@@ -57,6 +57,12 @@ public sealed partial class QuestWindow : Window
             AppWindow.Move(position);
         _root.Loaded += (_, _) => FitToContent();
         Closed += (_, _) => Stack.CloseAll();
+        // As in the main window: a click on nothing in particular lets go of held cards.
+        _root.Tapped += (_, e) =>
+        {
+            if (!e.Handled && !Linked.IsInside(e.OriginalSource) && Stack.AnyHeld)
+                Stack.CloseAll();
+        };
     }
 
     public string QuestId { get; }

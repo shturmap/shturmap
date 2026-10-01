@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
 using Shturmap.Map;
 using Shturmap.Session;
 
@@ -10,13 +9,12 @@ namespace Shturmap.App.Controls;
 /// <summary>The item card: shown when pointing at a key or an item on a card or in BRING.</summary>
 public sealed partial class ItemCard : UserControl, ICard
 {
-    private Storyboard? _hold;
-
     public ItemCard(ItemCardView view)
     {
         InitializeComponent();
         Key = new CardKey.Item(view.ItemId);
         Show(view);
+        SetMode(CardMode.Hover);
     }
 
     public CardKey Key { get; }
@@ -27,8 +25,6 @@ public sealed partial class ItemCard : UserControl, ICard
 
     public CardMode Mode { get; private set; } = CardMode.Hover;
 
-    public event Action<ICard>? Held;
-
     public void Show(ItemCardView view)
     {
         View = view;
@@ -38,23 +34,8 @@ public sealed partial class ItemCard : UserControl, ICard
     public void SetMode(CardMode mode)
     {
         Mode = mode;
-        StopHold();
-        Frame.BorderBrush = (Brush)Application.Current.Resources[mode == CardMode.Hover ? "LineStrongBrush" : "AmberBrush"];
-        HoldScale.ScaleX = mode == CardMode.Held ? 1 : 0;
-    }
-
-    public void StartHold(TimeSpan duration) => _hold = HoldAnimation.Start(HoldScale, duration, () =>
-    {
-        if (Mode != CardMode.Hover)
-            return;
-        SetMode(CardMode.Held);
-        Held?.Invoke(this);
-    });
-
-    public void StopHold()
-    {
-        _hold?.Stop();
-        _hold = null;
+        Opacity = mode == CardMode.Hover ? CardLook.HoverOpacity : 1;
+        Frame.BorderBrush = (Brush)Application.Current.Resources[mode == CardMode.Held ? "AmberBrush" : "LineStrongBrush"];
     }
 
     // ---- x:Bind helpers ----

@@ -76,6 +76,20 @@ public static class Linked
     /// <summary>The pointer left a linked element.</summary>
     public static event Action<FrameworkElement>? Left;
 
+    /// <summary>A linked element was clicked (tapped), with the card it opens.</summary>
+    public static event Action<FrameworkElement, CardKey?>? Clicked;
+
+    /// <summary>Whether something (e.g. the target of a click) is a linked element or inside one.</summary>
+    public static bool IsInside(object? target)
+    {
+        for (var node = target as DependencyObject; node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is FrameworkElement element && Hooked.TryGetValue(element, out _))
+                return true;
+        }
+        return false;
+    }
+
     /// <summary>Sets the focus from outside the rows, e.g. a map marker under the pointer.</summary>
     public static void Set(Focus? focus)
     {
@@ -101,6 +115,7 @@ public static class Linked
         {
             element.PointerEntered += (_, _) => Enter(element);
             element.PointerExited += (_, _) => Exit(element);
+            element.Tapped += (_, _) => Clicked?.Invoke(element, KeyOf(element));
             element.Loaded += (_, _) =>
             {
                 Live.Add(element);
@@ -137,9 +152,12 @@ public static class Linked
         if (GetAlso(element) is IEnumerable<string> also)
             quests.UnionWith(also);
         Apply(new Focus(quests, item, marker));
-        CardKey? key = item is not null ? new CardKey.Item(item) : GetQuest(element) is { } quest ? new CardKey.Quest(quest) : null;
-        Hovered?.Invoke(element, key);
+        Hovered?.Invoke(element, KeyOf(element));
     }
+
+    // The card an element opens: its item if it has one, else its quest; none for rows that only highlight.
+    private static CardKey? KeyOf(FrameworkElement element) =>
+        GetItem(element) is { } item ? new CardKey.Item(item) : GetQuest(element) is { } quest ? new CardKey.Quest(quest) : null;
 
     private static void Exit(FrameworkElement element)
     {

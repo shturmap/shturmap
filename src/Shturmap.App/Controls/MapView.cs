@@ -34,6 +34,13 @@ public sealed partial class MapView : Grid
         PointerExited += (_, e) => Hover(null, e.GetCurrentPoint(this).Position);
         PointerWheelChanged += OnPointerWheelChanged;
         DoubleTapped += OnDoubleTapped;
+        // A tap on a marker is that marker's click (MarkerClicked); only taps on the bare map reach the window, where
+        // they let go of held cards.
+        Tapped += (_, e) =>
+        {
+            if (_hovered is not null)
+                e.Handled = true;
+        };
     }
 
     /// <summary>Keep the player in view when a new position arrives. Turned off by dragging the map.</summary>
@@ -69,28 +76,57 @@ public sealed partial class MapView : Grid
         _panel.Invalidate();
     }
 
-    /// <summary>Redraws without moving, e.g. to let an ageing fix fade. Keeps redrawing while focused markers pulse.</summary>
+    /// <summary>
+    /// Redraws without moving, e.g. to let an ageing fix fade. Keeps redrawing while the focus dimming eases in or
+    /// out and while focused markers pulse.
+    /// </summary>
     public void Redraw()
     {
         _panel.Invalidate();
-        if (_scene is not { Pulse: true, Focus.Count: > 0 })
+        if (_scene is not { } scene)
             return;
-        if (_pulse is null)
+        if (!scene.Pulse)
         {
-            _pulse = DispatcherQueue.CreateTimer();
-            _pulse.Interval = TimeSpan.FromMilliseconds(16);
-            _pulse.Tick += (_, _) =>
-            {
-                _panel.Invalidate();
-                if (_scene is not { Pulse: true, Focus.Count: > 0 })
-                    _pulse.Stop();
-            };
+            // Animation effects off: the dimming switches at once and nothing pulses.
+            scene.Dim = DimTarget(scene);
+            return;
         }
-        if (!_pulse.IsRunning)
-            _pulse.Start();
+        if (!Animating(scene))
+            return;
+        if (_animation is null)
+        {
+            _animation = DispatcherQueue.CreateTimer();
+            _animation.Interval = TimeSpan.FromMilliseconds(16);
+            _animation.Tick += (_, _) => Step();
+        }
+        _lastStep = DateTime.Now;
+        if (!_animation.IsRunning)
+            _animation.Start();
     }
 
-    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _pulse;
+    private static readonly TimeSpan DimEase = TimeSpan.FromMilliseconds(180);
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _animation;
+    private DateTime _lastStep;
+
+    private static float DimTarget(MapScene scene) => scene.Focus.Count > 0 ? 1f : 0f;
+
+    private static bool Animating(MapScene scene) =>
+        scene.Focus.Count > 0 || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
+
+    private void Step()
+    {
+        if (_scene is not { } scene || !Animating(scene))
+        {
+            _animation?.Stop();
+            return;
+        }
+        var now = DateTime.Now;
+        var step = (float)((now - _lastStep) / DimEase);
+        _lastStep = now;
+        var target = DimTarget(scene);
+        scene.Dim = scene.Dim < target ? Math.Min(target, scene.Dim + step) : Math.Max(target, scene.Dim - step);
+        _panel.Invalidate();
+    }
 
     /// <param name="frame">Fit the player and the nearest open objective (or about 150 m around) into view.</param>
     public void CenterOnPlayer(bool frame = false)

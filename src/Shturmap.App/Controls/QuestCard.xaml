@@ -14,13 +14,6 @@
   <Border x:Name="Frame" Width="360" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}"
           BorderThickness="1" CornerRadius="0">
     <Grid>
-      <!-- Fills while the pointer rests; when full, the card holds. -->
-      <Rectangle x:Name="HoldBar" Height="2" VerticalAlignment="Top" Margin="10,0" Fill="{StaticResource AmberBrush}"
-                 RenderTransformOrigin="0,0.5">
-        <Rectangle.RenderTransform>
-          <ScaleTransform x:Name="HoldScale" ScaleX="0" />
-        </Rectangle.RenderTransform>
-      </Rectangle>
 
       <StackPanel Padding="14,12,14,12" Spacing="10">
         <Grid ColumnSpacing="12" controls:Linked.Also="{x:Bind View.QuestIds}">

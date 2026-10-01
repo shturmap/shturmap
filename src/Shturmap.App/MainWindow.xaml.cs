@@ -64,7 +64,19 @@ public sealed partial class MainWindow : Window
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
+        Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
         Linked.FocusChanged += OnFocusChanged;
+        // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
+        // handle their own clicks.
+        root.Tapped += (_, e) =>
+        {
+            if (!e.Handled && !Linked.IsInside(e.OriginalSource) && _cards.AnyHeld)
+                _cards.CloseAll();
+        };
+        _focusClear = DispatcherQueue.CreateTimer();
+        _focusClear.Interval = TimeSpan.FromMilliseconds(250);
+        _focusClear.IsRepeating = false;
+        _focusClear.Tick += (_, _) => ApplyMapFocus();
         Map.MarkerHovered += OnMarkerHovered;
         Map.MarkerClicked += OnMarkerClicked;
         Closed += (_, _) =>
@@ -509,7 +521,20 @@ public sealed partial class MainWindow : Window
         return ids;
     }
 
+    private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _focusClear;
+
+    // Moving from one row to the next passes through "nothing in focus" for a moment; showing that moment would
+    // make every marker on the map blink. So a new focus applies at once, but losing it waits a little.
     private void OnFocusChanged()
+    {
+        _focusClear.Stop();
+        if (Linked.Current is null)
+            _focusClear.Start();
+        else
+            ApplyMapFocus();
+    }
+
+    private void ApplyMapFocus()
     {
         if (Map.Scene is not { } scene)
             return;
@@ -533,6 +558,7 @@ public sealed partial class MainWindow : Window
         }
         _hoveredMarker = marker;
         _markerHoveredAt = DateTime.Now;
+        _markerAt = at;
         switch (marker)
         {
             case null:
@@ -549,11 +575,17 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // Clicking a quest marker selects the quest (guide line) and holds its card, like clicking it in the list.
     private void OnMarkerClicked(MapMarker marker)
     {
-        if (marker is { Group: { } quest, Objective: not null })
-            Select(quest, "map");
+        if (marker is not { Group: { } quest, Objective: not null })
+            return;
+        Select(quest, "map");
+        var at = Map.TransformToVisual(Content).TransformPoint(_markerAt);
+        _cards.Click(new CardKey.Quest(quest), new Windows.Foundation.Rect(at.X - 8, at.Y - 8, 16, 16));
     }
+
+    private Windows.Foundation.Point _markerAt;
 
     private void Select(string questId, string how)
     {

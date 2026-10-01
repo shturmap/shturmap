@@ -13,11 +13,6 @@
        loose spots to see them on the map; point at a quest for its card. -->
   <Border x:Name="Frame" Width="340" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
     <Grid>
-      <Rectangle x:Name="HoldBar" Height="2" VerticalAlignment="Top" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0,0.5">
-        <Rectangle.RenderTransform>
-          <ScaleTransform x:Name="HoldScale" ScaleX="0" />
-        </Rectangle.RenderTransform>
-      </Rectangle>
 
       <StackPanel Padding="14,14,14,14" Spacing="8">
         <Grid ColumnSpacing="12">

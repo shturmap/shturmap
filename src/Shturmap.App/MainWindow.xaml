@@ -69,7 +69,7 @@
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Move into the card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears; click to keep the card. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />

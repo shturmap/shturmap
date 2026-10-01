@@ -38,10 +38,11 @@ public static class MapRenderer
         DrawSpawns(canvas, camera, scene, uiScale);
         foreach (var marker in scene.Markers.OrderBy(m => IsSelected(scene, m) || IsFocused(scene, m) ? 1 : 0))
         {
-            // Markers step back when something else is pointed at, or when they are on another floor than the one shown.
-            var alpha = scene.Focus.Count > 0 && !IsFocused(scene, marker) ? 0.28f
-                : !OnShownFloor(scene, marker.Position) ? 0.5f
-                : 1f;
+            // Markers step back when something else is pointed at (easing with the scene's Dim), or when they are on
+            // another floor than the one shown.
+            var alpha = scene.ShownFocus.Count > 0 && !IsFocused(scene, marker) ? 1 - 0.72f * scene.Dim : 1f;
+            if (!OnShownFloor(scene, marker.Position))
+                alpha = Math.Min(alpha, 0.5f);
             if (alpha < 1)
             {
                 using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
@@ -61,7 +62,7 @@ public static class MapRenderer
         scene.Selected is not null && (m.Id == scene.Selected || m.Group == scene.Selected);
 
     private static bool IsFocused(MapScene scene, MapMarker m) =>
-        scene.Focus.Contains(m.Id) || (m.Group is not null && scene.Focus.Contains(m.Group));
+        scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
 
     private static bool OnShownFloor(MapScene scene, WorldPoint p) =>
         scene.Definition.Layers.Count == 0 || FloorResolver.LayerFor(scene.Definition, p)?.SvgLayer == scene.Floor?.SvgLayer;
@@ -127,11 +128,12 @@ public static class MapRenderer
             return;
         using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
         var color = ColorOf(zone.Kind);
-        var focused = zone.Group is not null && scene.Focus.Contains(zone.Group);
+        var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
         var selected = (scene.Selected is not null && zone.Group == scene.Selected) || focused;
-        var faded = scene.Focus.Count > 0 && !focused;
-        using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : faded ? 12 : 35)), IsAntialias = true };
-        using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : faded ? 50 : 140)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
+        // Zones outside the focus ease back with the scene's Dim, like the markers.
+        var fade = scene.ShownFocus.Count > 0 && !focused ? scene.Dim : 0f;
+        using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35 - 23 * fade)), IsAntialias = true };
+        using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : 140 - 90 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
         canvas.DrawPath(path, fill);
         canvas.DrawPath(path, stroke);
     }
@@ -215,7 +217,7 @@ public static class MapRenderer
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
-        if (scene.Pulse && IsFocused(scene, marker))
+        if (scene.Pulse && scene.Focus.Count > 0 && IsFocused(scene, marker))
             DrawPulse(canvas, scene, at, r, color, ui);
 
         switch (marker.Kind)

@@ -70,11 +70,25 @@ public sealed class MapScene
         {
             if (value.Count > 0 && !value.SetEquals(_focus))
                 FocusSince = DateTime.Now;
+            if (value.Count > 0)
+                LastFocus = value;
             _focus = value;
         }
     }
 
     private IReadOnlySet<string> _focus = new HashSet<string>();
+
+    /// <summary>The last non-empty focus: still emphasised while the dimming fades out.</summary>
+    public IReadOnlySet<string> LastFocus { get; private set; } = new HashSet<string>();
+
+    /// <summary>
+    /// How far the markers outside the focus have stepped back, 0 to 1. The map view eases it toward 1 while
+    /// something is in focus and back to 0 after, so the highlight fades in and out rather than blinking.
+    /// </summary>
+    public float Dim { get; set; }
+
+    /// <summary>What is drawn emphasised: the focus, or while the dimming fades out, the focus that just ended.</summary>
+    public IReadOnlySet<string> ShownFocus => _focus.Count > 0 ? _focus : Dim > 0 ? LastFocus : _focus;
 
     /// <summary>When the current focus began: its pulse starts from there.</summary>
     public DateTime FocusSince { get; private set; }

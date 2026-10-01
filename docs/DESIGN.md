@@ -114,9 +114,11 @@ Quest **types are shown by glyph, never by colour**; colour stays free for state
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
 portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
 header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind rows; map markers
-not in focus step back to 28 % opacity, and the focused ones pulse: a ring leaves the marker and fades every 1.4 s
-(motion is noticed before anything else; off when Windows' animation effects are off, and only while something is
-in focus). Markers on another floor than the one shown are drawn at half strength.
+not in focus step back to 28 % opacity, easing in and out over 0.18 s, and the focused ones pulse: a ring leaves
+the marker and fades every 1.4 s (motion is noticed before anything else; off, with the easing, when Windows'
+animation effects are off, and only while something is in focus). Losing the focus waits 0.25 s before the map
+follows, so moving from one row to the next switches the highlight straight across instead of making every marker
+blink. Markers on another floor than the one shown are drawn at half strength.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Screen anatomy
@@ -154,13 +156,15 @@ open squares. In Plan, each BRING row has one line with the easiest source.
 Cards behave like the nested tooltips in Crusader Kings III:
 
 1. **Hover**: rest the pointer on a quest, key or item (rail row, map marker, or a row on a card) for 0.4 s and
-   its card appears beside it. Moving down a list swaps an unheld card after 0.12 s.
-2. **Held**: keep resting while a thin amber bar fills (0.9 s), or move into the card, and it stays; the border
-   turns amber. A held card is replaced only after a full 0.4 s on something else, so crossing other markers on
-   the way into it doesn't replace it.
+   its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
+   subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
+2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
+   amber border and stays until a click on nothing in particular (bare rail or map), Esc, or another click on its
+   quest. While it is held, pointing at other things still highlights them but opens no card in its place;
+   clicking another quest switches to that one. Nothing holds by itself (owner, 2026-10-01: the timed hold was
+   dropped).
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
-   it, and so on. Moving back to an earlier card closes the later ones; leaving them all closes all (0.35 s grace).
-   Esc closes them.
+   it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
 4. **Pinned**: the pin turns a quest card into a small window with a normal title bar, to move anywhere and leave
    open; its own nested cards open beside it. In a raid it shows live distances, which is what a pin is for: a
    tracker for the quests you chose, readable without the mouse. Pinned cards come back after a restart and close

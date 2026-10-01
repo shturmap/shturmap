@@ -16,10 +16,10 @@ public abstract record CardKey
 
 public enum CardMode
 {
-    /// <summary>Shown while the pointer rests on its subject; goes away with it.</summary>
+    /// <summary>Shown while the pointer is on its subject or on the card; goes away with it. Semi-transparent.</summary>
     Hover,
 
-    /// <summary>The pointer rested long enough or moved in: the card stays while the pointer is on it.</summary>
+    /// <summary>Clicked: stays until a click elsewhere, Esc, or another click on its subject.</summary>
     Held,
 
     /// <summary>Its own window, open until closed.</summary>
@@ -37,11 +37,10 @@ public interface ICard
     CardMode Mode { get; }
 
     void SetMode(CardMode mode);
+}
 
-    /// <summary>Fills the hold bar over the given time, then holds the card.</summary>
-    void StartHold(TimeSpan duration);
-
-    void StopHold();
-
-    event Action<ICard>? Held;
+internal static class CardLook
+{
+    /// <summary>An unheld card is see-through enough not to hide the map behind it.</summary>
+    public const double HoverOpacity = 0.8;
 }

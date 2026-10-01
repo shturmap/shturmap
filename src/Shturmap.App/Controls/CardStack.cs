@@ -8,16 +8,17 @@ namespace Shturmap.App.Controls;
 
 /// <summary>
 /// Cards that open from what the pointer rests on, and from things on those cards, like the nested tooltips in
-/// Crusader Kings III. Rest on a quest, key or item for 0.4 s and its card opens beside it; keep resting while the
-/// bar fills (or move into the card) and it holds; point at something on a held card and that one's card opens
-/// beside it, and so on. Leaving a card closes it and everything opened from it; nothing needs a click.
+/// Crusader Kings III. Rest on a quest, key or item for 0.4 s and its card opens beside it, see-through; it stays
+/// while the pointer is on it, so things on it can open their own cards, and goes when the pointer leaves. A click
+/// on the quest (or on the card) holds it: it turns solid and stays until a click elsewhere, Esc, or another click
+/// on the quest. While a card is held, pointing at other things still highlights them but opens no card in its
+/// place; clicking another quest switches the held card.
 /// One stack per window: the main window, and each pinned card window.
 /// </summary>
 public sealed class CardStack
 {
     private static readonly TimeSpan ShowAfter = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan SwapAfter = TimeSpan.FromMilliseconds(120);
-    private static readonly TimeSpan HoldAfter = TimeSpan.FromMilliseconds(900);
     private static readonly TimeSpan SettleAfter = TimeSpan.FromMilliseconds(350);
     private const int NoSource = -2;
 
@@ -26,6 +27,8 @@ public sealed class CardStack
     private sealed record Level(Popup Popup, FrameworkElement Card, DateTime Opened)
     {
         public ICard Face => (ICard)Card;
+
+        public bool Held => Face.Mode == CardMode.Held;
     }
 
     /// <summary>"main" or "pinned": which kind of window this stack is in (for the study log).</summary>
@@ -105,9 +108,10 @@ public sealed class CardStack
         if (key is null)
             return;
         var target = level + 1;
-        // Pointing at a card's own subject (its header) or at what is already open beside it opens nothing new.
+        // Pointing at a card's own subject (its header), at what is already open beside it, or anywhere while a
+        // held card sits in that place opens nothing new.
         if ((level >= 0 && level < _levels.Count && _levels[level].Face.Key == key) ||
-            (target < _levels.Count && _levels[target].Face.Key == key))
+            (target < _levels.Count && (_levels[target].Face.Key == key || _levels[target].Held)))
         {
             _show.Stop();
             return;
@@ -115,9 +119,8 @@ public sealed class CardStack
         _pendingKey = key;
         _pendingLevel = target;
         _pendingAnchor = anchor;
-        // Skimming a list swaps an unheld card quickly; a held one waits, so crossing other markers on the way
-        // into it doesn't replace it.
-        _show.Interval = target < _levels.Count && _levels[target].Face.Mode == CardMode.Hover ? SwapAfter : ShowAfter;
+        // Skimming a list swaps an open card quickly.
+        _show.Interval = target < _levels.Count ? SwapAfter : ShowAfter;
         Restart(_show);
     }
 
@@ -132,6 +135,40 @@ public sealed class CardStack
         Restart(_settle);
     }
 
+    /// <summary>A click on an element that shows <paramref name="key"/>: hold its card (open it first if needed), or let go of it if held.</summary>
+    public void Click(FrameworkElement element, CardKey? key)
+    {
+        var level = LevelOf(element);
+        Click(key, AnchorOf(element, level), level);
+    }
+
+    /// <summary>A click on something outside the cards, e.g. a map marker.</summary>
+    public void Click(CardKey? key, Rect anchor, int level = -1)
+    {
+        if (key is null || (level >= 0 && level < _levels.Count && _levels[level].Face.Key == key))
+            return;
+        var target = level + 1;
+        if (target < _levels.Count && _levels[target].Face.Key == key)
+        {
+            if (_levels[target].Held)
+            {
+                Study.Ui("card.release", ("card", key.ToString()), ("name", _levels[target].Face.Title), ("level", target), ("window", Where));
+                CloseFrom(target);
+            }
+            else
+            {
+                Hold(target);
+            }
+            return;
+        }
+        _pendingKey = key;
+        _pendingLevel = target;
+        _pendingAnchor = anchor;
+        ShowPending();
+        if (target < _levels.Count && _levels[target].Face.Key == key)
+            Hold(target);
+    }
+
     /// <summary>Opens a card right away, held (developer snapshots).</summary>
     public FrameworkElement? Open(CardKey key, Rect anchor, int level)
     {
@@ -144,6 +181,9 @@ public sealed class CardStack
         _levels[level].Face.SetMode(CardMode.Held);
         return _levels[level].Card;
     }
+
+    /// <summary>Whether any card is held (a click elsewhere lets go of it).</summary>
+    public bool AnyHeld => _levels.Any(l => l.Held);
 
     public void CloseAll() => CloseFrom(0);
 
@@ -161,10 +201,19 @@ public sealed class CardStack
 
     // ---- inside ----
 
-    // Keeps the deepest card the pointer is on, or the card for the source it rests on, and closes the rest.
+    private void Hold(int level)
+    {
+        var face = _levels[level].Face;
+        if (face.Mode != CardMode.Hover)
+            return;
+        face.SetMode(CardMode.Held);
+        Study.Ui("card.hold", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
+    }
+
+    // Keeps held cards, the deepest card the pointer is on, and the card for the source it rests on; closes the rest.
     private void Settle()
     {
-        var keep = _over;
+        var keep = Math.Max(_over, _levels.FindLastIndex(l => l.Held));
         if (_sourceLevel != NoSource)
             keep = Math.Max(keep, _sourceKey is null ? _sourceLevel : _sourceLevel + 1);
         CloseFrom(keep + 1);
@@ -183,8 +232,6 @@ public sealed class CardStack
             // Moving into a card cancels a card pending from outside it.
             if (_pendingLevel <= level)
                 _show.Stop();
-            if (((ICard)card).Mode == CardMode.Hover)
-                ((ICard)card).SetMode(CardMode.Held);
             Restart(_settle);
         };
         card.PointerExited += (_, _) =>
@@ -193,17 +240,20 @@ public sealed class CardStack
                 _over = -1;
             Restart(_settle);
         };
+        // A click anywhere on a card holds it (rows on it hold their own cards first).
+        card.Tapped += (_, _) =>
+        {
+            if (level < _levels.Count && _levels[level].Card == card)
+                Hold(level);
+        };
         _levels.Add(new Level(popup, card, DateTime.Now));
         CardOpened?.Invoke(card);
         var face = (ICard)card;
         Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
-        face.Held += c => Study.Ui("card.hold", ("card", c.Key.ToString()), ("name", c.Title), ("level", level), ("window", Where));
 
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
         popup.IsOpen = true;
-        ((ICard)card).SetMode(CardMode.Hover);
-        ((ICard)card).StartHold(HoldAfter);
         _pendingKey = null;
     }
 
@@ -230,8 +280,7 @@ public sealed class CardStack
         for (var i = _levels.Count - 1; i >= Math.Max(0, level); i--)
         {
             Study.Ui("card.close", ("card", _levels[i].Face.Key.ToString()), ("name", _levels[i].Face.Title), ("level", i),
-                ("window", Where), ("openS", DateTime.Now - _levels[i].Opened), ("held", _levels[i].Face.Mode != CardMode.Hover));
-            _levels[i].Face.StopHold();
+                ("window", Where), ("openS", DateTime.Now - _levels[i].Opened), ("held", _levels[i].Held));
             _levels[i].Popup.IsOpen = false;
             _levels.RemoveAt(i);
         }
