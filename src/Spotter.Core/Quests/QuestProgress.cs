@@ -41,8 +41,9 @@ public static class QuestProgress
     };
 
     /// <summary>
-    /// Current state per quest. The newest observation wins, whatever its source, so a log event after a scan
-    /// overrides it and a manual change holds until the game says otherwise. Quests nobody observed are marked
+    /// Current state per quest. The newest observation wins, so a log event after a scan overrides it and a manual
+    /// change holds until the game says otherwise; but once the log has seen a quest completed or failed, only a
+    /// later log event can make it active again. Quests nobody observed are marked
     /// completed when an active or completed quest strictly requires them; that is inferred, not stored.
     /// </summary>
     /// <param name="requirements">Prerequisites of a quest; only those requiring "complete" alone are used for inference.</param>
@@ -54,7 +55,14 @@ public static class QuestProgress
     {
         var result = new Dictionary<string, QuestStatus>(StringComparer.Ordinal);
         foreach (var o in observations.OrderBy(o => o.At).ThenBy(o => o.Source))
+        {
+            // The game's log is the only witness of a hand-in. An import (dated by its file, not by the quest) or
+            // a misread scan must not reopen a quest the log saw completed or failed; only a later log event can.
+            if (o.Source is ObservationSource.Import or ObservationSource.TasksScan && o.State == QuestState.Active &&
+                result.GetValueOrDefault(o.QuestId) is { Source: ObservationSource.Log, State: QuestState.Completed or QuestState.Failed })
+                continue;
             result[o.QuestId] = new QuestStatus(o.QuestId, o.State, o.Source, o.At);
+        }
 
         var queue = new Queue<string>(result.Values.Where(s => s.State is QuestState.Active or QuestState.Completed).Select(s => s.QuestId));
         while (queue.Count > 0)

@@ -31,6 +31,9 @@ switch (command)
     case "simulate":
         await Simulate();
         break;
+    case "quests":
+        await Quests(args.ElementAtOrDefault(1) ?? "pve");
+        break;
     default:
         Console.WriteLine("""
             spotter-cli locate              find the game, logs, screenshots and settings on this PC
@@ -41,8 +44,30 @@ switch (command)
                                             draw a map with the positions from screenshot names
             spotter-cli watch [seconds]     run the companion headless and print what it sees
             spotter-cli simulate            play a scripted Streets raid against a temporary fake game folder
+            spotter-cli quests [mode]       list active quests with every stored observation behind them
             """);
         break;
+}
+
+static async Task Quests(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Spotter", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
+    using var store = new Spotter.Data.Progress.ProgressStore(Spotter.Session.AppPaths.Default.Database);
+    var observations = store.Load(gameMode);
+    var statuses = Spotter.Core.Quests.QuestProgress.Resolve(observations,
+        id => data.Tasks.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new Spotter.Core.Quests.QuestRequirement(r.Task, r.Status ?? [])) ?? [],
+        id => data.Tasks.GetValueOrDefault(id)?.Name ?? id);
+    var bySource = observations.GroupBy(o => o.Source).Select(g => $"{g.Key} {g.Count()}");
+    Console.WriteLine($"{observations.Count} observations ({string.Join(", ", bySource)})");
+    foreach (var status in statuses.Values.Where(s => s.State == Spotter.Core.Quests.QuestState.Active && data.Tasks.ContainsKey(s.QuestId))
+                 .OrderBy(s => data.Tasks[s.QuestId].Name))
+    {
+        Console.WriteLine($"{data.Tasks[status.QuestId].Name}");
+        foreach (var o in observations.Where(o => o.QuestId == status.QuestId).OrderBy(o => o.At))
+            Console.WriteLine($"    {o.At:yyyy-MM-dd HH:mm} {o.State,-9} {o.Source,-9} {o.Evidence}");
+    }
 }
 
 static async Task Simulate()

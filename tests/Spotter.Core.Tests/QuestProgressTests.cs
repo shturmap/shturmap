@@ -31,6 +31,32 @@ public class QuestProgressTests
     }
 
     [Fact]
+    public void An_import_or_scan_never_reopens_a_quest_the_log_saw_finished()
+    {
+        // TarkovEyes dates its whole file by its last save, which can be after the game logged the hand-in.
+        var result = Resolve(
+            Obs("c", QuestState.Active, ObservationSource.Log, 26),
+            Obs("c", QuestState.Completed, ObservationSource.Log, 29),
+            Obs("c", QuestState.Active, ObservationSource.Import, 30),
+            Obs("b", QuestState.Failed, ObservationSource.Log, 28),
+            Obs("b", QuestState.Active, ObservationSource.TasksScan, 30));
+        Assert.Equal(QuestState.Completed, result["c"].State);
+        Assert.Equal(QuestState.Failed, result["b"].State);
+    }
+
+    [Fact]
+    public void A_later_log_start_reopens_a_failed_quest_and_an_import_can_still_complete_one()
+    {
+        var result = Resolve(
+            Obs("b", QuestState.Failed, ObservationSource.Log, 27),
+            Obs("b", QuestState.Active, ObservationSource.Log, 28),
+            Obs("c", QuestState.Active, ObservationSource.Log, 26),
+            Obs("c", QuestState.Completed, ObservationSource.Import, 30));
+        Assert.Equal(QuestState.Active, result["b"].State);
+        Assert.Equal(QuestState.Completed, result["c"].State);
+    }
+
+    [Fact]
     public void Manual_holds_until_the_game_says_otherwise()
     {
         var result = Resolve(
