@@ -6,9 +6,8 @@ read of everything in their own application and push-notification logs (20 sessi
 
 ## Before starting
 
-- **Publish first.** Commits `5e134c2`, `98c389a` and `5e2e24d` are built and tested (125 tests) but not yet in
-  `artifacts\Shturmap`: the owner was in a raid with the app running from there. Check
-  `Get-Process Shturmap`, then run `eng\publish.ps1` (it refuses while the app runs from `artifacts`).
+- **Published** on 2026-10-01 at 23:42: `artifacts\Shturmap` matches `3a6166b`. To publish again, check
+  `Get-Process Shturmap` first: `eng\publish.ps1` refuses while the app runs from `artifacts`.
 - **Boundary (owner's rule).** Read only `*application_*.log` and `*push-notifications_*.log` in an EFT log
   session folder, never `*.log`: that glob also matches `backend_000.log`, which is off limits. No memory, no
   input, no screen capture.
