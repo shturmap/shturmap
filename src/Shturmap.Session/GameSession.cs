@@ -339,8 +339,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                         : $"Loading {_map.Name}", needs is { Count: > 0 } ? 45 : 6);
                 }
                 break;
-            case RaidStarted:
+            case RaidStarted started:
                 ResolveMap();
+                // The side is only known now; the bring-list said at loading was for a PMC.
+                if (!item.IsReplay && started.State.Side == RaidSide.Scav && _map is not null)
+                    Say($"Scav raid on {_map.Name} · quest objectives don't count, items found in raid do", 8);
                 break;
             case RaidEnded ended:
                 _lastRaidMap = _map;
@@ -504,8 +507,16 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
         if (_data is not null && _map is not null)
         {
-            var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
+            // In a raid the map shows what counts for the side you play: no quest objectives for a Scav (they only
+            // count for the PMC), and only your side's extracts.
+            var side = _tracker.State.Phase == RaidPhase.Menu ? RaidSide.Unknown : _tracker.State.Side;
+            var active = side == RaidSide.Scav ? [] : _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
             content = MapContentBuilder.Build(_data, _map.Id, active, new HashSet<string>());
+            if (side != RaidSide.Unknown)
+            {
+                var otherSide = side == RaidSide.Scav ? MarkerKind.ExtractPmc : MarkerKind.ExtractScav;
+                content = content with { Markers = content.Markers.Where(m => m.Kind != otherSide).ToList() };
+            }
             var sameArtwork = _data.MapIdsSharing(_map.NormalizedName);
             var projection = definition is not null ? new MapProjection(definition) : null;
             // Degrees clockwise from map-up: unlike "ahead-left", still true after the player has turned.
@@ -531,7 +542,6 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
                     bearing, o.Quest.Trader));
             }
-            var side = _tracker.State.Side;
             var shownMap = _data.Maps.GetValueOrDefault(_map.Id);
             foreach (var m in content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))
             {

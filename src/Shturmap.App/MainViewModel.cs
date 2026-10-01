@@ -138,6 +138,21 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidBring { get; set; } = [];
 
+    /// <summary>"PMC" or "SCAV" beside the raid card's title, or empty when the logs can't tell.</summary>
+    [ObservableProperty] public partial string RaidSide { get; set; } = "";
+
+    /// <summary>A Scav raid: the card shows the loot your quests need instead of their objectives.</summary>
+    [ObservableProperty] public partial bool ScavRaid { get; set; }
+
+    /// <summary>One line on what the side means for your quests, or empty.</summary>
+    [ObservableProperty] public partial string RaidNote { get; set; } = "";
+
+    /// <summary>In a Scav raid: items your quests need found in raid, the ones loose here first.</summary>
+    [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidLoot { get; set; } = [];
+
+    /// <summary>"And 14 more items …" when the loot list is cut short, or empty.</summary>
+    [ObservableProperty] public partial string RaidLootMore { get; set; } = "";
+
     [ObservableProperty] public partial IReadOnlyList<ExtractItem> Extracts { get; set; } = [];
 
     [ObservableProperty] public partial string Hint { get; set; } = "";

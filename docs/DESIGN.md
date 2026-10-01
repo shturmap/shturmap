@@ -140,6 +140,18 @@ Text says only what the place doesn't: an objective "… on Streets of Tarkov" d
     by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
     transits for your side, each with what it takes to leave there (see "Extract requirements"). ANY MAP closes
     the rail in both states.
+  - *Scav raid* (owner, 2026-10-01: a Scav needs a different view): the same card, with SCAV beside the map's
+    name (PMC in a PMC raid; nothing when the logs can't tell). Quest objectives only count for the PMC, but items
+    found in raid count whoever found them, so the card's summary is "Find items for 4 quests" and its one
+    section is FIND IN RAID: the items your active quests need found in raid (find/hand-over objectives marked
+    found-in-raid), as BRING rows with icon, count and quests, the ones lying loose on this map first ("Loose
+    here · 3 spots"; pointing at a row draws the spots), at most eight and one line for the rest. One note line
+    says why. The raid line drops "min left" (a Scav joins under way; the logs don't say how long is left). The
+    map draws no quest objectives, and in any raid only your side's extracts. ANY MAP is hidden (a Scav's kills
+    don't count). When the raid starts as a Scav, a notice replaces the PMC bring-list said at loading.
+    How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
+    joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining
+    under way. Locally hosted raids stay unknown and get the PMC view.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, boss spawns (red diamonds, one label
   per spawn area: "Reshala 75%"), Scav spawns (small quiet rings, no label, not hoverable), player, trail, guide
   line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
@@ -175,7 +187,8 @@ Cards behave like the nested tooltips in Crusader Kings III:
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
 4. **Pinned**: the pin turns a quest card into a small window with a normal title bar, to move anywhere and leave
-   open; its own nested cards open beside it. In a raid it shows live distances, which is what a pin is for: a
+   open; its own nested cards open beside it. The card the pin was on closes, with anything opened from it, so the
+   quest isn't shown twice (owner, 2026-10-01). In a raid it shows live distances, which is what a pin is for: a
    tracker for the quests you chose, readable without the mouse. Pinned cards come back after a restart and close
    by themselves when their quest is completed.
 
@@ -186,8 +199,11 @@ but don't light up for their own card's quest, or the whole card would glow.
 
 Pointing highlights for as long as the pointer stays; a click on a quest (its rail row, or one of its markers) also
 **keeps** it highlighted, so its markers are easy to find on the map while you look away (owner, 2026-10-01). The
-kept quest's rows keep a quieter gold tint than the pointer's; on the map its markers stay large with a steady ring,
-the rest stay dimmed, and a dashed line runs from your last fix to its nearest marker. It pulses three times when
+kept quest has its own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among gold didn't
+stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart from gold with
+any colour vision. Its rows keep a cyan tint; on the map its markers turn cyan and grow (14 px radius, against 12 for
+what is pointed at and 10 at rest) inside a steady cyan ring on a dark band, its zones turn cyan, the rest stay
+dimmed, and a dashed cyan line runs from your last fix to its nearest marker. It pulses three times when
 kept, and again when the pointer comes back from something else, then holds still: a marker pulsing all raid would be
 motion at the edge of the player's eye. Pointing at something else shows that instead, for as long as the pointer is
 on it. One quest is kept at a time; another click on it, a click on another quest, or Esc (after the cards) lets it

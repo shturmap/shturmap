@@ -5,7 +5,9 @@ param(
   [Parameter(Mandatory)] [string] $Out,
   [int] $SnapshotAfter = 16,
   # Part of a quest name: highlight it, hold its card and pin it before the snapshot.
-  [string] $ShowQuest
+  [string] $ShowQuest,
+  # Play the raid as a Scav: the match setup names another profile than the menu's.
+  [switch] $Scav
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -34,9 +36,11 @@ function Shot([string]$position) {
 
 Log 'Session mode: Pve'
 Log 'PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0'
-# Revision - Streets of Tarkov, Dandies, Ballet Lover, Audit, Glory to CPSU, Road Closed
+# Revision - Streets of Tarkov, Dandies, Ballet Lover, Audit, Glory to CPSU, Road Closed; Shortage and Acquaintance
+# want items found in raid (what a Scav raid can do for them).
 foreach ($quest in '639135f286e646067c176a87', '65734c186dc1e402c80dc19e', '639135a7e705511c8a4a1b78',
-                   '638fcd23dc65553116701d33', '64f5aac4b63b74469b6c14c2', '639282134ed9512be67647ed') {
+                   '638fcd23dc65553116701d33', '64f5aac4b63b74469b6c14c2', '639282134ed9512be67647ed',
+                   '5967733e86f774602332fc84', '5d24b81486f77439c92d6ba8') {
   QuestStarted $quest
 }
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter)
@@ -44,7 +48,8 @@ if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
 Start-Sleep -Seconds 4
 Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
-Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: 000000000000000000000003, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+$raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
+Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
 Log 'GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19'
 Start-Sleep -Seconds 1
 Log 'GameStarted:90.6(10.33) real:107.49(12.02) diff:16.89'

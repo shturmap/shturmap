@@ -125,7 +125,7 @@
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep it lit: its markers stay ringed on the map, with a line from you to the nearest, until you click it again or press Esc. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep it lit: its markers turn cyan, larger and ringed on the map, with a line from you to the nearest, until you click it again or press Esc. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
@@ -171,22 +171,27 @@
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
                   <Grid.RowDefinitions>
-                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
                   </Grid.RowDefinitions>
                   <Ellipse Width="14" Height="14" Fill="{StaticResource AmberBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="Quest objective; its glyph is the quest type. A hollow ring: one of the places it can be." TextWrapping="Wrap" />
-                  <Polygon Grid.Row="1" Points="7,0 14,12 0,12" Fill="{StaticResource GreenBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="1" Grid.Column="1" Text="Extract for your side (green PMC, teal Scav, khaki shared)" TextWrapping="Wrap" />
-                  <Polygon Grid.Row="2" Points="7,0 14,7 7,14 0,7" Fill="#9C8CC4" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="2" Grid.Column="1" Text="Transit to another map" TextWrapping="Wrap" />
-                  <Polygon Grid.Row="3" Points="7,0 14,7 7,14 0,7" Fill="{StaticResource RedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="3" Grid.Column="1" Text="Boss spawn, with the boss's chance on this map" TextWrapping="Wrap" />
-                  <Ellipse Grid.Row="4" Width="9" Height="9" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="4" Grid.Column="1" Text="Scav spawn" TextWrapping="Wrap" />
-                  <Rectangle Grid.Row="5" Width="10" Height="10" Stroke="{StaticResource SandBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="5" Grid.Column="1" Text="Where an item lies loose, while you point at it" TextWrapping="Wrap" />
-                  <Ellipse Grid.Row="6" Width="11" Height="11" Fill="{StaticResource SandBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="6" Grid.Column="1" Text="You, at your last screenshot" TextWrapping="Wrap" />
+                  <Grid Grid.Row="1" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Ellipse Width="20" Height="20" Stroke="{StaticResource KeptBrush}" StrokeThickness="2" />
+                    <Ellipse Width="12" Height="12" Fill="{StaticResource KeptBrush}" />
+                  </Grid>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="The quest you clicked to keep highlighted" TextWrapping="Wrap" VerticalAlignment="Center" />
+                  <Polygon Grid.Row="2" Points="7,0 14,12 0,12" Fill="{StaticResource GreenBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="Extract for your side (green PMC, teal Scav, khaki shared)" TextWrapping="Wrap" />
+                  <Polygon Grid.Row="3" Points="7,0 14,7 7,14 0,7" Fill="#9C8CC4" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="Transit to another map" TextWrapping="Wrap" />
+                  <Polygon Grid.Row="4" Points="7,0 14,7 7,14 0,7" Fill="{StaticResource RedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" Text="Boss spawn, with the boss's chance on this map" TextWrapping="Wrap" />
+                  <Ellipse Grid.Row="5" Width="9" Height="9" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Grid.Column="1" Text="Scav spawn" TextWrapping="Wrap" />
+                  <Rectangle Grid.Row="6" Width="10" Height="10" Stroke="{StaticResource SandBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Grid.Column="1" Text="Where an item lies loose, while you point at it" TextWrapping="Wrap" />
+                  <Ellipse Grid.Row="7" Width="11" Height="11" Fill="{StaticResource SandBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="7" Grid.Column="1" Text="You, at your last screenshot" TextWrapping="Wrap" />
                 </Grid>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
                            Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data. It never touches the game. It keeps a study log of raids and how you use it in %LOCALAPPDATA%\Shturmap\study; nothing is sent anywhere." />
@@ -292,18 +297,28 @@
               <TextBlock Style="{StaticResource EyebrowText}" Text="THIS RAID" Margin="0,18,0,6" />
               <Border Padding="14,12" Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
                 <StackPanel Spacing="3">
-                  <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
+                  <Grid>
+                    <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
+                    <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
+                               ToolTipService.ToolTip="The side you play this raid, from the game's log" />
+                  </Grid>
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                              ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
                   <TextBlock Text="{x:Bind ViewModel.RaidLine, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}" Style="{StaticResource NoteText}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidFixNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidFixNote), Mode=OneWay}" Style="{StaticResource NoteText}" />
+                  <TextBlock Text="{x:Bind ViewModel.RaidNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidNote), Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidProgress, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidBring), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidBring, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
+                  <!-- A Scav raid: the loot your quests need found in raid takes the place of their objectives. -->
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="FIND IN RAID" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidLoot), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLoot, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
+                  <TextBlock Text="{x:Bind ViewModel.RaidLootMore, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLootMore), Mode=OneWay}"
+                             Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,4,0,0" />
                 </StackPanel>
               </Border>
 
@@ -335,24 +350,27 @@
               </ItemsControl>
             </StackPanel>
 
-            <!-- Quests that move on in any raid, in Plan and in a raid alike. -->
-            <TextBlock Style="{StaticResource EyebrowText}" Text="ANY MAP" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
-            <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="local:QuestLine">
-                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="Auto" />
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
-                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                    <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
-                  </Grid>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!-- Quests that move on in any raid, in Plan and in a PMC raid alike (a Scav's kills don't count; its loot
+                 is in FIND IN RAID). -->
+            <StackPanel Visibility="{x:Bind ShownIfNot(ViewModel.ScavRaid), Mode=OneWay}">
+              <TextBlock Style="{StaticResource EyebrowText}" Text="ANY MAP" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
+              <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:QuestLine">
+                    <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
+                      <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
           </StackPanel>
         </ScrollViewer>
       </Grid>

@@ -225,7 +225,11 @@ public sealed partial class MainWindow : Window
         var parts = new List<string>();
         if (s.RaidInfo is { } info)
         {
-            if (elapsed is { } e && info.RaidMinutes > 0)
+            // A Scav joins a raid already under way, and how long is left isn't in the logs: better no time than a
+            // wrong one.
+            if (s.Raid.Side == RaidSide.Scav && s.Raid.Phase == RaidPhase.InRaid)
+                parts.Add("joined under way");
+            else if (elapsed is { } e && info.RaidMinutes > 0)
                 parts.Add($"{Math.Max(0, info.RaidMinutes - (int)e.TotalMinutes)} min left");
             else if (info.RaidMinutes > 0)
                 parts.Add($"{info.RaidMinutes} min raid");
@@ -323,6 +327,8 @@ public sealed partial class MainWindow : Window
             fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
 
         vm.RaidTitle = Caps.Of(s.Map?.Name);
+        vm.RaidSide = s.Raid.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "SCAV", _ => "" };
+        vm.ScavRaid = vm.InRaid && s.Raid.Side == RaidSide.Scav;
         vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
         vm.RaidFixNote = age switch
         {
@@ -354,6 +360,11 @@ public sealed partial class MainWindow : Window
         vm.RaidBring = (s.MapPlan?.Requirements ?? []).Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring,
             r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds,
             s.Data is { } data ? ItemCards.Best(data, s.Sources, r.ItemId)?.Text ?? "" : "")).ToList();
+        vm.RaidNote = "";
+        vm.RaidLoot = [];
+        vm.RaidLootMore = "";
+        if (vm.ScavRaid)
+            ShowScavRaid(s);
         vm.Extracts = s.Extracts.Select(e => new ExtractItem(
             e.Id,
             e.Name,
@@ -371,12 +382,32 @@ public sealed partial class MainWindow : Window
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
-            : vm.InRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
+            : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
         vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
         vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
             && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
+    }
+
+    // The loot a Scav raid can find for your quests, up to this many rows; the rest is one line.
+    private const int LootShown = 8;
+
+    // A Scav raid in the raid card: quest objectives only count for the PMC, so instead of COMPLETE and PROGRESS the
+    // card lists what your quests need found in raid, which counts whoever finds it.
+    private void ShowScavRaid(SessionSnapshot s)
+    {
+        var vm = ViewModel;
+        var loot = s is { Data: { } data, Map: { } map } ? ScavRaid.Loot(data, s.Quests, data.MapIdsSharing(map.NormalizedName)) : [];
+        var quests = loot.SelectMany(l => l.QuestIds).Distinct().Count();
+        vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
+        vm.RaidNote = "As a Scav, quest objectives don't count; items you find in raid do.";
+        vm.RaidComplete = [];
+        vm.RaidProgress = [];
+        vm.RaidBring = [];
+        vm.RaidLoot = loot.Take(LootShown).Select(l => new RequirementLine(Glyphs.Bring, l.Text, "for " + l.ForQuests, l.ItemId, l.QuestIds,
+            l.SpotsHere switch { 0 => "", 1 => "Loose here · 1 spot", var n => $"Loose here · {n} spots" })).ToList();
+        vm.RaidLootMore = loot.Count > LootShown ? $"And {loot.Count - LootShown} more items your quests need found in raid." : "";
     }
 
     // Where an objective without a place on the map is done: kills and finds anywhere on it, hand-overs at the trader.
@@ -553,11 +584,19 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // A quest card's pin, in whichever window's stack it opened, makes a pinned window where the card was.
+    // A quest card's pin, in whichever window's stack it opened, turns the card into a pinned window where the card
+    // was: the card itself closes, so the quest isn't shown twice.
     private void HookPins(CardStack stack, Window window) => stack.CardOpened += card =>
     {
         if (card is QuestCard quest)
-            quest.PinClicked += c => Pin(c.View, QuestWindow.ScreenPoint(window, stack.PositionOf(c)));
+        {
+            quest.PinClicked += c =>
+            {
+                var at = QuestWindow.ScreenPoint(window, stack.PositionOf(c));
+                stack.Close(c);
+                Pin(c.View, at);
+            };
+        }
     };
 
     /// <summary>"121 m · NE · 3 m up" for an objective on the shown map, from the last fix; empty without one.</summary>

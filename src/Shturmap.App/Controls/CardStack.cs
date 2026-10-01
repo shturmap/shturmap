@@ -212,6 +212,14 @@ public sealed class CardStack
 
     public void CloseAll() => CloseFrom(0);
 
+    /// <summary>Closes one card, with everything opened from it (e.g. a card that has just been pinned).</summary>
+    public void Close(FrameworkElement card)
+    {
+        var level = _levels.FindIndex(l => l.Card == card);
+        if (level >= 0)
+            CloseFrom(level);
+    }
+
     /// <summary>Brings open cards up to date; a card whose update says no closes, with everything opened from it.</summary>
     public void Refresh(Func<FrameworkElement, bool> update)
     {

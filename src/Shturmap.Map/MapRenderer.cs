@@ -18,6 +18,12 @@ public static class MapRenderer
     private static readonly SKColor Ink = SKColor.Parse("#d9d5c4");
     private static readonly SKColor Red = SKColor.Parse("#b8604a");
 
+    /// <summary>
+    /// The quest kept highlighted by a click (owner, 2026-10-01: gold among gold didn't stand out). Cyan is the one
+    /// hue nothing else on the map uses, the artwork included, and it stays apart from gold with any colour vision.
+    /// </summary>
+    public static readonly SKColor Kept = SKColor.Parse("#3fd2e0");
+
     // Bahnschrift (ships with Windows), semi-condensed like the app's labels.
     private static readonly SKTypeface Typeface =
         SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.Normal, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? SKTypeface.Default;
@@ -79,7 +85,7 @@ public static class MapRenderer
             if (marker.Kind == MarkerKind.ScavSpawn)
                 continue;
             var distance = SKPoint.Distance(Screen(camera, scene, marker.Position), screen);
-            var reach = (marker.Objective is not null ? 13f : 10f) * ui;
+            var reach = (marker.Objective is not null ? 15f : 10f) * ui;
             if (distance <= reach && distance < bestDistance)
             {
                 best = marker;
@@ -131,9 +137,10 @@ public static class MapRenderer
         if (zone.Outline.Count < 3)
             return;
         using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
-        var color = ColorOf(zone.Kind);
+        var kept = scene.Selected is not null && zone.Group == scene.Selected;
+        var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
-        var selected = (scene.Selected is not null && zone.Group == scene.Selected) || focused;
+        var selected = kept || focused;
         // Zones outside the focus ease back with the scene's Dim, like the markers.
         var fade = scene.ShownFocus.Count > 0 && !focused ? scene.Dim : 0f;
         using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35 - 23 * fade)), IsAntialias = true };
@@ -189,7 +196,7 @@ public static class MapRenderer
         var nearest = targets.MinBy(m => player.Position.HorizontalDistanceTo(m.Position))!;
         using var guide = new SKPaint
         {
-            Color = Amber.WithAlpha(200), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui,
+            Color = Kept.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f * ui,
             PathEffect = SKPathEffect.CreateDash([6 * ui, 5 * ui], 0),
         };
         canvas.DrawLine(Screen(camera, scene, player.Position), Screen(camera, scene, nearest.Position), guide);
@@ -215,19 +222,24 @@ public static class MapRenderer
     {
         var at = Screen(camera, scene, marker.Position);
         var selected = IsSelected(scene, marker) || IsFocused(scene, marker);
-        var color = ColorOf(marker.Kind);
+        // The kept quest's markers are drawn in their own colour and larger than anything pointed at.
+        var kept = marker.Objective is not null && IsSelected(scene, marker);
+        var color = kept ? Kept : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn larger than the plain extract and transit shapes.
-        var r = (marker.Objective is not null ? (selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
+        var r = (marker.Objective is not null ? (kept ? 14f : selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
         if (scene.Pulsing && IsFocused(scene, marker))
             DrawPulse(canvas, scene, at, r, color, ui);
-        // The kept quest keeps a steady ring once it stops pulsing, so it is still found at a glance.
-        if (marker.Objective is not null && IsSelected(scene, marker))
+        // The kept quest keeps a steady ring once it stops pulsing, so it is still found at a glance: a dark band,
+        // then the colour, so it reads on light and dark artwork alike.
+        if (kept)
         {
-            using var halo = new SKPaint { Color = color.WithAlpha(190), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
-            canvas.DrawCircle(at, r + 4 * ui, halo);
+            using var band = new SKPaint { Color = Background.WithAlpha(200), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4.5f * ui };
+            using var halo = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui };
+            canvas.DrawCircle(at, r + 5 * ui, band);
+            canvas.DrawCircle(at, r + 5 * ui, halo);
         }
 
         switch (marker.Kind)
