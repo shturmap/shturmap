@@ -6,11 +6,12 @@
     xmlns:controls="using:Spotter.App.Controls"
     xmlns:session="using:Spotter.Session">
 
-  <!-- One card per quest: who gives it, what to do and where, what to bring, why Spotter thinks it's active. -->
+  <!-- One card per quest: who gives it, what to do and where, what to bring, why Spotter thinks it's active.
+       Keys, items and quests on it are cards of their own: point at them. -->
   <Border x:Name="Frame" Width="360" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}"
           BorderThickness="1" CornerRadius="8">
     <Grid>
-      <!-- Fills while the pointer rests; when full, the card holds and the pointer can move into it. -->
+      <!-- Fills while the pointer rests; when full, the card holds. -->
       <Rectangle x:Name="HoldBar" Height="2" VerticalAlignment="Top" Margin="10,0" Fill="{StaticResource AmberBrush}"
                  RenderTransformOrigin="0,0.5">
         <Rectangle.RenderTransform>
@@ -19,7 +20,7 @@
       </Rectangle>
 
       <StackPanel Padding="14,12,14,12" Spacing="10">
-        <Grid x:Name="Header" ColumnSpacing="12" Background="Transparent">
+        <Grid ColumnSpacing="12" controls:Linked.Also="{x:Bind View.QuestIds}">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
@@ -39,7 +40,7 @@
             <TextBlock Text="{x:Bind View.Status}" Foreground="{StaticResource GreenBrush}" FontSize="12" TextWrapping="Wrap" />
           </StackPanel>
           <Button x:Name="PinButton" Grid.Column="2" Padding="7,5" VerticalAlignment="Top" Click="OnPinClick"
-                  ToolTipService.ToolTip="Pin: keep this card open as its own window">
+                  ToolTipService.ToolTip="Pin: keep this card open as a small window you can place anywhere">
             <FontIcon x:Name="PinGlyph" FontSize="14" />
           </Button>
         </Grid>
@@ -47,7 +48,8 @@
         <ItemsControl ItemsSource="{x:Bind View.Objectives}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="session:CardObjective">
-              <Grid ColumnSpacing="10" Margin="0,3" Padding="2,2" CornerRadius="4" controls:Linked.Item="{x:Bind ItemId}">
+              <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3" CornerRadius="4"
+                    controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />
@@ -58,6 +60,8 @@
                   <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
                   <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                  <TextBlock Text="{x:Bind Live}" Foreground="{StaticResource AmberBrush}" FontFamily="{StaticResource DataFont}" FontSize="12"
+                             Visibility="{x:Bind controls:QuestCard.ShownIf(Live)}" />
                 </StackPanel>
                 <controls:Picture Grid.Column="2" ItemId="{x:Bind ItemId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}" />
               </Grid>
@@ -65,12 +69,13 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <StackPanel Visibility="{x:Bind ShownIfAny(View.Needs)}" Spacing="2">
+        <StackPanel Visibility="{x:Bind ShownIfAny(View.Needs)}">
           <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,2,0,4" />
           <ItemsControl ItemsSource="{x:Bind View.Needs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="session:CardNeed">
-                <Grid ColumnSpacing="10" Margin="0,2" Padding="2,2" CornerRadius="4" controls:Linked.Item="{x:Bind ItemId}">
+                <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3" CornerRadius="4"
+                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -87,8 +92,28 @@
           </ItemsControl>
         </StackPanel>
 
-        <TextBlock Text="{x:Bind View.Unlocks}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
-                   Visibility="{x:Bind Shown(View.Unlocks)}" />
+        <StackPanel Visibility="{x:Bind ShownIfAny(View.Unlocks)}">
+          <TextBlock Style="{StaticResource EyebrowText}" Text="UNLOCKS" Margin="0,2,0,4" />
+          <ItemsControl ItemsSource="{x:Bind View.Unlocks}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="session:CardQuest">
+                <Grid ColumnSpacing="8" Margin="-4,0" Padding="4,2" CornerRadius="4" controls:Linked.Quest="{x:Bind QuestId}">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                  <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Size="18" Opacity="0.7" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="{x:Bind View.UnlocksMore}" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="22,2,0,0"
+                     Visibility="{x:Bind Shown(View.UnlocksMore)}" />
+        </StackPanel>
+
         <HyperlinkButton Content="Open the wiki page" NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Padding="0" FontSize="12"
                          Visibility="{x:Bind Shown(View.WikiLink)}" />
       </StackPanel>

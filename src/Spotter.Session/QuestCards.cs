@@ -7,15 +7,25 @@ namespace Spotter.Session;
 
 /// <param name="Where">Map names, "any map", or empty for work at the trader.</param>
 /// <param name="ItemId">An item the objective is about, to picture next to it.</param>
-public sealed record CardObjective(ObjectiveKind Kind, string Text, string Where, string? ItemId);
+/// <param name="Live">In a raid on this objective's map: how far and which way from the last fix ("121 m · NE").</param>
+public sealed record CardObjective(string QuestId, string ObjectiveId, ObjectiveKind Kind, string Text, string Where, string? ItemId, string Live)
+{
+    public IReadOnlyList<string> QuestIds => [QuestId];
+}
 
 /// <summary>A key or an item to take into the raid for this quest.</summary>
-public sealed record CardNeed(RequirementKind Kind, string ItemId, string Text, string Where);
+public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemId, string Text, string Where)
+{
+    public IReadOnlyList<string> QuestIds => [QuestId];
+}
+
+/// <summary>A quest named on a card (e.g. one this quest unlocks), to point at for its own card.</summary>
+public sealed record CardQuest(string QuestId, string Name, ObjectiveKind Kind, string? TraderId);
 
 /// <summary>Everything the quest card shows: who, what, where, what to bring, and why Spotter thinks it's active.</summary>
 /// <param name="Facts">"Prapor · from level 10 · needed for Kappa".</param>
 /// <param name="Status">"Active · from the game log, 26 Sep": where the state came from (docs/DESIGN.md §4.6).</param>
-/// <param name="Unlocks">"Unlocks Big Customer, Chemical - Part 2", or empty.</param>
+/// <param name="UnlocksMore">"and 3 more" when not all unlocked quests are listed, or empty.</param>
 public sealed record QuestCardView(
     string QuestId,
     string Name,
@@ -26,12 +36,20 @@ public sealed record QuestCardView(
     QuestState State,
     IReadOnlyList<CardObjective> Objectives,
     IReadOnlyList<CardNeed> Needs,
-    string Unlocks,
-    string? WikiLink);
+    IReadOnlyList<CardQuest> Unlocks,
+    string UnlocksMore,
+    string? WikiLink)
+{
+    public IReadOnlyList<string> QuestIds => [QuestId];
+}
 
 public static class QuestCards
 {
-    public static QuestCardView? Build(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, string questId)
+    private const int ShownUnlocks = 5;
+
+    /// <param name="live">Distance and direction for an objective id, in a raid on its map; null or empty otherwise.</param>
+    public static QuestCardView? Build(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, string questId,
+        Func<string, string?>? live = null)
     {
         if (!data.Tasks.TryGetValue(questId, out var task))
             return null;
@@ -48,28 +66,29 @@ public static class QuestCards
 
         var unlocks = data.Tasks.Values
             .Where(t => t.TaskRequirements?.Any(r => r.Task == questId) == true)
-            .Select(t => t.Name)
-            .Order(StringComparer.CurrentCulture)
+            .OrderBy(t => t.Name, StringComparer.CurrentCulture)
+            .Select(t => Reference(data, t))
             .ToList();
 
         return new QuestCardView(
             task.Id,
             task.Name,
-            QuestTaxonomy.QuestKind(objectives.Select(o => QuestTaxonomy.Classify(o.Type))),
+            KindOf(task),
             task.Trader,
             string.Join(" · ", facts.Where(f => f.Length > 0)),
             StatusText(status),
             status?.State ?? QuestState.NotStarted,
-            objectives.Select(o => Objective(data, o)).ToList(),
+            objectives.Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "")).ToList(),
             Needs(data, task),
-            unlocks.Count switch
-            {
-                0 => "",
-                <= 4 => "Unlocks " + string.Join(", ", unlocks),
-                _ => $"Unlocks {string.Join(", ", unlocks.Take(3))} and {unlocks.Count - 3} more",
-            },
+            unlocks.Take(ShownUnlocks).ToList(),
+            unlocks.Count > ShownUnlocks ? $"and {unlocks.Count - ShownUnlocks} more" : "",
             task.WikiLink);
     }
+
+    internal static CardQuest Reference(GameData data, ApiTask task) => new(task.Id, task.Name, KindOf(task), task.Trader);
+
+    internal static ObjectiveKind KindOf(ApiTask task) =>
+        QuestTaxonomy.QuestKind((task.Objectives ?? []).Select(o => QuestTaxonomy.Classify(o.Type)));
 
     private static string StatusText(QuestStatus? status)
     {
@@ -93,25 +112,27 @@ public static class QuestCards
         return source is null ? state : $"{state} · {source}";
     }
 
-    private static CardObjective Objective(GameData data, ApiObjective o)
+    private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live)
     {
         var kind = QuestTaxonomy.Classify(o.Type);
-        var mapIds = (o.Maps ?? [])
-            .Concat((o.Zones ?? []).Select(z => z.Map))
-            .Concat((o.PossibleLocations ?? []).Select(l => l.Map))
-            .OfType<string>();
-        var where = MapNames(data, mapIds);
+        var where = MapNames(data, MapIds(o));
         if (where.Length == 0 && QuestTaxonomy.WorksAnywhere(kind))
             where = "any map";
         var text = string.IsNullOrWhiteSpace(o.Description) ? QuestTaxonomy.Label(kind) : o.Description!;
         if (o.Optional)
             text += " (optional)";
         var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault();
-        return new CardObjective(kind, text, where, item);
+        return new CardObjective(task.Id, o.Id, kind, text, where, item, live);
     }
 
+    internal static IEnumerable<string> MapIds(ApiObjective o) =>
+        (o.Maps ?? [])
+            .Concat((o.Zones ?? []).Select(z => z.Map))
+            .Concat((o.PossibleLocations ?? []).Select(l => l.Map))
+            .OfType<string>();
+
     // Variants drawn with the same artwork (Ground Zero and Ground Zero 21+) read as one map.
-    private static string MapNames(GameData data, IEnumerable<string> mapIds) =>
+    internal static string MapNames(GameData data, IEnumerable<string> mapIds) =>
         string.Join(", ", mapIds
             .Select(id => data.Maps.GetValueOrDefault(id))
             .OfType<ApiMap>()
@@ -134,7 +155,7 @@ public static class QuestCards
             var where = MapNames(data, maps);
             if (needs.Any(n => n.Text == text))
                 return;
-            needs.Add(new CardNeed(kind, alternatives[0], text, where.Length > 0 ? "on " + where : ""));
+            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, where.Length > 0 ? "on " + where : ""));
         }
 
         foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task).Objectives))

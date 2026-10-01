@@ -29,6 +29,17 @@ public static class Linked
     public static readonly DependencyProperty MarkerProperty = DependencyProperty.RegisterAttached(
         "Marker", typeof(string), typeof(Linked), new PropertyMetadata(null, OnChanged));
 
+    public static readonly DependencyProperty AlsoProperty = DependencyProperty.RegisterAttached(
+        "Also", typeof(object), typeof(Linked), new PropertyMetadata(null, OnChanged));
+
+    /// <summary>
+    /// Quest ids (an IEnumerable&lt;string&gt;) this element lights up when pointed at, without lighting up itself
+    /// for them: rows on a quest's own card, which would otherwise all glow whenever that quest is in focus.
+    /// </summary>
+    public static object? GetAlso(DependencyObject d) => d.GetValue(AlsoProperty);
+
+    public static void SetAlso(DependencyObject d, object? value) => d.SetValue(AlsoProperty, value);
+
     public static string? GetQuest(DependencyObject d) => (string?)d.GetValue(QuestProperty);
 
     public static void SetQuest(DependencyObject d, string? value) => d.SetValue(QuestProperty, value);
@@ -56,8 +67,14 @@ public static class Linked
     /// <summary>Raised when the focus changes, from rows or from <see cref="Set"/> (map markers).</summary>
     public static event Action? FocusChanged;
 
-    /// <summary>The pointer entered (questId) or left (null) an element that shows one quest.</summary>
-    public static event Action<FrameworkElement, string?>? QuestHovered;
+    /// <summary>
+    /// The pointer entered a linked element. The key is the card it opens: its item if it has one, else its quest;
+    /// null for rows that only highlight (several quests, a marker).
+    /// </summary>
+    public static event Action<FrameworkElement, CardKey?>? Hovered;
+
+    /// <summary>The pointer left a linked element.</summary>
+    public static event Action<FrameworkElement>? Left;
 
     /// <summary>Sets the focus from outside the rows, e.g. a map marker under the pointer.</summary>
     public static void Set(Focus? focus)
@@ -113,19 +130,21 @@ public static class Linked
         _source = element;
         var item = GetItem(element);
         var marker = GetMarker(element);
-        Apply(new Focus(QuestsOf(element).ToHashSet(), item, marker));
-        if (item is null && marker is null && GetQuest(element) is { } quest)
-            QuestHovered?.Invoke(element, quest);
+        var quests = QuestsOf(element).ToHashSet();
+        if (GetAlso(element) is IEnumerable<string> also)
+            quests.UnionWith(also);
+        Apply(new Focus(quests, item, marker));
+        CardKey? key = item is not null ? new CardKey.Item(item) : GetQuest(element) is { } quest ? new CardKey.Quest(quest) : null;
+        Hovered?.Invoke(element, key);
     }
 
     private static void Exit(FrameworkElement element)
     {
+        Left?.Invoke(element);
         if (_source != element)
             return;
         _source = null;
         Apply(null);
-        if (GetItem(element) is null && GetMarker(element) is null && GetQuest(element) is not null)
-            QuestHovered?.Invoke(element, null);
     }
 
     private static bool IsLinked(FrameworkElement element, Focus focus) =>

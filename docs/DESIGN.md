@@ -126,19 +126,30 @@ Typography: the system UI font for text, Cascadia Mono / Consolas for numbers (d
 
 One card per quest, the same everywhere: trader portrait, type glyph and name; trader, level and Kappa /
 Lightkeeper; the state and where it came from ("Active · from the game log, 25 Sep"); every objective with its
-glyph, where it is and the item it is about; BRING (keys and items, with icons and maps); what it unlocks; a link
-to the wiki page. Nothing else: no rewards, no guides.
+glyph, where it is, the item it is about and, in a raid on its map, how far and which way it is from the last fix
+("69 m · ahead-left"); BRING (keys and items, with icons and maps); UNLOCKS (the quests it opens); a link to the
+wiki page. Nothing else: no rewards, no guides.
 
-It has three states, like the pinnable tooltips in Crusader Kings III:
+The **item card** (a key or an item): its icon and name, and which of your active quests need it and how ("Key ·
+Customs", "Bring ×3, to plant · Streets of Tarkov", "Find in raid ×2").
 
-1. **Hover**: rest the pointer on a quest (rail row or map marker) for 0.4 s and the card appears beside it.
-   Moving down a list swaps cards after 0.12 s.
+Cards behave like the nested tooltips in Crusader Kings III:
+
+1. **Hover**: rest the pointer on a quest, key or item (rail row, map marker, or a row on a card) for 0.4 s and
+   its card appears beside it. Moving down a list swaps an unheld card after 0.12 s.
 2. **Held**: keep resting while a thin amber bar fills (0.9 s), or move into the card, and it stays; the border
-   turns amber. Leaving it closes it after 0.5 s. Esc closes it.
-3. **Pinned**: the pin turns it into a small window of its own, placed where the card was. Pinned cards come back
-   after a restart and close by themselves when their quest is completed.
+   turns amber. A held card is replaced only after a full 0.4 s on something else, so crossing other markers on
+   the way into it doesn't replace it.
+3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
+   it, and so on. Moving back to an earlier card closes the later ones; leaving them all closes all (0.35 s grace).
+   Esc closes them.
+4. **Pinned**: the pin turns a quest card into a small window with a normal title bar, to move anywhere and leave
+   open; its own nested cards open beside it. In a raid it shows live distances, which is what a pin is for: a
+   tracker for the quests you chose, readable without the mouse. Pinned cards come back after a restart and close
+   by themselves when their quest is completed.
 
-Rows inside a card take part in linked highlighting, so pointing at a key in a card lights up that key in BRING.
+Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
+but don't light up for their own card's quest, or the whole card would glow.
 
 ### Keyboard (window focused only)
 

@@ -17,6 +17,16 @@ function Log([string]$message) {
   $line = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|application|$message`r`n"
   [IO.File]::AppendAllText($log, $line)
 }
+# Quests come only from the game's notification log, so the fake game "starts" some Streets quests there.
+$push = Join-Path $root ("Logs\$session\" + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510 push-notifications_000.log')
+function QuestStarted([string]$id) {
+  $now = Get-Date
+  $dt = [DateTimeOffset]::new($now).ToUnixTimeSeconds()
+  $body = "{`r`n  `"type`": `"new_message`",`r`n  `"eventId`": `"fake-$id`",`r`n  `"dialogId`": `"54cb50c76803fa8b248b4571`",`r`n" +
+    "  `"message`": {`r`n    `"_id`": `"fake-$id`",`r`n    `"type`": 10,`r`n    `"dt`": $dt,`r`n    `"text`": `"quest started`",`r`n" +
+    "    `"templateId`": `"$id description`"`r`n  }`r`n}`r`n"
+  [IO.File]::AppendAllText($push, $now.ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|push-notifications|Got notification | ChatMessageReceived`r`n" + $body)
+}
 function Shot([string]$position) {
   $name = (Get-Date).ToString('yyyy-MM-dd[HH-mm]') + "_$position (0).png"
   [IO.File]::WriteAllText((Join-Path $root "Screenshots\$name"), '')
@@ -24,6 +34,11 @@ function Shot([string]$position) {
 
 Log 'Session mode: Pve'
 Log 'PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0'
+# Revision - Streets of Tarkov, Dandies, Ballet Lover, Audit, Glory to CPSU, Road Closed
+foreach ($quest in '639135f286e646067c176a87', '65734c186dc1e402c80dc19e', '639135a7e705511c8a4a1b78',
+                   '638fcd23dc65553116701d33', '64f5aac4b63b74469b6c14c2', '639282134ed9512be67647ed') {
+  QuestStarted $quest
+}
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru

@@ -9,40 +9,28 @@ using Spotter.Session;
 
 namespace Spotter.App.Controls;
 
-public enum CardMode
-{
-    /// <summary>Shown while the pointer rests on a quest; goes away with it.</summary>
-    Hover,
-
-    /// <summary>The pointer rested long enough: the card stays while the pointer moves into it.</summary>
-    Held,
-
-    /// <summary>Its own window, open until closed.</summary>
-    Pinned,
-}
-
-/// <summary>The quest card (docs/DESIGN.md §4, "Quest cards"): the same card on hover, held, and pinned.</summary>
-public sealed partial class QuestCard : UserControl
+/// <summary>The quest card (docs/DESIGN.md §4, "Quest cards"): the same card on hover, held, nested and pinned.</summary>
+public sealed partial class QuestCard : UserControl, ICard
 {
     private Storyboard? _hold;
 
-    public QuestCard()
+    public QuestCard(QuestCardView view)
     {
         InitializeComponent();
         PinGlyph.Glyph = char.ConvertFromUtf32(0xE718);
+        Key = new CardKey.Quest(view.QuestId);
+        Show(view);
     }
 
-    public QuestCardView? View { get; private set; }
+    public CardKey Key { get; }
+
+    public QuestCardView View { get; private set; } = null!;
 
     public CardMode Mode { get; private set; } = CardMode.Hover;
 
-    /// <summary>The header, which pinned windows use as their title bar.</summary>
-    public FrameworkElement DragArea => Header;
-
     public event Action<QuestCard>? PinClicked;
 
-    /// <summary>The hold bar filled up.</summary>
-    public event Action<QuestCard>? Held;
+    public event Action<ICard>? Held;
 
     public void Show(QuestCardView view)
     {
@@ -60,28 +48,15 @@ public sealed partial class QuestCard : UserControl
         HoldBar.Visibility = mode == CardMode.Pinned ? Visibility.Collapsed : Visibility.Visible;
         HoldScale.ScaleX = mode == CardMode.Held ? 1 : 0;
         PinButton.Visibility = mode == CardMode.Pinned ? Visibility.Collapsed : Visibility.Visible;
-        // A pinned window's close button sits over the header's right end.
-        Header.Margin = new Thickness(0, 0, mode == CardMode.Pinned ? 40 : 0, 0);
     }
 
-    /// <summary>Fills the hold bar over the given time, then holds the card.</summary>
-    public void StartHold(TimeSpan duration)
+    public void StartHold(TimeSpan duration) => _hold = HoldAnimation.Start(HoldScale, duration, () =>
     {
-        StopHold();
-        var fill = new DoubleAnimation { From = 0, To = 1, Duration = duration };
-        Storyboard.SetTarget(fill, HoldScale);
-        Storyboard.SetTargetProperty(fill, "ScaleX");
-        _hold = new Storyboard();
-        _hold.Children.Add(fill);
-        _hold.Completed += (_, _) =>
-        {
-            if (Mode != CardMode.Hover)
-                return;
-            SetMode(CardMode.Held);
-            Held?.Invoke(this);
-        };
-        _hold.Begin();
-    }
+        if (Mode != CardMode.Hover)
+            return;
+        SetMode(CardMode.Held);
+        Held?.Invoke(this);
+    });
 
     public void StopHold()
     {
@@ -102,4 +77,20 @@ public sealed partial class QuestCard : UserControl
     public static string NeedGlyph(RequirementKind kind) => kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring;
 
     public Uri? WikiUri(string? link) => Uri.TryCreate(link, UriKind.Absolute, out var uri) ? uri : null;
+}
+
+/// <summary>The hold bar's fill, shared by the quest and item cards.</summary>
+internal static class HoldAnimation
+{
+    public static Storyboard Start(ScaleTransform bar, TimeSpan duration, Action completed)
+    {
+        var fill = new DoubleAnimation { From = 0, To = 1, Duration = duration };
+        Storyboard.SetTarget(fill, bar);
+        Storyboard.SetTargetProperty(fill, "ScaleX");
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(fill);
+        storyboard.Completed += (_, _) => completed();
+        storyboard.Begin();
+        return storyboard;
+    }
 }

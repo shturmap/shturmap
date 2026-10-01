@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -11,29 +10,41 @@ using Windows.Graphics;
 namespace Spotter.App;
 
 /// <summary>
-/// A pinned quest card: a small window of its own that stays open until closed, and comes back after a restart.
-/// It is owned by the main window, so it stays above it and has no taskbar button; it is never set topmost, so it
-/// can't cover the game.
+/// A pinned quest card: a small window of its own with a normal title bar to move it by, open until closed, back
+/// after a restart. In a raid it shows how far each objective on that map is. Things on it open their own cards
+/// beside the window. It is owned by the main window, so it stays above it and has no taskbar button; it is never
+/// topmost, so it can't cover the game.
 /// </summary>
 public sealed partial class QuestWindow : Window
 {
-    private readonly QuestCard _card = new();
+    private readonly QuestCard _card;
+    private readonly Grid _root;
 
-    public QuestWindow(QuestCardView view, Window owner, PointInt32? at)
+    public QuestWindow(QuestCardView view, Window owner, PointInt32? at, Func<CardKey, FrameworkElement?> createCard)
     {
         QuestId = view.QuestId;
-        var root = new Grid { Background = (Brush)Application.Current.Resources["CardBrush"] };
-        root.Children.Add(_card);
-        Content = root;
-        Title = view.Name;
+        _card = new QuestCard(view);
         _card.SetMode(CardMode.Pinned);
-        _card.Show(view);
+        _root = new Grid { Background = Brush("CardBrush") };
+        _root.Children.Add(_card);
+        Content = _root;
+        Title = view.Name;
+        Stack = new CardStack(_root, createCard, ScreenAround, besideRoot: true);
 
-        ExtendsContentIntoTitleBar = true;
-        SetTitleBar(_card.DragArea);
-        AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
-        AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-        AppWindow.TitleBar.ButtonForegroundColor = ((SolidColorBrush)Application.Current.Resources["InkBrush"]).Color;
+        var bar = AppWindow.TitleBar;
+        var card = Color("CardBrush");
+        var line = Color("LineBrush");
+        bar.BackgroundColor = card;
+        bar.InactiveBackgroundColor = card;
+        bar.ForegroundColor = Color("InkBrush");
+        bar.InactiveForegroundColor = Color("MutedBrush");
+        bar.ButtonBackgroundColor = card;
+        bar.ButtonInactiveBackgroundColor = card;
+        bar.ButtonForegroundColor = Color("InkBrush");
+        bar.ButtonInactiveForegroundColor = Color("MutedBrush");
+        bar.ButtonHoverBackgroundColor = line;
+        bar.ButtonPressedBackgroundColor = line;
+        bar.IconShowOptions = IconShowOptions.HideIconAndSystemMenu;
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsMaximizable = false;
@@ -44,20 +55,26 @@ public sealed partial class QuestWindow : Window
         AppWindow.Resize(new SizeInt32(560, 600));
         if (at is { } position)
             AppWindow.Move(position);
-        root.Loaded += (_, _) => FitToContent();
+        _root.Loaded += (_, _) => FitToContent();
+        Closed += (_, _) => Stack.CloseAll();
     }
 
     public string QuestId { get; }
 
-    public QuestCardView? View => _card.View;
+    public QuestCardView View => _card.View;
+
+    /// <summary>Cards opened from things on this card.</summary>
+    public CardStack Stack { get; }
 
     /// <summary>The card element, for snapshots.</summary>
     public UIElement Card => _card;
 
     public void Update(QuestCardView view)
     {
+        var resize = view.Objectives.Count(o => o.Live.Length > 0) != _card.View.Objectives.Count(o => o.Live.Length > 0);
         _card.Show(view);
-        FitToContent();
+        if (resize)
+            FitToContent();
     }
 
     private void FitToContent()
@@ -67,6 +84,19 @@ public sealed partial class QuestWindow : Window
         var size = _card.DesiredSize;
         AppWindow.ResizeClient(new SizeInt32((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(Math.Min(size.Height, 900) * scale)));
     }
+
+    // The screen's work area around this window, in its content's coordinates: nested cards open outside the window.
+    private Windows.Foundation.Rect ScreenAround()
+    {
+        var scale = Content.XamlRoot?.RasterizationScale ?? 1;
+        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
+        var origin = ScreenPoint(this, default);
+        return new Windows.Foundation.Rect((area.X - origin.X) / scale, (area.Y - origin.Y) / scale, area.Width / scale, area.Height / scale);
+    }
+
+    private static Brush Brush(string key) => (Brush)Application.Current.Resources[key];
+
+    private static Windows.UI.Color Color(string key) => ((SolidColorBrush)Application.Current.Resources[key]).Color;
 
     /// <summary>A point in a window's content (device-independent pixels) on the screen.</summary>
     public static PointInt32 ScreenPoint(Window window, Windows.Foundation.Point at)
