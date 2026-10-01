@@ -71,7 +71,8 @@
         <ScrollViewer Grid.Row="1" Padding="16,0,16,16">
           <StackPanel>
             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind ViewModel.ObjectivesHeader, Mode=OneWay}" />
-            <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.Hint), Mode=OneWay}"
+                       Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,6" />
             <ListView x:Name="ObjectiveList" ItemsSource="{x:Bind ViewModel.Objectives, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnObjectiveClick" Margin="-12,0">
               <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:ObjectiveItem">

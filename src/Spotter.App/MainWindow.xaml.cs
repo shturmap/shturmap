@@ -69,6 +69,8 @@ public sealed partial class MainWindow : Window
 
     public Brush OkBrush(bool ok) => (Brush)Application.Current.Resources[ok ? "GreenBrush" : "AmberBrush"];
 
+    public Visibility ShownIf(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+
     private void Apply(SessionSnapshot s)
     {
         if (!ReferenceEquals(s, _snapshot))
