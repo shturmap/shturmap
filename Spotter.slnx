@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Spotter.App/Spotter.App.csproj" />
+  </Folder>
+</Solution>
