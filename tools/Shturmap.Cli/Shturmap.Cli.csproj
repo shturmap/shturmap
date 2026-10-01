@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Headless runner: exercise discovery, log replay, data loading and quest states without the UI or the game. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(ShturmapWindowsTfm)</TargetFramework>
+    <RootNamespace>Shturmap.Cli</RootNamespace>
+    <AssemblyName>shturmap-cli</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Shturmap.Core\Shturmap.Core.csproj" />
+    <ProjectReference Include="..\..\src\Shturmap.Game\Shturmap.Game.csproj" />
+    <ProjectReference Include="..\..\src\Shturmap.Data\Shturmap.Data.csproj" />
+    <ProjectReference Include="..\..\src\Shturmap.Map\Shturmap.Map.csproj" />
+    <ProjectReference Include="..\..\src\Shturmap.Session\Shturmap.Session.csproj" />
+  </ItemGroup>
+</Project>

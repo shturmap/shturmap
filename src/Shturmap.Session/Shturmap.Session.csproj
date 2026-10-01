@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Ties the parts together: game files in, one state snapshot out. No UI, so the CLI can run it headless. -->
+  <PropertyGroup>
+    <TargetFramework>$(ShturmapWindowsTfm)</TargetFramework>
+    <RootNamespace>Shturmap.Session</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shturmap.Core\Shturmap.Core.csproj" />
+    <ProjectReference Include="..\Shturmap.Game\Shturmap.Game.csproj" />
+    <ProjectReference Include="..\Shturmap.Data\Shturmap.Data.csproj" />
+    <ProjectReference Include="..\Shturmap.Map\Shturmap.Map.csproj" />
+  </ItemGroup>
+</Project>

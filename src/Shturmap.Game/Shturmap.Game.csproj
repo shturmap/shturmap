@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Everything that reads the game's files: install discovery, logs, screenshots, settings. Read-only. -->
+  <PropertyGroup>
+    <TargetFramework>$(ShturmapWindowsTfm)</TargetFramework>
+    <RootNamespace>Shturmap.Game</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shturmap.Core\Shturmap.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Shturmap.Game.Tests" />
+  </ItemGroup>
+</Project>

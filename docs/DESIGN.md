@@ -1,16 +1,16 @@
-# Spotter design
+# Shturmap design
 
-This document is binding for anyone changing Spotter, people and agents alike. Read it before you change
+This document is binding for anyone changing Shturmap, people and agents alike. Read it before you change
 behaviour or UI, follow it, and update it in the same change when a decision changes.
 
-## 1. What Spotter is
+## 1. What Shturmap is
 
-Spotter answers two questions for an Escape from Tarkov player, on a second monitor:
+Shturmap answers two questions for an Escape from Tarkov player, on a second monitor:
 
 1. **Before a raid: where should I go, and what do I need to bring?**
 2. **During a raid: where am I, and where is my next objective?**
 
-That is the whole product. A feature belongs in Spotter only if it helps one of these two questions and works
+That is the whole product. A feature belongs in Shturmap only if it helps one of these two questions and works
 without the player having to click during a raid. When in doubt, leave it out.
 
 **Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
@@ -20,9 +20,9 @@ dashboards, a settings maze.
 
 ## 2. Ground rules (game terms of service)
 
-Spotter reads only files the game writes for the player, plus public community data:
+Shturmap reads only files the game writes for the player, plus public community data:
 
-- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots` (positions only; Spotter never opens the
+- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots` (positions only; Shturmap never opens the
   images);
 - `application_*.log` and `push-notifications_*.log` in the game's `Logs` folder, with shared read access;
 - `Control.ini` and `Game.ini`, read-only.
@@ -31,7 +31,7 @@ It never opens a handle to `EscapeFromTarkov.exe`, reads or writes its memory, i
 registers global hotkeys, captures the screen, draws over the game, edits game files (including
 `Logging.config`), or reads `backend_000.log` or launcher credentials (only `gamesRootDir` is read from the
 launcher settings). `SafetyTests` fails the test run if forbidden APIs appear in `src/`. Keyboard shortcuts work
-only while Spotter's own window has focus.
+only while Shturmap's own window has focus.
 
 BSG's licence agreement (4.3.4, 2018 text), read literally, covers all companion tools; the owner accepted that
 residual risk. Do not widen the boundary.
@@ -46,7 +46,7 @@ residual risk. Do not widen the boundary.
   Downloaded at runtime, displayed unmodified except for showing one floor at a time, credited on the map, never
   redistributed. Non-commercial only.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
-  test fixtures. Spotter fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
+  test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
   display for personal use, the way every Tarkov tool and tarkov.dev itself show them.
 - **Not used**: other Battlestate artwork (quest images, game UI art, map art), text from the EFT wiki or guide
@@ -54,13 +54,13 @@ residual risk. Do not widen the boundary.
   TarkovTracker, MAYAK, Tarkov Pilot, RatScanner). Facts learned from them (log formats, file paths) are
   reimplemented.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
-  the only custom glyph is the crosshair (drawn from a path in `Spotter.Map.Glyphs`).
+  the only custom glyph is the crosshair (drawn from a path in `Shturmap.Map.Glyphs`).
 - **Test fixtures** contain only scrubbed logs and the maps.json snapshot. (`tests/fixtures/ocr`, untracked, holds
   the owner's own Tasks screenshots from the removed OCR feature; never commit or publish it.)
 
 ## 4. UX principles
 
-1. **No clicks in a raid.** Spotter follows the game: the logs decide the view, the map, the mode and the side;
+1. **No clicks in a raid.** Shturmap follows the game: the logs decide the view, the map, the mode and the side;
    screenshots move the player. Nothing in a raid requires input. Defaults must be right without configuration.
 2. **Glanceable from a second monitor.** Primary text ≥ 14 px, numbers in a monospaced face, high contrast on a
    dark ground, the important line first. No animation beyond what helps the eye follow a change.
@@ -188,7 +188,7 @@ map) to draw a line to it, point at anything to see what belongs to it.
 
 Every objective gets one type, from tarkov.dev's objective `type`. The game gives each quest one hand-assigned
 type on its Tasks screen (Elimination, Pickup, Exploration, Discovery, Completion, …); that type is not in any
-public data and can't be derived reliably (a check against the wiki matched 62.5 %), so Spotter types objectives
+public data and can't be derived reliably (a check against the wiki matched 62.5 %), so Shturmap types objectives
 instead and borrows the game's names and look where one fits, so the labels feel familiar:
 
 | type | glyph | objective types | in raid? |
@@ -213,12 +213,12 @@ game's icon artwork; the glyphs only echo it.
 - **Bring**: items a Place objective consumes (`items` of `plantItem`, `markerItem` of `mark`, `useAny` of
   `useItem`, the quest item of `plantQuestItem`), with counts summed per item.
 - Shown aggregated per map in Plan, and inline on the objective in Raid ("needs Dorm room 114 key").
-- Spotter cannot see the stash; it lists what is needed, not what is missing.
+- Shturmap cannot see the stash; it lists what is needed, not what is missing.
 
 ## 7. Raid planner
 
 For each map (variants sharing artwork, like Ground Zero 21+, count as one), using active quests only
-(objective progress is unknown to Spotter):
+(objective progress is unknown to Shturmap):
 
 - An objective is **doable** on a map if it names that map or has a place there, or names no map and is Kill,
   Collect or Survive. It is **tied** to the map if it names the map or has a place there.
@@ -238,20 +238,20 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
 
 | project | role |
 | --- | --- |
-| `Spotter.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, name matching |
-| `Spotter.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher, game settings |
-| `Spotter.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, game art cache (portraits, icons) |
-| `Spotter.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
-| `Spotter.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
-| `Spotter.App` | WinUI 3 window; reads snapshots, never game files |
-| `tools/Spotter.Cli` | headless runner: locate, replay, data, ocr, render, watch, simulate |
+| `Shturmap.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, name matching |
+| `Shturmap.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher, game settings |
+| `Shturmap.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, game art cache (portraits, icons) |
+| `Shturmap.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
+| `Shturmap.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
+| `Shturmap.App` | WinUI 3 window; reads snapshots, never game files |
+| `tools/Shturmap.Cli` | headless runner: locate, replay, data, ocr, render, watch, simulate |
 
 Rules:
 
 - Core logic is pure and unit-tested; fixtures come from real logs (scrubbed with `tools/make-log-fixtures.ps1`).
-- Every change keeps `.\eng\dotnet.ps1 test --solution Spotter.slnx` green, including `SafetyTests`.
-- Verify UI with `Spotter.exe --snapshot <folder>` (renders the window and the map to PNGs) or
-  `spotter-cli render`; never capture the user's screens.
+- Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
+- Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs) or
+  `shturmap-cli render`; never capture the user's screens.
 - Comments explain why, not what. Match the surrounding style.
 - Write user-facing text plainly: short sentences, units on numbers, no jargon.
 
@@ -278,7 +278,7 @@ for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageRecei
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
 require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
 Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows; they are ignored (and could never
-reopen a quest the log saw completed). `spotter-cli quests` lists active quests with every observation.
+reopen a quest the log saw completed). `shturmap-cli quests` lists active quests with every observation.
 
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
@@ -288,7 +288,7 @@ screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floo
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
 from the maps payload's `lootLoose`.
 
-**Study log.** `%LOCALAPPDATA%\Spotter\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
+**Study log.** `%LOCALAPPDATA%\Shturmap\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
 `ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI
 use can be lined up with raids and quest completions later. Game: app start/exit, data loaded (with the top
 suggestion), mode, raid loading (with the suggestion rank of the map actually played and the bring list), raid
@@ -296,7 +296,7 @@ start/end, quest started/completed/failed (live only), each fix, each notice. UI
 in/out (with durations: the closest signals to attention), map pan (one per drag), zoom (one per wheel burst,
 button or key), fit, follow, floor picks, map picks (picker or plan card), selections, hovers resting ≥ 0.4 s
 (where: list, card, pinned, map), card open/hold/close (level, seconds open), pins and pinned-window closes,
-help open/close, keys, rail scrolls, notice dismissals. Only Spotter's own windows are observed; nothing is
+help open/close, keys, rail scrolls, notice dismissals. Only Shturmap's own windows are observed; nothing is
 sent anywhere.
 
 ## 9. Status
@@ -307,7 +307,8 @@ sent anywhere.
   occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
   highlighting, quest cards (hover, held, nested, pinned with live distances), item cards with sources and loose
   spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
-- Next: read a study log from a real session and correlate it with quest completions (`spotter-cli` command).
-- On hold (owner, 2026-10-01): product name (proposed: Shturman). Don't rename or raise it.
+- Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).
+- Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own
+  so a search finds the app rather than the Woods boss. The old data folder and database move over on first start.
 - Open: tile-only maps (The Lab, Labyrinth, Icebreaker); manual quest editing; objective progress;
   published size 237 MB (budget 80–120 MB, needs trimming).

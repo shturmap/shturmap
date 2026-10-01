@@ -1,6 +1,6 @@
 # Runs the .NET 10 SDK even when the machine-wide dotnet on PATH has no SDK
 # (this machine has a per-user SDK in %LOCALAPPDATA%\Microsoft\dotnet).
-# Usage: .\eng\dotnet.ps1 build | test | run --project src\Spotter.App
+# Usage: .\eng\dotnet.ps1 build | test | run --project src\Shturmap.App
 $ErrorActionPreference = 'Stop'
 $roots = @($env:DOTNET_ROOT, "$env:LOCALAPPDATA\Microsoft\dotnet", "$env:ProgramFiles\dotnet") |
   Where-Object { $_ -and (Test-Path (Join-Path $_ 'dotnet.exe')) }

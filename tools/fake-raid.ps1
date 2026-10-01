@@ -1,5 +1,5 @@
-# Plays a scripted Streets raid against Spotter without the game, and saves window/map snapshots mid-raid.
-# Usage: .\tools\fake-raid.ps1 -Exe artifacts\Spotter\Spotter.exe -Out <folder for PNGs>
+# Plays a scripted Streets raid against Shturmap without the game, and saves window/map snapshots mid-raid.
+# Usage: .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out <folder for PNGs>
 param(
   [Parameter(Mandatory)] [string] $Exe,
   [Parameter(Mandatory)] [string] $Out,
@@ -8,7 +8,7 @@ param(
   [string] $ShowQuest
 )
 $ErrorActionPreference = 'Stop'
-$root = Join-Path ([IO.Path]::GetTempPath()) ("spotter-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+$root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 $start = Get-Date
 $session = 'log_' + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510'
 New-Item -ItemType Directory -Force (Join-Path $root "Logs\$session"), (Join-Path $root 'Screenshots') | Out-Null

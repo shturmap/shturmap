@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Shturmap.App.Controls.QuestCard"
+    FontFamily="{StaticResource UiFont}"
+    Foreground="{StaticResource InkBrush}"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Shturmap.App.Controls"
+    xmlns:session="using:Shturmap.Session"
+    xmlns:local="using:Shturmap.App">
+
+  <!-- One card per quest: who gives it, what to do and where, what to bring, why Shturmap thinks it's active.
+       Keys, items and quests on it are cards of their own: point at them. -->
+  <Border x:Name="Frame" Width="360" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}"
+          BorderThickness="1" CornerRadius="0">
+    <Grid>
+      <!-- Fills while the pointer rests; when full, the card holds. -->
+      <Rectangle x:Name="HoldBar" Height="2" VerticalAlignment="Top" Margin="10,0" Fill="{StaticResource AmberBrush}"
+                 RenderTransformOrigin="0,0.5">
+        <Rectangle.RenderTransform>
+          <ScaleTransform x:Name="HoldScale" ScaleX="0" />
+        </Rectangle.RenderTransform>
+      </Rectangle>
+
+      <StackPanel Padding="14,12,14,12" Spacing="10">
+        <Grid ColumnSpacing="12" controls:Linked.Also="{x:Bind View.QuestIds}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <controls:Picture TraderId="{x:Bind View.TraderId}" Size="44" />
+          <StackPanel Grid.Column="1" Spacing="2">
+            <Grid ColumnSpacing="7">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <controls:KindGlyph Kind="{x:Bind View.Kind}" Brush="{StaticResource AmberBrush}" Margin="0,3,0,0" />
+              <TextBlock Grid.Column="1" Text="{x:Bind View.Name}" Style="{StaticResource TitleText}" />
+            </Grid>
+            <TextBlock Text="{x:Bind View.Facts}" Style="{StaticResource NoteText}" />
+            <TextBlock Text="{x:Bind local:Caps.Of(View.Status)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource GreenBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+          </StackPanel>
+          <Button x:Name="PinButton" Grid.Column="2" Padding="7,5" VerticalAlignment="Top" Click="OnPinClick"
+                  ToolTipService.ToolTip="Pin: keep this card open as a small window you can place anywhere">
+            <FontIcon x:Name="PinGlyph" FontSize="14" />
+          </Button>
+        </Grid>
+
+        <ItemsControl ItemsSource="{x:Bind View.Objectives}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="session:CardObjective">
+              <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3"
+                    controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,2,0,0" />
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                  <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
+                             Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                  <TextBlock Text="{x:Bind Live}" Style="{StaticResource StatusText}" FontSize="12" Foreground="{StaticResource AmberBrush}"
+                             Visibility="{x:Bind controls:QuestCard.ShownIf(Live)}" />
+                </StackPanel>
+                <controls:Picture Grid.Column="2" ItemId="{x:Bind ItemId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Visibility="{x:Bind ShownIfAny(View.Needs)}">
+          <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,2,0,4" />
+          <ItemsControl ItemsSource="{x:Bind View.Needs}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="session:CardNeed">
+                <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3"
+                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <controls:Picture ItemId="{x:Bind ItemId}" Size="34" Glyph="{x:Bind controls:QuestCard.NeedGlyph(Kind)}" />
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                    <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12"
+                               Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <StackPanel Visibility="{x:Bind ShownIfAny(View.Unlocks)}">
+          <TextBlock Style="{StaticResource EyebrowText}" Text="UNLOCKS" Margin="0,2,0,4" />
+          <ItemsControl ItemsSource="{x:Bind View.Unlocks}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="session:CardQuest">
+                <Grid ColumnSpacing="8" Margin="-4,0" Padding="4,2" controls:Linked.Quest="{x:Bind QuestId}">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                  <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Size="18" Opacity="0.7" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="{x:Bind View.UnlocksMore}" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="22,2,0,0"
+                     Visibility="{x:Bind Shown(View.UnlocksMore)}" />
+        </StackPanel>
+
+        <HyperlinkButton Content="Open the wiki page" NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0" FontSize="12"
+                         Visibility="{x:Bind Shown(View.WikiLink)}" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="Shturmap.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedTheme="Dark">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+      </ResourceDictionary.MergedDictionaries>
+
+      <!-- Look (docs/DESIGN.md §4, "Visual language"): the game's own UI, pared down. Near-black flat panels with
+           hairlines and square corners, beige-white text, condensed uppercase labels, one muted gold for quests,
+           the game's green and red only for state. Bahnschrift ships with Windows: nothing to bundle. -->
+      <Color x:Key="GroundColor">#0B0C0B</Color>
+      <Color x:Key="RailColor">#101110</Color>
+      <Color x:Key="PanelColor">#151614</Color>
+      <Color x:Key="RaisedColor">#1E1F1B</Color>
+      <Color x:Key="LineColor">#2A2B27</Color>
+      <Color x:Key="LineStrongColor">#45463F</Color>
+      <Color x:Key="InkColor">#D9D5C4</Color>
+      <Color x:Key="MutedColor">#8A8778</Color>
+      <Color x:Key="AmberColor">#C9AD62</Color>
+      <Color x:Key="TealColor">#6F9A94</Color>
+      <Color x:Key="GreenColor">#8DA65E</Color>
+      <Color x:Key="RedColor">#B8604A</Color>
+
+      <SolidColorBrush x:Key="GroundBrush" Color="{StaticResource GroundColor}" />
+      <SolidColorBrush x:Key="RailBrush" Color="{StaticResource RailColor}" />
+      <SolidColorBrush x:Key="CardBrush" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="RaisedBrush" Color="{StaticResource RaisedColor}" />
+      <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="LineStrongBrush" Color="{StaticResource LineStrongColor}" />
+      <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
+      <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource MutedColor}" />
+      <SolidColorBrush x:Key="AmberBrush" Color="{StaticResource AmberColor}" />
+      <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
+      <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
+      <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
+      <SolidColorBrush x:Key="SandBrush" Color="#E9E2C8" />
+      <!-- An inventory cell behind item icons. -->
+      <SolidColorBrush x:Key="CellBrush" Color="#1A1B18" />
+      <!-- Linked highlighting: everything that belongs to what the pointer is on. -->
+      <SolidColorBrush x:Key="LinkBrush" Color="#2EC9AD62" />
+
+      <FontFamily x:Key="UiFont">Bahnschrift</FontFamily>
+      <FontFamily x:Key="DataFont">Bahnschrift</FontFamily>
+
+      <!-- Every control: the condensed face, square corners, flat dark fills, gold for "on". -->
+      <FontFamily x:Key="ContentControlThemeFontFamily">Bahnschrift</FontFamily>
+      <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+      <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+      <Color x:Key="SystemAccentColor">#C9AD62</Color>
+      <Color x:Key="SystemAccentColorLight1">#D6BE7E</Color>
+      <Color x:Key="SystemAccentColorLight2">#E2CF9C</Color>
+      <Color x:Key="SystemAccentColorDark1">#A88F4E</Color>
+
+      <SolidColorBrush x:Key="ButtonBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{StaticResource RaisedColor}" />
+      <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="ButtonForeground" Color="{StaticResource InkColor}" />
+      <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{StaticResource InkColor}" />
+      <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{StaticResource InkColor}" />
+      <SolidColorBrush x:Key="ButtonBorderBrush" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="{StaticResource LineStrongColor}" />
+      <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="{StaticResource LineStrongColor}" />
+
+      <SolidColorBrush x:Key="ToggleButtonBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="{StaticResource RaisedColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="{StaticResource RaisedColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="ToggleButtonForeground" Color="{StaticResource MutedColor}" />
+      <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="{StaticResource AmberColor}" />
+      <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="{StaticResource AmberColor}" />
+      <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="{StaticResource AmberColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBorderBrush" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="{StaticResource AmberColor}" />
+      <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="{StaticResource AmberColor}" />
+
+      <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource RaisedColor}" />
+      <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{StaticResource LineColor}" />
+      <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="{StaticResource LineStrongColor}" />
+      <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="{StaticResource LineStrongColor}" />
+
+      <SolidColorBrush x:Key="DropDownButtonBackground" Color="Transparent" />
+      <SolidColorBrush x:Key="DropDownButtonBorderBrush" Color="Transparent" />
+
+      <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="{StaticResource LineStrongColor}" />
+      <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="{StaticResource LineStrongColor}" />
+
+      <SolidColorBrush x:Key="ToolTipBackground" Color="{StaticResource PanelColor}" />
+      <SolidColorBrush x:Key="ToolTipBorderBrush" Color="{StaticResource LineStrongColor}" />
+      <SolidColorBrush x:Key="ToolTipForeground" Color="{StaticResource InkColor}" />
+
+      <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent" />
+      <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="{StaticResource RaisedColor}" />
+
+      <SolidColorBrush x:Key="HyperlinkButtonForeground" Color="{StaticResource AmberColor}" />
+      <SolidColorBrush x:Key="HyperlinkButtonForegroundPointerOver" Color="#D6BE7E" />
+
+      <Style TargetType="ToolTip" BasedOn="{StaticResource DefaultToolTipStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontSize" Value="13" />
+      </Style>
+
+      <Style TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+      </Style>
+
+      <!-- Section labels: small, condensed, uppercase, spaced, like the game's headers. -->
+      <Style x:Key="EyebrowText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontStretch" Value="SemiCondensed" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="CharacterSpacing" Value="140" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="Margin" Value="0,20,0,6" />
+      </Style>
+
+      <!-- Titles: map and quest names. -->
+      <Style x:Key="TitleText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontStretch" Value="SemiCondensed" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+      </Style>
+
+      <!-- Small secondary lines. -->
+      <Style x:Key="NoteText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+      </Style>
+
+      <!-- Distances and other numbers that should catch the eye. -->
+      <Style x:Key="FigureText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontStretch" Value="SemiCondensed" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Foreground" Value="{StaticResource AmberBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+      </Style>
+
+      <!-- Status-bar items: uppercase words, no boxes. -->
+      <Style x:Key="StatusText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontStretch" Value="SemiCondensed" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="CharacterSpacing" Value="80" />
+        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+      </Style>
+
+      <!-- Square icon buttons for the map. -->
+      <Style x:Key="MapButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+      </Style>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

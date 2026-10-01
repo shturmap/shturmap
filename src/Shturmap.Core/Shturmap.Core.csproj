@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure domain logic: no Windows APIs, no I/O beyond what callers hand in. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Shturmap.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

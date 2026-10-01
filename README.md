@@ -1,4 +1,4 @@
-# Spotter
+# Shturmap
 
 A Windows companion for Escape from Tarkov. It shows where you are on the map, what your active quests want
 from that map, and how far away and in which direction each objective and extract is. It is built to sit on a
@@ -12,10 +12,10 @@ screen and never draws over the game. See [docs/DESIGN.md](docs/DESIGN.md#ground
 
 ```powershell
 .\eng\publish.ps1                 # builds a self-contained folder
-.\artifacts\Spotter\Spotter.exe   # no .NET install needed to run it
+.\artifacts\Shturmap\Shturmap.exe   # no .NET install needed to run it
 ```
 
-On first start Spotter finds the game (Steam or the Battlestate Games launcher), the logs, the Screenshots
+On first start Shturmap finds the game (Steam or the Battlestate Games launcher), the logs, the Screenshots
 folder, your screenshot key and the game language. It downloads quest and map data from tarkov.dev and reads all
 log sessions on disk for quest history. The window opens maximised on the second monitor.
 
@@ -29,12 +29,12 @@ known.
 Requires the .NET 10 SDK. `eng\dotnet.ps1` finds an SDK installed per user when the machine-wide `dotnet` has none.
 
 ```powershell
-.\eng\dotnet.ps1 build Spotter.slnx
-.\eng\dotnet.ps1 test --solution Spotter.slnx
-.\eng\dotnet.ps1 run --project tools\Spotter.Cli -- help
+.\eng\dotnet.ps1 build Shturmap.slnx
+.\eng\dotnet.ps1 test --solution Shturmap.slnx
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- help
 ```
 
-`tools/Spotter.Cli` runs the pieces without the UI or the game:
+`tools/Shturmap.Cli` runs the pieces without the UI or the game:
 
 | command | what it does |
 | --- | --- |
@@ -46,9 +46,9 @@ Requires the .NET 10 SDK. `eng\dotnet.ps1` finds an SDK installed per user when 
 | `watch [seconds]` | runs the companion headless and prints what it sees |
 | `simulate` | plays a scripted raid against a temporary fake game folder |
 
-`Spotter.exe --snapshot <folder> [seconds]` renders the window and the map to PNGs and exits.
+`Shturmap.exe --snapshot <folder> [seconds]` renders the window and the map to PNGs and exits.
 
-Diagnostics are written to `%LOCALAPPDATA%\Spotter\logs`. Data lives in `%LOCALAPPDATA%\Spotter`.
+Diagnostics are written to `%LOCALAPPDATA%\Shturmap\logs`. Data lives in `%LOCALAPPDATA%\Shturmap`.
 
 ## Credits and licences
 
@@ -58,6 +58,6 @@ Diagnostics are written to `%LOCALAPPDATA%\Spotter\logs`. Data lives in `%LOCALA
   CC BY-NC-SA 4.0. Downloaded at runtime for personal use, never bundled.
 - Trader portraits and item icons: Battlestate Games' art, shown from tarkov.dev's image service at runtime for
   personal use, never bundled.
-- Escape from Tarkov is a trademark of Battlestate Games. Spotter is unofficial and unaffiliated.
+- Escape from Tarkov is a trademark of Battlestate Games. Shturmap is unofficial and unaffiliated.
 
 Personal, non-commercial use.

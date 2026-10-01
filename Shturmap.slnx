@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Shturmap.App/Shturmap.App.csproj" />
+    <Project Path="src/Shturmap.Core/Shturmap.Core.csproj" />
+    <Project Path="src/Shturmap.Data/Shturmap.Data.csproj" />
+    <Project Path="src/Shturmap.Game/Shturmap.Game.csproj" />
+    <Project Path="src/Shturmap.Map/Shturmap.Map.csproj" />
+    <Project Path="src/Shturmap.Session/Shturmap.Session.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Shturmap.Core.Tests/Shturmap.Core.Tests.csproj" />
+    <Project Path="tests/Shturmap.Data.Tests/Shturmap.Data.Tests.csproj" />
+    <Project Path="tests/Shturmap.Game.Tests/Shturmap.Game.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Shturmap.Cli/Shturmap.Cli.csproj" />
+  </Folder>
+</Solution>
