@@ -13,6 +13,8 @@
     <!-- Unpackaged and self-contained: a plain folder, no MSIX, no Windows App Runtime install. -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Needed for publish to include the app's resources.pri and compiled XAML, even without MSIX. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
     <SelfContained>true</SelfContained>
   </PropertyGroup>
 
@@ -26,4 +28,20 @@
   <ItemGroup>
     <ProjectReference Include="..\Spotter.Session\Spotter.Session.csproj" />
   </ItemGroup>
+
+  <!-- Keep the published folder lean. -->
+  <ItemGroup>
+    <!-- The Windows App SDK brings an ML runtime (onnxruntime, DirectML, ~40 MB) that Spotter does not use. -->
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" ExcludeAssets="all" PrivateAssets="all" />
+    <!-- The Windows API projection is huge and mostly unused; precompiling it doubles its size for no gain. -->
+    <PublishReadyToRunExclude Include="Microsoft.Windows.SDK.NET.dll" />
+  </ItemGroup>
+
+  <!-- Native packages ship debug symbols (~250 MB) that end users never need. -->
+  <Target Name="RemoveSymbolsFromPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_PublishedSymbols Include="$(PublishDir)**\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(_PublishedSymbols)" />
+  </Target>
 </Project>
