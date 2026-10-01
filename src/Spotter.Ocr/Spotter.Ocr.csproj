@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Reads the in-game Tasks screen from screenshots the game wrote, with the OCR built into Windows. -->
+  <PropertyGroup>
+    <TargetFramework>$(SpotterWindowsTfm)</TargetFramework>
+    <RootNamespace>Spotter.Ocr</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Spotter.Core\Spotter.Core.csproj" />
+  </ItemGroup>
+</Project>

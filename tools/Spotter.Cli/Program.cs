@@ -19,13 +19,43 @@ switch (command)
     case "data":
         await Data(args.ElementAtOrDefault(1) ?? "pve", args.ElementAtOrDefault(2) ?? "en");
         break;
+    case "ocr":
+        await Ocr(args.Skip(1).ToList());
+        break;
     default:
         Console.WriteLine("""
             spotter-cli locate              find the game, logs, screenshots and settings on this PC
             spotter-cli replay [session]    replay a log session (default: newest) through the raid tracker
             spotter-cli data [mode] [lang]  load tarkov.dev data (mode: pve | regular | seasonal)
+            spotter-cli ocr <png>...        read Tasks-screen screenshots and match them to PvE quests
             """);
         break;
+}
+
+static async Task Ocr(List<string> files)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Spotter", "cache", "tarkov-dev");
+    var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(GameMode.Pve, "en");
+    var candidates = data.Tasks.Values
+        .Select(t => new Spotter.Core.Quests.QuestCandidate(t.Id, t.Name,
+            t.Map is not null && data.Maps.TryGetValue(t.Map, out var m) ? [m.Name] : []))
+        .ToList();
+    var recognizer = Spotter.Ocr.TextRecognizer.Create("en") ?? throw new InvalidOperationException("No OCR language installed.");
+    // Experiments: SPOTTER_OCR_SCALE=2.5, SPOTTER_OCR_INTERP=Linear|Cubic|Fant|NearestNeighbor
+    var scale = double.TryParse(Environment.GetEnvironmentVariable("SPOTTER_OCR_SCALE"), System.Globalization.CultureInfo.InvariantCulture, out var s) ? s : 2.0;
+    var interpolation = Enum.TryParse<Windows.Graphics.Imaging.BitmapInterpolationMode>(Environment.GetEnvironmentVariable("SPOTTER_OCR_INTERP"), out var i)
+        ? i : Windows.Graphics.Imaging.BitmapInterpolationMode.Cubic;
+    var reader = new Spotter.Ocr.TasksScreenReader(recognizer, scale, interpolation);
+    foreach (var file in files)
+    {
+        var screen = await reader.ReadAsync(Path.GetFullPath(file));
+        Console.WriteLine($"{Path.GetFileName(file)}: {(screen is null ? "not a Tasks screen" : $"{screen.Tab} tab, {screen.Rows.Count} rows, {screen.Elapsed.TotalMilliseconds:0} ms")}");
+        foreach (var row in screen?.Rows ?? [])
+        {
+            var match = Spotter.Core.Quests.QuestNameMatcher.Match(row.Name, row.Location, candidates);
+            Console.WriteLine($"  {row.Name,-32} | {row.Location,-20} | {row.Status,-8} → {match.Verdict,-17} {match.Quest?.Name} ({match.Score:0.00})");
+        }
+    }
 }
 
 static async Task Data(string mode, string language)
