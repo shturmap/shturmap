@@ -2,10 +2,12 @@
   <Folder Name="/src/">
     <Project Path="src/Spotter.App/Spotter.App.csproj" />
     <Project Path="src/Spotter.Core/Spotter.Core.csproj" />
+    <Project Path="src/Spotter.Data/Spotter.Data.csproj" />
     <Project Path="src/Spotter.Game/Spotter.Game.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Spotter.Core.Tests/Spotter.Core.Tests.csproj" />
+    <Project Path="tests/Spotter.Data.Tests/Spotter.Data.Tests.csproj" />
     <Project Path="tests/Spotter.Game.Tests/Spotter.Game.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
