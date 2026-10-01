@@ -31,6 +31,7 @@ public sealed partial class MapView : Grid
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerCaptureLost += (_, _) => _dragFrom = null;
+        PointerExited += (_, e) => Hover(null, e.GetCurrentPoint(this).Position);
         PointerWheelChanged += OnPointerWheelChanged;
         DoubleTapped += OnDoubleTapped;
     }
@@ -39,6 +40,11 @@ public sealed partial class MapView : Grid
     public bool FollowPlayer { get; set; } = true;
 
     public event Action? FollowChanged;
+
+    /// <summary>The pointer moved onto a marker (or off all markers: null), with its position in this control.</summary>
+    public event Action<MapMarker?, Windows.Foundation.Point>? MarkerHovered;
+
+    private MapMarker? _hovered;
 
     public MapScene? Scene => _scene;
 
@@ -152,15 +158,46 @@ public sealed partial class MapView : Grid
         if (!point.Properties.IsLeftButtonPressed && !point.Properties.IsMiddleButtonPressed)
             return;
         _dragFrom = point.Position;
+        _pressedAt = point.Position;
+        _pressedOn = _hovered;
+        _dragging = false;
         CapturePointer(e.Pointer);
         e.Handled = true;
+    }
+
+    /// <summary>A marker was clicked (pressed and released without dragging the map).</summary>
+    public event Action<MapMarker>? MarkerClicked;
+
+    private Windows.Foundation.Point _pressedAt;
+    private MapMarker? _pressedOn;
+    private bool _dragging;
+
+    private void Hover(MapMarker? marker, Windows.Foundation.Point at)
+    {
+        if (marker?.Id == _hovered?.Id)
+            return;
+        _hovered = marker;
+        ProtectedCursor = marker is null ? null : InputSystemCursor.Create(InputSystemCursorShape.Hand);
+        MarkerHovered?.Invoke(marker, at);
     }
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (_dragFrom is not { } from)
+        {
+            var at = e.GetCurrentPoint(this).Position;
+            Hover(_scene is null ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), PixelScale), at);
             return;
+        }
         var to = e.GetCurrentPoint(this).Position;
+        // A few pixels of hand jitter during a click is not a drag (and must not stop following the player).
+        if (!_dragging && Math.Abs(to.X - _pressedAt.X) + Math.Abs(to.Y - _pressedAt.Y) < 4)
+            return;
+        if (!_dragging)
+        {
+            _dragging = true;
+            Hover(null, to);
+        }
         _camera.Pan((float)(to.X - from.X) * PixelScale, (float)(to.Y - from.Y) * PixelScale);
         _dragFrom = to;
         if (FollowPlayer)
@@ -173,8 +210,12 @@ public sealed partial class MapView : Grid
 
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
+        var clicked = !_dragging && _dragFrom is not null ? _pressedOn : null;
         _dragFrom = null;
+        _dragging = false;
         ReleasePointerCapture(e.Pointer);
+        if (clicked is not null)
+            MarkerClicked?.Invoke(clicked);
     }
 
     private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)

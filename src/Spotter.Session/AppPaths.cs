@@ -19,5 +19,8 @@ public sealed class AppPaths(string root, string? cacheRoot = null)
 
     public string PictureCache => Path.Combine(CacheRoot, "pictures");
 
+    /// <summary>Trader portraits and item icons from tarkov.dev, fetched when first shown.</summary>
+    public string GameArtCache => Path.Combine(CacheRoot, "game-art");
+
     public string Logs => Path.Combine(Root, "logs");
 }

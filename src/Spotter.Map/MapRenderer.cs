@@ -31,13 +31,53 @@ public static class MapRenderer
             DrawZone(canvas, camera, scene, zone);
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, camera, scene, uiScale);
-        foreach (var marker in scene.Markers.OrderBy(m => IsSelected(scene, m) ? 1 : 0))
-            DrawMarker(canvas, camera, scene, marker, uiScale, placed);
+        foreach (var marker in scene.Markers.OrderBy(m => IsSelected(scene, m) || IsFocused(scene, m) ? 1 : 0))
+        {
+            // Markers step back when something else is pointed at, or when they are on another floor than the one shown.
+            var alpha = scene.Focus.Count > 0 && !IsFocused(scene, marker) ? 0.28f
+                : !OnShownFloor(scene, marker.Position) ? 0.5f
+                : 1f;
+            if (alpha < 1)
+            {
+                using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
+                canvas.SaveLayer(layer);
+                DrawMarker(canvas, camera, scene, marker, uiScale, placed);
+                canvas.Restore();
+            }
+            else
+            {
+                DrawMarker(canvas, camera, scene, marker, uiScale, placed);
+            }
+        }
         DrawPlayer(canvas, camera, scene, uiScale);
     }
 
     private static bool IsSelected(MapScene scene, MapMarker m) =>
         scene.Selected is not null && (m.Id == scene.Selected || m.Group == scene.Selected);
+
+    private static bool IsFocused(MapScene scene, MapMarker m) =>
+        scene.Focus.Contains(m.Id) || (m.Group is not null && scene.Focus.Contains(m.Group));
+
+    private static bool OnShownFloor(MapScene scene, WorldPoint p) =>
+        scene.Definition.Layers.Count == 0 || FloorResolver.LayerFor(scene.Definition, p)?.SvgLayer == scene.Floor?.SvgLayer;
+
+    /// <summary>The marker under a screen point (pixels), nearest first, or null.</summary>
+    public static MapMarker? HitTest(Camera camera, MapScene scene, SKPoint screen, float ui)
+    {
+        MapMarker? best = null;
+        var bestDistance = float.MaxValue;
+        foreach (var marker in scene.Markers)
+        {
+            var distance = SKPoint.Distance(Screen(camera, scene, marker.Position), screen);
+            var reach = (marker.Objective is not null ? 13f : 10f) * ui;
+            if (distance <= reach && distance < bestDistance)
+            {
+                best = marker;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
 
     private static void DrawArtwork(SKCanvas canvas, Camera camera, MapScene scene)
     {
@@ -82,9 +122,11 @@ public static class MapRenderer
             return;
         using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
         var color = ColorOf(zone.Kind);
-        var selected = scene.Selected is not null && zone.Group == scene.Selected;
-        using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35)), IsAntialias = true };
-        using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : 140)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
+        var focused = zone.Group is not null && scene.Focus.Contains(zone.Group);
+        var selected = (scene.Selected is not null && zone.Group == scene.Selected) || focused;
+        var faded = scene.Focus.Count > 0 && !focused;
+        using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : faded ? 12 : 35)), IsAntialias = true };
+        using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : faded ? 50 : 140)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
         canvas.DrawPath(path, fill);
         canvas.DrawPath(path, stroke);
     }
@@ -128,7 +170,7 @@ public static class MapRenderer
     private static void DrawMarker(SKCanvas canvas, Camera camera, MapScene scene, MapMarker marker, float ui, List<(SKRect Box, string? Text)> placed)
     {
         var at = Screen(camera, scene, marker.Position);
-        var selected = IsSelected(scene, marker);
+        var selected = IsSelected(scene, marker) || IsFocused(scene, marker);
         var color = ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn larger than the plain extract and transit shapes.
         var r = (marker.Objective is not null ? (selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;

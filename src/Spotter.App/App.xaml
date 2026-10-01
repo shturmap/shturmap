@@ -31,6 +31,11 @@
       <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
       <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
       <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
+      <SolidColorBrush x:Key="SandBrush" Color="#F2D79C" />
+      <!-- An inventory cell behind item icons. -->
+      <SolidColorBrush x:Key="CellBrush" Color="#222B28" />
+      <!-- Linked highlighting: everything that belongs to what the pointer is on. -->
+      <SolidColorBrush x:Key="LinkBrush" Color="#33E49A3C" />
 
       <FontFamily x:Key="DataFont">Cascadia Mono, Consolas</FontFamily>
 

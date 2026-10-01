@@ -5,12 +5,14 @@ using Spotter.Core.Quests;
 namespace Spotter.App;
 
 /// <param name="Needs">Keys or items this objective needs, or empty.</param>
-public sealed record ObjectiveItem(string QuestId, string Text, string Quest, string Distance, string Direction, bool Done, ObjectiveKind Kind, string Needs)
+public sealed record ObjectiveItem(string QuestId, string Text, string Quest, string Distance, string Direction, bool Done, ObjectiveKind Kind, string Needs,
+    string? TraderId = null, string? TraderName = null)
 {
     public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 }
 
-public sealed record ExtractItem(string Name, string Kind, string Distance, string Direction);
+/// <param name="Id">The map marker's id, for linked highlighting.</param>
+public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction);
 
 public sealed record ConfirmItem(string QuestId, string Read, string Quest);
 
@@ -19,12 +21,25 @@ public sealed record MapChoice(string NormalizedName, string Name)
     public override string ToString() => Name;
 }
 
-public sealed record QuestLine(ObjectiveKind Kind, string Name);
+public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName);
 
-/// <param name="Glyph">Segoe Fluent Icons character: key or briefcase.</param>
-public sealed record RequirementLine(string Glyph, string Text, string For);
+/// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
+/// <param name="QuestIds">The quests it is for, for linked highlighting.</param>
+public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds);
+
+/// <summary>One floor in the map's floor picker, top floor first.</summary>
+/// <param name="PlayerHere">The floor of the last position fix.</param>
+public sealed record FloorChoice(int Index, string Name, bool Shown, bool PlayerHere)
+{
+    public Microsoft.UI.Xaml.Media.Brush Foreground => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Shown ? "AmberBrush" : "InkBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush Border => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Shown ? "AmberBrush" : "LineBrush"];
+
+    public Visibility PlayerVisibility => PlayerHere ? Visibility.Visible : Visibility.Collapsed;
+}
 
 /// <summary>One suggested map in Plan. Only the expanded card shows its quests and requirements.</summary>
+/// <param name="Summary">"Complete 8 quests · progress 2 more".</param>
 public sealed record PlanCard(
     string NormalizedName,
     string MapName,
@@ -36,6 +51,8 @@ public sealed record PlanCard(
     IReadOnlyList<RequirementLine> Requirements)
 {
     public Visibility ExpandedVisibility => Expanded ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility FinishVisibility => Expanded && Finish.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility ProgressVisibility => Expanded && Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -109,6 +126,8 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial bool Following { get; set; } = true;
 
     [ObservableProperty] public partial string Attribution { get; set; } = "";
+
+    [ObservableProperty] public partial IReadOnlyList<FloorChoice> Floors { get; set; } = [];
 
     public IReadOnlyList<LegendItem> Legend { get; } = Enum.GetValues<ObjectiveKind>()
         .Select(k => new LegendItem(k, QuestTaxonomy.Label(k), QuestTaxonomy.Explanation(k)))

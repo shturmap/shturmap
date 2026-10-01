@@ -27,4 +27,24 @@ public static class FloorResolver
         }
         return best;
     }
+
+    /// <summary>
+    /// The map's floors that have artwork of their own, from the top down, the base layer as null ("Ground").
+    /// Ordered by where each floor's height bands start (open-ended bands count as ±1000 m), then by where they
+    /// end, so a basement sharing the base layer's lower bound still sorts below it. Floors without their own
+    /// artwork (Customs' 4th floor, Reserve's upper floors) are drawn in the base layer and aren't listed.
+    /// </summary>
+    public static IReadOnlyList<MapLayer?> Stack(MapDefinition map)
+    {
+        static double Clamp(double v) => Math.Clamp(v, -1000, 1000);
+        var floors = map.Layers
+            .Where(l => l.Extents.Count > 0 && (map.SvgPath is null ? l.TilePath is not null : l.SvgLayer is not null))
+            .Select(l => (Layer: (MapLayer?)l, Low: l.Extents.Min(e => Clamp(e.Height.Min)), High: l.Extents.Max(e => Clamp(e.Height.Max))))
+            .Append((Layer: null, Low: Clamp(map.BaseHeight.Min), High: Clamp(map.BaseHeight.Max)))
+            .OrderByDescending(f => f.Low)
+            .ThenByDescending(f => f.High)
+            .Select(f => f.Layer)
+            .ToList();
+        return floors.Count > 1 ? floors : [];
+    }
 }

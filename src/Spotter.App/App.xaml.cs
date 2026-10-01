@@ -21,7 +21,13 @@ public partial class App : Application
         AppLog.Info("Starting Spotter " + typeof(App).Assembly.GetName().Version);
         _session = CreateSession(Environment.GetCommandLineArgs());
         _session.Notice += notice => AppLog.Info("Notice: " + notice.Text);
-        _window = new MainWindow(_session) { SnapshotMode = Environment.GetCommandLineArgs().Contains("--snapshot") };
+        var cli = Environment.GetCommandLineArgs();
+        var showQuest = Array.IndexOf(cli, "--show-quest");
+        _window = new MainWindow(_session)
+        {
+            SnapshotMode = cli.Contains("--snapshot"),
+            ShowQuest = showQuest >= 0 && showQuest + 1 < cli.Length ? cli[showQuest + 1] : null,
+        };
         _window.Closed += async (_, _) => await _session.DisposeAsync();
         _window.Activate();
         try
@@ -35,7 +41,6 @@ public partial class App : Application
         }
 
         // Developer aid: "--snapshot <folder> [seconds]" renders the window and the map to PNGs, then exits.
-        var cli = Environment.GetCommandLineArgs();
         var at = Array.IndexOf(cli, "--snapshot");
         if (at >= 0 && at + 1 < cli.Length)
         {

@@ -44,9 +44,14 @@ residual risk. Do not widen the boundary.
 - **Map artwork** is the SVG maps by Shebuka and contributors (CC BY-NC-SA 4.0, licence void for cheats/radars).
   Downloaded at runtime, displayed unmodified except for showing one floor at a time, credited on the map, never
   redistributed. Non-commercial only.
-- **Not used**: Battlestate artwork (trader portraits, quest images, item icons, game UI art) in the product,
-  text from the EFT wiki or guide sites, and code from GPL or unlicensed projects (TarkovMonitor, TarkovTracker,
-  MAYAK, Tarkov Pilot, RatScanner). Facts learned from them (log formats, file paths) are reimplemented.
+- **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
+  test fixtures. Spotter fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
+  is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
+  display for personal use, the way every Tarkov tool and tarkov.dev itself show them.
+- **Not used**: other Battlestate artwork (quest images, game UI art, map art), text from the EFT wiki or guide
+  sites (the quest card links to the wiki page instead), and code from GPL or unlicensed projects (TarkovMonitor,
+  TarkovTracker, MAYAK, Tarkov Pilot, RatScanner). Facts learned from them (log formats, file paths) are
+  reimplemented.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
   the only custom glyph is the crosshair (drawn from a path in `Spotter.Map.Glyphs`).
 - **Test fixtures** contain only scrubbed logs and the owner's own Tasks screenshots (game UI, for OCR tests in a
@@ -59,7 +64,8 @@ residual risk. Do not widen the boundary.
 2. **Glanceable from a second monitor.** Primary text ≥ 14 px, numbers in a monospaced face, high contrast on a
    dark ground, the important line first. No animation beyond what helps the eye follow a change.
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
-   automatic. No tabs, no modes to pick, no modal dialogs.
+   automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
+   pinned; they are owned by the main window and never topmost, so they can't cover the game.
 4. **Minimal surface.** Every control earns its place. Prefer an automatic behaviour over a button, a sensible
    default over a setting. Messages are one line and dismiss themselves.
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
@@ -74,6 +80,9 @@ residual risk. Do not widen the boundary.
    objective together.
 9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
    map, while there is still time to back out of matching.
+10. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
+    appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
+    are no detail pages to open. Finished quests appear nowhere.
 
 ### Visual language
 
@@ -87,6 +96,11 @@ residual risk. Do not widen the boundary.
 | secondary text | grey `#8E9A93` on ground `#0E1413` |
 
 Quest **types are shown by glyph, never by colour**; colour stays free for state (open, done, selected).
+The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
+portraits** are secondary: small and round, at the right end of Plan rows, before the quest line of Raid rows and
+in the card header; never in place of the glyph, never on the map. **Item icons** sit in a dark inventory cell
+next to what to bring. **Linked highlight**: amber at 20 % behind rows; map markers not in focus step back to
+28 % opacity; markers on another floor than the one shown are drawn at half strength.
 Typography: the system UI font for text, Cascadia Mono / Consolas for numbers (distances, times, chances).
 
 ### Screen anatomy
@@ -94,16 +108,35 @@ Typography: the system UI font for text, Cascadia Mono / Consolas for numbers (d
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix; on the right the inputs (logs,
   screenshots, data) as chips that turn amber when something needs attention, and the help button.
 - **Rail** (left, 380 px), content by state:
-  - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, the best one
-    expanded with what you can finish, what you can progress, and the **requirements** (keys, items to bring).
-    Clicking another map expands it and shows it on the map; that click is optional.
+  - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
+    line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
+    BRING (keys, items to bring). Clicking another map expands it and shows it on the map; that click is optional.
   - *Raid*: one raid line (time left, bosses with spawn chance, time of day); **objectives here**, nearest first,
     with type glyph, distance, direction and floor hint, and an inline key/item requirement where needed; then
     objectives with no fixed place; then extracts and transits for your side.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, player, trail, guide line to the
-  selected objective. Map controls bottom-right; one-line notices top-centre; attribution bottom-left.
+  selected objective. Map controls bottom-right, with the floor picker above them on maps with floors; one-line
+  notices top-centre; attribution bottom-left.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts and the glyph legend. Opens once by itself on
   first run.
+
+### Quest cards
+
+One card per quest, the same everywhere: trader portrait, type glyph and name; trader, level and Kappa /
+Lightkeeper; the state and where it came from ("Active · from the game log, 25 Sep"); every objective with its
+glyph, where it is and the item it is about; BRING (keys and items, with icons and maps); what it unlocks; a link
+to the wiki page. Nothing else: no rewards, no guides.
+
+It has three states, like the pinnable tooltips in Crusader Kings III:
+
+1. **Hover**: rest the pointer on a quest (rail row or map marker) for 0.4 s and the card appears beside it.
+   Moving down a list swaps cards after 0.12 s.
+2. **Held**: keep resting while a thin amber bar fills (0.9 s), or move into the card, and it stays; the border
+   turns amber. Leaving it closes it after 0.5 s. Esc closes it.
+3. **Pinned**: the pin turns it into a small window of its own, placed where the card was. Pinned cards come back
+   after a restart and close by themselves when their quest is completed.
+
+Rows inside a card take part in linked highlighting, so pointing at a key in a card lights up that key in BRING.
 
 ### Keyboard (window focused only)
 
@@ -112,10 +145,15 @@ Typography: the system UI font for text, Cascadia Mono / Consolas for numbers (d
 | F | follow my position |
 | + / − | zoom in / out |
 | 0 | show the whole map |
-| Esc | clear the selection |
+| PgUp / PgDn | show the floor above / below |
+| Esc | close the card, else clear the selection |
 | F1 or ? | help |
 
-Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, click an objective to draw a line to it.
+Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
+one's key as a tooltip over the whole window.
+
+Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, click an objective (in the list or on the
+map) to draw a line to it, point at anything to see what belongs to it.
 
 ## 5. Quest taxonomy
 
@@ -173,7 +211,7 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
 | --- | --- |
 | `Spotter.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, name matching |
 | `Spotter.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher, game settings |
-| `Spotter.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, TarkovEyes import |
+| `Spotter.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, TarkovEyes import, game art cache (portraits, icons) |
 | `Spotter.Ocr` | Tasks-screen reader on Windows.Media.Ocr |
 | `Spotter.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
 | `Spotter.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
@@ -208,8 +246,14 @@ fitted into the projected `svgBounds ?? bounds`. Golden test: a Streets screensh
 `nameId`, then an alias table. Side: the match-setup `Profileid` equals the menu profile for PMC raids and differs
 for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageReceived` type 10/11/12.
 
-**Quest progress.** Stored observations (log, Tasks scan, manual, import); newest wins; prerequisites of active
-or completed quests that strictly require "complete" are shown as implied, never stored.
+**Quest progress.** Stored observations (log, Tasks scan, manual, import); newest wins, except that an import or
+a scan never reopens a quest the log saw completed or failed (TarkovEyes' save is dated by its file, which can be
+after the hand-in); only a later log event can. Prerequisites of active or completed quests that strictly require
+"complete" are shown as implied, never stored. `spotter-cli quests` lists active quests with every observation.
+
+**Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
+artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
+screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floors) are drawn in the base layer.
 
 **Tasks OCR.** Header row found in a whole-frame pass, Task→Status columns cropped and read at 2×, rows anchored
 on Status; names matched by edit distance with the exact-number rule, a Location check and font-confusion
@@ -220,7 +264,8 @@ folding. Accept ≥ 0.92 with margin; confirm ≥ 0.75.
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, TarkovEyes import, Tasks scans, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
-  occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load.
-- Pending decision: product name (proposed: Shturman). Rename only after the owner confirms.
-- Open: tile-only maps (The Lab, Labyrinth, Icebreaker); manual quest editing; objective progress; floor picker;
+  occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
+  highlighting, quest cards (hover, held, pinned), trader portraits and item icons, floor picker.
+- On hold (owner, 2026-10-01): product name (proposed: Shturman). Don't rename or raise it.
+- Open: tile-only maps (The Lab, Labyrinth, Icebreaker); manual quest editing; objective progress;
   published size 237 MB (budget 80–120 MB, needs trimming).

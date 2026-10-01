@@ -86,4 +86,17 @@ public class MapProjectionTests
         Assert.True(layer.Contains(inside));
         Assert.False(layer.Contains(outside));
     }
+
+    [Theory]
+    [InlineData("streets-of-tarkov", "5th Floor,4th Floor,3rd Floor,2nd Floor,Ground,Underground")]
+    [InlineData("customs", "3rd Floor,2nd Floor,Ground,Underground")] // its 4th floor is drawn in the base layer
+    [InlineData("reserve", "Ground,Bunkers")]
+    [InlineData("ground-zero", "3rd Floor,2nd Floor,Ground,Garage")]
+    [InlineData("factory", "3rd Floor,2nd Floor,Ground,Tunnels")]
+    [InlineData("woods", "")]
+    public void Floors_stack_from_the_top_down(string map, string expected)
+    {
+        var floors = FloorResolver.Stack(Fixtures.Map(map)).Select(l => l?.Name ?? "Ground");
+        Assert.Equal(expected, string.Join(",", floors));
+    }
 }

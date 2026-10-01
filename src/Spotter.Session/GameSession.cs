@@ -6,6 +6,7 @@ using Spotter.Core.Navigation;
 using Spotter.Core.Quests;
 using Spotter.Core.Raid;
 using Spotter.Data.Http;
+using Spotter.Data.Images;
 using Spotter.Data.Maps;
 using Spotter.Data.Progress;
 using Spotter.Data.TarkovDev;
@@ -63,6 +64,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     public ArtworkProvider? Artwork { get; private set; }
 
+    /// <summary>Trader portraits and item icons, fetched when first shown.</summary>
+    public GameArt? Art { get; private set; }
+
     /// <summary>Raised after every change, on a background thread.</summary>
     public event Action<SessionSnapshot>? Changed;
 
@@ -82,6 +86,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             var http = CachedHttp.CreateClient();
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
             Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache);
+            Art = new GameArt(http, paths.GameArtCache);
             if (TextRecognizer.Create(_settings.Language) is { } recognizer)
                 _tasks = new TasksScreenReader(recognizer);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
@@ -558,7 +563,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     string.IsNullOrWhiteSpace(o.Objective.Description) ? "(no description)" : o.Objective.Description!,
                     o.Done, o.Places.Count > 0, distance, direction, height,
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
-                    bearing));
+                    bearing, o.Quest.Trader));
             }
             var side = _tracker.State.Side;
             foreach (var m in content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))

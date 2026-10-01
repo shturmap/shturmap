@@ -6,13 +6,17 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Spotter.App.Controls;
 using Spotter.Core.Logs;
+using Spotter.Core.Maps;
 using Spotter.Core.Navigation;
 using Spotter.Core.Planning;
+using Spotter.Core.Quests;
 using Spotter.Core.Raid;
 using Spotter.Map;
 using Spotter.Session;
 using Windows.Graphics;
+using MapLayer = Spotter.Core.Maps.MapLayer;
 
 namespace Spotter.App;
 
@@ -28,6 +32,14 @@ public sealed partial class MainWindow : Window
     private bool _scanDismissed;
     private bool _helpShownOnce;
     private ScanResult? _shownScan;
+    private readonly QuestCardHost _cards;
+    private readonly Dictionary<string, QuestWindow> _pinned = [];
+    private bool _pinnedRestored;
+    private IReadOnlyList<MapLayer?> _floors = [];
+    private string? _floorsFor;
+    private int? _floorPick;
+    private DateTime? _floorPickFix;
+    private int _shownFloor = -1;
 
     public MainWindow(GameSession session)
     {
@@ -35,6 +47,20 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         SystemBackdrop = new MicaBackdrop();
         PlaceOnSecondMonitor();
+
+        Picture.Art = () => _session.Art;
+        _cards = new QuestCardHost((FrameworkElement)Content, DispatcherQueue, BuildCard);
+        _cards.PinRequested += (view, at) => Pin(view, QuestWindow.ScreenPoint(this, at));
+        Linked.QuestHovered += OnQuestHovered;
+        Linked.FocusChanged += OnFocusChanged;
+        Map.MarkerHovered += OnMarkerHovered;
+        Map.MarkerClicked += OnMarkerClicked;
+        Closed += (_, _) =>
+        {
+            SavePinned();
+            foreach (var window in _pinned.Values.ToList())
+                window.Close();
+        };
 
         _clock = DispatcherQueue.CreateTimer();
         _clock.Interval = TimeSpan.FromSeconds(1);
@@ -69,7 +95,7 @@ public sealed partial class MainWindow : Window
         var fresh = DateTime.Now - fix.At < FreshFix;
         if (fresh != _fixWasFresh)
             UpdateRaidLists(s);
-        Map.Redraw(); // the marker fades and its "may have moved" ring grows with age
+        Map.Redraw(); // the player marker fades with age
     }
 
     public MainViewModel ViewModel { get; } = new();
@@ -113,7 +139,11 @@ public sealed partial class MainWindow : Window
         UpdateRaidLists(s);
         UpdateScan(s);
         UpdateMap(s);
+        _cards.Refresh();
+        RefreshPinned();
+        RestorePinnedOnce(s);
         ShowHelpOnFirstRun(s);
+        ShowQuestForSnapshot(s);
     }
 
     private void UpdateClockTexts()
@@ -191,18 +221,31 @@ public sealed partial class MainWindow : Window
         var openIndex = s.Plan.ToList().FindIndex(p => p.NormalizedName == s.Map?.NormalizedName);
         if (openIndex < 0)
             openIndex = 0;
+        QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
         vm.Plans = s.Plan.Select((p, i) => new PlanCard(
             p.NormalizedName,
             p.MapName,
-            p.Progress.Count > 0 ? $"{p.Finish.Count} finish · {p.Progress.Count} progress" : $"{p.Finish.Count} finish",
+            Summary(p.Finish.Count, p.Progress.Count),
             string.Join(" · ", new[] { p.WalkingMinutes > 0 ? $"~{p.WalkingMinutes} min walking" : null, p.RaidMinutes > 0 ? $"{p.RaidMinutes} min raid" : null }
                 .Concat(p.Bosses).OfType<string>()),
             i == openIndex,
-            p.Finish.Select(q => new QuestLine(q.Kind, q.Name)).ToList(),
-            p.Progress.Select(q => new QuestLine(q.Kind, q.Name)).ToList(),
-            p.Requirements.Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text, "for " + r.ForQuests)).ToList()
+            p.Finish.Select(Line).ToList(),
+            p.Progress.Select(Line).ToList(),
+            p.Requirements.Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds)).ToList()
         )).ToList();
-        vm.AnyMap = s.AnyMap.Select(q => new QuestLine(q.Kind, q.Name)).ToList();
+        vm.AnyMap = s.AnyMap.Select(Line).ToList();
+    }
+
+    /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
+    private static string Summary(int complete, int progress)
+    {
+        static string Quests(int n) => n == 1 ? "1 quest" : $"{n} quests";
+        return (complete, progress) switch
+        {
+            (> 0, > 0) => $"Complete {Quests(complete)} · progress {progress} more",
+            (> 0, _) => $"Complete {Quests(complete)}",
+            _ => $"Progress {Quests(progress)}",
+        };
     }
 
     private void UpdateRaidLists(SessionSnapshot s)
@@ -223,6 +266,7 @@ public sealed partial class MainWindow : Window
         vm.Objectives = s.Objectives.Where(o => o.HasPlace).Select(o => ToItem(o, Direction(o.Direction, o.MapBearing))).ToList();
         vm.Unplaced = s.Objectives.Where(o => !o.HasPlace).Select(o => ToItem(o, "")).ToList();
         vm.Extracts = s.Extracts.Select(e => new ExtractItem(
+            e.Id,
             e.Name,
             e.Kind switch
             {
@@ -246,7 +290,7 @@ public sealed partial class MainWindow : Window
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
         return new ObjectiveItem(o.QuestId, o.Text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
-            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "");
+            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
     }
 
     private static string Distance(double? metres) => metres switch
@@ -300,11 +344,198 @@ public sealed partial class MainWindow : Window
             return;
         scene.Player = latest.Fix;
         scene.Trail = latest.Trail;
-        scene.Floor = latest.Floor;
+        scene.Floor = ShownFloor(latest);
         scene.Markers = latest.Content?.Markers ?? [];
         scene.Zones = latest.Content?.Zones ?? [];
         scene.Selected = _selectedQuest;
+        scene.Focus = MapFocus();
         Map.Refresh();
+    }
+
+    // ---- floors ----
+
+    /// <summary>
+    /// The floor to draw: the player's, from the last fix, unless one was picked since that fix. A new screenshot
+    /// says where you are, so it ends the pick.
+    /// </summary>
+    private MapLayer? ShownFloor(SessionSnapshot s)
+    {
+        if (s.Definition is null)
+            return s.Floor;
+        if (s.Definition.Key != _floorsFor)
+        {
+            _floorsFor = s.Definition.Key;
+            _floors = FloorResolver.Stack(s.Definition);
+            _floorPick = null;
+        }
+        if (_floorPick is not null && s.Fix?.At != _floorPickFix)
+            _floorPick = null;
+        var playerFloor = s.Fix is null ? -1 : IndexOfFloor(s.Floor);
+        _shownFloor = _floorPick ?? IndexOfFloor(s.Floor);
+        ViewModel.Floors = _floors.Select((layer, i) => new FloorChoice(i, layer?.Name ?? "Ground", i == _shownFloor, i == playerFloor)).ToList();
+        return _shownFloor >= 0 && _shownFloor < _floors.Count ? _floors[_shownFloor] : s.Floor;
+    }
+
+    // A floor without artwork of its own is drawn in the base layer, so it counts as ground here.
+    private int IndexOfFloor(MapLayer? layer)
+    {
+        var index = layer is null ? -1 : _floors.ToList().IndexOf(layer);
+        return index >= 0 ? index : _floors.ToList().IndexOf(null);
+    }
+
+    private void PickFloor(int index)
+    {
+        if (_floors.Count == 0 || _snapshot is not { } s)
+            return;
+        _floorPick = Math.Clamp(index, 0, _floors.Count - 1);
+        _floorPickFix = s.Fix?.At;
+        UpdateMap(s);
+    }
+
+    private void OnFloorClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: int index })
+            PickFloor(index);
+    }
+
+    // ---- quest cards and linked highlighting ----
+
+    private QuestCardView? BuildCard(string questId) =>
+        _snapshot is { Data: { } data } s ? QuestCards.Build(data, s.Quests, questId) : null;
+
+    private Windows.Foundation.Rect BoundsInWindow(FrameworkElement element) =>
+        element.TransformToVisual(Content).TransformBounds(new Windows.Foundation.Rect(0, 0, element.ActualWidth, element.ActualHeight));
+
+    private void OnQuestHovered(FrameworkElement element, string? questId)
+    {
+        // Rows inside pinned windows highlight here too, but their cards would open in the wrong window.
+        if (element.XamlRoot != Content.XamlRoot)
+            return;
+        if (questId is null)
+            _cards.Leave();
+        else
+            _cards.Hover(questId, BoundsInWindow(element));
+    }
+
+    private IReadOnlySet<string> MapFocus()
+    {
+        if (Linked.Current is not { } focus)
+            return new HashSet<string>();
+        var ids = new HashSet<string>(focus.Quests);
+        if (focus.Marker is { } marker)
+            ids.Add(marker);
+        return ids;
+    }
+
+    private void OnFocusChanged()
+    {
+        if (Map.Scene is not { } scene)
+            return;
+        scene.Focus = MapFocus();
+        Map.Redraw();
+    }
+
+    private void OnMarkerHovered(MapMarker? marker, Windows.Foundation.Point at)
+    {
+        switch (marker)
+        {
+            case null:
+                Linked.Set(null);
+                _cards.Leave();
+                break;
+            case { Group: { } quest, Objective: not null }:
+                Linked.Set(Focus.Quest(quest));
+                var p = Map.TransformToVisual(Content).TransformPoint(at);
+                _cards.Hover(quest, new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
+                break;
+            default:
+                Linked.Set(new Focus(new HashSet<string>(), Marker: marker.Id));
+                _cards.Leave();
+                break;
+        }
+    }
+
+    private void OnMarkerClicked(MapMarker marker)
+    {
+        if (marker is { Group: { } quest, Objective: not null })
+            Select(quest);
+    }
+
+    private void Select(string questId)
+    {
+        _selectedQuest = _selectedQuest == questId ? null : questId;
+        if (Map.Scene is { } scene)
+        {
+            scene.Selected = _selectedQuest;
+            Map.Refresh();
+        }
+    }
+
+    // ---- pinned cards ----
+
+    private const string PinnedSetting = "pinned.cards";
+
+    private void Pin(QuestCardView view, PointInt32? at)
+    {
+        if (_pinned.TryGetValue(view.QuestId, out var open))
+        {
+            open.Activate();
+            return;
+        }
+        var window = new QuestWindow(view, this, at);
+        window.Closed += (_, _) =>
+        {
+            if (_pinned.Remove(window.QuestId))
+                SavePinned();
+        };
+        _pinned[view.QuestId] = window;
+        window.Activate();
+        SavePinned();
+    }
+
+    private void SavePinned()
+    {
+        if (SnapshotMode)
+            return;
+        _session.SetSetting(PinnedSetting, string.Join(";", _pinned.Values.Select(w =>
+            FormattableString.Invariant($"{w.QuestId}@{w.AppWindow.Position.X},{w.AppWindow.Position.Y}"))));
+    }
+
+    // Pinned cards come back where they were, as long as their quest is still active.
+    private void RestorePinnedOnce(SessionSnapshot s)
+    {
+        if (_pinnedRestored || s.Data is null || SnapshotMode)
+            return;
+        _pinnedRestored = true;
+        foreach (var entry in (_session.GetSetting(PinnedSetting) ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = entry.Split('@', ',');
+            if (parts.Length != 3 || BuildCard(parts[0]) is not { State: QuestState.Active } view)
+                continue;
+            PointInt32? at = int.TryParse(parts[1], CultureInfo.InvariantCulture, out var x) && int.TryParse(parts[2], CultureInfo.InvariantCulture, out var y)
+                && DisplayArea.GetFromPoint(new PointInt32(x + 40, y + 20), DisplayAreaFallback.None) is not null
+                ? new PointInt32(x, y)
+                : null;
+            Pin(view, at);
+        }
+    }
+
+    // A finished quest has nothing left to show: its card closes.
+    private void RefreshPinned()
+    {
+        foreach (var window in _pinned.Values.ToList())
+        {
+            var view = BuildCard(window.QuestId);
+            if (view is { State: QuestState.Active })
+            {
+                if (view.Status != window.View?.Status)
+                    window.Update(view);
+                continue;
+            }
+            if (view is { State: QuestState.Completed })
+                ShowNotice($"{view.Name} is complete; its card is closed.");
+            window.Close();
+        }
     }
 
     private void ShowNotice(string message, TimeSpan? duration = null)
@@ -318,6 +549,29 @@ public sealed partial class MainWindow : Window
 
     /// <summary>Set for "--snapshot" runs: the help panel opens to be rendered, and isn't marked as seen.</summary>
     public bool SnapshotMode { get; set; }
+
+    /// <summary>"--show-quest &lt;part of a name&gt;" (snapshots): highlights that quest, holds its card and pins it.</summary>
+    public string? ShowQuest { get; set; }
+
+    private void ShowQuestForSnapshot(SessionSnapshot s)
+    {
+        if (ShowQuest is not { } text || s.Data is null || s.Plan.Count == 0 && s.Objectives.Count == 0)
+            return;
+        ShowQuest = null;
+        var id = s.Plan.SelectMany(p => p.Finish.Concat(p.Progress)).Select(q => (q.QuestId, q.Name))
+            .Concat(s.Objectives.Select(o => (o.QuestId, Name: o.QuestName)))
+            .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).QuestId;
+        if (id is null || BuildCard(id) is not { } view)
+            return;
+        // Let the rail lay out first, so the highlight lands on real rows.
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+        {
+            Linked.Set(Focus.Quest(id));
+            _cards.ShowHeld(id, new Windows.Foundation.Rect(372, 150, 8, 8));
+            var origin = QuestWindow.ScreenPoint(this, new Windows.Foundation.Point(((FrameworkElement)Content).ActualWidth - 420, 120));
+            Pin(view, origin);
+        });
+    }
 
     // The help panel opens by itself once, the first time the app has something to show.
     private void ShowHelpOnFirstRun(SessionSnapshot s)
@@ -367,6 +621,8 @@ public sealed partial class MainWindow : Window
 
     private void AddShortcuts(UIElement root)
     {
+        // Accelerators on the root would otherwise show their key ("F") as a tooltip over the whole window.
+        root.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
         void Add(Windows.System.VirtualKey key, Action action)
         {
             var accelerator = new KeyboardAccelerator { Key = key };
@@ -389,7 +645,15 @@ public sealed partial class MainWindow : Window
         Add((Windows.System.VirtualKey)189, () => Map.ZoomBy(1 / 1.5)); // the -/_ key
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
-        Add(Windows.System.VirtualKey.Escape, ClearSelection);
+        Add(Windows.System.VirtualKey.Escape, () =>
+        {
+            if (_cards.ShownQuest is not null)
+                _cards.Close();
+            else
+                ClearSelection();
+        });
+        Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1));
+        Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1));
         Add(Windows.System.VirtualKey.F1, ShowHelp);
         root.CharacterReceived += (_, e) =>
         {
@@ -434,14 +698,8 @@ public sealed partial class MainWindow : Window
 
     private void OnObjectiveClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is not ObjectiveItem item)
-            return;
-        _selectedQuest = _selectedQuest == item.QuestId ? null : item.QuestId;
-        if (Map.Scene is { } scene)
-        {
-            scene.Selected = _selectedQuest;
-            Map.Refresh();
-        }
+        if (e.ClickedItem is ObjectiveItem item)
+            Select(item.QuestId);
     }
 
     private async void OnConfirmClick(object sender, RoutedEventArgs e)
@@ -487,6 +745,13 @@ public sealed partial class MainWindow : Window
             await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
                 await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
+            if (_cards.ShownQuest is not null)
+            {
+                AppLog.Info($"Snapshot: card {_cards.ShownQuest} is {_cards.Mode}");
+                await RenderToPngAsync(_cards.Card, Path.Combine(folder, "card.png"));
+            }
+            if (_pinned.Values.FirstOrDefault() is { } pinned)
+                await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"));
             AppLog.Info("Snapshot saved to " + folder);
         }

@@ -59,5 +59,11 @@ public sealed class MapScene
     /// <summary>A quest group or marker id to emphasise and point to from the player.</summary>
     public string? Selected { get; set; }
 
+    /// <summary>
+    /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
+    /// are drawn emphasised and everything else steps back.
+    /// </summary>
+    public IReadOnlySet<string> Focus { get; set; } = new HashSet<string>();
+
     public bool ShowLabels { get; set; } = true;
 }

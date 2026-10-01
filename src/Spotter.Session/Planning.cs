@@ -6,9 +6,10 @@ using Spotter.Data.TarkovDev;
 namespace Spotter.Session;
 
 /// <summary>Something a raid needs, ready to show: "Dorm room 114 key", "MS2000 Marker ×3", for which quests.</summary>
-public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests);
+/// <param name="ItemId">The item to picture (the first of the alternatives).</param>
+public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds);
 
-public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind);
+public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null);
 
 /// <summary>One suggested map for the next raid.</summary>
 public sealed record MapPlanView(
@@ -40,7 +41,7 @@ public static class Planning
 
     /// <summary>Active quests whose in-raid work fits any map.</summary>
     public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds) =>
-        RaidPlanner.AnyMap(Quests(data, activeQuestIds)).Select(QuestView).ToList();
+        RaidPlanner.AnyMap(Quests(data, activeQuestIds)).Select(q => QuestView(data, q)).ToList();
 
     private static List<PlanQuest> Quests(GameData data, IEnumerable<string> ids) =>
         ids.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>().Select(ToPlan).ToList();
@@ -114,15 +115,15 @@ public static class Planning
     private static MapPlanView ToView(GameData data, MapPlan plan) => new(
         data.Maps.TryGetValue(plan.Map.Id, out var map) ? map.NormalizedName : plan.Map.Id,
         plan.Map.Name,
-        plan.Finish.Select(q => QuestView(q.Quest)).ToList(),
-        plan.Progress.Select(q => QuestView(q.Quest)).ToList(),
+        plan.Finish.Select(q => QuestView(data, q.Quest)).ToList(),
+        plan.Progress.Select(q => QuestView(data, q.Quest)).ToList(),
         plan.Requirements.Select(r => RequirementText(data, r)).ToList(),
         (int)Math.Ceiling(plan.WalkingMinutes),
         plan.Map.RaidMinutes,
         data.BossesOn(plan.Map.Id).Select(BossText).ToList());
 
-    private static PlanQuestView QuestView(PlanQuest q) =>
-        new(q.Id, q.Name, QuestTaxonomy.QuestKind(q.Objectives.Select(o => o.Kind)));
+    private static PlanQuestView QuestView(GameData data, PlanQuest q) =>
+        new(q.Id, q.Name, QuestTaxonomy.QuestKind(q.Objectives.Select(o => o.Kind)), data.Tasks.GetValueOrDefault(q.Id)?.Trader);
 
     public static RequirementView RequirementText(GameData data, Requirement r)
     {
@@ -131,7 +132,7 @@ public static class Planning
         if (r.Count > 1)
             text += $" ×{r.Count}";
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
-        return new RequirementView(r.Kind, text, quests);
+        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList());
     }
 
     /// <summary>"Key: X · Bring: Y" for one objective on one map, or null if it needs nothing.</summary>

@@ -3,7 +3,9 @@
 param(
   [Parameter(Mandatory)] [string] $Exe,
   [Parameter(Mandatory)] [string] $Out,
-  [int] $SnapshotAfter = 16
+  [int] $SnapshotAfter = 16,
+  # Part of a quest name: highlight it, hold its card and pin it before the snapshot.
+  [string] $ShowQuest
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("spotter-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -22,7 +24,9 @@ function Shot([string]$position) {
 
 Log 'Session mode: Pve'
 Log 'PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0'
-$p = Start-Process $Exe -ArgumentList '--fake-game', $root, '--snapshot', $Out, $SnapshotAfter -PassThru
+$appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter)
+if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
+$p = Start-Process $Exe -ArgumentList $appArgs -PassThru
 Start-Sleep -Seconds 4
 Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
 Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: 000000000000000000000003, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
