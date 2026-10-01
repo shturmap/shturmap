@@ -578,6 +578,10 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
             AnyMap = _anyMap,
+            MapPlan = _data is not null && _map is not null
+                ? _plan.FirstOrDefault(p => p.NormalizedName == _map.NormalizedName)
+                  ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _map.NormalizedName)
+                : null,
             LastRaid = _lastRaidState is ({ } state, var endedAt) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
                 ? new LastRaidView(lastMap.Name, endedAt - state.RaidStartedAt!.Value, state.Side, endedAt)
                 : null,

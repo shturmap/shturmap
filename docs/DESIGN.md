@@ -130,13 +130,19 @@ Text says only what the place doesn't: an objective "… on Streets of Tarkov" d
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
     BRING (keys, items to bring). Clicking another map expands it and shows it on the map; that click is optional.
-  - *Raid*: one raid line (time left, bosses with spawn chance, time of day); **objectives here**, nearest first,
-    with type glyph, distance, direction and floor hint, and an inline key/item requirement where needed; then
-    objectives with no fixed place; then extracts and transits for your side, each with what it takes to leave
-    there, if anything (see "Extract requirements").
+  - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
+    different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
+    line ("Complete 5 quests · progress 1 more"), the raid line (time left, time of day, bosses with spawn chance)
+    and, when the distances aren't from a fresh screenshot, where they are from. Then COMPLETE, PROGRESS and BRING
+    as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
+    needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
+    fixed place, "after the raid" (muted) for hand-overs. Objectives inside a quest go nearest first, and quests
+    by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
+    transits for your side, each with what it takes to leave there (see "Extract requirements"). ANY MAP closes
+    the rail in both states.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, boss spawns (red diamonds, one label
   per spawn area: "Reshala 75%"), Scav spawns (small quiet rings, no label, not hoverable), player, trail, guide
-  line to the selected objective. Map controls bottom-right, with the floor picker above them on maps with floors;
+  line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols. Opens
@@ -176,6 +182,18 @@ Cards behave like the nested tooltips in Crusader Kings III:
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
 
+### Keeping a quest highlighted
+
+Pointing highlights for as long as the pointer stays; a click on a quest (its rail row, or one of its markers) also
+**keeps** it highlighted, so its markers are easy to find on the map while you look away (owner, 2026-10-01). The
+kept quest's rows keep a quieter gold tint than the pointer's; on the map its markers stay large with a steady ring,
+the rest stay dimmed, and a dashed line runs from your last fix to its nearest marker. It pulses three times when
+kept, and again when the pointer comes back from something else, then holds still: a marker pulsing all raid would be
+motion at the edge of the player's eye. Pointing at something else shows that instead, for as long as the pointer is
+on it. One quest is kept at a time; another click on it, a click on another quest, or Esc (after the cards) lets it
+go, and it goes by itself when the quest is done. A highlight with nothing on the shown map (a quest kept from
+another map, a quest for any map) dims nothing.
+
 ### Extract requirements
 
 Shown under each extract in the Raid rail, short, in gold, with the item's icon when one is handed over:
@@ -201,14 +219,14 @@ are translated although the payload's translation list misses them.
 | + / − | zoom in / out |
 | 0 | show the whole map |
 | PgUp / PgDn | show the floor above / below |
-| Esc | close the card, else clear the selection |
+| Esc | close the cards, else stop keeping the quest highlighted |
 | F1 or ? | help |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window.
 
-Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, click an objective (in the list or on the
-map) to draw a line to it, point at anything to see what belongs to it.
+Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, point at anything to see what belongs to
+it, click a quest (in the list or on the map) to keep it highlighted.
 
 ## 5. Quest taxonomy
 

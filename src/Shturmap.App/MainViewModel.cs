@@ -9,6 +9,10 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
     string? TraderId = null, string? TraderName = null)
 {
     public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Muted for what is done at a trader after the raid: nothing to do about it here.</summary>
+    public Microsoft.UI.Xaml.Media.Brush TextBrush =>
+        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[QuestTaxonomy.InRaid(Kind) ? "InkBrush" : "MutedBrush"];
 }
 
 /// <param name="Id">The map marker's id, for linked highlighting.</param>
@@ -77,6 +81,19 @@ public sealed record PlanCard(
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "RaisedBrush" : "RailBrush"];
 }
 
+/// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
+/// <param name="Complete">Whether this raid can complete it (Plan's COMPLETE), or only progress it.</param>
+public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
+    IReadOnlyList<ObjectiveItem> Objectives, bool Complete)
+{
+    // As in Plan: quests this raid completes in gold and ink, the ones it only progresses muted.
+    public Microsoft.UI.Xaml.Media.Brush GlyphBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "AmberBrush" : "MutedBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush NameBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "InkBrush" : "MutedBrush"];
+
+    public double PictureOpacity => Complete ? 1 : 0.6;
+}
+
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);
 
 /// <summary>What the window shows, as display-ready text. Filled from each session snapshot.</summary>
@@ -106,13 +123,22 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial MapChoice? SelectedMap { get; set; }
 
-    [ObservableProperty] public partial IReadOnlyList<ObjectiveItem> Objectives { get; set; } = [];
+    /// <summary>The raid card's title: the map, in capitals like Plan's cards.</summary>
+    [ObservableProperty] public partial string RaidTitle { get; set; } = "";
 
-    [ObservableProperty] public partial IReadOnlyList<ObjectiveItem> Unplaced { get; set; } = [];
+    /// <summary>"Complete 3 quests · progress 2 more", as on the map's Plan card.</summary>
+    [ObservableProperty] public partial string RaidSummary { get; set; } = "";
+
+    /// <summary>What the distances are measured from when it isn't a fresh screenshot, or empty.</summary>
+    [ObservableProperty] public partial string RaidFixNote { get; set; } = "";
+
+    [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidComplete { get; set; } = [];
+
+    [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidProgress { get; set; } = [];
+
+    [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidBring { get; set; } = [];
 
     [ObservableProperty] public partial IReadOnlyList<ExtractItem> Extracts { get; set; } = [];
-
-    [ObservableProperty] public partial string ObjectivesHeader { get; set; } = "OBJECTIVES HERE";
 
     [ObservableProperty] public partial string Hint { get; set; } = "";
 

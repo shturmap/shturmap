@@ -8,6 +8,62 @@
     Title="Shturmap">
 
   <Grid Background="{StaticResource GroundBrush}">
+    <Grid.Resources>
+      <!-- Something to bring, in Plan's cards and the raid card. -->
+      <DataTemplate x:Key="RequirementTemplate" x:DataType="local:RequirementLine">
+        <Grid ColumnSpacing="12" Padding="6,4" Margin="-6,0"
+              controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Quests="{x:Bind QuestIds}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <controls:Picture ItemId="{x:Bind ItemId}" Glyph="{x:Bind Glyph}" Size="40" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+            <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Bind For}" Style="{StaticResource NoteText}" />
+            <TextBlock Text="{x:Bind Source}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}"
+                       Visibility="{x:Bind SourceVisibility}" />
+          </StackPanel>
+        </Grid>
+      </DataTemplate>
+
+      <!-- A quest in the raid card: its line as in Plan, then its objectives here with how far and which way.
+           The whole block is one quest: pointing at it lights the quest up everywhere, clicking keeps it lit. -->
+      <DataTemplate x:Key="RaidQuestTemplate" x:DataType="local:RaidQuest">
+        <StackPanel Padding="6,4,6,6" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+          <Grid ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{x:Bind GlyphBrush}" Margin="0,1,0,0" />
+            <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{x:Bind NameBrush}" TextWrapping="Wrap" />
+            <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="{x:Bind PictureOpacity}" />
+          </Grid>
+          <ItemsControl ItemsSource="{x:Bind Objectives}" Margin="26,2,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="local:ObjectiveItem">
+                <Grid ColumnSpacing="10" Padding="0,3">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Spacing="1">
+                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
+                    <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </DataTemplate>
+    </Grid.Resources>
     <Grid.RowDefinitions>
       <RowDefinition Height="40" />
       <RowDefinition Height="*" />
@@ -68,8 +124,8 @@
                   <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance." />
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
-                <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears; click to keep the card. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
+                <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep it lit: its markers stay ringed on the map, with a line from you to the nearest, until you click it again or press Esc. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
@@ -220,110 +276,40 @@
                             </ItemsControl.ItemTemplate>
                           </ItemsControl>
                           <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
-                          <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="local:RequirementLine">
-                                <Grid ColumnSpacing="12" Padding="6,4" Margin="-6,0"
-                                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Quests="{x:Bind QuestIds}">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                  </Grid.ColumnDefinitions>
-                                  <controls:Picture ItemId="{x:Bind ItemId}" Glyph="{x:Bind Glyph}" Size="40" />
-                                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
-                                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind For}" Style="{StaticResource NoteText}" />
-                                    <TextBlock Text="{x:Bind Source}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}"
-                                               Visibility="{x:Bind SourceVisibility}" />
-                                  </StackPanel>
-                                </Grid>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
+                          <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
+                                        ItemTemplate="{StaticResource RequirementTemplate}" />
                         </StackPanel>
                       </StackPanel>
                     </Button>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <TextBlock Style="{StaticResource EyebrowText}" Text="ANY MAP" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
-              <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="local:QuestLine">
-                    <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
-                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
-                      <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                      <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
             </StackPanel>
 
-            <!-- RAID -->
+            <!-- RAID: the map's Plan card, live. The same header and COMPLETE / PROGRESS / BRING; each quest carries its
+                 objectives here, nearest first, and the quests are ordered by their nearest objective. -->
             <StackPanel Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
-              <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidLine), Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}"
-                         TextWrapping="Wrap" Margin="0,18,0,0" />
-              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind ViewModel.ObjectivesHeader, Mode=OneWay}" />
-              <ListView ItemsSource="{x:Bind ViewModel.Objectives, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnObjectiveClick"
-                        Margin="-12,0" Padding="0">
-                <ListView.ItemTemplate>
-                  <DataTemplate x:DataType="local:ObjectiveItem">
-                    <Grid Padding="6,8" Margin="-6,0" ColumnSpacing="10" controls:Linked.Quest="{x:Bind QuestId}">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
-                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,2,0,0" />
-                      <StackPanel Grid.Column="1" Spacing="2">
-                        <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <controls:Picture TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="16" />
-                          <TextBlock Text="{x:Bind Quest}" Style="{StaticResource NoteText}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="230" />
-                        </StackPanel>
-                        <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" FontSize="12.5" TextWrapping="Wrap" />
-                      </StackPanel>
-                      <StackPanel Grid.Column="2">
-                        <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" />
-                        <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
-                      </StackPanel>
-                    </Grid>
-                  </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
-
-              <TextBlock Style="{StaticResource EyebrowText}" Text="NO FIXED PLACE" Visibility="{x:Bind ShownIfAny(ViewModel.Unplaced), Mode=OneWay}" />
-              <ListView ItemsSource="{x:Bind ViewModel.Unplaced, Mode=OneWay}" SelectionMode="None" Margin="-12,0">
-                <ListView.ItemTemplate>
-                  <DataTemplate x:DataType="local:ObjectiveItem">
-                    <Grid Padding="6,6" Margin="-6,0" ColumnSpacing="10" controls:Linked.Quest="{x:Bind QuestId}">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                      </Grid.ColumnDefinitions>
-                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,2,0,0" />
-                      <StackPanel Grid.Column="1" Spacing="2">
-                        <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                          <controls:Picture TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="16" Opacity="0.6" />
-                          <TextBlock Text="{x:Bind Quest}" Style="{StaticResource NoteText}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="260" />
-                        </StackPanel>
-                        <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" FontSize="12.5" TextWrapping="Wrap" />
-                      </StackPanel>
-                    </Grid>
-                  </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
+              <TextBlock Style="{StaticResource EyebrowText}" Text="THIS RAID" Margin="0,18,0,6" />
+              <Border Padding="14,12" Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
+                <StackPanel Spacing="3">
+                  <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
+                  <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
+                             Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
+                             ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
+                  <TextBlock Text="{x:Bind ViewModel.RaidLine, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}" Style="{StaticResource NoteText}" />
+                  <TextBlock Text="{x:Bind ViewModel.RaidFixNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidFixNote), Mode=OneWay}" Style="{StaticResource NoteText}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidProgress, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidBring), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidBring, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
+                </StackPanel>
+              </Border>
 
               <TextBlock Style="{StaticResource EyebrowText}" Text="EXTRACTS AND TRANSITS" />
-              <ListView ItemsSource="{x:Bind ViewModel.Extracts, Mode=OneWay}" SelectionMode="None" Margin="-12,0">
-                <ListView.ItemTemplate>
+              <ItemsControl ItemsSource="{x:Bind ViewModel.Extracts, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:ExtractItem">
                     <Grid Padding="6,5" Margin="-6,0" ColumnSpacing="10" controls:Linked.Marker="{x:Bind Id}">
                       <Grid.ColumnDefinitions>
@@ -345,9 +331,28 @@
                       </StackPanel>
                     </Grid>
                   </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </StackPanel>
+
+            <!-- Quests that move on in any raid, in Plan and in a raid alike. -->
+            <TextBlock Style="{StaticResource EyebrowText}" Text="ANY MAP" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
+            <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:QuestLine">
+                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
         </ScrollViewer>
       </Grid>

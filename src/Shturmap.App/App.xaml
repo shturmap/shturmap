@@ -43,6 +43,8 @@
       <SolidColorBrush x:Key="CellBrush" Color="#1A1B18" />
       <!-- Linked highlighting: everything that belongs to what the pointer is on. -->
       <SolidColorBrush x:Key="LinkBrush" Color="#2EC9AD62" />
+      <!-- The quest kept highlighted by a click: quieter than the pointer's, so the pointer still reads on top. -->
+      <SolidColorBrush x:Key="SelectBrush" Color="#1CC9AD62" />
 
       <FontFamily x:Key="UiFont">Bahnschrift</FontFamily>
       <FontFamily x:Key="DataFont">Bahnschrift</FontFamily>

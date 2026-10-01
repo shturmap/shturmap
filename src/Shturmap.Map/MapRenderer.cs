@@ -221,8 +221,14 @@ public static class MapRenderer
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
-        if (scene.Pulse && scene.Focus.Count > 0 && IsFocused(scene, marker))
+        if (scene.Pulsing && IsFocused(scene, marker))
             DrawPulse(canvas, scene, at, r, color, ui);
+        // The kept quest keeps a steady ring once it stops pulsing, so it is still found at a glance.
+        if (marker.Objective is not null && IsSelected(scene, marker))
+        {
+            using var halo = new SKPaint { Color = color.WithAlpha(190), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
+            canvas.DrawCircle(at, r + 4 * ui, halo);
+        }
 
         switch (marker.Kind)
         {

@@ -64,6 +64,22 @@ public static class Linked
 
     public static Focus? Current { get; private set; }
 
+    /// <summary>The quest kept highlighted by a click: its rows keep a quieter tint than the pointer's.</summary>
+    public static string? Selected
+    {
+        get => _selected;
+        set
+        {
+            if (value == _selected)
+                return;
+            _selected = value;
+            foreach (var element in Live)
+                Paint(element);
+        }
+    }
+
+    private static string? _selected;
+
     /// <summary>Raised when the focus changes, from rows or from <see cref="Set"/> (map markers).</summary>
     public static event Action? FocusChanged;
 
@@ -185,7 +201,9 @@ public static class Linked
     private static void Paint(FrameworkElement element) =>
         SetBackground(element, Current is { } focus && IsLinked(element, focus)
             ? (Brush)Application.Current.Resources["LinkBrush"]
-            : Clear);
+            : _selected is not null && QuestsOf(element).Contains(_selected)
+                ? (Brush)Application.Current.Resources["SelectBrush"]
+                : Clear);
 
     private static Brush? Background(FrameworkElement element) => element switch
     {

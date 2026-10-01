@@ -64,7 +64,13 @@ public sealed partial class MainWindow : Window
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
-        Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
+        Linked.Clicked += (element, key) =>
+        {
+            // A quest's row in the rail also keeps the quest highlighted, here and on the map, until it is clicked again.
+            if (CardStack.For(element.XamlRoot) == _cards && !_cards.Contains(element) && key is CardKey.Quest quest)
+                Select(quest.Id, "list");
+            CardStack.For(element.XamlRoot)?.Click(element, key);
+        };
         Linked.FocusChanged += OnFocusChanged;
         // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
         // handle their own clicks.
@@ -145,9 +151,9 @@ public sealed partial class MainWindow : Window
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
-        new("ESC", "Close the cards, clear the selected objective"),
+        new("ESC", "Close the cards; again to stop highlighting the quest"),
         new("F1 / ?", "This help"),
-        new("MOUSE", "Drag to move the map, double-click to zoom in, click an objective or a marker to draw a line to it"),
+        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest, in the list or on the map, to keep it highlighted"),
     ];
 
     public Brush OkBrush(bool ok) => Resource(ok ? "GreenBrush" : "AmberBrush");
@@ -183,6 +189,12 @@ public sealed partial class MainWindow : Window
         vm.DataText = s.DataHealth.Text;
         vm.DataOk = s.DataHealth.Ok;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
+        // A kept quest that is done (or failed) has nothing left to find.
+        if (_selectedQuest is not null && s.Quests.GetValueOrDefault(_selectedQuest)?.State != QuestState.Active)
+        {
+            _selectedQuest = null;
+            ShowSelection();
+        }
         UpdateClockTexts();
         UpdatePicker(s);
         UpdatePlan(s);
@@ -299,23 +311,49 @@ public sealed partial class MainWindow : Window
         };
     }
 
+    // The raid card is the plan card for this map, live: the same header and COMPLETE / PROGRESS / BRING sections,
+    // with each quest's objectives here under it, nearest first, and the quests ordered by their nearest objective.
     private void UpdateRaidLists(SessionSnapshot s)
     {
         var vm = ViewModel;
         var age = s.Fix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
         var fresh = age < FreshFix;
         _fixWasFresh = age is null ? null : fresh;
-        vm.ObjectivesHeader = age switch
-        {
-            null => $"OBJECTIVES ON {s.Map?.Name.ToUpperInvariant()}",
-            _ when fresh => "OBJECTIVES HERE · NEAREST FIRST",
-            { TotalMinutes: < 60 } a => $"FROM YOUR FIX {Math.Max(1, (int)a.TotalMinutes)} MIN AGO · NEAREST FIRST",
-            _ => "FROM YOUR LAST FIX · NEAREST FIRST",
-        };
         string Direction(RelativeDirection? relative, double? mapBearing) =>
             fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
-        vm.Objectives = s.Objectives.Where(o => o.HasPlace).Select(o => ToItem(o, Direction(o.Direction, o.MapBearing), s.Map?.Name)).ToList();
-        vm.Unplaced = s.Objectives.Where(o => !o.HasPlace).Select(o => ToItem(o, "", s.Map?.Name)).ToList();
+
+        vm.RaidTitle = Caps.Of(s.Map?.Name);
+        vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
+        vm.RaidFixNote = age switch
+        {
+            null => $"No position yet: press {vm.HelpKeys} for distances",
+            _ when fresh => "",
+            { TotalMinutes: < 60 } a => $"Distances from your screenshot {Math.Max(1, (int)a.TotalMinutes)} min ago",
+            _ => "Distances from your last screenshot",
+        };
+        var complete = s.MapPlan?.Finish.Select(q => q.QuestId).ToHashSet() ?? [];
+        var kinds = (s.MapPlan?.Finish ?? []).Concat(s.MapPlan?.Progress ?? []).ToDictionary(q => q.QuestId, q => q.Kind);
+        var quests = s.Objectives
+            .GroupBy(o => o.QuestId)
+            .Select(g =>
+            {
+                var first = g.First();
+                var objectives = g.OrderBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
+                    .Select(o => ToItem(o, o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.Map?.Name))
+                    .ToList();
+                return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
+                    kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
+                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key)));
+            })
+            .OrderBy(q => q.Nearest)
+            .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
+            .Select(q => q.Quest)
+            .ToList();
+        vm.RaidComplete = quests.Where(q => q.Complete).ToList();
+        vm.RaidProgress = quests.Where(q => !q.Complete).ToList();
+        vm.RaidBring = (s.MapPlan?.Requirements ?? []).Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring,
+            r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds,
+            s.Data is { } data ? ItemCards.Best(data, s.Sources, r.ItemId)?.Text ?? "" : "")).ToList();
         vm.Extracts = s.Extracts.Select(e => new ExtractItem(
             e.Id,
             e.Name,
@@ -340,6 +378,14 @@ public sealed partial class MainWindow : Window
         vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
             && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
     }
+
+    // Where an objective without a place on the map is done: kills and finds anywhere on it, hand-overs at the trader.
+    private static string Unplaced(ObjectiveKind kind) => kind switch
+    {
+        ObjectiveKind.Trader => "after the raid",
+        ObjectiveKind.Survive => "",
+        _ => "anywhere",
+    };
 
     private static ObjectiveItem ToItem(ObjectiveView o, string direction, string? mapName)
     {
@@ -605,14 +651,22 @@ public sealed partial class MainWindow : Window
 
     private Windows.Foundation.Point _markerAt;
 
+    // Clicking a quest keeps it highlighted (its rows tinted, its markers emphasised and ringed, a line to the nearest
+    // one) until it is clicked again, another quest is clicked, or Esc.
     private void Select(string questId, string how)
     {
         _selectedQuest = _selectedQuest == questId ? null : questId;
         Study.Ui("select", ("quest", questId), ("on", _selectedQuest is not null), ("how", how));
+        ShowSelection();
+    }
+
+    private void ShowSelection()
+    {
+        Linked.Selected = _selectedQuest;
         if (Map.Scene is { } scene)
         {
             scene.Selected = _selectedQuest;
-            Map.Refresh();
+            Map.Redraw(); // starts the pulse and the dimming
         }
     }
 
@@ -718,6 +772,7 @@ public sealed partial class MainWindow : Window
         // first thing it needs (nested), and the quest pinned in a window.
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
+            Select(id, "snapshot");
             Linked.Set(Focus.Quest(id));
             _cards.Open(new CardKey.Quest(id), new Windows.Foundation.Rect(372, 150, 8, 8), 0);
             var item = view.Needs.FirstOrDefault()?.ItemId ?? view.Objectives.FirstOrDefault(o => o.ItemId is not null)?.ItemId;
@@ -832,12 +887,11 @@ public sealed partial class MainWindow : Window
 
     private void ClearSelection()
     {
+        if (_selectedQuest is null)
+            return;
+        Study.Ui("select", ("quest", _selectedQuest), ("on", false), ("how", "esc"));
         _selectedQuest = null;
-        if (Map.Scene is { } scene)
-        {
-            scene.Selected = null;
-            Map.Refresh();
-        }
+        ShowSelection();
     }
 
     // ---- UI events ----
@@ -866,12 +920,6 @@ public sealed partial class MainWindow : Window
             Study.Ui("map.pick", ("to", map), ("how", "plan"), ("planRank", ViewModel.Plans.ToList().FindIndex(p => p.NormalizedName == map) + 1));
             await _session.SelectMapAsync(map);
         }
-    }
-
-    private void OnObjectiveClick(object sender, ItemClickEventArgs e)
-    {
-        if (e.ClickedItem is ObjectiveItem item)
-            Select(item.QuestId, "list");
     }
 
     private void OnNoticeClosed(object sender, RoutedEventArgs e)

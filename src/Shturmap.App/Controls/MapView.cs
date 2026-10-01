@@ -108,10 +108,10 @@ public sealed partial class MapView : Grid
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _animation;
     private DateTime _lastStep;
 
-    private static float DimTarget(MapScene scene) => scene.Focus.Count > 0 ? 1f : 0f;
+    private static float DimTarget(MapScene scene) => scene.HasHighlight ? 1f : 0f;
 
     private static bool Animating(MapScene scene) =>
-        scene.Focus.Count > 0 || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
+        scene.Pulsing || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
 
     private void Step()
     {

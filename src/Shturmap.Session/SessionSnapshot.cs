@@ -96,6 +96,9 @@ public sealed record SessionSnapshot
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];
 
+    /// <summary>The plan for the map on screen (ranked or not): the raid view is this plan, live.</summary>
+    public MapPlanView? MapPlan { get; init; }
+
     public RaidInfo? RaidInfo { get; init; }
 
     public LastRaidView? LastRaid { get; init; }
