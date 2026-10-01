@@ -23,4 +23,7 @@ public sealed class AppPaths(string root, string? cacheRoot = null)
     public string GameArtCache => Path.Combine(CacheRoot, "game-art");
 
     public string Logs => Path.Combine(Root, "logs");
+
+    /// <summary>The study log: game events and what the player did in Spotter, one JSON line each.</summary>
+    public string Study => Path.Combine(Root, "study");
 }

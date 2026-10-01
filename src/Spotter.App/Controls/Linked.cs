@@ -125,9 +125,12 @@ public static class Linked
                 yield return q;
     }
 
+    private static DateTime _enteredAt;
+
     private static void Enter(FrameworkElement element)
     {
         _source = element;
+        _enteredAt = DateTime.Now;
         var item = GetItem(element);
         var marker = GetMarker(element);
         var quests = QuestsOf(element).ToHashSet();
@@ -143,6 +146,13 @@ public static class Linked
         Left?.Invoke(element);
         if (_source != element)
             return;
+        // Resting on something is the closest the study log gets to "looked at it"; passing over it is not.
+        var dwell = DateTime.Now - _enteredAt;
+        if (dwell >= TimeSpan.FromMilliseconds(400) && Current is { } focus)
+        {
+            Study.Ui("hover", ("quests", focus.Quests.ToList()), ("item", focus.Item), ("marker", focus.Marker), ("s", dwell),
+                ("where", CardStack.For(element.XamlRoot) is { } stack ? (stack.Contains(element) ? "card" : stack.Where == "pinned" ? "pinned" : "list") : "list"));
+        }
         _source = null;
         Apply(null);
     }

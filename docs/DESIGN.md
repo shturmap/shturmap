@@ -13,9 +13,10 @@ Spotter answers two questions for an Escape from Tarkov player, on a second moni
 That is the whole product. A feature belongs in Spotter only if it helps one of these two questions and works
 without the player having to click during a raid. When in doubt, leave it out.
 
-**Not goals** (declined on purpose; don't add them): item prices or a flea-market view, hideout tracking, loot
-or container maps beyond what quests need, item scanning by hotkey, ammo charts, squad sharing, achievements,
-overlays on the game window, statistics dashboards, a settings maze.
+**Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
+part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
+item scanning by hotkey, ammo charts, squad sharing, achievements, overlays on the game window, statistics
+dashboards, a settings maze.
 
 ## 2. Ground rules (game terms of service)
 
@@ -88,27 +89,39 @@ residual risk. Do not widen the boundary.
 
 ### Visual language
 
+The game's own UI, pared down: what a Tarkov player already reads at a glance, with nothing added for show.
+No stock Windows look (no Mica, no rounded Fluent controls, no pills).
+
+- **Shape**: square corners everywhere (`ControlCornerRadius` 0), flat near-black panels, 1 px hairlines; the
+  selected/expanded thing is one step lighter with a stronger hairline, like a selected slot in the game.
+- **Type**: Bahnschrift (ships with Windows, DIN-like, close to the game's lettering). Labels and status words are
+  semi-condensed, semibold, uppercase and spaced (`EyebrowText`, `StatusText`); titles semi-condensed semibold
+  (`TitleText`); body text regular; numbers semibold gold (`FigureText`). Styles live in `App.xaml`; cards and
+  flyouts set the font themselves (popups don't get the app's implicit text style).
+- **Pictures**: trader portraits square in a thin frame; item icons in a dark inventory cell.
+
 | meaning | colour |
 | --- | --- |
-| quests and objectives (one accent) | amber `#E49A3C` |
-| extracts, success, healthy inputs | green `#6CC38E` |
-| the player, the trail | sand `#F2D79C` / teal `#74B8B1` |
-| transits | violet `#B598E8` |
-| bosses, danger | red `#EC7D69` |
-| secondary text | grey `#8E9A93` on ground `#0E1413` |
+| quests, objectives, distances, "on" (one accent) | muted gold `#C9AD62` |
+| extracts, success, healthy inputs | green `#8DA65E` |
+| the player, the trail | sand `#E9E2C8` / teal `#6F9A94` |
+| transits | violet `#9C8CC4` |
+| bosses, danger | red `#B8604A` |
+| text | beige-white `#D9D5C4`, secondary `#8A8778` |
+| ground, rail, panel, raised | `#0B0C0B`, `#101110`, `#151614`, `#1E1F1B`; hairlines `#2A2B27` / `#45463F` |
 
 Quest **types are shown by glyph, never by colour**; colour stays free for state (open, done, selected).
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
-portraits** are secondary: small and round, at the right end of Plan rows, before the quest line of Raid rows and
-in the card header; never in place of the glyph, never on the map. **Item icons** sit in a dark inventory cell
-next to what to bring. **Linked highlight**: amber at 20 % behind rows; map markers not in focus step back to
-28 % opacity; markers on another floor than the one shown are drawn at half strength.
-Typography: the system UI font for text, Cascadia Mono / Consolas for numbers (distances, times, chances).
+portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
+header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind rows; map markers
+not in focus step back to 28 % opacity; markers on another floor than the one shown are drawn at half strength.
+Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Screen anatomy
 
-- **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix; on the right the inputs (logs,
-  screenshots, data) as chips that turn amber when something needs attention, and the help button.
+- **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
+  (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
+  the help button.
 - **Rail** (left, 380 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
@@ -130,8 +143,11 @@ glyph, where it is, the item it is about and, in a raid on its map, how far and 
 ("69 m · ahead-left"); BRING (keys and items, with icons and maps); UNLOCKS (the quests it opens); a link to the
 wiki page. Nothing else: no rewards, no guides.
 
-The **item card** (a key or an item): its icon and name, and which of your active quests need it and how ("Key ·
-Customs", "Bring ×3, to plant · Streets of Tarkov", "Find in raid ×2").
+The **item card** (a key or an item): its icon and name; GET IT, easiest first: traders that sell it (loyalty level,
+price, quest unlock), barters, hideout crafts, the flea market (from which level), and where it lies loose ("Loose
+on Customs · 3 spots"); then which of your active quests need it and how ("Key · Customs", "Bring ×3, to plant ·
+Streets of Tarkov"). While the pointer is on an item anywhere, its loose spots on the shown map are drawn as small
+open squares. In Plan, each BRING row has one line with the easiest source.
 
 Cards behave like the nested tooltips in Crusader Kings III:
 
@@ -268,13 +284,30 @@ reopen a quest the log saw completed). `spotter-cli quests` lists active quests 
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
 screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floors) are drawn in the base layer.
 
+**Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
+`barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
+from the maps payload's `lootLoose`.
+
+**Study log.** `%LOCALAPPDATA%\Spotter\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
+`ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI
+use can be lined up with raids and quest completions later. Game: app start/exit, data loaded (with the top
+suggestion), mode, raid loading (with the suggestion rank of the map actually played and the bring list), raid
+start/end, quest started/completed/failed (live only), each fix, each notice. UI: window focus/blur and pointer
+in/out (with durations: the closest signals to attention), map pan (one per drag), zoom (one per wheel burst,
+button or key), fit, follow, floor picks, map picks (picker or plan card), selections, hovers resting ≥ 0.4 s
+(where: list, card, pinned, map), card open/hold/close (level, seconds open), pins and pinned-window closes,
+help open/close, keys, rail scrolls, notice dismissals. Only Spotter's own windows are observed; nothing is
+sent anywhere.
+
 ## 9. Status
 
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
   occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
-  highlighting, quest cards (hover, held, pinned), trader portraits and item icons, floor picker.
+  highlighting, quest cards (hover, held, nested, pinned with live distances), item cards with sources and loose
+  spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
+- Next: read a study log from a real session and correlate it with quest completions (`spotter-cli` command).
 - On hold (owner, 2026-10-01): product name (proposed: Shturman). Don't rename or raise it.
 - Open: tile-only maps (The Lab, Labyrinth, Icebreaker); manual quest editing; objective progress;
   published size 237 MB (budget 80–120 MB, needs trimming).

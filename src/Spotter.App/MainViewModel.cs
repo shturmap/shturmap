@@ -23,7 +23,11 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
 /// <param name="QuestIds">The quests it is for, for linked highlighting.</param>
-public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds);
+/// <param name="Source">The easiest way to get it ("Prapor LL1 · 18,936 ₽"), or empty.</param>
+public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds, string Source)
+{
+    public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+}
 
 /// <summary>One floor in the map's floor picker, top floor first.</summary>
 /// <param name="PlayerHere">The floor of the last position fix.</param>
@@ -38,6 +42,7 @@ public sealed record FloorChoice(int Index, string Name, bool Shown, bool Player
 
 /// <summary>One suggested map in Plan. Only the expanded card shows its quests and requirements.</summary>
 /// <param name="Summary">"Complete 8 quests · progress 2 more".</param>
+/// <param name="Rank">Its place in the suggestions: "1", "2", ….</param>
 public sealed record PlanCard(
     string NormalizedName,
     string MapName,
@@ -46,8 +51,14 @@ public sealed record PlanCard(
     bool Expanded,
     IReadOnlyList<QuestLine> Finish,
     IReadOnlyList<QuestLine> Progress,
-    IReadOnlyList<RequirementLine> Requirements)
+    IReadOnlyList<RequirementLine> Requirements,
+    string Rank = "")
 {
+    public string MapTitle => Caps.Of(MapName);
+
+    public Microsoft.UI.Xaml.Media.Brush CardBorder =>
+        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "LineStrongBrush" : "LineBrush"];
+
     public Visibility ExpandedVisibility => Expanded ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility FinishVisibility => Expanded && Finish.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -57,7 +68,7 @@ public sealed record PlanCard(
     public Visibility RequirementsVisibility => Expanded && Requirements.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Microsoft.UI.Xaml.Media.Brush CardBackground =>
-        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "CardBrush" : "RailBrush"];
+        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "RaisedBrush" : "RailBrush"];
 }
 
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);

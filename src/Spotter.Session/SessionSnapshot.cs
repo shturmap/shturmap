@@ -66,6 +66,9 @@ public sealed record SessionSnapshot
 
     public GameData? Data { get; init; }
 
+    /// <summary>Where items come from; arrives a little after <see cref="Data"/>.</summary>
+    public ItemSources? Sources { get; init; }
+
     public IReadOnlyDictionary<string, QuestStatus> Quests { get; init; } = new Dictionary<string, QuestStatus>();
 
     public MapContent? Content { get; init; }

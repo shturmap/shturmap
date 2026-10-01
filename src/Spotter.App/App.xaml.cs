@@ -22,6 +22,8 @@ public partial class App : Application
         _session = CreateSession(Environment.GetCommandLineArgs());
         _session.Notice += notice => AppLog.Info("Notice: " + notice.Text);
         var cli = Environment.GetCommandLineArgs();
+        // Developer runs stay out of the player's study log.
+        _session.Study.Enabled = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
         var showQuest = Array.IndexOf(cli, "--show-quest");
         _window = new MainWindow(_session)
         {

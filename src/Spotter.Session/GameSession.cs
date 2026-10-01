@@ -40,6 +40,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     private GameMode _mode = GameMode.Pve;
     private GameData? _data;
+    private ItemSources? _sources;
     private string? _dataError;
     private MapIdentity? _map;
     private PlayerFix? _fix;
@@ -60,6 +61,21 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     /// <summary>Trader portraits and item icons, fetched when first shown.</summary>
     public GameArt? Art { get; private set; }
 
+    /// <summary>The study log: game events here, the player's use of Spotter from the UI.</summary>
+    public StudyLog Study { get; } = new(paths.Study);
+
+    // Every study line says where in the game the player was.
+    private IEnumerable<(string, object?)> StudyContext()
+    {
+        var s = Snapshot;
+        yield return ("phase", s.Raid.Phase);
+        yield return ("map", s.Map?.NormalizedName);
+        if (s.Raid.RaidStartedAt is { } started)
+            yield return ("raidMin", (DateTime.Now - started).TotalMinutes);
+        if (s.Fix is { } fix)
+            yield return ("fixAgeS", (DateTime.Now - fix.At).TotalSeconds);
+    }
+
     /// <summary>Raised after every change, on a background thread.</summary>
     public event Action<SessionSnapshot>? Changed;
 
@@ -72,6 +88,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         try
         {
             var env = new WindowsGameEnvironment();
+            Study.Context = StudyContext;
+            Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()));
             _store = new ProgressStore(paths.Database);
             _locations = locations ?? new InstallLocator(env).Locate(_store.GetSetting("installFolder"));
             AppLog.Info($"Game: {_locations.Install?.Kind} {_locations.Install?.Root}; logs {_locations.LogsFolder ?? "not found"}; screenshots {_locations.ScreenshotsFolder}");
@@ -158,6 +176,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 RecomputeQuests();
                 ResolveMap();
                 Publish();
+                Study.Game("data.loaded", ("mode", mode), ("activeQuests", _quests.Values.Count(q => q.State == QuestState.Active)),
+                    ("planTop", _plan.FirstOrDefault()?.NormalizedName));
+                _ = Task.Run(() => LoadSourcesAsync(mode, data.Language));
             }
             finally
             {
@@ -179,6 +200,31 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
     }
 
+    // Where items come from: only the item cards need it, so it loads after everything else.
+    private async Task LoadSourcesAsync(GameMode mode, string language)
+    {
+        try
+        {
+            var sources = await _loader!.LoadSourcesAsync(mode, language, _stop.Token);
+            await _gate.WaitAsync();
+            try
+            {
+                if (mode != _mode)
+                    return;
+                _sources = sources;
+                Publish();
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            AppLog.Error("Item sources could not be loaded", e);
+        }
+    }
+
     private void SwitchMode(GameMode mode)
     {
         if (mode == GameMode.Unknown || mode == _mode)
@@ -186,6 +232,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         _mode = mode;
         _store?.SetSetting("mode", mode.ToString());
         _data = null;
+        _sources = null;
         RecomputeQuests();
         _ = Task.Run(() => LoadDataAsync(mode));
     }
@@ -259,13 +306,19 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             if (_store?.Add([FromLog(mode, quest)]) > 0)
             {
                 RecomputeQuests();
-                if (!item.IsReplay && _data?.Tasks.GetValueOrDefault(quest.QuestId) is { } task)
-                    Say($"{task.Name}: {quest.Status switch { QuestLogStatus.Started => "started", QuestLogStatus.Completed => "completed", _ => "failed" }}");
+                if (!item.IsReplay)
+                {
+                    var name = _data?.Tasks.GetValueOrDefault(quest.QuestId)?.Name;
+                    Study.Game("quest", ("id", quest.QuestId), ("name", name), ("state", quest.Status));
+                    if (name is not null)
+                        Say($"{name}: {quest.Status switch { QuestLogStatus.Started => "started", QuestLogStatus.Completed => "completed", _ => "failed" }}");
+                }
             }
             return;
         }
 
-        switch (_tracker.Apply(item.Event))
+        var transition = _tracker.Apply(item.Event);
+        switch (transition)
         {
             case ModeChanged changed:
                 SwitchMode(changed.State.Mode);
@@ -294,6 +347,34 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 _lastRaidEnded = ended.At;
                 if (ended.Previous.RaidStartedAt is not null)
                     _lastRaidState = (ended.Previous, ended.At);
+                break;
+        }
+        if (!item.IsReplay)
+            StudyRaid(transition);
+    }
+
+    // Raids in the study log, with what the planner had suggested, so choices can be compared with suggestions.
+    private void StudyRaid(RaidTransition? transition)
+    {
+        switch (transition)
+        {
+            case ModeChanged changed:
+                Study.Game("mode", ("mode", changed.State.Mode));
+                break;
+            case RaidLoading:
+                var rank = _plan.ToList().FindIndex(p => p.NormalizedName == _map?.NormalizedName);
+                var bring = _data is null || _map is null ? null
+                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _map.NormalizedName)?.Requirements;
+                Study.Game("raid.loading", ("raidMap", _map?.NormalizedName), ("planRank", rank < 0 ? null : rank + 1), ("planTop", _plan.FirstOrDefault()?.NormalizedName),
+                    ("bring", bring?.Select(r => r.Text).ToList() ?? []));
+                break;
+            case RaidStarted started:
+                Study.Game("raid.start", ("raidMap", _map?.NormalizedName), ("side", started.State.Side));
+                break;
+            case RaidEnded ended:
+                Study.Game("raid.end", ("side", ended.Previous.Side),
+                    ("minutes", ended.Previous.RaidStartedAt is { } at ? (ended.At - at).TotalMinutes : null),
+                    ("lastMap", _lastRaidMap?.NormalizedName));
                 break;
         }
     }
@@ -343,6 +424,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             _lastClock = seen.Info.RaidClockHours;
             _fixMapId = map.Id;
             Publish();
+            var p = _fix.Position;
+            Study.Game("fix", ("x", p.X), ("y", p.Y), ("z", p.Z), ("floor", Snapshot.Floor?.Name), ("fixMap", map.NormalizedName));
         }
         finally
         {
@@ -405,7 +488,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     // ---- snapshot ----
 
-    private void Say(string message, double seconds = 6) => Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds)));
+    private void Say(string message, double seconds = 6)
+    {
+        Study.Game("notice", ("text", message));
+        Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds)));
+    }
 
     private void Publish()
     {
@@ -465,6 +552,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             Trail = fix is not null ? _trail.ToList() : [],
             Floor = definition is not null && fix is not null ? FloorResolver.LayerFor(definition, fix.Position) : null,
             Data = _data,
+            Sources = _sources,
             // Repeatable (daily/weekly) tasks have ids no catalog lists; they are kept in the store but not shown.
             Quests = _data is null ? _quests : _quests.Where(q => _data.Tasks.ContainsKey(q.Key)).ToDictionary(),
             Content = content,
@@ -512,6 +600,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             await _tailer.DisposeAsync();
         Artwork?.Dispose();
         _store?.Dispose();
+        Study.Game("app.exit");
+        Study.Dispose();
         _stop.Dispose();
     }
 }

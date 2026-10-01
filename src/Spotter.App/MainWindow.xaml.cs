@@ -44,11 +44,21 @@ public sealed partial class MainWindow : Window
     {
         _session = session;
         InitializeComponent();
-        SystemBackdrop = new MicaBackdrop();
+        // A flat dark title bar like the rest; no translucent backdrop.
+        AppWindow.TitleBar.BackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
+        AppWindow.TitleBar.InactiveBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
+        AppWindow.TitleBar.ForegroundColor = (Windows.UI.Color)Application.Current.Resources["InkColor"];
+        AppWindow.TitleBar.InactiveForegroundColor = (Windows.UI.Color)Application.Current.Resources["MutedColor"];
+        AppWindow.TitleBar.ButtonBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
+        AppWindow.TitleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
+        AppWindow.TitleBar.ButtonForegroundColor = (Windows.UI.Color)Application.Current.Resources["InkColor"];
+        AppWindow.TitleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RaisedColor"];
         PlaceOnSecondMonitor();
 
         Picture.Art = () => _session.Art;
+        Study.Log = session.Study;
         var root = (FrameworkElement)Content;
+        StudyAttention(root);
         _cards = new CardStack(root, CreateCard, () => new Windows.Foundation.Rect(0, 0, root.ActualWidth, root.ActualHeight), besideRoot: false);
         HookPins(_cards, this);
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
@@ -110,6 +120,18 @@ public sealed partial class MainWindow : Window
     // ---- x:Bind helpers ----
 
     public Brush RaidBrush(bool inRaid) => Resource(inRaid ? "AmberBrush" : "InkBrush");
+
+    /// <summary>The keys in the help panel.</summary>
+    public IReadOnlyList<KeyHelp> Keys { get; } =
+    [
+        new("F", "Follow my position"),
+        new("+ / −", "Zoom in / out (or the mouse wheel)"),
+        new("0", "Show the whole map"),
+        new("PGUP / PGDN", "Show the floor above / below"),
+        new("ESC", "Close the cards, clear the selected objective"),
+        new("F1 / ?", "This help"),
+        new("MOUSE", "Drag to move the map, double-click to zoom in, click an objective or a marker to draw a line to it"),
+    ];
 
     public Brush OkBrush(bool ok) => Resource(ok ? "GreenBrush" : "AmberBrush");
 
@@ -237,7 +259,9 @@ public sealed partial class MainWindow : Window
             i == openIndex,
             p.Finish.Select(Line).ToList(),
             p.Progress.Select(Line).ToList(),
-            p.Requirements.Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds)).ToList()
+            p.Requirements.Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds,
+                s.Data is { } data ? ItemCards.Best(data, s.Sources, r.ItemId)?.Text ?? "" : "")).ToList(),
+            (i + 1).ToString(CultureInfo.InvariantCulture)
         )).ToList();
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
@@ -269,8 +293,8 @@ public sealed partial class MainWindow : Window
         };
         string Direction(RelativeDirection? relative, double? mapBearing) =>
             fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
-        vm.Objectives = s.Objectives.Where(o => o.HasPlace).Select(o => ToItem(o, Direction(o.Direction, o.MapBearing))).ToList();
-        vm.Unplaced = s.Objectives.Where(o => !o.HasPlace).Select(o => ToItem(o, "")).ToList();
+        vm.Objectives = s.Objectives.Where(o => o.HasPlace).Select(o => ToItem(o, Direction(o.Direction, o.MapBearing), s.Map?.Name)).ToList();
+        vm.Unplaced = s.Objectives.Where(o => !o.HasPlace).Select(o => ToItem(o, "", s.Map?.Name)).ToList();
         vm.Extracts = s.Extracts.Select(e => new ExtractItem(
             e.Id,
             e.Name,
@@ -291,11 +315,14 @@ public sealed partial class MainWindow : Window
         vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";
     }
 
-    private static ObjectiveItem ToItem(ObjectiveView o, string direction)
+    private static ObjectiveItem ToItem(ObjectiveView o, string direction, string? mapName)
     {
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
-        return new ObjectiveItem(o.QuestId, o.Text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
+        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov.
+        var suffix = " on " + mapName;
+        var text = mapName is not null && o.Text.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? o.Text[..^suffix.Length] : o.Text;
+        return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
     }
 
@@ -338,6 +365,47 @@ public sealed partial class MainWindow : Window
         Map.Refresh();
     }
 
+    // ---- study log: attention ----
+
+    private DateTime? _pointerIn;
+    private DateTime? _focusedAt;
+
+    // Spotter can't see where the player looks; window focus and the pointer resting over it are the closest
+    // signals. Both are logged as they change, with how long they lasted.
+    private void StudyAttention(FrameworkElement root)
+    {
+        Activated += (_, e) =>
+        {
+            var focused = e.WindowActivationState != WindowActivationState.Deactivated;
+            if (focused && _focusedAt is null)
+            {
+                _focusedAt = DateTime.Now;
+                Study.Ui("window.focus");
+            }
+            else if (!focused && _focusedAt is { } since)
+            {
+                _focusedAt = null;
+                Study.Ui("window.blur", ("s", DateTime.Now - since));
+            }
+        };
+        // Entered/exited also arrive from child elements; only crossing the window's edge counts.
+        root.PointerEntered += (_, _) =>
+        {
+            if (_pointerIn is not null)
+                return;
+            _pointerIn = DateTime.Now;
+            Study.Ui("pointer.in");
+        };
+        root.PointerExited += (_, e) =>
+        {
+            var p = e.GetCurrentPoint(root).Position;
+            if (_pointerIn is not { } since || (p.X > 0 && p.Y > 0 && p.X < root.ActualWidth - 1 && p.Y < root.ActualHeight - 1))
+                return;
+            _pointerIn = null;
+            Study.Ui("pointer.out", ("s", DateTime.Now - since));
+        };
+    }
+
     // ---- floors ----
 
     /// <summary>
@@ -369,19 +437,20 @@ public sealed partial class MainWindow : Window
         return index >= 0 ? index : _floors.ToList().IndexOf(null);
     }
 
-    private void PickFloor(int index)
+    private void PickFloor(int index, string how)
     {
         if (_floors.Count == 0 || _snapshot is not { } s)
             return;
         _floorPick = Math.Clamp(index, 0, _floors.Count - 1);
         _floorPickFix = s.Fix?.At;
+        Study.Ui("map.floor", ("floor", _floors[_floorPick.Value]?.Name ?? "Ground"), ("how", how));
         UpdateMap(s);
     }
 
     private void OnFloorClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: int index })
-            PickFloor(index);
+            PickFloor(index, "click");
     }
 
     // ---- quest cards and linked highlighting ----
@@ -392,7 +461,7 @@ public sealed partial class MainWindow : Window
     private FrameworkElement? CreateCard(CardKey key) => key switch
     {
         CardKey.Quest q when BuildCard(q.Id) is { } view => new QuestCard(view),
-        CardKey.Item i when _snapshot is { Data: { } data } s => new ItemCard(ItemCards.Build(data, s.Quests, i.Id)),
+        CardKey.Item i when _snapshot is { Data: { } data } s => new ItemCard(ItemCards.Build(data, s.Sources, s.Quests, i.Id)),
         _ => null,
     };
 
@@ -405,7 +474,7 @@ public sealed partial class MainWindow : Window
                 quest.Show(view);
                 return true;
             case ItemCard item when _snapshot is { Data: { } data } s:
-                item.Show(ItemCards.Build(data, s.Quests, item.View.ItemId));
+                item.Show(ItemCards.Build(data, s.Sources, s.Quests, item.View.ItemId));
                 return true;
             default:
                 return false;
@@ -445,14 +514,25 @@ public sealed partial class MainWindow : Window
         if (Map.Scene is not { } scene)
             return;
         scene.Focus = MapFocus();
+        // Pointing at an item shows where it lies loose on the shown map.
+        scene.Spawns = Linked.Current?.Item is { } item && _snapshot is { Data: { } data, Map: { } map }
+            ? data.SpawnsOf(item).Where(s => data.MapIdsSharing(map.NormalizedName).Contains(s.MapId)).Select(s => s.Position).ToList()
+            : [];
         Map.Redraw();
     }
+
+    private DateTime _markerHoveredAt;
 
     private void OnMarkerHovered(MapMarker? marker, Windows.Foundation.Point at)
     {
         if (_hoveredMarker is { } previous)
+        {
             _cards.Exit(previous);
+            if (DateTime.Now - _markerHoveredAt is { TotalMilliseconds: >= 400 } dwell)
+                Study.Ui("hover", ("marker", previous.Id), ("quest", previous.Group), ("name", previous.Label), ("s", dwell), ("where", "map"));
+        }
         _hoveredMarker = marker;
+        _markerHoveredAt = DateTime.Now;
         switch (marker)
         {
             case null:
@@ -472,12 +552,13 @@ public sealed partial class MainWindow : Window
     private void OnMarkerClicked(MapMarker marker)
     {
         if (marker is { Group: { } quest, Objective: not null })
-            Select(quest);
+            Select(quest, "map");
     }
 
-    private void Select(string questId)
+    private void Select(string questId, string how)
     {
         _selectedQuest = _selectedQuest == questId ? null : questId;
+        Study.Ui("select", ("quest", questId), ("on", _selectedQuest is not null), ("how", how));
         if (Map.Scene is { } scene)
         {
             scene.Selected = _selectedQuest;
@@ -498,8 +579,12 @@ public sealed partial class MainWindow : Window
         }
         var window = new QuestWindow(view, this, at, CreateCard);
         HookPins(window.Stack, window);
+        var pinnedAt = DateTime.Now;
+        Study.Ui("card.pin", ("quest", view.QuestId), ("name", view.Name));
         window.Closed += (_, _) =>
         {
+            Study.Ui("pinned.close", ("quest", view.QuestId), ("name", view.Name), ("openS", DateTime.Now - pinnedAt),
+                ("x", window.AppWindow.Position.X), ("y", window.AppWindow.Position.Y));
             if (_pinned.Remove(window.QuestId))
                 SavePinned();
         };
@@ -609,8 +694,17 @@ public sealed partial class MainWindow : Window
             HelpFlyout.ShowAt(HelpButton);
     }
 
+    private DateTime _helpOpenedAt;
+
+    private void OnHelpOpened(object sender, object e)
+    {
+        _helpOpenedAt = DateTime.Now;
+        Study.Ui("help.open");
+    }
+
     private void OnHelpClosed(object sender, object e)
     {
+        Study.Ui("help.close", ("s", DateTime.Now - _helpOpenedAt));
         if (!SnapshotMode)
             _session.SetSetting("help.seen", "1");
     }
@@ -648,6 +742,7 @@ public sealed partial class MainWindow : Window
             var accelerator = new KeyboardAccelerator { Key = key };
             accelerator.Invoked += (_, e) =>
             {
+                Study.Ui("key", ("key", key.ToString()));
                 action();
                 e.Handled = true;
             };
@@ -659,10 +754,10 @@ public sealed partial class MainWindow : Window
             ViewModel.Following = true;
             OnFollowClick(this, new RoutedEventArgs());
         });
-        Add(Windows.System.VirtualKey.Add, () => Map.ZoomBy(1.5));
-        Add((Windows.System.VirtualKey)187, () => Map.ZoomBy(1.5)); // the +/= key
-        Add(Windows.System.VirtualKey.Subtract, () => Map.ZoomBy(1 / 1.5));
-        Add((Windows.System.VirtualKey)189, () => Map.ZoomBy(1 / 1.5)); // the -/_ key
+        Add(Windows.System.VirtualKey.Add, () => ZoomBy(1.5, "key"));
+        Add((Windows.System.VirtualKey)187, () => ZoomBy(1.5, "key")); // the +/= key
+        Add(Windows.System.VirtualKey.Subtract, () => ZoomBy(1 / 1.5, "key"));
+        Add((Windows.System.VirtualKey)189, () => ZoomBy(1 / 1.5, "key")); // the -/_ key
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.Escape, () =>
@@ -672,8 +767,8 @@ public sealed partial class MainWindow : Window
             else
                 ClearSelection();
         });
-        Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1));
-        Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1));
+        Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
+        Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, ShowHelp);
         root.CharacterReceived += (_, e) =>
         {
@@ -700,32 +795,44 @@ public sealed partial class MainWindow : Window
     private async void OnModeClick(object sender, RoutedEventArgs e)
     {
         if (sender is MenuFlyoutItem { Tag: string tag } && Enum.TryParse<GameMode>(tag, out var mode))
+        {
+            Study.Ui("mode.pick", ("mode", mode));
             await _session.SetModeAsync(mode);
+        }
     }
 
     private async void OnMapPicked(object sender, SelectionChangedEventArgs e)
     {
         if (_updatingPicker || ViewModel.SelectedMap is not { } choice || choice.NormalizedName == _snapshot?.Map?.NormalizedName)
             return;
+        Study.Ui("map.pick", ("to", choice.NormalizedName), ("how", "picker"));
         await _session.SelectMapAsync(choice.NormalizedName);
     }
 
     private async void OnPlanClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string map } && map != _snapshot?.Map?.NormalizedName)
+        {
+            Study.Ui("map.pick", ("to", map), ("how", "plan"), ("planRank", ViewModel.Plans.ToList().FindIndex(p => p.NormalizedName == map) + 1));
             await _session.SelectMapAsync(map);
+        }
     }
 
     private void OnObjectiveClick(object sender, ItemClickEventArgs e)
     {
         if (e.ClickedItem is ObjectiveItem item)
-            Select(item.QuestId);
+            Select(item.QuestId, "list");
     }
 
-    private void OnNoticeClosed(InfoBar sender, object args) => ViewModel.NoticeOpen = false;
+    private void OnNoticeClosed(object sender, RoutedEventArgs e)
+    {
+        Study.Ui("notice.close", ("text", ViewModel.NoticeText));
+        ViewModel.NoticeOpen = false;
+    }
 
     private void OnFollowClick(object sender, RoutedEventArgs e)
     {
+        Study.Ui("map.follow", ("on", ViewModel.Following));
         Map.FollowPlayer = ViewModel.Following;
         if (Map.FollowPlayer)
             Map.CenterOnPlayer();
@@ -733,14 +840,27 @@ public sealed partial class MainWindow : Window
 
     private void OnFitClick(object sender, RoutedEventArgs e)
     {
+        Study.Ui("map.fit");
         ViewModel.Following = false;
         Map.FollowPlayer = false;
         Map.FitMap();
     }
 
-    private void OnZoomInClick(object sender, RoutedEventArgs e) => Map.ZoomBy(1.5);
+    private void OnZoomInClick(object sender, RoutedEventArgs e) => ZoomBy(1.5, "button");
 
-    private void OnZoomOutClick(object sender, RoutedEventArgs e) => Map.ZoomBy(1 / 1.5);
+    private void OnZoomOutClick(object sender, RoutedEventArgs e) => ZoomBy(1 / 1.5, "button");
+
+    private void ZoomBy(double factor, string how)
+    {
+        Map.ZoomBy(factor);
+        Study.Ui("map.zoom", ("factor", factor), ("how", how));
+    }
+
+    private void OnRailScrolled(object? sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (!e.IsIntermediate && sender is ScrollViewer scroll)
+            Study.Ui("rail.scroll", ("y", scroll.VerticalOffset), ("of", scroll.ScrollableHeight));
+    }
 
     // ---- developer aid ----
 

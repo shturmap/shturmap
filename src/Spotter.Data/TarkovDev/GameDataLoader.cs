@@ -75,6 +75,46 @@ public sealed class GameDataLoader(CachedHttp http)
         };
     }
 
+    /// <summary>
+    /// Where items come from: trader offers, barters, crafts and hideout station names. Loaded after the rest, in
+    /// the background: the item payload is large (17 MB) and only the item cards need it. Refreshed once a day.
+    /// </summary>
+    public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, CancellationToken ct = default)
+    {
+        var slug = GameData.Slug(mode);
+        language = string.IsNullOrWhiteSpace(language) ? "en" : language.ToLowerInvariant();
+        var day = TimeSpan.FromHours(24);
+        Task<CachedResponse> Fetch(string endpoint) =>
+            http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct);
+
+        var items = Fetch($"{slug}/items");
+        var barters = Fetch($"{slug}/barters");
+        var crafts = Fetch($"{slug}/crafts");
+        var hideout = Fetch($"{slug}/hideout");
+        var hideoutEn = Fetch($"{slug}/hideout_en");
+        var hideoutLang = language == "en" ? hideoutEn : Fetch($"{slug}/hideout_{language}");
+        await Task.WhenAll(items, barters, crafts, hideout, hideoutEn, hideoutLang);
+
+        ApiItemsEnvelope? itemsData;
+        await using (var stream = File.OpenRead(items.Result.FilePath))
+            itemsData = await JsonSerializer.DeserializeAsync(stream, ApiJsonContext.Default.ApiItemsEnvelope, ct);
+        ApiBartersEnvelope? bartersData;
+        await using (var stream = File.OpenRead(barters.Result.FilePath))
+            bartersData = await JsonSerializer.DeserializeAsync(stream, ApiJsonContext.Default.ApiBartersEnvelope, ct);
+        ApiCraftsEnvelope? craftsData;
+        await using (var stream = File.OpenRead(crafts.Result.FilePath))
+            craftsData = await JsonSerializer.DeserializeAsync(stream, ApiJsonContext.Default.ApiCraftsEnvelope, ct);
+        var stations = Read(hideout.Result, hideoutLang.Result, hideoutEn.Result, null, ApiJsonContext.Default.DictionaryStringApiStation);
+
+        return new ItemSources
+        {
+            Items = itemsData?.Data?.Items ?? [],
+            Barters = (bartersData?.Data ?? []).Where(b => b.OfferedItem is not null).ToLookup(b => b.OfferedItem!.Item),
+            Crafts = (craftsData?.Data ?? []).Where(c => c.ProductItem is not null).ToLookup(c => c.ProductItem!.Item),
+            Stations = stations.Values.ToDictionary(s => s.Id, s => s.Name),
+        };
+    }
+
     /// <summary>The payload's "data" with every translatable string replaced by the chosen language's text.</summary>
     internal static JsonNode? Translated(CachedResponse payload, CachedResponse language, CachedResponse english)
     {

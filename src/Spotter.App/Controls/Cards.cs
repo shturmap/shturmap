@@ -3,9 +3,15 @@ namespace Spotter.App.Controls;
 /// <summary>What a card is about: a quest or an item.</summary>
 public abstract record CardKey
 {
-    public sealed record Quest(string Id) : CardKey;
+    public sealed record Quest(string Id) : CardKey
+    {
+        public override string ToString() => "quest:" + Id;
+    }
 
-    public sealed record Item(string Id) : CardKey;
+    public sealed record Item(string Id) : CardKey
+    {
+        public override string ToString() => "item:" + Id;
+    }
 }
 
 public enum CardMode
@@ -24,6 +30,9 @@ public enum CardMode
 public interface ICard
 {
     CardKey Key { get; }
+
+    /// <summary>The quest's or item's name (for the study log).</summary>
+    string Title { get; }
 
     CardMode Mode { get; }
 

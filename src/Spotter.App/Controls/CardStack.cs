@@ -23,10 +23,13 @@ public sealed class CardStack
 
     private static readonly Dictionary<XamlRoot, CardStack> Stacks = [];
 
-    private sealed record Level(Popup Popup, FrameworkElement Card)
+    private sealed record Level(Popup Popup, FrameworkElement Card, DateTime Opened)
     {
         public ICard Face => (ICard)Card;
     }
+
+    /// <summary>"main" or "pinned": which kind of window this stack is in (for the study log).</summary>
+    public string Where => _besideRoot ? "pinned" : "main";
 
     private readonly List<Level> _levels = [];
     private readonly FrameworkElement _root;
@@ -190,8 +193,11 @@ public sealed class CardStack
                 _over = -1;
             Restart(_settle);
         };
-        _levels.Add(new Level(popup, card));
+        _levels.Add(new Level(popup, card, DateTime.Now));
         CardOpened?.Invoke(card);
+        var face = (ICard)card;
+        Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
+        face.Held += c => Study.Ui("card.hold", ("card", c.Key.ToString()), ("name", c.Title), ("level", level), ("window", Where));
 
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
@@ -223,6 +229,8 @@ public sealed class CardStack
     {
         for (var i = _levels.Count - 1; i >= Math.Max(0, level); i--)
         {
+            Study.Ui("card.close", ("card", _levels[i].Face.Key.ToString()), ("name", _levels[i].Face.Title), ("level", i),
+                ("window", Where), ("openS", DateTime.Now - _levels[i].Opened), ("held", _levels[i].Face.Mode != CardMode.Hover));
             _levels[i].Face.StopHold();
             _levels[i].Popup.IsOpen = false;
             _levels.RemoveAt(i);
@@ -230,6 +238,9 @@ public sealed class CardStack
         if (_over >= _levels.Count)
             _over = -1;
     }
+
+    /// <summary>Whether an element is on one of the open cards.</summary>
+    public bool Contains(FrameworkElement element) => LevelOf(element) >= 0;
 
     // Which card an element is on (its index), or -1 for the window itself.
     private int LevelOf(DependencyObject element)

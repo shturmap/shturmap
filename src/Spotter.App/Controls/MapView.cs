@@ -196,9 +196,12 @@ public sealed partial class MapView : Grid
         if (!_dragging)
         {
             _dragging = true;
+            _dragStarted = DateTime.Now;
+            _dragDistance = 0;
             Hover(null, to);
         }
         _camera.Pan((float)(to.X - from.X) * PixelScale, (float)(to.Y - from.Y) * PixelScale);
+        _dragDistance += Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
         _dragFrom = to;
         if (FollowPlayer)
         {
@@ -211,6 +214,8 @@ public sealed partial class MapView : Grid
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
         var clicked = !_dragging && _dragFrom is not null ? _pressedOn : null;
+        if (_dragging)
+            Study.Ui("map.pan", ("px", _dragDistance), ("s", DateTime.Now - _dragStarted));
         _dragFrom = null;
         _dragging = false;
         ReleasePointerCapture(e.Pointer);
@@ -218,17 +223,40 @@ public sealed partial class MapView : Grid
             MarkerClicked?.Invoke(clicked);
     }
 
+    private DateTime _dragStarted;
+    private double _dragDistance;
+    private double _wheelFactor = 1;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _wheelEnd;
+
     private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(this);
-        _camera.ZoomAt(Pixels(point.Position), Math.Pow(1.0015, point.Properties.MouseWheelDelta));
+        var factor = Math.Pow(1.0015, point.Properties.MouseWheelDelta);
+        _camera.ZoomAt(Pixels(point.Position), factor);
         _panel.Invalidate();
         e.Handled = true;
+
+        // One study event per burst of wheel turns.
+        _wheelFactor *= factor;
+        if (_wheelEnd is null)
+        {
+            _wheelEnd = DispatcherQueue.CreateTimer();
+            _wheelEnd.Interval = TimeSpan.FromMilliseconds(600);
+            _wheelEnd.IsRepeating = false;
+            _wheelEnd.Tick += (_, _) =>
+            {
+                Study.Ui("map.zoom", ("factor", _wheelFactor), ("how", "wheel"), ("zoom", _camera.Zoom));
+                _wheelFactor = 1;
+            };
+        }
+        _wheelEnd.Stop();
+        _wheelEnd.Start();
     }
 
     private void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
         _camera.ZoomAt(Pixels(e.GetPosition(this)), 2);
         _panel.Invalidate();
+        Study.Ui("map.zoom", ("factor", 2.0), ("how", "double-click"), ("zoom", _camera.Zoom));
     }
 }

@@ -2,13 +2,12 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.UI.Xaml.Shapes;
 using Spotter.Data.Images;
 
 namespace Spotter.App.Controls;
 
 /// <summary>
-/// A trader portrait (round) or an item icon (in a dark cell, like the game's inventory). Shows a glyph until the
+/// A trader portrait or an item icon, square in a dark cell like the game's inventory. Shows a glyph until the
 /// picture has been fetched, and keeps the glyph if it can't be (offline, unknown id). Set either TraderId or ItemId.
 /// </summary>
 public sealed partial class Picture : Grid
@@ -81,10 +80,13 @@ public sealed partial class Picture : Grid
         _shown = id;
         Children.Clear();
 
-        if (IsTrader)
-            Children.Add(new Ellipse { Fill = Brush("CardBrush"), Stroke = Brush("LineBrush"), StrokeThickness = 1 });
-        else
-            Children.Add(new Border { Background = Brush("CellBrush"), BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3) });
+        // Square like the game's trader portraits and inventory cells.
+        Children.Add(new Border
+        {
+            Background = Brush(IsTrader ? "CardBrush" : "CellBrush"),
+            BorderBrush = Brush("LineStrongBrush"),
+            BorderThickness = new Thickness(1),
+        });
         var fallback = new FontIcon
         {
             Glyph = Glyph ?? char.ConvertFromUtf32(IsTrader ? 0xE77B : 0xE7B8),
@@ -114,10 +116,9 @@ public sealed partial class Picture : Grid
         var scale = XamlRoot?.RasterizationScale ?? 1.5;
         var bitmap = new BitmapImage(new Uri(path)) { DecodePixelWidth = (int)Math.Ceiling(Size * scale) };
         fallback.Visibility = Visibility.Collapsed;
-        if (IsTrader)
-            Children.Add(new Ellipse { Fill = new ImageBrush { ImageSource = bitmap, Stretch = Stretch.UniformToFill } });
-        else
-            Children.Add(new Image { Source = bitmap, Margin = new Thickness(Size > 24 ? 2 : 1), Stretch = Stretch.Uniform });
+        Children.Add(IsTrader
+            ? new Image { Source = bitmap, Margin = new Thickness(1), Stretch = Stretch.UniformToFill }
+            : new Image { Source = bitmap, Margin = new Thickness(Size > 24 ? 3 : 1), Stretch = Stretch.Uniform });
     }
 
     private static Brush Brush(string key) => (Brush)Application.Current.Resources[key];

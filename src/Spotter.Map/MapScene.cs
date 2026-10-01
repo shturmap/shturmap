@@ -65,5 +65,8 @@ public sealed class MapScene
     /// </summary>
     public IReadOnlySet<string> Focus { get; set; } = new HashSet<string>();
 
+    /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
+    public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
+
     public bool ShowLabels { get; set; } = true;
 }

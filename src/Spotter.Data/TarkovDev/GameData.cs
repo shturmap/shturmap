@@ -1,3 +1,4 @@
+using Spotter.Core;
 using Spotter.Core.Logs;
 using Spotter.Core.Maps;
 
@@ -69,6 +70,33 @@ public sealed class GameData
 
     public string TraderName(string? traderId) =>
         traderId is not null && Traders.TryGetValue(traderId, out var t) ? t.Name : "";
+
+    private Dictionary<string, List<(string MapId, WorldPoint Position)>>? _spawns;
+
+    /// <summary>Where an item can spawn as loose loot, per map (from the maps payload).</summary>
+    public IReadOnlyList<(string MapId, WorldPoint Position)> SpawnsOf(string itemId)
+    {
+        var spawns = LazyInitializer.EnsureInitialized(ref _spawns, () =>
+        {
+            var index = new Dictionary<string, List<(string, WorldPoint)>>(StringComparer.Ordinal);
+            foreach (var map in Maps.Values)
+            {
+                foreach (var spawn in map.LootLoose ?? [])
+                {
+                    if (spawn.Position is not { } p)
+                        continue;
+                    foreach (var item in spawn.Items ?? [])
+                    {
+                        if (!index.TryGetValue(item, out var list))
+                            index[item] = list = [];
+                        list.Add((map.Id, p.ToWorld()));
+                    }
+                }
+            }
+            return index;
+        });
+        return spawns.TryGetValue(itemId, out var found) ? found : [];
+    }
 
     public static string Slug(GameMode mode) => mode switch
     {

@@ -24,6 +24,8 @@ public sealed partial class QuestCard : UserControl, ICard
 
     public CardKey Key { get; }
 
+    public string Title => View.Name;
+
     public QuestCardView View { get; private set; } = null!;
 
     public CardMode Mode { get; private set; } = CardMode.Hover;
@@ -42,8 +44,7 @@ public sealed partial class QuestCard : UserControl, ICard
     {
         Mode = mode;
         StopHold();
-        Frame.BorderBrush = (Brush)Application.Current.Resources[mode == CardMode.Hover ? "LineBrush" : "AmberBrush"];
-        Frame.CornerRadius = new CornerRadius(mode == CardMode.Pinned ? 0 : 8);
+        Frame.BorderBrush = (Brush)Application.Current.Resources[mode == CardMode.Hover ? "LineStrongBrush" : "AmberBrush"];
         Frame.BorderThickness = new Thickness(mode == CardMode.Pinned ? 0 : 1);
         HoldBar.Visibility = mode == CardMode.Pinned ? Visibility.Collapsed : Visibility.Visible;
         HoldScale.ScaleX = mode == CardMode.Held ? 1 : 0;
@@ -65,6 +66,8 @@ public sealed partial class QuestCard : UserControl, ICard
     }
 
     private void OnPinClick(object sender, RoutedEventArgs e) => PinClicked?.Invoke(this);
+
+    private void OnWikiClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.open", ("quest", View.QuestId), ("name", View.Name));
 
     // ---- x:Bind helpers ----
 

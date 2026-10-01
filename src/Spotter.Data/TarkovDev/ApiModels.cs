@@ -31,6 +31,9 @@ public sealed record ApiBoss(string Mob, double SpawnChance);
 
 public sealed record ApiMob(string Id, string Name);
 
+/// <summary>A place where loose loot can spawn, and which items can spawn there.</summary>
+public sealed record ApiLootSpawn(ApiPosition? Position, List<string>? Items);
+
 public sealed record ApiMap(
     string Id,
     string Name,
@@ -43,7 +46,32 @@ public sealed record ApiMap(
     List<ApiTransit>? Transits,
     List<ApiLock>? Locks,
     List<ApiHazard>? Hazards,
-    List<ApiBoss>? Bosses);
+    List<ApiBoss>? Bosses,
+    List<ApiLootSpawn>? LootLoose = null);
+
+// Where items come from (json.tarkov.dev items, barters, crafts, hideout). Prices are only used to say which trader
+// offer is the cheap one; Spotter has no price views (docs/DESIGN.md §1).
+
+public sealed record ApiTraderOffer(string Trader, double Price, string? Currency, double? PriceRUB, int MinTraderLevel, string? TaskUnlock);
+
+/// <param name="Types">Includes "noFlea" for items that can't be sold on the flea market.</param>
+public sealed record ApiItem(string Id, List<string>? Types, int? MinLevelForFlea, double? LastLowPrice, List<ApiTraderOffer>? BuyFromTrader);
+
+public sealed record ApiCount(string Item, double Count);
+
+public sealed record ApiBarter(string Trader, int MinTraderLevel, string? TaskUnlock, List<ApiCount>? RequiredItems, ApiCount? OfferedItem);
+
+public sealed record ApiCraft(string Station, int Level, List<ApiCount>? RequiredItems, ApiCount? ProductItem);
+
+public sealed record ApiStation(string Id, string Name);
+
+internal sealed record ApiItemsData(Dictionary<string, ApiItem>? Items);
+
+internal sealed record ApiItemsEnvelope(ApiItemsData? Data);
+
+internal sealed record ApiBartersEnvelope(List<ApiBarter>? Data);
+
+internal sealed record ApiCraftsEnvelope(List<ApiCraft>? Data);
 
 public sealed record ApiZone(string? Id, string? Name, string? Map, ApiPosition? Position, List<ApiPosition>? Outline, double? Top, double? Bottom);
 
@@ -102,4 +130,8 @@ public sealed record ApiQuestItem(string Id, string Name, string? ShortName);
 [JsonSerializable(typeof(Dictionary<string, ApiTrader>))]
 [JsonSerializable(typeof(Dictionary<string, ApiQuestItem>))]
 [JsonSerializable(typeof(Dictionary<string, ApiMob>))]
+[JsonSerializable(typeof(Dictionary<string, ApiStation>))]
+[JsonSerializable(typeof(ApiItemsEnvelope))]
+[JsonSerializable(typeof(ApiBartersEnvelope))]
+[JsonSerializable(typeof(ApiCraftsEnvelope))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;
