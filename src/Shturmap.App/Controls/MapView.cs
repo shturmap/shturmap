@@ -10,8 +10,9 @@ using Shturmap.Map;
 namespace Shturmap.App.Controls;
 
 /// <summary>
-/// The map surface: draws a <see cref="MapScene"/> on the GPU and handles pan (drag), zoom (wheel, double-click)
-/// and following the player. Drawing is in physical pixels; markers are scaled by the display's scale factor.
+/// The map surface: draws a <see cref="MapScene"/> on the GPU and handles pan (drag) and zoom (wheel, double-click).
+/// The view only moves when the player moves it: a new position pings where it is instead, or at the edge when it is
+/// out of view. Drawing is in physical pixels; markers are scaled by the display's scale factor.
 /// </summary>
 public sealed partial class MapView : Grid
 {
@@ -20,7 +21,7 @@ public sealed partial class MapView : Grid
     private MapScene? _scene;
     private bool _fitPending;
     private Windows.Foundation.Point? _dragFrom;
-    private PlayerFix? _followedFix;
+    private PlayerFix? _seenFix;
 
     public MapView()
     {
@@ -38,15 +39,21 @@ public sealed partial class MapView : Grid
         // they let go of held cards.
         Tapped += (_, e) =>
         {
-            if (_hovered is not null)
+            if (_hovered is not null || _overEdge)
                 e.Handled = true;
         };
     }
 
-    /// <summary>Keep the player in view when a new position arrives. Turned off by dragging the map.</summary>
-    public bool FollowPlayer { get; set; } = true;
+    /// <summary>A new position arrived and pings; true when it is out of view (the edge arrow points to it).</summary>
+    public event Action<bool>? PlayerPinged;
 
-    public event Action? FollowChanged;
+    /// <summary>The edge arrow of an out-of-view player was clicked, and the view moved to them.</summary>
+    public event Action? EdgeClicked;
+
+    // A position counts as new for a ping only when it is recent: not an old screenshot found when the app starts.
+    private static readonly TimeSpan PingIfNewerThan = TimeSpan.FromSeconds(30);
+
+    private bool _overEdge;
 
     /// <summary>The pointer moved onto a marker (or off all markers: null), with its position in this control.</summary>
     public event Action<MapMarker?, Windows.Foundation.Point>? MarkerHovered;
@@ -64,15 +71,27 @@ public sealed partial class MapView : Grid
         if (scene is not null)
             scene.Pulse = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
         _fitPending = true;
-        _followedFix = null;
+        _seenFix = null;
         _panel.Invalidate();
     }
 
-    /// <summary>Redraws after the scene's markers, player or floor changed; frames a new fix if following.</summary>
+    /// <summary>
+    /// Redraws after the scene's markers, player or floor changed. A new position doesn't move the view (owner,
+    /// 2026-10-01): it pings, and says so when it is out of view.
+    /// </summary>
     public void Refresh()
     {
-        if (_scene?.Player is { } fix && FollowPlayer && !_fitPending && !ReferenceEquals(fix, _followedFix))
-            CenterOnPlayer(frame: true);
+        if (_scene is { Player: { } fix } scene && !ReferenceEquals(fix, _seenFix))
+        {
+            _seenFix = fix;
+            if (DateTime.Now - fix.At < PingIfNewerThan)
+            {
+                scene.PingSince = DateTime.Now;
+                // Before the first paint the view isn't fitted yet; the whole map will be in view then.
+                PlayerPinged?.Invoke(!_fitPending && MapRenderer.EdgeOf(_camera, scene, PixelScale) is not null);
+                Redraw();
+            }
+        }
         _panel.Invalidate();
     }
 
@@ -111,7 +130,7 @@ public sealed partial class MapView : Grid
     private static float DimTarget(MapScene scene) => scene.HasHighlight ? 1f : 0f;
 
     private static bool Animating(MapScene scene) =>
-        scene.Pulsing || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
+        scene.Pulsing || scene.Pinging || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
 
     private void Step()
     {
@@ -128,34 +147,12 @@ public sealed partial class MapView : Grid
         _panel.Invalidate();
     }
 
-    /// <param name="frame">Fit the player and the nearest open objective (or about 150 m around) into view.</param>
-    public void CenterOnPlayer(bool frame = false)
+    /// <summary>Moves the view to the player's last position, keeping the zoom (F, the button, the edge arrow).</summary>
+    public void CenterOnPlayer()
     {
         if (_scene?.Player is not { } fix)
             return;
-        _followedFix = fix;
-        var at = _scene.Projection.ToMap(fix.Position);
-        if (!frame)
-        {
-            _camera.CenterOn(at);
-            _panel.Invalidate();
-            return;
-        }
-        // A fix comes now and then, so each one should answer "where am I and where to next" at a glance.
-        var step = _scene.Projection.ToMap(fix.Position.X + 1, fix.Position.Z);
-        var unitsPerMeter = Math.Sqrt((step.X - at.X) * (step.X - at.X) + (step.Y - at.Y) * (step.Y - at.Y));
-        var target = _scene.Markers
-            .Where(m => m.Objective is not null && m.Kind is MarkerKind.Objective or MarkerKind.PossibleLocation)
-            .Where(m => fix.Position.HorizontalDistanceTo(m.Position) < 600)
-            .MinBy(m => fix.Position.HorizontalDistanceTo(m.Position));
-        var reach = 150 * unitsPerMeter;
-        var points = new List<Shturmap.Core.Maps.MapPoint> { at };
-        if (target is not null)
-            points.Add(_scene.Projection.ToMap(target.Position));
-        var rect = new Shturmap.Core.Maps.MapRect(
-            Math.Min(points.Min(p => p.X), at.X - reach / 2), Math.Min(points.Min(p => p.Y), at.Y - reach / 2),
-            Math.Max(points.Max(p => p.X), at.X + reach / 2), Math.Max(points.Max(p => p.Y), at.Y + reach / 2));
-        _camera.Frame(rect, 90 * PixelScale);
+        _camera.CenterOn(_scene.Projection.ToMap(fix.Position));
         _panel.Invalidate();
     }
 
@@ -202,8 +199,6 @@ public sealed partial class MapView : Grid
         {
             _fitPending = false;
             _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale);
-            if (FollowPlayer && _scene.Player is not null)
-                CenterOnPlayer(frame: true);
         }
         MapRenderer.Render(canvas, _camera, _scene, PixelScale);
     }
@@ -218,6 +213,7 @@ public sealed partial class MapView : Grid
         _dragFrom = point.Position;
         _pressedAt = point.Position;
         _pressedOn = _hovered;
+        _pressedEdge = _overEdge;
         _dragging = false;
         CapturePointer(e.Pointer);
         e.Handled = true;
@@ -228,6 +224,7 @@ public sealed partial class MapView : Grid
 
     private Windows.Foundation.Point _pressedAt;
     private MapMarker? _pressedOn;
+    private bool _pressedEdge;
     private bool _dragging;
 
     private void Hover(MapMarker? marker, Windows.Foundation.Point at)
@@ -235,16 +232,28 @@ public sealed partial class MapView : Grid
         if (marker?.Id == _hovered?.Id)
             return;
         _hovered = marker;
-        ProtectedCursor = marker is null ? null : InputSystemCursor.Create(InputSystemCursorShape.Hand);
+        ProtectedCursor = marker is null && !_overEdge ? null : InputSystemCursor.Create(InputSystemCursorShape.Hand);
         MarkerHovered?.Invoke(marker, at);
     }
+
+    // The edge arrow of an out-of-view player is a button: it shows them.
+    private bool OverEdge(Windows.Foundation.Point at) =>
+        _scene is not null && MapRenderer.EdgeOf(_camera, _scene, PixelScale) is { } edge
+        && SKPoint.Distance(edge, Pixels(at)) <= MapRenderer.EdgeReach * PixelScale;
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (_dragFrom is not { } from)
         {
             var at = e.GetCurrentPoint(this).Position;
-            Hover(_scene is null ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), PixelScale), at);
+            var overEdge = OverEdge(at);
+            if (overEdge != _overEdge)
+            {
+                _overEdge = overEdge;
+                ProtectedCursor = overEdge || _hovered is not null ? InputSystemCursor.Create(InputSystemCursorShape.Hand) : null;
+                ToolTipService.SetToolTip(this, overEdge ? "Show my position (F)" : null);
+            }
+            Hover(_scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), PixelScale), at);
             return;
         }
         var to = e.GetCurrentPoint(this).Position;
@@ -261,24 +270,30 @@ public sealed partial class MapView : Grid
         _camera.Pan((float)(to.X - from.X) * PixelScale, (float)(to.Y - from.Y) * PixelScale);
         _dragDistance += Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
         _dragFrom = to;
-        if (FollowPlayer)
-        {
-            FollowPlayer = false;
-            FollowChanged?.Invoke();
-        }
         _panel.Invalidate();
     }
 
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
-        var clicked = !_dragging && _dragFrom is not null ? _pressedOn : null;
+        var click = !_dragging && _dragFrom is not null;
+        var clicked = click ? _pressedOn : null;
         if (_dragging)
             Study.Ui("map.pan", ("px", _dragDistance), ("s", DateTime.Now - _dragStarted));
         _dragFrom = null;
         _dragging = false;
         ReleasePointerCapture(e.Pointer);
-        if (clicked is not null)
+        if (click && _pressedEdge)
+        {
+            CenterOnPlayer();
+            _overEdge = false;
+            ToolTipService.SetToolTip(this, null);
+            ProtectedCursor = null;
+            EdgeClicked?.Invoke();
+        }
+        else if (clicked is not null)
+        {
             MarkerClicked?.Invoke(clicked);
+        }
     }
 
     private DateTime _dragStarted;

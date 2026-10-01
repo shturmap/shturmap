@@ -180,6 +180,18 @@ public sealed class MapScene
     /// </summary>
     public bool Pulsing => Pulse && (FocusShown || (SelectedShown && DateTime.Now - FocusSince < MapRenderer.PulsePeriod * KeptPulses));
 
+    /// <summary>How long a new position pings: rings leave the player marker, or its edge arrow when out of view.</summary>
+    public static readonly TimeSpan PingLength = TimeSpan.FromSeconds(2.6);
+
+    /// <summary>
+    /// When a new position arrived (owner, 2026-10-01: a screenshot must not move the map; it shows where you are
+    /// instead). Null when the position isn't new, e.g. an old screenshot found at start.
+    /// </summary>
+    public DateTime? PingSince { get; set; }
+
+    /// <summary>Whether the newest position is still pinging.</summary>
+    public bool Pinging => PingSince is { } since && DateTime.Now - since < PingLength;
+
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
 

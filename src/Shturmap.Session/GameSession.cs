@@ -124,6 +124,35 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     // ---- inputs from the UI ----
 
     /// <summary>Shows another map (browsing between raids). During a raid the raid's map comes back on the next fix.</summary>
+    /// <summary>
+    /// The side for this raid, said by the player because the logs can't tell (PvE raids are hosted locally and look
+    /// the same for PMC and Scav). Holds until the raid ends; ignored when the logs know the side.
+    /// </summary>
+    public async Task SetSideAsync(RaidSide side)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_tracker.State.Phase == RaidPhase.Menu || _tracker.State.Side != RaidSide.Unknown)
+                return;
+            _sideSaid = side;
+            Study.Game("side.set", ("side", side));
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private RaidSide? _sideSaid;
+
+    // The raid as shown: the tracker's, with the side the player said when the logs couldn't tell.
+    private RaidState ShownRaid =>
+        _sideSaid is { } said && _tracker.State.Phase != RaidPhase.Menu && _tracker.State.Side == RaidSide.Unknown
+            ? _tracker.State with { Side = said }
+            : _tracker.State;
+
     public async Task SelectMapAsync(string normalizedName)
     {
         await _gate.WaitAsync();
@@ -317,6 +346,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             return;
         }
 
+        var phaseBefore = _tracker.State.Phase;
         var transition = _tracker.Apply(item.Event);
         switch (transition)
         {
@@ -324,6 +354,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 SwitchMode(changed.State.Mode);
                 break;
             case RaidLoading:
+                _sideSaid = null;
                 _lastClock = null;
                 _trail.Clear();
                 _fix = null;
@@ -337,19 +368,33 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     Say(needs is { Count: > 0 }
                         ? $"Loading {_map.Name} · bring: {string.Join(", ", needs.Select(r => r.Text))}"
                         : $"Loading {_map.Name}", needs is { Count: > 0 } ? 45 : 6);
+                    Announce(new ViewCue(phaseBefore == RaidPhase.InRaid ? CueKind.Transit : CueKind.RaidLoading, _map.Name));
                 }
                 break;
             case RaidStarted started:
                 ResolveMap();
                 // The side is only known now; the bring-list said at loading was for a PMC.
                 if (!item.IsReplay && started.State.Side == RaidSide.Scav && _map is not null)
+                {
                     Say($"Scav raid on {_map.Name} · quest objectives don't count, items found in raid do", 8);
+                    Announce(new ViewCue(CueKind.ScavRaid, _map.Name));
+                }
                 break;
             case RaidEnded ended:
+                _sideSaid = null;
                 _lastRaidMap = _map;
                 _lastRaidEnded = ended.At;
+                // Out of the raid there is no "you" on the map (owner, 2026-10-01).
+                _fix = null;
+                _fixMapId = null;
+                _trail.Clear();
                 if (ended.Previous.RaidStartedAt is not null)
                     _lastRaidState = (ended.Previous, ended.At);
+                if (!item.IsReplay && _map is not null)
+                {
+                    Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _map.Name,
+                        ended.Previous.RaidStartedAt is { } began ? ended.At - began : null));
+                }
                 break;
         }
         if (!item.IsReplay)
@@ -491,6 +536,18 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     // ---- snapshot ----
 
+    /// <summary>
+    /// Changes of view Shturmap makes on its own (a raid loading, a transit, a Scav raid, the raid over), for a big
+    /// cue in the middle of the map. Never raised while the logs are replayed at start.
+    /// </summary>
+    public event Action<ViewCue>? Cue;
+
+    private void Announce(ViewCue cue)
+    {
+        Study.Game("cue", ("kind", cue.Kind), ("map", cue.MapName));
+        Cue?.Invoke(cue);
+    }
+
     private void Say(string message, double seconds = 6)
     {
         Study.Game("notice", ("text", message));
@@ -509,7 +566,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         {
             // In a raid the map shows what counts for the side you play: no quest objectives for a Scav (they only
             // count for the PMC), and only your side's extracts.
-            var side = _tracker.State.Phase == RaidPhase.Menu ? RaidSide.Unknown : _tracker.State.Side;
+            var side = ShownRaid.Phase == RaidPhase.Menu ? RaidSide.Unknown : ShownRaid.Side;
             var active = side == RaidSide.Scav ? [] : _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
             content = MapContentBuilder.Build(_data, _map.Id, active, new HashSet<string>());
             if (side != RaidSide.Unknown)
@@ -560,7 +617,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
         Snapshot = new SessionSnapshot
         {
-            Raid = _tracker.State,
+            Raid = ShownRaid,
+            SideFromLogs = _tracker.State.Side != RaidSide.Unknown,
             Mode = _mode,
             Map = _map,
             Definition = definition,

@@ -13,6 +13,21 @@ namespace Shturmap.Session;
 /// <summary>A one-line message for the user and how long it stays.</summary>
 public sealed record SessionNotice(string Text, TimeSpan Duration);
 
+public enum CueKind
+{
+    RaidLoading,
+    Transit,
+    ScavRaid,
+    RaidOver,
+
+    /// <summary>The game went back to the menus before the raid began (matching cancelled).</summary>
+    LoadCancelled,
+}
+
+/// <summary>A change of view the app makes on its own, announced big in the middle of the map for a few seconds.</summary>
+/// <param name="RaidLength">How long the raid lasted (raid over).</param>
+public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null);
+
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);
 
@@ -53,6 +68,9 @@ public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double
 public sealed record SessionSnapshot
 {
     public RaidState Raid { get; init; } = new();
+
+    /// <summary>Whether the logs told the raid's side; if not, the side is the player's say (or unknown, shown as PMC).</summary>
+    public bool SideFromLogs { get; init; }
 
     public GameMode Mode { get; init; } = GameMode.Pve;
 

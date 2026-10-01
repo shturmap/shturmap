@@ -7,7 +7,9 @@ param(
   # Part of a quest name: highlight it, hold its card and pin it before the snapshot.
   [string] $ShowQuest,
   # Play the raid as a Scav: the match setup names another profile than the menu's.
-  [switch] $Scav
+  [switch] $Scav,
+  # A PvE-style raid hosted locally: no match-setup line, so the logs can't tell the side.
+  [switch] $LocalRaid
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -49,7 +51,9 @@ $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
 Start-Sleep -Seconds 4
 Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
 $raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
-Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+if (-not $LocalRaid) {
+  Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+}
 Log 'GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19'
 Start-Sleep -Seconds 1
 Log 'GameStarted:90.6(10.33) real:107.49(12.02) diff:16.89'

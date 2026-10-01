@@ -36,10 +36,14 @@
               <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{x:Bind GlyphBrush}" Margin="0,1,0,0" />
             <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{x:Bind NameBrush}" TextWrapping="Wrap" />
-            <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="{x:Bind PictureOpacity}" />
+            <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
+            <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+            <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="{x:Bind PictureOpacity}" />
           </Grid>
           <ItemsControl ItemsSource="{x:Bind Objectives}" Margin="26,2,0,0">
             <ItemsControl.ItemTemplate>
@@ -121,11 +125,11 @@
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance." />
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance. The map stays where you put it: your new position pings, and an arrow at the edge points to it when it is out of view (F shows it)." />
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep it lit: its markers turn cyan, larger and ringed on the map, with a line from you to the nearest, until you click it again or press Esc. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To keep it lit on the map, click its highlighter (the pen beside it, or on its card): its markers turn cyan, larger and ringed, with a line from you to the nearest, until you click it again or press Esc. Move into a card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
@@ -255,10 +259,14 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                   </Grid.ColumnDefinitions>
                                   <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
                                   <TextBlock Grid.Column="1" Text="{x:Bind Name}" TextWrapping="Wrap" />
-                                  <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
+                                  <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
+                                  <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                                  <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
                                 </Grid>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -272,10 +280,14 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                   </Grid.ColumnDefinitions>
                                   <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
                                   <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                                  <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
+                                  <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" Opacity="0.75" />
+                                  <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                                  <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
                                 </Grid>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -300,7 +312,17 @@
                   <Grid>
                     <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
                     <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
+                               Visibility="{x:Bind ShownIfNot(ViewModel.SideSwitchable), Mode=OneWay}"
                                ToolTipService.ToolTip="The side you play this raid, from the game's log" />
+                    <!-- PvE raids look the same in the log for a PMC and a Scav: then the tag is a switch. -->
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6,1" Click="OnSideClick"
+                            Visibility="{x:Bind ShownIfTrue(ViewModel.SideSwitchable), Mode=OneWay}"
+                            ToolTipService.ToolTip="The game's log doesn't say which side you play in PvE. Click to switch between PMC and Scav for this raid.">
+                      <StackPanel Orientation="Horizontal" Spacing="5">
+                        <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" />
+                        <FontIcon Glyph="&#xE8AB;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                      </StackPanel>
+                    </Button>
                   </Grid>
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
@@ -362,10 +384,12 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
                       <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
                       <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                      <controls:Picture Grid.Column="2" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
+                      <controls:KeepToggle Grid.Column="2" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                      <controls:Picture Grid.Column="3" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -378,6 +402,34 @@
       <!-- The map. -->
       <Grid Grid.Column="1">
         <controls:MapView x:Name="Map" />
+
+        <!-- A change of view Shturmap made on its own (a raid loading, a transit, a Scav raid, the raid over): big, in
+             the middle, for under three seconds, never taking a click. Owner, 2026-10-01. -->
+        <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0" RenderTransformOrigin="0.5,0.5">
+          <Grid.RenderTransform>
+            <ScaleTransform x:Name="CueBandScale" />
+          </Grid.RenderTransform>
+          <Border Background="#E60B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" Padding="24,30">
+            <StackPanel HorizontalAlignment="Center" Spacing="10">
+              <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
+                <Rectangle.RenderTransform>
+                  <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
+                </Rectangle.RenderTransform>
+              </Rectangle>
+              <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
+                         CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
+              <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="46" FontWeight="SemiBold"
+                         FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}" />
+              <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
+                         Foreground="{StaticResource MutedBrush}" />
+              <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
+                <Rectangle.RenderTransform>
+                  <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
+                </Rectangle.RenderTransform>
+              </Rectangle>
+            </StackPanel>
+          </Border>
+        </Grid>
 
         <!-- One-line notices, top centre; they go by themselves. -->
         <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" MaxWidth="900" Padding="14,8,6,8"
@@ -414,10 +466,8 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <ToggleButton Width="36" Height="36" Padding="0" HorizontalAlignment="Right" IsChecked="{x:Bind ViewModel.Following, Mode=TwoWay}"
-                        Click="OnFollowClick" ToolTipService.ToolTip="Follow my position (F)">
-            <FontIcon Glyph="&#xE81D;" FontSize="15" />
-          </ToggleButton>
+          <!-- The view only moves when you move it: a new position pings instead. This shows it. -->
+          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>

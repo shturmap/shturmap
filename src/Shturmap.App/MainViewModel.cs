@@ -29,7 +29,9 @@ public sealed record MapChoice(string NormalizedName, string Name)
     public override string ToString() => Name;
 }
 
-public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName);
+/// <param name="Needs">What it needs brought on the map (empty: nothing), or null where bringing doesn't apply.</param>
+public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
+    IReadOnlyList<Controls.NeedChip>? Needs = null);
 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
 /// <param name="QuestIds">The quests it is for, for linked highlighting.</param>
@@ -84,7 +86,7 @@ public sealed record PlanCard(
 /// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
 /// <param name="Complete">Whether this raid can complete it (Plan's COMPLETE), or only progress it.</param>
 public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<ObjectiveItem> Objectives, bool Complete)
+    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null)
 {
     // As in Plan: quests this raid completes in gold and ink, the ones it only progresses muted.
     public Microsoft.UI.Xaml.Media.Brush GlyphBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "AmberBrush" : "MutedBrush"];
@@ -141,6 +143,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"PMC" or "SCAV" beside the raid card's title, or empty when the logs can't tell.</summary>
     [ObservableProperty] public partial string RaidSide { get; set; } = "";
 
+    /// <summary>The logs can't tell the side (PvE): the side tag is a switch.</summary>
+    [ObservableProperty] public partial bool SideSwitchable { get; set; }
+
     /// <summary>A Scav raid: the card shows the loot your quests need instead of their objectives.</summary>
     [ObservableProperty] public partial bool ScavRaid { get; set; }
 
@@ -170,8 +175,6 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial bool NoticeOpen { get; set; }
 
     [ObservableProperty] public partial string NoticeText { get; set; } = "";
-
-    [ObservableProperty] public partial bool Following { get; set; } = true;
 
     [ObservableProperty] public partial string Attribution { get; set; } = "";
 

@@ -79,11 +79,32 @@ residual risk. Do not widen the boundary.
    the "you are here" parts works without a fix. A fix shows its age and the marker fades. No "you may be
    anywhere in here" ring: it was tried and is visual noise. Directions relative to your facing
    ("ahead-left") are shown only for 45 s after a fix; after that they become map directions ("NE", map-up is
-   north), which stay true while you move. Distances say how old they are. A new fix frames you and your nearest
-   objective together.
+   north), which stay true while you move. Distances say how old they are. **A new fix never moves the view**
+   (owner, 2026-10-01; the study log showed the player zooming back out within seconds of every automatic
+   framing): the map stays where the player put it, and the new position pings instead, three bold sand rings
+   leaving the marker over 2.6 s (two still rings with animation effects off). Out of view, a badge at the edge
+   of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
+   so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
+   the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
+   player marker and trail go: out of a raid there is no "you".
+11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
+    loading, a transit, a Scav raid starting, the raid over, loading cancelled), a cue holds the middle of the map
+    for 2.8 s (owner, 2026-10-01): a dark band opens from a line, gold rules draw out from the centre, the map's
+    name (or RAID OVER) decodes letter by letter like a terminal, with one line under it (what the raid can do,
+    or the next raid suggested), then it fades. It takes no clicks. Picks the player makes (a Plan card, the map
+    list) show no cue. With animation effects off it shows and goes without motion. Never during the log replay
+    at start.
 9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
-   map, while there is still time to back out of matching.
-10. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
+   map, while there is still time to back out of matching. What a quest needs is also beside its name wherever
+   it is listed for a map (Plan cards, the raid card): up to three tiny inventory cells with the items' icons,
+   "+N" for more; a quest that needs nothing shows one empty, dashed cell, the inventory's way of saying "nothing
+   here" (owner, 2026-10-01: BRING alone didn't show which item is for which quest). ANY MAP rows show no cells:
+   bringing doesn't apply there.
+10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **highlighter** (a pen, on the row
+    while the quest is pointed at or kept, and always on its card beside the pin) keeps it lit on the map (owner,
+    2026-10-01: one click doing both was misleading; the study log had the player toggling quests on and off and
+    losing held cards on the way to the map).
+12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
     are no detail pages to open. Finished quests appear nowhere.
 
@@ -151,7 +172,9 @@ Text says only what the place doesn't: an objective "… on Streets of Tarkov" d
     don't count). When the raid starts as a Scav, a notice replaces the PMC bring-list said at loading.
     How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
     joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining
-    under way. Locally hosted raids stay unknown and get the PMC view.
+    under way. Locally hosted raids (all PvE raids) log neither, so they stay unknown and get the PMC view; the
+    side tag is then a switch (PMC ⇄ SCAV) that holds for the raid (the study log: 4 of 4 PvE raids unknown). No
+    PvE Scav raid has been seen in a log yet; if one shows a line that tells, it replaces the switch.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, boss spawns (red diamonds, one label
   per spawn area: "Reshala 75%"), Scav spawns (small quiet rings, no label, not hoverable), player, trail, guide
   line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
@@ -197,8 +220,9 @@ but don't light up for their own card's quest, or the whole card would glow.
 
 ### Keeping a quest highlighted
 
-Pointing highlights for as long as the pointer stays; a click on a quest (its rail row, or one of its markers) also
-**keeps** it highlighted, so its markers are easy to find on the map while you look away (owner, 2026-10-01). The
+Pointing highlights for as long as the pointer stays; the quest's highlighter (on its rail rows and its card)
+**keeps** it highlighted, so its markers are easy to find on the map while you look away (owner, 2026-10-01). A
+click on the quest itself only keeps its card open. The
 kept quest has its own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among gold didn't
 stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart from gold with
 any colour vision. Its rows keep a cyan tint; on the map its markers turn cyan and grow (14 px radius, against 12 for
@@ -231,7 +255,7 @@ are translated although the payload's translation list misses them.
 
 | key | action |
 | --- | --- |
-| F | follow my position |
+| F | show my position (the view never moves by itself) |
 | + / − | zoom in / out |
 | 0 | show the whole map |
 | PgUp / PgDn | show the floor above / below |
@@ -242,7 +266,8 @@ Keyboard accelerators sit on the window root with their placement hidden; WinUI 
 one's key as a tooltip over the whole window.
 
 Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, point at anything to see what belongs to
-it, click a quest (in the list or on the map) to keep it highlighted.
+it, click a quest (in the list or on the map) to keep its card open, click its highlighter to keep it lit, click the
+edge badge to show your position.
 
 ## 5. Quest taxonomy
 

@@ -75,10 +75,19 @@ public static class Linked
             _selected = value;
             foreach (var element in Live)
                 Paint(element);
+            SelectedChanged?.Invoke();
         }
     }
 
     private static string? _selected;
+
+    /// <summary>Raised when the kept quest changes (the highlighter toggles follow it).</summary>
+    public static event Action? SelectedChanged;
+
+    /// <summary>A highlighter toggle was clicked: keep this quest highlighted, or stop if it is the kept one.</summary>
+    public static event Action<string>? KeepRequested;
+
+    public static void RequestKeep(string questId) => KeepRequested?.Invoke(questId);
 
     /// <summary>Raised when the focus changes, from rows or from <see cref="Set"/> (map markers).</summary>
     public static event Action? FocusChanged;

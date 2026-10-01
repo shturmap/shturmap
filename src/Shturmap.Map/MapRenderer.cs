@@ -325,12 +325,129 @@ public static class MapRenderer
         placed.Add((box, marker.Label));
     }
 
+    // ---- the player's new position: a ping where it is, or an arrow at the edge when it is out of view ----
+
+    /// <summary>
+    /// Where the player is shown at the edge of the view (pixels) while their position is out of view, or null while
+    /// it is in view: on the line from the view's centre toward the position, inset from the edge.
+    /// </summary>
+    public static SKPoint? EdgeOf(Camera camera, MapScene scene, float ui)
+    {
+        if (scene.Player is not { } player)
+            return null;
+        var at = Screen(camera, scene, player.Position);
+        var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
+        var margin = 6 * ui;
+        if (at.X >= margin && at.X <= w - margin && at.Y >= margin && at.Y <= h - margin)
+            return null;
+        var inset = EdgeInset * ui;
+        var center = new SKPoint(w / 2, h / 2);
+        var d = at - center;
+        var tx = Math.Abs(d.X) < 1e-3 ? float.MaxValue : Math.Max(0, w / 2 - inset) / Math.Abs(d.X);
+        var ty = Math.Abs(d.Y) < 1e-3 ? float.MaxValue : Math.Max(0, h / 2 - inset) / Math.Abs(d.Y);
+        var t = Math.Min(tx, ty);
+        return new SKPoint(center.X + d.X * t, center.Y + d.Y * t);
+    }
+
+    private const float EdgeInset = 42;
+
+    /// <summary>How near (pixels, before scaling) a click must be to the edge arrow to show the player.</summary>
+    public const float EdgeReach = 24;
+
+    // Rings leaving the marker like a sonar ping: motion and size the eye can't miss, gone after a few seconds.
+    // Each ring is the player's sand on a dark band, so it reads on light and dark artwork alike.
+    private static void DrawPing(SKCanvas canvas, SKPoint at, double seconds, bool animate, float ui, float from = 10)
+    {
+        using var band = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 9 * ui };
+        using var ring = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4 * ui };
+        // A steady bright ring hugging the marker for the whole ping, so even a still frame says "here, now".
+        band.Color = Background.WithAlpha(170);
+        ring.Color = Player;
+        canvas.DrawCircle(at, (from + 6) * ui, band);
+        canvas.DrawCircle(at, (from + 6) * ui, ring);
+        if (!animate)
+        {
+            // Animation effects off: a second still ring for the same few seconds.
+            canvas.DrawCircle(at, (from + 24) * ui, band);
+            canvas.DrawCircle(at, (from + 24) * ui, ring);
+            return;
+        }
+        const double each = 1.4, gap = 0.6;
+        for (var i = 0; i < 3; i++)
+        {
+            var p = (seconds - i * gap) / each;
+            if (p is < 0 or > 1)
+                continue;
+            var eased = 1 - Math.Pow(1 - p, 3);
+            var r = (float)(from + 6 + 84 * eased) * ui;
+            // Strong for most of the way out, then gone: a ring that is faint from the start is missed.
+            var fade = (float)(1 - Math.Pow(p, 2.5));
+            band.Color = Background.WithAlpha((byte)(150 * fade));
+            ring.Color = Player.WithAlpha((byte)(255 * fade));
+            canvas.DrawCircle(at, r, band);
+            canvas.DrawCircle(at, r, ring);
+        }
+    }
+
+    // The player out of view: a badge at the edge with an arrow pointing their way. While a new position pings it
+    // is larger, pings itself and says so.
+    private static void DrawEdge(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    {
+        if (EdgeOf(camera, scene, ui) is not { } edge || scene.Player is not { } player)
+            return;
+        var toward = Screen(camera, scene, player.Position) - edge;
+        var angle = (float)(Math.Atan2(toward.Y, toward.X) * 180 / Math.PI);
+        var pinging = scene.Pinging;
+        var r = (pinging ? 17f : 13f) * ui;
+        if (pinging)
+            DrawPing(canvas, edge, (DateTime.Now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui, 28);
+
+        using var plate = new SKPaint { Color = Background.WithAlpha(230), IsAntialias = true };
+        using var edgeLine = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
+        using var fill = new SKPaint { Color = Player, IsAntialias = true };
+        canvas.Save();
+        canvas.RotateDegrees(angle, edge.X, edge.Y);
+        using (var arrow = Polygon(new(edge.X + r + 15 * ui, edge.Y), new(edge.X + r + 2 * ui, edge.Y - 9 * ui), new(edge.X + r + 2 * ui, edge.Y + 9 * ui)))
+        {
+            using var arrowEdge = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
+            canvas.DrawPath(arrow, arrowEdge);
+            canvas.DrawPath(arrow, fill);
+        }
+        canvas.Restore();
+        canvas.DrawCircle(edge, r, plate);
+        canvas.DrawCircle(edge, r, edgeLine);
+        canvas.DrawCircle(edge, r * 0.4f, fill);
+
+        if (!pinging)
+            return;
+        // Said beside the badge, on the side toward the middle of the view, so it never runs off the edge.
+        const string text = "YOUR NEW POSITION · PRESS F";
+        using var font = new SKFont(TypefaceBold, 13 * ui);
+        var width = font.MeasureText(text);
+        var center = new SKPoint(camera.Viewport.Width / 2, camera.Viewport.Height / 2);
+        var inward = center - edge;
+        var length = Math.Max(1, inward.Length);
+        var labelAt = new SKPoint(edge.X + inward.X / length * (r + 18 * ui), edge.Y + inward.Y / length * (r + 18 * ui));
+        var left = inward.X >= 0 ? labelAt.X : labelAt.X - width;
+        if (Math.Abs(inward.X) < Math.Abs(inward.Y) * 0.5f)
+            left = labelAt.X - width / 2;
+        left = Math.Clamp(left, 8 * ui, camera.Viewport.Width - width - 8 * ui);
+        var baseline = labelAt.Y + font.Size * 0.35f;
+        using var shadow = new SKPaint { Color = Background.WithAlpha(235), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4 * ui };
+        using var label = new SKPaint { Color = Player, IsAntialias = true };
+        canvas.DrawText(text, left, baseline, SKTextAlign.Left, font, shadow);
+        canvas.DrawText(text, left, baseline, SKTextAlign.Left, font, label);
+    }
+
     private static void DrawPlayer(SKCanvas canvas, Camera camera, MapScene scene, float ui)
     {
         if (scene.Player is not { } player)
             return;
+        DrawEdge(canvas, camera, scene, ui);
         var at = Screen(camera, scene, player.Position);
         var age = DateTime.Now - player.At;
+        if (scene.Pinging)
+            DrawPing(canvas, at, (DateTime.Now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui);
 
         // The facing is only true for a moment; after a minute the cone would mislead.
         if (player.YawDegrees is { } yaw && age < TimeSpan.FromSeconds(60))

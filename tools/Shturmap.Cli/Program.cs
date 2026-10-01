@@ -204,7 +204,8 @@ static async Task Render(string mapName, string output, List<string> screenshots
     }
     scene.Selected = content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id;
 
-    foreach (var (suffix, zoomIn) in new[] { ("", 1.0), ("-close", 3.0) })
+    // "-ping": a new position pinging, 0.6 s in; "-edge": the same with the player out of view (the edge arrow).
+    foreach (var (suffix, zoomIn, ping, away) in new[] { ("", 1.0, false, 0f), ("-close", 3.0, false, 0f), ("-ping", 3.0, true, 0f), ("-edge", 3.0, true, 1100f) })
     {
         var camera = new Shturmap.Map.Camera();
         camera.Resize(new SkiaSharp.SKSize(1600, 1000));
@@ -213,7 +214,9 @@ static async Task Render(string mapName, string output, List<string> screenshots
         {
             camera.CenterOn(scene.Projection.ToMap(p.Position));
             camera.ZoomAt(new SkiaSharp.SKPoint(800, 500), zoomIn);
+            camera.Pan(-away, -away * 0.3f);
         }
+        scene.PingSince = ping ? DateTime.Now - TimeSpan.FromSeconds(0.6) : null;
         sw.Restart();
         using var surface = SkiaSharp.SKSurface.Create(new SkiaSharp.SKImageInfo(1600, 1000));
         Shturmap.Map.MapRenderer.Render(surface.Canvas, camera, scene);

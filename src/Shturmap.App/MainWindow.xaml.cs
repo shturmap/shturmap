@@ -64,13 +64,9 @@ public sealed partial class MainWindow : Window
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
-        Linked.Clicked += (element, key) =>
-        {
-            // A quest's row in the rail also keeps the quest highlighted, here and on the map, until it is clicked again.
-            if (CardStack.For(element.XamlRoot) == _cards && !_cards.Contains(element) && key is CardKey.Quest quest)
-                Select(quest.Id, "list");
-            CardStack.For(element.XamlRoot)?.Click(element, key);
-        };
+        // A click on a quest keeps its card open; the highlighter beside it (rows, cards) keeps it lit on the map.
+        Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
+        Linked.KeepRequested += quest => Select(quest, "toggle");
         Linked.FocusChanged += OnFocusChanged;
         // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
         // handle their own clicks.
@@ -106,7 +102,14 @@ public sealed partial class MainWindow : Window
         _noticeTimer.IsRepeating = false;
         _noticeTimer.Tick += (_, _) => ViewModel.NoticeOpen = false;
 
-        Map.FollowChanged += () => ViewModel.Following = Map.FollowPlayer;
+        // A new position never moves the view; out of view, the edge arrow points to it and a notice says so.
+        Map.PlayerPinged += offScreen =>
+        {
+            Study.Ui("fix.ping", ("inView", !offScreen));
+            if (offScreen)
+                ShowNotice("Your new position is outside the part of the map shown: press F, or click the arrow at the edge.", TimeSpan.FromSeconds(5));
+        };
+        Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
         AddShortcuts((UIElement)Content);
 
         // Snapshots arrive on background threads; only the newest one is applied.
@@ -116,6 +119,7 @@ public sealed partial class MainWindow : Window
             DispatcherQueue.TryEnqueue(() => Apply(s));
         };
         session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration));
+        session.Cue += cue => DispatcherQueue.TryEnqueue(() => ShowCue(cue));
     }
 
     // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
@@ -147,13 +151,13 @@ public sealed partial class MainWindow : Window
     /// <summary>The keys in the help panel.</summary>
     public IReadOnlyList<KeyHelp> Keys { get; } =
     [
-        new("F", "Follow my position"),
+        new("F", "Show my position (the map never moves by itself)"),
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
         new("ESC", "Close the cards; again to stop highlighting the quest"),
         new("F1 / ?", "This help"),
-        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest, in the list or on the map, to keep it highlighted"),
+        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
     ];
 
     public Brush OkBrush(bool ok) => Resource(ok ? "GreenBrush" : "AmberBrush");
@@ -287,6 +291,7 @@ public sealed partial class MainWindow : Window
         if (openIndex < 0)
             openIndex = 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
+        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(p, q.QuestId) };
         vm.Plans = s.Plan.Select((p, i) => new PlanCard(
             p.NormalizedName,
             p.MapName,
@@ -294,14 +299,20 @@ public sealed partial class MainWindow : Window
             string.Join(" · ", new[] { p.WalkingMinutes > 0 ? $"~{p.WalkingMinutes} min walking" : null, p.RaidMinutes > 0 ? $"{p.RaidMinutes} min raid" : null }
                 .Concat(p.Bosses).OfType<string>()),
             i == openIndex,
-            p.Finish.Select(Line).ToList(),
-            p.Progress.Select(Line).ToList(),
+            p.Finish.Select(q => OnMap(q, p)).ToList(),
+            p.Progress.Select(q => OnMap(q, p)).ToList(),
             p.Requirements.Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds,
                 s.Data is { } data ? ItemCards.Best(data, s.Sources, r.ItemId)?.Text ?? "" : "")).ToList(),
             (i + 1).ToString(CultureInfo.InvariantCulture)
         )).ToList();
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
+
+    /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
+    private static IReadOnlyList<NeedChip> Chips(MapPlanView? plan, string questId) =>
+        (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId))
+            .Select(r => new NeedChip(r.ItemId, r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text))
+            .ToList();
 
     /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
     private static string Summary(int complete, int progress)
@@ -327,7 +338,9 @@ public sealed partial class MainWindow : Window
             fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
 
         vm.RaidTitle = Caps.Of(s.Map?.Name);
-        vm.RaidSide = s.Raid.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "SCAV", _ => "" };
+        // When the logs can't tell (PvE), the raid is shown as a PMC's and the tag is a switch to say otherwise.
+        vm.RaidSide = s.Raid.Side switch { RaidSide.Scav => "SCAV", RaidSide.Pmc => "PMC", _ => vm.InRaid ? "PMC" : "" };
+        vm.SideSwitchable = vm.InRaid && !s.SideFromLogs;
         vm.ScavRaid = vm.InRaid && s.Raid.Side == RaidSide.Scav;
         vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
         vm.RaidFixNote = age switch
@@ -349,7 +362,7 @@ public sealed partial class MainWindow : Window
                     .ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
-                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key)));
+                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key), Chips(s.MapPlan, g.Key)));
             })
             .OrderBy(q => q.Nearest)
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
@@ -678,20 +691,19 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // Clicking a quest marker selects the quest (guide line) and holds its card, like clicking it in the list.
+    // Clicking a quest marker holds its card, like clicking the quest in the list; the card's highlighter keeps it lit.
     private void OnMarkerClicked(MapMarker marker)
     {
         if (marker is not { Group: { } quest, Objective: not null })
             return;
-        Select(quest, "map");
         var at = Map.TransformToVisual(Content).TransformPoint(_markerAt);
         _cards.Click(new CardKey.Quest(quest), new Windows.Foundation.Rect(at.X - 8, at.Y - 8, 16, 16));
     }
 
     private Windows.Foundation.Point _markerAt;
 
-    // Clicking a quest keeps it highlighted (its rows tinted, its markers emphasised and ringed, a line to the nearest
-    // one) until it is clicked again, another quest is clicked, or Esc.
+    // A quest's highlighter keeps it lit (rows tinted, markers cyan and ringed, a line to the nearest one) until it is
+    // clicked again, another quest's is clicked, or Esc.
     private void Select(string questId, string how)
     {
         _selectedQuest = _selectedQuest == questId ? null : questId;
@@ -780,6 +792,107 @@ public sealed partial class MainWindow : Window
                 ShowNotice($"{view.Name} is complete; its card is closed.");
             window.Close();
         }
+    }
+
+    // ---- the big cue: Shturmap changed its view on its own ----
+
+    private static readonly TimeSpan CueLength = TimeSpan.FromSeconds(2.8);
+    private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
+    private DispatcherQueueTimer? _cueTimer;
+
+    private (string Eyebrow, string Title, string Detail) CueText(ViewCue cue)
+    {
+        var map = Caps.Of(cue.MapName);
+        var plan = _snapshot?.Plan.FirstOrDefault(p => p.MapName == cue.MapName) ?? _snapshot?.MapPlan;
+        var here = plan is { } p && p.MapName == cue.MapName && p.Finish.Count + p.Progress.Count > 0 ? Summary(p.Finish.Count, p.Progress.Count) : "";
+        return cue.Kind switch
+        {
+            CueKind.RaidLoading => ("RAID LOADING", map, here),
+            CueKind.Transit => ("TRANSIT", map, here),
+            CueKind.ScavRaid => (map, "SCAV RAID", "Quest objectives don't count here; items you find in raid do."),
+            CueKind.LoadCancelled => (map, "LOADING CANCELLED", "Back to planning the next raid."),
+            _ => (cue.RaidLength is { } length ? $"{map} · {(int)length.TotalMinutes} MIN" : map, "RAID OVER",
+                _snapshot?.Plan.FirstOrDefault() is { } next
+                    ? $"Next raid: {next.MapName} · {Summary(next.Finish.Count, next.Progress.Count)}"
+                    : "Back to planning the next raid."),
+        };
+    }
+
+    // The band opens from a line, its gold rules draw out from the middle, and the title decodes letter by letter
+    // like a terminal; then it all fades. Off with Windows' animation effects: it just shows and goes.
+    private void ShowCue(ViewCue cue)
+    {
+        var (eyebrow, title, detail) = CueText(cue);
+        CueEyebrow.Text = eyebrow;
+        CueDetail.Text = detail;
+        CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        CuePanel.Visibility = Visibility.Visible;
+        _cueStory?.Stop();
+        _cueTimer?.Stop();
+
+        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
+        {
+            CueTitle.Text = title;
+            CuePanel.Opacity = 1;
+            CueBandScale.ScaleY = 1;
+            CueRuleTopScale.ScaleX = CueRuleBottomScale.ScaleX = 1;
+            _cueTimer = DispatcherQueue.CreateTimer();
+            _cueTimer.Interval = CueLength;
+            _cueTimer.IsRepeating = false;
+            _cueTimer.Tick += (_, _) => CuePanel.Visibility = Visibility.Collapsed;
+            _cueTimer.Start();
+            return;
+        }
+
+        var story = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
+        var easeOut = new Microsoft.UI.Xaml.Media.Animation.CubicEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut };
+        void Animate(DependencyObject target, string property, params (double Seconds, double Value)[] keys)
+        {
+            var frames = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimationUsingKeyFrames();
+            foreach (var (seconds, value) in keys)
+            {
+                frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
+                {
+                    KeyTime = TimeSpan.FromSeconds(seconds), Value = value, EasingFunction = easeOut,
+                });
+            }
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(frames, target);
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(frames, property);
+            story.Children.Add(frames);
+        }
+        var end = CueLength.TotalSeconds;
+        // Developer snapshots keep the last cue up, so it can be looked at.
+        if (SnapshotMode)
+            Animate(CuePanel, "Opacity", (0, 0), (0.18, 1));
+        else
+            Animate(CuePanel, "Opacity", (0, 0), (0.18, 1), (end - 0.45, 1), (end, 0));
+        Animate(CueBandScale, "ScaleY", (0, 0.15), (0.28, 1));
+        Animate(CueRuleTopScale, "ScaleX", (0, 0), (0.1, 0), (0.7, 1));
+        Animate(CueRuleBottomScale, "ScaleX", (0, 0), (0.1, 0), (0.7, 1));
+        story.Completed += (_, _) =>
+        {
+            if (ReferenceEquals(story, _cueStory) && !SnapshotMode)
+                CuePanel.Visibility = Visibility.Collapsed;
+        };
+        _cueStory = story;
+        story.Begin();
+
+        // The title decodes: unresolved letters flicker through random ones, resolving left to right.
+        const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var started = DateTime.Now;
+        var decode = TimeSpan.FromMilliseconds(750);
+        _cueTimer = DispatcherQueue.CreateTimer();
+        _cueTimer.Interval = TimeSpan.FromMilliseconds(35);
+        _cueTimer.Tick += (timer, _) =>
+        {
+            var p = Math.Min(1, (DateTime.Now - started) / decode);
+            var resolved = (int)Math.Round(p * title.Length);
+            CueTitle.Text = string.Concat(title.Select((c, i) =>
+                i < resolved || !char.IsLetterOrDigit(c) ? c : glyphs[Random.Shared.Next(glyphs.Length)]));
+            if (p >= 1)
+                timer.Stop();
+        };
+        _cueTimer.Start();
     }
 
     private void ShowNotice(string message, TimeSpan? duration = null)
@@ -893,11 +1006,7 @@ public sealed partial class MainWindow : Window
             root.KeyboardAccelerators.Add(accelerator);
         }
 
-        Add(Windows.System.VirtualKey.F, () =>
-        {
-            ViewModel.Following = true;
-            OnFollowClick(this, new RoutedEventArgs());
-        });
+        Add(Windows.System.VirtualKey.F, ShowMe);
         Add(Windows.System.VirtualKey.Add, () => ZoomBy(1.5, "key"));
         Add((Windows.System.VirtualKey)187, () => ZoomBy(1.5, "key")); // the +/= key
         Add(Windows.System.VirtualKey.Subtract, () => ZoomBy(1 / 1.5, "key"));
@@ -961,25 +1070,34 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void OnSideClick(object sender, RoutedEventArgs e)
+    {
+        var to = _snapshot?.Raid.Side == RaidSide.Scav ? RaidSide.Pmc : RaidSide.Scav;
+        Study.Ui("side.switch", ("to", to));
+        await _session.SetSideAsync(to);
+    }
+
     private void OnNoticeClosed(object sender, RoutedEventArgs e)
     {
         Study.Ui("notice.close", ("text", ViewModel.NoticeText));
         ViewModel.NoticeOpen = false;
     }
 
-    private void OnFollowClick(object sender, RoutedEventArgs e)
+    private void OnShowMeClick(object sender, RoutedEventArgs e)
     {
-        Study.Ui("map.follow", ("on", ViewModel.Following));
-        Map.FollowPlayer = ViewModel.Following;
-        if (Map.FollowPlayer)
-            Map.CenterOnPlayer();
+        Study.Ui("map.showme", ("how", "button"));
+        Map.CenterOnPlayer();
+    }
+
+    private void ShowMe()
+    {
+        Study.Ui("map.showme", ("how", "key"));
+        Map.CenterOnPlayer();
     }
 
     private void OnFitClick(object sender, RoutedEventArgs e)
     {
         Study.Ui("map.fit");
-        ViewModel.Following = false;
-        Map.FollowPlayer = false;
         Map.FitMap();
     }
 
