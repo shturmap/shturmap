@@ -54,6 +54,8 @@ public sealed partial class MapView : Grid
     public void SetScene(MapScene? scene)
     {
         _scene = scene;
+        if (scene is not null)
+            scene.Pulse = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
         _fitPending = true;
         _followedFix = null;
         _panel.Invalidate();
@@ -67,8 +69,28 @@ public sealed partial class MapView : Grid
         _panel.Invalidate();
     }
 
-    /// <summary>Redraws without moving, e.g. to let an ageing fix fade.</summary>
-    public void Redraw() => _panel.Invalidate();
+    /// <summary>Redraws without moving, e.g. to let an ageing fix fade. Keeps redrawing while focused markers pulse.</summary>
+    public void Redraw()
+    {
+        _panel.Invalidate();
+        if (_scene is not { Pulse: true, Focus.Count: > 0 })
+            return;
+        if (_pulse is null)
+        {
+            _pulse = DispatcherQueue.CreateTimer();
+            _pulse.Interval = TimeSpan.FromMilliseconds(16);
+            _pulse.Tick += (_, _) =>
+            {
+                _panel.Invalidate();
+                if (_scene is not { Pulse: true, Focus.Count: > 0 })
+                    _pulse.Stop();
+            };
+        }
+        if (!_pulse.IsRunning)
+            _pulse.Start();
+    }
+
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _pulse;
 
     /// <param name="frame">Fit the player and the nearest open objective (or about 150 m around) into view.</param>
     public void CenterOnPlayer(bool frame = false)

@@ -114,7 +114,9 @@ Quest **types are shown by glyph, never by colour**; colour stays free for state
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
 portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
 header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind rows; map markers
-not in focus step back to 28 % opacity; markers on another floor than the one shown are drawn at half strength.
+not in focus step back to 28 % opacity, and the focused ones pulse: a ring leaves the marker and fades every 1.4 s
+(motion is noticed before anything else; off when Windows' animation effects are off, and only while something is
+in focus). Markers on another floor than the one shown are drawn at half strength.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Screen anatomy

@@ -189,6 +189,22 @@ public static class MapRenderer
         canvas.DrawLine(Screen(camera, scene, player.Position), Screen(camera, scene, nearest.Position), guide);
     }
 
+    /// <summary>How long one pulse of a focused marker takes; the map keeps redrawing while something is in focus.</summary>
+    public static readonly TimeSpan PulsePeriod = TimeSpan.FromSeconds(1.4);
+
+    // A ring that leaves the marker and fades, like a ping: motion is what the eye notices before anything else, so
+    // the focused markers are found at once even among many.
+    private static void DrawPulse(SKCanvas canvas, MapScene scene, SKPoint at, float r, SKColor color, float ui)
+    {
+        var t = (float)((DateTime.Now - scene.FocusSince).TotalSeconds % PulsePeriod.TotalSeconds / PulsePeriod.TotalSeconds);
+        var fade = (1 - t) * (1 - t);
+        using var ring = new SKPaint
+        {
+            Color = color.WithAlpha((byte)(220 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui,
+        };
+        canvas.DrawCircle(at, r + (3 + 26 * t) * ui, ring);
+    }
+
     private static void DrawMarker(SKCanvas canvas, Camera camera, MapScene scene, MapMarker marker, float ui, List<(SKRect Box, string? Text)> placed)
     {
         var at = Screen(camera, scene, marker.Position);
@@ -198,6 +214,9 @@ public static class MapRenderer
         var r = (marker.Objective is not null ? (selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
+
+        if (scene.Pulse && IsFocused(scene, marker))
+            DrawPulse(canvas, scene, at, r, color, ui);
 
         switch (marker.Kind)
         {

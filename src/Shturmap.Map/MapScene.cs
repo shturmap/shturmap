@@ -63,7 +63,24 @@ public sealed class MapScene
     /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
     /// are drawn emphasised and everything else steps back.
     /// </summary>
-    public IReadOnlySet<string> Focus { get; set; } = new HashSet<string>();
+    public IReadOnlySet<string> Focus
+    {
+        get => _focus;
+        set
+        {
+            if (value.Count > 0 && !value.SetEquals(_focus))
+                FocusSince = DateTime.Now;
+            _focus = value;
+        }
+    }
+
+    private IReadOnlySet<string> _focus = new HashSet<string>();
+
+    /// <summary>When the current focus began: its pulse starts from there.</summary>
+    public DateTime FocusSince { get; private set; }
+
+    /// <summary>Focused markers pulse so the eye finds them at once; off when Windows' animation effects are off.</summary>
+    public bool Pulse { get; set; } = true;
 
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
