@@ -21,8 +21,8 @@ overlays on the game window, statistics dashboards, a settings maze.
 
 Spotter reads only files the game writes for the player, plus public community data:
 
-- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots`; pixels only of menu screenshots, to read
-  the Tasks screen;
+- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots` (positions only; Spotter never opens the
+  images);
 - `application_*.log` and `push-notifications_*.log` in the game's `Logs` folder, with shared read access;
 - `Control.ini` and `Game.ini`, read-only.
 
@@ -54,8 +54,8 @@ residual risk. Do not widen the boundary.
   reimplemented.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
   the only custom glyph is the crosshair (drawn from a path in `Spotter.Map.Glyphs`).
-- **Test fixtures** contain only scrubbed logs and the owner's own Tasks screenshots (game UI, for OCR tests in a
-  private repository). Remove `tests/fixtures/ocr` before ever publishing the repository.
+- **Test fixtures** contain only scrubbed logs and the maps.json snapshot. (`tests/fixtures/ocr`, untracked, holds
+  the owner's own Tasks screenshots from the removed OCR feature; never commit or publish it.)
 
 ## 4. UX principles
 
@@ -70,8 +70,10 @@ residual risk. Do not widen the boundary.
    default over a setting. Messages are one line and dismiss themselves.
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
    to the objective that needs it during the raid.
-6. **Says why.** Every quest state can say where it came from (log, Tasks scan, import, manual, implied).
-7. **Only ask when unsure.** The only confirmations in the app are uncertain Tasks-scan reads, one click each.
+6. **Says why.** Every quest state can say where it came from (the game log and when, or implied by a later
+   quest).
+7. **Never ask.** No confirmations, no prompts. Quest states come from the game's logs alone (owner, 2026-10-01:
+   players don't screenshot their Tasks screen, so Tasks-screen reading and the TarkovEyes import were removed).
 8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
    the "you are here" parts works without a fix. A fix shows its age and the marker fades. No "you may be
    anywhere in here" ring: it was tried and is visual noise. Directions relative to your facing
@@ -211,8 +213,7 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
 | --- | --- |
 | `Spotter.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, name matching |
 | `Spotter.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher, game settings |
-| `Spotter.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, TarkovEyes import, game art cache (portraits, icons) |
-| `Spotter.Ocr` | Tasks-screen reader on Windows.Media.Ocr |
+| `Spotter.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, game art cache (portraits, icons) |
 | `Spotter.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
 | `Spotter.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
 | `Spotter.App` | WinUI 3 window; reads snapshots, never game files |
@@ -246,23 +247,20 @@ fitted into the projected `svgBounds ?? bounds`. Golden test: a Streets screensh
 `nameId`, then an alias table. Side: the match-setup `Profileid` equals the menu profile for PMC raids and differs
 for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageReceived` type 10/11/12.
 
-**Quest progress.** Stored observations (log, Tasks scan, manual, import); newest wins, except that an import or
-a scan never reopens a quest the log saw completed or failed (TarkovEyes' save is dated by its file, which can be
-after the hand-in); only a later log event can. Prerequisites of active or completed quests that strictly require
-"complete" are shown as implied, never stored. `spotter-cli quests` lists active quests with every observation.
+**Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
+log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
+require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
+Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows; they are ignored (and could never
+reopen a quest the log saw completed). `spotter-cli quests` lists active quests with every observation.
 
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
 screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floors) are drawn in the base layer.
 
-**Tasks OCR.** Header row found in a whole-frame pass, Task→Status columns cropped and read at 2×, rows anchored
-on Status; names matched by edit distance with the exact-number rule, a Location check and font-confusion
-folding. Accept ≥ 0.92 with margin; confirm ≥ 0.75.
-
 ## 9. Status
 
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
-  markers, objectives by distance, log backfill, live quest events, TarkovEyes import, Tasks scans, safety test,
+  markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
   occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
   highlighting, quest cards (hover, held, pinned), trader portraits and item icons, floor picker.

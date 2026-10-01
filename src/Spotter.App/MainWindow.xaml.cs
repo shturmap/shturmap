@@ -29,9 +29,7 @@ public sealed partial class MainWindow : Window
     private string? _sceneKey;
     private string? _selectedQuest;
     private bool _updatingPicker;
-    private bool _scanDismissed;
     private bool _helpShownOnce;
-    private ScanResult? _shownScan;
     private readonly QuestCardHost _cards;
     private readonly Dictionary<string, QuestWindow> _pinned = [];
     private bool _pinnedRestored;
@@ -137,7 +135,6 @@ public sealed partial class MainWindow : Window
         UpdatePicker(s);
         UpdatePlan(s);
         UpdateRaidLists(s);
-        UpdateScan(s);
         UpdateMap(s);
         _cards.Refresh();
         RefreshPinned();
@@ -279,7 +276,7 @@ public sealed partial class MainWindow : Window
             Direction(e.Direction, e.MapBearing))).ToList();
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
-            : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map. If quests are missing, take a screenshot of Character → Tasks in the game."
+            : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
         vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";
@@ -300,26 +297,6 @@ public sealed partial class MainWindow : Window
         _ => $"{metres / 1000:0.0} km",
     };
 
-    private void UpdateScan(SessionSnapshot s)
-    {
-        if (s.LastScan is not { } scan)
-        {
-            ViewModel.ScanOpen = false;
-            return;
-        }
-        if (_shownScan is null || scan.File != _shownScan.File)
-            _scanDismissed = false;
-        _shownScan = scan;
-        ViewModel.ScanTitle = $"Tasks scan · {scan.Tab} tab · {scan.Rows} rows read";
-        ViewModel.ScanMessage = scan.NewlyActive.Count > 0 ? "Now active: " + string.Join(", ", scan.NewlyActive) : "Nothing new.";
-        if (scan.NeedConfirmation.Count > 0)
-            ViewModel.ScanMessage += " Please check these reads:";
-        if (scan.Unread > 0)
-            ViewModel.ScanMessage += $" {scan.Unread} row(s) could not be read.";
-        ViewModel.Confirmations = scan.NeedConfirmation.Where(m => m.Quest is not null)
-            .Select(m => new ConfirmItem(m.Quest!.Id, m.RowName, m.Quest.Name)).ToList();
-        ViewModel.ScanOpen = !_scanDismissed;
-    }
 
     private async void UpdateMap(SessionSnapshot s)
     {
@@ -700,18 +677,6 @@ public sealed partial class MainWindow : Window
     {
         if (e.ClickedItem is ObjectiveItem item)
             Select(item.QuestId);
-    }
-
-    private async void OnConfirmClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: string questId })
-            await _session.ConfirmScanAsync(questId);
-    }
-
-    private void OnScanClosed(InfoBar sender, object args)
-    {
-        _scanDismissed = true;
-        ViewModel.ScanOpen = false;
     }
 
     private void OnNoticeClosed(InfoBar sender, object args) => ViewModel.NoticeOpen = false;

@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Headless runner: exercise discovery, log replay, OCR and data loading without the UI or the game. -->
+  <!-- Headless runner: exercise discovery, log replay, data loading and quest states without the UI or the game. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(SpotterWindowsTfm)</TargetFramework>
@@ -11,7 +11,6 @@
     <ProjectReference Include="..\..\src\Spotter.Core\Spotter.Core.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Game\Spotter.Game.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Data\Spotter.Data.csproj" />
-    <ProjectReference Include="..\..\src\Spotter.Ocr\Spotter.Ocr.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Map\Spotter.Map.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Session\Spotter.Session.csproj" />
   </ItemGroup>

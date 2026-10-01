@@ -59,9 +59,9 @@
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Spotter suggests where to go next, what you can complete there and what to bring." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Keep still while the bar fills and the card stays, so you can move into it; pin it to keep it open in its own window." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Move into the card and point at a key, an item or a quest in it for that one's card. Pin a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
-                           Text="The logs only reach back so far. If older quests are missing, open Character → Tasks in the game and take a screenshot; scroll and take another for more rows." />
+                           Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS (WHEN THIS WINDOW HAS FOCUS)" />
                 <Grid ColumnSpacing="16" RowSpacing="2">
@@ -311,31 +311,6 @@
           </StackPanel>
         </ScrollViewer>
 
-        <!-- Result of the last Tasks-screen scan, with one-click confirmations for uncertain reads. -->
-        <InfoBar Grid.Row="2" Margin="12" IsOpen="{x:Bind ViewModel.ScanOpen, Mode=OneWay}" Severity="Informational"
-                 Title="{x:Bind ViewModel.ScanTitle, Mode=OneWay}" Message="{x:Bind ViewModel.ScanMessage, Mode=OneWay}"
-                 CloseButtonClick="OnScanClosed">
-          <InfoBar.Content>
-            <ItemsControl ItemsSource="{x:Bind ViewModel.Confirmations, Mode=OneWay}" Margin="0,0,0,10">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="local:ConfirmItem">
-                  <Grid ColumnSpacing="8" Margin="0,2">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock VerticalAlignment="Center" TextWrapping="Wrap">
-                      <Run Text="{x:Bind Read}" Foreground="{StaticResource MutedBrush}" />
-                      <Run Text=" → " />
-                      <Run Text="{x:Bind Quest}" />
-                    </TextBlock>
-                    <Button Grid.Column="1" Content="Active" Tag="{x:Bind QuestId}" Click="OnConfirmClick" />
-                  </Grid>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </InfoBar.Content>
-        </InfoBar>
       </Grid>
 
       <!-- The map. -->

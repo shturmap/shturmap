@@ -86,8 +86,6 @@ public static class QuestCards
         var source = status.Source switch
         {
             ObservationSource.Log => $"from the game log, {day}",
-            ObservationSource.TasksScan => $"from a Tasks screenshot, {day}",
-            ObservationSource.Import => "imported from TarkovEyes",
             ObservationSource.Manual => "set by you",
             _ when status.ImpliedBy is { } later => $"because {later} needs it",
             _ => null,

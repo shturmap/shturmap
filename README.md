@@ -16,14 +16,13 @@ screen and never draws over the game. See [docs/DESIGN.md](docs/DESIGN.md#ground
 ```
 
 On first start Spotter finds the game (Steam or the Battlestate Games launcher), the logs, the Screenshots
-folder, your screenshot key and the game language. It downloads quest and map data from tarkov.dev, reads all
-log sessions on disk for quest history, imports TarkovEyes progress if present, and reads any Tasks-screen
-screenshots from the last week. The window opens maximised on the second monitor.
+folder, your screenshot key and the game language. It downloads quest and map data from tarkov.dev and reads all
+log sessions on disk for quest history. The window opens maximised on the second monitor.
 
 In a raid, press your screenshot key (PrtSc by default). The map switches to the raid's map when it loads; each
-screenshot moves your marker, picks the floor from your height and re-sorts objectives by distance. Quests follow
-the logs as you start, fail and finish them. The logs only reach back so far: if older quests are missing, open
-Character → Tasks and press the screenshot key; scroll and press again for more rows.
+screenshot moves your marker, picks the floor from your height and re-sorts objectives by distance. Quests come
+from the game's logs alone, as you start, fail and finish them; a quest started before your oldest log isn't
+known.
 
 ## Work on it
 
@@ -42,7 +41,7 @@ Requires the .NET 10 SDK. `eng\dotnet.ps1` finds an SDK installed per user when 
 | `locate` | shows every install candidate found and which one is used |
 | `replay [session]` | replays a log session through the raid tracker |
 | `data [mode] [lang]` | loads tarkov.dev data and lists maps |
-| `ocr <png>…` | reads Tasks-screen screenshots and matches quest names |
+| `quests [mode]` | lists active quests and the log entries behind them |
 | `render <map> <out.png> [screenshot names…]` | draws a map with positions to a PNG |
 | `watch [seconds]` | runs the companion headless and prints what it sees |
 | `simulate` | plays a scripted raid against a temporary fake game folder |
@@ -57,6 +56,8 @@ Diagnostics are written to `%LOCALAPPDATA%\Spotter\logs`. Data lives in `%LOCALA
 - Map geometry: tarkov.dev's `maps.json` (MIT).
 - Map artwork: Shebuka and contributors, [tarkov-dev-svg-maps](https://github.com/the-hideout/tarkov-dev-svg-maps),
   CC BY-NC-SA 4.0. Downloaded at runtime for personal use, never bundled.
+- Trader portraits and item icons: Battlestate Games' art, shown from tarkov.dev's image service at runtime for
+  personal use, never bundled.
 - Escape from Tarkov is a trademark of Battlestate Games. Spotter is unofficial and unaffiliated.
 
 Personal, non-commercial use.

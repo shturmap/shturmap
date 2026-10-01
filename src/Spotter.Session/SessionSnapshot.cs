@@ -7,7 +7,6 @@ using Spotter.Core.Raid;
 using Spotter.Data.TarkovDev;
 using Spotter.Game.Install;
 using Spotter.Map;
-using Spotter.Ocr;
 
 namespace Spotter.Session;
 
@@ -47,16 +46,6 @@ public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Si
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
 public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction, double? MapBearing = null);
 
-/// <summary>The outcome of reading a Tasks screenshot.</summary>
-public sealed record ScanResult(
-    DateTime At,
-    string File,
-    TasksTab Tab,
-    int Rows,
-    IReadOnlyList<string> NewlyActive,
-    IReadOnlyList<QuestMatch> NeedConfirmation,
-    int Unread);
-
 /// <summary>Everything the UI shows, replaced as a whole whenever something changes.</summary>
 public sealed record SessionSnapshot
 {
@@ -94,8 +83,6 @@ public sealed record SessionSnapshot
     public SourceHealth DataHealth { get; init; } = new(false, "Loading game data…");
 
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
-
-    public ScanResult? LastScan { get; init; }
 
     /// <summary>Suggested maps for the next raid, best first.</summary>
     public IReadOnlyList<MapPlanView> Plan { get; init; } = [];

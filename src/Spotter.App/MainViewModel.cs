@@ -14,8 +14,6 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 /// <param name="Id">The map marker's id, for linked highlighting.</param>
 public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction);
 
-public sealed record ConfirmItem(string QuestId, string Read, string Quest);
-
 public sealed record MapChoice(string NormalizedName, string Name)
 {
     public override string ToString() => Name;
@@ -110,14 +108,6 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial IReadOnlyList<QuestLine> AnyMap { get; set; } = [];
 
     [ObservableProperty] public partial string HelpKeys { get; set; } = "your screenshot key";
-
-    [ObservableProperty] public partial bool ScanOpen { get; set; }
-
-    [ObservableProperty] public partial string ScanTitle { get; set; } = "";
-
-    [ObservableProperty] public partial string ScanMessage { get; set; } = "";
-
-    [ObservableProperty] public partial IReadOnlyList<ConfirmItem> Confirmations { get; set; } = [];
 
     [ObservableProperty] public partial bool NoticeOpen { get; set; }
 

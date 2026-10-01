@@ -10,6 +10,10 @@ public enum QuestState
     Failed,
 }
 
+/// <summary>
+/// Where a stored observation came from. Only Log (and Manual) are used; TasksScan and Import rows from earlier
+/// versions may still be in a database and are ignored (docs/DESIGN.md §8, "Quest progress").
+/// </summary>
 public enum ObservationSource
 {
     Log,

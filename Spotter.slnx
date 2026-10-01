@@ -5,14 +5,12 @@
     <Project Path="src/Spotter.Data/Spotter.Data.csproj" />
     <Project Path="src/Spotter.Game/Spotter.Game.csproj" />
     <Project Path="src/Spotter.Map/Spotter.Map.csproj" />
-    <Project Path="src/Spotter.Ocr/Spotter.Ocr.csproj" />
     <Project Path="src/Spotter.Session/Spotter.Session.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Spotter.Core.Tests/Spotter.Core.Tests.csproj" />
     <Project Path="tests/Spotter.Data.Tests/Spotter.Data.Tests.csproj" />
     <Project Path="tests/Spotter.Game.Tests/Spotter.Game.Tests.csproj" />
-    <Project Path="tests/Spotter.Ocr.Tests/Spotter.Ocr.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Spotter.Cli/Spotter.Cli.csproj" />

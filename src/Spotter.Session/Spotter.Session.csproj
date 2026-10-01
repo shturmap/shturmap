@@ -9,7 +9,6 @@
     <ProjectReference Include="..\Spotter.Core\Spotter.Core.csproj" />
     <ProjectReference Include="..\Spotter.Game\Spotter.Game.csproj" />
     <ProjectReference Include="..\Spotter.Data\Spotter.Data.csproj" />
-    <ProjectReference Include="..\Spotter.Ocr\Spotter.Ocr.csproj" />
     <ProjectReference Include="..\Spotter.Map\Spotter.Map.csproj" />
   </ItemGroup>
 </Project>

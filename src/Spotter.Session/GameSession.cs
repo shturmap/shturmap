@@ -1,4 +1,3 @@
-using System.Globalization;
 using Spotter.Core;
 using Spotter.Core.Logs;
 using Spotter.Core.Maps;
@@ -15,22 +14,19 @@ using Spotter.Game.Logs;
 using Spotter.Game.Screenshots;
 using Spotter.Game.Settings;
 using Spotter.Map;
-using Spotter.Ocr;
 
 namespace Spotter.Session;
 
 /// <summary>
 /// The running companion: finds the game, follows its logs and screenshots, keeps quest progress and game data,
 /// and publishes one <see cref="SessionSnapshot"/> per change. All state changes happen under one gate; slow
-/// work (downloads, OCR) runs outside it.
+/// work (downloads) runs outside it.
 /// </summary>
 /// <param name="locations">Game folders to use instead of discovering them (simulations and tests).</param>
 public sealed class GameSession(AppPaths paths, GameLocations? locations = null) : IAsyncDisposable
 {
-    private static readonly TimeSpan RecentScreenshots = TimeSpan.FromDays(7);
 
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private readonly SemaphoreSlim _ocrGate = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
     private readonly RaidTracker _tracker = new();
     private readonly List<WorldPoint> _trail = [];
@@ -39,20 +35,17 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     private GameDataLoader? _loader;
     private LogTailer? _tailer;
     private ScreenshotWatcher? _watcher;
-    private TasksScreenReader? _tasks;
     private GameSettings _settings = new([], null, false);
     private GameLocations? _locations;
 
     private GameMode _mode = GameMode.Pve;
     private GameData? _data;
     private string? _dataError;
-    private bool _recentScanned;
     private MapIdentity? _map;
     private PlayerFix? _fix;
     private string? _fixMapId;
     private MapIdentity? _lastRaidMap;
     private DateTime? _lastRaidEnded;
-    private ScanResult? _lastScan;
     private IReadOnlyList<MapPlanView> _plan = [];
     private IReadOnlyList<PlanQuestView> _anyMap = [];
     // Kept raw: a raid replayed at startup ends before the map data has loaded to name it.
@@ -70,7 +63,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     /// <summary>Raised after every change, on a background thread.</summary>
     public event Action<SessionSnapshot>? Changed;
 
-    /// <summary>Short messages for the user ("Raid started on Customs", "Tasks scan: 2 new active").</summary>
+    /// <summary>Short messages for the user ("Raid started on Customs", "Loading Streets of Tarkov · bring: …").</summary>
     public event Action<SessionNotice>? Notice;
 
     public async Task StartAsync()
@@ -87,11 +80,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
             Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache);
             Art = new GameArt(http, paths.GameArtCache);
-            if (TextRecognizer.Create(_settings.Language) is { } recognizer)
-                _tasks = new TasksScreenReader(recognizer);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;
-            ImportTarkovEyesOnce();
             RecomputeQuests();
             Publish();
         }
@@ -151,39 +141,6 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     public Task SetQuestStateAsync(string questId, QuestState state) =>
         AddObservationsAsync([new QuestObservation(_mode, questId, state, ObservationSource.Manual, DateTime.Now, "manual:" + Guid.NewGuid())]);
 
-    /// <summary>Accepts a Tasks-scan match that needed confirmation.</summary>
-    public async Task ConfirmScanAsync(string questId)
-    {
-        var scan = _lastScan;
-        if (scan is null)
-            return;
-        await AddObservationsAsync([new QuestObservation(_mode, questId, QuestState.Active, ObservationSource.TasksScan, scan.At, "tasks:" + scan.File)]);
-        await _gate.WaitAsync();
-        try
-        {
-            _lastScan = scan with { NeedConfirmation = scan.NeedConfirmation.Where(m => m.Quest?.Id != questId).ToList() };
-            Publish();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
-    public async Task DismissScanAsync()
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            _lastScan = null;
-            Publish();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
     // ---- game data ----
 
     private async Task LoadDataAsync(GameMode mode)
@@ -205,11 +162,6 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             finally
             {
                 _gate.Release();
-            }
-            if (!_recentScanned)
-            {
-                _recentScanned = true;
-                await ScanRecentTasksScreenshotsAsync();
             }
         }
         catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException)
@@ -369,13 +321,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     // ---- screenshots ----
 
+    // Screenshots only give positions (from their names); quest states come from the logs alone.
     private async Task OnScreenshotAsync(ScreenshotSeen seen)
     {
         if (!seen.Info.HasPosition)
-        {
-            await ScanTasksAsync(seen);
             return;
-        }
         await _gate.WaitAsync();
         try
         {
@@ -413,80 +363,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         return null;
     }
 
-    private async Task ScanRecentTasksScreenshotsAsync()
-    {
-        if (_watcher is null || _store is null)
-            return;
-        foreach (var seen in _watcher.Recent(RecentScreenshots).Where(s => !s.Info.HasPosition).OrderBy(s => s.CreatedAt))
-        {
-            if (_store.GetSetting("scanned:" + Path.GetFileName(seen.Path)) is null)
-                await ScanTasksAsync(seen, quiet: true);
-        }
-    }
-
-    private async Task ScanTasksAsync(ScreenshotSeen seen, bool quiet = false)
-    {
-        if (_tasks is null || _data is null || _store is null)
-            return;
-        await _ocrGate.WaitAsync();
-        TasksScreen? screen;
-        try
-        {
-            if (!await ScreenshotWatcher.WaitUntilCompleteAsync(seen.Path, TimeSpan.FromSeconds(15)))
-                return;
-            screen = await _tasks.ReadAsync(seen.Path);
-            _store.SetSetting("scanned:" + Path.GetFileName(seen.Path), "1");
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
-        {
-            return;
-        }
-        finally
-        {
-            _ocrGate.Release();
-        }
-        if (screen is null || screen.Rows.Count == 0)
-            return;
-
-        await _gate.WaitAsync();
-        try
-        {
-            if (_data is not { } data)
-                return;
-            var candidates = data.Tasks.Values
-                .Select(t => new QuestCandidate(t.Id, t.Name, t.Map is not null && data.Maps.TryGetValue(t.Map, out var m) ? [m.Name] : []))
-                .ToList();
-            var matches = screen.Rows.Select(r => QuestNameMatcher.Match(r.Name, r.Location, candidates)).ToList();
-            var accepted = matches.Where(m => m.Verdict == MatchVerdict.Accepted).Select(m => m.Quest!).ToList();
-            var newly = accepted.Where(q => _quests.GetValueOrDefault(q.Id)?.State != QuestState.Active).Select(q => q.Name).ToList();
-            _store.Add(accepted.Select(q => new QuestObservation(_mode, q.Id, QuestState.Active, ObservationSource.TasksScan, seen.CreatedAt,
-                "tasks:" + Path.GetFileName(seen.Path))));
-            RecomputeQuests();
-            _lastScan = new ScanResult(seen.CreatedAt, Path.GetFileName(seen.Path), screen.Tab, screen.Rows.Count, newly,
-                matches.Where(m => m.Verdict == MatchVerdict.NeedsConfirmation).ToList(),
-                matches.Count(m => m.Verdict == MatchVerdict.Unread));
-            if (!quiet || newly.Count > 0)
-                Say($"Tasks scan: {screen.Rows.Count} rows read" + (newly.Count > 0 ? $", new active: {string.Join(", ", newly)}" : ", nothing new"));
-            Publish();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
     // ---- quests ----
-
-    private void ImportTarkovEyesOnce()
-    {
-        if (_store is null || _store.GetSetting("import.tarkoveyes") is not null)
-            return;
-        var imported = TarkovEyesImport.Read(TarkovEyesImport.DefaultPath);
-        if (imported.Count > 0)
-            Say($"Imported {imported.Count} quest states from TarkovEyes.");
-        _store.Add(imported);
-        _store.SetSetting("import.tarkoveyes", DateTime.Now.ToString("O", CultureInfo.InvariantCulture));
-    }
 
     private async Task AddObservationsAsync(IReadOnlyList<QuestObservation> observations)
     {
@@ -511,8 +388,10 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         if (_store is null)
             return;
         var tasks = _data?.Tasks;
+        // Only the game's own log counts (docs/DESIGN.md §8). Rows from earlier Tasks scans or the TarkovEyes import
+        // may still be in the database; they are ignored.
         _quests = QuestProgress.Resolve(
-            _store.Load(_mode),
+            _store.Load(_mode).Where(o => o.Source is ObservationSource.Log or ObservationSource.Manual),
             id => tasks?.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new QuestRequirement(r.Task, r.Status ?? [])) ?? [],
             id => tasks?.GetValueOrDefault(id)?.Name ?? id);
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId).ToList();
@@ -603,7 +482,6 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 ? new(!_data.Offline, _data.Offline ? "Data (offline copy)" : "Data")
                 : new(false, _dataError is null ? "Loading game data…" : "No game data: " + _dataError),
             ScreenshotKeys = _settings.ScreenshotKeys,
-            LastScan = _lastScan,
             Plan = _plan,
             AnyMap = _anyMap,
             LastRaid = _lastRaidState is ({ } state, var endedAt) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
