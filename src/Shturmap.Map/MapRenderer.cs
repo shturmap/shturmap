@@ -16,6 +16,7 @@ public static class MapRenderer
     private static readonly SKColor Violet = SKColor.Parse("#9c8cc4");
     private static readonly SKColor Player = SKColor.Parse("#e9e2c8");
     private static readonly SKColor Ink = SKColor.Parse("#d9d5c4");
+    private static readonly SKColor Red = SKColor.Parse("#b8604a");
 
     // Bahnschrift (ships with Windows), semi-condensed like the app's labels.
     private static readonly SKTypeface Typeface =
@@ -74,6 +75,9 @@ public static class MapRenderer
         var bestDistance = float.MaxValue;
         foreach (var marker in scene.Markers)
         {
+            // Scav spawns are many and say nothing more on hover.
+            if (marker.Kind == MarkerKind.ScavSpawn)
+                continue;
             var distance = SKPoint.Distance(Screen(camera, scene, marker.Position), screen);
             var reach = (marker.Objective is not null ? 13f : 10f) * ui;
             if (distance <= reach && distance < bestDistance)
@@ -245,6 +249,24 @@ public static class MapRenderer
                     canvas.DrawPath(tri, outline);
                 }
                 break;
+            case MarkerKind.ScavSpawn:
+                // A small open ring: there for whoever looks, not competing with quests and exits.
+                using (var ring = new SKPaint { Color = color.WithAlpha(170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui })
+                {
+                    canvas.DrawCircle(at, 4 * ui, outline);
+                    canvas.DrawCircle(at, 4 * ui, ring);
+                }
+                break;
+            case MarkerKind.BossSpawn:
+                // A red diamond with a dark centre: not to be confused with the violet transit diamond.
+                using (var plate = Polygon(new(at.X, at.Y - r * 1.25f), new(at.X + r * 1.25f, at.Y), new(at.X, at.Y + r * 1.25f), new(at.X - r * 1.25f, at.Y)))
+                {
+                    canvas.DrawPath(plate, fill);
+                    canvas.DrawPath(plate, outline);
+                }
+                using (var dot = new SKPaint { Color = Background, IsAntialias = true })
+                    canvas.DrawCircle(at, r * 0.32f, dot);
+                break;
             case MarkerKind.Transit:
                 using (var diamond = Polygon(new(at.X, at.Y - r), new(at.X + r, at.Y), new(at.X, at.Y + r), new(at.X - r, at.Y)))
                 {
@@ -269,7 +291,7 @@ public static class MapRenderer
                 break;
         }
 
-        if (!scene.ShowLabels && !selected)
+        if ((!scene.ShowLabels && !selected) || marker.Label.Length == 0)
             return;
         using var font = new SKFont(selected ? TypefaceBold : Typeface, (selected ? 13 : 11.5f) * ui);
         var width = font.MeasureText(marker.Label);
@@ -279,7 +301,7 @@ public static class MapRenderer
         if (blocking.Any(p => p.Box.IntersectsWith(box)))
             return;
         using var shadow = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
-        using var text = new SKPaint { Color = selected ? color : Ink, IsAntialias = true };
+        using var text = new SKPaint { Color = selected || marker.Kind == MarkerKind.BossSpawn ? color : Ink, IsAntialias = true };
         canvas.DrawText(marker.Label, box.Left, at.Y + font.Size * 0.35f, SKTextAlign.Left, font, shadow);
         canvas.DrawText(marker.Label, box.Left, at.Y + font.Size * 0.35f, SKTextAlign.Left, font, text);
         placed.Add((box, marker.Label));
@@ -338,6 +360,7 @@ public static class MapRenderer
         MarkerKind.ExtractScav => Teal,
         MarkerKind.ExtractShared => Lime,
         MarkerKind.Transit => Violet,
+        MarkerKind.BossSpawn => Red,
         _ => Ink,
     };
 }

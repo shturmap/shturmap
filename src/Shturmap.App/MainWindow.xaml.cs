@@ -73,6 +73,11 @@ public sealed partial class MainWindow : Window
             if (!e.Handled && !Linked.IsInside(e.OriginalSource) && _cards.AnyHeld)
                 _cards.CloseAll();
         };
+        root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((_, e) =>
+        {
+            if (_cards.AnyHeld)
+                _cards.PointerAt(e.GetCurrentPoint(root).Position);
+        }), handledEventsToo: true);
         _focusClear = DispatcherQueue.CreateTimer();
         _focusClear.Interval = TimeSpan.FromMilliseconds(250);
         _focusClear.IsRepeating = false;
@@ -154,6 +159,10 @@ public sealed partial class MainWindow : Window
     public Visibility ShownIfNot(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     public Visibility ShownIfAny(IEnumerable? items) => items?.GetEnumerator().MoveNext() == true ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility ShownIfLink(Uri? link) => link is null ? Visibility.Collapsed : Visibility.Visible;
+
+    private void OnWikiMapClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.map", ("url", ViewModel.WikiMap?.ToString()));
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
@@ -318,13 +327,18 @@ public sealed partial class MainWindow : Window
                 _ => "Shared extract",
             },
             Distance(e.Distance),
-            Direction(e.Direction, e.MapBearing))).ToList();
+            Direction(e.Direction, e.MapBearing),
+            e.Needs,
+            e.NeedItemId)).ToList();
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
         vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";
+        // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
+        vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
+            && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
     }
 
     private static ObjectiveItem ToItem(ObjectiveView o, string direction, string? mapName)
@@ -568,6 +582,10 @@ public sealed partial class MainWindow : Window
                 Linked.Set(Focus.Quest(quest));
                 var p = Map.TransformToVisual(Content).TransformPoint(at);
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
+                break;
+            case { Group: { } group }:
+                // A boss: all its spawn points light up together.
+                Linked.Set(new Focus(new HashSet<string> { group }));
                 break;
             default:
                 Linked.Set(new Focus(new HashSet<string>(), Marker: marker.Id));

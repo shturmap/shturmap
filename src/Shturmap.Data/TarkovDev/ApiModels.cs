@@ -11,6 +11,8 @@ public sealed record ApiPosition(double X, double Y, double Z)
     public WorldPoint ToWorld() => new(X, Y, Z);
 }
 
+/// <param name="Switches">Ids of switches (in the map's Switches) the extract depends on.</param>
+/// <param name="TransferItem">What has to be handed over to leave: roubles for a car, a special item for a secret exit.</param>
 public sealed record ApiExtract(
     string Id,
     string? Name,
@@ -18,16 +20,28 @@ public sealed record ApiExtract(
     ApiPosition? Position,
     List<ApiPosition>? Outline,
     double? Top,
-    double? Bottom);
+    double? Bottom,
+    List<string>? Switches = null,
+    ApiCount? TransferItem = null);
 
-public sealed record ApiTransit(string Id, string? Description, string? Map, ApiPosition? Position, List<ApiPosition>? Outline);
+/// <param name="Conditions">What the transit needs, in words ("TerraGroup Labs access keycard required (1)"), if anything.</param>
+public sealed record ApiTransit(string Id, string? Description, string? Map, ApiPosition? Position, List<ApiPosition>? Outline,
+    string? Conditions = null);
+
+public sealed record ApiSwitch(string Id, string? Name);
+
+/// <summary>A spawn point: who can spawn there ("scav", "pmc", "all") and as what ("bot", "player", "boss", "all").</summary>
+public sealed record ApiSpawn(ApiPosition? Position, List<string>? Sides, List<string>? Categories, string? ZoneName);
+
+public sealed record ApiBossLocation(string? Name, double Chance, List<ApiPosition>? Positions);
 
 public sealed record ApiLock(string? Id, string? LockType, string? Key, bool NeedsPower, ApiPosition? Position);
 
 public sealed record ApiHazard(string? HazardType, string? Name, ApiPosition? Position, List<ApiPosition>? Outline, double? Top, double? Bottom);
 
 /// <param name="Mob">Id into the payload's mobs, e.g. "bossBoar"; AI PMCs appear as "pmcBEAR"/"pmcUSEC".</param>
-public sealed record ApiBoss(string Mob, double SpawnChance);
+/// <param name="SpawnLocations">Where it can spawn, each with its share of the spawns and its points.</param>
+public sealed record ApiBoss(string Mob, double SpawnChance, List<ApiBossLocation>? SpawnLocations = null);
 
 public sealed record ApiMob(string Id, string Name);
 
@@ -47,7 +61,9 @@ public sealed record ApiMap(
     List<ApiLock>? Locks,
     List<ApiHazard>? Hazards,
     List<ApiBoss>? Bosses,
-    List<ApiLootSpawn>? LootLoose = null);
+    List<ApiLootSpawn>? LootLoose = null,
+    List<ApiSwitch>? Switches = null,
+    List<ApiSpawn>? Spawns = null);
 
 // Where items come from (json.tarkov.dev items, barters, crafts, hideout). Prices are only used to say which trader
 // offer is the cheap one; Shturmap has no price views (docs/DESIGN.md §1).

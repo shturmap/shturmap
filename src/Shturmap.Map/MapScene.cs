@@ -12,6 +12,12 @@ public enum MarkerKind
     ExtractScav,
     ExtractShared,
     Transit,
+
+    /// <summary>Where AI Scavs spawn: small and quiet, no label.</summary>
+    ScavSpawn,
+
+    /// <summary>Where a boss can spawn: red, labelled with the boss and its chance.</summary>
+    BossSpawn,
 }
 
 /// <summary>A point of interest drawn at a fixed screen size.</summary>

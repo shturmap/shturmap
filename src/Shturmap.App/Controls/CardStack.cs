@@ -10,9 +10,9 @@ namespace Shturmap.App.Controls;
 /// Cards that open from what the pointer rests on, and from things on those cards, like the nested tooltips in
 /// Crusader Kings III. Rest on a quest, key or item for 0.4 s and its card opens beside it, see-through; it stays
 /// while the pointer is on it, so things on it can open their own cards, and goes when the pointer leaves. A click
-/// on the quest (or on the card) holds it: it turns solid and stays until a click elsewhere, Esc, or another click
-/// on the quest. While a card is held, pointing at other things still highlights them but opens no card in its
-/// place; clicking another quest switches the held card.
+/// on the quest (or on the card) holds it: it turns solid and stays while the pointer is near it, until a click
+/// elsewhere, Esc, another click on the quest, a full rest on something else that opens a card in its place, or the
+/// pointer moving well away from it.
 /// One stack per window: the main window, and each pinned card window.
 /// </summary>
 public sealed class CardStack
@@ -108,10 +108,9 @@ public sealed class CardStack
         if (key is null)
             return;
         var target = level + 1;
-        // Pointing at a card's own subject (its header), at what is already open beside it, or anywhere while a
-        // held card sits in that place opens nothing new.
+        // Pointing at a card's own subject (its header) or at what is already open beside it opens nothing new.
         if ((level >= 0 && level < _levels.Count && _levels[level].Face.Key == key) ||
-            (target < _levels.Count && (_levels[target].Face.Key == key || _levels[target].Held)))
+            (target < _levels.Count && _levels[target].Face.Key == key))
         {
             _show.Stop();
             return;
@@ -119,8 +118,8 @@ public sealed class CardStack
         _pendingKey = key;
         _pendingLevel = target;
         _pendingAnchor = anchor;
-        // Skimming a list swaps an open card quickly.
-        _show.Interval = target < _levels.Count ? SwapAfter : ShowAfter;
+        // Skimming a list swaps an unheld card quickly; a held one gives way only to a full rest on something else.
+        _show.Interval = target < _levels.Count && !_levels[target].Held ? SwapAfter : ShowAfter;
         Restart(_show);
     }
 
@@ -184,6 +183,32 @@ public sealed class CardStack
 
     /// <summary>Whether any card is held (a click elsewhere lets go of it).</summary>
     public bool AnyHeld => _levels.Any(l => l.Held);
+
+    /// <summary>How far the pointer may wander from a held card before it closes.</summary>
+    private const double FarAway = 240;
+
+    /// <summary>
+    /// The pointer moved in the window (root coordinates). A held card closes, with everything opened from it, once
+    /// the pointer is well away from it: holding is for reading it, not for keeping it forever.
+    /// </summary>
+    public void PointerAt(Point p)
+    {
+        for (var i = 0; i < _levels.Count; i++)
+        {
+            if (!_levels[i].Held || _over >= i)
+                continue;
+            var box = Bounds(_levels[i]);
+            var dx = Math.Max(0, Math.Max(box.Left - p.X, p.X - box.Right));
+            var dy = Math.Max(0, Math.Max(box.Top - p.Y, p.Y - box.Bottom));
+            if (dx * dx + dy * dy > FarAway * FarAway)
+            {
+                Study.Ui("card.release", ("card", _levels[i].Face.Key.ToString()), ("name", _levels[i].Face.Title), ("level", i),
+                    ("window", Where), ("how", "away"));
+                CloseFrom(i);
+                return;
+            }
+        }
+    }
 
     public void CloseAll() => CloseFrom(0);
 

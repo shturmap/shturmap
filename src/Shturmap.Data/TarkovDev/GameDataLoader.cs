@@ -47,7 +47,22 @@ public sealed class GameDataLoader(CachedHttp http)
         fetches.Add(definitions);
         await Task.WhenAll(fetches);
 
-        var mapsData = Translated(maps.Result, mapsLang.Result, mapsEn.Result);
+        // Extract names arrive as the game's internal keys ("Alpinist", "RedRebel_alp") and are translated; the keys
+        // tell some requirements that no field does, so they are kept.
+        var extractKeys = new Dictionary<string, string>(StringComparer.Ordinal);
+        var mapsData = Translated(maps.Result, mapsLang.Result, mapsEn.Result, raw =>
+        {
+            if (raw?["maps"] is not JsonObject all)
+                return;
+            foreach (var (_, map) in all)
+            {
+                foreach (var extract in (map?["extracts"] as JsonArray ?? []).OfType<JsonObject>())
+                {
+                    if (extract["id"]?.GetValue<string>() is { } id && extract["name"]?.GetValue<string>() is { } key)
+                        extractKeys.TryAdd(id, key);
+                }
+            }
+        }, alsoTranslate: ["conditions"]);
         var tasksData = Translated(tasks.Result, tasksLang.Result, tasksEn.Result);
         var tradersData = Translated(traders.Result, tradersLang.Result, tradersEn.Result);
 
@@ -69,6 +84,7 @@ public sealed class GameDataLoader(CachedHttp http)
             Tasks = Section(tasksData, "tasks", ApiJsonContext.Default.DictionaryStringApiTask),
             Traders = Section(tradersData, null, ApiJsonContext.Default.DictionaryStringApiTrader),
             ItemNames = itemNames,
+            ExtractKeys = extractKeys,
             MapDefinitions = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct)),
             CheckedAt = fetches.Min(f => f.Result.FetchedAt),
             Offline = fetches.Any(f => f.Result.Stale),
@@ -116,14 +132,20 @@ public sealed class GameDataLoader(CachedHttp http)
     }
 
     /// <summary>The payload's "data" with every translatable string replaced by the chosen language's text.</summary>
-    internal static JsonNode? Translated(CachedResponse payload, CachedResponse language, CachedResponse english)
+    /// <param name="beforeTranslation">Sees the data as it arrived, with the game's keys in place of text.</param>
+    /// <param name="alsoTranslate">Properties holding keys that the payload's own list misses (transit "conditions").</param>
+    internal static JsonNode? Translated(CachedResponse payload, CachedResponse language, CachedResponse english,
+        Action<JsonNode?>? beforeTranslation = null, IEnumerable<string>? alsoTranslate = null)
     {
         var root = JsonNode.Parse(File.ReadAllText(payload.FilePath)) ?? throw new JsonException("empty payload");
         var paths = root["translations"] is JsonArray p ? p.Select(x => x?.GetValue<string>() ?? "").ToList() : [];
         var data = root["data"];
+        beforeTranslation?.Invoke(data);
         var lang = JsonTranslator.ReadDictionary(File.ReadAllText(language.FilePath));
         var en = ReferenceEquals(language, english) ? null : JsonTranslator.ReadDictionary(File.ReadAllText(english.FilePath));
-        JsonTranslator.Translate(data, JsonTranslator.TranslatableProperties(paths), lang, en);
+        var properties = JsonTranslator.TranslatableProperties(paths);
+        properties.UnionWith(alsoTranslate ?? []);
+        JsonTranslator.Translate(data, properties, lang, en);
         return data;
     }
 

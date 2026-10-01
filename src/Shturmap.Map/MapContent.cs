@@ -46,6 +46,42 @@ public static class MapContentBuilder
             markers.Add(new MapMarker("transit:" + transit.Id, MarkerKind.Transit, transit.Position.ToWorld(), "Transit to " + target));
         }
 
+        // AI Scav spawns, each spot once.
+        var scavSpots = new List<WorldPoint>();
+        foreach (var spawn in map.Spawns ?? [])
+        {
+            if (spawn.Position is null || spawn.Sides?.Contains("scav") != true || spawn.Categories?.Any(c => c is "bot" or "all") != true)
+                continue;
+            var at = spawn.Position.ToWorld();
+            if (scavSpots.Any(p => p.HorizontalDistanceTo(at) < 3))
+                continue;
+            scavSpots.Add(at);
+            markers.Add(new MapMarker($"scav:{scavSpots.Count}", MarkerKind.ScavSpawn, at, ""));
+        }
+
+        // Boss spawns: every point marked, one point per spawn area labelled with the boss and its chance.
+        foreach (var boss in map.Bosses ?? [])
+        {
+            if (!boss.Mob.StartsWith("boss", StringComparison.Ordinal))
+                continue;
+            var name = data.Mobs.TryGetValue(boss.Mob, out var mob) ? mob.Name : boss.Mob;
+            var label = $"{name} {Math.Round(boss.SpawnChance * 100):0}%";
+            var spots = new List<WorldPoint>();
+            foreach (var location in boss.SpawnLocations ?? [])
+            {
+                var labelled = false;
+                foreach (var position in location.Positions ?? [])
+                {
+                    var at = position.ToWorld();
+                    if (spots.Any(p => p.HorizontalDistanceTo(at) < 3))
+                        continue;
+                    spots.Add(at);
+                    markers.Add(new MapMarker($"boss:{boss.Mob}:{spots.Count}", MarkerKind.BossSpawn, at, labelled ? "" : label, "boss:" + boss.Mob));
+                    labelled = true;
+                }
+            }
+        }
+
         foreach (var questId in activeQuests)
         {
             if (!data.Tasks.TryGetValue(questId, out var quest))

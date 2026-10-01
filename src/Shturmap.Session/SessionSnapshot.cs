@@ -44,7 +44,10 @@ public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, dou
 public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Side, DateTime EndedAt);
 
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
-public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction, double? MapBearing = null);
+/// <param name="Needs">What it takes to leave here ("Pay 5,000 ₽"), or empty.</param>
+/// <param name="NeedItemId">An item to hand over, to picture next to it.</param>
+public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction, double? MapBearing = null,
+    string Needs = "", string? NeedItemId = null);
 
 /// <summary>Everything the UI shows, replaced as a whole whenever something changes.</summary>
 public sealed record SessionSnapshot

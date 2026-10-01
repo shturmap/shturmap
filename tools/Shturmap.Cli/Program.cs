@@ -102,8 +102,8 @@ static async Task Simulate()
         Console.WriteLine($"[{step}] {s.Raid.Phase} on {s.Map?.Name} as {s.Raid.Side}; fix {(s.Fix is null ? "none" : s.Fix.Position + $" facing {s.Fix.YawDegrees:0}°")}; floor {s.Floor?.Name ?? "ground"}; trail {s.Trail.Count}");
         foreach (var o in s.Objectives.Where(o => o.HasPlace).Take(5))
             Console.WriteLine($"      {o.Distance,6:0} m {(o.Direction is { } d ? Shturmap.Core.Navigation.Bearing.Describe(d) : ""),-12} {o.QuestName}: {o.Text}");
-        foreach (var e in s.Extracts.Take(3))
-            Console.WriteLine($"      {e.Distance,6:0} m {(e.Direction is { } d ? Shturmap.Core.Navigation.Bearing.Describe(d) : ""),-12} {e.Name} ({e.Kind})");
+        foreach (var e in step == "raid started" ? s.Extracts : s.Extracts.Take(3))
+            Console.WriteLine($"      {e.Distance,6:0} m {(e.Direction is { } d ? Shturmap.Core.Navigation.Bearing.Describe(d) : ""),-12} {e.Name} ({e.Kind}){(e.Needs.Length > 0 ? "  — " + e.Needs : "")}");
     }
 
     Print("menu");

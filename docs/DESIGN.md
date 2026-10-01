@@ -132,12 +132,15 @@ Text says only what the place doesn't: an objective "… on Streets of Tarkov" d
     BRING (keys, items to bring). Clicking another map expands it and shows it on the map; that click is optional.
   - *Raid*: one raid line (time left, bosses with spawn chance, time of day); **objectives here**, nearest first,
     with type glyph, distance, direction and floor hint, and an inline key/item requirement where needed; then
-    objectives with no fixed place; then extracts and transits for your side.
-- **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, player, trail, guide line to the
-  selected objective. Map controls bottom-right, with the floor picker above them on maps with floors; one-line
-  notices top-centre; attribution bottom-left.
-- **Help** (F1 or `?`): one panel with how it works, the shortcuts and the glyph legend. Opens once by itself on
-  first run.
+    objectives with no fixed place; then extracts and transits for your side, each with what it takes to leave
+    there, if anything (see "Extract requirements").
+- **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, boss spawns (red diamonds, one label
+  per spawn area: "Reshala 75%"), Scav spawns (small quiet rings, no label, not hoverable), player, trail, guide
+  line to the selected objective. Map controls bottom-right, with the floor picker above them on maps with floors;
+  one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
+  containers and the rest Shturmap doesn't draw) above the attribution.
+- **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols. Opens
+  once by itself on first run.
 
 ### Quest cards
 
@@ -159,10 +162,10 @@ Cards behave like the nested tooltips in Crusader Kings III:
    its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
 2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
-   amber border and stays until a click on nothing in particular (bare rail or map), Esc, or another click on its
-   quest. While it is held, pointing at other things still highlights them but opens no card in its place;
-   clicking another quest switches to that one. Nothing holds by itself (owner, 2026-10-01: the timed hold was
-   dropped).
+   amber border and stays while the pointer is near it. It closes on a click on nothing in particular (bare rail
+   or map), Esc, another click on its quest, a full 0.4 s rest on something else that opens a card in its place,
+   or the pointer moving more than 240 px away from it. Nothing holds by itself (owner, 2026-10-01: the timed hold
+   was dropped).
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
 4. **Pinned**: the pin turns a quest card into a small window with a normal title bar, to move anywhere and leave
@@ -172,6 +175,23 @@ Cards behave like the nested tooltips in Crusader Kings III:
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
+
+### Extract requirements
+
+Shown under each extract in the Raid rail, short, in gold, with the item's icon when one is handed over:
+
+| from | example |
+| --- | --- |
+| `transferItem` in roubles, dollars or euros | "Pay 5,000 ₽" (car V-Ex), "Pay €2,400" (Icebreaker heli) |
+| `transferItem`, any other item | "Hand over Note with code word Onyx" (secret extracts) |
+| internal name `Alpinist*` / `RedRebel*` | "Red Rebel ice pick and paracord, no armored rig" (Cliff Descent, Mountain Pass, Climber's Trail) |
+| "(Flare)" in the name, or `sniper` in the internal name | "Fire a red signal flare there" |
+| "(Co-op)" in the name | "Co-op: a PMC and a player Scav leave together" |
+| `switches` | "ZB-013 Power Switch first"; a switch tarkov.dev lists on most of a map's extracts is only shown where its name contains the extract's name (it lists the ZB-013 switch on every Customs extract) |
+| transit `conditions` | "TerraGroup Labs access keycard required (1)" |
+
+Internal extract names are kept from the payload before translation (`GameData.ExtractKeys`); transit conditions
+are translated although the payload's translation list misses them.
 
 ### Keyboard (window focused only)
 

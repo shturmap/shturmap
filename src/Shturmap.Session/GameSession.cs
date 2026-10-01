@@ -532,13 +532,19 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     bearing, o.Quest.Trader));
             }
             var side = _tracker.State.Side;
+            var shownMap = _data.Maps.GetValueOrDefault(_map.Id);
             foreach (var m in content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))
             {
                 if ((side == RaidSide.Scav && m.Kind == MarkerKind.ExtractPmc) || (side != RaidSide.Scav && m.Kind == MarkerKind.ExtractScav))
                     continue;
                 double? distance = fix is not null ? fix.Position.HorizontalDistanceTo(m.Position) : null;
                 RelativeDirection? direction = fix?.YawDegrees is { } yaw ? Bearing.Relative(yaw, Bearing.YawTo(fix.Position, m.Position)) : null;
-                extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction, MapBearing(m.Position)));
+                // Marker ids are "extract:<id>" and "transit:<id>".
+                var id = m.Id[(m.Id.IndexOf(':') + 1)..];
+                var (needs, item) = m.Kind == MarkerKind.Transit
+                    ? (shownMap?.Transits?.FirstOrDefault(t => t.Id == id) is { } transit ? ExtractRules.Needs(transit) : "", (string?)null)
+                    : shownMap?.Extracts?.FirstOrDefault(e => e.Id == id) is { } extract ? ExtractRules.Needs(_data, shownMap, extract) : ("", null);
+                extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction, MapBearing(m.Position), needs, item));
             }
         }
 

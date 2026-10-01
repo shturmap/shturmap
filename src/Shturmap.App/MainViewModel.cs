@@ -12,7 +12,13 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 }
 
 /// <param name="Id">The map marker's id, for linked highlighting.</param>
-public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction);
+/// <param name="Needs">What it takes to leave ("Pay 5,000 ₽", "Red Rebel ice pick and paracord, no armored rig"), or empty.</param>
+public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction, string Needs = "", string? NeedItemId = null)
+{
+    public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility ItemVisibility => NeedItemId is null ? Visibility.Collapsed : Visibility.Visible;
+}
 
 public sealed record MapChoice(string NormalizedName, string Name)
 {
@@ -129,6 +135,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string Attribution { get; set; } = "";
 
     [ObservableProperty] public partial IReadOnlyList<FloorChoice> Floors { get; set; } = [];
+
+    /// <summary>The wiki's interactive map for the shown map, or null.</summary>
+    [ObservableProperty] public partial Uri? WikiMap { get; set; }
 
     public IReadOnlyList<LegendItem> Legend { get; } = Enum.GetValues<ObjectiveKind>()
         .Select(k => new LegendItem(k, QuestTaxonomy.Label(k), QuestTaxonomy.Explanation(k)))

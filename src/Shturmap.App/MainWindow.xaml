@@ -107,6 +107,31 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <TextBlock Style="{StaticResource EyebrowText}" Text="ON THE MAP" />
+                <Grid ColumnSpacing="12" RowSpacing="4">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                  </Grid.RowDefinitions>
+                  <Ellipse Width="14" Height="14" Fill="{StaticResource AmberBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="Quest objective; its glyph is the quest type. A hollow ring: one of the places it can be." TextWrapping="Wrap" />
+                  <Polygon Grid.Row="1" Points="7,0 14,12 0,12" Fill="{StaticResource GreenBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="Extract for your side (green PMC, teal Scav, khaki shared)" TextWrapping="Wrap" />
+                  <Polygon Grid.Row="2" Points="7,0 14,7 7,14 0,7" Fill="#9C8CC4" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="Transit to another map" TextWrapping="Wrap" />
+                  <Polygon Grid.Row="3" Points="7,0 14,7 7,14 0,7" Fill="{StaticResource RedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="Boss spawn, with the boss's chance on this map" TextWrapping="Wrap" />
+                  <Ellipse Grid.Row="4" Width="9" Height="9" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" Text="Scav spawn" TextWrapping="Wrap" />
+                  <Rectangle Grid.Row="5" Width="10" Height="10" Stroke="{StaticResource SandBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Grid.Column="1" Text="Where an item lies loose, while you point at it" TextWrapping="Wrap" />
+                  <Ellipse Grid.Row="6" Width="11" Height="11" Fill="{StaticResource SandBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Grid.Column="1" Text="You, at your last screenshot" TextWrapping="Wrap" />
+                </Grid>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
                            Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data. It never touches the game. It keeps a study log of raids and how you use it in %LOCALAPPDATA%\Shturmap\study; nothing is sent anywhere." />
               </StackPanel>
@@ -305,9 +330,14 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
-                      <StackPanel>
+                      <StackPanel Spacing="1">
                         <TextBlock Text="{x:Bind Name}" />
                         <TextBlock Text="{x:Bind local:Caps.Of(Kind)}" Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" />
+                        <!-- What it takes to leave here: money, an item, a switch, climbing gear, a flare, a partner. -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind NeedsVisibility}" Margin="0,2,0,0">
+                          <controls:Picture ItemId="{x:Bind NeedItemId}" Size="20" Visibility="{x:Bind ItemVisibility}" />
+                          <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" MaxWidth="250" VerticalAlignment="Center" />
+                        </StackPanel>
                       </StackPanel>
                       <StackPanel Grid.Column="1">
                         <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" Foreground="{StaticResource GreenBrush}" />
@@ -369,8 +399,15 @@
           <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
         </StackPanel>
-        <TextBlock Text="{x:Bind ViewModel.Attribution, Mode=OneWay}" Style="{StaticResource NoteText}" FontSize="11"
-                   HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" />
+        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
+          <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
+          <HyperlinkButton Padding="0" NavigateUri="{x:Bind ViewModel.WikiMap, Mode=OneWay}" Click="OnWikiMapClick"
+                           Visibility="{x:Bind ShownIfLink(ViewModel.WikiMap), Mode=OneWay}"
+                           ToolTipService.ToolTip="Opens this map's interactive map on the Escape from Tarkov wiki in your browser">
+            <TextBlock Text="WIKI MAP ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+          </HyperlinkButton>
+          <TextBlock Text="{x:Bind ViewModel.Attribution, Mode=OneWay}" Style="{StaticResource NoteText}" FontSize="11" />
+        </StackPanel>
       </Grid>
     </Grid>
   </Grid>

@@ -63,6 +63,11 @@ public sealed partial class QuestWindow : Window
             if (!e.Handled && !Linked.IsInside(e.OriginalSource) && Stack.AnyHeld)
                 Stack.CloseAll();
         };
+        _root.AddHandler(UIElement.PointerMovedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, e) =>
+        {
+            if (Stack.AnyHeld)
+                Stack.PointerAt(e.GetCurrentPoint(_root).Position);
+        }), handledEventsToo: true);
     }
 
     public string QuestId { get; }
