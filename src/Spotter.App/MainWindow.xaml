@@ -13,7 +13,7 @@
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <!-- Status bar: mode, raid, last fix on the left; inputs on the right. -->
+    <!-- Status bar: mode, raid, last fix on the left; inputs and help on the right. -->
     <Grid Padding="16,8" ColumnSpacing="12" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto" />
@@ -22,7 +22,7 @@
       </Grid.ColumnDefinitions>
       <StackPanel Orientation="Horizontal" Spacing="10">
         <TextBlock Text="SPOTTER" FontWeight="SemiBold" CharacterSpacing="160" VerticalAlignment="Center" Margin="0,0,6,0" />
-        <DropDownButton x:Name="ModeButton" Content="{x:Bind ViewModel.ModeText, Mode=OneWay}" FontFamily="{StaticResource DataFont}" FontSize="12" Padding="10,3">
+        <DropDownButton Content="{x:Bind ViewModel.ModeText, Mode=OneWay}" FontFamily="{StaticResource DataFont}" FontSize="12" Padding="10,3">
           <DropDownButton.Flyout>
             <MenuFlyout Placement="Bottom">
               <MenuFlyoutItem Text="PvE" Tag="Pve" Click="OnModeClick" />
@@ -48,6 +48,64 @@
         <Border Style="{StaticResource Chip}" BorderBrush="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}">
           <TextBlock Style="{StaticResource ChipText}" Text="{x:Bind ViewModel.DataText, Mode=OneWay}" Foreground="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}" />
         </Border>
+        <Button x:Name="HelpButton" Padding="8,4" ToolTipService.ToolTip="How Spotter works (F1)">
+          <FontIcon Glyph="&#xE897;" FontSize="14" />
+          <Button.Flyout>
+            <Flyout x:Name="HelpFlyout" Placement="BottomEdgeAlignedRight" Closed="OnHelpClosed">
+              <StackPanel Width="440" Spacing="6">
+                <TextBlock Text="How Spotter works" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=". The game names each screenshot with your position; Spotter moves your marker, picks the floor and sorts your objectives by distance." />
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
+                <TextBlock TextWrapping="Wrap" Text="Between raids, Spotter suggests where to go next, what you can finish there and what to bring. To update your quests, open Character → Tasks in the game and take a screenshot; scroll and take another for more rows." />
+
+                <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS (WHEN THIS WINDOW HAS FOCUS)" />
+                <Grid ColumnSpacing="16" RowSpacing="2">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                  </Grid.RowDefinitions>
+                  <TextBlock FontFamily="{StaticResource DataFont}" Text="F" />
+                  <TextBlock Grid.Column="1" Text="Follow my position" />
+                  <TextBlock Grid.Row="1" FontFamily="{StaticResource DataFont}" Text="+ / −" />
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="Zoom in / out (or the mouse wheel)" />
+                  <TextBlock Grid.Row="2" FontFamily="{StaticResource DataFont}" Text="0" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="Show the whole map" />
+                  <TextBlock Grid.Row="3" FontFamily="{StaticResource DataFont}" Text="Esc" />
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="Clear the selected objective" />
+                  <TextBlock Grid.Row="4" FontFamily="{StaticResource DataFont}" Text="F1 / ?" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" Text="This help" />
+                  <TextBlock Grid.Row="5" FontFamily="{StaticResource DataFont}" Text="Mouse" />
+                  <TextBlock Grid.Row="5" Grid.Column="1" TextWrapping="Wrap" Text="Drag to move the map, double-click to zoom in, click an objective to draw a line to it" />
+                </Grid>
+
+                <TextBlock Style="{StaticResource EyebrowText}" Text="QUEST TYPES" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Legend}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:LegendItem">
+                      <Grid ColumnSpacing="10" Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="Auto" />
+                          <ColumnDefinition Width="70" />
+                          <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,2,0,0" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind Label}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind Explanation}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
+                           Text="Spotter only reads your screenshots, the game's logs and public tarkov.dev data. It never touches the game." />
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
       </StackPanel>
     </Grid>
 
@@ -57,76 +115,169 @@
         <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
 
-      <!-- Left rail: what to do on this map, nearest first. -->
+      <!-- Left rail: Plan between raids, Raid during one. The state follows the game. -->
       <Grid Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ComboBox x:Name="MapPicker" Margin="16,14,16,0" HorizontalAlignment="Stretch" Header="Map"
+        <ComboBox Margin="16,14,16,0" HorizontalAlignment="Stretch" Header="Map"
                   ItemsSource="{x:Bind ViewModel.MapChoices, Mode=OneWay}"
                   SelectedItem="{x:Bind ViewModel.SelectedMap, Mode=TwoWay}"
                   SelectionChanged="OnMapPicked" />
         <ScrollViewer Grid.Row="1" Padding="16,0,16,16">
           <StackPanel>
-            <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind ViewModel.ObjectivesHeader, Mode=OneWay}" />
             <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.Hint), Mode=OneWay}"
-                       Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,6" />
-            <ListView x:Name="ObjectiveList" ItemsSource="{x:Bind ViewModel.Objectives, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnObjectiveClick" Margin="-12,0">
-              <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:ObjectiveItem">
-                  <Grid Padding="0,7" ColumnSpacing="10">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                      <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                      <TextBlock Text="{x:Bind Quest}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                      <TextBlock Text="{x:Bind Distance}" Foreground="{StaticResource AmberBrush}" FontFamily="{StaticResource DataFont}" HorizontalAlignment="Right" />
-                      <TextBlock Text="{x:Bind Direction}" Foreground="{StaticResource MutedBrush}" FontFamily="{StaticResource DataFont}" FontSize="11" HorizontalAlignment="Right" />
-                    </StackPanel>
-                  </Grid>
-                </DataTemplate>
-              </ListView.ItemTemplate>
-            </ListView>
+                       Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
 
-            <TextBlock Style="{StaticResource EyebrowText}" Text="NO FIXED PLACE" />
-            <ListView ItemsSource="{x:Bind ViewModel.Unplaced, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="False" Margin="-12,0">
-              <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:ObjectiveItem">
-                  <StackPanel Padding="0,6">
-                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
-                    <TextBlock Text="{x:Bind Quest}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-                  </StackPanel>
-                </DataTemplate>
-              </ListView.ItemTemplate>
-            </ListView>
+            <!-- PLAN -->
+            <StackPanel Visibility="{x:Bind ShownIfNot(ViewModel.InRaid), Mode=OneWay}">
+              <TextBlock Text="{x:Bind ViewModel.LastRaidText, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.LastRaidText), Mode=OneWay}"
+                         Foreground="{StaticResource MutedBrush}" FontFamily="{StaticResource DataFont}" FontSize="12" Margin="0,14,0,0" />
+              <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
+              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:PlanCard">
+                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,10" Margin="0,0,0,8"
+                            Background="{x:Bind CardBackground}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick">
+                      <StackPanel Spacing="3">
+                        <Grid ColumnSpacing="8">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Text="{x:Bind MapName}" FontSize="16" FontWeight="SemiBold" />
+                          <TextBlock Grid.Column="1" Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontFamily="{StaticResource DataFont}" FontSize="12" VerticalAlignment="Center" />
+                        </Grid>
+                        <TextBlock Text="{x:Bind Detail}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                        <StackPanel Visibility="{x:Bind ExpandedVisibility}" Spacing="3" Margin="0,8,0,0">
+                          <ItemsControl ItemsSource="{x:Bind Finish}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="local:QuestLine">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,2,0,0" />
+                                  <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" MaxWidth="290" />
+                                </StackPanel>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                          <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS ONLY" Margin="0,8,0,2" Visibility="{x:Bind ProgressVisibility}" />
+                          <ItemsControl ItemsSource="{x:Bind Progress}" Visibility="{x:Bind ProgressVisibility}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="local:QuestLine">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                  <TextBlock Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" MaxWidth="290" />
+                                </StackPanel>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                          <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,8,0,2" Visibility="{x:Bind RequirementsVisibility}" />
+                          <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="local:RequirementLine">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                  <FontIcon Glyph="{x:Bind Glyph}" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="{StaticResource InkBrush}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                                  <StackPanel MaxWidth="290">
+                                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind For}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                  </StackPanel>
+                                </StackPanel>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </StackPanel>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Style="{StaticResource EyebrowText}" Text="ANY MAP" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
+              <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:QuestLine">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                      <TextBlock Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" MaxWidth="300" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
 
-            <TextBlock Style="{StaticResource EyebrowText}" Text="EXTRACTS AND TRANSITS" />
-            <ListView ItemsSource="{x:Bind ViewModel.Extracts, Mode=OneWay}" SelectionMode="None" Margin="-12,0">
-              <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:ExtractItem">
-                  <Grid Padding="0,5" ColumnSpacing="10">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                      <TextBlock Text="{x:Bind Name}" />
-                      <TextBlock Text="{x:Bind Kind}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                      <TextBlock Text="{x:Bind Distance}" Foreground="{StaticResource GreenBrush}" FontFamily="{StaticResource DataFont}" HorizontalAlignment="Right" />
-                      <TextBlock Text="{x:Bind Direction}" Foreground="{StaticResource MutedBrush}" FontFamily="{StaticResource DataFont}" FontSize="11" HorizontalAlignment="Right" />
-                    </StackPanel>
-                  </Grid>
-                </DataTemplate>
-              </ListView.ItemTemplate>
-            </ListView>
+            <!-- RAID -->
+            <StackPanel Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
+              <TextBlock Text="{x:Bind ViewModel.RaidLine, Mode=OneWay}" Foreground="{StaticResource AmberBrush}" FontFamily="{StaticResource DataFont}"
+                         FontSize="13" TextWrapping="Wrap" Margin="0,14,0,0" />
+              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind ViewModel.ObjectivesHeader, Mode=OneWay}" />
+              <ListView ItemsSource="{x:Bind ViewModel.Objectives, Mode=OneWay}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnObjectiveClick" Margin="-12,0">
+                <ListView.ItemTemplate>
+                  <DataTemplate x:DataType="local:ObjectiveItem">
+                    <Grid Padding="0,7" ColumnSpacing="10">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,3,0,0" />
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Bind Quest}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                        <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" Foreground="{StaticResource InkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                        <TextBlock Text="{x:Bind Distance}" Foreground="{StaticResource AmberBrush}" FontFamily="{StaticResource DataFont}" HorizontalAlignment="Right" />
+                        <TextBlock Text="{x:Bind Direction}" Foreground="{StaticResource MutedBrush}" FontFamily="{StaticResource DataFont}" FontSize="11" HorizontalAlignment="Right" />
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListView.ItemTemplate>
+              </ListView>
+
+              <TextBlock Style="{StaticResource EyebrowText}" Text="NO FIXED PLACE" Visibility="{x:Bind ShownIfAny(ViewModel.Unplaced), Mode=OneWay}" />
+              <ListView ItemsSource="{x:Bind ViewModel.Unplaced, Mode=OneWay}" SelectionMode="None" Margin="-12,0">
+                <ListView.ItemTemplate>
+                  <DataTemplate x:DataType="local:ObjectiveItem">
+                    <Grid Padding="0,6" ColumnSpacing="10">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind Quest}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                        <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" FontSize="12" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListView.ItemTemplate>
+              </ListView>
+
+              <TextBlock Style="{StaticResource EyebrowText}" Text="EXTRACTS AND TRANSITS" />
+              <ListView ItemsSource="{x:Bind ViewModel.Extracts, Mode=OneWay}" SelectionMode="None" Margin="-12,0">
+                <ListView.ItemTemplate>
+                  <DataTemplate x:DataType="local:ExtractItem">
+                    <Grid Padding="0,5" ColumnSpacing="10">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <StackPanel>
+                        <TextBlock Text="{x:Bind Name}" />
+                        <TextBlock Text="{x:Bind Kind}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                        <TextBlock Text="{x:Bind Distance}" Foreground="{StaticResource GreenBrush}" FontFamily="{StaticResource DataFont}" HorizontalAlignment="Right" />
+                        <TextBlock Text="{x:Bind Direction}" Foreground="{StaticResource MutedBrush}" FontFamily="{StaticResource DataFont}" FontSize="11" HorizontalAlignment="Right" />
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListView.ItemTemplate>
+              </ListView>
+            </StackPanel>
           </StackPanel>
         </ScrollViewer>
 
@@ -163,12 +314,12 @@
         <InfoBar VerticalAlignment="Top" HorizontalAlignment="Center" Margin="12" IsOpen="{x:Bind ViewModel.NoticeOpen, Mode=OneWay}"
                  Severity="Informational" Message="{x:Bind ViewModel.NoticeText, Mode=OneWay}" IsClosable="True" CloseButtonClick="OnNoticeClosed" />
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="6">
-          <ToggleButton x:Name="FollowButton" IsChecked="{x:Bind ViewModel.Following, Mode=TwoWay}" Click="OnFollowClick" ToolTipService.ToolTip="Follow my position (F)">
+          <ToggleButton IsChecked="{x:Bind ViewModel.Following, Mode=TwoWay}" Click="OnFollowClick" ToolTipService.ToolTip="Follow my position (F)">
             <FontIcon Glyph="&#xE81D;" FontSize="16" />
           </ToggleButton>
-          <Button Click="OnFitClick" ToolTipService.ToolTip="Show the whole map"><FontIcon Glyph="&#xE9A6;" FontSize="16" /></Button>
-          <Button Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in"><FontIcon Glyph="&#xE710;" FontSize="16" /></Button>
-          <Button Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out"><FontIcon Glyph="&#xE738;" FontSize="16" /></Button>
+          <Button Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)"><FontIcon Glyph="&#xE9A6;" FontSize="16" /></Button>
+          <Button Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)"><FontIcon Glyph="&#xE710;" FontSize="16" /></Button>
+          <Button Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)"><FontIcon Glyph="&#xE738;" FontSize="16" /></Button>
         </StackPanel>
         <TextBlock Text="{x:Bind ViewModel.Attribution, Mode=OneWay}" Foreground="{StaticResource MutedBrush}" FontSize="11"
                    HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" />

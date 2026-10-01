@@ -138,7 +138,16 @@ static async Task Watch(int seconds)
     foreach (var q in snap.Quests.Values.Where(q => q.State == Spotter.Core.Quests.QuestState.Active).Take(40))
         Console.WriteLine($"  active: {snap.Data?.Tasks.GetValueOrDefault(q.QuestId)?.Name ?? q.QuestId} ({q.Source}, {q.At:dd.MM HH:mm})");
     foreach (var o in snap.Objectives.Take(8))
-        Console.WriteLine($"  here: {o.QuestName}: {o.Text} {(o.Distance is { } d ? $"{d:0} m" : "")}");
+        Console.WriteLine($"  here: [{o.Kind}] {o.QuestName}: {o.Text} {(o.Distance is { } d ? $"{d:0} m" : "")}{(o.Needs is { } n ? "  — " + n : "")}");
+    Console.WriteLine($"--- next raid (last: {snap.LastRaid?.MapName} {snap.LastRaid?.Duration:mm\\:ss} {snap.LastRaid?.Side}); any map: {string.Join("; ", snap.AnyMap.Select(q => $"[{q.Kind}] {q.Name}"))}");
+    foreach (var p in snap.Plan)
+    {
+        Console.WriteLine($"  {p.MapName}: finish {p.Finish.Count}, progress {p.Progress.Count}, ~{p.WalkingMinutes} min walking of {p.RaidMinutes} min; bosses {string.Join(", ", p.Bosses)}");
+        Console.WriteLine($"     finish:   {string.Join("; ", p.Finish.Select(q => $"[{q.Kind}] {q.Name}"))}");
+        Console.WriteLine($"     progress: {string.Join("; ", p.Progress.Select(q => $"[{q.Kind}] {q.Name}"))}");
+        foreach (var r in p.Requirements)
+            Console.WriteLine($"     {r.Kind}: {r.Text}  (for {r.ForQuests})");
+    }
 }
 
 static async Task Render(string mapName, string output, List<string> screenshots)

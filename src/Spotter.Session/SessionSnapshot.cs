@@ -16,6 +16,7 @@ public sealed record SourceHealth(bool Ok, string Text);
 
 /// <summary>An objective on the shown map, measured from the last position fix.</summary>
 /// <param name="HeightDifference">Metres above (+) or below (−) the player, when it matters (over 3 m).</param>
+/// <param name="Needs">Keys or items this objective needs, e.g. "Key: Dorm room 114 key", or null.</param>
 public sealed record ObjectiveView(
     string QuestId,
     string QuestName,
@@ -26,7 +27,15 @@ public sealed record ObjectiveView(
     bool HasPlace,
     double? Distance,
     RelativeDirection? Direction,
-    double? HeightDifference);
+    double? HeightDifference,
+    ObjectiveKind Kind,
+    string? Needs);
+
+/// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
+public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, double? ClockHours);
+
+/// <summary>The raid that just ended, for one line in Plan.</summary>
+public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Side, DateTime EndedAt);
 
 public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction);
 
@@ -79,6 +88,16 @@ public sealed record SessionSnapshot
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
 
     public ScanResult? LastScan { get; init; }
+
+    /// <summary>Suggested maps for the next raid, best first.</summary>
+    public IReadOnlyList<MapPlanView> Plan { get; init; } = [];
+
+    /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
+    public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];
+
+    public RaidInfo? RaidInfo { get; init; }
+
+    public LastRaidView? LastRaid { get; init; }
 
     public int ActiveQuestCount => Quests.Values.Count(q => q.State == QuestState.Active);
 }

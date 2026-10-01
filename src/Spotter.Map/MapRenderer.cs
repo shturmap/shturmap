@@ -130,12 +130,29 @@ public static class MapRenderer
         var at = Screen(camera, scene, marker.Position);
         var selected = IsSelected(scene, marker);
         var color = ColorOf(marker.Kind);
-        var r = (selected ? 8f : 6f) * ui;
+        // Quest markers carry a type glyph, so they are drawn larger than the plain extract and transit shapes.
+        var r = (marker.Objective is not null ? (selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
         switch (marker.Kind)
         {
+            case MarkerKind.Objective or MarkerKind.PossibleLocation when marker.Objective is { } kind:
+                if (marker.Kind == MarkerKind.PossibleLocation)
+                {
+                    // A possible location: hollow, so the eye reads "maybe here".
+                    using var ring = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
+                    canvas.DrawCircle(at, r, outline);
+                    canvas.DrawCircle(at, r - ui, ring);
+                    Glyphs.Draw(canvas, kind, at, r * 1.05f, color);
+                }
+                else
+                {
+                    canvas.DrawCircle(at, r, fill);
+                    canvas.DrawCircle(at, r, outline);
+                    Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);
+                }
+                break;
             case MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared:
                 using (var tri = Polygon(new(at.X, at.Y - r * 1.2f), new(at.X + r * 1.1f, at.Y + r * 0.8f), new(at.X - r * 1.1f, at.Y + r * 0.8f)))
                 {

@@ -1,0 +1,38 @@
+# Plays a scripted Streets raid against Spotter without the game, and saves window/map snapshots mid-raid.
+# Usage: .\tools\fake-raid.ps1 -Exe artifacts\Spotter\Spotter.exe -Out <folder for PNGs>
+param(
+  [Parameter(Mandatory)] [string] $Exe,
+  [Parameter(Mandatory)] [string] $Out
+)
+$ErrorActionPreference = 'Stop'
+$root = Join-Path ([IO.Path]::GetTempPath()) ("spotter-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+$start = Get-Date
+$session = 'log_' + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510'
+New-Item -ItemType Directory -Force (Join-Path $root "Logs\$session"), (Join-Path $root 'Screenshots') | Out-Null
+$log = Join-Path $root ("Logs\$session\" + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510 application_000.log')
+function Log([string]$message) {
+  $line = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|application|$message`r`n"
+  [IO.File]::AppendAllText($log, $line)
+}
+function Shot([string]$position) {
+  $name = (Get-Date).ToString('yyyy-MM-dd[HH-mm]') + "_$position (0).png"
+  [IO.File]::WriteAllText((Join-Path $root "Screenshots\$name"), '')
+}
+
+Log 'Session mode: Pve'
+Log 'PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0'
+$p = Start-Process $Exe -ArgumentList '--fake-game', $root, '--snapshot', $Out, '16' -PassThru
+Start-Sleep -Seconds 4
+Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
+Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: 000000000000000000000003, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+Log 'GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19'
+Start-Sleep -Seconds 1
+Log 'GameStarted:90.6(10.33) real:107.49(12.02) diff:16.89'
+Start-Sleep -Seconds 3
+Shot '-60.00, 3.50, 300.00_-0.02500, 0.23500, -0.00500, -0.97150_6.45'
+Start-Sleep -Seconds 3
+Shot '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
+$null = $p.WaitForExit(60000)
+if (-not $p.HasExited) { Stop-Process -Id $p.Id }
+Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+Write-Output "Snapshots in $Out"

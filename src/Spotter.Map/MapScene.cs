@@ -16,7 +16,9 @@ public enum MarkerKind
 
 /// <summary>A point of interest drawn at a fixed screen size.</summary>
 /// <param name="Group">Markers of one quest share a group, so selecting a quest highlights all its points.</param>
-public sealed record MapMarker(string Id, MarkerKind Kind, WorldPoint Position, string Label, string? Group = null);
+/// <param name="Objective">For quest markers, what the objective asks; drawn as a glyph inside the marker.</param>
+public sealed record MapMarker(string Id, MarkerKind Kind, WorldPoint Position, string Label, string? Group = null,
+    Spotter.Core.Quests.ObjectiveKind? Objective = null);
 
 /// <summary>An area drawn as an outline, e.g. a quest zone or an extract's footprint.</summary>
 public sealed record MapZone(string Id, MarkerKind Kind, IReadOnlyList<WorldPoint> Outline, string? Group = null);

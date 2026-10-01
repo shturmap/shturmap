@@ -52,6 +52,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     private MapIdentity? _lastRaidMap;
     private DateTime? _lastRaidEnded;
     private ScanResult? _lastScan;
+    private IReadOnlyList<MapPlanView> _plan = [];
+    private IReadOnlyList<PlanQuestView> _anyMap = [];
+    // Kept raw: a raid replayed at startup ends before the map data has loaded to name it.
+    private (RaidState State, DateTime EndedAt)? _lastRaidState;
+    private double? _lastClock;
     private Dictionary<string, QuestStatus> _quests = new();
 
     public SessionSnapshot Snapshot { get; private set; } = new();
@@ -188,8 +193,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     return; // the mode changed while loading; a newer load is under way
                 _data = data;
                 _dataError = null;
-                ResolveMap();
                 RecomputeQuests();
+                ResolveMap();
                 Publish();
             }
             finally
@@ -309,6 +314,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 SwitchMode(changed.State.Mode);
                 break;
             case RaidLoading:
+                _lastClock = null;
                 _trail.Clear();
                 _fix = null;
                 _fixMapId = null;
@@ -322,6 +328,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             case RaidEnded ended:
                 _lastRaidMap = _map;
                 _lastRaidEnded = ended.At;
+                if (ended.Previous.RaidStartedAt is not null)
+                    _lastRaidState = (ended.Previous, ended.At);
                 break;
         }
     }
@@ -340,7 +348,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
         if (_map is null)
         {
-            var last = _store?.GetSetting("lastMap") ?? "customs";
+            // Between raids, open on the best suggestion for the next one.
+            var last = _plan.FirstOrDefault()?.NormalizedName ?? _store?.GetSetting("lastMap") ?? "customs";
             if (_data.MapByNormalizedName(last) is { } m)
                 _map = new MapIdentity(m.Id, m.NormalizedName, m.NameId, m.ScenePath, m.Name);
         }
@@ -369,6 +378,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             if (_fix is not null && _fixMapId == map.Id)
                 _trail.Add(_fix.Position);
             _fix = new PlayerFix(seen.Info.Position!.Value, seen.Info.YawDegrees, seen.CreatedAt);
+            _lastClock = seen.Info.RaidClockHours;
             _fixMapId = map.Id;
             Publish();
         }
@@ -493,7 +503,14 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             _store.Load(_mode),
             id => tasks?.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new QuestRequirement(r.Task, r.Status ?? [])) ?? [],
             id => tasks?.GetValueOrDefault(id)?.Name ?? id);
+        var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId).ToList();
+        _plan = _data is null ? [] : Planning.Suggest(_data, active);
+        _anyMap = _data is null ? [] : Planning.AnyMap(_data, active);
     }
+
+    public string? GetSetting(string key) => _store?.GetSetting(key);
+
+    public void SetSetting(string key, string value) => _store?.SetSetting(key, value);
 
     // ---- snapshot ----
 
@@ -511,6 +528,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         {
             var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
             content = MapContentBuilder.Build(_data, _map.Id, active, new HashSet<string>());
+            var sameArtwork = _data.MapIdsSharing(_map.NormalizedName);
             foreach (var o in content.Objectives)
             {
                 double? distance = null, height = null;
@@ -526,7 +544,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 }
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
                     string.IsNullOrWhiteSpace(o.Objective.Description) ? "(no description)" : o.Objective.Description!,
-                    o.Done, o.Places.Count > 0, distance, direction, height));
+                    o.Done, o.Places.Count > 0, distance, direction, height,
+                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0)));
             }
             var side = _tracker.State.Side;
             foreach (var m in content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))
@@ -567,6 +586,15 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 : new(false, _dataError is null ? "Loading game data…" : "No game data: " + _dataError),
             ScreenshotKeys = _settings.ScreenshotKeys,
             LastScan = _lastScan,
+            Plan = _plan,
+            AnyMap = _anyMap,
+            LastRaid = _lastRaidState is ({ } state, var endedAt) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
+                ? new LastRaidView(lastMap.Name, endedAt - state.RaidStartedAt!.Value, state.Side, endedAt)
+                : null,
+            RaidInfo = _map is not null && _data?.Maps.GetValueOrDefault(_map.Id) is { } raidMap
+                ? new RaidInfo(raidMap.RaidDuration ?? 0, _data.BossesOn(raidMap.Id).Take(3).Select(Planning.BossText).ToList(),
+                    _tracker.State.Phase == RaidPhase.InRaid ? _lastClock : null)
+                : null,
         };
         Changed?.Invoke(Snapshot);
     }

@@ -23,6 +23,7 @@
 
       <SolidColorBrush x:Key="GroundBrush" Color="{StaticResource GroundColor}" />
       <SolidColorBrush x:Key="RailBrush" Color="{StaticResource RailColor}" />
+      <SolidColorBrush x:Key="CardBrush" Color="#1B2421" />
       <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
       <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
       <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource MutedColor}" />

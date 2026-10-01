@@ -1,4 +1,5 @@
 using Spotter.Core;
+using Spotter.Core.Quests;
 using Spotter.Data.TarkovDev;
 
 namespace Spotter.Map;
@@ -52,6 +53,7 @@ public static class MapContentBuilder
             foreach (var objective in quest.Objectives ?? [])
             {
                 var done = doneObjectives.Contains(objective.Id);
+                var kind = QuestTaxonomy.Classify(objective.Type);
                 var places = new List<WorldPoint>();
 
                 foreach (var zone in objective.Zones ?? [])
@@ -63,7 +65,7 @@ public static class MapContentBuilder
                         continue;
                     places.Add(zone.Position.ToWorld());
                     markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.Objective,
-                        zone.Position.ToWorld(), quest.Name, quest.Id));
+                        zone.Position.ToWorld(), quest.Name, quest.Id, kind));
                     if (zone.Outline is { Count: >= 3 } outline)
                         zones.Add(new MapZone($"zone:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.Objective,
                             outline.Select(p => p.ToWorld()).ToList(), quest.Id));
@@ -77,7 +79,7 @@ public static class MapContentBuilder
                     {
                         places.Add(position.ToWorld());
                         markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.PossibleLocation,
-                            position.ToWorld(), quest.Name, quest.Id));
+                            position.ToWorld(), quest.Name, quest.Id, kind));
                     }
                 }
 

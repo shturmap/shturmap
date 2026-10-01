@@ -16,6 +16,24 @@ public sealed class GameData
 
     public required IReadOnlyDictionary<string, ApiTrader> Traders { get; init; }
 
+    /// <summary>Bosses and other AI types by id ("bossBoar" → "Kaban").</summary>
+    public IReadOnlyDictionary<string, ApiMob> Mobs { get; init; } = new Dictionary<string, ApiMob>();
+
+    /// <summary>Item and quest-item names by id, in the game's language.</summary>
+    public IReadOnlyDictionary<string, string> ItemNames { get; init; } = new Dictionary<string, string>();
+
+    public string ItemName(string id) => ItemNames.TryGetValue(id, out var name) ? name : "Unknown item";
+
+    /// <summary>Bosses that can spawn on a map, strongest chance first (AI PMC squads are left out).</summary>
+    public IReadOnlyList<(string Name, double Chance)> BossesOn(string mapId) =>
+        Maps.TryGetValue(mapId, out var map) && map.Bosses is { } bosses
+            ? bosses.Where(b => b.Mob.StartsWith("boss", StringComparison.Ordinal))
+                .GroupBy(b => b.Mob)
+                .Select(g => (Name: Mobs.TryGetValue(g.Key, out var mob) ? mob.Name : g.Key, Chance: g.Max(b => b.SpawnChance)))
+                .OrderByDescending(b => b.Chance)
+                .ToList()
+            : [];
+
     public required IReadOnlyList<MapDefinition> MapDefinitions { get; init; }
 
     /// <summary>When the data was last confirmed current with tarkov.dev.</summary>
