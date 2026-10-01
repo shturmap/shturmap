@@ -86,7 +86,7 @@ public static class RaidPlanner
             score += tied.Sum(o => Places(o, map).Count > 0 ? 1 : 0.6) + (doable.Count - tied.Count) * 0.1;
             // Found-in-raid items depend on luck, and large kill counts take several raids.
             var finishable = doable.Count == inRaid.Count &&
-                             doable.All(o => o.Kind != ObjectiveKind.Collect && (o.Kind != ObjectiveKind.Kill || o.Count <= OneRaidCount));
+                             doable.All(o => o.Kind != ObjectiveKind.FindInRaid && (o.Kind != ObjectiveKind.Elimination || o.Count <= OneRaidCount));
             if (finishable)
             {
                 finish.Add(new QuestOnMap(quest, doable));

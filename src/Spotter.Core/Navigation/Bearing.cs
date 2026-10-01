@@ -29,6 +29,14 @@ public static class Bearing
         return (RelativeDirection)sector;
     }
 
+    /// <summary>Eight-point compass label for a heading in degrees clockwise from "up" on the map (map-up = N).</summary>
+    public static string Compass(double degreesFromUp)
+    {
+        string[] points = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+        var normalized = ((degreesFromUp % 360) + 360) % 360;
+        return points[(int)Math.Floor((normalized + 22.5) / 45) % 8];
+    }
+
     public static string Describe(RelativeDirection direction) => direction switch
     {
         RelativeDirection.Ahead => "ahead",

@@ -20,7 +20,7 @@ public partial class App : Application
     {
         AppLog.Info("Starting Spotter " + typeof(App).Assembly.GetName().Version);
         _session = CreateSession(Environment.GetCommandLineArgs());
-        _session.Notice += message => AppLog.Info("Notice: " + message);
+        _session.Notice += notice => AppLog.Info("Notice: " + notice.Text);
         _window = new MainWindow(_session) { SnapshotMode = Environment.GetCommandLineArgs().Contains("--snapshot") };
         _window.Closed += async (_, _) => await _session.DisposeAsync();
         _window.Activate();

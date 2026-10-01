@@ -30,6 +30,14 @@ public static class Planning
         return plans.Select(p => ToView(data, p)).ToList();
     }
 
+    /// <summary>The plan for one map (whether or not it ranks), e.g. for the bring-list when a raid loads.</summary>
+    public static MapPlanView? PlanFor(GameData data, IEnumerable<string> activeQuestIds, string normalizedName)
+    {
+        var id = data.MapByNormalizedName(normalizedName)?.Id;
+        var map = Maps(data).FirstOrDefault(m => id is not null && m.MapIds.Contains(id));
+        return map is null ? null : ToView(data, RaidPlanner.Plan(Quests(data, activeQuestIds), map));
+    }
+
     /// <summary>Active quests whose in-raid work fits any map.</summary>
     public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds) =>
         RaidPlanner.AnyMap(Quests(data, activeQuestIds)).Select(QuestView).ToList();

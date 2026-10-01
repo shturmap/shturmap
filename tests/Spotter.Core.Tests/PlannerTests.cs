@@ -6,14 +6,15 @@ namespace Spotter.Core.Tests;
 public class TaxonomyTests
 {
     [Theory]
-    [InlineData("shoot", ObjectiveKind.Kill)]
-    [InlineData("visit", ObjectiveKind.Visit)]
-    [InlineData("findQuestItem", ObjectiveKind.Retrieve)]
+    [InlineData("shoot", ObjectiveKind.Elimination)]
+    [InlineData("visit", ObjectiveKind.Exploration)]
+    [InlineData("findQuestItem", ObjectiveKind.Pickup)]
     [InlineData("plantItem", ObjectiveKind.Place)]
     [InlineData("mark", ObjectiveKind.Place)]
     [InlineData("useItem", ObjectiveKind.Place)]
-    [InlineData("findItem", ObjectiveKind.Collect)]
+    [InlineData("findItem", ObjectiveKind.FindInRaid)]
     [InlineData("extract", ObjectiveKind.Survive)]
+    [InlineData("experience", ObjectiveKind.Survive)]
     [InlineData("giveQuestItem", ObjectiveKind.Trader)]
     [InlineData("buildWeapon", ObjectiveKind.Trader)]
     [InlineData("somethingNew", ObjectiveKind.Trader)]
@@ -23,8 +24,8 @@ public class TaxonomyTests
     [Fact]
     public void Quest_kind_is_its_most_common_in_raid_objective()
     {
-        Assert.Equal(ObjectiveKind.Retrieve, QuestTaxonomy.QuestKind([ObjectiveKind.Retrieve, ObjectiveKind.Trader, ObjectiveKind.Trader]));
-        Assert.Equal(ObjectiveKind.Kill, QuestTaxonomy.QuestKind([ObjectiveKind.Visit, ObjectiveKind.Kill])); // tie: Kill first
+        Assert.Equal(ObjectiveKind.Pickup, QuestTaxonomy.QuestKind([ObjectiveKind.Pickup, ObjectiveKind.Trader, ObjectiveKind.Trader]));
+        Assert.Equal(ObjectiveKind.Elimination, QuestTaxonomy.QuestKind([ObjectiveKind.Exploration, ObjectiveKind.Elimination])); // tie: Kill first
         Assert.Equal(ObjectiveKind.Trader, QuestTaxonomy.QuestKind([ObjectiveKind.Trader]));
     }
 }
@@ -45,7 +46,7 @@ public class PlannerTests
 
     private static readonly PlanQuest Audit = new("audit", "Audit",
     [
-        Obj("a1", ObjectiveKind.Retrieve, ["streets"], [("streets", new WorldPoint(-177, 6, 227))], keys: [["hotel-key"]]),
+        Obj("a1", ObjectiveKind.Pickup, ["streets"], [("streets", new WorldPoint(-177, 6, 227))], keys: [["hotel-key"]]),
         Obj("a2", ObjectiveKind.Trader, []),
     ], NoKeys);
 
@@ -57,12 +58,12 @@ public class PlannerTests
 
     private static readonly PlanQuest Swift = new("swift", "Swift",
     [
-        Obj("s1", ObjectiveKind.Kill, ["woods"], count: 5),
+        Obj("s1", ObjectiveKind.Elimination, ["woods"], count: 5),
     ], NoKeys);
 
     private static readonly PlanQuest AnyKills = new("kills", "Kill 2 PMCs anywhere",
     [
-        Obj("k1", ObjectiveKind.Kill, [], count: 2),
+        Obj("k1", ObjectiveKind.Elimination, [], count: 2),
     ], NoKeys);
 
     [Fact]
@@ -82,8 +83,8 @@ public class PlannerTests
     {
         var quest = new PlanQuest("ice", "Ice Cream Cones",
         [
-            Obj("i1", ObjectiveKind.Visit, ["streets"], [("streets", new WorldPoint(5, 0, 5))]),
-            Obj("i2", ObjectiveKind.Collect, [], count: 1),
+            Obj("i1", ObjectiveKind.Exploration, ["streets"], [("streets", new WorldPoint(5, 0, 5))]),
+            Obj("i2", ObjectiveKind.FindInRaid, [], count: 1),
         ], NoKeys);
         var plan = RaidPlanner.Plan([quest], Streets);
         Assert.Empty(plan.Finish);
@@ -115,7 +116,7 @@ public class PlannerTests
     [Fact]
     public void Map_variants_count_as_one_map()
     {
-        var quest = new PlanQuest("gzq", "Ground Zero quest", [Obj("g1", ObjectiveKind.Visit, ["gz21"], [("gz21", new WorldPoint(1, 0, 1))])], NoKeys);
+        var quest = new PlanQuest("gzq", "Ground Zero quest", [Obj("g1", ObjectiveKind.Exploration, ["gz21"], [("gz21", new WorldPoint(1, 0, 1))])], NoKeys);
         Assert.Equal("gz", Assert.Single(RaidPlanner.Rank([quest], [GroundZero, Streets])).Map.Id);
     }
 

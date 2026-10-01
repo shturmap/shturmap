@@ -11,12 +11,16 @@ using Spotter.Ocr;
 
 namespace Spotter.Session;
 
+/// <summary>A one-line message for the user and how long it stays.</summary>
+public sealed record SessionNotice(string Text, TimeSpan Duration);
+
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);
 
 /// <summary>An objective on the shown map, measured from the last position fix.</summary>
 /// <param name="HeightDifference">Metres above (+) or below (−) the player, when it matters (over 3 m).</param>
 /// <param name="Needs">Keys or items this objective needs, e.g. "Key: Dorm room 114 key", or null.</param>
+/// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
 public sealed record ObjectiveView(
     string QuestId,
     string QuestName,
@@ -29,7 +33,8 @@ public sealed record ObjectiveView(
     RelativeDirection? Direction,
     double? HeightDifference,
     ObjectiveKind Kind,
-    string? Needs);
+    string? Needs,
+    double? MapBearing = null);
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
 public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, double? ClockHours);
@@ -37,7 +42,8 @@ public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, dou
 /// <summary>The raid that just ended, for one line in Plan.</summary>
 public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Side, DateTime EndedAt);
 
-public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction);
+/// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
+public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction, double? MapBearing = null);
 
 /// <summary>The outcome of reading a Tasks screenshot.</summary>
 public sealed record ScanResult(

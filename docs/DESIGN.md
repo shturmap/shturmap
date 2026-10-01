@@ -66,6 +66,14 @@ residual risk. Do not widen the boundary.
    to the objective that needs it during the raid.
 6. **Says why.** Every quest state can say where it came from (log, Tasks scan, import, manual, implied).
 7. **Only ask when unsure.** The only confirmations in the app are uncertain Tasks-scan reads, one click each.
+8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
+   the "you are here" parts works without a fix. A fix shows its age; the marker fades and a dashed ring grows
+   with the distance you have likely covered since (typical raid pace 1.5 m/s, at most 150 m). Directions relative to your facing
+   ("ahead-left") are shown only for 45 s after a fix; after that they become map directions ("NE", map-up is
+   north), which stay true while you move. Distances say how old they are. A new fix frames you and your nearest
+   objective together.
+9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
+   map, while there is still time to back out of matching.
 
 ### Visual language
 
@@ -111,21 +119,25 @@ Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, click 
 
 ## 5. Quest taxonomy
 
-Every objective gets one type, from tarkov.dev's objective `type`:
+Every objective gets one type, from tarkov.dev's objective `type`. The game gives each quest one hand-assigned
+type on its Tasks screen (Elimination, Pickup, Exploration, Discovery, Completion, …); that type is not in any
+public data and can't be derived reliably (a check against the wiki matched 62.5 %), so Spotter types objectives
+instead and borrows the game's names and look where one fits, so the labels feel familiar:
 
 | type | glyph | objective types | in raid? |
 | --- | --- | --- | --- |
-| **Kill** | crosshair (custom) | `shoot` | yes |
-| **Visit** | flag `E7C1` | `visit` | yes, at a place |
-| **Retrieve** | box `E7B8` | `findQuestItem` | yes, at a place |
+| **Elimination** | crosshair (custom; the game uses a skull) | `shoot` | yes |
+| **Exploration** | magnifier `E721` (as in the game) | `visit` | yes, at a place |
+| **Pickup** | pointing hand `E7C9` (as in the game) | `findQuestItem` | yes, at a place |
 | **Place** | pin `E840` | `plantItem`, `plantQuestItem`, `mark`, `useItem` | yes, at a place; needs an item |
-| **Collect** | bag `E719` | `findItem` | yes, anywhere (found in raid) |
-| **Survive** | runner `E726` | `extract` | yes, survive and extract |
-| **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `skill`, `experience`, `taskStatus`, `dialogue`, `globalVariable` | no |
+| **Find in raid** | bag `E719` | `findItem` | yes, anywhere (FIR) |
+| **Survive** | runner `E726` | `extract`, `experience` (an in-raid health condition, not XP) | yes |
+| **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
 
-A quest's type is that of its most common in-raid objective type (ties: Kill, Retrieve, Place, Visit, Survive,
-Collect); a quest with no in-raid objectives is a Trader quest. Requirements use a key glyph `E8D7` for keys and
-a briefcase `E821` for items to bring.
+A quest's type is that of its most common in-raid objective type (ties: Elimination, Pickup, Place, Exploration,
+Survive, Find in raid); a quest with no in-raid objectives is a Trader quest. This is derived, not the game's own
+label. Requirements use a key glyph `E8D7` for keys and a briefcase `E821` for items to bring. Never use the
+game's icon artwork; the glyphs only echo it.
 
 ## 6. Raid requirements
 
@@ -207,7 +219,8 @@ folding. Accept ≥ 0.92 with margin; confirm ≥ 0.75.
 
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, TarkovEyes import, Tasks scans, safety test,
-  self-contained publish.
-- In progress: taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts.
+  self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
+  occasional-position UX (fix age, uncertainty ring, compass directions), bring-list notice on raid load.
+- Pending decision: product name (proposed: Shturman). Rename only after the owner confirms.
 - Open: tile-only maps (The Lab, Labyrinth, Icebreaker); manual quest editing; objective progress; floor picker;
   published size 237 MB (budget 80–120 MB, needs trimming).

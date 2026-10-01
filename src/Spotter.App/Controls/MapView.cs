@@ -53,22 +53,45 @@ public sealed partial class MapView : Grid
         _panel.Invalidate();
     }
 
-    /// <summary>Redraws after the scene's markers, player or floor changed; follows a new fix if enabled.</summary>
+    /// <summary>Redraws after the scene's markers, player or floor changed; frames a new fix if following.</summary>
     public void Refresh()
     {
         if (_scene?.Player is { } fix && FollowPlayer && !_fitPending && !ReferenceEquals(fix, _followedFix))
-            CenterOnPlayer(zoomIn: _followedFix is null);
+            CenterOnPlayer(frame: true);
         _panel.Invalidate();
     }
 
-    public void CenterOnPlayer(bool zoomIn = false)
+    /// <summary>Redraws without moving, e.g. to let an ageing fix fade.</summary>
+    public void Redraw() => _panel.Invalidate();
+
+    /// <param name="frame">Fit the player and the nearest open objective (or about 150 m around) into view.</param>
+    public void CenterOnPlayer(bool frame = false)
     {
         if (_scene?.Player is not { } fix)
             return;
         _followedFix = fix;
-        _camera.CenterOn(_scene.Projection.ToMap(fix.Position));
-        if (zoomIn)
-            _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), 3);
+        var at = _scene.Projection.ToMap(fix.Position);
+        if (!frame)
+        {
+            _camera.CenterOn(at);
+            _panel.Invalidate();
+            return;
+        }
+        // A fix comes now and then, so each one should answer "where am I and where to next" at a glance.
+        var step = _scene.Projection.ToMap(fix.Position.X + 1, fix.Position.Z);
+        var unitsPerMeter = Math.Sqrt((step.X - at.X) * (step.X - at.X) + (step.Y - at.Y) * (step.Y - at.Y));
+        var target = _scene.Markers
+            .Where(m => m.Objective is not null && m.Kind is MarkerKind.Objective or MarkerKind.PossibleLocation)
+            .Where(m => fix.Position.HorizontalDistanceTo(m.Position) < 600)
+            .MinBy(m => fix.Position.HorizontalDistanceTo(m.Position));
+        var reach = 150 * unitsPerMeter;
+        var points = new List<Spotter.Core.Maps.MapPoint> { at };
+        if (target is not null)
+            points.Add(_scene.Projection.ToMap(target.Position));
+        var rect = new Spotter.Core.Maps.MapRect(
+            Math.Min(points.Min(p => p.X), at.X - reach / 2), Math.Min(points.Min(p => p.Y), at.Y - reach / 2),
+            Math.Max(points.Max(p => p.X), at.X + reach / 2), Math.Max(points.Max(p => p.Y), at.Y + reach / 2));
+        _camera.Frame(rect, 90 * PixelScale);
         _panel.Invalidate();
     }
 
@@ -116,7 +139,7 @@ public sealed partial class MapView : Grid
             _fitPending = false;
             _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale);
             if (FollowPlayer && _scene.Player is not null)
-                CenterOnPlayer(zoomIn: true);
+                CenterOnPlayer(frame: true);
         }
         MapRenderer.Render(canvas, _camera, _scene, PixelScale);
     }

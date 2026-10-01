@@ -68,7 +68,7 @@ static async Task Simulate()
     Log("Session mode: Pve");
     Log("PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0");
     await using var game = new Spotter.Session.GameSession(paths, locations);
-    game.Notice += m => Console.WriteLine($"  notice: {m}");
+    game.Notice += m => Console.WriteLine($"  notice: {m.Text}");
     await game.StartAsync();
     for (var i = 0; i < 50 && game.Snapshot.Data is null; i++)
         await Task.Delay(200);
@@ -118,7 +118,7 @@ static async Task Watch(int seconds)
 {
     await using var session = new Spotter.Session.GameSession(Spotter.Session.AppPaths.Default);
     var last = "";
-    session.Notice += message => Console.WriteLine($"{DateTime.Now:HH:mm:ss} NOTICE {message}");
+    session.Notice += notice => Console.WriteLine($"{DateTime.Now:HH:mm:ss} NOTICE {notice.Text}");
     session.Changed += s =>
     {
         var line = $"{s.Mode} | {s.Raid.Phase} {s.Map?.Name} side={s.Raid.Side} | fix={(s.Fix is null ? "-" : s.Fix.Position.ToString())} floor={s.Floor?.Name ?? "base"} | " +

@@ -2,7 +2,8 @@
 # Usage: .\tools\fake-raid.ps1 -Exe artifacts\Spotter\Spotter.exe -Out <folder for PNGs>
 param(
   [Parameter(Mandatory)] [string] $Exe,
-  [Parameter(Mandatory)] [string] $Out
+  [Parameter(Mandatory)] [string] $Out,
+  [int] $SnapshotAfter = 16
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("spotter-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -21,7 +22,7 @@ function Shot([string]$position) {
 
 Log 'Session mode: Pve'
 Log 'PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0'
-$p = Start-Process $Exe -ArgumentList '--fake-game', $root, '--snapshot', $Out, '16' -PassThru
+$p = Start-Process $Exe -ArgumentList '--fake-game', $root, '--snapshot', $Out, $SnapshotAfter -PassThru
 Start-Sleep -Seconds 4
 Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
 Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: 000000000000000000000003, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
@@ -32,7 +33,7 @@ Start-Sleep -Seconds 3
 Shot '-60.00, 3.50, 300.00_-0.02500, 0.23500, -0.00500, -0.97150_6.45'
 Start-Sleep -Seconds 3
 Shot '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
-$null = $p.WaitForExit(60000)
+$null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
 if (-not $p.HasExited) { Stop-Process -Id $p.Id }
 Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
 Write-Output "Snapshots in $Out"

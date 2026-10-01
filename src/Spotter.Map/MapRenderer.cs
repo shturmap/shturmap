@@ -200,12 +200,37 @@ public static class MapRenderer
         placed.Add((box, marker.Label));
     }
 
+    /// <summary>
+    /// How far the player has likely moved since a fix, at a typical raid pace of 1.5 m/s (looting, holding angles),
+    /// capped at 150 m. A sprint-speed radius would outgrow the view within a minute and say nothing.
+    /// </summary>
+    public static double UncertaintyMeters(TimeSpan age) => Math.Min(Math.Max(0, age.TotalSeconds - 15) * 1.5, 150);
+
     private static void DrawPlayer(SKCanvas canvas, Camera camera, MapScene scene, float ui)
     {
         if (scene.Player is not { } player)
             return;
         var at = Screen(camera, scene, player.Position);
-        if (player.YawDegrees is { } yaw)
+        var age = DateTime.Now - player.At;
+
+        // Fixes are occasional: the older one is, the wider the area the player may be in.
+        var meters = UncertaintyMeters(age);
+        if (meters > 0)
+        {
+            var rim = Screen(camera, scene, player.Position with { X = player.Position.X + meters });
+            var radius = SKPoint.Distance(at, rim);
+            using var area = new SKPaint { Color = Player.WithAlpha(18), IsAntialias = true };
+            using var ring = new SKPaint
+            {
+                Color = Player.WithAlpha(120), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui,
+                PathEffect = SKPathEffect.CreateDash([5 * ui, 5 * ui], 0),
+            };
+            canvas.DrawCircle(at, radius, area);
+            canvas.DrawCircle(at, radius, ring);
+        }
+
+        // The facing is only true for a moment; after a minute the cone would mislead.
+        if (player.YawDegrees is { } yaw && age < TimeSpan.FromSeconds(60))
         {
             var heading = (float)scene.Projection.ScreenHeadingDegrees(player.Position, yaw);
             canvas.Save();
@@ -226,8 +251,9 @@ public static class MapRenderer
             canvas.DrawPath(arrow, arrowPaint);
             canvas.Restore();
         }
-        using var halo = new SKPaint { Color = Player.WithAlpha(45), IsAntialias = true };
-        using var body = new SKPaint { Color = Player, IsAntialias = true };
+        var fade = age < TimeSpan.FromSeconds(30) ? 1.0 : Math.Max(0.45, 1 - (age.TotalSeconds - 30) / 180 * 0.55);
+        using var halo = new SKPaint { Color = Player.WithAlpha((byte)(45 * fade)), IsAntialias = true };
+        using var body = new SKPaint { Color = Player.WithAlpha((byte)(255 * fade)), IsAntialias = true };
         using var edge = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui };
         canvas.DrawCircle(at, 16 * ui, halo);
         canvas.DrawCircle(at, 6.5f * ui, body);

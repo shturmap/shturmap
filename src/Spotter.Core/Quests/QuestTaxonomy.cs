@@ -1,13 +1,16 @@
 namespace Spotter.Core.Quests;
 
-/// <summary>What an objective asks the player to do. See docs/DESIGN.md §5.</summary>
+/// <summary>
+/// What an objective asks the player to do. See docs/DESIGN.md §5. Names follow the game's own task types where one
+/// fits (Elimination, Exploration, Pickup) and the community's terms otherwise (found in raid).
+/// </summary>
 public enum ObjectiveKind
 {
-    Kill,
-    Visit,
-    Retrieve,
+    Elimination,
+    Exploration,
+    Pickup,
     Place,
-    Collect,
+    FindInRaid,
     Survive,
 
     /// <summary>Done outside the raid: hand-ins, builds, skills, trader levels.</summary>
@@ -18,24 +21,25 @@ public static class QuestTaxonomy
 {
     // Tie-break order when a quest's in-raid objectives are split evenly between types.
     private static readonly ObjectiveKind[] Priority =
-        [ObjectiveKind.Kill, ObjectiveKind.Retrieve, ObjectiveKind.Place, ObjectiveKind.Visit, ObjectiveKind.Survive, ObjectiveKind.Collect];
+        [ObjectiveKind.Elimination, ObjectiveKind.Pickup, ObjectiveKind.Place, ObjectiveKind.Exploration, ObjectiveKind.Survive, ObjectiveKind.FindInRaid];
 
     /// <summary>The kind of a tarkov.dev objective <c>type</c>.</summary>
     public static ObjectiveKind Classify(string? objectiveType) => objectiveType switch
     {
-        "shoot" => ObjectiveKind.Kill,
-        "visit" => ObjectiveKind.Visit,
-        "findQuestItem" => ObjectiveKind.Retrieve,
+        "shoot" => ObjectiveKind.Elimination,
+        "visit" => ObjectiveKind.Exploration,
+        "findQuestItem" => ObjectiveKind.Pickup,
         "plantItem" or "plantQuestItem" or "mark" or "useItem" => ObjectiveKind.Place,
-        "findItem" => ObjectiveKind.Collect,
-        "extract" => ObjectiveKind.Survive,
+        "findItem" => ObjectiveKind.FindInRaid,
+        // tarkov.dev's "experience" is an in-raid health condition (e.g. stay under an effect), not player XP.
+        "extract" or "experience" => ObjectiveKind.Survive,
         _ => ObjectiveKind.Trader,
     };
 
     public static bool InRaid(ObjectiveKind kind) => kind != ObjectiveKind.Trader;
 
     /// <summary>Kinds that count on any map when the objective names none.</summary>
-    public static bool WorksAnywhere(ObjectiveKind kind) => kind is ObjectiveKind.Kill or ObjectiveKind.Collect or ObjectiveKind.Survive;
+    public static bool WorksAnywhere(ObjectiveKind kind) => kind is ObjectiveKind.Elimination or ObjectiveKind.FindInRaid or ObjectiveKind.Survive;
 
     /// <summary>A quest's kind: its most common in-raid objective kind, or Trader if it has none.</summary>
     public static ObjectiveKind QuestKind(IEnumerable<ObjectiveKind> objectiveKinds)
@@ -49,23 +53,23 @@ public static class QuestTaxonomy
 
     public static string Label(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Kill => "Kill",
-        ObjectiveKind.Visit => "Visit",
-        ObjectiveKind.Retrieve => "Retrieve",
+        ObjectiveKind.Elimination => "Elimination",
+        ObjectiveKind.Exploration => "Exploration",
+        ObjectiveKind.Pickup => "Pickup",
         ObjectiveKind.Place => "Place",
-        ObjectiveKind.Collect => "Collect",
+        ObjectiveKind.FindInRaid => "Find in raid",
         ObjectiveKind.Survive => "Survive",
         _ => "Trader",
     };
 
     public static string Explanation(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Kill => "Eliminate targets, sometimes with conditions",
-        ObjectiveKind.Visit => "Go to a place",
-        ObjectiveKind.Retrieve => "Pick up a quest item at a place",
+        ObjectiveKind.Elimination => "Kill targets, sometimes with conditions",
+        ObjectiveKind.Exploration => "Go to a place",
+        ObjectiveKind.Pickup => "Pick up a quest item at a place",
         ObjectiveKind.Place => "Plant, mark or use an item at a place; bring the item",
-        ObjectiveKind.Collect => "Find items in raid, on any map",
-        ObjectiveKind.Survive => "Survive and extract",
-        _ => "Done at a trader, outside the raid",
+        ObjectiveKind.FindInRaid => "Find items in raid (FIR), on any map",
+        ObjectiveKind.Survive => "Survive and extract, or stay under a condition",
+        _ => "Hand over or other progress at a trader, outside the raid",
     };
 }

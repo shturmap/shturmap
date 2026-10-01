@@ -38,7 +38,7 @@ public sealed partial class MainWindow : Window
 
         _clock = DispatcherQueue.CreateTimer();
         _clock.Interval = TimeSpan.FromSeconds(1);
-        _clock.Tick += (_, _) => UpdateClockTexts();
+        _clock.Tick += (_, _) => OnClockTick();
         _clock.Start();
         _noticeTimer = DispatcherQueue.CreateTimer();
         _noticeTimer.Interval = TimeSpan.FromSeconds(6);
@@ -54,7 +54,22 @@ public sealed partial class MainWindow : Window
             Volatile.Write(ref _snapshot, s);
             DispatcherQueue.TryEnqueue(() => Apply(s));
         };
-        session.Notice += message => DispatcherQueue.TryEnqueue(() => ShowNotice(message));
+        session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration));
+    }
+
+    // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
+    private static readonly TimeSpan FreshFix = TimeSpan.FromSeconds(45);
+    private bool? _fixWasFresh;
+
+    private void OnClockTick()
+    {
+        UpdateClockTexts();
+        if (_snapshot is not { Fix: { } fix } s)
+            return;
+        var fresh = DateTime.Now - fix.At < FreshFix;
+        if (fresh != _fixWasFresh)
+            UpdateRaidLists(s);
+        Map.Redraw(); // the marker fades and its "may have moved" ring grows with age
     }
 
     public MainViewModel ViewModel { get; } = new();
@@ -193,9 +208,20 @@ public sealed partial class MainWindow : Window
     private void UpdateRaidLists(SessionSnapshot s)
     {
         var vm = ViewModel;
-        vm.ObjectivesHeader = s.Fix is null ? $"OBJECTIVES ON {s.Map?.Name.ToUpperInvariant()}" : "OBJECTIVES HERE · NEAREST FIRST";
-        vm.Objectives = s.Objectives.Where(o => o.HasPlace).Select(ToItem).ToList();
-        vm.Unplaced = s.Objectives.Where(o => !o.HasPlace).Select(ToItem).ToList();
+        var age = s.Fix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
+        var fresh = age < FreshFix;
+        _fixWasFresh = age is null ? null : fresh;
+        vm.ObjectivesHeader = age switch
+        {
+            null => $"OBJECTIVES ON {s.Map?.Name.ToUpperInvariant()}",
+            _ when fresh => "OBJECTIVES HERE · NEAREST FIRST",
+            { TotalMinutes: < 60 } a => $"FROM YOUR FIX {Math.Max(1, (int)a.TotalMinutes)} MIN AGO · NEAREST FIRST",
+            _ => "FROM YOUR LAST FIX · NEAREST FIRST",
+        };
+        string Direction(RelativeDirection? relative, double? mapBearing) =>
+            fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
+        vm.Objectives = s.Objectives.Where(o => o.HasPlace).Select(o => ToItem(o, Direction(o.Direction, o.MapBearing))).ToList();
+        vm.Unplaced = s.Objectives.Where(o => !o.HasPlace).Select(o => ToItem(o, "")).ToList();
         vm.Extracts = s.Extracts.Select(e => new ExtractItem(
             e.Name,
             e.Kind switch
@@ -206,7 +232,7 @@ public sealed partial class MainWindow : Window
                 _ => "Shared extract",
             },
             Distance(e.Distance),
-            e.Direction is { } d ? Bearing.Describe(d) : "")).ToList();
+            Direction(e.Direction, e.MapBearing))).ToList();
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map. To update your quests, take a screenshot of Character → Tasks in the game."
@@ -215,9 +241,8 @@ public sealed partial class MainWindow : Window
         vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";
     }
 
-    private static ObjectiveItem ToItem(ObjectiveView o)
+    private static ObjectiveItem ToItem(ObjectiveView o, string direction)
     {
-        var direction = o.Direction is { } d ? Bearing.Describe(d) : "";
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
         return new ObjectiveItem(o.QuestId, o.Text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
@@ -282,11 +307,12 @@ public sealed partial class MainWindow : Window
         Map.Refresh();
     }
 
-    private void ShowNotice(string message)
+    private void ShowNotice(string message, TimeSpan? duration = null)
     {
         ViewModel.NoticeText = message;
         ViewModel.NoticeOpen = true;
         _noticeTimer.Stop();
+        _noticeTimer.Interval = duration ?? TimeSpan.FromSeconds(6);
         _noticeTimer.Start();
     }
 

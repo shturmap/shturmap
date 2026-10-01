@@ -67,7 +67,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     public event Action<SessionSnapshot>? Changed;
 
     /// <summary>Short messages for the user ("Raid started on Customs", "Tasks scan: 2 new active").</summary>
-    public event Action<string>? Notice;
+    public event Action<SessionNotice>? Notice;
 
     public async Task StartAsync()
     {
@@ -320,7 +320,14 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 _fixMapId = null;
                 ResolveMap();
                 if (!item.IsReplay && _map is not null)
-                    Say($"Loading {_map.Name}");
+                {
+                    // Last call while matching can still be cancelled: what this map's quests need.
+                    var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
+                    var needs = _data is null ? null : Planning.PlanFor(_data, active, _map.NormalizedName)?.Requirements;
+                    Say(needs is { Count: > 0 }
+                        ? $"Loading {_map.Name} · bring: {string.Join(", ", needs.Select(r => r.Text))}"
+                        : $"Loading {_map.Name}", needs is { Count: > 0 } ? 45 : 6);
+                }
                 break;
             case RaidStarted:
                 ResolveMap();
@@ -514,7 +521,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     // ---- snapshot ----
 
-    private void Say(string message) => Notice?.Invoke(message);
+    private void Say(string message, double seconds = 6) => Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds)));
 
     private void Publish()
     {
@@ -529,9 +536,13 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
             content = MapContentBuilder.Build(_data, _map.Id, active, new HashSet<string>());
             var sameArtwork = _data.MapIdsSharing(_map.NormalizedName);
+            var projection = definition is not null ? new MapProjection(definition) : null;
+            // Degrees clockwise from map-up: unlike "ahead-left", still true after the player has turned.
+            double? MapBearing(WorldPoint target) =>
+                fix is not null && projection is not null ? projection.ScreenHeadingDegrees(fix.Position, Bearing.YawTo(fix.Position, target)) : null;
             foreach (var o in content.Objectives)
             {
-                double? distance = null, height = null;
+                double? distance = null, height = null, bearing = null;
                 RelativeDirection? direction = null;
                 if (fix is not null && o.Places.Count > 0)
                 {
@@ -539,13 +550,15 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     distance = fix.Position.HorizontalDistanceTo(nearest);
                     if (fix.YawDegrees is { } yaw)
                         direction = Bearing.Relative(yaw, Bearing.YawTo(fix.Position, nearest));
+                    bearing = MapBearing(nearest);
                     var dy = nearest.Y - fix.Position.Y;
                     height = Math.Abs(dy) > 3 ? dy : null;
                 }
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
                     string.IsNullOrWhiteSpace(o.Objective.Description) ? "(no description)" : o.Objective.Description!,
                     o.Done, o.Places.Count > 0, distance, direction, height,
-                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0)));
+                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
+                    bearing));
             }
             var side = _tracker.State.Side;
             foreach (var m in content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))
@@ -554,7 +567,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     continue;
                 double? distance = fix is not null ? fix.Position.HorizontalDistanceTo(m.Position) : null;
                 RelativeDirection? direction = fix?.YawDegrees is { } yaw ? Bearing.Relative(yaw, Bearing.YawTo(fix.Position, m.Position)) : null;
-                extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction));
+                extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction, MapBearing(m.Position)));
             }
         }
 

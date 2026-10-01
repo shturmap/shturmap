@@ -5,7 +5,8 @@ namespace Spotter.Map;
 
 /// <summary>
 /// The glyphs for quest types and requirements (docs/DESIGN.md §5). They come from Segoe Fluent Icons, which ships
-/// with Windows and is used in place; the crosshair is Spotter's own path because the font has none.
+/// with Windows and is used in place; the crosshair is Spotter's own path because the font has none. Where the game's
+/// Tasks screen has a type icon, the glyph echoes it (magnifier for Exploration, pointing hand for Pickup).
 /// </summary>
 public static class Glyphs
 {
@@ -17,25 +18,23 @@ public static class Glyphs
         "M7.25,0 H8.75 V5 H7.25 Z M7.25,11 H8.75 V16 H7.25 Z M0,7.25 H5 V8.75 H0 Z M11,7.25 H16 V8.75 H11 Z " +
         "M8,6.9 A1.1,1.1 0 1 1 8,9.1 A1.1,1.1 0 1 1 8,6.9 Z";
 
-    public const string Key = "";
+    public static readonly string Key = Code(0xE8D7);
 
-    public const string Bring = "";
+    public static readonly string Bring = Code(0xE821);
 
-    public const string Clock = "";
-
-    public const string Warning = "";
-
-    /// <summary>The font character for a type, or null for Kill, which is drawn from <see cref="CrosshairPath"/>.</summary>
+    /// <summary>The font character for a type, or null for Elimination, which is drawn from <see cref="CrosshairPath"/>.</summary>
     public static string? Character(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Kill => null,
-        ObjectiveKind.Visit => "",
-        ObjectiveKind.Retrieve => "",
-        ObjectiveKind.Place => "",
-        ObjectiveKind.Collect => "",
-        ObjectiveKind.Survive => "",
-        _ => "",
+        ObjectiveKind.Elimination => null,
+        ObjectiveKind.Exploration => Code(0xE721), // magnifier
+        ObjectiveKind.Pickup => Code(0xE7C9),      // pointing hand
+        ObjectiveKind.Place => Code(0xE840),       // pin
+        ObjectiveKind.FindInRaid => Code(0xE719),  // bag
+        ObjectiveKind.Survive => Code(0xE726),     // runner
+        _ => Code(0xE716),                         // people (trader)
     };
+
+    private static string Code(int codePoint) => char.ConvertFromUtf32(codePoint);
 
     private static readonly Lazy<SKTypeface> Typeface = new(() => SKTypeface.FromFamilyName(FontFamily) ?? SKTypeface.Default);
     private static readonly Lazy<SKPath> Crosshair = new(() => SKPath.ParseSvgPathData(CrosshairPath));

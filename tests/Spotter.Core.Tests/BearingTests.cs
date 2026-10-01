@@ -26,4 +26,13 @@ public class BearingTests
     {
         Assert.Equal(expected, Bearing.Relative(facing, target));
     }
+
+    [Theory]
+    [InlineData(0, "N")]
+    [InlineData(44, "NE")]
+    [InlineData(90, "E")]
+    [InlineData(200, "S")]
+    [InlineData(-30, "NW")]
+    [InlineData(359, "N")]
+    public void Compass_from_map_up(double degrees, string expected) => Assert.Equal(expected, Bearing.Compass(degrees));
 }
