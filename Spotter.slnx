@@ -4,6 +4,7 @@
     <Project Path="src/Spotter.Core/Spotter.Core.csproj" />
     <Project Path="src/Spotter.Data/Spotter.Data.csproj" />
     <Project Path="src/Spotter.Game/Spotter.Game.csproj" />
+    <Project Path="src/Spotter.Map/Spotter.Map.csproj" />
     <Project Path="src/Spotter.Ocr/Spotter.Ocr.csproj" />
   </Folder>
   <Folder Name="/tests/">

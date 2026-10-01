@@ -22,14 +22,74 @@ switch (command)
     case "ocr":
         await Ocr(args.Skip(1).ToList());
         break;
+    case "render":
+        await Render(args.ElementAtOrDefault(1) ?? "streets-of-tarkov", args.ElementAtOrDefault(2) ?? "map.png", args.Skip(3).ToList());
+        break;
     default:
         Console.WriteLine("""
             spotter-cli locate              find the game, logs, screenshots and settings on this PC
             spotter-cli replay [session]    replay a log session (default: newest) through the raid tracker
             spotter-cli data [mode] [lang]  load tarkov.dev data (mode: pve | regular | seasonal)
             spotter-cli ocr <png>...        read Tasks-screen screenshots and match them to PvE quests
+            spotter-cli render <map> <out.png> [screenshot names...]
+                                            draw a map with the positions from screenshot names
             """);
         break;
+}
+
+static async Task Render(string mapName, string output, List<string> screenshots)
+{
+    var cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Spotter", "cache");
+    var http = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "tarkov-dev"));
+    var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
+    var map = data.MapByNormalizedName(mapName) ?? throw new ArgumentException("Unknown map " + mapName);
+    var definition = data.DefinitionFor(map.NormalizedName) ?? throw new InvalidOperationException("No artwork definition for " + mapName);
+    var svg = await new Spotter.Data.Maps.ArtworkCache(new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "artwork")))
+        .GetSvgAsync(definition.SvgPath ?? throw new InvalidOperationException("Map has no SVG"));
+
+    var sw = Stopwatch.StartNew();
+    using var artwork = Spotter.Map.MapArtwork.Load(svg, definition, Path.Combine(cacheRoot, "pictures"));
+    Console.WriteLine($"Artwork parsed in {sw.ElapsedMilliseconds} ms (viewBox {artwork.ViewBox.Width:0}×{artwork.ViewBox.Height:0})");
+
+    // Quests from the Tasks screenshots, as an example of active quests.
+    var active = data.Tasks.Values.Where(t => new[] { "audit", "dandies", "secret-message", "road-closed", "ballet-lover", "glory-to-cpsu", "revision-streets-of-tarkov" }
+        .Contains(t.NormalizedName)).Select(t => t.Id).ToList();
+    var content = Spotter.Map.MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+    var scene = new Spotter.Map.MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones };
+
+    var fixes = screenshots.Select(s => Spotter.Core.Screenshots.ScreenshotName.TryParse(s, out var info) ? info : null)
+        .Where(i => i?.Position is not null).ToList();
+    if (fixes.Count > 0)
+    {
+        var last = fixes[^1]!;
+        scene.Player = new Spotter.Map.PlayerFix(last.Position!.Value, last.YawDegrees, last.TakenAt);
+        scene.Trail = fixes.SkipLast(1).Select(f => f!.Position!.Value).ToList();
+        scene.Floor = Spotter.Core.Maps.FloorResolver.LayerFor(definition, last.Position.Value);
+    }
+    scene.Selected = content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id;
+
+    foreach (var (suffix, zoomIn) in new[] { ("", 1.0), ("-close", 3.0) })
+    {
+        var camera = new Spotter.Map.Camera();
+        camera.Resize(new SkiaSharp.SKSize(1600, 1000));
+        camera.Fit(scene.Projection.WorldRect);
+        if (zoomIn > 1 && scene.Player is { } p)
+        {
+            camera.CenterOn(scene.Projection.ToMap(p.Position));
+            camera.ZoomAt(new SkiaSharp.SKPoint(800, 500), zoomIn);
+        }
+        sw.Restart();
+        using var surface = SkiaSharp.SKSurface.Create(new SkiaSharp.SKImageInfo(1600, 1000));
+        Spotter.Map.MapRenderer.Render(surface.Canvas, camera, scene);
+        var drawMs = sw.Elapsed.TotalMilliseconds;
+        var path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(output))!, Path.GetFileNameWithoutExtension(output) + suffix + ".png");
+        using var image = surface.Snapshot();
+        using var png = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 90);
+        await File.WriteAllBytesAsync(path, png.ToArray());
+        Console.WriteLine($"{path}: drawn in {drawMs:0.0} ms (CPU raster)");
+    }
+    Console.WriteLine($"{content.Markers.Count} markers, {content.Zones.Count} zones; objectives here: " +
+                      string.Join("; ", content.Objectives.Select(o => $"{o.Quest.Name}: {o.Objective.Description} ({o.Places.Count} places)")));
 }
 
 static async Task Ocr(List<string> files)

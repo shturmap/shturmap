@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Map drawing with SkiaSharp: artwork, camera, overlays. No UI framework, so it can render to a PNG in tests. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Spotter.Map</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="Svg.Skia" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Spotter.Core\Spotter.Core.csproj" />
+    <ProjectReference Include="..\Spotter.Data\Spotter.Data.csproj" />
+  </ItemGroup>
+</Project>

@@ -12,5 +12,6 @@
     <ProjectReference Include="..\..\src\Spotter.Game\Spotter.Game.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Data\Spotter.Data.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Ocr\Spotter.Ocr.csproj" />
+    <ProjectReference Include="..\..\src\Spotter.Map\Spotter.Map.csproj" />
   </ItemGroup>
 </Project>
