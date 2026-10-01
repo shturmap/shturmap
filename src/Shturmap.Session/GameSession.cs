@@ -89,7 +89,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         {
             var env = new WindowsGameEnvironment();
             Study.Context = StudyContext;
-            Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()));
+            Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
+                ("build", BuildTime()), ("prevClean", MarkRunning()));
             _store = new ProgressStore(paths.Database);
             _locations = locations ?? new InstallLocator(env).Locate(_store.GetSetting("installFolder"));
             AppLog.Info($"Game: {_locations.Install?.Kind} {_locations.Install?.Root}; logs {_locations.LogsFolder ?? "not found"}; screenshots {_locations.ScreenshotsFolder}");
@@ -329,6 +330,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     private void Apply(LogEvent item)
     {
+        _replaying = item.IsReplay;
         if (item.Event is QuestEvent quest)
         {
             var mode = _tracker.State.Mode == GameMode.Unknown ? _mode : _tracker.State.Mode;
@@ -411,13 +413,16 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 break;
             case RaidLoading:
                 var rank = _plan.ToList().FindIndex(p => p.NormalizedName == _map?.NormalizedName);
-                var bring = _data is null || _map is null ? null
-                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _map.NormalizedName)?.Requirements;
+                var plan = _data is null || _map is null ? null
+                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _map.NormalizedName);
+                // The plan's COMPLETE and PROGRESS quests, to check later which of them the raid actually completed.
                 Study.Game("raid.loading", ("raidMap", _map?.NormalizedName), ("planRank", rank < 0 ? null : rank + 1), ("planTop", _plan.FirstOrDefault()?.NormalizedName),
-                    ("bring", bring?.Select(r => r.Text).ToList() ?? []));
+                    ("bring", plan?.Requirements.Select(r => r.Text).ToList() ?? []),
+                    ("complete", plan?.Finish.Select(q => q.QuestId).ToList() ?? []),
+                    ("progress", plan?.Progress.Select(q => q.QuestId).ToList() ?? []));
                 break;
             case RaidStarted started:
-                Study.Game("raid.start", ("raidMap", _map?.NormalizedName), ("side", started.State.Side));
+                Study.Game("raid.start", ("raidMap", _map?.NormalizedName), ("side", started.State.Side), ("sideEvidence", _tracker.SideEvidence));
                 break;
             case RaidEnded ended:
                 Study.Game("raid.end", ("side", ended.Previous.Side),
@@ -454,7 +459,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     private async Task OnScreenshotAsync(ScreenshotSeen seen)
     {
         if (!seen.Info.HasPosition)
+        {
+            // A screenshot key press that gave no position (the study log asked how often this happens).
+            Study.Game("screenshot.nopos", ("name", Path.GetFileName(seen.Path)), ("phase", _tracker.State.Phase));
             return;
+        }
         await _gate.WaitAsync();
         try
         {
@@ -658,8 +667,17 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     _tracker.State.Phase == RaidPhase.InRaid ? _lastClock : null)
                 : null,
         };
+        // Changes in the number of active quests outside quest events (the study log saw 47 become 56 unexplained):
+        // the quest catalog arriving, a mode switch, prerequisites implied by a later quest.
+        var activeCount = Snapshot.ActiveQuestCount;
+        if (activeCount != _publishedActive && _publishedActive >= 0 && !_replaying)
+            Study.Game("quests.count", ("from", _publishedActive), ("to", activeCount), ("data", _data is not null), ("mode", _mode));
+        _publishedActive = activeCount;
         Changed?.Invoke(Snapshot);
     }
+
+    private int _publishedActive = -1;
+    private bool _replaying;
 
     private SourceHealth LogsHealth()
     {
@@ -668,6 +686,36 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         if (_tailer?.LastActivityUtc is { } at && DateTime.UtcNow - at < TimeSpan.FromMinutes(10))
             return new(true, "Logs live");
         return new(true, "Logs");
+    }
+
+    // ---- study log: why a session started ----
+
+    // A marker file exists while the app runs; finding it at start means the last session didn't end cleanly (a
+    // crash, or a kill to install a new build).
+    private string RunningMarker => Path.Combine(paths.Study, "running");
+
+    private bool? MarkRunning()
+    {
+        if (!Study.Enabled)
+            return null;
+        try
+        {
+            Directory.CreateDirectory(paths.Study);
+            var clean = !File.Exists(RunningMarker);
+            File.WriteAllText(RunningMarker, DateTime.Now.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+            return clean;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
+
+    // When this build was made: a new build between sessions is testing, not play.
+    private static DateTime? BuildTime()
+    {
+        var location = typeof(GameSession).Assembly.Location;
+        return location.Length > 0 && File.Exists(location) ? File.GetLastWriteTime(location) : null;
     }
 
     public async ValueTask DisposeAsync()
@@ -679,6 +727,16 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         Artwork?.Dispose();
         _store?.Dispose();
         Study.Game("app.exit");
+        if (Study.Enabled)
+        {
+            try
+            {
+                File.Delete(RunningMarker);
+            }
+            catch (IOException)
+            {
+            }
+        }
         Study.Dispose();
         _stop.Dispose();
     }

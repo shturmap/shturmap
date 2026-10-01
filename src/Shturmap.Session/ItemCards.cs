@@ -47,6 +47,8 @@ public static class ItemCards
                 var times = count > 1 ? $" ×{count}" : "";
                 if ((o.RequiredKeys ?? []).Any(set => set.Contains(itemId)))
                     Add("Key", maps);
+                if ((o.Wearing ?? []).Any(set => set.Any(i => i.Id == itemId)))
+                    Add("Wear, for kills", maps);
                 var listed = o.Items?.Contains(itemId) == true;
                 var how = o.Type switch
                 {

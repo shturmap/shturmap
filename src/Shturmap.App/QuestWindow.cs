@@ -55,7 +55,25 @@ public sealed partial class QuestWindow : Window
         AppWindow.Resize(new SizeInt32(560, 600));
         if (at is { } position)
             AppWindow.Move(position);
-        _root.Loaded += (_, _) => FitToContent();
+        _root.Loaded += (_, _) =>
+        {
+            FitToContent();
+            KeepOnScreen("restore");
+        };
+        // A move settles a moment after the last position change; then the title bar is brought back on screen if
+        // it ended up off it (the study log: a pinned window closed twice with its title bar above the screen).
+        _moved = DispatcherQueue.CreateTimer();
+        _moved.Interval = TimeSpan.FromMilliseconds(600);
+        _moved.IsRepeating = false;
+        _moved.Tick += (_, _) => KeepOnScreen("move");
+        AppWindow.Changed += (_, e) =>
+        {
+            if (e.DidPositionChange && !_placing)
+            {
+                _moved.Stop();
+                _moved.Start();
+            }
+        };
         Closed += (_, _) => Stack.CloseAll();
         // As in the main window: a click on nothing in particular lets go of held cards.
         _root.Tapped += (_, e) =>
@@ -86,6 +104,29 @@ public sealed partial class QuestWindow : Window
         _card.Show(view);
         if (resize)
             FitToContent();
+    }
+
+    private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _moved;
+    private bool _placing;
+
+    // The title bar (what the window is moved by) must stay inside a screen's work area, or the window can't be
+    // grabbed again. Moved the least distance that does it.
+    private const int TitleBarHeight = 32;
+
+    private void KeepOnScreen(string how)
+    {
+        var position = AppWindow.Position;
+        var size = AppWindow.Size;
+        var area = DisplayArea.GetFromRect(new RectInt32(position.X, position.Y, size.Width, TitleBarHeight), DisplayAreaFallback.Nearest).WorkArea;
+        var x = Math.Clamp(position.X, area.X - size.Width + 120, area.X + area.Width - 120);
+        var y = Math.Clamp(position.Y, area.Y, area.Y + area.Height - TitleBarHeight);
+        var moved = x != position.X || y != position.Y;
+        Study.Ui("pinned.move", ("quest", QuestId), ("x", x), ("y", y), ("how", how), ("clamped", moved));
+        if (!moved)
+            return;
+        _placing = true;
+        AppWindow.Move(new PointInt32(x, y));
+        _placing = false;
     }
 
     private void FitToContent()

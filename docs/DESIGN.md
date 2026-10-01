@@ -86,12 +86,17 @@ residual risk. Do not widen the boundary.
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
-   player marker and trail go: out of a raid there is no "you".
+   player marker and trail go: out of a raid there is no "you". In a raid, a position older than 2 minutes (or
+   none a minute in) is said at the top of the map in big gold type, "POSITION 7 MIN OLD · PRESS PRTSC OR HOME
+   FOR A NEW ONE", and the banner pops once when the window gets focus (the study log: about one position per 8
+   raid minutes, often several minutes old when the app was looked at).
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
     loading, a transit, a Scav raid starting, the raid over, loading cancelled), a cue holds the middle of the map
-    for 2.8 s (owner, 2026-10-01): a dark band opens from a line, gold rules draw out from the centre, the map's
-    name (or RAID OVER) decodes letter by letter like a terminal, with one line under it (what the raid can do,
-    or the next raid suggested), then it fades. It takes no clicks. Picks the player makes (a Plan card, the map
+    for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop): a dark band springs open
+    behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
+    map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
+    flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
+    suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
     list) show no cue. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
 9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
@@ -139,7 +144,9 @@ not in focus step back to 28 % opacity, easing in and out over 0.18 s, and the f
 the marker and fades every 1.4 s (motion is noticed before anything else; off, with the easing, when Windows'
 animation effects are off, and only while something is in focus). Losing the focus waits 0.25 s before the map
 follows, so moving from one row to the next switches the highlight straight across instead of making every marker
-blink. Markers on another floor than the one shown are drawn at half strength.
+blink. Markers on another floor than the one shown are drawn at full strength, highlighted like any other, with a
+small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half strength read as
+"unimportant" and hid highlighted markers). Scav spawns carry no arrow.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Screen anatomy
@@ -151,10 +158,18 @@ Text says only what the place doesn't: an objective "… on Streets of Tarkov" d
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
     BRING (keys, items to bring). Clicking another map expands it and shows it on the map; that click is optional.
+    Folded cards carry enough to compare without opening them (the study log: ten card clicks in 4.5 minutes to
+    compare maps): one quest-type glyph per quest (gold to complete, muted to progress) and up to five cells of
+    what to bring. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
+    "PREVIEW · CUSTOMS · CLICK THE CARD TO PLAN IT"; moving to the next card switches at once, leaving puts the
+    shown map back exactly as it was (pan and zoom), and a click keeps it. A raid loading ends a preview.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
     line ("Complete 5 quests · progress 1 more"), the raid line (time left, time of day, bosses with spawn chance)
-    and, when the distances aren't from a fresh screenshot, where they are from. Then COMPLETE, PROGRESS and BRING
+    and, when the distances aren't from a fresh screenshot, where they are from. Then **the glance**, two rows in
+    big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
+    direction), and EXIT, the nearest extract or transit for your side (and what it takes); in a raid the app gets
+    glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for hand-overs. Objectives inside a quest go nearest first, and quests
@@ -195,11 +210,19 @@ The **item card** (a key or an item): its icon and name; GET IT, easiest first: 
 price, quest unlock), barters, hideout crafts, the flea market (from which level), and where it lies loose ("Loose
 on Customs · 3 spots"); then which of your active quests need it and how ("Key · Customs", "Bring ×3, to plant ·
 Streets of Tarkov"). While the pointer is on an item anywhere, its loose spots on the shown map are drawn as small
-open squares. In Plan, each BRING row has one line with the easiest source.
+open squares. Every BRING row (Plan, the raid card, a quest card) says what the item is for and for which quests
+("to mark, for Revision", "to wear, for Dandies", "key for Ballet Lover") and has one line with the easiest
+source; the tiny need cells beside quest names say the same in their tooltips (the study log: gear item cards were
+opened 10 to 21 times each to find out why and where). Gear a kill objective asks to be worn (tarkov.dev's
+`wearing`: sets worn together, any set will do) is a requirement of its own, "to wear", shown as "Bomber beanie /
+RayBench Hipster Reserve sunglasses" (neutral about and/or: the data's sets don't always match the quest's
+wording, which the objective text gives anyway); item cards list it as "Wear, for kills".
 
 Cards behave like the nested tooltips in Crusader Kings III:
 
-1. **Hover**: rest the pointer on a quest, key or item (rail row, map marker, or a row on a card) for 0.4 s and
+1. **Hover**: rest the pointer on a quest, key or item for 0.65 s on a rail row or map marker (the study log: 62 %
+   of cards opened from lists closed within a second, opened by a pointer passing over), 0.4 s on a row on a card
+   or in a pinned window, and
    its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
 2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
@@ -213,7 +236,9 @@ Cards behave like the nested tooltips in Crusader Kings III:
    open; its own nested cards open beside it. The card the pin was on closes, with anything opened from it, so the
    quest isn't shown twice (owner, 2026-10-01). In a raid it shows live distances, which is what a pin is for: a
    tracker for the quests you chose, readable without the mouse. Pinned cards come back after a restart and close
-   by themselves when their quest is completed.
+   by themselves when their quest is completed. A pinned window's title bar is kept inside a screen's work area,
+   when it comes back and 0.6 s after it was moved, by the least move that does it (the study log: one closed
+   twice with its title bar above the screen, where it can't be grabbed).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
@@ -381,7 +406,14 @@ start/end, quest started/completed/failed (live only), each fix, each notice. UI
 in/out (with durations: the closest signals to attention), map pan (one per drag), zoom (one per wheel burst,
 button or key), fit, follow, floor picks, map picks (picker or plan card), selections, hovers resting ≥ 0.4 s
 (where: list, card, pinned, map), card open/hold/close (level, seconds open), pins and pinned-window closes,
-help open/close, keys, rail scrolls, notice dismissals. Only Shturmap's own windows are observed; nothing is
+help open/close, keys, rail scrolls, notice dismissals. Added after the first study (2026-10-01): the plan's
+COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the evidence for each side decision,
+screenshots that gave no position, whether a new position was in view and uses of the edge arrow and F, map
+previews, pinned-window moves with their final position and whether they were clamped, notices expiring vs
+closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
+banners seen, side switches, why a session started (the previous one ended cleanly or not, the build's time), and
+active-quest count changes outside quest events. How a raid ended (survived, killed) is not in the application
+log, so it can't be recorded. Only Shturmap's own windows are observed; nothing is
 sent anywhere.
 
 ## 9. Status

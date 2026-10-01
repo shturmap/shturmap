@@ -64,9 +64,12 @@ public sealed record PlanCard(
     IReadOnlyList<QuestLine> Finish,
     IReadOnlyList<QuestLine> Progress,
     IReadOnlyList<RequirementLine> Requirements,
-    string Rank = "")
+    string Rank = "",
+    IReadOnlyList<Controls.NeedChip>? Needs = null)
 {
     public string MapTitle => Caps.Of(MapName);
+
+    public Visibility FoldedVisibility => Expanded ? Visibility.Collapsed : Visibility.Visible;
 
     public Microsoft.UI.Xaml.Media.Brush CardBorder =>
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "LineStrongBrush" : "LineBrush"];
@@ -134,6 +137,12 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>What the distances are measured from when it isn't a fresh screenshot, or empty.</summary>
     [ObservableProperty] public partial string RaidFixNote { get; set; } = "";
 
+    /// <summary>The nearest objective with a place, from the last position: the first thing a glance should find.</summary>
+    [ObservableProperty] public partial ObjectiveItem? RaidNext { get; set; }
+
+    /// <summary>The nearest extract or transit for your side, from the last position.</summary>
+    [ObservableProperty] public partial ExtractItem? RaidExit { get; set; }
+
     [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidComplete { get; set; } = [];
 
     [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidProgress { get; set; } = [];
@@ -163,6 +172,15 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string Hint { get; set; } = "";
 
     [ObservableProperty] public partial string RaidLine { get; set; } = "";
+
+    /// <summary>"PREVIEW · CUSTOMS" while another map is shown from a Plan card under the pointer; else empty.</summary>
+    [ObservableProperty] public partial string PreviewText { get; set; } = "";
+
+    /// <summary>In a raid, "POSITION 7 MIN OLD" when the last position is too old to trust at a glance; else empty.</summary>
+    [ObservableProperty] public partial string StaleText { get; set; } = "";
+
+    /// <summary>What to do about it: "PRESS PRTSC OR HOME FOR A NEW ONE".</summary>
+    [ObservableProperty] public partial string StaleHint { get; set; } = "";
 
     [ObservableProperty] public partial string LastRaidText { get; set; } = "";
 

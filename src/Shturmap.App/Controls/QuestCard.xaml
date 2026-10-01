@@ -83,8 +83,10 @@
                   <controls:Picture ItemId="{x:Bind ItemId}" Size="34" Glyph="{x:Bind controls:QuestCard.NeedGlyph(Kind)}" />
                   <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
-                    <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12"
+                    <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                    <TextBlock Text="{x:Bind Source}" Foreground="{StaticResource AmberBrush}" FontSize="12" TextWrapping="Wrap"
+                               Visibility="{x:Bind controls:QuestCard.ShownIf(Source)}" />
                   </StackPanel>
                 </Grid>
               </DataTemplate>

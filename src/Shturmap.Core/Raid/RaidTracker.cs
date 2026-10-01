@@ -127,8 +127,13 @@ public sealed class RaidTracker
         }
     }
 
+    /// <summary>What the side of the last raid start was decided from, for the study log: "setup:same,starting:yes".</summary>
+    public string SideEvidence { get; private set; } = "";
+
     private RaidSide DetectSide()
     {
+        var setup = _setupProfileId is null ? "none" : _menuProfileId is null ? "no-menu" : _setupProfileId == _menuProfileId ? "same" : "other";
+        SideEvidence = $"setup:{setup},starting:{(_sawStarting ? "yes" : "no")}";
         if (_setupProfileId is not null && _menuProfileId is not null)
             return _setupProfileId == _menuProfileId ? RaidSide.Pmc : RaidSide.Scav;
         return _sawStarting ? RaidSide.Unknown : RaidSide.Scav;

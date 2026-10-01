@@ -100,7 +100,12 @@ public sealed partial class MainWindow : Window
         _noticeTimer = DispatcherQueue.CreateTimer();
         _noticeTimer.Interval = TimeSpan.FromSeconds(6);
         _noticeTimer.IsRepeating = false;
-        _noticeTimer.Tick += (_, _) => ViewModel.NoticeOpen = false;
+        _noticeTimer.Tick += (_, _) =>
+        {
+            if (ViewModel.NoticeOpen)
+                Study.Ui("notice.expire", ("text", ViewModel.NoticeText));
+            ViewModel.NoticeOpen = false;
+        };
 
         // A new position never moves the view; out of view, the edge arrow points to it and a notice says so.
         Map.PlayerPinged += offScreen =>
@@ -172,6 +177,8 @@ public sealed partial class MainWindow : Window
 
     public Visibility ShownIfLink(Uri? link) => link is null ? Visibility.Collapsed : Visibility.Visible;
 
+    public Visibility ShownIfSet(object? value) => value is null ? Visibility.Collapsed : Visibility.Visible;
+
     private void OnWikiMapClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.map", ("url", ViewModel.WikiMap?.ToString()));
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
@@ -193,6 +200,12 @@ public sealed partial class MainWindow : Window
         vm.DataText = s.DataHealth.Text;
         vm.DataOk = s.DataHealth.Ok;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
+        // A raid loading ends any preview at once: the raid's map is what matters now.
+        if (vm.InRaid && _previewing is not null)
+        {
+            _previewTimer?.Stop();
+            EndPreview(restore: false);
+        }
         // A kept quest that is done (or failed) has nothing left to find.
         if (_selectedQuest is not null && s.Quests.GetValueOrDefault(_selectedQuest)?.State != QuestState.Active)
         {
@@ -245,6 +258,7 @@ public sealed partial class MainWindow : Window
             parts.AddRange(info.Bosses);
         }
         ViewModel.RaidLine = string.Join(" · ", parts);
+        UpdateStale(s, elapsed);
 
         if (s.Fix is not { } fix)
         {
@@ -254,6 +268,50 @@ public sealed partial class MainWindow : Window
         var age = DateTime.Now - fix.At;
         var ago = age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s" : age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} min" : $"{(int)age.TotalHours} h";
         ViewModel.FixText = $"Fix {ago} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m";
+    }
+
+    // A position older than this is too old to show without saying so in big type (the study log: positions came
+    // about every 8 minutes and were often several minutes old when the app was looked at).
+    private static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(2);
+
+    private void UpdateStale(SessionSnapshot s, TimeSpan? inRaid)
+    {
+        var age = s.Fix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
+        ViewModel.StaleText = s.Raid.Phase != RaidPhase.InRaid ? ""
+            : age is null ? (inRaid > TimeSpan.FromMinutes(1) ? "NO POSITION YET" : "")
+            : age >= StaleAfter ? $"POSITION {(int)age.Value.TotalMinutes} MIN OLD"
+            : "";
+        ViewModel.StaleHint = ViewModel.StaleText.Length > 0 ? Caps.Of($"Press {ViewModel.HelpKeys} for a new one") : "";
+    }
+
+    // When the window gets focus with a stale position, the banner pops once, so the glance lands on it.
+    private void PopStale()
+    {
+        if (ViewModel.StaleText.Length == 0)
+            return;
+        Study.Ui("stale.seen", ("text", ViewModel.StaleText));
+        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
+            return;
+        var story = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
+        foreach (var property in new[] { "ScaleX", "ScaleY" })
+        {
+            var frames = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimationUsingKeyFrames();
+            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.LinearDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1 });
+            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
+            {
+                KeyTime = TimeSpan.FromMilliseconds(140), Value = 1.12,
+                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.CubicEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut },
+            });
+            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
+            {
+                KeyTime = TimeSpan.FromMilliseconds(520), Value = 1,
+                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.ElasticEase { Oscillations = 1, Springiness = 4, EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut },
+            });
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(frames, StaleScale);
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(frames, property);
+            story.Children.Add(frames);
+        }
+        story.Begin();
     }
 
     private void UpdatePicker(SessionSnapshot s)
@@ -291,7 +349,7 @@ public sealed partial class MainWindow : Window
         if (openIndex < 0)
             openIndex = 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
-        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(p, q.QuestId) };
+        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId) };
         vm.Plans = s.Plan.Select((p, i) => new PlanCard(
             p.NormalizedName,
             p.MapName,
@@ -301,18 +359,30 @@ public sealed partial class MainWindow : Window
             i == openIndex,
             p.Finish.Select(q => OnMap(q, p)).ToList(),
             p.Progress.Select(q => OnMap(q, p)).ToList(),
-            p.Requirements.Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds,
-                s.Data is { } data ? ItemCards.Best(data, s.Sources, r.ItemId)?.Text ?? "" : "")).ToList(),
-            (i + 1).ToString(CultureInfo.InvariantCulture)
+            p.Requirements.Select(r => BringLine(s, r)).ToList(),
+            (i + 1).ToString(CultureInfo.InvariantCulture),
+            p.Requirements.Select(r => Chip(s, r)).ToList()
         )).ToList();
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
 
+    /// <summary>The easiest way to get an item, for one line under it ("Prapor LL1 · 18,936 ₽"), or empty.</summary>
+    private static string BestSource(SessionSnapshot s, string itemId) =>
+        s.Data is { } data ? ItemCards.Best(data, s.Sources, itemId)?.Text ?? "" : "";
+
+    private static string GlyphOf(RequirementKind kind) => kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring;
+
+    /// <summary>A BRING row: the item, what it is for and for which quests, and where to get it.</summary>
+    private static RequirementLine BringLine(SessionSnapshot s, RequirementView r) =>
+        new(GlyphOf(r.Kind), r.Text, r.Why, r.ItemId, r.QuestIds, BestSource(s, r.ItemId));
+
+    /// <summary>A tiny cell for an item; its tooltip says what it is, what for, and where to get it.</summary>
+    private static NeedChip Chip(SessionSnapshot s, RequirementView r) =>
+        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { r.Text, r.Why, BestSource(s, r.ItemId) }.Where(t => t.Length > 0)));
+
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
-    private static IReadOnlyList<NeedChip> Chips(MapPlanView? plan, string questId) =>
-        (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId))
-            .Select(r => new NeedChip(r.ItemId, r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring, r.Text))
-            .ToList();
+    private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
+        (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r)).ToList();
 
     /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
     private static string Summary(int complete, int progress)
@@ -362,7 +432,7 @@ public sealed partial class MainWindow : Window
                     .ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
-                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key), Chips(s.MapPlan, g.Key)));
+                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key), Chips(s, s.MapPlan, g.Key)));
             })
             .OrderBy(q => q.Nearest)
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
@@ -370,9 +440,7 @@ public sealed partial class MainWindow : Window
             .ToList();
         vm.RaidComplete = quests.Where(q => q.Complete).ToList();
         vm.RaidProgress = quests.Where(q => !q.Complete).ToList();
-        vm.RaidBring = (s.MapPlan?.Requirements ?? []).Select(r => new RequirementLine(r.Kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring,
-            r.Text, "for " + r.ForQuests, r.ItemId, r.QuestIds,
-            s.Data is { } data ? ItemCards.Best(data, s.Sources, r.ItemId)?.Text ?? "" : "")).ToList();
+        vm.RaidBring = (s.MapPlan?.Requirements ?? []).Select(r => BringLine(s, r)).ToList();
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
@@ -392,6 +460,14 @@ public sealed partial class MainWindow : Window
             Direction(e.Direction, e.MapBearing),
             e.Needs,
             e.NeedItemId)).ToList();
+
+        // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
+        // log: in a raid the app got glances with a median of 3.9 s).
+        vm.RaidNext = vm.ScavRaid ? null
+            : s.Objectives.Where(o => o.HasPlace && o.Distance is not null).MinBy(o => o.Distance) is { } nearest
+                ? ToItem(nearest, Direction(nearest.Direction, nearest.MapBearing), s.Map?.Name)
+                : null;
+        vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
@@ -452,7 +528,8 @@ public sealed partial class MainWindow : Window
 
     private async void UpdateMap(SessionSnapshot s)
     {
-        if (s.Definition is null || _session.Artwork is null)
+        // While another map is previewed, the shown one waits; it comes back when the preview ends.
+        if (s.Definition is null || _session.Artwork is null || _previewing is not null)
             return;
         var key = s.Definition.Key;
         if (key != _sceneKey)
@@ -467,7 +544,8 @@ public sealed partial class MainWindow : Window
                 ShowNotice($"{s.Map?.Name} is only published as image tiles; drawing those comes in a later version.");
                 return;
             }
-            Map.SetScene(new MapScene(s.Definition, artwork));
+            Map.SetScene(new MapScene(s.Definition, artwork), _restoreView);
+            _restoreView = null;
         }
         if (Map.Scene is not { } scene || _snapshot is not { } latest)
             return;
@@ -479,6 +557,81 @@ public sealed partial class MainWindow : Window
         scene.Selected = _selectedQuest;
         scene.Focus = MapFocus();
         Map.Refresh();
+    }
+
+    // ---- previewing another map from Plan ----
+
+    // Resting on a folded Plan card shows its map for as long as the pointer stays, without switching to it; the
+    // view of the shown map comes back as it was (the study log: ten card clicks in 4.5 minutes to compare maps).
+    private static readonly TimeSpan PreviewAfter = TimeSpan.FromMilliseconds(600);
+    private static readonly TimeSpan PreviewEndAfter = TimeSpan.FromMilliseconds(300);
+    private DispatcherQueueTimer? _previewTimer;
+    private string? _previewWanted;
+    private string? _previewing;
+    private (Shturmap.Core.Maps.MapPoint Center, double Zoom)? _restoreView;
+
+    private void OnPlanPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string map } && !ViewModel.InRaid && map != _snapshot?.Map?.NormalizedName)
+            Preview(map, PreviewAfter);
+    }
+
+    private void OnPlanPointerExited(object sender, PointerRoutedEventArgs e) => Preview(null, PreviewEndAfter);
+
+    private void Preview(string? map, TimeSpan after)
+    {
+        _previewWanted = map;
+        if (_previewTimer is null)
+        {
+            _previewTimer = DispatcherQueue.CreateTimer();
+            _previewTimer.IsRepeating = false;
+            _previewTimer.Tick += (_, _) =>
+            {
+                if (_previewWanted == _previewing)
+                    return;
+                if (_previewWanted is { } wanted)
+                    StartPreview(wanted);
+                else
+                    EndPreview(restore: true);
+            };
+        }
+        _previewTimer.Stop();
+        // Moving straight from one card to the next switches at once; only the first one waits.
+        _previewTimer.Interval = map is not null && _previewing is not null ? TimeSpan.FromMilliseconds(120) : after;
+        _previewTimer.Start();
+    }
+
+    private async void StartPreview(string normalizedName)
+    {
+        if (_snapshot is not { Data: { } data } s || data.MapByNormalizedName(normalizedName) is not { } map
+            || data.DefinitionFor(normalizedName) is not { } definition || _session.Artwork is null)
+            return;
+        if (_previewing is null)
+            _restoreView = Map.View;
+        _previewing = normalizedName;
+        var artwork = await _session.Artwork.GetAsync(definition);
+        if (_previewing != normalizedName || artwork is null)
+            return;
+        var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
+        var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+        Map.SetScene(new MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones });
+        _sceneKey = null;
+        ViewModel.PreviewText = $"PREVIEW · {Caps.Of(map.Name)}";
+        Study.Ui("map.preview", ("map", normalizedName));
+    }
+
+    private void EndPreview(bool restore)
+    {
+        if (_previewing is null)
+            return;
+        _previewing = null;
+        _previewWanted = null;
+        ViewModel.PreviewText = "";
+        _sceneKey = null;
+        if (!restore)
+            _restoreView = null;
+        if (_snapshot is { } s)
+            UpdateMap(s);
     }
 
     // ---- study log: attention ----
@@ -496,7 +649,9 @@ public sealed partial class MainWindow : Window
             if (focused && _focusedAt is null)
             {
                 _focusedAt = DateTime.Now;
-                Study.Ui("window.focus");
+                Study.Ui("window.focus", ("railY", RailScroll.VerticalOffset), ("railH", RailScroll.ViewportHeight),
+                    ("visible", Linked.QuestsVisibleIn(RailScroll).ToList()));
+                PopStale();
             }
             else if (!focused && _focusedAt is { } since)
             {
@@ -572,7 +727,7 @@ public sealed partial class MainWindow : Window
     // ---- quest cards and linked highlighting ----
 
     private QuestCardView? BuildCard(string questId) =>
-        _snapshot is { Data: { } data } s ? QuestCards.Build(data, s.Quests, questId, LiveText) : null;
+        _snapshot is { Data: { } data } s ? QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources) : null;
 
     private FrameworkElement? CreateCard(CardKey key) => key switch
     {
@@ -796,7 +951,7 @@ public sealed partial class MainWindow : Window
 
     // ---- the big cue: Shturmap changed its view on its own ----
 
-    private static readonly TimeSpan CueLength = TimeSpan.FromSeconds(2.8);
+    private static readonly TimeSpan CueLength = TimeSpan.FromSeconds(5);
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
@@ -818,8 +973,10 @@ public sealed partial class MainWindow : Window
         };
     }
 
-    // The band opens from a line, its gold rules draw out from the middle, and the title decodes letter by letter
-    // like a terminal; then it all fades. Off with Windows' animation effects: it just shows and goes.
+    // The band springs open behind the text with a gold flash, its gold rules shoot out from the middle, and the
+    // title slides up while it decodes letter by letter, the undecoded letters in gold; then it all fades. Nothing
+    // with text in it is ever scaled, so the text stays sharp (owner, 2026-10-01: it was sometimes blurry, could
+    // last longer and use more pop). Off with Windows' animation effects: it just shows and goes.
     private void ShowCue(ViewCue cue)
     {
         var (eyebrow, title, detail) = CueText(cue);
@@ -836,6 +993,10 @@ public sealed partial class MainWindow : Window
             CuePanel.Opacity = 1;
             CueBandScale.ScaleY = 1;
             CueRuleTopScale.ScaleX = CueRuleBottomScale.ScaleX = 1;
+            CueTitleShift.Y = 0;
+            CueFlash.Opacity = 0;
+            if (SnapshotMode)
+                return;
             _cueTimer = DispatcherQueue.CreateTimer();
             _cueTimer.Interval = CueLength;
             _cueTimer.IsRepeating = false;
@@ -845,15 +1006,16 @@ public sealed partial class MainWindow : Window
         }
 
         var story = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
-        var easeOut = new Microsoft.UI.Xaml.Media.Animation.CubicEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut };
-        void Animate(DependencyObject target, string property, params (double Seconds, double Value)[] keys)
+        Microsoft.UI.Xaml.Media.Animation.EasingFunctionBase easeOut = new Microsoft.UI.Xaml.Media.Animation.CubicEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut };
+        Microsoft.UI.Xaml.Media.Animation.EasingFunctionBase spring = new Microsoft.UI.Xaml.Media.Animation.BackEase { Amplitude = 0.55, EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut };
+        void Animate(DependencyObject target, string property, Microsoft.UI.Xaml.Media.Animation.EasingFunctionBase ease, params (double Seconds, double Value)[] keys)
         {
             var frames = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimationUsingKeyFrames();
             foreach (var (seconds, value) in keys)
             {
                 frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
                 {
-                    KeyTime = TimeSpan.FromSeconds(seconds), Value = value, EasingFunction = easeOut,
+                    KeyTime = TimeSpan.FromSeconds(seconds), Value = value, EasingFunction = ease,
                 });
             }
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(frames, target);
@@ -863,12 +1025,14 @@ public sealed partial class MainWindow : Window
         var end = CueLength.TotalSeconds;
         // Developer snapshots keep the last cue up, so it can be looked at.
         if (SnapshotMode)
-            Animate(CuePanel, "Opacity", (0, 0), (0.18, 1));
+            Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12, 1));
         else
-            Animate(CuePanel, "Opacity", (0, 0), (0.18, 1), (end - 0.45, 1), (end, 0));
-        Animate(CueBandScale, "ScaleY", (0, 0.15), (0.28, 1));
-        Animate(CueRuleTopScale, "ScaleX", (0, 0), (0.1, 0), (0.7, 1));
-        Animate(CueRuleBottomScale, "ScaleX", (0, 0), (0.1, 0), (0.7, 1));
+            Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12, 1), (end - 0.6, 1), (end, 0));
+        Animate(CueBandScale, "ScaleY", spring, (0, 0), (0.42, 1));
+        Animate(CueFlash, "Opacity", easeOut, (0, 0), (0.1, 0.32), (0.65, 0));
+        Animate(CueRuleTopScale, "ScaleX", spring, (0, 0), (0.15, 0), (0.75, 1));
+        Animate(CueRuleBottomScale, "ScaleX", spring, (0, 0), (0.15, 0), (0.75, 1));
+        Animate(CueTitleShift, "Y", easeOut, (0, 22), (0.1, 22), (0.55, 0));
         story.Completed += (_, _) =>
         {
             if (ReferenceEquals(story, _cueStory) && !SnapshotMode)
@@ -877,18 +1041,23 @@ public sealed partial class MainWindow : Window
         _cueStory = story;
         story.Begin();
 
-        // The title decodes: unresolved letters flicker through random ones, resolving left to right.
+        // The title decodes: undecoded letters flicker through random ones in gold, settling left to right in ink.
         const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var settled = new Microsoft.UI.Xaml.Documents.Run();
+        var flicker = new Microsoft.UI.Xaml.Documents.Run { Foreground = Resource("AmberBrush") };
+        CueTitle.Inlines.Clear();
+        CueTitle.Inlines.Add(settled);
+        CueTitle.Inlines.Add(flicker);
         var started = DateTime.Now;
-        var decode = TimeSpan.FromMilliseconds(750);
+        var decode = TimeSpan.FromMilliseconds(900);
         _cueTimer = DispatcherQueue.CreateTimer();
         _cueTimer.Interval = TimeSpan.FromMilliseconds(35);
         _cueTimer.Tick += (timer, _) =>
         {
             var p = Math.Min(1, (DateTime.Now - started) / decode);
             var resolved = (int)Math.Round(p * title.Length);
-            CueTitle.Text = string.Concat(title.Select((c, i) =>
-                i < resolved || !char.IsLetterOrDigit(c) ? c : glyphs[Random.Shared.Next(glyphs.Length)]));
+            settled.Text = title[..resolved];
+            flicker.Text = string.Concat(title[resolved..].Select(c => char.IsLetterOrDigit(c) ? glyphs[Random.Shared.Next(glyphs.Length)] : c));
             if (p >= 1)
                 timer.Stop();
         };
@@ -1065,6 +1234,9 @@ public sealed partial class MainWindow : Window
     {
         if (sender is Button { Tag: string map } && map != _snapshot?.Map?.NormalizedName)
         {
+            // A click on a previewed map keeps it: the map is shown fitted, as after any pick.
+            _previewTimer?.Stop();
+            EndPreview(restore: false);
             Study.Ui("map.pick", ("to", map), ("how", "plan"), ("planRank", ViewModel.Plans.ToList().FindIndex(p => p.NormalizedName == map) + 1));
             await _session.SelectMapAsync(map);
         }

@@ -64,16 +64,21 @@ public sealed partial class MapView : Grid
 
     private float PixelScale => (float)(XamlRoot?.RasterizationScale ?? 1.0);
 
-    /// <summary>Shows a new map, fitted to the window.</summary>
-    public void SetScene(MapScene? scene)
+    /// <summary>Shows a new map, fitted to the window, or at a view saved earlier with <see cref="View"/>.</summary>
+    public void SetScene(MapScene? scene, (Shturmap.Core.Maps.MapPoint Center, double Zoom)? view = null)
     {
         _scene = scene;
         if (scene is not null)
             scene.Pulse = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
-        _fitPending = true;
+        _fitPending = view is null;
+        if (view is { } v)
+            _camera.Restore(v.Center, v.Zoom);
         _seenFix = null;
         _panel.Invalidate();
     }
+
+    /// <summary>Where the view is: to come back to it after a preview of another map.</summary>
+    public (Shturmap.Core.Maps.MapPoint Center, double Zoom) View => (_camera.Center, _camera.Zoom);
 
     /// <summary>
     /// Redraws after the scene's markers, player or floor changed. A new position doesn't move the view (owner,

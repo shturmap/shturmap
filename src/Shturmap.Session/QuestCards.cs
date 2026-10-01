@@ -14,7 +14,9 @@ public sealed record CardObjective(string QuestId, string ObjectiveId, Objective
 }
 
 /// <summary>A key or an item to take into the raid for this quest.</summary>
-public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemId, string Text, string Where)
+/// <param name="Where">What it is for and where: "to plant · on Streets of Tarkov".</param>
+/// <param name="Source">The easiest way to get it ("Prapor LL1 · 18,936 ₽"), or empty.</param>
+public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemId, string Text, string Where, string Source = "")
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
 }
@@ -48,8 +50,9 @@ public static class QuestCards
     private const int ShownUnlocks = 5;
 
     /// <param name="live">Distance and direction for an objective id, in a raid on its map; null or empty otherwise.</param>
+    /// <param name="sources">Where items come from, for one line under each thing to bring.</param>
     public static QuestCardView? Build(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, string questId,
-        Func<string, string?>? live = null)
+        Func<string, string?>? live = null, ItemSources? sources = null)
     {
         if (!data.Tasks.TryGetValue(questId, out var task))
             return null;
@@ -79,7 +82,7 @@ public static class QuestCards
             StatusText(status),
             status?.State ?? QuestState.NotStarted,
             objectives.Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "")).ToList(),
-            Needs(data, task),
+            Needs(data, task, sources),
             unlocks.Take(ShownUnlocks).ToList(),
             unlocks.Count > ShownUnlocks ? $"and {unlocks.Count - ShownUnlocks} more" : "",
             task.WikiLink);
@@ -121,7 +124,8 @@ public static class QuestCards
         var text = string.IsNullOrWhiteSpace(o.Description) ? QuestTaxonomy.Label(kind) : o.Description!;
         if (o.Optional)
             text += " (optional)";
-        var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault();
+        var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
+            ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id;
         return new CardObjective(task.Id, o.Id, kind, text, where, item, live);
     }
 
@@ -141,34 +145,44 @@ public static class QuestCards
             .Distinct()
             .Order(StringComparer.CurrentCulture));
 
-    private static List<CardNeed> Needs(GameData data, ApiTask task)
+    private static List<CardNeed> Needs(GameData data, ApiTask task, ItemSources? sources)
     {
         var needs = new List<CardNeed>();
-        void Add(RequirementKind kind, IReadOnlyList<string> alternatives, int count, IEnumerable<string> maps)
+        void Add(RequirementKind kind, IReadOnlyList<string> alternatives, int count, IEnumerable<string> maps, string purpose)
         {
             if (alternatives.Count == 0)
                 return;
             var names = alternatives.Select(data.ItemName).Distinct().ToList();
-            var text = names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+            var text = kind == RequirementKind.Wear ? Planning.GearText(data, alternatives)
+                : names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
             if (count > 1)
                 text += $" ×{count}";
             var where = MapNames(data, maps);
             if (needs.Any(n => n.Text == text))
                 return;
-            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, where.Length > 0 ? "on " + where : ""));
+            var why = string.Join(" · ", new[] { purpose, where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
+            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, why, ItemCards.Best(data, sources, alternatives[0])?.Text ?? ""));
         }
 
         foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task).Objectives))
         {
             var maps = (o.Maps ?? []).Concat((o.Zones ?? []).Select(z => z.Map)).OfType<string>().ToList();
             foreach (var keys in plan.Keys)
-                Add(RequirementKind.Key, keys, 1, maps);
+                Add(RequirementKind.Key, keys, 1, maps, "key");
             foreach (var (item, count) in plan.Bring)
-                Add(RequirementKind.Bring, [item], count, maps);
+                Add(RequirementKind.Bring, [item], count, maps, o.Type switch
+                {
+                    "plantItem" or "plantQuestItem" => "to plant",
+                    "mark" => "to mark",
+                    "useItem" => "to use",
+                    _ => "to bring",
+                });
+            if (plan.Wear is { Count: > 0 } wear)
+                Add(RequirementKind.Wear, wear.SelectMany(s => s).Distinct().ToList(), 1, maps, "to wear");
         }
         foreach (var needed in task.NeededKeys ?? [])
             foreach (var key in needed.Keys ?? [])
-                Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map]);
+                Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map], "key");
         return needs;
     }
 }

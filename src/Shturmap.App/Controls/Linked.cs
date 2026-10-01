@@ -115,6 +115,32 @@ public static class Linked
         return false;
     }
 
+    /// <summary>The quests whose rows are at least half visible in a scrolling area (for the study log).</summary>
+    public static IEnumerable<string> QuestsVisibleIn(FrameworkElement viewport)
+    {
+        var seen = new HashSet<string>();
+        foreach (var element in Live.ToList())
+        {
+            if (element.XamlRoot != viewport.XamlRoot || GetQuest(element) is not { } quest || element.ActualHeight <= 0)
+                continue;
+            if (HalfVisible(element, viewport) && seen.Add(quest))
+                yield return quest;
+        }
+    }
+
+    private static bool HalfVisible(FrameworkElement element, FrameworkElement viewport)
+    {
+        try
+        {
+            var box = element.TransformToVisual(viewport).TransformBounds(new Windows.Foundation.Rect(0, 0, element.ActualWidth, element.ActualHeight));
+            return Math.Min(viewport.ActualHeight, box.Bottom) - Math.Max(0, box.Top) >= box.Height / 2;
+        }
+        catch (ArgumentException)
+        {
+            return false; // not in the viewport's tree (a card's row)
+        }
+    }
+
     /// <summary>Sets the focus from outside the rows, e.g. a map marker under the pointer.</summary>
     public static void Set(Focus? focus)
     {

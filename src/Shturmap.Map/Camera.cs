@@ -18,6 +18,13 @@ public sealed class Camera
 
     public void Resize(SKSize viewport) => Viewport = viewport;
 
+    /// <summary>Puts the view back where it was (after looking at another map for a moment).</summary>
+    public void Restore(MapPoint center, double zoom)
+    {
+        Center = center;
+        Zoom = zoom;
+    }
+
     public SKPoint ToScreen(MapPoint p) => new(
         (float)((p.X - Center.X) * Zoom + Viewport.Width / 2),
         (float)((p.Y - Center.Y) * Zoom + Viewport.Height / 2));

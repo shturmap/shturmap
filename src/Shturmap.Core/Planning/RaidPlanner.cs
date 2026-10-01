@@ -11,12 +11,16 @@ public enum RequirementKind
 {
     Key,
     Bring,
+
+    /// <summary>Gear to wear while doing the objective (kills while wearing a helmet, a beanie).</summary>
+    Wear,
 }
 
 /// <param name="Places">Positions per map id, where the objective has fixed places.</param>
 /// <param name="Count">How many kills or items it asks for (1 when it's a single action).</param>
 /// <param name="Keys">Key alternatives needed for this objective: each inner list is one way in.</param>
 /// <param name="Bring">Items consumed: (item id, count).</param>
+/// <param name="Wear">Gear to wear: each inner list is a set worn together; any set will do.</param>
 public sealed record PlanObjective(
     string Id,
     ObjectiveKind Kind,
@@ -25,7 +29,8 @@ public sealed record PlanObjective(
     int Count,
     bool Optional,
     IReadOnlyList<IReadOnlyList<string>> Keys,
-    IReadOnlyList<(string ItemId, int Count)> Bring);
+    IReadOnlyList<(string ItemId, int Count)> Bring,
+    IReadOnlyList<IReadOnlyList<string>>? Wear = null);
 
 /// <param name="NeededKeys">Keys the quest needs, per map id.</param>
 public sealed record PlanQuest(string Id, string Name, IReadOnlyList<PlanObjective> Objectives, IReadOnlyDictionary<string, IReadOnlyList<string>> NeededKeys);
@@ -124,6 +129,7 @@ public static class RaidPlanner
     {
         var keys = new Dictionary<string, (List<string> Alternatives, HashSet<string> Quests)>(StringComparer.Ordinal);
         var items = new Dictionary<string, (int Count, HashSet<string> Quests)>(StringComparer.Ordinal);
+        var wear = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
 
         void AddKey(IReadOnlyList<string> alternatives, string questId)
         {
@@ -154,6 +160,15 @@ public static class RaidPlanner
                     entry.Quests.Add(quest.Id);
                     items[itemId] = (entry.Count + count, entry.Quests);
                 }
+                // Gear is worn, not used up: one requirement per objective's choice of sets.
+                if (objective.Wear is { Count: > 0 } sets)
+                {
+                    var gear = sets.SelectMany(s => s).Distinct().ToList();
+                    var id = string.Join("|", gear.Order(StringComparer.Ordinal));
+                    if (!wear.TryGetValue(id, out var entry))
+                        wear[id] = entry = (gear, new HashSet<string>());
+                    entry.Quests.Add(quest.Id);
+                }
             }
         }
 
@@ -163,6 +178,7 @@ public static class RaidPlanner
             .Where(k => k.Alternatives.Count == 1 || !k.Alternatives.Any(singles.Contains))
             .Select(k => new Requirement(RequirementKind.Key, k.Alternatives, 1, k.Quests.ToList()))
             .Concat(items.Select(i => new Requirement(RequirementKind.Bring, [i.Key], i.Value.Count, i.Value.Quests.ToList())))
+            .Concat(wear.Values.Select(w => new Requirement(RequirementKind.Wear, w.Items, 1, w.Quests.ToList())))
             .ToList();
     }
 

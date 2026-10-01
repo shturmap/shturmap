@@ -240,7 +240,8 @@
                   <DataTemplate x:DataType="local:PlanCard">
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,12" Margin="0,0,0,6"
                             Background="{x:Bind CardBackground}" BorderBrush="{x:Bind CardBorder}" BorderThickness="1"
-                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick">
+                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick"
+                            PointerEntered="OnPlanPointerEntered" PointerExited="OnPlanPointerExited">
                       <StackPanel Spacing="3">
                         <Grid>
                           <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
@@ -249,6 +250,37 @@
                         <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                                    ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
                         <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
+                        <!-- Folded: enough to compare without opening it. One glyph per quest (gold: complete, muted:
+                             progress), then what to bring. -->
+                        <Grid Visibility="{x:Bind FoldedVisibility}" Margin="0,5,0,0" ColumnSpacing="10">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <StackPanel Orientation="Horizontal" Spacing="3">
+                            <ItemsControl ItemsSource="{x:Bind Finish}">
+                              <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate>
+                              </ItemsControl.ItemsPanel>
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:QuestLine">
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}" />
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{x:Bind Progress}">
+                              <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate>
+                              </ItemsControl.ItemsPanel>
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:QuestLine">
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" ToolTipService.ToolTip="{x:Bind Name}" />
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                          <controls:NeedsStrip Grid.Column="1" Needs="{x:Bind Needs}" Shown="5" />
+                        </Grid>
                         <StackPanel Visibility="{x:Bind ExpandedVisibility}">
                           <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
                           <ItemsControl ItemsSource="{x:Bind Finish}">
@@ -330,6 +362,44 @@
                   <TextBlock Text="{x:Bind ViewModel.RaidLine, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}" Style="{StaticResource NoteText}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidFixNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidFixNote), Mode=OneWay}" Style="{StaticResource NoteText}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidNote), Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />
+                  <!-- The glance: the nearest objective and the nearest way out, big, before anything else. -->
+                  <Grid Margin="-6,12,-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
+                        Visibility="{x:Bind ShownIfSet(ViewModel.RaidNext), Mode=OneWay}" controls:Linked.Quest="{x:Bind ViewModel.RaidNext.QuestId, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="48" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="NEXT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AmberBrush}" Margin="0,12,0,0" />
+                    <StackPanel Grid.Column="1" Spacing="1" Padding="0,9">
+                      <TextBlock Text="{x:Bind ViewModel.RaidNext.Text, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{x:Bind ViewModel.RaidNext.Quest, Mode=OneWay}" Style="{StaticResource NoteText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Padding="10,8,0,8">
+                      <TextBlock Text="{x:Bind ViewModel.RaidNext.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" HorizontalAlignment="Right" />
+                      <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidNext.Direction), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11.5"
+                                 Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
+                    </StackPanel>
+                  </Grid>
+                  <Grid Margin="-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,1"
+                        Visibility="{x:Bind ShownIfSet(ViewModel.RaidExit), Mode=OneWay}" controls:Linked.Marker="{x:Bind ViewModel.RaidExit.Id, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="48" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="EXIT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource GreenBrush}" Margin="0,12,0,0" />
+                    <StackPanel Grid.Column="1" Spacing="1" Padding="0,9">
+                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Name, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Needs, Mode=OneWay}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
+                                 Visibility="{x:Bind ShownIf(ViewModel.RaidExit.Needs), Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Padding="10,8,0,8">
+                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{StaticResource GreenBrush}" HorizontalAlignment="Right" />
+                      <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.Direction), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11.5"
+                                 Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
+                    </StackPanel>
+                  </Grid>
                   <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
@@ -405,34 +475,42 @@
 
         <!-- A change of view Shturmap made on its own (a raid loading, a transit, a Scav raid, the raid over): big, in
              the middle, for under three seconds, never taking a click. Owner, 2026-10-01. -->
-        <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0" RenderTransformOrigin="0.5,0.5">
-          <Grid.RenderTransform>
-            <ScaleTransform x:Name="CueBandScale" />
-          </Grid.RenderTransform>
-          <Border Background="#E60B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" Padding="24,30">
-            <StackPanel HorizontalAlignment="Center" Spacing="10">
-              <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
-                <Rectangle.RenderTransform>
-                  <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
-                </Rectangle.RenderTransform>
-              </Rectangle>
-              <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
-                         CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
-              <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="46" FontWeight="SemiBold"
-                         FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}" />
-              <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
-                         Foreground="{StaticResource MutedBrush}" />
-              <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
-                <Rectangle.RenderTransform>
-                  <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
-                </Rectangle.RenderTransform>
-              </Rectangle>
-            </StackPanel>
-          </Border>
+        <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0">
+          <!-- The band springs open behind the text; the text itself is never scaled, so it stays sharp. -->
+          <Grid RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+              <ScaleTransform x:Name="CueBandScale" ScaleY="0" />
+            </Grid.RenderTransform>
+            <Border Background="#EB0B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" />
+            <Rectangle x:Name="CueFlash" Fill="{StaticResource AmberBrush}" Opacity="0" />
+          </Grid>
+          <StackPanel HorizontalAlignment="Center" Spacing="10" Padding="24,30">
+            <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
+              <Rectangle.RenderTransform>
+                <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
+              </Rectangle.RenderTransform>
+            </Rectangle>
+            <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
+                       CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
+            <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="48" FontWeight="SemiBold"
+                       FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}">
+              <TextBlock.RenderTransform>
+                <TranslateTransform x:Name="CueTitleShift" />
+              </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
+                       Foreground="{StaticResource MutedBrush}" />
+            <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
+              <Rectangle.RenderTransform>
+                <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
+              </Rectangle.RenderTransform>
+            </Rectangle>
+          </StackPanel>
         </Grid>
 
         <!-- One-line notices, top centre; they go by themselves. -->
-        <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" MaxWidth="900" Padding="14,8,6,8"
+        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" Spacing="8">
+        <Border HorizontalAlignment="Center" MaxWidth="900" Padding="14,8,6,8"
                 Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1"
                 Visibility="{x:Bind ShownIfTrue(ViewModel.NoticeOpen), Mode=OneWay}">
           <Grid ColumnSpacing="12">
@@ -449,6 +527,29 @@
             </Button>
           </Grid>
         </Border>
+        <!-- Another map shown for a moment from a Plan card under the pointer. -->
+        <Border HorizontalAlignment="Center" Padding="14,6" Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"
+                Visibility="{x:Bind ShownIf(ViewModel.PreviewText), Mode=OneWay}" IsHitTestVisible="False">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="{x:Bind ViewModel.PreviewText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
+            <TextBlock Text="CLICK THE CARD TO PLAN IT" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
+          </StackPanel>
+        </Border>
+        <!-- In a raid, an old position says so in big type: a glance must not mistake it for where you are now. -->
+        <Border x:Name="StaleBanner" HorizontalAlignment="Center" Padding="18,10" RenderTransformOrigin="0.5,0.5"
+                Background="#F00B0C0B" BorderBrush="{StaticResource AmberBrush}" BorderThickness="2"
+                Visibility="{x:Bind ShownIf(ViewModel.StaleText), Mode=OneWay}" IsHitTestVisible="False">
+          <Border.RenderTransform>
+            <ScaleTransform x:Name="StaleScale" />
+          </Border.RenderTransform>
+          <StackPanel HorizontalAlignment="Center" Spacing="2">
+            <TextBlock Text="{x:Bind ViewModel.StaleText, Mode=OneWay}" HorizontalAlignment="Center" FontSize="22" FontWeight="SemiBold"
+                       FontStretch="SemiCondensed" CharacterSpacing="120" Foreground="{StaticResource AmberBrush}" />
+            <TextBlock Text="{x:Bind ViewModel.StaleHint, Mode=OneWay}" HorizontalAlignment="Center" Style="{StaticResource StatusText}"
+                       Foreground="{StaticResource InkBrush}" />
+          </StackPanel>
+        </Border>
+        </StackPanel>
 
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4">
           <!-- Floors, top first. Shturmap shows yours (dot) from each screenshot; a pick here holds until the next one. -->

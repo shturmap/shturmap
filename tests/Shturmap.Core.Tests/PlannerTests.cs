@@ -114,6 +114,23 @@ public class PlannerTests
     }
 
     [Fact]
+    public void Gear_to_wear_is_a_requirement_once_per_set_of_choices()
+    {
+        string[][] beanieAndGlasses = [["beanie"], ["glasses"]];
+        var kill = new PlanObjective("d1", ObjectiveKind.Elimination, ["streets"], new Dictionary<string, IReadOnlyList<WorldPoint>>(), 1, false, [], [],
+            beanieAndGlasses.Select(s => (IReadOnlyList<string>)s).ToList());
+        var dandies = new PlanQuest("dandies", "Dandies", [kill], NoKeys);
+        var other = new PlanQuest("other", "Other", [kill with { Id = "o1" }], NoKeys);
+
+        var plan = RaidPlanner.Plan([dandies, other], Streets);
+
+        var wear = Assert.Single(plan.Requirements, r => r.Kind == RequirementKind.Wear);
+        Assert.Equal(new[] { "beanie", "glasses" }, wear.Alternatives);
+        Assert.Equal(new[] { "dandies", "other" }, wear.ForQuests.Order().ToArray());
+        Assert.Equal(1, wear.Count); // worn, not used up
+    }
+
+    [Fact]
     public void Map_variants_count_as_one_map()
     {
         var quest = new PlanQuest("gzq", "Ground Zero quest", [Obj("g1", ObjectiveKind.Exploration, ["gz21"], [("gz21", new WorldPoint(1, 0, 1))])], NoKeys);

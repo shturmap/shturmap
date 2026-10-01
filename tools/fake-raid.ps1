@@ -9,7 +9,9 @@ param(
   # Play the raid as a Scav: the match setup names another profile than the menu's.
   [switch] $Scav,
   # A PvE-style raid hosted locally: no match-setup line, so the logs can't tell the side.
-  [switch] $LocalRaid
+  [switch] $LocalRaid,
+  # No raid at all: the quests start and the app stays in Plan (with two Customs quests, so Plan has folded cards).
+  [switch] $PlanOnly
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -45,9 +47,21 @@ foreach ($quest in '639135f286e646067c176a87', '65734c186dc1e402c80dc19e', '6391
                    '5967733e86f774602332fc84', '5d24b81486f77439c92d6ba8') {
   QuestStarted $quest
 }
+if ($PlanOnly) {
+  # Pharmacist and Golden Swag, on Customs.
+  QuestStarted '5969f9e986f7741dde183a50'
+  QuestStarted '5979eee086f774311955e614'
+}
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
+if ($PlanOnly) {
+  $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
+  if (-not $p.HasExited) { Stop-Process -Id $p.Id }
+  Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+  Write-Output "Snapshots in $Out"
+  return
+}
 Start-Sleep -Seconds 4
 Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
 $raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }

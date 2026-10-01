@@ -97,6 +97,7 @@ public sealed record ApiPossibleLocation(string? Map, List<ApiPosition>? Positio
 /// <param name="MarkerItem">The marker a "mark" objective uses, e.g. the MS2000.</param>
 /// <param name="UseAny">Items a "useItem" objective accepts, e.g. signal flares.</param>
 /// <param name="RequiredKeys">Ways in: each inner list is a set of alternative keys.</param>
+/// <param name="Wearing">Gear to wear for a kill objective: each inner list is a set worn together; any set will do.</param>
 public sealed record ApiObjective(
     string Id,
     string? Type,
@@ -111,7 +112,11 @@ public sealed record ApiObjective(
     string? MarkerItem,
     List<string>? UseAny,
     List<List<string>>? RequiredKeys,
-    bool FoundInRaid);
+    bool FoundInRaid,
+    List<List<ApiItemRef>>? Wearing = null);
+
+/// <summary>An item named in an objective's conditions.</summary>
+public sealed record ApiItemRef(string Id, string? Name);
 
 public sealed record ApiTaskRequirement(string Task, List<string>? Status);
 

@@ -53,6 +53,11 @@ public sealed class MapScene
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>
     public MapLayer? Floor { get; set; }
 
+    /// <summary>The map's floors with artwork of their own, top first (the base layer as null); empty without floors.</summary>
+    public IReadOnlyList<MapLayer?> FloorStack => _floorStack ??= FloorResolver.Stack(Definition);
+
+    private IReadOnlyList<MapLayer?>? _floorStack;
+
     public PlayerFix? Player { get; set; }
 
     /// <summary>Earlier fixes in this raid, oldest first.</summary>

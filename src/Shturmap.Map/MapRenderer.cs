@@ -45,11 +45,10 @@ public static class MapRenderer
         DrawSpawns(canvas, camera, scene, uiScale);
         foreach (var marker in scene.Markers.OrderBy(m => IsSelected(scene, m) || IsFocused(scene, m) ? 1 : 0))
         {
-            // Markers step back when something else is pointed at (easing with the scene's Dim), or when they are on
-            // another floor than the one shown.
+            // Markers step back when something else is pointed at (easing with the scene's Dim). A marker on another
+            // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength
+            // markers read as "not important", and a highlighted one must look highlighted).
             var alpha = scene.ShownFocus.Count > 0 && !IsFocused(scene, marker) ? 1 - 0.72f * scene.Dim : 1f;
-            if (!OnShownFloor(scene, marker.Position))
-                alpha = Math.Min(alpha, 0.5f);
             if (alpha < 1)
             {
                 using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
@@ -71,8 +70,44 @@ public static class MapRenderer
     private static bool IsFocused(MapScene scene, MapMarker m) =>
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
 
-    private static bool OnShownFloor(MapScene scene, WorldPoint p) =>
-        scene.Definition.Layers.Count == 0 || FloorResolver.LayerFor(scene.Definition, p)?.SvgLayer == scene.Floor?.SvgLayer;
+    /// <summary>
+    /// Whether a point is on a floor above (+1) or below (−1) the one shown, or on it (0). Floors without artwork
+    /// of their own are drawn in the base layer, so they count as the ground.
+    /// </summary>
+    public static int FloorOffset(MapScene scene, WorldPoint p)
+    {
+        var stack = scene.FloorStack;
+        if (stack.Count == 0)
+            return 0;
+        var layer = FloorResolver.LayerFor(scene.Definition, p);
+        int IndexOf(MapLayer? l)
+        {
+            var i = l is null ? -1 : stack.ToList().FindIndex(s => s is not null && s.SvgLayer == l.SvgLayer);
+            return i >= 0 ? i : stack.ToList().IndexOf(null);
+        }
+        var here = IndexOf(scene.Floor);
+        var there = IndexOf(layer);
+        // The stack lists the top floor first.
+        return there == here ? 0 : there < here ? 1 : -1;
+    }
+
+    // The other-floor arrow: a small dark disc at the marker's upper right with a chevron pointing up or down.
+    private static void DrawFloorArrow(SKCanvas canvas, SKPoint at, float r, int offset, float ui)
+    {
+        var c = new SKPoint(at.X + r * 0.8f, at.Y - r * 0.8f);
+        var size = 5.5f * ui;
+        using var disc = new SKPaint { Color = Background, IsAntialias = true };
+        using var rim = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
+        canvas.DrawCircle(c, size, disc);
+        canvas.DrawCircle(c, size, rim);
+        var h = 2.6f * ui;
+        var w = 3.2f * ui;
+        using var chevron = offset > 0
+            ? Polygon(new(c.X, c.Y - h), new(c.X + w, c.Y + h * 0.8f), new(c.X - w, c.Y + h * 0.8f))
+            : Polygon(new(c.X, c.Y + h), new(c.X + w, c.Y - h * 0.8f), new(c.X - w, c.Y - h * 0.8f));
+        using var fill = new SKPaint { Color = Player, IsAntialias = true };
+        canvas.DrawPath(chevron, fill);
+    }
 
     /// <summary>The marker under a screen point (pixels), nearest first, or null.</summary>
     public static MapMarker? HitTest(Camera camera, MapScene scene, SKPoint screen, float ui)
@@ -308,6 +343,9 @@ public static class MapRenderer
                 canvas.DrawCircle(at, r, outline);
                 break;
         }
+
+        if (marker.Kind != MarkerKind.ScavSpawn && FloorOffset(scene, marker.Position) is var floor and not 0)
+            DrawFloorArrow(canvas, at, r, floor, ui);
 
         if ((!scene.ShowLabels && !selected) || marker.Label.Length == 0)
             return;

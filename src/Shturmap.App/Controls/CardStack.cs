@@ -8,7 +8,7 @@ namespace Shturmap.App.Controls;
 
 /// <summary>
 /// Cards that open from what the pointer rests on, and from things on those cards, like the nested tooltips in
-/// Crusader Kings III. Rest on a quest, key or item for 0.4 s and its card opens beside it, see-through; it stays
+/// Crusader Kings III. Rest on a quest, key or item for 0.65 s (0.4 s on a card) and its card opens beside it, see-through; it stays
 /// while the pointer is on it, so things on it can open their own cards, and goes when the pointer leaves. A click
 /// on the quest (or on the card) holds it: it turns solid and stays while the pointer is near it, until a click
 /// elsewhere, Esc, another click on the quest, a full rest on something else that opens a card in its place, or the
@@ -17,6 +17,10 @@ namespace Shturmap.App.Controls;
 /// </summary>
 public sealed class CardStack
 {
+    // From the window's own lists and the map a card waits longer: the study log had 62 % of those cards closing
+    // within a second, opened by a pointer only passing over a list. Inside cards and pinned windows, pointing is
+    // deliberate.
+    private static readonly TimeSpan ShowFromList = TimeSpan.FromMilliseconds(650);
     private static readonly TimeSpan ShowAfter = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan SwapAfter = TimeSpan.FromMilliseconds(120);
     private static readonly TimeSpan SettleAfter = TimeSpan.FromMilliseconds(350);
@@ -119,7 +123,9 @@ public sealed class CardStack
         _pendingLevel = target;
         _pendingAnchor = anchor;
         // Skimming a list swaps an unheld card quickly; a held one gives way only to a full rest on something else.
-        _show.Interval = target < _levels.Count && !_levels[target].Held ? SwapAfter : ShowAfter;
+        _show.Interval = target < _levels.Count && !_levels[target].Held ? SwapAfter
+            : level < 0 && !_besideRoot ? ShowFromList
+            : ShowAfter;
         Restart(_show);
     }
 

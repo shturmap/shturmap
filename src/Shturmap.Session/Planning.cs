@@ -7,7 +7,8 @@ namespace Shturmap.Session;
 
 /// <summary>Something a raid needs, ready to show: "Dorm room 114 key", "MS2000 Marker ×3", for which quests.</summary>
 /// <param name="ItemId">The item to picture (the first of the alternatives).</param>
-public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds);
+/// <param name="Why">What it is for, then for which quests: "to mark, for Revision", "key for Ballet Lover".</param>
+public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "");
 
 public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null);
 
@@ -87,7 +88,41 @@ public static class Planning
             places.ToDictionary(p => p.Key, p => (IReadOnlyList<WorldPoint>)p.Value),
             count, o.Optional,
             (o.RequiredKeys ?? []).Where(k => k.Count > 0).Select(k => (IReadOnlyList<string>)k).ToList(),
-            bring);
+            bring,
+            (o.Wearing ?? []).Select(set => (IReadOnlyList<string>)set.Select(i => i.Id).ToList()).Where(set => set.Count > 0).ToList());
+    }
+
+    /// <summary>
+    /// Gear for a wear condition, short: "Bomber beanie / RayBench Hipster Reserve sunglasses", or "PACA Soft Armor /
+    /// 2 others". Neutral about "and" or "or": the data's sets don't always match the quest's wording, which the
+    /// objective text says anyway.
+    /// </summary>
+    public static string GearText(GameData data, IEnumerable<string> items)
+    {
+        var names = items.Select(data.ItemName).Distinct().ToList();
+        return names.Count <= 2 ? string.Join(" / ", names) : $"{names[0]} / {names.Count - 1} others";
+    }
+
+    /// <summary>What an item is brought for, from the objectives that use it: "to plant", "to mark", "to use".</summary>
+    private static string Purpose(GameData data, Requirement r)
+    {
+        if (r.Kind == RequirementKind.Wear)
+            return "to wear";
+        var item = r.Alternatives[0];
+        var uses = r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>()
+            .SelectMany(t => t.Objectives ?? [])
+            .Select(o => o.Type switch
+            {
+                "plantItem" when o.Items?.Contains(item) == true => "to plant",
+                "plantQuestItem" when o.QuestItem == item => "to plant",
+                "mark" when o.MarkerItem == item => "to mark",
+                "useItem" when o.UseAny?.Contains(item) == true => "to use",
+                _ => null,
+            })
+            .OfType<string>()
+            .Distinct()
+            .ToList();
+        return uses.Count > 0 ? string.Join(" and ", uses) : "to bring";
     }
 
     private static void Add(Dictionary<string, List<WorldPoint>> places, string map, WorldPoint p)
@@ -128,11 +163,14 @@ public static class Planning
     public static RequirementView RequirementText(GameData data, Requirement r)
     {
         var names = r.Alternatives.Select(data.ItemName).Distinct().ToList();
-        var text = names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+        var text = r.Kind == RequirementKind.Wear ? GearText(data, r.Alternatives)
+            : names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
         if (r.Count > 1)
             text += $" ×{r.Count}";
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
-        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList());
+        // Says why it is on the list (the study log: gear cards were opened over and over to find out).
+        var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : $"{Purpose(data, r)}, for {quests}";
+        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why);
     }
 
     /// <summary>"Key: X · Bring: Y" for one objective on one map, or null if it needs nothing.</summary>
@@ -151,6 +189,8 @@ public static class Planning
             parts.Add("Key: " + string.Join(", ", keys.Distinct()));
         if (plan.Bring.Count > 0)
             parts.Add("Bring: " + string.Join(", ", plan.Bring.Select(b => data.ItemName(b.ItemId) + (b.Count > 1 ? $" ×{b.Count}" : ""))));
+        if (plan.Wear is { Count: > 0 } wear)
+            parts.Add("Wear: " + GearText(data, wear.SelectMany(s => s)));
         return parts.Count > 0 ? string.Join(" · ", parts) : null;
     }
 }

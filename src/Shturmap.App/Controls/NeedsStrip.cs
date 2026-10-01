@@ -18,8 +18,15 @@ public sealed partial class NeedsStrip : StackPanel
     public static readonly DependencyProperty NeedsProperty = DependencyProperty.Register(
         nameof(Needs), typeof(IReadOnlyList<NeedChip>), typeof(NeedsStrip), new PropertyMetadata(null, (d, _) => ((NeedsStrip)d).Build()));
 
+    public static readonly DependencyProperty ShownProperty = DependencyProperty.Register(
+        nameof(Shown), typeof(int), typeof(NeedsStrip), new PropertyMetadata(3, (d, _) => ((NeedsStrip)d).Build()));
+
     /// <summary>How many cells at most; the rest is "+N".</summary>
-    private const int Shown = 3;
+    public int Shown
+    {
+        get => (int)GetValue(ShownProperty);
+        set => SetValue(ShownProperty, value);
+    }
 
     private const double Cell = 18;
 
