@@ -346,10 +346,11 @@
                     <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
                                Visibility="{x:Bind ShownIfNot(ViewModel.SideSwitchable), Mode=OneWay}"
                                ToolTipService.ToolTip="The side you play this raid, from the game's log" />
-                    <!-- PvE raids look the same in the log for a PMC and a Scav: then the tag is a switch. -->
+                    <!-- A raid hosted on your own machine (PvE can be) looks the same in the log for a PMC and a
+                         Scav: then the tag is a switch. -->
                     <Button HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6,1" Click="OnSideClick"
                             Visibility="{x:Bind ShownIfTrue(ViewModel.SideSwitchable), Mode=OneWay}"
-                            ToolTipService.ToolTip="The game's log doesn't say which side you play in PvE. Click to switch between PMC and Scav for this raid.">
+                            ToolTipService.ToolTip="This raid runs on your own machine, and then the game's log doesn't say which side you play. Click to switch between PMC and Scav for this raid.">
                       <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" />
                         <FontIcon Glyph="&#xE8AB;" FontSize="10" Foreground="{StaticResource MutedBrush}" />

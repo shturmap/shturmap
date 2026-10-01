@@ -187,9 +187,11 @@ Text says only what the place doesn't: an objective "… on Streets of Tarkov" d
     don't count). When the raid starts as a Scav, a notice replaces the PMC bring-list said at loading.
     How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
     joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining
-    under way. Locally hosted raids (all PvE raids) log neither, so they stay unknown and get the PMC view; the
-    side tag is then a switch (PMC ⇄ SCAV) that holds for the raid (the study log: 4 of 4 PvE raids unknown). No
-    PvE Scav raid has been seen in a log yet; if one shows a line that tells, it replaces the switch.
+    under way. PvE raids can be either: server-hosted ones log the match setup like PvP (seen on 25, 26 and 30
+    September), locally hosted ones (all four on 1 October, two on 26 September) log neither and start with a
+    zero-length "GameStarting". Those stay unknown and get the PMC view; the side tag is then a switch (PMC ⇄
+    SCAV) that holds for the raid. No local Scav raid has been seen in a log yet; if one shows a line that tells,
+    it replaces the switch.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, boss spawns (red diamonds, one label
   per spawn area: "Reshala 75%"), Scav spawns (small quiet rings, no label, not hoverable), player, trail, guide
   line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
