@@ -57,7 +57,7 @@ public class LogRecordReaderTests
         var record = reader.Append(Sample)[0];
         var quest = Assert.IsType<QuestEvent>(GameLogParser.Parse(record));
         Assert.Equal("5936d90786f7742b1420ba5b", quest.QuestId);
-        Assert.Equal(QuestStatus.Started, quest.Status);
+        Assert.Equal(QuestLogStatus.Started, quest.Status);
         Assert.Equal("000000000000000000000042", quest.EventId);
         Assert.Equal("54cb50c76803fa8b248b4571", quest.TraderId);
     }
@@ -113,8 +113,8 @@ public class LogReplayTests
         Assert.All(raids, r => Assert.Equal(GameMode.Seasonal, r.Mode));
         Assert.Equal("Interchange", raids[1].Location);
 
-        Assert.Equal(8, quests.Count(q => q.Status == QuestStatus.Started));
-        Assert.Equal(0, quests.Count(q => q.Status == QuestStatus.Completed));
+        Assert.Equal(8, quests.Count(q => q.Status == QuestLogStatus.Started));
+        Assert.Equal(0, quests.Count(q => q.Status == QuestLogStatus.Completed));
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public class LogReplayTests
         });
         Assert.Equal("2026-01-01 16:27:14", raids[2].Started!.Value.ToString("yyyy-MM-dd HH:mm:ss"));
 
-        Assert.Equal(2, quests.Count(q => q.Status == QuestStatus.Started));
-        Assert.Equal(1, quests.Count(q => q.Status == QuestStatus.Completed));
+        Assert.Equal(2, quests.Count(q => q.Status == QuestLogStatus.Started));
+        Assert.Equal(1, quests.Count(q => q.Status == QuestLogStatus.Completed));
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class LogReplayTests
         // The parser reports all of them; the quest engine ignores ids it does not know.
         Assert.Equal(
             new[] { "596a0e1686f7741ddf17dbee", "5d25e44386f77409453bce7b", "616041eb031af660100c9967", "61604635c725987e815b1a46" },
-            completions.Where(q => q.Status == QuestStatus.Completed).Select(q => q.QuestId).Order(StringComparer.Ordinal).ToArray());
+            completions.Where(q => q.Status == QuestLogStatus.Completed).Select(q => q.QuestId).Order(StringComparer.Ordinal).ToArray());
     }
 
     [Theory]

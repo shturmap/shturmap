@@ -8,7 +8,7 @@ public enum GameMode
     Seasonal,
 }
 
-public enum QuestStatus
+public enum QuestLogStatus
 {
     Started,
     Failed,
@@ -46,4 +46,4 @@ public sealed record ProfileLoadedEvent(DateTime At, string? ProfileId) : GameEv
 public sealed record MatchingCancelledEvent(DateTime At) : GameEvent(At);
 
 /// <summary>A quest started, failed or was completed (push-notifications ChatMessageReceived, types 10–12).</summary>
-public sealed record QuestEvent(DateTime At, string QuestId, QuestStatus Status, string EventId, string? TraderId) : GameEvent(At);
+public sealed record QuestEvent(DateTime At, string QuestId, QuestLogStatus Status, string EventId, string? TraderId) : GameEvent(At);

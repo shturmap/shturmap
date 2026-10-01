@@ -111,11 +111,11 @@ public static partial class GameLogParser
             return null;
 
         var type = message.TryGetProperty("type", out var t) && t.ValueKind == JsonValueKind.Number ? t.GetInt32() : -1;
-        QuestStatus? status = type switch
+        QuestLogStatus? status = type switch
         {
-            10 => QuestStatus.Started,
-            11 => QuestStatus.Failed,
-            12 => QuestStatus.Completed,
+            10 => QuestLogStatus.Started,
+            11 => QuestLogStatus.Failed,
+            12 => QuestLogStatus.Completed,
             _ => null,
         };
         var template = String(message, "templateId");

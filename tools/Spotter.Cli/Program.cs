@@ -25,6 +25,12 @@ switch (command)
     case "render":
         await Render(args.ElementAtOrDefault(1) ?? "streets-of-tarkov", args.ElementAtOrDefault(2) ?? "map.png", args.Skip(3).ToList());
         break;
+    case "watch":
+        await Watch(int.TryParse(args.ElementAtOrDefault(1), out var seconds) ? seconds : 20);
+        break;
+    case "simulate":
+        await Simulate();
+        break;
     default:
         Console.WriteLine("""
             spotter-cli locate              find the game, logs, screenshots and settings on this PC
@@ -33,8 +39,106 @@ switch (command)
             spotter-cli ocr <png>...        read Tasks-screen screenshots and match them to PvE quests
             spotter-cli render <map> <out.png> [screenshot names...]
                                             draw a map with the positions from screenshot names
+            spotter-cli watch [seconds]     run the companion headless and print what it sees
+            spotter-cli simulate            play a scripted Streets raid against a temporary fake game folder
             """);
         break;
+}
+
+static async Task Simulate()
+{
+    // A fake game: a Logs session the script appends to, and a Screenshots folder it drops files into.
+    var root = Directory.CreateTempSubdirectory("spotter-sim-").FullName;
+    var start = DateTime.Now;
+    var session = $"log_{start:yyyy.MM.dd_HH-mm-ss}_1.1.5.1.47510";
+    var logs = Path.Combine(root, "Logs");
+    Directory.CreateDirectory(Path.Combine(logs, session));
+    var appLog = Path.Combine(logs, session, $"{start:yyyy.MM.dd_HH-mm-ss}_1.1.5.1.47510 application_000.log");
+    var shots = Path.Combine(root, "Screenshots");
+    Directory.CreateDirectory(shots);
+    void Log(string message) => File.AppendAllText(appLog, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}|1.1.5.1.47510|Info|application|{message}\r\n");
+    void Shot(double x, double y, double z, string quaternion) =>
+        File.WriteAllText(Path.Combine(shots, FormattableString.Invariant($"{DateTime.Now:yyyy-MM-dd[HH-mm]}_{x:0.00}, {y:0.00}, {z:0.00}_{quaternion}_14.13 (0).png")), "");
+
+    var install = new InstallCandidate(InstallKind.Manual, root, logs, start, "simulation", null);
+    var settingsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Battlestate Games", "Escape from Tarkov", "Settings");
+    var locations = new GameLocations(install, [install], shots, settingsFolder);
+    var paths = new Spotter.Session.AppPaths(Path.Combine(root, "app"), Spotter.Session.AppPaths.Default.CacheRoot);
+
+    Log("Session mode: Pve");
+    Log("PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0");
+    await using var game = new Spotter.Session.GameSession(paths, locations);
+    game.Notice += m => Console.WriteLine($"  notice: {m}");
+    await game.StartAsync();
+    for (var i = 0; i < 50 && game.Snapshot.Data is null; i++)
+        await Task.Delay(200);
+
+    void Print(string step)
+    {
+        var s = game.Snapshot;
+        Console.WriteLine($"[{step}] {s.Raid.Phase} on {s.Map?.Name} as {s.Raid.Side}; fix {(s.Fix is null ? "none" : s.Fix.Position + $" facing {s.Fix.YawDegrees:0}°")}; floor {s.Floor?.Name ?? "ground"}; trail {s.Trail.Count}");
+        foreach (var o in s.Objectives.Where(o => o.HasPlace).Take(5))
+            Console.WriteLine($"      {o.Distance,6:0} m {(o.Direction is { } d ? Spotter.Core.Navigation.Bearing.Describe(d) : ""),-12} {o.QuestName}: {o.Text}");
+        foreach (var e in s.Extracts.Take(3))
+            Console.WriteLine($"      {e.Distance,6:0} m {(e.Direction is { } d ? Spotter.Core.Navigation.Bearing.Describe(d) : ""),-12} {e.Name} ({e.Kind})");
+    }
+
+    Print("menu");
+    Log("scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset");
+    Log("TRACE-NetworkGameCreate profileStatus: 'Profileid: 000000000000000000000003, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: SIMRAD'");
+    Log("GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19");
+    await Task.Delay(1500);
+    Log("GameStarted:90.6(10.33) real:107.49(12.02) diff:16.89");
+    await Task.Delay(2500);
+    Print("raid started");
+
+    Shot(-60.00, 3.50, 300.00, "-0.02500, 0.23500, -0.00500, -0.97150");
+    await Task.Delay(1500);
+    Print("first screenshot");
+    Shot(40.00, 2.50, 120.00, "0.01000, 0.99900, -0.04000, 0.02000");
+    await Task.Delay(1500);
+    Print("second screenshot");
+    Shot(40.00, 12.4, 120.00, "0.01000, 0.99900, -0.04000, 0.02000");
+    await Task.Delay(1500);
+    Print("upstairs");
+
+    Log("PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0");
+    await Task.Delay(2500);
+    Print("raid over");
+    try
+    {
+        Directory.Delete(root, true);
+    }
+    catch (IOException)
+    {
+    }
+}
+
+static async Task Watch(int seconds)
+{
+    await using var session = new Spotter.Session.GameSession(Spotter.Session.AppPaths.Default);
+    var last = "";
+    session.Notice += message => Console.WriteLine($"{DateTime.Now:HH:mm:ss} NOTICE {message}");
+    session.Changed += s =>
+    {
+        var line = $"{s.Mode} | {s.Raid.Phase} {s.Map?.Name} side={s.Raid.Side} | fix={(s.Fix is null ? "-" : s.Fix.Position.ToString())} floor={s.Floor?.Name ?? "base"} | " +
+                   $"active quests={s.ActiveQuestCount} objectives here={s.Objectives.Count} extracts={s.Extracts.Count} | {s.Logs.Text}, {s.Screenshots.Text}, {s.DataHealth.Text}";
+        if (line != last)
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss} {line}");
+        last = line;
+    };
+    var sw = Stopwatch.StartNew();
+    await session.StartAsync();
+    Console.WriteLine($"started in {sw.ElapsedMilliseconds} ms");
+    await Task.Delay(TimeSpan.FromSeconds(seconds));
+    var snap = session.Snapshot;
+    Console.WriteLine($"--- after {seconds}s: {snap.Quests.Values.Count(q => q.State == Spotter.Core.Quests.QuestState.Active)} active, " +
+                      $"{snap.Quests.Values.Count(q => q.State == Spotter.Core.Quests.QuestState.Completed && !q.IsImplied)} completed, " +
+                      $"{snap.Quests.Values.Count(q => q.IsImplied)} implied complete");
+    foreach (var q in snap.Quests.Values.Where(q => q.State == Spotter.Core.Quests.QuestState.Active).Take(40))
+        Console.WriteLine($"  active: {snap.Data?.Tasks.GetValueOrDefault(q.QuestId)?.Name ?? q.QuestId} ({q.Source}, {q.At:dd.MM HH:mm})");
+    foreach (var o in snap.Objectives.Take(8))
+        Console.WriteLine($"  here: {o.QuestName}: {o.Text} {(o.Distance is { } d ? $"{d:0} m" : "")}");
 }
 
 static async Task Render(string mapName, string output, List<string> screenshots)

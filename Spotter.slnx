@@ -6,6 +6,7 @@
     <Project Path="src/Spotter.Game/Spotter.Game.csproj" />
     <Project Path="src/Spotter.Map/Spotter.Map.csproj" />
     <Project Path="src/Spotter.Ocr/Spotter.Ocr.csproj" />
+    <Project Path="src/Spotter.Session/Spotter.Session.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Spotter.Core.Tests/Spotter.Core.Tests.csproj" />

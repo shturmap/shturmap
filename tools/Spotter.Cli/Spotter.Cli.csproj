@@ -13,5 +13,6 @@
     <ProjectReference Include="..\..\src\Spotter.Data\Spotter.Data.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Ocr\Spotter.Ocr.csproj" />
     <ProjectReference Include="..\..\src\Spotter.Map\Spotter.Map.csproj" />
+    <ProjectReference Include="..\..\src\Spotter.Session\Spotter.Session.csproj" />
   </ItemGroup>
 </Project>
