@@ -67,8 +67,8 @@ residual risk. Do not widen the boundary.
 6. **Says why.** Every quest state can say where it came from (log, Tasks scan, import, manual, implied).
 7. **Only ask when unsure.** The only confirmations in the app are uncertain Tasks-scan reads, one click each.
 8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
-   the "you are here" parts works without a fix. A fix shows its age; the marker fades and a dashed ring grows
-   with the distance you have likely covered since (typical raid pace 1.5 m/s, at most 150 m). Directions relative to your facing
+   the "you are here" parts works without a fix. A fix shows its age and the marker fades. No "you may be
+   anywhere in here" ring: it was tried and is visual noise. Directions relative to your facing
    ("ahead-left") are shown only for 45 s after a fix; after that they become map directions ("NE", map-up is
    north), which stay true while you move. Distances say how old they are. A new fix frames you and your nearest
    objective together.
@@ -220,7 +220,7 @@ folding. Accept ≥ 0.92 with margin; confirm ≥ 0.75.
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, TarkovEyes import, Tasks scans, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
-  occasional-position UX (fix age, uncertainty ring, compass directions), bring-list notice on raid load.
+  occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load.
 - Pending decision: product name (proposed: Shturman). Rename only after the owner confirms.
 - Open: tile-only maps (The Lab, Labyrinth, Icebreaker); manual quest editing; objective progress; floor picker;
   published size 237 MB (budget 80–120 MB, needs trimming).

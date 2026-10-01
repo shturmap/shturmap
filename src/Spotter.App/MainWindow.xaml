@@ -58,7 +58,9 @@
                   <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=". The game names each screenshot with your position; Spotter moves your marker, picks the floor and sorts your objectives by distance." />
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
-                <TextBlock TextWrapping="Wrap" Text="Between raids, Spotter suggests where to go next, what you can finish there and what to bring. To update your quests, open Character → Tasks in the game and take a screenshot; scroll and take another for more rows." />
+                <TextBlock TextWrapping="Wrap" Text="Between raids, Spotter suggests where to go next, what you can finish there and what to bring." />
+                <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
+                           Text="The logs only reach back so far. If older quests are missing, open Character → Tasks in the game and take a screenshot; scroll and take another for more rows." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS (WHEN THIS WINDOW HAS FOCUS)" />
                 <Grid ColumnSpacing="16" RowSpacing="2">

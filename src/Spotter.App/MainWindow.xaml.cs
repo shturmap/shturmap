@@ -235,7 +235,7 @@ public sealed partial class MainWindow : Window
             Direction(e.Direction, e.MapBearing))).ToList();
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
-            : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map. To update your quests, take a screenshot of Character → Tasks in the game."
+            : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map. If quests are missing, take a screenshot of Character → Tasks in the game."
             : vm.InRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
         vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";

@@ -21,8 +21,9 @@ log sessions on disk for quest history, imports TarkovEyes progress if present, 
 screenshots from the last week. The window opens maximised on the second monitor.
 
 In a raid, press your screenshot key (PrtSc by default). The map switches to the raid's map when it loads; each
-screenshot moves your marker, picks the floor from your height and re-sorts objectives by distance. To update
-your quest list, open Character → Tasks and press the screenshot key; scroll and press again for more rows.
+screenshot moves your marker, picks the floor from your height and re-sorts objectives by distance. Quests follow
+the logs as you start, fail and finish them. The logs only reach back so far: if older quests are missing, open
+Character → Tasks and press the screenshot key; scroll and press again for more rows.
 
 ## Work on it
 
