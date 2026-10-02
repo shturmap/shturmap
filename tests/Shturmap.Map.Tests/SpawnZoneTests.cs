@@ -4,7 +4,8 @@ using static Shturmap.Map.Tests.Fixtures;
 
 namespace Shturmap.Map.Tests;
 
-// Spawns are drawn one marker per zone, at the centroid of the zone's points (owner, 2026-10-02).
+// Spawns are drawn one marker per zone, at the centroid of the zone's points, split into groups where the centroid
+// would stand away from them (owner, 2026-10-02).
 public class SpawnZoneTests
 {
     private static ApiSpawn Scav(string zone, double x, double z, double y = 0) => new(At(x, z, y), ["scav"], ["bot"], zone);
@@ -25,6 +26,42 @@ public class SpawnZoneTests
     {
         var map = TestMap("customs", [Scav("Z", 0, 0), Scav("Z", 0, 0), Scav("Z", 30, 0)]);
         Assert.Equal(new WorldPoint(15, 0, 0), MapContentBuilder.SpawnZones(With(map), map).Single().Position);
+    }
+
+    [Fact]
+    public void A_zone_whose_centroid_stands_among_its_points_stays_one_marker()
+    {
+        // 75 m end to end, but the centroid is 12.5 m from the nearest point.
+        var map = TestMap("customs", [Scav("Z", 0, 0), Scav("Z", 25, 0), Scav("Z", 50, 0), Scav("Z", 75, 0)]);
+        Assert.Equal(new WorldPoint(37.5, 0, 0), Assert.Single(MapContentBuilder.SpawnZones(With(map), map)).Position);
+    }
+
+    [Fact]
+    public void A_zone_in_two_places_gets_a_marker_in_each()
+    {
+        // Customs' sniper zone lists two points 228 m apart; one marker at their centroid stood 114 m from both.
+        var map = TestMap("customs", [Scav("Z", 0, 0), Scav("Z", 10, 0), Scav("Z", 20, 0), Scav("Z", 228, 0)]);
+        var markers = MapContentBuilder.SpawnZones(With(map), map);
+        Assert.Equal(["scav:Z", "scav:Z:2"], markers.Select(m => m.Id));
+        Assert.Equal([new WorldPoint(10, 0, 0), new WorldPoint(228, 0, 0)], markers.Select(m => m.Position));
+    }
+
+    [Fact]
+    public void A_zone_reaching_another_floor_gets_a_marker_on_each()
+    {
+        // Reserve: a zone reaching from the ground into the bunker below put its marker between the two.
+        var map = TestMap("reserve", [Scav("Z", 0, 0), Scav("Z", 10, 0), Scav("Z", 0, 0, -10), Scav("Z", 10, 0, -10)]);
+        Assert.Equal([0.0, -10.0], MapContentBuilder.SpawnZones(With(map), map).Select(m => m.Position.Y));
+    }
+
+    [Fact]
+    public void A_split_boss_zone_says_its_chances_once()
+    {
+        var map = TestMap("woods", bosses: [new("bossKojaniy", 0.75, [new("Lumber Mill", 0.5, [At(0, 0), At(10, 0), At(150, 0)])])]);
+        var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("bossKojaniy", "Shturman")), map);
+        Assert.Equal(["Shturman 75% · 50% here", ""], markers.Select(m => m.Label));
+        Assert.Equal([new WorldPoint(5, 0, 0), new WorldPoint(150, 0, 0)], markers.Select(m => m.Position));
+        Assert.All(markers, m => Assert.Equal("boss:bossKojaniy", m.Group));
     }
 
     [Fact]

@@ -31,6 +31,9 @@ switch (command)
     case "quests":
         await Quests(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "spawns":
+        await Spawns(args.ElementAtOrDefault(1) ?? "pve");
+        break;
     default:
         Console.WriteLine("""
             shturmap-cli locate              find the game, logs, screenshots and settings on this PC
@@ -41,6 +44,7 @@ switch (command)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
+            shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
             """);
         break;
 }
@@ -170,6 +174,39 @@ static async Task Watch(int seconds)
         Console.WriteLine($"     progress: {string.Join("; ", p.Progress.Select(q => $"[{q.Kind}] {q.Name}"))}");
         foreach (var r in p.Requirements)
             Console.WriteLine($"     {r.Kind}: {r.Text}  (for {r.ForQuests})");
+    }
+}
+
+// Spawn markers stand at the centroid of a group of real spawn points; this shows how far each is from the nearest
+// point of its kind, so a data change that leaves a marker where nothing spawns is seen.
+static async Task Spawns(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
+    foreach (var map in data.Maps.Values.OrderBy(m => m.Name))
+    {
+        var scav = (map.Spawns ?? []).Where(s => s.Position is not null && s.Sides?.Contains("scav") == true).ToList();
+        var points = new Dictionary<Shturmap.Map.MarkerKind, List<Shturmap.Core.WorldPoint>>
+        {
+            [Shturmap.Map.MarkerKind.ScavSpawn] = scav.Where(s => s.Categories?.Any(c => c is "bot" or "all") == true && s.Categories?.Contains("sniper") != true)
+                .Select(s => s.Position!.ToWorld()).ToList(),
+            [Shturmap.Map.MarkerKind.SniperSpawn] = scav.Where(s => s.Categories?.Contains("bot") == true && s.Categories?.Contains("sniper") == true)
+                .Select(s => s.Position!.ToWorld()).ToList(),
+            [Shturmap.Map.MarkerKind.BossSpawn] = (map.Bosses ?? []).Where(b => b.Mob.StartsWith("boss", StringComparison.Ordinal))
+                .SelectMany(b => b.SpawnLocations ?? []).SelectMany(l => l.Positions ?? []).Select(p => p.ToWorld()).ToList(),
+        };
+        var markers = Shturmap.Map.MapContentBuilder.SpawnZones(data, map);
+        if (markers.Count == 0)
+            continue;
+        var far = markers.Select(m => (m, p: points[m.Kind].MinBy(p => p.HorizontalDistanceTo(m.Position) + Math.Abs(p.Y - m.Position.Y))))
+            .Select(x => (x.m, d: x.p.HorizontalDistanceTo(x.m.Position), dy: x.p.Y - x.m.Position.Y)).ToList();
+        var zones = scav.Select(s => (s.Categories?.Contains("sniper") == true, s.ZoneName)).Distinct().Count();
+        Console.WriteLine($"{map.Name} ({map.NormalizedName}): {zones} Scav and sniper zones; {markers.Count(m => m.Kind == Shturmap.Map.MarkerKind.ScavSpawn)} Scav, " +
+                          $"{markers.Count(m => m.Kind == Shturmap.Map.MarkerKind.SniperSpawn)} sniper, {markers.Count(m => m.Kind == Shturmap.Map.MarkerKind.BossSpawn)} boss; " +
+                          $"farthest {far.Max(x => x.d):0} m across, {far.Max(x => Math.Abs(x.dy)):0.0} m up or down");
+        foreach (var (m, d, dy) in far.Where(x => x.d > 20 || Math.Abs(x.dy) > 3))
+            Console.WriteLine($"    {m.Id}: {d:0} m from the nearest point, {dy:+0.0;-0.0;0.0} m in height");
     }
 }
 

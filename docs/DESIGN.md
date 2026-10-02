@@ -308,15 +308,20 @@ spawns below).
 - **Spawns: one marker per zone, at its centroid** (owner, 2026-10-02: the player needs to know which area has
   Scavs, where the bosses and the snipers are, not each spawn point; "just use the centroid, do not colour code the
   potential spawn area"). tarkov.dev names a zone for each spawn point; the points of one zone get one marker at
-  their centroid, the mean of X, Y and Z, so the marker can stand where no spawn point is (on Customs and
-  Interchange some zones spread over 300–450 m, and their centroid lands 40–250 m from the nearest point). No
-  areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
+  their centroid, the mean of X, Y and Z. A marker must stand among its points, within 25 m across and 3 m (about a
+  floor) in height of one of them: where a zone's centroid doesn't, the zone is cut in two at its widest gap, until
+  every group's does, and each group gets its marker (owner, 2026-10-02: on Customs and Interchange some zones spread
+  over 300–450 m and their centroid landed 40–250 m from the nearest point; Customs' sniper marker stood on the
+  ground between its two points, 228 m apart on the 2nd and 4th floors). Split only where needed, Woods keeps 28
+  Scav markers for its 11 zones and Customs 24 (PvE). `shturmap-cli spawns [mode]` lists, per map, how far each marker stands from a real
+  point. No areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
   ink, unlabelled and not hoverable. Sniper zones (side "scav", categories "bot" and "sniper"; Ground Zero's
   player spawns tagged "sniper" don't count) are a hollow ink hexagon labelled "Sniper": a shape no other symbol
   uses, not a reticle, which is the Elimination glyph. Bosses (mobs "boss…") get one red diamond per spawn zone,
   labelled with the two numbers the data gives, the boss's chance on the map and, for a boss with several zones,
   that zone's share: "Kollontay 75% · 50% here", "Kaban 75%"; never their product, since the data doesn't say the
-  share is conditional. Bosses whose zones have the same centroid share one marker ("Reshala 75% · 33% here /
+  share is conditional. A boss zone split in groups says this once, on its largest group; the others are bare
+  diamonds that light with it. Bosses whose groups have the same centroid share one marker ("Reshala 75% · 33% here /
   Knight 25%" on Customs' Stronghold), and pointing at a boss lights all its zones.
 - **Labels by priority** (`MapRenderer.Layout`). Every symbol is placed before any text, so no label covers a
   symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,

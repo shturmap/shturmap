@@ -46,8 +46,9 @@ public static class MapContentBuilder
             markers.Add(new MapMarker("transit:" + transit.Id, MarkerKind.Transit, transit.Position.ToWorld(), "Transit to " + target));
         }
 
-        // Spawns, one marker per spawn zone at the centroid of the zone's points (owner, 2026-10-02: the player needs
-        // to know which area has Scavs, where bosses and snipers are, not every spawn point).
+        // Spawns, one marker per spawn zone at the centroid of the zone's points, or per group where the zone lies
+        // apart (owner, 2026-10-02: the player needs to know which area has Scavs, where bosses and snipers are, not
+        // every spawn point).
         markers.AddRange(SpawnZones(data, map));
 
         foreach (var questId in activeQuests)
@@ -99,10 +100,11 @@ public static class MapContentBuilder
     /// <summary>
     /// One marker per spawn zone, at the centroid (the mean of X, Y and Z) of the zone's points: AI Scav zones
     /// (side "scav", category "bot" or "all", not "sniper"), sniper zones (side "scav", categories "bot" and
-    /// "sniper") and, per boss, each of its spawn locations. The data gives zones by name; the points of one zone are
-    /// grouped by that name alone. A boss marker says the boss's chance on the map and, when the boss has several
-    /// zones, this zone's share ("Kollontay 75% · 50% here"). Bosses whose zones have the same centroid (Customs'
-    /// Stronghold lists the same points for Reshala and Knight) share one marker.
+    /// "sniper") and, per boss, each of its spawn locations. The data gives zones by name; a zone whose points lie
+    /// apart is split into its groups (<see cref="Groups"/>), one marker each, so no marker stands where nothing
+    /// spawns. A boss marker says the boss's chance on the map and, when the boss has several zones, this zone's
+    /// share ("Kollontay 75% · 50% here"), on the zone's largest group only. Bosses whose groups have the same
+    /// centroid (Customs' Stronghold lists the same points for Reshala and Knight) share one marker.
     /// </summary>
     public static IReadOnlyList<MapMarker> SpawnZones(GameData data, ApiMap map)
     {
@@ -110,9 +112,11 @@ public static class MapContentBuilder
         var spawns = (map.Spawns ?? []).Where(s => s.Position is not null && s.Sides?.Contains("scav") == true).ToList();
         foreach (var zone in spawns.Where(s => s.Categories?.Any(c => c is "bot" or "all") == true && s.Categories?.Contains("sniper") != true)
                      .GroupBy(s => s.ZoneName ?? ""))
-            markers.Add(new MapMarker("scav:" + zone.Key, MarkerKind.ScavSpawn, Centroid(Distinct(zone.Select(s => s.Position!.ToWorld()))), ""));
+            foreach (var (group, i) in Groups(Distinct(zone.Select(s => s.Position!.ToWorld()))).Select((g, i) => (g, i)))
+                markers.Add(new MapMarker(GroupId("scav:" + zone.Key, i), MarkerKind.ScavSpawn, Centroid(group), ""));
         foreach (var zone in spawns.Where(s => s.Categories?.Contains("bot") == true && s.Categories?.Contains("sniper") == true).GroupBy(s => s.ZoneName ?? ""))
-            markers.Add(new MapMarker("sniper:" + zone.Key, MarkerKind.SniperSpawn, Centroid(Distinct(zone.Select(s => s.Position!.ToWorld()))), "Sniper"));
+            foreach (var (group, i) in Groups(Distinct(zone.Select(s => s.Position!.ToWorld()))).Select((g, i) => (g, i)))
+                markers.Add(new MapMarker(GroupId("sniper:" + zone.Key, i), MarkerKind.SniperSpawn, Centroid(group), "Sniper"));
 
         // Per boss and zone: the label parts and the zone's points (the payload can list one boss several times).
         var zones = new List<(string Mob, string Zone, List<string> Parts, List<WorldPoint> Points)>();
@@ -138,24 +142,110 @@ public static class MapContentBuilder
                 zones[index].Points.AddRange(positions.Select(p => p.ToWorld()));
             }
         }
-        var placed = new List<(WorldPoint At, List<string> Mobs, List<string> Parts, string Zone)>();
+        var placed = new List<(WorldPoint At, List<string> Mobs, List<string> Parts, string Id)>();
         foreach (var zone in zones)
         {
-            var at = Centroid(Distinct(zone.Points));
-            var same = placed.FindIndex(p => p.At.HorizontalDistanceTo(at) < 3 && Math.Abs(p.At.Y - at.Y) < 3);
-            if (same < 0)
+            foreach (var (group, i) in Groups(Distinct(zone.Points)).Select((g, i) => (g, i)))
             {
-                placed.Add((at, [zone.Mob], [.. zone.Parts], zone.Zone));
-                continue;
+                var at = Centroid(group);
+                // The zone's share is said once, on its largest group.
+                List<string> parts = i == 0 ? zone.Parts : [];
+                var same = placed.FindIndex(p => p.At.HorizontalDistanceTo(at) < 3 && Math.Abs(p.At.Y - at.Y) < 3);
+                if (same < 0)
+                {
+                    placed.Add((at, [zone.Mob], [.. parts], GroupId($"boss:{zone.Mob}:{zone.Zone}", i)));
+                    continue;
+                }
+                if (!placed[same].Mobs.Contains(zone.Mob))
+                    placed[same].Mobs.Add(zone.Mob);
+                placed[same].Parts.AddRange(parts.Where(p => !placed[same].Parts.Contains(p)));
             }
-            if (!placed[same].Mobs.Contains(zone.Mob))
-                placed[same].Mobs.Add(zone.Mob);
-            placed[same].Parts.AddRange(zone.Parts.Where(p => !placed[same].Parts.Contains(p)));
         }
         foreach (var p in placed)
-            markers.Add(new MapMarker($"boss:{p.Mobs[0]}:{p.Zone}", MarkerKind.BossSpawn, p.At, string.Join(" / ", p.Parts), BossGroup(p.Mobs)));
+            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, string.Join(" / ", p.Parts), BossGroup(p.Mobs)));
         return markers;
     }
+
+    // A marker must stand among its points: within 25 m across and 3 m (about a floor) in height of one of them.
+    // tarkov.dev's zones can span 450 m (Customs, Interchange) or reach into a bunker (Reserve), and one marker at
+    // the mean of all their points stood up to 250 m from the nearest one (owner, 2026-10-02: the centroid, but no
+    // marker where nothing spawns).
+    private const double GroupReach = 25, GroupFloor = 3;
+    // In the gap between two points a floor of height weighs like 17 m across.
+    private const double HeightWeight = 5;
+
+    /// <summary>
+    /// A zone's points in groups, as few as can be: a group whose centroid doesn't stand among its points (see
+    /// <see cref="GroupReach"/>) is cut in two at its widest gap, until every group's does. Largest group first.
+    /// </summary>
+    public static IReadOnlyList<IReadOnlyList<WorldPoint>> Groups(IReadOnlyList<WorldPoint> points)
+    {
+        var done = new List<IReadOnlyList<WorldPoint>>();
+        var open = new Stack<IReadOnlyList<WorldPoint>>();
+        if (points.Count > 0)
+            open.Push(points);
+        while (open.TryPop(out var group))
+        {
+            var centre = Centroid(group);
+            if (group.Any(p => p.HorizontalDistanceTo(centre) <= GroupReach && Math.Abs(p.Y - centre.Y) <= GroupFloor))
+            {
+                done.Add(group);
+                continue;
+            }
+            var (a, b) = SplitAtWidestGap(group);
+            open.Push(b);
+            open.Push(a);
+        }
+        return done.OrderByDescending(g => g.Count).ToList();
+    }
+
+    // Cuts the longest edge of the points' minimum spanning tree: the two sides are the groups with the widest gap
+    // between them.
+    private static (List<WorldPoint> A, List<WorldPoint> B) SplitAtWidestGap(IReadOnlyList<WorldPoint> points)
+    {
+        static double Gap(WorldPoint a, WorldPoint b) =>
+            Math.Sqrt(Math.Pow(a.HorizontalDistanceTo(b), 2) + Math.Pow(HeightWeight * (a.Y - b.Y), 2));
+        var n = points.Count;
+        var inTree = new bool[n];
+        var best = Enumerable.Repeat(double.MaxValue, n).ToArray();
+        var from = new int[n];
+        best[0] = 0;
+        from[0] = -1;
+        for (var k = 0; k < n; k++)
+        {
+            var u = -1;
+            for (var v = 0; v < n; v++)
+                if (!inTree[v] && (u < 0 || best[v] < best[u]))
+                    u = v;
+            inTree[u] = true;
+            for (var v = 0; v < n; v++)
+            {
+                if (inTree[v])
+                    continue;
+                var gap = Gap(points[u], points[v]);
+                if (gap < best[v])
+                {
+                    best[v] = gap;
+                    from[v] = u;
+                }
+            }
+        }
+        var cut = Enumerable.Range(1, n - 1).MaxBy(v => best[v]);
+        // The side of the cut edge that hangs from "cut": every point whose path to the tree's root passes it.
+        var side = new bool[n];
+        for (var v = 0; v < n; v++)
+        {
+            var w = v;
+            while (w >= 0 && w != cut)
+                w = from[w];
+            side[v] = w == cut;
+        }
+        return (Enumerable.Range(0, n).Where(v => !side[v]).Select(v => points[v]).ToList(),
+                Enumerable.Range(0, n).Where(v => side[v]).Select(v => points[v]).ToList());
+    }
+
+    // The first group keeps the zone's id; further groups count on from 2.
+    private static string GroupId(string id, int index) => index == 0 ? id : $"{id}:{index + 1}";
 
     /// <summary>The group of a boss marker: "boss:" and the bosses that share it, joined by "+".</summary>
     public static string BossGroup(IEnumerable<string> mobs) => "boss:" + string.Join("+", mobs);

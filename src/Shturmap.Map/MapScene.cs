@@ -13,13 +13,13 @@ public enum MarkerKind
     ExtractShared,
     Transit,
 
-    /// <summary>An AI Scav spawn zone, at the centroid of its points: small and quiet, no label.</summary>
+    /// <summary>AI Scav spawns, at the centroid of a group of a zone's points: small and quiet, no label.</summary>
     ScavSpawn,
 
-    /// <summary>A boss's spawn zone, at the centroid of its points: red, labelled with the boss and its chances.</summary>
+    /// <summary>A boss's spawns, at the centroid of a group of a zone's points: red, labelled with the boss and its chances.</summary>
     BossSpawn,
 
-    /// <summary>A sniper Scav spawn zone, at the centroid of its points: a hollow hexagon.</summary>
+    /// <summary>Sniper Scav spawns, at the centroid of a group of a zone's points: a hollow hexagon.</summary>
     SniperSpawn,
 }
 
