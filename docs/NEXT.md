@@ -7,7 +7,7 @@ Item 5 (one design system) was added on 2026-10-02. Items 1, 3 and 4 are done (2
 
 ## Before starting
 
-- **Release 0.1.0** built on 2026-10-02 from the commit "Sheet maps say when there is no floor data" into an empty
+- **Release 0.1.0** built on 2026-10-02 from the commit "Quest markers pop: the map artwork recedes, markers get a dark collar" into an empty
   `artifacts\Shturmap` (585 files, 241 MB, licences included) and zipped as `artifacts\Shturmap-0.1.0-win-x64.zip`
   (91 MB) with a `.sha256`. Not published anywhere yet. To build again, check `Get-Process Shturmap` first:
   `eng\publish.ps1` refuses while the app runs from `artifacts`, and it doesn't empty the folder.
