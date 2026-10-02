@@ -188,7 +188,9 @@ public static class MapRenderer
         var box = sheet.Bounds;
         using var font = new SKFont(TypefaceBold, 10 * ui);
         using var paint = new SKPaint { Color = Ink.WithAlpha(110), IsAntialias = true };
-        canvas.DrawText($"NO ARTWORK FOR THIS MAP · GRID {SheetSpacing:0} M", box.Left + 10 * ui, box.Top + 18 * ui, SKTextAlign.Left, font, paint);
+        // Without floor data (Labyrinth) every marker is drawn on one plane: say so rather than imply one floor.
+        var caption = $"NO ARTWORK FOR THIS MAP · GRID {SheetSpacing:0} M" + (scene.FloorStack.Count == 0 ? " · NO FLOOR DATA" : "");
+        canvas.DrawText(caption, box.Left + 10 * ui, box.Top + 18 * ui, SKTextAlign.Left, font, paint);
     }
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));

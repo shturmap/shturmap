@@ -66,7 +66,8 @@ residual risk. Do not widen the boundary.
   (10 m, every fifth line stronger), tarkov.dev's labels for the shown floor, and everything else as on any map
   (player, trail, objectives, extracts, transits, spawns, floors). No walls or layouts are drawn: none exist in the
   data (owner, 2026-10-02: Shturmap shows only what it has a precise readout for). The sheet says
-  "NO ARTWORK FOR THIS MAP · GRID 10 M" in its corner, the credit line says so, and a notice says it once per map.
+  "NO ARTWORK FOR THIS MAP · GRID 10 M" in its corner (plus "NO FLOOR DATA" where maps.json has no floors, as for
+  Labyrinth: its markers are then all on one plane), the credit line says so, and a notice says it once per map.
   A sheet uses one scale for both axes (`MapProjection.For`), so its squares stay square; tarkov.dev's Icebreaker
   transform stretches Y 1.75× to fit its tiles. The credit line names an artist only where their SVG is drawn.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
