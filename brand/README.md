@@ -13,6 +13,7 @@ in ink with MAP cut out of an amber strip. Everything here is built by `build.cs
 | `wordmark-dark.svg`, `wordmark-light.svg` | The wordmark alone |
 | `icon-512.png`, `icon-1024.png` | The icon as raster, for the website and stores |
 | `logo-dark.png`, `logo-light.png` | The logos at 80 px tall (twice README size), as raster fallbacks |
+| `social-preview.png` | The repository's social preview, 1280×640 (GitHub: Settings → General → Social preview) |
 | `../src/Shturmap.App/Assets/Shturmap.ico` | The app icon: the small drawing fitted to 16, 20, 24, 32 and 40 px, the detailed one at 48 to 256 px |
 
 The SVGs are plain filled paths over a viewBox (no masks, text or fonts), so they look the same everywhere.

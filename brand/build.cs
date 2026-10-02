@@ -31,6 +31,7 @@ File.WriteAllBytes(Path.Combine(brand, "icon-1024.png"), Output.Png(icon, 1024, 
 // The README logo is shown 40 px tall; the PNG fallbacks are twice that.
 File.WriteAllBytes(Path.Combine(brand, "logo-dark.png"), Output.Png(logoDark, (int)Math.Round(logoDark.W / logoDark.H * 80), 80));
 File.WriteAllBytes(Path.Combine(brand, "logo-light.png"), Output.Png(logoLight, (int)Math.Round(logoLight.W / logoLight.H * 80), 80));
+File.WriteAllBytes(Path.Combine(brand, "social-preview.png"), Output.Png(Logo.Social(logoDark), 1280, 640));
 // Up to 40 px the pixel-fitted plain letter; from 48 px the detailed icon, whose chevron reads from there on.
 Output.Ico(Path.Combine(root.FullName, "src", "Shturmap.App", "Assets", "Shturmap.ico"),
     [16, 20, 24, 32, 40, 48, 64, 96, 128, 256], n => n <= 40 ? Logo.Small(n) : icon);
@@ -44,7 +45,7 @@ record Inks(string Ink, string Amber);
 
 static class Logo
 {
-    const string Plate = "#151614", Border = "#45463F", Marks = "#4A4A41";
+    const string Plate = "#151614", Border = "#45463F", Marks = "#4A4A41", Ground = "#0B0C0B", GridLine = "#171815";
 
     public static readonly Inks Dark = new("#D9D5C4", "#C9AD62");
     public static readonly Inks Light = new("#1E1F1B", "#8C7436");
@@ -101,6 +102,24 @@ static class Logo
         var layers = icon.Layers.Select(l => new Layer(l.Fill, Geo.Moved(l.Path, M / 256, 0, (h - M) / 2)))
             .Concat(word.Layers.Select(l => new Layer(l.Fill, Geo.Moved(l.Path, 1, M + gap, (h - word.H) / 2))));
         return new(M + gap + word.W, h, layers.ToList());
+    }
+
+    // GitHub's social preview, 1280×640: the logo centred on a map sheet (a faint 64-px grid and the icon's crop
+    // marks), inside the 1.91:1 area that sites cropping the card still show.
+    public static Drawing Social(Drawing logo)
+    {
+        const double W = 1280, H = 640, cell = 64, width = 800;
+        var grid = Geo.Union(Enumerable.Range(1, (int)(W / cell) - 1).Select(i => Geo.Rect(i * cell, 0, 1, H))
+            .Concat(Enumerable.Range(1, (int)(H / cell) - 1).Select(i => Geo.Rect(0, i * cell, W, 1))));
+        var marks = Geo.Union(new (double, double)[][]
+        {
+            [(64, 112), (64, 64), (112, 64)], [(1168, 64), (1216, 64), (1216, 112)],
+            [(64, 528), (64, 576), (112, 576)], [(1168, 576), (1216, 576), (1216, 528)],
+        }.Select(l => Geo.Stroke(l, 4)));
+        double s = width / logo.W;
+        var layers = new List<Layer> { new(Ground, Geo.Rect(0, 0, W, H)), new(GridLine, grid), new(Marks, marks) };
+        layers.AddRange(logo.Layers.Select(l => new Layer(l.Fill, Geo.Moved(l.Path, s, (W - width) / 2, (H - logo.H * s) / 2))));
+        return new(W, H, layers);
     }
 }
 
