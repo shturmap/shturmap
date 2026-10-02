@@ -645,6 +645,12 @@ bottom/top) show only on their floor, as on tarkov.dev; labels without heights s
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
 from the maps payload's `lootLoose`.
 
+**Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
+`<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:
+`GameDataLoader.ApiLanguage` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
+`es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
+tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
+
 **Study log.** `%LOCALAPPDATA%\Shturmap\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
 `ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI
 use can be lined up with raids and quest completions later. Game: app start/exit, data loaded (with the top

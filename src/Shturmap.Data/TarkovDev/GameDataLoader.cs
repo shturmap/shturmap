@@ -18,16 +18,18 @@ public sealed class GameDataLoader(CachedHttp http)
     private static readonly Uri MapDefinitionsUri = new("https://raw.githubusercontent.com/the-hideout/tarkov-dev/main/src/data/maps.json");
     private static readonly TimeSpan MaxAge = TimeSpan.FromHours(1);
 
+    /// <param name="language">The game's language code, as its settings say it ("ge" for German).</param>
     public async Task<GameData> LoadAsync(GameMode mode, string language, CancellationToken ct = default)
     {
         var slug = GameData.Slug(mode);
-        language = string.IsNullOrWhiteSpace(language) ? "en" : language.ToLowerInvariant();
+        language = ApiLanguage(language);
 
         var fetches = new List<Task<CachedResponse>>();
-        Task<CachedResponse> Fetch(string endpoint, TimeSpan? maxAge = null)
+        var translations = new List<Task<CachedResponse>>();
+        Task<CachedResponse> Fetch(string endpoint, TimeSpan? maxAge = null, bool translation = false)
         {
             var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", maxAge ?? MaxAge, ct);
-            fetches.Add(task);
+            (translation ? translations : fetches).Add(task);
             return task;
         }
 
@@ -39,13 +41,21 @@ public sealed class GameDataLoader(CachedHttp http)
         var tradersEn = Fetch($"{slug}/traders_en");
         // Item names only (1.6 MB); the full item payload is ten times larger and not needed.
         var itemsEn = Fetch($"{slug}/items_en", TimeSpan.FromHours(24));
-        var mapsLang = language == "en" ? mapsEn : Fetch($"{slug}/maps_{language}");
-        var tasksLang = language == "en" ? tasksEn : Fetch($"{slug}/tasks_{language}");
-        var tradersLang = language == "en" ? tradersEn : Fetch($"{slug}/traders_{language}");
-        var itemsLang = language == "en" ? itemsEn : Fetch($"{slug}/items_{language}", TimeSpan.FromHours(24));
+        var mapsLang = language == "en" ? mapsEn : Fetch($"{slug}/maps_{language}", translation: true);
+        var tasksLang = language == "en" ? tasksEn : Fetch($"{slug}/tasks_{language}", translation: true);
+        var tradersLang = language == "en" ? tradersEn : Fetch($"{slug}/traders_{language}", translation: true);
+        var itemsLang = language == "en" ? itemsEn : Fetch($"{slug}/items_{language}", TimeSpan.FromHours(24), translation: true);
         var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct);
         fetches.Add(definitions);
         await Task.WhenAll(fetches);
+        if (!await Arrived(translations))
+        {
+            // tarkov.dev has no text in this language: everything comes in English, so the data stays one language.
+            language = "en";
+            (mapsLang, tasksLang, tradersLang, itemsLang) = (mapsEn, tasksEn, tradersEn, itemsEn);
+        }
+        else
+            fetches.AddRange(translations);
 
         // Extract names arrive as the game's internal keys ("Alpinist", "RedRebel_alp") and are translated; the keys
         // tell some requirements that no field does, so they are kept.
@@ -98,7 +108,7 @@ public sealed class GameDataLoader(CachedHttp http)
     public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, CancellationToken ct = default)
     {
         var slug = GameData.Slug(mode);
-        language = string.IsNullOrWhiteSpace(language) ? "en" : language.ToLowerInvariant();
+        language = ApiLanguage(language);
         var day = TimeSpan.FromHours(24);
         Task<CachedResponse> Fetch(string endpoint) =>
             http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct);
@@ -109,7 +119,9 @@ public sealed class GameDataLoader(CachedHttp http)
         var hideout = Fetch($"{slug}/hideout");
         var hideoutEn = Fetch($"{slug}/hideout_en");
         var hideoutLang = language == "en" ? hideoutEn : Fetch($"{slug}/hideout_{language}");
-        await Task.WhenAll(items, barters, crafts, hideout, hideoutEn, hideoutLang);
+        await Task.WhenAll(items, barters, crafts, hideout, hideoutEn);
+        if (!await Arrived([hideoutLang]))
+            hideoutLang = hideoutEn;
 
         ApiItemsEnvelope? itemsData;
         await using (var stream = File.OpenRead(items.Result.FilePath))
@@ -129,6 +141,38 @@ public sealed class GameDataLoader(CachedHttp http)
             Crafts = (craftsData?.Data ?? []).Where(c => c.ProductItem is not null).ToLookup(c => c.ProductItem!.Item),
             Stations = stations.Values.ToDictionary(s => s.Id, s => s.Name),
         };
+    }
+
+    /// <summary>
+    /// tarkov.dev's code for the game's language. The game names some languages its own way, and tarkov.dev answers
+    /// those with 404 (seen 2026-10-02: a German game asked for "maps_ge", and no data loaded at all).
+    /// </summary>
+    public static string ApiLanguage(string? gameLanguage) => (gameLanguage ?? "").Trim().ToLowerInvariant() switch
+    {
+        "" => "en",
+        "ge" => "de",
+        "cz" => "cs",
+        "jp" => "ja",
+        "kr" => "ko",
+        "po" => "pt",
+        "tu" => "tr",
+        "ch" => "zh",
+        "es-mx" => "es",
+        var code => code,
+    };
+
+    // Whether every translation arrived; tarkov.dev answering one with an error must not cost the player the data.
+    private static async Task<bool> Arrived(IReadOnlyList<Task<CachedResponse>> translations)
+    {
+        try
+        {
+            await Task.WhenAll(translations);
+            return true;
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
     }
 
     /// <summary>The payload's "data" with every translatable string replaced by the chosen language's text.</summary>
