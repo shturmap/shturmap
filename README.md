@@ -5,9 +5,25 @@
   </picture>
 </h1>
 
-A map for Escape from Tarkov on your second monitor. It shows where you are, what your active quests want on the
-current map, and how far away and in which direction each objective and extract is. In a raid, your screenshot key
-is the only input.
+**A second-monitor map for Escape from Tarkov.** Your active quests' objectives, the extracts and your position on
+the map of the raid you're in: what you'd otherwise look up in the wiki, in one window. Website:
+[shturmap.github.io](https://shturmap.github.io)
+
+Quest status comes from the game's own log files. Your position comes from the name of the screenshot the game saves
+when you press your screenshot key. No macros, no input to the game, no access to its process.
+
+<img alt="Shturmap in a raid on Streets of Tarkov: the raid card with the next objective and the nearest extract by distance and direction, and the map with quest markers and your position" src="https://shturmap.github.io/assets/img/raid.webp" width="800">
+
+<sub>A raid on Streets of Tarkov, rendered by the app. Map © Shebuka and contributors, CC BY-NC-SA 4.0.</sub>
+
+- **Before the raid:** maps ranked by how many of your quests they finish or move on, and what to bring, with where
+  to get it.
+- **In the raid:** press your screenshot key and your marker drops; objectives and the nearest extract are sorted by
+  distance and direction. No clicks.
+- **Quest cards:** objectives, keys and items for any quest, one hover away. Pin a card and its distances stay live.
+- **Quest tracking:** started, finished, failed, read from the game's own log files. Nothing to tick off.
+- **Native Windows app:** C# on .NET and WinUI 3, with the map drawn on your GPU. No Electron; it opens in under a
+  second.
 
 ## What it reads, and what it never does
 
