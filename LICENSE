@@ -1,9 +1,6 @@
-maps.json: snapshot of https://github.com/the-hideout/tarkov-dev/blob/main/src/data/maps.json, taken 2026-10-01 for
-projection tests. It is under the tarkov-dev repository's licence:
-
 MIT License
 
-Copyright (c) 2019 Oskar Risberg
+Copyright (c) 2026 the Shturmap contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

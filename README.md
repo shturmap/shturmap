@@ -1,63 +1,87 @@
 # Shturmap
 
-A Windows companion for Escape from Tarkov. It shows where you are on the map, what your active quests want
-from that map, and how far away and in which direction each objective and extract is. It is built to sit on a
-second monitor and to need no clicks during a raid: your screenshot key is the only input.
+A map for Escape from Tarkov on your second monitor. It shows where you are, what your active quests want on the
+current map, and how far away and in which direction each objective and extract is. In a raid, your screenshot key
+is the only input.
 
-It reads only what the game writes for you: screenshot file names, the application and notification logs, and
-the game's Control.ini and Game.ini. It never touches the game process, never sends input, never captures the
-screen and never draws over the game. See [docs/DESIGN.md](docs/DESIGN.md#ground-rules).
+## What it reads, and what it never does
 
-## Run it
+Shturmap works only from files the game writes for you and from public community data:
+
+- the **file names** of your screenshots, which the game fills with your position and facing (the images are
+  never read);
+- the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
+  quests started, failed and completed;
+- `Control.ini` and `Game.ini`, read-only: your screenshot key and the game language;
+- where the game is installed: the Windows uninstall entry, Steam's library list, and the games folder from the
+  Battlestate Games launcher's settings (nothing else from that file);
+- quest, map and item data from tarkov.dev, and the community map artwork.
+
+It never:
+
+- opens the game process, reads or writes its memory, or loads anything into it;
+- sends keystrokes or mouse input, or registers global hotkeys (its shortcuts work only in its own window);
+- captures the screen or draws over the game;
+- changes game files or settings, or reads the launcher's login data or the game's backend log;
+- sends anything about you or your game anywhere. Its only network traffic downloads the public data above, and
+  what it records stays in `%LOCALAPPDATA%\Shturmap`. (The Microsoft runtime it is built on has its own terms; see
+  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
+
+A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
+capturing the screen. The full rules are in [docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).
+
+Shturmap is an unofficial fan project, not made or endorsed by Battlestate Games. Battlestate discourages
+third-party software in general, so use it at your own risk.
+
+## Get it
+
+There are no release builds yet. Build it on Windows 10 (2004) or later with the
+[.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```powershell
-.\eng\publish.ps1                 # builds a self-contained folder
-.\artifacts\Shturmap\Shturmap.exe   # no .NET install needed to run it
+.\eng\publish.ps1                     # self-contained build in artifacts\Shturmap
+.\artifacts\Shturmap\Shturmap.exe
 ```
 
-On first start Shturmap finds the game (Steam or the Battlestate Games launcher), the logs, the Screenshots
-folder, your screenshot key and the game language. It downloads quest and map data from tarkov.dev and reads all
-log sessions on disk for quest history. The window opens maximised on the second monitor.
+On first start it finds the game (Steam or the Battlestate Games launcher), its logs and your Screenshots folder,
+downloads data from tarkov.dev and reads your existing logs for quest history. In a raid, press your screenshot
+key: your marker moves, the floor follows your height and objectives re-sort by distance.
 
-In a raid, press your screenshot key (PrtSc by default). The map switches to the raid's map when it loads; each
-screenshot moves your marker, picks the floor from your height and re-sorts objectives by distance. Quests come
-from the game's logs alone, as you start, fail and finish them; a quest started before your oldest log isn't
-known.
+Limits: quests come from the logs alone, so a quest started before your oldest log isn't known. Maps without
+vector artwork (The Lab, Labyrinth, Icebreaker) aren't drawn yet. On Windows 10, install the Segoe Fluent Icons
+font for the glyphs.
 
-## Work on it
-
-Requires the .NET 10 SDK. `eng\dotnet.ps1` finds an SDK installed per user when the machine-wide `dotnet` has none.
+## Develop
 
 ```powershell
 .\eng\dotnet.ps1 build Shturmap.slnx
 .\eng\dotnet.ps1 test --solution Shturmap.slnx
-.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- help
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- help   # every part headless, incl. a simulated raid
 ```
 
-`tools/Shturmap.Cli` runs the pieces without the UI or the game:
+[docs/DESIGN.md](docs/DESIGN.md) is the binding spec; read it before changing anything.
 
-| command | what it does |
-| --- | --- |
-| `locate` | shows every install candidate found and which one is used |
-| `replay [session]` | replays a log session through the raid tracker |
-| `data [mode] [lang]` | loads tarkov.dev data and lists maps |
-| `quests [mode]` | lists active quests and the log entries behind them |
-| `render <map> <out.png> [screenshot names…]` | draws a map with positions to a PNG |
-| `watch [seconds]` | runs the companion headless and prints what it sees |
-| `simulate` | plays a scripted raid against a temporary fake game folder |
+## Credits
 
-`Shturmap.exe --snapshot <folder> [seconds]` renders the window and the map to PNGs and exits.
+- Quest, map and item data, map geometry and image hosting: [tarkov.dev](https://tarkov.dev) by
+  [The Hideout](https://github.com/the-hideout).
+- Map artwork: Shebuka and contributors,
+  [tarkov-dev-svg-maps](https://github.com/the-hideout/tarkov-dev-svg-maps),
+  [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Downloaded at runtime, never bundled,
+  non-commercial use only.
+- Inspired by [TarkovEyes](https://github.com/MelGP/tarkoveyes) by MelGP; Shturmap is a from-scratch rebuild.
+- Log formats and file locations were learned from community tools:
+  [TarkovMonitor](https://github.com/the-hideout/TarkovMonitor),
+  [TarkovTracker](https://github.com/tarkovtracker-org/TarkovTracker), [MAYAK](https://github.com/ichi0g0y/mayak),
+  [Tarkov Pilot](https://github.com/ggdiam/TarkovPilot) and [RatScanner](https://github.com/RatScanner/RatScanner).
+  No code was taken from them.
+- Quest and interactive-map links go to the [Escape from Tarkov Wiki](https://escapefromtarkov.fandom.com).
+- Escape from Tarkov and its game content and materials are trademarks and copyrights of Battlestate Games and its
+  licensors. Trader portraits and item icons are Battlestate's art, shown from tarkov.dev at runtime and never
+  bundled.
+- Bundled libraries and their licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-Diagnostics are written to `%LOCALAPPDATA%\Shturmap\logs`. Data lives in `%LOCALAPPDATA%\Shturmap`.
+## Licence
 
-## Credits and licences
-
-- Quest, map and item data: [tarkov.dev](https://tarkov.dev) (json.tarkov.dev).
-- Map geometry: tarkov.dev's `maps.json` (MIT).
-- Map artwork: Shebuka and contributors, [tarkov-dev-svg-maps](https://github.com/the-hideout/tarkov-dev-svg-maps),
-  CC BY-NC-SA 4.0. Downloaded at runtime for personal use, never bundled.
-- Trader portraits and item icons: Battlestate Games' art, shown from tarkov.dev's image service at runtime for
-  personal use, never bundled.
-- Escape from Tarkov is a trademark of Battlestate Games. Shturmap is unofficial and unaffiliated.
-
-Personal, non-commercial use.
+Shturmap's code is under the [MIT licence](LICENSE). Data and artwork it downloads keep their own terms (see
+Credits).

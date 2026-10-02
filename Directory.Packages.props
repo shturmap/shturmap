@@ -7,7 +7,6 @@
     <PackageVersion Include="SkiaSharp" Version="4.153.1" />
     <PackageVersion Include="SkiaSharp.Views.WinUI" Version="4.153.1" />
     <PackageVersion Include="Svg.Skia" Version="5.2.3" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
   </ItemGroup>

@@ -473,7 +473,7 @@ public sealed partial class MainWindow : Window
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
-        vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors · data tarkov.dev" : "Data tarkov.dev";
+        vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev" : "Data tarkov.dev";
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
         vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
             && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;

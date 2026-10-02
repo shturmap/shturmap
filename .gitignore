@@ -8,3 +8,5 @@ artifacts/
 publish/
 # Local caches and fixtures that may contain personal data
 .local/
+# The owner's own Tasks-screen screenshots from the removed OCR feature (docs/DESIGN.md §3); never commit them
+tests/fixtures/ocr/

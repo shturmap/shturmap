@@ -38,25 +38,42 @@ residual risk. Do not widen the boundary.
 
 ## 3. Copyright and data use
 
+- **Shturmap's own code** is MIT-licensed (`LICENSE`; owner, 2026-10-02, to publish it on GitHub). Everything a
+  build redistributes is listed with its licence in `THIRD-PARTY-NOTICES.md`; `eng\notices.ps1` (run by
+  `publish.ps1`) puts it, `LICENSE` and every package's own licence files into the build. Update it in the same
+  change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
-  (`json.tarkov.dev`). It is downloaded at runtime into the user's cache for personal use and shown with
-  "data tarkov.dev". It is never bundled in the repository or a build.
-- **Map geometry** comes from tarkov.dev's `maps.json` (MIT; a snapshot is used as a test fixture with attribution).
-- **Map artwork** is the SVG maps by Shebuka and contributors (CC BY-NC-SA 4.0, licence void for cheats/radars).
-  Downloaded at runtime, displayed unmodified except for showing one floor at a time, credited on the map, never
-  redistributed. Non-commercial only.
+  (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
+  terms. Requests say who they are (User-Agent `Shturmap/…`) and are cached with ETags (1 h, 24 h, 7 days by kind).
+  Data is downloaded at runtime into the user's cache for personal use and shown with "data tarkov.dev". It is
+  never bundled in the repository or a build.
+- **Map geometry** comes from tarkov.dev's `maps.json` (MIT, Copyright (c) 2019 Oskar Risberg; the test fixture
+  snapshot carries that notice).
+- **Map artwork** is the SVG maps by Shebuka and contributors (CC BY-NC-SA 4.0). Their README revokes the licence
+  for software "designed to facilitate cheating or gaining an unfair advantage" (radars and ESP overlays, maps
+  modified for cheat clients, automation scripts, pixel-bots). Shturmap is none of these: positions come only from
+  screenshots the player takes, the game is never touched and nothing is automated (§2). The artwork is downloaded
+  at runtime, displayed unmodified except for showing one floor at a time (their README invites that), credited on
+  the map with its licence, and never redistributed. Non-commercial only. A published screenshot that shows a map
+  shares the artwork: credit it the same way and keep it non-commercial.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
-  display for personal use, the way every Tarkov tool and tarkov.dev itself show them.
+  display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Never publish screenshots
+  that show them (BSG licence 4.2.2).
 - **Not used**: other Battlestate artwork (quest images, game UI art, map art), text from the EFT wiki or guide
-  sites (the quest card links to the wiki page instead), and code from GPL or unlicensed projects (TarkovMonitor,
-  TarkovTracker, MAYAK, Tarkov Pilot, RatScanner). Facts learned from them (log formats, file paths) are
-  reimplemented.
+  sites (the quest card links to the wiki page instead), and code from other community tools: TarkovMonitor,
+  TarkovTracker and MAYAK (GPL-3.0), Tarkov Pilot (no licence), RatScanner (source-available, based on the Elastic
+  License). Facts learned from them (log formats, file paths) are reimplemented. The idea comes from TarkovEyes
+  (MelGP, MIT); Shturmap is a from-scratch rebuild and takes no code from it.
+- **Name and branding**: no "Tarkov" in the app's or the repository's name, no Battlestate logos, typefaces or UI
+  art. Logo lettering is drawn from scratch (Windows fonts may be used on screen, not converted to outlines). The
+  README says Shturmap is unofficial and that game content belongs to Battlestate Games.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
   the only custom glyph is the crosshair (drawn from a path in `Shturmap.Map.Glyphs`).
-- **Test fixtures** contain only scrubbed logs and the maps.json snapshot. (`tests/fixtures/ocr`, untracked, holds
-  the owner's own Tasks screenshots from the removed OCR feature; never commit or publish it.)
+- **Test fixtures** contain only scrubbed logs (`tools/make-log-fixtures.ps1`) and the maps.json snapshot.
+  `tests/fixtures/ocr` is ignored by git: it holds the owner's own Tasks screenshots from the removed OCR feature.
+  Never commit or publish it; it was removed from the whole history on 2026-10-02, before going public.
 
 ## 4. UX principles
 

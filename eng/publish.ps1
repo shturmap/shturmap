@@ -11,4 +11,6 @@ if ($running) {
 }
 & (Join-Path $PSScriptRoot 'dotnet.ps1') publish (Join-Path $root 'src\Shturmap.App\Shturmap.App.csproj') -c Release -o $out -p:PublishReadyToRun=true
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# The build redistributes third-party libraries; their licences require the notices to travel with it.
+& (Join-Path $PSScriptRoot 'notices.ps1') -Out $out
 Write-Output "Published to $out"

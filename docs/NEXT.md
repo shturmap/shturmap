@@ -6,8 +6,9 @@ read of everything in their own application and push-notification logs (20 sessi
 
 ## Before starting
 
-- **Published** on 2026-10-01 at 23:42: `artifacts\Shturmap` matches `3a6166b`. To publish again, check
-  `Get-Process Shturmap` first: `eng\publish.ps1` refuses while the app runs from `artifacts`.
+- **Published** on 2026-10-01 at 23:42: `artifacts\Shturmap` matches `f04199c` (renumbered when the history was
+  cleaned on 2026-10-02). To publish again, check `Get-Process Shturmap` first: `eng\publish.ps1` refuses while
+  the app runs from `artifacts`.
 - **Boundary (owner's rule).** Read only `*application_*.log` and `*push-notifications_*.log` in an EFT log
   session folder, never `*.log`: that glob also matches `backend_000.log`, which is off limits. No memory, no
   input, no screen capture.

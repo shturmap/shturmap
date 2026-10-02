@@ -6,6 +6,7 @@
     <Deterministic>true</Deterministic>
     <Product>Shturmap</Product>
     <Version>0.1.0</Version>
+    <Copyright>Copyright (c) 2026 the Shturmap contributors</Copyright>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Windows APIs (OCR, file system, registry) need a Windows TFM; keep one value for every Windows-specific project. -->
     <ShturmapWindowsTfm>net10.0-windows10.0.22621.0</ShturmapWindowsTfm>
