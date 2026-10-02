@@ -7,9 +7,9 @@ Item 5 (one design system) was added on 2026-10-02.
 
 ## Before starting
 
-- **Published** on 2026-10-01 at 23:42: `artifacts\Shturmap` matches `f04199c` (renumbered when the history was
-  cleaned on 2026-10-02). To publish again, check `Get-Process Shturmap` first: `eng\publish.ps1` refuses while
-  the app runs from `artifacts`.
+- **Published** on 2026-10-01 at 23:42 from the commit "docs/NEXT.md: plan for group picks, hosting, loading
+  progress, outcome hint". That build has no licence notices and no icon yet: publish again before sharing one.
+  Check `Get-Process Shturmap` first: `eng\publish.ps1` refuses while the app runs from `artifacts`.
 - **Boundary (owner's rule).** Read only `*application_*.log` and `*push-notifications_*.log` in an EFT log
   session folder, never `*.log`: that glob also matches `backend_000.log`, which is off limits. No memory, no
   input, no screen capture.
