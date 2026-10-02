@@ -166,7 +166,12 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
 - **Pictures**: trader portraits square in a thin frame; item icons in a dark inventory cell.
 - **Map artwork recedes**: it is drawn at 38 % of its colour and 85 % of its brightness, so its own yellows and
   browns don't compete with the quest amber and Shturmap's markers are found at a glance, while streets and
-  buildings still read by brightness. Quest markers carry a dark collar (3 px, ground at 67 %) that gives them an
+  buildings still read by brightness. Colours near the amber then lose the rest of their chroma
+  (`ArtworkColors`, a small SkSL colour filter: in CIELAB, within 28° of the amber's hue and 14 of its lightness
+  the chroma drops to 6, easing out by 55° and 26; cartography review, 2026-10-02): after the plain recede Customs'
+  dashed lines were ΔE 3.9 from the amber and 4.1 % of Factory's artwork within ΔE 10; now no pixel of any SVG
+  map, floors included, is within ΔE 17 (measured at 2400 px across the sheet). The yellow shapes keep their
+  outline and brightness and lose their hue (what they mark in the artwork is unverified). Quest markers carry a dark collar (3 px, ground at 67 %) that gives them an
   edge on light streets, where amber and road are nearly as bright (owner, 2026-10-02: unhighlighted quest markers
   were hard to find pre-attentively).
 
