@@ -297,6 +297,14 @@ spawns below).
   (250 px): eight "Abandoned Cargo" places in one block carry one label. Map names are boxed by their rotated
   extent and drawn on the marker labels' halo (the ground at 86 %, 3 px): without it Ink at 59 % measured 1.4:1 on
   Streets' light streets, with it 4.7:1.
+- **Distances on the map.** The guide line to the kept quest carries the card's number on a small dark plate with
+  a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
+  card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
+  old as the position). A line too short to carry it clear of its ends has none. A scale bar at the lower left,
+  above the wiki link and the credit line, takes the longest round length (1, 2, 5, 10, 25, 50, 100, 200, 500 m …)
+  that fits in 120 px and follows the zoom. No range rings (three circles on every view for a question the bar and
+  the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
+  relative to the facing).
 
 ### Quest cards
 

@@ -44,7 +44,7 @@ public static class MapRenderer
         foreach (var zone in scene.Zones)
             DrawZone(canvas, camera, scene, zone);
         DrawTrail(canvas, camera, scene, uiScale);
-        DrawGuide(canvas, camera, scene, uiScale);
+        DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
 
         // Markers step back when something else is pointed at (easing with the scene's Dim), all in one layer so
@@ -68,6 +68,8 @@ public static class MapRenderer
             DrawMarker(canvas, scene, marker, uiScale);
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
             DrawLabel(canvas, label);
+        DrawGuidePlate(canvas, layout.Guide, uiScale);
+        DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
     }
 
@@ -92,8 +94,9 @@ public static class MapRenderer
     /// <summary>A map name that fits, rotated about its anchor.</summary>
     public sealed record PlacedName(string Text, SKPoint At, float Rotation, float Size, SKRect Box);
 
-    /// <summary>Everything drawn in one frame, in drawing order, and the boxes nothing else may cover.</summary>
-    public sealed record MapLayout(IReadOnlyList<ShownMarker> Markers, IReadOnlyList<PlacedLabel> Labels, IReadOnlyList<PlacedName> Names);
+    /// <summary>Everything placed in one frame: markers in drawing order, their labels, the map's names, the guide and the scale.</summary>
+    public sealed record MapLayout(IReadOnlyList<ShownMarker> Markers, IReadOnlyList<PlacedLabel> Labels, IReadOnlyList<PlacedName> Names,
+        GuideLine? Guide, ScaleBar Scale);
 
     /// <summary>
     /// Places symbols first, then labels by priority (cartography review, 2026-10-02): the kept or pointed-at quest,
@@ -120,6 +123,11 @@ public static class MapRenderer
         }
         if (scene.Player is { } player)
             taken.Add(Square(Screen(camera, scene, player.Position), 12 * ui));
+        var guide = Guide(camera, scene, ui);
+        if (guide?.Plate is not null)
+            taken.Add(guide.PlateBox);
+        var scale = Scale(camera, scene, ui);
+        taken.Add(scale.Box);
 
         var labels = new List<PlacedLabel>();
         using var regular = new SKFont(Typeface, 11.5f * ui);
@@ -170,7 +178,7 @@ public static class MapRenderer
                 names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box));
             }
         }
-        return new MapLayout(markers, labels, names);
+        return new MapLayout(markers, labels, names, guide, scale);
     }
 
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
@@ -466,21 +474,136 @@ public static class MapRenderer
         }
     }
 
-    // A dashed line from the player to the selected objective.
-    private static void DrawGuide(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    // A dashed line from the player to the kept quest's nearest place.
+    private static void DrawGuide(SKCanvas canvas, GuideLine? guide, float ui)
     {
-        if (scene.Player is not { } player || scene.Selected is null)
+        if (guide is null)
             return;
-        var targets = scene.Markers.Where(m => IsSelected(scene, m) && m.Kind != MarkerKind.ObjectiveDone).ToList();
-        if (targets.Count == 0)
-            return;
-        var nearest = targets.MinBy(m => player.Position.HorizontalDistanceTo(m.Position))!;
-        using var guide = new SKPaint
+        using var line = new SKPaint
         {
             Color = Kept.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f * ui,
             PathEffect = SKPathEffect.CreateDash([6 * ui, 5 * ui], 0),
         };
-        canvas.DrawLine(Screen(camera, scene, player.Position), Screen(camera, scene, nearest.Position), guide);
+        canvas.DrawLine(guide.From, guide.To, line);
+    }
+
+    /// <summary>The guide from the player to the kept quest's nearest place, and its distance on a plate.</summary>
+    /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
+    public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
+
+    private static GuideLine? Guide(Camera camera, MapScene scene, float ui)
+    {
+        if (scene.Player is not { } player || scene.Selected is null)
+            return null;
+        var targets = scene.Markers.Where(m => IsSelected(scene, m) && m.Kind != MarkerKind.ObjectiveDone).ToList();
+        if (targets.Count == 0)
+            return null;
+        var nearest = targets.MinBy(m => player.Position.HorizontalDistanceTo(m.Position))!;
+        var from = Screen(camera, scene, player.Position);
+        var to = Screen(camera, scene, nearest.Position);
+        // The number the card shows: horizontal metres to the nearest place, as old as the position.
+        var metres = player.Position.HorizontalDistanceTo(nearest.Position);
+        var age = DateTime.Now - player.At;
+        var text = DistanceText(metres) + (age >= TimeSpan.FromMinutes(1) ? $" · {(int)age.TotalMinutes} MIN" : "");
+        // On the part of the line in view, and only where the line is long enough to carry it clear of its ends.
+        var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        view.Inflate(-24 * ui, -24 * ui);
+        using var font = new SKFont(TypefaceBold, 12 * ui);
+        var width = font.MeasureText(text) + 12 * ui;
+        var height = 18 * ui;
+        if (Clip(from, to, view) is not var (a, b) || SKPoint.Distance(a, b) < width + 56 * ui)
+            return new GuideLine(from, to, metres, null, SKRect.Empty);
+        var mid = new SKPoint((a.X + b.X) / 2, (a.Y + b.Y) / 2);
+        return new GuideLine(from, to, metres, text, SKRect.Create(mid.X - width / 2, mid.Y - height / 2, width, height));
+    }
+
+    /// <summary>A distance as the cards say it: "69 m", "1.2 km".</summary>
+    public static string DistanceText(double metres) => metres < 1000 ? $"{metres:0} m" : $"{metres / 1000:0.0} km";
+
+    // The part of a segment inside a rectangle (Liang–Barsky), or null.
+    private static (SKPoint A, SKPoint B)? Clip(SKPoint a, SKPoint b, SKRect box)
+    {
+        float t0 = 0, t1 = 1, dx = b.X - a.X, dy = b.Y - a.Y;
+        foreach (var (p, q) in new[] { (-dx, a.X - box.Left), (dx, box.Right - a.X), (-dy, a.Y - box.Top), (dy, box.Bottom - a.Y) })
+        {
+            if (p == 0)
+            {
+                if (q < 0)
+                    return null;
+                continue;
+            }
+            var t = q / p;
+            if (p < 0)
+                t0 = Math.Max(t0, t);
+            else
+                t1 = Math.Min(t1, t);
+            if (t0 > t1)
+                return null;
+        }
+        return (new SKPoint(a.X + t0 * dx, a.Y + t0 * dy), new SKPoint(a.X + t1 * dx, a.Y + t1 * dy));
+    }
+
+    private static void DrawGuidePlate(SKCanvas canvas, GuideLine? guide, float ui)
+    {
+        if (guide?.Plate is not { } text)
+            return;
+        var box = guide.PlateBox;
+        using var plate = new SKPaint { Color = Background.WithAlpha(235), IsAntialias = true };
+        using var edge = new SKPaint { Color = Kept, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var font = new SKFont(TypefaceBold, 12 * ui);
+        using var paint = new SKPaint { Color = Kept, IsAntialias = true };
+        canvas.DrawRect(box, plate);
+        canvas.DrawRect(box, edge);
+        canvas.DrawText(text, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
+    }
+
+    // ---- the scale bar ----
+
+    /// <summary>The scale bar: its round length in metres, its length on screen, and where it stands.</summary>
+    public sealed record ScaleBar(double Metres, float Pixels, SKPoint Origin, SKRect Box);
+
+    private static readonly double[] ScaleSteps = [1, 2, 5, 10, 25, 50, 100, 200, 500, 1000, 2000];
+
+    /// <summary>The longest round length (1, 2, 5, 10, 25, 50, 100, 200, 500 m …) that fits in a number of pixels.</summary>
+    public static double ScaleBarMetres(double pixelsPerMetre, float maxPixels) =>
+        ScaleSteps.Where(s => s * pixelsPerMetre <= maxPixels).DefaultIfEmpty(ScaleSteps[0]).Max();
+
+    // Bottom left, above the wiki link and the credit line the window lays over that corner.
+    private static ScaleBar Scale(Camera camera, MapScene scene, float ui)
+    {
+        var origin = Screen(camera, scene, new WorldPoint(0, 0, 0));
+        var perMetre = (SKPoint.Distance(origin, Screen(camera, scene, new WorldPoint(100, 0, 0))) +
+                        SKPoint.Distance(origin, Screen(camera, scene, new WorldPoint(0, 0, 100)))) / 200;
+        var metres = ScaleBarMetres(perMetre, 120 * ui);
+        var pixels = (float)(metres * perMetre);
+        var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
+        return new ScaleBar(metres, pixels, at, new SKRect(at.X - 6 * ui, at.Y - 20 * ui, at.X + pixels + 34 * ui, at.Y + 4 * ui));
+    }
+
+    private static void DrawScaleBar(SKCanvas canvas, ScaleBar bar, float ui)
+    {
+        var (x, y, w) = (bar.Origin.X, bar.Origin.Y, bar.Pixels);
+        using var halo = new SKPaint { Color = Background.WithAlpha(200), IsAntialias = true, StrokeWidth = 4 * ui, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Square };
+        using var line = new SKPaint { Color = Ink.WithAlpha(210), IsAntialias = true, StrokeWidth = 1.5f * ui, Style = SKPaintStyle.Stroke };
+        foreach (var paint in new[] { halo, line })
+        {
+            canvas.DrawLine(x, y, x + w, y, paint);
+            canvas.DrawLine(x, y - 5 * ui, x, y, paint);
+            canvas.DrawLine(x + w / 2, y - 3 * ui, x + w / 2, y, paint);
+            canvas.DrawLine(x + w, y - 5 * ui, x + w, y, paint);
+        }
+        using var font = new SKFont(Typeface, 10.5f * ui);
+        using var textHalo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        using var text = new SKPaint { Color = Ink.WithAlpha(210), IsAntialias = true };
+        var half = bar.Metres / 2;
+        var marks = new List<(string Text, float X)> { ("0", x), (DistanceText(bar.Metres), x + w) };
+        if (half == Math.Floor(half))
+            marks.Add(($"{half:0}", x + w / 2));
+        foreach (var (label, at) in marks)
+        {
+            canvas.DrawText(label, at, y - 8 * ui, SKTextAlign.Center, font, textHalo);
+            canvas.DrawText(label, at, y - 8 * ui, SKTextAlign.Center, font, text);
+        }
     }
 
     /// <summary>How long one pulse of a focused marker takes; the map keeps redrawing while something is in focus.</summary>

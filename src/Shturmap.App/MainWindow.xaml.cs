@@ -539,12 +539,8 @@ public sealed partial class MainWindow : Window
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
     }
 
-    private static string Distance(double? metres) => metres switch
-    {
-        null => "",
-        < 1000 => $"{metres:0} m",
-        _ => $"{metres / 1000:0.0} km",
-    };
+    // The map's guide plate says the same (MapRenderer.DistanceText).
+    private static string Distance(double? metres) => metres is { } m ? MapRenderer.DistanceText(m) : "";
 
 
     private async void UpdateMap(SessionSnapshot s)

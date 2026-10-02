@@ -1,31 +1,14 @@
 using SkiaSharp;
 using Shturmap.Core;
 using Shturmap.Core.Maps;
-using Shturmap.Core.Quests;
+using static Shturmap.Map.Tests.TestView;
 
 namespace Shturmap.Map.Tests;
 
 // Labels are placed by priority after every symbol, each trying four positions (cartography review, 2026-10-02).
 public class LabelTests
 {
-    // One metre is one pixel; world x grows to the right, world z upward; the view's centre is the origin.
-    private static (Camera Camera, MapScene Scene) View(IReadOnlyList<MapMarker> markers, params MapLabel[] names)
-    {
-        var definition = new MapDefinition
-        {
-            Key = "test",
-            Transform = [1, 0, 1, 0],
-            Bounds = new WorldBox(-500, -500, 500, 500),
-            Labels = names,
-        };
-        var camera = new Camera();
-        camera.Resize(new SKSize(1000, 1000));
-        camera.Restore(new MapPoint(0, 0), 1);
-        return (camera, new MapScene(definition, null) { Markers = markers });
-    }
-
-    private static MapMarker Quest(string id, double x, double z, string name) =>
-        new($"objective:{id}:1", MarkerKind.Objective, new WorldPoint(x, 0, z), name, "quest-" + id, ObjectiveKind.Exploration);
+    private static (Camera Camera, MapScene Scene) View(IReadOnlyList<MapMarker> markers, params MapLabel[] names) => Of(markers, names);
 
     [Fact]
     public void Candidates_go_right_left_above_below()
