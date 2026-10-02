@@ -86,9 +86,9 @@ server-hosted on 25, 26 and 30 September, local for two raids on 26 September an
 
 ## 3. Loading progress in the RAID LOADING cue
 
-**Done (2026-10-02)**, as a line in the raid card ("LOADING · MAP / RAID / SPAWNING / STARTING" over a thin rule)
-rather than in the cue, which the owner had lengthened to 8 s. Stages and typical lengths come from 49 loads (location
-loaded at 25 s, spawned 42 s, pooled 47 s, raid start 71 s; 31–139 s); no time estimate. Each raid's step timings
+**Done (2026-10-02)**, as a line in the raid card naming the last step the log reported, over one segment per step
+that lights only when the log reports it; nothing estimated (owner). The cue stays 5 s, with a slower entrance. In
+49 loads: location loaded at 25 s, spawned 42 s, pooled 47 s, raid start 71 s (31–139 s). Each raid's step timings
 go to the study log in `raid.start`. `fake-raid.ps1 -HoldLoading` shows it.
 
 **Why.** Loading takes 60–130 s and Shturmap shows nothing between the 5 s cue and the raid start.

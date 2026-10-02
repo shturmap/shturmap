@@ -110,8 +110,9 @@ residual risk. Do not widen the boundary.
    raid minutes, often several minutes old when the app was looked at).
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
     loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
-    holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop),
-    RAID LOADING for 8 s (owner, 2026-10-02: they like it, and loading takes 60–130 s anyway): a dark band springs open
+    holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop). Its
+    entrance plays at 1.8 times its first pace, about 1.6 s (owner, 2026-10-02: the elements should appear more
+    slowly; a briefly tried 8 s RAID LOADING cue was too long): a dark band springs open
     behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
@@ -214,10 +215,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
     line ("Complete 5 quests · progress 1 more"), the raid line (time left, time of day, bosses with spawn chance)
     and, when the distances aren't from a fresh screenshot, where they are from. While the raid loads, one quiet
-    line under the raid line says how far it has got, "LOADING · MAP", "RAID", "SPAWNING" or "STARTING", over a thin
-    gold rule that fills by stage and creeps within one by its typical length (medians of 49 loads in the owner's
-    logs: location loaded at 25 s, player spawned at 42 s, pooled at 47 s, raid start at 71 s; owner, 2026-10-02:
-    loading takes 60–130 s and showed nothing). No time estimate: loads vary too much. Then **the glance**, two rows in
+    line under the raid line names the last loading step the game's log reported ("LOADING · MAP", then "MAP
+    LOADED", "RAID PREPARED", "RAID CREATED", "PLAYER SPAWNED", "GAME POOLED", "GAME RUNNING"), over six thin
+    segments, one per step, each gold only once its own step is in the log (owner, 2026-10-02: loading takes
+    60–130 s and showed nothing; and nothing estimated, only what the log says, so a skipped step stays dark and no
+    rule creeps by typical times). No time estimate. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
     direction), and EXIT, the nearest extract or transit for your side (and what it takes); in a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING

@@ -361,18 +361,12 @@
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                              ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
                   <TextBlock Text="{x:Bind ViewModel.RaidLine, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}" Style="{StaticResource NoteText}" />
-                  <!-- While the raid loads: the stage the game's log last reported, and a thin rule that fills by stage
-                       (LoadingProgress). Gone once the raid starts. -->
+                  <!-- While the raid loads: the last step the game's log reported, and one segment per loading step that
+                       lights once the log reports that step; nothing estimated (LoadingProgress). Gone once the raid starts. -->
                   <StackPanel Spacing="5" Margin="0,8,0,2" Visibility="{x:Bind ShownIf(ViewModel.LoadingText), Mode=OneWay}"
-                              ToolTipService.ToolTip="How far the game has got loading the raid, from its log">
+                              ToolTipService.ToolTip="The loading steps the game has reported in its log">
                     <TextBlock Text="{x:Bind ViewModel.LoadingText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
-                    <Grid Height="2" Background="{StaticResource LineBrush}">
-                      <Border Background="{StaticResource AmberBrush}" RenderTransformOrigin="0,0">
-                        <Border.RenderTransform>
-                          <ScaleTransform ScaleX="{x:Bind ViewModel.LoadingFill, Mode=OneWay}" />
-                        </Border.RenderTransform>
-                      </Border>
-                    </Grid>
+                    <Grid x:Name="LoadingSegments" Height="2" ColumnSpacing="3" />
                   </StackPanel>
                   <TextBlock Text="{x:Bind ViewModel.RaidFixNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidFixNote), Mode=OneWay}" Style="{StaticResource NoteText}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidNote), Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />

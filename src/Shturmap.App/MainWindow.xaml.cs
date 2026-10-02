@@ -264,14 +264,12 @@ public sealed partial class MainWindow : Window
         ViewModel.RaidLine = string.Join(" · ", parts);
         if (s.Raid.Phase == RaidPhase.Loading)
         {
-            var (stage, fill) = LoadingProgress.At(s.Raid, DateTime.Now);
-            ViewModel.LoadingText = $"LOADING · {stage}";
-            ViewModel.LoadingFill = fill;
+            ViewModel.LoadingText = LoadingProgress.Text(s.Raid);
+            ShowLoadingSteps(LoadingProgress.Done(s.Raid));
         }
         else
         {
             ViewModel.LoadingText = "";
-            ViewModel.LoadingFill = 0;
         }
         UpdateStale(s, elapsed);
 
@@ -964,10 +962,31 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // One thin segment per loading step, gold once the log has reported that step, a hairline until then.
+    private void ShowLoadingSteps(bool[] done)
+    {
+        if (LoadingSegments.Children.Count != done.Length)
+        {
+            LoadingSegments.Children.Clear();
+            LoadingSegments.ColumnDefinitions.Clear();
+            for (var i = 0; i < done.Length; i++)
+            {
+                LoadingSegments.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var segment = new Border();
+                Grid.SetColumn(segment, i);
+                LoadingSegments.Children.Add(segment);
+            }
+        }
+        for (var i = 0; i < done.Length; i++)
+            ((Border)LoadingSegments.Children[i]).Background = Resource(done[i] ? "AmberBrush" : "LineBrush");
+    }
+
     // ---- the big cue: Shturmap changed its view on its own ----
 
-    // The raid-loading cue stays 8 s (owner, 2026-10-02: they like it, and loading takes 60–130 s anyway); the others 5 s.
-    private static TimeSpan CueLength(CueKind kind) => TimeSpan.FromSeconds(kind == CueKind.RaidLoading ? 8 : 5);
+    // Every cue lasts 5 s; its entrance is played at 1.8 times the original pace (owner, 2026-10-02: the elements
+    // should appear more slowly, the cue shouldn't stay longer).
+    private static TimeSpan CueLength(CueKind kind) => TimeSpan.FromSeconds(5);
+    private const double CuePace = 1.8;
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
@@ -1040,16 +1059,17 @@ public sealed partial class MainWindow : Window
             story.Children.Add(frames);
         }
         var end = CueLength(cue.Kind).TotalSeconds;
+        const double k = CuePace;
         // Developer snapshots keep the last cue up, so it can be looked at.
         if (SnapshotMode)
-            Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12, 1));
+            Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1));
         else
-            Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12, 1), (end - 0.6, 1), (end, 0));
-        Animate(CueBandScale, "ScaleY", spring, (0, 0), (0.42, 1));
-        Animate(CueFlash, "Opacity", easeOut, (0, 0), (0.1, 0.32), (0.65, 0));
-        Animate(CueRuleTopScale, "ScaleX", spring, (0, 0), (0.15, 0), (0.75, 1));
-        Animate(CueRuleBottomScale, "ScaleX", spring, (0, 0), (0.15, 0), (0.75, 1));
-        Animate(CueTitleShift, "Y", easeOut, (0, 22), (0.1, 22), (0.55, 0));
+            Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1), (end - 0.6, 1), (end, 0));
+        Animate(CueBandScale, "ScaleY", spring, (0, 0), (0.42 * k, 1));
+        Animate(CueFlash, "Opacity", easeOut, (0, 0), (0.1 * k, 0.32), (0.65 * k, 0));
+        Animate(CueRuleTopScale, "ScaleX", spring, (0, 0), (0.15 * k, 0), (0.75 * k, 1));
+        Animate(CueRuleBottomScale, "ScaleX", spring, (0, 0), (0.15 * k, 0), (0.75 * k, 1));
+        Animate(CueTitleShift, "Y", easeOut, (0, 22), (0.1 * k, 22), (0.55 * k, 0));
         story.Completed += (_, _) =>
         {
             if (ReferenceEquals(story, _cueStory) && !SnapshotMode)
@@ -1066,7 +1086,7 @@ public sealed partial class MainWindow : Window
         CueTitle.Inlines.Add(settled);
         CueTitle.Inlines.Add(flicker);
         var started = DateTime.Now;
-        var decode = TimeSpan.FromMilliseconds(900);
+        var decode = TimeSpan.FromMilliseconds(900 * CuePace);
         _cueTimer = DispatcherQueue.CreateTimer();
         _cueTimer.Interval = TimeSpan.FromMilliseconds(35);
         _cueTimer.Tick += (timer, _) =>

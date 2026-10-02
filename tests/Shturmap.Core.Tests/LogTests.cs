@@ -272,23 +272,25 @@ public class GroupLoadingInsuranceTests
     }
 
     [Fact]
-    public void Tracks_the_loading_stage_and_its_timings()
+    public void Shows_only_the_loading_steps_the_log_reported()
     {
         var t0 = new DateTime(2026, 1, 1, 13, 0, 0);
         var tracker = new RaidTracker();
         tracker.Apply(new MapLoadingEvent(t0, "maps/customs_preset.bundle", null));
-        Assert.Equal(("MAP", 0.1), Round(LoadingProgress.At(tracker.State, t0.AddSeconds(10))));
-        Assert.Equal(("MAP", 0.225), Round(LoadingProgress.At(tracker.State, t0.AddSeconds(200)))); // never past 90 % of a stage
+        Assert.Equal("LOADING · MAP", LoadingProgress.Text(tracker.State));
+        Assert.Equal([false, false, false, false, false, false], LoadingProgress.Done(tracker.State));
 
+        // Only what the log reported lights up: GamePrepared never came, so its segment stays dark.
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(25), LoadingStep.LocationLoaded));
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(26), LoadingStep.GameCreated));
         Assert.Equal(LoadingStep.GameCreated, tracker.State.LoadingStep);
-        Assert.Equal(t0.AddSeconds(25), tracker.State.LoadingStageSince); // the stage began with LocationLoaded
-        Assert.Equal("RAID", LoadingProgress.At(tracker.State, t0.AddSeconds(30)).Stage);
+        Assert.Equal("LOADING · RAID CREATED", LoadingProgress.Text(tracker.State));
+        Assert.Equal([true, false, true, false, false, false], LoadingProgress.Done(tracker.State));
 
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(42), LoadingStep.PlayerSpawned));
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(47), LoadingStep.GamePooled));
-        Assert.Equal(("STARTING", 0.75), Round(LoadingProgress.At(tracker.State, t0.AddSeconds(47))));
+        Assert.Equal("LOADING · GAME POOLED", LoadingProgress.Text(tracker.State));
+        Assert.Equal([true, false, true, true, true, false], LoadingProgress.Done(tracker.State));
 
         Assert.IsType<RaidStarted>(tracker.Apply(new GameStartedEvent(t0.AddSeconds(71))));
         Assert.Null(tracker.State.LoadingStep);
@@ -296,8 +298,6 @@ public class GroupLoadingInsuranceTests
             new (LoadingStep?, double)[] { (LoadingStep.LocationLoaded, 25), (LoadingStep.GameCreated, 26), (LoadingStep.PlayerSpawned, 42), (LoadingStep.GamePooled, 47), (null, 71) },
             tracker.LoadingSteps.ToArray());
     }
-
-    private static (string, double) Round((string Stage, double Fill) p) => (p.Stage, Math.Round(p.Fill, 3));
 
     [Fact]
     public void A_lost_note_during_the_raid_hints_how_it_ended()
