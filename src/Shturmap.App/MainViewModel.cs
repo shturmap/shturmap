@@ -10,6 +10,11 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 {
     public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    // Without a position there is no distance and no direction; an empty line would still take its height.
+    public Visibility DistanceVisibility => Distance.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility DirectionVisibility => Direction.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
     /// <summary>Muted for what is done at a trader after the raid: nothing to do about it here.</summary>
     public Microsoft.UI.Xaml.Media.Brush TextBrush =>
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[QuestTaxonomy.InRaid(Kind) ? "InkBrush" : "MutedBrush"];

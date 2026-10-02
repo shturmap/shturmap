@@ -58,8 +58,9 @@
                     <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
                   </StackPanel>
                   <StackPanel Grid.Column="1">
-                    <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
-                    <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{x:Bind Distance}" Visibility="{x:Bind DistanceVisibility}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
+                    <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Visibility="{x:Bind DirectionVisibility}" Style="{StaticResource StatusText}" FontSize="11"
+                               Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
                   </StackPanel>
                 </Grid>
               </DataTemplate>
