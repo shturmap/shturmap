@@ -175,7 +175,7 @@
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
                   <Grid.RowDefinitions>
-                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
                   </Grid.RowDefinitions>
                   <Ellipse Width="14" Height="14" Fill="{StaticResource AmberBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="Quest objective; its glyph is the quest type. A hollow ring: one of the places it can be." TextWrapping="Wrap" />
@@ -189,13 +189,15 @@
                   <Polygon Grid.Row="3" Points="7,0 14,7 7,14 0,7" Fill="#9C8CC4" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="Transit to another map" TextWrapping="Wrap" />
                   <Polygon Grid.Row="4" Points="7,0 14,7 7,14 0,7" Fill="{StaticResource RedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="4" Grid.Column="1" Text="Boss spawn, with the boss's chance on this map" TextWrapping="Wrap" />
-                  <Ellipse Grid.Row="5" Width="9" Height="9" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="5" Grid.Column="1" Text="Scav spawn" TextWrapping="Wrap" />
-                  <Rectangle Grid.Row="6" Width="10" Height="10" Stroke="{StaticResource SandBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="6" Grid.Column="1" Text="Where an item lies loose, while you point at it" TextWrapping="Wrap" />
-                  <Ellipse Grid.Row="7" Width="11" Height="11" Fill="{StaticResource SandBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="7" Grid.Column="1" Text="You, at your last screenshot" TextWrapping="Wrap" />
+                  <TextBlock Grid.Row="4" Grid.Column="1" Text="Boss spawn zone, at the centre of its spawn points: the boss's chance on this map and, for a boss with several zones, this zone's share (&quot;Kollontay 75% · 50% here&quot;)" TextWrapping="Wrap" />
+                  <Polygon Grid.Row="5" Points="13,7 10,12.2 4,12.2 1,7 4,1.8 10,1.8" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Grid.Column="1" Text="Sniper Scav spawn zone, at the centre of its spawn points" TextWrapping="Wrap" />
+                  <Ellipse Grid.Row="6" Width="9" Height="9" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Grid.Column="1" Text="Scav spawn zone, at the centre of its spawn points" TextWrapping="Wrap" />
+                  <Rectangle Grid.Row="7" Width="10" Height="10" Stroke="{StaticResource SandBrush}" StrokeThickness="1.5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="7" Grid.Column="1" Text="Where an item lies loose, while you point at it" TextWrapping="Wrap" />
+                  <Ellipse Grid.Row="8" Width="11" Height="11" Fill="{StaticResource SandBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="8" Grid.Column="1" Text="You, at your last screenshot" TextWrapping="Wrap" />
                 </Grid>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
                            Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data. It never touches the game. It keeps a study log of raids and how you use it in %LOCALAPPDATA%\Shturmap\study; nothing is sent anywhere." />

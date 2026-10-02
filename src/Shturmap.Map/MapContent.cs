@@ -46,41 +46,9 @@ public static class MapContentBuilder
             markers.Add(new MapMarker("transit:" + transit.Id, MarkerKind.Transit, transit.Position.ToWorld(), "Transit to " + target));
         }
 
-        // AI Scav spawns, each spot once.
-        var scavSpots = new List<WorldPoint>();
-        foreach (var spawn in map.Spawns ?? [])
-        {
-            if (spawn.Position is null || spawn.Sides?.Contains("scav") != true || spawn.Categories?.Any(c => c is "bot" or "all") != true)
-                continue;
-            var at = spawn.Position.ToWorld();
-            if (scavSpots.Any(p => p.HorizontalDistanceTo(at) < 3))
-                continue;
-            scavSpots.Add(at);
-            markers.Add(new MapMarker($"scav:{scavSpots.Count}", MarkerKind.ScavSpawn, at, ""));
-        }
-
-        // Boss spawns: every point marked, one point per spawn area labelled with the boss and its chance.
-        foreach (var boss in map.Bosses ?? [])
-        {
-            if (!boss.Mob.StartsWith("boss", StringComparison.Ordinal))
-                continue;
-            var name = data.Mobs.TryGetValue(boss.Mob, out var mob) ? mob.Name : boss.Mob;
-            var label = $"{name} {Math.Round(boss.SpawnChance * 100):0}%";
-            var spots = new List<WorldPoint>();
-            foreach (var location in boss.SpawnLocations ?? [])
-            {
-                var labelled = false;
-                foreach (var position in location.Positions ?? [])
-                {
-                    var at = position.ToWorld();
-                    if (spots.Any(p => p.HorizontalDistanceTo(at) < 3))
-                        continue;
-                    spots.Add(at);
-                    markers.Add(new MapMarker($"boss:{boss.Mob}:{spots.Count}", MarkerKind.BossSpawn, at, labelled ? "" : label, "boss:" + boss.Mob));
-                    labelled = true;
-                }
-            }
-        }
+        // Spawns, one marker per spawn zone at the centroid of the zone's points (owner, 2026-10-02: the player needs
+        // to know which area has Scavs, where bosses and snipers are, not every spawn point).
+        markers.AddRange(SpawnZones(data, map));
 
         foreach (var questId in activeQuests)
         {
@@ -127,4 +95,90 @@ public static class MapContentBuilder
         }
         return new MapContent(markers, zones, objectives);
     }
+
+    /// <summary>
+    /// One marker per spawn zone, at the centroid (the mean of X, Y and Z) of the zone's points: AI Scav zones
+    /// (side "scav", category "bot" or "all", not "sniper"), sniper zones (side "scav", categories "bot" and
+    /// "sniper") and, per boss, each of its spawn locations. The data gives zones by name; the points of one zone are
+    /// grouped by that name alone. A boss marker says the boss's chance on the map and, when the boss has several
+    /// zones, this zone's share ("Kollontay 75% · 50% here"). Bosses whose zones have the same centroid (Customs'
+    /// Stronghold lists the same points for Reshala and Knight) share one marker.
+    /// </summary>
+    public static IReadOnlyList<MapMarker> SpawnZones(GameData data, ApiMap map)
+    {
+        var markers = new List<MapMarker>();
+        var spawns = (map.Spawns ?? []).Where(s => s.Position is not null && s.Sides?.Contains("scav") == true).ToList();
+        foreach (var zone in spawns.Where(s => s.Categories?.Any(c => c is "bot" or "all") == true && s.Categories?.Contains("sniper") != true)
+                     .GroupBy(s => s.ZoneName ?? ""))
+            markers.Add(new MapMarker("scav:" + zone.Key, MarkerKind.ScavSpawn, Centroid(Distinct(zone.Select(s => s.Position!.ToWorld()))), ""));
+        foreach (var zone in spawns.Where(s => s.Categories?.Contains("bot") == true && s.Categories?.Contains("sniper") == true).GroupBy(s => s.ZoneName ?? ""))
+            markers.Add(new MapMarker("sniper:" + zone.Key, MarkerKind.SniperSpawn, Centroid(Distinct(zone.Select(s => s.Position!.ToWorld()))), "Sniper"));
+
+        // Per boss and zone: the label parts and the zone's points (the payload can list one boss several times).
+        var zones = new List<(string Mob, string Zone, List<string> Parts, List<WorldPoint> Points)>();
+        foreach (var boss in map.Bosses ?? [])
+        {
+            if (!boss.Mob.StartsWith("boss", StringComparison.Ordinal))
+                continue;
+            var name = data.Mobs.TryGetValue(boss.Mob, out var mob) ? mob.Name : boss.Mob;
+            foreach (var location in boss.SpawnLocations ?? [])
+            {
+                if (location.Positions is not { Count: > 0 } positions)
+                    continue;
+                var key = location.Name ?? "";
+                var index = zones.FindIndex(z => z.Mob == boss.Mob && z.Zone == key);
+                if (index < 0)
+                {
+                    zones.Add((boss.Mob, key, [], []));
+                    index = zones.Count - 1;
+                }
+                var part = $"{name} {Percent(boss.SpawnChance)}%" + (location.Chance < 0.995 ? $" · {Percent(location.Chance)}% here" : "");
+                if (!zones[index].Parts.Contains(part))
+                    zones[index].Parts.Add(part);
+                zones[index].Points.AddRange(positions.Select(p => p.ToWorld()));
+            }
+        }
+        var placed = new List<(WorldPoint At, List<string> Mobs, List<string> Parts, string Zone)>();
+        foreach (var zone in zones)
+        {
+            var at = Centroid(Distinct(zone.Points));
+            var same = placed.FindIndex(p => p.At.HorizontalDistanceTo(at) < 3 && Math.Abs(p.At.Y - at.Y) < 3);
+            if (same < 0)
+            {
+                placed.Add((at, [zone.Mob], [.. zone.Parts], zone.Zone));
+                continue;
+            }
+            if (!placed[same].Mobs.Contains(zone.Mob))
+                placed[same].Mobs.Add(zone.Mob);
+            placed[same].Parts.AddRange(zone.Parts.Where(p => !placed[same].Parts.Contains(p)));
+        }
+        foreach (var p in placed)
+            markers.Add(new MapMarker($"boss:{p.Mobs[0]}:{p.Zone}", MarkerKind.BossSpawn, p.At, string.Join(" / ", p.Parts), BossGroup(p.Mobs)));
+        return markers;
+    }
+
+    /// <summary>The group of a boss marker: "boss:" and the bosses that share it, joined by "+".</summary>
+    public static string BossGroup(IEnumerable<string> mobs) => "boss:" + string.Join("+", mobs);
+
+    /// <summary>The bosses of a boss marker's group.</summary>
+    public static IReadOnlyList<string> BossesOf(string group) =>
+        group.StartsWith("boss:", StringComparison.Ordinal) ? group["boss:".Length..].Split('+') : [];
+
+    /// <summary>The mean of the points, in all three coordinates.</summary>
+    public static WorldPoint Centroid(IReadOnlyList<WorldPoint> points) =>
+        new(points.Average(p => p.X), points.Average(p => p.Y), points.Average(p => p.Z));
+
+    // The same point listed twice (one zone repeated in the payload) must not pull the centroid toward it.
+    private static List<WorldPoint> Distinct(IEnumerable<WorldPoint> points)
+    {
+        var kept = new List<WorldPoint>();
+        foreach (var p in points)
+        {
+            if (!kept.Any(k => k.HorizontalDistanceTo(p) < 0.5 && Math.Abs(k.Y - p.Y) < 0.5))
+                kept.Add(p);
+        }
+        return kept;
+    }
+
+    private static string Percent(double share) => Math.Round(share * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
 }

@@ -855,8 +855,12 @@ public sealed partial class MainWindow : Window
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
                 break;
             case { Group: { } group }:
-                // A boss: all its spawn points light up together.
-                Linked.Set(new Focus(new HashSet<string> { group }));
+                // A boss: all its spawn zones light up together, including zones it shares with another boss.
+                var bosses = MapContentBuilder.BossesOf(group);
+                var groups = (Map.Scene?.Markers ?? []).Select(m => m.Group).OfType<string>()
+                    .Where(g => MapContentBuilder.BossesOf(g).Intersect(bosses).Any())
+                    .Append(group).ToHashSet();
+                Linked.Set(new Focus(groups));
                 break;
             default:
                 Linked.Set(new Focus(new HashSet<string>(), Marker: marker.Id));

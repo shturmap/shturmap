@@ -120,8 +120,8 @@ public static class MapRenderer
         var bestDistance = float.MaxValue;
         foreach (var marker in scene.Markers)
         {
-            // Scav spawns are many and say nothing more on hover.
-            if (marker.Kind == MarkerKind.ScavSpawn)
+            // Scav and sniper zones say nothing more on hover.
+            if (marker.Kind is MarkerKind.ScavSpawn or MarkerKind.SniperSpawn)
                 continue;
             var distance = SKPoint.Distance(Screen(camera, scene, marker.Position), screen);
             var reach = (marker.Objective is not null ? 15f : 10f) * ui;
@@ -378,6 +378,18 @@ public static class MapRenderer
                     canvas.DrawPath(tri, outline);
                 }
                 break;
+            case MarkerKind.SniperSpawn:
+                // A hollow hexagon: a shape no other marker uses (a reticle would repeat the Elimination glyph).
+                using (var hex = Hexagon(at, 6.5f * ui))
+                using (var plate = new SKPaint { Color = Background.WithAlpha(210), IsAntialias = true })
+                using (var edge = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f * ui })
+                {
+                    canvas.DrawPath(hex, plate);
+                    canvas.DrawPath(hex, edge);
+                    fill.Color = color;
+                    canvas.DrawCircle(at, 1.6f * ui, fill);
+                }
+                break;
             case MarkerKind.ScavSpawn:
                 // A small open ring: there for whoever looks, not competing with quests and exits.
                 using (var ring = new SKPaint { Color = color.WithAlpha(170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui })
@@ -420,8 +432,8 @@ public static class MapRenderer
                 break;
         }
 
-        if (marker.Kind != MarkerKind.ScavSpawn && FloorOffset(scene, marker.Position) is var floor and not 0)
-            DrawFloorArrow(canvas, at, r, floor, ui);
+        if (FloorOffset(scene, marker.Position) is var floor and not 0)
+            DrawFloorArrow(canvas, at, marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : r, floor, ui);
 
         if ((!scene.ShowLabels && !selected) || marker.Label.Length == 0)
             return;
@@ -593,6 +605,9 @@ public static class MapRenderer
         canvas.DrawCircle(at, 6.5f * ui, body);
         canvas.DrawCircle(at, 6.5f * ui, edge);
     }
+
+    private static SKPath Hexagon(SKPoint at, float r) =>
+        Polygon(Enumerable.Range(0, 6).Select(i => new SKPoint(at.X + r * MathF.Cos(MathF.PI / 3 * i), at.Y + r * MathF.Sin(MathF.PI / 3 * i))).ToArray());
 
     private static SKPath Polygon(params SKPoint[] points)
     {

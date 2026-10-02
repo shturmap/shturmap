@@ -190,7 +190,7 @@ animation effects are off, and only while something is in focus). Losing the foc
 follows, so moving from one row to the next switches the highlight straight across instead of making every marker
 blink. Markers on another floor than the one shown are drawn at full strength, highlighted like any other, with a
 small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half strength read as
-"unimportant" and hid highlighted markers). Scav spawns carry no arrow.
+"unimportant" and hid highlighted markers). Spawn zone markers carry it too, by the height of their centroid.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Logo
@@ -264,13 +264,31 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     zero-length "GameStarting". Those stay unknown and get the PMC view; the side tag is then a switch (PMC ⇄
     SCAV) that holds for the raid. No local Scav raid has been seen in a log yet; if one shows a line that tells,
     it replaces the switch.
-- **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, boss spawns (red diamonds, one label
-  per spawn area: "Reshala 75%"), Scav spawns (small quiet rings, no label, not hoverable), player, trail, guide
-  line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
+- **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, spawn zones (see "Map drawing"),
+  player, trail, guide line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols. Opens
   once by itself on first run.
+
+### Map drawing
+
+Rules from a cartography review of the map (2026-10-02; the owner approved its twelve changes, with the change to
+spawns below).
+
+- **Spawns: one marker per zone, at its centroid** (owner, 2026-10-02: the player needs to know which area has
+  Scavs, where the bosses and the snipers are, not each spawn point; "just use the centroid, do not colour code the
+  potential spawn area"). tarkov.dev names a zone for each spawn point; the points of one zone get one marker at
+  their centroid, the mean of X, Y and Z, so the marker can stand where no spawn point is (on Customs and
+  Interchange some zones spread over 300–450 m, and their centroid lands 40–250 m from the nearest point). No
+  areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
+  ink, unlabelled and not hoverable. Sniper zones (side "scav", categories "bot" and "sniper"; Ground Zero's
+  player spawns tagged "sniper" don't count) are a hollow ink hexagon labelled "Sniper": a shape no other symbol
+  uses, not a reticle, which is the Elimination glyph. Bosses (mobs "boss…") get one red diamond per spawn zone,
+  labelled with the two numbers the data gives, the boss's chance on the map and, for a boss with several zones,
+  that zone's share: "Kollontay 75% · 50% here", "Kaban 75%"; never their product, since the data doesn't say the
+  share is conditional. Bosses whose zones have the same centroid share one marker ("Reshala 75% · 33% here /
+  Knight 25%" on Customs' Stronghold), and pointing at a boss lights all its zones.
 
 ### Quest cards
 
