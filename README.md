@@ -1,4 +1,9 @@
-# Shturmap
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.svg">
+    <img alt="Shturmap" src="brand/logo-light.svg" height="40">
+  </picture>
+</h1>
 
 A map for Escape from Tarkov on your second monitor. It shows where you are, what your active quests want on the
 current map, and how far away and in which direction each objective and extract is. In a raid, your screenshot key

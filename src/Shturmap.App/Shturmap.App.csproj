@@ -6,6 +6,8 @@
     <RootNamespace>Shturmap.App</RootNamespace>
     <AssemblyName>Shturmap</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The exe's icon (Explorer, shortcuts); the windows load the same file at runtime. brand\build.cs makes it. -->
+    <ApplicationIcon>Assets\Shturmap.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -27,6 +29,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shturmap.Session\Shturmap.Session.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Shturmap.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- Keep the published folder lean. -->

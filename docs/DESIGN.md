@@ -166,6 +166,29 @@ small dark disc at their upper right holding an up or down chevron (owner, 2026-
 "unimportant" and hid highlighted markers). Scav spawns carry no arrow.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
+### Logo
+
+The mark is a stencilled Cyrillic **Ш** (Shturman's initial) on a dark plate with quiet map-sheet corner marks; a
+chevron cut through the centre stem points the way. The wordmark is SHTUR in ink beside MAP cut out of an amber
+stencil tag: the name's two halves, navigator and map (owner, 2026-10-02, after five panels of options). The files
+and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` also makes
+`src/Shturmap.App/Assets/Shturmap.ico`, the exe's and the windows' icon.
+
+- **Construction.** These rules keep the mark clear of hate, war and political signs (each option was checked
+  against them). The three stems stay joined to the base and end flat at one height, with no bar across the top:
+  free bars read as the Three Percenters' "III". The chevron is cut only through the centre stem and points up:
+  never on all three stems (the Three Arrows), never down (a V). In the wordmark the M stays whole (a freed middle
+  reads as a V), and stencil bridges go only where a closed shape needs one (A, P, R). Two faint echoes are
+  accepted knowingly: the cut gives the centre stem an arrow tip (Tyr rune), and a marked centre stem between two
+  others recalls the tryzub's layout.
+- **Sizes.** 16 to 40 px use the plain Ш fitted to whole pixels (the cut would smudge); 48 px and up the full mark.
+- **Lockup.** The gap between the icon's plate and the wordmark is half the cap height; the plate is about 1.36×
+  the cap height; everything is centred on one axis. The README shows `brand/logo-dark.svg` or `logo-light.svg`
+  through `<picture>`, 40 px tall.
+- **Colours.** The palette above. On light backgrounds ink is `#1E1F1B` and amber `#8C7436`; the icon keeps its
+  dark plate on both.
+- The lettering is drawn from scratch as paths, never from font outlines (§3).
+
 ### Screen anatomy
 
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs

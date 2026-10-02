@@ -5,6 +5,9 @@ namespace Shturmap.App;
 
 public partial class App : Application
 {
+    /// <summary>The app icon for title bars, the taskbar and Alt+Tab (the exe carries the same icon).</summary>
+    public static string IconPath { get; } = Path.Combine(AppContext.BaseDirectory, "Assets", "Shturmap.ico");
+
     private MainWindow? _window;
     private GameSession? _session;
 

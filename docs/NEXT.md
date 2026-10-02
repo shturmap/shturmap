@@ -2,6 +2,7 @@
 
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
 read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
+Item 5 (one design system) was added on 2026-10-02.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
 ## Before starting
@@ -125,6 +126,17 @@ allowed logs says it directly, but the insurer writes when insured gear was lost
   not have been insured.
 - With item 1's quest ids at raid load (already logged as `complete` / `progress`), this lets a later study
   compare plans with what happened.
+
+## 5. One design system for the app, the README and the website
+
+**Why** (owner, 2026-10-02). With the logo settled (DESIGN.md §4, "Logo"), the colours, type and general look must
+be the same in the app, the README and the coming website, and DESIGN.md has to say how.
+
+**Plan.** Write one design system into DESIGN.md and align `App.xaml` and the README to it:
+- colours: the palette, plus the light-background variants that so far exist only for the logo;
+- type: Bahnschrift in the app; a DIN-like font with a licence that allows web use for the website, since
+  Bahnschrift may be used on screen but not served as a web font (Microsoft's font FAQ); how the README fits in;
+- shape, spacing and motion rules, the logo's use (clear space, minimum sizes), and the tone of the text.
 
 ## Not asked for (owner to decide)
 

@@ -30,6 +30,7 @@ public sealed partial class QuestWindow : Window
         Content = _root;
         Title = view.Name;
         Stack = new CardStack(_root, createCard, ScreenAround, besideRoot: true);
+        AppWindow.SetIcon(App.IconPath);
 
         var bar = AppWindow.TitleBar;
         var card = Color("CardBrush");

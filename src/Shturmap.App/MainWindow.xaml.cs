@@ -44,6 +44,7 @@ public sealed partial class MainWindow : Window
     {
         _session = session;
         InitializeComponent();
+        AppWindow.SetIcon(App.IconPath);
         // A flat dark title bar like the rest; no translucent backdrop.
         AppWindow.TitleBar.BackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
         AppWindow.TitleBar.InactiveBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
