@@ -14,5 +14,8 @@ Essentials:
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
   (the wrapper finds the per-user .NET 10 SDK). Publish: `.\eng\publish.ps1`.
 - The CLI (`tools/Shturmap.Cli`) runs every part headless; `simulate` plays a scripted raid against a fake game.
+- After a tarkov.dev or game update, run `shturmap-cli synopses pve` and `shturmap-cli synopses regular` and look at
+  the FALLBACK, LONG and BREAK rows: the quest synopses in Plan are made from tarkov.dev's texts by fixed rules
+  (DESIGN.md §5, "Quest synopsis"). Never commit quest texts or a dump of them; tests read the local cache.
 - After UI changes that show in the website's screenshots or hero clip, re-record them with `tools\make-media.ps1`
   in `..\shturmap.github.io` (see its CLAUDE.md), then go through its hand-check list.

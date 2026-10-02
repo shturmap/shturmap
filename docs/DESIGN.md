@@ -86,7 +86,9 @@ residual risk. Do not widen the boundary.
   README says Shturmap is unofficial and that game content belongs to Battlestate Games.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
   the only custom glyph is the crosshair (drawn from a path in `Shturmap.Map.Glyphs`).
-- **Test fixtures** contain only scrubbed logs (`tools/make-log-fixtures.ps1`) and the maps.json snapshot.
+- **Test fixtures** contain only scrubbed logs (`tools/make-log-fixtures.ps1`) and the maps.json snapshot. Quest
+  texts are not committed: the synopsis tests quote a few short objective lines, and the check over all quests
+  reads the user's local tarkov.dev cache.
   `tests/fixtures/ocr` is ignored by git: it holds the owner's own Tasks screenshots from the removed OCR feature.
   Never commit or publish it; it was removed from the whole history on 2026-10-02, before going public.
 
@@ -239,7 +241,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Rail** (left, 380 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
-    BRING (keys, items to bring). Clicking another map expands it and shows it on the map; that click is optional.
+    BRING (keys, items to bring). Each quest row there is the quest's name, then a quiet line of what it asks on
+    that map in a few words, at most two lines and then "…" ("Ballet Lover" over "Find balletmeister's apartment ·
+    Survive and extract"; see §5, "Quest synopsis"). The raid card keeps names only: its objective lines already
+    say what to do. Clicking another map expands it and shows it on the map; that click is optional.
     Folded cards carry enough to compare without opening them (the study log: ten card clicks in 4.5 minutes to
     compare maps): one quest-type glyph per quest (gold to complete, muted to progress) and up to five cells of
     what to bring. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
@@ -491,6 +496,47 @@ Survive, Find in raid); a quest with no in-raid objectives is a Trader quest. Th
 label. Requirements use a key glyph `E8D7` for keys and a briefcase `E821` for items to bring. Never use the
 game's icon artwork; the glyphs only echo it.
 
+### Quest synopsis
+
+Under each quest's name in Plan's COMPLETE and PROGRESS, one quiet line says what the quest asks on that map:
+"Get valuable item", "Kill Scavs ×10 with M4A1, M16, ADAR, or TX-15", "Mark first LAV III, Stryker, second LAV
+III" (owner, 2026-10-02). Why: before a raid the owner pointed at every quest row to see what it wanted (the study
+log: 210 quest cards opened from the rail in the menus over two evenings, 188 of them in back-to-back scans, and 53
+looks at 12 quests in one 12-minute stretch). The owner chose the name first and the synopsis under it over the
+synopsis in the name's place: the name is what the trader, the wiki, the BRING rows ("for Dandies") and the map's
+labels use, so it stays the thing you recognise.
+
+- **Made from the loaded data, without AI** (owner: it must keep up with tarkov.dev's quest updates without help).
+  `QuestSynopsis` (Core) works on tarkov.dev's objective texts and count fields for the objectives the planner
+  counts on that map (in-raid, not optional; hand-overs are left out). Nothing is stored: a new quest gets its line
+  as soon as the data has it.
+- **It only subtracts.** It may (1) replace a known verb phrase at the start from a fixed table ("Locate and
+  obtain" → Get, "Locate and neutralize" and "Eliminate" → Kill, "Locate" → Find, "Find the item in raid:" → FIR,
+  "Survive and extract through" → Extract through, "Use the transit to" → Transit to, and the term "PMC operatives"
+  → PMCs); (2) remove known filler: lowercase articles (not after "of"), this map's name and lists that hold it
+  ("on Woods, Ground Zero, or Customs"), "with an MS2000 Marker" (it is in the row's bring cells), "at the
+  specified spot", "from the location", and the place of an objective whose marker is on this map ("in dorm room
+  203"), together with a word leading into it ("hidden"); (3) add the count field as "×N", before a kill's
+  conditions or at the end, as the game and the BRING rows show counts. Nothing else. A reworded text then gives a
+  longer line, never a wrong one; a text with no known verb is shown as written, less the map's name.
+- **Never dropped**: conditions and exclusions, word for word (brackets, "excluding", "without", "only", "while",
+  "using", "wearing", "during", "in one raid", headshots). A place that holds one stays whole. A number the text
+  gives that the count field contradicts is left out, and so is the count (Job for a Patriot says 20 PMCs, its
+  count 10). A place stays when cutting it would leave one word ("Stash package at laboratory storage room") or
+  when two objectives would then read the same (Spotter's two sniping positions).
+- **Merging**: consecutive objectives with the same verb share it, and words all their objects share are said once
+  ("Stash AK-50 body, handguard, barrel"; "Kill Knight, Big Pipe, Birdeye (in one raid)"), never across a count and
+  a shared ending only after short names ("first, second, third yellow minibus").
+- **English only.** The rules are written for English texts; in another game language the row shows the name alone.
+- **Checks.** `QuestSynopsis.Problems` checks a line: every word is in the objective's text or the table, or is
+  its count; every condition of the text is kept; nothing stops mid-phrase. A test runs it over every quest on
+  every map in the local tarkov.dev cache (PvE and PvP; skipped without a cache, since the quest texts are
+  tarkov.dev's and BSG's and stay out of the repository). On 2026-10-02: 614 PvE and 620 PvP rows, no breaks, no
+  fallbacks; a quarter run past two lines and end in "…" (long item lists, kill conditions).
+- **After a tarkov.dev or game update** run `shturmap-cli synopses pve` and `… regular`: they list every Plan row
+  with its line and flag FALLBACK (a text with no known verb), LONG (more than two lines at the row's width) and
+  BREAK (a rule broken). Add a verb or filler phrase to the table only when it subtracts.
+
 ## 6. Raid requirements
 
 - **Keys**: the quest's `neededKeys` for that map, and each objective's `requiredKeys` (a list of alternatives:
@@ -587,6 +633,7 @@ log session on disk and followed live; newest wins. Prerequisites of active or c
 require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
 Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows; they are ignored (and could never
 reopen a quest the log saw completed). `shturmap-cli quests` lists active quests with every observation.
+`shturmap-cli synopses [mode]` lists every Plan row's synopsis with its flags (§5, "Quest synopsis").
 
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next

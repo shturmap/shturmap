@@ -35,8 +35,12 @@ public sealed record MapChoice(string NormalizedName, string Name)
 }
 
 /// <param name="Needs">What it needs brought on the map (empty: nothing), or null where bringing doesn't apply.</param>
+/// <param name="Synopsis">What it asks on the map in a few words, under the name; empty for none.</param>
 public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<Controls.NeedChip>? Needs = null);
+    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "")
+{
+    public Visibility SynopsisVisibility => Synopsis.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+}
 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
 /// <param name="QuestIds">The quests it is for, for linked highlighting.</param>

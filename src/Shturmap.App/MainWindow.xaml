@@ -283,7 +283,12 @@
                                     <ColumnDefinition Width="Auto" />
                                   </Grid.ColumnDefinitions>
                                   <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
-                                  <TextBlock Grid.Column="1" Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                  <!-- The name, then what the quest asks here in a few words (QuestSynopsis), at most two lines. -->
+                                  <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
+                                               MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                  </StackPanel>
                                   <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
                                   <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
                                   <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
@@ -304,7 +309,11 @@
                                     <ColumnDefinition Width="Auto" />
                                   </Grid.ColumnDefinitions>
                                   <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource MutedBrush}" Margin="0,1,0,0" />
-                                  <TextBlock Grid.Column="1" Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                  <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Text="{x:Bind Name}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
+                                               MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                  </StackPanel>
                                   <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" Opacity="0.75" />
                                   <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
                                   <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" Opacity="0.6" />

@@ -10,7 +10,8 @@ namespace Shturmap.Session;
 /// <param name="Why">What it is for, then for which quests: "to mark, for Revision", "key for Ballet Lover".</param>
 public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "");
 
-public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null);
+/// <param name="Synopsis">What it asks on the plan's map in a few words (<see cref="Planning.Synopsis"/>), or empty.</param>
+public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null, string Synopsis = "");
 
 /// <summary>One suggested map for the next raid.</summary>
 public sealed record MapPlanView(
@@ -150,12 +151,29 @@ public static class Planning
     private static MapPlanView ToView(GameData data, MapPlan plan) => new(
         data.Maps.TryGetValue(plan.Map.Id, out var map) ? map.NormalizedName : plan.Map.Id,
         plan.Map.Name,
-        plan.Finish.Select(q => QuestView(data, q.Quest)).ToList(),
-        plan.Progress.Select(q => QuestView(data, q.Quest)).ToList(),
+        plan.Finish.Select(q => QuestView(data, q.Quest) with { Synopsis = Synopsis(data, q, plan.Map)?.Text ?? "" }).ToList(),
+        plan.Progress.Select(q => QuestView(data, q.Quest) with { Synopsis = Synopsis(data, q, plan.Map)?.Text ?? "" }).ToList(),
         plan.Requirements.Select(r => RequirementText(data, r)).ToList(),
         (int)Math.Ceiling(plan.WalkingMinutes),
         plan.Map.RaidMinutes,
         data.BossesOn(plan.Map.Id).Select(BossText).ToList());
+
+    /// <summary>
+    /// What a quest asks on a map in a few words: its objectives there as the planner counts them, shortened by
+    /// <see cref="QuestSynopsis"/>. Null when the data isn't in English: the rules are written for English texts.
+    /// </summary>
+    public static SynopsisLine? Synopsis(GameData data, QuestOnMap quest, PlanMap map)
+    {
+        if (data.Language != "en" || !data.Tasks.TryGetValue(quest.Quest.Id, out var task))
+            return null;
+        var objectives = quest.Objectives
+            .Select(o => (task.Objectives ?? []).FirstOrDefault(a => a.Id == o.Id) is { } api
+                ? new SynopsisObjective(api.Description ?? "", Math.Max(1, api.Count ?? 1), api.Type, RaidPlanner.Places(o, map).Count > 0)
+                : null)
+            .OfType<SynopsisObjective>();
+        var here = map.MapIds.Select(id => data.Maps.GetValueOrDefault(id)?.Name).OfType<string>().ToList();
+        return QuestSynopsis.Of(objectives, here, data.Maps.Values.Select(m => m.Name).ToList());
+    }
 
     private static PlanQuestView QuestView(GameData data, PlanQuest q) =>
         new(q.Id, q.Name, QuestTaxonomy.QuestKind(q.Objectives.Select(o => o.Kind)), data.Tasks.GetValueOrDefault(q.Id)?.Trader);

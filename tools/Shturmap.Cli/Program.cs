@@ -34,6 +34,9 @@ switch (command)
     case "spawns":
         await Spawns(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "synopses":
+        await Synopses(args.ElementAtOrDefault(1) ?? "pve");
+        break;
     default:
         Console.WriteLine("""
             shturmap-cli locate              find the game, logs, screenshots and settings on this PC
@@ -45,8 +48,81 @@ switch (command)
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
             shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
+            shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             """);
         break;
+}
+
+// The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), its synopsis,
+// and what to look at: FALLBACK (a text starting with no known verb, shown as written), LONG (more than the two lines
+// the row shows) and BREAK (QuestSynopsis.Problems: a word not in the text, a condition left out, a cut mid-phrase).
+static async Task Synopses(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
+    var quests = data.Tasks.Values.Select(Shturmap.Session.Planning.ToPlan).ToList();
+    // The row's second line: Bahnschrift 12.5 (NoteText) in the Plan row's text column, 221 px less the bring cells
+    // (18 px each, 2 apart; past three a "+N").
+    using var typeface = SkiaSharp.SKFontManager.Default.MatchFamily("Bahnschrift") ?? SkiaSharp.SKTypeface.Default;
+    using var font = new SkiaSharp.SKFont(typeface, 12.5f);
+    static double Width(int cells) => 221 - cells switch { 0 => 18, <= 3 => cells * 18 + (cells - 1) * 2, _ => 3 * 18 + 2 * 2 + 4 + 14 };
+    int Lines(string text, double width)
+    {
+        var lines = 0;
+        var line = "";
+        foreach (var word in text.Split(' '))
+        {
+            var next = line.Length == 0 ? word : line + " " + word;
+            if (line.Length > 0 && font.MeasureText(next) > width)
+            {
+                lines++;
+                line = word;
+            }
+            else
+            {
+                line = next;
+            }
+        }
+        return line.Length > 0 ? lines + 1 : lines;
+    }
+
+    int rows = 0, fallbacks = 0, longRows = 0, breaks = 0;
+    foreach (var map in Shturmap.Session.Planning.Maps(data).OrderBy(m => m.Name))
+    {
+        var plan = Shturmap.Core.Planning.RaidPlanner.Plan(quests, map);
+        Console.WriteLine($"== {map.Name}");
+        foreach (var q in plan.Finish.Concat(plan.Progress))
+        {
+            var line = Shturmap.Session.Planning.Synopsis(data, q, map);
+            if (line is null)
+                continue;
+            rows++;
+            var cells = plan.Requirements.Count(r => r.ForQuests.Contains(q.Quest.Id));
+            var lines = Lines(line.Text, Width(cells));
+            var problems = Shturmap.Core.Quests.QuestSynopsis.Problems(line);
+            var flags = new List<string>();
+            if (line.HasFallback)
+            {
+                fallbacks++;
+                flags.Add("FALLBACK");
+            }
+            if (lines > 2)
+            {
+                longRows++;
+                flags.Add($"LONG {lines}");
+            }
+            if (problems.Count > 0)
+            {
+                breaks++;
+                flags.Add("BREAK");
+            }
+            Console.WriteLine($"  {q.Quest.Name} | {line.Text}{(flags.Count > 0 ? "  [" + string.Join(", ", flags) + "]" : "")}");
+            foreach (var p in problems)
+                Console.WriteLine($"      {p}");
+        }
+    }
+    Console.WriteLine($"{rows} rows: {fallbacks} with a fallback, {longRows} longer than two lines, {breaks} breaking a rule");
 }
 
 static async Task Quests(string mode)
