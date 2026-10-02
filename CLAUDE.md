@@ -14,3 +14,5 @@ Essentials:
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
   (the wrapper finds the per-user .NET 10 SDK). Publish: `.\eng\publish.ps1`.
 - The CLI (`tools/Shturmap.Cli`) runs every part headless; `simulate` plays a scripted raid against a fake game.
+- After UI changes that show in the website's screenshots or hero clip, re-record them with `tools\make-media.ps1`
+  in `..\shturmap.github.io` (see its CLAUDE.md), then go through its hand-check list.

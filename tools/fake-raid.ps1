@@ -140,14 +140,14 @@ if ($Demo) {
     Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
   }
   if ($rec.ExitCode -ne 0) { throw "tools\record-window failed ($($rec.ExitCode))." }
-  # The loop: from just before the key appears to a moment after the view is back. make-media.ps1 crossfades its last
+  # The loop: from a moment before the pause to a moment after the view is back. make-media.ps1 crossfades its last
   # 0.6 s into its first frame, so the walk back to the start position never shows as a jump.
   $first = [datetime]::ParseExact((Get-Content ([IO.Path]::ChangeExtension($capture, '.start.txt'))), 'yyyy-MM-dd HH:mm:ss.fff', $invariant)
-  foreach ($what in 'key', 'press', 'fix 2', 'end') { if (-not (DemoTime $what)) { throw "The app's log has no 'Demo: $what'." } }
-  $in = ((DemoTime 'key') - $first).TotalSeconds - 0.5
+  foreach ($what in 'key', 'press', 'read', 'fix 2', 'end') { if (-not (DemoTime $what)) { throw "The app's log has no 'Demo: $what'." } }
+  $in = ((DemoTime 'key') - $first).TotalSeconds - 0.6
   $outAt = ((DemoTime 'end') - $first).TotalSeconds + 0.8
-  $lag = ((DemoTime 'fix 2') - (DemoTime 'press')).TotalMilliseconds
-  Write-Output ("Key press to position: {0:0} ms" -f $lag)
+  Write-Output ("Key press to position read: {0:0} ms; shown as the pause ends, {1:0} ms after the press" -f `
+    ((DemoTime 'read') - (DemoTime 'press')).TotalMilliseconds, ((DemoTime 'fix 2') - (DemoTime 'press')).TotalMilliseconds)
   if ($in -lt 0 -or $outAt -gt $RecordSeconds) { throw "The demo didn't fit the recording (in $in s, out $outAt s)." }
   $cut = [string]::Format([Globalization.CultureInfo]::InvariantCulture, '{0:0.000} {1:0.000}', $in, $outAt)
   [IO.File]::WriteAllText((Join-Path (Resolve-Path $Out) 'cut.txt'), $cut)

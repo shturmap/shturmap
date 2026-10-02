@@ -11,14 +11,15 @@ using Point = Windows.Foundation.Point;
 namespace Shturmap.App;
 
 // Developer aid for the website's hero clip: "--demo <quest>" (with --fake-game) plays one scripted interaction. The
-// clip must never read as live tracking, so the position changes exactly once, and only after a key press: a drawn
-// screenshot key appears and is pressed ("Demo: press" in the log), tools\fake-raid.ps1 -Demo then writes the
-// screenshot file the game would, and the fix lands a moment later (marker, ping, raid card re-sorted), with the
-// file name the position comes from shown under the key. Then a drawn pointer goes to the quest in the raid card (the
-// map highlights it, its card opens), clicks its highlighter (kept, cyan), the map zooms to the quest and the player,
-// the pointer rests on the quest's nearest marker on the map (its card stays up to be read), and everything is let go
-// and the view zooms back. It calls the app's own code paths: nothing is sent to the system as input, and nothing is
-// captured here (the recorder is tools\record-window, which records this window only).
+// clip must never read as live tracking, so the position changes exactly once, and only after a key press. First a
+// pause: the window dims and a large screenshot key holds the middle. It is pressed ("Demo: press" in the log),
+// tools\fake-raid.ps1 -Demo writes the screenshot file the game would, and the name the position comes from appears
+// under the key. That position is held back from the view until the pause ends (demo only), so the marker moves, pings
+// and the raid card re-sorts as the dim clears: cause, then effect. Then a drawn pointer goes to the quest in the raid
+// card (the map highlights it, its card opens), clicks its highlighter (kept, cyan), the map zooms to the quest and the
+// player, the pointer rests on the quest's nearest marker on the map (its card stays up to be read), and everything is
+// let go and the view zooms back. It calls the app's own code paths: nothing is sent to the system as input, and
+// nothing is captured here (the recorder is tools\record-window, which records this window only).
 public sealed partial class MainWindow
 {
     private string? _demoQuest;
@@ -42,13 +43,27 @@ public sealed partial class MainWindow
     private int _demoFixes;
     private PlayerFix? _demoLastFix;
     private TaskCompletionSource<PlayerFix>? _demoFixWanted;
+    private bool _demoHolding;
 
     // From the first fix on there are no notices, so the clip has none.
     private bool DemoQuiet => DemoMode && _demoFixes >= 1;
 
+    private static bool SameFix(PlayerFix a, PlayerFix? b) => b is not null && a.At == b.At && a.Position == b.Position;
+
+    // During the demo's pause, new snapshots wait (the newest is applied when it ends); a new position among them is
+    // what the key press brought.
+    private bool DemoHolds(SessionSnapshot s)
+    {
+        if (!_demoHolding)
+            return false;
+        if (s.Fix is { } fix && !SameFix(fix, _demoLastFix))
+            _demoFixWanted?.TrySetResult(fix);
+        return true;
+    }
+
     private void DemoOnSnapshot(SessionSnapshot s)
     {
-        if (!DemoMode || s.Fix is not { } fix || (_demoLastFix is { } last && last.At == fix.At && last.Position == fix.Position))
+        if (!DemoMode || s.Fix is not { } fix || SameFix(fix, _demoLastFix))
             return;
         _demoLastFix = fix;
         _demoFixes++;
@@ -56,8 +71,6 @@ public sealed partial class MainWindow
         ViewModel.NoticeOpen = false;
         if (_demoFixes == 1)
             PlayDemo();
-        else
-            _demoFixWanted?.TrySetResult(fix);
     }
 
     private async void PlayDemo()
@@ -73,22 +86,30 @@ public sealed partial class MainWindow
             return;
         }
 
-        // The key press comes first; the position follows it.
+        // The pause: dim, the key in the middle, nothing else moving. Then the press, and the file name it brings.
         AppLog.Info("Demo: key");
-        ShowKey();
-        await Task.Delay(650);
         _demoFixWanted = new TaskCompletionSource<PlayerFix>();
-        await PressKey(() => AppLog.Info("Demo: press"));
+        _demoHolding = true;
+        await ShowKey();
+        await Task.Delay(1200);
+        var press = PressKey(() => AppLog.Info("Demo: press"));
         if (await Task.WhenAny(_demoFixWanted.Task, Task.Delay(4000)) != _demoFixWanted.Task)
         {
             AppLog.Error("Demo: no position arrived after the key press");
             return;
         }
+        AppLog.Info("Demo: read");
         ShowKeyFileName(_demoFixWanted.Task.Result.Position);
-        // The marker pings and the raid card re-sorts while the key stays up.
-        await Task.Delay(1500);
-        await HideKey();
-        await Task.Delay(200);
+        await press;
+        await Task.Delay(700);
+        // As the dim clears, the view takes the new position: the marker moves, pings, the raid card re-sorts.
+        await HideKey(() =>
+        {
+            _demoHolding = false;
+            if (Volatile.Read(ref _snapshot) is { } latest)
+                Apply(latest);
+        });
+        await Task.Delay(1300);
         if (Linked.RowOf(quest, root.XamlRoot) is not { } row)
         {
             AppLog.Error("Demo: the quest's row isn't in the raid card");
@@ -140,67 +161,69 @@ public sealed partial class MainWindow
         AppLog.Info("Demo: end");
     }
 
-    // ---- the drawn screenshot key, bottom left of the map: what makes the position change ----
+    // ---- the drawn screenshot key, large in the middle of a dimmed window: what makes the position change ----
 
+    private const double KeyDip = 12;
     private Popup? _key;
-    private Border? _keyPanel, _keyCap;
+    private Grid? _keyLayer;
+    private Border? _keyCap;
     private TextBlock? _keyLabel, _keyFileName;
     private TranslateTransform? _keyDip;
 
-    private void ShowKey()
+    private Task ShowKey()
     {
         if (_key is null)
         {
             Brush Res(string name) => (Brush)Application.Current.Resources[name];
-            var amber = (Windows.UI.Color)Application.Current.Resources["AmberColor"];
-            _keyLabel = new TextBlock
+            TextBlock Caps(string text, double size, double spacing, string brush) => new()
             {
-                // The key as the app names it from the game's settings (the status bar says the same).
-                Text = (_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc").ToUpperInvariant(),
-                FontSize = 22, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontStretch = Windows.UI.Text.FontStretch.SemiCondensed,
-                CharacterSpacing = 120, Foreground = Res("InkBrush"), HorizontalAlignment = HorizontalAlignment.Center,
+                Text = text, FontSize = size, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontStretch = Windows.UI.Text.FontStretch.SemiCondensed,
+                CharacterSpacing = (int)spacing, Foreground = Res(brush), HorizontalAlignment = HorizontalAlignment.Center,
             };
+            // The key as the app names it from the game's settings (the status bar says the same).
+            _keyLabel = Caps((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc").ToUpperInvariant(), 66, 120, "InkBrush");
             _keyDip = new TranslateTransform();
             _keyCap = new Border
             {
-                MinWidth = 104, Padding = new Thickness(18, 9, 18, 9), Background = Res("RaisedBrush"),
-                BorderBrush = Res("LineStrongBrush"), BorderThickness = new Thickness(1), Child = _keyLabel, RenderTransform = _keyDip,
+                MinWidth = 312, Padding = new Thickness(54, 22, 54, 26), Background = Res("RaisedBrush"),
+                BorderBrush = Res("LineStrongBrush"), BorderThickness = new Thickness(1.5), Child = _keyLabel, RenderTransform = _keyDip,
             };
             // The key's side: a darker edge under the cap that the cap sinks into when pressed.
-            var key = new Grid { HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(0, 0, 0, 4) };
+            var key = new Grid { HorizontalAlignment = HorizontalAlignment.Center, Padding = new Thickness(0, 0, 0, KeyDip) };
             key.Children.Add(new Border
             {
-                Background = Res("GroundBrush"), BorderBrush = Res("LineStrongBrush"), BorderThickness = new Thickness(1),
-                Margin = new Thickness(0, 4, 0, -4),
+                Background = Res("GroundBrush"), BorderBrush = Res("LineStrongBrush"), BorderThickness = new Thickness(1.5),
+                Margin = new Thickness(0, KeyDip, 0, -KeyDip),
             });
             key.Children.Add(_keyCap);
-            var caption = new TextBlock
-            {
-                Text = "SCREENSHOT · POSITION FROM THE FILE NAME", FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                FontStretch = Windows.UI.Text.FontStretch.SemiCondensed, CharacterSpacing = 90, Foreground = Res("MutedBrush"),
-            };
             _keyFileName = new TextBlock
             {
-                FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12.5, Foreground = new SolidColorBrush(amber), Opacity = 0,
+                FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 20, HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = Res("AmberBrush"), Margin = new Thickness(0, 6, 0, 0),
             };
-            _keyPanel = new Border
+            // The ground colour at about 60 % over the whole window: the pause.
+            _keyLayer = new Grid
             {
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xF0, 0x0B, 0x0C, 0x0B)), BorderBrush = Res("LineBrush"),
-                BorderThickness = new Thickness(1), Padding = new Thickness(16, 14, 16, 12), IsHitTestVisible = false,
-                Child = new StackPanel { Spacing = 9, Children = { key, caption, _keyFileName } },
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x9C, 0x0B, 0x0C, 0x0B)), IsHitTestVisible = false,
+                Children =
+                {
+                    new StackPanel
+                    {
+                        HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Spacing = 12,
+                        Children = { key, Caps("SCREENSHOT", 26, 400, "InkBrush"), Caps("POSITION FROM THE FILE NAME", 15, 260, "MutedBrush"), _keyFileName },
+                    },
+                },
             };
-            _key = new Popup { Child = _keyPanel, XamlRoot = Content.XamlRoot, ShouldConstrainToRootBounds = true, IsHitTestVisible = false };
+            _key = new Popup { Child = _keyLayer, XamlRoot = Content.XamlRoot, ShouldConstrainToRootBounds = true, IsHitTestVisible = false };
         }
-        // Bottom left of the map, above the wiki link and the map credit.
-        _keyFileName!.Text = "…_00.00, 0.00, 000.00_…";
-        _keyPanel!.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
-        var corner = Map.TransformToVisual(Content).TransformPoint(new Point(20, Map.ActualHeight - 58 - _keyPanel.DesiredSize.Height));
-        _key.HorizontalOffset = corner.X;
-        _key.VerticalOffset = corner.Y;
-        _keyFileName.Opacity = 0;
-        _keyPanel.Opacity = 0;
+        var root = (FrameworkElement)Content;
+        _keyLayer!.Width = root.ActualWidth;
+        _keyLayer.Height = root.ActualHeight;
+        // Room for the file name from the start, so nothing shifts when it appears.
+        _keyFileName!.Text = " ";
+        _keyLayer.Opacity = 0;
         _key.IsOpen = true;
-        _ = Animate(250, t => _keyPanel.Opacity = t);
+        return Animate(300, t => _keyLayer.Opacity = t);
     }
 
     // The press: the cap sinks onto its edge and flashes amber (then <paramref name="down"/> runs), and comes back up.
@@ -211,16 +234,15 @@ public sealed partial class MainWindow
         var ink = (Windows.UI.Color)Application.Current.Resources["InkColor"];
         Windows.UI.Color Mix(Windows.UI.Color a, Windows.UI.Color b, double t) => Windows.UI.Color.FromArgb(255,
             (byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
-        var flash = new SolidColorBrush(amber);
-        _keyCap!.BorderBrush = flash;
+        _keyCap!.BorderBrush = new SolidColorBrush(amber);
         _keyCap.Background = new SolidColorBrush(Mix(raised, amber, 0.45));
         _keyLabel!.Foreground = new SolidColorBrush(amber);
-        await Animate(90, t => _keyDip!.Y = 4 * t);
+        await Animate(90, t => _keyDip!.Y = KeyDip * t);
         down();
-        await Task.Delay(110);
-        await Animate(420, t =>
+        await Task.Delay(130);
+        await Animate(450, t =>
         {
-            _keyDip!.Y = 4 * (1 - Math.Min(1, t * 2.5));
+            _keyDip!.Y = KeyDip * (1 - Math.Min(1, t * 2.5));
             _keyCap.Background = new SolidColorBrush(Mix(Mix(raised, amber, 0.45), raised, t));
             _keyLabel.Foreground = new SolidColorBrush(Mix(amber, ink, t));
         });
@@ -231,12 +253,16 @@ public sealed partial class MainWindow
     private void ShowKeyFileName(Shturmap.Core.WorldPoint p)
     {
         _keyFileName!.Text = FormattableString.Invariant($"…_{p.X:0.00}, {p.Y:0.00}, {p.Z:0.00}_…");
+        _keyFileName.Opacity = 0;
         _ = Animate(200, t => _keyFileName.Opacity = t);
     }
 
-    private async Task HideKey()
+    // Fades the pause out; <paramref name="clearing"/> runs halfway, as the window shows through again.
+    private async Task HideKey(Action clearing)
     {
-        await Animate(300, t => _keyPanel!.Opacity = 1 - t);
+        await Animate(150, t => _keyLayer!.Opacity = 1 - t / 2);
+        clearing();
+        await Animate(150, t => _keyLayer!.Opacity = (1 - t) / 2);
         _key!.IsOpen = false;
     }
 

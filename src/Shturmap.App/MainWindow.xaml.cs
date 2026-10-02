@@ -190,6 +190,8 @@ public sealed partial class MainWindow : Window
     {
         if (!ReferenceEquals(s, _snapshot))
             return; // a newer snapshot is queued behind this one
+        if (DemoHolds(s))
+            return; // the website demo's pause; applied when it ends
 
         var vm = ViewModel;
         vm.ModeText = s.Mode switch { GameMode.Pvp => "PvP", GameMode.Seasonal => "Seasonal", _ => "PvE" };
