@@ -29,6 +29,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly CancellationTokenSource _stop = new();
     private readonly RaidTracker _tracker = new();
+    private readonly RaidOutcomeHints _hints = new();
     private readonly List<WorldPoint> _trail = [];
 
     private ProgressStore? _store;
@@ -348,6 +349,26 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             return;
         }
 
+        switch (item.Event)
+        {
+            case GroupRaidSettingsEvent pick:
+                if (!item.IsReplay)
+                    OnGroupPick(pick);
+                return;
+            case GroupStatusEvent group:
+                if (!item.IsReplay)
+                    Study.Game("group.status", ("status", group.Status));
+                return;
+            case InsuranceNoticeEvent notice:
+                if (!item.IsReplay)
+                {
+                    Study.Game("insurance", ("kind", notice.Kind), ("location", notice.LocationId), ("items", notice.ItemCount));
+                    if (_hints.Notice(notice, _tracker.State, _map?.NameId) is { } late)
+                        StudyHint(late);
+                }
+                return;
+        }
+
         var phaseBefore = _tracker.State.Phase;
         var transition = _tracker.Apply(item.Event);
         switch (transition)
@@ -365,11 +386,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 if (!item.IsReplay && _map is not null)
                 {
                     // Last call while matching can still be cancelled: what this map's quests need.
-                    var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-                    var needs = _data is null ? null : Planning.PlanFor(_data, active, _map.NormalizedName)?.Requirements;
-                    Say(needs is { Count: > 0 }
-                        ? $"Loading {_map.Name} · bring: {string.Join(", ", needs.Select(r => r.Text))}"
-                        : $"Loading {_map.Name}", needs is { Count: > 0 } ? 45 : 6);
+                    var bring = BringOn(_map);
+                    Say(bring is not null ? $"Loading {_map.Name} · bring: {bring}" : $"Loading {_map.Name}", bring is not null ? 45 : 6);
                     Announce(new ViewCue(phaseBefore == RaidPhase.InRaid ? CueKind.Transit : CueKind.RaidLoading, _map.Name));
                 }
                 break;
@@ -400,8 +418,39 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 break;
         }
         if (!item.IsReplay)
+        {
             StudyRaid(transition);
+            if (transition is RaidEnded over && _hints.Ended(over, _map?.NameId) is { } hint)
+                StudyHint(hint);
+        }
     }
+
+    // What the active quests need on a map, for the notices: "MS2000 Marker ×3, Bomber beanie"; null when nothing.
+    private string? BringOn(MapIdentity map)
+    {
+        var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
+        var needs = _data is null ? null : Planning.PlanFor(_data, active, map.NormalizedName)?.Requirements;
+        return needs is { Count: > 0 } ? string.Join(", ", needs.Select(r => r.Text)) : null;
+    }
+
+    // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now and say what to
+    // bring, while there is still time to change gear. Only in the menus; a later pick replaces it.
+    private void OnGroupPick(GroupRaidSettingsEvent pick)
+    {
+        var map = _data?.CreateResolver().Resolve(null, pick.LocationId);
+        Study.Game("group.pick", ("location", pick.LocationId), ("pickMap", map?.NormalizedName), ("timeVariant", pick.TimeVariant));
+        if (_tracker.State.Phase != RaidPhase.Menu || map is null)
+            return;
+        _map = map;
+        _store?.SetSetting("lastMap", map.NormalizedName);
+        var bring = BringOn(map);
+        Say(bring is not null ? $"Your group picked {map.Name} · bring: {bring}" : $"Your group picked {map.Name}", bring is not null ? 45 : 8);
+        Announce(new ViewCue(CueKind.GroupPick, map.Name));
+    }
+
+    // A hint of how the raid ended, for the study log only: never shown, and no hint proves nothing.
+    private void StudyHint(OutcomeHint hint) =>
+        Study.Game("raid.outcomeHint", ("lostInsured", true), ("location", hint.LocationId), ("noticeFromEndS", hint.NoticeSecondsFromEnd));
 
     // Raids in the study log, with what the planner had suggested, so choices can be compared with suggestions.
     private void StudyRaid(RaidTransition? transition)
@@ -422,7 +471,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     ("progress", plan?.Progress.Select(q => q.QuestId).ToList() ?? []));
                 break;
             case RaidStarted started:
-                Study.Game("raid.start", ("raidMap", _map?.NormalizedName), ("side", started.State.Side), ("sideEvidence", _tracker.SideEvidence));
+                // How long each loading step took ("LocationLoaded:24.9", seconds since the scene line), to tune the
+                // loading line's stages.
+                Study.Game("raid.start", ("raidMap", _map?.NormalizedName), ("side", started.State.Side), ("sideEvidence", _tracker.SideEvidence),
+                    ("loadingSteps", _tracker.LoadingSteps.Select(s => string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                        $"{s.Step?.ToString() ?? "GameStarted"}:{s.Seconds:0.0}")).ToList()));
                 break;
             case RaidEnded ended:
                 Study.Game("raid.end", ("side", ended.Previous.Side),
@@ -482,7 +535,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             _fixMapId = map.Id;
             Publish();
             var p = _fix.Position;
-            Study.Game("fix", ("x", p.X), ("y", p.Y), ("z", p.Z), ("floor", Snapshot.Floor?.Name), ("fixMap", map.NormalizedName));
+            // The raid clock, with group.pick's time variant, settles which of the two raid times "CURR" and "PAST" are.
+            Study.Game("fix", ("x", p.X), ("y", p.Y), ("z", p.Z), ("floor", Snapshot.Floor?.Name), ("fixMap", map.NormalizedName),
+                ("clock", seen.Info.RaidClockHours));
         }
         finally
         {

@@ -21,6 +21,10 @@ param(
   [string] $Culture = 'en-US',
   # Snapshot pixel density: 2 renders twice the pixels, for sharp images on high-DPI screens.
   [int] $Scale = 1,
+  # The group's leader picks Streets while the app is in the menus (the GROUP PICKED cue and the bring notice).
+  [switch] $GroupPick,
+  # Stop the raid halfway through loading (the "LOADING · SPAWNING" line in the raid card): no raid start, no fixes.
+  [switch] $HoldLoading,
   # Record the hero clip (see above) instead of taking snapshots.
   [switch] $Demo,
   # Part of the name of the quest the demo points at.
@@ -60,11 +64,28 @@ $posB = '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
 # The demo's walk: south on Primorsky Ave, facing the way it goes.
 $walkFrom = '13.02, 3.92, 381.30_0.00500, 0.04500, -0.00050, 0.99900_14.13'
 $walkTo = '12.50, 4.00, 410.00_0.00500, 0.04500, -0.00050, 0.99900_14.15'
+function GroupNotification([string]$kind, [string]$body) {
+  $now = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss.fff')
+  [IO.File]::AppendAllText($push, "$now|1.1.5.1.47510|Info|push-notifications|Got notification | $kind`r`n$body`r`n")
+}
+function PickStreets {
+  GroupNotification 'GroupMatchRaidSettings' ("{`r`n  `"type`": `"groupMatchRaidSettings`",`r`n  `"raidSettings`": {`r`n" +
+    "    `"location`": `"TarkovStreets`",`r`n    `"timeVariant`": `"CURR`",`r`n    `"raidMode`": `"Online`"`r`n  }`r`n}")
+  GroupNotification 'GroupMatchRaidReady' "{`r`n  `"type`": `"groupMatchRaidReady`"`r`n}"
+}
 function StartRaid {
   Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
   $raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
   if (-not $LocalRaid) {
     Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+  }
+  if ($HoldLoading) {
+    # The steps of a real load (docs/NEXT.md, item 3), up to the spawn; the raid never starts.
+    Log 'LocationLoaded:23.5 real:29.87 diff:6.37'
+    Log 'GamePrepared:24.1 real:30.6 diff:6.5'
+    Log 'GameCreated:24.6(0.5) real:31.1(0.5) diff:6.5'
+    Log 'PlayerSpawnEvent:30.3(5.7) real:37.2(6.1) diff:6.9'
+    return
   }
   Log 'GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19'
   Start-Sleep -Seconds 1
@@ -123,7 +144,7 @@ if ($Demo) {
   try {
     Start-Sleep -Seconds 4
     StartRaid
-    Start-Sleep -Seconds 6 # the raid cue is over
+    Start-Sleep -Seconds 9 # the 8 s raid cue is over
     # One short walk on Primorsky Ave toward the taxi extract, about 29 m: the player stands at the first position,
     # and the key press brings the second. These are the only two positions the app gets.
     Shot $walkFrom 0 # "Demo: armed"; the demo starts six seconds later
@@ -159,6 +180,11 @@ if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
+if ($GroupPick) {
+  # Live, after the startup replay and the game data, as in the menus between raids.
+  Start-Sleep -Seconds 6
+  PickStreets
+}
 if ($PlanOnly) {
   $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
   if (-not $p.HasExited) { Stop-Process -Id $p.Id }
@@ -168,10 +194,12 @@ if ($PlanOnly) {
 }
 Start-Sleep -Seconds 4
 StartRaid
-Start-Sleep -Seconds 3
-Shot $posA
-Start-Sleep -Seconds 3
-Shot $posB
+if (-not $HoldLoading) {
+  Start-Sleep -Seconds 3
+  Shot $posA
+  Start-Sleep -Seconds 3
+  Shot $posB
+}
 $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
 if (-not $p.HasExited) { Stop-Process -Id $p.Id }
 Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue

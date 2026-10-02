@@ -36,6 +36,12 @@ public sealed record RaidState
     public DateTime? RaidStartedAt { get; init; }
 
     public RaidSide Side { get; init; } = RaidSide.Unknown;
+
+    /// <summary>The last loading step the log reported while loading; null before the first.</summary>
+    public LoadingStep? LoadingStep { get; init; }
+
+    /// <summary>When the loading stage that step belongs to began (<see cref="LoadingProgress"/>).</summary>
+    public DateTime? LoadingStageSince { get; init; }
 }
 
 public abstract record RaidTransition(RaidState State);
@@ -87,8 +93,22 @@ public sealed class RaidTracker
                     LoadingSince = e.At,
                     RaidStartedAt = null,
                     Side = RaidSide.Unknown,
+                    LoadingStep = null,
+                    LoadingStageSince = null,
                 };
+                _steps.Clear();
                 return new RaidLoading(State);
+
+            case LoadingStepEvent step when State.Phase == RaidPhase.Loading:
+                // Matching can finish before the scene line (then it belongs to no loading) or after it.
+                if (_steps.All(s => s.Step != step.Step))
+                    _steps.Add((step.Step, (e.At - State.LoadingSince!.Value).TotalSeconds));
+                if (step.Step != Logs.LoadingStep.MatchingCompleted)
+                {
+                    var newStage = LoadingProgress.StageOf(step.Step) != LoadingProgress.StageOf(State.LoadingStep);
+                    State = State with { LoadingStep = step.Step, LoadingStageSince = newStage ? e.At : State.LoadingStageSince };
+                }
+                return null;
 
             case MatchSetupEvent setup when State.Phase == RaidPhase.Loading:
                 _setupProfileId = setup.ProfileId ?? _setupProfileId;
@@ -112,7 +132,9 @@ public sealed class RaidTracker
                 return null;
 
             case GameStartedEvent when State.Phase == RaidPhase.Loading:
-                State = State with { Phase = RaidPhase.InRaid, RaidStartedAt = e.At, Side = DetectSide() };
+                _steps.Add((null, (e.At - State.LoadingSince!.Value).TotalSeconds));
+                LoadingSteps = _steps.ToList();
+                State = State with { Phase = RaidPhase.InRaid, RaidStartedAt = e.At, Side = DetectSide(), LoadingStep = null, LoadingStageSince = null };
                 return new RaidStarted(State);
 
             case ProfileLoadedEvent loaded:
@@ -129,6 +151,14 @@ public sealed class RaidTracker
 
     /// <summary>What the side of the last raid start was decided from, for the study log: "setup:same,starting:yes".</summary>
     public string SideEvidence { get; private set; } = "";
+
+    /// <summary>
+    /// The last raid's loading, for the study log: each step with its seconds since the scene line, in the order
+    /// they came; the raid start is the entry without a step.
+    /// </summary>
+    public IReadOnlyList<(LoadingStep? Step, double Seconds)> LoadingSteps { get; private set; } = [];
+
+    private readonly List<(LoadingStep? Step, double Seconds)> _steps = [];
 
     private RaidSide DetectSide()
     {

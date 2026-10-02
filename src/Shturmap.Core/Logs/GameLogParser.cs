@@ -65,6 +65,9 @@ public static partial class GameLogParser
         if (msg.StartsWith("GameStarted:", StringComparison.Ordinal))
             return new GameStartedEvent(at);
 
+        if (StepOf(msg) is { } step)
+            return new LoadingStepEvent(at, step);
+
         if (msg.StartsWith("PrepareSelectedProfileLocally", StringComparison.Ordinal))
         {
             var profile = ProfileId().Match(msg);
@@ -78,6 +81,29 @@ public static partial class GameLogParser
         return null;
     }
 
+    // "LocationLoaded:9.61 real:13.28 diff:3.67" and its kin; GameSpawn and GameSpawned come with GameRunned and add
+    // nothing.
+    private static LoadingStep? StepOf(string msg)
+    {
+        foreach (var (prefix, step) in Steps)
+        {
+            if (msg.StartsWith(prefix, StringComparison.Ordinal))
+                return step;
+        }
+        return null;
+    }
+
+    private static readonly (string Prefix, LoadingStep Step)[] Steps =
+    [
+        ("MatchingCompleted:", LoadingStep.MatchingCompleted),
+        ("LocationLoaded:", LoadingStep.LocationLoaded),
+        ("GamePrepared:", LoadingStep.GamePrepared),
+        ("GameCreated:", LoadingStep.GameCreated),
+        ("PlayerSpawnEvent:", LoadingStep.PlayerSpawned),
+        ("GamePooled:", LoadingStep.GamePooled),
+        ("GameRunned:", LoadingStep.GameRunning),
+    ];
+
     public static GameMode ModeFrom(string raw) => raw.ToLowerInvariant() switch
     {
         "pve" => GameMode.Pve,
@@ -88,8 +114,32 @@ public static partial class GameLogParser
 
     private static GameEvent? ParseNotification(LogRecord record)
     {
+        // Each notification is logged twice, as "Got notification | Kind" with its body and as a "Received
+        // notification: Type: Kind" line; only the first counts. The group status kinds are read from that header
+        // alone: their bodies are other players' profiles.
+        if (record.Message.StartsWith("Got notification", StringComparison.Ordinal))
+        {
+            GroupStatus? group = record.Message.TrimEnd() switch
+            {
+                var m when m.EndsWith("GroupMatchRaidReady", StringComparison.Ordinal) => GroupStatus.Ready,
+                var m when m.EndsWith("GroupMatchRaidNotReady", StringComparison.Ordinal) => GroupStatus.NotReady,
+                var m when m.EndsWith("GroupMatchStartGame", StringComparison.Ordinal) => GroupStatus.Start,
+                _ => null,
+            };
+            if (group is { } kind)
+                return new GroupStatusEvent(record.Timestamp, kind);
+        }
+
         if (record.Body is null)
             return null;
+
+        if (record.Message.Contains("GroupMatchRaidSettings", StringComparison.Ordinal))
+        {
+            using var settings = TryParse(record.Body);
+            if (settings is null || !settings.RootElement.TryGetProperty("raidSettings", out var raid) || String(raid, "location") is not { } location)
+                return null;
+            return new GroupRaidSettingsEvent(record.Timestamp, location, String(raid, "timeVariant"));
+        }
 
         if (record.Message.Contains("UserConfirmed", StringComparison.Ordinal))
         {
@@ -111,6 +161,10 @@ public static partial class GameLogParser
             return null;
 
         var type = message.TryGetProperty("type", out var t) && t.ValueKind == JsonValueKind.Number ? t.GetInt32() : -1;
+        // The insurer writes about a raid by its location: a trader message (2) when insured gear was lost, the
+        // insurance return (8) with the gear hours later.
+        if (type is 2 or 8 && message.TryGetProperty("systemData", out var system) && String(system, "location") is { } raidLocation)
+            return new InsuranceNoticeEvent(record.Timestamp, type == 2 ? InsuranceNotice.Lost : InsuranceNotice.Returned, raidLocation, ItemsIn(message));
         QuestLogStatus? status = type switch
         {
             10 => QuestLogStatus.Started,
@@ -132,6 +186,15 @@ public static partial class GameLogParser
         var eventId = String(doc.RootElement, "eventId") ?? String(message, "_id") ?? $"{questId}:{status}:{at:O}";
         var trader = String(doc.RootElement, "dialogId") ?? String(message, "uid");
         return new QuestEvent(at, questId.ToLowerInvariant(), status.Value, eventId, trader);
+    }
+
+    // The items a message carries, without their attachments: those whose parent is the message's own stash.
+    private static int ItemsIn(JsonElement message)
+    {
+        if (!message.TryGetProperty("items", out var items) || !items.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            return 0;
+        var stash = String(items, "stash");
+        return data.EnumerateArray().Count(i => stash is null || String(i, "parentId") == stash);
     }
 
     private static JsonDocument? TryParse(string json)

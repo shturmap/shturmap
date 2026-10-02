@@ -2,7 +2,7 @@
 
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
 read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
-Item 5 (one design system) was added on 2026-10-02.
+Item 5 (one design system) was added on 2026-10-02. Items 1, 3 and 4 are done (2026-10-02); 2 and 5 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
 ## Before starting
@@ -25,6 +25,12 @@ Item 5 (one design system) was added on 2026-10-02.
   `tests/Shturmap.Core.Tests/LogTests.cs`.
 
 ## 1. Group raids: show the leader's map before loading
+
+**Done (2026-10-02).** In the owner's logs the pick came 20–70 s before loading (5 picks, 2 sessions, each followed
+by that map loading). Day/night is left out: the Tarkov clock formula matches 12 of 13 screenshot raid clocks, but
+no screenshot exists from a raid whose time variant is known, so which time "CURR" and "PAST" mean is unchecked;
+the study log now records the variant (`group.pick`) and the raid clock (`fix`) to settle it. `fake-raid.ps1
+-PlanOnly -GroupPick` shows it.
 
 **Why.** In a group, the leader picks the map in the menus; Shturmap only learns it when loading starts, too late
 to change gear. The push log says it earlier.
@@ -80,6 +86,11 @@ server-hosted on 25, 26 and 30 September, local for two raids on 26 September an
 
 ## 3. Loading progress in the RAID LOADING cue
 
+**Done (2026-10-02)**, as a line in the raid card ("LOADING · MAP / RAID / SPAWNING / STARTING" over a thin rule)
+rather than in the cue, which the owner had lengthened to 8 s. Stages and typical lengths come from 49 loads (location
+loaded at 25 s, spawned 42 s, pooled 47 s, raid start 71 s; 31–139 s); no time estimate. Each raid's step timings
+go to the study log in `raid.start`. `fake-raid.ps1 -HoldLoading` shows it.
+
 **Why.** Loading takes 60–130 s and Shturmap shows nothing between the 5 s cue and the raid start.
 
 **Evidence** (application log, a local Customs raid, about 72 s in all):
@@ -106,6 +117,10 @@ server-hosted on 25, 26 and 30 September, local for two raids on 26 September an
 - Study log: per-raid step timings, matching time.
 
 ## 4. A hint of how the raid ended (study log only)
+
+**Done (2026-10-02).** The logs held two insurer notes (type 2, Prapor, with the raid's location) and two returns
+(type 8). Both notes came 17–20 s *before* the raid's end line, not after it, so a note counts during the raid and
+up to 5 minutes after it (`RaidOutcomeHints`); the Streets fixture gives one hint. Never shown in the UI.
 
 **Why.** The study log can't tell a survived raid from a death, so plan accuracy can't be judged. Nothing in the
 allowed logs says it directly, but the insurer writes when insured gear was lost.

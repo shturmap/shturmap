@@ -262,6 +262,17 @@ public sealed partial class MainWindow : Window
             parts.AddRange(info.Bosses);
         }
         ViewModel.RaidLine = string.Join(" · ", parts);
+        if (s.Raid.Phase == RaidPhase.Loading)
+        {
+            var (stage, fill) = LoadingProgress.At(s.Raid, DateTime.Now);
+            ViewModel.LoadingText = $"LOADING · {stage}";
+            ViewModel.LoadingFill = fill;
+        }
+        else
+        {
+            ViewModel.LoadingText = "";
+            ViewModel.LoadingFill = 0;
+        }
         UpdateStale(s, elapsed);
 
         if (s.Fix is not { } fix)
@@ -955,7 +966,8 @@ public sealed partial class MainWindow : Window
 
     // ---- the big cue: Shturmap changed its view on its own ----
 
-    private static readonly TimeSpan CueLength = TimeSpan.FromSeconds(5);
+    // The raid-loading cue stays 8 s (owner, 2026-10-02: they like it, and loading takes 60–130 s anyway); the others 5 s.
+    private static TimeSpan CueLength(CueKind kind) => TimeSpan.FromSeconds(kind == CueKind.RaidLoading ? 8 : 5);
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
@@ -970,6 +982,7 @@ public sealed partial class MainWindow : Window
             CueKind.Transit => ("TRANSIT", map, here),
             CueKind.ScavRaid => (map, "SCAV RAID", "Quest objectives don't count here; items you find in raid do."),
             CueKind.LoadCancelled => (map, "LOADING CANCELLED", "Back to planning the next raid."),
+            CueKind.GroupPick => ("GROUP PICKED", map, here),
             _ => (cue.RaidLength is { } length ? $"{map} · {(int)length.TotalMinutes} MIN" : map, "RAID OVER",
                 _snapshot?.Plan.FirstOrDefault() is { } next
                     ? $"Next raid: {next.MapName} · {Summary(next.Finish.Count, next.Progress.Count)}"
@@ -1002,7 +1015,7 @@ public sealed partial class MainWindow : Window
             if (SnapshotMode)
                 return;
             _cueTimer = DispatcherQueue.CreateTimer();
-            _cueTimer.Interval = CueLength;
+            _cueTimer.Interval = CueLength(cue.Kind);
             _cueTimer.IsRepeating = false;
             _cueTimer.Tick += (_, _) => CuePanel.Visibility = Visibility.Collapsed;
             _cueTimer.Start();
@@ -1026,7 +1039,7 @@ public sealed partial class MainWindow : Window
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(frames, property);
             story.Children.Add(frames);
         }
-        var end = CueLength.TotalSeconds;
+        var end = CueLength(cue.Kind).TotalSeconds;
         // Developer snapshots keep the last cue up, so it can be looked at.
         if (SnapshotMode)
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12, 1));

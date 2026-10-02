@@ -109,8 +109,9 @@ residual risk. Do not widen the boundary.
    FOR A NEW ONE", and the banner pops once when the window gets focus (the study log: about one position per 8
    raid minutes, often several minutes old when the app was looked at).
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
-    loading, a transit, a Scav raid starting, the raid over, loading cancelled), a cue holds the middle of the map
-    for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop): a dark band springs open
+    loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
+    holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop),
+    RAID LOADING for 8 s (owner, 2026-10-02: they like it, and loading takes 60–130 s anyway): a dark band springs open
     behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
@@ -118,7 +119,12 @@ residual risk. Do not widen the boundary.
     list) show no cue. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
 9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
-   map, while there is still time to back out of matching. What a quest needs is also beside its name wherever
+   map, while there is still time to back out of matching. In a group it comes earlier: when the leader picks a
+   raid (the notification log says so 20–70 s before loading starts), Shturmap shows that map with the GROUP PICKED
+   cue and says "Your group picked Streets of Tarkov · bring: …" (owner, 2026-10-02). The pick's time of day
+   ("CURR" or "PAST", the two raid times 12 h apart) isn't shown: the clock formula checks out against the
+   screenshots' raid clocks, but which of the two times each name means couldn't be checked without a group raid
+   with a screenshot; the study log now records both to settle it. What a quest needs is also beside its name wherever
    it is listed for a map (Plan cards, the raid card): up to three tiny inventory cells with the items' icons,
    "+N" for more; a quest that needs nothing shows one empty, dashed cell, the inventory's way of saying "nothing
    here" (owner, 2026-10-01: BRING alone didn't show which item is for which quest). ANY MAP rows show no cells:
@@ -207,7 +213,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
     line ("Complete 5 quests · progress 1 more"), the raid line (time left, time of day, bosses with spawn chance)
-    and, when the distances aren't from a fresh screenshot, where they are from. Then **the glance**, two rows in
+    and, when the distances aren't from a fresh screenshot, where they are from. While the raid loads, one quiet
+    line under the raid line says how far it has got, "LOADING · MAP", "RAID", "SPAWNING" or "STARTING", over a thin
+    gold rule that fills by stage and creeps within one by its typical length (medians of 49 loads in the owner's
+    logs: location loaded at 25 s, player spawned at 42 s, pooled at 47 s, raid start at 71 s; owner, 2026-10-02:
+    loading takes 60–130 s and showed nothing). No time estimate: loads vary too much. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
     direction), and EXIT, the nearest extract or transit for your side (and what it takes); in a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
@@ -406,7 +416,8 @@ Rules:
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs) or
   `shturmap-cli render`; never capture the user's screens. For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
-  (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens).
+  (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
+  plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
   drawn press of the screenshot key. The key comes in a pause: the window dims, the key stands large in the middle
@@ -440,7 +451,14 @@ fitted into the projected `svgBounds ?? bounds`. Golden test: a Streets screensh
 **Logs and raids.** Menu → Loading (`scene preset path:`) → InRaid (`GameStarted`) → Menu
 (`PrepareSelectedProfileLocally` or matching cancelled). Map: scene path ↔ `scenePath`, then `Location:` ↔
 `nameId`, then an alias table. Side: the match-setup `Profileid` equals the menu profile for PMC raids and differs
-for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageReceived` type 10/11/12.
+for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageReceived` type 10/11/12. Loading steps:
+`LocationLoaded`, `GamePrepared`, `GameCreated`, `PlayerSpawnEvent`, `GamePooled`, `GameRunned` (and
+`MatchingCompleted` for the study log). Group: `GroupMatchRaidSettings` (its `raidSettings.location` and
+`timeVariant`); `GroupMatchRaidReady`, `GroupMatchRaidNotReady` and `GroupMatchStartGame` by their header alone,
+because their bodies (and the invites') hold other players' profiles, which Shturmap never reads. The insurer:
+`ChatMessageReceived` type 2 (a trader message) with `systemData.location` when insured gear was lost, type 8 (the
+insurance return) with the gear hours later. Each notification is logged twice ("Got notification" with its body,
+then "Received notification"); only the first counts.
 
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
@@ -470,8 +488,13 @@ screenshots that gave no position, whether a new position was in view and uses o
 previews, pinned-window moves with their final position and whether they were clamped, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
 banners seen, side switches, why a session started (the previous one ended cleanly or not, the build's time), and
-active-quest count changes outside quest events. How a raid ended (survived, killed) is not in the application
-log, so it can't be recorded. Only Shturmap's own windows are observed; nothing is
+active-quest count changes outside quest events. Added 2026-10-02: group picks (location, map, time variant) and
+group ready / not ready / start; each raid's loading steps with their seconds since the scene line (in
+`raid.start`); the raid clock in each fix; the insurer's notes (kind, location, item count). How a raid ended
+(survived, killed) is in none of the allowed logs. The nearest thing is `raid.outcomeHint` `{ lostInsured: true }`:
+the insurer's "lost" note came during the raid or within 5 minutes after it, on the same location (in the owner's
+logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;
+no note proves nothing, since gear may not have been insured. Only Shturmap's own windows are observed; nothing is
 sent anywhere.
 
 ## 9. Status

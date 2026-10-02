@@ -173,6 +173,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial string RaidLine { get; set; } = "";
 
+    /// <summary>"LOADING · SPAWNING" while the raid loads, else empty; <see cref="LoadingFill"/> is its rule, 0–1.</summary>
+    [ObservableProperty] public partial string LoadingText { get; set; } = "";
+
+    [ObservableProperty] public partial double LoadingFill { get; set; }
+
     /// <summary>"PREVIEW · CUSTOMS" while another map is shown from a Plan card under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
 

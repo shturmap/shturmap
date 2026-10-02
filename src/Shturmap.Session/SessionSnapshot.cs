@@ -22,6 +22,9 @@ public enum CueKind
 
     /// <summary>The game went back to the menus before the raid began (matching cancelled).</summary>
     LoadCancelled,
+
+    /// <summary>The group's leader picked a raid; its map is shown before loading starts.</summary>
+    GroupPick,
 }
 
 /// <summary>A change of view the app makes on its own, announced big in the middle of the map for a few seconds.</summary>

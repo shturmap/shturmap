@@ -47,3 +47,49 @@ public sealed record MatchingCancelledEvent(DateTime At) : GameEvent(At);
 
 /// <summary>A quest started, failed or was completed (push-notifications ChatMessageReceived, types 10–12).</summary>
 public sealed record QuestEvent(DateTime At, string QuestId, QuestLogStatus Status, string EventId, string? TraderId) : GameEvent(At);
+
+/// <summary>
+/// "GroupMatchRaidSettings": the group's leader picked a raid. Location is the map's nameId ("Sandbox_high",
+/// "bigmap"); TimeVariant is "CURR" or "PAST", one of the two raid times 12 hours apart.
+/// </summary>
+public sealed record GroupRaidSettingsEvent(DateTime At, string LocationId, string? TimeVariant) : GameEvent(At);
+
+public enum GroupStatus
+{
+    Ready,
+    NotReady,
+    Start,
+}
+
+/// <summary>
+/// "GroupMatchRaidReady", "GroupMatchRaidNotReady", "GroupMatchStartGame". Only the kind is read: their bodies hold
+/// other players' profiles, which Shturmap never looks at.
+/// </summary>
+public sealed record GroupStatusEvent(DateTime At, GroupStatus Status) : GameEvent(At);
+
+/// <summary>The steps a raid's loading logs between the scene line and "GameStarted", in the order they come.</summary>
+public enum LoadingStep
+{
+    MatchingCompleted,
+    LocationLoaded,
+    GamePrepared,
+    GameCreated,
+    PlayerSpawned,
+    GamePooled,
+    GameRunning,
+}
+
+/// <summary>"LocationLoaded:9.61 real:13.28 …", "PlayerSpawnEvent:…" — a loading step done.</summary>
+public sealed record LoadingStepEvent(DateTime At, LoadingStep Step) : GameEvent(At);
+
+public enum InsuranceNotice
+{
+    /// <summary>A trader message (type 2) naming a raid's location: the insurer's note that insured gear was lost.</summary>
+    Lost,
+
+    /// <summary>The insurance return (type 8): the gear that came back, hours later.</summary>
+    Returned,
+}
+
+/// <summary>An insurer's message about a raid (ChatMessageReceived types 2 and 8 with systemData.location).</summary>
+public sealed record InsuranceNoticeEvent(DateTime At, InsuranceNotice Kind, string LocationId, int ItemCount) : GameEvent(At);
