@@ -7,9 +7,10 @@ Item 5 (one design system) was added on 2026-10-02. Items 1, 3 and 4 are done (2
 
 ## Before starting
 
-- **Published** on 2026-10-01 at 23:42 from the commit "docs/NEXT.md: plan for group picks, hosting, loading
-  progress, outcome hint". That build has no licence notices and no icon yet: publish again before sharing one.
-  Check `Get-Process Shturmap` first: `eng\publish.ps1` refuses while the app runs from `artifacts`.
+- **Release 0.1.0** built on 2026-10-02 from the commit "Sheet maps say when there is no floor data" into an empty
+  `artifacts\Shturmap` (585 files, 241 MB, licences included) and zipped as `artifacts\Shturmap-0.1.0-win-x64.zip`
+  (91 MB) with a `.sha256`. Not published anywhere yet. To build again, check `Get-Process Shturmap` first:
+  `eng\publish.ps1` refuses while the app runs from `artifacts`, and it doesn't empty the folder.
 - **Boundary (owner's rule).** Read only `*application_*.log` and `*push-notifications_*.log` in an EFT log
   session folder, never `*.log`: that glob also matches `backend_000.log`, which is off limits. No memory, no
   input, no screen capture.
