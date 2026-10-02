@@ -236,19 +236,24 @@ public static class MapRenderer
         // The kept quest's markers are drawn in their own colour and larger than anything pointed at.
         var kept = marker.Objective is not null && IsSelected(scene, marker);
         var color = kept ? Kept : ColorOf(marker.Kind);
-        // Quest markers carry a type glyph, so they are drawn larger than the plain extract and transit shapes.
-        var r = (marker.Objective is not null ? (kept ? 14f : selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
+        // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
+        // the boss diamond (level 3): a 15 px triangle or diamond.
+        var r = marker switch
+        {
+            { Objective: not null } => kept ? 14f : selected ? 12f : 10f,
+            { Kind: MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit } => selected ? 9.5f : 7.5f,
+            _ => selected ? 8f : 6f,
+        } * ui;
         var reach = marker.Kind switch
         {
             _ when kept => r + 7.5f * ui,
-            MarkerKind.Objective or MarkerKind.PossibleLocation => r + MarkerCollar * ui,
             MarkerKind.ObjectiveDone => r * 0.8f,
             MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared => r * 1.2f,
             MarkerKind.BossSpawn => r * 1.25f,
             MarkerKind.SniperSpawn => 6.5f * ui,
             MarkerKind.ScavSpawn => 4 * ui,
             _ => r,
-        };
+        } + MarkerCollar * ui;
         var inFocus = scene.ShownFocus.Count == 0 || focused;
         return new ShownMarker(marker, at, r, color, selected, kept, inFocus && scene.ShownFocus.Count > 0, FloorOffset(scene, marker.Position))
         {
@@ -616,8 +621,43 @@ public static class MapRenderer
         canvas.DrawCircle(at, r + (3 + 26 * t) * ui, ring);
     }
 
+    // Every symbol stands on a dark collar (3 px, the ground at 67 %), so it keeps an edge on light streets, where
+    // amber, green and road are nearly as bright (cartography review, 2026-10-02: one collar rule for all symbols).
     private const float MarkerCollar = 3f;
     private const byte MarkerCollarAlpha = 170;
+
+    private static void DrawCollar(SKCanvas canvas, SKPath shape, float ui)
+    {
+        using var collar = new SKPaint
+        {
+            Color = Background.WithAlpha(MarkerCollarAlpha), IsAntialias = true, Style = SKPaintStyle.StrokeAndFill,
+            StrokeWidth = 2 * MarkerCollar * ui, StrokeJoin = SKStrokeJoin.Round,
+        };
+        canvas.DrawPath(shape, collar);
+    }
+
+    private static void DrawCollar(SKCanvas canvas, SKPoint at, float r, float ui)
+    {
+        using var collar = new SKPaint { Color = Background.WithAlpha(MarkerCollarAlpha), IsAntialias = true };
+        canvas.DrawCircle(at, r + MarkerCollar * ui, collar);
+    }
+
+    // A collar for a hollow ring: a dark band under the ring and 3 px either side of it, the middle left open.
+    private static void DrawRingCollar(SKCanvas canvas, SKPoint at, float r, float width, float ui)
+    {
+        using var collar = new SKPaint
+        {
+            Color = Background.WithAlpha(MarkerCollarAlpha), IsAntialias = true, Style = SKPaintStyle.Stroke,
+            StrokeWidth = width + 2 * MarkerCollar * ui,
+        };
+        canvas.DrawCircle(at, r, collar);
+    }
+
+    private static SKPath Triangle(SKPoint at, float r) =>
+        Polygon(new(at.X, at.Y - r * 1.2f), new(at.X + r * 1.1f, at.Y + r * 0.8f), new(at.X - r * 1.1f, at.Y + r * 0.8f));
+
+    private static SKPath Diamond(SKPoint at, float r) =>
+        Polygon(new(at.X, at.Y - r), new(at.X + r, at.Y), new(at.X, at.Y + r), new(at.X - r, at.Y));
 
     private static void DrawMarker(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui)
     {
@@ -645,23 +685,22 @@ public static class MapRenderer
                 {
                     // A possible location: hollow, so the eye reads "maybe here".
                     using var ring = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
-                    canvas.DrawCircle(at, r, outline);
+                    DrawRingCollar(canvas, at, r - ui, 2 * ui, ui);
                     canvas.DrawCircle(at, r - ui, ring);
                     Glyphs.Draw(canvas, kind, at, r * 1.05f, color);
                 }
                 else
                 {
-                    // A dark collar gives the disc an edge on light streets, where amber and road are nearly as bright.
-                    using var collar = new SKPaint { Color = Background.WithAlpha(MarkerCollarAlpha), IsAntialias = true };
-                    canvas.DrawCircle(at, r + MarkerCollar * ui, collar);
+                    DrawCollar(canvas, at, r, ui);
                     canvas.DrawCircle(at, r, fill);
                     canvas.DrawCircle(at, r, outline);
                     Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);
                 }
                 break;
             case MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared:
-                using (var tri = Polygon(new(at.X, at.Y - r * 1.2f), new(at.X + r * 1.1f, at.Y + r * 0.8f), new(at.X - r * 1.1f, at.Y + r * 0.8f)))
+                using (var tri = Triangle(at, r))
                 {
+                    DrawCollar(canvas, tri, ui);
                     canvas.DrawPath(tri, fill);
                     canvas.DrawPath(tri, outline);
                 }
@@ -669,12 +708,10 @@ public static class MapRenderer
             case MarkerKind.SniperSpawn:
                 // A hollow hexagon: a shape no other marker uses (a reticle would repeat the Elimination glyph).
                 using (var hex = Hexagon(at, 6.5f * ui))
-                using (var plate = new SKPaint { Color = Background.WithAlpha(210), IsAntialias = true })
                 using (var edge = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f * ui })
                 {
-                    canvas.DrawPath(hex, plate);
+                    DrawCollar(canvas, hex, ui);
                     canvas.DrawPath(hex, edge);
-                    fill.Color = color;
                     canvas.DrawCircle(at, 1.6f * ui, fill);
                 }
                 break;
@@ -682,14 +719,15 @@ public static class MapRenderer
                 // A small open ring: there for whoever looks, not competing with quests and exits.
                 using (var ring = new SKPaint { Color = color.WithAlpha(170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui })
                 {
-                    canvas.DrawCircle(at, 4 * ui, outline);
+                    DrawRingCollar(canvas, at, 4 * ui, 1.5f * ui, ui);
                     canvas.DrawCircle(at, 4 * ui, ring);
                 }
                 break;
             case MarkerKind.BossSpawn:
                 // A red diamond with a dark centre: not to be confused with the violet transit diamond.
-                using (var plate = Polygon(new(at.X, at.Y - r * 1.25f), new(at.X + r * 1.25f, at.Y), new(at.X, at.Y + r * 1.25f), new(at.X - r * 1.25f, at.Y)))
+                using (var plate = Diamond(at, r * 1.25f))
                 {
+                    DrawCollar(canvas, plate, ui);
                     canvas.DrawPath(plate, fill);
                     canvas.DrawPath(plate, outline);
                 }
@@ -697,24 +735,20 @@ public static class MapRenderer
                     canvas.DrawCircle(at, r * 0.32f, dot);
                 break;
             case MarkerKind.Transit:
-                using (var diamond = Polygon(new(at.X, at.Y - r), new(at.X + r, at.Y), new(at.X, at.Y + r), new(at.X - r, at.Y)))
+                using (var diamond = Diamond(at, r))
                 {
+                    DrawCollar(canvas, diamond, ui);
                     canvas.DrawPath(diamond, fill);
                     canvas.DrawPath(diamond, outline);
                 }
                 break;
-            case MarkerKind.PossibleLocation:
-                using (var ring = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui })
-                {
-                    canvas.DrawCircle(at, r, ring);
-                    canvas.DrawCircle(at, r * 0.35f, fill);
-                }
-                break;
             case MarkerKind.ObjectiveDone:
                 fill.Color = color.WithAlpha(150);
+                DrawCollar(canvas, at, r * 0.8f, ui);
                 canvas.DrawCircle(at, r * 0.8f, fill);
                 break;
             default:
+                DrawCollar(canvas, at, r, ui);
                 canvas.DrawCircle(at, r, fill);
                 canvas.DrawCircle(at, r, outline);
                 break;

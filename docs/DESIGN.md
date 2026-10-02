@@ -172,9 +172,12 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
   the chroma drops to 6, easing out by 55° and 26; cartography review, 2026-10-02): after the plain recede Customs'
   dashed lines were ΔE 3.9 from the amber and 4.1 % of Factory's artwork within ΔE 10; now no pixel of any SVG
   map, floors included, is within ΔE 17 (measured at 2400 px across the sheet). The yellow shapes keep their
-  outline and brightness and lose their hue (what they mark in the artwork is unverified). Quest markers carry a dark collar (3 px, ground at 67 %) that gives them an
-  edge on light streets, where amber and road are nearly as bright (owner, 2026-10-02: unhighlighted quest markers
-  were hard to find pre-attentively).
+  outline and brightness and lose their hue (what they mark in the artwork is unverified). Every map symbol
+  carries a dark collar (3 px, ground at 67 %, round at the corners) that gives it an edge on light streets, where
+  amber, green and road are nearly as bright (owner, 2026-10-02: unhighlighted quest markers were hard to find
+  pre-attentively; the cartography review the same day gave extracts, transits, bosses, snipers and Scav zones the
+  same collar, since they measured below 3:1 against mid and light streets). Hollow symbols get a collar band
+  under the ring, their middle left open.
 
 | meaning | colour |
 | --- | --- |
@@ -281,6 +284,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 Rules from a cartography review of the map (2026-10-02; the owner approved its twelve changes, with the change to
 spawns below).
+
+- **Four levels, the rule for every symbol.** A reader takes in the map in order of importance; each level differs
+  from the next in size, contrast or colour, and there are few things at the top.
+
+  | level | members | treatment |
+  | --- | --- | --- |
+  | 1 | the player; the kept quest, its guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
+  | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink |
+  | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
+  | 4 | the artwork, its names, the sheet grid | receded; names thinned with zoom |
+
+  Extracts and transits are as large as the boss diamond (15 px across), no longer smaller. A new symbol gets a
+  level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
 
 - **Spawns: one marker per zone, at its centroid** (owner, 2026-10-02: the player needs to know which area has
   Scavs, where the bosses and the snipers are, not each spawn point; "just use the centroid, do not colour code the
