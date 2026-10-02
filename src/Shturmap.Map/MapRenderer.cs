@@ -38,33 +38,226 @@ public static class MapRenderer
         else
             DrawSchematic(canvas, camera, scene, uiScale);
 
-        var placed = new List<(SKRect Box, string? Text)>();
-        if (scene.ShowLabels)
-            DrawMapLabels(canvas, camera, scene, uiScale, placed);
+        var layout = Layout(camera, scene, uiScale);
+        foreach (var name in layout.Names)
+            DrawMapName(canvas, name, uiScale);
         foreach (var zone in scene.Zones)
             DrawZone(canvas, camera, scene, zone);
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, camera, scene, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
-        foreach (var marker in scene.Markers.OrderBy(m => IsSelected(scene, m) || IsFocused(scene, m) ? 1 : 0))
+
+        // Markers step back when something else is pointed at (easing with the scene's Dim), all in one layer so
+        // overlapping ones fade as one. A marker on another floor stays at full strength and carries an arrow to it
+        // instead (owner, 2026-10-01: half-strength markers read as "not important", and a highlighted one must look
+        // highlighted).
+        var back = layout.Markers.Where(m => !m.Focused).ToList();
+        var alpha = scene.ShownFocus.Count > 0 ? 1 - 0.72f * scene.Dim : 1f;
+        if (alpha < 1 && back.Count > 0)
         {
-            // Markers step back when something else is pointed at (easing with the scene's Dim). A marker on another
-            // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength
-            // markers read as "not important", and a highlighted one must look highlighted).
-            var alpha = scene.ShownFocus.Count > 0 && !IsFocused(scene, marker) ? 1 - 0.72f * scene.Dim : 1f;
-            if (alpha < 1)
+            using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
+            canvas.SaveLayer(layer);
+        }
+        foreach (var marker in back)
+            DrawMarker(canvas, scene, marker, uiScale);
+        foreach (var label in layout.Labels.Where(l => !l.Of.Focused))
+            DrawLabel(canvas, label);
+        if (alpha < 1 && back.Count > 0)
+            canvas.Restore();
+        foreach (var marker in layout.Markers.Where(m => m.Focused))
+            DrawMarker(canvas, scene, marker, uiScale);
+        foreach (var label in layout.Labels.Where(l => l.Of.Focused))
+            DrawLabel(canvas, label);
+        DrawPlayer(canvas, camera, scene, uiScale);
+    }
+
+    // ---- layout: what is drawn where, before anything is drawn ----
+
+    /// <summary>A marker as drawn in one frame.</summary>
+    /// <param name="At">Screen position (pixels).</param>
+    /// <param name="R">The marker's radius: its size and the distance its label keeps.</param>
+    /// <param name="Selected">Kept highlighted or pointed at: drawn larger, its label bold.</param>
+    /// <param name="Kept">A marker of the quest kept highlighted: drawn in the kept colour, ringed.</param>
+    /// <param name="Focused">Drawn at full strength while something is in focus.</param>
+    /// <param name="Floor">Floors above (+) or below (−) the one shown; 0 on it.</param>
+    public sealed record ShownMarker(MapMarker Marker, SKPoint At, float R, SKColor Color, bool Selected, bool Kept, bool Focused, int Floor)
+    {
+        /// <summary>How far the symbol reaches from its centre, collar and ring included (pixels).</summary>
+        public float Reach { get; init; }
+    }
+
+    /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
+    public sealed record PlacedLabel(string Text, SKRect Box, float Baseline, float Size, bool Bold, SKColor Color, ShownMarker Of);
+
+    /// <summary>A map name that fits, rotated about its anchor.</summary>
+    public sealed record PlacedName(string Text, SKPoint At, float Rotation, float Size, SKRect Box);
+
+    /// <summary>Everything drawn in one frame, in drawing order, and the boxes nothing else may cover.</summary>
+    public sealed record MapLayout(IReadOnlyList<ShownMarker> Markers, IReadOnlyList<PlacedLabel> Labels, IReadOnlyList<PlacedName> Names);
+
+    /// <summary>
+    /// Places symbols first, then labels by priority (cartography review, 2026-10-02): the kept or pointed-at quest,
+    /// bosses, quests, extracts and transits, snipers, and the map's own names last. Each marker label tries right,
+    /// left, above and below its symbol and is dropped when all four are taken; no label covers a symbol. A selected
+    /// label that finds no free place still shows on the right, giving way only to its own copies.
+    /// </summary>
+    public static MapLayout Layout(Camera camera, MapScene scene, float ui)
+    {
+        // Markers out of view are left out (their labels would take the place of the ones in view).
+        var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        view.Inflate(40 * ui, 40 * ui);
+        var markers = scene.Markers
+            .Select(m => Show(camera, scene, m, ui))
+            .Where(m => view.Contains(m.At))
+            .OrderBy(m => m.Focused ? 2 : m.Selected ? 1 : 0)
+            .ToList();
+        var taken = new List<SKRect>();
+        foreach (var m in markers)
+        {
+            taken.Add(Square(m.At, m.Reach));
+            if (m.Floor != 0)
+                taken.Add(FloorBadgeBox(m, ui));
+        }
+        if (scene.Player is { } player)
+            taken.Add(Square(Screen(camera, scene, player.Position), 12 * ui));
+
+        var labels = new List<PlacedLabel>();
+        using var regular = new SKFont(Typeface, 11.5f * ui);
+        using var bold = new SKFont(TypefaceBold, 13 * ui);
+        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected)).OrderBy(LabelRank))
+        {
+            // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
+            if (labels.Any(l => l.Text == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
+                continue;
+            var font = m.Selected ? bold : regular;
+            var width = font.MeasureText(m.Marker.Label);
+            var gap = 4 * ui;
+            SKRect? box = null;
+            foreach (var candidate in LabelCandidates(m.At, m.Reach + gap, width, font.Size))
             {
-                using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
-                canvas.SaveLayer(layer);
-                DrawMarker(canvas, camera, scene, marker, uiScale, placed);
-                canvas.Restore();
+                if (!taken.Any(t => t.IntersectsWith(candidate)))
+                {
+                    box = candidate;
+                    break;
+                }
             }
-            else
+            if (box is null && m.Selected)
+                box = LabelCandidates(m.At, m.Reach + gap, width, font.Size).First();
+            if (box is not { } placed)
+                continue;
+            taken.Add(placed);
+            var color = m.Selected ? m.Color : m.Marker.Kind == MarkerKind.BossSpawn ? Red : Ink;
+            labels.Add(new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected, color, m));
+        }
+
+        var names = new List<PlacedName>();
+        if (scene.ShowLabels)
+        {
+            using var font = new SKFont(Typeface, 11 * ui);
+            foreach (var label in scene.Definition.Labels.OrderByDescending(l => l.Size))
             {
-                DrawMarker(canvas, camera, scene, marker, uiScale, placed);
+                // A label with heights belongs to one floor and shows only with it, as on tarkov.dev (The Lab's rooms
+                // would print over each other otherwise).
+                if (label.Height is { } h && FloorOffset(scene, new WorldPoint(label.X, (h.Min + h.Max) / 2, label.Z)) != 0)
+                    continue;
+                var text = label.Text.ToUpperInvariant();
+                var at = camera.ToScreen(scene.Projection.ToMap(label.X, label.Z));
+                var width = font.MeasureText(text);
+                var box = Rotated(SKRect.Create(at.X - width / 2, at.Y - font.Size, width, font.Size * 1.3f), at, (float)label.Rotation);
+                if (taken.Any(t => t.IntersectsWith(box)))
+                    continue;
+                taken.Add(box);
+                names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box));
             }
         }
-        DrawPlayer(canvas, camera, scene, uiScale);
+        return new MapLayout(markers, labels, names);
+    }
+
+    /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
+    public const float LabelRepeat = 250;
+
+    // Label priority: what the player picked, then bosses, quests, ways out, snipers.
+    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Marker.Kind switch
+    {
+        MarkerKind.BossSpawn => 1,
+        MarkerKind.Objective or MarkerKind.PossibleLocation or MarkerKind.ObjectiveDone => 2,
+        MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit => 3,
+        _ => 4,
+    };
+
+    /// <summary>Where a marker label may go, in order: right, left, above and below the symbol.</summary>
+    /// <param name="clearance">From the symbol's centre to the label's near edge.</param>
+    public static IEnumerable<SKRect> LabelCandidates(SKPoint at, float clearance, float width, float size)
+    {
+        var height = size * 1.3f;
+        var top = at.Y - size * 0.75f;
+        yield return SKRect.Create(at.X + clearance, top, width, height);
+        yield return SKRect.Create(at.X - clearance - width, top, width, height);
+        yield return SKRect.Create(at.X - width / 2, at.Y - clearance - height, width, height);
+        yield return SKRect.Create(at.X - width / 2, at.Y + clearance, width, height);
+    }
+
+    private static SKRect Square(SKPoint at, float half) => new(at.X - half, at.Y - half, at.X + half, at.Y + half);
+
+    // The axis-aligned box around a rectangle rotated about a point.
+    private static SKRect Rotated(SKRect box, SKPoint about, float degrees)
+    {
+        if (degrees == 0)
+            return box;
+        var rotation = SKMatrix.CreateRotationDegrees(degrees, about.X, about.Y);
+        return rotation.MapRect(box);
+    }
+
+    private static ShownMarker Show(Camera camera, MapScene scene, MapMarker marker, float ui)
+    {
+        var at = Screen(camera, scene, marker.Position);
+        var focused = IsFocused(scene, marker);
+        var selected = IsSelected(scene, marker) || focused;
+        // The kept quest's markers are drawn in their own colour and larger than anything pointed at.
+        var kept = marker.Objective is not null && IsSelected(scene, marker);
+        var color = kept ? Kept : ColorOf(marker.Kind);
+        // Quest markers carry a type glyph, so they are drawn larger than the plain extract and transit shapes.
+        var r = (marker.Objective is not null ? (kept ? 14f : selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
+        var reach = marker.Kind switch
+        {
+            _ when kept => r + 7.5f * ui,
+            MarkerKind.Objective or MarkerKind.PossibleLocation => r + MarkerCollar * ui,
+            MarkerKind.ObjectiveDone => r * 0.8f,
+            MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared => r * 1.2f,
+            MarkerKind.BossSpawn => r * 1.25f,
+            MarkerKind.SniperSpawn => 6.5f * ui,
+            MarkerKind.ScavSpawn => 4 * ui,
+            _ => r,
+        };
+        var inFocus = scene.ShownFocus.Count == 0 || focused;
+        return new ShownMarker(marker, at, r, color, selected, kept, inFocus && scene.ShownFocus.Count > 0, FloorOffset(scene, marker.Position))
+        {
+            Reach = reach + 1 * ui,
+        };
+    }
+
+    private static void DrawLabel(SKCanvas canvas, PlacedLabel label)
+    {
+        using var font = new SKFont(label.Bold ? TypefaceBold : Typeface, label.Size);
+        var ui = label.Size / (label.Bold ? 13 : 11.5f);
+        using var shadow = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        using var text = new SKPaint { Color = label.Color, IsAntialias = true };
+        canvas.DrawText(label.Text, label.Box.Left, label.Baseline, SKTextAlign.Left, font, shadow);
+        canvas.DrawText(label.Text, label.Box.Left, label.Baseline, SKTextAlign.Left, font, text);
+    }
+
+    // The map's own names: Ink at 59 % on a halo of the ground, so they read on light streets (1.4:1 without it,
+    // 4.7:1 with it, cartography review 2026-10-02).
+    private static void DrawMapName(SKCanvas canvas, PlacedName name, float ui)
+    {
+        using var font = new SKFont(Typeface, name.Size);
+        using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
+        canvas.Save();
+        canvas.RotateDegrees(name.Rotation, name.At.X, name.At.Y);
+        canvas.DrawText(name.Text, name.At.X, name.At.Y, SKTextAlign.Center, font, halo);
+        canvas.DrawText(name.Text, name.At.X, name.At.Y, SKTextAlign.Center, font, paint);
+        canvas.Restore();
     }
 
     private static bool IsSelected(MapScene scene, MapMarker m) =>
@@ -93,6 +286,12 @@ public static class MapRenderer
         var there = IndexOf(layer);
         // The stack lists the top floor first.
         return there == here ? 0 : there < here ? 1 : -1;
+    }
+
+    private static SKRect FloorBadgeBox(ShownMarker m, float ui)
+    {
+        var r = m.Marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : m.R;
+        return Square(new SKPoint(m.At.X + r * 0.8f, m.At.Y - r * 0.8f), 6 * ui);
     }
 
     // The other-floor arrow: a small dark disc at the marker's upper right with a chevron pointing up or down.
@@ -214,29 +413,6 @@ public static class MapRenderer
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
 
-    private static void DrawMapLabels(SKCanvas canvas, Camera camera, MapScene scene, float ui, List<(SKRect Box, string? Text)> placed)
-    {
-        using var font = new SKFont(Typeface, 11 * ui);
-        using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
-        foreach (var label in scene.Definition.Labels)
-        {
-            // A label with heights belongs to one floor and shows only with it, as on tarkov.dev (The Lab's rooms
-            // would print over each other otherwise).
-            if (label.Height is { } h && FloorOffset(scene, new WorldPoint(label.X, (h.Min + h.Max) / 2, label.Z)) != 0)
-                continue;
-            var at = camera.ToScreen(scene.Projection.ToMap(label.X, label.Z));
-            var width = font.MeasureText(label.Text);
-            var box = SKRect.Create(at.X - width / 2, at.Y - font.Size, width, font.Size * 1.3f);
-            if (placed.Any(p => p.Box.IntersectsWith(box)))
-                continue;
-            canvas.Save();
-            canvas.RotateDegrees((float)label.Rotation, at.X, at.Y);
-            canvas.DrawText(label.Text.ToUpperInvariant(), at.X, at.Y, SKTextAlign.Center, font, paint);
-            canvas.Restore();
-            placed.Add((box, null));
-        }
-    }
-
     private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone)
     {
         if (zone.Outline.Count < 3)
@@ -326,15 +502,10 @@ public static class MapRenderer
     private const float MarkerCollar = 3f;
     private const byte MarkerCollarAlpha = 170;
 
-    private static void DrawMarker(SKCanvas canvas, Camera camera, MapScene scene, MapMarker marker, float ui, List<(SKRect Box, string? Text)> placed)
+    private static void DrawMarker(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui)
     {
-        var at = Screen(camera, scene, marker.Position);
-        var selected = IsSelected(scene, marker) || IsFocused(scene, marker);
-        // The kept quest's markers are drawn in their own colour and larger than anything pointed at.
-        var kept = marker.Objective is not null && IsSelected(scene, marker);
-        var color = kept ? Kept : ColorOf(marker.Kind);
-        // Quest markers carry a type glyph, so they are drawn larger than the plain extract and transit shapes.
-        var r = (marker.Objective is not null ? (kept ? 14f : selected ? 12f : 10f) : (selected ? 8f : 6f)) * ui;
+        var (marker, at, r, color) = (shown.Marker, shown.At, shown.R, shown.Color);
+        var kept = shown.Kept;
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
@@ -432,23 +603,8 @@ public static class MapRenderer
                 break;
         }
 
-        if (FloorOffset(scene, marker.Position) is var floor and not 0)
-            DrawFloorArrow(canvas, at, marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : r, floor, ui);
-
-        if ((!scene.ShowLabels && !selected) || marker.Label.Length == 0)
-            return;
-        using var font = new SKFont(selected ? TypefaceBold : Typeface, (selected ? 13 : 11.5f) * ui);
-        var width = font.MeasureText(marker.Label);
-        var box = SKRect.Create(at.X + r + 4 * ui, at.Y - font.Size * 0.75f, width, font.Size * 1.3f);
-        // Unselected labels give way to anything already placed; a selected label only to its own copies nearby.
-        var blocking = selected ? placed.Where(p => p.Text == marker.Label) : placed;
-        if (blocking.Any(p => p.Box.IntersectsWith(box)))
-            return;
-        using var shadow = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
-        using var text = new SKPaint { Color = selected || marker.Kind == MarkerKind.BossSpawn ? color : Ink, IsAntialias = true };
-        canvas.DrawText(marker.Label, box.Left, at.Y + font.Size * 0.35f, SKTextAlign.Left, font, shadow);
-        canvas.DrawText(marker.Label, box.Left, at.Y + font.Size * 0.35f, SKTextAlign.Left, font, text);
-        placed.Add((box, marker.Label));
+        if (shown.Floor != 0)
+            DrawFloorArrow(canvas, at, marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : r, shown.Floor, ui);
     }
 
     // ---- the player's new position: a ping where it is, or an arrow at the edge when it is out of view ----

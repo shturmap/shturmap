@@ -289,6 +289,14 @@ spawns below).
   that zone's share: "Kollontay 75% · 50% here", "Kaban 75%"; never their product, since the data doesn't say the
   share is conditional. Bosses whose zones have the same centroid share one marker ("Reshala 75% · 33% here /
   Knight 25%" on Customs' Stronghold), and pointing at a boss lights all its zones.
+- **Labels by priority** (`MapRenderer.Layout`). Every symbol is placed before any text, so no label covers a
+  symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,
+  snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above
+  and below its symbol, in that order, and is dropped when all four are taken (pointing at the marker still names
+  it); a selected label that finds no free place goes on the right anyway. A name is said once per neighbourhood
+  (250 px): eight "Abandoned Cargo" places in one block carry one label. Map names are boxed by their rotated
+  extent and drawn on the marker labels' halo (the ground at 86 %, 3 px): without it Ink at 59 % measured 1.4:1 on
+  Streets' light streets, with it 4.7:1.
 
 ### Quest cards
 
