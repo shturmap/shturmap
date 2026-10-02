@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Developer tool for the website's hero clip: records Shturmap's own window (Windows.Graphics.Capture) to a
+       lossless video. Not part of the app; it lives outside src/ so SafetyTests keeps capture APIs out of the app. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(ShturmapWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <RootNamespace>RecordWindow</RootNamespace>
+    <AssemblyName>record-window</AssemblyName>
+  </PropertyGroup>
+</Project>

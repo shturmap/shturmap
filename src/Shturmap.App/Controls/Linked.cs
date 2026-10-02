@@ -141,6 +141,24 @@ public static class Linked
         }
     }
 
+    /// <summary>
+    /// Points at a row the way the mouse does, leaving the one pointed at before (the website demo's drawn pointer;
+    /// it calls the same code as the pointer events, nothing is sent to the system).
+    /// </summary>
+    public static void PointAt(FrameworkElement? element)
+    {
+        if (_source is { } previous && previous != element)
+            Exit(previous);
+        if (element is not null && element != _source)
+            Enter(element);
+    }
+
+    /// <summary>The quest's block in a window's lists (the tallest loaded element showing just that quest), or null.</summary>
+    public static FrameworkElement? RowOf(string questId, XamlRoot root) =>
+        Live.Where(e => e.XamlRoot == root && GetQuest(e) == questId && CardStack.For(root)?.Contains(e) != true && e.ActualHeight > 0)
+            .OrderByDescending(e => e.ActualHeight)
+            .FirstOrDefault();
+
     /// <summary>Sets the focus from outside the rows, e.g. a map marker under the pointer.</summary>
     public static void Set(Focus? focus)
     {

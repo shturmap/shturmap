@@ -43,6 +43,8 @@ public partial class App : Application
             SnapshotMode = cli.Contains("--snapshot"),
             SnapshotScale = int.TryParse(Arg(cli, "--snapshot-scale"), out var snapshotScale) ? Math.Clamp(snapshotScale, 1, 4) : 1,
             ShowQuest = Arg(cli, "--show-quest"),
+            // Developer aid for the website's hero clip: plays a scripted interaction (Demo.cs); fake games only.
+            DemoQuest = cli.Contains("--fake-game") ? Arg(cli, "--demo") : null,
         };
         _window.Closed += async (_, _) => await _session.DisposeAsync();
         _window.Activate();

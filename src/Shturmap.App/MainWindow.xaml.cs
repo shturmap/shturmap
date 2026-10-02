@@ -223,6 +223,7 @@ public sealed partial class MainWindow : Window
         RestorePinnedOnce(s);
         ShowHelpOnFirstRun(s);
         ShowQuestForSnapshot(s);
+        DemoOnSnapshot(s);
     }
 
     private void UpdateClockTexts()
@@ -1067,6 +1068,8 @@ public sealed partial class MainWindow : Window
 
     private void ShowNotice(string message, TimeSpan? duration = null)
     {
+        if (DemoQuiet)
+            return;
         ViewModel.NoticeText = message;
         ViewModel.NoticeOpen = true;
         _noticeTimer.Stop();
@@ -1111,7 +1114,7 @@ public sealed partial class MainWindow : Window
     // The help panel opens by itself once, the first time the app has something to show.
     private void ShowHelpOnFirstRun(SessionSnapshot s)
     {
-        if (_helpShownOnce || s.Data is null)
+        if (_helpShownOnce || s.Data is null || DemoMode)
             return;
         _helpShownOnce = true;
         if (SnapshotMode || _session.GetSetting("help.seen") is null)

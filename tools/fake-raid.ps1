@@ -1,5 +1,8 @@
 # Plays a scripted Streets raid against Shturmap without the game, and saves window/map snapshots mid-raid.
 # Usage: .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out <folder for PNGs>
+# With -Demo it records the website's hero clip instead: the app plays its scripted interaction (src\Shturmap.App\
+# Demo.cs) and tools\record-window records Shturmap's own window into <Out>\capture.mkv; <Out>\cut.txt holds the
+# loop's in and out points in seconds.
 param(
   [Parameter(Mandatory)] [string] $Exe,
   [Parameter(Mandatory)] [string] $Out,
@@ -17,7 +20,15 @@ param(
   # Culture for dates and numbers in the snapshot.
   [string] $Culture = 'en-US',
   # Snapshot pixel density: 2 renders twice the pixels, for sharp images on high-DPI screens.
-  [int] $Scale = 1
+  [int] $Scale = 1,
+  # Record the hero clip (see above) instead of taking snapshots.
+  [switch] $Demo,
+  # Part of the name of the quest the demo points at.
+  [string] $DemoQuest = 'Road Closed',
+  # How long the recorder runs, in seconds; the loop is cut out of it.
+  [int] $RecordSeconds = 20,
+  # ffmpeg, if it isn't on PATH (winget install --id Gyan.FFmpeg -e).
+  [string] $Ffmpeg
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -39,9 +50,22 @@ function QuestStarted([string]$id) {
     "    `"templateId`": `"$id description`"`r`n  }`r`n}`r`n"
   [IO.File]::AppendAllText($push, $now.ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|push-notifications|Got notification | ChatMessageReceived`r`n" + $body)
 }
-function Shot([string]$position) {
-  $name = (Get-Date).ToString('yyyy-MM-dd[HH-mm]') + "_$position (0).png"
+function Shot([string]$position, [int]$n = 0) {
+  $name = (Get-Date).ToString('yyyy-MM-dd[HH-mm]') + "_$position ($n).png"
   [IO.File]::WriteAllText((Join-Path $root "Screenshots\$name"), '')
+}
+# Two places on Streets: A, then B near the Primorsky Ave taxi extract.
+$posA = '-60.00, 3.50, 300.00_-0.02500, 0.23500, -0.00500, -0.97150_6.45'
+$posB = '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
+function StartRaid {
+  Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
+  $raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
+  if (-not $LocalRaid) {
+    Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+  }
+  Log 'GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19'
+  Start-Sleep -Seconds 1
+  Log 'GameStarted:90.6(10.33) real:107.49(12.02) diff:16.89'
 }
 
 Log 'Session mode: Pve'
@@ -58,6 +82,55 @@ if ($PlanOnly) {
   QuestStarted '5969f9e986f7741dde183a50'
   QuestStarted '5979eee086f774311955e614'
 }
+if ($Demo) {
+  $ffmpegExe = if ($Ffmpeg) { $Ffmpeg } elseif (Get-Command ffmpeg -ErrorAction SilentlyContinue) { (Get-Command ffmpeg).Source } else {
+    Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages') -Recurse -Filter ffmpeg.exe -ErrorAction SilentlyContinue |
+      Select-Object -First 1 -ExpandProperty FullName }
+  if (-not $ffmpegExe) { throw 'ffmpeg not found: winget install --id Gyan.FFmpeg -e, or pass -Ffmpeg.' }
+  $repo = Split-Path $PSScriptRoot -Parent
+  & (Join-Path $repo 'eng\dotnet.ps1') build (Join-Path $PSScriptRoot 'record-window\record-window.csproj') -v q -nologo | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'tools\record-window did not build.' }
+  $recorder = Get-ChildItem (Join-Path $PSScriptRoot 'record-window\bin') -Recurse -Filter record-window.exe | Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1 -ExpandProperty FullName
+  New-Item -ItemType Directory -Force $Out | Out-Null
+  $capture = Join-Path (Resolve-Path $Out) 'capture.mkv'
+  $appArgs = @('--fake-game', $root, '--demo', "`"$DemoQuest`"", '--culture', $Culture, '--window', $(if ($Window) { $Window } else { '1600x900' }))
+  $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
+  Start-Sleep -Seconds 4
+  StartRaid
+  # Fixes at A and B in turn first: the view, the raid card and the trail (each walk over the same line draws it a
+  # little stronger) are then all but the same at the clip's start and end. The fix before the demo comes as long
+  # before the loop's start as the one after it before its end, so the marker has faded alike.
+  foreach ($i in 0..3) { Start-Sleep -Seconds 2; Shot $(if ($i % 2) { $posB } else { $posA }) $i }
+  Start-Sleep -Seconds 5 # the raid cue and the pings are over
+  $rec = Start-Process $recorder -ArgumentList '--seconds', $RecordSeconds, '--out', "`"$capture`"", '--ffmpeg', "`"$ffmpegExe`"" -PassThru -NoNewWindow
+  $null = $rec.Handle # without it PowerShell loses the exit code
+  Start-Sleep -Seconds 1
+  Shot $posA 4 # "Demo: armed"
+  Start-Sleep -Milliseconds 4300
+  Shot $posB 5 # "Demo: start": the app's scripted interaction
+  Start-Sleep -Milliseconds 10500
+  Shot $posA 6 # "Demo: back", where the clip started
+  $rec.WaitForExit()
+  Stop-Process -Id $p.Id -ErrorAction SilentlyContinue
+  Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+  if ($rec.ExitCode -ne 0) { throw "tools\record-window failed ($($rec.ExitCode))." }
+  # The loop: from just before the demo starts to as long after the last fix as its start is after the one before,
+  # when everything (view, trail, marker, fix age) is as it began.
+  $appLog = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Shturmap\logs') -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  $time = { param($pattern) $line = Select-String -Path $appLog.FullName -Pattern $pattern | Select-Object -Last 1
+    if (-not $line) { throw "No '$pattern' in $($appLog.Name)." }
+    [datetime]::ParseExact($line.Line.Substring(0, 23), 'yyyy-MM-dd HH:mm:ss.fff', [Globalization.CultureInfo]::InvariantCulture) }
+  $first = [datetime]::ParseExact((Get-Content ([IO.Path]::ChangeExtension($capture, '.start.txt'))), 'yyyy-MM-dd HH:mm:ss.fff', [Globalization.CultureInfo]::InvariantCulture)
+  $in = ((& $time 'Demo: start') - $first).TotalSeconds - 0.8
+  $age = $in - ((& $time 'Demo: armed') - $first).TotalSeconds
+  $outAt = ((& $time 'Demo: back') - $first).TotalSeconds + $age
+  if ($in -lt 0 -or $outAt -gt $RecordSeconds) { throw "The demo didn't fit the recording (in $in s, out $outAt s)." }
+  $cut = [string]::Format([Globalization.CultureInfo]::InvariantCulture, '{0:0.000} {1:0.000}', $in, $outAt)
+  [IO.File]::WriteAllText((Join-Path (Resolve-Path $Out) 'cut.txt'), $cut)
+  Write-Output "Recorded $capture; loop $cut s"
+  return
+}
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter, '--culture', $Culture)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 if ($Window) { $appArgs += @('--window', $Window) }
@@ -71,18 +144,11 @@ if ($PlanOnly) {
   return
 }
 Start-Sleep -Seconds 4
-Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
-$raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
-if (-not $LocalRaid) {
-  Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
-}
-Log 'GameStarting:80.26(1.7) real:95.46(2.73) diff:15.19'
-Start-Sleep -Seconds 1
-Log 'GameStarted:90.6(10.33) real:107.49(12.02) diff:16.89'
+StartRaid
 Start-Sleep -Seconds 3
-Shot '-60.00, 3.50, 300.00_-0.02500, 0.23500, -0.00500, -0.97150_6.45'
+Shot $posA
 Start-Sleep -Seconds 3
-Shot '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
+Shot $posB
 $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
 if (-not $p.HasExited) { Stop-Process -Id $p.Id }
 Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue

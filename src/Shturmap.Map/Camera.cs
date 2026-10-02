@@ -49,12 +49,14 @@ public sealed class Camera
     }
 
     /// <summary>Shows a rectangle with some room around it, without changing the zoom limits.</summary>
-    public void Frame(MapRect rect, float padding)
+    public void Frame(MapRect rect, float padding) => (Center, Zoom) = Framing(rect, padding);
+
+    /// <summary>The centre and zoom that would show a rectangle with some room around it (see <see cref="Frame"/>).</summary>
+    public (MapPoint Center, double Zoom) Framing(MapRect rect, float padding)
     {
-        Center = new MapPoint((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2);
         var zx = (Viewport.Width - 2 * padding) / Math.Max(rect.Width, 1e-6);
         var zy = (Viewport.Height - 2 * padding) / Math.Max(rect.Height, 1e-6);
-        Zoom = Math.Clamp(Math.Min(zx, zy), MinZoom, MaxZoom);
+        return (new MapPoint((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2), Math.Clamp(Math.Min(zx, zy), MinZoom, MaxZoom));
     }
 
     public void CenterOn(MapPoint p) => Center = p;

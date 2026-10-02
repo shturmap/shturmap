@@ -64,12 +64,15 @@ public sealed partial class MapView : Grid
 
     private float PixelScale => (float)(XamlRoot?.RasterizationScale ?? 1.0);
 
+    /// <summary>Pings and pulses play even with Windows' animation effects off (the website demo's recording).</summary>
+    public bool AlwaysAnimate { get; set; }
+
     /// <summary>Shows a new map, fitted to the window, or at a view saved earlier with <see cref="View"/>.</summary>
     public void SetScene(MapScene? scene, (Shturmap.Core.Maps.MapPoint Center, double Zoom)? view = null)
     {
         _scene = scene;
         if (scene is not null)
-            scene.Pulse = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+            scene.Pulse = AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
         _fitPending = view is null;
         if (view is { } v)
             _camera.Restore(v.Center, v.Zoom);
@@ -141,7 +144,9 @@ public sealed partial class MapView : Grid
     {
         if (_scene is not { } scene || !Animating(scene))
         {
+            // One more frame without it: a ping's last ring would otherwise stay up until the next redraw.
             _animation?.Stop();
+            _panel.Invalidate();
             return;
         }
         var now = DateTime.Now;
@@ -171,6 +176,54 @@ public sealed partial class MapView : Grid
     {
         _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor);
         _panel.Invalidate();
+    }
+
+    // ---- the website demo's camera moves (players move the view themselves) ----
+
+    private EventHandler<object>? _viewAnimation;
+
+    /// <summary>Moves the view to a centre and zoom over <paramref name="duration"/>, eased in and out.</summary>
+    public void AnimateView((Shturmap.Core.Maps.MapPoint Center, double Zoom) to, TimeSpan duration)
+    {
+        StopViewAnimation();
+        var from = View;
+        var started = DateTime.Now;
+        _viewAnimation = (_, _) =>
+        {
+            var t = Math.Min(1, (DateTime.Now - started) / duration);
+            var e = t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
+            // The zoom eases on a log scale, so a zoom in and the same zoom out look alike.
+            var zoom = Math.Exp(Math.Log(from.Zoom) + (Math.Log(to.Zoom) - Math.Log(from.Zoom)) * e);
+            _camera.Restore(new Shturmap.Core.Maps.MapPoint(from.Center.X + (to.Center.X - from.Center.X) * e,
+                from.Center.Y + (to.Center.Y - from.Center.Y) * e), zoom);
+            _panel.Invalidate();
+            if (t >= 1)
+                StopViewAnimation();
+        };
+        CompositionTarget.Rendering += _viewAnimation;
+    }
+
+    private void StopViewAnimation()
+    {
+        if (_viewAnimation is null)
+            return;
+        CompositionTarget.Rendering -= _viewAnimation;
+        _viewAnimation = null;
+    }
+
+    /// <summary>The view that shows these world positions with <paramref name="padding"/> (DIPs) around them.</summary>
+    public (Shturmap.Core.Maps.MapPoint Center, double Zoom) FramingOf(IReadOnlyCollection<Shturmap.Core.WorldPoint> points, double padding)
+    {
+        var map = points.Select(p => _scene!.Projection.ToMap(p)).ToList();
+        var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
+        return _camera.Framing(rect, (float)(padding * PixelScale));
+    }
+
+    /// <summary>Where a world position is drawn now, in this control's coordinates (DIPs).</summary>
+    public Windows.Foundation.Point PointOf(Shturmap.Core.WorldPoint world)
+    {
+        var p = _camera.ToScreen(_scene!.Projection.ToMap(world));
+        return new(p.X / PixelScale, p.Y / PixelScale);
     }
 
     /// <summary>Draws the current view into a PNG (developer snapshot; the GPU surface itself can't be read back),
