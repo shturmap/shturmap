@@ -142,14 +142,33 @@ public static class MapRenderer
         canvas.Concat(in view);
         canvas.Translate((float)scene.Placement.OffsetX, (float)scene.Placement.OffsetY);
         canvas.Scale((float)scene.Placement.Scale);
-        canvas.DrawPicture(artwork.Base);
+        using var recede = new SKPaint { ColorFilter = Recede };
+        canvas.DrawPicture(artwork.Base, recede);
         if (artwork.Layer(scene.Floor?.SvgLayer) is { } floor)
         {
             using var dim = new SKPaint { Color = Background.WithAlpha(150) };
             canvas.DrawRect(artwork.ViewBox, dim);
-            canvas.DrawPicture(floor);
+            canvas.DrawPicture(floor, recede);
         }
         canvas.Restore();
+    }
+
+    // The artwork recedes behind the app's own markers: less colour and a little darker, so its own yellows and browns
+    // no longer compete with the quest amber, while streets and buildings still read by their brightness (owner,
+    // 2026-10-02: unhighlighted quest markers were hard to find at a glance).
+    private static readonly SKColorFilter Recede = RecedingFilter(saturation: 0.38f, brightness: 0.85f);
+
+    private static SKColorFilter RecedingFilter(float saturation, float brightness)
+    {
+        // A saturation matrix around Rec. 709 luma, scaled by the brightness.
+        float s = saturation, b = brightness, lr = 0.2126f, lg = 0.7152f, lb = 0.0722f;
+        return SKColorFilter.CreateColorMatrix(
+        [
+            b * (lr + (1 - lr) * s), b * lg * (1 - s), b * lb * (1 - s), 0, 0,
+            b * lr * (1 - s), b * (lg + (1 - lg) * s), b * lb * (1 - s), 0, 0,
+            b * lr * (1 - s), b * lg * (1 - s), b * (lb + (1 - lb) * s), 0, 0,
+            0, 0, 0, 1, 0,
+        ]);
     }
 
     // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the
@@ -304,6 +323,9 @@ public static class MapRenderer
         canvas.DrawCircle(at, r + (3 + 26 * t) * ui, ring);
     }
 
+    private const float MarkerCollar = 3f;
+    private const byte MarkerCollarAlpha = 170;
+
     private static void DrawMarker(SKCanvas canvas, Camera camera, MapScene scene, MapMarker marker, float ui, List<(SKRect Box, string? Text)> placed)
     {
         var at = Screen(camera, scene, marker.Position);
@@ -341,6 +363,9 @@ public static class MapRenderer
                 }
                 else
                 {
+                    // A dark collar gives the disc an edge on light streets, where amber and road are nearly as bright.
+                    using var collar = new SKPaint { Color = Background.WithAlpha(MarkerCollarAlpha), IsAntialias = true };
+                    canvas.DrawCircle(at, r + MarkerCollar * ui, collar);
                     canvas.DrawCircle(at, r, fill);
                     canvas.DrawCircle(at, r, outline);
                     Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);

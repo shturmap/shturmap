@@ -164,6 +164,11 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
   (`TitleText`); body text regular; numbers semibold gold (`FigureText`). Styles live in `App.xaml`; cards and
   flyouts set the font themselves (popups don't get the app's implicit text style).
 - **Pictures**: trader portraits square in a thin frame; item icons in a dark inventory cell.
+- **Map artwork recedes**: it is drawn at 38 % of its colour and 85 % of its brightness, so its own yellows and
+  browns don't compete with the quest amber and Shturmap's markers are found at a glance, while streets and
+  buildings still read by brightness. Quest markers carry a dark collar (3 px, ground at 67 %) that gives them an
+  edge on light streets, where amber and road are nearly as bright (owner, 2026-10-02: unhighlighted quest markers
+  were hard to find pre-attentively).
 
 | meaning | colour |
 | --- | --- |
