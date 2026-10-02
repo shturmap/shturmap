@@ -101,7 +101,11 @@ public static class MapRenderer
     public sealed record PlacedLabel(string Text, SKRect Box, float Baseline, float Size, bool Bold, SKColor Color, ShownMarker Of);
 
     /// <summary>A map name that fits, rotated about its anchor.</summary>
-    public sealed record PlacedName(string Text, SKPoint At, float Rotation, float Size, SKRect Box);
+    public sealed record PlacedName(string Text, SKPoint At, float Rotation, float Size, SKRect Box)
+    {
+        /// <summary>A landmark's name (tarkov.dev size 90 and up): semi-bold, letter-spaced.</summary>
+        public bool Landmark { get; init; }
+    }
 
     /// <summary>Everything placed in one frame: markers in drawing order, their labels, the map's names, the guide and the scale.</summary>
     public sealed record MapLayout(IReadOnlyList<ShownMarker> Markers, IReadOnlyList<PlacedLabel> Labels, IReadOnlyList<PlacedName> Names,
@@ -180,21 +184,28 @@ public static class MapRenderer
         var names = new List<PlacedName>();
         if (scene.ShowLabels)
         {
-            using var font = new SKFont(Typeface, 11 * ui);
-            foreach (var label in scene.Definition.Labels.OrderByDescending(l => l.Size))
+            var zoom = ZoomOverOverview(camera, scene, ui);
+            var screen = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+            using var street = new SKFont(Typeface, 11 * ui);
+            using var landmark = new SKFont(TypefaceBold, 12 * ui);
+            foreach (var label in scene.Definition.Labels.OrderByDescending(l => l.Size ?? StreetSize))
             {
                 // A label with heights belongs to one floor and shows only with it, as on tarkov.dev (The Lab's rooms
                 // would print over each other otherwise).
                 if (label.Height is { } h && FloorOffset(scene, new WorldPoint(label.X, (h.Min + h.Max) / 2, label.Z)) != 0)
                     continue;
+                var tier = NameTier(label.Size);
+                if (zoom < tier.FromZoom)
+                    continue;
                 var text = label.Text.ToUpperInvariant();
                 var at = camera.ToScreen(scene.Projection.ToMap(label.X, label.Z));
-                var width = font.MeasureText(text);
+                var font = tier.Landmark ? landmark : street;
+                var width = NameWidth(font, text, tier.Landmark ? NameTracking * ui : 0);
                 var box = Rotated(SKRect.Create(at.X - width / 2, at.Y - font.Size, width, font.Size * 1.3f), at, (float)label.Rotation);
-                if (taken.Any(t => t.IntersectsWith(box)))
+                if (!box.IntersectsWith(screen) || taken.Any(t => t.IntersectsWith(box)))
                     continue;
                 taken.Add(box);
-                names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box));
+                names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box) { Landmark = tier.Landmark });
             }
         }
         return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons };
@@ -354,17 +365,69 @@ public static class MapRenderer
         canvas.DrawText(label.Text, label.Box.Left, label.Baseline, SKTextAlign.Left, font, text);
     }
 
+    // ---- the map's own names, by tarkov.dev's label size ----
+
+    /// <summary>The size tarkov.dev's street names have; names without a size are treated as streets.</summary>
+    private const double StreetSize = 80;
+
+    /// <summary>The extra space between a landmark name's letters (pixels, before scaling).</summary>
+    private const float NameTracking = 1.2f;
+
+    /// <summary>
+    /// How a map name of a tarkov.dev label size is set (cartography review, 2026-10-02): landmarks (90 and up) in
+    /// 12 px semi-bold spaced caps, streets (80, or no size) always, shops (65–70) from 1.5 times the overview zoom,
+    /// the smallest (60) from 2.5 times.
+    /// </summary>
+    public static (bool Landmark, double FromZoom) NameTier(double? size) => size switch
+    {
+        null => (false, 0),
+        >= 85 => (true, 0),
+        >= 75 => (false, 0),
+        >= 65 => (false, 1.5),
+        _ => (false, 2.5),
+    };
+
+    /// <summary>The zoom as a multiple of the zoom that shows the whole map in this view.</summary>
+    public static double ZoomOverOverview(Camera camera, MapScene scene, float ui)
+    {
+        var rect = scene.Projection.WorldRect;
+        var padding = 24 * ui;
+        var overview = Math.Min((camera.Viewport.Width - 2 * padding) / Math.Max(rect.Width, 1e-6), (camera.Viewport.Height - 2 * padding) / Math.Max(rect.Height, 1e-6));
+        return camera.Zoom / overview;
+    }
+
+    private static float NameWidth(SKFont font, string text, float tracking) =>
+        tracking == 0 ? font.MeasureText(text) : text.Sum(c => font.MeasureText(c.ToString())) + tracking * Math.Max(0, text.Length - 1);
+
     // The map's own names: Ink at 59 % on a halo of the ground, so they read on light streets (1.4:1 without it,
     // 4.7:1 with it, cartography review 2026-10-02).
     private static void DrawMapName(SKCanvas canvas, PlacedName name, float ui)
     {
-        using var font = new SKFont(Typeface, name.Size);
+        using var font = new SKFont(name.Landmark ? TypefaceBold : Typeface, name.Size);
         using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
         using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
         canvas.Save();
         canvas.RotateDegrees(name.Rotation, name.At.X, name.At.Y);
-        canvas.DrawText(name.Text, name.At.X, name.At.Y, SKTextAlign.Center, font, halo);
-        canvas.DrawText(name.Text, name.At.X, name.At.Y, SKTextAlign.Center, font, paint);
+        if (!name.Landmark)
+        {
+            canvas.DrawText(name.Text, name.At.X, name.At.Y, SKTextAlign.Center, font, halo);
+            canvas.DrawText(name.Text, name.At.X, name.At.Y, SKTextAlign.Center, font, paint);
+        }
+        else
+        {
+            // Spaced caps, letter by letter: Skia has no letter spacing.
+            var tracking = NameTracking * ui;
+            foreach (var paintOf in new[] { halo, paint })
+            {
+                var x = name.At.X - NameWidth(font, name.Text, tracking) / 2;
+                foreach (var c in name.Text)
+                {
+                    var letter = c.ToString();
+                    canvas.DrawText(letter, x, name.At.Y, SKTextAlign.Left, font, paintOf);
+                    x += font.MeasureText(letter) + tracking;
+                }
+            }
+        }
         canvas.Restore();
     }
 

@@ -27,7 +27,8 @@ public sealed record MapLayer(string Name, string? SvgLayer, string? TilePath, b
 }
 
 /// <param name="Height">The heights the label belongs to (tarkov.dev's bottom/top), or null for every floor.</param>
-public sealed record MapLabel(double X, double Z, string Text, double Rotation, double Size, HeightRange? Height = null);
+/// <param name="Size">tarkov.dev's label size (90 for landmarks, 80 for streets, 70 or 65 for shops, 60 for the smallest), or null when it gives none.</param>
+public sealed record MapLabel(double X, double Z, string Text, double Rotation, double? Size, HeightRange? Height = null);
 
 /// <summary>
 /// One interactive map from tarkov.dev's maps.json (MIT): how game coordinates land on its artwork.
