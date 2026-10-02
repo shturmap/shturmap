@@ -10,3 +10,6 @@ public static class Caps
 
 /// <summary>One line of the keyboard help: the key as a keycap, and what it does.</summary>
 public sealed record KeyHelp(string Key, string Action);
+
+/// <summary>One line of the map legend: the symbol as the map draws it, and what it means.</summary>
+public sealed record MapLegendRow(Microsoft.UI.Xaml.Media.ImageSource Swatch, string Text);

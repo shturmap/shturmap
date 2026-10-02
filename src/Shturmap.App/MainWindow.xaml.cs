@@ -15,6 +15,7 @@ using Shturmap.Core.Quests;
 using Shturmap.Core.Raid;
 using Shturmap.Map;
 using Shturmap.Session;
+using SkiaSharp.Views.Windows;
 using Windows.Graphics;
 using MapLayer = Shturmap.Core.Maps.MapLayer;
 
@@ -166,6 +167,18 @@ public sealed partial class MainWindow : Window
         new("F1 / ?", "This help"),
         new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
     ];
+
+    /// <summary>
+    /// The map symbols in the help panel, drawn by the map's own renderer so they can't drift from the map (at twice
+    /// the DIP size, which stays sharp up to 200 % and in snapshots).
+    /// </summary>
+    public IReadOnlyList<MapLegendRow> MapLegendRows { get; } = MapLegend.Rows
+        .Select(row =>
+        {
+            using var bitmap = MapLegend.Draw(row.Symbol, 2);
+            return new MapLegendRow(bitmap.ToWriteableBitmap(), row.Text);
+        })
+        .ToList();
 
     public Brush OkBrush(bool ok) => Resource(ok ? "GreenBrush" : "AmberBrush");
 

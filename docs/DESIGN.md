@@ -283,7 +283,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   player, trail, guide line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
-- **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols. Opens
+- **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
+  "Map drawing", "Legend"). Opens
   once by itself on first run.
 
 ### Map drawing
@@ -360,6 +361,12 @@ spawns below).
   whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when kept,
   gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
   without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
+- **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap
+  per symbol, made with the map's own drawing code at twice the DIP size), so they can't drift from the map; the
+  hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
+  four levels, every symbol on the map has one (the done objective, quest zones, the floor arrow, the guide line
+  and its plate, the trail, the edge badge and chevrons, clusters and the sheet were missing), and each names
+  shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change.
 
 ### Quest cards
 

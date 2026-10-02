@@ -5,7 +5,7 @@ using Shturmap.Core.Maps;
 namespace Shturmap.Map;
 
 /// <summary>Draws a <see cref="MapScene"/> through a <see cref="Camera"/>. Markers keep a fixed screen size.</summary>
-public static class MapRenderer
+public static partial class MapRenderer
 {
     // The app's palette (App.xaml, docs/DESIGN.md §4): muted gold for quests, the game's green for extracts.
     private static readonly SKColor Background = SKColor.Parse("#0b0c0b");
