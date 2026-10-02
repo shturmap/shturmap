@@ -1,8 +1,8 @@
 # Plays a scripted Streets raid against Shturmap without the game, and saves window/map snapshots mid-raid.
 # Usage: .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out <folder for PNGs>
 # With -Demo it records the website's hero clip instead: the app plays its scripted interaction (src\Shturmap.App\
-# Demo.cs) and tools\record-window records Shturmap's own window into <Out>\capture.mkv; <Out>\cut.txt holds the
-# loop's in and out points in seconds.
+# Demo.cs), this script writes the one screenshot that follows the demo's key press, and tools\record-window records
+# Shturmap's own window into <Out>\capture.mkv; <Out>\cut.txt holds the loop's in and out points in seconds.
 param(
   [Parameter(Mandatory)] [string] $Exe,
   [Parameter(Mandatory)] [string] $Out,
@@ -26,7 +26,7 @@ param(
   # Part of the name of the quest the demo points at.
   [string] $DemoQuest = 'Road Closed',
   # How long the recorder runs, in seconds; the loop is cut out of it.
-  [int] $RecordSeconds = 20,
+  [int] $RecordSeconds = 24,
   # ffmpeg, if it isn't on PATH (winget install --id Gyan.FFmpeg -e).
   [string] $Ffmpeg
 )
@@ -57,6 +57,9 @@ function Shot([string]$position, [int]$n = 0) {
 # Two places on Streets: A, then B near the Primorsky Ave taxi extract.
 $posA = '-60.00, 3.50, 300.00_-0.02500, 0.23500, -0.00500, -0.97150_6.45'
 $posB = '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
+# The demo's walk: south on Primorsky Ave, facing the way it goes.
+$walkFrom = '13.02, 3.92, 381.30_0.00500, 0.04500, -0.00050, 0.99900_14.13'
+$walkTo = '12.50, 4.00, 410.00_0.00500, 0.04500, -0.00050, 0.99900_14.15'
 function StartRaid {
   Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
   $raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
@@ -95,36 +98,56 @@ if ($Demo) {
   New-Item -ItemType Directory -Force $Out | Out-Null
   $capture = Join-Path (Resolve-Path $Out) 'capture.mkv'
   $appArgs = @('--fake-game', $root, '--demo', "`"$DemoQuest`"", '--culture', $Culture, '--window', $(if ($Window) { $Window } else { '1600x900' }))
+  $launched = Get-Date
   $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
-  Start-Sleep -Seconds 4
-  StartRaid
-  # Fixes at A and B in turn first: the view, the raid card and the trail (each walk over the same line draws it a
-  # little stronger) are then all but the same at the clip's start and end. The fix before the demo comes as long
-  # before the loop's start as the one after it before its end, so the marker has faded alike.
-  foreach ($i in 0..3) { Start-Sleep -Seconds 2; Shot $(if ($i % 2) { $posB } else { $posA }) $i }
-  Start-Sleep -Seconds 5 # the raid cue and the pings are over
-  $rec = Start-Process $recorder -ArgumentList '--seconds', $RecordSeconds, '--out', "`"$capture`"", '--ffmpeg', "`"$ffmpegExe`"" -PassThru -NoNewWindow
-  $null = $rec.Handle # without it PowerShell loses the exit code
-  Start-Sleep -Seconds 1
-  Shot $posA 4 # "Demo: armed"
-  Start-Sleep -Milliseconds 4300
-  Shot $posB 5 # "Demo: start": the app's scripted interaction
-  Start-Sleep -Milliseconds 10500
-  Shot $posA 6 # "Demo: back", where the clip started
-  $rec.WaitForExit()
-  Stop-Process -Id $p.Id -ErrorAction SilentlyContinue
-  Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+  # The app's own log says when the demo presses the drawn key ("Demo: press"); the screenshot follows it, as the
+  # game's would. Lines from earlier runs in the same log are skipped by their time.
+  $logs = Join-Path $env:LOCALAPPDATA 'Shturmap\logs'
+  $invariant = [Globalization.CultureInfo]::InvariantCulture # not $culture: that is -Culture
+  function DemoTime([string]$what) {
+    $file = Get-ChildItem $logs -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $stream = [IO.File]::Open($file.FullName, 'Open', 'Read', 'ReadWrite')
+    try { $text = (New-Object IO.StreamReader($stream)).ReadToEnd() } finally { $stream.Dispose() }
+    foreach ($line in ($text -split "`r?`n")) {
+      if ($line.Length -lt 23 -or -not $line.Contains("Demo: $what")) { continue }
+      $at = [datetime]::ParseExact($line.Substring(0, 23), 'yyyy-MM-dd HH:mm:ss.fff', $invariant)
+      if ($at -gt $launched) { return $at }
+    }
+    return $null
+  }
+  function WaitFor([string]$what, [int]$seconds) {
+    $until = (Get-Date).AddSeconds($seconds)
+    while ((Get-Date) -lt $until) { if (DemoTime $what) { return }; Start-Sleep -Milliseconds 25 }
+    throw "The app's log never said 'Demo: $what'."
+  }
+  try {
+    Start-Sleep -Seconds 4
+    StartRaid
+    Start-Sleep -Seconds 6 # the raid cue is over
+    # One short walk on Primorsky Ave toward the taxi extract, about 29 m: the player stands at the first position,
+    # and the key press brings the second. These are the only two positions the app gets.
+    Shot $walkFrom 0 # "Demo: armed"; the demo starts six seconds later
+    Start-Sleep -Seconds 3
+    $rec = Start-Process $recorder -ArgumentList '--seconds', $RecordSeconds, '--out', "`"$capture`"", '--ffmpeg', "`"$ffmpegExe`"" -PassThru -NoNewWindow
+    $null = $rec.Handle # without it PowerShell loses the exit code
+    WaitFor 'press' 15
+    Start-Sleep -Milliseconds 170 # the game takes a moment to write the screenshot
+    Shot $walkTo 1
+    $rec.WaitForExit()
+  }
+  finally {
+    Stop-Process -Id $p.Id -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+  }
   if ($rec.ExitCode -ne 0) { throw "tools\record-window failed ($($rec.ExitCode))." }
-  # The loop: from just before the demo starts to as long after the last fix as its start is after the one before,
-  # when everything (view, trail, marker, fix age) is as it began.
-  $appLog = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Shturmap\logs') -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-  $time = { param($pattern) $line = Select-String -Path $appLog.FullName -Pattern $pattern | Select-Object -Last 1
-    if (-not $line) { throw "No '$pattern' in $($appLog.Name)." }
-    [datetime]::ParseExact($line.Line.Substring(0, 23), 'yyyy-MM-dd HH:mm:ss.fff', [Globalization.CultureInfo]::InvariantCulture) }
-  $first = [datetime]::ParseExact((Get-Content ([IO.Path]::ChangeExtension($capture, '.start.txt'))), 'yyyy-MM-dd HH:mm:ss.fff', [Globalization.CultureInfo]::InvariantCulture)
-  $in = ((& $time 'Demo: start') - $first).TotalSeconds - 0.8
-  $age = $in - ((& $time 'Demo: armed') - $first).TotalSeconds
-  $outAt = ((& $time 'Demo: back') - $first).TotalSeconds + $age
+  # The loop: from just before the key appears to a moment after the view is back. make-media.ps1 crossfades its last
+  # 0.6 s into its first frame, so the walk back to the start position never shows as a jump.
+  $first = [datetime]::ParseExact((Get-Content ([IO.Path]::ChangeExtension($capture, '.start.txt'))), 'yyyy-MM-dd HH:mm:ss.fff', $invariant)
+  foreach ($what in 'key', 'press', 'fix 2', 'end') { if (-not (DemoTime $what)) { throw "The app's log has no 'Demo: $what'." } }
+  $in = ((DemoTime 'key') - $first).TotalSeconds - 0.5
+  $outAt = ((DemoTime 'end') - $first).TotalSeconds + 0.8
+  $lag = ((DemoTime 'fix 2') - (DemoTime 'press')).TotalMilliseconds
+  Write-Output ("Key press to position: {0:0} ms" -f $lag)
   if ($in -lt 0 -or $outAt -gt $RecordSeconds) { throw "The demo didn't fit the recording (in $in s, out $outAt s)." }
   $cut = [string]::Format([Globalization.CultureInfo]::InvariantCulture, '{0:0.000} {1:0.000}', $in, $outAt)
   [IO.File]::WriteAllText((Join-Path (Resolve-Path $Out) 'cut.txt'), $cut)
