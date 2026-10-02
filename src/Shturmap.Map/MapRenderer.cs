@@ -73,6 +73,8 @@ public static class MapRenderer
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
             DrawLabel(canvas, label);
         DrawGuidePlate(canvas, layout.Guide, uiScale);
+        foreach (var chevron in layout.Chevrons)
+            DrawChevron(canvas, chevron, uiScale);
         DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
     }
@@ -103,7 +105,11 @@ public static class MapRenderer
 
     /// <summary>Everything placed in one frame: markers in drawing order, their labels, the map's names, the guide and the scale.</summary>
     public sealed record MapLayout(IReadOnlyList<ShownMarker> Markers, IReadOnlyList<PlacedLabel> Labels, IReadOnlyList<PlacedName> Names,
-        GuideLine? Guide, ScaleBar Scale);
+        GuideLine? Guide, ScaleBar Scale)
+    {
+        /// <summary>Where the highlighted quest's places out of view lie: chevrons at the edge.</summary>
+        public IReadOnlyList<EdgeChevron> Chevrons { get; init; } = [];
+    }
 
     /// <summary>
     /// Places symbols first, then labels by priority (cartography review, 2026-10-02): the kept or pointed-at quest,
@@ -138,6 +144,8 @@ public static class MapRenderer
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
         var scale = Scale(camera, scene, ui);
+        var chevrons = Chevrons(camera, scene, ui);
+        taken.AddRange(chevrons.Select(c => Square(c.At, 10 * ui)));
         taken.Add(scale.Box);
 
         var labels = new List<PlacedLabel>();
@@ -189,7 +197,7 @@ public static class MapRenderer
                 names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box));
             }
         }
-        return new MapLayout(markers, labels, names, guide, scale);
+        return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons };
     }
 
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
@@ -658,6 +666,74 @@ public static class MapRenderer
         canvas.DrawRect(box, plate);
         canvas.DrawRect(box, edge);
         canvas.DrawText(text, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
+    }
+
+    // ---- the highlighted quest's places out of view ----
+
+    /// <summary>A chevron at the edge of the view pointing toward places out of view, with how many lie that way.</summary>
+    /// <param name="Degrees">The direction it points, clockwise from the right.</param>
+    public sealed record EdgeChevron(SKPoint At, float Degrees, int Count, SKColor Color);
+
+    /// <summary>How far in from the edge of the view the chevrons sit (pixels, before scaling).</summary>
+    private const float ChevronInset = 18;
+
+    // The kept quest's places out of view, or the pointed-at quest's while the pointer is on it: one chevron per
+    // direction (places whose edge points lie within 56 px merge), in the quest's colour. The same vocabulary as the
+    // player's edge badge, smaller and without a plate: the player is level 1.
+    private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui)
+    {
+        var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
+        var center = new SKPoint(w / 2, h / 2);
+        var inset = ChevronInset * ui;
+        var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color)>();
+        foreach (var marker in scene.Markers)
+        {
+            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !IsFocused(scene, marker))
+                continue;
+            var at = Screen(camera, scene, marker.Position);
+            if (at.X >= 0 && at.X <= w && at.Y >= 0 && at.Y <= h)
+                continue;
+            var d = at - center;
+            var tx = Math.Abs(d.X) < 1e-3 ? float.MaxValue : Math.Max(0, w / 2 - inset) / Math.Abs(d.X);
+            var ty = Math.Abs(d.Y) < 1e-3 ? float.MaxValue : Math.Max(0, h / 2 - inset) / Math.Abs(d.Y);
+            var t = Math.Min(tx, ty);
+            var length = Math.Max(1e-3f, d.Length);
+            points.Add((new SKPoint(center.X + d.X * t, center.Y + d.Y * t), new SKPoint(d.X / length, d.Y / length),
+                IsSelected(scene, marker) ? Kept : ColorOf(marker.Kind)));
+        }
+        return Clusters(points, (a, b) => a.Color == b.Color && SKPoint.Distance(a.Edge, b.Edge) < 56 * ui)
+            .Select(c =>
+            {
+                var at = new SKPoint(c.Average(p => p.Edge.X), c.Average(p => p.Edge.Y));
+                var direction = new SKPoint(c.Sum(p => p.Direction.X), c.Sum(p => p.Direction.Y));
+                return new EdgeChevron(at, (float)(Math.Atan2(direction.Y, direction.X) * 180 / Math.PI), c.Count, c[0].Color);
+            })
+            .ToList();
+    }
+
+    private static void DrawChevron(SKCanvas canvas, EdgeChevron chevron, float ui)
+    {
+        var at = chevron.At;
+        using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui, StrokeJoin = SKStrokeJoin.Round };
+        using var fill = new SKPaint { Color = chevron.Color, IsAntialias = true };
+        canvas.Save();
+        canvas.RotateDegrees(chevron.Degrees, at.X, at.Y);
+        using (var arrow = Polygon(new(at.X + 6 * ui, at.Y), new(at.X - 4 * ui, at.Y - 6.5f * ui), new(at.X - 1.5f * ui, at.Y), new(at.X - 4 * ui, at.Y + 6.5f * ui)))
+        {
+            canvas.DrawPath(arrow, halo);
+            canvas.DrawPath(arrow, fill);
+        }
+        canvas.Restore();
+        if (chevron.Count < 2)
+            return;
+        // The count sits inward of the chevron, toward the middle of the view.
+        var radians = chevron.Degrees * Math.PI / 180;
+        var label = new SKPoint(at.X - (float)Math.Cos(radians) * 14 * ui, at.Y - (float)Math.Sin(radians) * 14 * ui);
+        using var font = new SKFont(TypefaceBold, 10.5f * ui);
+        using var textHalo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        var count = chevron.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        canvas.DrawText(count, label.X, label.Y + font.Size * 0.36f, SKTextAlign.Center, font, textHalo);
+        canvas.DrawText(count, label.X, label.Y + font.Size * 0.36f, SKTextAlign.Center, font, fill);
     }
 
     // ---- the scale bar ----

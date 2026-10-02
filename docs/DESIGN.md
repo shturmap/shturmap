@@ -350,6 +350,11 @@ spawns below).
   places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
   too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
   pointing at a cluster points at its quest.
+- **Places out of view.** While a quest is kept highlighted, or pointed at, its places outside the view are shown
+  as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
+  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when kept,
+  gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
+  without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
 
 ### Quest cards
 
