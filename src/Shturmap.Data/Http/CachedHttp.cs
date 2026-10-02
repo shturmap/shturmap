@@ -23,7 +23,8 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
         {
             Timeout = TimeSpan.FromSeconds(60),
         };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Shturmap/0.1 (personal Escape from Tarkov companion)");
+        // Says who is asking and where to find us, so tarkov.dev can get in touch about Shturmap's traffic.
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Shturmap/0.1 (+https://github.com/shturmap; Escape from Tarkov companion)");
         return client;
     }
 
