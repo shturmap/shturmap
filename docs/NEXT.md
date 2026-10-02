@@ -7,10 +7,11 @@ Item 5 (one design system) was added on 2026-10-02. Items 1, 3 and 4 are done (2
 
 ## Before starting
 
-- **Release 0.1.0** built on 2026-10-02 from the commit "Quest markers pop: the map artwork recedes, markers get a
-  dark collar" into an empty `artifacts\Shturmap` (585 files, 241 MB, licences included) and zipped as
-  `artifacts\Shturmap-0.1.0-win-x64.zip` (91 MB) with a `.sha256`. Not published anywhere yet. To build again, check `Get-Process Shturmap` first:
-  `eng\publish.ps1` refuses while the app runs from `artifacts`, and it doesn't empty the folder.
+- **Release 0.1.0** is one exe since 2026-10-03: `eng\release.ps1` builds `artifacts\Shturmap-0.1.0-win-x64.exe`
+  (86 MB, unpacks about 200 MB to `%TEMP%\.net` on its first start) and the folder build zipped beside it, each
+  with a `.sha256` (DESIGN.md §8, "Distribution"). Passed to friends by hand; not published anywhere yet. It
+  refuses while Shturmap runs from `artifacts`; `eng\publish.ps1` alone builds only `artifacts\Shturmap` and
+  doesn't empty it first.
 - **Boundary (owner's rule).** Read only `*application_*.log` and `*push-notifications_*.log` in an EFT log
   session folder, never `*.log`: that glob also matches `backend_000.log`, which is off limits. No memory, no
   input, no screen capture.

@@ -1,9 +1,10 @@
 # Third-party notices
 
 Shturmap's own code is under the MIT licence (`LICENSE`). A build of Shturmap also contains the components below,
-each under its own licence. Every build carries the full licence and notice texts in its `licenses` folder
-(`eng\notices.ps1` copies them from the packages). Data and artwork that Shturmap downloads at runtime are not
-part of a build; they are credited in the [README](README.md#credits).
+each under its own licence. Every build carries the full licence and notice texts, this file and `LICENSE` in its
+`licenses` folder (`eng\notices.ps1` gathers them from the packages); the single-file release carries them inside
+and unpacks them with the app, and the help panel's LICENCES link opens the folder. Data and artwork that Shturmap
+downloads at runtime are not part of a build; they are credited in the [README](README.md#credits).
 
 | Component | Licence | Copyright |
 | --- | --- | --- |

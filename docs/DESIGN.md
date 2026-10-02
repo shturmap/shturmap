@@ -39,9 +39,10 @@ residual risk. Do not widen the boundary.
 ## 3. Copyright and data use
 
 - **Shturmap's own code** is MIT-licensed (`LICENSE`; owner, 2026-10-02, to publish it on GitHub). Everything a
-  build redistributes is listed with its licence in `THIRD-PARTY-NOTICES.md`; `eng\notices.ps1` (run by
-  `publish.ps1`) puts it, `LICENSE` and every package's own licence files into the build. Update it in the same
-  change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
+  build redistributes is listed with its licence in `THIRD-PARTY-NOTICES.md`; `eng\notices.ps1`, run by the app
+  project before every publish, gathers it, `LICENSE` and every package's own licence files into the build's
+  `licenses` folder, which the single exe carries inside and unpacks with the app (§8, "Distribution"). The help
+  panel's LICENCES link opens it. Update it in the same change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
   (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
   terms. Requests say who they are (User-Agent `Shturmap/…`) and are cached with ETags (1 h, 24 h, 7 days by kind).
@@ -602,6 +603,31 @@ Rules:
 - Comments explain why, not what. Match the surrounding style.
 - Write user-facing text plainly: short sentences, units on numbers, no jargon.
 
+### Distribution
+
+The release is **one file**, `Shturmap-<version>-win-x64.exe` (owner, 2026-10-03: easiest to pass on; nothing to
+unzip, so nobody runs it from inside a zip). `eng\release.ps1` builds it, and the same build as a folder, zipped
+beside it for whoever prefers that, each with a `.sha256`; `eng\publish.ps1` builds only the folder
+(`artifacts\Shturmap`, the developer's copy and what `tools\fake-raid.ps1` runs).
+
+- **How it runs.** .NET's single-file publish with everything inside (`IncludeAllContentForSelfExtract`,
+  compressed): WinUI needs its files on disk, so the first start of each build unpacks them (about 200 MB) to
+  `%TEMP%\.net\<exe name>\<bundle id>` and runs from there; later starts reuse that copy. Measured 2026-10-03:
+  86 MB to download; a session is ready 1.3 s after the first start and 0.44 s after later ones. The single exe is
+  not precompiled (ReadyToRun): as one file that builds a 120 MB composite image of the whole framework, which made
+  the exe 110 MB and its unpacked copy 285 MB to start 0.1 s sooner; precompiled without the composite image, it
+  failed to start. The folder build stays precompiled.
+- **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
+  `<exe name>.pri`, so the project names its PRI file `resources.pri`: named after the project, any other exe
+  name (the release's own, or a browser's "Shturmap (1).exe") made the window fail to load.
+- **No pile of copies.** Each build and each exe name leaves its own unpacked copy. A start from one removes the
+  others in the background (`UnpackedCopies`, logged): only `%TEMP%\.net\Shturmap…\<id>` folders holding
+  `Shturmap.dll`, never its own, and never one in use: a copy is moved aside before it is deleted, which Windows
+  refuses while another Shturmap runs from it. With `DOTNET_BUNDLE_EXTRACT_BASE_DIR` set elsewhere it does nothing.
+- **Nothing beside the exe.** The unpacked folder is a cache: the app writes nothing there and keeps all its data
+  in `%LOCALAPPDATA%\Shturmap`. The "build time" in the study log is the exe's own file time, not the unpacking's.
+- **Unsigned.** Windows SmartScreen asks once ("More info → Run anyway"); the README says so.
+
 ### How the parts work
 
 **Finding the game.** Candidates come from the `EscapeFromTarkov` uninstall key (HKLM 32/64, HKCU), the
@@ -686,5 +712,5 @@ sent anywhere.
 - Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own
   so a search finds the app rather than the Woods boss. The old data folder and database move over on first start.
 - The Lab, Labyrinth and Icebreaker are drawn as sheets (§3, "Maps without artwork"; 2026-10-02).
-- Open: manual quest editing; objective progress;
-  published size 237 MB (budget 80–120 MB, needs trimming).
+- Released as one exe (2026-10-03; §8, "Distribution"): 86 MB to download, about 200 MB unpacked.
+- Open: manual quest editing; objective progress; the unpacked size (budget 80–120 MB, needs trimming).

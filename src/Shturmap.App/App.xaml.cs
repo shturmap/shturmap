@@ -24,6 +24,19 @@ public partial class App : Application
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         AppLog.Info("Starting Shturmap " + typeof(App).Assembly.GetName().Version);
+        // Run as the single exe, earlier versions left their unpacked copies in %TEMP%: remove them, off the start.
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                foreach (var line in Shturmap.Core.UnpackedCopies.RemoveOthers())
+                    AppLog.Info("Unpacked copies: " + line);
+            }
+            catch (Exception e)
+            {
+                AppLog.Error("Removing old unpacked copies failed", e);
+            }
+        });
         var cli = Environment.GetCommandLineArgs();
         // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
         // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.

@@ -187,6 +187,11 @@
                 </ItemsControl>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
                            Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data. It never touches the game. It keeps a study log of raids and how you use it in %LOCALAPPDATA%\Shturmap\study; nothing is sent anywhere." />
+                <!-- The licences of the code a build carries (eng\notices.ps1); a single exe unpacks them with the app. -->
+                <HyperlinkButton Padding="0" Click="OnLicencesClick" Visibility="{x:Bind LicencesVisibility}" HorizontalAlignment="Left"
+                                 ToolTipService.ToolTip="Opens the folder with Shturmap's licence and those of the code it is built with">
+                  <TextBlock Text="LICENCES ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                </HyperlinkButton>
               </StackPanel>
             </Flyout>
           </Button.Flyout>

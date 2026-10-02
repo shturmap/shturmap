@@ -196,6 +196,24 @@ public sealed partial class MainWindow : Window
 
     private void OnWikiMapClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.map", ("url", ViewModel.WikiMap?.ToString()));
 
+    /// <summary>Shturmap's licence and the third-party ones a published build carries (eng\notices.ps1).</summary>
+    public static string LicencesFolder { get; } = Path.Combine(AppContext.BaseDirectory, "licenses");
+
+    /// <summary>A developer build has no licences folder, so the help panel shows the link only in a published one.</summary>
+    public Visibility LicencesVisibility { get; } = Directory.Exists(LicencesFolder) ? Visibility.Visible : Visibility.Collapsed;
+
+    private void OnLicencesClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(LicencesFolder) { UseShellExecute = true });
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            AppLog.Error("Opening the licences folder failed", ex);
+        }
+    }
+
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
     // ---- snapshot → view ----

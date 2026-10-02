@@ -17,6 +17,10 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <!-- Needed for publish to include the app's resources.pri and compiled XAML, even without MSIX. -->
     <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- WinUI finds the app's resources (its compiled XAML) in resources.pri or in <exe name>.pri. Named after the
+         project, they were lost as soon as the exe had another name ("Shturmap-0.1.0-win-x64.exe", or a browser's
+         "Shturmap (1).exe"), and the window failed to load (2026-10-03). -->
+    <ProjectPriFileName>resources.pri</ProjectPriFileName>
     <SelfContained>true</SelfContained>
   </PropertyGroup>
 
@@ -42,6 +46,20 @@
     <!-- The Windows API projection is huge and mostly unused; precompiling it doubles its size for no gain. -->
     <PublishReadyToRunExclude Include="Microsoft.Windows.SDK.NET.dll" />
   </ItemGroup>
+
+  <!-- The licences a build must carry (docs/DESIGN.md §3): eng\notices.ps1 gathers them before every publish into
+       licenses\, published beside the exe; a single exe carries them inside and unpacks them with the app. -->
+  <Target Name="PublishNotices" BeforeTargets="ComputeResolvedFilesToPublishList">
+    <PropertyGroup>
+      <_ShturmapNotices>$(MSBuildProjectDirectory)\$(IntermediateOutputPath)notices</_ShturmapNotices>
+    </PropertyGroup>
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\eng\notices.ps1&quot; -Out &quot;$(_ShturmapNotices)&quot;" />
+    <ItemGroup>
+      <_ShturmapNotice Include="$(_ShturmapNotices)\**\*" />
+      <ResolvedFileToPublish Include="@(_ShturmapNotice)" RelativePath="%(_ShturmapNotice.RecursiveDir)%(_ShturmapNotice.Filename)%(_ShturmapNotice.Extension)"
+                             CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
 
   <!-- Native packages ship debug symbols (~250 MB) that end users never need. -->
   <Target Name="RemoveSymbolsFromPublish" AfterTargets="Publish">

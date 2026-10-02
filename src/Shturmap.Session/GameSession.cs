@@ -766,10 +766,11 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
     }
 
-    // When this build was made: a new build between sessions is testing, not play.
+    // When this build was made: a new build between sessions is testing, not play. The exe's own time: a single exe's
+    // assemblies are unpacked into %TEMP% on its first start, so theirs would be the unpacking's.
     private static DateTime? BuildTime()
     {
-        var location = typeof(GameSession).Assembly.Location;
+        var location = Environment.ProcessPath ?? "";
         return location.Length > 0 && File.Exists(location) ? File.GetLastWriteTime(location) : null;
     }
 

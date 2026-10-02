@@ -12,7 +12,9 @@ Essentials:
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
-  (the wrapper finds the per-user .NET 10 SDK). Publish: `.\eng\publish.ps1`.
+  (the wrapper finds the per-user .NET 10 SDK). Publish the folder build (`artifacts\Shturmap`, what
+  `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. The release to send, one exe plus a zip:
+  `.\eng\release.ps1` (DESIGN.md §8, "Distribution").
 - The CLI (`tools/Shturmap.Cli`) runs every part headless; `simulate` plays a scripted raid against a fake game.
 - After a tarkov.dev or game update, run `shturmap-cli synopses pve` and `shturmap-cli synopses regular` and look at
   the FALLBACK, LONG and BREAK rows: the quest synopses in Plan are made from tarkov.dev's texts by fixed rules

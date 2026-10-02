@@ -56,12 +56,16 @@ third-party software in general, so use it at your own risk.
 
 ## Get it
 
-There are no release builds yet. Build it on Windows 10 (2004) or later with the
-[.NET 10 SDK](https://dotnet.microsoft.com/download):
+There are no public releases yet. A release is one file, `Shturmap-<version>-win-x64.exe` (about 90 MB), for 64-bit
+Windows 10 (2004) or later: nothing to install or unzip. The app isn't signed, so Windows warns on its first start;
+click **More info → Run anyway**. The first start takes a second longer while it unpacks itself into your temp
+folder (about 200 MB, reused on later starts; a newer version removes the older one's copy).
+
+To build it yourself, with the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```powershell
-.\eng\publish.ps1                     # self-contained build in artifacts\Shturmap
-.\artifacts\Shturmap\Shturmap.exe
+.\eng\release.ps1                     # artifacts\Shturmap-<version>-win-x64.exe, plus the same build zipped
+.\eng\publish.ps1                     # or just the folder build: artifacts\Shturmap\Shturmap.exe
 ```
 
 On first start it finds the game (Steam or the Battlestate Games launcher), its logs and your Screenshots folder,

@@ -1,4 +1,6 @@
 # Builds a self-contained Shturmap into artifacts\Shturmap. Run artifacts\Shturmap\Shturmap.exe; no .NET install needed.
+# The licences travel in its licenses\ folder (the app project gathers them, eng\notices.ps1). For the release to
+# send, a single exe, see eng\release.ps1.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $out = Join-Path $root 'artifacts\Shturmap'
@@ -11,6 +13,4 @@ if ($running) {
 }
 & (Join-Path $PSScriptRoot 'dotnet.ps1') publish (Join-Path $root 'src\Shturmap.App\Shturmap.App.csproj') -c Release -o $out -p:PublishReadyToRun=true
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-# The build redistributes third-party libraries; their licences require the notices to travel with it.
-& (Join-Path $PSScriptRoot 'notices.ps1') -Out $out
 Write-Output "Published to $out"

@@ -1,7 +1,8 @@
-# Puts the licences a build must carry next to it: LICENSE and THIRD-PARTY-NOTICES.md in the folder, and in
-# licenses\ every licence and notice file the app's packages and the .NET runtime ship, plus the texts some
-# packages don't carry themselves (eng\licenses). Run by publish.ps1 after a publish.
-# Usage: .\eng\notices.ps1 -Out artifacts\Shturmap
+# Gathers the licences a build must carry into <Out>\licenses: Shturmap's LICENSE, THIRD-PARTY-NOTICES.md, every
+# licence and notice file the app's packages and the .NET runtime ship, and the texts some packages don't carry
+# themselves (eng\licenses). The app project runs it before every publish and publishes <Out> beside the exe, so a
+# single exe carries them inside (docs/DESIGN.md §3); the help panel's LICENCES link opens the folder.
+# Usage: .\eng\notices.ps1 -Out <folder>
 param([Parameter(Mandatory)] [string] $Out)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -11,7 +12,7 @@ $licenses = Join-Path $Out 'licenses'
 if (Test-Path $licenses) { Remove-Item $licenses -Recurse -Force }
 New-Item -ItemType Directory -Force $licenses | Out-Null
 
-Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $Out
+Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $licenses
 Copy-Item (Join-Path $PSScriptRoot 'licenses\*') $licenses
 
 $isNotice = '(?i)^(licen[cs]e|notice|third-?party-?notices)[^/]*$'
@@ -30,4 +31,4 @@ foreach ($package in $packages | Where-Object { $_.Files.Count -gt 0 }) {
   $target = New-Item -ItemType Directory -Force (Join-Path $licenses $package.Name)
   foreach ($file in $package.Files) { Copy-Item (Join-Path $cache (Join-Path $package.Path $file)) $target }
 }
-Write-Output "Licences and notices copied to $licenses"
+Write-Output "Licences and notices gathered in $licenses"
