@@ -59,8 +59,9 @@ residual risk. Do not widen the boundary.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
-  display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Never publish screenshots
-  that show them (BSG licence 4.2.2).
+  display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Screenshots of Shturmap
+  on the website and in the README may show them, as the wiki and other community sites do (owner, 2026-10-02,
+  accepting that BSG's licence 4.2.2, read literally, doesn't allow it); they are never published on their own.
 - **Not used**: other Battlestate artwork (quest images, game UI art, map art), text from the EFT wiki or guide
   sites (the quest card links to the wiki page instead), and code from other community tools: TarkovMonitor,
   TarkovTracker and MAYAK (GPL-3.0), Tarkov Pilot (no licence), RatScanner (source-available, based on the Elastic
@@ -403,7 +404,8 @@ Rules:
 - Core logic is pure and unit-tested; fixtures come from real logs (scrubbed with `tools/make-log-fixtures.ps1`).
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs) or
-  `shturmap-cli render`; never capture the user's screens.
+  `shturmap-cli render`; never capture the user's screens. For website media, `tools\fake-raid.ps1 -Window
+  1600x900` renders at a fixed size (the app's `--window`; the UI reads larger) in English (`--culture`).
 - Comments explain why, not what. Match the surrounding style.
 - Write user-facing text plainly: short sentences, units on numbers, no jargon.
 

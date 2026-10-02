@@ -40,7 +40,7 @@ public sealed partial class MainWindow : Window
     private DateTime? _floorPickFix;
     private int _shownFloor = -1;
 
-    public MainWindow(GameSession session)
+    public MainWindow(GameSession session, SizeInt32? size = null)
     {
         _session = session;
         InitializeComponent();
@@ -54,7 +54,7 @@ public sealed partial class MainWindow : Window
         AppWindow.TitleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
         AppWindow.TitleBar.ButtonForegroundColor = (Windows.UI.Color)Application.Current.Resources["InkColor"];
         AppWindow.TitleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RaisedColor"];
-        PlaceOnSecondMonitor();
+        PlaceOnSecondMonitor(size);
 
         Picture.Art = () => _session.Art;
         Study.Log = session.Study;
@@ -1136,7 +1136,8 @@ public sealed partial class MainWindow : Window
             _session.SetSetting("help.seen", "1");
     }
 
-    private void PlaceOnSecondMonitor()
+    // Maximised on the second monitor, or on the only one at 1600×1000; a given size (developer runs) is kept as is.
+    private void PlaceOnSecondMonitor(SizeInt32? size)
     {
         var displays = DisplayArea.FindAll();
         DisplayArea? target = null;
@@ -1150,11 +1151,13 @@ public sealed partial class MainWindow : Window
         }
         if (target is null)
         {
-            AppWindow.Resize(new SizeInt32(1600, 1000));
+            AppWindow.Resize(size ?? new SizeInt32(1600, 1000));
             return;
         }
         AppWindow.Move(new PointInt32(target.WorkArea.X + 40, target.WorkArea.Y + 40));
-        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        if (size is { } fixedSize)
+            AppWindow.Resize(fixedSize);
+        else if (AppWindow.Presenter is OverlappedPresenter presenter)
             presenter.Maximize();
     }
 
