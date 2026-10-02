@@ -68,9 +68,9 @@ On first start it finds the game (Steam or the Battlestate Games launcher), its 
 downloads data from tarkov.dev and reads your existing logs for quest history. In a raid, press your screenshot
 key: your marker moves, the floor follows your height and objectives re-sort by distance.
 
-Limits: quests come from the logs alone, so a quest started before your oldest log isn't known. Maps without
-vector artwork (The Lab, Labyrinth, Icebreaker) aren't drawn yet. On Windows 10, install the Segoe Fluent Icons
-font for the glyphs.
+Limits: quests come from the logs alone, so a quest started before your oldest log isn't known. The Lab, Labyrinth
+and Icebreaker have no usable map artwork, so they are drawn as a 10 m grid with your position, objectives and
+extracts. On Windows 10, install the Segoe Fluent Icons font for the glyphs.
 
 ## Develop
 

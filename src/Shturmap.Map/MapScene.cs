@@ -34,20 +34,23 @@ public sealed record PlayerFix(WorldPoint Position, double? YawDegrees, DateTime
 /// <summary>Everything the renderer draws for one map.</summary>
 public sealed class MapScene
 {
-    public MapScene(MapDefinition definition, MapArtwork artwork)
+    /// <param name="artwork">Null for a map without usable artwork: the renderer draws a schematic sheet instead.</param>
+    public MapScene(MapDefinition definition, MapArtwork? artwork)
     {
         Definition = definition;
         Artwork = artwork;
-        Projection = new MapProjection(definition);
-        Placement = Projection.PlaceSvg(artwork.ViewBox.Left, artwork.ViewBox.Top, artwork.ViewBox.Width, artwork.ViewBox.Height);
+        Projection = MapProjection.For(definition);
+        if (artwork is not null)
+            Placement = Projection.PlaceSvg(artwork.ViewBox.Left, artwork.ViewBox.Top, artwork.ViewBox.Width, artwork.ViewBox.Height);
     }
 
     public MapDefinition Definition { get; }
 
-    public MapArtwork Artwork { get; }
+    public MapArtwork? Artwork { get; }
 
     public MapProjection Projection { get; }
 
+    /// <summary>Where the artwork sits in map units; default when there is no artwork.</summary>
     public SvgPlacement Placement { get; }
 
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>

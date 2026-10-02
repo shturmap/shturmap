@@ -27,6 +27,7 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherQueueTimer _noticeTimer;
     private SessionSnapshot? _snapshot;
     private string? _sceneKey;
+    private readonly HashSet<string> _sheetNoticeShown = new(StringComparer.Ordinal);
     private string? _selectedQuest;
     private bool _updatingPicker;
     private bool _helpShownOnce;
@@ -486,7 +487,14 @@ public sealed partial class MainWindow : Window
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
-        vm.Attribution = s.Definition?.Author is { } author ? $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev" : "Data tarkov.dev";
+        // Credit the artist only where their SVG is drawn: maps.json also names the authors of tile renders, which
+        // Shturmap doesn't use.
+        vm.Attribution = s.Definition switch
+        {
+            { SvgPath: not null, Author: { } author } => $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev",
+            { SvgPath: null } => "No map artwork · grid 10 m · data tarkov.dev",
+            _ => "Data tarkov.dev",
+        };
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
         vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
             && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
@@ -551,12 +559,9 @@ public sealed partial class MainWindow : Window
             var artwork = await _session.Artwork.GetAsync(s.Definition);
             if (_sceneKey != key)
                 return;
-            if (artwork is null)
-            {
-                Map.SetScene(null);
-                ShowNotice($"{s.Map?.Name} is only published as image tiles; drawing those comes in a later version.");
-                return;
-            }
+            // No usable artwork (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
+            if (artwork is null && _sheetNoticeShown.Add(key))
+                ShowNotice($"No map artwork for {s.Map?.Name}: a 10 m grid stands in, with your position, objectives and extracts.");
             Map.SetScene(new MapScene(s.Definition, artwork), _restoreView);
             _restoreView = null;
         }
@@ -623,7 +628,7 @@ public sealed partial class MainWindow : Window
             _restoreView = Map.View;
         _previewing = normalizedName;
         var artwork = await _session.Artwork.GetAsync(definition);
-        if (_previewing != normalizedName || artwork is null)
+        if (_previewing != normalizedName)
             return;
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
         var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());

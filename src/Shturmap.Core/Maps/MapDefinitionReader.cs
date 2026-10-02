@@ -84,7 +84,8 @@ public static class MapDefinitionReader
         {
             if (Numbers(label["position"]) is not { Length: >= 2 } pos || Str(label, "text") is not { } text)
                 continue;
-            labels.Add(new MapLabel(pos[0], pos[1], text, Num(label["rotation"]) ?? 0, Num(label["size"]) ?? 60));
+            var height = Num(label["bottom"]) is { } bottom && Num(label["top"]) is { } top ? new HeightRange(bottom, top) : (HeightRange?)null;
+            labels.Add(new MapLabel(pos[0], pos[1], text, Num(label["rotation"]) ?? 0, Num(label["size"]) ?? 60, height));
         }
         return labels;
     }

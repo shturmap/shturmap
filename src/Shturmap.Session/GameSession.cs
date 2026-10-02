@@ -639,7 +639,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 content = content with { Markers = content.Markers.Where(m => m.Kind != otherSide).ToList() };
             }
             var sameArtwork = _data.MapIdsSharing(_map.NormalizedName);
-            var projection = definition is not null ? new MapProjection(definition) : null;
+            var projection = definition is not null ? MapProjection.For(definition) : null;
             // Degrees clockwise from map-up: unlike "ahead-left", still true after the player has turned.
             double? MapBearing(WorldPoint target) =>
                 fix is not null && projection is not null ? projection.ScreenHeadingDegrees(fix.Position, Bearing.YawTo(fix.Position, target)) : null;

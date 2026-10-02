@@ -179,18 +179,30 @@ static async Task Render(string mapName, string output, List<string> screenshots
     var http = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "tarkov-dev"));
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
     var map = data.MapByNormalizedName(mapName) ?? throw new ArgumentException("Unknown map " + mapName);
-    var definition = data.DefinitionFor(map.NormalizedName) ?? throw new InvalidOperationException("No artwork definition for " + mapName);
-    var svg = await new Shturmap.Data.Maps.ArtworkCache(new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "artwork")))
-        .GetSvgAsync(definition.SvgPath ?? throw new InvalidOperationException("Map has no SVG"));
+    var definition = data.DefinitionFor(map.NormalizedName) ?? throw new InvalidOperationException("No map definition for " + mapName);
 
+    // Maps without an SVG (The Lab, Labyrinth, Icebreaker) render as the schematic sheet.
     var sw = Stopwatch.StartNew();
-    using var artwork = Shturmap.Map.MapArtwork.Load(svg, definition, Path.Combine(cacheRoot, "pictures"));
-    Console.WriteLine($"Artwork parsed in {sw.ElapsedMilliseconds} ms (viewBox {artwork.ViewBox.Width:0}×{artwork.ViewBox.Height:0})");
+    Shturmap.Map.MapArtwork? artwork = null;
+    if (definition.SvgPath is { } svgUrl)
+    {
+        var svg = await new Shturmap.Data.Maps.ArtworkCache(new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "artwork"))).GetSvgAsync(svgUrl);
+        artwork = Shturmap.Map.MapArtwork.Load(svg, definition, Path.Combine(cacheRoot, "pictures"));
+        Console.WriteLine($"Artwork parsed in {sw.ElapsedMilliseconds} ms (viewBox {artwork.ViewBox.Width:0}×{artwork.ViewBox.Height:0})");
+    }
+    else
+    {
+        Console.WriteLine("No artwork for this map: drawing the schematic sheet");
+    }
+    using var artworkScope = artwork;
 
-    // Quests from the Tasks screenshots, as an example of active quests.
+    // Quests from the Tasks screenshots, as an example of active quests; on maps where none of them has anything,
+    // every quest with something on the map.
     var active = data.Tasks.Values.Where(t => new[] { "audit", "dandies", "secret-message", "road-closed", "ballet-lover", "glory-to-cpsu", "revision-streets-of-tarkov" }
         .Contains(t.NormalizedName)).Select(t => t.Id).ToList();
     var content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+    if (content.Objectives.All(o => o.Places.Count == 0))
+        content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
     var scene = new Shturmap.Map.MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones };
 
     var fixes = screenshots.Select(s => Shturmap.Core.Screenshots.ScreenshotName.TryParse(s, out var info) ? info : null)

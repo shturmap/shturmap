@@ -1,4 +1,5 @@
-# Plays a scripted Streets raid against Shturmap without the game, and saves window/map snapshots mid-raid.
+# Plays a scripted raid (Streets, or -Map lab/labyrinth/icebreaker) against Shturmap without the game, and saves
+# window/map snapshots mid-raid.
 # Usage: .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out <folder for PNGs>
 # With -Demo it records the website's hero clip instead: the app plays its scripted interaction (src\Shturmap.App\
 # Demo.cs), this script writes the one screenshot that follows the demo's key press, and tools\record-window records
@@ -32,8 +33,12 @@ param(
   # How long the recorder runs, in seconds; the loop is cut out of it.
   [int] $RecordSeconds = 24,
   # ffmpeg, if it isn't on PATH (winget install --id Gyan.FFmpeg -e).
-  [string] $Ffmpeg
+  [string] $Ffmpeg,
+  # The raid's map, for snapshots (the demo always plays Streets). The Lab, Labyrinth and Icebreaker are drawn as
+  # sheets (no artwork, docs/DESIGN.md §3).
+  [ValidateSet('streets', 'lab', 'labyrinth', 'icebreaker')] [string] $Map = 'streets'
 )
+if ($Demo -and $Map -ne 'streets') { throw 'The demo plays Streets only.' }
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 $start = Get-Date
@@ -73,11 +78,20 @@ function PickStreets {
     "    `"location`": `"TarkovStreets`",`r`n    `"timeVariant`": `"CURR`",`r`n    `"raidMode`": `"Online`"`r`n  }`r`n}")
   GroupNotification 'GroupMatchRaidReady' "{`r`n  `"type`": `"groupMatchRaidReady`"`r`n}"
 }
+# Per map: the scene the log names while loading, the match setup's location, and the two snapshot fixes.
+$facing = '0.01000, 0.99900, -0.04000, 0.02000_14.13'
+$raidMaps = @{
+  streets    = @{ Scene = 'maps/city_preset.bundle rcid:city.scenespreset.asset'; Location = 'TarkovStreets'; A = $posA; B = $posB }
+  lab        = @{ Scene = 'maps/laboratory_preset.bundle'; Location = 'laboratory'; A = "-210.00, 0.50, -340.00_$facing"; B = "-200.00, 0.50, -330.00_$facing" }
+  labyrinth  = @{ Scene = 'maps/labyrinth_preset.bundle'; Location = 'Labyrinth'; A = "0.00, 0.00, 10.00_$facing"; B = "0.00, 0.00, 20.00_$facing" }
+  icebreaker = @{ Scene = 'maps/icebreaker.bundle'; Location = 'Icebreaker'; A = "5.00, 19.20, -10.00_$facing"; B = "5.00, 19.20, 0.00_$facing" }
+}
+$raidMap = $raidMaps[$Map]
 function StartRaid {
-  Log 'scene preset path:maps/city_preset.bundle rcid:city.scenespreset.asset'
+  Log "scene preset path:$($raidMap.Scene)"
   $raidProfile = if ($Scav) { '000000000000000000000004' } else { '000000000000000000000003' }
   if (-not $LocalRaid) {
-    Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: TarkovStreets, shortId: FAKE01'"
+    Log "TRACE-NetworkGameCreate profileStatus: 'Profileid: $raidProfile, Status: Busy, RaidMode: Online, Location: $($raidMap.Location), shortId: FAKE01'"
   }
   if ($HoldLoading) {
     # The steps of a real load (docs/NEXT.md, item 3), up to the spawn; the raid never starts.
@@ -196,9 +210,9 @@ Start-Sleep -Seconds 4
 StartRaid
 if (-not $HoldLoading) {
   Start-Sleep -Seconds 3
-  Shot $posA
+  Shot $raidMap.A
   Start-Sleep -Seconds 3
-  Shot $posB
+  Shot $raidMap.B
 }
 $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
 if (-not $p.HasExited) { Stop-Process -Id $p.Id }

@@ -33,7 +33,10 @@ public static class MapRenderer
     public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1)
     {
         canvas.Clear(Background);
-        DrawArtwork(canvas, camera, scene);
+        if (scene.Artwork is not null)
+            DrawArtwork(canvas, camera, scene, scene.Artwork);
+        else
+            DrawSchematic(canvas, camera, scene, uiScale);
 
         var placed = new List<(SKRect Box, string? Text)>();
         if (scene.ShowLabels)
@@ -82,7 +85,8 @@ public static class MapRenderer
         var layer = FloorResolver.LayerFor(scene.Definition, p);
         int IndexOf(MapLayer? l)
         {
-            var i = l is null ? -1 : stack.ToList().FindIndex(s => s is not null && s.SvgLayer == l.SvgLayer);
+            // The same layer object, not the same SvgLayer: maps without artwork have no SvgLayer on any floor.
+            var i = l is null ? -1 : stack.ToList().FindIndex(s => s is not null && s == l);
             return i >= 0 ? i : stack.ToList().IndexOf(null);
         }
         var here = IndexOf(scene.Floor);
@@ -130,7 +134,7 @@ public static class MapRenderer
         return best;
     }
 
-    private static void DrawArtwork(SKCanvas canvas, Camera camera, MapScene scene)
+    private static void DrawArtwork(SKCanvas canvas, Camera camera, MapScene scene, MapArtwork artwork)
     {
         canvas.Save();
         // Concat, not SetMatrix: a snapshot draws on a canvas already scaled for pixel density.
@@ -138,14 +142,53 @@ public static class MapRenderer
         canvas.Concat(in view);
         canvas.Translate((float)scene.Placement.OffsetX, (float)scene.Placement.OffsetY);
         canvas.Scale((float)scene.Placement.Scale);
-        canvas.DrawPicture(scene.Artwork.Base);
-        if (scene.Artwork.Layer(scene.Floor?.SvgLayer) is { } floor)
+        canvas.DrawPicture(artwork.Base);
+        if (artwork.Layer(scene.Floor?.SvgLayer) is { } floor)
         {
             using var dim = new SKPaint { Color = Background.WithAlpha(150) };
-            canvas.DrawRect(scene.Artwork.ViewBox, dim);
+            canvas.DrawRect(artwork.ViewBox, dim);
             canvas.DrawPicture(floor);
         }
         canvas.Restore();
+    }
+
+    // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the
+    // extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid (10 m, every fifth line
+    // stronger), so positions, distances and markers still read true. No walls: the data has none. The 10 m lines go
+    // when they would crowd closer than 6 px. A caption in the sheet's corner says what it is.
+    private static readonly SKColor SheetPanel = SKColor.Parse("#121311");
+    private static readonly SKColor SheetEdge = SKColor.Parse("#45463f");
+    private static readonly SKColor SheetMinor = SKColor.Parse("#1c1d1a");
+    private static readonly SKColor SheetMajor = SKColor.Parse("#2a2b27");
+    private const double SheetSpacing = 10;
+
+    private static void DrawSchematic(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    {
+        var b = scene.Definition.Bounds;
+        SKPoint At(double x, double z) => camera.ToScreen(scene.Projection.ToMap(x, z));
+        using var sheet = Polygon(At(b.X1, b.Z1), At(b.X2, b.Z1), At(b.X2, b.Z2), At(b.X1, b.Z2));
+        using var panel = new SKPaint { Color = SheetPanel, IsAntialias = true };
+        canvas.DrawPath(sheet, panel);
+
+        var step = SKPoint.Distance(At(0, 0), At(SheetSpacing, 0));
+        canvas.Save();
+        canvas.ClipPath(sheet, antialias: true);
+        using var minor = new SKPaint { Color = SheetMinor, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+        using var major = new SKPaint { Color = SheetMajor, StrokeWidth = 1, Style = SKPaintStyle.Stroke };
+        foreach (var line in SchematicGrid.Lines(b, SheetSpacing, 5))
+        {
+            if (!line.Major && step < 6)
+                continue;
+            canvas.DrawLine(At(line.X1, line.Z1), At(line.X2, line.Z2), line.Major ? major : minor);
+        }
+        canvas.Restore();
+        using var edge = new SKPaint { Color = SheetEdge, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
+        canvas.DrawPath(sheet, edge);
+
+        var box = sheet.Bounds;
+        using var font = new SKFont(TypefaceBold, 10 * ui);
+        using var paint = new SKPaint { Color = Ink.WithAlpha(110), IsAntialias = true };
+        canvas.DrawText($"NO ARTWORK FOR THIS MAP · GRID {SheetSpacing:0} M", box.Left + 10 * ui, box.Top + 18 * ui, SKTextAlign.Left, font, paint);
     }
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
@@ -156,6 +199,10 @@ public static class MapRenderer
         using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
         foreach (var label in scene.Definition.Labels)
         {
+            // A label with heights belongs to one floor and shows only with it, as on tarkov.dev (The Lab's rooms
+            // would print over each other otherwise).
+            if (label.Height is { } h && FloorOffset(scene, new WorldPoint(label.X, (h.Min + h.Max) / 2, label.Z)) != 0)
+                continue;
             var at = camera.ToScreen(scene.Projection.ToMap(label.X, label.Z));
             var width = font.MeasureText(label.Text);
             var box = SKRect.Create(at.X - width / 2, at.Y - font.Size, width, font.Size * 1.3f);

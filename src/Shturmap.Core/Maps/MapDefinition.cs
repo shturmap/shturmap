@@ -26,7 +26,8 @@ public sealed record MapLayer(string Name, string? SvgLayer, string? TilePath, b
     public bool Contains(WorldPoint p) => Extents.Any(e => e.Contains(p));
 }
 
-public sealed record MapLabel(double X, double Z, string Text, double Rotation, double Size);
+/// <param name="Height">The heights the label belongs to (tarkov.dev's bottom/top), or null for every floor.</param>
+public sealed record MapLabel(double X, double Z, string Text, double Rotation, double Size, HeightRange? Height = null);
 
 /// <summary>
 /// One interactive map from tarkov.dev's maps.json (MIT): how game coordinates land on its artwork.
