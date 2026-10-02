@@ -201,7 +201,11 @@ animation effects are off, and only while something is in focus). Losing the foc
 follows, so moving from one row to the next switches the highlight straight across instead of making every marker
 blink. Markers on another floor than the one shown are drawn at full strength, highlighted like any other, with a
 small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half strength read as
-"unimportant" and hid highlighted markers). Spawn zone markers carry it too, by the height of their centroid.
+"unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate with the chevron
+and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or down alone
+didn't say how far; cartography review, 2026-10-02). Badge places are fixed: the floor at the upper right, a
+cluster's count at the lower right; beside small symbols (Scav and sniper zones, bosses) the floor badge moves out
+so the symbol stays visible. Spawn zone markers carry it too, by the height of their centroid.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Logo

@@ -367,8 +367,8 @@ public static class MapRenderer
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
 
     /// <summary>
-    /// Whether a point is on a floor above (+1) or below (−1) the one shown, or on it (0). Floors without artwork
-    /// of their own are drawn in the base layer, so they count as the ground.
+    /// How many floors above (+) or below (−) the one shown a point is, or 0 on it, counted in the map's floor list
+    /// (read data). Floors without artwork of their own are drawn in the base layer, so they count as the ground.
     /// </summary>
     public static int FloorOffset(MapScene scene, WorldPoint p)
     {
@@ -382,33 +382,60 @@ public static class MapRenderer
             var i = l is null ? -1 : stack.ToList().FindIndex(s => s is not null && s == l);
             return i >= 0 ? i : stack.ToList().IndexOf(null);
         }
-        var here = IndexOf(scene.Floor);
-        var there = IndexOf(layer);
         // The stack lists the top floor first.
-        return there == here ? 0 : there < here ? 1 : -1;
+        return IndexOf(scene.Floor) - IndexOf(layer);
+    }
+
+    // The floor arrow sits at the marker's upper right (the lower right is the cluster badge's); beside small symbols
+    // it moves out so they stay visible.
+    private static SKPoint FloorBadgeCenter(ShownMarker m, float ui)
+    {
+        var r = m.Marker.Kind switch
+        {
+            MarkerKind.ScavSpawn => 4 * ui,
+            MarkerKind.SniperSpawn => 6.5f * ui,
+            MarkerKind.BossSpawn => m.R * 1.25f,
+            _ => m.R,
+        };
+        var d = r < 8 * ui ? r + 3 * ui : r * 0.8f;
+        return new SKPoint(m.At.X + d, m.At.Y - d);
     }
 
     private static SKRect FloorBadgeBox(ShownMarker m, float ui)
     {
-        var r = m.Marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : m.R;
-        return Square(new SKPoint(m.At.X + r * 0.8f, m.At.Y - r * 0.8f), 6 * ui);
+        var c = FloorBadgeCenter(m, ui);
+        return Math.Abs(m.Floor) > 1 ? SKRect.Create(c.X - 6 * ui, c.Y - 6.5f * ui, 18 * ui, 13 * ui) : Square(c, 6 * ui);
     }
 
-    // The other-floor arrow: a small dark disc at the marker's upper right with a chevron pointing up or down.
-    private static void DrawFloorArrow(SKCanvas canvas, SKPoint at, float r, int offset, float ui)
+    // The other-floor arrow: a small dark disc with a chevron pointing up or down; two or more floors away, a small
+    // plate with the chevron and the number of floors.
+    private static void DrawFloorArrow(SKCanvas canvas, ShownMarker m, float ui)
     {
-        var c = new SKPoint(at.X + r * 0.8f, at.Y - r * 0.8f);
-        var size = 5.5f * ui;
-        using var disc = new SKPaint { Color = Background, IsAntialias = true };
+        var c = FloorBadgeCenter(m, ui);
+        var offset = m.Floor;
+        using var plate = new SKPaint { Color = Background, IsAntialias = true };
         using var rim = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
-        canvas.DrawCircle(c, size, disc);
-        canvas.DrawCircle(c, size, rim);
-        var h = 2.6f * ui;
-        var w = 3.2f * ui;
+        using var fill = new SKPaint { Color = Player, IsAntialias = true };
+        var count = Math.Abs(offset);
+        if (count > 1)
+        {
+            var box = FloorBadgeBox(m, ui);
+            canvas.DrawRect(box, plate);
+            canvas.DrawRect(box, rim);
+            c = new SKPoint(box.Left + 5.5f * ui, box.MidY);
+            using var font = new SKFont(TypefaceBold, 9.5f * ui);
+            canvas.DrawText(count.ToString(System.Globalization.CultureInfo.InvariantCulture), box.Right - 5 * ui, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, fill);
+        }
+        else
+        {
+            canvas.DrawCircle(c, 5.5f * ui, plate);
+            canvas.DrawCircle(c, 5.5f * ui, rim);
+        }
+        var h = (count > 1 ? 2.3f : 2.6f) * ui;
+        var w = (count > 1 ? 2.8f : 3.2f) * ui;
         using var chevron = offset > 0
             ? Polygon(new(c.X, c.Y - h), new(c.X + w, c.Y + h * 0.8f), new(c.X - w, c.Y + h * 0.8f))
             : Polygon(new(c.X, c.Y + h), new(c.X + w, c.Y - h * 0.8f), new(c.X - w, c.Y - h * 0.8f));
-        using var fill = new SKPaint { Color = Player, IsAntialias = true };
         canvas.DrawPath(chevron, fill);
     }
 
@@ -849,7 +876,7 @@ public static class MapRenderer
         }
 
         if (shown.Floor != 0)
-            DrawFloorArrow(canvas, at, marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : r, shown.Floor, ui);
+            DrawFloorArrow(canvas, shown, ui);
         if (shown.Count > 1)
             DrawCountBadge(canvas, shown, ui);
     }
