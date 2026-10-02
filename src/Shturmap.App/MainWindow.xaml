@@ -185,7 +185,7 @@
                   </Grid>
                   <TextBlock Grid.Row="1" Grid.Column="1" Text="The quest you clicked to keep highlighted" TextWrapping="Wrap" VerticalAlignment="Center" />
                   <Polygon Grid.Row="2" Points="7,0 14,12 0,12" Fill="{StaticResource GreenBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="2" Grid.Column="1" Text="Extract for your side (green PMC, teal Scav, khaki shared)" TextWrapping="Wrap" />
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="Extract for your side: a triangle, green for PMC, teal for Scav; khaki and split down the middle when shared" TextWrapping="Wrap" />
                   <Polygon Grid.Row="3" Points="7,0 14,7 7,14 0,7" Fill="#9C8CC4" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="Transit to another map" TextWrapping="Wrap" />
                   <Polygon Grid.Row="4" Points="7,0 14,7 7,14 0,7" Fill="{StaticResource RedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />

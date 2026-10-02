@@ -19,6 +19,7 @@ public static class MapRenderer
     private static readonly SKColor Violet = SKColor.Parse("#9c8cc4");
     private static readonly SKColor Player = SKColor.Parse("#e9e2c8");
     private static readonly SKColor Ink = SKColor.Parse("#d9d5c4");
+    private static readonly SKColor Muted = SKColor.Parse("#8a8778");
     private static readonly SKColor Red = SKColor.Parse("#b8604a");
 
     /// <summary>
@@ -444,12 +445,13 @@ public static class MapRenderer
         var points = scene.Trail.Select(p => Screen(camera, scene, p)).ToList();
         if (scene.Player is { } player)
             points.Add(Screen(camera, scene, player.Position));
+        // In the player's sand: it is their path (teal is the Scav extracts').
         using var line = new SKPaint
         {
-            Color = Teal.WithAlpha(170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui,
+            Color = Player.WithAlpha(150), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui,
             PathEffect = SKPathEffect.CreateDash([4 * ui, 4 * ui], 0),
         };
-        using var dot = new SKPaint { Color = Teal.WithAlpha(200), IsAntialias = true };
+        using var dot = new SKPaint { Color = Player.WithAlpha(190), IsAntialias = true };
         for (var i = 1; i < points.Count; i++)
             canvas.DrawLine(points[i - 1], points[i], line);
         foreach (var p in points.Take(scene.Trail.Count))
@@ -704,6 +706,13 @@ public static class MapRenderer
                     canvas.DrawPath(tri, fill);
                     canvas.DrawPath(tri, outline);
                 }
+                // Shared by both sides: split down the middle, so it differs from your side's triangle in shape too
+                // (green and khaki come within ΔE 7 with red-green colour blindness).
+                if (marker.Kind == MarkerKind.ExtractShared)
+                {
+                    using var split = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.2f * ui };
+                    canvas.DrawLine(at.X, at.Y - r * 0.85f, at.X, at.Y + r * 0.8f, split);
+                }
                 break;
             case MarkerKind.SniperSpawn:
                 // A hollow hexagon: a shape no other marker uses (a reticle would repeat the Elimination glyph).
@@ -743,9 +752,19 @@ public static class MapRenderer
                 }
                 break;
             case MarkerKind.ObjectiveDone:
-                fill.Color = color.WithAlpha(150);
+                // Done: a smaller disc in muted ink with a check mark, which leaves green to the extracts.
                 DrawCollar(canvas, at, r * 0.8f, ui);
                 canvas.DrawCircle(at, r * 0.8f, fill);
+                using (var check = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui, StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round })
+                using (var tick = new SKPathBuilder())
+                {
+                    var s = r * 0.8f;
+                    tick.MoveTo(at.X - 0.42f * s, at.Y + 0.02f * s);
+                    tick.LineTo(at.X - 0.1f * s, at.Y + 0.34f * s);
+                    tick.LineTo(at.X + 0.45f * s, at.Y - 0.3f * s);
+                    using var mark = tick.Detach();
+                    canvas.DrawPath(mark, check);
+                }
                 break;
             default:
                 DrawCollar(canvas, at, r, ui);
@@ -960,7 +979,7 @@ public static class MapRenderer
     private static SKColor ColorOf(MarkerKind kind) => kind switch
     {
         MarkerKind.Objective or MarkerKind.PossibleLocation => Amber,
-        MarkerKind.ObjectiveDone => Green,
+        MarkerKind.ObjectiveDone => Muted,
         MarkerKind.ExtractPmc => Green,
         MarkerKind.ExtractScav => Teal,
         MarkerKind.ExtractShared => Lime,

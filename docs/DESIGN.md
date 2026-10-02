@@ -182,11 +182,13 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
 | meaning | colour |
 | --- | --- |
 | quests, objectives, distances, "on" (one accent) | muted gold `#C9AD62` |
-| extracts, success, healthy inputs | green `#8DA65E` |
-| the player, the trail | sand `#E9E2C8` / teal `#6F9A94` |
+| extracts (PMC), success, healthy inputs | green `#8DA65E` |
+| Scav extracts | teal `#6F9A94` |
+| shared extracts | khaki `#B7B77A`, the triangle split down the middle |
+| the player and their trail | sand `#E9E2C8` |
 | transits | violet `#9C8CC4` |
 | bosses, danger | red `#B8604A` |
-| text | beige-white `#D9D5C4`, secondary `#8A8778` |
+| text | beige-white `#D9D5C4`, secondary `#8A8778` (also done objectives on the map, with a check mark) |
 | ground, rail, panel, raised | `#0B0C0B`, `#101110`, `#151614`, `#1E1F1B`; hairlines `#2A2B27` / `#45463F` |
 
 Quest **types are shown by glyph, never by colour**; colour stays free for state (open, done, selected).
@@ -332,6 +334,11 @@ spawns below).
   were rejected). It has the kept quest's vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
   the position is a minute old the ring turns dashed and a small dark tag beside it gives the age in whole units,
   as the top bar does ("4 MIN", "2 H"). The facing cone (first minute only) has its arrow outside the ring.
+- **One meaning per colour, shape as a second cue.** Simulated colour blindness (Machado 2009) put the quest amber,
+  the PMC-extract green and the shared-extract khaki within ΔE 4–7 of each other. Shared extracts are split down
+  the middle by a dark line (two sides, one exit), not hollow (hollow means "one of these places"). Done
+  objectives are a smaller muted-ink disc with a check mark, no longer translucent green, so green means extracts
+  only; their zones turn muted too. The trail is the player's sand, no longer the Scav-extract teal.
 
 ### Quest cards
 
