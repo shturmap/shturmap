@@ -90,6 +90,9 @@ public static class MapRenderer
     {
         /// <summary>How far the symbol reaches from its centre, collar and ring included (pixels).</summary>
         public float Reach { get; init; }
+
+        /// <summary>How many places of one objective this marker stands for (1, or a cluster's size).</summary>
+        public int Count { get; init; } = 1;
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
@@ -110,17 +113,12 @@ public static class MapRenderer
     /// </summary>
     public static MapLayout Layout(Camera camera, MapScene scene, float ui)
     {
-        // Markers out of view are left out (their labels would take the place of the ones in view).
-        var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
-        view.Inflate(40 * ui, 40 * ui);
-        var markers = scene.Markers
-            .Select(m => Show(camera, scene, m, ui))
-            .Where(m => view.Contains(m.At))
-            .OrderBy(m => m.Focused ? 2 : m.Selected ? 1 : 0)
-            .ToList();
+        var markers = ShownMarkers(camera, scene, ui);
         var taken = new List<SKRect>();
         foreach (var m in markers)
         {
+            if (m.Count > 1)
+                taken.Add(CountBadgeBox(m, ui));
             taken.Add(Square(m.At, m.Reach));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeBox(m, ui));
@@ -145,7 +143,7 @@ public static class MapRenderer
         var labels = new List<PlacedLabel>();
         using var regular = new SKFont(Typeface, 11.5f * ui);
         using var bold = new SKFont(TypefaceBold, 13 * ui);
-        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected)).OrderBy(LabelRank))
+        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected)).OrderBy(LabelRank).ThenByDescending(m => m.Count))
         {
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
             if (labels.Any(l => l.Text == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
@@ -227,6 +225,82 @@ public static class MapRenderer
             return box;
         var rotation = SKMatrix.CreateRotationDegrees(degrees, about.X, about.Y);
         return rotation.MapRect(box);
+    }
+
+    /// <summary>
+    /// The markers drawn in this view, in drawing order: places of one objective whose markers would overlap (closer
+    /// than two marker widths) merge into one at the group's medoid, a real place, with their count; groups split as
+    /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view).
+    /// </summary>
+    public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui)
+    {
+        var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        view.Inflate(40 * ui, 40 * ui);
+        var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui))).ToList();
+        var result = new List<(int Index, ShownMarker Shown)>();
+        foreach (var group in shown.GroupBy(s => ObjectiveOf(s.Shown.Marker) is { } objective ? $"{objective}|{s.Shown.Marker.Kind}" : "#" + s.Index))
+        {
+            foreach (var cluster in Clusters(group.ToList(), (a, b) => SKPoint.Distance(a.Shown.At, b.Shown.At) < 4 * a.Shown.R))
+            {
+                if (cluster.Count == 1)
+                {
+                    result.Add(cluster[0]);
+                    continue;
+                }
+                var medoid = cluster.MinBy(c => cluster.Sum(o => SKPoint.Distance(c.Shown.At, o.Shown.At)))!;
+                // A group can span floors: its arrow shows when any of its places is on another floor than the one shown.
+                var floor = medoid.Shown.Floor != 0 ? medoid.Shown.Floor
+                    : cluster.Select(c => c.Shown.Floor).Where(f => f != 0).GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+                result.Add((medoid.Index, medoid.Shown with { Count = cluster.Count, Floor = floor }));
+            }
+        }
+        return result
+            .Where(r => view.Contains(r.Shown.At))
+            .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
+            .ThenBy(r => r.Index)
+            .Select(r => r.Shown)
+            .ToList();
+    }
+
+    // Single linkage: items closer than the test (directly or through others) end up in one cluster.
+    private static List<List<T>> Clusters<T>(List<T> items, Func<T, T, bool> near)
+    {
+        var clusters = new List<List<T>>();
+        foreach (var item in items)
+        {
+            var joined = clusters.Where(c => c.Any(o => near(item, o))).ToList();
+            var merged = joined.SelectMany(c => c).Append(item).ToList();
+            clusters.RemoveAll(joined.Contains);
+            clusters.Add(merged);
+        }
+        return clusters;
+    }
+
+    /// <summary>The objective a quest marker belongs to (its id is "objective:&lt;objective id&gt;:&lt;n&gt;"), or null.</summary>
+    public static string? ObjectiveOf(MapMarker m) =>
+        m.Objective is not null && m.Id.StartsWith("objective:", StringComparison.Ordinal) && m.Id.LastIndexOf(':') is var end and > 10
+            ? m.Id[10..end]
+            : null;
+
+    // The count badge sits at the marker's lower right; the upper right is the floor arrow's.
+    private static SKRect CountBadgeBox(ShownMarker m, float ui)
+    {
+        using var font = new SKFont(TypefaceBold, 10 * ui);
+        var width = Math.Max(font.MeasureText(m.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)) + 7 * ui, 14 * ui);
+        var c = new SKPoint(m.At.X + m.R * 0.85f, m.At.Y + m.R * 0.85f);
+        return SKRect.Create(c.X - width / 2, c.Y - 7 * ui, width, 14 * ui);
+    }
+
+    private static void DrawCountBadge(SKCanvas canvas, ShownMarker m, float ui)
+    {
+        var box = CountBadgeBox(m, ui);
+        using var plate = new SKPaint { Color = Background, IsAntialias = true };
+        using var edge = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
+        using var font = new SKFont(TypefaceBold, 10 * ui);
+        using var paint = new SKPaint { Color = m.Color, IsAntialias = true };
+        canvas.DrawRect(box, plate);
+        canvas.DrawRect(box, edge);
+        canvas.DrawText(m.Count.ToString(System.Globalization.CultureInfo.InvariantCulture), box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
     }
 
     private static ShownMarker Show(Camera camera, MapScene scene, MapMarker marker, float ui)
@@ -343,12 +417,13 @@ public static class MapRenderer
     {
         MapMarker? best = null;
         var bestDistance = float.MaxValue;
-        foreach (var marker in scene.Markers)
+        foreach (var shown in ShownMarkers(camera, scene, ui))
         {
+            var marker = shown.Marker;
             // Scav and sniper zones say nothing more on hover.
             if (marker.Kind is MarkerKind.ScavSpawn or MarkerKind.SniperSpawn)
                 continue;
-            var distance = SKPoint.Distance(Screen(camera, scene, marker.Position), screen);
+            var distance = SKPoint.Distance(shown.At, screen);
             var reach = (marker.Objective is not null ? 15f : 10f) * ui;
             if (distance <= reach && distance < bestDistance)
             {
@@ -775,6 +850,8 @@ public static class MapRenderer
 
         if (shown.Floor != 0)
             DrawFloorArrow(canvas, at, marker.Kind == MarkerKind.ScavSpawn ? 4 * ui : r, shown.Floor, ui);
+        if (shown.Count > 1)
+            DrawCountBadge(canvas, shown, ui);
     }
 
     // ---- the player's new position: a ping where it is, or an arrow at the edge when it is out of view ----

@@ -339,6 +339,13 @@ spawns below).
   the middle by a dark line (two sides, one exit), not hollow (hollow means "one of these places"). Done
   objectives are a smaller muted-ink disc with a check mark, no longer translucent green, so green means extracts
   only; their zones turn muted too. The trail is the player's sand, no longer the Scav-extract teal.
+- **Clusters of one objective's places.** Places of one objective (and one kind) whose markers would overlap,
+  closer than two marker widths on screen, merge into one marker at the group's medoid (a real place, so the
+  marker never stands where nothing is) with a count badge at its lower right in the marker's colour: "Following the
+  Bread Crumbs" lists 16 places on The Lab, which piled up with four labels. Groups split as the view zooms in;
+  places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
+  too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
+  pointing at a cluster points at its quest.
 
 ### Quest cards
 
