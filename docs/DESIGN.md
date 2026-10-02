@@ -108,7 +108,8 @@ residual risk. Do not widen the boundary.
 7. **Never ask.** No confirmations, no prompts. Quest states come from the game's logs alone (owner, 2026-10-01:
    players don't screenshot their Tasks screen, so Tasks-screen reading and the TarkovEyes import were removed).
 8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
-   the "you are here" parts works without a fix. A fix shows its age and the marker fades. No "you may be
+   the "you are here" parts works without a fix. A fix shows its age; the marker stays at full strength and says
+   it (see "Map drawing"). No "you may be
    anywhere in here" ring: it was tried and is visual noise. Directions relative to your facing
    ("ahead-left") are shown only for 45 s after a fix; after that they become map directions ("NE", map-up is
    north), which stay true while you move. Distances say how old they are. **A new fix never moves the view**
@@ -310,6 +311,11 @@ spawns below).
   that fits in 120 px and follows the zoom. No range rings (three circles on every view for a question the bar and
   the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
   relative to the facing).
+- **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
+  below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
+  were rejected). It has the kept quest's vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
+  the position is a minute old the ring turns dashed and a small dark tag beside it gives the age in whole units,
+  as the top bar does ("4 MIN", "2 H"). The facing cone (first minute only) has its arrow outside the ring.
 
 ### Quest cards
 

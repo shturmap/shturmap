@@ -146,7 +146,7 @@ public sealed partial class MainWindow : Window
             _cards.Refresh(UpdateCard);
             RefreshPinned();
         }
-        Map.Redraw(); // the player marker fades with age
+        Map.Redraw(); // the player's ring and age tag follow the fix's age
     }
 
     public MainViewModel ViewModel { get; } = new();

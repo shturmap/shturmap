@@ -125,7 +125,16 @@ public static class MapRenderer
                 taken.Add(FloorBadgeBox(m, ui));
         }
         if (scene.Player is { } player)
-            taken.Add(Square(Screen(camera, scene, player.Position), 12 * ui));
+        {
+            var at = Screen(camera, scene, player.Position);
+            taken.Add(Square(at, (PlayerRing + 3) * ui));
+            var age = DateTime.Now - player.At;
+            if (age >= PlayerOld)
+            {
+                using var tagFont = new SKFont(TypefaceBold, 10.5f * ui);
+                taken.Add(AgeTagBox(at, tagFont.MeasureText(AgeText(age)), ui));
+            }
+        }
         var guide = Guide(camera, scene, ui);
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
@@ -489,7 +498,7 @@ public static class MapRenderer
         // The number the card shows: horizontal metres to the nearest place, as old as the position.
         var metres = player.Position.HorizontalDistanceTo(nearest.Position);
         var age = DateTime.Now - player.At;
-        var text = DistanceText(metres) + (age >= TimeSpan.FromMinutes(1) ? $" · {(int)age.TotalMinutes} MIN" : "");
+        var text = DistanceText(metres) + (age >= PlayerOld ? " · " + AgeText(age) : "");
         // On the part of the line in view, and only where the line is long enough to carry it clear of its ends.
         var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
         view.Inflate(-24 * ui, -24 * ui);
@@ -839,6 +848,21 @@ public static class MapRenderer
         if (scene.Pinging)
             DrawPing(canvas, at, (DateTime.Now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui);
 
+        // Full strength at any age (cartography review, 2026-10-02: fading it said "less important" and sank it below
+        // the quest markers). The age is said instead: a steady ring, sand on a dark band like the kept quest's, turns
+        // dashed once the position is a minute old, and a tag gives the minutes, as the top bar does.
+        var old = age >= PlayerOld;
+        using var glow = new SKPaint { Color = Player.WithAlpha(40), IsAntialias = true };
+        using var band = new SKPaint { Color = Background.WithAlpha(200), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4.5f * ui };
+        using var ring = new SKPaint
+        {
+            Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui,
+            PathEffect = old ? SKPathEffect.CreateDash([3.5f * ui, 3 * ui], 0) : null,
+        };
+        canvas.DrawCircle(at, 16 * ui, glow);
+        canvas.DrawCircle(at, PlayerRing * ui, band);
+        canvas.DrawCircle(at, PlayerRing * ui, ring);
+
         // The facing is only true for a moment; after a minute the cone would mislead.
         if (player.YawDegrees is { } yaw && age < TimeSpan.FromSeconds(60))
         {
@@ -856,19 +880,38 @@ public static class MapRenderer
             wedgeBuilder.Close();
             using var wedge = wedgeBuilder.Detach();
             canvas.DrawPath(wedge, cone);
-            using var arrow = Polygon(new(at.X, at.Y - 17 * ui), new(at.X - 6 * ui, at.Y - 8 * ui), new(at.X + 6 * ui, at.Y - 8 * ui));
+            // Outside the ring, so the ring stays whole.
+            using var arrow = Polygon(new(at.X, at.Y - 23 * ui), new(at.X - 6 * ui, at.Y - 15 * ui), new(at.X + 6 * ui, at.Y - 15 * ui));
             using var arrowPaint = new SKPaint { Color = Player, IsAntialias = true };
             canvas.DrawPath(arrow, arrowPaint);
             canvas.Restore();
         }
-        var fade = age < TimeSpan.FromSeconds(30) ? 1.0 : Math.Max(0.45, 1 - (age.TotalSeconds - 30) / 180 * 0.55);
-        using var halo = new SKPaint { Color = Player.WithAlpha((byte)(45 * fade)), IsAntialias = true };
-        using var body = new SKPaint { Color = Player.WithAlpha((byte)(255 * fade)), IsAntialias = true };
+        using var body = new SKPaint { Color = Player, IsAntialias = true };
         using var edge = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui };
-        canvas.DrawCircle(at, 16 * ui, halo);
         canvas.DrawCircle(at, 6.5f * ui, body);
         canvas.DrawCircle(at, 6.5f * ui, edge);
+        if (!old)
+            return;
+        var text = AgeText(age);
+        using var font = new SKFont(TypefaceBold, 10.5f * ui);
+        var box = AgeTagBox(at, font.MeasureText(text), ui);
+        using var plate = new SKPaint { Color = Background.WithAlpha(230), IsAntialias = true };
+        using var paint = new SKPaint { Color = Player, IsAntialias = true };
+        canvas.DrawRect(box, plate);
+        canvas.DrawText(text, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
     }
+
+    /// <summary>From when the player's ring is dashed and carries an age tag.</summary>
+    public static readonly TimeSpan PlayerOld = TimeSpan.FromMinutes(1);
+
+    private const float PlayerRing = 12;
+
+    /// <summary>A fix's age as the map says it: "4 MIN", "2 H" (whole units, as the top bar).</summary>
+    public static string AgeText(TimeSpan age) => age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} MIN" : $"{(int)age.TotalHours} H";
+
+    // The age tag sits right of the ring.
+    private static SKRect AgeTagBox(SKPoint at, float textWidth, float ui) =>
+        SKRect.Create(at.X + (PlayerRing + 5) * ui, at.Y - 8 * ui, textWidth + 10 * ui, 16 * ui);
 
     private static SKPath Hexagon(SKPoint at, float r) =>
         Polygon(Enumerable.Range(0, 6).Select(i => new SKPoint(at.X + r * MathF.Cos(MathF.PI / 3 * i), at.Y + r * MathF.Sin(MathF.PI / 3 * i))).ToArray());
