@@ -41,6 +41,7 @@ public partial class App : Application
         _window = new MainWindow(_session, windowSize)
         {
             SnapshotMode = cli.Contains("--snapshot"),
+            SnapshotScale = int.TryParse(Arg(cli, "--snapshot-scale"), out var snapshotScale) ? Math.Clamp(snapshotScale, 1, 4) : 1,
             ShowQuest = Arg(cli, "--show-quest"),
         };
         _window.Closed += async (_, _) => await _session.DisposeAsync();

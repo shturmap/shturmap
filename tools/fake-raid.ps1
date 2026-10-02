@@ -15,7 +15,9 @@ param(
   # Window size for the snapshot, e.g. 1600x900 (website media); maximised when empty.
   [string] $Window,
   # Culture for dates and numbers in the snapshot.
-  [string] $Culture = 'en-US'
+  [string] $Culture = 'en-US',
+  # Snapshot pixel density: 2 renders twice the pixels, for sharp images on high-DPI screens.
+  [int] $Scale = 1
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -59,6 +61,7 @@ if ($PlanOnly) {
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter, '--culture', $Culture)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 if ($Window) { $appArgs += @('--window', $Window) }
+if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
 if ($PlanOnly) {
   $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)

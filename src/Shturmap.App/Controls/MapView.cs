@@ -173,11 +173,13 @@ public sealed partial class MapView : Grid
         _panel.Invalidate();
     }
 
-    /// <summary>Draws the current view into a PNG (developer snapshot; the GPU surface itself can't be read back).</summary>
-    public void SaveSnapshot(string path)
+    /// <summary>Draws the current view into a PNG (developer snapshot; the GPU surface itself can't be read back),
+    /// at <paramref name="scale"/> times the screen's pixels.</summary>
+    public void SaveSnapshot(string path, int scale = 1)
     {
         var size = _camera.Viewport;
-        using var surface = SKSurface.Create(new SKImageInfo(Math.Max(1, (int)size.Width), Math.Max(1, (int)size.Height)));
+        using var surface = SKSurface.Create(new SKImageInfo(Math.Max(1, (int)size.Width * scale), Math.Max(1, (int)size.Height * scale)));
+        surface.Canvas.Scale(scale);
         if (_scene is null)
             surface.Canvas.Clear(SKColor.Parse("#0e1413"));
         else

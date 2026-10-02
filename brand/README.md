@@ -43,7 +43,7 @@ The icon keeps its own colours on both: plate `#151614`, border `#45463F`, corne
 - The chevron is cut through the centre stem only, pointing up. Never on all three stems, never pointing down.
 - The corner marks stay low-contrast, mirror each other and open toward the centre.
 - The wordmark's M stays whole; stencil bridges only where a closed shape needs one (A, P, R).
-- Lockup: the icon's plate is about 1.36 times the cap height, the gap between plate and wordmark is about half the
+- Lockup: the icon's plate is about 1.36 times the cap height, the gap between plate and wordmark is a third of the
   cap height, and icon and wordmark are centred on one horizontal axis. The MAP strip reaches 8 % of the cap height
   above and below the letters.
 

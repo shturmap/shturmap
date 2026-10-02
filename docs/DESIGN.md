@@ -183,9 +183,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   accepted knowingly: the cut gives the centre stem an arrow tip (Tyr rune), and a marked centre stem between two
   others recalls the tryzub's layout.
 - **Sizes.** 16 to 40 px use the plain Ш fitted to whole pixels (the cut would smudge); 48 px and up the full mark.
-- **Lockup.** The gap between the icon's plate and the wordmark is half the cap height; the plate is about 1.36×
-  the cap height; everything is centred on one axis. The README shows `brand/logo-dark.svg` or `logo-light.svg`
-  through `<picture>`, 40 px tall.
+- **Lockup.** The gap between the icon's plate and the wordmark is a third of the cap height (owner, 2026-10-02:
+  half read too loose); the plate is about 1.36× the cap height; everything is centred on one axis. The README
+  shows `brand/logo-dark.svg` or `logo-light.svg` through `<picture>`, 40 px tall.
 - **Colours.** The palette above. On light backgrounds ink is `#1E1F1B` and amber `#8C7436`; the icon keeps its
   dark plate on both.
 - The lettering is drawn from scratch as paths, never from font outlines (§3).
@@ -405,7 +405,8 @@ Rules:
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs) or
   `shturmap-cli render`; never capture the user's screens. For website media, `tools\fake-raid.ps1 -Window
-  1600x900` renders at a fixed size (the app's `--window`; the UI reads larger) in English (`--culture`).
+  1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
+  (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens).
 - Comments explain why, not what. Match the surrounding style.
 - Write user-facing text plainly: short sentences, units on numbers, no jargon.
 

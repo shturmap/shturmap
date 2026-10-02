@@ -133,7 +133,9 @@ public static class MapRenderer
     private static void DrawArtwork(SKCanvas canvas, Camera camera, MapScene scene)
     {
         canvas.Save();
-        canvas.SetMatrix(camera.Matrix);
+        // Concat, not SetMatrix: a snapshot draws on a canvas already scaled for pixel density.
+        var view = camera.Matrix;
+        canvas.Concat(in view);
         canvas.Translate((float)scene.Placement.OffsetX, (float)scene.Placement.OffsetY);
         canvas.Scale((float)scene.Placement.Scale);
         canvas.DrawPicture(scene.Artwork.Base);

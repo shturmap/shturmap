@@ -1077,6 +1077,9 @@ public sealed partial class MainWindow : Window
     /// <summary>Set for "--snapshot" runs: the help panel opens to be rendered, and isn't marked as seen.</summary>
     public bool SnapshotMode { get; set; }
 
+    /// <summary>Snapshots render at this multiple of the screen's pixel density (2 for sharp website images).</summary>
+    public int SnapshotScale { get; set; } = 1;
+
     /// <summary>"--show-quest &lt;part of a name&gt;" (snapshots): highlights that quest, holds its card and pins it.</summary>
     public string? ShowQuest { get; set; }
 
@@ -1309,7 +1312,7 @@ public sealed partial class MainWindow : Window
                 await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));
             if (_pinned.Values.FirstOrDefault() is { } pinned)
                 await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
-            Map.SaveSnapshot(Path.Combine(folder, "map.png"));
+            Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);
             AppLog.Info("Snapshot saved to " + folder);
         }
         catch (Exception e)
@@ -1321,13 +1324,26 @@ public sealed partial class MainWindow : Window
     private async Task RenderToPngAsync(UIElement element, string path)
     {
         var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
-        await rtb.RenderAsync(element);
+        var scale = Content.XamlRoot?.RasterizationScale ?? 1;
+        if (SnapshotScale == 1)
+            await rtb.RenderAsync(element);
+        else
+        {
+            // A scaled render alone only stretches the bitmap; raising the element's rasterization scale first makes
+            // text and vectors draw at the higher density.
+            var previous = element.RasterizationScale;
+            element.RasterizationScale = scale * SnapshotScale;
+            await Task.Delay(250);
+            await rtb.RenderAsync(element, (int)Math.Round(element.ActualSize.X * scale * SnapshotScale),
+                (int)Math.Round(element.ActualSize.Y * scale * SnapshotScale));
+            element.RasterizationScale = previous;
+        }
         var pixels = await rtb.GetPixelsAsync();
         var storageFolder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(Path.GetDirectoryName(path));
         var file = await storageFolder.CreateFileAsync(Path.GetFileName(path), Windows.Storage.CreationCollisionOption.ReplaceExisting);
         using var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
         var encoder = await Windows.Graphics.Imaging.BitmapEncoder.CreateAsync(Windows.Graphics.Imaging.BitmapEncoder.PngEncoderId, stream);
-        var dpi = 96 * (Content.XamlRoot?.RasterizationScale ?? 1);
+        var dpi = 96 * scale * SnapshotScale;
         encoder.SetPixelData(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
             (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, dpi, dpi, System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.ToArray(pixels));
         await encoder.FlushAsync();

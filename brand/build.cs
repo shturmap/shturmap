@@ -94,10 +94,11 @@ static class Logo
             [new(k.Ink, Geo.Moved(shtur.Shape, 1, 0, padV)), new(k.Amber, Geo.Moved(strip, 1, 0, padV))]);
     }
 
-    // The 256-unit icon drawn 150 units tall, a 46-unit gap, then the wordmark, all centred on one axis.
+    // The 256-unit icon drawn 150 units tall, then the wordmark, all centred on one axis. With the plate's own 7-unit
+    // margin, the 26-unit gap leaves a third of the cap height between the plate and the letters.
     public static Drawing Lockup(Drawing icon, Drawing word)
     {
-        const double M = 150, gap = 46;
+        const double M = 150, gap = 26;
         double h = Math.Max(M, word.H + 8);
         var layers = icon.Layers.Select(l => new Layer(l.Fill, Geo.Moved(l.Path, M / 256, 0, (h - M) / 2)))
             .Concat(word.Layers.Select(l => new Layer(l.Fill, Geo.Moved(l.Path, 1, M + gap, (h - word.H) / 2))));
