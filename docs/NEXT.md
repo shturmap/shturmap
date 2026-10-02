@@ -155,6 +155,22 @@ be the same in the app, the README and the coming website, and DESIGN.md has to 
   Bahnschrift may be used on screen but not served as a web font (Microsoft's font FAQ); how the README fits in;
 - shape, spacing and motion rules, the logo's use (clear space, minimum sizes), and the tone of the text.
 
+## At the production release on GitHub (owner, 2026-10-03)
+
+Raise these with the owner when the app gets its first public GitHub Release (not for builds passed to friends):
+
+1. **Website media.** Re-record the screenshots and the hero clip (`tools\make-media.ps1` in the site repository),
+   only when the owner says so.
+2. **R2: GitHub Issues and Discussions.** Issue forms for bugs and for features; help gets a "Report a problem"
+   link that opens the bug form with the version and Windows prefilled (the same values as Copy diagnostics), and
+   the player pastes the diagnostics. Discussions for questions and ideas.
+3. **R3: a form without an account,** beside the issues (e.g. Tally, hosted in the EU). The owner copies its reports
+   into issues by hand at first; automate it (Tally → Make or Zapier, "create issue") only if there are many.
+   Never a GitHub token in the app and no relay run by the app: Shturmap itself sends nothing. Link both from help,
+   the README and the website's footer.
+
+Until then, friends report with Copy diagnostics and LOG FOLDER in help (R1, done 2026-10-03).
+
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an

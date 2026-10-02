@@ -11,6 +11,9 @@ public sealed class GameData
 
     public required string Language { get; init; }
 
+    /// <summary>The language asked for when tarkov.dev gave no texts in it and English came instead, or null.</summary>
+    public string? MissingLanguage { get; init; }
+
     public required IReadOnlyDictionary<string, ApiMap> Maps { get; init; }
 
     public required IReadOnlyDictionary<string, ApiTask> Tasks { get; init; }

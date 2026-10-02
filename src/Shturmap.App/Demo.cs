@@ -67,7 +67,7 @@ public sealed partial class MainWindow
             return;
         _demoLastFix = fix;
         _demoFixes++;
-        AppLog.Info($"Demo: fix {_demoFixes} at {fix.Position}");
+        AppLog.Debug($"Demo: fix {_demoFixes} at {fix.Position}");
         ViewModel.NoticeOpen = false;
         if (_demoFixes == 1)
             PlayDemo();
@@ -76,7 +76,7 @@ public sealed partial class MainWindow
     private async void PlayDemo()
     {
         var root = (FrameworkElement)Content;
-        AppLog.Info("Demo: armed");
+        AppLog.Debug("Demo: armed");
         await Task.Delay(DemoLead);
         var startView = Map.View;
         var quest = _snapshot?.Objectives.FirstOrDefault(o => o.QuestName.Contains(_demoQuest!, StringComparison.OrdinalIgnoreCase))?.QuestId;
@@ -87,18 +87,18 @@ public sealed partial class MainWindow
         }
 
         // The pause: dim, the key in the middle, nothing else moving. Then the press, and the file name it brings.
-        AppLog.Info("Demo: key");
+        AppLog.Debug("Demo: key");
         _demoFixWanted = new TaskCompletionSource<PlayerFix>();
         _demoHolding = true;
         await ShowKey();
         await Task.Delay(1200);
-        var press = PressKey(() => AppLog.Info("Demo: press"));
+        var press = PressKey(() => AppLog.Debug("Demo: press"));
         if (await Task.WhenAny(_demoFixWanted.Task, Task.Delay(4000)) != _demoFixWanted.Task)
         {
             AppLog.Error("Demo: no position arrived after the key press");
             return;
         }
-        AppLog.Info("Demo: read");
+        AppLog.Debug("Demo: read");
         ShowKeyFileName(_demoFixWanted.Task.Result.Position);
         await press;
         await Task.Delay(700);
@@ -158,7 +158,7 @@ public sealed partial class MainWindow
         ClearSelection();
         Map.AnimateView(startView, TimeSpan.FromMilliseconds(1300));
         await Task.Delay(1400);
-        AppLog.Info("Demo: end");
+        AppLog.Debug("Demo: end");
     }
 
     // ---- the drawn screenshot key, large in the middle of a dimmed window: what makes the position change ----

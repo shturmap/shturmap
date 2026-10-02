@@ -290,8 +290,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
-  "Map drawing", "Legend"). Opens
-  once by itself on first run.
+  "Map drawing", "Legend"), what Shturmap reads and that it sends nothing, the "Keep a study log" switch, and the
+  links COPY DIAGNOSTICS, LOG FOLDER and LICENCES (§8, "Study log", "Diagnostics"). Opens once by itself on first
+  run.
 
 ### Map drawing
 
@@ -582,8 +583,9 @@ Rules:
 
 - Core logic is pure and unit-tested; fixtures come from real logs (scrubbed with `tools/make-log-fixtures.ps1`).
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
-- Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs) or
-  `shturmap-cli render`; never capture the user's screens. For website media, `tools\fake-raid.ps1 -Window
+- Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs, and writes what Copy
+  diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render`; never capture the user's screens.
+  `--verbose` adds the app log's DEBUG lines; `--study` keeps a study log for one session. For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
   (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
@@ -699,6 +701,47 @@ the insurer's "lost" note came during the raid or within 5 minutes after it, on 
 logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;
 no note proves nothing, since gear may not have been insured. Only Shturmap's own windows are observed; nothing is
 sent anywhere.
+
+The study log is **the player's choice** (owner, 2026-10-03): off by default, kept only while "Keep a study log" in
+help is ticked, with one line saying what it records, that it stays on this PC (where) and that nothing is sent.
+The switch is saved in the app's settings (`studyLog` = `on`/`off` in `shturmap.db`; `shturmap-cli study [on|off]`
+sets it without the app); `--study` keeps it for one session without changing the switch; snapshot and fake-game
+runs never keep one. Days older than 30 are removed at start, on or off. Ticking it mid-session writes `study.on`,
+unticking writes `study.off` and stops.
+
+**App log** (owner, 2026-10-03). `%LOCALAPPDATA%\Shturmap\logs\shturmap-yyyy-MM-dd.log`: a short support trail,
+not a trace. INFO: the start (version with commit, single exe or folder build, Windows), the game, logs and
+screenshots folders found, the game's language and screenshot key, mode, data loaded (from where, language, counts,
+when checked), raids loading, starting, ending, the study switch. WARN: something degraded but working (the data
+from the saved copy, English instead of the game's language, a folder not found, the item sources or a map's
+artwork not loaded). ERROR: what failed, with the exception. DEBUG only with `--verbose` (and the website demo,
+which times its clip by its lines): notices, the map surface, snapshots, fake games, the demo. Every line is
+written with the profile folder as `%USERPROFILE%` (any case, either slash; that covers Documents, OneDrive and
+AppData under it); no profile or account ids, no game file contents. At most 1 MB a day: a last WARN line says so
+and nothing more is written until the next day. Seven days kept; the old `spotter-*.log` files are removed.
+
+**Error messages** (owner, 2026-10-03). What the player sees says what failed in plain words, with the status where
+there is one, and what to do; the exception goes to the app log only. Data (`LoadProblem`): "Couldn't reach
+tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tarkov.dev didn't answer in time…";
+"tarkov.dev answered 503. It is busy or down for a moment…"; "tarkov.dev answered 404. Please report it: Copy
+diagnostics in help (?)."; "tarkov.dev's data has changed in a way Shturmap can't read. Please report it…";
+"Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.", the DATA chip
+says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or 429) is
+tried again every 2 minutes, said once; the notice adds where to report it if it keeps failing. With a saved copy
+the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
+German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
+that quests and raids won't follow the game, and why. A map's artwork that doesn't download: "No map artwork for
+Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map.
+
+**Diagnostics** (owner, 2026-10-03). Help ends with three quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
+`%LOCALAPPDATA%\Shturmap\logs`) and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
+"Diagnostics copied: paste them into your message.": Shturmap's version with commit and whether it is the single
+exe; Windows' version and build; the install type (Steam, BSG launcher, manual) and whether the game, logs and
+screenshots folders were found; mode; the game's language and tarkov.dev's; the data's state (loaded, offline copy
+or failed with the kind, status and plain reason, and when it was checked); the active quest count; the study log
+on or off; and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
+cut to `<id>`, and no quest names or lists go along. Nothing is sent: the player pastes it into a report and can
+read it first. Where to report comes with the production release (docs/NEXT.md).
 
 ## 9. Status
 

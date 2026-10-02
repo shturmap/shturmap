@@ -54,7 +54,9 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
                 WriteMeta(metaPath, meta! with { FetchedAt = now });
                 return new CachedResponse(body, false, false, now);
             }
-            response.EnsureSuccessStatusCode();
+            // Which address answered what, for the app log; the player sees LoadProblem's words.
+            if (!response.IsSuccessStatusCode)
+                throw new HttpRequestException($"{uri} answered {(int)response.StatusCode} {response.ReasonPhrase}", null, response.StatusCode);
 
             var temp = body + ".download";
             await using (var file = File.Create(temp))

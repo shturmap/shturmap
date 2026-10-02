@@ -48,9 +48,11 @@ public sealed class GameDataLoader(CachedHttp http)
         var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct);
         fetches.Add(definitions);
         await Task.WhenAll(fetches);
+        string? missing = null;
         if (!await Arrived(translations))
         {
             // tarkov.dev has no text in this language: everything comes in English, so the data stays one language.
+            missing = language;
             language = "en";
             (mapsLang, tasksLang, tradersLang, itemsLang) = (mapsEn, tasksEn, tradersEn, itemsEn);
         }
@@ -89,6 +91,7 @@ public sealed class GameDataLoader(CachedHttp http)
         {
             Mode = mode,
             Language = language,
+            MissingLanguage = missing,
             Maps = Section(mapsData, "maps", ApiJsonContext.Default.DictionaryStringApiMap),
             Mobs = Section(mapsData, "mobs", ApiJsonContext.Default.DictionaryStringApiMob),
             Tasks = Section(tasksData, "tasks", ApiJsonContext.Default.DictionaryStringApiTask),

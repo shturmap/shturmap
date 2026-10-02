@@ -19,8 +19,34 @@ public sealed class StudyLog(string folder) : IDisposable
     /// <summary>Fields added to every line, e.g. the raid phase and map.</summary>
     public Func<IEnumerable<(string Key, object? Value)>>? Context { get; set; }
 
-    /// <summary>Off for developer runs (snapshots, fake games), which would otherwise mix into the player's study.</summary>
-    public bool Enabled { get; set; } = true;
+    /// <summary>
+    /// Off unless the player switches it on in help (owner, 2026-10-03), or <c>--study</c> for one session; always off
+    /// for developer runs (snapshots, fake games), which would otherwise mix into the player's study.
+    /// </summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>Days of study log kept; older days are removed at start.</summary>
+    public const int KeepDays = 30;
+
+    /// <summary>Removes days older than <see cref="KeepDays"/>, whether the log is on or off.</summary>
+    public void Prune(DateTime now)
+    {
+        try
+        {
+            if (!Directory.Exists(folder))
+                return;
+            var oldest = DateOnly.FromDateTime(now).AddDays(-KeepDays);
+            foreach (var file in Directory.EnumerateFiles(folder, "*.jsonl"))
+            {
+                if (DateOnly.TryParseExact(Path.GetFileNameWithoutExtension(file), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) &&
+                    day < oldest)
+                    File.Delete(file);
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
 
     /// <summary>Something the player did in Shturmap.</summary>
     public void Ui(string name, params (string Key, object? Value)[] data) => Write("ui", name, data);

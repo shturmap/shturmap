@@ -13,6 +13,7 @@ using Shturmap.Core.Navigation;
 using Shturmap.Core.Planning;
 using Shturmap.Core.Quests;
 using Shturmap.Core.Raid;
+using Shturmap.Data.TarkovDev;
 using Shturmap.Map;
 using Shturmap.Session;
 using SkiaSharp.Views.Windows;
@@ -202,17 +203,64 @@ public sealed partial class MainWindow : Window
     /// <summary>A developer build has no licences folder, so the help panel shows the link only in a published one.</summary>
     public Visibility LicencesVisibility { get; } = Directory.Exists(LicencesFolder) ? Visibility.Visible : Visibility.Collapsed;
 
-    private void OnLicencesClick(object sender, RoutedEventArgs e)
+    private void OnLicencesClick(object sender, RoutedEventArgs e) => OpenFolder(LicencesFolder, "licences");
+
+    private void OnLogFolderClick(object sender, RoutedEventArgs e)
+    {
+        Study.Ui("help.logs");
+        OpenFolder(AppLog.Folder ?? AppPaths.Default.Logs, "log");
+    }
+
+    // Opens a folder of Shturmap's own in Explorer.
+    private static void OpenFolder(string folder, string what)
     {
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(LicencesFolder) { UseShellExecute = true });
+            Directory.CreateDirectory(folder);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(folder) { UseShellExecute = true });
         }
-        catch (System.ComponentModel.Win32Exception ex)
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
         {
-            AppLog.Error("Opening the licences folder failed", ex);
+            AppLog.Warn($"Opening the {what} folder failed", ex);
         }
     }
+
+    // What a report needs, on the clipboard for the player to paste and read first; nothing is sent (docs/DESIGN.md
+    // §8, "Diagnostics").
+    private void OnCopyDiagnosticsClick(object sender, RoutedEventArgs e)
+    {
+        if (Volatile.Read(ref _snapshot) is null)
+            return;
+        var text = DiagnosticsText();
+        try
+        {
+            var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            package.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+            // Kept on the clipboard after Shturmap closes.
+            Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+            ShowNotice("Diagnostics copied: paste them into your message.");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Copying the diagnostics failed", ex);
+            ShowNotice("Couldn't copy the diagnostics: another app may be using the clipboard. Try again.");
+        }
+        Study.Ui("help.diagnostics");
+    }
+
+    private string DiagnosticsText() =>
+        Diagnostics.Build(Volatile.Read(ref _snapshot) ?? new SessionSnapshot(), GameSession.Version, Diagnostics.WindowsVersion(), App.BuildKind,
+            AppLog.Tail(Diagnostics.LogLines), DateTime.Now, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+
+    private async void OnStudyLogClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Microsoft.UI.Xaml.Controls.Primitives.ToggleButton toggle)
+            await _session.SetStudyLogAsync(toggle.IsChecked == true);
+    }
+
+    // The study switch's box: filled gold with a check when on, an empty gold square when off.
+    public Brush StudyBoxBrush(bool on) => on ? Resource("AmberBrush") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
@@ -234,6 +282,14 @@ public sealed partial class MainWindow : Window
         vm.ScreenshotsOk = s.Screenshots.Ok;
         vm.DataText = s.DataHealth.Text;
         vm.DataOk = s.DataHealth.Ok;
+        vm.DataDetail = s switch
+        {
+            { Data: { Offline: true } data } => $"A saved copy of tarkov.dev's data from {data.CheckedAt.ToLocalTime():g}: tarkov.dev couldn't be reached.",
+            { Data: { } data } => $"Game data from tarkov.dev, checked {data.CheckedAt.ToLocalTime():t}.",
+            { DataProblem: { } problem } => GameSession.DataNotice(problem),
+            _ => "Loading game data from tarkov.dev…",
+        };
+        vm.StudyLogOn = s.StudyLogOn;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
@@ -583,7 +639,7 @@ public sealed partial class MainWindow : Window
         if (key != _sceneKey)
         {
             _sceneKey = key;
-            var artwork = await _session.Artwork.GetAsync(s.Definition);
+            var artwork = await ArtworkFor(s.Definition, s.Map?.Name);
             if (_sceneKey != key)
                 return;
             // No usable artwork (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
@@ -602,6 +658,34 @@ public sealed partial class MainWindow : Window
         scene.Selected = _selectedQuest;
         scene.Focus = MapFocus();
         Map.Refresh();
+    }
+
+    // A map's artwork, or null for the sheet. A download that fails says why, once per map, and the sheet stands in;
+    // the next time the map is shown it is tried again.
+    private async Task<MapArtwork?> ArtworkFor(MapDefinition definition, string? mapName)
+    {
+        try
+        {
+            return await _session.Artwork!.GetAsync(definition);
+        }
+        catch (Exception e)
+        {
+            var problem = LoadProblem.Explain(e);
+            AppLog.Warn($"Map artwork for {mapName} not loaded ({problem.Kind}{(problem.Status is { } s ? " " + s : "")})", e);
+            if (_sheetNoticeShown.Add(definition.Key))
+            {
+                var why = problem.Kind switch
+                {
+                    LoadFailure.Unreachable or LoadFailure.TimedOut => "couldn't download it; check the internet connection",
+                    LoadFailure.ServerBusy or LoadFailure.Refused => $"its server answered {problem.Status}",
+                    LoadFailure.Disk => "couldn't save it on this PC; check the free disk space",
+                    _ => "couldn't read it",
+                };
+                ShowNotice($"No map artwork for {mapName}: {why}. A 10 m grid stands in, with your position, objectives and extracts.",
+                    TimeSpan.FromSeconds(12));
+            }
+            return null;
+        }
     }
 
     // ---- previewing another map from Plan ----
@@ -654,7 +738,7 @@ public sealed partial class MainWindow : Window
         if (_previewing is null)
             _restoreView = Map.View;
         _previewing = normalizedName;
-        var artwork = await _session.Artwork.GetAsync(definition);
+        var artwork = await ArtworkFor(definition, map.Name);
         if (_previewing != normalizedName)
             return;
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
@@ -1372,7 +1456,8 @@ public sealed partial class MainWindow : Window
 
     // ---- developer aid ----
 
-    /// <summary>Renders the window's controls, the help panel and the map to PNG files in a folder ("--snapshot").</summary>
+    /// <summary>Renders the window's controls, the help panel and the map to PNG files in a folder ("--snapshot"), with
+    /// the text Copy diagnostics would copy.</summary>
     public async Task SaveSnapshotAsync(string folder)
     {
         Directory.CreateDirectory(folder);
@@ -1387,7 +1472,9 @@ public sealed partial class MainWindow : Window
             if (_pinned.Values.FirstOrDefault() is { } pinned)
                 await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);
-            AppLog.Info("Snapshot saved to " + folder);
+            // What Copy diagnostics would put on the clipboard, to check it without clicking.
+            await File.WriteAllTextAsync(Path.Combine(folder, "diagnostics.txt"), DiagnosticsText());
+            AppLog.Debug("Snapshot saved to " + folder);
         }
         catch (Exception e)
         {

@@ -21,9 +21,16 @@ public partial class App : Application
         TaskScheduler.UnobservedTaskException += (_, e) => AppLog.Error("Unobserved task exception", e.Exception);
     }
 
+    /// <summary>"single exe" when run from the release's unpacked copy, else "folder build".</summary>
+    public static string BuildKind { get; } =
+        Shturmap.Core.UnpackedCopies.RunsFromCopy(AppContext.BaseDirectory, Path.GetTempPath()) ? "single exe" : "folder build";
+
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        AppLog.Info("Starting Shturmap " + typeof(App).Assembly.GetName().Version);
+        var cli = Environment.GetCommandLineArgs();
+        // The website demo times its clip by its DEBUG lines (tools\fake-raid.ps1 -Demo).
+        AppLog.Verbose = cli.Contains("--verbose") || cli.Contains("--demo");
+        AppLog.Info($"Starting Shturmap {GameSession.Version} ({BuildKind}) on {Diagnostics.WindowsVersion()}");
         // Run as the single exe, earlier versions left their unpacked copies in %TEMP%: remove them, off the start.
         _ = Task.Run(() =>
         {
@@ -34,10 +41,9 @@ public partial class App : Application
             }
             catch (Exception e)
             {
-                AppLog.Error("Removing old unpacked copies failed", e);
+                AppLog.Warn("Removing old unpacked copies failed", e);
             }
         });
-        var cli = Environment.GetCommandLineArgs();
         // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
         // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.
         if (Arg(cli, "--culture") is { } culture)
@@ -48,9 +54,10 @@ public partial class App : Application
         SizeInt32? windowSize = Arg(cli, "--window")?.Split('x') is [var w, var h] && int.TryParse(w, out var width)
             && int.TryParse(h, out var height) ? new SizeInt32(width, height) : null;
         _session = CreateSession(cli);
-        _session.Notice += notice => AppLog.Info("Notice: " + notice.Text);
-        // Developer runs stay out of the player's study log.
-        _session.Study.Enabled = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
+        _session.Notice += notice => AppLog.Debug("Notice: " + notice.Text);
+        // The study log follows the player's switch in help; "--study" keeps it for one session; developer runs stay
+        // out of it.
+        _session.StudyOverride = GameSession.StudyOverrideFor(cli);
         _window = new MainWindow(_session, windowSize)
         {
             SnapshotMode = cli.Contains("--snapshot"),
@@ -100,7 +107,7 @@ public partial class App : Application
         var install = new Shturmap.Game.Install.InstallCandidate(Shturmap.Game.Install.InstallKind.Manual, root, Path.Combine(root, "Logs"),
             DateTime.Now, "fake game", null);
         var settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Battlestate Games", "Escape from Tarkov", "Settings");
-        AppLog.Info("Using a fake game folder: " + root);
+        AppLog.Debug("Using a fake game folder: " + root);
         return new GameSession(new AppPaths(Path.Combine(root, "app"), AppPaths.Default.CacheRoot),
             new Shturmap.Game.Install.GameLocations(install, [install], Path.Combine(root, "Screenshots"), settings));
     }

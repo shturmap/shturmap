@@ -109,6 +109,15 @@ public sealed record SessionSnapshot
 
     public SourceHealth DataHealth { get; init; } = new(false, "Loading game data…");
 
+    /// <summary>Why there is no game data, in plain words, or null.</summary>
+    public LoadProblem? DataProblem { get; init; }
+
+    /// <summary>The game's language code, as its settings say it ("ge"), or null when unknown.</summary>
+    public string? GameLanguage { get; init; }
+
+    /// <summary>Whether the study log is being kept this session.</summary>
+    public bool StudyLogOn { get; init; }
+
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
 
     /// <summary>Suggested maps for the next raid, best first.</summary>

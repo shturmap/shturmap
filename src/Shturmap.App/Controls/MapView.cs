@@ -248,7 +248,7 @@ public sealed partial class MapView : Grid
     {
         var canvas = e.Surface.Canvas;
         if (_paints++ == 0)
-            Shturmap.Session.AppLog.Info($"Map surface first paint: {e.BackendRenderTarget.Width}x{e.BackendRenderTarget.Height} px, GPU context {(e.Surface.Context is null ? "none" : "ok")}");
+            Shturmap.Session.AppLog.Debug($"Map surface first paint: {e.BackendRenderTarget.Width}x{e.BackendRenderTarget.Height} px, GPU context {(e.Surface.Context is null ? "none" : "ok")}");
         _camera.Resize(new SKSize(e.BackendRenderTarget.Width, e.BackendRenderTarget.Height));
         if (_scene is null)
         {

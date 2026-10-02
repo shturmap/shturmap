@@ -37,6 +37,9 @@ switch (command)
     case "synopses":
         await Synopses(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "study":
+        Study(args.ElementAtOrDefault(1));
+        break;
     default:
         Console.WriteLine("""
             shturmap-cli locate              find the game, logs, screenshots and settings on this PC
@@ -49,8 +52,21 @@ switch (command)
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
             shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
+            shturmap-cli study [on|off]      show or set the "Keep a study log" switch, as help sets it (Shturmap closed)
             """);
         break;
+}
+
+// The help panel's "Keep a study log" switch, in the app's own settings; for setting it without opening the app.
+static void Study(string? value)
+{
+    using var store = new Shturmap.Data.Progress.ProgressStore(Shturmap.Session.AppPaths.Default.Database);
+    const string key = Shturmap.Session.GameSession.StudySetting;
+    if (value is "on" or "off")
+        store.SetSetting(key, value);
+    else if (value is not null)
+        throw new ArgumentException("Use: shturmap-cli study [on|off]");
+    Console.WriteLine($"Study log: {store.GetSetting(key) ?? "off (not set)"}");
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), its synopsis,

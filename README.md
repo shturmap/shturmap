@@ -45,8 +45,12 @@ It never:
 - captures the screen or draws over the game;
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
 - sends anything about you or your game anywhere. Its only network traffic downloads the public data above, and
-  what it records stays in `%LOCALAPPDATA%\Shturmap`. (The Microsoft runtime it is built on has its own terms; see
+  what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log, and a study log of how you use it only if
+  you switch that on in help. (The Microsoft runtime it is built on has its own terms; see
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
+
+To report a problem, use **Copy diagnostics** in help (?) and paste the text into your message: versions, what it
+found, the data's state and its log, with your user folder masked and no ids.
 
 A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
 capturing the screen. The full rules are in [docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).

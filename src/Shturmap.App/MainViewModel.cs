@@ -133,6 +133,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool DataOk { get; set; }
 
+    /// <summary>The data chip's tooltip: where the data is from, or why there is none, in plain words.</summary>
+    [ObservableProperty] public partial string DataDetail { get; set; } = "Loading game data from tarkov.dev…";
+
+    [ObservableProperty] public partial bool StudyLogOn { get; set; }
+
     [ObservableProperty] public partial IReadOnlyList<MapChoice> MapChoices { get; set; } = [];
 
     [ObservableProperty] public partial MapChoice? SelectedMap { get; set; }

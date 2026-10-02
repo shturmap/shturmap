@@ -42,7 +42,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     private GameMode _mode = GameMode.Pve;
     private GameData? _data;
     private ItemSources? _sources;
-    private string? _dataError;
+    private LoadProblem? _dataProblem;
+    private readonly HashSet<string> _languageSaid = [];
     private MapIdentity? _map;
     private PlayerFix? _fix;
     private string? _fixMapId;
@@ -62,8 +63,63 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     /// <summary>Trader portraits and item icons, fetched when first shown.</summary>
     public GameArt? Art { get; private set; }
 
-    /// <summary>The study log: game events here, the player's use of Shturmap from the UI.</summary>
+    /// <summary>The study log: game events here, the player's use of Shturmap from the UI. Off unless the player
+    /// switches it on (owner, 2026-10-03).</summary>
     public StudyLog Study { get; } = new(paths.Study);
+
+    /// <summary>
+    /// The study log for this session regardless of the player's switch: true for <c>--study</c>, false for developer
+    /// runs (snapshots, fake games), null to follow the switch.
+    /// </summary>
+    public bool? StudyOverride { get; set; }
+
+    /// <summary>The key of the player's study-log switch in the app's settings ("on" or "off"; absent is off).</summary>
+    public const string StudySetting = "studyLog";
+
+    /// <summary>The override a command line asks for: developer runs never keep one, <c>--study</c> does.</summary>
+    public static bool? StudyOverrideFor(IReadOnlyCollection<string> cli) =>
+        cli.Contains("--snapshot") || cli.Contains("--fake-game") ? false : cli.Contains("--study") ? true : null;
+
+    /// <summary>Whether the study log is kept: the override if there is one, else the player's switch, off when unset.</summary>
+    public static bool StudyOn(bool? studyOverride, string? setting) => studyOverride ?? setting == "on";
+
+    /// <summary>The player's "Keep a study log" switch, saved with the app's settings; the log starts or stops now.</summary>
+    public async Task SetStudyLogAsync(bool on)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            _store?.SetSetting(StudySetting, on ? "on" : "off");
+            if (StudyOverride is not null || Study.Enabled == on)
+                return;
+            if (!on)
+            {
+                Study.Game("study.off");
+                Study.Enabled = false;
+                ClearRunning();
+            }
+            else
+            {
+                Study.Enabled = true;
+                Study.Game("study.on", ("version", Version), ("prevClean", MarkRunning()));
+            }
+            AppLog.Info("Study log " + (on ? "on" : "off"));
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Shturmap's version with its commit ("0.1.0+d349909").</summary>
+    public static string Version { get; } = ShortVersion(
+        typeof(GameSession).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion
+        ?? typeof(GameSession).Assembly.GetName().Version?.ToString() ?? "?");
+
+    private static string ShortVersion(string version) =>
+        version.IndexOf('+') is var plus and >= 0 && version.Length > plus + 8 ? version[..(plus + 8)] : version;
 
     // Every study line says where in the game the player was.
     private IEnumerable<(string, object?)> StudyContext()
@@ -89,19 +145,23 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         try
         {
             var env = new WindowsGameEnvironment();
+            _store = new ProgressStore(paths.Database);
             Study.Context = StudyContext;
+            Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
+            Study.Prune(DateTime.Now);
             Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
                 ("build", BuildTime()), ("prevClean", MarkRunning()));
-            _store = new ProgressStore(paths.Database);
             _locations = locations ?? new InstallLocator(env).Locate(_store.GetSetting("installFolder"));
-            AppLog.Info($"Game: {_locations.Install?.Kind} {_locations.Install?.Root}; logs {_locations.LogsFolder ?? "not found"}; screenshots {_locations.ScreenshotsFolder}");
+            ReportGameFolders(_locations);
             _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
+            AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
             var http = CachedHttp.CreateClient();
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
             Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache);
             Art = new GameArt(http, paths.GameArtCache);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;
+            AppLog.Info($"Mode {_mode}; study log {(Study.Enabled ? "on" : "off")}");
             RecomputeQuests();
             Publish();
         }
@@ -192,6 +252,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     // ---- game data ----
 
+    // A load that failed for a reason that may pass (no connection, tarkov.dev busy) is tried again this often.
+    private static readonly TimeSpan DataRetry = TimeSpan.FromMinutes(2);
+
     private async Task LoadDataAsync(GameMode mode)
     {
         try
@@ -203,10 +266,22 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 if (mode != _mode)
                     return; // the mode changed while loading; a newer load is under way
                 _data = data;
-                _dataError = null;
+                _dataProblem = null;
                 RecomputeQuests();
                 ResolveMap();
                 Publish();
+                var how = data.Offline ? "from the saved copy (tarkov.dev unreachable)" : "from tarkov.dev";
+                var line = $"Data loaded {how}: {mode}, language {data.Language}, {data.Tasks.Count} quests, {data.Maps.Count} maps, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}";
+                if (data.Offline)
+                    AppLog.Warn(line);
+                else
+                    AppLog.Info(line);
+                if (data.MissingLanguage is { } missing)
+                {
+                    AppLog.Warn($"No '{missing}' texts from tarkov.dev; using English");
+                    if (_languageSaid.Add(missing))
+                        Say($"No {LanguageName(missing)} texts on tarkov.dev; showing English.", 10);
+                }
                 Study.Game("data.loaded", ("mode", mode), ("activeQuests", _quests.Values.Count(q => q.State == QuestState.Active)),
                     ("planTop", _plan.FirstOrDefault()?.NormalizedName));
                 _ = Task.Run(() => LoadSourcesAsync(mode, data.Language));
@@ -216,19 +291,91 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 _gate.Release();
             }
         }
-        catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException)
+        catch (Exception e) when (!_stop.IsCancellationRequested)
         {
+            var problem = LoadProblem.Explain(e);
             await _gate.WaitAsync();
             try
             {
-                _dataError = e is TaskCanceledException ? "timed out" : e.Message;
+                if (mode != _mode)
+                    return;
+                var again = _dataProblem?.Kind == problem.Kind;
+                _dataProblem = problem;
+                if (again)
+                    AppLog.Warn($"Data load failed again ({problem.Kind}{(problem.Status is { } s ? " " + s : "")}): {e.GetType().Name}: {e.Message}");
+                else
+                {
+                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}", e);
+                    Say(DataNotice(problem), 30);
+                }
                 Publish();
             }
             finally
             {
                 _gate.Release();
             }
+            if (problem.Transient)
+                _ = RetryDataAsync(mode);
         }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task RetryDataAsync(GameMode mode)
+    {
+        try
+        {
+            await Task.Delay(DataRetry, _stop.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        if (mode == _mode && _data is null)
+            await LoadDataAsync(mode);
+    }
+
+    /// <summary>What the player is told when the data didn't load: what failed, what to do, and where to report it.</summary>
+    public static string DataNotice(LoadProblem problem) => problem.Transient
+        ? $"No game data. {problem.Text} Shturmap tries again every {DataRetry.TotalMinutes:0} minutes; if it keeps failing, report it with Copy diagnostics in help (?)."
+        : $"No game data. {problem.Text}";
+
+    private static string LanguageName(string code)
+    {
+        try
+        {
+            var culture = System.Globalization.CultureInfo.GetCultureInfo(code);
+            return culture.ThreeLetterISOLanguageName == "ivl" ? $"'{code}'" : culture.EnglishName;
+        }
+        catch (System.Globalization.CultureNotFoundException)
+        {
+            return $"'{code}'";
+        }
+    }
+
+    // Said once at start when the game or its logs aren't found: without them quests and raids can't follow the game.
+    private void ReportGameFolders(GameLocations found)
+    {
+        if (found.Install is { } install)
+            AppLog.Info($"Game found: {install.Kind} at {install.Root} ({install.Found})");
+        else
+            AppLog.Warn($"Game not found ({found.Candidates.Count} candidates: {string.Join("; ", found.Candidates.Select(c => $"{c.Kind} {c.Root}: {c.Rejected}"))})");
+        if (found.LogsFolder is { } logs)
+            AppLog.Info("Logs: " + logs);
+        else
+            AppLog.Warn("Logs folder not found");
+        var shots = Directory.Exists(found.ScreenshotsFolder);
+        var line = $"Screenshots: {found.ScreenshotsFolder}{(shots ? "" : " (not there yet; the game makes it with the first screenshot)")}";
+        if (shots)
+            AppLog.Info(line);
+        else
+            AppLog.Warn(line);
+
+        if (found.Install is null)
+            Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it: Copy diagnostics in help (?).", 30);
+        else if (found.LogsFolder is null)
+            Say("Found the game, but not its Logs folder, so quests and raids won't follow the game until it has run once.", 30);
     }
 
     // Where items come from: only the item cards need it, so it loads after everything else.
@@ -250,9 +397,13 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 _gate.Release();
             }
         }
-        catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException or System.Text.Json.JsonException)
+        catch (Exception e) when (!_stop.IsCancellationRequested)
         {
-            AppLog.Error("Item sources could not be loaded", e);
+            // Only the item cards' "where to get it" is missing; everything else works.
+            AppLog.Warn($"Item sources not loaded ({LoadProblem.Explain(e).Kind}): {e.GetType().Name}: {e.Message}");
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 
@@ -262,7 +413,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             return;
         _mode = mode;
         _store?.SetSetting("mode", mode.ToString());
+        AppLog.Info($"Mode {mode}: loading its data");
         _data = null;
+        _dataProblem = null;
         _sources = null;
         RecomputeQuests();
         _ = Task.Run(() => LoadDataAsync(mode));
@@ -419,6 +572,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
         if (!item.IsReplay)
         {
+            LogRaid(transition);
             StudyRaid(transition);
             if (transition is RaidEnded over && _hints.Ended(over, _map?.NameId) is { } hint)
                 StudyHint(hint);
@@ -451,6 +605,25 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     // A hint of how the raid ended, for the study log only: never shown, and no hint proves nothing.
     private void StudyHint(OutcomeHint hint) =>
         Study.Game("raid.outcomeHint", ("lostInsured", true), ("location", hint.LocationId), ("noticeFromEndS", hint.NoticeSecondsFromEnd));
+
+    // Raids in the app log: the support trail of what the game did (map names only, never profile ids).
+    private void LogRaid(RaidTransition? transition)
+    {
+        switch (transition)
+        {
+            case RaidLoading:
+                AppLog.Info($"Raid loading: {_map?.Name ?? "unknown map"}");
+                break;
+            case RaidStarted started:
+                AppLog.Info($"Raid started: {_map?.Name ?? "unknown map"}, side {started.State.Side}");
+                break;
+            case RaidEnded ended:
+                AppLog.Info(ended.Previous.RaidStartedAt is { } at
+                    ? $"Raid ended after {(ended.At - at).TotalMinutes:0} min"
+                    : "Raid loading cancelled");
+                break;
+        }
+    }
 
     // Raids in the study log, with what the planner had suggested, so choices can be compared with suggestions.
     private void StudyRaid(RaidTransition? transition)
@@ -706,7 +879,10 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, "Screenshots") : new(false, "No screenshots yet"),
             DataHealth = _data is not null
                 ? new(!_data.Offline, _data.Offline ? "Data (offline copy)" : "Data")
-                : new(false, _dataError is null ? "Loading game data…" : "No game data: " + _dataError),
+                : new(false, _dataProblem is null ? "Loading game data…" : "No game data"),
+            DataProblem = _dataProblem,
+            GameLanguage = _settings.Language,
+            StudyLogOn = Study.Enabled,
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
             AnyMap = _anyMap,
@@ -766,6 +942,17 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
     }
 
+    private void ClearRunning()
+    {
+        try
+        {
+            File.Delete(RunningMarker);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
     // When this build was made: a new build between sessions is testing, not play. The exe's own time: a single exe's
     // assemblies are unpacked into %TEMP% on its first start, so theirs would be the unpacking's.
     private static DateTime? BuildTime()
@@ -784,15 +971,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         _store?.Dispose();
         Study.Game("app.exit");
         if (Study.Enabled)
-        {
-            try
-            {
-                File.Delete(RunningMarker);
-            }
-            catch (IOException)
-            {
-            }
-        }
+            ClearRunning();
         Study.Dispose();
         _stop.Dispose();
     }

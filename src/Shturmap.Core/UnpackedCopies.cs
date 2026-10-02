@@ -24,6 +24,10 @@ public static class UnpackedCopies
             .ToList();
     }
 
+    /// <summary>Whether this app runs from a single exe's unpacked copy (else from a folder build or a developer's).</summary>
+    public static bool RunsFromCopy(string baseDirectory, string tempPath) =>
+        IsCopy(Normalize(baseDirectory), Normalize(Path.Combine(tempPath, ".net")));
+
     /// <summary>Removes the other unpacked copies, in the background of a start; returns what it did, for the log.</summary>
     public static IReadOnlyList<string> RemoveOthers()
     {
