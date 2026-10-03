@@ -122,7 +122,11 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
       maybe less than quest markers;
     - fade the labels of the others more than their symbols.
     Compare candidates side by side in snapshots (a highlighted quest on Customs and Streets) before choosing, and
-    record the decision in DESIGN.md (the four-level rule in "Map drawing").
+    record the decision in DESIGN.md (the four-level rule in "Map drawing"). **The raid view matters most** (owner:
+    "This is probably especially relevant in the raid view"): there a quest is often kept highlighted for a long
+    time, while extracts, other objectives nearby and bosses still matter at a glance. So judge the candidates in a
+    fake-raid snapshot with a kept quest (`tools\fake-raid.ps1 -ShowQuest …`), and consider fading less, or not at
+    all, in a raid than in Plan.
 13. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
