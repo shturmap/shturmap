@@ -75,18 +75,51 @@ public class LandmarkTests
     }
 
     [Fact]
-    public void Hazards_are_trap_sized_hazards_only()
+    public void Hazards_are_trap_sized_traps_and_minefields_of_any_size()
     {
         var map = MapWith(hazards:
         [
             new("hazard", "Hazard", At(0, 0), Box(0, 0, 1, 3), 2, 0),
             new("hazard", "Hazard", At(0, 0), Box(-27, -29, 54, 58), -0.6, -2.6),
-            new("minefield", "DamageType_Landmine", At(0, 0), Box(100, 100, 5, 5), 1, 0),
+            new("minefield", "DamageType_Landmine", At(0, 0), Box(100, 100, 80, 60), 1, 0),
             new("sniper", "ScavRole/Marksman", At(0, 0), Box(200, 200, 5, 5), 1, 0),
         ]);
-        var zone = Assert.Single(MapContentBuilder.Hazards(map));
-        Assert.Equal(MarkerKind.Hazard, zone.Kind);
-        Assert.Equal(4, zone.Outline.Count);
+        var zones = MapContentBuilder.Hazards(map);
+        Assert.Equal(2, zones.Count);
+        Assert.All(zones, z => Assert.Equal(MarkerKind.Hazard, z.Kind));
+        Assert.Null(zones[0].Group);
+        Assert.Equal(MapContentBuilder.MinefieldGroup, zones[1].Group);
+    }
+
+    [Fact]
+    public void Minefields_are_left_out_over_artwork_that_draws_them()
+    {
+        // Customs' artwork has no minefields, so the data's show; Woods' has a "Minefield" group, so they don't.
+        var minefield = new MapZone("minefield:0", MarkerKind.Hazard, [new(0, 0, 0), new(5, 0, 0), new(5, 0, 5)], MapContentBuilder.MinefieldGroup);
+        var trap = minefield with { Id = "hazard:0", Group = null };
+        var (_, sheet) = TestView.Of([]);
+        string Svg(string inner) => $"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">{inner}</svg>""";
+        MapArtwork Artwork(string svg)
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"shturmap-mines-{Guid.NewGuid():N}.svg");
+            File.WriteAllText(path, svg);
+            try
+            {
+                return MapArtwork.Load(path, sheet.Definition);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+        using var without = Artwork(Svg("""<g id="Roads"><rect width="10" height="10"/></g>"""));
+        using var with = Artwork(Svg("""<g id="Minefield"><rect width="10" height="10"/></g>"""));
+        Assert.False(without.ShowsMinefields);
+        Assert.True(with.ShowsMinefields);
+        Assert.True(MapRenderer.HazardShown(minefield, null));
+        Assert.True(MapRenderer.HazardShown(minefield, without));
+        Assert.False(MapRenderer.HazardShown(minefield, with));
+        Assert.True(MapRenderer.HazardShown(trap, with));
     }
 
     [Fact]

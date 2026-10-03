@@ -537,10 +537,12 @@ spawns below).
     Their labels come last in the label order.
   - **Hazards**: tarkov.dev's "hazard" outlines (Labyrinth's 18 traps, 2–27 m²) as a hatched ink outline, an area
     style nothing else has. Labyrinth's 19th "hazard", 54 × 58 m below the central hall's floor, is left out: the data
-    doesn't say what it is, and hatching it would cover the hall (trap-sized means up to 50 m²). Not drawn: "sniper"
-    zones (the sniper markers already) and "minefield" outlines, which the artwork draws for Woods, Shoreline,
-    Lighthouse, Streets and Terminal but not for Customs (2), Reserve (1), Interchange (7) or Ground Zero (5): whether
-    to draw those is open.
+    doesn't say what it is, and hatching it would cover the hall (trap-sized means up to 50 m²). **Minefields**
+    (owner, 2026-10-03: "Yes, draw the minefields as hazard areas"): tarkov.dev's "minefield" outlines in the same
+    hatched style, whatever their size, wherever the map's picture doesn't draw them itself. The artwork of Woods,
+    Shoreline, Lighthouse, Streets and Terminal has a group whose id starts with "mine" (`MapArtwork.ShowsMinefields`),
+    so the data's outlines would only double them there; Customs (2), Reserve (1), Interchange (7) and Ground Zero (5)
+    get them from the data. Not drawn: "sniper" zones (the sniper markers already).
   - **Containers** on a sheet only: faint ink dots where loot containers stand, on the floor shown (The Lab has 319,
     Labyrinth 35), so rooms and corridors show from real points where no artwork draws them. On artwork they would
     be clutter (Streets has 1,282).

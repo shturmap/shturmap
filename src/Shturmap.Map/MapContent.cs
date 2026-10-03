@@ -144,18 +144,29 @@ public static class MapContentBuilder
     }
 
     /// <summary>
-    /// Hazards tarkov.dev outlines as hazards (Labyrinth's traps), trap-sized only: up to <see cref="HazardMaxArea"/>.
-    /// Labyrinth's 18 traps are 2–27 m²; its 19th "hazard" is 54 × 58 m, below the central hall's floor, and the data
-    /// doesn't say what it is, so it is left out rather than hatching the whole hall. The other hazard types are left
-    /// out too: "sniper" zones are where sniper Scavs spawn, already the sniper markers; "minefield" outlines are drawn
-    /// by the artwork of Woods, Shoreline, Lighthouse, Streets and Terminal (their "mines" layers) but not of Customs,
-    /// Reserve, Interchange or Ground Zero, so drawing them is a decision of its own (docs/DESIGN.md, "Map drawing").
+    /// Hazards tarkov.dev outlines: Labyrinth's traps ("hazard"), trap-sized only, up to <see cref="HazardMaxArea"/>,
+    /// and minefields ("minefield"), whatever their size. Labyrinth's 18 traps are 2–27 m²; its 19th "hazard" is
+    /// 54 × 58 m, below the central hall's floor, and the data doesn't say what it is, so it is left out rather than
+    /// hatching the whole hall. Minefields are drawn where the artwork doesn't draw them itself (owner, 2026-10-03):
+    /// Woods, Shoreline, Lighthouse, Streets and Terminal have "mines" layers, Customs, Reserve, Interchange and Ground
+    /// Zero don't; the renderer leaves them out over artwork that shows them (<see cref="MinefieldGroup"/>,
+    /// <see cref="MapArtwork.ShowsMinefields"/>). "sniper" zones are left out: they are where sniper Scavs spawn,
+    /// already the sniper markers.
     /// </summary>
-    public static IReadOnlyList<MapZone> Hazards(ApiMap map) =>
-        (map.Hazards ?? [])
+    public static IReadOnlyList<MapZone> Hazards(ApiMap map)
+    {
+        var hazards = map.Hazards ?? [];
+        var traps = hazards
             .Where(h => h.HazardType == "hazard" && h.Outline is { Count: >= 3 } outline && Area(outline) <= HazardMaxArea)
-            .Select((h, i) => new MapZone($"hazard:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList()))
-            .ToList();
+            .Select((h, i) => new MapZone($"hazard:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList()));
+        var minefields = hazards
+            .Where(h => h.HazardType == "minefield" && h.Outline is { Count: >= 3 })
+            .Select((h, i) => new MapZone($"minefield:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList(), MinefieldGroup));
+        return [.. traps, .. minefields];
+    }
+
+    /// <summary>The group of a minefield's zone, so the renderer can leave it out over artwork that draws minefields.</summary>
+    public const string MinefieldGroup = "minefield";
 
     /// <summary>The largest hazard drawn, in m² (a trap; see <see cref="Hazards"/>).</summary>
     public const double HazardMaxArea = 50;

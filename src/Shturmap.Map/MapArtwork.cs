@@ -16,14 +16,21 @@ public sealed class MapArtwork : IDisposable
 {
     private readonly Dictionary<string, Lazy<SKPicture?>> _layers;
 
-    private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox)
+    private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox, bool showsMinefields)
     {
         Base = basePicture;
         _layers = layers;
         ViewBox = viewBox;
+        ShowsMinefields = showsMinefields;
     }
 
     public SKPicture Base { get; }
+
+    /// <summary>
+    /// The artwork draws minefields itself (a "mines" or "Minefield" group: Woods, Shoreline, Lighthouse, Streets,
+    /// Terminal), so the data's minefield outlines aren't drawn over it (docs/DESIGN.md, "Landmarks").
+    /// </summary>
+    public bool ShowsMinefields { get; }
 
     /// <summary>The SVG's viewBox, the coordinate system of the pictures.</summary>
     public SKRect ViewBox { get; }
@@ -47,7 +54,8 @@ public sealed class MapArtwork : IDisposable
             id => id,
             id => new Lazy<SKPicture?>(() => Cached(CachePath(id), () => Render(doc, g => g == id)), LazyThreadSafetyMode.ExecutionAndPublication),
             StringComparer.Ordinal);
-        return new MapArtwork(basePicture, layers, viewBox);
+        var showsMinefields = doc.Descendants().Any(e => ((string?)e.Attribute("id"))?.StartsWith("mine", StringComparison.OrdinalIgnoreCase) == true);
+        return new MapArtwork(basePicture, layers, viewBox, showsMinefields);
     }
 
     private static bool IsGroup(XElement e) => e.Name.LocalName == "g" && e.Attribute("id") is not null;
