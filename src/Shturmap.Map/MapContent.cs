@@ -12,6 +12,10 @@ public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<
 {
     /// <summary>Where the map's loot containers stand; drawn only on a sheet (<see cref="MapScene.Containers"/>).</summary>
     public IReadOnlyList<WorldPoint> Containers { get; init; } = [];
+
+    /// <summary>Markers that light with a marker pointed at: an extract's switches, a switch's extracts
+    /// (<see cref="MapContentBuilder.ExtractSwitchLinks"/>).</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Links { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 }
 
 /// <summary>Builds what to draw on a map: extracts, transits, and the active quests' objectives.</summary>
@@ -103,7 +107,51 @@ public static class MapContentBuilder
                     objectives.Add(new ObjectiveOnMap(quest, objective, places, done));
             }
         }
-        return new MapContent(markers, zones, objectives) { Containers = Containers(map) };
+        return new MapContent(markers, zones, objectives) { Containers = Containers(map), Links = ExtractSwitchLinks(map) };
+    }
+
+    /// <summary>
+    /// An extract and the switches it needs light together (owner, 2026-10-03, from the map audit: you have to find
+    /// the switch to leave). An extract lists its switches; a switch that unlocks one of those (a power switch freeing
+    /// a lever) counts too, up to a few steps. Only switches the data places have markers; the chain runs through the
+    /// others. A switch the data lists for every extract of a map tells none of them apart and links nothing: Customs
+    /// lists one lever for all 27 extracts and The Lab the Med Elevator's three buttons for all 7, though most of them
+    /// need no switch. Marker ids: "extract:&lt;id&gt;" and "switch:&lt;id&gt;".
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> ExtractSwitchLinks(ApiMap map)
+    {
+        var placed = (map.Switches ?? []).Where(s => s.Position is not null).Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+        var extracts = map.Extracts ?? [];
+        var everywhere = extracts.Count > 1
+            ? extracts.Select(e => (IEnumerable<string>)(e.Switches ?? [])).Aggregate((a, b) => a.Intersect(b, StringComparer.Ordinal)).ToHashSet(StringComparer.Ordinal)
+            : [];
+        // Who unlocks whom, read backwards: for each switch, the switches whose flipping unlocks it (not those that lock it).
+        var activators = (map.Switches ?? [])
+            .SelectMany(s => (s.Activates ?? []).Where(a => a is { Operation: "Unlock", Switch: not null }).Select(a => (By: s.Id, Of: a.Switch!)))
+            .ToLookup(a => a.Of, a => a.By, StringComparer.Ordinal);
+        var links = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        void Link(string a, string b)
+        {
+            if (!links.TryGetValue(a, out var set))
+                links[a] = set = new HashSet<string>(StringComparer.Ordinal);
+            set.Add(b);
+        }
+        foreach (var extract in extracts)
+        {
+            var direct = (extract.Switches ?? []).Where(s => !everywhere.Contains(s)).ToList();
+            if (extract.Position is null || direct.Count == 0)
+                continue;
+            var needed = new HashSet<string>(direct, StringComparer.Ordinal);
+            var frontier = direct.ToList();
+            for (var step = 0; step < 4 && frontier.Count > 0; step++)
+                frontier = frontier.SelectMany(s => activators[s]).Where(needed.Add).ToList();
+            foreach (var s in needed.Where(placed.Contains))
+            {
+                Link("extract:" + extract.Id, "switch:" + s);
+                Link("switch:" + s, "extract:" + extract.Id);
+            }
+        }
+        return links.ToDictionary(l => l.Key, l => (IReadOnlyList<string>)l.Value.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
     }
 
     /// <summary>The group a lock's marker carries: pointing at its key (anywhere in the window) lights it.</summary>

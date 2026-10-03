@@ -531,7 +531,16 @@ spawns below).
     key's need cells and item card don't link yet: a linked element inside a linked row loses the row's highlight
     when the pointer leaves it. Container locks would mark containers; the data has none.
   - **Switches**: a power symbol (`E7E8`) with the switch's name ("Med Elevator Power Button", "Alarm Switch",
-    "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12.
+    "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12. **An extract
+    and its switches light together** (owner, 2026-10-03, from the map audit: you have to find the switch to leave):
+    an extract's `switches` in the data, and a switch that unlocks one of those (a power switch freeing a lever, up to
+    four steps through the data's "activates"; not one that locks it). Pointing at the extract (its marker, its row,
+    its requirement line) lights its switches at any zoom, and pointing at a switch lights the extracts it opens
+    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists for every extract of
+    a map tells none of them apart, so it links nothing, and today that is all of them: the audit's 34 extracts are
+    Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's three buttons, though
+    most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links yet, and the legend
+    doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
   - **When they show**: on a map with artwork from 1.5 times the overview (as the shops' names; Streets has 63 locks,
     Customs 36, Reserve 34), on a sheet at any zoom; their labels from 2.5 times or when pointed at; only those on
     the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.

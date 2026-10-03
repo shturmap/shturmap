@@ -95,6 +95,49 @@ public class LandmarkTests
     }
 
     [Fact]
+    public void An_extract_and_the_switches_it_needs_light_each_other()
+    {
+        // An extract needs a lever, which a power switch unlocks, which a switch the data doesn't place unlocks.
+        var map = MapWith(switches:
+        [
+            new("power", "Power switch", At(0, 0), [new("Unlock", "lever")]),
+            new("lever", "Lever", At(5, 0)),
+            new("hidden", "Hidden", null, [new("Unlock", "power")]),
+            new("alarm", "Alarm", At(9, 9)),
+        ]) with { Extracts = [new("d2", "D-2", "pmc", At(10, 0), null, null, null, ["lever"])] };
+        var links = MapContentBuilder.ExtractSwitchLinks(map);
+        Assert.Equal(["switch:lever", "switch:power"], links["extract:d2"]);
+        Assert.Equal(["extract:d2"], links["switch:power"]);
+        Assert.Equal(["extract:d2"], links["switch:lever"]);
+        Assert.False(links.ContainsKey("switch:hidden"));
+        Assert.False(links.ContainsKey("switch:alarm"));
+    }
+
+    [Fact]
+    public void A_switch_listed_for_every_extract_links_none()
+    {
+        // Customs lists one lever for all its extracts, most of which need no switch; a lock-switch is not needed either.
+        var map = MapWith(switches:
+        [
+            new("lever", "Lever", At(0, 0)),
+            new("gate", "Gate button", At(5, 0)),
+            new("console", "Console", At(7, 0), [new("Lock", "gate")]),
+        ]) with
+        {
+            Extracts =
+            [
+                new("a", "Gas Station", "pmc", At(10, 0), null, null, null, ["lever"]),
+                new("b", "Gate", "pmc", At(20, 0), null, null, null, ["lever", "gate"]),
+            ],
+        };
+        var links = MapContentBuilder.ExtractSwitchLinks(map);
+        Assert.Equal(["switch:gate"], links["extract:b"]);
+        Assert.False(links.ContainsKey("extract:a"));
+        Assert.False(links.ContainsKey("switch:lever"));
+        Assert.False(links.ContainsKey("switch:console"));
+    }
+
+    [Fact]
     public void Minefields_are_left_out_over_artwork_that_draws_them()
     {
         // Customs' artwork has no minefields, so the data's show; Woods' has a "Minefield" group, so they don't.

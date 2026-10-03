@@ -910,7 +910,12 @@ public sealed partial class MainWindow : Window
             return new HashSet<string>();
         var ids = new HashSet<string>(focus.Quests);
         if (focus.Marker is { } marker)
+        {
             ids.Add(marker);
+            // An extract lights the switches it needs, a switch the extracts it opens.
+            if (_snapshot?.Content?.Links.TryGetValue(marker, out var linked) == true)
+                ids.UnionWith(linked);
+        }
         // A key lights the locks it opens.
         if (focus.Item is { } item)
             ids.Add(MapContentBuilder.KeyGroup(item));

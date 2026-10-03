@@ -30,7 +30,10 @@ public sealed record ApiTransit(string Id, string? Description, string? Map, Api
 
 /// <param name="Name">What the game calls it, translated ("Med Elevator Power Button", "Alarm Switch").</param>
 /// <param name="Position">Where it is on the map; null when tarkov.dev places it nowhere.</param>
-public sealed record ApiSwitch(string Id, string? Name, ApiPosition? Position = null);
+/// <param name="Activates">What flipping it does to other switches ("Unlock": a power switch frees a lever).</param>
+public sealed record ApiSwitch(string Id, string? Name, ApiPosition? Position = null, List<ApiSwitchActivation>? Activates = null);
+
+public sealed record ApiSwitchActivation(string? Operation, string? Switch);
 
 /// <summary>A spawn point: who can spawn there ("scav", "pmc", "all") and as what ("bot", "player", "boss", "all").</summary>
 public sealed record ApiSpawn(ApiPosition? Position, List<string>? Sides, List<string>? Categories, string? ZoneName);
