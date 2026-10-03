@@ -49,6 +49,13 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
      extension keeps that row shape and adds the verb: "to use, for Wet Job" (one of several weapons, or a class),
      "to fit, for Job for a Patriot" (mods), "to wear, for Dandies" (gear). "Don't wear" (`notWearing`: no armor, no
      helmet) isn't an item to bring: a short note on the quest instead, not a BRING row.
+   - **Extracts that need an item** (owner, 2026-10-03: "For example in the cease fire quest it is not clear that we
+     need to bring a flare from the app"). Cease Fire! asks to extract through Klimov Street (Flare); the extract
+     list already says what each exit takes (`ExtractRules`: flare, paracord and ice pick, money, …), but the
+     quest's BRING doesn't. An `extract` objective that names an exit (internal key, `GameData.ExtractKeys`) whose
+     requirement is an item gets a BRING row: "to leave through Klimov Street, for Cease Fire!" (the flare, with
+     icon and source). The same for `useItem` objectives that use an item (e.g. Airmail's red signal flare), if
+     BRING doesn't list them yet. Check which quests this touches with an audit over the data.
    - **Rules that hold:** only what the data says (Shturmap knows no inventory, so never "you have it"); one row per
      item or class, listing the quests it serves; the same in Plan's BRING, the raid card's BRING and the quest card;
      the synopsis line already names the weapon in words, BRING adds icon, source and price. Check the effort
