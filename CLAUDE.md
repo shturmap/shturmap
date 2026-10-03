@@ -5,6 +5,29 @@ game terms-of-service boundary, copyright rules, UX principles (second monitor, 
 the visual language and taxonomy, and engineering rules. If a change conflicts with it, stop and ask the owner;
 if a decision changes, update `docs/DESIGN.md` in the same change.
 
+## Secrets and private data: the repository is public (owner, 2026-10-03)
+
+Everything committed is public for good: history can't be taken back once pushed. So never put any of these into a
+tracked file, a test or fixture, a commit message, release notes, an issue or a build:
+
+- **Secrets:** access tokens of any kind (GitHub, Sentry `sntryu_…`, API keys), passwords, private keys,
+  certificates, `.env` files, and the Sentry DSN (only in the untracked `eng\sentry.dsn`). A token the owner pastes
+  into the chat is used for that task only, never written to a file, and the owner is reminded to revoke it.
+- **The owner's private data:** the only identity in the repository is the commit author, `shturmap
+  <339214139+shturmap@users.noreply.github.com>`. No email addresses, postal address, phone number, Windows user
+  name, machine name, IP addresses, or paths under the user folder (write `%USERPROFILE%`); no screenshots of the
+  owner's screen.
+- **Players' data:** game profile and account ids, nicknames, IPs, session tokens. Log fixtures come only through
+  `tools\make-log-fixtures.ps1`, which replaces ids by placeholders; never copy a backend log, a study log, a
+  diagnostics text or a Sentry report into the repository.
+- **Links to private workspaces:** no claude.ai links (sessions, artifacts), so commit messages end with the
+  `Co-Authored-By` line only, without a `Claude-Session` link.
+- **Copyrighted data:** quest texts, tarkov.dev payloads or Battlestate art (see below).
+
+Before each commit, read the staged diff (`git diff --cached`) for the list above. Before a release, scan the built
+files for the Windows user name (DESIGN.md §8, "Reports"). When unsure whether something is private, stop and ask
+the owner instead of committing it.
+
 Essentials:
 
 - Never touch the game process, send input, hook, register global hotkeys or capture the screen. `SafetyTests`
