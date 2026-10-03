@@ -265,9 +265,53 @@ public sealed partial class MapView : Grid
 
     private SKPoint Pixels(Windows.Foundation.Point p) => new((float)p.X * PixelScale, (float)p.Y * PixelScale);
 
+#if DEVTOOLS
+    /// <summary>Developer view: while set, a left press on the map picks a place instead of panning. It is called with
+    /// the world X/Z pressed and, after a drag, the X/Z released (the facing); the middle button still pans.</summary>
+    public Action<(double X, double Z), (double X, double Z)?>? DevPick { get; set; }
+
+    private (double X, double Z)? _devPickFrom;
+    private Windows.Foundation.Point _devPickAt;
+
+    /// <summary>The world X/Z under a point in this control (DIPs), as drawn now; null without a map.</summary>
+    public (double X, double Z)? DevWorldAt(Windows.Foundation.Point at) =>
+        _scene is null ? null : _scene.Projection.ToWorld(_camera.ToMap(Pixels(at)));
+
+    /// <summary>The point at these fractions of this control's size (a developer script's "place").</summary>
+    public Windows.Foundation.Point DevPointAt(double fx, double fy) => new(ActualWidth * fx, ActualHeight * fy);
+
+    // A press that picks a place: kept until release, which says whether it was a drag (a facing).
+    private bool DevPress(PointerRoutedEventArgs e, Microsoft.UI.Input.PointerPoint point)
+    {
+        if (DevPick is null || !point.Properties.IsLeftButtonPressed || DevWorldAt(point.Position) is not { } world)
+            return false;
+        _devPickFrom = world;
+        _devPickAt = point.Position;
+        CapturePointer(e.Pointer);
+        e.Handled = true;
+        return true;
+    }
+
+    private bool DevRelease(PointerRoutedEventArgs e)
+    {
+        if (_devPickFrom is not { } from)
+            return false;
+        _devPickFrom = null;
+        ReleasePointerCapture(e.Pointer);
+        var at = e.GetCurrentPoint(this).Position;
+        var dragged = Math.Abs(at.X - _devPickAt.X) + Math.Abs(at.Y - _devPickAt.Y) >= 6;
+        DevPick?.Invoke(from, dragged ? DevWorldAt(at) : null);
+        return true;
+    }
+#endif
+
     private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(this);
+#if DEVTOOLS
+        if (DevPress(e, point))
+            return;
+#endif
         if (!point.Properties.IsLeftButtonPressed && !point.Properties.IsMiddleButtonPressed)
             return;
         _dragFrom = point.Position;
@@ -303,6 +347,10 @@ public sealed partial class MapView : Grid
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
+#if DEVTOOLS
+        if (_devPickFrom is not null)
+            return;
+#endif
         if (_dragFrom is not { } from)
         {
             var at = e.GetCurrentPoint(this).Position;
@@ -335,6 +383,10 @@ public sealed partial class MapView : Grid
 
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
+#if DEVTOOLS
+        if (DevRelease(e))
+            return;
+#endif
         var click = !_dragging && _dragFrom is not null;
         var clicked = click ? _pressedOn : null;
         if (_dragging)
