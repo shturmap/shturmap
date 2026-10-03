@@ -209,6 +209,10 @@ Raise these with the owner when the app gets its first public GitHub Release (no
      release, publish 0.2.1, and see that 0.2.0 offers it. Until then the GitHub path is untested; the local feed
      path is;
    - friends with the 0.1.0 exe run the Setup once (the release notes say so).
+4. **Repository settings and who publishes** (on hold until the release, owner, 2026-10-03). Before the repository
+   goes public: turn off GitHub Issues and Discussions (reports go through the app), decide whether releases are
+   published by the owner's account or by GitHub Actions, and whether the maintainer's identity is shown on the
+   repository's pages.
 
 ## Not asked for (owner to decide)
 
