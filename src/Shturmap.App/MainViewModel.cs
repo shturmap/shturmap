@@ -200,12 +200,6 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"PREVIEW · CUSTOMS" while another map is shown from a Plan card under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
 
-    /// <summary>In a raid, "POSITION 7 MIN OLD" when the last position is too old to trust at a glance; else empty.</summary>
-    [ObservableProperty] public partial string StaleText { get; set; } = "";
-
-    /// <summary>What to do about it: "PRESS PRTSC OR HOME FOR A NEW ONE".</summary>
-    [ObservableProperty] public partial string StaleHint { get; set; } = "";
-
     [ObservableProperty] public partial string LastRaidText { get; set; } = "";
 
     [ObservableProperty] public partial IReadOnlyList<PlanCard> Plans { get; set; } = [];

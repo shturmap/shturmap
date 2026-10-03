@@ -360,8 +360,6 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.LoadingText = "";
         }
-        UpdateStale(s, elapsed);
-
         if (s.Fix is not { } fix)
         {
             ViewModel.FixText = $"No position yet · press {ViewModel.HelpKeys} in raid";
@@ -370,50 +368,6 @@ public sealed partial class MainWindow : Window
         var age = DateTime.Now - fix.At;
         var ago = age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s" : age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} min" : $"{(int)age.TotalHours} h";
         ViewModel.FixText = $"Fix {ago} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m";
-    }
-
-    // A position older than this is too old to show without saying so in big type (the study log: positions came
-    // about every 8 minutes and were often several minutes old when the app was looked at).
-    private static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(2);
-
-    private void UpdateStale(SessionSnapshot s, TimeSpan? inRaid)
-    {
-        var age = s.Fix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
-        ViewModel.StaleText = s.Raid.Phase != RaidPhase.InRaid ? ""
-            : age is null ? (inRaid > TimeSpan.FromMinutes(1) ? "NO POSITION YET" : "")
-            : age >= StaleAfter ? $"POSITION {(int)age.Value.TotalMinutes} MIN OLD"
-            : "";
-        ViewModel.StaleHint = ViewModel.StaleText.Length > 0 ? Caps.Of($"Press {ViewModel.HelpKeys} for a new one") : "";
-    }
-
-    // When the window gets focus with a stale position, the banner pops once, so the glance lands on it.
-    private void PopStale()
-    {
-        if (ViewModel.StaleText.Length == 0)
-            return;
-        Study.Ui("stale.seen", ("text", ViewModel.StaleText));
-        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
-            return;
-        var story = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
-        foreach (var property in new[] { "ScaleX", "ScaleY" })
-        {
-            var frames = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimationUsingKeyFrames();
-            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.LinearDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1 });
-            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
-            {
-                KeyTime = TimeSpan.FromMilliseconds(140), Value = 1.12,
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.CubicEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut },
-            });
-            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
-            {
-                KeyTime = TimeSpan.FromMilliseconds(520), Value = 1,
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.ElasticEase { Oscillations = 1, Springiness = 4, EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut },
-            });
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(frames, StaleScale);
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(frames, property);
-            story.Children.Add(frames);
-        }
-        story.Begin();
     }
 
     private void UpdatePicker(SessionSnapshot s)
@@ -620,9 +574,13 @@ public sealed partial class MainWindow : Window
     {
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
-        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov.
+        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
+        // "(optional)" at the end.
+        const string optional = " (optional)";
+        var tail = o.Text.EndsWith(optional, StringComparison.Ordinal) ? optional : "";
+        var core = o.Text[..^tail.Length];
         var suffix = " on " + mapName;
-        var text = mapName is not null && o.Text.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? o.Text[..^suffix.Length] : o.Text;
+        var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
     }
@@ -652,6 +610,7 @@ public sealed partial class MainWindow : Window
         if (Map.Scene is not { } scene || _snapshot is not { } latest)
             return;
         scene.Player = latest.Fix;
+        scene.InRaid = latest.Raid.Phase == RaidPhase.InRaid;
         scene.Trail = latest.Trail;
         scene.Floor = ShownFloor(latest);
         scene.Markers = latest.Content?.Markers ?? [];
@@ -781,7 +740,6 @@ public sealed partial class MainWindow : Window
                 _focusedAt = DateTime.Now;
                 Study.Ui("window.focus", ("railY", RailScroll.VerticalOffset), ("railH", RailScroll.ViewportHeight),
                     ("visible", Linked.QuestsVisibleIn(RailScroll).ToList()));
-                PopStale();
             }
             else if (!focused && _focusedAt is { } since)
             {
