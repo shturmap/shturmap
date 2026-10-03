@@ -103,7 +103,16 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
     - **README:** if it makes sense, the three or four questions that matter before installing (allowed / banned /
       PvP / what it sends), linking to the website's full FAQ; no duplication beyond that.
     - Follow DESIGN.md §2's wording rule (no cheat-seller vocabulary, no hint of approval).
-11. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+11. **No big "POSITION 7 MIN OLD" over the map; the age goes beside the marker** (owner, 2026-10-03: "Get rid of the
+    'Position X minutes old' big title feedback in the app. Put it next to the marker"). Today, in a raid, a position
+    older than `StaleAfter` (MainWindow.xaml.cs, about line 375) shows in big type over the map (MainWindow.xaml,
+    about line 717; an earlier decision from the study log: positions came about every 8 minutes and were often
+    minutes old when the app was looked at). The marker already carries a dashed ring and an age tag ("4 MIN") once
+    a position is a minute old (cartography change 5), and the guide line's plate says "69 m · 4 MIN". So: remove the
+    big type; check the marker's age tag reads well enough at a glance on its own (size, contrast, the collar), maybe
+    "7 MIN OLD" once past `StaleAfter`; keep the raid card's note ("Distances from your screenshot 7 min ago").
+    DESIGN.md: record that the owner replaced the earlier decision, with the date.
+12. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
