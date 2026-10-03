@@ -37,10 +37,13 @@ public sealed record MapChoice(string NormalizedName, string Name)
 /// <param name="Needs">What it needs brought on the map (empty: nothing), or null where bringing doesn't apply.</param>
 /// <param name="Synopsis">What it asks on the map in a few words, under the name; empty for none.</param>
 /// <param name="StartsGroup">The first row of a later effort group in a Plan section (Session.Planning.Rows).</param>
+/// <param name="Note">For a PROGRESS row, why it only progresses here ("2 of 5 objectives here"); else empty.</param>
 public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "", bool StartsGroup = false)
+    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "", bool StartsGroup = false, string Note = "")
 {
     public Visibility SynopsisVisibility => Synopsis.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility NoteVisibility => Note.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>A hairline above the row where a later effort group starts; no heading (owner, 2026-10-03).</summary>
     public Thickness GroupLine => StartsGroup ? new Thickness(0, 1, 0, 0) : new Thickness(0);
@@ -93,6 +96,9 @@ public sealed record PlanCard(
 
     public Visibility ProgressVisibility => Expanded && Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>On a folded card, a hairline between the glyphs of quests to complete and those to progress.</summary>
+    public Visibility GlyphDividerVisibility => Finish.Count > 0 && Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility RequirementsVisibility => Expanded && Requirements.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Microsoft.UI.Xaml.Media.Brush CardBackground =>
@@ -102,15 +108,7 @@ public sealed record PlanCard(
 /// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
 /// <param name="Complete">Whether this raid can complete it (Plan's COMPLETE), or only progress it.</param>
 public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null)
-{
-    // As in Plan: quests this raid completes in gold and ink, the ones it only progresses muted.
-    public Microsoft.UI.Xaml.Media.Brush GlyphBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "AmberBrush" : "MutedBrush"];
-
-    public Microsoft.UI.Xaml.Media.Brush NameBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "InkBrush" : "MutedBrush"];
-
-    public double PictureOpacity => Complete ? 1 : 0.6;
-}
+    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null);
 
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);
 
@@ -123,6 +121,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string ModeDetail { get; set; } = "";
 
     [ObservableProperty] public partial string RaidText { get; set; } = "Starting…";
+
+    /// <summary>Where the raid state comes from (the game's log), for its tooltip.</summary>
+    [ObservableProperty] public partial string RaidDetail { get; set; } = "";
 
     [ObservableProperty] public partial bool InRaid { get; set; }
 

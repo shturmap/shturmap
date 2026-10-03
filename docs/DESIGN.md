@@ -286,6 +286,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   with no game on this PC, "No game on this PC: the mode you last played". A mode name Shturmap doesn't know (a
   future one) keeps the last known mode, says "The game says 'X', which Shturmap doesn't know yet…" and is logged
   as a WARN. A chooser belongs to the mode without a game (docs/NEXT.md, item 6).
+  The raid state says only what the log shows (owner, 2026-10-03: "in the menus" while the game wasn't even
+  running was misleading): "LOADING CUSTOMS", "IN RAID · CUSTOMS · PMC · 12 MIN", and otherwise "NOT IN A RAID",
+  never "in the menus" (`RaidStatus`). The application log has no line that marks the game quitting: the sequence
+  "Disposing BEClient … BEClient exit successfully … Dll released" that ends some sessions also comes right after
+  startup and between raids, and about half of the owner's 22 sessions (15 August to 3 October) simply stop after an
+  ordinary line. So the log can't tell the menus from a closed game, and "GAME CLOSED" can't be said truthfully; the
+  tooltip says so ("The game's log shows no raid. It doesn't say whether the game is open…"). No process checks
+  (§2).
+  Everything in the bar shares one middle line (a player's report, 2026-10-03): the status words use the tight
+  line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
+  and the lights, the "?" and the help button's frame are centred on the same line; vertical padding keeps the
+  words with tooltips easy to point at.
 - **Rail** (left, 380 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
@@ -296,8 +308,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     and no headings (§7, "Plan order"); the raid card stays nearest first. Clicking another map expands it and
     shows it on the map; that click is optional.
     Folded cards carry enough to compare without opening them (the study log: ten card clicks in 4.5 minutes to
-    compare maps): one quest-type glyph per quest (gold to complete, muted to progress) and up to five cells of
-    what to bring. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
+    compare maps): one quest-type glyph per quest, all gold, those to complete first, then a hairline, then those
+    to progress, and up to five cells of what to bring.
+    **PROGRESS is not less important** (owner, 2026-10-03: muted PROGRESS rows "suggest less importance", while
+    these quests are as much this raid's work). Rows in PROGRESS, in ANY MAP and in the raid card's PROGRESS look
+    exactly like COMPLETE rows: gold glyph, ink name, trader portrait and bring cells at full strength. The section
+    heading says which, and a PROGRESS row in Plan adds one short line in small muted capitals saying why it only
+    progresses ("2 OF 5 OBJECTIVES HERE"; §7, "Raid planner"). Muted keeps one meaning in quest rows: an objective
+    done after the raid, at a trader. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
     "PREVIEW · CUSTOMS · CLICK THE CARD TO PLAN IT"; moving to the next card switches at once, leaving puts the
     shown map back exactly as it was (pan and zoom), and a click keeps it. A raid loading ends a preview.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
@@ -620,8 +638,15 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
   untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
   expanded.
 - Quests whose in-raid work fits any map are listed once under **Any map**.
-- Walking estimate: a nearest-neighbour route through one place per located objective, at 3 m/s, shown against
-  the raid length ("~7 min walking · 35 min raid").
+- No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
+  walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's
+  length and its bosses with their chances ("40 min raid · Kaban 75% · Kollontay 75%"). The planner still measures
+  a nearest-neighbour route through one place per located objective, only to break ties between maps of equal
+  score; it is never shown.
+- A **progressed** quest's row says why it can't be finished there, from the same tests (`Planning.ProgressNote`):
+  "2 of 5 objectives here" (its other in-raid objectives are on other maps; hand-overs and optional ones don't
+  count), "needs items found in raid", "25 kills in all" (a kill count above 3; the total the data gives, since the
+  logs don't report kill progress). Joined by " · " when several apply.
 - Quest-level keys are shown on the objectives that have a place on that map, not on hand-ins or extracts.
 
 ### Plan order

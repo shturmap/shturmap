@@ -138,10 +138,10 @@ public class PlannerTests
     }
 
     [Fact]
-    public void Walking_route_visits_each_place_once()
+    public void Route_length_for_ranking_ties_visits_each_place_once()
     {
+        // Only breaks ties between maps; never shown as a walking time (owner, 2026-10-03).
         var plan = RaidPlanner.Plan([Revision], Streets);
         Assert.Equal(300, plan.RouteMeters, 3);
-        Assert.Equal(300 / 3.0 / 60, plan.WalkingMinutes, 6);
     }
 }

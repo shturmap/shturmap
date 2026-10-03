@@ -308,7 +308,7 @@ static async Task Watch(int seconds)
     Console.WriteLine($"--- next raid (last: {snap.LastRaid?.MapName} {snap.LastRaid?.Duration:mm\\:ss} {snap.LastRaid?.Side}); any map: {string.Join("; ", snap.AnyMap.Select(q => $"[{q.Kind}] {q.Name}"))}");
     foreach (var p in snap.Plan)
     {
-        Console.WriteLine($"  {p.MapName}: finish {p.Finish.Count}, progress {p.Progress.Count}, ~{p.WalkingMinutes} min walking of {p.RaidMinutes} min; bosses {string.Join(", ", p.Bosses)}");
+        Console.WriteLine($"  {p.MapName}: finish {p.Finish.Count}, progress {p.Progress.Count}, {p.RaidMinutes} min raid; bosses {string.Join(", ", p.Bosses)}");
         Console.WriteLine($"     finish:   {string.Join("; ", p.Finish.Select(q => $"[{q.Kind}] {q.Name}"))}");
         Console.WriteLine($"     progress: {string.Join("; ", p.Progress.Select(q => $"[{q.Kind}] {q.Name}"))}");
         foreach (var r in p.Requirements)
