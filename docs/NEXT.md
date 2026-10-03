@@ -201,7 +201,8 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
     - **Zero picks = today's behaviour,** so nobody has to use it. Check it against the effort order (item list
       order), the synopsis lines and the folded cards; one symbol, one meaning (the pen keeps its meaning: "keep
       lit", now for several). DESIGN.md decision, help text, legend.
-17. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+17. **Next round: item 5 below, one design system** (owner, 2026-10-03: "Yes, do the design system after this round"), before the website's next update (the FAQ).
+18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
