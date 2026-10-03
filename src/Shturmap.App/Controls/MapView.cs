@@ -44,6 +44,21 @@ public sealed partial class MapView : Grid
         };
     }
 
+    private bool _tileRedrawQueued;
+
+    // Raised on a loader thread, often several tiles at once: one redraw on the UI thread for them all.
+    private void OnTilesChanged()
+    {
+        if (_tileRedrawQueued)
+            return;
+        _tileRedrawQueued = true;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _tileRedrawQueued = false;
+            _panel.Invalidate();
+        });
+    }
+
     /// <summary>A new position arrived and pings; true when it is out of view (the edge arrow points to it).</summary>
     public event Action<bool>? PlayerPinged;
 
@@ -70,6 +85,11 @@ public sealed partial class MapView : Grid
     /// <summary>Shows a new map, fitted to the window, or at a view saved earlier with <see cref="View"/>.</summary>
     public void SetScene(MapScene? scene, (Shturmap.Core.Maps.MapPoint Center, double Zoom)? view = null)
     {
+        // A tile render redraws as its tiles arrive (they load in the background).
+        if (_scene?.Tiles is { } before)
+            before.Changed -= OnTilesChanged;
+        if (scene?.Tiles is { } after)
+            after.Changed += OnTilesChanged;
         _scene = scene;
         if (scene is not null)
             scene.Pulse = AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
@@ -226,6 +246,20 @@ public sealed partial class MapView : Grid
         return new(p.X / PixelScale, p.Y / PixelScale);
     }
 
+    /// <summary>Waits until the tiles the current view needs are loaded (a snapshot of a tile render), at most <paramref name="limit"/>.</summary>
+    public async Task TilesLoadedAsync(TimeSpan limit)
+    {
+        if (_scene is not { Tiles: { } tiles } scene || scene.Definition.TilePath is not { } basePath)
+            return;
+        var a = _camera.ToMap(new SKPoint(0, 0));
+        var b = _camera.ToMap(new SKPoint(_camera.Viewport.Width, _camera.Viewport.Height));
+        var view = new Shturmap.Core.Maps.MapRect(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+        var loads = new List<Task> { tiles.LoadAsync(basePath, view, scene.Projection.WorldRect, _camera.Zoom) };
+        if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
+            loads.Add(tiles.LoadAsync(floorPath, view, scene.Projection.WorldRect, _camera.Zoom));
+        await Task.WhenAny(Task.WhenAll(loads), Task.Delay(limit));
+    }
+
     /// <summary>Draws the current view into a PNG (developer snapshot; the GPU surface itself can't be read back),
     /// at <paramref name="scale"/> times the screen's pixels.</summary>
     public void SaveSnapshot(string path, int scale = 1)
@@ -233,8 +267,9 @@ public sealed partial class MapView : Grid
         var size = _camera.Viewport;
         using var surface = SKSurface.Create(new SKImageInfo(Math.Max(1, (int)size.Width * scale), Math.Max(1, (int)size.Height * scale)));
         surface.Canvas.Scale(scale);
+        // No map yet: the ground, as everywhere (it had a teal tint of its own until the design system, 2026-10-03).
         if (_scene is null)
-            surface.Canvas.Clear(SKColor.Parse("#0e1413"));
+            surface.Canvas.Clear(Palette.Sk(Palette.Ground));
         else
             MapRenderer.Render(surface.Canvas, _camera, _scene, PixelScale);
         using var image = surface.Snapshot();
@@ -252,7 +287,7 @@ public sealed partial class MapView : Grid
         _camera.Resize(new SKSize(e.BackendRenderTarget.Width, e.BackendRenderTarget.Height));
         if (_scene is null)
         {
-            canvas.Clear(SKColor.Parse("#0e1413"));
+            canvas.Clear(Palette.Sk(Palette.Ground));
             return;
         }
         if (_fitPending)
@@ -265,9 +300,53 @@ public sealed partial class MapView : Grid
 
     private SKPoint Pixels(Windows.Foundation.Point p) => new((float)p.X * PixelScale, (float)p.Y * PixelScale);
 
+#if DEVTOOLS
+    /// <summary>Developer view: while set, a left press on the map picks a place instead of panning. It is called with
+    /// the world X/Z pressed and, after a drag, the X/Z released (the facing); the middle button still pans.</summary>
+    public Action<(double X, double Z), (double X, double Z)?>? DevPick { get; set; }
+
+    private (double X, double Z)? _devPickFrom;
+    private Windows.Foundation.Point _devPickAt;
+
+    /// <summary>The world X/Z under a point in this control (DIPs), as drawn now; null without a map.</summary>
+    public (double X, double Z)? DevWorldAt(Windows.Foundation.Point at) =>
+        _scene is null ? null : _scene.Projection.ToWorld(_camera.ToMap(Pixels(at)));
+
+    /// <summary>The point at these fractions of this control's size (a developer script's "place").</summary>
+    public Windows.Foundation.Point DevPointAt(double fx, double fy) => new(ActualWidth * fx, ActualHeight * fy);
+
+    // A press that picks a place: kept until release, which says whether it was a drag (a facing).
+    private bool DevPress(PointerRoutedEventArgs e, Microsoft.UI.Input.PointerPoint point)
+    {
+        if (DevPick is null || !point.Properties.IsLeftButtonPressed || DevWorldAt(point.Position) is not { } world)
+            return false;
+        _devPickFrom = world;
+        _devPickAt = point.Position;
+        CapturePointer(e.Pointer);
+        e.Handled = true;
+        return true;
+    }
+
+    private bool DevRelease(PointerRoutedEventArgs e)
+    {
+        if (_devPickFrom is not { } from)
+            return false;
+        _devPickFrom = null;
+        ReleasePointerCapture(e.Pointer);
+        var at = e.GetCurrentPoint(this).Position;
+        var dragged = Math.Abs(at.X - _devPickAt.X) + Math.Abs(at.Y - _devPickAt.Y) >= 6;
+        DevPick?.Invoke(from, dragged ? DevWorldAt(at) : null);
+        return true;
+    }
+#endif
+
     private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(this);
+#if DEVTOOLS
+        if (DevPress(e, point))
+            return;
+#endif
         if (!point.Properties.IsLeftButtonPressed && !point.Properties.IsMiddleButtonPressed)
             return;
         _dragFrom = point.Position;
@@ -303,6 +382,10 @@ public sealed partial class MapView : Grid
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
+#if DEVTOOLS
+        if (_devPickFrom is not null)
+            return;
+#endif
         if (_dragFrom is not { } from)
         {
             var at = e.GetCurrentPoint(this).Position;
@@ -335,6 +418,10 @@ public sealed partial class MapView : Grid
 
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
     {
+#if DEVTOOLS
+        if (DevRelease(e))
+            return;
+#endif
         var click = !_dragging && _dragFrom is not null;
         var clicked = click ? _pressedOn : null;
         if (_dragging)

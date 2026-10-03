@@ -81,27 +81,44 @@ against sanctions); and say that some players see a position map as an unfair ad
   at runtime, displayed unmodified except for showing one floor at a time (their README invites that), credited on
   the map with its licence, and never redistributed. Non-commercial only. A published screenshot that shows a map
   shares the artwork: credit it the same way and keep it non-commercial.
-- **Maps without artwork** (The Lab, Labyrinth, Icebreaker; checked 2026-10-02). tarkov.dev shows them as image
-  tiles (assets.tarkov.dev, credited to "Tarkov.dev" and to TarkovBOT.eu for Icebreaker) that are top-down renders
-  of the game's own level geometry and textures, i.e. Battlestate's art, which Shturmap doesn't use (below). The
-  svg-maps repository's `Labs.svg` (Shebuka, CC BY-NC-SA 4.0, last changed 2023) is a schematic that isn't to scale:
-  fitted to the georeferenced level, its rooms are off by 13–22 m, so positions would land in the wrong rooms, and
-  tarkov.dev has never placed it either. These maps are drawn as a **sheet** instead, from data only: maps.json's
-  bounds (the extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid on whole metres
-  (10 m, every fifth line stronger), tarkov.dev's labels for the shown floor, and everything else as on any map
-  (player, trail, objectives, extracts, transits, spawns, floors). No walls or layouts are drawn: none exist in the
-  data (owner, 2026-10-02: Shturmap shows only what it has a precise readout for). The sheet says
+- **Maps without SVG artwork** (The Lab, Labyrinth, Icebreaker). tarkov.dev publishes them only as image tiles
+  (assets.tarkov.dev; maps.json credits "Tarkov.dev", and TarkovBOT.eu for Icebreaker): top-down renders of the
+  game's own level geometry and textures, i.e. Battlestate's art. **They are shown** (owner, 2026-10-03: "Do B and A",
+  extending to these renders the terms accepted for trader portraits and item icons below; until then they weren't
+  used and the sheet below stood in): fetched from tarkov.dev's image service as a view needs them (the zoom level
+  that matches the screen, the base layer and the shown floor's layer, at most four at a time; while one loads the
+  nearest coarser tile stands in, stretched), kept in the user's cache (`cache\map-tiles\<map>\<layer>\<z>\<x>_<y>.png`,
+  checked again after a month) and decoded in memory (the 192 most recently used), never in the repository, a build
+  or the test fixtures, credited on the map ("Map: Tarkov.dev · data tarkov.dev"). Screenshots of Shturmap may show
+  them, as with icons. They are placed with tarkov.dev's own transform, through its Leaflet CRS: a map unit is a pixel
+  at zoom 0, so the tile (z, x, y) covers [x·T, (x+1)·T] ÷ 2^z map units each way, T being maps.json's tileSize (175
+  for The Lab, 256 elsewhere) whatever the image's own size (`TileGrid`; worked out from Leaflet's documented maths,
+  no code taken). Checked by eye on 2026-10-03: The Lab's extracts land in their rooms on its levels (the medical
+  block's elevator room on Technical, the hangar's floor), its room names on their rooms on both floors, Labyrinth's
+  and Icebreaker's loot spots on their decks and rooms. Like SVG artwork the renders recede, the colour treatment
+  baked into each tile when it is decoded, so a frame only copies pixels (on the CPU, 16–45 ms a frame for The Lab,
+  3–11 ms for Icebreaker and Labyrinth); they are clipped to maps.json's bounds (Labyrinth's render runs on with a
+  border line and an opaque background). The Icebreaker render is stretched 1.75× along one axis, so these maps keep
+  tarkov.dev's transform (`MapProjection.For`). The svg-maps repository's `Labs.svg` (Shebuka, CC BY-NC-SA 4.0, last
+  changed 2023) stays unused: a schematic that isn't to scale, its rooms 13–22 m off when fitted to the level.
+- **The sheet** stands in when no tile can be had (offline without saved tiles, or none published), drawn from data
+  only: maps.json's bounds (the extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid
+  on whole metres (10 m, every fifth line stronger), tarkov.dev's labels for the shown floor, and everything else as
+  on any map (player, trail, objectives, extracts, transits, spawns, floors). No walls or layouts are drawn: none
+  exist in the data (owner, 2026-10-02: Shturmap shows only what it has a precise readout for). The sheet says
   "NO ARTWORK FOR THIS MAP · GRID 10 M" in its corner (plus "NO FLOOR DATA" where maps.json has no floors, as for
-  Labyrinth: its markers are then all on one plane), the credit line says so, and a notice says it once per map.
-  A sheet uses one scale for both axes (`MapProjection.For`), so its squares stay square; tarkov.dev's Icebreaker
-  transform stretches Y 1.75× to fit its tiles. The credit line names an artist only where their SVG is drawn.
+  Labyrinth: its markers are then all on one plane), the credit line says so, and a notice says it once per map ("No
+  map render for The Lab: couldn't download it…"). With tarkov.dev's transform kept, Icebreaker's 10 m squares are
+  oblong on its sheet (the lines are still 10 m apart); a map with neither SVG nor tiles would get one scale for both
+  axes, so its squares stay square. The credit line names an artist only where their SVG is drawn.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
   display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Screenshots of Shturmap
   on the website and in the README may show them, as the wiki and other community sites do (owner, 2026-10-02,
   accepting that BSG's licence 4.2.2, read literally, doesn't allow it); they are never published on their own.
-- **Not used**: other Battlestate artwork (quest images, game UI art, map art), text from the EFT wiki or guide
+- **Not used**: other Battlestate artwork (quest images, game UI art, and map art except tarkov.dev's renders of the
+  three maps without SVG artwork, above), text from the EFT wiki or guide
   sites (the quest card links to the wiki page instead), and code from other community tools: TarkovMonitor,
   TarkovTracker and MAYAK (GPL-3.0), Tarkov Pilot (no licence), RatScanner (source-available, based on the Elastic
   License). Facts learned from them (log formats, file paths) are reimplemented. The idea comes from TarkovEyes
@@ -146,10 +163,13 @@ against sanctions); and say that some players see a position map as an unfair ad
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
-   player marker and trail go: out of a raid there is no "you". In a raid, a position older than 2 minutes (or
-   none a minute in) is said at the top of the map in big gold type, "POSITION 7 MIN OLD · PRESS PRTSC OR HOME
-   FOR A NEW ONE", and the banner pops once when the window gets focus (the study log: about one position per 8
-   raid minutes, often several minutes old when the app was looked at).
+   player marker and trail go: out of a raid there is no "you". A position's age is said beside the marker: from
+   a minute, the ring turns dashed and a tag gives the minutes ("4 MIN"); from 2 minutes the tag reads "7 MIN
+   OLD", larger and framed in sand (the study log: about one position per 8 raid minutes, often several minutes
+   old when the app was looked at). Until 2026-10-03 the 2-minute case was also said over the map in big gold type
+   ("POSITION 7 MIN OLD · PRESS PRTSC OR HOME FOR A NEW ONE", and "NO POSITION YET" a minute into a raid without
+   one); the owner had it removed: "Put it next to the marker". No position yet is said by the status bar and the
+   raid card.
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
     loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
     holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop). Its
@@ -161,10 +181,28 @@ against sanctions); and say that some players see a position map as an unfair ad
     suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
     list) show no cue. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
-9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
-   map, while there is still time to back out of matching. In a group it comes earlier: when the leader picks a
-   raid (the notification log says so 20–70 s before loading starts), Shturmap shows that map with the GROUP PICKED
-   cue and says "Your group picked Streets of Tarkov · bring: …" (owner, 2026-10-02). The pick's time of day
+9. **Say it before it matters.** When a raid starts loading, Shturmap shows what to bring for that map, while there
+   is still time to back out of matching. **The kit reminder** (owner, 2026-10-03: the one-line "Loading … · bring:
+   …" notice came too late to read and as a list of words; "it could still be a good reminder what to bring … with
+   icon previews"; "If the player sees they forgot something they can still cancel loading into the map"):
+   - **When:** the scene line names the map 1–2 s after matching starts, before matching completes (2–25 s) and
+     before a server raid's match setup (15–71 s); in the owner's logs (30 loads, 2026-08-15 to 2026-10-02)
+     matching was cancelled 9–27 s after it started, so it is the earliest line naming the map and still in time.
+     A group's pick comes earlier still (below). A cancelled load goes back to the menus, which ends it.
+   - **What** (`Planning.Kit`): every active quest's BRING row for the map; what it takes to get in or out first
+     (the entry item, the exits quests name: a flare, climbing gear, money), then what the picks need, then, with
+     picks on this map, the rest under ALSO USEFUL. Without picks there it is all one list. Shturmap knows no
+     inventory, so it is a list to check, never a claim that something is missing.
+   - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name: up to six items in that order, in
+     BRING's cells at 34 px, and "+3" for the rest; never scaled, like the cue's text. A transit's cue has none (the
+     gear is what the raid had).
+   - **The raid card** starts with CHECK YOUR KIT, in BRING's rows, while the raid loads; BRING itself steps aside
+     until the raid starts, then is back in its place. A Scav loading (known early when a server raid's setup names
+     the Scav profile) gets no kit, and the card's note says why: quest objectives don't count for a Scav.
+   - The study log notes it (`kit.reminder`: when, map, items, items for picks).
+
+   In a group it comes earlier: when the leader picks a raid (the notification log says so 20–70 s before loading
+   starts), Shturmap shows that map with the GROUP PICKED cue and its kit (owner, 2026-10-02). The pick's time of day
    ("CURR" or "PAST", the two raid times 12 h apart) isn't shown: the clock formula checks out against the
    screenshots' raid clocks, but which of the two times each name means couldn't be checked without a group raid
    with a screenshot; the study log now records both to settle it. What a quest needs is also beside its name wherever
@@ -172,13 +210,109 @@ against sanctions); and say that some players see a position map as an unfair ad
    "+N" for more; a quest that needs nothing shows one empty, dashed cell, the inventory's way of saying "nothing
    here" (owner, 2026-10-01: BRING alone didn't show which item is for which quest). ANY MAP rows show no cells:
    bringing doesn't apply there.
-10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **highlighter** (a pen, on the row
-    while the quest is pointed at or kept, and always on its card beside the pop-out button) keeps it lit on the map (owner,
-    2026-10-01: one click doing both was misleading; the study log had the player toggling quests on and off and
-    losing held cards on the way to the map).
+10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **pen** (on the row while the quest is
+    pointed at or picked, and always on its card beside the pop-out button) picks it for the coming raid: lit on the
+    map and first in the rail, several at once ("Picks"; owner, 2026-10-01: one click doing both was misleading; the
+    study log had the player toggling quests on and off and losing held cards on the way to the map).
 12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
     are no detail pages to open. Finished quests appear nowhere.
+
+### Design system
+
+One set of colours, type, shapes, motion, icons and words for the app, the map, the README, the website and the
+release notes (owner, 2026-10-02: "make sure the colours, fonts and general design are consistent in the app, the
+readme and the future website"; written down 2026-10-03). The sections below ("Visual language", "Logo", "Map
+drawing", §2's wording rules) apply it; when they say a colour or a style, it is one of these.
+
+**Colours.** The table is the source: `Shturmap.Map.Palette` holds it in code, and `DesignTokenTests` fail when
+App.xaml, a XAML colour, the map, `brand\build.cs`, the website's CSS or this table disagrees, or a colour appears that
+isn't here. A colour may appear at a lower alpha (gold at 18 % behind linked rows, ground at 78–94 % behind overlays);
+a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symbol, one meaning, for colour too).
+
+| token | hex | role | where (App.xaml · map · website) |
+| --- | --- | --- | --- |
+| `Ground` | `#0B0C0B` | the page and the map behind everything; dark collars and halos | GroundColor · Background · `--ground` |
+| `Rail` | `#101110` | the rail and status bar | RailColor · — · `--rail` |
+| `Panel` | `#151614` | cards, flyouts, tooltips, the icon's plate | PanelColor · — · `--panel`, `--grid` |
+| `Raised` | `#1E1F1B` | the selected or expanded thing, one step lighter | RaisedColor · — · `--raised` |
+| `Line` | `#2A2B27` | hairlines | LineColor · sheet grid · `--line` |
+| `LineStrong` | `#45463F` | the stronger hairline of what is selected; frames | LineStrongColor · sheet edge · `--line-strong` |
+| `Cell` | `#1A1B18` | the inventory cell behind item icons | CellColor · — · — |
+| `Ink` | `#D9D5C4` | text | InkColor · labels · `--ink` |
+| `Muted` | `#8A8778` | secondary text; what happens after the raid or at a trader; done objectives | MutedColor · Muted · `--muted` |
+| `Amber` | `#C9AD62` | the one accent: quests, objectives, distances, "on" | AmberColor, SystemAccentColor · Amber · `--amber` |
+| `AmberHover` | `#D6BE7E` | the accent under the pointer | SystemAccentColorLight1 · — · `--amber-hover` |
+| `AmberHi` | `#E2CF9C` | focus rings, link hover on the web | SystemAccentColorLight2 · — · `--amber-hi` |
+| `AmberDeep` | `#A88F4E` | the accent pressed | SystemAccentColorDark1 · — · — |
+| `Green` | `#8DA65E` | PMC extracts, success, healthy inputs | GreenColor · Green · — |
+| `Teal` | `#6F9A94` | Scav extracts | TealColor · Teal · `--teal` |
+| `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | — · Lime · — |
+| `Violet` | `#9C8CC4` | transits | — · Violet · — |
+| `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
+| `Sand` | `#E9E2C8` | the player and their trail | SandColor · Player · `--sand` |
+| `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
+| `LightGround` | `#F1F0EC` | the logo's light background | brand |
+| `LightInk` | `#1E1F1B` | the logo's ink on light | brand, README light mode |
+| `LightAmber` | `#8C7436` | the logo's amber on light | brand, README light mode |
+| `LogoMarks` | `#4A4A41` | the icon plate's corner marks | brand |
+| `LogoGrid` | `#171815` | the social preview's grid | brand |
+| `DeveloperPlateEdge` | `#1E6F78` | the dev icon plate's edge | brand |
+| `DeveloperPlateMarks` | `#2A97A3` | the dev icon plate's corner marks | brand |
+| `WebInkSoft` | `#BDB9A8` | long reading on the website (leads, answers) | website `--ink-soft` |
+| `WebDim` | `#6E6C60` | parts of a file name Shturmap doesn't use (website) | website `--dim` |
+| `WebTealText` | `#8FB8B1` | the facing in a file name, as text (website) | website `--teal-text` |
+| `SheetPanel` | `#121311` | the map sheet's panel (maps without artwork) | map |
+| `SheetMinor` | `#1C1D1A` | the map sheet's 10 m lines | map |
+
+**Type.** Bahnschrift in the app and on the map (ships with Windows, DIN-like, close to the game's lettering). It
+may be shown on screen but not served as a web font (Microsoft's font FAQ), so the website uses DIN-like faces with
+the SIL Open Font Licence, self-hosted: Barlow Semi Condensed for what the app sets semi-condensed, Barlow for body
+text, IBM Plex Mono for numbers and file names. The README uses GitHub's own type. Roles, app style and size (px) ·
+website class:
+
+| role | app | website |
+| --- | --- | --- |
+| section label: uppercase, spaced, muted | `EyebrowText` 11, semi-condensed semibold, 0.14 em | `.eb` 12, Barlow SC 600, 0.18 em |
+| status word | `StatusText` / `StatusBarText` 12, semi-condensed semibold, 0.08 em | the route readout 13, 0.12 em |
+| title (map, quest) | `TitleText` 17, semi-condensed semibold | headings, Barlow SC 600: h1 34–56, `.h` 40 (32 on phones), questions 21 |
+| body | the implicit TextBlock style, 14 | body 17, line height 1.6 |
+| note, secondary | `NoteText` 12.5, muted | `.note` 14, captions 13, muted |
+| figure (distances) | `FigureText` 15, semi-condensed semibold, amber; 22 in the glance | IBM Plex Mono: section numbers, legends, code |
+| the big cue | 13 / 48 / 15 | — |
+
+New text uses a role, not a new size; the few in-between sizes in XAML (10, 10.5, 11.5) are badges and hints that
+fit a fixed box.
+
+**Shape and spacing.** Square corners everywhere (`ControlCornerRadius` and `OverlayCornerRadius` 0, no
+`border-radius` on the web); flat panels; 1 px hairlines in `Line`, the selected one in `LineStrong`; map symbols wear
+a dark collar (see "Visual language"). Spacing in the app steps 2–3 px inside a row, 6–10 px between lines, 12–18 px
+between groups, 20 px above a section label; the rail is 384 px, the status bar 40 px. The website lays out on a 96 px
+grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps from 8 to 56 px.
+
+**Motion.** Slow enough to read, never for show: the big cue takes 5 s with its entrance at 1.8 times the original
+pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
+position pings. With Windows' animation effects off the app shows and hides without motion. The website follows the
+reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
+easing; owner, 2026-10-02), the rest stops.
+
+**Icons.** Segoe Fluent Icons in the app, drawn glyphs on the map (`Glyphs`), one symbol with one meaning everywhere
+("Visual language", the list of checked symbols); quest types by glyph, never by colour. Text links that leave
+Shturmap end in "↗". The website draws its few symbols itself, in the same colours.
+
+**Logo.** As in "Logo": the full mark from 48 px, the plain Ш from 16 to 40 px; the lockup at least 30 px tall (the
+website's phone header; 40 px in the README and the website header); keep a free space of at least half the plate's
+height around it; dark and light variants as in the table.
+
+**Words.** Sober and short, units on numbers, no marketing and no jargon (§8, "Rules"); what Shturmap reads and never
+does, the risk named plainly, none of the cheat sellers' vocabulary and no hint of Battlestate's approval (§2). The
+same in the app, the README, the website and the release notes.
+
+**Where each surface takes it from.** The app: `App.xaml` (colour resources, brushes and the text styles) and
+`Shturmap.Map.Palette` for the map. The website: `assets/site.css`'s `:root` (colours under the tokens' names,
+`--f-cond`, `--f-body`, `--f-mono`). The README and the website: `brand/` (the logo files, dark and light). Release
+notes: plain Markdown, the same words. A change to the design system changes this section, `Palette`, App.xaml and the
+website's CSS together, and `DesignTokenTests` check the colours.
 
 ### Visual language
 
@@ -206,17 +340,9 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
   same collar, since they measured below 3:1 against mid and light streets). Hollow symbols get a collar band
   under the ring, their middle left open.
 
-| meaning | colour |
-| --- | --- |
-| quests, objectives, distances, "on" (one accent) | muted gold `#C9AD62` |
-| extracts (PMC), success, healthy inputs | green `#8DA65E` |
-| Scav extracts | teal `#6F9A94` |
-| shared extracts | khaki `#B7B77A`, the triangle split down the middle |
-| the player and their trail | sand `#E9E2C8` |
-| transits | violet `#9C8CC4` |
-| bosses, danger | red `#B8604A` |
-| text | beige-white `#D9D5C4`, secondary `#8A8778` (also done objectives on the map, with a check mark) |
-| ground, rail, panel, raised | `#0B0C0B`, `#101110`, `#151614`, `#1E1F1B`; hairlines `#2A2B27` / `#45463F` |
+Colours and their one meaning each: the token table in "Design system" above (gold for quests, green / teal /
+khaki for extracts by side, violet for transits, red for bosses, sand for the player, cyan for kept or picked
+quests, muted for what happens after the raid).
 
 **One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
 pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
@@ -225,8 +351,9 @@ everywhere: rows, cards, map markers, the legend, buttons. The card's button tha
 window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
 Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP) end in "↗". A check of all symbols the same day, by rendering
 them side by side:
-- **Two meanings, still open:** `E719` (a shopping bag) is both the Find-in-raid quest type and the flea market as an
-  item source on item cards. The owner decides which keeps it.
+- **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
+  item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market
+  became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
 - **Close but distinct:** `E707` (a pin standing on a surface) marks loose spawns as an item source; it is not the
   pushpin. `E81D` (a disc in a ring, "Show my position") matches the player's own map symbol, the same meaning.
 - **One meaning, two symbols:** the Trader quest type is `E716` (two people); a trader portrait that hasn't loaded
@@ -236,17 +363,18 @@ Quest **types are shown by glyph, never by colour**; colour stays free for state
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
 portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
 header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind rows; map markers
-not in focus step back to 28 % opacity, easing in and out over 0.18 s, and the focused ones pulse: a ring leaves
-the marker and fades every 1.4 s (motion is noticed before anything else; off, with the easing, when Windows'
-animation effects are off, and only while something is in focus). Losing the focus waits 0.25 s before the map
-follows, so moving from one row to the next switches the highlight straight across instead of making every marker
-blink. Markers on another floor than the one shown are drawn at full strength, highlighted like any other, with a
-small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half strength read as
-"unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate with the chevron
-and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or down alone
-didn't say how far; cartography review, 2026-10-02). Badge places are fixed: the floor at the upper right, a
-cluster's count at the lower right; beside small symbols (Scav and sniper zones, bosses) the floor badge moves out
-so the symbol stays visible. Spawn zone markers carry it too, by the height of their centroid.
+not in focus step back by kind (see "Map drawing", "Stepping back"), easing in and out over 0.18 s, and the focused
+ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
+easing, when Windows' animation effects are off, and only while something is in focus). Losing the focus waits
+0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
+of making every marker blink. Markers on another floor than the one shown are drawn at full strength, highlighted
+like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
+strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
+with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
+down alone didn't say how far; cartography review, 2026-10-02). Badge places are fixed: the floor at the upper
+right, a cluster's count at the lower right, an optional objective's "OPT" at the upper left; beside small symbols
+(Scav and sniper zones, bosses) the floor badge moves out so the symbol stays visible. Spawn zone markers carry it
+too, by the height of their centroid.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Logo
@@ -268,7 +396,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Lockup.** The gap between the icon's plate and the wordmark is a third of the cap height (owner, 2026-10-02:
   half read too loose); the plate is about 1.36× the cap height; everything is centred on one axis. The README
   shows `brand/logo-dark.svg` or `logo-light.svg` through `<picture>`, 40 px tall.
-- **Colours.** The palette above. On light backgrounds ink is `#1E1F1B` and amber `#8C7436`; the icon keeps its
+- **Colours.** The design system's tokens ("Design system"). On light backgrounds ink is `LightInk` `#1E1F1B` and amber `LightAmber` `#8C7436`; the icon keeps its
   dark plate on both.
 - The lettering is drawn from scratch as paths, never from font outlines (§3).
 
@@ -276,7 +404,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
-  the help button.
+  three buttons of one size (28 px, 6 px apart): **feedback** (a speech bubble, `E939`: the Report dialog, PROBLEM
+  preselected; muted and disabled where the build can't report, its tooltip saying so), **?** (help, F1) and the
+  **gear** (settings, `E713`, Ctrl+,). Owner, 2026-10-03: "It's not clear that the settings are with the
+  questionmark on the top right. It should probably be a questionmark for the help and then a settings button next
+  to it", and "there should be a separate feedback/bugreport button".
   The mode is a plain label from the game's log, with no chooser (owner, 2026-10-03, replacing a PvE/PvP/Seasonal
   dropdown). Evidence: all 21 sessions in the owner's application logs (15 August to 2 October) have `Session
   mode: Pve | Regular | PvpSeason` 8–11 s after the game starts, a switch within a session writes a new line (2
@@ -285,7 +417,21 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   today); before any line, "The mode you last played; follows the game once it starts" (the saved `mode` setting);
   with no game on this PC, "No game on this PC: the mode you last played". A mode name Shturmap doesn't know (a
   future one) keeps the last known mode, says "The game says 'X', which Shturmap doesn't know yet…" and is logged
-  as a WARN. A chooser belongs to the mode without a game (docs/NEXT.md, item 6).
+  as a WARN. With no game on this PC the label becomes a chooser (PvE / PvP / Seasonal, saved like the logged mode):
+  there is no log to say it, and the maps and data to browse differ by mode (owner, 2026-10-03, the no-game
+  fallback; see *No game* below). It goes back to the label as soon as the game is found.
+  The raid state says only what the log shows (owner, 2026-10-03: "in the menus" while the game wasn't even
+  running was misleading): "LOADING CUSTOMS", "IN RAID · CUSTOMS · PMC · 12 MIN", and otherwise "NOT IN A RAID",
+  never "in the menus" (`RaidStatus`). The application log has no line that marks the game quitting: the sequence
+  "Disposing BEClient … BEClient exit successfully … Dll released" that ends some sessions also comes right after
+  startup and between raids, and about half of the owner's 22 sessions (15 August to 3 October) simply stop after an
+  ordinary line. So the log can't tell the menus from a closed game, and "GAME CLOSED" can't be said truthfully; the
+  tooltip says so ("The game's log shows no raid. It doesn't say whether the game is open…"). No process checks
+  (§2).
+  Everything in the bar shares one middle line (a player's report, 2026-10-03): the status words use the tight
+  line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
+  and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
+  words with tooltips easy to point at.
 - **Rail** (left, 380 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
@@ -296,8 +442,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     and no headings (§7, "Plan order"); the raid card stays nearest first. Clicking another map expands it and
     shows it on the map; that click is optional.
     Folded cards carry enough to compare without opening them (the study log: ten card clicks in 4.5 minutes to
-    compare maps): one quest-type glyph per quest (gold to complete, muted to progress) and up to five cells of
-    what to bring. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
+    compare maps): one quest-type glyph per quest, all gold, those to complete first, then a hairline, then those
+    to progress, and up to five cells of what to bring.
+    **PROGRESS is not less important** (owner, 2026-10-03: muted PROGRESS rows "suggest less importance", while
+    these quests are as much this raid's work). Rows in PROGRESS, in ANY MAP and in the raid card's PROGRESS look
+    exactly like COMPLETE rows: gold glyph, ink name, trader portrait and bring cells at full strength. The section
+    heading says which, and a PROGRESS row in Plan adds one short line in small muted capitals saying why it only
+    progresses ("2 OF 5 OBJECTIVES HERE"; §7, "Raid planner"). Muted keeps one meaning in quest rows: an objective
+    done after the raid, at a trader. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
     "PREVIEW · CUSTOMS · CLICK THE CARD TO PLAN IT"; moving to the next card switches at once, leaving puts the
     shown map back exactly as it was (pan and zoom), and a click keeps it. A raid loading ends a preview.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
@@ -308,7 +460,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     LOADED", "RAID PREPARED", "RAID CREATED", "PLAYER SPAWNED", "GAME POOLED", "GAME RUNNING"), over six thin
     segments, one per step, each gold only once its own step is in the log (owner, 2026-10-02: loading takes
     60–130 s and showed nothing; and nothing estimated, only what the log says, so a skipped step stays dark and no
-    rule creeps by typical times). No time estimate. Then **the glance**, two rows in
+    rule creeps by typical times). No time estimate. While it loads, CHECK YOUR KIT follows (the kit reminder, UX
+    principle 9), and BRING waits below until the raid starts. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
     direction), and EXIT, the nearest extract or transit for your side (and what it takes); in a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
@@ -326,7 +479,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     here · 3 spots"; pointing at a row draws the spots), at most eight and one line for the rest. One note line
     says why. The raid line drops "min left" (a Scav joins under way; the logs don't say how long is left). The
     map draws no quest objectives, and in any raid only your side's extracts. ANY MAP is hidden (a Scav's kills
-    don't count). When the raid starts as a Scav, a notice replaces the PMC bring-list said at loading.
+    don't count). When the raid starts as a Scav, a notice says so; a server raid's setup tells it while loading
+    already, and then no PMC kit is shown (the kit reminder, UX principle 9). The side is set from the setup then,
+    and decided again at the raid start.
     How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
     joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining
     under way. PvE raids can be either: server-hosted ones log the match setup like PvP (seen on 25, 26 and 30
@@ -334,15 +489,43 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     zero-length "GameStarting". Those stay unknown and get the PMC view; the side tag is then a switch (PMC ⇄
     SCAV) that holds for the raid. No local Scav raid has been seen in a log yet; if one shows a line that tells,
     it replaces the switch.
+  - *No game* (owner, 2026-10-03: "Yes, build the fallback 1-5"; the one 30 s notice was easy to miss, and a game
+    Shturmap couldn't find left no way to point it there). While discovery finds no game, one line stands where the
+    Plan card would be, for as long as that lasts: "NO GAME FOUND ON THIS PC", **CHOOSE GAME FOLDER…**, and "Or
+    browse the maps: pick one above, everything on it shows. Your quests and raids follow the game once Shturmap
+    finds it; it keeps looking while it runs." (`GameStateLine`). A game found without log sessions says "THE GAME
+    HASN'T RUN ON THIS PC YET", where it was found, and offers the same choice (a wrong install may have been
+    found). NEXT RAID, its cards and the "none of your quests" hint step aside: without the game's logs there are
+    no quests to plan, and nothing quest-like is shown. The map browses as always (extracts, transits, bosses,
+    spawns, landmarks, hazards), and the mode is chosen by hand (status bar, above). No notice says it a second time.
+    - **Choose game folder…** opens Windows' folder picker. The folder counts if discovery accepts it: the game's
+      build folder with `EscapeFromTarkov.exe` or a `Logs` folder with sessions, or the folder above it (Steam's
+      layout). Otherwise a notice says why ("That folder doesn't hold Escape from Tarkov: …") and nothing changes. A
+      chosen folder is saved (`installFolder`) and wins over discovery. It is followed at once, without a restart:
+      the old logs let go, the new ones read for quest history and followed live, the game's settings read again;
+      the screenshot folder is the user's Documents one either way (§2's boundary unchanged). A network folder that
+      holds the game works the same, but isn't offered as a feature (the laptop beside the game PC is undecided).
+    - **It keeps looking.** While the game or its logs aren't found, discovery runs again every 30 s (registry and
+      file checks only), so a game installed or first started later is followed by itself, and a notice says so
+      once ("Found Escape from Tarkov in …: quests and raids follow the game now").
+    - Developer switch `--no-game` (developer builds only): discovery looks only at a folder chosen in the session,
+      with an app folder of its own so a choice never sticks in real settings; with `--fake-game` the fake game isn't
+      found either, until chosen. The developer view's "No game" trigger does the same at runtime and keeps the
+      fake game's screenshots, and its script step `choose <folder> | game` chooses a folder.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, spawn zones (see "Map drawing"),
-  player, trail, guide line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
+  player, trail, guide line to the nearest place of the picks. Map controls bottom-right, with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
   "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
-  crash reports, the "Keep a study log" switch, the "Crash reports" choice (ASK AFTER A CRASH · ALWAYS SEND ·
-  NEVER) with what a crash report holds, and the links REPORT A PROBLEM OR IDEA and COPY DIAGNOSTICS, then LOG
-  FOLDER, PRIVACY and LICENCES (§8, "Study log", "Diagnostics", "Reports"). Opens once by itself on first run.
+  crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
+  "Diagnostics"). Opens once by itself on first run.
+- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log", "Crash reports" (ASK AFTER A
+  CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
+  available in this build"); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
+  UNINSTALL SHTURMAP… with its question; at the foot the version and the kind of build (§8, "Study log",
+  "Reports", "Distribution"). It never opens by itself; closing it drops an unanswered uninstall question.
+  Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.
 - **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
   CANCEL and SEND.
@@ -359,13 +542,90 @@ spawns below).
 
   | level | members | treatment |
   | --- | --- | --- |
-  | 1 | the player; the kept quest, its guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
+  | 1 | the player; the picked quests, the guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
-  | 4 | the artwork, its names, the sheet grid | receded; names thinned with zoom |
+  | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
 
   Extracts and transits are as large as the boss diamond (15 px across), no longer smaller. A new symbol gets a
   level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
+
+- **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
+  out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
+  What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
+  in a raid. Picks alone step nothing back (owner, 2026-10-03, "Picks"): only pointing does, for as long as it lasts.
+
+  | kind | planning | in a raid |
+  | --- | --- | --- |
+  | your side's extracts and transits, bosses | full strength (labels 70 %) | full strength |
+  | other quests' markers | 62 % (labels 45 %) | 80 % (labels 60 %) |
+  | Scav and sniper zones, locks and switches | 60 % (labels 50 %) | 75 % (labels 60 %) |
+
+  Labels step back further than symbols, so the highlighted quest's names stand out without hiding where everything
+  else is. Stepping back by colour (greying) was compared and dropped: a greyed quest marker reads as done (grey
+  means done or after the raid). The candidates (all at 60 %, greyed, by kind) were
+  compared side by side on Customs and Streets, in a raid and in Plan.
+
+- **Optional objectives** (owner, 2026-10-03: they "might still be very relevant for a quest"). tarkov.dev marks 60
+  of 1,418 objectives optional; 45 have places on a map (most on Customs, 15, and Streets, 11: Abandoned Cargo's
+  seven cargos, Pyramid Scheme's ten). Their markers carry a small "OPT" badge at the upper left, in the badge style
+  of the count (dark plate, the marker's colour), and the quest card and the raid card say "(optional)" after the
+  objective. Words, because no shape, colour or ring is free to mean "optional": the hollow ring is a possible
+  place, grey is done, a dashed ring is an old position, and a dotted ring, also tried, read like either. A label
+  suffix was tried too; it disappears with the label.
+
+- **Landmarks from tarkov.dev's data** (owner, 2026-10-03: "Do B and A"; B, landmarks, came with the question of
+  backgrounds for The Lab, Labyrinth and Icebreaker, and holds on every map). All level 4, all real positions from
+  the maps payload, nothing inferred:
+  - **Locks**: a door's or a car trunk's (both need a key): a padlock (Segoe Fluent `E72E`) on the dark collar, no
+    plate, labelled with the key's short name as printed on the key ("TGL MO", "Dorm 114", "RB-PKPM"; the full name
+    when it has none) and "needs power" where the data says so. The key glyph `E8D7` stays the key itself (BRING,
+    need cells); the padlock is where it opens. Pointing at a key (its BRING row, its row on a quest card) lights
+    every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card. The
+    key's need cells and item card don't link yet: a linked element inside a linked row loses the row's highlight
+    when the pointer leaves it. Container locks would mark containers; the data has none.
+  - **Switches**: a power symbol (`E7E8`) with the switch's name ("Med Elevator Power Button", "Alarm Switch",
+    "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12. **An extract
+    and its switches light together** (owner, 2026-10-03, from the map audit: you have to find the switch to leave):
+    an extract's `switches` in the data, and a switch that unlocks one of those (a power switch freeing a lever, up to
+    four steps through the data's "activates"; not one that locks it). Pointing at the extract (its marker, its row,
+    its requirement line) lights its switches at any zoom, and pointing at a switch lights the extracts it opens
+    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists for every extract of
+    a map tells none of them apart, so it links nothing, and today that is all of them: the audit's 34 extracts are
+    Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's three buttons, though
+    most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links yet, and the legend
+    doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
+  - **When they show**: on a map with artwork from 1.5 times the overview (as the shops' names; Streets has 63 locks,
+    Customs 36, Reserve 34), on a sheet at any zoom; their labels from 2.5 times or when pointed at; only those on
+    the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.
+    Their labels come last in the label order.
+  - **Hazards**: tarkov.dev's "hazard" outlines (Labyrinth's 18 traps, 2–27 m²) as a hatched ink outline, an area
+    style nothing else has. Labyrinth's 19th "hazard", 54 × 58 m below the central hall's floor, is left out: the data
+    doesn't say what it is, and hatching it would cover the hall (trap-sized means up to 50 m²). **Minefields**
+    (owner, 2026-10-03: "Yes, draw the minefields as hazard areas"): tarkov.dev's "minefield" outlines in the same
+    hatched style, whatever their size, wherever the map's picture doesn't draw them itself. The artwork of Woods,
+    Shoreline, Lighthouse, Streets and Terminal has a group whose id starts with "mine" (`MapArtwork.ShowsMinefields`),
+    so the data's outlines would only double them there; Customs (2), Reserve (1), Interchange (7) and Ground Zero (5)
+    get them from the data. **Border-sniper zones** (owner, 2026-10-03, from the map audit): tarkov.dev's "sniper"
+    hazards are the kill zones where the map's border snipers shoot anyone who walks in, not sniper-Scav spawns. All
+    107 are named "ScavRole/Marksman", five of their eight maps have no sniper Scavs at all, and they lie at the
+    edges. They get the same hatch (so the hatch means "this area kills you": traps, minefields, border snipers),
+    named "SNIPER ZONE" from 1.5 times the overview, once per group of neighbouring zones. Where the artwork draws
+    them (a "danger" group named "Sniper": Customs, Ground Zero, Streets; "Danger": Interchange, whose strips the
+    data's zones cover exactly; `MapArtwork.ShowsSniperZones`) they are left to it; Woods (39), Lighthouse (13),
+    Shoreline (10) and Reserve (3) get them from the data. **Kept to the drawn map** (owner, 2026-10-03: "What are the
+    big white rectangles at the bottom of Customs, looks odd"): over artwork a hazard shows only where the picture
+    draws something (ground, water, buildings), not over the empty space around the map, where many of the data's
+    outlines run on. The SVGs have no background, so `MapArtwork.Ground` is the base picture's alpha, drawn once when
+    the artwork loads (2048 px on the longer side) and laid under the hatch's ink as a shader placed like the artwork,
+    so a frame costs nothing more. Customs' two minefields and Reserve's minefield and sniper zones lie wholly past the
+    drawn map, so nothing of them shows; Woods' and Interchange's end at the map's edge. A zone is named only where its
+    centre is on the drawn map. Tiles and sheets keep hazards whole (Labyrinth's traps lie inside its render). The
+    hatch is quiet so the artwork reads through it: 0.8 px lines 5 px apart at 31 % ink, the outline 1 px at 47 %.
+  - **Containers** on a sheet only: faint ink dots where loot containers stand, on the floor shown (The Lab has 319,
+    Labyrinth 35), so rooms and corridors show from real points where no artwork draws them. On artwork they would
+    be clutter (Streets has 1,282).
+  - `shturmap-cli render <map> <out.png> --focus-item <key>` draws a map as pointing at a key does.
 
 - **Spawns: one marker per zone, at its centroid** (owner, 2026-10-02: the player needs to know which area has
   Scavs, where the bosses and the snipers are, not each spawn point; "just use the centroid, do not colour code the
@@ -379,12 +639,18 @@ spawns below).
   point. No areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
   ink, unlabelled and not hoverable. Sniper zones (side "scav", categories "bot" and "sniper"; Ground Zero's
   player spawns tagged "sniper" don't count) are a hollow ink hexagon labelled "Sniper": a shape no other symbol
-  uses, not a reticle, which is the Elimination glyph. Bosses (mobs "boss…") get one red diamond per spawn zone,
-  labelled with the two numbers the data gives, the boss's chance on the map and, for a boss with several zones,
-  that zone's share: "Kollontay 75% · 50% here", "Kaban 75%"; never their product, since the data doesn't say the
-  share is conditional. A boss zone split in groups says this once, on its largest group; the others are bare
-  diamonds that light with it. Bosses whose groups have the same centroid share one marker ("Reshala 75% · 33% here /
-  Knight 25%" on Customs' Stronghold), and pointing at a boss lights all its zones.
+  uses, not a reticle, which is the Elimination glyph. Bosses and AI squads get one red diamond per spawn zone: the
+  red diamond means "boss or AI squad spawn". Every mob in the data's bosses list counts except the AI PMCs
+  (`pmcUSEC`, `pmcBEAR`, which come everywhere): bosses, and since the map audit (owner, 2026-10-03) Rogues
+  (Lighthouse, Icebreaker), Raiders (Reserve, The Lab), cultists (Customs, Woods, Shoreline, Night Factory, Ground Zero
+  21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled with the two
+  numbers the data gives, the chance on the map and, for one with several zones, that zone's share: "Kollontay 75% ·
+  50% here", "Kaban 75%"; never their product, since the data doesn't say the share is conditional. Several entries
+  of one name at one place say their chances in one line, highest first ("Rogue 100%, 90%, 50%" at Lighthouse's
+  Chalet: groups that may each spawn). A zone split in groups says this once, on its largest group; the others are
+  bare diamonds that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
+  Knight 25%" on Customs' Stronghold), and pointing at one lights all its zones. The Lab gets 8, Terminal 16; Ground
+  Zero 21+ gets 9, mostly a 2 % cultist that may spawn at any Scav spawn.
 - **Labels by priority** (`MapRenderer.Layout`). Every symbol is placed before any text, so no label covers a
   symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,
   snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above
@@ -398,7 +664,7 @@ spawns below).
   Landmarks (90 and up) are set in 12 px semi-bold caps, letter-spaced; streets (80, and names without a size) as
   before, 11 px, at every zoom; 65–70 from 1.5 times the zoom that shows the whole map; 60 from 2.5 times. Larger
   names are placed first. Names out of view aren't placed.
-- **Distances on the map.** The guide line to the kept quest carries the card's number on a small dark plate with
+- **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
   a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
   card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
   old as the position). A line too short to carry it clear of its ends has none. A scale bar at the lower left,
@@ -408,7 +674,7 @@ spawns below).
   relative to the facing).
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
-  were rejected). It has the kept quest's vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
+  were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
   the position is a minute old the ring turns dashed and a small dark tag beside it gives the age in whole units,
   as the top bar does ("4 MIN", "2 H"). The facing cone (first minute only) has its arrow outside the ring.
 - **One meaning per colour, shape as a second cue.** Simulated colour blindness (Machado 2009) put the quest amber,
@@ -423,9 +689,9 @@ spawns below).
   places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
   too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
   pointing at a cluster points at its quest.
-- **Places out of view.** While a quest is kept highlighted, or pointed at, its places outside the view are shown
+- **Places out of view.** While quests are picked, or one is pointed at, their places outside the view are shown
   as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
-  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when kept,
+  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,
   gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
   without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
 - **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap
@@ -455,6 +721,41 @@ opened 10 to 21 times each to find out why and where). Gear a kill objective ask
 RayBench Hipster Reserve sunglasses" (neutral about and/or: the data's sets don't always match the quest's
 wording, which the objective text gives anyway); item cards list it as "Wear, for kills".
 
+**What kills and exits take** (owner, 2026-10-03: "There are others that still require items, such as doing kills
+with certain weapons or weapon classes … It should be a coherent design so it is still clear what to bring and what
+is needed to solve a quest"; and "in the cease fire quest it is not clear that we need to bring a flare"). BRING
+keeps one row shape (icon, what, what for and for which quests, where to get it) and adds the verbs:
+- **"to use"** for the weapons a kill objective names (`usingWeapon`, any one will do). tarkov.dev arrives with a
+  class as every member, so the weapons are grouped by their item category (tarkov.dev's `categories`, most
+  specific first; presets, which repeat the weapon they build, don't count) and said in at most three parts: a
+  group that is at least three quarters of its category, or more than ten weapons, by the category ("Any sniper
+  rifle", "Shotgun (13 of 16 kinds)", "Assault rifle (15 of 53 kinds)"); if that takes more parts and the weapons
+  span several categories, every group of two or more by its category ("Any handgun or revolver (3 of 5 kinds)");
+  otherwise, and for a few weapons of one category, the weapons ("Colt M4A1 or 5 others"), so there is a gun to
+  name. "Any" only for the whole category; a count says how many kinds will do. Whole categories come first, then
+  parts of one, then single weapons ("Any sniper rifle or MP-18 7.62x54R single-shot rifle"). The categories load
+  with the item sources, after the rest; until then the list form. A class row's source line names one of them ("e.g.
+  Mosin rifle · Prapor LL1 · …").
+- **"to fit"** for the mods the weapon must carry (`usingWeaponMods`), shown like gear ("Valday PS-320 1/6x scope /
+  AK-12 5.45x39 sound suppressor").
+- **"to leave through <exit>"** for what the exit an extract objective names takes: the objective names it by the
+  game's internal name (`exitName` before translation, `ObjectiveFacts.Exit`), the same as the map's extract, and
+  `ExtractRules.Items` gives the items by the rules the extract list already uses: a red signal flare at a flare exit
+  (Cease Fire!, Belka and Strelka), ice pick and paracord at a climbing exit (Payback), the roubles or item a paid
+  exit asks for ("Roubles ×5,000: to leave through Primorsky Ave Taxi V-Ex"). Transits stay with their own text.
+- **"to enter <map>"** for what the map itself takes to deploy (tarkov.dev's `accessKeys`: The Lab's access keycard,
+  Labyrinth's, Icebreaker's marine repair kit; owner, 2026-10-03, from the map audit). It is the first row of the Plan
+  card's BRING and the raid card's, the first of the map card's need cells, and shows with no quest picked or none
+  there, since every raid there needs it (a Plan that ranked The Lab first never said it takes a keycard).
+- **Gear a kill forbids** (`notWearing`) is nothing to bring, so no row: a note on the objective's line in the raid
+  card, "Without: armor, headwear" (the item categories it spans; before they load, the items).
+- One row per weapon set, mod set or exit item, listing every quest it serves; the quest rows' need cells, the raid
+  card's objective lines ("Use: …", "Fit: …"), the quest card's BRING and the item card ("Use, for kills", "Fit, for
+  kills", "Bring, to leave through …") say the same. Only what the data says: Shturmap knows no inventory, so never
+  "you have it". `shturmap-cli bring [mode]` lists every map's rows and flags an item without a name, a weapon list
+  shown as "X or N others" (with the categories it spans) and an exit no map has; run it after a tarkov.dev or game
+  update. Checked 2026-10-03 (PvE and PvP): no unknown items, no unmatched exits.
+
 Cards behave like the nested tooltips in Crusader Kings III:
 
 1. **Hover**: rest the pointer on a quest, key or item for 0.65 s on a rail row or map marker (the study log: 62 %
@@ -482,21 +783,44 @@ Cards behave like the nested tooltips in Crusader Kings III:
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
 
-### Keeping a quest highlighted
+### Picks: the quests for the coming raid
 
-Pointing highlights for as long as the pointer stays; the quest's highlighter (on its rail rows and its card)
-**keeps** it highlighted, so its markers are easy to find on the map while you look away (owner, 2026-10-01). A
-click on the quest itself only keeps its card open. The
-kept quest has its own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among gold didn't
-stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart from gold with
-any colour vision. Its rows keep a cyan tint; on the map its markers turn cyan and grow (14 px radius, against 12 for
-what is pointed at and 10 at rest) inside a steady cyan ring on a dark band, its zones turn cyan, the rest stay
-dimmed, and a dashed cyan line runs from your last fix to its nearest marker. It pulses three times when
-kept, and again when the pointer comes back from something else, then holds still: a marker pulsing all raid would be
-motion at the edge of the player's eye. Pointing at something else shows that instead, for as long as the pointer is
-on it. One quest is kept at a time; another click on it, a click on another quest, or Esc (after the cards) lets it
-go, and it goes by itself when the quest is done. A highlight with nothing on the shown map (a quest kept from
-another map, a quest for any map) dims nothing.
+Pointing highlights for as long as the pointer stays; the quest's pen (on its rail rows and its card) **picks** it
+for the coming raid (owner, 2026-10-03: "you typically bring items for specific quest or want to run a specific
+quest. Therefore you likely want to have something like the current 'mark quest' thing, but for all the quest you
+want to tackle in the map. Still it should show all other quest markers."). It grew out of the single "kept"
+quest (owner, 2026-10-01: keep a quest's markers easy to find while you look away): the same pen, the same look,
+now for as many quests as you like, and the pen keeps its one meaning, "keep lit". A click on the quest itself
+still only keeps its card open (two clicks, two meanings).
+
+- **One click per quest while planning, none in the raid.** Picks hold from Plan through loading into the raid
+  and across restarts (the settings, `picks.<mode>`; PvE and PvP keep their own, `QuestPicks`).
+- **No upkeep.** A pick stays until the log reports the quest completed or failed (it leaves by itself), its pen
+  is clicked again, or CLEAR PICKS (beside NEXT RAID, outside raids). Picks don't clear at raid end: a quest often
+  takes several raids, and a plan that empties itself would have to be made again each time. Esc never touches
+  picks (it closes the cards): a key that throws a plan away would be too easy to hit. Only an active quest can be
+  picked; a quest whose state the log doesn't tell stays picked.
+- **The look.** Picks have their own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among
+  gold didn't stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart
+  from gold with any colour vision. Their rows, and the BRING rows that serve them, keep a cyan tint; on the map
+  their markers turn cyan and grow (14 px radius, against 12 for what is pointed at and 10 at rest) inside a steady
+  cyan ring on a dark band, their zones turn cyan, and a dashed cyan line runs from your last fix to the nearest
+  place of any pick, with the distance on its plate (the raid card's NEXT names the same objective). Their places
+  out of view get chevrons. Picks hold still: a marker pulsing all raid would be motion at the edge of the
+  player's eye; what the pointer is on pulses.
+- **Nothing else steps back for picks.** Every other quest marker stays at full strength (the owner's "Still it
+  should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
+  then picks don't step back either: they are the plan for this raid, as much as the ways out.
+- **The rail.** A map's card shows its picks first, as a group of their own headed PICKED (in cyan), then COMPLETE
+  and PROGRESS without them, with the effort hairlines drawn anew (`Planning.Sections`). A pick that only
+  progresses here keeps its note ("2 of 5 objectives here"). Compared on 2026-10-03 with picks sorted first inside
+  COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
+  a group of their own says "this raid's work" at a glance. BRING lists what the picks need first, then a hairline
+  and the rest (`Planning.BringOrder`). A map with picks is suggested first, most picks first: the player's plan
+  before the planner's. A folded card shows its picks' glyphs first, in cyan, then a hairline. The raid card
+  starts with PICKED, nearest first, and NEXT is the nearest objective among the picks.
+- **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
+- The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
 
 ### Extract requirements
 
@@ -523,15 +847,15 @@ are translated although the payload's translation list misses them.
 | + / − | zoom in / out |
 | 0 | show the whole map |
 | PgUp / PgDn | show the floor above / below |
-| Esc | close the cards, else stop keeping the quest highlighted |
+| Esc | close the cards (it never drops picks) |
 | F1 or ? | help |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window.
 
 Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, point at anything to see what belongs to
-it, click a quest (in the list or on the map) to keep its card open, click its highlighter to keep it lit, click the
-edge badge to show your position.
+it, click a quest (in the list or on the map) to keep its card open, click its pen to pick it for the coming raid,
+click the edge badge to show your position.
 
 ## 5. Quest taxonomy
 
@@ -620,8 +944,15 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
   untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
   expanded.
 - Quests whose in-raid work fits any map are listed once under **Any map**.
-- Walking estimate: a nearest-neighbour route through one place per located objective, at 3 m/s, shown against
-  the raid length ("~7 min walking · 35 min raid").
+- No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
+  walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's
+  length and its bosses with their chances ("40 min raid · Kaban 75% · Kollontay 75%"). The planner still measures
+  a nearest-neighbour route through one place per located objective, only to break ties between maps of equal
+  score; it is never shown.
+- A **progressed** quest's row says why it can't be finished there, from the same tests (`Planning.ProgressNote`):
+  "2 of 5 objectives here" (its other in-raid objectives are on other maps; hand-overs and optional ones don't
+  count), "needs items found in raid", "25 kills in all" (a kill count above 3; the total the data gives, since the
+  logs don't report kill progress). Joined by " · " when several apply.
 - Quest-level keys are shown on the objectives that have a place on that map, not on hand-ins or extracts.
 
 ### Plan order
@@ -722,6 +1053,26 @@ self-unpacking exe, without updates; they need the Setup once.
   `%LOCALAPPDATA%\Shturmap` outlive the app. Checked 2026-10-03: installing, updating and uninstalling left the data
   folder's files all there and `shturmap.db` byte for byte the same; the uninstall removed the install folder, its
   shortcuts and its Apps entry.
+- **Uninstalling from settings** (owner, 2026-10-03: "The installer should also be able to uninstall", then: an
+  "Uninstall Shturmap…" in help, with the data only on a tick; in settings since help and settings were split). Windows' Settings → Apps (and the Start menu's
+  Uninstall) already ran Velopack's uninstaller; the Setup itself has no repair-or-remove mode, and another installer
+  around Velopack wasn't worth it. Settings' quiet link "UNINSTALL SHTURMAP…" shows only in an install Velopack made,
+  the release (`ShturmapApp`) or the dev build (`ShturmapDev`) (`Uninstall.Offered`), never in a folder build. It
+  asks one question, "Remove Shturmap from this PC?", with an unticked "Also delete my Shturmap data" and what that is
+  (settings, quest history, logs, study log, reports waiting, crash records, and for the release the download
+  cache; the dev build's data is `%LOCALAPPDATA%\Shturmap-dev`, and the cache it shares stays with the release's
+  folder). UNINSTALL closes the session as RESTART NOW does (so a reinstall doesn't take the exit for a crash), leaves
+  a note in the install folder when the box is ticked (`Uninstall.IntentFile`, removed when it isn't), starts
+  Velopack's uninstaller (`Update.exe uninstall`, which shows a dialog only when something goes wrong) and ends.
+  Velopack stops what still runs from the install, then starts the exe with its uninstall hook: `Program.Main`'s
+  `OnBeforeUninstallFastCallback` deletes the data folder only on a note at most 5 minutes old, so an uninstall from
+  Windows' Settings never deletes data, and retries for up to 20 s while the closing app still holds a file. The
+  deletion is checked strictly (`Uninstall.MayDelete`): exactly this install's data folder (the release's
+  `%LOCALAPPDATA%\Shturmap`, the dev build's `%LOCALAPPDATA%\Shturmap-dev`), directly in `%LOCALAPPDATA%`, not a
+  link; never a `--data` folder, a parent, a child or another build's folder. Velopack's own hook rather than a
+  script left behind: the deletion runs in Shturmap's code, after the app's files are let go, with the same check the
+  tests cover. Developer check: `--uninstall-test keep|delete` (developer builds) runs it at once, before any
+  session, with Velopack's dialogs off.
 - **Updates.** `Program.Main` runs Velopack first: its Setup, updater and uninstall start the exe with their own
   arguments, and a version downloaded in an earlier session is applied there, before the app starts (the app then
   starts again with the same arguments). Then WinUI's own start (`DISABLE_XAML_GENERATED_MAIN`). An installed app
@@ -729,7 +1080,7 @@ self-unpacking exe, without updates; they need the Setup once.
   such requests an hour per address. A new version downloads in the background (a delta when there is one) and
   applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
   start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
-  "Updates" in help: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
+  "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
   request at all). A version already downloaded applies at the next start whatever the setting. Builds the Setup
   didn't install (the folder build, `dotnet run`) and developer runs (snapshots, fake games, the demo) ask nothing;
   help says "Updates: not available in this build". Checks, finds and downloads are logged at INFO; a failure is a
@@ -742,14 +1093,15 @@ self-unpacking exe, without updates; they need the Setup once.
   a player sends: `api.github.com` for the list, the packages from GitHub's release-asset hosts. Never Velopack's
   own update service (`SafetyTests`). Help, the README and PRIVACY.md say that GitHub sees the address, as with any
   download, and nothing else is sent.
-- **Releasing.** `eng\release.ps1` builds the folder (precompiled, with the Sentry DSN), asks GitHub for the last
-  release so `vpk pack` can build a delta, and packs into `artifacts\releases` (the Setup, full and delta packages,
-  `releases.win.json` and `RELEASES`, the portable zip), plus `artifacts\Shturmap-Setup.exe` and its `.sha256`. The
-  notes are `docs\release-notes\<version>.md`. `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
+- **Releasing.** `eng\release.ps1` builds into `artifacts\release` (owner, 2026-10-03: "The artifacts should contain
+  a dev and release artifact"; the dev build is `artifacts\dev`, below): the folder `app\` (precompiled, with the
+  Sentry DSN), and after asking GitHub for the last release so `vpk pack` can build a delta, `packages\` (the Setup,
+  full and delta packages, `releases.win.json` and `RELEASES`, the portable zip), plus `Shturmap-Setup.exe` and its
+  `.sha256`. The notes are `docs\release-notes\<version>.md`. `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
   `v<version>`, a published pre-release; `-Draft` leaves a draft) and adds `Shturmap-Setup.exe`; it refuses unless
-  the tree is clean, the commit pushed and the build made from that commit. `vpk` is a pinned local tool
-  (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`, the developer's copy
-  and what `tools\fake-raid.ps1` runs). To test the whole update path without GitHub, `--update-feed <folder>` points
+  the tree is clean, the commit pushed and the build made from that commit (`artifacts\release\app`). `vpk` is a
+  pinned local tool (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`,
+  what `tools\fake-raid.ps1` runs; it keeps the developer data folder). To test the whole update path without GitHub, `--update-feed <folder>` points
   an installed build at a local feed (local folders only) and lets it update even in a snapshot or a fake game.
   Velopack's Setup 1.2.161 crashes when given arguments for the app (`-- …`); install silently with `--silent` only.
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
@@ -761,6 +1113,92 @@ self-unpacking exe, without updates; they need the Setup once.
   from it; a later start tries again only if one was in use.
 - **Unsigned.** Windows SmartScreen asks once about the Setup ("More info → Run anyway"); the README and the
   release notes say so. Updates don't ask.
+
+### Data folders
+
+Only the installed release keeps the player's data folder, `%LOCALAPPDATA%\Shturmap`; every other build keeps its
+own, `%LOCALAPPDATA%\Shturmap-dev` (owner, 2026-10-03: the release installed beside the dev build must not share a
+database, settings, app log, study log or reports with it; developer starts were mixing into the owner's study log).
+"Other builds" are the dev build, the folder build (`eng\publish.ps1`, what `tools\fake-raid.ps1` runs), `dotnet
+run`, the CLI and tests. `--data <folder>` picks any folder (the app and the CLI; the CLI reaches the release's data
+with `--data "%LOCALAPPDATA%\Shturmap"`). The app chooses at start, before anything is written: Velopack's id of the
+install (`ShturmapApp` → the release's folder, anything else → the developer folder; `Distribution.DataFolderFor`,
+`AppPaths.Use`). Diagnostics and the app log's first line name the folder ("Data folder: dev").
+
+The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits and icons) stays shared in
+`%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
+to a temporary file of its own (`CachedHttp.TempFor`, the process id and a GUID) and replaces the cached file in one
+move, retried for a moment while another process reads it (`CachedHttp.Replace`); a reader never sees half a file,
+and a copy that can't be saved is fetched or drawn again next time. A test runs eight writers at once.
+
+### Developer aids
+
+**The dev build.** Beside the release, a dev build that is always current and never taken for the release (owner,
+2026-10-03: "a dev artifact of the app that always carries the recent updates and is in dev mode … The dev version
+should carry a different icon so it is visually clear"). `eng\dev.ps1` builds it into `artifacts\dev`; run it after
+committing app changes (CLAUDE.md).
+
+- **Dev mode.** Built with `ShturmapDev=true` (Release configuration, not precompiled: builds come often and deltas
+  stay small), which defines `DEVTOOLS`, as Debug builds do (`Directory.Build.props`): the window says "Shturmap DEV"
+  (`App.Title`), the exe, windows and taskbar show the dev icon, the build kind is "dev build", and the developer
+  tools compile in. Releases never define it.
+- **Its own install.** Velopack's id `ShturmapDev` (`Distribution.DeveloperPackId`): `%LOCALAPPDATA%\ShturmapDev`, shortcuts
+  "Shturmap DEV" on the desktop and in the Start menu, its own Apps entry. Its data is the developer folder above.
+  It never mixes with the release's `ShturmapApp` (a test checks the ids and folders).
+- **Always current.** The dev build updates itself from a local feed, `artifacts\dev\feed`, never from GitHub: each
+  `eng\dev.ps1` run packs a new version (`<version>-dev.<UTC time>`, so each is newer) with a delta from the last,
+  keeps the three newest versions in the feed (and in its lists), and writes the feed's folder to `dev-feed.txt` in
+  the dev install's folder. The installed dev app reads that file at start, asks the feed (at start and every 6
+  hours, `UpdatePolicy` as for the release), downloads in the background and applies at the next start, never during
+  a raid; RESTART NOW applies it at once. No folder of the developer's PC is compiled in, and the dev app follows
+  whichever checkout built last. The first run installs it (`--silent`); `artifacts\dev\Shturmap-DEV-Setup.exe`
+  installs it on purpose. Checked 2026-10-03: two builds in a row, each found in the feed within a second, a 0.2–0.3
+  MB delta downloaded in about 4 s, applied at the next start.
+- **What changed.** Each dev build carries `dev\changelog.json` beside the exe: `build` (the full commit), `built` (UTC
+  time) and `commits`, those since the last release tag `v*` (or the last 50), newest first, each `hash` (short),
+  `date` and `subject` (the commit's title; no authors, no bodies, a user folder masked). The dev view shows it, so
+  the owner can check whether a change is live and what changed lately ("No changelog in this build" without it).
+- **Reports.** None by default (no DSN). `eng\dev.ps1 -WithReports` builds the DSN in; its reports carry the Sentry
+  environment "dev" (`ReportEnvelopes.EnvironmentOf`), so they can be filtered apart.
+- **The icon.** `brand\build.cs` makes `Shturmap-dev.ico`: the same mark, only recoloured, on the app's "kept" cyan
+  (#3FD2E0) plate with the Ш in the plate's dark. `Logo.Dev` picks the variant; `.\eng\dotnet.ps1 run brand\build.cs
+  -- dev-panel <png>` draws all three candidates beside the release icon (a cyan plate, a cyan band across the foot,
+  an amber corner tab). No "DEV" lettering: a stencilled V beside the Ш and its chevron could read as the V of the
+  war symbols the logo rules avoid (§4, "Logo").
+
+**The developer view** (owner, 2026-10-03: "a Dev view that allows to switch between modes and can fake-play a raid
+that reacts to what I do in the app and 'fake-updates' the position on demand … not exposed in the production
+version … to check the UI without having to play the game"). Developer builds only: its code is in `Dev` folders
+(`src/Shturmap.App/Dev`, `src/Shturmap.Session/Dev`) wholly inside `#if DEVTOOLS`, and every use of it elsewhere
+too. `DEVTOOLS` is defined for Debug builds and `eng\dev.ps1`'s `ShturmapDev=true` builds (Directory.Build.props,
+with a Directory.Build.targets fallback for builds started without `-c`, whose Configuration the SDK only sets
+after the props are read); a release never has it. `DevToolsGuardTests` check the wrapping, that no project
+defines `DEVTOOLS` on its own, and that a Release build on the PC holds no developer-view type or member.
+- `Shturmap.exe --dev-view` starts a session on a fake game folder of its own under `%TEMP%`
+  (`shturmap-devview-<id>`, read like `--fake-game`, so nothing is sent and no study log is kept; folders older
+  than a day go at the next start) and opens the view; F12 opens it in any developer build (a session on the real
+  game offers a restart in the view). Chosen over switching a running session to a fake folder: re-pointing the
+  session's tailer and watcher at runtime would touch the real start path for a developer aid.
+- It writes what the game would: application-log lines (the mode, the scene line, the match setup or a local
+  raid's transit line, the loading steps, the raid start and end, a transit, matching cancelled), push
+  notifications (quests started, completed, failed; a group's map pick) and screenshot files named as the game
+  names them (position, facing quaternion, raid clock). The app reads them through its real parser, tracker,
+  watcher and session; tests read them back the same way. The logs say nothing of single objectives, so neither
+  can the view.
+- Positions on demand: with "Pick on the map" on, a click on the map is a screenshot there (a drag sets the
+  facing), its height from the shown floor's band (or the nearest known place on the base map), adjustable; F9
+  repeats the last position; "Age" makes the last position older without a new screenshot; "Record a path" and
+  "Walk" take screenshots along clicked places.
+- Triggers for what no file reaches: the Report dialog, the question after a crash, the update-ready line (which,
+  as designed, stays hidden in a raid), a failed data load (offline, 404, 503; data back with "Reload data") and
+  the "no game" notice.
+- "What's in this build" shows `dev\changelog.json` beside the app (written by `eng\dev.ps1`: the build's commit
+  and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
+  with the app's version and commit.
+- `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
+  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `place <fx> <fy>
+  [<fx> <fy>]`, `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
+  `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
 
 ### How the parts work
 
@@ -799,8 +1237,9 @@ reopen a quest the log saw completed). `shturmap-cli quests` lists active quests
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
 screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floors) are drawn in the base layer.
-On a sheet (maps without artwork) the floors are tarkov.dev's tile layers. Map labels with heights (tarkov.dev's
-bottom/top) show only on their floor, as on tarkov.dev; labels without heights show on every floor.
+On the maps without SVG artwork the floors are tarkov.dev's tile layers: the shown floor's tiles over the base
+layer's, which dims as under an SVG floor (the sheet stands in with the same floors). Map labels with heights
+(tarkov.dev's bottom/top) show only on their floor, as on tarkov.dev; labels without heights show on every floor.
 
 **Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
@@ -826,7 +1265,7 @@ COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the
 screenshots that gave no position, whether a new position was in view and uses of the edge arrow and F, map
 previews, popped-out-window moves with their final position and whether they were clamped, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
-banners seen, side switches, why a session started (the previous one ended cleanly or not, the build's time), and
+banners seen (until the banner went, 2026-10-03), side switches, why a session started (the previous one ended cleanly or not, the build's time), and
 active-quest count changes outside quest events. Added 2026-10-02: group picks (location, map, time variant) and
 group ready / not ready / start; each raid's loading steps with their seconds since the scene line (in
 `raid.start`); the raid clock in each fix; the insurer's notes (kind, location, item count). How a raid ended
@@ -837,7 +1276,7 @@ no note proves nothing, since gear may not have been insured. Only Shturmap's ow
 sent anywhere.
 
 The study log is **the player's choice** (owner, 2026-10-03): off by default, kept only while "Keep a study log" in
-help is ticked, with one line saying what it records, that it stays on this PC (where) and that nothing is sent.
+settings is ticked, with one line saying what it records, that it stays on this PC (where) and that nothing is sent.
 The switch is saved in the app's settings (`studyLog` = `on`/`off` in `shturmap.db`; `shturmap-cli study [on|off]`
 sets it without the app); `--study` keeps it for one session without changing the switch; snapshot and fake-game
 runs never keep one. Days older than 30 are removed at start, on or off. Ticking it mid-session writes `study.on`,
@@ -866,7 +1305,8 @@ a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
 German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
 that quests and raids won't follow the game, and why. A map's artwork that doesn't download: "No map artwork for
-Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map.
+Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map; a tile render
+that can't be had: "No map render for The Lab: …", the same way.
 
 **Diagnostics** (owner, 2026-10-03). Help ends with quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
@@ -883,7 +1323,7 @@ bother", and crash reports as a mode the player chooses; Sentry, EU region; cras
 default). One way to report, from the app, with no account and no browser: no GitHub issue forms, no separate web
 form. Problems and ideas both go through it.
 
-- **The Report dialog.** REPORT A PROBLEM OR IDEA in help, the REPORT link on notices that ask for a report, and
+- **The Report dialog.** The feedback button at the top right, the REPORT link on notices that ask for a report, and
   ADD A NOTE after a crash report was sent all open it. PROBLEM | IDEA (the placeholder follows: "What happened,
   and what did you expect?" / "What would help, and when would you use it?"), the text (required, at most 4,000
   characters), a contact for a reply (optional, e.g. a Discord name or an email, at most 120), "Include
@@ -942,13 +1382,14 @@ form. Problems and ideas both go through it.
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
-  occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
+  occasional-position UX (fix age, fading marker, compass directions), kit reminder on raid load (cue pictures, CHECK YOUR KIT), linked
   highlighting, quest cards (hover, held, nested, popped out with live distances), item cards with sources and loose
   spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
 - Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).
 - Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own
   so a search finds the app rather than the Woods boss. The old data folder and database move over on first start.
-- The Lab, Labyrinth and Icebreaker are drawn as sheets (§3, "Maps without artwork"; 2026-10-02).
+- The Lab, Labyrinth and Icebreaker are drawn from tarkov.dev's tile renders (§3, "Maps without SVG artwork";
+  2026-10-03), as a sheet when no tile can be had (2026-10-02).
 - 0.1.0 went to friends as one self-unpacking exe (2026-10-03). From 0.2.0, the first public release, a Setup from
   GitHub Releases that keeps itself up to date (Velopack; §8, "Distribution"): 106 MB to download, 244 MB installed.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").

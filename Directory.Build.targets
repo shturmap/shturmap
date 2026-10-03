@@ -4,4 +4,10 @@
        Windows user name, and Shturmap sends no source context, so the target is replaced by an empty one
        (2026-10-03; docs/DESIGN.md §8, "Reports"). -->
   <Target Name="WriteSentryAttributes" />
+
+  <!-- The developer tools (Directory.Build.props): a build without "-c" has no Configuration yet while the props are
+       read, and only gets its default Debug from the SDK afterwards, so Debug builds are caught here too. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' and !$(DefineConstants.Contains('DEVTOOLS'))">
+    <DefineConstants>$(DefineConstants);DEVTOOLS</DefineConstants>
+  </PropertyGroup>
 </Project>

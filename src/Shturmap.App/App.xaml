@@ -10,21 +10,25 @@
         <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
       </ResourceDictionary.MergedDictionaries>
 
-      <!-- Look (docs/DESIGN.md §4, "Visual language"): the game's own UI, pared down. Near-black flat panels with
-           hairlines and square corners, beige-white text, condensed uppercase labels, one muted gold for quests,
-           the game's green and red only for state. Bahnschrift ships with Windows: nothing to bundle. -->
+      <!-- Look (docs/DESIGN.md §4, "Design system" and "Visual language"): the game's own UI, pared down. Near-black
+           flat panels with hairlines and square corners, beige-white text, condensed uppercase labels, one muted gold
+           for quests, the game's green and red only for state. Bahnschrift ships with Windows: nothing to bundle.
+           The colours are the design system's table (Shturmap.Map.Palette); DesignTokenTests keep them equal. -->
       <Color x:Key="GroundColor">#0B0C0B</Color>
       <Color x:Key="RailColor">#101110</Color>
       <Color x:Key="PanelColor">#151614</Color>
       <Color x:Key="RaisedColor">#1E1F1B</Color>
       <Color x:Key="LineColor">#2A2B27</Color>
       <Color x:Key="LineStrongColor">#45463F</Color>
+      <Color x:Key="CellColor">#1A1B18</Color>
       <Color x:Key="InkColor">#D9D5C4</Color>
       <Color x:Key="MutedColor">#8A8778</Color>
       <Color x:Key="AmberColor">#C9AD62</Color>
       <Color x:Key="TealColor">#6F9A94</Color>
       <Color x:Key="GreenColor">#8DA65E</Color>
       <Color x:Key="RedColor">#B8604A</Color>
+      <Color x:Key="SandColor">#E9E2C8</Color>
+      <Color x:Key="KeptColor">#3FD2E0</Color>
 
       <SolidColorBrush x:Key="GroundBrush" Color="{StaticResource GroundColor}" />
       <SolidColorBrush x:Key="RailBrush" Color="{StaticResource RailColor}" />
@@ -38,17 +42,17 @@
       <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
       <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
       <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
-      <SolidColorBrush x:Key="SandBrush" Color="#E9E2C8" />
+      <SolidColorBrush x:Key="SandBrush" Color="{StaticResource SandColor}" />
       <!-- An inventory cell behind item icons. -->
-      <SolidColorBrush x:Key="CellBrush" Color="#1A1B18" />
-      <!-- Linked highlighting: everything that belongs to what the pointer is on. -->
+      <SolidColorBrush x:Key="CellBrush" Color="{StaticResource CellColor}" />
+      <!-- Linked highlighting: everything that belongs to what the pointer is on (AmberColor at 18 %). -->
       <SolidColorBrush x:Key="LinkBrush" Color="#2EC9AD62" />
-      <!-- The quest kept highlighted by a click: its own colour, the one the map draws its markers in (MapRenderer.Kept). -->
-      <SolidColorBrush x:Key="KeptBrush" Color="#3FD2E0" />
+      <!-- The quests kept lit or picked: their own colour, the one the map draws their markers in (MapRenderer.Kept);
+           SelectBrush is KeptColor at 15 % behind their rows. -->
+      <SolidColorBrush x:Key="KeptBrush" Color="{StaticResource KeptColor}" />
       <SolidColorBrush x:Key="SelectBrush" Color="#263FD2E0" />
 
       <FontFamily x:Key="UiFont">Bahnschrift</FontFamily>
-      <FontFamily x:Key="DataFont">Bahnschrift</FontFamily>
 
       <!-- Every control: the condensed face, square corners, flat dark fills, gold for "on". -->
       <FontFamily x:Key="ContentControlThemeFontFamily">Bahnschrift</FontFamily>
@@ -107,7 +111,7 @@
       <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="{StaticResource RaisedColor}" />
 
       <SolidColorBrush x:Key="HyperlinkButtonForeground" Color="{StaticResource AmberColor}" />
-      <SolidColorBrush x:Key="HyperlinkButtonForegroundPointerOver" Color="#D6BE7E" />
+      <SolidColorBrush x:Key="HyperlinkButtonForegroundPointerOver" Color="{StaticResource SystemAccentColorLight1}" />
 
       <Style TargetType="ToolTip" BasedOn="{StaticResource DefaultToolTipStyle}">
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />

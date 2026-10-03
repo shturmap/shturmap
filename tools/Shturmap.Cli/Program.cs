@@ -7,6 +7,14 @@ using Shturmap.Game.Install;
 using Shturmap.Game.Logs;
 using Shturmap.Game.Settings;
 
+// "--data <folder>" anywhere: that data folder instead of the developer one (%LOCALAPPDATA%\Shturmap-dev); the
+// installed release's is "--data %LOCALAPPDATA%\Shturmap" (docs/DESIGN.md §8, "Data folders").
+if (Array.IndexOf(args, "--data") is var dataAt and >= 0 && dataAt + 1 < args.Length)
+{
+    Shturmap.Session.AppPaths.Use(Shturmap.Session.DataFolderKind.Custom, Environment.ExpandEnvironmentVariables(args[dataAt + 1]));
+    args = [.. args[..dataAt], .. args[(dataAt + 2)..]];
+}
+
 var command = args.FirstOrDefault() ?? "help";
 switch (command)
 {
@@ -40,6 +48,9 @@ switch (command)
     case "effort":
         await Effort(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "bring":
+        await Bring(args.ElementAtOrDefault(1) ?? "pve");
+        break;
     case "study":
         Study(args.ElementAtOrDefault(1));
         break;
@@ -48,17 +59,68 @@ switch (command)
             shturmap-cli locate              find the game, logs, screenshots and settings on this PC
             shturmap-cli replay [session]    replay a log session (default: newest) through the raid tracker
             shturmap-cli data [mode] [lang]  load tarkov.dev data (mode: pve | regular | seasonal)
-            shturmap-cli render <map> <out.png> [screenshot names...]
-                                            draw a map with the positions from screenshot names
+            shturmap-cli render <map> <out.png> [screenshot names...] [--focus-item <item id or name>]
+                                            draw a map with the positions from screenshot names; --focus-item
+                                            draws it as pointing at that item does (a key lights its locks)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
             shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
+            shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
             shturmap-cli study [on|off]      show or set the "Keep a study log" switch, as help sets it (Shturmap closed)
+
+            --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
+                                            the installed release's is --data %LOCALAPPDATA%\Shturmap
             """);
         break;
+}
+
+// The audit of what BRING lists, after a tarkov.dev or game update: every map's rows with all quests active, in the
+// app's own words (classes named from the item categories), and what to look at: UNKNOWN ITEM (an id without a name),
+// LIST (more than three weapons that aren't one class: shown as "X or N others"), and, over all quests, NO EXIT (an
+// extract objective naming an exit no map has).
+static async Task Bring(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var loader = new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache));
+    var data = await loader.LoadAsync(gameMode, "en");
+    var sources = await loader.LoadSourcesAsync(gameMode, "en");
+    var quests = data.Tasks.Values.Select(t => Shturmap.Session.Planning.ToPlan(t, data)).ToList();
+    var kinds = new Dictionary<Shturmap.Core.Planning.RequirementKind, int>();
+    var flagged = 0;
+    foreach (var map in Shturmap.Session.Planning.Maps(data).OrderBy(m => m.Name))
+    {
+        var plan = Shturmap.Core.Planning.RaidPlanner.Plan(quests, map);
+        Console.WriteLine($"== {map.Name}");
+        foreach (var r in plan.Requirements.OrderBy(r => r.Kind))
+        {
+            var view = Shturmap.Session.Planning.RequirementText(data, r, sources);
+            kinds[r.Kind] = kinds.GetValueOrDefault(r.Kind) + 1;
+            var flags = new List<string>();
+            if (r.Alternatives.Any(id => data.ItemName(id) == "Unknown item"))
+                flags.Add("UNKNOWN ITEM");
+            // A weapon list shown as "X or N others": which categories it spans, against each category's size.
+            if (r.Kind == Shturmap.Core.Planning.RequirementKind.Weapon && view.Text.EndsWith(" others", StringComparison.Ordinal))
+                flags.Add($"LIST {r.Alternatives.Count}: " + string.Join(", ", r.Alternatives
+                    .GroupBy(id => sources.Items.GetValueOrDefault(id)?.Categories?.FirstOrDefault())
+                    .OrderByDescending(g => g.Count())
+                    .Select(g => g.Key is null ? $"? {g.Count()}" : $"{data.ItemName(g.Key)} {g.Count()}/{sources.Members[g.Key].Count()}")));
+            flagged += flags.Count > 0 ? 1 : 0;
+            Console.WriteLine($"  {r.Kind,-10} {view.Text} | {view.Why}" + (flags.Count > 0 ? $"  [{string.Join(", ", flags)}]" : ""));
+        }
+    }
+    var noExit = data.Tasks.Values
+        .SelectMany(t => (t.Objectives ?? []).Select(o => (Task: t, Facts: data.ObjectiveFacts.GetValueOrDefault(o.Id))))
+        // Transits ("STR_TRANSIT_4") are named the same way but aren't extracts; what they take is the transit's text.
+        .Where(x => x.Facts?.Exit is { } exit && !exit.Contains("TRANSIT", StringComparison.Ordinal) &&
+                    !data.Maps.Values.SelectMany(m => m.Extracts ?? []).Any(e => data.ExtractKeys.GetValueOrDefault(e.Id) == exit))
+        .Select(x => $"{x.Task.Name} ({x.Facts!.Exit})").Distinct().ToList();
+    Console.WriteLine();
+    Console.WriteLine("Rows: " + string.Join(", ", kinds.OrderBy(k => k.Key).Select(k => $"{k.Key} {k.Value}")) + $"; flagged {flagged}");
+    Console.WriteLine($"NO EXIT: {(noExit.Count == 0 ? "none" : string.Join("; ", noExit))}");
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's
@@ -308,7 +370,7 @@ static async Task Watch(int seconds)
     Console.WriteLine($"--- next raid (last: {snap.LastRaid?.MapName} {snap.LastRaid?.Duration:mm\\:ss} {snap.LastRaid?.Side}); any map: {string.Join("; ", snap.AnyMap.Select(q => $"[{q.Kind}] {q.Name}"))}");
     foreach (var p in snap.Plan)
     {
-        Console.WriteLine($"  {p.MapName}: finish {p.Finish.Count}, progress {p.Progress.Count}, ~{p.WalkingMinutes} min walking of {p.RaidMinutes} min; bosses {string.Join(", ", p.Bosses)}");
+        Console.WriteLine($"  {p.MapName}: finish {p.Finish.Count}, progress {p.Progress.Count}, {p.RaidMinutes} min raid; bosses {string.Join(", ", p.Bosses)}");
         Console.WriteLine($"     finish:   {string.Join("; ", p.Finish.Select(q => $"[{q.Kind}] {q.Name}"))}");
         Console.WriteLine($"     progress: {string.Join("; ", p.Progress.Select(q => $"[{q.Kind}] {q.Name}"))}");
         foreach (var r in p.Requirements)
@@ -332,7 +394,7 @@ static async Task Spawns(string mode)
                 .Select(s => s.Position!.ToWorld()).ToList(),
             [Shturmap.Map.MarkerKind.SniperSpawn] = scav.Where(s => s.Categories?.Contains("bot") == true && s.Categories?.Contains("sniper") == true)
                 .Select(s => s.Position!.ToWorld()).ToList(),
-            [Shturmap.Map.MarkerKind.BossSpawn] = (map.Bosses ?? []).Where(b => b.Mob.StartsWith("boss", StringComparison.Ordinal))
+            [Shturmap.Map.MarkerKind.BossSpawn] = (map.Bosses ?? []).Where(b => b.Mob is not ("pmcUSEC" or "pmcBEAR"))
                 .SelectMany(b => b.SpawnLocations ?? []).SelectMany(l => l.Positions ?? []).Select(p => p.ToWorld()).ToList(),
         };
         var markers = Shturmap.Map.MapContentBuilder.SpawnZones(data, map);
@@ -351,6 +413,13 @@ static async Task Spawns(string mode)
 
 static async Task Render(string mapName, string output, List<string> screenshots)
 {
+    // "--focus-item <id or name>": as if the pointer were on that item somewhere in the window.
+    string? focusItem = null;
+    if (screenshots.IndexOf("--focus-item") is var f and >= 0 && f + 1 < screenshots.Count)
+    {
+        focusItem = screenshots[f + 1];
+        screenshots.RemoveRange(f, 2);
+    }
     var cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache");
     var http = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "tarkov-dev"));
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
@@ -366,11 +435,21 @@ static async Task Render(string mapName, string output, List<string> screenshots
         artwork = Shturmap.Map.MapArtwork.Load(svg, definition, Path.Combine(cacheRoot, "pictures"));
         Console.WriteLine($"Artwork parsed in {sw.ElapsedMilliseconds} ms (viewBox {artwork.ViewBox.Width:0}×{artwork.ViewBox.Height:0})");
     }
-    else
+    using var artworkScope = artwork;
+    // Maps tarkov.dev only publishes as tiles: its render, through the same disk cache as the app ("--sheet" draws
+    // the grid sheet that stands in when no tile can be had).
+    Shturmap.Map.MapTiles? tiles = null;
+    if (artwork is null && definition.TilePath is not null && !screenshots.Remove("--sheet"))
+    {
+        var tileHttp = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "map-tiles"));
+        tiles = new Shturmap.Map.MapTiles(definition, (tile, ct) => Shturmap.Session.ArtworkProvider.FetchTileAsync(tileHttp, definition.Key, tile, ct));
+        Console.WriteLine($"No SVG for this map: drawing tarkov.dev's tile render (tile size {tiles.TileSize}, zoom {definition.MinZoom}–{definition.MaxZoom}, map: {definition.Author})");
+    }
+    else if (artwork is null)
     {
         Console.WriteLine("No artwork for this map: drawing the schematic sheet");
     }
-    using var artworkScope = artwork;
+    using var tilesScope = tiles;
 
     // Quests from the Tasks screenshots, as an example of active quests; on maps where none of them has anything,
     // every quest with something on the map.
@@ -379,7 +458,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
     var content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
     if (content.Objectives.All(o => o.Places.Count == 0))
         content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
-    var scene = new Shturmap.Map.MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones };
+    var scene = new Shturmap.Map.MapScene(definition, artwork, tiles) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers };
 
     var fixes = screenshots.Select(s => Shturmap.Core.Screenshots.ScreenshotName.TryParse(s, out var info) ? info : null)
         .Where(i => i?.Position is not null).ToList();
@@ -390,7 +469,20 @@ static async Task Render(string mapName, string output, List<string> screenshots
         scene.Trail = fixes.SkipLast(1).Select(f => f!.Position!.Value).ToList();
         scene.Floor = Shturmap.Core.Maps.FloorResolver.LayerFor(definition, last.Position.Value);
     }
-    scene.Selected = content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id;
+    // The first quest with a place, picked: shows the picks' look and the guide line ("--no-pick": none, e.g. to see a
+    // map's artwork under a quest zone that covers it).
+    var pick = !screenshots.Remove("--no-pick");
+    scene.Kept = !pick ? new HashSet<string>() : content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
+    if (focusItem is not null)
+    {
+        var item = data.ItemNames.ContainsKey(focusItem) ? focusItem
+            : data.ItemNames.FirstOrDefault(n => n.Value.Equals(focusItem, StringComparison.OrdinalIgnoreCase)).Key
+              ?? data.ItemShortNames.FirstOrDefault(n => n.Value.Equals(focusItem, StringComparison.OrdinalIgnoreCase)).Key
+              ?? throw new ArgumentException("Unknown item " + focusItem);
+        Console.WriteLine($"Pointing at {data.ItemName(item)} ({item})");
+        scene.Focus = new HashSet<string> { Shturmap.Map.MapContentBuilder.KeyGroup(item) };
+        scene.Dim = 1;
+    }
 
     // "-ping": a new position pinging, 0.6 s in; "-edge": the same with the player out of view (the edge arrow).
     foreach (var (suffix, zoomIn, ping, away) in new[] { ("", 1.0, false, 0f), ("-close", 3.0, false, 0f), ("-ping", 3.0, true, 0f), ("-edge", 3.0, true, 1100f) })
@@ -405,10 +497,25 @@ static async Task Render(string mapName, string output, List<string> screenshots
             camera.Pan(-away, -away * 0.3f);
         }
         scene.PingSince = ping ? DateTime.Now - TimeSpan.FromSeconds(0.6) : null;
+        if (tiles is not null && definition.TilePath is { } basePath)
+        {
+            sw.Restart();
+            var a = camera.ToMap(new SkiaSharp.SKPoint(0, 0));
+            var b = camera.ToMap(new SkiaSharp.SKPoint(1600, 1000));
+            var view = new Shturmap.Core.Maps.MapRect(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+            await tiles.LoadAsync(basePath, view, scene.Projection.WorldRect, camera.Zoom);
+            if (scene.Floor?.TilePath is { } floorPath)
+                await tiles.LoadAsync(floorPath, view, scene.Projection.WorldRect, camera.Zoom);
+            Console.WriteLine($"  tiles for zoom {tiles.ZoomFor(camera.Zoom)} ready in {sw.ElapsedMilliseconds} ms ({tiles.Cached} in memory, {tiles.Status})");
+        }
         sw.Restart();
         using var surface = SkiaSharp.SKSurface.Create(new SkiaSharp.SKImageInfo(1600, 1000));
         Shturmap.Map.MapRenderer.Render(surface.Canvas, camera, scene);
         var drawMs = sw.Elapsed.TotalMilliseconds;
+        // A second draw of the same view: what a frame costs while panning, once the tiles are in memory.
+        sw.Restart();
+        Shturmap.Map.MapRenderer.Render(surface.Canvas, camera, scene);
+        drawMs = Math.Min(drawMs, sw.Elapsed.TotalMilliseconds);
         var path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(output))!, Path.GetFileNameWithoutExtension(output) + suffix + ".png");
         using var image = surface.Snapshot();
         using var png = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 90);

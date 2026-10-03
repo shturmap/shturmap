@@ -20,7 +20,7 @@ public sealed class StudyLog(string folder) : IDisposable
     public Func<IEnumerable<(string Key, object? Value)>>? Context { get; set; }
 
     /// <summary>
-    /// Off unless the player switches it on in help (owner, 2026-10-03), or <c>--study</c> for one session; always off
+    /// Off unless the player switches it on in settings (owner, 2026-10-03), or <c>--study</c> for one session; always off
     /// for developer runs (snapshots, fake games), which would otherwise mix into the player's study.
     /// </summary>
     public bool Enabled { get; set; }

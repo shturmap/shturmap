@@ -30,8 +30,9 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
 
     public async Task<CachedResponse> GetAsync(Uri uri, string cacheKey, TimeSpan maxAge, CancellationToken ct = default)
     {
-        Directory.CreateDirectory(cacheFolder);
         var body = Path.Combine(cacheFolder, cacheKey);
+        // A key may hold folders (map tiles: "<map>/<layer>/<z>/<x>_<y>.png").
+        Directory.CreateDirectory(Path.GetDirectoryName(body)!);
         var metaPath = body + ".meta.json";
         var meta = ReadMeta(metaPath);
         var cached = meta is not null && File.Exists(body);
@@ -58,16 +59,66 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
             if (!response.IsSuccessStatusCode)
                 throw new HttpRequestException($"{uri} answered {(int)response.StatusCode} {response.ReasonPhrase}", null, response.StatusCode);
 
-            var temp = body + ".download";
-            await using (var file = File.Create(temp))
-                await response.Content.CopyToAsync(file, ct);
-            File.Move(temp, body, overwrite: true);
+            var temp = TempFor(body);
+            try
+            {
+                await using (var file = File.Create(temp))
+                    await response.Content.CopyToAsync(file, ct);
+                Replace(temp, body);
+            }
+            finally
+            {
+                TryDelete(temp);
+            }
             WriteMeta(metaPath, new Meta(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, now));
             return new CachedResponse(body, true, false, now);
+        }
+        catch (IOException) when (!cached && File.Exists(body))
+        {
+            // Another Shturmap wrote the same file a moment ago and still holds it: that copy is as new.
+            return new CachedResponse(body, false, false, DateTimeOffset.UtcNow);
         }
         catch (Exception e) when (cached && e is HttpRequestException or TaskCanceledException or IOException)
         {
             return new CachedResponse(body, false, true, meta!.FetchedAt);
+        }
+    }
+
+    // The cache is shared by every Shturmap on the PC (the installed release and developer builds; docs/DESIGN.md §8,
+    // "Data folders"). Each download goes to a temporary file of its own and replaces the cached one in one move, so
+    // two processes never write the same file and a reader never sees half of one.
+
+    /// <summary>A temporary file beside <paramref name="path"/> that no other writer uses.</summary>
+    public static string TempFor(string path) => $"{path}.{Environment.ProcessId}-{Guid.NewGuid():N}.download";
+
+    /// <summary>
+    /// Moves a finished temporary file over the cached one. A reader in another process can hold the cached file open
+    /// for a moment (Windows then refuses to replace it), so it tries a few times before giving up.
+    /// </summary>
+    public static void Replace(string temp, string path)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                File.Move(temp, path, overwrite: true);
+                return;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException && attempt < 5)
+            {
+                Thread.Sleep(50 * attempt);
+            }
+        }
+    }
+
+    public static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
         }
     }
 
@@ -77,11 +128,27 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
         {
             return File.Exists(path) ? JsonSerializer.Deserialize<Meta>(File.ReadAllText(path)) : null;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
             return null;
         }
     }
 
-    private static void WriteMeta(string path, Meta meta) => File.WriteAllText(path, JsonSerializer.Serialize(meta));
+    // Meta that couldn't be written only means the next request revalidates: harmless.
+    private static void WriteMeta(string path, Meta meta)
+    {
+        var temp = TempFor(path);
+        try
+        {
+            File.WriteAllText(temp, JsonSerializer.Serialize(meta));
+            Replace(temp, path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+        }
+        finally
+        {
+            TryDelete(temp);
+        }
+    }
 }

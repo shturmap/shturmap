@@ -13,4 +13,14 @@ public sealed class ItemSources
 
     /// <summary>Hideout station names by id, in the game's language.</summary>
     public required IReadOnlyDictionary<string, string> Stations { get; init; }
+
+    private ILookup<string, string>? _members;
+
+    /// <summary>
+    /// Item ids by category id; an item is listed under every category in its chain (<see cref="ApiItem.Categories"/>).
+    /// Presets (a weapon in a ready build, tarkov.dev type "preset") are left out: they repeat the weapon they build.
+    /// </summary>
+    public ILookup<string, string> Members =>
+        _members ??= Items.Values.Where(i => i.Types?.Contains("preset") != true)
+            .SelectMany(i => (i.Categories ?? []).Select(c => (Category: c, i.Id))).ToLookup(x => x.Category, x => x.Id);
 }

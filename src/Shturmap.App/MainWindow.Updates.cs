@@ -7,7 +7,7 @@ namespace Shturmap.App;
 
 // New versions (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"): asked for at start and every 6 hours,
 // downloaded in the background, applied at the next start; one quiet line between raids, and RESTART NOW on a click
-// only, never during a raid. "Updates" in help: Automatic, Tell me only, Off.
+// only, never during a raid. "Updates" in settings: Automatic, Tell me only, Off.
 public sealed partial class MainWindow
 {
     private Updater? _updater;

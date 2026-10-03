@@ -21,13 +21,23 @@ public enum MarkerKind
 
     /// <summary>Sniper Scav spawns, at the centroid of a group of a zone's points: a hollow hexagon.</summary>
     SniperSpawn,
+
+    /// <summary>A locked door or car trunk (tarkov.dev's locks): a padlock, labelled with its key's short name.</summary>
+    Lock,
+
+    /// <summary>A switch the game knows (power, alarms, elevator buttons, trap switches): a power symbol with its name.</summary>
+    Switch,
+
+    /// <summary>A hazard tarkov.dev outlines as such (Labyrinth's traps): a hatched outline, drawn as a zone.</summary>
+    Hazard,
 }
 
 /// <summary>A point of interest drawn at a fixed screen size.</summary>
 /// <param name="Group">Markers of one quest share a group, so selecting a quest highlights all its points.</param>
 /// <param name="Objective">For quest markers, what the objective asks; drawn as a glyph inside the marker.</param>
+/// <param name="Optional">A quest marker of an objective tarkov.dev marks optional: the quest can be finished without it.</param>
 public sealed record MapMarker(string Id, MarkerKind Kind, WorldPoint Position, string Label, string? Group = null,
-    Shturmap.Core.Quests.ObjectiveKind? Objective = null);
+    Shturmap.Core.Quests.ObjectiveKind? Objective = null, bool Optional = false);
 
 /// <summary>An area drawn as an outline, e.g. a quest zone or an extract's footprint.</summary>
 public sealed record MapZone(string Id, MarkerKind Kind, IReadOnlyList<WorldPoint> Outline, string? Group = null);
@@ -37,11 +47,14 @@ public sealed record PlayerFix(WorldPoint Position, double? YawDegrees, DateTime
 /// <summary>Everything the renderer draws for one map.</summary>
 public sealed class MapScene
 {
-    /// <param name="artwork">Null for a map without usable artwork: the renderer draws a schematic sheet instead.</param>
-    public MapScene(MapDefinition definition, MapArtwork? artwork)
+    /// <param name="artwork">Null for a map without SVG artwork.</param>
+    /// <param name="tiles">tarkov.dev's tile render for a map without SVG artwork (The Lab, Labyrinth, Icebreaker), or
+    /// null. With neither, or while the tiles can't be had, the renderer draws a schematic sheet.</param>
+    public MapScene(MapDefinition definition, MapArtwork? artwork, MapTiles? tiles = null)
     {
         Definition = definition;
         Artwork = artwork;
+        Tiles = artwork is null ? tiles : null;
         Projection = MapProjection.For(definition);
         if (artwork is not null)
             Placement = Projection.PlaceSvg(artwork.ViewBox.Left, artwork.ViewBox.Top, artwork.ViewBox.Width, artwork.ViewBox.Height);
@@ -50,6 +63,15 @@ public sealed class MapScene
     public MapDefinition Definition { get; }
 
     public MapArtwork? Artwork { get; }
+
+    /// <summary>The map's tile render, for maps tarkov.dev publishes only as tiles; null otherwise.</summary>
+    public MapTiles? Tiles { get; }
+
+    /// <summary>
+    /// Whether the map is drawn as the grid sheet now: no SVG artwork, and no tile render (or none to be had). On a sheet
+    /// the container dots show, and landmarks at any zoom; over artwork or tiles they would be clutter.
+    /// </summary>
+    public bool IsSheet => Artwork is null && Tiles is not { Status: not TileStatus.Unavailable };
 
     public MapProjection Projection { get; }
 
@@ -75,7 +97,7 @@ public sealed class MapScene
         set
         {
             _markers = value;
-            _focusShown = _selectedShown = null;
+            _focusShown = null;
         }
     }
 
@@ -87,7 +109,7 @@ public sealed class MapScene
         set
         {
             _zones = value;
-            _focusShown = _selectedShown = null;
+            _focusShown = null;
         }
     }
 
@@ -100,39 +122,26 @@ public sealed class MapScene
         (_markers.Any(m => ids.Contains(m.Id) || (m.Group is not null && ids.Contains(m.Group))) ||
          _zones.Any(z => z.Group is not null && ids.Contains(z.Group)));
 
-    private bool? _focusShown, _selectedShown;
+    private bool? _focusShown;
 
     private bool FocusShown => _focusShown ??= Shows(_focus);
 
-    private bool SelectedShown => _selectedShown ??= _selected is not null && Shows(_selectedSet);
-
     /// <summary>
-    /// The quest the player clicked to keep highlighted: drawn emphasised and pulsing, everything else dimmed, with a
-    /// line from the player to its nearest point, until it is clicked again. Pointing at something else shows that
-    /// instead for as long as the pointer is on it.
+    /// The quests picked for the coming raid (quest groups, or marker ids): drawn in the kept look (cyan, larger,
+    /// ringed) with a line from the player to the nearest of their places, for as long as they are picked. Unlike
+    /// what the pointer is on, picks never make anything else step back: every other quest marker stays at full
+    /// strength (owner, 2026-10-03: "Still it should show all other quest markers").
     /// </summary>
-    public string? Selected
+    public IReadOnlySet<string> Kept
     {
-        get => _selected;
-        set
-        {
-            if (value == _selected)
-                return;
-            if (value is not null && !FocusShown)
-                FocusSince = DateTime.Now;
-            if (value is null && SelectedShown)
-                LastFocus = _selectedSet;
-            _selected = value;
-            _selectedSet = value is null ? new HashSet<string>() : new HashSet<string> { value };
-            _selectedShown = null;
-        }
+        get => _kept;
+        set => _kept = value.Count == 0 ? Nothing : value;
     }
 
-    private string? _selected;
-    private IReadOnlySet<string> _selectedSet = new HashSet<string>();
+    private IReadOnlySet<string> _kept = Nothing;
 
-    /// <summary>Whether anything on this map is highlighted: something pointed at, or a quest kept highlighted.</summary>
-    public bool HasHighlight => FocusShown || SelectedShown;
+    /// <summary>Whether something pointed at is highlighted on this map (picks alone don't count: they dim nothing).</summary>
+    public bool HasHighlight => FocusShown;
 
     /// <summary>
     /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
@@ -143,14 +152,11 @@ public sealed class MapScene
         get => _focus;
         set
         {
-            var wasShown = FocusShown;
             var same = value.SetEquals(_focus);
             _focus = value;
             _focusShown = null;
             if (FocusShown && !same)
                 FocusSince = DateTime.Now;
-            else if (!FocusShown && wasShown && SelectedShown)
-                FocusSince = DateTime.Now; // back to the kept quest: it pulses again
             if (FocusShown)
                 LastFocus = value;
         }
@@ -163,16 +169,23 @@ public sealed class MapScene
 
     /// <summary>
     /// How far the markers outside the focus have stepped back, 0 to 1. The map view eases it toward 1 while
-    /// something is in focus and back to 0 after, so the highlight fades in and out rather than blinking.
+    /// something is in focus and back to 0 after, so the highlight fades in and out rather than blinking. How far
+    /// each kind steps back at 1 is <see cref="MapRenderer.StepBackOf"/>.
     /// </summary>
     public float Dim { get; set; }
 
     /// <summary>
-    /// What is drawn emphasised: what the pointer is on, else the kept quest, else (while the dimming fades out) what
-    /// was highlighted last.
+    /// The player is in a raid on this map. Markers outside the focus then step back less than while planning:
+    /// extracts, nearby objectives and bosses still matter at a glance.
+    /// </summary>
+    public bool InRaid { get; set; }
+
+    /// <summary>
+    /// What is drawn emphasised: what the pointer is on, else (while the dimming fades out) what was pointed at last.
+    /// Picks (<see cref="Kept"/>) have their own look and are never part of it.
     /// </summary>
     public IReadOnlySet<string> ShownFocus =>
-        FocusShown ? _focus : SelectedShown ? _selectedSet : Dim > 0 ? LastFocus : Nothing;
+        FocusShown ? _focus : Dim > 0 ? LastFocus : Nothing;
 
     private static readonly IReadOnlySet<string> Nothing = new HashSet<string>();
 
@@ -182,14 +195,11 @@ public sealed class MapScene
     /// <summary>Focused markers pulse so the eye finds them at once; off when Windows' animation effects are off.</summary>
     public bool Pulse { get; set; } = true;
 
-    /// <summary>How often a kept quest pulses when it is picked, or when the pointer comes back to it; then it holds still.</summary>
-    public const int KeptPulses = 3;
-
     /// <summary>
-    /// Whether the emphasised markers pulse now: all the while the pointer is on something, and a few times for a kept
-    /// quest. A kept quest pulsing for as long as it is kept would be motion at the edge of the player's eye all raid.
+    /// Whether the emphasised markers pulse now: all the while the pointer is on something. Picks hold still: a pick
+    /// pulsing all raid would be motion at the edge of the player's eye.
     /// </summary>
-    public bool Pulsing => Pulse && (FocusShown || (SelectedShown && DateTime.Now - FocusSince < MapRenderer.PulsePeriod * KeptPulses));
+    public bool Pulsing => Pulse && FocusShown;
 
     /// <summary>How long a new position pings: rings leave the player marker, or its edge arrow when out of view.</summary>
     public static readonly TimeSpan PingLength = TimeSpan.FromSeconds(2.6);
@@ -205,6 +215,12 @@ public sealed class MapScene
 
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
+
+    /// <summary>
+    /// Where the map's loot containers stand (tarkov.dev's positions). Drawn only on a sheet, as faint dots: real points
+    /// that sketch rooms and corridors where no artwork does. With artwork they would be clutter.
+    /// </summary>
+    public IReadOnlyList<WorldPoint> Containers { get; set; } = [];
 
     public bool ShowLabels { get; set; } = true;
 }

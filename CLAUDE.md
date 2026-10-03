@@ -38,11 +38,18 @@ Essentials:
   (the wrapper finds the per-user .NET 10 SDK). Publish the folder build (`artifacts\Shturmap`, what
   `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. A release (Velopack; DESIGN.md §8, "Distribution"): set
   `<Version>` in `Directory.Build.props`, write `docs\release-notes\<version>.md`, commit and push, then
-  `.\eng\release.ps1` (builds `artifacts\releases` and `artifacts\Shturmap-Setup.exe`, nothing uploaded) and, with
-  the owner's go, `.\eng\publish-release.ps1` (a GitHub pre-release "Shturmap <version> (private testing)";
-  `-Draft` to review it on GitHub first). Before publishing, scan `artifacts\releases` (unpack the `.nupkg`) for the
-  Windows user name. Test updates locally with an installed build and `--update-feed <folder>`, never by
+  `.\eng\release.ps1` (builds `artifacts\release`: `Shturmap-Setup.exe`, `packages\`, `app\`; nothing uploaded) and,
+  with the owner's go, `.\eng\publish-release.ps1` (a GitHub pre-release "Shturmap <version> (private testing)";
+  `-Draft` to review it on GitHub first). Before publishing, scan `artifacts\release\packages` (unpack the `.nupkg`)
+  for the Windows user name. Test updates locally with an installed build and `--update-feed <folder>`, never by
   publishing a test release.
+- **After committing app changes, run `.\eng\dev.ps1`** (owner, 2026-10-03): it builds the dev build ("Shturmap DEV",
+  cyan icon, `%LOCALAPPDATA%\Shturmap-dev` data, developer tools) into its local feed `artifacts\dev\feed`, and the
+  owner's installed dev app takes it at its next start, so the owner always tries the latest. The first run installs
+  it. It never touches the release's install or the player's data (DESIGN.md §8, "Developer aids").
+- Data folders: only the installed release uses `%LOCALAPPDATA%\Shturmap` (the owner's own data); every other build,
+  the CLI and tests use `%LOCALAPPDATA%\Shturmap-dev`; `--data <folder>` picks another (DESIGN.md §8, "Data folders").
+  To read or change the release's data with the CLI, give `--data "%LOCALAPPDATA%\Shturmap"`.
 - Reports go to Sentry through the DSN in the untracked `eng\sentry.dsn` (gitignored), which `eng\release.ps1` and
   `eng\publish.ps1` build in. Never commit the DSN or write its value into docs, tests or commit messages; tests use
   the local `FakeSentry`. Check a release with `Shturmap.exe --send-report "<text>" <folder>` (it must say "Sent.

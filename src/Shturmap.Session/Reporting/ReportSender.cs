@@ -87,13 +87,17 @@ public static class ReportEnvelopes
         return Envelope.FromEvent(evt, null, log.Length > 0 ? [Text("log.txt", log)] : []);
     }
 
+    /// <summary>Sentry's environment for a report: "dev" from a dev build, else "release".</summary>
+    public static string EnvironmentOf(ReportInfo info) => info.Build.StartsWith("dev", StringComparison.Ordinal) ? "dev" : "release";
+
     private static SentryEvent Base(ReportInfo info, DateTime at, SentryLevel level)
     {
         var evt = new SentryEvent
         {
             Level = level,
             Release = "shturmap@" + info.Version,
-            Environment = "release",
+            // A dev build's reports (eng\dev.ps1 -WithReports) are filed apart, so Sentry can filter them out.
+            Environment = EnvironmentOf(info),
             ServerName = null,
         };
         // The event is stamped when it is sent; when it happened (a crash, sent at the next start) goes along.

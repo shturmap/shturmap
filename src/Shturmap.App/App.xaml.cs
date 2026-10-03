@@ -8,8 +8,20 @@ namespace Shturmap.App;
 
 public partial class App : Application
 {
-    /// <summary>The app icon for title bars, the taskbar and Alt+Tab (the exe carries the same icon).</summary>
-    public static string IconPath { get; } = Path.Combine(AppContext.BaseDirectory, "Assets", "Shturmap.ico");
+#if DEVTOOLS
+    /// <summary>A developer build (Debug, or eng\dev.ps1): "Shturmap DEV", its own icon, data folder and update feed,
+    /// never GitHub's releases (docs/DESIGN.md §8, "Developer aids").</summary>
+    public const bool IsDevBuild = true;
+#else
+    public const bool IsDevBuild = false;
+#endif
+
+    /// <summary>The app icon for title bars, the taskbar and Alt+Tab (the exe carries the same icon); the dev build's
+    /// has a cyan plate, so it is never taken for the release.</summary>
+    public static string IconPath { get; } = Path.Combine(AppContext.BaseDirectory, "Assets", IsDevBuild ? "Shturmap-dev.ico" : "Shturmap.ico");
+
+    /// <summary>The windows' title.</summary>
+    public const string Title = IsDevBuild ? "Shturmap DEV" : "Shturmap";
 
     private MainWindow? _window;
     private GameSession? _session;
@@ -19,20 +31,41 @@ public partial class App : Application
     /// "Reports").</summary>
     public static Reporter Reporter { get; private set; } = null!;
 
+    // The command line, read once. A developer build turns "--dev-view" into a fake game of its own (Dev/App.Dev.cs).
+    private static string[]? _cli;
+
+    private static string[] CommandLine()
+    {
+        if (_cli is null)
+        {
+            _cli = Environment.GetCommandLineArgs();
+#if DEVTOOLS
+            _cli = DevCommandLine(_cli);
+#endif
+        }
+        return _cli;
+    }
+
     public App()
     {
         InitializeComponent();
-        AppLog.Initialize(AppPaths.Default.Logs);
-        var cli = Environment.GetCommandLineArgs();
+        // The developer view's arguments come in here (DEVTOOLS); the app log starts below, in the chosen data folder.
+        var cli = CommandLine();
         var started = DateTime.Now;
         // Developer runs (snapshots, fake games, the website demo) send nothing; a build without a DSN can't. The one
         // exception is the release's delivery check, "--send-report", which may run in a fake game so the player's
         // own folder and study log stay untouched.
         var developerRun = (cli.Contains("--snapshot") || cli.Contains("--fake-game") || cli.Contains("--demo")) && !cli.Contains("--send-report");
         // New versions: only an installed app asks, and no developer run; "--update-feed <folder>" tests the whole
-        // path against a local feed (docs/DESIGN.md §8, "Distribution").
-        Updater = new Updater(Arg(cli, "--update-feed"), developerRun || cli.Contains("--send-report"));
-        BuildKind = Updater.Installed ? "installed" : "folder build";
+        // path against a local feed. The dev build asks only its own local feed (docs/DESIGN.md §8, "Distribution").
+        Updater = new Updater(Arg(cli, "--update-feed"), developerRun || cli.Contains("--send-report"), IsDevBuild, IsDevBuild ? DeveloperFeed() : null);
+        // Only the installed release keeps the player's data folder; every other build its own, "--data" any
+        // (docs/DESIGN.md §8, "Data folders"). Chosen before anything writes there, the app log first.
+        var paths = AppPaths.Use(Distribution.DataFolderFor(Updater.AppId, Arg(cli, "--data")), Arg(cli, "--data"));
+        AppLog.Initialize(paths.Logs);
+        if (Updater.StartProblem is { } problem)
+            AppLog.Warn("Updates: Velopack couldn't start", problem);
+        BuildKind = IsDevBuild ? "dev build" : Updater.Installed ? "installed" : "folder build";
         Reporter = new Reporter(AppRoot(cli), ReportEndpoint.Parse(BuiltDsn()), developerRun,
             new ReportInfo(GameSession.Version, BuildKind, Diagnostics.WindowsVersion()));
         // A session that ended without closing left its marker behind: note it before marking this one. One from
@@ -61,15 +94,37 @@ public partial class App : Application
     }
 
     // The DSN the release was built with (eng\release.ps1); developer builds and forks have none.
-    private static string? BuiltDsn() =>
+    private static string? BuiltDsn() => BuiltMetadata(Reporter.DsnMetadata);
+
+    /// <summary>
+    /// The dev build's update feed: the local folder eng\dev.ps1 last packed into, which it writes to dev-feed.txt in
+    /// the dev install's folder (%LOCALAPPDATA%\ShturmapDev, beside current\) on every run. So the installed dev app
+    /// follows whichever checkout built last, and no folder of the developer's PC is compiled into the build.
+    /// </summary>
+    private static string? DeveloperFeed()
+    {
+        try
+        {
+            var install = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory));
+            var file = install is null ? null : Path.Combine(install, "dev-feed.txt");
+            return file is not null && File.Exists(file) ? File.ReadAllText(file).Trim() : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static string? BuiltMetadata(string key) =>
         typeof(App).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
-            .OfType<System.Reflection.AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == Reporter.DsnMetadata)?.Value;
+            .OfType<System.Reflection.AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == key)?.Value;
 
     // Shturmap's folder, or a fake game's own (see CreateSession).
     private static string AppRoot(string[] cli) =>
         Arg(cli, "--fake-game") is { } root ? Path.Combine(root, "app") : AppPaths.Default.Root;
 
-    /// <summary>"installed" when installed by its Setup (Velopack), else "folder build" (developer builds included).</summary>
+    /// <summary>"installed" for the release installed by its Setup (Velopack), "dev build" for a developer build
+    /// (eng\dev.ps1, Debug), else "folder build".</summary>
     public static string BuildKind { get; private set; } = "folder build";
 
     /// <summary>New versions, from GitHub Releases.</summary>
@@ -81,10 +136,14 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        var cli = Environment.GetCommandLineArgs();
+        var cli = CommandLine();
         // The website demo times its clip by its DEBUG lines (tools\fake-raid.ps1 -Demo).
         AppLog.Verbose = cli.Contains("--verbose") || cli.Contains("--demo");
-        AppLog.Info($"Starting Shturmap {GameSession.Version} ({BuildKind}) on {Diagnostics.WindowsVersion()}");
+        AppLog.Info($"Starting Shturmap {GameSession.Version} ({BuildKind}, {AppPaths.Default.KindText} data folder) on {Diagnostics.WindowsVersion()}");
+#if DEVTOOLS
+        if (DevUninstallTest(cli))
+            return;
+#endif
         // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
         // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.
         if (Arg(cli, "--culture") is { } culture)
@@ -96,7 +155,7 @@ public partial class App : Application
             && int.TryParse(h, out var height) ? new SizeInt32(width, height) : null;
         _session = CreateSession(cli);
         _session.Notice += notice => AppLog.Debug("Notice: " + notice.Text);
-        // The study log follows the player's switch in help; "--study" keeps it for one session; developer runs stay
+        // The study log follows the player's switch in settings; "--study" keeps it for one session; developer runs stay
         // out of it.
         _session.StudyOverride = GameSession.StudyOverrideFor(cli);
         _window = new MainWindow(_session, windowSize)
@@ -132,6 +191,9 @@ public partial class App : Application
             _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, "Example: the map stayed on Woods after I loaded into Customs.", "snapshot", showSent: true);
         if (cli.Contains("--show-crash"))
             _window.AskAboutCrashes(Reporter.Crashes.Waiting() is { Count: > 0 } waiting ? waiting : [ExampleCrash()]);
+#if DEVTOOLS
+        await StartDevToolsAsync(cli);
+#endif
 
         // Developer aid: "--send-report <text> <folder>" sends one real report through the dialog's own Send (a
         // release's delivery check), saves the window to the folder and exits.
@@ -242,6 +304,20 @@ public partial class App : Application
     // with its own database in <folder>\app (downloads are shared with the real cache).
     private static GameSession CreateSession(string[] cli)
     {
+#if DEVTOOLS
+        // Developer switch "--no-game": as if Escape from Tarkov weren't on this PC, so the no-game fallback can be seen
+        // (docs/DESIGN.md, "No game on this PC"). Discovery then looks only at a folder chosen in the session. It gets
+        // an app folder of its own (a fake game's, or a temporary one), so a folder chosen to try it never sticks in
+        // the real settings. With "--fake-game" the fake game isn't found either, until it is chosen; in the
+        // developer view the "No game" trigger does the same while keeping the fake game's screenshots.
+        if (cli.Contains("--no-game"))
+        {
+            var app = Arg(cli, "--fake-game") is { } fake ? Path.Combine(fake, "app")
+                : Path.Combine(Path.GetTempPath(), "shturmap-nogame-" + Guid.NewGuid().ToString("N")[..8], "app");
+            AppLog.Debug("No game: only a folder chosen in this session counts");
+            return new GameSession(new AppPaths(app, AppPaths.Default.CacheRoot)) { NoGame = true };
+        }
+#endif
         var at = Array.IndexOf(cli, "--fake-game");
         if (at < 0 || at + 1 >= cli.Length)
             return new GameSession(AppPaths.Default);

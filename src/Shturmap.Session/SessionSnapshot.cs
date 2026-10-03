@@ -30,7 +30,12 @@ public enum CueKind
 
 /// <summary>A change of view the app makes on its own, announced big in the middle of the map for a few seconds.</summary>
 /// <param name="RaidLength">How long the raid lasted (raid over).</param>
-public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null);
+/// <param name="Kit">For a raid loading or a group's pick, the first items of the kit reminder, pictured under the map's
+/// name (<see cref="Planning.CueKit"/>); <paramref name="KitMore"/> says how many more ("+3").</param>
+public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0);
+
+/// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
+public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKind Kind);
 
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);
@@ -107,6 +112,15 @@ public sealed record SessionSnapshot
 
     public GameLocations? Locations { get; init; }
 
+    /// <summary>Discovery found no game on this PC (not while still looking): the no-game state.</summary>
+    public bool NoGameFound => Locations is { Install: null };
+
+    /// <summary>The game is found but has no log sessions yet: it hasn't run on this PC.</summary>
+    public bool GameNotRunYet => Locations is { Install: not null, LogsFolder: null };
+
+    /// <summary>"Choose game folder…" can work: discovery isn't overridden by a fake game.</summary>
+    public bool CanChooseGameFolder { get; init; }
+
     public SourceHealth Logs { get; init; } = new(false, "Looking for the game…");
 
     public SourceHealth Screenshots { get; init; } = new(false, "Looking for screenshots…");
@@ -124,8 +138,11 @@ public sealed record SessionSnapshot
 
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
 
-    /// <summary>Suggested maps for the next raid, best first.</summary>
+    /// <summary>Suggested maps for the next raid, best first (maps with picks first).</summary>
     public IReadOnlyList<MapPlanView> Plan { get; init; } = [];
+
+    /// <summary>The quests picked for the coming raid in this mode (<see cref="QuestPicks"/>).</summary>
+    public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();
 
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];

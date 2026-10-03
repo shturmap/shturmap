@@ -113,6 +113,11 @@ public sealed class RaidTracker
                 {
                     LocationId = setup.LocationId ?? State.LocationId,
                     RaidId = setup.ShortId ?? State.RaidId,
+                    // A server-hosted raid's setup names the joining profile while it still loads: the side is known
+                    // then already (the kit reminder leaves a Scav's loading alone). The raid start decides it again.
+                    Side = _setupProfileId is not null && _menuProfileId is not null
+                        ? _setupProfileId == _menuProfileId ? RaidSide.Pmc : RaidSide.Scav
+                        : State.Side,
                 };
                 return null;
 

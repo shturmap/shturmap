@@ -64,6 +64,34 @@ public static class ExtractRules
         return (string.Join(" · ", parts.Distinct()), item);
     }
 
+    // Items the rules above name in words: the red signal flare (RSP-30 red cartridge) fired at a flare exit, and the
+    // climbing exits' ice pick and paracord. Game item ids, which don't change.
+    public const string RedFlare = "62178c4d4ecf221597654e3d";
+    public const string IcePick = "5c0126f40db834002a125382";
+    public const string Paracord = "5c12688486f77426843c7d32";
+
+    /// <summary>
+    /// The items leaving through an extract takes, by the same rules as <see cref="Needs(GameData, ApiMap, ApiExtract)"/>:
+    /// a red flare at a flare exit, ice pick and paracord at a climbing exit, the money or item a paid exit asks for.
+    /// Empty when it takes none (switches and co-op exits take no item).
+    /// </summary>
+    public static IReadOnlyList<(string ItemId, int Count)> Items(GameData data, ApiExtract extract)
+    {
+        var items = new List<(string, int)>();
+        var key = data.ExtractKeys.GetValueOrDefault(extract.Id) ?? "";
+        var name = extract.Name ?? "";
+        if (key.Contains("Alpinist", StringComparison.OrdinalIgnoreCase) || key.Contains("RedRebel", StringComparison.OrdinalIgnoreCase))
+        {
+            items.Add((IcePick, 1));
+            items.Add((Paracord, 1));
+        }
+        if (name.Contains("(Flare)", StringComparison.OrdinalIgnoreCase) || key.Contains("sniper", StringComparison.OrdinalIgnoreCase))
+            items.Add((RedFlare, 1));
+        if (extract.TransferItem is { Count: > 0 } transfer)
+            items.Add((transfer.Item, (int)Math.Ceiling(transfer.Count)));
+        return items;
+    }
+
     /// <summary>What a transit needs ("TerraGroup Labs access keycard required (1)"), or empty.</summary>
     public static string Needs(ApiTransit transit) => transit.Conditions?.Trim() ?? "";
 }

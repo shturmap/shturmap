@@ -12,7 +12,7 @@ public class ChevronTests
         // The view spans x and z from -500 to 500.
         var (camera, scene) = Of([Quest("a", 0, 0, "Revision", group: "revision"), Quest("b", 900, 10, "Revision", group: "revision"),
             Quest("c", 950, -10, "Revision", group: "revision"), Quest("d", 0, -900, "Revision", group: "revision"), Quest("e", 900, 0, "Dandies")]);
-        scene.Selected = "revision";
+        scene.Kept = new HashSet<string> { "revision" };
         var chevrons = MapRenderer.Layout(camera, scene, 1).Chevrons;
         Assert.Equal(2, chevrons.Count);
         var right = chevrons.Single(c => c.At.X > 900);

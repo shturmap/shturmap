@@ -14,6 +14,15 @@ while (!File.Exists(Path.Combine(root.FullName, "Shturmap.slnx")))
     root = root.Parent ?? throw new InvalidOperationException("Run this inside the Shturmap repository.");
 var brand = Path.Combine(root.FullName, "brand");
 
+// "dev-panel <png>": the dev icon's candidates beside the release icon, at the sizes Windows shows, on dark and light
+// ground, for choosing one (nothing else is written).
+if (args is ["dev-panel", var panelPath])
+{
+    File.WriteAllBytes(panelPath, Output.DevPanel());
+    Console.WriteLine($"Wrote the dev icon panel to {panelPath}");
+    return;
+}
+
 var icon = Logo.Icon();
 var wordDark = Logo.Wordmark(Logo.Dark);
 var wordLight = Logo.Wordmark(Logo.Light);
@@ -35,9 +44,22 @@ File.WriteAllBytes(Path.Combine(brand, "social-preview.png"), Output.Png(Logo.So
 // Up to 40 px the pixel-fitted plain letter; from 48 px the detailed icon, whose chevron reads from there on.
 Output.Ico(Path.Combine(root.FullName, "src", "Shturmap.App", "Assets", "Shturmap.ico"),
     [16, 20, 24, 32, 40, 48, 64, 96, 128, 256], n => n <= 40 ? Logo.Small(n) : icon);
+// The dev build's icon (eng\dev.ps1, Debug builds): the same mark, changed only in colour or by an added shape, so a
+// developer build is never taken for the release (docs/DESIGN.md §8, "Developer aids"). Logo.Dev picks the variant.
+Output.Ico(Path.Combine(root.FullName, "src", "Shturmap.App", "Assets", "Shturmap-dev.ico"),
+    [16, 20, 24, 32, 40, 48, 64, 96, 128, 256], n => Logo.DevVariant(n <= 40 ? Logo.Small(n) : icon, Logo.Dev));
 Console.WriteLine($"Built the logo set in {brand}");
 
 record Layer(string Fill, SKPath Path);
+
+/// <summary>How the dev icon differs from the release's: a cyan plate (the app's "kept" cyan) with the mark in the
+/// plate's dark; a cyan band across the foot of the plate; or an amber tab in its upper right corner.</summary>
+enum DevStyle
+{
+    CyanPlate,
+    CyanBand,
+    AmberTab,
+}
 
 record Drawing(double W, double H, List<Layer> Layers);
 
@@ -49,6 +71,40 @@ static class Logo
 
     public static readonly Inks Dark = new("#D9D5C4", "#C9AD62");
     public static readonly Inks Light = new("#1E1F1B", "#8C7436");
+
+    /// <summary>The dev icon's variant (owner's choice; Output.DevPanel shows all three).</summary>
+    public const DevStyle Dev = DevStyle.CyanPlate;
+
+    // The app's "kept" cyan, and darker steps of it for the plate's border and corner marks.
+    const string Cyan = "#3FD2E0", CyanBorder = "#1E6F78", CyanMarks = "#2A97A3";
+
+    /// <summary>A drawing of the icon (the detailed 256-unit one or a pixel-fitted small one) in a dev variant. The mark
+    /// itself keeps its shape (DESIGN.md §4, "Logo").</summary>
+    public static Drawing DevVariant(Drawing d, DevStyle style)
+    {
+        double n = d.W, b = n >= 256 ? 16 : Math.Max(1, Math.Round(n / 16.0, MidpointRounding.AwayFromZero));
+        switch (style)
+        {
+            case DevStyle.CyanPlate:
+                return d with
+                {
+                    Layers = d.Layers.Select(l => l with
+                    {
+                        Fill = l.Fill switch { Plate => Cyan, Border => CyanBorder, Marks => CyanMarks, _ when l.Fill == Dark.Amber => Plate, _ => l.Fill },
+                    }).ToList(),
+                };
+            case DevStyle.CyanBand:
+            {
+                var h = n >= 256 ? 24 : Math.Max(2, Math.Round(n / 8.0, MidpointRounding.AwayFromZero));
+                return d with { Layers = [.. d.Layers, new(Cyan, Geo.Rect(b, n - b - h, n - 2 * b, h))] };
+            }
+            default:
+            {
+                var t = n >= 256 ? 64 : Math.Max(4, Math.Round(n / 3.0, MidpointRounding.AwayFromZero));
+                return d with { Layers = [.. d.Layers, new(Dark.Amber, Geo.Poly(n - b - t, b, n - b, b, n - b, b + t))] };
+            }
+        }
+    }
 
     // 256 units: the plate and its border, quiet crop marks, and the Ш with a chevron cut through the centre stem.
     public static Drawing Icon()
@@ -257,6 +313,46 @@ static class Output
             sb.Append($"<path fill=\"{l.Fill}\"{rule} d=\"{data}\"/>");
         }
         return sb.Append("</svg>").ToString();
+    }
+
+    // The release icon and the three dev variants (columns) at 128, 48, 32, 24 and 16 px, on the app's dark ground and
+    // on a light one, as Windows draws them (small sizes use the pixel-fitted letter, as the .ico does).
+    public static byte[] DevPanel()
+    {
+        int[] sizes = [128, 48, 32, 24, 16];
+        (string Name, Func<Drawing, Drawing> Of)[] columns =
+        [
+            ("release", d => d),
+            ("cyan plate (default)", d => Logo.DevVariant(d, DevStyle.CyanPlate)),
+            ("cyan band", d => Logo.DevVariant(d, DevStyle.CyanBand)),
+            ("amber tab", d => Logo.DevVariant(d, DevStyle.AmberTab)),
+        ];
+        const int cell = 180, label = 28, rowGap = 16;
+        int width = cell * columns.Length, half = label + sizes.Sum() + rowGap * sizes.Length + 24;
+        using var bmp = new SKBitmap(width, half * 2);
+        using var c = new SKCanvas(bmp);
+        using var font = new SKFont(SKTypeface.Default, 14);
+        foreach (var (ground, ink, top) in new[] { ("#0B0C0B", "#D9D5C4", 0), ("#F1F0EC", "#1E1F1B", half) })
+        {
+            using var fill = new SKPaint { Color = SKColor.Parse(ground) };
+            c.DrawRect(0, top, width, half, fill);
+            using var text = new SKPaint { Color = SKColor.Parse(ink), IsAntialias = true };
+            for (var i = 0; i < columns.Length; i++)
+            {
+                c.DrawText(columns[i].Name, i * cell + 12, top + 20, SKTextAlign.Left, font, text);
+                var y = top + label + 8;
+                foreach (var n in sizes)
+                {
+                    var drawing = columns[i].Of(n <= 40 ? Logo.Small(n) : Logo.Icon());
+                    using var image = SKImage.FromEncodedData(Png(drawing, n, n));
+                    c.DrawImage(image, i * cell + (cell - n) / 2, y, new SKSamplingOptions(SKFilterMode.Nearest));
+                    y += n + rowGap;
+                }
+            }
+        }
+        using var img = SKImage.FromBitmap(bmp);
+        using var data = img.Encode(SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
     }
 
     public static byte[] Png(Drawing d, int w, int h)

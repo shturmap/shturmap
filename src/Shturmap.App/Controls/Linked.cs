@@ -64,27 +64,27 @@ public static class Linked
 
     public static Focus? Current { get; private set; }
 
-    /// <summary>The quest kept highlighted by a click: its rows keep a quieter tint than the pointer's.</summary>
-    public static string? Selected
+    /// <summary>The quests picked for the coming raid: their rows, and the rows serving them, keep a quieter tint than the pointer's.</summary>
+    public static IReadOnlySet<string> Picks
     {
-        get => _selected;
+        get => _picks;
         set
         {
-            if (value == _selected)
+            if (value.SetEquals(_picks))
                 return;
-            _selected = value;
+            _picks = value;
             foreach (var element in Live)
                 Paint(element);
-            SelectedChanged?.Invoke();
+            PicksChanged?.Invoke();
         }
     }
 
-    private static string? _selected;
+    private static IReadOnlySet<string> _picks = new HashSet<string>();
 
-    /// <summary>Raised when the kept quest changes (the highlighter toggles follow it).</summary>
-    public static event Action? SelectedChanged;
+    /// <summary>Raised when the picks change (the pens follow them).</summary>
+    public static event Action? PicksChanged;
 
-    /// <summary>A highlighter toggle was clicked: keep this quest highlighted, or stop if it is the kept one.</summary>
+    /// <summary>A pen was clicked: pick this quest for the coming raid, or unpick it.</summary>
     public static event Action<string>? KeepRequested;
 
     public static void RequestKeep(string questId) => KeepRequested?.Invoke(questId);
@@ -254,7 +254,7 @@ public static class Linked
     private static void Paint(FrameworkElement element) =>
         SetBackground(element, Current is { } focus && IsLinked(element, focus)
             ? (Brush)Application.Current.Resources["LinkBrush"]
-            : _selected is not null && QuestsOf(element).Contains(_selected)
+            : _picks.Count > 0 && QuestsOf(element).Any(_picks.Contains)
                 ? (Brush)Application.Current.Resources["SelectBrush"]
                 : Clear);
 

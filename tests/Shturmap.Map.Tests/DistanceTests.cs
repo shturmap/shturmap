@@ -35,7 +35,7 @@ public class DistanceTests
         var (camera, scene) = Of([Quest("near", 69, 0, "Revision", group: "revision"), Quest("far", -300, 0, "Revision", group: "revision")]);
         camera.ZoomAt(new SkiaSharp.SKPoint(500, 500), 4);
         scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now - TimeSpan.FromMinutes(minutes));
-        scene.Selected = "revision";
+        scene.Kept = new HashSet<string> { "revision" };
         var guide = MapRenderer.Layout(camera, scene, 1).Guide!;
         Assert.Equal(69, guide.Metres, 3);
         Assert.Equal(plate, guide.Plate);
@@ -46,7 +46,7 @@ public class DistanceTests
     {
         var (camera, scene) = Of([Quest("near", 20, 0, "Revision", group: "revision")]);
         scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
-        scene.Selected = "revision";
+        scene.Kept = new HashSet<string> { "revision" };
         Assert.Null(MapRenderer.Layout(camera, scene, 1).Guide!.Plate);
     }
 

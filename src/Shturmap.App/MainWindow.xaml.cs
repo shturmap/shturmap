@@ -30,7 +30,6 @@ public sealed partial class MainWindow : Window
     private SessionSnapshot? _snapshot;
     private string? _sceneKey;
     private readonly HashSet<string> _sheetNoticeShown = new(StringComparer.Ordinal);
-    private string? _selectedQuest;
     private bool _updatingPicker;
     private bool _helpShownOnce;
     private readonly CardStack _cards;
@@ -47,6 +46,7 @@ public sealed partial class MainWindow : Window
     {
         _session = session;
         InitializeComponent();
+        Title = App.Title;
         AppWindow.SetIcon(App.IconPath);
         // A flat dark title bar like the rest; no translucent backdrop.
         AppWindow.TitleBar.BackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
@@ -68,9 +68,9 @@ public sealed partial class MainWindow : Window
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
-        // A click on a quest keeps its card open; the highlighter beside it (rows, cards) keeps it lit on the map.
+        // A click on a quest keeps its card open; the pen beside it (rows, cards) picks it for the coming raid.
         Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
-        Linked.KeepRequested += quest => Select(quest, "toggle");
+        Linked.KeepRequested += quest => _ = _session.TogglePickAsync(quest, "pen");
         Linked.FocusChanged += OnFocusChanged;
         // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
         // handle their own clicks.
@@ -164,8 +164,9 @@ public sealed partial class MainWindow : Window
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
-        new("ESC", "Close the cards; again to stop highlighting the quest"),
+        new("ESC", "Close the cards"),
         new("F1 / ?", "This help"),
+        new("CTRL + ,", "Settings: updates, crash reports, the study log, the app's folders"),
         new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
     ];
 
@@ -200,7 +201,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Shturmap's licence and the third-party ones a published build carries (eng\notices.ps1).</summary>
     public static string LicencesFolder { get; } = Path.Combine(AppContext.BaseDirectory, "licenses");
 
-    /// <summary>A developer build has no licences folder, so the help panel shows the link only in a published one.</summary>
+    /// <summary>A developer build has no licences folder, so settings shows the link only in a published one.</summary>
     public Visibility LicencesVisibility { get; } = Directory.Exists(LicencesFolder) ? Visibility.Visible : Visibility.Collapsed;
 
     private void OnLicencesClick(object sender, RoutedEventArgs e) => OpenFolder(LicencesFolder, "licences");
@@ -251,7 +252,8 @@ public sealed partial class MainWindow : Window
 
     private string DiagnosticsText() =>
         Diagnostics.Build(Volatile.Read(ref _snapshot) ?? new SessionSnapshot(), GameSession.Version, Diagnostics.WindowsVersion(), App.BuildKind,
-            AppLog.Tail(Diagnostics.LogLines), DateTime.Now, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            AppLog.Tail(Diagnostics.LogLines), DateTime.Now, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            AppPaths.Default.KindText);
 
     private async void OnStudyLogClick(object sender, RoutedEventArgs e)
     {
@@ -276,6 +278,7 @@ public sealed partial class MainWindow : Window
         var vm = ViewModel;
         vm.ModeText = ModeReading.Text(s.Mode);
         vm.ModeDetail = s.ModeReading.Tooltip(gameFound: s.Locations is null || s.Locations.Install is not null, DateTime.Now);
+        ApplyGameState(s);
         vm.InRaid = s.Raid.Phase != RaidPhase.Menu;
         vm.LogsText = s.Logs.Text;
         vm.LogsOk = s.Logs.Ok;
@@ -298,12 +301,7 @@ public sealed partial class MainWindow : Window
             _previewTimer?.Stop();
             EndPreview(restore: false);
         }
-        // A kept quest that is done (or failed) has nothing left to find.
-        if (_selectedQuest is not null && s.Quests.GetValueOrDefault(_selectedQuest)?.State != QuestState.Active)
-        {
-            _selectedQuest = null;
-            ShowSelection();
-        }
+        ShowPicks(s);
         UpdateClockTexts();
         UpdatePicker(s);
         UpdatePlan(s);
@@ -321,16 +319,10 @@ public sealed partial class MainWindow : Window
     {
         if (_snapshot is not { } s)
             return;
-        var map = s.Map?.Name ?? "";
-        var side = s.Raid.Side switch { RaidSide.Pmc => " · PMC", RaidSide.Scav => " · Scav", _ => "" };
         var elapsed = s.Raid.RaidStartedAt is { } started ? DateTime.Now - started : (TimeSpan?)null;
-        ViewModel.RaidText = s.Raid.Phase switch
-        {
-            RaidPhase.Loading => $"Loading {map}",
-            RaidPhase.InRaid when elapsed is { } e => $"In raid · {map}{side} · {(int)e.TotalMinutes} min",
-            RaidPhase.InRaid => $"In raid · {map}{side}",
-            _ => "In the menus",
-        };
+        // Only what the log shows: outside a raid "Not in a raid", never "in the menus" (RaidStatus).
+        ViewModel.RaidText = RaidStatus.Text(s.Raid, s.Map?.Name, DateTime.Now);
+        ViewModel.RaidDetail = RaidStatus.Tooltip(s.Raid, DateTime.Now);
 
         var parts = new List<string>();
         if (s.RaidInfo is { } info)
@@ -360,8 +352,6 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.LoadingText = "";
         }
-        UpdateStale(s, elapsed);
-
         if (s.Fix is not { } fix)
         {
             ViewModel.FixText = $"No position yet · press {ViewModel.HelpKeys} in raid";
@@ -370,50 +360,6 @@ public sealed partial class MainWindow : Window
         var age = DateTime.Now - fix.At;
         var ago = age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s" : age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} min" : $"{(int)age.TotalHours} h";
         ViewModel.FixText = $"Fix {ago} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m";
-    }
-
-    // A position older than this is too old to show without saying so in big type (the study log: positions came
-    // about every 8 minutes and were often several minutes old when the app was looked at).
-    private static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(2);
-
-    private void UpdateStale(SessionSnapshot s, TimeSpan? inRaid)
-    {
-        var age = s.Fix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
-        ViewModel.StaleText = s.Raid.Phase != RaidPhase.InRaid ? ""
-            : age is null ? (inRaid > TimeSpan.FromMinutes(1) ? "NO POSITION YET" : "")
-            : age >= StaleAfter ? $"POSITION {(int)age.Value.TotalMinutes} MIN OLD"
-            : "";
-        ViewModel.StaleHint = ViewModel.StaleText.Length > 0 ? Caps.Of($"Press {ViewModel.HelpKeys} for a new one") : "";
-    }
-
-    // When the window gets focus with a stale position, the banner pops once, so the glance lands on it.
-    private void PopStale()
-    {
-        if (ViewModel.StaleText.Length == 0)
-            return;
-        Study.Ui("stale.seen", ("text", ViewModel.StaleText));
-        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
-            return;
-        var story = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
-        foreach (var property in new[] { "ScaleX", "ScaleY" })
-        {
-            var frames = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimationUsingKeyFrames();
-            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.LinearDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 1 });
-            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
-            {
-                KeyTime = TimeSpan.FromMilliseconds(140), Value = 1.12,
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.CubicEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut },
-            });
-            frames.KeyFrames.Add(new Microsoft.UI.Xaml.Media.Animation.EasingDoubleKeyFrame
-            {
-                KeyTime = TimeSpan.FromMilliseconds(520), Value = 1,
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.ElasticEase { Oscillations = 1, Springiness = 4, EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseOut },
-            });
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(frames, StaleScale);
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(frames, property);
-            story.Children.Add(frames);
-        }
-        story.Begin();
     }
 
     private void UpdatePicker(SessionSnapshot s)
@@ -451,36 +397,49 @@ public sealed partial class MainWindow : Window
         if (openIndex < 0)
             openIndex = 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
-        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup };
-        vm.Plans = s.Plan.Select((p, i) => new PlanCard(
-            p.NormalizedName,
-            p.MapName,
-            Summary(p.Finish.Count, p.Progress.Count),
-            string.Join(" · ", new[] { p.WalkingMinutes > 0 ? $"~{p.WalkingMinutes} min walking" : null, p.RaidMinutes > 0 ? $"{p.RaidMinutes} min raid" : null }
-                .Concat(p.Bosses).OfType<string>()),
-            i == openIndex,
-            p.Finish.Select(q => OnMap(q, p)).ToList(),
-            p.Progress.Select(q => OnMap(q, p)).ToList(),
-            p.Requirements.Select(r => BringLine(s, r)).ToList(),
-            (i + 1).ToString(CultureInfo.InvariantCulture),
-            p.Requirements.Select(r => Chip(s, r)).ToList()
-        )).ToList();
+        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
+        // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections).
+        vm.Plans = s.Plan.Select((p, i) =>
+        {
+            var sections = Planning.Sections(p, s.Picks);
+            return new PlanCard(
+                p.NormalizedName,
+                p.MapName,
+                Summary(p.Finish.Count, p.Progress.Count),
+                Planning.FactsLine(p),
+                i == openIndex,
+                sections.Finish.Select(q => OnMap(q, p)).ToList(),
+                sections.Progress.Select(q => OnMap(q, p)).ToList(),
+                BringLines(s, p.Requirements),
+                (i + 1).ToString(CultureInfo.InvariantCulture),
+                p.Requirements.Select(r => Chip(s, r)).ToList(),
+                sections.Picks.Select(q => OnMap(q, p)).ToList());
+        }).ToList();
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
 
-    /// <summary>The easiest way to get an item, for one line under it ("Prapor LL1 · 18,936 ₽"), or empty.</summary>
-    private static string BestSource(SessionSnapshot s, string itemId) =>
-        s.Data is { } data ? ItemCards.Best(data, s.Sources, itemId)?.Text ?? "" : "";
+    /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
+    private static IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows) =>
+        Planning.BringOrder(rows, s.Picks).Select(b => BringLine(s, b.Row) with { StartsOthers = b.StartsOthers }).ToList();
+
+    /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
+    /// will do (a weapon class), one of them ("e.g. Mosin rifle (Sniper) · …"); empty if unknown.</summary>
+    private static string BestSource(SessionSnapshot s, RequirementView r) =>
+        s.Data is { } data ? ItemCards.BestOf(data, s.Sources, r.Kind == RequirementKind.Weapon && r.Alternatives is { Count: > 0 } all ? all : [r.ItemId]) : "";
+
+    // A weapon row names its class once the item categories are loaded ("Any sniper rifle"); the rest as given.
+    private static string RowText(SessionSnapshot s, RequirementView r) =>
+        r.Kind == RequirementKind.Weapon && r.Alternatives is { Count: > 1 } all && s.Data is { } data ? Planning.WeaponText(data, s.Sources, all) : r.Text;
 
     private static string GlyphOf(RequirementKind kind) => kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring;
 
     /// <summary>A BRING row: the item, what it is for and for which quests, and where to get it.</summary>
     private static RequirementLine BringLine(SessionSnapshot s, RequirementView r) =>
-        new(GlyphOf(r.Kind), r.Text, r.Why, r.ItemId, r.QuestIds, BestSource(s, r.ItemId));
+        new(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, BestSource(s, r));
 
     /// <summary>A tiny cell for an item; its tooltip says what it is, what for, and where to get it.</summary>
     private static NeedChip Chip(SessionSnapshot s, RequirementView r) =>
-        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { r.Text, r.Why, BestSource(s, r.ItemId) }.Where(t => t.Length > 0)));
+        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, BestSource(s, r) }.Where(t => t.Length > 0)));
 
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
     private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
@@ -540,9 +499,16 @@ public sealed partial class MainWindow : Window
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
             .Select(q => q.Quest)
             .ToList();
-        vm.RaidComplete = quests.Where(q => q.Complete).ToList();
-        vm.RaidProgress = quests.Where(q => !q.Complete).ToList();
-        vm.RaidBring = (s.MapPlan?.Requirements ?? []).Select(r => BringLine(s, r)).ToList();
+        // The picks first, nearest first; then COMPLETE and PROGRESS without them.
+        vm.RaidPicks = quests.Where(q => s.Picks.Contains(q.QuestId)).ToList();
+        vm.RaidComplete = quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
+        vm.RaidProgress = quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
+        // While the raid loads, the kit comes first, as a last check while matching can still be cancelled; BRING
+        // returns to its place below when the raid starts (owner, 2026-10-03).
+        var kit = Planning.KitWhileLoading(s.Raid, s.MapPlan, s.Picks);
+        vm.RaidKit = kit.Main.Select(r => BringLine(s, r)).ToList();
+        vm.RaidKitMore = kit.More.Select(r => BringLine(s, r)).ToList();
+        vm.RaidBring = s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? []);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
@@ -565,24 +531,18 @@ public sealed partial class MainWindow : Window
 
         // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
         // log: in a raid the app got glances with a median of 3.9 s).
-        vm.RaidNext = vm.ScavRaid ? null
-            : s.Objectives.Where(o => o.HasPlace && o.Distance is not null).MinBy(o => o.Distance) is { } nearest
-                ? ToItem(nearest, Direction(nearest.Direction, nearest.MapBearing), s.Map?.Name)
-                : null;
+        // With picks, NEXT is the nearest objective among them (the guide line leads there too); else the nearest of all.
+        var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null).ToList();
+        var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
+        vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.Map?.Name);
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
+            : vm.NoGameLogs ? "" // the no-game line says why there is nothing to plan
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
-        // Credit the artist only where their SVG is drawn: maps.json also names the authors of tile renders, which
-        // Shturmap doesn't use.
-        vm.Attribution = s.Definition switch
-        {
-            { SvgPath: not null, Author: { } author } => $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev",
-            { SvgPath: null } => "No map artwork · grid 10 m · data tarkov.dev",
-            _ => "Data tarkov.dev",
-        };
+        vm.Attribution = AttributionFor(s.Definition);
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
         vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
             && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
@@ -599,7 +559,13 @@ public sealed partial class MainWindow : Window
         var loot = s is { Data: { } data, Map: { } map } ? ScavRaid.Loot(data, s.Quests, data.MapIdsSharing(map.NormalizedName)) : [];
         var quests = loot.SelectMany(l => l.QuestIds).Distinct().Count();
         vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
-        vm.RaidNote = "As a Scav, quest objectives don't count; items you find in raid do.";
+        // Loading as a Scav (a server-hosted raid's setup says so early) has no kit to check: nothing counts for quests.
+        vm.RaidNote = s.Raid.Phase == RaidPhase.Loading
+            ? "As a Scav, quest objectives don't count, so there is nothing to bring for them; items you find in raid do."
+            : "As a Scav, quest objectives don't count; items you find in raid do.";
+        vm.RaidKit = [];
+        vm.RaidKitMore = [];
+        vm.RaidPicks = [];
         vm.RaidComplete = [];
         vm.RaidProgress = [];
         vm.RaidBring = [];
@@ -620,9 +586,13 @@ public sealed partial class MainWindow : Window
     {
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
-        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov.
+        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
+        // "(optional)" at the end.
+        const string optional = " (optional)";
+        var tail = o.Text.EndsWith(optional, StringComparison.Ordinal) ? optional : "";
+        var core = o.Text[..^tail.Length];
         var suffix = " on " + mapName;
-        var text = mapName is not null && o.Text.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? o.Text[..^suffix.Length] : o.Text;
+        var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
     }
@@ -643,22 +613,61 @@ public sealed partial class MainWindow : Window
             var artwork = await ArtworkFor(s.Definition, s.Map?.Name);
             if (_sceneKey != key)
                 return;
-            // No usable artwork (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
-            if (artwork is null && _sheetNoticeShown.Add(key))
+            // Without SVG artwork, tarkov.dev's tile render where it has one (The Lab, Labyrinth, Icebreaker).
+            var tiles = artwork is null ? TilesFor(s.Definition, s.Map?.Name) : null;
+            // No usable artwork at all (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
+            if (artwork is null && tiles is null && _sheetNoticeShown.Add(key))
                 ShowNotice($"No map artwork for {s.Map?.Name}: a 10 m grid stands in, with your position, objectives and extracts.");
-            Map.SetScene(new MapScene(s.Definition, artwork), _restoreView);
+            Map.SetScene(new MapScene(s.Definition, artwork, tiles), _restoreView);
             _restoreView = null;
         }
         if (Map.Scene is not { } scene || _snapshot is not { } latest)
             return;
         scene.Player = latest.Fix;
+        scene.InRaid = latest.Raid.Phase == RaidPhase.InRaid;
         scene.Trail = latest.Trail;
         scene.Floor = ShownFloor(latest);
         scene.Markers = latest.Content?.Markers ?? [];
         scene.Zones = latest.Content?.Zones ?? [];
-        scene.Selected = _selectedQuest;
+        scene.Containers = latest.Content?.Containers ?? [];
+        scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
         Map.Refresh();
+    }
+
+    // Who drew what is on the map. The SVG maps' artists by name and licence; the tile renders (Battlestate's level,
+    // rendered by tarkov.dev or TarkovBOT.eu; docs/DESIGN.md §3) by who maps.json names; the sheet says what it is.
+    private string AttributionFor(MapDefinition? definition) => definition switch
+    {
+        { SvgPath: not null, Author: { } author } => $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev",
+        { SvgPath: null } when _session.Artwork?.TilesFor(definition) is { Status: not TileStatus.Unavailable } =>
+            $"Map: {definition.Author ?? "tarkov.dev"} · data tarkov.dev",
+        { SvgPath: null } => "No map artwork · grid 10 m · data tarkov.dev",
+        _ => "Data tarkov.dev",
+    };
+
+    private readonly HashSet<MapTiles> _tilesWatched = [];
+
+    // A map's tile render. If no tile can be had (offline without saved tiles, or none published), the grid sheet
+    // stands in, said once per map, and the credit line follows.
+    private MapTiles? TilesFor(MapDefinition definition, string? mapName)
+    {
+        if (_session.Artwork?.TilesFor(definition) is not { } tiles)
+            return null;
+        if (_tilesWatched.Add(tiles))
+        {
+            tiles.Changed += () => DispatcherQueue.TryEnqueue(() =>
+            {
+                ViewModel.Attribution = AttributionFor(_snapshot?.Definition);
+                if (tiles.Status == TileStatus.Unavailable && _sheetNoticeShown.Add(definition.Key))
+                {
+                    AppLog.Warn($"Map render for {mapName} not loaded: no tile could be had");
+                    ShowNotice($"No map render for {mapName}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.",
+                        TimeSpan.FromSeconds(12));
+                }
+            });
+        }
+        return tiles;
     }
 
     // A map's artwork, or null for the sheet. A download that fails says why, once per map, and the sheet stands in;
@@ -744,7 +753,8 @@ public sealed partial class MainWindow : Window
             return;
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
         var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
-        Map.SetScene(new MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones });
+        Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _sceneKey = null;
         ViewModel.PreviewText = $"PREVIEW · {Caps.Of(map.Name)}";
         Study.Ui("map.preview", ("map", normalizedName));
@@ -781,7 +791,6 @@ public sealed partial class MainWindow : Window
                 _focusedAt = DateTime.Now;
                 Study.Ui("window.focus", ("railY", RailScroll.VerticalOffset), ("railH", RailScroll.ViewportHeight),
                     ("visible", Linked.QuestsVisibleIn(RailScroll).ToList()));
-                PopStale();
             }
             else if (!focused && _focusedAt is { } since)
             {
@@ -914,7 +923,15 @@ public sealed partial class MainWindow : Window
             return new HashSet<string>();
         var ids = new HashSet<string>(focus.Quests);
         if (focus.Marker is { } marker)
+        {
             ids.Add(marker);
+            // An extract lights the switches it needs, a switch the extracts it opens.
+            if (_snapshot?.Content?.Links.TryGetValue(marker, out var linked) == true)
+                ids.UnionWith(linked);
+        }
+        // A key lights the locks it opens.
+        if (focus.Item is { } item)
+            ids.Add(MapContentBuilder.KeyGroup(item));
         return ids;
     }
 
@@ -966,6 +983,12 @@ public sealed partial class MainWindow : Window
                 var p = Map.TransformToVisual(Content).TransformPoint(at);
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
                 break;
+            case { Kind: MarkerKind.Lock } when MapContentBuilder.KeyOf(marker.Group) is { } key:
+                // A padlock: its key's card, the key's rows in BRING and every lock the key opens light up.
+                Linked.Set(new Focus(new HashSet<string>(), Item: key, Marker: marker.Id));
+                var k = Map.TransformToVisual(Content).TransformPoint(at);
+                _cards.Enter(marker, new CardKey.Item(key), new Windows.Foundation.Rect(k.X - 8, k.Y - 8, 16, 16));
+                break;
             case { Group: { } group }:
                 // A boss: all its spawn zones light up together, including zones it shares with another boss.
                 var bosses = MapContentBuilder.BossesOf(group);
@@ -991,24 +1014,20 @@ public sealed partial class MainWindow : Window
 
     private Windows.Foundation.Point _markerAt;
 
-    // A quest's highlighter keeps it lit (rows tinted, markers cyan and ringed, a line to the nearest one) until it is
-    // clicked again, another quest's is clicked, or Esc.
-    private void Select(string questId, string how)
+    // The picks (the pen on a quest; GameSession keeps them): rows tinted, markers cyan and ringed, a line to the
+    // nearest place, until a quest is done, its pen is clicked again or the picks are cleared.
+    private void ShowPicks(SessionSnapshot s)
     {
-        _selectedQuest = _selectedQuest == questId ? null : questId;
-        Study.Ui("select", ("quest", questId), ("on", _selectedQuest is not null), ("how", how));
-        ShowSelection();
-    }
-
-    private void ShowSelection()
-    {
-        Linked.Selected = _selectedQuest;
-        if (Map.Scene is { } scene)
+        Linked.Picks = s.Picks;
+        ViewModel.HasPicks = s.Picks.Count > 0;
+        if (Map.Scene is { } scene && !scene.Kept.SetEquals(s.Picks))
         {
-            scene.Selected = _selectedQuest;
-            Map.Redraw(); // starts the pulse and the dimming
+            scene.Kept = s.Picks;
+            Map.Redraw();
         }
     }
+
+    private async void OnClearPicksClick(object sender, RoutedEventArgs e) => await _session.ClearPicksAsync();
 
     // ---- pinned cards ----
 
@@ -1111,6 +1130,26 @@ public sealed partial class MainWindow : Window
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
+    // The kit pictured under the map's name (a raid loading, a group's pick): the cells BRING uses, at 34 px, then "+3".
+    private void ShowCueKit(ViewCue cue)
+    {
+        CueKit.Children.Clear();
+        foreach (var item in cue.Kit ?? [])
+            CueKit.Children.Add(new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 34 });
+        if (cue.KitMore > 0)
+        {
+            CueKit.Children.Add(new TextBlock
+            {
+                Text = $"+{cue.KitMore}",
+                Style = (Style)Application.Current.Resources["FigureText"],
+                Foreground = Resource("MutedBrush"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0),
+            });
+        }
+        CueKit.Visibility = CueKit.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private (string Eyebrow, string Title, string Detail) CueText(ViewCue cue)
     {
         var map = Caps.Of(cue.MapName);
@@ -1140,6 +1179,7 @@ public sealed partial class MainWindow : Window
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowCueKit(cue);
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();
@@ -1257,7 +1297,8 @@ public sealed partial class MainWindow : Window
         // first thing it needs (nested), and the quest pinned in a window.
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
-            Select(id, "snapshot");
+            if (_snapshot?.Picks.Contains(id) != true)
+                _ = _session.TogglePickAsync(id, "snapshot", save: false);
             Linked.Set(Focus.Quest(id));
             _cards.Open(new CardKey.Quest(id), new Windows.Foundation.Rect(372, 150, 8, 8), 0);
             var item = view.Needs.FirstOrDefault()?.ItemId ?? view.Objectives.FirstOrDefault(o => o.ItemId is not null)?.ItemId;
@@ -1289,9 +1330,55 @@ public sealed partial class MainWindow : Window
     private void OnHelpOpened(object sender, object e)
     {
         _helpOpenedAt = DateTime.Now;
-        LoadCrashMode();
         Study.Ui("help.open");
     }
+
+    // Settings, apart from help (owner, 2026-10-03): the preferences and the app's data. It never opens by itself.
+    private void ShowSettings()
+    {
+        if (SettingsButton.XamlRoot is not null)
+            SettingsFlyout.ShowAt(SettingsButton);
+    }
+
+    private DateTime _settingsOpenedAt;
+
+    private void OnSettingsOpened(object sender, object e)
+    {
+        _settingsOpenedAt = DateTime.Now;
+        LoadCrashMode();
+        Study.Ui("settings.open");
+    }
+
+    private void OnSettingsClosed(object sender, object e)
+    {
+        Study.Ui("settings.close", ("s", DateTime.Now - _settingsOpenedAt));
+        // An unanswered "Remove Shturmap?" doesn't wait for the next visit.
+        ViewModel.UninstallAsking = false;
+    }
+
+    private async Task<bool> OpenSettingsForSnapshotAsync()
+    {
+        if (SettingsButton.XamlRoot is null)
+            return false;
+        var opened = new TaskCompletionSource();
+        void Done(object? sender, object e) => opened.TrySetResult();
+        SettingsFlyout.Opened += Done;
+        try
+        {
+            ShowSettings();
+            if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
+                return false;
+            await Task.Delay(300); // one layout pass for its contents
+            return true;
+        }
+        finally
+        {
+            SettingsFlyout.Opened -= Done;
+        }
+    }
+
+    /// <summary>The version and kind of this build, at the foot of settings.</summary>
+    public string VersionText { get; } = $"Shturmap {GameSession.Version} · {App.BuildKind}";
 
     private void OnHelpClosed(object sender, object e)
     {
@@ -1360,16 +1447,26 @@ public sealed partial class MainWindow : Window
         Add((Windows.System.VirtualKey)189, () => ZoomBy(1 / 1.5, "key")); // the -/_ key
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
-        Add(Windows.System.VirtualKey.Escape, () =>
-        {
-            if (_cards.Cards.Count > 0)
-                _cards.CloseAll();
-            else
-                ClearSelection();
-        });
+        // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press
+        // that throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way).
+        Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, ShowHelp);
+        // Ctrl+, opens settings, as in many Windows apps (the gear beside "?").
+        var settingsKey = new KeyboardAccelerator { Key = (Windows.System.VirtualKey)188, Modifiers = Windows.System.VirtualKeyModifiers.Control };
+        settingsKey.Invoked += (_, e) =>
+        {
+            if (ReportOpen)
+                return;
+            Study.Ui("key", ("key", "Ctrl+Comma"));
+            ShowSettings();
+            e.Handled = true;
+        };
+        root.KeyboardAccelerators.Add(settingsKey);
+#if DEVTOOLS
+        AddDevShortcuts(Add);
+#endif
         root.CharacterReceived += (_, e) =>
         {
             if (e.Character == '?' && !ReportOpen)
@@ -1378,15 +1475,6 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
             }
         };
-    }
-
-    private void ClearSelection()
-    {
-        if (_selectedQuest is null)
-            return;
-        Study.Ui("select", ("quest", _selectedQuest), ("on", false), ("how", "esc"));
-        _selectedQuest = null;
-        ShowSelection();
     }
 
     // ---- UI events ----
@@ -1470,11 +1558,19 @@ public sealed partial class MainWindow : Window
             await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
                 await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
+            // Settings never opens by itself, so a snapshot opens it just for its picture (help closes with that).
+            if (SnapshotMode && SettingsFlyout.Content is UIElement settings && await OpenSettingsForSnapshotAsync())
+            {
+                await RenderToPngAsync(settings, Path.Combine(folder, "settings.png"));
+                SettingsFlyout.Hide();
+            }
             var cards = _cards.Cards;
             for (var i = 0; i < cards.Count; i++)
                 await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));
             if (_pinned.Values.FirstOrDefault() is { } pinned)
                 await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
+            // A tile render (The Lab, Labyrinth, Icebreaker) loads its tiles for this view first.
+            await Map.TilesLoadedAsync(TimeSpan.FromSeconds(20));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);
             // What Copy diagnostics would put on the clipboard, to check it without clicking.
             await File.WriteAllTextAsync(Path.Combine(folder, "diagnostics.txt"), DiagnosticsText());

@@ -3,10 +3,38 @@
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
 read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
 Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) on 2026-10-03. Items 1, 3 and 4 are done
-(2026-10-02); 2, 5 and 6 are open.
+(2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
+
+**Status, 2026-10-03 evening:** the quota came back the same day and the owner said "go ahead with the open TODOs".
+Done and merged (DESIGN.md has each decision): 1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14 (with the changelog the
+owner added), 15, 16, and 17 (the design system, §4). Still open:
+- **4, click checks:** in the installed dev build ("Shturmap DEV", F12 for the developer view), with the owner.
+- **10, the FAQ:** drafted, not published. The website changes are on the site repository's branch `work/faq`
+  (worktree `..\Shturmap-wt\g-site`, with the design system's CSS alignment on top), and the README FAQ on the app
+  branch `work/g-readme` (worktree `..\Shturmap-wt\g-readme`). They wait for the owner's choice of heading ("Is this
+  allowed? Can I get banned?" or "Is this cheating?") and their go. Publish both together: the README links to the
+  website's `#faq`.
+- **18:** items 2 and 6 below, and the release checklist (on hold until the release).
+- Version: still 0.2.0, though much has changed since the build sent to a friend; ask before the next one goes out.
+- **Running:** tarkov.dev's tile renders for The Lab, Labyrinth and Icebreaker (owner, 2026-10-03, "Do B and A":
+  map renders accepted like portraits and icons), and landmarks (locked doors with their keys, switches, container
+  dots on the sheet).
+- **Next, after the map work is merged** (owner, 2026-10-03): "Uninstall Shturmap…" in help, with one confirmation
+  and an unticked "Also delete my Shturmap data" (settings, quest history, logs, study log, download cache), which
+  then runs Velopack's own uninstaller (`Update.exe --uninstall`); the same for the dev build with its own data
+  folder; one line in README and FAQ ("Windows Settings → Apps, or Help → Uninstall"); PRIVACY.md can then say how
+  to delete everything. Windows' Apps entry already works (Velopack registers it); the Setup itself has no
+  repair/remove mode, and a different installer around Velopack isn't worth it.
+- **Then, once everything is done: the website's media from the newest version** (owner, 2026-10-03: "Once
+  everything is done, update the website with assets from the most recent version"). Re-record with
+  `tools\make-media.ps1` (site repo; its CLAUDE.md and hand-check list) on the branch `work/faq`, so the website
+  goes out as one update: media, FAQ, release wording, design-system CSS. Going live needs the owner's FAQ heading
+  choice; publish the site and merge `work/g-readme` together.
+
+The items below are kept as written, for their reasons and quotes.
 
 1. **A separate data folder for dev builds** (proposed, waiting for the owner's go). Today the installed release
    (`%LOCALAPPDATA%\ShturmapApp`) and the folder build (`artifacts\Shturmap`) share `%LOCALAPPDATA%\Shturmap`: one
@@ -201,7 +229,8 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
     - **Zero picks = today's behaviour,** so nobody has to use it. Check it against the effort order (item list
       order), the synopsis lines and the folded cards; one symbol, one meaning (the pen keeps its meaning: "keep
       lit", now for several). DESIGN.md decision, help text, legend.
-17. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+17. **Done (2026-10-03): item 5 below, one design system** (owner: "Yes, do the design system after this round"): DESIGN.md §4 "Design system", `Shturmap.Map.Palette`, `DesignTokenTests`; the website's CSS follows it on the unpublished FAQ branch.
+18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
@@ -345,6 +374,11 @@ allowed logs says it directly, but the insurer writes when insured gear was lost
 
 ## 5. One design system for the app, the README and the website
 
+**Done (2026-10-03):** DESIGN.md §4 "Design system" (colour tokens with roles, type roles for app and web, shape and
+spacing, motion, icons, logo use, words, and where each surface takes them from); `Shturmap.Map.Palette` as the
+colour table in code; `DesignTokenTests` keep App.xaml, XAML colours, the map, the brand files, the design doc and
+the website's CSS equal to it.
+
 **Why** (owner, 2026-10-02). With the logo settled (DESIGN.md §4, "Logo"), the colours, type and general look must
 be the same in the app, the README and the coming website, and DESIGN.md has to say how.
 
@@ -365,18 +399,23 @@ ReportGameFolders`) and then an app built around quests it can't know.
 requirements, spawn zones, bosses with chances, map names, loose loot spots) and the help. What doesn't: active
 quests, raid state, positions (all from the game's logs and screenshot names).
 
-**Open questions for the owner before planning:**
-- What the default view is: a map browser (pick a map; extracts, transits, bosses, spawns; the side selectable
-  PMC/Scav), a quest lookup (every quest on a map, clearly labelled as all quests, not "yours", since quest states
-  come only from the game's logs: DESIGN.md), or both.
-- The game mode: without the game's log Shturmap can't know it, and since 2026-10-03 the status bar's mode is a
-  label from the log with no chooser (DESIGN.md, "Screen anatomy"). A PvE / PvP / Seasonal chooser belongs to this
-  mode (tarkov.dev's data differs per mode: bosses, prices).
-- The laptop case: reading the game PC's logs and screenshots over a network share (the folder pickers already
-  allow a manual game folder: "Install: manual") would make the full app work there; is that in scope?
-- How it says so: one quiet line where the Plan card would be ("No game on this PC: browsing maps"), not a notice
-  that disappears; and when the game turns up later (installed, or a share mounted), switching over by itself.
-- Truthfulness: nothing may look like the player's own state (no "complete", no distances without a position).
+**Done (2026-10-03, owner: "Yes, build the fallback 1-5"; DESIGN.md "Screen anatomy", *No game*):**
+1. One line where the Plan card would be, for as long as no game is found: "NO GAME FOUND ON THIS PC" ·
+   **CHOOSE GAME FOLDER…** · "or browse the maps"; a variant when the game is found but hasn't run. No 30 s notice.
+2. **Choose game folder…**: Windows' folder picker, checked with discovery's rules, saved, and followed at once
+   without a restart (logs re-pointed and read for history).
+3. Browse mode: the map as always, a PvE / PvP / Seasonal chooser in place of the mode label, nothing quest-like.
+4. Discovery runs again every 30 s while the game or its logs are missing, and switches over by itself.
+5. Developer switch `--no-game` and the developer view's "No game" trigger, plus its script step `choose`.
+
+**Still open:**
+- The laptop case: reading the game PC's logs over a network folder. A network folder chosen with **Choose game
+  folder…** that holds the game already works; whether to say so (README, FAQ) and support it is the owner's call.
+  Screenshots stay the local Documents folder's, so positions wouldn't arrive over the network.
+- A quest lookup without the game (every quest on a map, labelled as all quests, not "yours") was not built; the
+  browse mode shows nothing quest-like.
+- Once the settings flyout (help / settings split) is on main, add a "GAME FOLDER: <path or 'not found'> ·
+  CHOOSE…" row there, so a found-but-wrong install can be changed too.
 
 ## At the production release on GitHub (owner, 2026-10-03)
 

@@ -16,14 +16,43 @@ public sealed class MapArtwork : IDisposable
 {
     private readonly Dictionary<string, Lazy<SKPicture?>> _layers;
 
-    private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox)
+    private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox, bool showsMinefields,
+        bool showsSniperZones)
     {
         Base = basePicture;
         _layers = layers;
         ViewBox = viewBox;
+        ShowsMinefields = showsMinefields;
+        ShowsSniperZones = showsSniperZones;
+        Ground = Coverage(basePicture, viewBox);
     }
 
     public SKPicture Base { get; }
+
+    /// <summary>
+    /// Where the base picture draws anything (ground, water, buildings) as an alpha mask over <see cref="ViewBox"/>,
+    /// drawn once when the artwork loads: the data's hazards are kept to it, so a minefield or sniper zone that runs past
+    /// the drawn map doesn't hatch the empty space around it (owner, 2026-10-03). The SVGs have no background, so
+    /// outside the drawn map is transparent. Null if it can't be drawn.
+    /// </summary>
+    public SKImage? Ground { get; }
+
+    // The mask's longer side in pixels: about one pixel per screen pixel at the overview; zoomed in, its edge softens over
+    // a few pixels, which a hatch's end doesn't mind.
+    private const int GroundSize = 2048;
+
+    /// <summary>
+    /// The artwork draws minefields itself (a "mines" or "Minefield" group: Woods, Shoreline, Lighthouse, Streets,
+    /// Terminal), so the data's minefield outlines aren't drawn over it (docs/DESIGN.md, "Landmarks").
+    /// </summary>
+    public bool ShowsMinefields { get; }
+
+    /// <summary>
+    /// The artwork draws the border snipers' kill zones itself: a "danger"-styled group named "Sniper" (Customs, Ground
+    /// Zero, Streets) or "Danger" (Interchange), so the data's sniper zones aren't drawn over it (docs/DESIGN.md,
+    /// "Landmarks"). Minefields are "danger"-styled too, but named "mines"; they don't count here.
+    /// </summary>
+    public bool ShowsSniperZones { get; }
 
     /// <summary>The SVG's viewBox, the coordinate system of the pictures.</summary>
     public SKRect ViewBox { get; }
@@ -47,26 +76,79 @@ public sealed class MapArtwork : IDisposable
             id => id,
             id => new Lazy<SKPicture?>(() => Cached(CachePath(id), () => Render(doc, g => g == id)), LazyThreadSafetyMode.ExecutionAndPublication),
             StringComparer.Ordinal);
-        return new MapArtwork(basePicture, layers, viewBox);
+        var showsMinefields = doc.Descendants().Any(e => ((string?)e.Attribute("id"))?.StartsWith("mine", StringComparison.OrdinalIgnoreCase) == true);
+        var showsSniperZones = doc.Descendants().Any(e => (string?)e.Attribute("id") is { } id && (id.Equals("sniper", StringComparison.OrdinalIgnoreCase) || id.Equals("danger", StringComparison.OrdinalIgnoreCase)));
+        return new MapArtwork(basePicture, layers, viewBox, showsMinefields, showsSniperZones);
     }
 
     private static bool IsGroup(XElement e) => e.Name.LocalName == "g" && e.Attribute("id") is not null;
+
+    private static SKImage? Coverage(SKPicture picture, SKRect viewBox)
+    {
+        if (viewBox.Width <= 0 || viewBox.Height <= 0)
+            return null;
+        var scale = GroundSize / Math.Max(viewBox.Width, viewBox.Height);
+        var info = new SKImageInfo((int)Math.Ceiling(viewBox.Width * scale), (int)Math.Ceiling(viewBox.Height * scale), SKColorType.Alpha8, SKAlphaType.Premul);
+        using var surface = SKSurface.Create(info);
+        if (surface is null)
+            return null;
+        surface.Canvas.Clear(SKColors.Transparent);
+        surface.Canvas.Scale(scale);
+        surface.Canvas.Translate(-viewBox.Left, -viewBox.Top);
+        surface.Canvas.DrawPicture(picture);
+        return surface.Snapshot();
+    }
+
+    /// <summary>Whether the artwork draws anything at a point of its <see cref="ViewBox"/> (see <see cref="Ground"/>).</summary>
+    public bool OnGround(SKPoint at)
+    {
+        if (Ground is null)
+            return true;
+        var x = (int)((at.X - ViewBox.Left) / ViewBox.Width * Ground.Width);
+        var y = (int)((at.Y - ViewBox.Top) / ViewBox.Height * Ground.Height);
+        if (x < 0 || y < 0 || x >= Ground.Width || y >= Ground.Height)
+            return false;
+        using var pixels = Ground.PeekPixels();
+        return pixels is null || pixels.GetPixelColor(x, y).Alpha > 127;
+    }
 
     private static SKPicture Cached(string? path, Func<SKPicture> render)
     {
         if (path is not null && File.Exists(path))
         {
-            using var stream = File.OpenRead(path);
-            if (SKPicture.Deserialize(stream) is { } cached)
-                return cached;
+            try
+            {
+                using var stream = File.OpenRead(path);
+                if (SKPicture.Deserialize(stream) is { } cached)
+                    return cached;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Another Shturmap is replacing it this moment: draw it here instead.
+            }
         }
         var picture = render();
         if (path is not null)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var data = picture.Serialize();
-            using var file = File.Create(path);
-            data.SaveTo(file);
+            // The picture cache is shared by every Shturmap on the PC: written to a temporary file of its own and
+            // moved over in one go, so no other process reads half a file (Shturmap.Data.Http.CachedHttp). A copy that
+            // can't be saved now is drawn again next time.
+            var temp = Shturmap.Data.Http.CachedHttp.TempFor(path);
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                using (var data = picture.Serialize())
+                using (var file = File.Create(temp))
+                    data.SaveTo(file);
+                Shturmap.Data.Http.CachedHttp.Replace(temp, path);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+            }
+            finally
+            {
+                Shturmap.Data.Http.CachedHttp.TryDelete(temp);
+            }
         }
         return picture;
     }
@@ -107,6 +189,7 @@ public sealed class MapArtwork : IDisposable
     public void Dispose()
     {
         Base.Dispose();
+        Ground?.Dispose();
         foreach (var layer in _layers.Values.Where(l => l.IsValueCreated))
             layer.Value?.Dispose();
     }

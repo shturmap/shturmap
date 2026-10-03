@@ -7,26 +7,26 @@ namespace Shturmap.Map;
 /// <summary>Draws a <see cref="MapScene"/> through a <see cref="Camera"/>. Markers keep a fixed screen size.</summary>
 public static partial class MapRenderer
 {
-    // The app's palette (App.xaml, docs/DESIGN.md §4): muted gold for quests, the game's green for extracts.
-    private static readonly SKColor Background = SKColor.Parse("#0b0c0b");
-    private static readonly SKColor Amber = SKColor.Parse("#c9ad62");
+    // The design system's palette (Palette, docs/DESIGN.md §4): muted gold for quests, the game's green for extracts.
+    private static readonly SKColor Background = Palette.Sk(Palette.Ground);
+    private static readonly SKColor Amber = Palette.Sk(Palette.Amber);
 
     /// <summary>The quest amber, which nothing else on the map may resemble.</summary>
     public static SKColor QuestAmber => Amber;
-    private static readonly SKColor Green = SKColor.Parse("#8da65e");
-    private static readonly SKColor Teal = SKColor.Parse("#6f9a94");
-    private static readonly SKColor Lime = SKColor.Parse("#b7b77a");
-    private static readonly SKColor Violet = SKColor.Parse("#9c8cc4");
-    private static readonly SKColor Player = SKColor.Parse("#e9e2c8");
-    private static readonly SKColor Ink = SKColor.Parse("#d9d5c4");
-    private static readonly SKColor Muted = SKColor.Parse("#8a8778");
-    private static readonly SKColor Red = SKColor.Parse("#b8604a");
+    private static readonly SKColor Green = Palette.Sk(Palette.Green);
+    private static readonly SKColor Teal = Palette.Sk(Palette.Teal);
+    private static readonly SKColor Lime = Palette.Sk(Palette.Khaki);
+    private static readonly SKColor Violet = Palette.Sk(Palette.Violet);
+    private static readonly SKColor Player = Palette.Sk(Palette.Sand);
+    private static readonly SKColor Ink = Palette.Sk(Palette.Ink);
+    private static readonly SKColor Muted = Palette.Sk(Palette.Muted);
+    private static readonly SKColor Red = Palette.Sk(Palette.Red);
 
     /// <summary>
     /// The quest kept highlighted by a click (owner, 2026-10-01: gold among gold didn't stand out). Cyan is the one
     /// hue nothing else on the map uses, the artwork included, and it stays apart from gold with any colour vision.
     /// </summary>
-    public static readonly SKColor Kept = SKColor.Parse("#3fd2e0");
+    public static readonly SKColor Kept = Palette.Sk(Palette.Kept);
 
     // Bahnschrift (ships with Windows), semi-condensed like the app's labels.
     private static readonly SKTypeface Typeface =
@@ -34,40 +34,63 @@ public static partial class MapRenderer
     private static readonly SKTypeface TypefaceBold =
         SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.SemiBold, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? SKTypeface.Default;
 
-    public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1)
+    /// <param name="stepBack">How markers outside the focus step back; <see cref="StepBackOf"/> unless a developer
+    /// render compares alternatives.</param>
+    public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         canvas.Clear(Background);
         if (scene.Artwork is not null)
             DrawArtwork(canvas, camera, scene, scene.Artwork);
+        else if (!scene.IsSheet && scene.Tiles is { } tiles)
+            DrawTiles(canvas, camera, scene, tiles);
         else
             DrawSchematic(canvas, camera, scene, uiScale);
+        if (scene.IsSheet)
+            DrawContainers(canvas, camera, scene, uiScale);
 
         var layout = Layout(camera, scene, uiScale);
         foreach (var name in layout.Names)
             DrawMapName(canvas, name, uiScale);
-        foreach (var zone in scene.Zones)
-            DrawZone(canvas, camera, scene, zone);
+        var hazardLabels = new List<(string Text, SKPoint At)>();
+        using (var ground = GroundShader(camera, scene))
+        {
+            foreach (var zone in scene.Zones)
+                DrawZone(canvas, camera, scene, zone, uiScale, hazardLabels, ground);
+        }
+        // Over every hatch, and once per group of neighbouring areas (border zones overlap along an edge).
+        var labelled = new List<SKPoint>();
+        var screen = new SKRect(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        foreach (var (text, at) in hazardLabels.Where(l => screen.Contains(l.At)))
+        {
+            if (labelled.Any(p => SKPoint.Distance(p, at) < 260 * uiScale))
+                continue;
+            labelled.Add(at);
+            DrawHazardLabel(canvas, text, at, uiScale);
+        }
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
 
-        // Markers step back when something else is pointed at (easing with the scene's Dim), all in one layer so
-        // overlapping ones fade as one. A marker on another floor stays at full strength and carries an arrow to it
-        // instead (owner, 2026-10-01: half-strength markers read as "not important", and a highlighted one must look
-        // highlighted).
-        var back = layout.Markers.Where(m => !m.Focused).ToList();
-        var alpha = scene.ShownFocus.Count > 0 ? 1 - 0.72f * scene.Dim : 1f;
-        if (alpha < 1 && back.Count > 0)
+        // Markers outside the focus step back while something is highlighted (easing with the scene's Dim), each kind
+        // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
+        // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength markers
+        // read as "not important", and a highlighted one must look highlighted).
+        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03).
+        var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
+        stepBack ??= StepBackOf;
+        StepBack Measure(ShownMarker m) => m.Kept ? Full : stepBack(m.Marker.Kind, scene.InRaid);
+        foreach (var group in layout.Markers.Where(m => !m.Focused).GroupBy(Measure))
         {
-            using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
-            canvas.SaveLayer(layer);
+            using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
+            foreach (var marker in group)
+                DrawMarker(canvas, scene, marker, uiScale);
         }
-        foreach (var marker in back)
-            DrawMarker(canvas, scene, marker, uiScale);
-        foreach (var label in layout.Labels.Where(l => !l.Of.Focused))
-            DrawLabel(canvas, label);
-        if (alpha < 1 && back.Count > 0)
-            canvas.Restore();
+        foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => Measure(l.Of).LabelAlpha))
+        {
+            using var layer = new StepBackLayer(canvas, group.Key, 1, dim);
+            foreach (var label in group)
+                DrawLabel(canvas, label);
+        }
         foreach (var marker in layout.Markers.Where(m => m.Focused))
             DrawMarker(canvas, scene, marker, uiScale);
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
@@ -77,6 +100,53 @@ public static partial class MapRenderer
             DrawChevron(canvas, chevron, uiScale);
         DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
+    }
+
+    // ---- stepping back: what is outside the focus while something is highlighted ----
+
+    /// <summary>How far a marker outside the focus steps back once the dimming is complete.</summary>
+    /// <param name="Alpha">Its opacity, 1 for full strength.</param>
+    /// <param name="Saturation">How much of its colour it keeps, 1 for all.</param>
+    /// <param name="LabelAlpha">Its label's opacity: labels step back further than their symbols.</param>
+    public readonly record struct StepBack(float Alpha, float Saturation, float LabelAlpha);
+
+    // Not stepping back at all: picks.
+    private static readonly StepBack Full = new(1f, 1f, 1f);
+
+    /// <summary>
+    /// How far each kind steps back while something else is highlighted (owner, 2026-10-03: at 28 % the other markers
+    /// could barely be made out, "but are still pretty important", above all in a raid). Ways out (your side's
+    /// extracts and transits) and bosses never step back: they matter at a glance whatever is highlighted. Other
+    /// quests' markers fade to about two thirds while planning and much less in a raid, where a quest is often kept
+    /// highlighted all raid; spawn rings fade like them. Labels step back further than symbols, so the highlighted
+    /// quest's names stand out without hiding where everything else is.
+    /// </summary>
+    public static StepBack StepBackOf(MarkerKind kind, bool inRaid) => kind switch
+    {
+        MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit or MarkerKind.BossSpawn
+            => new(1f, 1f, inRaid ? 1f : 0.7f),
+        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn or MarkerKind.Lock or MarkerKind.Switch => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
+        _ => inRaid ? new(0.8f, 1f, 0.6f) : new(0.62f, 1f, 0.45f),
+    };
+
+    // A layer that steps what is drawn into it back by a measure, eased with the dim; no layer when it changes nothing.
+    private readonly ref struct StepBackLayer
+    {
+        private readonly SKCanvas? _canvas;
+
+        public StepBackLayer(SKCanvas canvas, float alpha, float saturation, float dim)
+        {
+            var a = 1 - (1 - alpha) * dim;
+            var s = 1 - (1 - saturation) * dim;
+            if (a >= 0.999f && s >= 0.999f)
+                return;
+            using var filter = s < 0.999f ? ArtworkColors.Recede(s, 1 - 0.1f * (1 - s)) : null;
+            using var paint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(255 * a)), ColorFilter = filter };
+            canvas.SaveLayer(paint);
+            _canvas = canvas;
+        }
+
+        public void Dispose() => _canvas?.Restore();
     }
 
     // ---- layout: what is drawn where, before anything is drawn ----
@@ -129,6 +199,8 @@ public static partial class MapRenderer
         {
             if (m.Count > 1)
                 taken.Add(CountBadgeBox(m, ui));
+            if (ShowsOptional(m))
+                taken.Add(OptionalBadgeBox(m, ui));
             taken.Add(Square(m.At, m.Reach));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeBox(m, ui));
@@ -140,8 +212,9 @@ public static partial class MapRenderer
             var age = DateTime.Now - player.At;
             if (age >= PlayerOld)
             {
-                using var tagFont = new SKFont(TypefaceBold, 10.5f * ui);
-                taken.Add(AgeTagBox(at, tagFont.MeasureText(AgeText(age)), ui));
+                var (text, stale) = AgeTag(age);
+                using var tagFont = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
+                taken.Add(AgeTagBox(at, tagFont.MeasureText(text), stale, ui));
             }
         }
         var guide = Guide(camera, scene, ui);
@@ -155,7 +228,10 @@ public static partial class MapRenderer
         var labels = new List<PlacedLabel>();
         using var regular = new SKFont(Typeface, 11.5f * ui);
         using var bold = new SKFont(TypefaceBold, 13 * ui);
-        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected)).OrderBy(LabelRank).ThenByDescending(m => m.Count))
+        // A lock's key and a switch's name are said close up, or for the one pointed at.
+        var landmarkLabels = ZoomOverOverview(camera, scene, ui) >= LandmarkLabelFromZoom;
+        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected) && (m.Selected || landmarkLabels || !IsLandmark(m.Marker.Kind)))
+                     .OrderBy(LabelRank).ThenByDescending(m => m.Count))
         {
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
             if (labels.Any(l => l.Text == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
@@ -214,14 +290,28 @@ public static partial class MapRenderer
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
     public const float LabelRepeat = 250;
 
-    // Label priority: what the player picked, then bosses, quests, ways out, snipers.
+    // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
     private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Marker.Kind switch
     {
         MarkerKind.BossSpawn => 1,
         MarkerKind.Objective or MarkerKind.PossibleLocation or MarkerKind.ObjectiveDone => 2,
         MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit => 3,
+        MarkerKind.Lock or MarkerKind.Switch => 5,
         _ => 4,
     };
+
+    /// <summary>Locks and switches: level-4 landmarks from tarkov.dev's data (docs/DESIGN.md, "Map drawing").</summary>
+    public static bool IsLandmark(MarkerKind kind) => kind is MarkerKind.Lock or MarkerKind.Switch;
+
+    /// <summary>
+    /// From which zoom (a multiple of the overview, as for the map's names) locks and switches show on a map with
+    /// artwork: Streets has 63 locks, Customs 36, Reserve 34, too many for the overview. On a sheet they show at any
+    /// zoom (they are among the few things it has). What is pointed at shows at any zoom.
+    /// </summary>
+    public const double LandmarkFromZoom = 1.5;
+
+    /// <summary>From which zoom their labels (the key's short name, the switch's name) show unless pointed at.</summary>
+    public const double LandmarkLabelFromZoom = 2.5;
 
     /// <summary>Where a marker label may go, in order: right, left, above and below the symbol.</summary>
     /// <param name="clearance">From the symbol's centre to the label's near edge.</param>
@@ -255,7 +345,12 @@ public static partial class MapRenderer
     {
         var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
         view.Inflate(40 * ui, 40 * ui);
-        var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui))).ToList();
+        // Locks and switches are level 4: from a zoom on maps with artwork, and on the floor shown; the ones pointed at
+        // show anyway, with their floor arrow (The Lab's other floors would otherwise cover the sheet with arrows).
+        var landmarks = scene.IsSheet || ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom;
+        var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui)))
+            .Where(s => !IsLandmark(s.Shown.Marker.Kind) || s.Shown.Selected || (landmarks && s.Shown.Floor == 0))
+            .ToList();
         var result = new List<(int Index, ShownMarker Shown)>();
         foreach (var group in shown.GroupBy(s => ObjectiveOf(s.Shown.Marker) is { } objective ? $"{objective}|{s.Shown.Marker.Kind}" : "#" + s.Index))
         {
@@ -310,6 +405,33 @@ public static partial class MapRenderer
         return SKRect.Create(c.X - width / 2, c.Y - 7 * ui, width, 14 * ui);
     }
 
+    // An optional objective's marker says so in a small badge at its upper left (owner, 2026-10-03: optional places
+    // "might still be very relevant for a quest"). Words, because no shape, colour or ring on the map is free to mean
+    // "optional" (one symbol, one meaning); the upper right is the floor arrow's, the lower right the count's.
+    private const string OptionalTag = "OPT";
+
+    private static bool ShowsOptional(ShownMarker m) => m.Marker.Optional && m.Marker.Kind is MarkerKind.Objective or MarkerKind.PossibleLocation;
+
+    private static SKRect OptionalBadgeBox(ShownMarker m, float ui)
+    {
+        using var font = new SKFont(TypefaceBold, 8.5f * ui);
+        var width = font.MeasureText(OptionalTag) + 6 * ui;
+        var c = new SKPoint(m.At.X - m.R * 0.85f, m.At.Y - m.R * 0.85f);
+        return SKRect.Create(c.X - width / 2, c.Y - 6 * ui, width, 12 * ui);
+    }
+
+    private static void DrawOptionalBadge(SKCanvas canvas, ShownMarker m, float ui)
+    {
+        var box = OptionalBadgeBox(m, ui);
+        using var plate = new SKPaint { Color = Background, IsAntialias = true };
+        using var edge = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.1f * ui };
+        using var font = new SKFont(TypefaceBold, 8.5f * ui);
+        using var paint = new SKPaint { Color = m.Color, IsAntialias = true };
+        canvas.DrawRect(box, plate);
+        canvas.DrawRect(box, edge);
+        canvas.DrawText(OptionalTag, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
+    }
+
     private static void DrawCountBadge(SKCanvas canvas, ShownMarker m, float ui)
     {
         var box = CountBadgeBox(m, ui);
@@ -327,7 +449,7 @@ public static partial class MapRenderer
         var at = Screen(camera, scene, marker.Position);
         var focused = IsFocused(scene, marker);
         var selected = IsSelected(scene, marker) || focused;
-        // The kept quest's markers are drawn in their own colour and larger than anything pointed at.
+        // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
         var kept = marker.Objective is not null && IsSelected(scene, marker);
         var color = kept ? Kept : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
@@ -336,6 +458,7 @@ public static partial class MapRenderer
         {
             { Objective: not null } => kept ? 14f : selected ? 12f : 10f,
             { Kind: MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit } => selected ? 9.5f : 7.5f,
+            { Kind: MarkerKind.Lock or MarkerKind.Switch } => selected ? 7.5f : 5.5f,
             _ => selected ? 8f : 6f,
         } * ui;
         var reach = marker.Kind switch
@@ -431,8 +554,9 @@ public static partial class MapRenderer
         canvas.Restore();
     }
 
+    // A marker of a picked quest (or a picked marker): the kept look.
     private static bool IsSelected(MapScene scene, MapMarker m) =>
-        scene.Selected is not null && (m.Id == scene.Selected || m.Group == scene.Selected);
+        scene.Kept.Count > 0 && (scene.Kept.Contains(m.Id) || (m.Group is not null && scene.Kept.Contains(m.Group)));
 
     private static bool IsFocused(MapScene scene, MapMarker m) =>
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
@@ -551,14 +675,49 @@ public static partial class MapRenderer
         canvas.Restore();
     }
 
+    // tarkov.dev's tile render (The Lab, Labyrinth, Icebreaker; docs/DESIGN.md §3): the base layer's tiles, and on another
+    // floor that floor's tiles over the base, dimmed as for SVG floors. The same treatment as SVG artwork (the recede
+    // filter), baked into each tile when it is decoded (MapTiles). Tiles are drawn without anti-aliasing, so neighbours
+    // meet on whole pixels with no seam.
+    private static void DrawTiles(SKCanvas canvas, Camera camera, MapScene scene, MapTiles tiles)
+    {
+        if (scene.Definition.TilePath is not { } basePath)
+            return;
+        var corner1 = camera.ToMap(new SKPoint(0, 0));
+        var corner2 = camera.ToMap(new SKPoint(camera.Viewport.Width, camera.Viewport.Height));
+        var view = new MapRect(Math.Min(corner1.X, corner2.X), Math.Min(corner1.Y, corner2.Y), Math.Max(corner1.X, corner2.X), Math.Max(corner1.Y, corner2.Y));
+        var bounds = scene.Projection.WorldRect;
+        var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+        using var plain = new SKPaint();
+        void Layer(string template)
+        {
+            canvas.Save();
+            var matrix = camera.Matrix;
+            canvas.Concat(in matrix);
+            // Inside the map's bounds only: the renders run on to whole tiles, past their own edge (Labyrinth's border
+            // line, its opaque background).
+            canvas.ClipRect(new SKRect((float)bounds.Left, (float)bounds.Top, (float)bounds.Right, (float)bounds.Bottom));
+            tiles.Draw(template, view, bounds, camera.Zoom, (image, source, target) =>
+                canvas.DrawImage(image, source, new SKRect((float)target.Left, (float)target.Top, (float)target.Right, (float)target.Bottom), sampling, plain));
+            canvas.Restore();
+        }
+        Layer(basePath);
+        if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
+        {
+            using var dim = new SKPaint { Color = Background.WithAlpha(150) };
+            canvas.DrawRect(canvas.LocalClipBounds, dim);
+            Layer(floorPath);
+        }
+    }
+
     // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the
     // extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid (10 m, every fifth line
     // stronger), so positions, distances and markers still read true. No walls: the data has none. The 10 m lines go
     // when they would crowd closer than 6 px. A caption in the sheet's corner says what it is.
-    private static readonly SKColor SheetPanel = SKColor.Parse("#121311");
-    private static readonly SKColor SheetEdge = SKColor.Parse("#45463f");
-    private static readonly SKColor SheetMinor = SKColor.Parse("#1c1d1a");
-    private static readonly SKColor SheetMajor = SKColor.Parse("#2a2b27");
+    private static readonly SKColor SheetPanel = Palette.Sk(Palette.SheetPanel);
+    private static readonly SKColor SheetEdge = Palette.Sk(Palette.LineStrong);
+    private static readonly SKColor SheetMinor = Palette.Sk(Palette.SheetMinor);
+    private static readonly SKColor SheetMajor = Palette.Sk(Palette.Line);
     private const double SheetSpacing = 10;
 
     private static void DrawSchematic(SKCanvas canvas, Camera camera, MapScene scene, float ui)
@@ -594,17 +753,47 @@ public static partial class MapRenderer
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
 
-    private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone)
+    /// <summary>A minefield or border-sniper zone from the data is left out over artwork that draws them itself; traps
+    /// always show.</summary>
+    public static bool HazardShown(MapZone zone, MapArtwork? artwork) => zone.Group switch
+    {
+        MapContentBuilder.MinefieldGroup => artwork is not { ShowsMinefields: true },
+        MapContentBuilder.SniperZoneGroup => artwork is not { ShowsSniperZones: true },
+        _ => true,
+    };
+
+    /// <summary>Hazard areas get a name from this zoom over the overview (like landmarks): "SNIPER ZONE".</summary>
+    public static string? HazardLabel(MapZone zone) => zone.Group == MapContentBuilder.SniperZoneGroup ? "SNIPER ZONE" : null;
+
+    /// <param name="hazardLabels">Collects hazard areas' names ("SNIPER ZONE", from <see cref="LandmarkFromZoom"/>) to draw
+    /// after every zone; null draws none.</param>
+    /// <param name="ground">The artwork's ground in screen space (<see cref="GroundShader"/>) that keeps a hazard to the
+    /// drawn map; null draws it whole.</param>
+    private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1,
+        List<(string Text, SKPoint At)>? hazardLabels = null, SKShader? ground = null)
     {
         if (zone.Outline.Count < 3)
             return;
-        using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
-        var kept = scene.Selected is not null && zone.Group == scene.Selected;
+        var points = zone.Outline.Select(p => Screen(camera, scene, p)).ToArray();
+        using var path = Polygon(points);
+        if (zone.Kind == MarkerKind.Hazard)
+        {
+            if (!HazardShown(zone, scene.Artwork))
+                return;
+            DrawHazard(canvas, path, scene, ui, ground);
+            // Named where it lies on the drawn map, not out in the empty space past its edge.
+            var centre = new SKPoint(points.Average(p => p.X), points.Average(p => p.Y));
+            if (hazardLabels is not null && HazardLabel(zone) is { } label && ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom
+                && (scene.Artwork is not { } artwork || artwork.OnGround(ToViewBox(camera, scene, centre))))
+                hazardLabels.Add((label, centre));
+            return;
+        }
+        var kept = zone.Group is not null && scene.Kept.Contains(zone.Group);
         var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
         var selected = kept || focused;
         // Zones outside the focus ease back with the scene's Dim, like the markers.
-        var fade = scene.ShownFocus.Count > 0 && !focused ? scene.Dim : 0f;
+        var fade = scene.ShownFocus.Count > 0 && !focused && !kept ? scene.Dim : 0f;
         using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35 - 23 * fade)), IsAntialias = true };
         using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : 140 - 90 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
         canvas.DrawPath(path, fill);
@@ -632,6 +821,93 @@ public static partial class MapRenderer
     }
 
     // Where the item the pointer is on lies loose: small open squares, like an empty inventory cell.
+    /// <summary>How strongly a lock's or switch's glyph is drawn when not pointed at (level 4).</summary>
+    private const byte LandmarkAlpha = 200;
+
+    // On a sheet, where loot containers stand: faint dots on the floor shown, so rooms and corridors show from real
+    // points where no artwork draws them (owner, 2026-10-03). Never on artwork, where they would be clutter.
+    private static void DrawContainers(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    {
+        if (scene.Containers.Count == 0)
+            return;
+        using var dot = new SKPaint { Color = Ink.WithAlpha(70), IsAntialias = true };
+        var r = 1.6f * ui;
+        var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        foreach (var container in scene.Containers)
+        {
+            var at = Screen(camera, scene, container);
+            if (view.Contains(at) && FloorOffset(scene, container) == 0)
+                canvas.DrawCircle(at, r, dot);
+        }
+    }
+
+    // A hazard area's name, set like a street name (Ink at 59 % on a halo of the ground), centred on the area.
+    private static void DrawHazardLabel(SKCanvas canvas, string text, SKPoint at, float ui)
+    {
+        using var font = new SKFont(Typeface, 10.5f * ui);
+        using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
+        canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, halo);
+        canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, paint);
+    }
+
+    // A hazard tarkov.dev outlines (traps, minefields, border-sniper zones): a thin ink outline, hatched, an area style
+    // nothing else uses. Thin and sparse, so the artwork reads through it (owner, 2026-10-03, on Customs' minefields: "big
+    // white rectangles"), and over artwork only where it draws the map (GroundShader).
+    private static void DrawHazard(SKCanvas canvas, SKPath path, MapScene scene, float ui, SKShader? ground = null)
+    {
+        var fade = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
+        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)(80 - 35 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.8f * ui };
+        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)(120 - 55 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var hatchOnGround = OnGround(hatch, ground);
+        using var edgeOnGround = OnGround(edge, ground);
+        var box = path.Bounds;
+        canvas.Save();
+        canvas.ClipPath(path, antialias: true);
+        var step = 5 * ui;
+        for (var x = box.Left - box.Height; x < box.Right; x += step)
+            canvas.DrawLine(x, box.Bottom, x + box.Height, box.Top, hatch);
+        canvas.Restore();
+        canvas.DrawPath(path, edge);
+    }
+
+    // A paint's colour taken through the ground's alpha (a shader in place of the colour); null: as it is.
+    private static SKShader? OnGround(SKPaint paint, SKShader? ground)
+    {
+        if (ground is null)
+            return null;
+        using var color = SKShader.CreateColor(paint.Color);
+        paint.Shader = SKShader.CreateBlend(SKBlendMode.DstIn, color, ground);
+        paint.Color = SKColors.Black;
+        return paint.Shader;
+    }
+
+    /// <summary>
+    /// The artwork's <see cref="MapArtwork.Ground"/> placed on the screen as the artwork is drawn (DrawArtwork), transparent
+    /// past its edge; null without artwork (tiles and sheets keep their hazards whole: they lie inside the render).
+    /// </summary>
+    private static SKShader? GroundShader(Camera camera, MapScene scene)
+    {
+        if (scene.Artwork is not { Ground: { } ground } artwork)
+            return null;
+        var box = artwork.ViewBox;
+        var place = scene.Placement;
+        var matrix = camera.Matrix
+            .PreConcat(SKMatrix.CreateTranslation((float)place.OffsetX, (float)place.OffsetY))
+            .PreConcat(SKMatrix.CreateScale((float)place.Scale, (float)place.Scale))
+            .PreConcat(SKMatrix.CreateTranslation(box.Left, box.Top))
+            .PreConcat(SKMatrix.CreateScale(box.Width / ground.Width, box.Height / ground.Height));
+        return ground.ToShader(SKShaderTileMode.Decal, SKShaderTileMode.Decal, new SKSamplingOptions(SKFilterMode.Linear), matrix);
+    }
+
+    // A screen point in the artwork's own coordinates (its viewBox), the inverse of DrawArtwork's placement.
+    private static SKPoint ToViewBox(Camera camera, MapScene scene, SKPoint screen)
+    {
+        var map = camera.ToMap(screen);
+        var place = scene.Placement;
+        return new SKPoint((float)((map.X - place.OffsetX) / place.Scale), (float)((map.Y - place.OffsetY) / place.Scale));
+    }
+
     private static void DrawSpawns(SKCanvas canvas, Camera camera, MapScene scene, float ui)
     {
         if (scene.Spawns.Count == 0)
@@ -648,7 +924,7 @@ public static partial class MapRenderer
         }
     }
 
-    // A dashed line from the player to the kept quest's nearest place.
+    // A dashed line from the player to the nearest place of the picked quests.
     private static void DrawGuide(SKCanvas canvas, GuideLine? guide, float ui)
     {
         if (guide is null)
@@ -661,13 +937,13 @@ public static partial class MapRenderer
         canvas.DrawLine(guide.From, guide.To, line);
     }
 
-    /// <summary>The guide from the player to the kept quest's nearest place, and its distance on a plate.</summary>
+    /// <summary>The guide from the player to the nearest place of the picked quests, and its distance on a plate.</summary>
     /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
 
     private static GuideLine? Guide(Camera camera, MapScene scene, float ui)
     {
-        if (scene.Player is not { } player || scene.Selected is null)
+        if (scene.Player is not { } player || scene.Kept.Count == 0)
             return null;
         var targets = scene.Markers.Where(m => IsSelected(scene, m) && m.Kind != MarkerKind.ObjectiveDone).ToList();
         if (targets.Count == 0)
@@ -740,7 +1016,7 @@ public static partial class MapRenderer
     /// <summary>How far in from the edge of the view the chevrons sit (pixels, before scaling).</summary>
     private const float ChevronInset = 18;
 
-    // The kept quest's places out of view, or the pointed-at quest's while the pointer is on it: one chevron per
+    // The picked quests' places out of view, and the pointed-at quest's while the pointer is on it: one chevron per
     // direction (places whose edge points lie within 56 px merge), in the quest's colour. The same vocabulary as the
     // player's edge badge, smaller and without a plate: the player is level 1.
     private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui)
@@ -751,7 +1027,7 @@ public static partial class MapRenderer
         var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color)>();
         foreach (var marker in scene.Markers)
         {
-            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !IsFocused(scene, marker))
+            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsFocused(scene, marker) || IsSelected(scene, marker)))
                 continue;
             var at = Screen(camera, scene, marker.Position);
             if (at.X >= 0 && at.X <= w && at.Y >= 0 && at.Y <= h)
@@ -911,7 +1187,7 @@ public static partial class MapRenderer
 
         if (scene.Pulsing && IsFocused(scene, marker))
             DrawPulse(canvas, scene, at, r, color, ui);
-        // The kept quest keeps a steady ring once it stops pulsing, so it is still found at a glance: a dark band,
+        // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band,
         // then the colour, so it reads on light and dark artwork alike.
         if (kept)
         {
@@ -992,6 +1268,13 @@ public static partial class MapRenderer
                     canvas.DrawPath(diamond, outline);
                 }
                 break;
+            case MarkerKind.Lock or MarkerKind.Switch:
+                // A glyph on a dark collar, no plate: quiet, and a shape no other marker has (a padlock, a power
+                // symbol). The key itself is the key glyph in BRING; the padlock is where it opens.
+                DrawCollar(canvas, at, r, ui);
+                Glyphs.Draw(canvas, marker.Kind == MarkerKind.Lock ? Glyphs.Lock : Glyphs.Switch, at, r * 1.9f,
+                    shown.Selected ? color : color.WithAlpha(LandmarkAlpha));
+                break;
             case MarkerKind.ObjectiveDone:
                 // Done: a smaller disc in muted ink with a check mark, which leaves green to the extracts.
                 DrawCollar(canvas, at, r * 0.8f, ui);
@@ -1018,6 +1301,8 @@ public static partial class MapRenderer
             DrawFloorArrow(canvas, shown, ui);
         if (shown.Count > 1)
             DrawCountBadge(canvas, shown, ui);
+        if (ShowsOptional(shown))
+            DrawOptionalBadge(canvas, shown, ui);
     }
 
     // ---- the player's new position: a ping where it is, or an arrow at the edge when it is out of view ----
@@ -1188,26 +1473,48 @@ public static partial class MapRenderer
         canvas.DrawCircle(at, 6.5f * ui, edge);
         if (!old)
             return;
-        var text = AgeText(age);
-        using var font = new SKFont(TypefaceBold, 10.5f * ui);
-        var box = AgeTagBox(at, font.MeasureText(text), ui);
-        using var plate = new SKPaint { Color = Background.WithAlpha(230), IsAntialias = true };
+        // Past PlayerStale the tag says so on its own, larger and framed in sand: it took over from the big
+        // "POSITION 7 MIN OLD" over the map (owner, 2026-10-03: "Put it next to the marker").
+        var (text, stale) = AgeTag(age);
+        using var font = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
+        var box = AgeTagBox(at, font.MeasureText(text), stale, ui);
+        using var plate = new SKPaint { Color = Background.WithAlpha((byte)(stale ? 240 : 230)), IsAntialias = true };
         using var paint = new SKPaint { Color = Player, IsAntialias = true };
         canvas.DrawRect(box, plate);
+        if (stale)
+        {
+            using var frame = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui };
+            canvas.DrawRect(box, frame);
+        }
         canvas.DrawText(text, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
     }
 
     /// <summary>From when the player's ring is dashed and carries an age tag.</summary>
     public static readonly TimeSpan PlayerOld = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    /// From when a position is too old to trust at a glance: the age tag then says "OLD", larger and framed (the same
+    /// two minutes the big banner over the map used before it was removed, owner, 2026-10-03).
+    /// </summary>
+    public static readonly TimeSpan PlayerStale = TimeSpan.FromMinutes(2);
+
     private const float PlayerRing = 12;
 
     /// <summary>A fix's age as the map says it: "4 MIN", "2 H" (whole units, as the top bar).</summary>
     public static string AgeText(TimeSpan age) => age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} MIN" : $"{(int)age.TotalHours} H";
 
+    /// <summary>The tag beside the player once the position is a minute old: "1 MIN", and from <see cref="PlayerStale"/>
+    /// "7 MIN OLD", larger and framed.</summary>
+    public static (string Text, bool Stale) AgeTag(TimeSpan age) => age >= PlayerStale ? (AgeText(age) + " OLD", true) : (AgeText(age), false);
+
+    private static float AgeTagSize(bool stale) => stale ? 12.5f : 10.5f;
+
     // The age tag sits right of the ring.
-    private static SKRect AgeTagBox(SKPoint at, float textWidth, float ui) =>
-        SKRect.Create(at.X + (PlayerRing + 5) * ui, at.Y - 8 * ui, textWidth + 10 * ui, 16 * ui);
+    private static SKRect AgeTagBox(SKPoint at, float textWidth, bool stale, float ui)
+    {
+        var height = (stale ? 20 : 16) * ui;
+        return SKRect.Create(at.X + (PlayerRing + 5) * ui, at.Y - height / 2, textWidth + (stale ? 12 : 10) * ui, height);
+    }
 
     private static SKPath Hexagon(SKPoint at, float r) =>
         Polygon(Enumerable.Range(0, 6).Select(i => new SKPoint(at.X + r * MathF.Cos(MathF.PI / 3 * i), at.Y + r * MathF.Sin(MathF.PI / 3 * i))).ToArray());

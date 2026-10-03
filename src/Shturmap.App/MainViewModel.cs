@@ -37,10 +37,13 @@ public sealed record MapChoice(string NormalizedName, string Name)
 /// <param name="Needs">What it needs brought on the map (empty: nothing), or null where bringing doesn't apply.</param>
 /// <param name="Synopsis">What it asks on the map in a few words, under the name; empty for none.</param>
 /// <param name="StartsGroup">The first row of a later effort group in a Plan section (Session.Planning.Rows).</param>
+/// <param name="Note">For a PROGRESS row, why it only progresses here ("2 of 5 objectives here"); else empty.</param>
 public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "", bool StartsGroup = false)
+    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "", bool StartsGroup = false, string Note = "")
 {
     public Visibility SynopsisVisibility => Synopsis.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility NoteVisibility => Note.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>A hairline above the row where a later effort group starts; no heading (owner, 2026-10-03).</summary>
     public Thickness GroupLine => StartsGroup ? new Thickness(0, 1, 0, 0) : new Thickness(0);
@@ -49,9 +52,13 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
 /// <param name="QuestIds">The quests it is for, for linked highlighting.</param>
 /// <param name="Source">The easiest way to get it ("Prapor LL1 · 18,936 ₽"), or empty.</param>
-public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds, string Source)
+/// <param name="StartsOthers">The first row that serves no pick, after rows that do: a hairline above it.</param>
+public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds, string Source,
+    bool StartsOthers = false)
 {
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);
 }
 
 /// <summary>One floor in the map's floor picker, top floor first.</summary>
@@ -78,9 +85,20 @@ public sealed record PlanCard(
     IReadOnlyList<QuestLine> Progress,
     IReadOnlyList<RequirementLine> Requirements,
     string Rank = "",
-    IReadOnlyList<Controls.NeedChip>? Needs = null)
+    IReadOnlyList<Controls.NeedChip>? Needs = null,
+    IReadOnlyList<QuestLine>? Picks = null)
 {
     public string MapTitle => Caps.Of(MapName);
+
+    /// <summary>The quests picked for the coming raid on this map, first in the card (owner, 2026-10-03).</summary>
+    public IReadOnlyList<QuestLine> Picked => Picks ?? [];
+
+    public Visibility PicksVisibility => Expanded && Picked.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>On a folded card, the picks' glyphs (cyan) come first, then a hairline.</summary>
+    public Visibility FoldedPicksVisibility => Picked.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility PickDividerVisibility => Picked.Count > 0 && Finish.Count + Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility FoldedVisibility => Expanded ? Visibility.Collapsed : Visibility.Visible;
 
@@ -93,6 +111,9 @@ public sealed record PlanCard(
 
     public Visibility ProgressVisibility => Expanded && Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>On a folded card, a hairline between the glyphs of quests to complete and those to progress.</summary>
+    public Visibility GlyphDividerVisibility => Finish.Count > 0 && Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility RequirementsVisibility => Expanded && Requirements.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Microsoft.UI.Xaml.Media.Brush CardBackground =>
@@ -102,15 +123,7 @@ public sealed record PlanCard(
 /// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
 /// <param name="Complete">Whether this raid can complete it (Plan's COMPLETE), or only progress it.</param>
 public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null)
-{
-    // As in Plan: quests this raid completes in gold and ink, the ones it only progresses muted.
-    public Microsoft.UI.Xaml.Media.Brush GlyphBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "AmberBrush" : "MutedBrush"];
-
-    public Microsoft.UI.Xaml.Media.Brush NameBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Complete ? "InkBrush" : "MutedBrush"];
-
-    public double PictureOpacity => Complete ? 1 : 0.6;
-}
+    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null);
 
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);
 
@@ -123,6 +136,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string ModeDetail { get; set; } = "";
 
     [ObservableProperty] public partial string RaidText { get; set; } = "Starting…";
+
+    /// <summary>Where the raid state comes from (the game's log), for its tooltip.</summary>
+    [ObservableProperty] public partial string RaidDetail { get; set; } = "";
 
     [ObservableProperty] public partial bool InRaid { get; set; }
 
@@ -145,6 +161,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool StudyLogOn { get; set; }
 
+    /// <summary>Help's "Uninstall Shturmap…" asks its one question.</summary>
+    [ObservableProperty] public partial bool UninstallAsking { get; set; }
+
+    /// <summary>"Also delete my Shturmap data": unticked until the player ticks it, and each time the question opens.</summary>
+    [ObservableProperty] public partial bool UninstallDeleteData { get; set; }
+
     [ObservableProperty] public partial IReadOnlyList<MapChoice> MapChoices { get; set; } = [];
 
     [ObservableProperty] public partial MapChoice? SelectedMap { get; set; }
@@ -164,11 +186,24 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The nearest extract or transit for your side, from the last position.</summary>
     [ObservableProperty] public partial ExtractItem? RaidExit { get; set; }
 
+    /// <summary>The picked quests on the raid's map, first in the raid card, nearest first.</summary>
+    [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidPicks { get; set; } = [];
+
+    /// <summary>Whether any quest is picked (for CLEAR PICKS, outside raids).</summary>
+    [ObservableProperty] public partial bool HasPicks { get; set; }
+
     [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidComplete { get; set; } = [];
 
     [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidProgress { get; set; } = [];
 
     [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidBring { get; set; } = [];
+
+    /// <summary>While the raid loads, "CHECK YOUR KIT": what gets you in or out, then what the picks need (or all of
+    /// it without picks here); BRING itself steps aside until the raid starts (Planning.KitWhileLoading).</summary>
+    [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidKit { get; set; } = [];
+
+    /// <summary>With picks here, the kit's other rows, under "ALSO USEFUL".</summary>
+    [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidKitMore { get; set; } = [];
 
     /// <summary>"PMC" or "SCAV" beside the raid card's title, or empty when the logs can't tell.</summary>
     [ObservableProperty] public partial string RaidSide { get; set; } = "";
@@ -200,12 +235,6 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"PREVIEW · CUSTOMS" while another map is shown from a Plan card under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
 
-    /// <summary>In a raid, "POSITION 7 MIN OLD" when the last position is too old to trust at a glance; else empty.</summary>
-    [ObservableProperty] public partial string StaleText { get; set; } = "";
-
-    /// <summary>What to do about it: "PRESS PRTSC OR HOME FOR A NEW ONE".</summary>
-    [ObservableProperty] public partial string StaleHint { get; set; } = "";
-
     [ObservableProperty] public partial string LastRaidText { get; set; } = "";
 
     [ObservableProperty] public partial IReadOnlyList<PlanCard> Plans { get; set; } = [];
@@ -221,10 +250,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The notice asks for a report: it shows a REPORT link (COPY DIAGNOSTICS where reporting isn't set up).</summary>
     [ObservableProperty] public partial bool NoticeOffersReport { get; set; }
 
-    /// <summary>The "Crash reports" setting in help: "Ask", "Always" or "Never".</summary>
+    /// <summary>The "Crash reports" setting in settings: "Ask", "Always" or "Never".</summary>
     [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";
 
-    /// <summary>The "Updates" setting in help: "Automatic", "TellOnly" or "Off".</summary>
+    /// <summary>The "Updates" setting in settings: "Automatic", "TellOnly" or "Off".</summary>
     [ObservableProperty] public partial string UpdateMode { get; set; } = "Automatic";
 
     /// <summary>This build can update itself (installed by its Setup); otherwise help says it can't.</summary>
@@ -232,6 +261,25 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>The one quiet line about a new version, between raids; empty when there is none.</summary>
     [ObservableProperty] public partial string UpdateLine { get; set; } = "";
+
+    /// <summary>The rail's line while the game, or its logs, aren't found (<see cref="Shturmap.Session.GameStateLine"/>); empty otherwise.</summary>
+    [ObservableProperty] public partial string GameLine { get; set; } = "";
+
+    [ObservableProperty] public partial string GameNote { get; set; } = "";
+
+    [ObservableProperty] public partial bool GameFolderChoosable { get; set; }
+
+    /// <summary>Settings' "GAME FOLDER" row: where Shturmap found the game, or that it didn't.</summary>
+    [ObservableProperty] public partial string GameFolderText { get; set; } = "";
+
+    /// <summary>Settings' CHOOSE… beside the game folder: whenever a folder can be chosen (not in a fake game).</summary>
+    [ObservableProperty] public partial bool GameFolderChangeable { get; set; }
+
+    /// <summary>No game logs to plan from (no game, or it hasn't run): NEXT RAID and its cards step aside for the line.</summary>
+    [ObservableProperty] public partial bool NoGameLogs { get; set; }
+
+    /// <summary>No game on this PC: the mode is chosen by hand instead of read from the log.</summary>
+    [ObservableProperty] public partial bool ModeChoosable { get; set; }
 
     [ObservableProperty] public partial bool UpdateOffersDownload { get; set; }
 

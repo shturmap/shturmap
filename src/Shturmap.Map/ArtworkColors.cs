@@ -14,7 +14,7 @@ public static class ArtworkColors
 
     // A saturation matrix around Rec. 709 luma, scaled by the brightness (owner, 2026-10-02: unhighlighted quest
     // markers were hard to find at a glance).
-    private static SKColorFilter Recede(float saturation, float brightness)
+    internal static SKColorFilter Recede(float saturation, float brightness)
     {
         float s = saturation, b = brightness, lr = 0.2126f, lg = 0.7152f, lb = 0.0722f;
         return SKColorFilter.CreateColorMatrix(

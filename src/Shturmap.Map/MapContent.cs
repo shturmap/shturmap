@@ -8,7 +8,15 @@ namespace Shturmap.Map;
 /// <param name="Places">Where on this map; empty for objectives with no fixed place (kills, hand-ins).</param>
 public sealed record ObjectiveOnMap(ApiTask Quest, ApiObjective Objective, IReadOnlyList<WorldPoint> Places, bool Done);
 
-public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<MapZone> Zones, IReadOnlyList<ObjectiveOnMap> Objectives);
+public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<MapZone> Zones, IReadOnlyList<ObjectiveOnMap> Objectives)
+{
+    /// <summary>Where the map's loot containers stand; drawn only on a sheet (<see cref="MapScene.Containers"/>).</summary>
+    public IReadOnlyList<WorldPoint> Containers { get; init; } = [];
+
+    /// <summary>Markers that light with a marker pointed at: an extract's switches, a switch's extracts
+    /// (<see cref="MapContentBuilder.ExtractSwitchLinks"/>).</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Links { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+}
 
 /// <summary>Builds what to draw on a map: extracts, transits, and the active quests' objectives.</summary>
 public static class MapContentBuilder
@@ -24,6 +32,11 @@ public static class MapContentBuilder
         if (!data.Maps.TryGetValue(mapId, out var map))
             return new MapContent(markers, zones, objectives);
         var sameArtwork = data.MapIdsSharing(map.NormalizedName);
+
+        // Landmarks first, so everything else draws over them (owner, 2026-10-03: locked doors with their keys,
+        // switches, and on a sheet the containers, all from tarkov.dev's data).
+        markers.AddRange(Landmarks(data, map));
+        zones.AddRange(Hazards(map));
 
         foreach (var extract in map.Extracts ?? [])
         {
@@ -70,7 +83,7 @@ public static class MapContentBuilder
                         continue;
                     places.Add(zone.Position.ToWorld());
                     markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.Objective,
-                        zone.Position.ToWorld(), quest.Name, quest.Id, kind));
+                        zone.Position.ToWorld(), quest.Name, quest.Id, kind, objective.Optional));
                     if (zone.Outline is { Count: >= 3 } outline)
                         zones.Add(new MapZone($"zone:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.Objective,
                             outline.Select(p => p.ToWorld()).ToList(), quest.Id));
@@ -84,7 +97,7 @@ public static class MapContentBuilder
                     {
                         places.Add(position.ToWorld());
                         markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.PossibleLocation,
-                            position.ToWorld(), quest.Name, quest.Id, kind));
+                            position.ToWorld(), quest.Name, quest.Id, kind, objective.Optional));
                     }
                 }
 
@@ -94,8 +107,142 @@ public static class MapContentBuilder
                     objectives.Add(new ObjectiveOnMap(quest, objective, places, done));
             }
         }
-        return new MapContent(markers, zones, objectives);
+        return new MapContent(markers, zones, objectives) { Containers = Containers(map), Links = ExtractSwitchLinks(map) };
     }
+
+    /// <summary>
+    /// An extract and the switches it needs light together (owner, 2026-10-03, from the map audit: you have to find
+    /// the switch to leave). An extract lists its switches; a switch that unlocks one of those (a power switch freeing
+    /// a lever) counts too, up to a few steps. Only switches the data places have markers; the chain runs through the
+    /// others. A switch the data lists for every extract of a map tells none of them apart and links nothing: Customs
+    /// lists one lever for all 27 extracts and The Lab the Med Elevator's three buttons for all 7, though most of them
+    /// need no switch. Marker ids: "extract:&lt;id&gt;" and "switch:&lt;id&gt;".
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> ExtractSwitchLinks(ApiMap map)
+    {
+        var placed = (map.Switches ?? []).Where(s => s.Position is not null).Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+        var extracts = map.Extracts ?? [];
+        var everywhere = extracts.Count > 1
+            ? extracts.Select(e => (IEnumerable<string>)(e.Switches ?? [])).Aggregate((a, b) => a.Intersect(b, StringComparer.Ordinal)).ToHashSet(StringComparer.Ordinal)
+            : [];
+        // Who unlocks whom, read backwards: for each switch, the switches whose flipping unlocks it (not those that lock it).
+        var activators = (map.Switches ?? [])
+            .SelectMany(s => (s.Activates ?? []).Where(a => a is { Operation: "Unlock", Switch: not null }).Select(a => (By: s.Id, Of: a.Switch!)))
+            .ToLookup(a => a.Of, a => a.By, StringComparer.Ordinal);
+        var links = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        void Link(string a, string b)
+        {
+            if (!links.TryGetValue(a, out var set))
+                links[a] = set = new HashSet<string>(StringComparer.Ordinal);
+            set.Add(b);
+        }
+        foreach (var extract in extracts)
+        {
+            var direct = (extract.Switches ?? []).Where(s => !everywhere.Contains(s)).ToList();
+            if (extract.Position is null || direct.Count == 0)
+                continue;
+            var needed = new HashSet<string>(direct, StringComparer.Ordinal);
+            var frontier = direct.ToList();
+            for (var step = 0; step < 4 && frontier.Count > 0; step++)
+                frontier = frontier.SelectMany(s => activators[s]).Where(needed.Add).ToList();
+            foreach (var s in needed.Where(placed.Contains))
+            {
+                Link("extract:" + extract.Id, "switch:" + s);
+                Link("switch:" + s, "extract:" + extract.Id);
+            }
+        }
+        return links.ToDictionary(l => l.Key, l => (IReadOnlyList<string>)l.Value.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
+    }
+
+    /// <summary>The group a lock's marker carries: pointing at its key (anywhere in the window) lights it.</summary>
+    public static string KeyGroup(string keyId) => "key:" + keyId;
+
+    /// <summary>The key a lock marker's group names, or null for any other group.</summary>
+    public static string? KeyOf(string? group) =>
+        group is not null && group.StartsWith("key:", StringComparison.Ordinal) ? group["key:".Length..] : null;
+
+    /// <summary>
+    /// The map's locks and switches as markers, from tarkov.dev's data (owner, 2026-10-03). A lock (a door, or a car's
+    /// trunk: both need a key) is labelled with its key's short name, as printed on the key ("TGL MO"), and "needs
+    /// power" where the data says so; its group is the key, so pointing at the key lights every lock it opens. A
+    /// switch is labelled with its name (power, alarm, elevator, trap switches); a name the data leaves untranslated is
+    /// just "Switch". Container locks would mark containers, which on a sheet are dots already; the data has none.
+    /// </summary>
+    public static IReadOnlyList<MapMarker> Landmarks(GameData data, ApiMap map)
+    {
+        var markers = new List<MapMarker>();
+        foreach (var l in map.Locks ?? [])
+        {
+            if (l.Position is null || l.LockType is not ("door" or "trunk"))
+                continue;
+            var label = l.Key is { } key ? data.ItemShortName(key) : "Locked";
+            if (l.NeedsPower)
+                label += " · needs power";
+            markers.Add(new MapMarker("lock:" + (l.Id ?? markers.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)), MarkerKind.Lock,
+                l.Position.ToWorld(), label, l.Key is { } k ? KeyGroup(k) : null));
+        }
+        foreach (var s in map.Switches ?? [])
+        {
+            if (s.Position is null)
+                continue;
+            var name = s.Name is { Length: > 0 } n && !n.StartsWith("switch_", StringComparison.Ordinal) ? n : "Switch";
+            markers.Add(new MapMarker("switch:" + s.Id, MarkerKind.Switch, s.Position.ToWorld(), name));
+        }
+        return markers;
+    }
+
+    /// <summary>
+    /// Hazards tarkov.dev outlines: Labyrinth's traps ("hazard"), trap-sized only, up to <see cref="HazardMaxArea"/>,
+    /// and minefields ("minefield"), whatever their size. Labyrinth's 18 traps are 2–27 m²; its 19th "hazard" is
+    /// 54 × 58 m, below the central hall's floor, and the data doesn't say what it is, so it is left out rather than
+    /// hatching the whole hall. Minefields are drawn where the artwork doesn't draw them itself (owner, 2026-10-03):
+    /// Woods, Shoreline, Lighthouse, Streets and Terminal have "mines" layers, Customs, Reserve, Interchange and Ground
+    /// Zero don't; the renderer leaves them out over artwork that shows them (<see cref="MinefieldGroup"/>,
+    /// <see cref="MapArtwork.ShowsMinefields"/>). "sniper" zones are the border snipers' kill zones (owner, 2026-10-03,
+    /// from the map audit), not sniper-Scav spawns: all 107 are named "ScavRole/Marksman", five of their eight maps
+    /// have no sniper Scavs at all, and they lie at the map's edges, where the artwork of Customs, Ground Zero, Streets
+    /// and Interchange draws them as "danger" groups. They are drawn the same way, where the artwork doesn't
+    /// (<see cref="SniperZoneGroup"/>, <see cref="MapArtwork.ShowsSniperZones"/>): the hatch means "this area kills you".
+    /// </summary>
+    public static IReadOnlyList<MapZone> Hazards(ApiMap map)
+    {
+        var hazards = map.Hazards ?? [];
+        var traps = hazards
+            .Where(h => h.HazardType == "hazard" && h.Outline is { Count: >= 3 } outline && Area(outline) <= HazardMaxArea)
+            .Select((h, i) => new MapZone($"hazard:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList()));
+        var minefields = hazards
+            .Where(h => h.HazardType == "minefield" && h.Outline is { Count: >= 3 })
+            .Select((h, i) => new MapZone($"minefield:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList(), MinefieldGroup));
+        var snipers = hazards
+            .Where(h => h.HazardType == "sniper" && h.Outline is { Count: >= 3 })
+            .Select((h, i) => new MapZone($"sniper-zone:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList(), SniperZoneGroup));
+        return [.. traps, .. minefields, .. snipers];
+    }
+
+    /// <summary>The group of a minefield's zone, so the renderer can leave it out over artwork that draws minefields.</summary>
+    public const string MinefieldGroup = "minefield";
+
+    /// <summary>The group of a border sniper's kill zone, left out over artwork that draws them; labelled "Sniper zone".</summary>
+    public const string SniperZoneGroup = "sniper-zone";
+
+    /// <summary>The largest hazard drawn, in m² (a trap; see <see cref="Hazards"/>).</summary>
+    public const double HazardMaxArea = 50;
+
+    // A polygon's area on the ground (x, z), shoelace formula.
+    private static double Area(IReadOnlyList<ApiPosition> outline)
+    {
+        var sum = 0.0;
+        for (var i = 0; i < outline.Count; i++)
+        {
+            var (a, b) = (outline[i], outline[(i + 1) % outline.Count]);
+            sum += a.X * b.Z - b.X * a.Z;
+        }
+        return Math.Abs(sum) / 2;
+    }
+
+    /// <summary>Where the map's loot containers stand (each place once).</summary>
+    public static IReadOnlyList<WorldPoint> Containers(ApiMap map) =>
+        (map.LootContainers ?? []).Where(c => c.Position is not null).Select(c => c.Position!.ToWorld()).Distinct().ToList();
 
     /// <summary>
     /// One marker per spawn zone, at the centroid (the mean of X, Y and Z) of the zone's points: AI Scav zones
@@ -118,11 +265,14 @@ public static class MapContentBuilder
             foreach (var (group, i) in Groups(Distinct(zone.Select(s => s.Position!.ToWorld()))).Select((g, i) => (g, i)))
                 markers.Add(new MapMarker(GroupId("sniper:" + zone.Key, i), MarkerKind.SniperSpawn, Centroid(group), "Sniper"));
 
-        // Per boss and zone: the label parts and the zone's points (the payload can list one boss several times).
-        var zones = new List<(string Mob, string Zone, List<string> Parts, List<WorldPoint> Points)>();
+        // Per boss or AI squad and zone: the label parts and the zone's points (the payload can list one boss several
+        // times). Bosses and the AI squads the bosses list carries (owner, 2026-10-03, from the map audit): Rogues,
+        // Raiders, cultists, Black Division and AF are as deadly and have spawn zones and chances in the data. Only the
+        // AI PMCs (pmcUSEC, pmcBEAR) are left out: they come everywhere and are no squad with a place.
+        var zones = new List<(string Mob, string Zone, List<SpawnPart> Parts, List<WorldPoint> Points)>();
         foreach (var boss in map.Bosses ?? [])
         {
-            if (!boss.Mob.StartsWith("boss", StringComparison.Ordinal))
+            if (boss.Mob is "pmcUSEC" or "pmcBEAR")
                 continue;
             var name = data.Mobs.TryGetValue(boss.Mob, out var mob) ? mob.Name : boss.Mob;
             foreach (var location in boss.SpawnLocations ?? [])
@@ -136,20 +286,20 @@ public static class MapContentBuilder
                     zones.Add((boss.Mob, key, [], []));
                     index = zones.Count - 1;
                 }
-                var part = $"{name} {Percent(boss.SpawnChance)}%" + (location.Chance < 0.995 ? $" · {Percent(location.Chance)}% here" : "");
+                var part = new SpawnPart(name, Percent(boss.SpawnChance), location.Chance < 0.995 ? Percent(location.Chance) : null);
                 if (!zones[index].Parts.Contains(part))
                     zones[index].Parts.Add(part);
                 zones[index].Points.AddRange(positions.Select(p => p.ToWorld()));
             }
         }
-        var placed = new List<(WorldPoint At, List<string> Mobs, List<string> Parts, string Id)>();
+        var placed = new List<(WorldPoint At, List<string> Mobs, List<SpawnPart> Parts, string Id)>();
         foreach (var zone in zones)
         {
             foreach (var (group, i) in Groups(Distinct(zone.Points)).Select((g, i) => (g, i)))
             {
                 var at = Centroid(group);
                 // The zone's share is said once, on its largest group.
-                List<string> parts = i == 0 ? zone.Parts : [];
+                List<SpawnPart> parts = i == 0 ? zone.Parts : [];
                 var same = placed.FindIndex(p => p.At.HorizontalDistanceTo(at) < 3 && Math.Abs(p.At.Y - at.Y) < 3);
                 if (same < 0)
                 {
@@ -162,9 +312,22 @@ public static class MapContentBuilder
             }
         }
         foreach (var p in placed)
-            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, string.Join(" / ", p.Parts), BossGroup(p.Mobs)));
+            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, SpawnLabel(p.Parts), BossGroup(p.Mobs)));
         return markers;
     }
+
+    /// <summary>One entry of a boss or AI squad at a place: its name, its chance on the map, and its zone's share.</summary>
+    public sealed record SpawnPart(string Name, int Chance, int? Here);
+
+    /// <summary>
+    /// A boss marker's label: "Kollontay 75% · 50% here", "Reshala 75% · 33% here / Knight 25%". Several entries of one
+    /// name at one place say their chances in one line, highest first: Lighthouse's Chalet lists Rogues at 100, 90 and
+    /// 50 % ("Rogue 100%, 90%, 50%"), each a group that may spawn.
+    /// </summary>
+    public static string SpawnLabel(IEnumerable<SpawnPart> parts) =>
+        string.Join(" / ", parts.GroupBy(p => (p.Name, p.Here)).Select(g =>
+            $"{g.Key.Name} {string.Join(", ", g.Select(p => p.Chance).Distinct().OrderDescending().Select(c => c + "%"))}" +
+            (g.Key.Here is { } here ? $" · {here}% here" : "")));
 
     // A marker must stand among its points: within 25 m across and 3 m (about a floor) in height of one of them.
     // tarkov.dev's zones can span 450 m (Customs, Interchange) or reach into a bunker (Reserve), and one marker at
@@ -270,5 +433,5 @@ public static class MapContentBuilder
         return kept;
     }
 
-    private static string Percent(double share) => Math.Round(share * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+    private static int Percent(double share) => (int)Math.Round(share * 100);
 }

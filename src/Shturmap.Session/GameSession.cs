@@ -23,7 +23,7 @@ namespace Shturmap.Session;
 /// work (downloads) runs outside it.
 /// </summary>
 /// <param name="locations">Game folders to use instead of discovering them (simulations and tests).</param>
-public sealed class GameSession(AppPaths paths, GameLocations? locations = null) : IAsyncDisposable
+public sealed partial class GameSession(AppPaths paths, GameLocations? locations = null) : IAsyncDisposable
 {
 
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -137,7 +137,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     /// <summary>Raised after every change, on a background thread.</summary>
     public event Action<SessionSnapshot>? Changed;
 
-    /// <summary>Short messages for the user ("Raid started on Customs", "Loading Streets of Tarkov · bring: …").</summary>
+    /// <summary>Short messages for the user ("Raid started on Customs", "Scav raid on Customs · …").</summary>
     public event Action<SessionNotice>? Notice;
 
     public async Task StartAsync()
@@ -147,18 +147,24 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         {
             var env = new WindowsGameEnvironment();
             _store = new ProgressStore(paths.Database);
+            _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
             Study.Context = StudyContext;
             Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
             Study.Prune(DateTime.Now);
             Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
                 ("build", BuildTime()), ("prevClean", MarkRunning()));
-            _locations = locations ?? new InstallLocator(env).Locate(_store.GetSetting("installFolder"));
+            _env = env;
+            // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
+            // looked for again (the player chose a folder, or the game was installed later).
+            _locate = locations is not null ? null : folder => new InstallLocator(env).Locate(folder, discover: !NoGame);
+            _locations = locations ?? _locate!(_store.GetSetting(InstallFolderSetting));
             ReportGameFolders(_locations);
             _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
             AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
             var http = CachedHttp.CreateClient();
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
-            Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache);
+            Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache,
+                new CachedHttp(http, paths.MapTileCache));
             Art = new GameArt(http, paths.GameArtCache);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;
@@ -173,15 +179,189 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
         _ = Task.Run(() => LoadDataAsync(_mode));
         _ = Task.Run(BackfillLogsAsync);
-        if (_locations.LogsFolder is { } logs)
-        {
-            _tailer = new LogTailer(logs);
-            _tailer.Start();
-            _ = Task.Run(ConsumeLogsAsync);
-        }
+        FollowLogs();
         _watcher = new ScreenshotWatcher(_locations.ScreenshotsFolder);
         _watcher.ScreenshotTaken += s => _ = Task.Run(() => OnScreenshotAsync(s));
         _watcher.Start();
+        if (_locate is not null)
+            _ = Task.Run(LookAgainAsync);
+    }
+
+    // ---- the game's folders: found, chosen, or found later (owner, 2026-10-03: the no-game fallback) ----
+
+    /// <summary>The setting that holds the folder the player chose with "Choose game folder…".</summary>
+    public const string InstallFolderSetting = "installFolder";
+
+    /// <summary>While the game or its logs aren't found, discovery runs again this often (registry and file checks
+    /// only), so a game installed or first started later is followed without a restart.</summary>
+    public static readonly TimeSpan LookAgainEvery = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Developer switch <c>--no-game</c>: discovery looks only at a folder the player chose, so the no-game state can
+    /// be seen on a PC that has the game. Set before <see cref="StartAsync"/>.
+    /// </summary>
+    public bool NoGame { get; init; }
+
+    private IGameEnvironment? _env;
+    private Func<string?, GameLocations>? _locate;
+
+    /// <summary>Whether "Choose game folder…" can work here: not with game folders given from outside (fake games).</summary>
+    public bool CanChooseGameFolder => _locate is not null;
+
+    /// <summary>
+    /// The folder the player chose for the game. It counts if it holds the game (the build folder or the one above it,
+    /// as discovery accepts them); then it is saved and followed from now on, without a restart: its logs are read for
+    /// quest history and followed live. If it doesn't, nothing changes and the notice says why.
+    /// </summary>
+    /// <returns>True if the folder holds the game.</returns>
+    public async Task<bool> ChooseGameFolderAsync(string folder)
+    {
+        if (_locate is null)
+            return false;
+        var found = _locate(folder);
+        var chosen = ChosenCandidate(found);
+        if (chosen is not { IsValid: true })
+        {
+            AppLog.Info($"Game folder chosen but not the game: {folder} ({chosen?.Rejected ?? "not considered"})");
+            await SayAsync(InstallLocator.Explain(chosen), 12);
+            return false;
+        }
+        await _gate.WaitAsync();
+        try
+        {
+            _store?.SetSetting(InstallFolderSetting, folder);
+            AppLog.Info("Game folder chosen: " + folder);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+        await FollowAsync(found);
+        return true;
+    }
+
+    // Looks for the game again while it, or its logs, aren't found; stops looking once both are.
+    private async Task LookAgainAsync()
+    {
+        try
+        {
+            while (!_stop.IsCancellationRequested)
+            {
+                await Task.Delay(LookAgainEvery, _stop.Token);
+                if (_locations is { Install: not null, LogsFolder: not null } || _locate is null)
+                    continue;
+                var found = _locate(_store?.GetSetting(InstallFolderSetting));
+                if (SameGame(found, _locations))
+                    continue;
+                await FollowAsync(found);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    /// <summary>The same game in the same place: nothing to switch.</summary>
+    public static bool SameGame(GameLocations a, GameLocations? b) =>
+        string.Equals(a.Install?.Root, b?.Install?.Root, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(a.LogsFolder, b?.LogsFolder, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The chosen folder in what discovery made of it: the game if <see cref="InstallCandidate.IsValid"/>, else why not.</summary>
+    public static InstallCandidate? ChosenCandidate(GameLocations found) => found.Candidates.FirstOrDefault(c => c.Kind == InstallKind.Manual);
+
+    /// <summary>A switch worth saying once: the game's logs are followed now, where none (or others) were before.</summary>
+    public static bool SaysFound(GameLocations? before, GameLocations after) =>
+        after.LogsFolder is not null && !string.Equals(after.LogsFolder, before?.LogsFolder, StringComparison.OrdinalIgnoreCase);
+
+    // Follows other game folders from now on: the settings read again, the old logs let go, the new ones read for quest
+    // history and followed live. Says once when the game is followed now where it wasn't before.
+    private async Task FollowAsync(GameLocations found)
+    {
+        // A choice and the next look-again never switch the logs at the same time.
+        await _following.WaitAsync();
+        try
+        {
+            await FollowNowAsync(found);
+        }
+        finally
+        {
+            _following.Release();
+        }
+    }
+
+    private readonly SemaphoreSlim _following = new(1, 1);
+
+    private async Task FollowNowAsync(GameLocations found)
+    {
+        LogTailer? old;
+        await _gate.WaitAsync();
+        try
+        {
+            var say = SaysFound(_locations, found);
+            old = string.Equals(found.LogsFolder, _locations?.LogsFolder, StringComparison.OrdinalIgnoreCase) ? null : _tailer;
+            if (old is not null)
+                _tailer = null;
+            _locations = found;
+            ReportGameFolders(found, notice: false);
+            if (_env is not null)
+                _settings = new GameSettingsReader(_env).Read(found.SettingsFolder);
+            if (say)
+                Say($"Found Escape from Tarkov in {found.Install!.Root}: quests and raids follow the game now.", 10);
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+        if (old is not null)
+            await old.DisposeAsync();
+        if (_tailer is null)
+            FollowLogs();
+        await BackfillLogsAsync();
+    }
+
+    // Follows the found logs live, if there are any.
+    private void FollowLogs()
+    {
+        if (_locations?.LogsFolder is not { } logs)
+            return;
+        _tailer = new LogTailer(logs);
+        _tailer.Start();
+        _ = Task.Run(ConsumeLogsAsync);
+    }
+
+    /// <summary>
+    /// The mode, chosen by the player: only while no game is found (owner, 2026-10-03: the mode comes from the game's
+    /// log; a chooser belongs to the no-game state, where there is no log to say it). Loads that mode's data.
+    /// </summary>
+    public async Task ChooseModeAsync(GameMode mode)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_locations is not { Install: null })
+                return;
+            Study.Ui("mode.choose", ("mode", mode));
+            SwitchMode(mode);
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task SayAsync(string message, double seconds)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            Say(message, seconds);
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     // ---- inputs from the UI ----
@@ -342,7 +522,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     }
 
     // Said once at start when the game or its logs aren't found: without them quests and raids can't follow the game.
-    private void ReportGameFolders(GameLocations found)
+    // Logs where the game was found. The rail says it as long as the game or its logs are missing (the no-game line),
+    // so no notice says it a second time; notice: true only for the developer view's old trigger.
+    private void ReportGameFolders(GameLocations found, bool notice = false)
     {
         if (found.Install is { } install)
             AppLog.Info($"Game found: {install.Kind} at {install.Root} ({install.Found})");
@@ -359,6 +541,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         else
             AppLog.Warn(line);
 
+        if (!notice)
+            return;
         if (found.Install is null)
             Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it.", 30, offersReport: true);
         else if (found.LogsFolder is null)
@@ -535,15 +719,18 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 ResolveMap();
                 if (!item.IsReplay && _map is not null)
                 {
-                    // Last call while matching can still be cancelled: what this map's quests need.
-                    var bring = BringOn(_map);
-                    Say(bring is not null ? $"Loading {_map.Name} · bring: {bring}" : $"Loading {_map.Name}", bring is not null ? 45 : 6);
-                    Announce(new ViewCue(phaseBefore == RaidPhase.InRaid ? CueKind.Transit : CueKind.RaidLoading, _map.Name));
+                    // The scene line comes 1–2 s after matching starts (owner's logs: 30 loads), while matching can
+                    // still be cancelled: the cue pictures the kit, the raid card lists it until the raid starts. A
+                    // transit's gear is what the raid had, so its cue shows none.
+                    if (phaseBefore == RaidPhase.InRaid)
+                        Announce(new ViewCue(CueKind.Transit, _map.Name));
+                    else
+                        Announce(KitCue(CueKind.RaidLoading, _map, "loading"));
                 }
                 break;
             case RaidStarted started:
                 ResolveMap();
-                // The side is only known now; the bring-list said at loading was for a PMC.
+                // The side is only certain now; the kit shown while loading was a PMC's, unless a setup said Scav.
                 if (!item.IsReplay && started.State.Side == RaidSide.Scav && _map is not null)
                 {
                     Say($"Scav raid on {_map.Name} · quest objectives don't count, items found in raid do", 8);
@@ -576,16 +763,27 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
     }
 
-    // What the active quests need on a map, for the notices: "MS2000 Marker ×3, Bomber beanie"; null when nothing.
-    private string? BringOn(MapIdentity map)
+    // The kit reminder for a map (Planning.Kit): what every active quest needs there, picks first.
+    private Planning.KitList KitOn(MapIdentity map)
     {
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-        var needs = _data is null ? null : Planning.PlanFor(_data, active, map.NormalizedName)?.Requirements;
-        return needs is { Count: > 0 } ? string.Join(", ", needs.Select(r => r.Text)) : null;
+        return _data is null ? Planning.KitList.Empty : Planning.Kit(Planning.PlanFor(_data, active, map.NormalizedName), Picks);
     }
 
-    // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now and say what to
-    // bring, while there is still time to change gear. Only in the menus; a later pick replaces it.
+    // A raid loading's or a group pick's cue with the kit pictured (owner, 2026-10-03: the text notice "Loading … ·
+    // bring: …" was long and came as a list of words; the pictures read at a glance). The study log notes it.
+    private ViewCue KitCue(CueKind kind, MapIdentity map, string when)
+    {
+        var kit = KitOn(map);
+        var (shown, more) = Planning.CueKit(kit);
+        var picks = Picks;
+        Study.Game("kit.reminder", ("when", when), ("map", map.NormalizedName), ("items", kit.Count),
+            ("forPicks", kit.All.Count(r => r.QuestIds.Any(picks.Contains))));
+        return new ViewCue(kind, map.Name, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind)).ToList(), KitMore: more);
+    }
+
+    // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now with its kit,
+    // while there is still time to change gear. Only in the menus; a later pick replaces it.
     private void OnGroupPick(GroupRaidSettingsEvent pick)
     {
         var map = _data?.CreateResolver().Resolve(null, pick.LocationId);
@@ -594,9 +792,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             return;
         _map = map;
         _store?.SetSetting("lastMap", map.NormalizedName);
-        var bring = BringOn(map);
-        Say(bring is not null ? $"Your group picked {map.Name} · bring: {bring}" : $"Your group picked {map.Name}", bring is not null ? 45 : 8);
-        Announce(new ViewCue(CueKind.GroupPick, map.Name));
+        Announce(KitCue(CueKind.GroupPick, map, "groupPick"));
     }
 
     // A hint of how the raid ended, for the study log only: never shown, and no hint proves nothing.
@@ -760,8 +956,63 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             id => tasks?.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new QuestRequirement(r.Task, r.Status ?? [])) ?? [],
             id => tasks?.GetValueOrDefault(id)?.Name ?? id);
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId).ToList();
-        _plan = _data is null ? [] : Planning.Suggest(_data, active);
+        // A picked quest the log reports completed or failed has nothing left to do: it leaves the picks by itself.
+        foreach (var done in _picks?.Prune(_mode, _quests) ?? [])
+            Study.Ui("unpick", ("quest", done), ("how", "done"));
+        _plan = _data is null ? [] : Planning.Suggest(_data, active, Picks);
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active);
+    }
+
+    // ---- picks: the quests chosen for the coming raid ----
+
+    private QuestPicks? _picks;
+
+    private IReadOnlySet<string> Picks => _picks?.Of(_mode) ?? new HashSet<string>();
+
+    /// <summary>
+    /// Picks a quest for the coming raid, or unpicks it (the pen on a quest). Only an active quest can be picked; a
+    /// pick holds until the quest is done, the pen is clicked again or the picks are cleared.
+    /// </summary>
+    /// <param name="how">For the study log: "pen", "snapshot", ….</param>
+    /// <param name="save">False for a pick that must not outlive the session (developer snapshots).</param>
+    public async Task TogglePickAsync(string questId, string how, bool save = true)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_picks is null)
+                return;
+            var picked = Picks.Contains(questId);
+            if (!picked && _quests.GetValueOrDefault(questId)?.State != QuestState.Active)
+                return;
+            var now = _picks.Toggle(_mode, questId, save);
+            Study.Ui(now ? "pick" : "unpick", ("quest", questId), ("how", how), ("picks", Picks.Count));
+            RecomputeQuests();
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Unpicks every quest for this mode (CLEAR PICKS, outside raids).</summary>
+    public async Task ClearPicksAsync()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_picks is null || Picks.Count == 0)
+                return;
+            Study.Ui("picks.clear", ("picks", Picks.Count));
+            _picks.Clear(_mode);
+            RecomputeQuests();
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     public string? GetSetting(string key) => _store?.GetSetting(key);
@@ -828,9 +1079,9 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     height = Math.Abs(dy) > 3 ? dy : null;
                 }
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
-                    string.IsNullOrWhiteSpace(o.Objective.Description) ? "(no description)" : o.Objective.Description!,
+                    ObjectiveText(o.Objective),
                     o.Done, o.Places.Count > 0, distance, direction, height,
-                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
+                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
                     bearing, o.Quest.Trader));
             }
             var shownMap = _data.Maps.GetValueOrDefault(_map.Id);
@@ -872,6 +1123,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 .ToList(),
             Extracts = extracts.OrderBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
             Locations = _locations,
+            CanChooseGameFolder = _locate is not null,
             Logs = LogsHealth(),
             Screenshots = _locations is null ? new(false, "Looking for screenshots…")
                 : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, "Screenshots") : new(false, "No screenshots yet"),
@@ -883,6 +1135,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             StudyLogOn = Study.Enabled,
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
+            Picks = Picks,
             AnyMap = _anyMap,
             MapPlan = _data is not null && _map is not null
                 ? _plan.FirstOrDefault(p => p.NormalizedName == _map.NormalizedName)
@@ -916,6 +1169,13 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             return new(true, "Logs live");
         return new(true, "Logs");
     }
+
+    /// <summary>
+    /// An objective's line in the raid card: its description, and "(optional)" when tarkov.dev marks it so, as the
+    /// quest card says it (owner, 2026-10-03: optional places "might still be very relevant for a quest").
+    /// </summary>
+    public static string ObjectiveText(ApiObjective objective) =>
+        (string.IsNullOrWhiteSpace(objective.Description) ? "(no description)" : objective.Description!) + (objective.Optional ? " (optional)" : "");
 
     // ---- study log: why a session started ----
 

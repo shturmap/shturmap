@@ -151,11 +151,11 @@ public sealed partial class MainWindow
             Linked.PointAt(null);
         }
 
-        // Let go, as with Esc, and back to where the clip started.
+        // Unpick it, and back to where the clip started.
         await MovePointer(rest, 650);
         _ = HidePointer();
         _cards.CloseAll();
-        ClearSelection();
+        Linked.RequestKeep(quest); // unpick it again
         Map.AnimateView(startView, TimeSpan.FromMilliseconds(1300));
         await Task.Delay(1400);
         AppLog.Debug("Demo: end");

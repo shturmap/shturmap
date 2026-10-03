@@ -103,7 +103,8 @@ public class LogReplayTests
                 ("maps/sandbox_start_preset.bundle", RaidSide.Unknown, true),
                 ("maps/shopping_mall.bundle", RaidSide.Pmc, true),
                 ("maps/customs_preset.bundle", RaidSide.Pmc, true),
-                ("maps/shopping_mall.bundle", RaidSide.Unknown, false), // matching cancelled
+                // Matching cancelled, after the setup had named the Scav profile: the side is known while loading.
+                ("maps/shopping_mall.bundle", RaidSide.Scav, false),
                 ("maps/shopping_mall.bundle", RaidSide.Scav, true),
                 ("maps/customs_preset.bundle", RaidSide.Pmc, true),
                 ("maps/customs_preset.bundle", RaidSide.Pmc, true),

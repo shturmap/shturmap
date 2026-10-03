@@ -125,7 +125,7 @@ public static class QuestCards
         if (o.Optional)
             text += " (optional)";
         var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
-            ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id;
+            ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id ?? o.UsingWeapon?.FirstOrDefault();
         return new CardObjective(task.Id, o.Id, kind, text, where, item, live);
     }
 
@@ -153,18 +153,22 @@ public static class QuestCards
             if (alternatives.Count == 0)
                 return;
             var names = alternatives.Select(data.ItemName).Distinct().ToList();
-            var text = kind == RequirementKind.Wear ? Planning.GearText(data, alternatives)
-                : names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+            var text = kind switch
+            {
+                RequirementKind.Wear or RequirementKind.WeaponMods => Planning.GearText(data, alternatives),
+                RequirementKind.Weapon => Planning.WeaponText(data, sources, alternatives),
+                _ => names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others",
+            };
             if (count > 1)
-                text += $" ×{count}";
+                text += " ×" + count.ToString("N0", CultureInfo.CurrentCulture);
             var where = MapNames(data, maps);
             if (needs.Any(n => n.Text == text))
                 return;
             var why = string.Join(" · ", new[] { purpose, where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
-            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, why, ItemCards.Best(data, sources, alternatives[0])?.Text ?? ""));
+            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, why, ItemCards.BestOf(data, sources, alternatives)));
         }
 
-        foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task).Objectives))
+        foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
         {
             var maps = (o.Maps ?? []).Concat((o.Zones ?? []).Select(z => z.Map)).OfType<string>().ToList();
             foreach (var keys in plan.Keys)
@@ -179,6 +183,12 @@ public static class QuestCards
                 });
             if (plan.Wear is { Count: > 0 } wear)
                 Add(RequirementKind.Wear, wear.SelectMany(s => s).Distinct().ToList(), 1, maps, "to wear");
+            if (plan.Weapons is { Count: > 0 } weapons)
+                Add(RequirementKind.Weapon, weapons, 1, maps, "to use");
+            if (plan.Mods is { Count: > 0 } mods)
+                Add(RequirementKind.WeaponMods, mods.SelectMany(s => s).Distinct().ToList(), 1, maps, "to fit");
+            foreach (var (item, count) in plan.ExitItems ?? [])
+                Add(RequirementKind.Exit, [item], count, maps, "to leave through " + plan.Exit);
         }
         foreach (var needed in task.NeededKeys ?? [])
             foreach (var key in needed.Keys ?? [])
