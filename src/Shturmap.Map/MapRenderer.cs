@@ -45,12 +45,14 @@ public static partial class MapRenderer
             DrawTiles(canvas, camera, scene, tiles);
         else
             DrawSchematic(canvas, camera, scene, uiScale);
+        if (scene.IsSheet)
+            DrawContainers(canvas, camera, scene, uiScale);
 
         var layout = Layout(camera, scene, uiScale);
         foreach (var name in layout.Names)
             DrawMapName(canvas, name, uiScale);
         foreach (var zone in scene.Zones)
-            DrawZone(canvas, camera, scene, zone);
+            DrawZone(canvas, camera, scene, zone, uiScale);
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
@@ -109,7 +111,7 @@ public static partial class MapRenderer
     {
         MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit or MarkerKind.BossSpawn
             => new(1f, 1f, inRaid ? 1f : 0.7f),
-        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
+        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn or MarkerKind.Lock or MarkerKind.Switch => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
         _ => inRaid ? new(0.8f, 1f, 0.6f) : new(0.62f, 1f, 0.45f),
     };
 
@@ -212,7 +214,10 @@ public static partial class MapRenderer
         var labels = new List<PlacedLabel>();
         using var regular = new SKFont(Typeface, 11.5f * ui);
         using var bold = new SKFont(TypefaceBold, 13 * ui);
-        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected)).OrderBy(LabelRank).ThenByDescending(m => m.Count))
+        // A lock's key and a switch's name are said close up, or for the one pointed at.
+        var landmarkLabels = ZoomOverOverview(camera, scene, ui) >= LandmarkLabelFromZoom;
+        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected) && (m.Selected || landmarkLabels || !IsLandmark(m.Marker.Kind)))
+                     .OrderBy(LabelRank).ThenByDescending(m => m.Count))
         {
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
             if (labels.Any(l => l.Text == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
@@ -271,14 +276,28 @@ public static partial class MapRenderer
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
     public const float LabelRepeat = 250;
 
-    // Label priority: what the player picked, then bosses, quests, ways out, snipers.
+    // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
     private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Marker.Kind switch
     {
         MarkerKind.BossSpawn => 1,
         MarkerKind.Objective or MarkerKind.PossibleLocation or MarkerKind.ObjectiveDone => 2,
         MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit => 3,
+        MarkerKind.Lock or MarkerKind.Switch => 5,
         _ => 4,
     };
+
+    /// <summary>Locks and switches: level-4 landmarks from tarkov.dev's data (docs/DESIGN.md, "Map drawing").</summary>
+    public static bool IsLandmark(MarkerKind kind) => kind is MarkerKind.Lock or MarkerKind.Switch;
+
+    /// <summary>
+    /// From which zoom (a multiple of the overview, as for the map's names) locks and switches show on a map with
+    /// artwork: Streets has 63 locks, Customs 36, Reserve 34, too many for the overview. On a sheet they show at any
+    /// zoom (they are among the few things it has). What is pointed at shows at any zoom.
+    /// </summary>
+    public const double LandmarkFromZoom = 1.5;
+
+    /// <summary>From which zoom their labels (the key's short name, the switch's name) show unless pointed at.</summary>
+    public const double LandmarkLabelFromZoom = 2.5;
 
     /// <summary>Where a marker label may go, in order: right, left, above and below the symbol.</summary>
     /// <param name="clearance">From the symbol's centre to the label's near edge.</param>
@@ -312,7 +331,12 @@ public static partial class MapRenderer
     {
         var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
         view.Inflate(40 * ui, 40 * ui);
-        var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui))).ToList();
+        // Locks and switches are level 4: from a zoom on maps with artwork, and on the floor shown; the ones pointed at
+        // show anyway, with their floor arrow (The Lab's other floors would otherwise cover the sheet with arrows).
+        var landmarks = scene.IsSheet || ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom;
+        var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui)))
+            .Where(s => !IsLandmark(s.Shown.Marker.Kind) || s.Shown.Selected || (landmarks && s.Shown.Floor == 0))
+            .ToList();
         var result = new List<(int Index, ShownMarker Shown)>();
         foreach (var group in shown.GroupBy(s => ObjectiveOf(s.Shown.Marker) is { } objective ? $"{objective}|{s.Shown.Marker.Kind}" : "#" + s.Index))
         {
@@ -420,6 +444,7 @@ public static partial class MapRenderer
         {
             { Objective: not null } => kept ? 14f : selected ? 12f : 10f,
             { Kind: MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit } => selected ? 9.5f : 7.5f,
+            { Kind: MarkerKind.Lock or MarkerKind.Switch } => selected ? 7.5f : 5.5f,
             _ => selected ? 8f : 6f,
         } * ui;
         var reach = marker.Kind switch
@@ -714,11 +739,16 @@ public static partial class MapRenderer
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
 
-    private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone)
+    private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1)
     {
         if (zone.Outline.Count < 3)
             return;
         using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
+        if (zone.Kind == MarkerKind.Hazard)
+        {
+            DrawHazard(canvas, path, scene, ui);
+            return;
+        }
         var kept = zone.Group is not null && scene.Kept.Contains(zone.Group);
         var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
@@ -752,6 +782,42 @@ public static partial class MapRenderer
     }
 
     // Where the item the pointer is on lies loose: small open squares, like an empty inventory cell.
+    /// <summary>How strongly a lock's or switch's glyph is drawn when not pointed at (level 4).</summary>
+    private const byte LandmarkAlpha = 200;
+
+    // On a sheet, where loot containers stand: faint dots on the floor shown, so rooms and corridors show from real
+    // points where no artwork draws them (owner, 2026-10-03). Never on artwork, where they would be clutter.
+    private static void DrawContainers(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    {
+        if (scene.Containers.Count == 0)
+            return;
+        using var dot = new SKPaint { Color = Ink.WithAlpha(70), IsAntialias = true };
+        var r = 1.6f * ui;
+        var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        foreach (var container in scene.Containers)
+        {
+            var at = Screen(camera, scene, container);
+            if (view.Contains(at) && FloorOffset(scene, container) == 0)
+                canvas.DrawCircle(at, r, dot);
+        }
+    }
+
+    // A hazard tarkov.dev outlines (Labyrinth's traps): a thin ink outline, hatched, an area style nothing else uses.
+    private static void DrawHazard(SKCanvas canvas, SKPath path, MapScene scene, float ui)
+    {
+        var fade = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
+        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)(110 - 50 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)(170 - 80 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
+        var box = path.Bounds;
+        canvas.Save();
+        canvas.ClipPath(path, antialias: true);
+        var step = 4 * ui;
+        for (var x = box.Left - box.Height; x < box.Right; x += step)
+            canvas.DrawLine(x, box.Bottom, x + box.Height, box.Top, hatch);
+        canvas.Restore();
+        canvas.DrawPath(path, edge);
+    }
+
     private static void DrawSpawns(SKCanvas canvas, Camera camera, MapScene scene, float ui)
     {
         if (scene.Spawns.Count == 0)
@@ -1111,6 +1177,13 @@ public static partial class MapRenderer
                     canvas.DrawPath(diamond, fill);
                     canvas.DrawPath(diamond, outline);
                 }
+                break;
+            case MarkerKind.Lock or MarkerKind.Switch:
+                // A glyph on a dark collar, no plate: quiet, and a shape no other marker has (a padlock, a power
+                // symbol). The key itself is the key glyph in BRING; the padlock is where it opens.
+                DrawCollar(canvas, at, r, ui);
+                Glyphs.Draw(canvas, marker.Kind == MarkerKind.Lock ? Glyphs.Lock : Glyphs.Switch, at, r * 1.9f,
+                    shown.Selected ? color : color.WithAlpha(LandmarkAlpha));
                 break;
             case MarkerKind.ObjectiveDone:
                 // Done: a smaller disc in muted ink with a check mark, which leaves green to the extracts.

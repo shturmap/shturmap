@@ -490,7 +490,7 @@ spawns below).
   | 1 | the player; the picked quests, the guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
-  | 4 | the artwork, its names, the sheet grid | receded; names thinned with zoom |
+  | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
 
   Extracts and transits are as large as the boss diamond (15 px across), no longer smaller. A new symbol gets a
   level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
@@ -504,7 +504,7 @@ spawns below).
   | --- | --- | --- |
   | your side's extracts and transits, bosses | full strength (labels 70 %) | full strength |
   | other quests' markers | 62 % (labels 45 %) | 80 % (labels 60 %) |
-  | Scav and sniper zones | 60 % (labels 50 %) | 75 % (labels 60 %) |
+  | Scav and sniper zones, locks and switches | 60 % (labels 50 %) | 75 % (labels 60 %) |
 
   Labels step back further than symbols, so the highlighted quest's names stand out without hiding where everything
   else is. Stepping back by colour (greying) was compared and dropped: a greyed quest marker reads as done (grey
@@ -518,6 +518,33 @@ spawns below).
   objective. Words, because no shape, colour or ring is free to mean "optional": the hollow ring is a possible
   place, grey is done, a dashed ring is an old position, and a dotted ring, also tried, read like either. A label
   suffix was tried too; it disappears with the label.
+
+- **Landmarks from tarkov.dev's data** (owner, 2026-10-03: "Do B and A"; B, landmarks, came with the question of
+  backgrounds for The Lab, Labyrinth and Icebreaker, and holds on every map). All level 4, all real positions from
+  the maps payload, nothing inferred:
+  - **Locks**: a door's or a car trunk's (both need a key): a padlock (Segoe Fluent `E72E`) on the dark collar, no
+    plate, labelled with the key's short name as printed on the key ("TGL MO", "Dorm 114", "RB-PKPM"; the full name
+    when it has none) and "needs power" where the data says so. The key glyph `E8D7` stays the key itself (BRING,
+    need cells); the padlock is where it opens. Pointing at a key (its BRING row, its row on a quest card) lights
+    every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card. The
+    key's need cells and item card don't link yet: a linked element inside a linked row loses the row's highlight
+    when the pointer leaves it. Container locks would mark containers; the data has none.
+  - **Switches**: a power symbol (`E7E8`) with the switch's name ("Med Elevator Power Button", "Alarm Switch",
+    "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12.
+  - **When they show**: on a map with artwork from 1.5 times the overview (as the shops' names; Streets has 63 locks,
+    Customs 36, Reserve 34), on a sheet at any zoom; their labels from 2.5 times or when pointed at; only those on
+    the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.
+    Their labels come last in the label order.
+  - **Hazards**: tarkov.dev's "hazard" outlines (Labyrinth's 18 traps, 2–27 m²) as a hatched ink outline, an area
+    style nothing else has. Labyrinth's 19th "hazard", 54 × 58 m below the central hall's floor, is left out: the data
+    doesn't say what it is, and hatching it would cover the hall (trap-sized means up to 50 m²). Not drawn: "sniper"
+    zones (the sniper markers already) and "minefield" outlines, which the artwork draws for Woods, Shoreline,
+    Lighthouse, Streets and Terminal but not for Customs (2), Reserve (1), Interchange (7) or Ground Zero (5): whether
+    to draw those is open.
+  - **Containers** on a sheet only: faint ink dots where loot containers stand, on the floor shown (The Lab has 319,
+    Labyrinth 35), so rooms and corridors show from real points where no artwork draws them. On artwork they would
+    be clutter (Streets has 1,282).
+  - `shturmap-cli render <map> <out.png> --focus-item <key>` draws a map as pointing at a key does.
 
 - **Spawns: one marker per zone, at its centroid** (owner, 2026-10-02: the player needs to know which area has
   Scavs, where the bosses and the snipers are, not each spawn point; "just use the centroid, do not colour code the

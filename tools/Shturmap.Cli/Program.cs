@@ -59,8 +59,9 @@ switch (command)
             shturmap-cli locate              find the game, logs, screenshots and settings on this PC
             shturmap-cli replay [session]    replay a log session (default: newest) through the raid tracker
             shturmap-cli data [mode] [lang]  load tarkov.dev data (mode: pve | regular | seasonal)
-            shturmap-cli render <map> <out.png> [screenshot names...]
-                                            draw a map with the positions from screenshot names
+            shturmap-cli render <map> <out.png> [screenshot names...] [--focus-item <item id or name>]
+                                            draw a map with the positions from screenshot names; --focus-item
+                                            draws it as pointing at that item does (a key lights its locks)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
@@ -412,6 +413,13 @@ static async Task Spawns(string mode)
 
 static async Task Render(string mapName, string output, List<string> screenshots)
 {
+    // "--focus-item <id or name>": as if the pointer were on that item somewhere in the window.
+    string? focusItem = null;
+    if (screenshots.IndexOf("--focus-item") is var f and >= 0 && f + 1 < screenshots.Count)
+    {
+        focusItem = screenshots[f + 1];
+        screenshots.RemoveRange(f, 2);
+    }
     var cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache");
     var http = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "tarkov-dev"));
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
@@ -450,7 +458,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
     var content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
     if (content.Objectives.All(o => o.Places.Count == 0))
         content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
-    var scene = new Shturmap.Map.MapScene(definition, artwork, tiles) { Markers = content.Markers, Zones = content.Zones };
+    var scene = new Shturmap.Map.MapScene(definition, artwork, tiles) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers };
 
     var fixes = screenshots.Select(s => Shturmap.Core.Screenshots.ScreenshotName.TryParse(s, out var info) ? info : null)
         .Where(i => i?.Position is not null).ToList();
@@ -465,6 +473,16 @@ static async Task Render(string mapName, string output, List<string> screenshots
     // map's artwork under a quest zone that covers it).
     var pick = !screenshots.Remove("--no-pick");
     scene.Kept = !pick ? new HashSet<string>() : content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
+    if (focusItem is not null)
+    {
+        var item = data.ItemNames.ContainsKey(focusItem) ? focusItem
+            : data.ItemNames.FirstOrDefault(n => n.Value.Equals(focusItem, StringComparison.OrdinalIgnoreCase)).Key
+              ?? data.ItemShortNames.FirstOrDefault(n => n.Value.Equals(focusItem, StringComparison.OrdinalIgnoreCase)).Key
+              ?? throw new ArgumentException("Unknown item " + focusItem);
+        Console.WriteLine($"Pointing at {data.ItemName(item)} ({item})");
+        scene.Focus = new HashSet<string> { Shturmap.Map.MapContentBuilder.KeyGroup(item) };
+        scene.Dim = 1;
+    }
 
     // "-ping": a new position pinging, 0.6 s in; "-edge": the same with the player out of view (the edge arrow).
     foreach (var (suffix, zoomIn, ping, away) in new[] { ("", 1.0, false, 0f), ("-close", 3.0, false, 0f), ("-ping", 3.0, true, 0f), ("-edge", 3.0, true, 1100f) })
