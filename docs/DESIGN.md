@@ -797,7 +797,11 @@ form. Problems and ideas both go through it.
   unexpected exit is one group) and `log.txt` attached. Tags: kind (problem, idea, crash), report id, build kind,
   source; release `shturmap@<version>`; the time it happened as an extra. The Sentry package also writes the build
   folder into referencing assemblies (`Sentry.ProjectDirectory`), which holds the developer's user name;
-  `Directory.Build.targets` turns that off, and `SentryNative` is off.
+  `Directory.Build.targets` turns that off, and `SentryNative` is off. Its source generator copied every build
+  property, the project folder among them, into `Shturmap.dll`: `SentryDisableSourceGenerator` is on. And every
+  DLL carried its PDB path, with the user name in it: `PathMap` in `Directory.Build.props` maps the repository to
+  `/_/`. A release build's files were scanned on 2026-10-03 and none holds the user name; scan again after adding a
+  package (the release must carry nothing of the developer's machine).
 - **Where to.** The DSN is not in the repository: `eng\release.ps1` and `eng\publish.ps1` pass it from the untracked
   `eng\sentry.dsn` (gitignored) or `SHTURMAP_SENTRY_DSN` as an assembly attribute. Only `https://…sentry.io` is
   accepted (or this PC over http, for tests). A build without one (developer builds, forks) shows the Report link
