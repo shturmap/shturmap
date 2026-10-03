@@ -503,7 +503,12 @@ public sealed partial class MainWindow : Window
         vm.RaidPicks = quests.Where(q => s.Picks.Contains(q.QuestId)).ToList();
         vm.RaidComplete = quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
         vm.RaidProgress = quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
-        vm.RaidBring = BringLines(s, s.MapPlan?.Requirements ?? []);
+        // While the raid loads, the kit comes first, as a last check while matching can still be cancelled; BRING
+        // returns to its place below when the raid starts (owner, 2026-10-03).
+        var kit = Planning.KitWhileLoading(s.Raid, s.MapPlan, s.Picks);
+        vm.RaidKit = kit.Main.Select(r => BringLine(s, r)).ToList();
+        vm.RaidKitMore = kit.More.Select(r => BringLine(s, r)).ToList();
+        vm.RaidBring = s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? []);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
@@ -554,7 +559,12 @@ public sealed partial class MainWindow : Window
         var loot = s is { Data: { } data, Map: { } map } ? ScavRaid.Loot(data, s.Quests, data.MapIdsSharing(map.NormalizedName)) : [];
         var quests = loot.SelectMany(l => l.QuestIds).Distinct().Count();
         vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
-        vm.RaidNote = "As a Scav, quest objectives don't count; items you find in raid do.";
+        // Loading as a Scav (a server-hosted raid's setup says so early) has no kit to check: nothing counts for quests.
+        vm.RaidNote = s.Raid.Phase == RaidPhase.Loading
+            ? "As a Scav, quest objectives don't count, so there is nothing to bring for them; items you find in raid do."
+            : "As a Scav, quest objectives don't count; items you find in raid do.";
+        vm.RaidKit = [];
+        vm.RaidKitMore = [];
         vm.RaidPicks = [];
         vm.RaidComplete = [];
         vm.RaidProgress = [];
@@ -1120,6 +1130,26 @@ public sealed partial class MainWindow : Window
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
+    // The kit pictured under the map's name (a raid loading, a group's pick): the cells BRING uses, at 34 px, then "+3".
+    private void ShowCueKit(ViewCue cue)
+    {
+        CueKit.Children.Clear();
+        foreach (var item in cue.Kit ?? [])
+            CueKit.Children.Add(new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 34 });
+        if (cue.KitMore > 0)
+        {
+            CueKit.Children.Add(new TextBlock
+            {
+                Text = $"+{cue.KitMore}",
+                Style = (Style)Application.Current.Resources["FigureText"],
+                Foreground = Resource("MutedBrush"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0),
+            });
+        }
+        CueKit.Visibility = CueKit.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private (string Eyebrow, string Title, string Detail) CueText(ViewCue cue)
     {
         var map = Caps.Of(cue.MapName);
@@ -1149,6 +1179,7 @@ public sealed partial class MainWindow : Window
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowCueKit(cue);
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();

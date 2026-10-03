@@ -95,6 +95,52 @@ public static class Planning
             .ToList();
     }
 
+    /// <summary>The kit reminder while a raid loads (<see cref="Kit"/>).</summary>
+    /// <param name="Main">What to check first: what it takes to get in (the entry item) or out (the exits quests name:
+    /// a flare, climbing gear, money), then what the picks need; without picks on this map, all of it.</param>
+    /// <param name="More">With picks on this map, what the other quests need: "also useful", quieter.</param>
+    public sealed record KitList(IReadOnlyList<RequirementView> Main, IReadOnlyList<RequirementView> More)
+    {
+        public static KitList Empty { get; } = new([], []);
+
+        public int Count => Main.Count + More.Count;
+
+        public IEnumerable<RequirementView> All => Main.Concat(More);
+    }
+
+    /// <summary>
+    /// What to bring for a map, as a reminder while its raid loads and matching can still be cancelled (owner,
+    /// 2026-10-03: "it could still be a good reminder what to bring … with icon previews"): every active quest's BRING
+    /// row, what gets you in or out first, then the picks' rows, then the rest. Shturmap knows no inventory, so it is a
+    /// list to check, never a claim that something is missing.
+    /// </summary>
+    public static KitList Kit(MapPlanView? plan, IReadOnlySet<string> picks)
+    {
+        if (plan is null)
+            return KitList.Empty;
+        var rows = plan.Requirements;
+        var essential = rows.Where(r => r.Kind == RequirementKind.Entry).Concat(rows.Where(r => r.Kind == RequirementKind.Exit)).ToList();
+        var rest = rows.Where(r => r.Kind is not (RequirementKind.Entry or RequirementKind.Exit)).ToList();
+        var picksHere = plan.Finish.Concat(plan.Progress).Select(q => q.QuestId).Where(picks.Contains).ToHashSet();
+        if (picksHere.Count == 0)
+            return new([.. essential, .. rest], []);
+        return new([.. essential, .. rest.Where(r => r.QuestIds.Any(picksHere.Contains))], [.. rest.Where(r => !r.QuestIds.Any(picksHere.Contains))]);
+    }
+
+    /// <summary>The kit while the raid loads, and nothing otherwise: before loading the Plan card's BRING says it, once
+    /// the raid starts the raid card's BRING does; a load cancelled goes back to the menus. A Scav (known early from a
+    /// server-hosted raid's setup) brings nothing for quests, whose objectives don't count for it.</summary>
+    public static KitList KitWhileLoading(Core.Raid.RaidState raid, MapPlanView? plan, IReadOnlySet<string> picks) =>
+        raid.Phase == Core.Raid.RaidPhase.Loading && raid.Side != Core.Raid.RaidSide.Scav ? Kit(plan, picks) : KitList.Empty;
+
+    /// <summary>The big cue's row of item pictures: the first <paramref name="shown"/> items in the kit's order, and
+    /// how many more there are ("+3").</summary>
+    public static (IReadOnlyList<RequirementView> Shown, int More) CueKit(KitList kit, int shown = 6)
+    {
+        var all = kit.All.ToList();
+        return (all.Take(shown).ToList(), Math.Max(0, all.Count - shown));
+    }
+
     /// <summary>The plan for one map (whether or not it ranks), e.g. for the bring-list when a raid loads.</summary>
     public static MapPlanView? PlanFor(GameData data, IEnumerable<string> activeQuestIds, string normalizedName)
     {

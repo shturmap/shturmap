@@ -137,7 +137,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>Raised after every change, on a background thread.</summary>
     public event Action<SessionSnapshot>? Changed;
 
-    /// <summary>Short messages for the user ("Raid started on Customs", "Loading Streets of Tarkov · bring: …").</summary>
+    /// <summary>Short messages for the user ("Raid started on Customs", "Scav raid on Customs · …").</summary>
     public event Action<SessionNotice>? Notice;
 
     public async Task StartAsync()
@@ -719,15 +719,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 ResolveMap();
                 if (!item.IsReplay && _map is not null)
                 {
-                    // Last call while matching can still be cancelled: what this map's quests need.
-                    var bring = BringOn(_map);
-                    Say(bring is not null ? $"Loading {_map.Name} · bring: {bring}" : $"Loading {_map.Name}", bring is not null ? 45 : 6);
-                    Announce(new ViewCue(phaseBefore == RaidPhase.InRaid ? CueKind.Transit : CueKind.RaidLoading, _map.Name));
+                    // The scene line comes 1–2 s after matching starts (owner's logs: 30 loads), while matching can
+                    // still be cancelled: the cue pictures the kit, the raid card lists it until the raid starts. A
+                    // transit's gear is what the raid had, so its cue shows none.
+                    if (phaseBefore == RaidPhase.InRaid)
+                        Announce(new ViewCue(CueKind.Transit, _map.Name));
+                    else
+                        Announce(KitCue(CueKind.RaidLoading, _map, "loading"));
                 }
                 break;
             case RaidStarted started:
                 ResolveMap();
-                // The side is only known now; the bring-list said at loading was for a PMC.
+                // The side is only certain now; the kit shown while loading was a PMC's, unless a setup said Scav.
                 if (!item.IsReplay && started.State.Side == RaidSide.Scav && _map is not null)
                 {
                     Say($"Scav raid on {_map.Name} · quest objectives don't count, items found in raid do", 8);
@@ -760,16 +763,27 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
     }
 
-    // What the active quests need on a map, for the notices: "MS2000 Marker ×3, Bomber beanie"; null when nothing.
-    private string? BringOn(MapIdentity map)
+    // The kit reminder for a map (Planning.Kit): what every active quest needs there, picks first.
+    private Planning.KitList KitOn(MapIdentity map)
     {
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-        var needs = _data is null ? null : Planning.PlanFor(_data, active, map.NormalizedName)?.Requirements;
-        return needs is { Count: > 0 } ? string.Join(", ", needs.Select(r => r.Text)) : null;
+        return _data is null ? Planning.KitList.Empty : Planning.Kit(Planning.PlanFor(_data, active, map.NormalizedName), Picks);
     }
 
-    // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now and say what to
-    // bring, while there is still time to change gear. Only in the menus; a later pick replaces it.
+    // A raid loading's or a group pick's cue with the kit pictured (owner, 2026-10-03: the text notice "Loading … ·
+    // bring: …" was long and came as a list of words; the pictures read at a glance). The study log notes it.
+    private ViewCue KitCue(CueKind kind, MapIdentity map, string when)
+    {
+        var kit = KitOn(map);
+        var (shown, more) = Planning.CueKit(kit);
+        var picks = Picks;
+        Study.Game("kit.reminder", ("when", when), ("map", map.NormalizedName), ("items", kit.Count),
+            ("forPicks", kit.All.Count(r => r.QuestIds.Any(picks.Contains))));
+        return new ViewCue(kind, map.Name, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind)).ToList(), KitMore: more);
+    }
+
+    // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now with its kit,
+    // while there is still time to change gear. Only in the menus; a later pick replaces it.
     private void OnGroupPick(GroupRaidSettingsEvent pick)
     {
         var map = _data?.CreateResolver().Resolve(null, pick.LocationId);
@@ -778,9 +792,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             return;
         _map = map;
         _store?.SetSetting("lastMap", map.NormalizedName);
-        var bring = BringOn(map);
-        Say(bring is not null ? $"Your group picked {map.Name} · bring: {bring}" : $"Your group picked {map.Name}", bring is not null ? 45 : 8);
-        Announce(new ViewCue(CueKind.GroupPick, map.Name));
+        Announce(KitCue(CueKind.GroupPick, map, "groupPick"));
     }
 
     // A hint of how the raid ended, for the study log only: never shown, and no hint proves nothing.

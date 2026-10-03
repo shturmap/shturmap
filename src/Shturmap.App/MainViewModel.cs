@@ -198,6 +198,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidBring { get; set; } = [];
 
+    /// <summary>While the raid loads, "CHECK YOUR KIT": what gets you in or out, then what the picks need (or all of
+    /// it without picks here); BRING itself steps aside until the raid starts (Planning.KitWhileLoading).</summary>
+    [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidKit { get; set; } = [];
+
+    /// <summary>With picks here, the kit's other rows, under "ALSO USEFUL".</summary>
+    [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidKitMore { get; set; } = [];
+
     /// <summary>"PMC" or "SCAV" beside the raid card's title, or empty when the logs can't tell.</summary>
     [ObservableProperty] public partial string RaidSide { get; set; } = "";
 

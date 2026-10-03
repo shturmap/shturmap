@@ -181,10 +181,28 @@ against sanctions); and say that some players see a position map as an unfair ad
     suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
     list) show no cue. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
-9. **Say it before it matters.** When a raid starts loading, a one-line notice repeats what to bring for that
-   map, while there is still time to back out of matching. In a group it comes earlier: when the leader picks a
-   raid (the notification log says so 20–70 s before loading starts), Shturmap shows that map with the GROUP PICKED
-   cue and says "Your group picked Streets of Tarkov · bring: …" (owner, 2026-10-02). The pick's time of day
+9. **Say it before it matters.** When a raid starts loading, Shturmap shows what to bring for that map, while there
+   is still time to back out of matching. **The kit reminder** (owner, 2026-10-03: the one-line "Loading … · bring:
+   …" notice came too late to read and as a list of words; "it could still be a good reminder what to bring … with
+   icon previews"; "If the player sees they forgot something they can still cancel loading into the map"):
+   - **When:** the scene line names the map 1–2 s after matching starts, before matching completes (2–25 s) and
+     before a server raid's match setup (15–71 s); in the owner's logs (30 loads, 2026-08-15 to 2026-10-02)
+     matching was cancelled 9–27 s after it started, so it is the earliest line naming the map and still in time.
+     A group's pick comes earlier still (below). A cancelled load goes back to the menus, which ends it.
+   - **What** (`Planning.Kit`): every active quest's BRING row for the map; what it takes to get in or out first
+     (the entry item, the exits quests name: a flare, climbing gear, money), then what the picks need, then, with
+     picks on this map, the rest under ALSO USEFUL. Without picks there it is all one list. Shturmap knows no
+     inventory, so it is a list to check, never a claim that something is missing.
+   - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name: up to six items in that order, in
+     BRING's cells at 34 px, and "+3" for the rest; never scaled, like the cue's text. A transit's cue has none (the
+     gear is what the raid had).
+   - **The raid card** starts with CHECK YOUR KIT, in BRING's rows, while the raid loads; BRING itself steps aside
+     until the raid starts, then is back in its place. A Scav loading (known early when a server raid's setup names
+     the Scav profile) gets no kit, and the card's note says why: quest objectives don't count for a Scav.
+   - The study log notes it (`kit.reminder`: when, map, items, items for picks).
+
+   In a group it comes earlier: when the leader picks a raid (the notification log says so 20–70 s before loading
+   starts), Shturmap shows that map with the GROUP PICKED cue and its kit (owner, 2026-10-02). The pick's time of day
    ("CURR" or "PAST", the two raid times 12 h apart) isn't shown: the clock formula checks out against the
    screenshots' raid clocks, but which of the two times each name means couldn't be checked without a group raid
    with a screenshot; the study log now records both to settle it. What a quest needs is also beside its name wherever
@@ -442,7 +460,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     LOADED", "RAID PREPARED", "RAID CREATED", "PLAYER SPAWNED", "GAME POOLED", "GAME RUNNING"), over six thin
     segments, one per step, each gold only once its own step is in the log (owner, 2026-10-02: loading takes
     60–130 s and showed nothing; and nothing estimated, only what the log says, so a skipped step stays dark and no
-    rule creeps by typical times). No time estimate. Then **the glance**, two rows in
+    rule creeps by typical times). No time estimate. While it loads, CHECK YOUR KIT follows (the kit reminder, UX
+    principle 9), and BRING waits below until the raid starts. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
     direction), and EXIT, the nearest extract or transit for your side (and what it takes); in a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
@@ -460,7 +479,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     here · 3 spots"; pointing at a row draws the spots), at most eight and one line for the rest. One note line
     says why. The raid line drops "min left" (a Scav joins under way; the logs don't say how long is left). The
     map draws no quest objectives, and in any raid only your side's extracts. ANY MAP is hidden (a Scav's kills
-    don't count). When the raid starts as a Scav, a notice replaces the PMC bring-list said at loading.
+    don't count). When the raid starts as a Scav, a notice says so; a server raid's setup tells it while loading
+    already, and then no PMC kit is shown (the kit reminder, UX principle 9). The side is set from the setup then,
+    and decided again at the raid start.
     How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
     joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining
     under way. PvE raids can be either: server-hosted ones log the match setup like PvP (seen on 25, 26 and 30
@@ -1361,7 +1382,7 @@ form. Problems and ideas both go through it.
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
-  occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
+  occasional-position UX (fix age, fading marker, compass directions), kit reminder on raid load (cue pictures, CHECK YOUR KIT), linked
   highlighting, quest cards (hover, held, nested, popped out with live distances), item cards with sources and loose
   spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
 - Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).

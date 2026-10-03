@@ -665,6 +665,15 @@
                   </StackPanel>
                   <TextBlock Text="{x:Bind ViewModel.RaidFixNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidFixNote), Mode=OneWay}" Style="{StaticResource NoteText}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidNote), Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />
+                  <!-- While the raid loads: the kit to check, while matching can still be cancelled (owner, 2026-10-03). What
+                       gets you in or out first, then the picks' items; with picks here the rest under ALSO USEFUL. A list
+                       to check: Shturmap knows no inventory. Gone when the raid starts; BRING is back below then. -->
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="CHECK YOUR KIT" Foreground="{StaticResource AmberBrush}" Margin="0,14,0,6"
+                             Visibility="{x:Bind ShownIfAny(ViewModel.RaidKit), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKit, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="ALSO USEFUL" Margin="0,12,0,4"
+                             Visibility="{x:Bind ShownIfAny(ViewModel.RaidKitMore), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKitMore, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- The glance: the nearest objective and the nearest way out, big, before anything else. -->
                   <Grid Margin="-6,12,-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
                         Visibility="{x:Bind ShownIfSet(ViewModel.RaidNext), Mode=OneWay}" controls:Linked.Quest="{x:Bind ViewModel.RaidNext.QuestId, Mode=OneWay}">
@@ -807,6 +816,9 @@
             </TextBlock>
             <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
                        Foreground="{StaticResource MutedBrush}" />
+            <!-- A raid loading's or a group pick's kit, pictured: up to six items in the kit's order, "+3" for the rest
+                 (owner, 2026-10-03: "with icon previews"). Never scaled, like the text. -->
+            <StackPanel x:Name="CueKit" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="0,4,0,0" Visibility="Collapsed" />
             <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
               <Rectangle.RenderTransform>
                 <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />

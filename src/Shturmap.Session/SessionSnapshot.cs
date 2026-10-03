@@ -30,7 +30,12 @@ public enum CueKind
 
 /// <summary>A change of view the app makes on its own, announced big in the middle of the map for a few seconds.</summary>
 /// <param name="RaidLength">How long the raid lasted (raid over).</param>
-public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null);
+/// <param name="Kit">For a raid loading or a group's pick, the first items of the kit reminder, pictured under the map's
+/// name (<see cref="Planning.CueKit"/>); <paramref name="KitMore"/> says how many more ("+3").</param>
+public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0);
+
+/// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
+public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKind Kind);
 
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);
