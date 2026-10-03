@@ -216,6 +216,21 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    goes public: turn off GitHub Issues and Discussions (reports go through the app), decide whether releases are
    published by the owner's account or by GitHub Actions, and whether the maintainer's identity is shown on the
    repository's pages.
+5. **Wording and risk, from the web research of 2026-10-03** (owner: "put points 1–5 on the release checklist";
+   DESIGN.md §2 has the findings and rules). Done in the README and DESIGN.md on 2026-10-03; still to do on the
+   website (only on the owner's word) and in the release notes (`docs\release-notes\0.2.0.md`):
+   1. the precise risk line: not made or endorsed by Battlestate; its License Agreement (4.3.4) lets it decide which
+      outside software is allowed; no guarantee against sanctions; use at your own risk;
+   2. where the coordinates come from: Battlestate's support article 437 (reporting a bug) describes them in the
+      screenshot name; a source, not an endorsement;
+   3. one honest sentence on PvP: some players see a map with your own position as an unfair advantage in PvP; most
+      useful for learning maps and in PvE; and the two rules (never shares a position, never takes a screenshot for
+      the player);
+   4. done: the two lasting rules and the wording rule in DESIGN.md §2;
+   5. a change by Battlestate: if the screenshot names lose their coordinates, or its planned "simplified GPS"
+      (roadmap, December 2026, reported only second-hand) changes things, Shturmap must keep working as a quest
+      planner without a position. Before the release, check what a screenshot name without coordinates does (a
+      fake-raid run with such a name), and say it in the README and on the website.
 
 ## Not asked for (owner to decide)
 

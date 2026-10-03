@@ -37,8 +37,28 @@ Over the network it downloads public data and art (tarkov.dev, the map artwork),
 leaves the PC unless the player sends a report or allows crash reports (§8, "Reports"). `SafetyTests` fails if the
 code names any other address, or if anything but the reporting code uses Sentry.
 
-BSG's licence agreement (4.3.4, 2018 text), read literally, covers all companion tools; the owner accepted that
-residual risk. Do not widen the boundary.
+BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text of 2026-06-15) forbids "outside
+software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game
+Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
+been permitted. The owner accepted that residual risk. Do not widen the boundary.
+
+What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
+pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
+article 437, on bug reports) and has never removed them; no BSG statement for or against such tools and no verified
+ban were found. Players tolerate a map of their own position, above all in PvE; sharing positions with a squad is
+called a "radar", and pressing the screenshot key automatically a "bot". Hence two rules that stay (owner,
+2026-10-03):
+
+- **Never share a position.** Shturmap shows the player's position to that player only: no squad map, no syncing
+  between players, no live sending of positions anywhere. The app log records no positions (only demo runs do, at
+  DEBUG), so a report doesn't carry them either.
+- **Never take a screenshot for the player.** A position comes only from a screenshot the player took with their
+  own key press; no timer, no synthesised key, no "auto" mode (on top of "never sends input" above).
+
+And one for every text about Shturmap (README, website, release notes): say what it reads and what it never does;
+never use the vocabulary cheat sellers use for their tools ("radar", "minimap", "GPS", "tracker", "undetected",
+"safe", "allowed", "ban-proof"); never suggest BSG approves of it; name the risk plainly (4.3.4, no guarantee
+against sanctions); and say that some players see a position map as an unfair advantage in PvP.
 
 ## 3. Copyright and data use
 

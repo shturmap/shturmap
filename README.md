@@ -34,7 +34,9 @@ when you press your screenshot key. No macros, no input to the game, no access t
 Shturmap works only from files the game writes for you and from public community data:
 
 - the **file names** of your screenshots, which the game fills with your position and facing (the images are
-  never read);
+  never read). Battlestate's own support article on
+  [reporting a bug](https://www.escapefromtarkov.com/support/knowledge/437) describes these coordinates in the name;
+  that is where they come from, not an endorsement of Shturmap;
 - the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
   quests started, failed and completed;
 - `Control.ini` and `Game.ini`, read-only: your screenshot key and the game language;
@@ -63,8 +65,13 @@ and press Send. No account needed. After a crash, Shturmap asks at its next star
 A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
 capturing the screen. The full rules are in [docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).
 
+It shows your position to you only: it never shares it with your squad or anyone else, and it never takes a
+screenshot for you. Some players see a map with your own position as an unfair advantage in PvP; Shturmap is at its
+most useful for learning maps and in PvE.
+
 Shturmap is an unofficial fan project, not made or endorsed by Battlestate Games. Battlestate discourages
-third-party software in general, so use it at your own risk.
+third-party software in general, and its License Agreement (section 4.3.4) lets it decide which outside software is
+allowed. There is no guarantee against sanctions: use it at your own risk.
 
 ## Get it
 
