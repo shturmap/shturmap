@@ -53,7 +53,15 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
      item or class, listing the quests it serves; the same in Plan's BRING, the raid card's BRING and the quest card;
      the synopsis line already names the weapon in words, BRING adds icon, source and price. Check the effort
      grouping (kill conditions) and the synopsis stay consistent with it.
-7. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+7. **"~17 min walking" on the map cards** (owner, 2026-10-03: "probably misleading since it is not clear on which
+   quests this is related to, also it's also not realistic since you rarely constantly walk in the game. Either get
+   rid of this or find a better solution.") It comes from `RaidPlanner`'s route length over the places of the
+   quests it lists, at a walking pace. It is also an estimate shown as a figure, which the owner's truthfulness rule
+   (only what was read; no estimates in the UI) already argues against. Recommendation to bring on Monday: remove
+   it, from the cards, the cue and anywhere else it appears (and its DESIGN.md mentions). If the owner wants
+   something in its place, only a fact with a clear subject, e.g. "objectives in 3 places" or the straight distance
+   between the two farthest places of the listed quests, and never a time.
+8. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
