@@ -291,6 +291,35 @@ public class ReportingTests : IDisposable
         Assert.Contains("closed unexpectedly", ReportEnvelopes.Describe(record));
     }
 
+    [Fact]
+    public async Task Sent_reports_tell_Sentry_never_to_infer_the_ip_and_keep_their_attachments()
+    {
+        // Without it Sentry looked up the reporter's town from the connection (a real report, 2026-10-03).
+        var raw = ReportSender.Sealed(await Bytes(ReportEnvelopes.Feedback(Report(), Info)), "0.1.0+abc1234");
+        var items = Items(raw);
+        var sdk = JsonDocument.Parse(Assert.Single(items, i => i.Header.GetProperty("type").GetString() == "feedback").Payload)
+            .RootElement.GetProperty("sdk");
+        Assert.Equal("never", sdk.GetProperty("settings").GetProperty("infer_ip").GetString());
+        Assert.Equal("shturmap", sdk.GetProperty("name").GetString());
+        Assert.Equal("0.1.0+abc1234", sdk.GetProperty("version").GetString());
+        Assert.Equal(2, items.Count);
+        Assert.Contains("Shturmap diagnostics", System.Text.Encoding.UTF8.GetString(items[1].Payload));
+
+        var crash = Items(ReportSender.Sealed(await Bytes(ReportEnvelopes.Crash(Thrown())), "0.1.0+abc1234"));
+        var evt = JsonDocument.Parse(crash[0].Payload).RootElement;
+        Assert.Equal("never", evt.GetProperty("sdk").GetProperty("settings").GetProperty("infer_ip").GetString());
+        Assert.Equal("fatal", evt.GetProperty("level").GetString());
+        Assert.Equal("log.txt", crash[1].Header.GetProperty("filename").GetString());
+    }
+
+    [Fact]
+    public async Task What_reaches_Sentry_says_never_infer_the_ip()
+    {
+        await using var sentry = new FakeSentry();
+        await NewReporter(sentry.Dsn).SendAsync(Report());
+        Assert.Contains("\"infer_ip\":\"never\"", Assert.Single(sentry.Requests).Body);
+    }
+
     // ---- end to end, against a Sentry stand-in on this PC ----
 
     [Fact]

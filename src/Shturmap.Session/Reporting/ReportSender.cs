@@ -146,7 +146,7 @@ public sealed class ReportSender(ReportEndpoint endpoint, HttpClient http, strin
     {
         using var body = new MemoryStream();
         await envelope.SerializeAsync(body, null, ct);
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint.Envelope) { Content = new ByteArrayContent(body.ToArray()) };
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint.Envelope) { Content = new ByteArrayContent(Sealed(body.ToArray(), version)) };
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-sentry-envelope");
         request.Headers.TryAddWithoutValidation("X-Sentry-Auth",
             $"Sentry sentry_version=7, sentry_client=shturmap/{version}, sentry_key={endpoint.PublicKey}");
@@ -168,5 +168,54 @@ public sealed class ReportSender(ReportEndpoint endpoint, HttpClient http, strin
         {
             return (Outcome.Later, "no answer in time");
         }
+    }
+
+    /// <summary>
+    /// The serialized envelope with each event's "sdk" filled in: who sent it, and that Sentry must never infer the
+    /// sender's IP address. Without it Sentry looked up the reporter's town from the connection and kept it, IP
+    /// storage off or not (seen on a report, 2026-10-03). The .NET SDK has no such setting, so it is written here.
+    /// </summary>
+    public static byte[] Sealed(byte[] envelope, string version)
+    {
+        using var output = new MemoryStream();
+        var at = Array.IndexOf(envelope, (byte)'\n');
+        if (at < 0)
+            return envelope;
+        output.Write(envelope, 0, at + 1); // the envelope's own header
+        at++;
+        while (at < envelope.Length)
+        {
+            var end = Array.IndexOf(envelope, (byte)'\n', at);
+            if (end < 0)
+                end = envelope.Length;
+            if (end == at)
+            {
+                at++;
+                continue;
+            }
+            var header = System.Text.Json.Nodes.JsonNode.Parse(envelope.AsSpan(at, end - at))!.AsObject();
+            at = Math.Min(end + 1, envelope.Length);
+            var next = Array.IndexOf(envelope, (byte)'\n', at);
+            var length = header["length"]?.GetValue<int>() ?? (next < 0 ? envelope.Length : next) - at;
+            var payload = envelope.AsSpan(at, length).ToArray();
+            at = Math.Min(at + length + 1, envelope.Length);
+            if (header["type"]?.GetValue<string>() is "event" or "feedback")
+            {
+                var evt = System.Text.Json.Nodes.JsonNode.Parse(payload)!.AsObject();
+                evt["sdk"] = new System.Text.Json.Nodes.JsonObject
+                {
+                    ["name"] = "shturmap",
+                    ["version"] = version,
+                    ["settings"] = new System.Text.Json.Nodes.JsonObject { ["infer_ip"] = "never" },
+                };
+                payload = Encoding.UTF8.GetBytes(evt.ToJsonString());
+                header["length"] = payload.Length;
+            }
+            output.Write(Encoding.UTF8.GetBytes(header.ToJsonString()));
+            output.WriteByte((byte)'\n');
+            output.Write(payload);
+            output.WriteByte((byte)'\n');
+        }
+        return output.ToArray();
     }
 }
