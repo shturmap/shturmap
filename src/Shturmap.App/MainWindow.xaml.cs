@@ -114,7 +114,8 @@ public sealed partial class MainWindow : Window
             ViewModel.NoticeOpen = false;
         };
 
-        // A new position never moves the view; out of view, the edge arrow points to it and a notice says so.
+        // A new position moves the view only while Follow my position is on; otherwise, out of view, the edge arrow
+        // points to it and a notice says so.
         Map.PlayerPinged += offScreen =>
         {
             Study.Ui("fix.ping", ("inView", !offScreen));
@@ -122,6 +123,13 @@ public sealed partial class MainWindow : Window
                 ShowNotice("Your new position is outside the part of the map shown: press F, or click the arrow at the edge.", TimeSpan.FromSeconds(5));
         };
         Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
+        // Dragging the map or showing the whole map takes the view back: the toggle goes off and shows it.
+        Map.FollowStopped += how =>
+        {
+            FollowButton.IsChecked = false;
+            SaveFollow(false);
+            Study.Ui("map.follow", ("on", false), ("how", how));
+        };
         AddShortcuts((UIElement)Content);
 
         // Snapshots arrive on background threads; only the newest one is applied.
@@ -163,7 +171,8 @@ public sealed partial class MainWindow : Window
     /// <summary>The keys in the help panel.</summary>
     public IReadOnlyList<KeyHelp> Keys { get; } =
     [
-        new("F", "Show my position (the map never moves by itself)"),
+        new("F", "Show my position"),
+        new("SHIFT + F", "Follow my position: the map moves with you until you drag it or show the whole map"),
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
@@ -350,6 +359,7 @@ public sealed partial class MainWindow : Window
         UpdatePicker(s);
         UpdatePlan(s);
         UpdateRaidLists(s);
+        LoadFollowOnce();
         UpdateMap(s);
         _cards.Refresh(UpdateCard);
         RefreshPinned();
@@ -1510,6 +1520,17 @@ public sealed partial class MainWindow : Window
             e.Handled = true;
         };
         root.KeyboardAccelerators.Add(settingsKey);
+        // Shift+F turns Follow my position on and off (F alone shows the position once).
+        var followKey = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F, Modifiers = Windows.System.VirtualKeyModifiers.Shift };
+        followKey.Invoked += (_, e) =>
+        {
+            if (ReportOpen)
+                return;
+            Study.Ui("key", ("key", "Shift+F"));
+            SetFollow(!Map.Follow, "key");
+            e.Handled = true;
+        };
+        root.KeyboardAccelerators.Add(followKey);
 #if DEVTOOLS
         AddDevShortcuts(Add);
 #endif
@@ -1568,6 +1589,40 @@ public sealed partial class MainWindow : Window
     {
         Study.Ui("map.showme", ("how", "key"));
         Map.CenterOnPlayer();
+    }
+
+    // ---- follow my position (owner, 2026-10-03; docs/DESIGN.md "Follow my position") ----
+
+    /// <summary>"--follow" (snapshots, the dev view): Follow my position on from the start of this run.</summary>
+    public bool FollowOnStart { get; set; }
+
+    private bool _followLoaded;
+
+    // It comes back as the player left it (off at first); snapshot and demo runs leave the saved choice alone.
+    private void LoadFollowOnce()
+    {
+        if (_followLoaded)
+            return;
+        _followLoaded = true;
+        var on = FollowOnStart || !SnapshotMode && !DemoMode && MapFollow.Parse(_session.GetSetting(MapFollow.Setting));
+        FollowButton.IsChecked = on;
+        Map.SetFollow(on);
+    }
+
+    private void OnFollowClick(object sender, RoutedEventArgs e) => SetFollow(FollowButton.IsChecked == true, "button");
+
+    private void SetFollow(bool on, string how)
+    {
+        FollowButton.IsChecked = on;
+        Map.SetFollow(on);
+        SaveFollow(on);
+        Study.Ui("map.follow", ("on", on), ("how", how));
+    }
+
+    private void SaveFollow(bool on)
+    {
+        if (!SnapshotMode && !DemoMode)
+            _session.SetSetting(MapFollow.Setting, MapFollow.Format(on));
     }
 
     private void OnFitClick(object sender, RoutedEventArgs e)

@@ -251,13 +251,19 @@ public sealed class MapScene
     public static readonly TimeSpan PingLength = TimeSpan.FromSeconds(2.6);
 
     /// <summary>
-    /// When a new position arrived (owner, 2026-10-01: a screenshot must not move the map; it shows where you are
-    /// instead). Null when the position isn't new, e.g. an old screenshot found at start.
+    /// When a new position arrived: it shows where you are, and moves the map only while Follow my position is on
+    /// (owner, 2026-10-01 and 2026-10-03). Null when the position isn't new, e.g. an old screenshot found at start.
     /// </summary>
     public DateTime? PingSince { get; set; }
 
     /// <summary>Whether the newest position is still pinging.</summary>
     public bool Pinging => PingSince is { } since && DateTime.Now - since < PingLength;
+
+    /// <summary>
+    /// While the view glides to a new position (Follow my position): the position is on its way into view, so the edge
+    /// badge waits rather than flash for a moment.
+    /// </summary>
+    public bool Gliding { get; set; }
 
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];

@@ -165,6 +165,8 @@ public partial class App : Application
             SnapshotMode = cli.Contains("--snapshot"),
             SnapshotScale = int.TryParse(Arg(cli, "--snapshot-scale"), out var snapshotScale) ? Math.Clamp(snapshotScale, 1, 4) : 1,
             ShowQuest = Arg(cli, "--show-quest"),
+            // Developer aid: Follow my position on from the start (snapshot runs leave it off otherwise).
+            FollowOnStart = cli.Contains("--follow"),
             // Developer aid for the website's hero clip: plays a scripted interaction (Demo.cs); fake games only.
             DemoQuest = cli.Contains("--fake-game") ? Arg(cli, "--demo") : null,
         };
