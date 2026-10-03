@@ -12,27 +12,16 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 Done and merged (DESIGN.md has each decision): 1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14 (with the changelog the
 owner added), 15, 16, and 17 (the design system, §4). Still open:
 - **4, click checks:** in the installed dev build ("Shturmap DEV", F12 for the developer view), with the owner.
-- **10, the FAQ:** drafted, not published. The website changes are on the site repository's branch `work/faq`
-  (worktree `..\Shturmap-wt\g-site`, with the design system's CSS alignment on top), and the README FAQ on the app
-  branch `work/g-readme` (worktree `..\Shturmap-wt\g-readme`). They wait for the owner's choice of heading ("Is this
-  allowed? Can I get banned?" or "Is this cheating?") and their go. Publish both together: the README links to the
-  website's `#faq`.
-- **18:** items 2 and 6 below, and the release checklist (on hold until the release).
+- **18:** item 2 below (local vs server raids), and the release checklist (on hold until the release).
 - Version: still 0.2.0, though much has changed since the build sent to a friend; ask before the next one goes out.
-- **Running:** tarkov.dev's tile renders for The Lab, Labyrinth and Icebreaker (owner, 2026-10-03, "Do B and A":
-  map renders accepted like portraits and icons), and landmarks (locked doors with their keys, switches, container
-  dots on the sheet).
-- **Next, after the map work is merged** (owner, 2026-10-03): "Uninstall Shturmap…" in help, with one confirmation
-  and an unticked "Also delete my Shturmap data" (settings, quest history, logs, study log, download cache), which
-  then runs Velopack's own uninstaller (`Update.exe --uninstall`); the same for the dev build with its own data
-  folder; one line in README and FAQ ("Windows Settings → Apps, or Help → Uninstall"); PRIVACY.md can then say how
-  to delete everything. Windows' Apps entry already works (Velopack registers it); the Setup itself has no
-  repair/remove mode, and a different installer around Velopack isn't worth it.
-- **Then, once everything is done: the website's media from the newest version** (owner, 2026-10-03: "Once
-  everything is done, update the website with assets from the most recent version"). Re-record with
-  `tools\make-media.ps1` (site repo; its CLAUDE.md and hand-check list) on the branch `work/faq`, so the website
-  goes out as one update: media, FAQ, release wording, design-system CSS. Going live needs the owner's FAQ heading
-  choice; publish the site and merge `work/g-readme` together.
+
+**Later the same evening, also done:** 10 (the FAQ, heading "Is this allowed? Can I get banned?", published with
+the website update on 2026-10-03: new media from the newest app, release wording, design-system CSS; the README's
+"Before you install"); tarkov.dev's tile renders for The Lab, Labyrinth and Icebreaker; landmarks (locked doors and
+keys, switches, Labyrinth's traps); minefields and border-sniper zones, clipped to the drawn map; AI squads (Rogues,
+Raiders, cultists…) as spawn markers; entry items in BRING; extract–switch links (none link with today's data);
+"Uninstall Shturmap…" with optional data deletion; feedback · help · settings as three buttons; the no-game
+fallback (item 6 below); the kit reminder while a raid loads.
 
 The items below are kept as written, for their reasons and quotes.
 
