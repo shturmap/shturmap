@@ -150,8 +150,11 @@ public static class MapContentBuilder
     /// hatching the whole hall. Minefields are drawn where the artwork doesn't draw them itself (owner, 2026-10-03):
     /// Woods, Shoreline, Lighthouse, Streets and Terminal have "mines" layers, Customs, Reserve, Interchange and Ground
     /// Zero don't; the renderer leaves them out over artwork that shows them (<see cref="MinefieldGroup"/>,
-    /// <see cref="MapArtwork.ShowsMinefields"/>). "sniper" zones are left out: they are where sniper Scavs spawn,
-    /// already the sniper markers.
+    /// <see cref="MapArtwork.ShowsMinefields"/>). "sniper" zones are the border snipers' kill zones (owner, 2026-10-03,
+    /// from the map audit), not sniper-Scav spawns: all 107 are named "ScavRole/Marksman", five of their eight maps
+    /// have no sniper Scavs at all, and they lie at the map's edges, where the artwork of Customs, Ground Zero, Streets
+    /// and Interchange draws them as "danger" groups. They are drawn the same way, where the artwork doesn't
+    /// (<see cref="SniperZoneGroup"/>, <see cref="MapArtwork.ShowsSniperZones"/>): the hatch means "this area kills you".
     /// </summary>
     public static IReadOnlyList<MapZone> Hazards(ApiMap map)
     {
@@ -162,11 +165,17 @@ public static class MapContentBuilder
         var minefields = hazards
             .Where(h => h.HazardType == "minefield" && h.Outline is { Count: >= 3 })
             .Select((h, i) => new MapZone($"minefield:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList(), MinefieldGroup));
-        return [.. traps, .. minefields];
+        var snipers = hazards
+            .Where(h => h.HazardType == "sniper" && h.Outline is { Count: >= 3 })
+            .Select((h, i) => new MapZone($"sniper-zone:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList(), SniperZoneGroup));
+        return [.. traps, .. minefields, .. snipers];
     }
 
     /// <summary>The group of a minefield's zone, so the renderer can leave it out over artwork that draws minefields.</summary>
     public const string MinefieldGroup = "minefield";
+
+    /// <summary>The group of a border sniper's kill zone, left out over artwork that draws them; labelled "Sniper zone".</summary>
+    public const string SniperZoneGroup = "sniper-zone";
 
     /// <summary>The largest hazard drawn, in m² (a trap; see <see cref="Hazards"/>).</summary>
     public const double HazardMaxArea = 50;

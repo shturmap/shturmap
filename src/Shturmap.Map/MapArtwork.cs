@@ -16,21 +16,43 @@ public sealed class MapArtwork : IDisposable
 {
     private readonly Dictionary<string, Lazy<SKPicture?>> _layers;
 
-    private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox, bool showsMinefields)
+    private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox, bool showsMinefields,
+        bool showsSniperZones)
     {
         Base = basePicture;
         _layers = layers;
         ViewBox = viewBox;
         ShowsMinefields = showsMinefields;
+        ShowsSniperZones = showsSniperZones;
+        Ground = Coverage(basePicture, viewBox);
     }
 
     public SKPicture Base { get; }
+
+    /// <summary>
+    /// Where the base picture draws anything (ground, water, buildings) as an alpha mask over <see cref="ViewBox"/>,
+    /// drawn once when the artwork loads: the data's hazards are kept to it, so a minefield or sniper zone that runs past
+    /// the drawn map doesn't hatch the empty space around it (owner, 2026-10-03). The SVGs have no background, so
+    /// outside the drawn map is transparent. Null if it can't be drawn.
+    /// </summary>
+    public SKImage? Ground { get; }
+
+    // The mask's longer side in pixels: about one pixel per screen pixel at the overview; zoomed in, its edge softens over
+    // a few pixels, which a hatch's end doesn't mind.
+    private const int GroundSize = 2048;
 
     /// <summary>
     /// The artwork draws minefields itself (a "mines" or "Minefield" group: Woods, Shoreline, Lighthouse, Streets,
     /// Terminal), so the data's minefield outlines aren't drawn over it (docs/DESIGN.md, "Landmarks").
     /// </summary>
     public bool ShowsMinefields { get; }
+
+    /// <summary>
+    /// The artwork draws the border snipers' kill zones itself: a "danger"-styled group named "Sniper" (Customs, Ground
+    /// Zero, Streets) or "Danger" (Interchange), so the data's sniper zones aren't drawn over it (docs/DESIGN.md,
+    /// "Landmarks"). Minefields are "danger"-styled too, but named "mines"; they don't count here.
+    /// </summary>
+    public bool ShowsSniperZones { get; }
 
     /// <summary>The SVG's viewBox, the coordinate system of the pictures.</summary>
     public SKRect ViewBox { get; }
@@ -55,10 +77,40 @@ public sealed class MapArtwork : IDisposable
             id => new Lazy<SKPicture?>(() => Cached(CachePath(id), () => Render(doc, g => g == id)), LazyThreadSafetyMode.ExecutionAndPublication),
             StringComparer.Ordinal);
         var showsMinefields = doc.Descendants().Any(e => ((string?)e.Attribute("id"))?.StartsWith("mine", StringComparison.OrdinalIgnoreCase) == true);
-        return new MapArtwork(basePicture, layers, viewBox, showsMinefields);
+        var showsSniperZones = doc.Descendants().Any(e => (string?)e.Attribute("id") is { } id && (id.Equals("sniper", StringComparison.OrdinalIgnoreCase) || id.Equals("danger", StringComparison.OrdinalIgnoreCase)));
+        return new MapArtwork(basePicture, layers, viewBox, showsMinefields, showsSniperZones);
     }
 
     private static bool IsGroup(XElement e) => e.Name.LocalName == "g" && e.Attribute("id") is not null;
+
+    private static SKImage? Coverage(SKPicture picture, SKRect viewBox)
+    {
+        if (viewBox.Width <= 0 || viewBox.Height <= 0)
+            return null;
+        var scale = GroundSize / Math.Max(viewBox.Width, viewBox.Height);
+        var info = new SKImageInfo((int)Math.Ceiling(viewBox.Width * scale), (int)Math.Ceiling(viewBox.Height * scale), SKColorType.Alpha8, SKAlphaType.Premul);
+        using var surface = SKSurface.Create(info);
+        if (surface is null)
+            return null;
+        surface.Canvas.Clear(SKColors.Transparent);
+        surface.Canvas.Scale(scale);
+        surface.Canvas.Translate(-viewBox.Left, -viewBox.Top);
+        surface.Canvas.DrawPicture(picture);
+        return surface.Snapshot();
+    }
+
+    /// <summary>Whether the artwork draws anything at a point of its <see cref="ViewBox"/> (see <see cref="Ground"/>).</summary>
+    public bool OnGround(SKPoint at)
+    {
+        if (Ground is null)
+            return true;
+        var x = (int)((at.X - ViewBox.Left) / ViewBox.Width * Ground.Width);
+        var y = (int)((at.Y - ViewBox.Top) / ViewBox.Height * Ground.Height);
+        if (x < 0 || y < 0 || x >= Ground.Width || y >= Ground.Height)
+            return false;
+        using var pixels = Ground.PeekPixels();
+        return pixels is null || pixels.GetPixelColor(x, y).Alpha > 127;
+    }
 
     private static SKPicture Cached(string? path, Func<SKPicture> render)
     {
@@ -137,6 +189,7 @@ public sealed class MapArtwork : IDisposable
     public void Dispose()
     {
         Base.Dispose();
+        Ground?.Dispose();
         foreach (var layer in _layers.Values.Where(l => l.IsValueCreated))
             layer.Value?.Dispose();
     }

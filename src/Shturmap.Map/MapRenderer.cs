@@ -51,8 +51,22 @@ public static partial class MapRenderer
         var layout = Layout(camera, scene, uiScale);
         foreach (var name in layout.Names)
             DrawMapName(canvas, name, uiScale);
-        foreach (var zone in scene.Zones)
-            DrawZone(canvas, camera, scene, zone, uiScale);
+        var hazardLabels = new List<(string Text, SKPoint At)>();
+        using (var ground = GroundShader(camera, scene))
+        {
+            foreach (var zone in scene.Zones)
+                DrawZone(canvas, camera, scene, zone, uiScale, hazardLabels, ground);
+        }
+        // Over every hatch, and once per group of neighbouring areas (border zones overlap along an edge).
+        var labelled = new List<SKPoint>();
+        var screen = new SKRect(0, 0, camera.Viewport.Width, camera.Viewport.Height);
+        foreach (var (text, at) in hazardLabels.Where(l => screen.Contains(l.At)))
+        {
+            if (labelled.Any(p => SKPoint.Distance(p, at) < 260 * uiScale))
+                continue;
+            labelled.Add(at);
+            DrawHazardLabel(canvas, text, at, uiScale);
+        }
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
@@ -739,19 +753,39 @@ public static partial class MapRenderer
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
 
-    /// <summary>A minefield from the data is left out over artwork that draws minefields itself; traps always show.</summary>
-    public static bool HazardShown(MapZone zone, MapArtwork? artwork) =>
-        !(zone.Group == MapContentBuilder.MinefieldGroup && artwork is { ShowsMinefields: true });
+    /// <summary>A minefield or border-sniper zone from the data is left out over artwork that draws them itself; traps
+    /// always show.</summary>
+    public static bool HazardShown(MapZone zone, MapArtwork? artwork) => zone.Group switch
+    {
+        MapContentBuilder.MinefieldGroup => artwork is not { ShowsMinefields: true },
+        MapContentBuilder.SniperZoneGroup => artwork is not { ShowsSniperZones: true },
+        _ => true,
+    };
 
-    private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1)
+    /// <summary>Hazard areas get a name from this zoom over the overview (like landmarks): "SNIPER ZONE".</summary>
+    public static string? HazardLabel(MapZone zone) => zone.Group == MapContentBuilder.SniperZoneGroup ? "SNIPER ZONE" : null;
+
+    /// <param name="hazardLabels">Collects hazard areas' names ("SNIPER ZONE", from <see cref="LandmarkFromZoom"/>) to draw
+    /// after every zone; null draws none.</param>
+    /// <param name="ground">The artwork's ground in screen space (<see cref="GroundShader"/>) that keeps a hazard to the
+    /// drawn map; null draws it whole.</param>
+    private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1,
+        List<(string Text, SKPoint At)>? hazardLabels = null, SKShader? ground = null)
     {
         if (zone.Outline.Count < 3)
             return;
-        using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
+        var points = zone.Outline.Select(p => Screen(camera, scene, p)).ToArray();
+        using var path = Polygon(points);
         if (zone.Kind == MarkerKind.Hazard)
         {
-            if (HazardShown(zone, scene.Artwork))
-                DrawHazard(canvas, path, scene, ui);
+            if (!HazardShown(zone, scene.Artwork))
+                return;
+            DrawHazard(canvas, path, scene, ui, ground);
+            // Named where it lies on the drawn map, not out in the empty space past its edge.
+            var centre = new SKPoint(points.Average(p => p.X), points.Average(p => p.Y));
+            if (hazardLabels is not null && HazardLabel(zone) is { } label && ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom
+                && (scene.Artwork is not { } artwork || artwork.OnGround(ToViewBox(camera, scene, centre))))
+                hazardLabels.Add((label, centre));
             return;
         }
         var kept = zone.Group is not null && scene.Kept.Contains(zone.Group);
@@ -807,20 +841,71 @@ public static partial class MapRenderer
         }
     }
 
-    // A hazard tarkov.dev outlines (Labyrinth's traps): a thin ink outline, hatched, an area style nothing else uses.
-    private static void DrawHazard(SKCanvas canvas, SKPath path, MapScene scene, float ui)
+    // A hazard area's name, set like a street name (Ink at 59 % on a halo of the ground), centred on the area.
+    private static void DrawHazardLabel(SKCanvas canvas, string text, SKPoint at, float ui)
+    {
+        using var font = new SKFont(Typeface, 10.5f * ui);
+        using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
+        canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, halo);
+        canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, paint);
+    }
+
+    // A hazard tarkov.dev outlines (traps, minefields, border-sniper zones): a thin ink outline, hatched, an area style
+    // nothing else uses. Thin and sparse, so the artwork reads through it (owner, 2026-10-03, on Customs' minefields: "big
+    // white rectangles"), and over artwork only where it draws the map (GroundShader).
+    private static void DrawHazard(SKCanvas canvas, SKPath path, MapScene scene, float ui, SKShader? ground = null)
     {
         var fade = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
-        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)(110 - 50 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
-        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)(170 - 80 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
+        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)(80 - 35 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.8f * ui };
+        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)(120 - 55 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var hatchOnGround = OnGround(hatch, ground);
+        using var edgeOnGround = OnGround(edge, ground);
         var box = path.Bounds;
         canvas.Save();
         canvas.ClipPath(path, antialias: true);
-        var step = 4 * ui;
+        var step = 5 * ui;
         for (var x = box.Left - box.Height; x < box.Right; x += step)
             canvas.DrawLine(x, box.Bottom, x + box.Height, box.Top, hatch);
         canvas.Restore();
         canvas.DrawPath(path, edge);
+    }
+
+    // A paint's colour taken through the ground's alpha (a shader in place of the colour); null: as it is.
+    private static SKShader? OnGround(SKPaint paint, SKShader? ground)
+    {
+        if (ground is null)
+            return null;
+        using var color = SKShader.CreateColor(paint.Color);
+        paint.Shader = SKShader.CreateBlend(SKBlendMode.DstIn, color, ground);
+        paint.Color = SKColors.Black;
+        return paint.Shader;
+    }
+
+    /// <summary>
+    /// The artwork's <see cref="MapArtwork.Ground"/> placed on the screen as the artwork is drawn (DrawArtwork), transparent
+    /// past its edge; null without artwork (tiles and sheets keep their hazards whole: they lie inside the render).
+    /// </summary>
+    private static SKShader? GroundShader(Camera camera, MapScene scene)
+    {
+        if (scene.Artwork is not { Ground: { } ground } artwork)
+            return null;
+        var box = artwork.ViewBox;
+        var place = scene.Placement;
+        var matrix = camera.Matrix
+            .PreConcat(SKMatrix.CreateTranslation((float)place.OffsetX, (float)place.OffsetY))
+            .PreConcat(SKMatrix.CreateScale((float)place.Scale, (float)place.Scale))
+            .PreConcat(SKMatrix.CreateTranslation(box.Left, box.Top))
+            .PreConcat(SKMatrix.CreateScale(box.Width / ground.Width, box.Height / ground.Height));
+        return ground.ToShader(SKShaderTileMode.Decal, SKShaderTileMode.Decal, new SKSamplingOptions(SKFilterMode.Linear), matrix);
+    }
+
+    // A screen point in the artwork's own coordinates (its viewBox), the inverse of DrawArtwork's placement.
+    private static SKPoint ToViewBox(Camera camera, MapScene scene, SKPoint screen)
+    {
+        var map = camera.ToMap(screen);
+        var place = scene.Placement;
+        return new SKPoint((float)((map.X - place.OffsetX) / place.Scale), (float)((map.Y - place.OffsetY) / place.Scale));
     }
 
     private static void DrawSpawns(SKCanvas canvas, Camera camera, MapScene scene, float ui)

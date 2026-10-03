@@ -75,20 +75,23 @@ public class LandmarkTests
     }
 
     [Fact]
-    public void Hazards_are_trap_sized_traps_and_minefields_of_any_size()
+    public void Hazards_are_trap_sized_traps_minefields_and_border_sniper_zones()
     {
         var map = MapWith(hazards:
         [
             new("hazard", "Hazard", At(0, 0), Box(0, 0, 1, 3), 2, 0),
             new("hazard", "Hazard", At(0, 0), Box(-27, -29, 54, 58), -0.6, -2.6),
             new("minefield", "DamageType_Landmine", At(0, 0), Box(100, 100, 80, 60), 1, 0),
-            new("sniper", "ScavRole/Marksman", At(0, 0), Box(200, 200, 5, 5), 1, 0),
+            new("sniper", "ScavRole/Marksman", At(0, 0), Box(200, 200, 300, 40), 1, 0),
         ]);
         var zones = MapContentBuilder.Hazards(map);
-        Assert.Equal(2, zones.Count);
+        Assert.Equal(3, zones.Count);
         Assert.All(zones, z => Assert.Equal(MarkerKind.Hazard, z.Kind));
         Assert.Null(zones[0].Group);
         Assert.Equal(MapContentBuilder.MinefieldGroup, zones[1].Group);
+        Assert.Equal(MapContentBuilder.SniperZoneGroup, zones[2].Group);
+        Assert.Equal("SNIPER ZONE", MapRenderer.HazardLabel(zones[2]));
+        Assert.Null(MapRenderer.HazardLabel(zones[1]));
     }
 
     [Fact]
@@ -120,6 +123,65 @@ public class LandmarkTests
         Assert.True(MapRenderer.HazardShown(minefield, without));
         Assert.False(MapRenderer.HazardShown(minefield, with));
         Assert.True(MapRenderer.HazardShown(trap, with));
+
+        // Border-sniper zones: Customs, Ground Zero and Streets draw a "Sniper" group, Interchange a "Danger" group.
+        var sniperZone = minefield with { Id = "sniper-zone:0", Group = MapContentBuilder.SniperZoneGroup };
+        using var sniper = Artwork(Svg("""<g id="Sniper" class="danger"><rect width="10" height="10"/></g>"""));
+        using var danger = Artwork(Svg("""<g id="Danger" class="danger"><rect width="10" height="10"/></g>"""));
+        Assert.False(with.ShowsSniperZones);
+        Assert.True(sniper.ShowsSniperZones);
+        Assert.True(danger.ShowsSniperZones);
+        Assert.False(sniper.ShowsMinefields);
+        Assert.True(MapRenderer.HazardShown(sniperZone, with));
+        Assert.False(MapRenderer.HazardShown(sniperZone, sniper));
+        Assert.False(MapRenderer.HazardShown(sniperZone, danger));
+        Assert.True(MapRenderer.HazardShown(minefield, sniper));
+    }
+
+    [Fact]
+    public void A_hazard_over_artwork_hatches_only_where_it_draws_the_map()
+    {
+        // Customs' minefields run past the drawn map into the empty space around it (owner, 2026-10-03: "big white
+        // rectangles"). Here the artwork draws its left half only.
+        var (camera, sheet) = TestView.Of([]);
+        var path = Path.Combine(Path.GetTempPath(), $"shturmap-ground-{Guid.NewGuid():N}.svg");
+        File.WriteAllText(path, """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><rect width="500" height="1000" fill="#808080"/></svg>""");
+        MapArtwork artwork;
+        try
+        {
+            artwork = MapArtwork.Load(path, sheet.Definition);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+        using var _ = artwork;
+        var scene = new MapScene(sheet.Definition, artwork);
+        SKPoint At(double x, double y) => camera.ToScreen(scene.Placement.SvgToMap(x, y));
+        Assert.True(artwork.OnGround(new SKPoint(250, 500)));
+        Assert.False(artwork.OnGround(new SKPoint(750, 500)));
+
+        SKBitmap Draw()
+        {
+            var bitmap = new SKBitmap(1000, 1000);
+            using var canvas = new SKCanvas(bitmap);
+            MapRenderer.Render(canvas, camera, scene, 1);
+            return bitmap;
+        }
+        // How many pixels of a 20-pixel square around a point the hazard changed.
+        static int Changed(SKBitmap before, SKBitmap after, SKPoint at)
+        {
+            var n = 0;
+            for (var x = (int)at.X - 10; x < (int)at.X + 10; x++)
+                for (var y = (int)at.Y - 10; y < (int)at.Y + 10; y++)
+                    n += before.GetPixel(x, y) != after.GetPixel(x, y) ? 1 : 0;
+            return n;
+        }
+        using var bare = Draw();
+        scene.Zones = [new MapZone("minefield:0", MarkerKind.Hazard, [new(-5000, 0, -5000), new(5000, 0, -5000), new(5000, 0, 5000), new(-5000, 0, 5000)], MapContentBuilder.MinefieldGroup)];
+        using var hatched = Draw();
+        Assert.True(Changed(bare, hatched, At(250, 500)) > 20);
+        Assert.Equal(0, Changed(bare, hatched, At(750, 500)));
     }
 
     [Fact]

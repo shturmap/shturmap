@@ -543,7 +543,22 @@ spawns below).
     hatched style, whatever their size, wherever the map's picture doesn't draw them itself. The artwork of Woods,
     Shoreline, Lighthouse, Streets and Terminal has a group whose id starts with "mine" (`MapArtwork.ShowsMinefields`),
     so the data's outlines would only double them there; Customs (2), Reserve (1), Interchange (7) and Ground Zero (5)
-    get them from the data. Not drawn: "sniper" zones (the sniper markers already).
+    get them from the data. **Border-sniper zones** (owner, 2026-10-03, from the map audit): tarkov.dev's "sniper"
+    hazards are the kill zones where the map's border snipers shoot anyone who walks in, not sniper-Scav spawns. All
+    107 are named "ScavRole/Marksman", five of their eight maps have no sniper Scavs at all, and they lie at the
+    edges. They get the same hatch (so the hatch means "this area kills you": traps, minefields, border snipers),
+    named "SNIPER ZONE" from 1.5 times the overview, once per group of neighbouring zones. Where the artwork draws
+    them (a "danger" group named "Sniper": Customs, Ground Zero, Streets; "Danger": Interchange, whose strips the
+    data's zones cover exactly; `MapArtwork.ShowsSniperZones`) they are left to it; Woods (39), Lighthouse (13),
+    Shoreline (10) and Reserve (3) get them from the data. **Kept to the drawn map** (owner, 2026-10-03: "What are the
+    big white rectangles at the bottom of Customs, looks odd"): over artwork a hazard shows only where the picture
+    draws something (ground, water, buildings), not over the empty space around the map, where many of the data's
+    outlines run on. The SVGs have no background, so `MapArtwork.Ground` is the base picture's alpha, drawn once when
+    the artwork loads (2048 px on the longer side) and laid under the hatch's ink as a shader placed like the artwork,
+    so a frame costs nothing more. Customs' two minefields and Reserve's minefield and sniper zones lie wholly past the
+    drawn map, so nothing of them shows; Woods' and Interchange's end at the map's edge. A zone is named only where its
+    centre is on the drawn map. Tiles and sheets keep hazards whole (Labyrinth's traps lie inside its render). The
+    hatch is quiet so the artwork reads through it: 0.8 px lines 5 px apart at 31 % ink, the outline 1 px at 47 %.
   - **Containers** on a sheet only: faint ink dots where loot containers stand, on the floor shown (The Lab has 319,
     Labyrinth 35), so rooms and corridors show from real points where no artwork draws them. On artwork they would
     be clutter (Streets has 1,282).
