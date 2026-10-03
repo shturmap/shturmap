@@ -25,7 +25,17 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
    Updates setting, the study-log switch, Copy diagnostics, LOG FOLDER, LICENCES, PRIVACY, the report dialog's Send,
    the crash question's buttons, the effort hairlines and new labels at 125 % and 150 % display scaling. Ask the owner
    to try them in the installed 0.2.0, or walk through them together.
-5. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+5. **PROGRESS rows look less important than they are** (owner, 2026-10-03: "the quests under progress have a
+   different styling, which in some way makes sense since they are not to be completed during this raid. However,
+   there is a bit of a weird cognitive mismatch since this encoding suggests less importance. This should be fixed.")
+   Today the Plan card draws PROGRESS rows muted (name, glyph and trader portrait dimmed), which reads as "disabled"
+   or "unimportant", while these quests are as much the player's work this raid as COMPLETE ones. Direction to
+   propose before changing anything: same ink and strength as COMPLETE rows; the section heading alone says
+   "progress", and if a row needs more, a factual note instead of dimming (e.g. "2 of 5 objectives here", or why it
+   can't finish: "needs found-in-raid items", "kills over several raids"), taken from what the planner already knows.
+   Check the raid card's rows and the folded cards' glyphs (gold to complete, muted to progress) for the same issue,
+   and keep "muted = after the raid / at a trader" (objective rows) as the one meaning of muted. DESIGN.md decision.
+6. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
