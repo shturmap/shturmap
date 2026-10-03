@@ -76,7 +76,27 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
    and the "?" glyph inside it. Fix so the capitals, the lights, the "?" and the button's frame share one middle line
    (the left side too: logo, mode label, raid state). Check with an enlarged snapshot crop, as for SHTURMAN-2, and at
    125 % and 150 % scaling.
-10. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+10. **An FAQ at the end of the website, for new and experienced players, and maybe in the README** (owner,
+    2026-10-03: "At the end of the website, put a FAQ that related to new and expert gamers and go into the 'is this
+    cheating' thing based on our research. Maybe also add this to the GH readme if it makes sense.") This is the
+    owner's go for a website change; do it in one pass with the release's website items ("At the production release",
+    item 5: risk line, article 437, PvP sentence; the "nothing is sent" wording; media refresh), and draft before
+    publishing.
+    - **New players:** what it is and what it isn't (a quest planner and a map of where your last screenshot was
+      taken); do I need to know the maps; how the position works (press your screenshot key); PvE and PvP; which
+      maps; game languages; what it costs (nothing) and what it sends (only reports you send, the update check).
+    - **Experienced players, "is this cheating?":** answered from the research (DESIGN.md §2): what it reads and
+      never does; BSG's support article 437 describes the coordinates in screenshot names (a source, not an
+      endorsement); the License Agreement 4.3.4 and no guarantee against sanctions; no BSG statement on such tools
+      and no verified ban found, as of 2026-10-03; the PvP debate; never shares a position, never takes a
+      screenshot for you; open source, so anyone can check.
+    - **Open for the owner:** earlier the owner wanted the site to avoid the word "cheating" and instead say what it
+      relies on and never does (2026-10-02). An FAQ answers players' own question, so propose the question's
+      wording (e.g. "Is this allowed? Can I get banned?" versus "Is this cheating?") before writing it.
+    - **README:** if it makes sense, the three or four questions that matter before installing (allowed / banned /
+      PvP / what it sends), linking to the website's full FAQ; no duplication beyond that.
+    - Follow DESIGN.md §2's wording rule (no cheat-seller vocabulary, no hint of approval).
+11. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
