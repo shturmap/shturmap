@@ -53,19 +53,23 @@ public sealed record PlanMap(string Id, string Name, IReadOnlySet<string> MapIds
 
 public sealed record QuestOnMap(PlanQuest Quest, IReadOnlyList<PlanObjective> Objectives);
 
-/// <param name="RouteMeters">Walking distance through one place per located objective, nearest first.</param>
+/// <summary>Why a quest only progresses on a map, as the planner sees it (<see cref="RaidPlanner.WhyProgress"/>).</summary>
+/// <param name="Here">Its raid objectives that can be done on this map.</param>
+/// <param name="InRaid">All its raid objectives (not optional).</param>
+/// <param name="FoundInRaid">One of those here wants items found in raid.</param>
+/// <param name="Kills">The largest kill count here above <see cref="RaidPlanner.OneRaidCount"/>, or 0.</param>
+public sealed record ProgressFacts(int Here, int InRaid, bool FoundInRaid, int Kills);
+
+/// <param name="RouteMeters">Distance through one place per located objective, nearest first: only to break ties
+/// between maps of equal score. Never shown; a time or distance estimate in the UI misled more than it helped (owner,
+/// 2026-10-03).</param>
 public sealed record MapPlan(
     PlanMap Map,
     double Score,
     IReadOnlyList<QuestOnMap> Finish,
     IReadOnlyList<QuestOnMap> Progress,
     IReadOnlyList<Requirement> Requirements,
-    double RouteMeters)
-{
-    public const double WalkingSpeed = 3; // m/s, allowing for caution and detours
-
-    public double WalkingMinutes => RouteMeters / WalkingSpeed / 60;
-}
+    double RouteMeters);
 
 /// <summary>
 /// Ranks maps for the next raid by what the active quests let you do there. See docs/DESIGN.md §7. Objective
@@ -86,6 +90,16 @@ public static class RaidPlanner
             .Take(top)
             .ToList();
     }
+
+    /// <summary>
+    /// The facts behind a quest being in PROGRESS rather than COMPLETE: the same tests as <see cref="Plan"/>'s
+    /// "finishable" (objectives elsewhere, found-in-raid items, kill counts above <see cref="OneRaidCount"/>).
+    /// </summary>
+    public static ProgressFacts WhyProgress(QuestOnMap quest) => new(
+        quest.Objectives.Count,
+        quest.Quest.Objectives.Count(o => QuestTaxonomy.InRaid(o.Kind) && !o.Optional),
+        quest.Objectives.Any(o => o.Kind == ObjectiveKind.FindInRaid),
+        quest.Objectives.Where(o => o.Kind == ObjectiveKind.Elimination && o.Count > OneRaidCount).Select(o => o.Count).DefaultIfEmpty(0).Max());
 
     public static MapPlan Plan(IReadOnlyList<PlanQuest> quests, PlanMap map)
     {

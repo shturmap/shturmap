@@ -13,8 +13,9 @@ public sealed record RequirementView(RequirementKind Kind, string Text, string F
 /// <param name="Synopsis">What it asks on the plan's map in a few words (<see cref="Planning.Synopsis"/>), or empty.</param>
 /// <param name="Group">Its effort group on the plan's map (<see cref="QuestEffort"/>).</param>
 /// <param name="StartsGroup">The first row of a later effort group in its section: a hairline goes above it.</param>
+/// <param name="Note">For a PROGRESS row, why it only progresses here, in a few words (<see cref="Planning.ProgressNote"/>); else empty.</param>
 public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null, string Synopsis = "",
-    EffortGroup Group = EffortGroup.GoThere, bool StartsGroup = false);
+    EffortGroup Group = EffortGroup.GoThere, bool StartsGroup = false, string Note = "");
 
 /// <summary>One suggested map for the next raid.</summary>
 public sealed record MapPlanView(
@@ -23,7 +24,6 @@ public sealed record MapPlanView(
     IReadOnlyList<PlanQuestView> Finish,
     IReadOnlyList<PlanQuestView> Progress,
     IReadOnlyList<RequirementView> Requirements,
-    int WalkingMinutes,
     int RaidMinutes,
     IReadOnlyList<string> Bosses);
 
@@ -43,6 +43,13 @@ public static class Planning
         var map = Maps(data).FirstOrDefault(m => id is not null && m.MapIds.Contains(id));
         return map is null ? null : ToView(data, RaidPlanner.Plan(Quests(data, activeQuestIds), map));
     }
+
+    /// <summary>
+    /// The facts under a map's name in Plan: the raid's length and its bosses with their chances. No walking time: it
+    /// was an estimate, for quests the line didn't name, and players rarely just walk (owner, 2026-10-03).
+    /// </summary>
+    public static string FactsLine(MapPlanView plan) =>
+        string.Join(" · ", new[] { plan.RaidMinutes > 0 ? $"{plan.RaidMinutes} min raid" : null }.Concat(plan.Bosses).OfType<string>());
 
     /// <summary>Active quests whose in-raid work fits any map.</summary>
     public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds) =>
@@ -169,9 +176,8 @@ public static class Planning
         data.Maps.TryGetValue(plan.Map.Id, out var map) ? map.NormalizedName : plan.Map.Id,
         plan.Map.Name,
         Rows(data, plan.Finish, plan.Map),
-        Rows(data, plan.Progress, plan.Map),
+        Rows(data, plan.Progress, plan.Map, progress: true),
         plan.Requirements.Select(r => RequirementText(data, r)).ToList(),
-        (int)Math.Ceiling(plan.WalkingMinutes),
         plan.Map.RaidMinutes,
         data.BossesOn(plan.Map.Id).Select(BossText).ToList());
 
@@ -192,9 +198,27 @@ public static class Planning
         return QuestSynopsis.Of(objectives, here, data.Maps.Values.Select(m => m.Name).ToList());
     }
 
+    /// <summary>
+    /// Why a PROGRESS row can't be finished on this map, in a few words from the planner's facts (owner, 2026-10-03:
+    /// a PROGRESS quest is as much this raid's work as a COMPLETE one, so its row isn't dimmed; it says why instead):
+    /// "2 of 5 objectives here", "needs items found in raid", "25 kills in all". Empty when none applies.
+    /// </summary>
+    public static string ProgressNote(QuestOnMap quest)
+    {
+        var facts = RaidPlanner.WhyProgress(quest);
+        var parts = new List<string>();
+        if (facts.Here < facts.InRaid)
+            parts.Add($"{facts.Here} of {facts.InRaid} objectives here");
+        if (facts.FoundInRaid)
+            parts.Add("needs items found in raid");
+        if (facts.Kills > 0)
+            parts.Add($"{facts.Kills} kills in all");
+        return string.Join(" · ", parts);
+    }
+
     /// <summary>One section's rows in the plan's order, each with its effort group; a later group's first row starts a
-    /// new group (the hairline between groups).</summary>
-    public static IReadOnlyList<PlanQuestView> Rows(GameData data, IEnumerable<QuestOnMap> section, PlanMap map)
+    /// new group (the hairline between groups). PROGRESS rows also carry why they only progress (a note).</summary>
+    public static IReadOnlyList<PlanQuestView> Rows(GameData data, IEnumerable<QuestOnMap> section, PlanMap map, bool progress = false)
     {
         var rows = new List<PlanQuestView>();
         foreach (var q in section)
@@ -205,6 +229,7 @@ public static class Planning
                 Synopsis = Synopsis(data, q, map)?.Text ?? "",
                 Group = group,
                 StartsGroup = rows.Count > 0 && rows[^1].Group != group,
+                Note = progress ? ProgressNote(q) : "",
             });
         }
         return rows;

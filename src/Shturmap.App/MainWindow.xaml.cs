@@ -321,16 +321,10 @@ public sealed partial class MainWindow : Window
     {
         if (_snapshot is not { } s)
             return;
-        var map = s.Map?.Name ?? "";
-        var side = s.Raid.Side switch { RaidSide.Pmc => " · PMC", RaidSide.Scav => " · Scav", _ => "" };
         var elapsed = s.Raid.RaidStartedAt is { } started ? DateTime.Now - started : (TimeSpan?)null;
-        ViewModel.RaidText = s.Raid.Phase switch
-        {
-            RaidPhase.Loading => $"Loading {map}",
-            RaidPhase.InRaid when elapsed is { } e => $"In raid · {map}{side} · {(int)e.TotalMinutes} min",
-            RaidPhase.InRaid => $"In raid · {map}{side}",
-            _ => "In the menus",
-        };
+        // Only what the log shows: outside a raid "Not in a raid", never "in the menus" (RaidStatus).
+        ViewModel.RaidText = RaidStatus.Text(s.Raid, s.Map?.Name, DateTime.Now);
+        ViewModel.RaidDetail = RaidStatus.Tooltip(s.Raid, DateTime.Now);
 
         var parts = new List<string>();
         if (s.RaidInfo is { } info)
@@ -451,13 +445,12 @@ public sealed partial class MainWindow : Window
         if (openIndex < 0)
             openIndex = 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
-        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup };
+        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
         vm.Plans = s.Plan.Select((p, i) => new PlanCard(
             p.NormalizedName,
             p.MapName,
             Summary(p.Finish.Count, p.Progress.Count),
-            string.Join(" · ", new[] { p.WalkingMinutes > 0 ? $"~{p.WalkingMinutes} min walking" : null, p.RaidMinutes > 0 ? $"{p.RaidMinutes} min raid" : null }
-                .Concat(p.Bosses).OfType<string>()),
+            Planning.FactsLine(p),
             i == openIndex,
             p.Finish.Select(q => OnMap(q, p)).ToList(),
             p.Progress.Select(q => OnMap(q, p)).ToList(),
