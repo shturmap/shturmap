@@ -115,6 +115,9 @@ public sealed partial class MainViewModel : ObservableObject
 {
     [ObservableProperty] public partial string ModeText { get; set; } = "PvE";
 
+    /// <summary>Where the mode comes from: the game's log and when, or the mode last played.</summary>
+    [ObservableProperty] public partial string ModeDetail { get; set; } = "";
+
     [ObservableProperty] public partial string RaidText { get; set; } = "Starting…";
 
     [ObservableProperty] public partial bool InRaid { get; set; }

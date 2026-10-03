@@ -78,6 +78,9 @@ public sealed record SessionSnapshot
 
     public GameMode Mode { get; init; } = GameMode.Pve;
 
+    /// <summary>What the game's log said about the mode, for the status bar's tooltip.</summary>
+    public ModeReading ModeReading { get; init; } = new();
+
     /// <summary>The map on screen: the raid's map while in a raid, otherwise the last raid's or the one picked.</summary>
     public MapIdentity? Map { get; init; }
 

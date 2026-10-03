@@ -274,7 +274,8 @@ public sealed partial class MainWindow : Window
             return; // the website demo's pause; applied when it ends
 
         var vm = ViewModel;
-        vm.ModeText = s.Mode switch { GameMode.Pvp => "PvP", GameMode.Seasonal => "Seasonal", _ => "PvE" };
+        vm.ModeText = ModeReading.Text(s.Mode);
+        vm.ModeDetail = s.ModeReading.Tooltip(gameFound: s.Locations is null || s.Locations.Install is not null, DateTime.Now);
         vm.InRaid = s.Raid.Phase != RaidPhase.Menu;
         vm.LogsText = s.Logs.Text;
         vm.LogsOk = s.Logs.Ok;
@@ -1389,15 +1390,6 @@ public sealed partial class MainWindow : Window
     }
 
     // ---- UI events ----
-
-    private async void OnModeClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem { Tag: string tag } && Enum.TryParse<GameMode>(tag, out var mode))
-        {
-            Study.Ui("mode.pick", ("mode", mode));
-            await _session.SetModeAsync(mode);
-        }
-    }
 
     private async void OnMapPicked(object sender, SelectionChangedEventArgs e)
     {

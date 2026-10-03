@@ -40,6 +40,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
     private GameLocations? _locations;
 
     private GameMode _mode = GameMode.Pve;
+    private ModeReading _modeReading = new();
     private GameData? _data;
     private ItemSources? _sources;
     private LoadProblem? _dataProblem;
@@ -233,20 +234,6 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         }
     }
 
-    public async Task SetModeAsync(GameMode mode)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            SwitchMode(mode);
-            Publish();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
     public Task SetQuestStateAsync(string questId, QuestState state) =>
         AddObservationsAsync([new QuestObservation(_mode, questId, state, ObservationSource.Manual, DateTime.Now, "manual:" + Guid.NewGuid())]);
 
@@ -409,7 +396,8 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     private void SwitchMode(GameMode mode)
     {
-        if (mode == GameMode.Unknown || mode == _mode)
+        mode = ModeReading.Follow(_mode, mode);
+        if (mode == _mode)
             return;
         _mode = mode;
         _store?.SetSetting("mode", mode.ToString());
@@ -520,6 +508,15 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                         StudyHint(late);
                 }
                 return;
+        }
+
+        // The status bar says where the mode comes from; a mode the game names that Shturmap can't read keeps the
+        // last known one (SwitchMode ignores Unknown).
+        if (item.Event is SessionModeEvent said)
+        {
+            if (said.Mode == GameMode.Unknown && said.Raw != _modeReading.Unknown)
+                AppLog.Warn($"The game's log names a mode Shturmap doesn't know ('{said.Raw}'); keeping {_mode}");
+            _modeReading = _modeReading.Read(said);
         }
 
         var phaseBefore = _tracker.State.Phase;
@@ -857,6 +854,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             Raid = ShownRaid,
             SideFromLogs = _tracker.State.Side != RaidSide.Unknown,
             Mode = _mode,
+            ModeReading = _modeReading,
             Map = _map,
             Definition = definition,
             Fix = fix,

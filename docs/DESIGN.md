@@ -243,6 +243,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
   the help button.
+  The mode is a plain label from the game's log, with no chooser (owner, 2026-10-03, replacing a PvE/PvP/Seasonal
+  dropdown). Evidence: all 21 sessions in the owner's application logs (15 August to 2 October) have `Session
+  mode: Pve | Regular | PvpSeason` 8–11 s after the game starts, a switch within a session writes a new line (2
+  sessions), and the dropdown was never used (no `mode.pick` in the study log). Its tooltip says where the mode
+  comes from, and only what was read: "From the game's log, 21:52" (the line's time, with the day when it isn't
+  today); before any line, "The mode you last played; follows the game once it starts" (the saved `mode` setting);
+  with no game on this PC, "No game on this PC: the mode you last played". A mode name Shturmap doesn't know (a
+  future one) keeps the last known mode, says "The game says 'X', which Shturmap doesn't know yet…" and is logged
+  as a WARN. A chooser belongs to the mode without a game (docs/NEXT.md, item 6).
 - **Rail** (left, 380 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and

@@ -171,6 +171,9 @@ quests, raid state, positions (all from the game's logs and screenshot names).
 - What the default view is: a map browser (pick a map; extracts, transits, bosses, spawns; the side selectable
   PMC/Scav), a quest lookup (every quest on a map, clearly labelled as all quests, not "yours", since quest states
   come only from the game's logs: DESIGN.md), or both.
+- The game mode: without the game's log Shturmap can't know it, and since 2026-10-03 the status bar's mode is a
+  label from the log with no chooser (DESIGN.md, "Screen anatomy"). A PvE / PvP / Seasonal chooser belongs to this
+  mode (tarkov.dev's data differs per mode: bosses, prices).
 - The laptop case: reading the game PC's logs and screenshots over a network share (the folder pickers already
   allow a manual game folder: "Install: manual") would make the full app work there; is that in scope?
 - How it says so: one quiet line where the Plan card would be ("No game on this PC: browsing maps"), not a notice
