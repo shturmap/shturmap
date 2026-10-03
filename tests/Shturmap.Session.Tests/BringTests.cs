@@ -184,4 +184,26 @@ public class BringTests
         // Before the item categories are loaded, the items themselves.
         Assert.Equal("Use: Mosin rifle or 2 others · Without: PACA armor / SSh-68 helmet", Planning.Needs(data, task, objective, new HashSet<string> { "streets" }, false));
     }
+
+    // ---- what it takes to enter the map ----
+
+    [Fact]
+    public void A_map_s_entry_item_comes_first_with_no_quest()
+    {
+        // The Lab can't be entered without its keycard, quests or not (owner, 2026-10-03, from the map audit).
+        var lab = new PlanMap("lab", "The Lab", new HashSet<string> { "lab" }, 40, ["keycard", "keycard"]);
+        var row = Assert.Single(RaidPlanner.Plan([], lab).Requirements);
+        Assert.Equal(RequirementKind.Entry, row.Kind);
+        Assert.Equal("The Lab", row.Enter);
+        Assert.Empty(row.ForQuests);
+        var view = Planning.RequirementText(Data(), row);
+        Assert.Equal("to enter The Lab", view.Why);
+        // Before what the picks need, and before everything else.
+        var key = new RequirementView(RequirementKind.Key, "Key", "A", "key1", ["A"]);
+        var other = new RequirementView(RequirementKind.Bring, "Flare", "B", "flare", ["B"]);
+        var rows = Planning.BringOrder([key, other, view], new HashSet<string> { "A" });
+        Assert.Equal([RequirementKind.Entry, RequirementKind.Key, RequirementKind.Bring], rows.Select(r => r.Row.Kind));
+        Assert.False(rows[0].ForPicks);
+        Assert.True(rows[2].StartsOthers);
+    }
 }

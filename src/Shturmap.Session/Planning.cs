@@ -82,12 +82,15 @@ public static class Planning
     /// <param name="StartsOthers">The first row that serves no pick, after rows that do: a hairline goes above it.</param>
     public sealed record BringRow(RequirementView Row, bool ForPicks, bool StartsOthers);
 
-    /// <summary>What to bring, with what the picks need first and a hairline before the rest; otherwise as planned.</summary>
+    /// <summary>What to bring, with what the picks need first and a hairline before the rest; otherwise as planned.
+    /// What it takes to enter the map comes before everything: without it there is no raid.</summary>
     public static IReadOnlyList<BringRow> BringOrder(IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks)
     {
-        var forPicks = rows.Where(r => r.QuestIds.Any(picks.Contains)).ToList();
-        var others = rows.Where(r => !r.QuestIds.Any(picks.Contains)).ToList();
-        return forPicks.Select(r => new BringRow(r, true, false))
+        var entry = rows.Where(r => r.Kind == RequirementKind.Entry).ToList();
+        var forPicks = rows.Where(r => r.Kind != RequirementKind.Entry && r.QuestIds.Any(picks.Contains)).ToList();
+        var others = rows.Where(r => r.Kind != RequirementKind.Entry && !r.QuestIds.Any(picks.Contains)).ToList();
+        return entry.Select(r => new BringRow(r, false, false))
+            .Concat(forPicks.Select(r => new BringRow(r, true, false)))
             .Concat(others.Select((r, i) => new BringRow(r, false, i == 0 && forPicks.Count > 0)))
             .ToList();
     }
@@ -305,6 +308,8 @@ public static class Planning
                 return "to fit";
             case RequirementKind.Exit:
                 return "to leave through " + r.Exit;
+            case RequirementKind.Entry:
+                return "to enter " + r.Enter;
         }
         var item = r.Alternatives[0];
         var uses = r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>()
@@ -341,7 +346,8 @@ public static class Planning
             .Select(g =>
             {
                 var primary = g.FirstOrDefault(m => m.Map.NormalizedName == g.Key).Map ?? g.First().Map;
-                return new PlanMap(primary.Id, primary.Name, g.Select(m => m.Map.Id).ToHashSet(), primary.RaidDuration ?? 0);
+                return new PlanMap(primary.Id, primary.Name, g.Select(m => m.Map.Id).ToHashSet(), primary.RaidDuration ?? 0,
+                    g.SelectMany(m => m.Map.AccessKeys ?? []).Distinct().ToList());
             })
             .ToList();
 
@@ -425,7 +431,7 @@ public static class Planning
             text += " ×" + r.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture);
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
         // Says why it is on the list (the study log: gear cards were opened over and over to find out).
-        var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : $"{Purpose(data, r)}, for {quests}";
+        var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : r.ForQuests.Count == 0 ? Purpose(data, r) : $"{Purpose(data, r)}, for {quests}";
         return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList());
     }
 

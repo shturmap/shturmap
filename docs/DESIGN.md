@@ -680,6 +680,10 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
   `ExtractRules.Items` gives the items by the rules the extract list already uses: a red signal flare at a flare exit
   (Cease Fire!, Belka and Strelka), ice pick and paracord at a climbing exit (Payback), the roubles or item a paid
   exit asks for ("Roubles ×5,000: to leave through Primorsky Ave Taxi V-Ex"). Transits stay with their own text.
+- **"to enter <map>"** for what the map itself takes to deploy (tarkov.dev's `accessKeys`: The Lab's access keycard,
+  Labyrinth's, Icebreaker's marine repair kit; owner, 2026-10-03, from the map audit). It is the first row of the Plan
+  card's BRING and the raid card's, the first of the map card's need cells, and shows with no quest picked or none
+  there, since every raid there needs it (a Plan that ranked The Lab first never said it takes a keycard).
 - **Gear a kill forbids** (`notWearing`) is nothing to bring, so no row: a note on the objective's line in the raid
   card, "Without: armor, headwear" (the item categories it spans; before they load, the items).
 - One row per weapon set, mod set or exit item, listing every quest it serves; the quest rows' need cells, the raid

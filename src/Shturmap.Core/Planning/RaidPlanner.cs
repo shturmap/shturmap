@@ -6,8 +6,9 @@ namespace Shturmap.Core.Planning;
 /// <param name="Alternatives">Item ids; any one will do (keys often have alternatives).</param>
 /// <param name="ForQuests">Quest ids that need it.</param>
 /// <param name="Exit">For <see cref="RequirementKind.Exit"/>: the exit it is for, by its name ("Klimov Street (Flare)").</param>
+/// <param name="Enter">For <see cref="RequirementKind.Entry"/>: the map it lets you into ("The Lab").</param>
 public sealed record Requirement(RequirementKind Kind, IReadOnlyList<string> Alternatives, int Count, IReadOnlyList<string> ForQuests,
-    string? Exit = null);
+    string? Exit = null, string? Enter = null);
 
 public enum RequirementKind
 {
@@ -25,6 +26,9 @@ public enum RequirementKind
 
     /// <summary>What the exit a quest names takes to leave through it: a flare, climbing gear, money.</summary>
     Exit,
+
+    /// <summary>What it takes to enter the map at all (The Lab's keycard): for no quest, always first.</summary>
+    Entry,
 }
 
 /// <param name="Places">Positions per map id, where the objective has fixed places.</param>
@@ -70,7 +74,8 @@ public sealed record PlanQuest(string Id, string Name, IReadOnlyList<PlanObjecti
     int TraderOrder = int.MaxValue);
 
 /// <summary>A map as the player picks it in the game; variants that share artwork (Ground Zero 21+) are one map.</summary>
-public sealed record PlanMap(string Id, string Name, IReadOnlySet<string> MapIds, int RaidMinutes);
+/// <param name="EntryItems">What it takes to enter it at all, as item ids (The Lab's keycard; tarkov.dev's accessKeys).</param>
+public sealed record PlanMap(string Id, string Name, IReadOnlySet<string> MapIds, int RaidMinutes, IReadOnlyList<string>? EntryItems = null);
 
 public sealed record QuestOnMap(PlanQuest Quest, IReadOnlyList<PlanObjective> Objectives);
 
@@ -249,14 +254,16 @@ public static class RaidPlanner
 
         // A key listed alone also satisfies any alternative set that contains it.
         var singles = keys.Values.Where(k => k.Alternatives.Count == 1).Select(k => k.Alternatives[0]).ToHashSet(StringComparer.Ordinal);
-        return keys.Values
+        // What it takes to enter the map comes first: without it there is no raid (owner, 2026-10-03, from the map audit).
+        var entryItems = (map.EntryItems ?? []).Distinct().Select(id => new Requirement(RequirementKind.Entry, [id], 1, [], Enter: map.Name));
+        return entryItems.Concat(keys.Values
             .Where(k => k.Alternatives.Count == 1 || !k.Alternatives.Any(singles.Contains))
             .Select(k => new Requirement(RequirementKind.Key, k.Alternatives, 1, k.Quests.ToList()))
             .Concat(items.Select(i => new Requirement(RequirementKind.Bring, [i.Key], i.Value.Count, i.Value.Quests.ToList())))
             .Concat(exits.Values.Select(e => new Requirement(RequirementKind.Exit, [e.Item], e.Count, e.Quests.ToList(), e.Exit)))
             .Concat(wear.Values.Select(w => new Requirement(RequirementKind.Wear, w.Items, 1, w.Quests.ToList())))
             .Concat(weapons.Values.Select(w => new Requirement(RequirementKind.Weapon, w.Items, 1, w.Quests.ToList())))
-            .Concat(mods.Values.Select(m => new Requirement(RequirementKind.WeaponMods, m.Items, 1, m.Quests.ToList())))
+            .Concat(mods.Values.Select(m => new Requirement(RequirementKind.WeaponMods, m.Items, 1, m.Quests.ToList()))))
             .ToList();
     }
 

@@ -55,6 +55,7 @@ public sealed record ApiMob(string Id, string Name);
 /// <summary>A place where loose loot can spawn, and which items can spawn there.</summary>
 public sealed record ApiLootSpawn(ApiPosition? Position, List<string>? Items);
 
+/// <param name="AccessKeys">What it takes to enter the map at all (The Lab's TerraGroup Labs access keycard), as item ids.</param>
 public sealed record ApiMap(
     string Id,
     string Name,
@@ -71,7 +72,8 @@ public sealed record ApiMap(
     List<ApiLootSpawn>? LootLoose = null,
     List<ApiSwitch>? Switches = null,
     List<ApiSpawn>? Spawns = null,
-    List<ApiContainerSpot>? LootContainers = null);
+    List<ApiContainerSpot>? LootContainers = null,
+    List<string>? AccessKeys = null);
 
 // Where items come from (json.tarkov.dev items, barters, crafts, hideout). Prices are only used to say which trader
 // offer is the cheap one; Shturmap has no price views (docs/DESIGN.md §1).
