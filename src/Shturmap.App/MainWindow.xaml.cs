@@ -30,7 +30,6 @@ public sealed partial class MainWindow : Window
     private SessionSnapshot? _snapshot;
     private string? _sceneKey;
     private readonly HashSet<string> _sheetNoticeShown = new(StringComparer.Ordinal);
-    private string? _selectedQuest;
     private bool _updatingPicker;
     private bool _helpShownOnce;
     private readonly CardStack _cards;
@@ -69,9 +68,9 @@ public sealed partial class MainWindow : Window
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
-        // A click on a quest keeps its card open; the highlighter beside it (rows, cards) keeps it lit on the map.
+        // A click on a quest keeps its card open; the pen beside it (rows, cards) picks it for the coming raid.
         Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
-        Linked.KeepRequested += quest => Select(quest, "toggle");
+        Linked.KeepRequested += quest => _ = _session.TogglePickAsync(quest, "pen");
         Linked.FocusChanged += OnFocusChanged;
         // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
         // handle their own clicks.
@@ -165,7 +164,7 @@ public sealed partial class MainWindow : Window
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
-        new("ESC", "Close the cards; again to stop highlighting the quest"),
+        new("ESC", "Close the cards"),
         new("F1 / ?", "This help"),
         new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
     ];
@@ -300,12 +299,7 @@ public sealed partial class MainWindow : Window
             _previewTimer?.Stop();
             EndPreview(restore: false);
         }
-        // A kept quest that is done (or failed) has nothing left to find.
-        if (_selectedQuest is not null && s.Quests.GetValueOrDefault(_selectedQuest)?.State != QuestState.Active)
-        {
-            _selectedQuest = null;
-            ShowSelection();
-        }
+        ShowPicks(s);
         UpdateClockTexts();
         UpdatePicker(s);
         UpdatePlan(s);
@@ -402,20 +396,29 @@ public sealed partial class MainWindow : Window
             openIndex = 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
         QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
-        vm.Plans = s.Plan.Select((p, i) => new PlanCard(
-            p.NormalizedName,
-            p.MapName,
-            Summary(p.Finish.Count, p.Progress.Count),
-            Planning.FactsLine(p),
-            i == openIndex,
-            p.Finish.Select(q => OnMap(q, p)).ToList(),
-            p.Progress.Select(q => OnMap(q, p)).ToList(),
-            p.Requirements.Select(r => BringLine(s, r)).ToList(),
-            (i + 1).ToString(CultureInfo.InvariantCulture),
-            p.Requirements.Select(r => Chip(s, r)).ToList()
-        )).ToList();
+        // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections).
+        vm.Plans = s.Plan.Select((p, i) =>
+        {
+            var sections = Planning.Sections(p, s.Picks);
+            return new PlanCard(
+                p.NormalizedName,
+                p.MapName,
+                Summary(p.Finish.Count, p.Progress.Count),
+                Planning.FactsLine(p),
+                i == openIndex,
+                sections.Finish.Select(q => OnMap(q, p)).ToList(),
+                sections.Progress.Select(q => OnMap(q, p)).ToList(),
+                BringLines(s, p.Requirements),
+                (i + 1).ToString(CultureInfo.InvariantCulture),
+                p.Requirements.Select(r => Chip(s, r)).ToList(),
+                sections.Picks.Select(q => OnMap(q, p)).ToList());
+        }).ToList();
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
+
+    /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
+    private static IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows) =>
+        Planning.BringOrder(rows, s.Picks).Select(b => BringLine(s, b.Row) with { StartsOthers = b.StartsOthers }).ToList();
 
     /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
     /// will do (a weapon class), one of them ("e.g. Mosin rifle (Sniper) · …"); empty if unknown.</summary>
@@ -494,9 +497,11 @@ public sealed partial class MainWindow : Window
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
             .Select(q => q.Quest)
             .ToList();
-        vm.RaidComplete = quests.Where(q => q.Complete).ToList();
-        vm.RaidProgress = quests.Where(q => !q.Complete).ToList();
-        vm.RaidBring = (s.MapPlan?.Requirements ?? []).Select(r => BringLine(s, r)).ToList();
+        // The picks first, nearest first; then COMPLETE and PROGRESS without them.
+        vm.RaidPicks = quests.Where(q => s.Picks.Contains(q.QuestId)).ToList();
+        vm.RaidComplete = quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
+        vm.RaidProgress = quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
+        vm.RaidBring = BringLines(s, s.MapPlan?.Requirements ?? []);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
@@ -519,10 +524,10 @@ public sealed partial class MainWindow : Window
 
         // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
         // log: in a raid the app got glances with a median of 3.9 s).
-        vm.RaidNext = vm.ScavRaid ? null
-            : s.Objectives.Where(o => o.HasPlace && o.Distance is not null).MinBy(o => o.Distance) is { } nearest
-                ? ToItem(nearest, Direction(nearest.Direction, nearest.MapBearing), s.Map?.Name)
-                : null;
+        // With picks, NEXT is the nearest objective among them (the guide line leads there too); else the nearest of all.
+        var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null).ToList();
+        var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
+        vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.Map?.Name);
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
@@ -554,6 +559,7 @@ public sealed partial class MainWindow : Window
         var quests = loot.SelectMany(l => l.QuestIds).Distinct().Count();
         vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
         vm.RaidNote = "As a Scav, quest objectives don't count; items you find in raid do.";
+        vm.RaidPicks = [];
         vm.RaidComplete = [];
         vm.RaidProgress = [];
         vm.RaidBring = [];
@@ -615,7 +621,7 @@ public sealed partial class MainWindow : Window
         scene.Floor = ShownFloor(latest);
         scene.Markers = latest.Content?.Markers ?? [];
         scene.Zones = latest.Content?.Zones ?? [];
-        scene.Selected = _selectedQuest;
+        scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
         Map.Refresh();
     }
@@ -949,24 +955,20 @@ public sealed partial class MainWindow : Window
 
     private Windows.Foundation.Point _markerAt;
 
-    // A quest's highlighter keeps it lit (rows tinted, markers cyan and ringed, a line to the nearest one) until it is
-    // clicked again, another quest's is clicked, or Esc.
-    private void Select(string questId, string how)
+    // The picks (the pen on a quest; GameSession keeps them): rows tinted, markers cyan and ringed, a line to the
+    // nearest place, until a quest is done, its pen is clicked again or the picks are cleared.
+    private void ShowPicks(SessionSnapshot s)
     {
-        _selectedQuest = _selectedQuest == questId ? null : questId;
-        Study.Ui("select", ("quest", questId), ("on", _selectedQuest is not null), ("how", how));
-        ShowSelection();
-    }
-
-    private void ShowSelection()
-    {
-        Linked.Selected = _selectedQuest;
-        if (Map.Scene is { } scene)
+        Linked.Picks = s.Picks;
+        ViewModel.HasPicks = s.Picks.Count > 0;
+        if (Map.Scene is { } scene && !scene.Kept.SetEquals(s.Picks))
         {
-            scene.Selected = _selectedQuest;
-            Map.Redraw(); // starts the pulse and the dimming
+            scene.Kept = s.Picks;
+            Map.Redraw();
         }
     }
+
+    private async void OnClearPicksClick(object sender, RoutedEventArgs e) => await _session.ClearPicksAsync();
 
     // ---- pinned cards ----
 
@@ -1215,7 +1217,8 @@ public sealed partial class MainWindow : Window
         // first thing it needs (nested), and the quest pinned in a window.
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
-            Select(id, "snapshot");
+            if (_snapshot?.Picks.Contains(id) != true)
+                _ = _session.TogglePickAsync(id, "snapshot", save: false);
             Linked.Set(Focus.Quest(id));
             _cards.Open(new CardKey.Quest(id), new Windows.Foundation.Rect(372, 150, 8, 8), 0);
             var item = view.Needs.FirstOrDefault()?.ItemId ?? view.Objectives.FirstOrDefault(o => o.ItemId is not null)?.ItemId;
@@ -1318,13 +1321,9 @@ public sealed partial class MainWindow : Window
         Add((Windows.System.VirtualKey)189, () => ZoomBy(1 / 1.5, "key")); // the -/_ key
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
-        Add(Windows.System.VirtualKey.Escape, () =>
-        {
-            if (_cards.Cards.Count > 0)
-                _cards.CloseAll();
-            else
-                ClearSelection();
-        });
+        // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press
+        // that throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way).
+        Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, ShowHelp);
@@ -1339,15 +1338,6 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
             }
         };
-    }
-
-    private void ClearSelection()
-    {
-        if (_selectedQuest is null)
-            return;
-        Study.Ui("select", ("quest", _selectedQuest), ("on", false), ("how", "esc"));
-        _selectedQuest = null;
-        ShowSelection();
     }
 
     // ---- UI events ----

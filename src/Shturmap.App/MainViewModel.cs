@@ -52,9 +52,13 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
 /// <param name="QuestIds">The quests it is for, for linked highlighting.</param>
 /// <param name="Source">The easiest way to get it ("Prapor LL1 · 18,936 ₽"), or empty.</param>
-public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds, string Source)
+/// <param name="StartsOthers">The first row that serves no pick, after rows that do: a hairline above it.</param>
+public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds, string Source,
+    bool StartsOthers = false)
 {
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);
 }
 
 /// <summary>One floor in the map's floor picker, top floor first.</summary>
@@ -81,9 +85,20 @@ public sealed record PlanCard(
     IReadOnlyList<QuestLine> Progress,
     IReadOnlyList<RequirementLine> Requirements,
     string Rank = "",
-    IReadOnlyList<Controls.NeedChip>? Needs = null)
+    IReadOnlyList<Controls.NeedChip>? Needs = null,
+    IReadOnlyList<QuestLine>? Picks = null)
 {
     public string MapTitle => Caps.Of(MapName);
+
+    /// <summary>The quests picked for the coming raid on this map, first in the card (owner, 2026-10-03).</summary>
+    public IReadOnlyList<QuestLine> Picked => Picks ?? [];
+
+    public Visibility PicksVisibility => Expanded && Picked.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>On a folded card, the picks' glyphs (cyan) come first, then a hairline.</summary>
+    public Visibility FoldedPicksVisibility => Picked.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility PickDividerVisibility => Picked.Count > 0 && Finish.Count + Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility FoldedVisibility => Expanded ? Visibility.Collapsed : Visibility.Visible;
 
@@ -164,6 +179,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>The nearest extract or transit for your side, from the last position.</summary>
     [ObservableProperty] public partial ExtractItem? RaidExit { get; set; }
+
+    /// <summary>The picked quests on the raid's map, first in the raid card, nearest first.</summary>
+    [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidPicks { get; set; } = [];
+
+    /// <summary>Whether any quest is picked (for CLEAR PICKS, outside raids).</summary>
+    [ObservableProperty] public partial bool HasPicks { get; set; }
 
     [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidComplete { get; set; } = [];
 

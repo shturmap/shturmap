@@ -104,8 +104,12 @@ public partial class DevToolsGuardTests
     [Fact]
     public void A_release_build_holds_none_of_it()
     {
-        var builds = Directory.EnumerateFiles(Src, "Shturmap*.dll", SearchOption.AllDirectories)
-            .Where(f => f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}"))
+        // What ships: eng\release.ps1's app and eng\publish.ps1's folder build. Not bin\Release, which eng\dev.ps1's
+        // dev build (Release with ShturmapDev=true, developer tools on purpose) shares.
+        var artifacts = Path.Combine(RepositoryRoot(), "artifacts");
+        var builds = new[] { Path.Combine(artifacts, "release", "app"), Path.Combine(artifacts, "Shturmap") }
+            .Where(Directory.Exists)
+            .SelectMany(d => Directory.EnumerateFiles(d, "Shturmap*.dll", SearchOption.TopDirectoryOnly))
             .Where(f => Path.GetFileName(f) is "Shturmap.dll" or "Shturmap.Session.dll")
             .ToList();
         if (builds.Count == 0)

@@ -20,7 +20,8 @@ when you press your screenshot key. No macros, no input to the game, no access t
 <sub>A raid on Streets of Tarkov, rendered by the app. Map © Shebuka and contributors, CC BY-NC-SA 4.0.</sub>
 
 - **Before the raid:** maps ranked by how many of your quests they finish or move on, and what to bring, with where
-  to get it.
+  to get it. Pick the quests you want to tackle with the pen beside them: they come first and stay lit on the map
+  until they are done.
 - **In the raid:** press your screenshot key and your marker drops; objectives and the nearest extract are sorted by
   distance and direction. No clicks.
 - **Quest cards:** objectives, keys and items for any quest, one hover away. Pop out a card and its distances stay

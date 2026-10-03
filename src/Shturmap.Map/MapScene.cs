@@ -76,7 +76,7 @@ public sealed class MapScene
         set
         {
             _markers = value;
-            _focusShown = _selectedShown = null;
+            _focusShown = null;
         }
     }
 
@@ -88,7 +88,7 @@ public sealed class MapScene
         set
         {
             _zones = value;
-            _focusShown = _selectedShown = null;
+            _focusShown = null;
         }
     }
 
@@ -101,39 +101,26 @@ public sealed class MapScene
         (_markers.Any(m => ids.Contains(m.Id) || (m.Group is not null && ids.Contains(m.Group))) ||
          _zones.Any(z => z.Group is not null && ids.Contains(z.Group)));
 
-    private bool? _focusShown, _selectedShown;
+    private bool? _focusShown;
 
     private bool FocusShown => _focusShown ??= Shows(_focus);
 
-    private bool SelectedShown => _selectedShown ??= _selected is not null && Shows(_selectedSet);
-
     /// <summary>
-    /// The quest the player clicked to keep highlighted: drawn emphasised and pulsing, everything else dimmed, with a
-    /// line from the player to its nearest point, until it is clicked again. Pointing at something else shows that
-    /// instead for as long as the pointer is on it.
+    /// The quests picked for the coming raid (quest groups, or marker ids): drawn in the kept look (cyan, larger,
+    /// ringed) with a line from the player to the nearest of their places, for as long as they are picked. Unlike
+    /// what the pointer is on, picks never make anything else step back: every other quest marker stays at full
+    /// strength (owner, 2026-10-03: "Still it should show all other quest markers").
     /// </summary>
-    public string? Selected
+    public IReadOnlySet<string> Kept
     {
-        get => _selected;
-        set
-        {
-            if (value == _selected)
-                return;
-            if (value is not null && !FocusShown)
-                FocusSince = DateTime.Now;
-            if (value is null && SelectedShown)
-                LastFocus = _selectedSet;
-            _selected = value;
-            _selectedSet = value is null ? new HashSet<string>() : new HashSet<string> { value };
-            _selectedShown = null;
-        }
+        get => _kept;
+        set => _kept = value.Count == 0 ? Nothing : value;
     }
 
-    private string? _selected;
-    private IReadOnlySet<string> _selectedSet = new HashSet<string>();
+    private IReadOnlySet<string> _kept = Nothing;
 
-    /// <summary>Whether anything on this map is highlighted: something pointed at, or a quest kept highlighted.</summary>
-    public bool HasHighlight => FocusShown || SelectedShown;
+    /// <summary>Whether something pointed at is highlighted on this map (picks alone don't count: they dim nothing).</summary>
+    public bool HasHighlight => FocusShown;
 
     /// <summary>
     /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
@@ -144,14 +131,11 @@ public sealed class MapScene
         get => _focus;
         set
         {
-            var wasShown = FocusShown;
             var same = value.SetEquals(_focus);
             _focus = value;
             _focusShown = null;
             if (FocusShown && !same)
                 FocusSince = DateTime.Now;
-            else if (!FocusShown && wasShown && SelectedShown)
-                FocusSince = DateTime.Now; // back to the kept quest: it pulses again
             if (FocusShown)
                 LastFocus = value;
         }
@@ -170,17 +154,17 @@ public sealed class MapScene
     public float Dim { get; set; }
 
     /// <summary>
-    /// The player is in a raid on this map. Markers outside the focus then step back less than while planning: a quest
-    /// is often kept highlighted all raid, and extracts, nearby objectives and bosses still matter at a glance.
+    /// The player is in a raid on this map. Markers outside the focus then step back less than while planning:
+    /// extracts, nearby objectives and bosses still matter at a glance.
     /// </summary>
     public bool InRaid { get; set; }
 
     /// <summary>
-    /// What is drawn emphasised: what the pointer is on, else the kept quest, else (while the dimming fades out) what
-    /// was highlighted last.
+    /// What is drawn emphasised: what the pointer is on, else (while the dimming fades out) what was pointed at last.
+    /// Picks (<see cref="Kept"/>) have their own look and are never part of it.
     /// </summary>
     public IReadOnlySet<string> ShownFocus =>
-        FocusShown ? _focus : SelectedShown ? _selectedSet : Dim > 0 ? LastFocus : Nothing;
+        FocusShown ? _focus : Dim > 0 ? LastFocus : Nothing;
 
     private static readonly IReadOnlySet<string> Nothing = new HashSet<string>();
 
@@ -190,14 +174,11 @@ public sealed class MapScene
     /// <summary>Focused markers pulse so the eye finds them at once; off when Windows' animation effects are off.</summary>
     public bool Pulse { get; set; } = true;
 
-    /// <summary>How often a kept quest pulses when it is picked, or when the pointer comes back to it; then it holds still.</summary>
-    public const int KeptPulses = 3;
-
     /// <summary>
-    /// Whether the emphasised markers pulse now: all the while the pointer is on something, and a few times for a kept
-    /// quest. A kept quest pulsing for as long as it is kept would be motion at the edge of the player's eye all raid.
+    /// Whether the emphasised markers pulse now: all the while the pointer is on something. Picks hold still: a pick
+    /// pulsing all raid would be motion at the edge of the player's eye.
     /// </summary>
-    public bool Pulsing => Pulse && (FocusShown || (SelectedShown && DateTime.Now - FocusSince < MapRenderer.PulsePeriod * KeptPulses));
+    public bool Pulsing => Pulse && FocusShown;
 
     /// <summary>How long a new position pings: rings leave the player marker, or its edge arrow when out of view.</summary>
     public static readonly TimeSpan PingLength = TimeSpan.FromSeconds(2.6);

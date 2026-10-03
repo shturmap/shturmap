@@ -147,6 +147,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         {
             var env = new WindowsGameEnvironment();
             _store = new ProgressStore(paths.Database);
+            _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
             Study.Context = StudyContext;
             Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
             Study.Prune(DateTime.Now);
@@ -760,8 +761,63 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             id => tasks?.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new QuestRequirement(r.Task, r.Status ?? [])) ?? [],
             id => tasks?.GetValueOrDefault(id)?.Name ?? id);
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId).ToList();
-        _plan = _data is null ? [] : Planning.Suggest(_data, active);
+        // A picked quest the log reports completed or failed has nothing left to do: it leaves the picks by itself.
+        foreach (var done in _picks?.Prune(_mode, _quests) ?? [])
+            Study.Ui("unpick", ("quest", done), ("how", "done"));
+        _plan = _data is null ? [] : Planning.Suggest(_data, active, Picks);
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active);
+    }
+
+    // ---- picks: the quests chosen for the coming raid ----
+
+    private QuestPicks? _picks;
+
+    private IReadOnlySet<string> Picks => _picks?.Of(_mode) ?? new HashSet<string>();
+
+    /// <summary>
+    /// Picks a quest for the coming raid, or unpicks it (the pen on a quest). Only an active quest can be picked; a
+    /// pick holds until the quest is done, the pen is clicked again or the picks are cleared.
+    /// </summary>
+    /// <param name="how">For the study log: "pen", "snapshot", ….</param>
+    /// <param name="save">False for a pick that must not outlive the session (developer snapshots).</param>
+    public async Task TogglePickAsync(string questId, string how, bool save = true)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_picks is null)
+                return;
+            var picked = Picks.Contains(questId);
+            if (!picked && _quests.GetValueOrDefault(questId)?.State != QuestState.Active)
+                return;
+            var now = _picks.Toggle(_mode, questId, save);
+            Study.Ui(now ? "pick" : "unpick", ("quest", questId), ("how", how), ("picks", Picks.Count));
+            RecomputeQuests();
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Unpicks every quest for this mode (CLEAR PICKS, outside raids).</summary>
+    public async Task ClearPicksAsync()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_picks is null || Picks.Count == 0)
+                return;
+            Study.Ui("picks.clear", ("picks", Picks.Count));
+            _picks.Clear(_mode);
+            RecomputeQuests();
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     public string? GetSetting(string key) => _store?.GetSetting(key);
@@ -883,6 +939,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             StudyLogOn = Study.Enabled,
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
+            Picks = Picks,
             AnyMap = _anyMap,
             MapPlan = _data is not null && _map is not null
                 ? _plan.FirstOrDefault(p => p.NormalizedName == _map.NormalizedName)
