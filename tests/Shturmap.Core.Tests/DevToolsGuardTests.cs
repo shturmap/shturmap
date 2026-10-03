@@ -40,7 +40,39 @@ public partial class DevToolsGuardTests
     [Fact]
     public void Outside_the_dev_folders_the_dev_view_is_only_named_inside_devtools()
     {
-        var violations = new List<string>();
+        var violations = ReleaseCode()
+            .Select(l => (l.File, l.Number, Match: DevName().Match(l.Text)))
+            .Where(l => l.Match.Success)
+            .Select(l => $"{l.File}:{l.Number} names {l.Match.Value} outside #if DEVTOOLS")
+            .ToList();
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
+    // The study log's switch, flag, setting key and writer, as they are named in the source.
+    [GeneratedRegex(@"\b(?:StudySetting|StudyOverride\w*|StudyOn|SetStudyLogAsync|AddStudySwitch|WriteValue)\b|""--study""|Keep a study log")]
+    private static partial Regex StudyPart();
+
+    /// <summary>
+    /// The study log is in developer builds only (owner, 2026-10-03): what a release compiles names none of its switch,
+    /// flag, setting key or writer, and no XAML holds the switch (it is built in code under DEVTOOLS).
+    /// <see cref="A_release_build_has_no_study_log"/> checks a build itself.
+    /// </summary>
+    [Fact]
+    public void Outside_devtools_there_is_no_study_switch_flag_or_writer()
+    {
+        var violations = ReleaseCode()
+            .Where(l => StudyPart().IsMatch(l.Text))
+            .Select(l => $"{l.File}:{l.Number}: {l.Text.Trim()}")
+            .Concat(Directory.EnumerateFiles(Src, "*.xaml", SearchOption.AllDirectories)
+                .Where(f => Regex.IsMatch(File.ReadAllText(f), @"Keep a study log|StudyLogOn|OnStudyLogClick"))
+                .Select(f => $"{Path.GetRelativePath(Src, f)} holds the study switch"))
+            .ToList();
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
+    // The code lines a release compiles, outside the Dev folders: not inside "#if DEVTOOLS" (its #else is), no comments.
+    private static IEnumerable<(string File, int Number, string Text)> ReleaseCode()
+    {
         foreach (var file in SourceFiles().Where(f => !InDevFolder(f)))
         {
             // Which of the open #if blocks are DEVTOOLS ones (their #else is not).
@@ -69,11 +101,10 @@ public partial class DevToolsGuardTests
                 }
                 if (line.StartsWith("//", StringComparison.Ordinal) || line.StartsWith("///", StringComparison.Ordinal))
                     continue;
-                if (!open.Contains(true) && DevName().Match(raw) is { Success: true } m)
-                    violations.Add($"{Path.GetRelativePath(Src, file)}:{number} names {m.Value} outside #if DEVTOOLS");
+                if (!open.Contains(true))
+                    yield return (Path.GetRelativePath(Src, file), number, raw);
             }
         }
-        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
 
     [Fact]
@@ -104,14 +135,7 @@ public partial class DevToolsGuardTests
     [Fact]
     public void A_release_build_holds_none_of_it()
     {
-        // What ships: eng\release.ps1's app and eng\publish.ps1's folder build. Not bin\Release, which eng\dev.ps1's
-        // dev build (Release with ShturmapDev=true, developer tools on purpose) shares.
-        var artifacts = Path.Combine(RepositoryRoot(), "artifacts");
-        var builds = new[] { Path.Combine(artifacts, "release", "app"), Path.Combine(artifacts, "Shturmap") }
-            .Where(Directory.Exists)
-            .SelectMany(d => Directory.EnumerateFiles(d, "Shturmap*.dll", SearchOption.TopDirectoryOnly))
-            .Where(f => Path.GetFileName(f) is "Shturmap.dll" or "Shturmap.Session.dll")
-            .ToList();
+        var builds = ShippedBuilds();
         if (builds.Count == 0)
             Assert.Skip("No Release build on this PC.");
         var found = new List<string>();
@@ -135,6 +159,75 @@ public partial class DevToolsGuardTests
         }
         Assert.True(found.Count == 0, string.Join(Environment.NewLine, found));
     }
+
+    /// <summary>
+    /// The study log is in developer builds only (owner, 2026-10-03: "The study log should only be part of the dev version
+    /// and not be in the release version"): a Release build has no settings switch (neither in code nor in the compiled
+    /// XAML), no <c>--study</c>, no setting key and no line writer. Skipped where no Release build exists yet.
+    /// </summary>
+    [Fact]
+    public void A_release_build_has_no_study_log()
+    {
+        var builds = ShippedBuilds();
+        if (builds.Count == 0)
+            Assert.Skip("No Release build on this PC.");
+        string[] members = ["SetStudyLogAsync", "StudyOverrideFor", "StudyOn", "get_StudyOverride", "set_StudyOverride", "StudySetting",
+            "WriteValue", "AddStudySwitch", "OnStudyLogClick"];
+        // String literals are kept as UTF-16 (the #US heap and constant blobs, and the XAML in resources.pri).
+        string[] literals = ["studyLog", "--study", "Keep a study log"];
+        var found = new List<string>();
+        foreach (var file in builds.Concat(builds.Select(Path.GetDirectoryName).Distinct().Select(d => Path.Combine(d!, "resources.pri")).Where(File.Exists)))
+        {
+            var bytes = File.ReadAllBytes(file);
+            foreach (var literal in literals)
+            {
+                if (bytes.AsSpan().IndexOf(System.Text.Encoding.Unicode.GetBytes(literal)) >= 0)
+                    found.Add($"{Shipped(file)}: \"{literal}\"");
+            }
+        }
+        foreach (var dll in builds)
+        {
+            using (var pe = new PEReader(File.OpenRead(dll)))
+            {
+                var md = pe.GetMetadataReader();
+                foreach (var handle in md.TypeDefinitions)
+                {
+                    var type = md.GetTypeDefinition(handle);
+                    var name = md.GetString(type.Name);
+                    if (name is not ("GameSession" or "StudyLog" or "MainWindow"))
+                        continue;
+                    foreach (var m in type.GetMethods())
+                    {
+                        var method = md.GetString(md.GetMethodDefinition(m).Name);
+                        if (members.Contains(method))
+                            found.Add($"{Shipped(dll)}: {name}.{method}");
+                    }
+                    foreach (var f in type.GetFields())
+                    {
+                        var field = md.GetString(md.GetFieldDefinition(f).Name);
+                        if (members.Contains(field))
+                            found.Add($"{Shipped(dll)}: {name}.{field}");
+                    }
+                }
+            }
+        }
+        Assert.True(found.Count == 0, string.Join(Environment.NewLine, found));
+    }
+
+    // What ships: eng\release.ps1's app and eng\publish.ps1's folder build. Not bin\Release, which eng\dev.ps1's dev build
+    // (Release with ShturmapDev=true, developer tools on purpose) shares.
+    private static List<string> ShippedBuilds()
+    {
+        var artifacts = Path.Combine(RepositoryRoot(), "artifacts");
+        return new[] { Path.Combine(artifacts, "release", "app"), Path.Combine(artifacts, "Shturmap") }
+            .Where(Directory.Exists)
+            .SelectMany(d => Directory.EnumerateFiles(d, "Shturmap*.dll", SearchOption.TopDirectoryOnly))
+            .Where(f => Path.GetFileName(f) is "Shturmap.dll" or "Shturmap.Session.dll")
+            .ToList();
+    }
+
+    // "release\app\Shturmap.dll": which build a finding is in.
+    private static string Shipped(string file) => Path.GetRelativePath(Path.Combine(RepositoryRoot(), "artifacts"), file);
 
     private static string RepositoryRoot()
     {

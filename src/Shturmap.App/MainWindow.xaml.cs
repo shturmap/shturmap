@@ -58,6 +58,9 @@ public sealed partial class MainWindow : Window
         AppWindow.TitleBar.ButtonForegroundColor = (Windows.UI.Color)Application.Current.Resources["InkColor"];
         AppWindow.TitleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RaisedColor"];
         PlaceOnSecondMonitor(size);
+#if DEVTOOLS
+        AddStudySwitch();
+#endif
 
         Picture.Art = () => _session.Art;
         Study.Log = session.Study;
@@ -166,7 +169,7 @@ public sealed partial class MainWindow : Window
         new("PGUP / PGDN", "Show the floor above / below"),
         new("ESC", "Close the cards"),
         new("F1 / ?", "This help"),
-        new("CTRL + ,", "Settings: updates, crash reports, the study log, the app's folders"),
+        new("CTRL + ,", StudyLog.Available ? "Settings: updates, crash reports, the study log, the app's folders" : "Settings: updates, crash reports, the app's folders"),
         new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
     ];
 
@@ -255,13 +258,54 @@ public sealed partial class MainWindow : Window
             AppLog.Tail(Diagnostics.LogLines), DateTime.Now, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             AppPaths.Default.KindText);
 
-    private async void OnStudyLogClick(object sender, RoutedEventArgs e)
+#if DEVTOOLS
+    // "Keep a study log" in settings: developer builds only (owner, 2026-10-03: "The study log should only be part of the
+    // dev version and not be in the release version"). Built here, not in MainWindow.xaml, so a release carries none of
+    // it; it looks like the uninstall question's tick.
+    private void AddStudySwitch()
     {
-        if (sender is Microsoft.UI.Xaml.Controls.Primitives.ToggleButton toggle)
-            await _session.SetStudyLogAsync(toggle.IsChecked == true);
+        var check = new FontIcon { Glyph = "", FontSize = 9, Foreground = Resource("GroundBrush") };
+        var box = new Border
+        {
+            Width = 13, Height = 13, BorderThickness = new Thickness(1), BorderBrush = Resource("AmberBrush"),
+            VerticalAlignment = VerticalAlignment.Center, Child = check,
+        };
+        var toggle = new Microsoft.UI.Xaml.Controls.Primitives.ToggleButton
+        {
+            Style = (Style)Application.Current.Resources["TickToggle"],
+            Margin = new Thickness(0, 6, 0, 0),
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 9,
+                Children = { box, new TextBlock { Text = "Keep a study log", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold } },
+            },
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(toggle, "Keep a study log");
+        void Show()
+        {
+            var on = ViewModel.StudyLogOn;
+            toggle.IsChecked = on;
+            box.Background = StudyBoxBrush(on);
+            check.Visibility = ShownIfTrue(on);
+        }
+        Show();
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.StudyLogOn))
+                Show();
+        };
+        toggle.Click += async (_, _) => await _session.SetStudyLogAsync(toggle.IsChecked == true);
+        StudySwitch.Children.Add(toggle);
+        StudySwitch.Children.Add(new TextBlock
+        {
+            Style = (Style)Application.Current.Resources["NoteText"], Margin = new Thickness(22, 0, 0, 0),
+            Text = @"Developer builds only. Records your raids, quest changes, screenshot positions and how you use Shturmap, to make it better. It stays on this PC, in the dev data folder's study folder (%LOCALAPPDATA%\Shturmap-dev\study), for 30 days, and is never sent, not even with a report.",
+        });
+        StudySwitch.Visibility = Visibility.Visible;
     }
+#endif
 
-    // The study switch's box: filled gold with a check when on, an empty gold square when off.
+    // The study switch's and the uninstall question's box: filled gold with a check when on, an empty gold square when off.
     public Brush StudyBoxBrush(bool on) => on ? Resource("AmberBrush") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];

@@ -1,6 +1,9 @@
+#if DEVTOOLS
 namespace Shturmap.Session.Tests;
 
-// The study log is the player's choice: off unless switched on in help, or --study for one session (owner, 2026-10-03).
+// The study log exists only in developer builds, on unless switched off in settings, or --study for one session; never
+// for snapshot and fake-game runs (owner, 2026-10-03: "The study log should only be part of the dev version and not be
+// in the release version"). A release compiles the switch and the writer out (DevToolsGuardTests checks the build).
 public class StudyLogTests : IDisposable
 {
     private readonly string _folder = Directory.CreateTempSubdirectory("shturmap-study-").FullName;
@@ -8,7 +11,10 @@ public class StudyLogTests : IDisposable
     public void Dispose() => Directory.Delete(_folder, true);
 
     [Fact]
-    public void A_new_study_log_writes_nothing()
+    public void This_build_has_a_study_log() => Assert.True(StudyLog.Available);
+
+    [Fact]
+    public void A_new_study_log_writes_nothing_until_enabled()
     {
         using var study = new StudyLog(_folder);
         study.Game("app.start");
@@ -26,12 +32,13 @@ public class StudyLogTests : IDisposable
     }
 
     [Theory]
-    [InlineData(null, null, false)]
+    [InlineData(null, null, true)]
     [InlineData(null, "off", false)]
     [InlineData(null, "on", true)]
-    [InlineData(true, null, true)]
+    [InlineData(true, "off", true)]
+    [InlineData(false, null, false)]
     [InlineData(false, "on", false)]
-    public void The_switch_decides_unless_the_command_line_does(bool? studyOverride, string? setting, bool on) =>
+    public void On_unless_switched_off_and_the_command_line_decides_first(bool? studyOverride, string? setting, bool on) =>
         Assert.Equal(on, GameSession.StudyOn(studyOverride, setting));
 
     [Theory]
@@ -40,7 +47,7 @@ public class StudyLogTests : IDisposable
     [InlineData(new[] { "--snapshot", "out", "--study" }, false)]
     [InlineData(new[] { "--fake-game", "x" }, false)]
     [InlineData(new[] { "--verbose" }, null)]
-    public void Study_on_the_command_line_counts_for_one_session_and_never_for_developer_runs(string[] cli, bool? studyOverride) =>
+    public void Study_on_the_command_line_counts_for_one_session_and_never_for_snapshots_or_fake_games(string[] cli, bool? studyOverride) =>
         Assert.Equal(studyOverride, GameSession.StudyOverrideFor(cli));
 
     [Fact]
@@ -52,3 +59,4 @@ public class StudyLogTests : IDisposable
         Assert.Equal(["2026-09-03.jsonl", "2026-10-03.jsonl", "running"], Directory.GetFiles(_folder).Select(Path.GetFileName).Order());
     }
 }
+#endif

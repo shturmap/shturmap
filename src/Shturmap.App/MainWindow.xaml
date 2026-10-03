@@ -252,25 +252,10 @@
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="SETTINGS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="PREFERENCES" />
-                <!-- Off by default (owner, 2026-10-03): the player decides whether Shturmap keeps a study log. -->
-                <ToggleButton IsChecked="{x:Bind ViewModel.StudyLogOn, Mode=OneWay}" Click="OnStudyLogClick" Margin="0,6,0,0"
-                              AutomationProperties.Name="Keep a study log">
-                  <ToggleButton.Template>
-                    <ControlTemplate TargetType="ToggleButton">
-                      <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" />
-                    </ControlTemplate>
-                  </ToggleButton.Template>
-                  <StackPanel Orientation="Horizontal" Spacing="9">
-                    <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                            Background="{x:Bind StudyBoxBrush(ViewModel.StudyLogOn), Mode=OneWay}">
-                      <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
-                                Visibility="{x:Bind ShownIfTrue(ViewModel.StudyLogOn), Mode=OneWay}" />
-                    </Border>
-                    <TextBlock Text="Keep a study log" FontWeight="SemiBold" />
-                  </StackPanel>
-                </ToggleButton>
-                <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap"
-                           Text="Records your raids, quest changes, screenshot positions and how you use Shturmap, to make it better. It stays on this PC, in %LOCALAPPDATA%\Shturmap\study, for 30 days, and is never sent, not even with a report." />
+                <!-- The study log's switch: developer builds only (owner, 2026-10-03: "The study log should only be part
+                     of the dev version and not be in the release version"). Filled in code under DEVTOOLS
+                     (AddStudySwitch), so a release has none of it; empty and collapsed there. -->
+                <StackPanel x:Name="StudySwitch" Spacing="8" Visibility="Collapsed" />
                 <!-- Crash reports go only as the player says here (owner, 2026-10-03: default "Ask after a crash";
                      docs/DESIGN.md §8, "Reports"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0">
@@ -369,12 +354,7 @@
                             Visibility="{x:Bind ShownIfTrue(ViewModel.UninstallAsking), Mode=OneWay}">
                   <TextBlock Text="Remove Shturmap from this PC?" FontWeight="SemiBold" />
                   <ToggleButton IsChecked="{x:Bind ViewModel.UninstallDeleteData, Mode=OneWay}" Click="OnUninstallDataClick"
-                                AutomationProperties.Name="Also delete my Shturmap data">
-                    <ToggleButton.Template>
-                      <ControlTemplate TargetType="ToggleButton">
-                        <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" />
-                      </ControlTemplate>
-                    </ToggleButton.Template>
+                                Style="{StaticResource TickToggle}" AutomationProperties.Name="Also delete my Shturmap data">
                     <StackPanel Orientation="Horizontal" Spacing="9">
                       <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                               Background="{x:Bind StudyBoxBrush(ViewModel.UninstallDeleteData), Mode=OneWay}">

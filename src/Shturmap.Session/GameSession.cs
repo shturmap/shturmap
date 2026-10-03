@@ -64,27 +64,29 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>Trader portraits and item icons, fetched when first shown.</summary>
     public GameArt? Art { get; private set; }
 
-    /// <summary>The study log: game events here, the player's use of Shturmap from the UI. Off unless the player
-    /// switches it on (owner, 2026-10-03).</summary>
+    /// <summary>The study log: game events here, the player's use of Shturmap from the UI. Developer builds only (owner,
+    /// 2026-10-03); a release has the calls, but the log can't be on there (<see cref="StudyLog.Available"/>).</summary>
     public StudyLog Study { get; } = new(paths.Study);
 
+#if DEVTOOLS
     /// <summary>
-    /// The study log for this session regardless of the player's switch: true for <c>--study</c>, false for developer
-    /// runs (snapshots, fake games), null to follow the switch.
+    /// The study log for this session regardless of the switch: true for <c>--study</c>, false for snapshot and
+    /// fake-game runs, null to follow the switch.
     /// </summary>
     public bool? StudyOverride { get; set; }
 
-    /// <summary>The key of the player's study-log switch in the app's settings ("on" or "off"; absent is off).</summary>
+    /// <summary>The key of the study-log switch in the app's settings ("on" or "off"; absent is on in a dev build).</summary>
     public const string StudySetting = "studyLog";
 
-    /// <summary>The override a command line asks for: developer runs never keep one, <c>--study</c> does.</summary>
+    /// <summary>The override a command line asks for: snapshot and fake-game runs never keep one, <c>--study</c> does.</summary>
     public static bool? StudyOverrideFor(IReadOnlyCollection<string> cli) =>
         cli.Contains("--snapshot") || cli.Contains("--fake-game") ? false : cli.Contains("--study") ? true : null;
 
-    /// <summary>Whether the study log is kept: the override if there is one, else the player's switch, off when unset.</summary>
-    public static bool StudyOn(bool? studyOverride, string? setting) => studyOverride ?? setting == "on";
+    /// <summary>Whether the study log is kept: the override if there is one, else the switch. Unset is on: a developer
+    /// build is for studying how Shturmap is used (owner, 2026-10-03).</summary>
+    public static bool StudyOn(bool? studyOverride, string? setting) => studyOverride ?? setting != "off";
 
-    /// <summary>The player's "Keep a study log" switch, saved with the app's settings; the log starts or stops now.</summary>
+    /// <summary>The "Keep a study log" switch, saved with the app's settings; the log starts or stops now.</summary>
     public async Task SetStudyLogAsync(bool on)
     {
         await _gate.WaitAsync();
@@ -112,6 +114,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _gate.Release();
         }
     }
+#endif
 
     /// <summary>Shturmap's version with its commit ("0.1.0+d349909").</summary>
     public static string Version { get; } = ShortVersion(
@@ -149,8 +152,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _store = new ProgressStore(paths.Database);
             _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
             Study.Context = StudyContext;
+#if DEVTOOLS
+            // Developer builds only (owner, 2026-10-03); a release leaves the study log off and any old days alone.
             Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
             Study.Prune(DateTime.Now);
+#endif
             Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
                 ("build", BuildTime()), ("prevClean", MarkRunning()));
             _env = env;
@@ -168,7 +174,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Art = new GameArt(http, paths.GameArtCache);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;
+#if DEVTOOLS
             AppLog.Info($"Mode {_mode}; study log {(Study.Enabled ? "on" : "off")}");
+#else
+            AppLog.Info($"Mode {_mode}");
+#endif
             RecomputeQuests();
             Publish();
         }

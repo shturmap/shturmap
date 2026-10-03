@@ -5,32 +5,54 @@ using System.Text.Json;
 namespace Shturmap.Session;
 
 /// <summary>
-/// The study log: what happened in the game and what the player did with Shturmap, one JSON object per line in
-/// <c>%LOCALAPPDATA%\Shturmap\study\yyyy-MM-dd.jsonl</c>, to read and correlate later (docs/DESIGN.md §8, "Study
-/// log"). Every line carries the game context (raid phase, map, age of the last fix), so UI events can be lined up
-/// with raids and quest completions. Only Shturmap's own windows are observed; nothing global, nothing sent anywhere.
+/// The study log: what happened in the game and what the player did with Shturmap, one JSON object per line in the
+/// data folder's <c>study\yyyy-MM-dd.jsonl</c>, to read and correlate later (docs/DESIGN.md §8, "Study log"). Every
+/// line carries the game context (raid phase, map, age of the last fix), so UI events can be lined up with raids and
+/// quest completions. Only Shturmap's own windows are observed; nothing global, nothing sent anywhere.
+/// Developer builds only (owner, 2026-10-03: "The study log should only be part of the dev version and not be in the
+/// release version"): a release compiles the writer and the pruning out, and <see cref="Enabled"/> stays false, so
+/// the calls scattered through the app are no-ops there.
 /// </summary>
 public sealed class StudyLog(string folder) : IDisposable
 {
+#if DEVTOOLS
+    /// <summary>Whether this build has a study log at all: developer builds (DEVTOOLS) only.</summary>
+    public const bool Available = true;
+#else
+    public const bool Available = false;
+#endif
+
     private readonly Lock _gate = new();
     private StreamWriter? _writer;
+#if DEVTOOLS
     private DateOnly _day;
+#endif
+    private bool _enabled;
+
+    /// <summary>Where the days are written: the data folder's <c>study</c> folder.</summary>
+    public string Folder => folder;
 
     /// <summary>Fields added to every line, e.g. the raid phase and map.</summary>
     public Func<IEnumerable<(string Key, object? Value)>>? Context { get; set; }
 
     /// <summary>
-    /// Off unless the player switches it on in settings (owner, 2026-10-03), or <c>--study</c> for one session; always off
-    /// for developer runs (snapshots, fake games), which would otherwise mix into the player's study.
+    /// In a developer build: on unless switched off in settings, or <c>--study</c> for one session; always off for
+    /// snapshot and fake-game runs. In a release it can't be switched on (<see cref="Available"/>).
     /// </summary>
-    public bool Enabled { get; set; }
+    public bool Enabled
+    {
+        get => _enabled;
+        set => _enabled = Available && value;
+    }
 
     /// <summary>Days of study log kept; older days are removed at start.</summary>
     public const int KeepDays = 30;
 
-    /// <summary>Removes days older than <see cref="KeepDays"/>, whether the log is on or off.</summary>
+    /// <summary>Removes days older than <see cref="KeepDays"/>, whether the log is on or off; nothing in a release, which
+    /// leaves any study files from earlier builds alone.</summary>
     public void Prune(DateTime now)
     {
+#if DEVTOOLS
         try
         {
             if (!Directory.Exists(folder))
@@ -46,6 +68,7 @@ public sealed class StudyLog(string folder) : IDisposable
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
         }
+#endif
     }
 
     /// <summary>Something the player did in Shturmap.</summary>
@@ -56,6 +79,7 @@ public sealed class StudyLog(string folder) : IDisposable
 
     private void Write(string source, string name, (string Key, object? Value)[] data)
     {
+#if DEVTOOLS
         if (!Enabled)
             return;
         try
@@ -93,8 +117,10 @@ public sealed class StudyLog(string folder) : IDisposable
         {
             // The study log must never get in the player's way.
         }
+#endif
     }
 
+#if DEVTOOLS
     private static void WriteValue(Utf8JsonWriter json, string key, object? value)
     {
         switch (value)
@@ -140,6 +166,7 @@ public sealed class StudyLog(string folder) : IDisposable
                 break;
         }
     }
+#endif
 
     public void Dispose()
     {

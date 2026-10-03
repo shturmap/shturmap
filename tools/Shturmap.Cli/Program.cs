@@ -51,9 +51,11 @@ switch (command)
     case "bring":
         await Bring(args.ElementAtOrDefault(1) ?? "pve");
         break;
+#if DEVTOOLS
     case "study":
         Study(args.ElementAtOrDefault(1));
         break;
+#endif
     default:
         Console.WriteLine("""
             shturmap-cli locate              find the game, logs, screenshots and settings on this PC
@@ -69,7 +71,7 @@ switch (command)
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
             shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
-            shturmap-cli study [on|off]      show or set the "Keep a study log" switch, as help sets it (Shturmap closed)
+            shturmap-cli study [on|off]      developer builds: show or set the "Keep a study log" switch (Shturmap closed)
 
             --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
                                             the installed release's is --data %LOCALAPPDATA%\Shturmap
@@ -166,7 +168,9 @@ static async Task Effort(string mode)
     Console.WriteLine($"Unknown objective types: {(unknownTypes.Count == 0 ? "none" : string.Join(", ", unknownTypes.Select(t => t ?? "(none)")))}");
 }
 
-// The help panel's "Keep a study log" switch, in the app's own settings; for setting it without opening the app.
+#if DEVTOOLS
+// Settings' "Keep a study log" switch (developer builds only), in the app's own settings; for setting it without opening
+// the app.
 static void Study(string? value)
 {
     using var store = new Shturmap.Data.Progress.ProgressStore(Shturmap.Session.AppPaths.Default.Database);
@@ -175,8 +179,9 @@ static void Study(string? value)
         store.SetSetting(key, value);
     else if (value is not null)
         throw new ArgumentException("Use: shturmap-cli study [on|off]");
-    Console.WriteLine($"Study log: {store.GetSetting(key) ?? "off (not set)"}");
+    Console.WriteLine($"Study log: {store.GetSetting(key) ?? "on (not set)"}");
 }
+#endif
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), its synopsis,
 // and what to look at: FALLBACK (a text starting with no known verb, shown as written), LONG (more than the two lines

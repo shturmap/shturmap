@@ -42,10 +42,12 @@ public class StatusBarButtonsTests
     {
         var doc = MainWindow();
         var settings = Clicks(Named(doc, "SettingsFlyout"));
-        foreach (var handler in new[] { "OnStudyLogClick", "OnCrashModeClick", "OnUpdateModeClick", "OnLogFolderClick", "OnPrivacyClick",
+        foreach (var handler in new[] { "OnCrashModeClick", "OnUpdateModeClick", "OnLogFolderClick", "OnPrivacyClick",
                      "OnLicencesClick", "OnUninstallClick", "OnUninstallConfirmClick" })
             Assert.Contains(handler, settings);
         Assert.DoesNotContain("OnCopyDiagnosticsClick", settings);
+        // Where a developer build puts "Keep a study log" (filled in code; a release has no switch).
+        Assert.Contains(Named(doc, "StudySwitch"), Named(doc, "SettingsFlyout").Descendants());
     }
 
     [Fact]
@@ -54,7 +56,7 @@ public class StatusBarButtonsTests
         var doc = MainWindow();
         var help = Clicks(Named(doc, "HelpFlyout"));
         Assert.Contains("OnCopyDiagnosticsClick", help);
-        foreach (var handler in new[] { "OnStudyLogClick", "OnCrashModeClick", "OnUpdateModeClick", "OnUninstallClick", "OnLogFolderClick" })
+        foreach (var handler in new[] { "OnCrashModeClick", "OnUpdateModeClick", "OnUninstallClick", "OnLogFolderClick" })
             Assert.DoesNotContain(handler, help);
         // The feedback button replaced help's report link.
         Assert.DoesNotContain("OnReportClick", help);

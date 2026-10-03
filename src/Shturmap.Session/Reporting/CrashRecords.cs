@@ -113,12 +113,12 @@ public sealed class CrashRecords(string folder, string? profile)
     }
 
     /// <summary>"Shturmap.App.MainWindow.Apply"; compiler-made methods by the method they belong to
-    /// ("MainWindow.OnStudyLogClick" for its async state machine, "… (lambda)" for a lambda).</summary>
+    /// ("MainWindow.OnUninstallConfirmClick" for its async state machine, "… (lambda)" for a lambda).</summary>
     public static string FunctionName(MethodBase method)
     {
         var type = method.DeclaringType;
         var name = Readable(method.Name);
-        // An async or iterator state machine: "<OnStudyLogClick>d__42.MoveNext" in the type that declared it.
+        // An async or iterator state machine: "<OnUninstallConfirmClick>d__42.MoveNext" in the type that declared it.
         if (type is { Name: ['<', ..] } && type.Name.LastIndexOf('>') is var end and > 1)
         {
             name = Readable(type.Name[1..end]);

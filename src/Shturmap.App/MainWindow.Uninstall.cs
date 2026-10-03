@@ -12,8 +12,8 @@ public sealed partial class MainWindow
 
     /// <summary>What "Also delete my Shturmap data" takes, for the build it runs in.</summary>
     public string UninstallDataText { get; } = App.Updater.AppId == Distribution.DeveloperPackId
-        ? @"Settings, quest history, logs, study log, reports waiting to be sent and crash records, in %LOCALAPPDATA%\Shturmap-dev. The download cache stays: the release shares it, in %LOCALAPPDATA%\Shturmap\cache."
-        : @"Settings, quest history, logs, study log, reports waiting to be sent, crash records and the download cache, in %LOCALAPPDATA%\Shturmap. Unticked, they stay for a later install.";
+        ? $@"Settings, quest history, logs, {(StudyLog.Available ? "study log, " : "")}reports waiting to be sent and crash records, in %LOCALAPPDATA%\Shturmap-dev. The download cache stays: the release shares it, in %LOCALAPPDATA%\Shturmap\cache."
+        : @"Settings, quest history, logs, reports waiting to be sent, crash records and the download cache: the whole folder %LOCALAPPDATA%\Shturmap. Unticked, they stay for a later install.";
 
     private void OnUninstallClick(object sender, RoutedEventArgs e)
     {

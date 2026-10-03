@@ -53,7 +53,10 @@ public static class Diagnostics
             null => "loading",
         });
         Line("Active quests", s.ActiveQuestCount.ToString(CultureInfo.InvariantCulture));
+#if DEVTOOLS
+        // Developer builds only: a release has no study log (owner, 2026-10-03).
         Line("Study log", s.StudyLogOn ? "on" : "off");
+#endif
         text.AppendLine();
         text.AppendLine($"App log, today's last {LogLines} lines:");
         foreach (var line in logTail.TakeLast(LogLines))

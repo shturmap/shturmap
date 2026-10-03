@@ -34,8 +34,8 @@ applies at the next start); Tell me only (it asks, and downloads only when you c
 What is never sent
 ------------------
 Your Windows user folder is masked in everything that is sent (written as %USERPROFILE%), and every game account,
-profile or quest id is cut out. Nothing is sent from memory, no screenshots, no game files, no study log, no list of
-your quests, no machine name and no IP address is stored with a report. Sentry (below) also sees your internet
+profile or quest id is cut out. Nothing is sent from memory, no screenshots, no game files, no list of your
+quests, no machine name and no IP address is stored with a report. Sentry (below) also sees your internet
 address when a report arrives and keeps your country and town from it; the address itself isn't kept.
 
 Who receives it
@@ -65,6 +65,7 @@ You can ask for a copy of a report you sent, or for it to be corrected or delete
 quote the report id Shturmap showed after sending (8 letters and digits). You can also complain to a data
 protection authority.
 
-Everything Shturmap keeps on your PC (settings, quest history, logs, the study log, reports waiting to be sent,
-crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. To delete all of it, use settings (the gear) →
+Everything Shturmap keeps on your PC (settings, quest history, logs, reports waiting to be sent, crash records and
+the download cache) is in %LOCALAPPDATA%\Shturmap. It keeps no study log of how you use it: only developer builds
+of Shturmap have one. To delete all of it, use settings (the gear) →
 "Uninstall Shturmap…" and tick "Also delete my Shturmap data"; or delete that folder yourself after uninstalling.

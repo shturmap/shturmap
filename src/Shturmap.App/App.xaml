@@ -153,6 +153,17 @@
         <Setter Property="TextWrapping" Value="Wrap" />
       </Style>
 
+      <!-- Ticks in settings: only the box and its words, no button chrome. -->
+      <Style x:Key="TickToggle" TargetType="ToggleButton">
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ToggleButton">
+              <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" />
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
       <!-- Distances and other numbers that should catch the eye. -->
       <Style x:Key="FigureText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource UiFont}" />

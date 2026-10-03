@@ -53,9 +53,8 @@ It never:
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
 - sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
   only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
-  (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
-  and a study log of how you use it only if you switch that on in settings. (The Microsoft runtime it is built on has
-  its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
+  (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log.
+  (The Microsoft runtime it is built on has its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
 To report a problem or suggest an idea, use the **feedback** button at the top right: write what happened, keep
 "Include diagnostics" ticked (Show what's sent shows exactly what goes, with your user folder masked and no ids),
@@ -97,7 +96,7 @@ Windows user only, with no admin rights, into `%LOCALAPPDATA%\ShturmapApp`, with
 shortcut. The installer isn't signed, so Windows warns about it; click **More info → Run anyway**.
 
 Uninstall: Windows Settings → Apps, or settings (the gear) → **Uninstall Shturmap…**. Your data in `%LOCALAPPDATA%\Shturmap`
-(settings, quest history, logs, study log, download cache) stays for a later install, unless you tick **Also delete
+(settings, quest history, logs, download cache) stays for a later install, unless you tick **Also delete
 my Shturmap data** in its question.
 
 Shturmap keeps itself up to date: it asks GitHub for a newer version at start and every 6 hours, downloads it in

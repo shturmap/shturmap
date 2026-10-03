@@ -39,7 +39,7 @@ The items below are kept as written, for their reasons and quotes.
 3. **Old release files** in `artifacts`: `Shturmap-0.1.0-win-x64.exe`/`.zip` (+ `.sha256`) are superseded by
    `Shturmap-Setup.exe` 0.2.0; delete them on the owner's OK so there's one file to send.
 4. **Not yet verified by a click** (snapshots and tests only): the pop-out button, RESTART NOW / DOWNLOAD and the
-   Updates setting, the study-log switch, Copy diagnostics, LOG FOLDER, LICENCES, PRIVACY, the report dialog's Send,
+   Updates setting, the study-log switch (dev build only since 2026-10-03), Copy diagnostics, LOG FOLDER, LICENCES, PRIVACY, the report dialog's Send,
    the crash question's buttons, the effort hairlines and new labels at 125 % and 150 % display scaling. Ask the owner
    to try them in the installed 0.2.0, or walk through them together.
 5. **PROGRESS rows look less important than they are** (owner, 2026-10-03: "the quests under progress have a

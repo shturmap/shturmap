@@ -520,7 +520,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
   "Diagnostics"). Opens once by itself on first run.
-- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log", "Crash reports" (ASK AFTER A
+- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
   available in this build"); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
   UNINSTALL SHTURMAP… with its question; at the foot the version and the kind of build (§8, "Study log",
@@ -1011,7 +1011,7 @@ Rules:
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs, and writes what Copy
   diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render`; never capture the user's screens.
-  `--verbose` adds the app log's DEBUG lines; `--study` keeps a study log for one session; `--show-report` opens
+  `--verbose` adds the app log's DEBUG lines; `--study` (developer builds) keeps a study log for one session; `--show-report` opens
   the Report dialog with an example and what's sent, `--show-crash` the question after a crash (for snapshots;
   snapshots send nothing); `--send-report <text> <folder>` sends one real report through the dialog's Send and
   saves the window (a release's delivery check, §8 "Reports"; with `--fake-game <folder>` it leaves the player's data and study log alone; its lines still go to the app log). For website media, `tools\fake-raid.ps1 -Window
@@ -1049,7 +1049,7 @@ self-unpacking exe, without updates; they need the Setup once.
   build), a delta between two builds 1.7 MB.
 - **The install folder is not the data folder.** Velopack installs to `%LOCALAPPDATA%\<pack id>`, and an uninstall
   deletes that folder. So the pack id is `ShturmapApp` (`Distribution.PackId`; `eng\release.ps1` packs with the
-  same, a test checks), never `Shturmap`: the database, logs, study log, cache, outbox and crash records in
+  same, a test checks), never `Shturmap`: the database, logs, cache, outbox and crash records in
   `%LOCALAPPDATA%\Shturmap` outlive the app. Checked 2026-10-03: installing, updating and uninstalling left the data
   folder's files all there and `shturmap.db` byte for byte the same; the uninstall removed the install folder, its
   shortcuts and its Apps entry.
@@ -1059,9 +1059,9 @@ self-unpacking exe, without updates; they need the Setup once.
   around Velopack wasn't worth it. Settings' quiet link "UNINSTALL SHTURMAP…" shows only in an install Velopack made,
   the release (`ShturmapApp`) or the dev build (`ShturmapDev`) (`Uninstall.Offered`), never in a folder build. It
   asks one question, "Remove Shturmap from this PC?", with an unticked "Also delete my Shturmap data" and what that is
-  (settings, quest history, logs, study log, reports waiting, crash records, and for the release the download
-  cache; the dev build's data is `%LOCALAPPDATA%\Shturmap-dev`, and the cache it shares stays with the release's
-  folder). UNINSTALL closes the session as RESTART NOW does (so a reinstall doesn't take the exit for a crash), leaves
+  (settings, quest history, logs, reports waiting, crash records, and for the release the download cache; the dev
+  build's data is `%LOCALAPPDATA%\Shturmap-dev`, with its study log, and the cache it shares stays with the
+  release's folder). UNINSTALL closes the session as RESTART NOW does (so a reinstall doesn't take the exit for a crash), leaves
   a note in the install folder when the box is ticked (`Uninstall.IntentFile`, removed when it isn't), starts
   Velopack's uninstaller (`Update.exe uninstall`, which shows a dialog only when something goes wrong) and ends.
   Velopack stops what still runs from the install, then starts the exe with its uninstall hook: `Program.Main`'s
@@ -1141,7 +1141,7 @@ committing app changes (CLAUDE.md).
 - **Dev mode.** Built with `ShturmapDev=true` (Release configuration, not precompiled: builds come often and deltas
   stay small), which defines `DEVTOOLS`, as Debug builds do (`Directory.Build.props`): the window says "Shturmap DEV"
   (`App.Title`), the exe, windows and taskbar show the dev icon, the build kind is "dev build", and the developer
-  tools compile in. Releases never define it.
+  tools and the study log (§8, "Study log") compile in. Releases never define it.
 - **Its own install.** Velopack's id `ShturmapDev` (`Distribution.DeveloperPackId`): `%LOCALAPPDATA%\ShturmapDev`, shortcuts
   "Shturmap DEV" on the desktop and in the Start menu, its own Apps entry. Its data is the developer folder above.
   It never mixes with the release's `ShturmapApp` (a test checks the ids and folders).
@@ -1251,7 +1251,7 @@ from the maps payload's `lootLoose`.
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
 tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
 
-**Study log.** `%LOCALAPPDATA%\Shturmap\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
+**Study log.** Developer builds only (below), in their data folder: `%LOCALAPPDATA%\Shturmap-dev\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
 `ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI
 use can be lined up with raids and quest completions later. Game: app start/exit, data loaded (with the top
 suggestion), mode, raid loading (with the suggestion rank of the map actually played and the bring list), raid
@@ -1275,17 +1275,27 @@ logs it came 17–20 s before the raid's end line). It is a hint for later studi
 no note proves nothing, since gear may not have been insured. Only Shturmap's own windows are observed; nothing is
 sent anywhere.
 
-The study log is **the player's choice** (owner, 2026-10-03): off by default, kept only while "Keep a study log" in
-settings is ticked, with one line saying what it records, that it stays on this PC (where) and that nothing is sent.
-The switch is saved in the app's settings (`studyLog` = `on`/`off` in `shturmap.db`; `shturmap-cli study [on|off]`
-sets it without the app); `--study` keeps it for one session without changing the switch; snapshot and fake-game
-runs never keep one. Days older than 30 are removed at start, on or off. Ticking it mid-session writes `study.on`,
-unticking writes `study.off` and stops.
+The study log is **in developer builds only** (owner, 2026-10-03: "The study log should only be part of the dev
+version and not be in the release version"; earlier that day it was the player's choice in every build, off by
+default). In a developer build (the dev build, Debug builds: `DEVTOOLS`) it is on unless "Keep a study log" in
+settings is unticked, with one line saying it is for developer builds, what it records, that it stays on this PC
+(where) and that nothing is sent. The switch is saved in the app's settings (`studyLog` = `on`/`off` in
+`shturmap.db`; a Debug build's `shturmap-cli study [on|off]` sets it without the app); `--study` keeps it for one
+session without changing the switch; snapshot and fake-game runs never keep one. Days older than 30 are removed at
+start, on or off. Ticking it mid-session writes `study.on`, unticking writes `study.off` and stops.
+
+A release (and the folder build) compiles it out under `#if DEVTOOLS`: no switch in settings, no `--study`, no
+setting read, no pruning, no line in diagnostics or the app log, so it never creates a `study` folder. The
+`Study.Ui` and `Study.Game` calls stay in the code and do nothing there (`StudyLog.Available` is false, so `Enabled`
+stays false and the writer is compiled out). Study days an earlier build left in `%LOCALAPPDATA%\Shturmap\study`
+stay as they are; a release never reads, prunes or deletes them, and "Also delete my Shturmap data" removes them
+with the rest of the folder. `DevToolsGuardTests.A_release_build_has_no_study_log` checks a Release build on the
+PC (no switch, no `--study`, no setting key, no writer).
 
 **App log** (owner, 2026-10-03). `%LOCALAPPDATA%\Shturmap\logs\shturmap-yyyy-MM-dd.log`: a short support trail,
 not a trace. INFO: the start (version with commit, installed or folder build, Windows), the game, logs and
 screenshots folders found, the game's language and screenshot key, mode, data loaded (from where, language, counts,
-when checked), raids loading, starting, ending, the study switch. WARN: something degraded but working (the data
+when checked), raids loading, starting, ending, the study switch (developer builds). WARN: something degraded but working (the data
 from the saved copy, English instead of the game's language, a folder not found, the item sources or a map's
 artwork not loaded). ERROR: what failed, with the exception. DEBUG only with `--verbose` (and the website demo,
 which times its clip by its lines): notices, the map surface, snapshots, fake games, the demo. Every line is
@@ -1314,7 +1324,7 @@ that can't be had: "No map render for The Lab: …", the same way.
 exe; Windows' version and build; the install type (Steam, BSG launcher, manual) and whether the game, logs and
 screenshots folders were found; mode; the game's language and tarkov.dev's; the data's state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; the study log
-on or off; and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
+on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
 cut to `<id>`, and no quest names or lists go along (`Redact`). Copying sends nothing; a report carries the same
 text when the player keeps "Include diagnostics", shown first.
 
