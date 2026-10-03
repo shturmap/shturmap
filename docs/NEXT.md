@@ -70,7 +70,13 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
    the current log session is live and in the menus; otherwise the plain "NOT IN A RAID", which is always true.
    Keep the words coherent with the other states (raid loading, in raid, raid over) and the tooltips, and update
    help and DESIGN.md.
-9. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+9. **The status lights and words at the top right don't line up with the "?" button** (owner, 2026-10-03). After the
+   lights were raised 2 px onto the middle of their capitals (`baeb938`, Sentry SHTURMAN-2), the row of lights and
+   capitals and the 28 px help button are still centred differently: the words' text box versus the button's box,
+   and the "?" glyph inside it. Fix so the capitals, the lights, the "?" and the button's frame share one middle line
+   (the left side too: logo, mode label, raid state). Check with an enlarged snapshot crop, as for SHTURMAN-2, and at
+   125 % and 150 % scaling.
+10. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
