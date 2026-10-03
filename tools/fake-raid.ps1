@@ -137,10 +137,12 @@ if ($Demo) {
   $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
   # The app's own log says when the demo presses the drawn key ("Demo: press"); the screenshot follows it, as the
   # game's would. Lines from earlier runs in the same log are skipped by their time.
-  $logs = Join-Path $env:LOCALAPPDATA 'Shturmap\logs'
+  # Builds that aren't installed (the folder build, Debug) log to Shturmap-dev, the installed release to Shturmap
+  # (docs/DESIGN.md §8, "Data folders"): the newest log file of either is this run's.
+  $logs = @('Shturmap-dev\logs', 'Shturmap\logs') | ForEach-Object { Join-Path $env:LOCALAPPDATA $_ } | Where-Object { Test-Path $_ }
   $invariant = [Globalization.CultureInfo]::InvariantCulture # not $culture: that is -Culture
   function DemoTime([string]$what) {
-    $file = Get-ChildItem $logs -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $file = Get-ChildItem $logs -File -Filter 'shturmap-*.log' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     $stream = [IO.File]::Open($file.FullName, 'Open', 'Read', 'ReadWrite')
     try { $text = (New-Object IO.StreamReader($stream)).ReadToEnd() } finally { $stream.Dispose() }
     foreach ($line in ($text -split "`r?`n")) {
