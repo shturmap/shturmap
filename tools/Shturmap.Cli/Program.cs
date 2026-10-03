@@ -61,7 +61,8 @@ switch (command)
             shturmap-cli data [mode] [lang]  load tarkov.dev data (mode: pve | regular | seasonal)
             shturmap-cli render <map> <out.png> [screenshot names...] [--focus-item <item id or name>]
                                             draw a map with the positions from screenshot names; --focus-item
-                                            draws it as pointing at that item does (a key lights its locks)
+                                            draws it as pointing at that item does (a key lights its locks);
+                                            --pick <quest name> picks that quest (with the locks of its keys)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
@@ -420,6 +421,13 @@ static async Task Render(string mapName, string output, List<string> screenshots
         focusItem = screenshots[f + 1];
         screenshots.RemoveRange(f, 2);
     }
+    // "--pick <quest name>": that quest picked instead of the first one with a place (it joins the active quests).
+    string? pickName = null;
+    if (screenshots.IndexOf("--pick") is var pi and >= 0 && pi + 1 < screenshots.Count)
+    {
+        pickName = screenshots[pi + 1];
+        screenshots.RemoveRange(pi, 2);
+    }
     var cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache");
     var http = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "tarkov-dev"));
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
@@ -455,6 +463,10 @@ static async Task Render(string mapName, string output, List<string> screenshots
     // every quest with something on the map.
     var active = data.Tasks.Values.Where(t => new[] { "audit", "dandies", "secret-message", "road-closed", "ballet-lover", "glory-to-cpsu", "revision-streets-of-tarkov" }
         .Contains(t.NormalizedName)).Select(t => t.Id).ToList();
+    var picked = pickName is null ? null
+        : data.Tasks.Values.FirstOrDefault(t => t.Name.Equals(pickName, StringComparison.OrdinalIgnoreCase))?.Id ?? throw new ArgumentException("Unknown quest " + pickName);
+    if (picked is not null && !active.Contains(picked))
+        active.Add(picked);
     var content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
     if (content.Objectives.All(o => o.Places.Count == 0))
         content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
@@ -472,7 +484,10 @@ static async Task Render(string mapName, string output, List<string> screenshots
     // The first quest with a place, picked: shows the picks' look and the guide line ("--no-pick": none, e.g. to see a
     // map's artwork under a quest zone that covers it).
     var pick = !screenshots.Remove("--no-pick");
-    scene.Kept = !pick ? new HashSet<string>() : content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
+    scene.QuestKeys = content.QuestKeys;
+    scene.Kept = !pick ? new HashSet<string>()
+        : picked is not null ? new HashSet<string> { picked }
+        : content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
     if (focusItem is not null)
     {
         var item = data.ItemNames.ContainsKey(focusItem) ? focusItem

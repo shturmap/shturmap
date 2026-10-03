@@ -16,6 +16,9 @@ public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<
     /// <summary>Markers that light with a marker pointed at: an extract's switches, a switch's extracts
     /// (<see cref="MapContentBuilder.ExtractSwitchLinks"/>).</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Links { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
+    /// <summary>Per quest, the lock groups of the keys it needs on this map (<see cref="MapContentBuilder.QuestKeys"/>).</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> QuestKeys { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 }
 
 /// <summary>Builds what to draw on a map: extracts, transits, and the active quests' objectives.</summary>
@@ -107,7 +110,35 @@ public static class MapContentBuilder
                     objectives.Add(new ObjectiveOnMap(quest, objective, places, done));
             }
         }
-        return new MapContent(markers, zones, objectives) { Containers = Containers(map), Links = ExtractSwitchLinks(map) };
+        return new MapContent(markers, zones, objectives)
+        {
+            Containers = Containers(map),
+            Links = ExtractSwitchLinks(map),
+            QuestKeys = QuestKeys(objectives, sameArtwork),
+        };
+    }
+
+    /// <summary>
+    /// The keys each quest with something on this map needs here, as lock groups (<see cref="KeyGroup"/>): the
+    /// quest's <c>neededKeys</c> for this map and its objectives' own keys, the same sources BRING's "key for …"
+    /// reads. A picked or pointed-at quest lights those locks too (owner, 2026-10-03: Golden Swag's trailer park cabin
+    /// door didn't light with the quest).
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> QuestKeys(IReadOnlyList<ObjectiveOnMap> objectives, IReadOnlySet<string> sameArtwork)
+    {
+        var keys = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var quest in objectives.GroupBy(o => o.Quest.Id))
+        {
+            var task = quest.First().Quest;
+            var ids = (task.NeededKeys ?? []).Where(k => k.Map is not null && sameArtwork.Contains(k.Map)).SelectMany(k => k.Keys ?? [])
+                .Concat(quest.SelectMany(o => (o.Objective.RequiredKeys ?? []).SelectMany(k => k)))
+                .Distinct(StringComparer.Ordinal)
+                .Select(KeyGroup)
+                .ToList();
+            if (ids.Count > 0)
+                keys[quest.Key] = ids;
+        }
+        return keys;
     }
 
     /// <summary>

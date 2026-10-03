@@ -135,34 +135,80 @@ public sealed class MapScene
     public IReadOnlySet<string> Kept
     {
         get => _kept;
-        set => _kept = value.Count == 0 ? Nothing : value;
+        set
+        {
+            _kept = value.Count == 0 ? Nothing : value;
+            _keptKeys = KeysOf(_kept);
+        }
     }
 
     private IReadOnlySet<string> _kept = Nothing;
+
+    /// <summary>
+    /// The locks of the keys the picked quests need on this map (<see cref="QuestKeys"/>): lit in the picks' colour
+    /// with their key's name at every zoom, so the door reads as part of the pick (owner, 2026-10-03: Golden Swag's
+    /// trailer park cabin). They are a means, not a goal: the guide line never leads to one.
+    /// </summary>
+    public IReadOnlySet<string> KeptKeys => _keptKeys;
+
+    private IReadOnlySet<string> _keptKeys = Nothing;
+
+    /// <summary>
+    /// Per quest, the lock groups ("key:&lt;item&gt;") of the keys it needs on this map
+    /// (<see cref="MapContent.QuestKeys"/>). A quest picked or pointed at lights them with its own markers.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> QuestKeys
+    {
+        get => _questKeys;
+        set
+        {
+            _questKeys = value;
+            _keptKeys = KeysOf(_kept);
+            Focus = _focusAsked;
+        }
+    }
+
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> _questKeys = new Dictionary<string, IReadOnlyList<string>>();
+
+    // The lock groups of the keys the given quests need here.
+    private IReadOnlySet<string> KeysOf(IReadOnlySet<string> quests)
+    {
+        if (quests.Count == 0 || _questKeys.Count == 0)
+            return Nothing;
+        var keys = quests.Where(_questKeys.ContainsKey).SelectMany(q => _questKeys[q]).ToHashSet(StringComparer.Ordinal);
+        return keys.Count == 0 ? Nothing : keys;
+    }
 
     /// <summary>Whether something pointed at is highlighted on this map (picks alone don't count: they dim nothing).</summary>
     public bool HasHighlight => FocusShown;
 
     /// <summary>
     /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
-    /// are drawn emphasised and everything else steps back.
+    /// are drawn emphasised and everything else steps back. A quest brings the locks of its keys along
+    /// (<see cref="QuestKeys"/>).
     /// </summary>
     public IReadOnlySet<string> Focus
     {
         get => _focus;
         set
         {
-            var same = value.SetEquals(_focus);
-            _focus = value;
+            _focusAsked = value;
+            var keys = KeysOf(value);
+            IReadOnlySet<string> shown = keys.Count == 0 ? value : value.Concat(keys).ToHashSet(StringComparer.Ordinal);
+            var same = shown.SetEquals(_focus);
+            _focus = shown;
             _focusShown = null;
             if (FocusShown && !same)
                 FocusSince = DateTime.Now;
             if (FocusShown)
-                LastFocus = value;
+                LastFocus = shown;
         }
     }
 
     private IReadOnlySet<string> _focus = new HashSet<string>();
+
+    // The focus as it was asked for, before the locks of its quests' keys were added.
+    private IReadOnlySet<string> _focusAsked = new HashSet<string>();
 
     /// <summary>The last non-empty focus: still emphasised while the dimming fades out.</summary>
     public IReadOnlySet<string> LastFocus { get; private set; } = new HashSet<string>();

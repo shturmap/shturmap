@@ -584,6 +584,12 @@ spawns below).
     every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card. The
     key's need cells and item card don't link yet: a linked element inside a linked row loses the row's highlight
     when the pointer leaves it. Container locks would mark containers; the data has none.
+    A quest brings its doors along (owner, 2026-10-03: "For the Golden Swag key the trailer park portable cabin
+    marker is not highlighted when the quest is highlighted as goal quest"): pointing at a quest, or picking it,
+    lights the locks of the keys it needs on that map (its `neededKeys` there and its objectives' own keys, the
+    sources BRING's "key for …" reads; `MapContent.QuestKeys`), at any zoom and with their names. A picked quest's
+    doors take the picks' cyan, without the picks' ring, so they read as part of the pick. They are a means, not a
+    goal: the guide line and NEXT still lead to the quest's own places, never to a door, however near.
   - **Switches**: a power symbol (`E7E8`) with the switch's name ("Med Elevator Power Button", "Alarm Switch",
     "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12. **An extract
     and its switches light together** (owner, 2026-10-03, from the map audit: you have to find the switch to leave):

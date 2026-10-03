@@ -630,6 +630,8 @@ public sealed partial class MainWindow : Window
         scene.Markers = latest.Content?.Markers ?? [];
         scene.Zones = latest.Content?.Zones ?? [];
         scene.Containers = latest.Content?.Containers ?? [];
+        // Before the picks and the focus: a quest brings the locks of the keys it needs here along.
+        scene.QuestKeys = latest.Content?.QuestKeys ?? new Dictionary<string, IReadOnlyList<string>>();
         scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
         Map.Refresh();
