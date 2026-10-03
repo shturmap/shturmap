@@ -19,4 +19,8 @@
          developer's Windows user name) among them; it serves the SDK's own client, which Shturmap doesn't create. -->
     <SentryDisableSourceGenerator>true</SentryDisableSourceGenerator>
   </PropertyGroup>
+  <!-- Developer builds (Debug, or eng\dev.ps1's ShturmapDev=true) compile the developer tools in; releases never do. -->
+  <PropertyGroup Condition="'$(ShturmapDev)' == 'true' or '$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);DEVTOOLS</DefineConstants>
+  </PropertyGroup>
 </Project>

@@ -23,7 +23,7 @@ namespace Shturmap.Session;
 /// work (downloads) runs outside it.
 /// </summary>
 /// <param name="locations">Game folders to use instead of discovering them (simulations and tests).</param>
-public sealed class GameSession(AppPaths paths, GameLocations? locations = null) : IAsyncDisposable
+public sealed partial class GameSession(AppPaths paths, GameLocations? locations = null) : IAsyncDisposable
 {
 
     private readonly SemaphoreSlim _gate = new(1, 1);

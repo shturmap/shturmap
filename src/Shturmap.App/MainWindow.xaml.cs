@@ -1321,6 +1321,9 @@ public sealed partial class MainWindow : Window
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, ShowHelp);
+#if DEVTOOLS
+        AddDevShortcuts(Add);
+#endif
         root.CharacterReceived += (_, e) =>
         {
             if (e.Character == '?' && !ReportOpen)

@@ -19,11 +19,26 @@ public partial class App : Application
     /// "Reports").</summary>
     public static Reporter Reporter { get; private set; } = null!;
 
+    // The command line, read once. A developer build turns "--dev-view" into a fake game of its own (Dev/App.Dev.cs).
+    private static string[]? _cli;
+
+    private static string[] CommandLine()
+    {
+        if (_cli is null)
+        {
+            _cli = Environment.GetCommandLineArgs();
+#if DEVTOOLS
+            _cli = DevCommandLine(_cli);
+#endif
+        }
+        return _cli;
+    }
+
     public App()
     {
         InitializeComponent();
         AppLog.Initialize(AppPaths.Default.Logs);
-        var cli = Environment.GetCommandLineArgs();
+        var cli = CommandLine();
         var started = DateTime.Now;
         // Developer runs (snapshots, fake games, the website demo) send nothing; a build without a DSN can't. The one
         // exception is the release's delivery check, "--send-report", which may run in a fake game so the player's
@@ -81,7 +96,7 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        var cli = Environment.GetCommandLineArgs();
+        var cli = CommandLine();
         // The website demo times its clip by its DEBUG lines (tools\fake-raid.ps1 -Demo).
         AppLog.Verbose = cli.Contains("--verbose") || cli.Contains("--demo");
         AppLog.Info($"Starting Shturmap {GameSession.Version} ({BuildKind}) on {Diagnostics.WindowsVersion()}");
@@ -132,6 +147,9 @@ public partial class App : Application
             _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, "Example: the map stayed on Woods after I loaded into Customs.", "snapshot", showSent: true);
         if (cli.Contains("--show-crash"))
             _window.AskAboutCrashes(Reporter.Crashes.Waiting() is { Count: > 0 } waiting ? waiting : [ExampleCrash()]);
+#if DEVTOOLS
+        await StartDevToolsAsync(cli);
+#endif
 
         // Developer aid: "--send-report <text> <folder>" sends one real report through the dialog's own Send (a
         // release's delivery check), saves the window to the folder and exits.
