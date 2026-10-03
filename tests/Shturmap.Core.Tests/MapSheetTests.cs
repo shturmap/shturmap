@@ -42,15 +42,28 @@ public class MapSheetTests
     }
 
     [Fact]
-    public void A_sheet_keeps_ten_metres_the_same_length_both_ways()
+    public void A_sheet_without_tiles_keeps_ten_metres_the_same_length_both_ways()
     {
-        // tarkov.dev stretches Icebreaker (X by 2, Y by 3.5) to fit its tile render; the sheet uses one scale.
-        var projection = MapProjection.For(Fixtures.Map("icebreaker"));
+        // A map with neither SVG nor tiles is drawn with one scale. (Icebreaker, stretched X by 2 and Y by 3.5 for its
+        // tile render, stands in for such a map here.)
+        var projection = MapProjection.For(Fixtures.Map("icebreaker") with { TilePath = null });
         var origin = projection.ToMap(0, 0);
         var alongX = projection.ToMap(10, 0) - origin;
         var alongZ = projection.ToMap(0, 10) - origin;
         Assert.Equal(Math.Sqrt(alongX.X * alongX.X + alongX.Y * alongX.Y), Math.Sqrt(alongZ.X * alongZ.X + alongZ.Y * alongZ.Y), 6);
         Assert.Equal(10 * Math.Sqrt(2 * 3.5), Math.Abs(alongX.X + alongX.Y), 6);
+    }
+
+    [Fact]
+    public void Tile_maps_keep_tarkov_devs_transform_so_markers_land_on_the_render()
+    {
+        // Icebreaker's render is stretched: its markers must be too (docs/DESIGN.md §3, "Maps without SVG artwork").
+        var map = Fixtures.Map("icebreaker");
+        var projection = MapProjection.For(map);
+        Assert.Same(map, projection.Map);
+        var origin = projection.ToMap(0, 0);
+        Assert.Equal(20, Math.Abs((projection.ToMap(10, 0) - origin).X), 6);
+        Assert.Equal(35, Math.Abs((projection.ToMap(0, 10) - origin).Y), 6);
     }
 
     [Fact]

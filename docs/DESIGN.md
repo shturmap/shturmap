@@ -81,27 +81,44 @@ against sanctions); and say that some players see a position map as an unfair ad
   at runtime, displayed unmodified except for showing one floor at a time (their README invites that), credited on
   the map with its licence, and never redistributed. Non-commercial only. A published screenshot that shows a map
   shares the artwork: credit it the same way and keep it non-commercial.
-- **Maps without artwork** (The Lab, Labyrinth, Icebreaker; checked 2026-10-02). tarkov.dev shows them as image
-  tiles (assets.tarkov.dev, credited to "Tarkov.dev" and to TarkovBOT.eu for Icebreaker) that are top-down renders
-  of the game's own level geometry and textures, i.e. Battlestate's art, which Shturmap doesn't use (below). The
-  svg-maps repository's `Labs.svg` (Shebuka, CC BY-NC-SA 4.0, last changed 2023) is a schematic that isn't to scale:
-  fitted to the georeferenced level, its rooms are off by 13–22 m, so positions would land in the wrong rooms, and
-  tarkov.dev has never placed it either. These maps are drawn as a **sheet** instead, from data only: maps.json's
-  bounds (the extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid on whole metres
-  (10 m, every fifth line stronger), tarkov.dev's labels for the shown floor, and everything else as on any map
-  (player, trail, objectives, extracts, transits, spawns, floors). No walls or layouts are drawn: none exist in the
-  data (owner, 2026-10-02: Shturmap shows only what it has a precise readout for). The sheet says
+- **Maps without SVG artwork** (The Lab, Labyrinth, Icebreaker). tarkov.dev publishes them only as image tiles
+  (assets.tarkov.dev; maps.json credits "Tarkov.dev", and TarkovBOT.eu for Icebreaker): top-down renders of the
+  game's own level geometry and textures, i.e. Battlestate's art. **They are shown** (owner, 2026-10-03: "Do B and A",
+  extending to these renders the terms accepted for trader portraits and item icons below; until then they weren't
+  used and the sheet below stood in): fetched from tarkov.dev's image service as a view needs them (the zoom level
+  that matches the screen, the base layer and the shown floor's layer, at most four at a time; while one loads the
+  nearest coarser tile stands in, stretched), kept in the user's cache (`cache\map-tiles\<map>\<layer>\<z>\<x>_<y>.png`,
+  checked again after a month) and decoded in memory (the 192 most recently used), never in the repository, a build
+  or the test fixtures, credited on the map ("Map: Tarkov.dev · data tarkov.dev"). Screenshots of Shturmap may show
+  them, as with icons. They are placed with tarkov.dev's own transform, through its Leaflet CRS: a map unit is a pixel
+  at zoom 0, so the tile (z, x, y) covers [x·T, (x+1)·T] ÷ 2^z map units each way, T being maps.json's tileSize (175
+  for The Lab, 256 elsewhere) whatever the image's own size (`TileGrid`; worked out from Leaflet's documented maths,
+  no code taken). Checked by eye on 2026-10-03: The Lab's extracts land in their rooms on its levels (the medical
+  block's elevator room on Technical, the hangar's floor), its room names on their rooms on both floors, Labyrinth's
+  and Icebreaker's loot spots on their decks and rooms. Like SVG artwork the renders recede, the colour treatment
+  baked into each tile when it is decoded, so a frame only copies pixels (on the CPU, 16–45 ms a frame for The Lab,
+  3–11 ms for Icebreaker and Labyrinth); they are clipped to maps.json's bounds (Labyrinth's render runs on with a
+  border line and an opaque background). The Icebreaker render is stretched 1.75× along one axis, so these maps keep
+  tarkov.dev's transform (`MapProjection.For`). The svg-maps repository's `Labs.svg` (Shebuka, CC BY-NC-SA 4.0, last
+  changed 2023) stays unused: a schematic that isn't to scale, its rooms 13–22 m off when fitted to the level.
+- **The sheet** stands in when no tile can be had (offline without saved tiles, or none published), drawn from data
+  only: maps.json's bounds (the extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid
+  on whole metres (10 m, every fifth line stronger), tarkov.dev's labels for the shown floor, and everything else as
+  on any map (player, trail, objectives, extracts, transits, spawns, floors). No walls or layouts are drawn: none
+  exist in the data (owner, 2026-10-02: Shturmap shows only what it has a precise readout for). The sheet says
   "NO ARTWORK FOR THIS MAP · GRID 10 M" in its corner (plus "NO FLOOR DATA" where maps.json has no floors, as for
-  Labyrinth: its markers are then all on one plane), the credit line says so, and a notice says it once per map.
-  A sheet uses one scale for both axes (`MapProjection.For`), so its squares stay square; tarkov.dev's Icebreaker
-  transform stretches Y 1.75× to fit its tiles. The credit line names an artist only where their SVG is drawn.
+  Labyrinth: its markers are then all on one plane), the credit line says so, and a notice says it once per map ("No
+  map render for The Lab: couldn't download it…"). With tarkov.dev's transform kept, Icebreaker's 10 m squares are
+  oblong on its sheet (the lines are still 10 m apart); a map with neither SVG nor tiles would get one scale for both
+  axes, so its squares stay square. The credit line names an artist only where their SVG is drawn.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
   display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Screenshots of Shturmap
   on the website and in the README may show them, as the wiki and other community sites do (owner, 2026-10-02,
   accepting that BSG's licence 4.2.2, read literally, doesn't allow it); they are never published on their own.
-- **Not used**: other Battlestate artwork (quest images, game UI art, map art), text from the EFT wiki or guide
+- **Not used**: other Battlestate artwork (quest images, game UI art, and map art except tarkov.dev's renders of the
+  three maps without SVG artwork, above), text from the EFT wiki or guide
   sites (the quest card links to the wiki page instead), and code from other community tools: TarkovMonitor,
   TarkovTracker and MAYAK (GPL-3.0), Tarkov Pilot (no licence), RatScanner (source-available, based on the Elastic
   License). Facts learned from them (log formats, file paths) are reimplemented. The idea comes from TarkovEyes
@@ -1082,8 +1099,9 @@ reopen a quest the log saw completed). `shturmap-cli quests` lists active quests
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
 screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floors) are drawn in the base layer.
-On a sheet (maps without artwork) the floors are tarkov.dev's tile layers. Map labels with heights (tarkov.dev's
-bottom/top) show only on their floor, as on tarkov.dev; labels without heights show on every floor.
+On the maps without SVG artwork the floors are tarkov.dev's tile layers: the shown floor's tiles over the base
+layer's, which dims as under an SVG floor (the sheet stands in with the same floors). Map labels with heights
+(tarkov.dev's bottom/top) show only on their floor, as on tarkov.dev; labels without heights show on every floor.
 
 **Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
@@ -1149,7 +1167,8 @@ a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
 German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
 that quests and raids won't follow the game, and why. A map's artwork that doesn't download: "No map artwork for
-Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map.
+Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map; a tile render
+that can't be had: "No map render for The Lab: …", the same way.
 
 **Diagnostics** (owner, 2026-10-03). Help ends with quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
@@ -1231,7 +1250,8 @@ form. Problems and ideas both go through it.
 - Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).
 - Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own
   so a search finds the app rather than the Woods boss. The old data folder and database move over on first start.
-- The Lab, Labyrinth and Icebreaker are drawn as sheets (§3, "Maps without artwork"; 2026-10-02).
+- The Lab, Labyrinth and Icebreaker are drawn from tarkov.dev's tile renders (§3, "Maps without SVG artwork";
+  2026-10-03), as a sheet when no tile can be had (2026-10-02).
 - 0.1.0 went to friends as one self-unpacking exe (2026-10-03). From 0.2.0, the first public release, a Setup from
   GitHub Releases that keeps itself up to date (Velopack; §8, "Distribution"): 106 MB to download, 244 MB installed.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").

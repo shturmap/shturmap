@@ -159,7 +159,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
             var http = CachedHttp.CreateClient();
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
-            Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache);
+            Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache,
+                new CachedHttp(http, paths.MapTileCache));
             Art = new GameArt(http, paths.GameArtCache);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;

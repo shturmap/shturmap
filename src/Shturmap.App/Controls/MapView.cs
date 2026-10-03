@@ -44,6 +44,21 @@ public sealed partial class MapView : Grid
         };
     }
 
+    private bool _tileRedrawQueued;
+
+    // Raised on a loader thread, often several tiles at once: one redraw on the UI thread for them all.
+    private void OnTilesChanged()
+    {
+        if (_tileRedrawQueued)
+            return;
+        _tileRedrawQueued = true;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _tileRedrawQueued = false;
+            _panel.Invalidate();
+        });
+    }
+
     /// <summary>A new position arrived and pings; true when it is out of view (the edge arrow points to it).</summary>
     public event Action<bool>? PlayerPinged;
 
@@ -70,6 +85,11 @@ public sealed partial class MapView : Grid
     /// <summary>Shows a new map, fitted to the window, or at a view saved earlier with <see cref="View"/>.</summary>
     public void SetScene(MapScene? scene, (Shturmap.Core.Maps.MapPoint Center, double Zoom)? view = null)
     {
+        // A tile render redraws as its tiles arrive (they load in the background).
+        if (_scene?.Tiles is { } before)
+            before.Changed -= OnTilesChanged;
+        if (scene?.Tiles is { } after)
+            after.Changed += OnTilesChanged;
         _scene = scene;
         if (scene is not null)
             scene.Pulse = AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
@@ -224,6 +244,20 @@ public sealed partial class MapView : Grid
     {
         var p = _camera.ToScreen(_scene!.Projection.ToMap(world));
         return new(p.X / PixelScale, p.Y / PixelScale);
+    }
+
+    /// <summary>Waits until the tiles the current view needs are loaded (a snapshot of a tile render), at most <paramref name="limit"/>.</summary>
+    public async Task TilesLoadedAsync(TimeSpan limit)
+    {
+        if (_scene is not { Tiles: { } tiles } scene || scene.Definition.TilePath is not { } basePath)
+            return;
+        var a = _camera.ToMap(new SKPoint(0, 0));
+        var b = _camera.ToMap(new SKPoint(_camera.Viewport.Width, _camera.Viewport.Height));
+        var view = new Shturmap.Core.Maps.MapRect(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+        var loads = new List<Task> { tiles.LoadAsync(basePath, view, scene.Projection.WorldRect, _camera.Zoom) };
+        if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
+            loads.Add(tiles.LoadAsync(floorPath, view, scene.Projection.WorldRect, _camera.Zoom));
+        await Task.WhenAny(Task.WhenAll(loads), Task.Delay(limit));
     }
 
     /// <summary>Draws the current view into a PNG (developer snapshot; the GPU surface itself can't be read back),

@@ -41,6 +41,8 @@ public static partial class MapRenderer
         canvas.Clear(Background);
         if (scene.Artwork is not null)
             DrawArtwork(canvas, camera, scene, scene.Artwork);
+        else if (!scene.IsSheet && scene.Tiles is { } tiles)
+            DrawTiles(canvas, camera, scene, tiles);
         else
             DrawSchematic(canvas, camera, scene, uiScale);
 
@@ -632,6 +634,41 @@ public static partial class MapRenderer
             canvas.DrawPicture(floor, recede);
         }
         canvas.Restore();
+    }
+
+    // tarkov.dev's tile render (The Lab, Labyrinth, Icebreaker; docs/DESIGN.md §3): the base layer's tiles, and on another
+    // floor that floor's tiles over the base, dimmed as for SVG floors. The same treatment as SVG artwork (the recede
+    // filter), baked into each tile when it is decoded (MapTiles). Tiles are drawn without anti-aliasing, so neighbours
+    // meet on whole pixels with no seam.
+    private static void DrawTiles(SKCanvas canvas, Camera camera, MapScene scene, MapTiles tiles)
+    {
+        if (scene.Definition.TilePath is not { } basePath)
+            return;
+        var corner1 = camera.ToMap(new SKPoint(0, 0));
+        var corner2 = camera.ToMap(new SKPoint(camera.Viewport.Width, camera.Viewport.Height));
+        var view = new MapRect(Math.Min(corner1.X, corner2.X), Math.Min(corner1.Y, corner2.Y), Math.Max(corner1.X, corner2.X), Math.Max(corner1.Y, corner2.Y));
+        var bounds = scene.Projection.WorldRect;
+        var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+        using var plain = new SKPaint();
+        void Layer(string template)
+        {
+            canvas.Save();
+            var matrix = camera.Matrix;
+            canvas.Concat(in matrix);
+            // Inside the map's bounds only: the renders run on to whole tiles, past their own edge (Labyrinth's border
+            // line, its opaque background).
+            canvas.ClipRect(new SKRect((float)bounds.Left, (float)bounds.Top, (float)bounds.Right, (float)bounds.Bottom));
+            tiles.Draw(template, view, bounds, camera.Zoom, (image, source, target) =>
+                canvas.DrawImage(image, source, new SKRect((float)target.Left, (float)target.Top, (float)target.Right, (float)target.Bottom), sampling, plain));
+            canvas.Restore();
+        }
+        Layer(basePath);
+        if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
+        {
+            using var dim = new SKPaint { Color = Background.WithAlpha(150) };
+            canvas.DrawRect(canvas.LocalClipBounds, dim);
+            Layer(floorPath);
+        }
     }
 
     // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the
