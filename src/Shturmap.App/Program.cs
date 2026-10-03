@@ -6,7 +6,7 @@ namespace Shturmap.App;
 /// The exe's start. Velopack goes first: its Setup, its updater and an uninstall start the exe with their own
 /// arguments, which it handles and then ends the process; and a version downloaded in an earlier session is applied
 /// here, before the app starts (docs/DESIGN.md §8, "Distribution"). An uninstall's hook deletes the data folder when
-/// the player asked for it in help (Updater.DeleteDataIfAsked). Then WinUI's own start, as it generates it.
+/// the player asked for it in settings (Updater.DeleteDataIfAsked). Then WinUI's own start, as it generates it.
 /// </summary>
 public static class Program
 {

@@ -28,7 +28,7 @@ in Shturmap's code it happened, Shturmap's and Windows' versions and the last 50
 -----------------------------
 Installed with its Setup, Shturmap asks GitHub (operated by GitHub, Inc., USA) for a newer version of itself at
 start and every 6 hours, and downloads it from there. GitHub sees your internet address, as with any download;
-Shturmap sends nothing else. "Updates" in help: Automatic, the default (a new version downloads in the background and
+Shturmap sends nothing else. "Updates" in settings: Automatic, the default (a new version downloads in the background and
 applies at the next start); Tell me only (it asks, and downloads only when you click); Off (no request at all).
 
 What is never sent
@@ -66,5 +66,5 @@ quote the report id Shturmap showed after sending (8 letters and digits). You ca
 protection authority.
 
 Everything Shturmap keeps on your PC (settings, quest history, logs, the study log, reports waiting to be sent,
-crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. To delete all of it, use Help (?) →
+crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. To delete all of it, use settings (the gear) →
 "Uninstall Shturmap…" and tick "Also delete my Shturmap data"; or delete that folder yourself after uninstalling.

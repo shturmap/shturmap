@@ -119,7 +119,16 @@
           <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}" VerticalAlignment="Center" />
           <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.DataText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}" />
         </StackPanel>
-        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
+        <!-- A problem or an idea, straight to the Report dialog (owner, 2026-10-03: "there should be a separate
+             feedback/bugreport button"). Where the build can't report (no DSN) it is disabled; the tooltip sits on the
+             frame around it, since a disabled button shows none. -->
+        <Grid Background="Transparent" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind FeedbackTooltip}">
+          <Button x:Name="FeedbackButton" Width="28" Height="28" Padding="0" Click="OnFeedbackClick"
+                  IsEnabled="{x:Bind ReportingAvailable}" AutomationProperties.Name="Report a problem or idea">
+            <FontIcon Glyph="&#xE939;" FontSize="13" Foreground="{x:Bind FeedbackIconBrush}" />
+          </Button>
+        </Grid>
+        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
           <TextBlock Text="?" Style="{StaticResource StatusBarText}" HorizontalAlignment="Center" />
           <Button.Flyout>
             <Flyout x:Name="HelpFlyout" Placement="BottomEdgeAlignedRight" Opened="OnHelpOpened" Closed="OnHelpClosed">
@@ -195,7 +204,41 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
-                           Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data, and it never touches the game. Nothing is sent unless you send a report or allow crash reports; installed with its Setup, it asks GitHub for a newer version at start (Updates, below). Its own log stays on this PC, in %LOCALAPPDATA%\Shturmap\logs." />
+                           Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data, and it never touches the game. Nothing is sent unless you send a report or allow crash reports; installed with its Setup, it asks GitHub for a newer version at start (Updates, in settings). Its own log stays on this PC, in %LOCALAPPDATA%\Shturmap\logs." />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="HELP AND FEEDBACK" Margin="0,8,0,0" />
+                <!-- Reports go through the feedback button at the top right (owner, 2026-10-03: "there should be a separate
+                     feedback/bugreport button"); help keeps the diagnostics to paste elsewhere. -->
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind FeedbackPointer}" />
+                <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,4,0,0">
+                  <HyperlinkButton Padding="0" Click="OnCopyDiagnosticsClick"
+                                   ToolTipService.ToolTip="Copies the app's version, what it found, the data's state and today's log (no names or ids), to paste into a message">
+                    <TextBlock Text="COPY DIAGNOSTICS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  </HyperlinkButton>
+                </StackPanel>
+                <TextBlock Style="{StaticResource NoteText}" Visibility="{x:Bind NotConfiguredVisibility}"
+                           Text="Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you Shturmap." />
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <!-- Settings and the app's data, apart from help (owner, 2026-10-03: "It's not clear that the settings are with the
+             questionmark on the top right … a settings button next to it"). Same frame as "?", 6 px from it. -->
+        <Button x:Name="SettingsButton" Width="28" Height="28" Padding="0" Margin="-10,0,0,0" VerticalAlignment="Center"
+                ToolTipService.ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings">
+          <FontIcon Glyph="&#xE713;" FontSize="13" Foreground="{StaticResource InkBrush}" />
+          <Button.Flyout>
+            <Flyout x:Name="SettingsFlyout" Placement="BottomEdgeAlignedRight" Opened="OnSettingsOpened" Closed="OnSettingsClosed">
+              <Flyout.FlyoutPresenterStyle>
+                <Style TargetType="FlyoutPresenter">
+                  <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+                  <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+                  <Setter Property="MaxWidth" Value="540" />
+                  <Setter Property="Padding" Value="18,16" />
+                </Style>
+              </Flyout.FlyoutPresenterStyle>
+              <StackPanel Width="480" Spacing="8">
+                <TextBlock Text="SETTINGS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="PREFERENCES" />
                 <!-- Off by default (owner, 2026-10-03): the player decides whether Shturmap keeps a study log. -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.StudyLogOn, Mode=OneWay}" Click="OnStudyLogClick" Margin="0,6,0,0"
                               AutomationProperties.Name="Keep a study log">
@@ -279,20 +322,7 @@
                            Text="A new version downloads in the background and applies the next time Shturmap starts, never during a raid. GitHub sees your internet address, as with any download; nothing else is sent." />
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{x:Bind ShownIfNot(ViewModel.UpdatesAvailable), Mode=OneWay}"
                            Text="Updates: not available in this build. Installed with Shturmap's Setup, it keeps itself up to date." />
-                <!-- One way to report, from here, with no account (owner, 2026-10-03; docs/DESIGN.md §8, "Reports"). -->
-                <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,8,0,0">
-                  <HyperlinkButton Padding="0" Click="OnReportClick" IsEnabled="{x:Bind ReportingAvailable}"
-                                   ToolTipService.ToolTip="Tell Shturmap's developer about a problem or an idea, right from here">
-                    <TextBlock Text="REPORT A PROBLEM OR IDEA" Style="{StaticResource StatusText}" FontSize="11"
-                               Foreground="{x:Bind ReportLinkBrush}" />
-                  </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Click="OnCopyDiagnosticsClick"
-                                   ToolTipService.ToolTip="Copies the app's version, what it found, the data's state and today's log (no names or ids), to paste into a message">
-                    <TextBlock Text="COPY DIAGNOSTICS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
-                  </HyperlinkButton>
-                </StackPanel>
-                <TextBlock Style="{StaticResource NoteText}" Visibility="{x:Bind NotConfiguredVisibility}"
-                           Text="Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you Shturmap." />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="APP AND DATA" Margin="0,8,0,0" />
                 <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,2,0,0">
                   <HyperlinkButton Padding="0" Click="OnLogFolderClick" ToolTipService.ToolTip="Opens Shturmap's log folder (%LOCALAPPDATA%\Shturmap\logs)">
                     <TextBlock Text="LOG FOLDER ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
@@ -341,6 +371,7 @@
                     </HyperlinkButton>
                   </StackPanel>
                 </StackPanel>
+                <TextBlock Style="{StaticResource NoteText}" Margin="0,8,0,0" Text="{x:Bind VersionText}" />
               </StackPanel>
             </Flyout>
           </Button.Flyout>
@@ -796,7 +827,7 @@
                 <HyperlinkButton Padding="0" Click="OnCrashKeepClick">
                   <TextBlock Text="DON'T SEND" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                 </HyperlinkButton>
-                <HyperlinkButton Padding="0" Click="OnCrashAlwaysClick" ToolTipService.ToolTip="Send this one, and future ones without asking (change it in help)">
+                <HyperlinkButton Padding="0" Click="OnCrashAlwaysClick" ToolTipService.ToolTip="Send this one, and future ones without asking (change it in settings)">
                   <TextBlock Text="ALWAYS SEND" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
                 <HyperlinkButton Padding="0" Click="OnCrashDetailsClick" ToolTipService.ToolTip="Shows exactly what would be sent">

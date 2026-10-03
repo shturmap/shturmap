@@ -3,7 +3,7 @@ using Shturmap.Session;
 
 namespace Shturmap.App;
 
-// "Uninstall Shturmap…" in help (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"): one question, with the data
+// "Uninstall Shturmap…" in settings (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"): one question, with the data
 // only on a tick, then Velopack's own uninstaller, the same one Windows' Settings → Apps runs.
 public sealed partial class MainWindow
 {
@@ -45,7 +45,7 @@ public sealed partial class MainWindow
             ShowNotice("Couldn't find Shturmap's uninstaller: remove it in Windows' Settings → Apps instead.");
             return;
         }
-        HelpFlyout.Hide();
+        SettingsFlyout.Hide();
         await _session.DisposeAsync();
         ((App)Application.Current).EndSession();
         updater.StartUninstall(deleteData, silent);

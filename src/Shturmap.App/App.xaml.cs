@@ -155,7 +155,7 @@ public partial class App : Application
             && int.TryParse(h, out var height) ? new SizeInt32(width, height) : null;
         _session = CreateSession(cli);
         _session.Notice += notice => AppLog.Debug("Notice: " + notice.Text);
-        // The study log follows the player's switch in help; "--study" keeps it for one session; developer runs stay
+        // The study log follows the player's switch in settings; "--study" keeps it for one session; developer runs stay
         // out of it.
         _session.StudyOverride = GameSession.StudyOverrideFor(cli);
         _window = new MainWindow(_session, windowSize)

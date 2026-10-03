@@ -5,8 +5,8 @@
   </picture>
 </h1>
 
-> **In private testing.** Expect rough edges. If something is wrong or missing, tell us from the app: help (?) →
-> **Report a problem or idea**.
+> **In private testing.** Expect rough edges. If something is wrong or missing, tell us from the app: the
+> **feedback** button at the top right.
 
 **A second-monitor map for Escape from Tarkov.** Your active quests' objectives, the extracts and your position on
 the map of the raid you're in: what you'd otherwise look up in the wiki, in one window. Website:
@@ -53,14 +53,14 @@ It never:
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
 - sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
   only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
-  (turn that off in help, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
-  and a study log of how you use it only if you switch that on in help. (The Microsoft runtime it is built on has
+  (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
+  and a study log of how you use it only if you switch that on in settings. (The Microsoft runtime it is built on has
   its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
-To report a problem or suggest an idea, use **Report a problem or idea** in help (?): write what happened, keep
+To report a problem or suggest an idea, use the **feedback** button at the top right: write what happened, keep
 "Include diagnostics" ticked (Show what's sent shows exactly what goes, with your user folder masked and no ids),
 and press Send. No account needed. After a crash, Shturmap asks at its next start whether to send a crash report;
-"Crash reports" in help can make that Always or Never. What a report holds and who receives it:
+"Crash reports" in settings (the gear beside ?) can make that Always or Never. What a report holds and who receives it:
 [PRIVACY.md](PRIVACY.md).
 
 A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
@@ -81,12 +81,12 @@ pre-release while Shturmap is in private testing), for 64-bit Windows 10 (2004) 
 Windows user only, with no admin rights, into `%LOCALAPPDATA%\ShturmapApp`, with a Start-menu and a desktop
 shortcut. The installer isn't signed, so Windows warns about it; click **More info → Run anyway**.
 
-Uninstall: Windows Settings → Apps, or Help (?) → **Uninstall Shturmap…**. Your data in `%LOCALAPPDATA%\Shturmap`
+Uninstall: Windows Settings → Apps, or settings (the gear) → **Uninstall Shturmap…**. Your data in `%LOCALAPPDATA%\Shturmap`
 (settings, quest history, logs, study log, download cache) stays for a later install, unless you tick **Also delete
-my Shturmap data** in help's question.
+my Shturmap data** in its question.
 
 Shturmap keeps itself up to date: it asks GitHub for a newer version at start and every 6 hours, downloads it in
-the background and applies it the next time you start it, never during a raid. Help (?) → **Updates** switches
+the background and applies it the next time you start it, never during a raid. Settings (the gear) → **Updates** switches
 between Automatic, Tell me only and Off.
 
 To build it yourself, with the [.NET 10 SDK](https://dotnet.microsoft.com/download):

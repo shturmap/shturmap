@@ -243,10 +243,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The notice asks for a report: it shows a REPORT link (COPY DIAGNOSTICS where reporting isn't set up).</summary>
     [ObservableProperty] public partial bool NoticeOffersReport { get; set; }
 
-    /// <summary>The "Crash reports" setting in help: "Ask", "Always" or "Never".</summary>
+    /// <summary>The "Crash reports" setting in settings: "Ask", "Always" or "Never".</summary>
     [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";
 
-    /// <summary>The "Updates" setting in help: "Automatic", "TellOnly" or "Off".</summary>
+    /// <summary>The "Updates" setting in settings: "Automatic", "TellOnly" or "Off".</summary>
     [ObservableProperty] public partial string UpdateMode { get; set; } = "Automatic";
 
     /// <summary>This build can update itself (installed by its Setup); otherwise help says it can't.</summary>

@@ -166,6 +166,7 @@ public sealed partial class MainWindow : Window
         new("PGUP / PGDN", "Show the floor above / below"),
         new("ESC", "Close the cards"),
         new("F1 / ?", "This help"),
+        new("CTRL + ,", "Settings: updates, crash reports, the study log, the app's folders"),
         new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
     ];
 
@@ -200,7 +201,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Shturmap's licence and the third-party ones a published build carries (eng\notices.ps1).</summary>
     public static string LicencesFolder { get; } = Path.Combine(AppContext.BaseDirectory, "licenses");
 
-    /// <summary>A developer build has no licences folder, so the help panel shows the link only in a published one.</summary>
+    /// <summary>A developer build has no licences folder, so settings shows the link only in a published one.</summary>
     public Visibility LicencesVisibility { get; } = Directory.Exists(LicencesFolder) ? Visibility.Visible : Visibility.Collapsed;
 
     private void OnLicencesClick(object sender, RoutedEventArgs e) => OpenFolder(LicencesFolder, "licences");
@@ -1296,9 +1297,55 @@ public sealed partial class MainWindow : Window
     private void OnHelpOpened(object sender, object e)
     {
         _helpOpenedAt = DateTime.Now;
-        LoadCrashMode();
         Study.Ui("help.open");
     }
+
+    // Settings, apart from help (owner, 2026-10-03): the preferences and the app's data. It never opens by itself.
+    private void ShowSettings()
+    {
+        if (SettingsButton.XamlRoot is not null)
+            SettingsFlyout.ShowAt(SettingsButton);
+    }
+
+    private DateTime _settingsOpenedAt;
+
+    private void OnSettingsOpened(object sender, object e)
+    {
+        _settingsOpenedAt = DateTime.Now;
+        LoadCrashMode();
+        Study.Ui("settings.open");
+    }
+
+    private void OnSettingsClosed(object sender, object e)
+    {
+        Study.Ui("settings.close", ("s", DateTime.Now - _settingsOpenedAt));
+        // An unanswered "Remove Shturmap?" doesn't wait for the next visit.
+        ViewModel.UninstallAsking = false;
+    }
+
+    private async Task<bool> OpenSettingsForSnapshotAsync()
+    {
+        if (SettingsButton.XamlRoot is null)
+            return false;
+        var opened = new TaskCompletionSource();
+        void Done(object? sender, object e) => opened.TrySetResult();
+        SettingsFlyout.Opened += Done;
+        try
+        {
+            ShowSettings();
+            if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
+                return false;
+            await Task.Delay(300); // one layout pass for its contents
+            return true;
+        }
+        finally
+        {
+            SettingsFlyout.Opened -= Done;
+        }
+    }
+
+    /// <summary>The version and kind of this build, at the foot of settings.</summary>
+    public string VersionText { get; } = $"Shturmap {GameSession.Version} · {App.BuildKind}";
 
     private void OnHelpClosed(object sender, object e)
     {
@@ -1373,6 +1420,17 @@ public sealed partial class MainWindow : Window
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, ShowHelp);
+        // Ctrl+, opens settings, as in many Windows apps (the gear beside "?").
+        var settingsKey = new KeyboardAccelerator { Key = (Windows.System.VirtualKey)188, Modifiers = Windows.System.VirtualKeyModifiers.Control };
+        settingsKey.Invoked += (_, e) =>
+        {
+            if (ReportOpen)
+                return;
+            Study.Ui("key", ("key", "Ctrl+Comma"));
+            ShowSettings();
+            e.Handled = true;
+        };
+        root.KeyboardAccelerators.Add(settingsKey);
 #if DEVTOOLS
         AddDevShortcuts(Add);
 #endif
@@ -1467,6 +1525,12 @@ public sealed partial class MainWindow : Window
             await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
                 await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
+            // Settings never opens by itself, so a snapshot opens it just for its picture (help closes with that).
+            if (SnapshotMode && SettingsFlyout.Content is UIElement settings && await OpenSettingsForSnapshotAsync())
+            {
+                await RenderToPngAsync(settings, Path.Combine(folder, "settings.png"));
+                SettingsFlyout.Hide();
+            }
             var cards = _cards.Cards;
             for (var i = 0; i < cards.Count; i++)
                 await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));

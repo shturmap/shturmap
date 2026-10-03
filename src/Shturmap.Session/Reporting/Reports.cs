@@ -29,7 +29,7 @@ public sealed record UserReport(string Id, DateTime At, ReportKind Kind, string 
         : null;
 }
 
-/// <summary>What happens after a crash: the player's choice in help ("Crash reports").</summary>
+/// <summary>What happens after a crash: the player's choice in settings ("Crash reports").</summary>
 public enum CrashMode
 {
     /// <summary>The next start asks: Send, Don't send, Always send. The default.</summary>
