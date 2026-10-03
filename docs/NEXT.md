@@ -2,7 +2,8 @@
 
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
 read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
-Item 5 (one design system) was added on 2026-10-02. Items 1, 3 and 4 are done (2026-10-02); 2 and 5 are open.
+Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) on 2026-10-03. Items 1, 3 and 4 are done
+(2026-10-02); 2, 5 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
 ## Before starting
@@ -154,6 +155,27 @@ be the same in the app, the README and the coming website, and DESIGN.md has to 
 - type: Bahnschrift in the app; a DIN-like font with a licence that allows web use for the website, since
   Bahnschrift may be used on screen but not served as a web font (Microsoft's font FAQ); how the README fits in;
 - shape, spacing and motion rules, the logo's use (clear space, minimum sizes), and the tone of the text.
+
+## 6. A useful default mode without the game installed
+
+**Why** (owner, 2026-10-03, "for later"). Someone without Escape from Tarkov on this PC still opens Shturmap: to
+look at it before installing, or on a laptop beside the PC that runs the game. Today they get one 30 s notice
+("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game…", `GameSession.
+ReportGameFolders`) and then an app built around quests it can't know.
+
+**What still works without the game:** tarkov.dev's data (all maps with artwork, extracts and transits with their
+requirements, spawn zones, bosses with chances, map names, loose loot spots) and the help. What doesn't: active
+quests, raid state, positions (all from the game's logs and screenshot names).
+
+**Open questions for the owner before planning:**
+- What the default view is: a map browser (pick a map; extracts, transits, bosses, spawns; the side selectable
+  PMC/Scav), a quest lookup (every quest on a map, clearly labelled as all quests, not "yours", since quest states
+  come only from the game's logs: DESIGN.md), or both.
+- The laptop case: reading the game PC's logs and screenshots over a network share (the folder pickers already
+  allow a manual game folder: "Install: manual") would make the full app work there; is that in scope?
+- How it says so: one quiet line where the Plan card would be ("No game on this PC: browsing maps"), not a notice
+  that disappears; and when the game turns up later (installed, or a share mounted), switching over by itself.
+- Truthfulness: nothing may look like the player's own state (no "complete", no distances without a position).
 
 ## At the production release on GitHub (owner, 2026-10-03)
 
