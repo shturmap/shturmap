@@ -4,6 +4,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
+    <!-- The SDK's own default, set this early so the DEVTOOLS condition below sees it in a plain "dotnet build" too. -->
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <!-- Paths compiled into the files (each DLL's PDB path, source paths in stack traces) start at the repository
          instead of the build machine's folder, which holds the developer's Windows user name. -->
     <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>

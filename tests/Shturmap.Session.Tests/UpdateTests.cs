@@ -48,17 +48,40 @@ public class UpdateTests
 
     // Velopack installs to %LOCALAPPDATA%\<pack id> and an uninstall deletes that folder: it must never be the data
     // folder, and the release must pack with the same id.
+    // Both installs (the release's and the dev build's) against every data folder, the shared cache included.
     [Fact]
     public void The_install_folder_is_never_the_data_folder()
     {
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var install = Path.TrimEndingDirectorySeparator(Distribution.InstallFolder(local)) + Path.DirectorySeparatorChar;
-        var data = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppPaths.Default.Root)) + Path.DirectorySeparatorChar;
-        Assert.NotEqual("Shturmap", Distribution.PackId, StringComparer.OrdinalIgnoreCase);
-        Assert.False(data.StartsWith(install, StringComparison.OrdinalIgnoreCase), $"{data} lies in {install}");
-        Assert.False(install.StartsWith(data, StringComparison.OrdinalIgnoreCase), $"{install} lies in {data}");
-        foreach (var folder in new[] { AppPaths.Default.Logs, AppPaths.Default.Study, AppPaths.Default.CacheRoot, AppPaths.Default.Database })
-            Assert.False(Path.GetFullPath(folder).StartsWith(install, StringComparison.OrdinalIgnoreCase), folder);
+        foreach (var packId in new[] { Distribution.PackId, Distribution.DeveloperPackId })
+        {
+            var install = Path.TrimEndingDirectorySeparator(Distribution.InstallFolder(local, packId)) + Path.DirectorySeparatorChar;
+            Assert.NotEqual("Shturmap", packId, StringComparer.OrdinalIgnoreCase);
+            Assert.NotEqual("Shturmap-dev", packId, StringComparer.OrdinalIgnoreCase);
+            foreach (var paths in new[] { AppPaths.For(DataFolderKind.Release, null, local), AppPaths.For(DataFolderKind.Dev, null, local), AppPaths.Default })
+            {
+                var data = Path.TrimEndingDirectorySeparator(Path.GetFullPath(paths.Root)) + Path.DirectorySeparatorChar;
+                Assert.False(data.StartsWith(install, StringComparison.OrdinalIgnoreCase), $"{data} lies in {install}");
+                Assert.False(install.StartsWith(data, StringComparison.OrdinalIgnoreCase), $"{install} lies in {data}");
+                foreach (var folder in new[] { paths.Logs, paths.Study, paths.CacheRoot, paths.Database })
+                    Assert.False(Path.GetFullPath(folder).StartsWith(install, StringComparison.OrdinalIgnoreCase), folder);
+            }
+        }
+        Assert.NotEqual(Distribution.PackId, Distribution.DeveloperPackId);
+    }
+
+    // The dev build is its own Velopack app: its own install folder, shortcuts ("Shturmap DEV") and local feed; it
+    // never packs as the release and never asks GitHub.
+    [Fact]
+    public void The_dev_build_packs_with_its_own_id_and_never_as_the_release()
+    {
+        var script = File.ReadAllText(Path.Combine(RepositoryRoot(), "eng", "dev.ps1"));
+        Assert.Contains($"$packId = '{Distribution.DeveloperPackId}'", script);
+        Assert.Contains("--packId $packId", script);
+        Assert.Contains("-p:ShturmapDev=true", script);
+        Assert.Contains("--packTitle 'Shturmap DEV'", script);
+        Assert.DoesNotContain($"'{Distribution.PackId}'", script);
+        Assert.DoesNotMatch(@"(?i)vpk\s+(download|upload)\s+github|--repoUrl", script);
     }
 
     [Fact]

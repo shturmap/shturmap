@@ -7,6 +7,14 @@ using Shturmap.Game.Install;
 using Shturmap.Game.Logs;
 using Shturmap.Game.Settings;
 
+// "--data <folder>" anywhere: that data folder instead of the developer one (%LOCALAPPDATA%\Shturmap-dev); the
+// installed release's is "--data %LOCALAPPDATA%\Shturmap" (docs/DESIGN.md §8, "Data folders").
+if (Array.IndexOf(args, "--data") is var dataAt and >= 0 && dataAt + 1 < args.Length)
+{
+    Shturmap.Session.AppPaths.Use(Shturmap.Session.DataFolderKind.Custom, Environment.ExpandEnvironmentVariables(args[dataAt + 1]));
+    args = [.. args[..dataAt], .. args[(dataAt + 2)..]];
+}
+
 var command = args.FirstOrDefault() ?? "help";
 switch (command)
 {
@@ -61,6 +69,9 @@ switch (command)
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
             shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
             shturmap-cli study [on|off]      show or set the "Keep a study log" switch, as help sets it (Shturmap closed)
+
+            --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
+                                            the installed release's is --data %LOCALAPPDATA%\Shturmap
             """);
         break;
 }

@@ -22,8 +22,24 @@ public static class Distribution
     /// </summary>
     public const bool PreReleases = true;
 
+    /// <summary>
+    /// The dev build's Velopack id (eng\dev.ps1): its own install folder (%LOCALAPPDATA%\ShturmapDev), shortcuts and
+    /// update feed, so it never mixes with the installed release (owner, 2026-10-03).
+    /// </summary>
+    public const string DeveloperPackId = "ShturmapDev";
+
     /// <summary>The folder Velopack installs to: never where Shturmap keeps the player's data.</summary>
-    public static string InstallFolder(string localAppData) => Path.Combine(localAppData, PackId);
+    public static string InstallFolder(string localAppData, string packId = PackId) => Path.Combine(localAppData, packId);
+
+    /// <summary>
+    /// Which data folder an app uses: <c>--data</c> names one; only the installed release has the player's own; every
+    /// other build (the dev build, the folder build, <c>dotnet run</c>) the developer folder.
+    /// </summary>
+    /// <param name="installedAppId">Velopack's id of this install, or null when not installed.</param>
+    public static DataFolderKind DataFolderFor(string? installedAppId, string? dataArgument) =>
+        !string.IsNullOrWhiteSpace(dataArgument) ? DataFolderKind.Custom
+        : installedAppId == PackId ? DataFolderKind.Release
+        : DataFolderKind.Dev;
 }
 
 /// <summary>What Shturmap does about new versions: the player's choice in help ("Updates").</summary>

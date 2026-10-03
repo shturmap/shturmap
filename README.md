@@ -88,9 +88,12 @@ between Automatic, Tell me only and Off.
 To build it yourself, with the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```powershell
-.\eng\release.ps1                     # the Setup and update packages (Velopack): artifacts\releases
+.\eng\release.ps1                     # the Setup and update packages (Velopack): artifacts\release
 .\eng\publish.ps1                     # or just the folder build: artifacts\Shturmap\Shturmap.exe
+.\eng\dev.ps1                         # the dev build "Shturmap DEV", installed beside the release: artifacts\dev
 ```
+
+Builds other than the installed release keep their data in `%LOCALAPPDATA%\Shturmap-dev`, apart from yours.
 
 On first start it finds the game (Steam or the Battlestate Games launcher), its logs and your Screenshots folder,
 downloads data from tarkov.dev and reads your existing logs for quest history. In a raid, press your screenshot

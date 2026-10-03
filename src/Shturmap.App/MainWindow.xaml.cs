@@ -47,6 +47,7 @@ public sealed partial class MainWindow : Window
     {
         _session = session;
         InitializeComponent();
+        Title = App.Title;
         AppWindow.SetIcon(App.IconPath);
         // A flat dark title bar like the rest; no translucent backdrop.
         AppWindow.TitleBar.BackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
@@ -251,7 +252,8 @@ public sealed partial class MainWindow : Window
 
     private string DiagnosticsText() =>
         Diagnostics.Build(Volatile.Read(ref _snapshot) ?? new SessionSnapshot(), GameSession.Version, Diagnostics.WindowsVersion(), App.BuildKind,
-            AppLog.Tail(Diagnostics.LogLines), DateTime.Now, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            AppLog.Tail(Diagnostics.LogLines), DateTime.Now, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            AppPaths.Default.KindText);
 
     private async void OnStudyLogClick(object sender, RoutedEventArgs e)
     {
