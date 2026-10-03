@@ -93,11 +93,16 @@ public sealed class GameDataLoader(CachedHttp http)
         });
         var tradersData = Translated(traders.Result, tradersLang.Result, tradersEn.Result);
 
-        var itemNames = ItemNames(JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsLang.Result.FilePath, ct)));
+        var itemTexts = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsLang.Result.FilePath, ct));
+        var itemNames = ItemNames(itemTexts);
+        var shortNames = ItemNames(itemTexts, ShortNameSuffix);
         if (!ReferenceEquals(itemsLang.Result, itemsEn.Result))
         {
-            foreach (var (id, name) in ItemNames(JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsEn.Result.FilePath, ct))))
+            var english = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsEn.Result.FilePath, ct));
+            foreach (var (id, name) in ItemNames(english))
                 itemNames.TryAdd(id, name);
+            foreach (var (id, name) in ItemNames(english, ShortNameSuffix))
+                shortNames.TryAdd(id, name);
         }
         foreach (var questItem in Section(tasksData, "questItems", ApiJsonContext.Default.DictionaryStringApiQuestItem).Values)
             itemNames[questItem.Id] = questItem.Name;
@@ -112,6 +117,7 @@ public sealed class GameDataLoader(CachedHttp http)
             Tasks = Section(tasksData, "tasks", ApiJsonContext.Default.DictionaryStringApiTask),
             Traders = Section(tradersData, null, ApiJsonContext.Default.DictionaryStringApiTrader),
             ItemNames = itemNames,
+            ItemShortNames = shortNames,
             ExtractKeys = extractKeys,
             ObjectiveFacts = objectiveFacts,
             MapDefinitions = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct)),
@@ -268,13 +274,15 @@ public sealed class GameDataLoader(CachedHttp http)
         JsonTypeInfo<Dictionary<string, T>> type) =>
         Section(Translated(payload, language, english), section, type);
 
-    // items_en maps "<id> Name" and "<id> ShortName" to text.
-    private static Dictionary<string, string> ItemNames(Dictionary<string, string> translations)
+    private const string NameSuffix = " Name", ShortNameSuffix = " ShortName";
+
+    // items_en maps "<id> Name" and "<id> ShortName" to text (item ids are 24 characters).
+    private static Dictionary<string, string> ItemNames(Dictionary<string, string> translations, string suffix = NameSuffix)
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, text) in translations)
         {
-            if (key.Length == 29 && key.EndsWith(" Name", StringComparison.Ordinal) && !string.IsNullOrEmpty(text))
+            if (key.Length == 24 + suffix.Length && key.EndsWith(suffix, StringComparison.Ordinal) && !string.IsNullOrEmpty(text))
                 names[key[..24]] = text;
         }
         return names;

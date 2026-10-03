@@ -8,7 +8,11 @@ namespace Shturmap.Map;
 /// <param name="Places">Where on this map; empty for objectives with no fixed place (kills, hand-ins).</param>
 public sealed record ObjectiveOnMap(ApiTask Quest, ApiObjective Objective, IReadOnlyList<WorldPoint> Places, bool Done);
 
-public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<MapZone> Zones, IReadOnlyList<ObjectiveOnMap> Objectives);
+public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<MapZone> Zones, IReadOnlyList<ObjectiveOnMap> Objectives)
+{
+    /// <summary>Where the map's loot containers stand; drawn only on a sheet (<see cref="MapScene.Containers"/>).</summary>
+    public IReadOnlyList<WorldPoint> Containers { get; init; } = [];
+}
 
 /// <summary>Builds what to draw on a map: extracts, transits, and the active quests' objectives.</summary>
 public static class MapContentBuilder
@@ -24,6 +28,11 @@ public static class MapContentBuilder
         if (!data.Maps.TryGetValue(mapId, out var map))
             return new MapContent(markers, zones, objectives);
         var sameArtwork = data.MapIdsSharing(map.NormalizedName);
+
+        // Landmarks first, so everything else draws over them (owner, 2026-10-03: locked doors with their keys,
+        // switches, and on a sheet the containers, all from tarkov.dev's data).
+        markers.AddRange(Landmarks(data, map));
+        zones.AddRange(Hazards(map));
 
         foreach (var extract in map.Extracts ?? [])
         {
@@ -94,8 +103,78 @@ public static class MapContentBuilder
                     objectives.Add(new ObjectiveOnMap(quest, objective, places, done));
             }
         }
-        return new MapContent(markers, zones, objectives);
+        return new MapContent(markers, zones, objectives) { Containers = Containers(map) };
     }
+
+    /// <summary>The group a lock's marker carries: pointing at its key (anywhere in the window) lights it.</summary>
+    public static string KeyGroup(string keyId) => "key:" + keyId;
+
+    /// <summary>The key a lock marker's group names, or null for any other group.</summary>
+    public static string? KeyOf(string? group) =>
+        group is not null && group.StartsWith("key:", StringComparison.Ordinal) ? group["key:".Length..] : null;
+
+    /// <summary>
+    /// The map's locks and switches as markers, from tarkov.dev's data (owner, 2026-10-03). A lock (a door, or a car's
+    /// trunk: both need a key) is labelled with its key's short name, as printed on the key ("TGL MO"), and "needs
+    /// power" where the data says so; its group is the key, so pointing at the key lights every lock it opens. A
+    /// switch is labelled with its name (power, alarm, elevator, trap switches); a name the data leaves untranslated is
+    /// just "Switch". Container locks would mark containers, which on a sheet are dots already; the data has none.
+    /// </summary>
+    public static IReadOnlyList<MapMarker> Landmarks(GameData data, ApiMap map)
+    {
+        var markers = new List<MapMarker>();
+        foreach (var l in map.Locks ?? [])
+        {
+            if (l.Position is null || l.LockType is not ("door" or "trunk"))
+                continue;
+            var label = l.Key is { } key ? data.ItemShortName(key) : "Locked";
+            if (l.NeedsPower)
+                label += " · needs power";
+            markers.Add(new MapMarker("lock:" + (l.Id ?? markers.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)), MarkerKind.Lock,
+                l.Position.ToWorld(), label, l.Key is { } k ? KeyGroup(k) : null));
+        }
+        foreach (var s in map.Switches ?? [])
+        {
+            if (s.Position is null)
+                continue;
+            var name = s.Name is { Length: > 0 } n && !n.StartsWith("switch_", StringComparison.Ordinal) ? n : "Switch";
+            markers.Add(new MapMarker("switch:" + s.Id, MarkerKind.Switch, s.Position.ToWorld(), name));
+        }
+        return markers;
+    }
+
+    /// <summary>
+    /// Hazards tarkov.dev outlines as hazards (Labyrinth's traps), trap-sized only: up to <see cref="HazardMaxArea"/>.
+    /// Labyrinth's 18 traps are 2–27 m²; its 19th "hazard" is 54 × 58 m, below the central hall's floor, and the data
+    /// doesn't say what it is, so it is left out rather than hatching the whole hall. The other hazard types are left
+    /// out too: "sniper" zones are where sniper Scavs spawn, already the sniper markers; "minefield" outlines are drawn
+    /// by the artwork of Woods, Shoreline, Lighthouse, Streets and Terminal (their "mines" layers) but not of Customs,
+    /// Reserve, Interchange or Ground Zero, so drawing them is a decision of its own (docs/DESIGN.md, "Map drawing").
+    /// </summary>
+    public static IReadOnlyList<MapZone> Hazards(ApiMap map) =>
+        (map.Hazards ?? [])
+            .Where(h => h.HazardType == "hazard" && h.Outline is { Count: >= 3 } outline && Area(outline) <= HazardMaxArea)
+            .Select((h, i) => new MapZone($"hazard:{i}", MarkerKind.Hazard, h.Outline!.Select(p => p.ToWorld()).ToList()))
+            .ToList();
+
+    /// <summary>The largest hazard drawn, in m² (a trap; see <see cref="Hazards"/>).</summary>
+    public const double HazardMaxArea = 50;
+
+    // A polygon's area on the ground (x, z), shoelace formula.
+    private static double Area(IReadOnlyList<ApiPosition> outline)
+    {
+        var sum = 0.0;
+        for (var i = 0; i < outline.Count; i++)
+        {
+            var (a, b) = (outline[i], outline[(i + 1) % outline.Count]);
+            sum += a.X * b.Z - b.X * a.Z;
+        }
+        return Math.Abs(sum) / 2;
+    }
+
+    /// <summary>Where the map's loot containers stand (each place once).</summary>
+    public static IReadOnlyList<WorldPoint> Containers(ApiMap map) =>
+        (map.LootContainers ?? []).Where(c => c.Position is not null).Select(c => c.Position!.ToWorld()).Distinct().ToList();
 
     /// <summary>
     /// One marker per spawn zone, at the centroid (the mean of X, Y and Z) of the zone's points: AI Scav zones
