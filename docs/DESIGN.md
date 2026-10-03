@@ -105,7 +105,7 @@ residual risk. Do not widen the boundary.
    dark ground, the important line first. No animation beyond what helps the eye follow a change.
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
-   pinned; they are owned by the main window and never topmost, so they can't cover the game.
+   popped out; they are owned by the main window and never topmost, so they can't cover the game.
 4. **Minimal surface.** Every control earns its place. Prefer an automatic behaviour over a button, a sensible
    default over a setting. Messages are one line and dismiss themselves.
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
@@ -153,7 +153,7 @@ residual risk. Do not widen the boundary.
    here" (owner, 2026-10-01: BRING alone didn't show which item is for which quest). ANY MAP rows show no cells:
    bringing doesn't apply there.
 10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **highlighter** (a pen, on the row
-    while the quest is pointed at or kept, and always on its card beside the pin) keeps it lit on the map (owner,
+    while the quest is pointed at or kept, and always on its card beside the pop-out button) keeps it lit on the map (owner,
     2026-10-01: one click doing both was misleading; the study log had the player toggling quests on and off and
     losing held cards on the way to the map).
 12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
@@ -197,6 +197,20 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
 | bosses, danger | red `#B8604A` |
 | text | beige-white `#D9D5C4`, secondary `#8A8778` (also done objectives on the map, with a check mark) |
 | ground, rail, panel, raised | `#0B0C0B`, `#101110`, `#151614`, `#1E1F1B`; hairlines `#2A2B27` / `#45463F` |
+
+**One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
+pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
+everywhere: rows, cards, map markers, the legend, buttons. The card's button that keeps it as a window is therefore
+**pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out: keep this card open as a small
+window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
+Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP) end in "↗". A check of all symbols the same day, by rendering
+them side by side:
+- **Two meanings, still open:** `E719` (a shopping bag) is both the Find-in-raid quest type and the flea market as an
+  item source on item cards. The owner decides which keeps it.
+- **Close but distinct:** `E707` (a pin standing on a surface) marks loose spawns as an item source; it is not the
+  pushpin. `E81D` (a disc in a ring, "Show my position") matches the player's own map symbol, the same meaning.
+- **One meaning, two symbols:** the Trader quest type is `E716` (two people); a trader portrait that hasn't loaded
+  falls back to `E77B` (one person).
 
 Quest **types are shown by glyph, never by colour**; colour stays free for state (open, done, selected).
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
@@ -425,7 +439,7 @@ Cards behave like the nested tooltips in Crusader Kings III:
 
 1. **Hover**: rest the pointer on a quest, key or item for 0.65 s on a rail row or map marker (the study log: 62 %
    of cards opened from lists closed within a second, opened by a pointer passing over), 0.4 s on a row on a card
-   or in a pinned window, and
+   or in a popped-out window, and
    its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
 2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
@@ -435,11 +449,13 @@ Cards behave like the nested tooltips in Crusader Kings III:
    was dropped).
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
-4. **Pinned**: the pin turns a quest card into a small window with a normal title bar, to move anywhere and leave
-   open; its own nested cards open beside it. The card the pin was on closes, with anything opened from it, so the
-   quest isn't shown twice (owner, 2026-10-01). In a raid it shows live distances, which is what a pin is for: a
-   tracker for the quests you chose, readable without the mouse. Pinned cards come back after a restart and close
-   by themselves when their quest is completed. A pinned window's title bar is kept inside a screen's work area,
+4. **Popped out**: the pop-out button (`E8A7`; "pinned" in the code, the settings and the study log) turns a quest
+   card into a small window with a normal title bar, to move anywhere and leave open; its own nested cards open
+   beside it. The card the button was on closes, with anything opened from it, so the quest isn't shown twice
+   (owner, 2026-10-01). In a raid it shows live distances, which is what popping out is for: a tracker for the
+   quests you chose, readable without the mouse. Popped-out cards come back after a restart and close by themselves
+   when their quest is completed; the window has no pop-out button of its own. Its title bar is kept inside a
+   screen's work area,
    when it comes back and 0.6 s after it was moved, by the least move that does it (the study log: one closed
    twice with its title bar above the screen, where it can't be grabbed).
 
@@ -783,11 +799,12 @@ suggestion), mode, raid loading (with the suggestion rank of the map actually pl
 start/end, quest started/completed/failed (live only), each fix, each notice. UI: window focus/blur and pointer
 in/out (with durations: the closest signals to attention), map pan (one per drag), zoom (one per wheel burst,
 button or key), fit, follow, floor picks, map picks (picker or plan card), selections, hovers resting ≥ 0.4 s
-(where: list, card, pinned, map), card open/hold/close (level, seconds open), pins and pinned-window closes,
+(where: list, card, pinned, map), card open/hold/close (level, seconds open), pop-outs and popped-out-window closes
+(events named `pinned…`),
 help open/close, keys, rail scrolls, notice dismissals. Added after the first study (2026-10-01): the plan's
 COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the evidence for each side decision,
 screenshots that gave no position, whether a new position was in view and uses of the edge arrow and F, map
-previews, pinned-window moves with their final position and whether they were clamped, notices expiring vs
+previews, popped-out-window moves with their final position and whether they were clamped, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
 banners seen, side switches, why a session started (the previous one ended cleanly or not, the build's time), and
 active-quest count changes outside quest events. Added 2026-10-02: group picks (location, map, time variant) and
@@ -906,7 +923,7 @@ form. Problems and ideas both go through it.
   markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
   occasional-position UX (fix age, fading marker, compass directions), bring-list notice on raid load, linked
-  highlighting, quest cards (hover, held, nested, pinned with live distances), item cards with sources and loose
+  highlighting, quest cards (hover, held, nested, popped out with live distances), item cards with sources and loose
   spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
 - Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).
 - Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own

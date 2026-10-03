@@ -882,8 +882,8 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // A quest card's pin, in whichever window's stack it opened, turns the card into a pinned window where the card
-    // was: the card itself closes, so the quest isn't shown twice.
+    // A quest card's pop-out button, in whichever window's stack it opened, turns the card into a window of its own
+    // ("pinned" in the code) where the card was: the card itself closes, so the quest isn't shown twice.
     private void HookPins(CardStack stack, Window window) => stack.CardOpened += card =>
     {
         if (card is QuestCard quest)

@@ -23,7 +23,8 @@ when you press your screenshot key. No macros, no input to the game, no access t
   to get it.
 - **In the raid:** press your screenshot key and your marker drops; objectives and the nearest extract are sorted by
   distance and direction. No clicks.
-- **Quest cards:** objectives, keys and items for any quest, one hover away. Pin a card and its distances stay live.
+- **Quest cards:** objectives, keys and items for any quest, one hover away. Pop out a card and its distances stay
+  live.
 - **Quest tracking:** started, finished, failed, read from the game's own log files. Nothing to tick off.
 - **Native Windows app:** C# on .NET and WinUI 3, with the map drawn on your GPU. No Electron; it opens in under a
   second.

@@ -8,13 +8,15 @@ using Shturmap.Session;
 
 namespace Shturmap.App.Controls;
 
-/// <summary>The quest card (docs/DESIGN.md §4, "Quest cards"): the same card on hover, held, nested and pinned.</summary>
+/// <summary>The quest card (docs/DESIGN.md §4, "Quest cards"): the same card on hover, held, nested and popped out.</summary>
 public sealed partial class QuestCard : UserControl, ICard
 {
     public QuestCard(QuestCardView view)
     {
         InitializeComponent();
-        PinGlyph.Glyph = char.ConvertFromUtf32(0xE718);
+        // Segoe Fluent Icons "OpenInNewWindow": pop out. Not the pushpin, which is the Place quest type (owner,
+        // 2026-10-03: one symbol, one meaning).
+        PinGlyph.Glyph = char.ConvertFromUtf32(0xE8A7);
         Key = new CardKey.Quest(view.QuestId);
         Show(view);
         SetMode(CardMode.Hover);

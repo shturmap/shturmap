@@ -10,7 +10,8 @@ using Windows.Graphics;
 namespace Shturmap.App;
 
 /// <summary>
-/// A pinned quest card: a small window of its own with a normal title bar to move it by, open until closed, back
+/// A popped-out quest card ("pinned" in the code and the study log): a small window of its own with a normal title
+/// bar to move it by, open until closed, back
 /// after a restart. In a raid it shows how far each objective on that map is. Things on it open their own cards
 /// beside the window. It is owned by the main window, so it stays above it and has no taskbar button; it is never
 /// topmost, so it can't cover the game.

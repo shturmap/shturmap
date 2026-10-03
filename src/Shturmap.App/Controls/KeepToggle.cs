@@ -8,7 +8,7 @@ namespace Shturmap.App.Controls;
 /// The highlighter on a quest: keeps the quest highlighted (cyan on the map) until it is clicked again. It is its
 /// own control so that keeping a quest lit and keeping its card open are two different clicks (owner, 2026-10-01:
 /// one click doing both was misleading). In rail rows it shows while the quest is pointed at anywhere, or while it is
-/// the kept one; on a card it is always there, framed like the pin beside it.
+/// the kept one; on a card it is always there, framed like the pop-out button beside it.
 /// </summary>
 public sealed partial class KeepToggle : Grid
 {

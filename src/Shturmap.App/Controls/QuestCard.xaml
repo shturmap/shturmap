@@ -35,11 +35,11 @@
             <TextBlock Text="{x:Bind View.Facts}" Style="{StaticResource NoteText}" />
             <TextBlock Text="{x:Bind local:Caps.Of(View.Status)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource GreenBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
           </StackPanel>
-          <!-- Two different things: light the quest up on the map (the highlighter), keep this card as a window (the pin). -->
+          <!-- Two different things: light the quest up on the map (the highlighter), keep this card as a window (pop out). -->
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
             <controls:KeepToggle QuestId="{x:Bind View.QuestId}" Framed="True" />
             <Button x:Name="PinButton" Padding="7,5" VerticalAlignment="Top" Click="OnPinClick"
-                    ToolTipService.ToolTip="Pin: keep this card open as a small window you can place anywhere">
+                    ToolTipService.ToolTip="Pop out: keep this card open as a small window you can place anywhere">
               <FontIcon x:Name="PinGlyph" FontSize="14" />
             </Button>
           </StackPanel>
