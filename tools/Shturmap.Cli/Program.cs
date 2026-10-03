@@ -40,6 +40,9 @@ switch (command)
     case "effort":
         await Effort(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "bring":
+        await Bring(args.ElementAtOrDefault(1) ?? "pve");
+        break;
     case "study":
         Study(args.ElementAtOrDefault(1));
         break;
@@ -56,9 +59,56 @@ switch (command)
             shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
+            shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
             shturmap-cli study [on|off]      show or set the "Keep a study log" switch, as help sets it (Shturmap closed)
             """);
         break;
+}
+
+// The audit of what BRING lists, after a tarkov.dev or game update: every map's rows with all quests active, in the
+// app's own words (classes named from the item categories), and what to look at: UNKNOWN ITEM (an id without a name),
+// LIST (more than three weapons that aren't one class: shown as "X or N others"), and, over all quests, NO EXIT (an
+// extract objective naming an exit no map has).
+static async Task Bring(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var loader = new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache));
+    var data = await loader.LoadAsync(gameMode, "en");
+    var sources = await loader.LoadSourcesAsync(gameMode, "en");
+    var quests = data.Tasks.Values.Select(t => Shturmap.Session.Planning.ToPlan(t, data)).ToList();
+    var kinds = new Dictionary<Shturmap.Core.Planning.RequirementKind, int>();
+    var flagged = 0;
+    foreach (var map in Shturmap.Session.Planning.Maps(data).OrderBy(m => m.Name))
+    {
+        var plan = Shturmap.Core.Planning.RaidPlanner.Plan(quests, map);
+        Console.WriteLine($"== {map.Name}");
+        foreach (var r in plan.Requirements.OrderBy(r => r.Kind))
+        {
+            var view = Shturmap.Session.Planning.RequirementText(data, r, sources);
+            kinds[r.Kind] = kinds.GetValueOrDefault(r.Kind) + 1;
+            var flags = new List<string>();
+            if (r.Alternatives.Any(id => data.ItemName(id) == "Unknown item"))
+                flags.Add("UNKNOWN ITEM");
+            // A weapon list shown as "X or N others": which categories it spans, against each category's size.
+            if (r.Kind == Shturmap.Core.Planning.RequirementKind.Weapon && view.Text.EndsWith(" others", StringComparison.Ordinal))
+                flags.Add($"LIST {r.Alternatives.Count}: " + string.Join(", ", r.Alternatives
+                    .GroupBy(id => sources.Items.GetValueOrDefault(id)?.Categories?.FirstOrDefault())
+                    .OrderByDescending(g => g.Count())
+                    .Select(g => g.Key is null ? $"? {g.Count()}" : $"{data.ItemName(g.Key)} {g.Count()}/{sources.Members[g.Key].Count()}")));
+            flagged += flags.Count > 0 ? 1 : 0;
+            Console.WriteLine($"  {r.Kind,-10} {view.Text} | {view.Why}" + (flags.Count > 0 ? $"  [{string.Join(", ", flags)}]" : ""));
+        }
+    }
+    var noExit = data.Tasks.Values
+        .SelectMany(t => (t.Objectives ?? []).Select(o => (Task: t, Facts: data.ObjectiveFacts.GetValueOrDefault(o.Id))))
+        // Transits ("STR_TRANSIT_4") are named the same way but aren't extracts; what they take is the transit's text.
+        .Where(x => x.Facts?.Exit is { } exit && !exit.Contains("TRANSIT", StringComparison.Ordinal) &&
+                    !data.Maps.Values.SelectMany(m => m.Extracts ?? []).Any(e => data.ExtractKeys.GetValueOrDefault(e.Id) == exit))
+        .Select(x => $"{x.Task.Name} ({x.Facts!.Exit})").Distinct().ToList();
+    Console.WriteLine();
+    Console.WriteLine("Rows: " + string.Join(", ", kinds.OrderBy(k => k.Key).Select(k => $"{k.Key} {k.Value}")) + $"; flagged {flagged}");
+    Console.WriteLine($"NO EXIT: {(noExit.Count == 0 ? "none" : string.Join("; ", noExit))}");
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's

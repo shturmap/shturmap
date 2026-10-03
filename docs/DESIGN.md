@@ -228,8 +228,9 @@ everywhere: rows, cards, map markers, the legend, buttons. The card's button tha
 window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
 Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP) end in "↗". A check of all symbols the same day, by rendering
 them side by side:
-- **Two meanings, still open:** `E719` (a shopping bag) is both the Find-in-raid quest type and the flea market as an
-  item source on item cards. The owner decides which keeps it.
+- **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
+  item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market
+  became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
 - **Close but distinct:** `E707` (a pin standing on a surface) marks loose spawns as an item source; it is not the
   pushpin. `E81D` (a disc in a ring, "Show my position") matches the player's own map symbol, the same meaning.
 - **One meaning, two symbols:** the Trader quest type is `E716` (two people); a trader portrait that hasn't loaded
@@ -500,6 +501,37 @@ opened 10 to 21 times each to find out why and where). Gear a kill objective ask
 `wearing`: sets worn together, any set will do) is a requirement of its own, "to wear", shown as "Bomber beanie /
 RayBench Hipster Reserve sunglasses" (neutral about and/or: the data's sets don't always match the quest's
 wording, which the objective text gives anyway); item cards list it as "Wear, for kills".
+
+**What kills and exits take** (owner, 2026-10-03: "There are others that still require items, such as doing kills
+with certain weapons or weapon classes … It should be a coherent design so it is still clear what to bring and what
+is needed to solve a quest"; and "in the cease fire quest it is not clear that we need to bring a flare"). BRING
+keeps one row shape (icon, what, what for and for which quests, where to get it) and adds the verbs:
+- **"to use"** for the weapons a kill objective names (`usingWeapon`, any one will do). tarkov.dev arrives with a
+  class as every member, so the weapons are grouped by their item category (tarkov.dev's `categories`, most
+  specific first; presets, which repeat the weapon they build, don't count) and said in at most three parts: a
+  group that is at least three quarters of its category, or more than ten weapons, by the category ("Any sniper
+  rifle", "Shotgun (13 of 16 kinds)", "Assault rifle (15 of 53 kinds)"); if that takes more parts and the weapons
+  span several categories, every group of two or more by its category ("Any handgun or revolver (3 of 5 kinds)");
+  otherwise, and for a few weapons of one category, the weapons ("Colt M4A1 or 5 others"), so there is a gun to
+  name. "Any" only for the whole category; a count says how many kinds will do. Whole categories come first, then
+  parts of one, then single weapons ("Any sniper rifle or MP-18 7.62x54R single-shot rifle"). The categories load
+  with the item sources, after the rest; until then the list form. A class row's source line names one of them ("e.g.
+  Mosin rifle · Prapor LL1 · …").
+- **"to fit"** for the mods the weapon must carry (`usingWeaponMods`), shown like gear ("Valday PS-320 1/6x scope /
+  AK-12 5.45x39 sound suppressor").
+- **"to leave through <exit>"** for what the exit an extract objective names takes: the objective names it by the
+  game's internal name (`exitName` before translation, `ObjectiveFacts.Exit`), the same as the map's extract, and
+  `ExtractRules.Items` gives the items by the rules the extract list already uses: a red signal flare at a flare exit
+  (Cease Fire!, Belka and Strelka), ice pick and paracord at a climbing exit (Payback), the roubles or item a paid
+  exit asks for ("Roubles ×5,000: to leave through Primorsky Ave Taxi V-Ex"). Transits stay with their own text.
+- **Gear a kill forbids** (`notWearing`) is nothing to bring, so no row: a note on the objective's line in the raid
+  card, "Without: armor, headwear" (the item categories it spans; before they load, the items).
+- One row per weapon set, mod set or exit item, listing every quest it serves; the quest rows' need cells, the raid
+  card's objective lines ("Use: …", "Fit: …"), the quest card's BRING and the item card ("Use, for kills", "Fit, for
+  kills", "Bring, to leave through …") say the same. Only what the data says: Shturmap knows no inventory, so never
+  "you have it". `shturmap-cli bring [mode]` lists every map's rows and flags an item without a name, a weapon list
+  shown as "X or N others" (with the categories it spans) and an exit no map has; run it after a tarkov.dev or game
+  update. Checked 2026-10-03 (PvE and PvP): no unknown items, no unmatched exits.
 
 Cards behave like the nested tooltips in Crusader Kings III:
 

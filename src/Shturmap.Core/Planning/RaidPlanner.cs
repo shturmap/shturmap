@@ -5,7 +5,9 @@ namespace Shturmap.Core.Planning;
 /// <summary>An item a raid needs: a key (any one of the alternatives) or something to bring and use up.</summary>
 /// <param name="Alternatives">Item ids; any one will do (keys often have alternatives).</param>
 /// <param name="ForQuests">Quest ids that need it.</param>
-public sealed record Requirement(RequirementKind Kind, IReadOnlyList<string> Alternatives, int Count, IReadOnlyList<string> ForQuests);
+/// <param name="Exit">For <see cref="RequirementKind.Exit"/>: the exit it is for, by its name ("Klimov Street (Flare)").</param>
+public sealed record Requirement(RequirementKind Kind, IReadOnlyList<string> Alternatives, int Count, IReadOnlyList<string> ForQuests,
+    string? Exit = null);
 
 public enum RequirementKind
 {
@@ -14,6 +16,15 @@ public enum RequirementKind
 
     /// <summary>Gear to wear while doing the objective (kills while wearing a helmet, a beanie).</summary>
     Wear,
+
+    /// <summary>A weapon to kill with: any one of the alternatives (a class arrives as all its members).</summary>
+    Weapon,
+
+    /// <summary>Mods the weapon must carry for the kills (a suppressor, a scope): fitted, not used up.</summary>
+    WeaponMods,
+
+    /// <summary>What the exit a quest names takes to leave through it: a flare, climbing gear, money.</summary>
+    Exit,
 }
 
 /// <param name="Places">Positions per map id, where the objective has fixed places.</param>
@@ -26,6 +37,11 @@ public enum RequirementKind
 /// <param name="ExitStatus">An extract objective's accepted exit statuses, as the game's keys ("ExpBonusSurvived").</param>
 /// <param name="Conditions">A kill objective's set conditions by name ("weapon", "distance", "zone", …).</param>
 /// <param name="FoundInRaid">A find objective whose items must be found in raid.</param>
+/// <param name="Weapons">A kill objective's weapons: any one will do.</param>
+/// <param name="Mods">A kill objective's weapon mods: each inner list is a set fitted together; any set will do.</param>
+/// <param name="NotWearing">Gear a kill objective forbids: a note on the objective, nothing to bring.</param>
+/// <param name="Exit">The exit an extract objective names, by its name, when leaving there takes items.</param>
+/// <param name="ExitItems">What that exit takes: (item id, count), all of them (climbing gear is two items).</param>
 public sealed record PlanObjective(
     string Id,
     ObjectiveKind Kind,
@@ -40,7 +56,12 @@ public sealed record PlanObjective(
     IReadOnlyList<string>? Targets = null,
     IReadOnlyList<string>? ExitStatus = null,
     IReadOnlyList<string>? Conditions = null,
-    bool FoundInRaid = false);
+    bool FoundInRaid = false,
+    IReadOnlyList<string>? Weapons = null,
+    IReadOnlyList<IReadOnlyList<string>>? Mods = null,
+    IReadOnlyList<string>? NotWearing = null,
+    string? Exit = null,
+    IReadOnlyList<(string ItemId, int Count)>? ExitItems = null);
 
 /// <param name="NeededKeys">Keys the quest needs, per map id.</param>
 /// <param name="TraderOrder">The quest giver's place in the trader list as tarkov.dev gives it (the game's own order),
@@ -160,6 +181,20 @@ public static class RaidPlanner
         var keys = new Dictionary<string, (List<string> Alternatives, HashSet<string> Quests)>(StringComparer.Ordinal);
         var items = new Dictionary<string, (int Count, HashSet<string> Quests)>(StringComparer.Ordinal);
         var wear = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
+        var weapons = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
+        var mods = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
+        var exits = new Dictionary<string, (string Item, int Count, string Exit, HashSet<string> Quests)>(StringComparer.Ordinal);
+
+        // One row per thing to take, listing every quest it serves: the same weapons, mods or exit item merge.
+        static void Merge(Dictionary<string, (List<string> Items, HashSet<string> Quests)> rows, IReadOnlyList<string> things, string questId)
+        {
+            if (things.Count == 0)
+                return;
+            var id = string.Join("|", things.Order(StringComparer.Ordinal));
+            if (!rows.TryGetValue(id, out var entry))
+                rows[id] = entry = (things.ToList(), new HashSet<string>());
+            entry.Quests.Add(questId);
+        }
 
         void AddKey(IReadOnlyList<string> alternatives, string questId)
         {
@@ -192,12 +227,22 @@ public static class RaidPlanner
                 }
                 // Gear is worn, not used up: one requirement per objective's choice of sets.
                 if (objective.Wear is { Count: > 0 } sets)
+                    Merge(wear, sets.SelectMany(s => s).Distinct().ToList(), quest.Id);
+                // A weapon to kill with (any one of them), and the mods it must carry (fitted, so like gear).
+                if (objective.Weapons is { Count: > 0 } guns)
+                    Merge(weapons, guns.Distinct().ToList(), quest.Id);
+                if (objective.Mods is { Count: > 0 } modSets)
+                    Merge(mods, modSets.SelectMany(s => s).Distinct().ToList(), quest.Id);
+                // What the exit a quest names takes (Cease Fire!: a red flare for Klimov Street): one row per item.
+                if (objective.Exit is { } exit)
                 {
-                    var gear = sets.SelectMany(s => s).Distinct().ToList();
-                    var id = string.Join("|", gear.Order(StringComparer.Ordinal));
-                    if (!wear.TryGetValue(id, out var entry))
-                        wear[id] = entry = (gear, new HashSet<string>());
-                    entry.Quests.Add(quest.Id);
+                    foreach (var (itemId, count) in objective.ExitItems ?? [])
+                    {
+                        var id = itemId + "|" + exit;
+                        if (!exits.TryGetValue(id, out var entry))
+                            exits[id] = entry = (itemId, count, exit, new HashSet<string>());
+                        entry.Quests.Add(quest.Id);
+                    }
                 }
             }
         }
@@ -208,7 +253,10 @@ public static class RaidPlanner
             .Where(k => k.Alternatives.Count == 1 || !k.Alternatives.Any(singles.Contains))
             .Select(k => new Requirement(RequirementKind.Key, k.Alternatives, 1, k.Quests.ToList()))
             .Concat(items.Select(i => new Requirement(RequirementKind.Bring, [i.Key], i.Value.Count, i.Value.Quests.ToList())))
+            .Concat(exits.Values.Select(e => new Requirement(RequirementKind.Exit, [e.Item], e.Count, e.Quests.ToList(), e.Exit)))
             .Concat(wear.Values.Select(w => new Requirement(RequirementKind.Wear, w.Items, 1, w.Quests.ToList())))
+            .Concat(weapons.Values.Select(w => new Requirement(RequirementKind.Weapon, w.Items, 1, w.Quests.ToList())))
+            .Concat(mods.Values.Select(m => new Requirement(RequirementKind.WeaponMods, m.Items, 1, m.Quests.ToList())))
             .ToList();
     }
 

@@ -40,7 +40,7 @@ public static class ItemCards
                     uses.Add(new ItemUse(task.Id, task.Name, QuestCards.KindOf(task), task.Trader, text));
             }
 
-            foreach (var o in task.Objectives ?? [])
+            foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
             {
                 var maps = QuestCards.MapIds(o).ToList();
                 var count = Math.Max(1, o.Count ?? 1);
@@ -49,6 +49,12 @@ public static class ItemCards
                     Add("Key", maps);
                 if ((o.Wearing ?? []).Any(set => set.Any(i => i.Id == itemId)))
                     Add("Wear, for kills", maps);
+                if (o.UsingWeapon?.Contains(itemId) == true)
+                    Add("Use, for kills", maps);
+                if ((o.UsingWeaponMods ?? []).Any(set => set.Contains(itemId)))
+                    Add("Fit, for kills", maps);
+                if ((plan.ExitItems ?? []).FirstOrDefault(i => i.ItemId == itemId) is { ItemId: not null } exitItem)
+                    Add($"Bring{(exitItem.Count > 1 ? $" ×{exitItem.Count}" : "")}, to leave through {plan.Exit}", maps);
                 var listed = o.Items?.Contains(itemId) == true;
                 var how = o.Type switch
                 {
@@ -75,6 +81,23 @@ public static class ItemCards
         return new ItemCardView(itemId, data.ItemName(itemId), uses.Any(u => u.How.StartsWith("Key", StringComparison.Ordinal)),
             Sources(data, sources, itemId),
             uses.OrderBy(u => u.QuestName, StringComparer.CurrentCulture).ToList());
+    }
+
+    /// <summary>
+    /// Where to get one of several items that will each do (a weapon class): the easiest way to get the first of them
+    /// that has a way, named ("e.g. Mosin rifle (Sniper) · Prapor LL1 · 12,000 ₽"); for one item, its easiest way.
+    /// Empty if none is known.
+    /// </summary>
+    public static string BestOf(GameData data, ItemSources? sources, IReadOnlyList<string> items)
+    {
+        if (items.Count == 1)
+            return Best(data, sources, items[0])?.Text ?? "";
+        foreach (var id in items.Distinct())
+        {
+            if (Best(data, sources, id) is { } best)
+                return $"e.g. {data.ItemName(id)} · {best.Text}";
+        }
+        return "";
     }
 
     /// <summary>The easiest way to get an item, for one line under it in BRING; null if unknown.</summary>

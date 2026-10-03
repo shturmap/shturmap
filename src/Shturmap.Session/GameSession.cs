@@ -830,7 +830,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
                     ObjectiveText(o.Objective),
                     o.Done, o.Places.Count > 0, distance, direction, height,
-                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
+                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
                     bearing, o.Quest.Trader));
             }
             var shownMap = _data.Maps.GetValueOrDefault(_map.Id);
