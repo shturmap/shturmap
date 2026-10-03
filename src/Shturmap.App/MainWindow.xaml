@@ -99,17 +99,19 @@
         <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16">
+        <!-- Each light sits on the middle of the capitals beside it, 2 px above the middle of the text box, which has
+             room for accents above the capitals (a player's report, 2026-10-03). -->
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.LogsOk), Mode=OneWay}" VerticalAlignment="Center" />
+          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.LogsOk), Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,4" />
           <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.LogsText), Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.ScreenshotsOk), Mode=OneWay}" VerticalAlignment="Center" />
+          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.ScreenshotsOk), Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,4" />
           <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.ScreenshotsText), Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent"
                     ToolTipService.ToolTip="{x:Bind ViewModel.DataDetail, Mode=OneWay}">
-          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}" VerticalAlignment="Center" />
+          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,4" />
           <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.DataText), Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
         </StackPanel>
         <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
