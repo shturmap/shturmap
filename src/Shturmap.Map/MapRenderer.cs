@@ -1370,10 +1370,10 @@ public static partial class MapRenderer
     }
 
     // The player out of view: a badge at the edge with an arrow pointing their way. While a new position pings it
-    // is larger, pings itself and says so.
+    // is larger, pings itself and says so. Not while the view glides to the position (Follow my position).
     private static void DrawEdge(SKCanvas canvas, Camera camera, MapScene scene, float ui)
     {
-        if (EdgeOf(camera, scene, ui) is not { } edge || scene.Player is not { } player)
+        if (scene.Gliding || EdgeOf(camera, scene, ui) is not { } edge || scene.Player is not { } player)
             return;
         var toward = Screen(camera, scene, player.Position) - edge;
         var angle = (float)(Math.Atan2(toward.Y, toward.X) * 180 / Math.PI);

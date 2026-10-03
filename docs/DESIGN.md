@@ -156,10 +156,14 @@ against sanctions); and say that some players see a position map as an unfair ad
    it (see "Map drawing"). No "you may be
    anywhere in here" ring: it was tried and is visual noise. Directions relative to your facing
    ("ahead-left") are shown only for 45 s after a fix; after that they become map directions ("NE", map-up is
-   north), which stay true while you move. Distances say how old they are. **A new fix never moves the view**
-   (owner, 2026-10-01; the study log showed the player zooming back out within seconds of every automatic
-   framing): the map stays where the player put it, and the new position pings instead, three bold sand rings
-   leaving the marker over 2.6 s (two still rings with animation effects off). Out of view, a badge at the edge
+   north), which stay true while you move. Distances say how old they are. **A new fix moves the view only while
+   Follow my position is on** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should
+   smooth scroll to the updated player position"). It replaces the rule of 2026-10-01, "a new fix never moves the
+   view", made when the study log showed the player zooming back out within seconds of every automatic framing; so
+   following is the player's choice, off by default, and it keeps their zoom (see "Map", "Follow my position").
+   Every new position pings, three bold sand rings leaving the marker over 2.6 s (two still rings with animation
+   effects off). Following, the view glides to it. Not following, the map stays where the player put it; out of
+   view, a badge at the edge
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
@@ -179,7 +183,8 @@ against sanctions); and say that some players see a position map as an unfair ad
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
     suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
-    list) show no cue. With animation effects off it shows and goes without motion. Never during the log replay
+    list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
+    ping say it. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
 9. **Say it before it matters.** When a raid starts loading, Shturmap shows what to bring for that map, while there
    is still time to back out of matching. **The kit reminder** (owner, 2026-10-03: the one-line "Loading … · bring:
@@ -292,7 +297,8 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
-position pings. With Windows' animation effects off the app shows and hides without motion. The website follows the
+position pings, and with Follow my position on the view glides to it over 0.5 s, eased out. With Windows' animation
+effects off the app shows and hides without motion, and following jumps to the position. The website follows the
 reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
 easing; owner, 2026-10-02), the rest stops.
 
@@ -356,6 +362,8 @@ them side by side:
   became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
 - **Close but distinct:** `E707` (a pin standing on a surface) marks loose spawns as an item source; it is not the
   pushpin. `E81D` (a disc in a ring, "Show my position") matches the player's own map symbol, the same meaning.
+  Follow my position (2026-10-03) is another action, so it has its own symbol, `E759` (a dot in a ring between four
+  arrows), used nowhere else.
 - **One meaning, two symbols:** the Trader quest type is `E716` (two people); a trader portrait that hasn't loaded
   falls back to `E77B` (one person).
 
@@ -513,9 +521,30 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       found either, until chosen. The developer view's "No game" trigger does the same at runtime and keeps the
       fake game's screenshots, and its script step `choose <folder> | game` chooses a folder.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, spawn zones (see "Map drawing"),
-  player, trail, guide line to the nearest place of the picks. Map controls bottom-right, with the floor picker above them on maps with floors;
+  player, trail, guide line to the nearest place of the picks. Map controls bottom-right (follow my position, show my
+  position, show the whole map, zoom in, zoom out), with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
+- **Follow my position** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should smooth
+  scroll to the updated player position"; it replaces 2026-10-01's "a new fix never moves the view", principle 8):
+  a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
+  "Follow my position (Shift+F)"; on, its symbol and frame are the kept cyan. Off by default, and kept between runs
+  (`followPosition` in shturmap.db).
+  - **On**, each new position glides into the middle of the view over 0.5 s, eased out, at the current zoom; the
+    floor follows the height as always, and the position pings as it arrives. Turning it on glides to the last
+    position at once. With Windows' animation effects off the view jumps there instead. While it glides the edge
+    badge waits (the position is on its way into view) and no notice says the position is out of view.
+  - **Taking the view back:** dragging the map or showing the whole map (0, the button) turns following off, and the
+    toggle shows it, with no notice or cue. Zooming (the wheel, double-click, + / −) keeps following, about the
+    player: the player stays in the middle. F and the show-my-position button centre at once, as before. Pointing
+    at a quest or holding a card never moves the view, so they leave following alone.
+  - A map opened while following (a raid loading) is fitted first, then centred on the player once there is a
+    position. Snapshot and demo runs leave the saved choice alone; `--follow` turns it on from the start (snapshots,
+    the dev view).
+  - The glide draws through the map's own GPU surface and paint, as every other frame; each frame works out its own
+    point on the glide as it is drawn. Only while it glides, a frame timer asks for frames at the system timer's pace
+    (about 64 a second): the map's 16 ms animation timer and the Rendering event each gave only about 30 a second
+    (measured with the dev view, 2026-10-03).
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
   "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
@@ -843,9 +872,10 @@ are translated although the payload's translation list misses them.
 
 | key | action |
 | --- | --- |
-| F | show my position (the view never moves by itself) |
-| + / − | zoom in / out |
-| 0 | show the whole map |
+| F | show my position, once |
+| Shift+F | Follow my position on / off |
+| + / − | zoom in / out (following, about the player) |
+| 0 | show the whole map (it stops following) |
 | PgUp / PgDn | show the floor above / below |
 | Esc | close the cards (it never drops picks) |
 | F1 or ? | help |
@@ -853,7 +883,8 @@ are translated although the payload's translation list misses them.
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window.
 
-Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, point at anything to see what belongs to
+Mouse: drag to pan (it stops following), wheel to zoom at the cursor (following, about the player), double-click to
+zoom in, point at anything to see what belongs to
 it, click a quest (in the list or on the map) to keep its card open, click its pen to pick it for the coming raid,
 click the edge badge to show your position.
 

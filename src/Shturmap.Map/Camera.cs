@@ -61,6 +61,16 @@ public sealed class Camera
 
     public void CenterOn(MapPoint p) => Center = p;
 
+    /// <summary>
+    /// Where a pan from <paramref name="from"/> to <paramref name="to"/> is at <paramref name="t"/> (0 to 1) of its
+    /// time, eased out: quick at first, settling at the end (following the player, docs/DESIGN.md "Follow my position").
+    /// </summary>
+    public static MapPoint PanAt(MapPoint from, MapPoint to, double t)
+    {
+        var e = 1 - Math.Pow(1 - Math.Clamp(t, 0, 1), 3);
+        return new MapPoint(from.X + (to.X - from.X) * e, from.Y + (to.Y - from.Y) * e);
+    }
+
     public void Pan(float dx, float dy) => Center = new MapPoint(Center.X - dx / Zoom, Center.Y - dy / Zoom);
 
     /// <summary>Zooms by a factor, keeping the map point under the cursor in place.</summary>

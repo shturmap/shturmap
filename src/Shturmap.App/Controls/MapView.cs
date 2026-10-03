@@ -11,8 +11,9 @@ namespace Shturmap.App.Controls;
 
 /// <summary>
 /// The map surface: draws a <see cref="MapScene"/> on the GPU and handles pan (drag) and zoom (wheel, double-click).
-/// The view only moves when the player moves it: a new position pings where it is instead, or at the edge when it is
-/// out of view. Drawing is in physical pixels; markers are scaled by the display's scale factor.
+/// The view moves by itself only while "Follow my position" is on (<see cref="Follow"/>): then a new position glides
+/// into the middle. Otherwise it stays where the player put it, and a new position pings where it is, or at the edge
+/// when it is out of view. Drawing is in physical pixels; markers are scaled by the display's scale factor.
 /// </summary>
 public sealed partial class MapView : Grid
 {
@@ -90,6 +91,7 @@ public sealed partial class MapView : Grid
             before.Changed -= OnTilesChanged;
         if (scene?.Tiles is { } after)
             after.Changed += OnTilesChanged;
+        StopGlide();
         _scene = scene;
         if (scene is not null)
             scene.Pulse = AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
@@ -97,26 +99,129 @@ public sealed partial class MapView : Grid
         if (view is { } v)
             _camera.Restore(v.Center, v.Zoom);
         _seenFix = null;
+        // Following, a new map opens on the player (after it is fitted, at its first paint).
+        _centerAfterFit = _follow.On;
         _panel.Invalidate();
+    }
+
+    // ---- follow my position (owner, 2026-10-03; docs/DESIGN.md "Follow my position") ----
+
+    private readonly FollowState _follow = new();
+    private bool _centerAfterFit;
+    private (Shturmap.Core.Maps.MapPoint From, Shturmap.Core.Maps.MapPoint To, DateTime Started)? _glide;
+
+    /// <summary>How long the view takes to glide to a new position while following.</summary>
+    public static readonly TimeSpan FollowPan = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>Whether the view follows the player's position.</summary>
+    public bool Follow => _follow.On;
+
+    /// <summary>Following stopped because the player moved the view themselves ("drag" or "fit").</summary>
+    public event Action<string>? FollowStopped;
+
+    /// <summary>Turns following on or off; on, the view glides to the player's position at once.</summary>
+    public void SetFollow(bool on)
+    {
+        _follow.Set(on);
+        if (!on)
+        {
+            StopGlide();
+            return;
+        }
+        _centerAfterFit = _fitPending;
+        if (!_fitPending)
+            GlideToPlayer();
+    }
+
+    // Glides to the player at the current zoom, eased out; with Windows' animation effects off it jumps.
+    private void GlideToPlayer()
+    {
+        if (_scene is null || FollowState.Target(_scene) is not { } to)
+            return;
+        StopGlide();
+        if (!_scene.Pulse)
+        {
+            _camera.CenterOn(to);
+            _panel.Invalidate();
+            return;
+        }
+        // Each frame works out where the glide is as it is drawn (GlideStep), so none shows a stale centre. The frames
+        // are asked for at the system timer's pace (about 64 a second): the map's 16 ms animation timer and the
+        // Rendering event each gave only about 30 a second (measured with the dev view, 2026-10-03).
+        _glide = (_camera.Center, to, DateTime.Now);
+        _scene.Gliding = true;
+        if (_glideFrames is null)
+        {
+            _glideFrames = DispatcherQueue.CreateTimer();
+            _glideFrames.Interval = TimeSpan.FromMilliseconds(15);
+            _glideFrames.Tick += (_, _) =>
+            {
+                GlideStep();
+                _panel.Invalidate();
+            };
+        }
+        _glideFrames.Start();
+    }
+
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _glideFrames;
+
+    // As a frame is drawn (and on each tick, so it ends unseen too): the view's centre at this moment of the glide; the
+    // glide ends on the position.
+    private void GlideStep()
+    {
+        if (_glide is not { } glide)
+            return;
+        var t = (DateTime.Now - glide.Started) / FollowPan;
+        _camera.CenterOn(Camera.PanAt(glide.From, glide.To, t));
+        if (t >= 1)
+            StopGlide();
+    }
+
+    private void StopGlide()
+    {
+        if (_glide is null)
+            return;
+        _glide = null;
+        _glideFrames?.Stop();
+        if (_scene is not null)
+            _scene.Gliding = false;
+        _panel.Invalidate();
+    }
+
+    // Zooming while following keeps the player in the middle.
+    private void KeepPlayerCentered()
+    {
+        if (!_follow.Zoomed() || _scene is null || FollowState.Target(_scene) is not { } to)
+            return;
+        StopGlide();
+        _camera.CenterOn(to);
     }
 
     /// <summary>Where the view is: to come back to it after a preview of another map.</summary>
     public (Shturmap.Core.Maps.MapPoint Center, double Zoom) View => (_camera.Center, _camera.Zoom);
 
     /// <summary>
-    /// Redraws after the scene's markers, player or floor changed. A new position doesn't move the view (owner,
-    /// 2026-10-01): it pings, and says so when it is out of view.
+    /// Redraws after the scene's markers, player or floor changed. A new position pings; following, the view glides to
+    /// it, otherwise it stays where the player put it and says so when the position is out of view.
     /// </summary>
     public void Refresh()
     {
         if (_scene is { Player: { } fix } scene && !ReferenceEquals(fix, _seenFix))
         {
             _seenFix = fix;
+            if (_follow.On)
+            {
+                // Before the first paint the view has no size: it starts on the position then. After it, it glides.
+                _centerAfterFit = _fitPending;
+                if (!_fitPending)
+                    GlideToPlayer();
+            }
             if (DateTime.Now - fix.At < PingIfNewerThan)
             {
                 scene.PingSince = DateTime.Now;
-                // Before the first paint the view isn't fitted yet; the whole map will be in view then.
-                PlayerPinged?.Invoke(!_fitPending && MapRenderer.EdgeOf(_camera, scene, PixelScale) is not null);
+                // Before the first paint the view isn't fitted yet; the whole map will be in view then. Following, the
+                // view is on its way to the position, so it is never out of view.
+                PlayerPinged?.Invoke(!_follow.On && !_fitPending && MapRenderer.EdgeOf(_camera, scene, PixelScale) is not null);
                 Redraw();
             }
         }
@@ -182,12 +287,20 @@ public sealed partial class MapView : Grid
     {
         if (_scene?.Player is not { } fix)
             return;
+        StopGlide();
         _camera.CenterOn(_scene.Projection.ToMap(fix.Position));
         _panel.Invalidate();
     }
 
+    /// <summary>Shows the whole map; while following, it stops following (the player chose the view).</summary>
     public void FitMap()
     {
+        if (_follow.Fitted())
+        {
+            StopGlide();
+            _centerAfterFit = false;
+            FollowStopped?.Invoke("fit");
+        }
         _fitPending = true;
         _panel.Invalidate();
     }
@@ -195,6 +308,7 @@ public sealed partial class MapView : Grid
     public void ZoomBy(double factor)
     {
         _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor);
+        KeepPlayerCentered();
         _panel.Invalidate();
     }
 
@@ -206,6 +320,7 @@ public sealed partial class MapView : Grid
     public void AnimateView((Shturmap.Core.Maps.MapPoint Center, double Zoom) to, TimeSpan duration)
     {
         StopViewAnimation();
+        StopGlide();
         var from = View;
         var started = DateTime.Now;
         _viewAnimation = (_, _) =>
@@ -295,6 +410,13 @@ public sealed partial class MapView : Grid
             _fitPending = false;
             _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale);
         }
+        // Following: once the view has its size (and a new map is fitted), it starts on the player.
+        if (_centerAfterFit && FollowState.Target(_scene) is { } player)
+        {
+            _centerAfterFit = false;
+            _camera.CenterOn(player);
+        }
+        GlideStep();
         MapRenderer.Render(canvas, _camera, _scene, PixelScale);
     }
 
@@ -409,6 +531,13 @@ public sealed partial class MapView : Grid
             _dragStarted = DateTime.Now;
             _dragDistance = 0;
             Hover(null, to);
+            // Dragging takes the view back: following stops, so the map never fights the player.
+            if (_follow.Dragged())
+            {
+                StopGlide();
+                _centerAfterFit = false;
+                FollowStopped?.Invoke("drag");
+            }
         }
         _camera.Pan((float)(to.X - from.X) * PixelScale, (float)(to.Y - from.Y) * PixelScale);
         _dragDistance += Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
@@ -453,6 +582,7 @@ public sealed partial class MapView : Grid
         var point = e.GetCurrentPoint(this);
         var factor = Math.Pow(1.0015, point.Properties.MouseWheelDelta);
         _camera.ZoomAt(Pixels(point.Position), factor);
+        KeepPlayerCentered();
         _panel.Invalidate();
         e.Handled = true;
 
@@ -476,6 +606,7 @@ public sealed partial class MapView : Grid
     private void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
         _camera.ZoomAt(Pixels(e.GetPosition(this)), 2);
+        KeepPlayerCentered();
         _panel.Invalidate();
         Study.Ui("map.zoom", ("factor", 2.0), ("how", "double-click"), ("zoom", _camera.Zoom));
     }

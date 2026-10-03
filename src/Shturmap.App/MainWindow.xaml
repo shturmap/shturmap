@@ -156,7 +156,7 @@
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance. The map stays where you put it: your new position pings, and an arrow at the edge points to it when it is out of view (F shows it)." />
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance. The map stays where you put it: your new position pings, and an arrow at the edge points to it when it is out of view (F shows it). Or turn on Follow my position (Shift+F), and the map moves with you until you drag it." />
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way." />
@@ -901,7 +901,24 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <!-- The view only moves when you move it: a new position pings instead. This shows it. -->
+          <!-- Follow my position (owner, 2026-10-03): on, a new position glides into the middle; dragging or showing the
+               whole map turns it off. Its own symbol (four arrows about a centre); on, in the kept cyan. -->
+          <ToggleButton x:Name="FollowButton" Style="{StaticResource MapToggleButton}" Click="OnFollowClick"
+                        ToolTipService.ToolTip="Follow my position (Shift+F)" AutomationProperties.Name="Follow my position">
+            <ToggleButton.Resources>
+              <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="ToggleButtonBackground" />
+              <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="ToggleButtonBackgroundPointerOver" />
+              <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="ToggleButtonBackgroundPressed" />
+              <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushChecked" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPointerOver" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPressed" ResourceKey="KeptBrush" />
+            </ToggleButton.Resources>
+            <FontIcon Glyph="&#xE759;" FontSize="15" />
+          </ToggleButton>
+          <!-- Off, the view only moves when you move it: a new position pings instead. This shows it. -->
           <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
