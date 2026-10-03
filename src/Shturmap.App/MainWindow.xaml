@@ -9,10 +9,12 @@
 
   <Grid Background="{StaticResource GroundBrush}">
     <Grid.Resources>
-      <!-- Something to bring, in Plan's cards and the raid card. -->
+      <!-- Something to bring, in Plan's cards and the raid card. What the picks need comes first, tinted like the
+           picks (linked highlighting), then a hairline and the rest. -->
       <DataTemplate x:Key="RequirementTemplate" x:DataType="local:RequirementLine">
         <Grid ColumnSpacing="12" Padding="6,4" Margin="-6,0"
-              controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Quests="{x:Bind QuestIds}">
+              controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Quests="{x:Bind QuestIds}"
+              BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind OthersLine}">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
@@ -137,7 +139,7 @@
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way." />
                 <TextBlock TextWrapping="Wrap" Text="Quests are ordered from going somewhere, to finding or surviving, to fighting; simpler first within each." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To keep it lit on the map, click its highlighter (the pen beside it, or on its card): its markers turn cyan, larger and ringed, with a line from you to the nearest, until you click it again or press Esc. Move into a card and point at a key, an item or a quest in it for that one's card. Pop out a card to keep it as a small window; in a raid it shows how far each objective is." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To pick it for the coming raid, click its pen (beside it, or on its card); pick as many as you like. Picks come first in their map's card (PICKED) and in the raid card, what they need comes first under BRING, and on the map their markers turn cyan, larger and ringed, with a line from you to the nearest; every other marker stays as it is. A pick stays until the quest is done, you click its pen again, or CLEAR PICKS. Move into a card and point at a key, an item or a quest in it for that one's card. Pop out a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
@@ -355,7 +357,15 @@
               </StackPanel>
               <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(ViewModel.LastRaidText), Mode=OneWay}"
                          Visibility="{x:Bind ShownIf(ViewModel.LastRaidText), Mode=OneWay}" Margin="0,18,0,0" />
-              <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
+              <!-- NEXT RAID, and while quests are picked, the one deliberate way to drop them all (Esc never does). -->
+              <Grid>
+                <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
+                <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnClearPicksClick"
+                                 Visibility="{x:Bind ShownIfTrue(ViewModel.HasPicks), Mode=OneWay}"
+                                 ToolTipService.ToolTip="Unpicks every quest you picked for the coming raid">
+                  <TextBlock Text="CLEAR PICKS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                </HyperlinkButton>
+              </Grid>
               <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
@@ -379,6 +389,19 @@
                             <ColumnDefinition Width="Auto" />
                           </Grid.ColumnDefinitions>
                           <StackPanel Orientation="Horizontal" Spacing="3">
+                            <!-- The picks first, in the picks' cyan, then a hairline (owner, 2026-10-03). -->
+                            <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind FoldedPicksVisibility}">
+                              <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate>
+                              </ItemsControl.ItemsPanel>
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:QuestLine">
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource KeptBrush}" ToolTipService.ToolTip="{x:Bind Name}" />
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Rectangle Width="1" Height="12" Margin="3,0" VerticalAlignment="Center" Fill="{StaticResource LineStrongBrush}"
+                                       Visibility="{x:Bind PickDividerVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Finish}">
                               <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate>
@@ -407,6 +430,37 @@
                           <controls:NeedsStrip Grid.Column="1" Needs="{x:Bind Needs}" Shown="5" />
                         </Grid>
                         <StackPanel Visibility="{x:Bind ExpandedVisibility}">
+                          <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
+                               only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
+                          <TextBlock Style="{StaticResource EyebrowText}" Text="PICKED" Foreground="{StaticResource KeptBrush}" Margin="0,14,0,4"
+                                     Visibility="{x:Bind PicksVisibility}" />
+                          <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind PicksVisibility}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="local:QuestLine">
+                                <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+                                  <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                  </Grid.ColumnDefinitions>
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
+                                  <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
+                                               MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
+                                               FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
+                                               TextTrimming="CharacterEllipsis" />
+                                  </StackPanel>
+                                  <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
+                                  <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                                  <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
                           <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
                           <ItemsControl ItemsSource="{x:Bind Finish}">
                             <ItemsControl.ItemTemplate>
@@ -549,6 +603,10 @@
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Grid>
+                  <!-- The picks first, nearest first, as in Plan. -->
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="PICKED" Foreground="{StaticResource KeptBrush}" Margin="0,14,0,4"
+                             Visibility="{x:Bind ShownIfAny(ViewModel.RaidPicks), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidPicks, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />

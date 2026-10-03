@@ -445,6 +445,14 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 else
                     Say("No quest " + name);
                 break;
+            case "pick":
+                // Picks (or unpicks) a quest for the coming raid, as its pen does.
+                var pickName = string.Join(' ', step.Args);
+                if (QuestNamed(pickName) is { } pick)
+                    await session.TogglePickAsync(pick, "dev");
+                else
+                    Say("No quest " + pickName);
+                break;
             case "place":
                 PlaceOnView(step.Number(0, 0.5), step.Number(1, 0.5),
                     step.Args.Count >= 4 ? step.Number(2) : null, step.Args.Count >= 4 ? step.Number(3) : null);

@@ -46,9 +46,9 @@ public static class MapLegend
     [
         new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it, from two minutes framed and marked OLD (\"7 MIN OLD\"); for the first minute a cone shows which way you faced."),
         new(LegendSymbol.PlayerOutOfView, "You, out of view: click it or press F to show your position."),
-        new(LegendSymbol.KeptQuest, "The quest you keep highlighted: cyan, larger, ringed."),
-        new(LegendSymbol.Guide, "From you to its nearest place: a dashed cyan line with the distance, as old as your position."),
-        new(LegendSymbol.OutOfView, "Its places out of view: a chevron at the edge, and how many lie that way."),
+        new(LegendSymbol.KeptQuest, "A quest you picked for the coming raid (its pen in the list): cyan, larger, ringed. Everything else stays as it is."),
+        new(LegendSymbol.Guide, "From you to the nearest place of your picks: a dashed cyan line with the distance, as old as your position."),
+        new(LegendSymbol.OutOfView, "Picked places out of view: a chevron at the edge, and how many lie that way."),
         new(LegendSymbol.Objective, "Quest objective: a gold disc; its glyph is the quest type."),
         new(LegendSymbol.PossibleLocation, "One of the places it can be: a hollow gold ring."),
         new(LegendSymbol.Cluster, "Places of one objective close together: one marker with their count. Zoom in to split them."),
@@ -116,7 +116,7 @@ public static partial class MapRenderer
                 DrawEdge(canvas, camera, scene, ui * 0.7f);
                 break;
             case LegendSymbol.KeptQuest:
-                scene.Selected = "legend";
+                scene.Kept = new HashSet<string> { "legend" };
                 Marker(Quest(MarkerKind.Objective), 0.7f);
                 break;
             case LegendSymbol.Guide:

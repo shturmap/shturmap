@@ -38,6 +38,7 @@ public static class DevScript
         ["transit"] = "<normalized name>: a transit to that map, during a raid",
         ["quest"] = "start | complete | fail <quest id or part of its name>",
         ["place"] = "<fx> <fy> [<to fx> <to fy>]: a click (or drag, for the facing) on the map at fractions of its size",
+        ["pick"] = "<id or name>: picks (or unpicks) the quest for the coming raid, as its pen does",
         ["pos"] = "<x> <y> <z> [yaw]: a screenshot at that world position",
         ["repeat"] = "a screenshot at the last position again",
         ["age"] = "<minutes>: the last position becomes older",

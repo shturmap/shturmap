@@ -5,10 +5,11 @@ using Microsoft.UI.Xaml.Media;
 namespace Shturmap.App.Controls;
 
 /// <summary>
-/// The highlighter on a quest: keeps the quest highlighted (cyan on the map) until it is clicked again. It is its
-/// own control so that keeping a quest lit and keeping its card open are two different clicks (owner, 2026-10-01:
-/// one click doing both was misleading). In rail rows it shows while the quest is pointed at anywhere, or while it is
-/// the kept one; on a card it is always there, framed like the pop-out button beside it.
+/// The pen on a quest: picks it for the coming raid (cyan on the map, first in the rail) until it is clicked again, the
+/// quest is done or the picks are cleared; several quests can be picked (owner, 2026-10-03). It is its own control so
+/// that keeping a quest lit and keeping its card open are two different clicks (owner, 2026-10-01: one click doing
+/// both was misleading). In rail rows it shows while the quest is pointed at anywhere, or while it is picked; on a
+/// card it is always there, framed like the pop-out button beside it.
 /// </summary>
 public sealed partial class KeepToggle : Grid
 {
@@ -32,13 +33,13 @@ public sealed partial class KeepToggle : Grid
         Loaded += (_, _) =>
         {
             Linked.FocusChanged += Update;
-            Linked.SelectedChanged += Update;
+            Linked.PicksChanged += Update;
             Update();
         };
         Unloaded += (_, _) =>
         {
             Linked.FocusChanged -= Update;
-            Linked.SelectedChanged -= Update;
+            Linked.PicksChanged -= Update;
         };
         PointerEntered += (_, _) =>
         {
@@ -77,7 +78,7 @@ public sealed partial class KeepToggle : Grid
 
     private void Update()
     {
-        var kept = QuestId is not null && Linked.Selected == QuestId;
+        var kept = QuestId is not null && Linked.Picks.Contains(QuestId);
         var pointed = QuestId is not null && Linked.Current?.Quests.Contains(QuestId) == true;
         Opacity = kept || Framed || pointed || _over ? 1 : 0;
         _icon.Foreground = Resource(kept ? "KeptBrush" : _over ? "InkBrush" : "MutedBrush");
@@ -90,7 +91,7 @@ public sealed partial class KeepToggle : Grid
             _icon.FontSize = 14;
         }
         ToolTipService.SetToolTip(this, kept
-            ? "Highlighted on the map. Click to stop"
-            : "Highlight on the map: keeps this quest lit (cyan) until you click again");
+            ? "Picked for the coming raid: cyan on the map, first in its card. Click to unpick"
+            : "Pick for the coming raid: keeps this quest lit (cyan) on the map and first in its card, until it is done or you click again");
     }
 }

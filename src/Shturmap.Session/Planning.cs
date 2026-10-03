@@ -34,10 +34,62 @@ public sealed record MapPlanView(
 /// <summary>Turns tarkov.dev quests and maps into the planner's terms and its results into display text.</summary>
 public static class Planning
 {
-    public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds)
+    /// <param name="picks">The quests picked for the coming raid: maps with picks come first, most picks first, the
+    /// player's plan before the planner's (owner, 2026-10-03); otherwise the planner's order.</param>
+    public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null)
     {
-        var plans = RaidPlanner.Rank(Quests(data, activeQuestIds), Maps(data));
-        return plans.Select(p => ToView(data, p)).ToList();
+        var plans = RaidPlanner.Rank(Quests(data, activeQuestIds), Maps(data)).Select(p => ToView(data, p)).ToList();
+        if (picks is not { Count: > 0 })
+            return plans;
+        return plans
+            .Select((p, i) => (Plan: p, Rank: i, Picked: p.Finish.Concat(p.Progress).Count(q => picks.Contains(q.QuestId))))
+            .OrderByDescending(x => x.Picked)
+            .ThenBy(x => x.Rank)
+            .Select(x => x.Plan)
+            .ToList();
+    }
+
+    /// <summary>A plan card's quest sections with the picks taken out to their own group on top (<see cref="Sections"/>).</summary>
+    /// <param name="Picks">The picked quests on this map: those that can be completed first, then those that only
+    /// progress (with their note), each in the planner's effort order.</param>
+    public sealed record PlanSections(IReadOnlyList<PlanQuestView> Picks, IReadOnlyList<PlanQuestView> Finish, IReadOnlyList<PlanQuestView> Progress);
+
+    /// <summary>
+    /// The quests of a plan card for the rail: the picks first, in a group of their own, then COMPLETE and PROGRESS
+    /// without them (owner, 2026-10-03: the quests you want to tackle first). The effort hairlines are drawn anew for
+    /// what is left; the picks, a short list chosen by hand, get none. Without picks, the sections as planned.
+    /// </summary>
+    public static PlanSections Sections(MapPlanView plan, IReadOnlySet<string> picks)
+    {
+        if (picks.Count == 0)
+            return new(Array.Empty<PlanQuestView>(), plan.Finish, plan.Progress);
+        static IReadOnlyList<PlanQuestView> Regroup(IEnumerable<PlanQuestView> rows)
+        {
+            var list = new List<PlanQuestView>();
+            foreach (var row in rows)
+                list.Add(row with { StartsGroup = list.Count > 0 && list[^1].Group != row.Group });
+            return list;
+        }
+        var picked = plan.Finish.Where(q => picks.Contains(q.QuestId))
+            .Concat(plan.Progress.Where(q => picks.Contains(q.QuestId)))
+            .Select(q => q with { StartsGroup = false })
+            .ToList();
+        return new(picked, Regroup(plan.Finish.Where(q => !picks.Contains(q.QuestId))), Regroup(plan.Progress.Where(q => !picks.Contains(q.QuestId))));
+    }
+
+    /// <summary>A BRING row in the rail's order (<see cref="BringOrder"/>).</summary>
+    /// <param name="ForPicks">It serves at least one picked quest.</param>
+    /// <param name="StartsOthers">The first row that serves no pick, after rows that do: a hairline goes above it.</param>
+    public sealed record BringRow(RequirementView Row, bool ForPicks, bool StartsOthers);
+
+    /// <summary>What to bring, with what the picks need first and a hairline before the rest; otherwise as planned.</summary>
+    public static IReadOnlyList<BringRow> BringOrder(IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks)
+    {
+        var forPicks = rows.Where(r => r.QuestIds.Any(picks.Contains)).ToList();
+        var others = rows.Where(r => !r.QuestIds.Any(picks.Contains)).ToList();
+        return forPicks.Select(r => new BringRow(r, true, false))
+            .Concat(others.Select((r, i) => new BringRow(r, false, i == 0 && forPicks.Count > 0)))
+            .ToList();
     }
 
     /// <summary>The plan for one map (whether or not it ranks), e.g. for the bring-list when a raid loads.</summary>

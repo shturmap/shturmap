@@ -124,8 +124,11 @@ public sealed record SessionSnapshot
 
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
 
-    /// <summary>Suggested maps for the next raid, best first.</summary>
+    /// <summary>Suggested maps for the next raid, best first (maps with picks first).</summary>
     public IReadOnlyList<MapPlanView> Plan { get; init; } = [];
+
+    /// <summary>The quests picked for the coming raid in this mode (<see cref="QuestPicks"/>).</summary>
+    public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();
 
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];

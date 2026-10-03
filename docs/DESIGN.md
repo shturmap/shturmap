@@ -175,10 +175,10 @@ against sanctions); and say that some players see a position map as an unfair ad
    "+N" for more; a quest that needs nothing shows one empty, dashed cell, the inventory's way of saying "nothing
    here" (owner, 2026-10-01: BRING alone didn't show which item is for which quest). ANY MAP rows show no cells:
    bringing doesn't apply there.
-10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **highlighter** (a pen, on the row
-    while the quest is pointed at or kept, and always on its card beside the pop-out button) keeps it lit on the map (owner,
-    2026-10-01: one click doing both was misleading; the study log had the player toggling quests on and off and
-    losing held cards on the way to the map).
+10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **pen** (on the row while the quest is
+    pointed at or picked, and always on its card beside the pop-out button) picks it for the coming raid: lit on the
+    map and first in the rail, several at once ("Picks"; owner, 2026-10-01: one click doing both was misleading; the
+    study log had the player toggling quests on and off and losing held cards on the way to the map).
 12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
     are no detail pages to open. Finished quests appear nowhere.
@@ -358,7 +358,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     SCAV) that holds for the raid. No local Scav raid has been seen in a log yet; if one shows a line that tells,
     it replaces the switch.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, spawn zones (see "Map drawing"),
-  player, trail, guide line to the kept quest's nearest marker. Map controls bottom-right, with the floor picker above them on maps with floors;
+  player, trail, guide line to the nearest place of the picks. Map controls bottom-right, with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
@@ -382,7 +382,7 @@ spawns below).
 
   | level | members | treatment |
   | --- | --- | --- |
-  | 1 | the player; the kept quest, its guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
+  | 1 | the player; the picked quests, the guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
   | 4 | the artwork, its names, the sheet grid | receded; names thinned with zoom |
@@ -392,8 +392,8 @@ spawns below).
 
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
-  What is pointed at or kept stays at full strength; the rest steps back by kind, never out of sight, and less in a
-  raid, where a quest is often kept highlighted all raid:
+  What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
+  in a raid. Picks alone step nothing back (owner, 2026-10-03, "Picks"): only pointing does, for as long as it lasts.
 
   | kind | planning | in a raid |
   | --- | --- | --- |
@@ -445,7 +445,7 @@ spawns below).
   Landmarks (90 and up) are set in 12 px semi-bold caps, letter-spaced; streets (80, and names without a size) as
   before, 11 px, at every zoom; 65–70 from 1.5 times the zoom that shows the whole map; 60 from 2.5 times. Larger
   names are placed first. Names out of view aren't placed.
-- **Distances on the map.** The guide line to the kept quest carries the card's number on a small dark plate with
+- **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
   a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
   card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
   old as the position). A line too short to carry it clear of its ends has none. A scale bar at the lower left,
@@ -455,7 +455,7 @@ spawns below).
   relative to the facing).
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
-  were rejected). It has the kept quest's vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
+  were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
   the position is a minute old the ring turns dashed and a small dark tag beside it gives the age in whole units,
   as the top bar does ("4 MIN", "2 H"). The facing cone (first minute only) has its arrow outside the ring.
 - **One meaning per colour, shape as a second cue.** Simulated colour blindness (Machado 2009) put the quest amber,
@@ -470,9 +470,9 @@ spawns below).
   places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
   too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
   pointing at a cluster points at its quest.
-- **Places out of view.** While a quest is kept highlighted, or pointed at, its places outside the view are shown
+- **Places out of view.** While quests are picked, or one is pointed at, their places outside the view are shown
   as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
-  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when kept,
+  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,
   gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
   without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
 - **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap
@@ -560,21 +560,44 @@ Cards behave like the nested tooltips in Crusader Kings III:
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
 
-### Keeping a quest highlighted
+### Picks: the quests for the coming raid
 
-Pointing highlights for as long as the pointer stays; the quest's highlighter (on its rail rows and its card)
-**keeps** it highlighted, so its markers are easy to find on the map while you look away (owner, 2026-10-01). A
-click on the quest itself only keeps its card open. The
-kept quest has its own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among gold didn't
-stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart from gold with
-any colour vision. Its rows keep a cyan tint; on the map its markers turn cyan and grow (14 px radius, against 12 for
-what is pointed at and 10 at rest) inside a steady cyan ring on a dark band, its zones turn cyan, the rest step
-back a little ("Stepping back"), and a dashed cyan line runs from your last fix to its nearest marker. It pulses
-three times when kept, and again when the pointer comes back from something else, then holds still: a marker
-pulsing all raid would be motion at the edge of the player's eye. Pointing at something else shows that instead,
-for as long as the pointer is on it. One quest is kept at a time; another click on it, a click on another quest,
-or Esc (after the cards) lets it go, and it goes by itself when the quest is done. A highlight with nothing on the
-shown map (a quest kept from another map, a quest for any map) dims nothing.
+Pointing highlights for as long as the pointer stays; the quest's pen (on its rail rows and its card) **picks** it
+for the coming raid (owner, 2026-10-03: "you typically bring items for specific quest or want to run a specific
+quest. Therefore you likely want to have something like the current 'mark quest' thing, but for all the quest you
+want to tackle in the map. Still it should show all other quest markers."). It grew out of the single "kept"
+quest (owner, 2026-10-01: keep a quest's markers easy to find while you look away): the same pen, the same look,
+now for as many quests as you like, and the pen keeps its one meaning, "keep lit". A click on the quest itself
+still only keeps its card open (two clicks, two meanings).
+
+- **One click per quest while planning, none in the raid.** Picks hold from Plan through loading into the raid
+  and across restarts (the settings, `picks.<mode>`; PvE and PvP keep their own, `QuestPicks`).
+- **No upkeep.** A pick stays until the log reports the quest completed or failed (it leaves by itself), its pen
+  is clicked again, or CLEAR PICKS (beside NEXT RAID, outside raids). Picks don't clear at raid end: a quest often
+  takes several raids, and a plan that empties itself would have to be made again each time. Esc never touches
+  picks (it closes the cards): a key that throws a plan away would be too easy to hit. Only an active quest can be
+  picked; a quest whose state the log doesn't tell stays picked.
+- **The look.** Picks have their own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among
+  gold didn't stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart
+  from gold with any colour vision. Their rows, and the BRING rows that serve them, keep a cyan tint; on the map
+  their markers turn cyan and grow (14 px radius, against 12 for what is pointed at and 10 at rest) inside a steady
+  cyan ring on a dark band, their zones turn cyan, and a dashed cyan line runs from your last fix to the nearest
+  place of any pick, with the distance on its plate (the raid card's NEXT names the same objective). Their places
+  out of view get chevrons. Picks hold still: a marker pulsing all raid would be motion at the edge of the
+  player's eye; what the pointer is on pulses.
+- **Nothing else steps back for picks.** Every other quest marker stays at full strength (the owner's "Still it
+  should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
+  then picks don't step back either: they are the plan for this raid, as much as the ways out.
+- **The rail.** A map's card shows its picks first, as a group of their own headed PICKED (in cyan), then COMPLETE
+  and PROGRESS without them, with the effort hairlines drawn anew (`Planning.Sections`). A pick that only
+  progresses here keeps its note ("2 of 5 objectives here"). Compared on 2026-10-03 with picks sorted first inside
+  COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
+  a group of their own says "this raid's work" at a glance. BRING lists what the picks need first, then a hairline
+  and the rest (`Planning.BringOrder`). A map with picks is suggested first, most picks first: the player's plan
+  before the planner's. A folded card shows its picks' glyphs first, in cyan, then a hairline. The raid card
+  starts with PICKED, nearest first, and NEXT is the nearest objective among the picks.
+- **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
+- The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
 
 ### Extract requirements
 
@@ -601,15 +624,15 @@ are translated although the payload's translation list misses them.
 | + / − | zoom in / out |
 | 0 | show the whole map |
 | PgUp / PgDn | show the floor above / below |
-| Esc | close the cards, else stop keeping the quest highlighted |
+| Esc | close the cards (it never drops picks) |
 | F1 or ? | help |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window.
 
 Mouse: drag to pan, wheel to zoom at the cursor, double-click to zoom in, point at anything to see what belongs to
-it, click a quest (in the list or on the map) to keep its card open, click its highlighter to keep it lit, click the
-edge badge to show your position.
+it, click a quest (in the list or on the map) to keep its card open, click its pen to pick it for the coming raid,
+click the edge badge to show your position.
 
 ## 5. Quest taxonomy
 
@@ -813,7 +836,7 @@ Rules:
     and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
     with the app's version and commit.
   - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
-    `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `place <fx> <fy>
+    `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `place <fx> <fy>
     [<fx> <fy>]`, `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
     `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
 - Website media is regenerated by `tools/make-media.ps1` in the shturmap.github.io repository; see its CLAUDE.md

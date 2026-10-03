@@ -440,7 +440,8 @@ static async Task Render(string mapName, string output, List<string> screenshots
         scene.Trail = fixes.SkipLast(1).Select(f => f!.Position!.Value).ToList();
         scene.Floor = Shturmap.Core.Maps.FloorResolver.LayerFor(definition, last.Position.Value);
     }
-    scene.Selected = content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id;
+    // The first quest with a place, picked: shows the picks' look and the guide line.
+    scene.Kept = content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
 
     // "-ping": a new position pinging, 0.6 s in; "-edge": the same with the player out of view (the edge arrow).
     foreach (var (suffix, zoomIn, ping, away) in new[] { ("", 1.0, false, 0f), ("-close", 3.0, false, 0f), ("-ping", 3.0, true, 0f), ("-edge", 3.0, true, 1100f) })

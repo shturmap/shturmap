@@ -57,15 +57,17 @@ public static partial class MapRenderer
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
         // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength markers
         // read as "not important", and a highlighted one must look highlighted).
+        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03).
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
         stepBack ??= StepBackOf;
-        foreach (var group in layout.Markers.Where(m => !m.Focused).GroupBy(m => stepBack(m.Marker.Kind, scene.InRaid)))
+        StepBack Measure(ShownMarker m) => m.Kept ? Full : stepBack(m.Marker.Kind, scene.InRaid);
+        foreach (var group in layout.Markers.Where(m => !m.Focused).GroupBy(Measure))
         {
             using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
             foreach (var marker in group)
                 DrawMarker(canvas, scene, marker, uiScale);
         }
-        foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => stepBack(l.Of.Marker.Kind, scene.InRaid).LabelAlpha))
+        foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => Measure(l.Of).LabelAlpha))
         {
             using var layer = new StepBackLayer(canvas, group.Key, 1, dim);
             foreach (var label in group)
@@ -89,6 +91,9 @@ public static partial class MapRenderer
     /// <param name="Saturation">How much of its colour it keeps, 1 for all.</param>
     /// <param name="LabelAlpha">Its label's opacity: labels step back further than their symbols.</param>
     public readonly record struct StepBack(float Alpha, float Saturation, float LabelAlpha);
+
+    // Not stepping back at all: picks.
+    private static readonly StepBack Full = new(1f, 1f, 1f);
 
     /// <summary>
     /// How far each kind steps back while something else is highlighted (owner, 2026-10-03: at 28 % the other markers
@@ -404,7 +409,7 @@ public static partial class MapRenderer
         var at = Screen(camera, scene, marker.Position);
         var focused = IsFocused(scene, marker);
         var selected = IsSelected(scene, marker) || focused;
-        // The kept quest's markers are drawn in their own colour and larger than anything pointed at.
+        // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
         var kept = marker.Objective is not null && IsSelected(scene, marker);
         var color = kept ? Kept : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
@@ -508,8 +513,9 @@ public static partial class MapRenderer
         canvas.Restore();
     }
 
+    // A marker of a picked quest (or a picked marker): the kept look.
     private static bool IsSelected(MapScene scene, MapMarker m) =>
-        scene.Selected is not null && (m.Id == scene.Selected || m.Group == scene.Selected);
+        scene.Kept.Count > 0 && (scene.Kept.Contains(m.Id) || (m.Group is not null && scene.Kept.Contains(m.Group)));
 
     private static bool IsFocused(MapScene scene, MapMarker m) =>
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
@@ -676,12 +682,12 @@ public static partial class MapRenderer
         if (zone.Outline.Count < 3)
             return;
         using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
-        var kept = scene.Selected is not null && zone.Group == scene.Selected;
+        var kept = zone.Group is not null && scene.Kept.Contains(zone.Group);
         var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
         var selected = kept || focused;
         // Zones outside the focus ease back with the scene's Dim, like the markers.
-        var fade = scene.ShownFocus.Count > 0 && !focused ? scene.Dim : 0f;
+        var fade = scene.ShownFocus.Count > 0 && !focused && !kept ? scene.Dim : 0f;
         using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35 - 23 * fade)), IsAntialias = true };
         using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : 140 - 90 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
         canvas.DrawPath(path, fill);
@@ -725,7 +731,7 @@ public static partial class MapRenderer
         }
     }
 
-    // A dashed line from the player to the kept quest's nearest place.
+    // A dashed line from the player to the nearest place of the picked quests.
     private static void DrawGuide(SKCanvas canvas, GuideLine? guide, float ui)
     {
         if (guide is null)
@@ -738,13 +744,13 @@ public static partial class MapRenderer
         canvas.DrawLine(guide.From, guide.To, line);
     }
 
-    /// <summary>The guide from the player to the kept quest's nearest place, and its distance on a plate.</summary>
+    /// <summary>The guide from the player to the nearest place of the picked quests, and its distance on a plate.</summary>
     /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
 
     private static GuideLine? Guide(Camera camera, MapScene scene, float ui)
     {
-        if (scene.Player is not { } player || scene.Selected is null)
+        if (scene.Player is not { } player || scene.Kept.Count == 0)
             return null;
         var targets = scene.Markers.Where(m => IsSelected(scene, m) && m.Kind != MarkerKind.ObjectiveDone).ToList();
         if (targets.Count == 0)
@@ -817,7 +823,7 @@ public static partial class MapRenderer
     /// <summary>How far in from the edge of the view the chevrons sit (pixels, before scaling).</summary>
     private const float ChevronInset = 18;
 
-    // The kept quest's places out of view, or the pointed-at quest's while the pointer is on it: one chevron per
+    // The picked quests' places out of view, and the pointed-at quest's while the pointer is on it: one chevron per
     // direction (places whose edge points lie within 56 px merge), in the quest's colour. The same vocabulary as the
     // player's edge badge, smaller and without a plate: the player is level 1.
     private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui)
@@ -828,7 +834,7 @@ public static partial class MapRenderer
         var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color)>();
         foreach (var marker in scene.Markers)
         {
-            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !IsFocused(scene, marker))
+            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsFocused(scene, marker) || IsSelected(scene, marker)))
                 continue;
             var at = Screen(camera, scene, marker.Position);
             if (at.X >= 0 && at.X <= w && at.Y >= 0 && at.Y <= h)
@@ -988,7 +994,7 @@ public static partial class MapRenderer
 
         if (scene.Pulsing && IsFocused(scene, marker))
             DrawPulse(canvas, scene, at, r, color, ui);
-        // The kept quest keeps a steady ring once it stops pulsing, so it is still found at a glance: a dark band,
+        // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band,
         // then the colour, so it reads on light and dark artwork alike.
         if (kept)
         {
