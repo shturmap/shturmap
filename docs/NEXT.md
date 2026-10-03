@@ -127,7 +127,19 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
     time, while extracts, other objectives nearby and bosses still matter at a glance. So judge the candidates in a
     fake-raid snapshot with a kept quest (`tools\fake-raid.ps1 -ShowQuest …`), and consider fading less, or not at
     all, in a raid than in Plan.
-13. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+13. **Mark optional objectives on the map** (owner, 2026-10-03: "In the quest markers, encode somehow when a marker is
+    optional. It might still be very relevant for a quest."). tarkov.dev flags objectives as `optional`; the planner
+    already leaves them out of "can be completed" (`RaidPlanner`), but the map draws their markers like required
+    ones. To do on Monday:
+    - Count how many optional objectives have places on the map, per map, and which quests they belong to.
+    - Find an encoding that respects "one symbol, one meaning" (DESIGN.md). Already taken: the hollow gold ring
+      (one of the possible places), muted grey (done or after the raid), the dashed ring (an old position), and the
+      badge corners (floor at the upper right, cluster count at the lower right). So a new, distinct mark is needed,
+      e.g. a small "OPT" tag beside the label, or a lighter collar style. Mock up two or three and compare them in
+      snapshots.
+    - Say the same in words where objectives are listed (quest card, raid card): "optional".
+    - Add a legend row, and record the decision in DESIGN.md.
+14. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
