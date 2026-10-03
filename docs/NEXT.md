@@ -181,7 +181,27 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
       change only something unmistakable but safe, e.g. the plate in the app's cyan, or a small "DEV" band. The
       owner checks logo changes against symbol resemblances (DESIGN.md §4, "Logo"), so show a panel of two or
       three variants first.
-16. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+16. **Pick several quests for the coming raid** (owner, 2026-10-03: "I like how easy to use the app is right now
+    and how little interaction you have to make with it in order to get a benefit. I feel we're missing one thing
+    though. When preparing a raid, you typically bring items for specific quest or want to run a specific quest.
+    Therefore you likely want to have something like the current 'mark quest' thing, but for all the quest you want
+    to tackle in the map. Still it should show all other quest markers. It should incorporate hazzle-free and well
+    designed and fitting into the existing app. Choose the best design possible.") Work out the design on Monday
+    and show it as mocks before building. Starting points:
+    - **Today:** the highlighter keeps one quest lit: cyan markers and a guide line to its nearest place. Picking
+      several would grow out of that same control: the pen on a Plan row toggles the quest into "this raid's
+      picks", so it costs one click per quest while planning, and none in the raid (DESIGN.md: no clicks in a raid).
+    - **On the map:** picks in the kept look (cyan, ringed); every other quest marker stays at normal strength, not
+      faded (ties in with item 12); the guide line goes to the nearest place among all picks.
+    - **In the rail:** the map's card shows the picks first, as their own small group or with a mark; BRING puts
+      what the picks need first ("for your picks"); the raid card then starts from the picks, nearest first.
+    - **Lifetime, without upkeep:** picks hold from Plan through loading into the raid; a quest the log reports
+      completed leaves the picks by itself; picks for another map wait for that map; decide whether picks clear at
+      raid end or stay until done. One quiet "Clear picks" outside raids.
+    - **Zero picks = today's behaviour,** so nobody has to use it. Check it against the effort order (item list
+      order), the synopsis lines and the folded cards; one symbol, one meaning (the pen keeps its meaning: "keep
+      lit", now for several). DESIGN.md decision, help text, legend.
+17. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
