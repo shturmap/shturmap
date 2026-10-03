@@ -534,14 +534,7 @@ public sealed partial class MainWindow : Window
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";
-        // Credit the artist only where their SVG is drawn: maps.json also names the authors of tile renders, which
-        // Shturmap doesn't use.
-        vm.Attribution = s.Definition switch
-        {
-            { SvgPath: not null, Author: { } author } => $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev",
-            { SvgPath: null } => "No map artwork · grid 10 m · data tarkov.dev",
-            _ => "Data tarkov.dev",
-        };
+        vm.Attribution = AttributionFor(s.Definition);
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
         vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
             && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
@@ -607,10 +600,12 @@ public sealed partial class MainWindow : Window
             var artwork = await ArtworkFor(s.Definition, s.Map?.Name);
             if (_sceneKey != key)
                 return;
-            // No usable artwork (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
-            if (artwork is null && _sheetNoticeShown.Add(key))
+            // Without SVG artwork, tarkov.dev's tile render where it has one (The Lab, Labyrinth, Icebreaker).
+            var tiles = artwork is null ? TilesFor(s.Definition, s.Map?.Name) : null;
+            // No usable artwork at all (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
+            if (artwork is null && tiles is null && _sheetNoticeShown.Add(key))
                 ShowNotice($"No map artwork for {s.Map?.Name}: a 10 m grid stands in, with your position, objectives and extracts.");
-            Map.SetScene(new MapScene(s.Definition, artwork), _restoreView);
+            Map.SetScene(new MapScene(s.Definition, artwork, tiles), _restoreView);
             _restoreView = null;
         }
         if (Map.Scene is not { } scene || _snapshot is not { } latest)
@@ -625,6 +620,41 @@ public sealed partial class MainWindow : Window
         scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
         Map.Refresh();
+    }
+
+    // Who drew what is on the map. The SVG maps' artists by name and licence; the tile renders (Battlestate's level,
+    // rendered by tarkov.dev or TarkovBOT.eu; docs/DESIGN.md §3) by who maps.json names; the sheet says what it is.
+    private string AttributionFor(MapDefinition? definition) => definition switch
+    {
+        { SvgPath: not null, Author: { } author } => $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev",
+        { SvgPath: null } when _session.Artwork?.TilesFor(definition) is { Status: not TileStatus.Unavailable } =>
+            $"Map: {definition.Author ?? "tarkov.dev"} · data tarkov.dev",
+        { SvgPath: null } => "No map artwork · grid 10 m · data tarkov.dev",
+        _ => "Data tarkov.dev",
+    };
+
+    private readonly HashSet<MapTiles> _tilesWatched = [];
+
+    // A map's tile render. If no tile can be had (offline without saved tiles, or none published), the grid sheet
+    // stands in, said once per map, and the credit line follows.
+    private MapTiles? TilesFor(MapDefinition definition, string? mapName)
+    {
+        if (_session.Artwork?.TilesFor(definition) is not { } tiles)
+            return null;
+        if (_tilesWatched.Add(tiles))
+        {
+            tiles.Changed += () => DispatcherQueue.TryEnqueue(() =>
+            {
+                ViewModel.Attribution = AttributionFor(_snapshot?.Definition);
+                if (tiles.Status == TileStatus.Unavailable && _sheetNoticeShown.Add(definition.Key))
+                {
+                    AppLog.Warn($"Map render for {mapName} not loaded: no tile could be had");
+                    ShowNotice($"No map render for {mapName}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.",
+                        TimeSpan.FromSeconds(12));
+                }
+            });
+        }
+        return tiles;
     }
 
     // A map's artwork, or null for the sheet. A download that fails says why, once per map, and the sheet stands in;
@@ -710,7 +740,8 @@ public sealed partial class MainWindow : Window
             return;
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
         var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
-        Map.SetScene(new MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
+        Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _sceneKey = null;
         ViewModel.PreviewText = $"PREVIEW · {Caps.Of(map.Name)}";
         Study.Ui("map.preview", ("map", normalizedName));
@@ -1436,6 +1467,8 @@ public sealed partial class MainWindow : Window
                 await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));
             if (_pinned.Values.FirstOrDefault() is { } pinned)
                 await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
+            // A tile render (The Lab, Labyrinth, Icebreaker) loads its tiles for this view first.
+            await Map.TilesLoadedAsync(TimeSpan.FromSeconds(20));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);
             // What Copy diagnostics would put on the clipboard, to check it without clicking.
             await File.WriteAllTextAsync(Path.Combine(folder, "diagnostics.txt"), DiagnosticsText());

@@ -108,6 +108,9 @@ public sealed class AppPaths(string root, string? cacheRoot = null, DataFolderKi
     /// <summary>Trader portraits and item icons from tarkov.dev, fetched when first shown.</summary>
     public string GameArtCache => Path.Combine(CacheRoot, "game-art");
 
+    /// <summary>tarkov.dev's tile renders of the maps without SVG artwork, fetched as a view needs them.</summary>
+    public string MapTileCache => Path.Combine(CacheRoot, "map-tiles");
+
     public string Logs => Path.Combine(Root, "logs");
 
     /// <summary>The study log: game events and what the player did in Shturmap, one JSON line each.</summary>

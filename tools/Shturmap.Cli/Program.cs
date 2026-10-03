@@ -435,11 +435,21 @@ static async Task Render(string mapName, string output, List<string> screenshots
         artwork = Shturmap.Map.MapArtwork.Load(svg, definition, Path.Combine(cacheRoot, "pictures"));
         Console.WriteLine($"Artwork parsed in {sw.ElapsedMilliseconds} ms (viewBox {artwork.ViewBox.Width:0}×{artwork.ViewBox.Height:0})");
     }
-    else
+    using var artworkScope = artwork;
+    // Maps tarkov.dev only publishes as tiles: its render, through the same disk cache as the app ("--sheet" draws
+    // the grid sheet that stands in when no tile can be had).
+    Shturmap.Map.MapTiles? tiles = null;
+    if (artwork is null && definition.TilePath is not null && !screenshots.Remove("--sheet"))
+    {
+        var tileHttp = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "map-tiles"));
+        tiles = new Shturmap.Map.MapTiles(definition, (tile, ct) => Shturmap.Session.ArtworkProvider.FetchTileAsync(tileHttp, definition.Key, tile, ct));
+        Console.WriteLine($"No SVG for this map: drawing tarkov.dev's tile render (tile size {tiles.TileSize}, zoom {definition.MinZoom}–{definition.MaxZoom}, map: {definition.Author})");
+    }
+    else if (artwork is null)
     {
         Console.WriteLine("No artwork for this map: drawing the schematic sheet");
     }
-    using var artworkScope = artwork;
+    using var tilesScope = tiles;
 
     // Quests from the Tasks screenshots, as an example of active quests; on maps where none of them has anything,
     // every quest with something on the map.
@@ -448,7 +458,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
     var content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
     if (content.Objectives.All(o => o.Places.Count == 0))
         content = Shturmap.Map.MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
-    var scene = new Shturmap.Map.MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers };
+    var scene = new Shturmap.Map.MapScene(definition, artwork, tiles) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers };
 
     var fixes = screenshots.Select(s => Shturmap.Core.Screenshots.ScreenshotName.TryParse(s, out var info) ? info : null)
         .Where(i => i?.Position is not null).ToList();
@@ -459,8 +469,10 @@ static async Task Render(string mapName, string output, List<string> screenshots
         scene.Trail = fixes.SkipLast(1).Select(f => f!.Position!.Value).ToList();
         scene.Floor = Shturmap.Core.Maps.FloorResolver.LayerFor(definition, last.Position.Value);
     }
-    // The first quest with a place, picked: shows the picks' look and the guide line.
-    scene.Kept = content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
+    // The first quest with a place, picked: shows the picks' look and the guide line ("--no-pick": none, e.g. to see a
+    // map's artwork under a quest zone that covers it).
+    var pick = !screenshots.Remove("--no-pick");
+    scene.Kept = !pick ? new HashSet<string>() : content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();
     if (focusItem is not null)
     {
         var item = data.ItemNames.ContainsKey(focusItem) ? focusItem
@@ -485,10 +497,25 @@ static async Task Render(string mapName, string output, List<string> screenshots
             camera.Pan(-away, -away * 0.3f);
         }
         scene.PingSince = ping ? DateTime.Now - TimeSpan.FromSeconds(0.6) : null;
+        if (tiles is not null && definition.TilePath is { } basePath)
+        {
+            sw.Restart();
+            var a = camera.ToMap(new SkiaSharp.SKPoint(0, 0));
+            var b = camera.ToMap(new SkiaSharp.SKPoint(1600, 1000));
+            var view = new Shturmap.Core.Maps.MapRect(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+            await tiles.LoadAsync(basePath, view, scene.Projection.WorldRect, camera.Zoom);
+            if (scene.Floor?.TilePath is { } floorPath)
+                await tiles.LoadAsync(floorPath, view, scene.Projection.WorldRect, camera.Zoom);
+            Console.WriteLine($"  tiles for zoom {tiles.ZoomFor(camera.Zoom)} ready in {sw.ElapsedMilliseconds} ms ({tiles.Cached} in memory, {tiles.Status})");
+        }
         sw.Restart();
         using var surface = SkiaSharp.SKSurface.Create(new SkiaSharp.SKImageInfo(1600, 1000));
         Shturmap.Map.MapRenderer.Render(surface.Canvas, camera, scene);
         var drawMs = sw.Elapsed.TotalMilliseconds;
+        // A second draw of the same view: what a frame costs while panning, once the tiles are in memory.
+        sw.Restart();
+        Shturmap.Map.MapRenderer.Render(surface.Canvas, camera, scene);
+        drawMs = Math.Min(drawMs, sw.Elapsed.TotalMilliseconds);
         var path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(output))!, Path.GetFileNameWithoutExtension(output) + suffix + ".png");
         using var image = surface.Snapshot();
         using var png = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 90);

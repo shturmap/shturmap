@@ -4,7 +4,7 @@ namespace Shturmap.Core.Maps;
 public readonly record struct GridLine(double X1, double Z1, double X2, double Z2, bool Major);
 
 /// <summary>
-/// The metric grid drawn where a map has no artwork (docs/DESIGN.md §3, "Maps without artwork"). Lines sit on
+/// The metric grid drawn where a map has no artwork (docs/DESIGN.md §3, "The sheet"). Lines sit on
 /// whole multiples of the spacing in world metres, so they line up with the game's coordinates, and run across
 /// the map's bounds.
 /// </summary>

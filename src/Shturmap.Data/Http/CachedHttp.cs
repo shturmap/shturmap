@@ -30,8 +30,9 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
 
     public async Task<CachedResponse> GetAsync(Uri uri, string cacheKey, TimeSpan maxAge, CancellationToken ct = default)
     {
-        Directory.CreateDirectory(cacheFolder);
         var body = Path.Combine(cacheFolder, cacheKey);
+        // A key may hold folders (map tiles: "<map>/<layer>/<z>/<x>_<y>.png").
+        Directory.CreateDirectory(Path.GetDirectoryName(body)!);
         var metaPath = body + ".meta.json";
         var meta = ReadMeta(metaPath);
         var cached = meta is not null && File.Exists(body);

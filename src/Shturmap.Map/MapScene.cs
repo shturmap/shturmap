@@ -47,11 +47,14 @@ public sealed record PlayerFix(WorldPoint Position, double? YawDegrees, DateTime
 /// <summary>Everything the renderer draws for one map.</summary>
 public sealed class MapScene
 {
-    /// <param name="artwork">Null for a map without usable artwork: the renderer draws a schematic sheet instead.</param>
-    public MapScene(MapDefinition definition, MapArtwork? artwork)
+    /// <param name="artwork">Null for a map without SVG artwork.</param>
+    /// <param name="tiles">tarkov.dev's tile render for a map without SVG artwork (The Lab, Labyrinth, Icebreaker), or
+    /// null. With neither, or while the tiles can't be had, the renderer draws a schematic sheet.</param>
+    public MapScene(MapDefinition definition, MapArtwork? artwork, MapTiles? tiles = null)
     {
         Definition = definition;
         Artwork = artwork;
+        Tiles = artwork is null ? tiles : null;
         Projection = MapProjection.For(definition);
         if (artwork is not null)
             Placement = Projection.PlaceSvg(artwork.ViewBox.Left, artwork.ViewBox.Top, artwork.ViewBox.Width, artwork.ViewBox.Height);
@@ -60,6 +63,15 @@ public sealed class MapScene
     public MapDefinition Definition { get; }
 
     public MapArtwork? Artwork { get; }
+
+    /// <summary>The map's tile render, for maps tarkov.dev publishes only as tiles; null otherwise.</summary>
+    public MapTiles? Tiles { get; }
+
+    /// <summary>
+    /// Whether the map is drawn as the grid sheet now: no SVG artwork, and no tile render (or none to be had). On a sheet
+    /// the container dots show, and landmarks at any zoom; over artwork or tiles they would be clutter.
+    /// </summary>
+    public bool IsSheet => Artwork is null && Tiles is not { Status: not TileStatus.Unavailable };
 
     public MapProjection Projection { get; }
 
@@ -209,9 +221,6 @@ public sealed class MapScene
     /// that sketch rooms and corridors where no artwork does. With artwork they would be clutter.
     /// </summary>
     public IReadOnlyList<WorldPoint> Containers { get; set; } = [];
-
-    /// <summary>The map is drawn as a sheet (no artwork): container dots show, and landmarks show at any zoom.</summary>
-    public bool IsSheet => Artwork is null;
 
     public bool ShowLabels { get; set; } = true;
 }

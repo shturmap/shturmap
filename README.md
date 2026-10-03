@@ -101,8 +101,9 @@ downloads data from tarkov.dev and reads your existing logs for quest history. I
 key: your marker moves, the floor follows your height and objectives re-sort by distance.
 
 Limits: quests come from the logs alone, so a quest started before your oldest log isn't known. The Lab, Labyrinth
-and Icebreaker have no usable map artwork, so they are drawn as a 10 m grid with your position, objectives and
-extracts. On Windows 10, install the Segoe Fluent Icons font for the glyphs.
+and Icebreaker are drawn from tarkov.dev's top-down renders, loaded as you look at them; without a connection and
+saved tiles they fall back to a 10 m grid with your position, objectives and extracts. On Windows 10, install the
+Segoe Fluent Icons font for the glyphs.
 
 ## Develop
 
@@ -122,6 +123,9 @@ extracts. On Windows 10, install the Segoe Fluent Icons font for the glyphs.
   [tarkov-dev-svg-maps](https://github.com/the-hideout/tarkov-dev-svg-maps),
   [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Downloaded at runtime, never bundled,
   non-commercial use only.
+- The Lab, Labyrinth and Icebreaker: tarkov.dev's top-down renders (Icebreaker's by
+  [TarkovBOT.eu](https://tarkovbot.eu/)) of Battlestate's levels, shown from tarkov.dev's image service at runtime
+  like trader portraits and item icons, never bundled.
 - Inspired by [TarkovEyes](https://github.com/MelGP/tarkoveyes) by MelGP; Shturmap is a from-scratch rebuild.
 - Log formats and file locations were learned from community tools:
   [TarkovMonitor](https://github.com/the-hideout/TarkovMonitor),

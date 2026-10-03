@@ -36,15 +36,16 @@ public sealed class MapProjection
     }
 
     /// <summary>
-    /// The projection a map is drawn with. A map with SVG artwork uses tarkov.dev's transform as it is, so the
-    /// artwork lines up. A map without artwork is drawn as a metric sheet with one scale for both axes (the mean of
-    /// tarkov.dev's two, which only differ for Icebreaker, whose tile render is stretched), so its grid squares stay
-    /// square and distances on the sheet read true.
+    /// The projection a map is drawn with. A map with artwork uses tarkov.dev's transform as it is, so the artwork
+    /// lines up: SVG artwork, and tarkov.dev's tile renders (The Lab, Labyrinth, Icebreaker), whose Icebreaker render is
+    /// stretched 1.75× along one axis and so needs that transform too, the fallback grid included (its 10 m lines stay
+    /// 10 m apart; its squares are then oblong). A map with neither is drawn as a metric sheet with one scale for both
+    /// axes (the mean of tarkov.dev's two), so its grid squares stay square and distances on the sheet read true.
     /// </summary>
     public static MapProjection For(MapDefinition map)
     {
         var t = map.Transform;
-        if (map.SvgPath is not null || t[0] == t[2])
+        if (map.SvgPath is not null || map.TilePath is not null || t[0] == t[2])
             return new MapProjection(map);
         var scale = Math.Sqrt(t[0] * t[2]);
         return new MapProjection(map with { Transform = [scale, t[1], scale, t[3]] });
