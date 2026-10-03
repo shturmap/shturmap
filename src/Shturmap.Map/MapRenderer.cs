@@ -702,6 +702,10 @@ public static partial class MapRenderer
 
     private static SKPoint Screen(Camera camera, MapScene scene, WorldPoint p) => camera.ToScreen(scene.Projection.ToMap(p));
 
+    /// <summary>A minefield from the data is left out over artwork that draws minefields itself; traps always show.</summary>
+    public static bool HazardShown(MapZone zone, MapArtwork? artwork) =>
+        !(zone.Group == MapContentBuilder.MinefieldGroup && artwork is { ShowsMinefields: true });
+
     private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1)
     {
         if (zone.Outline.Count < 3)
@@ -709,7 +713,8 @@ public static partial class MapRenderer
         using var path = Polygon(zone.Outline.Select(p => Screen(camera, scene, p)).ToArray());
         if (zone.Kind == MarkerKind.Hazard)
         {
-            DrawHazard(canvas, path, scene, ui);
+            if (HazardShown(zone, scene.Artwork))
+                DrawHazard(canvas, path, scene, ui);
             return;
         }
         var kept = zone.Group is not null && scene.Kept.Contains(zone.Group);
