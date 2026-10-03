@@ -468,19 +468,24 @@ public sealed partial class MainWindow : Window
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
 
-    /// <summary>The easiest way to get an item, for one line under it ("Prapor LL1 · 18,936 ₽"), or empty.</summary>
-    private static string BestSource(SessionSnapshot s, string itemId) =>
-        s.Data is { } data ? ItemCards.Best(data, s.Sources, itemId)?.Text ?? "" : "";
+    /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
+    /// will do (a weapon class), one of them ("e.g. Mosin rifle (Sniper) · …"); empty if unknown.</summary>
+    private static string BestSource(SessionSnapshot s, RequirementView r) =>
+        s.Data is { } data ? ItemCards.BestOf(data, s.Sources, r.Kind == RequirementKind.Weapon && r.Alternatives is { Count: > 0 } all ? all : [r.ItemId]) : "";
+
+    // A weapon row names its class once the item categories are loaded ("Any sniper rifle"); the rest as given.
+    private static string RowText(SessionSnapshot s, RequirementView r) =>
+        r.Kind == RequirementKind.Weapon && r.Alternatives is { Count: > 1 } all && s.Data is { } data ? Planning.WeaponText(data, s.Sources, all) : r.Text;
 
     private static string GlyphOf(RequirementKind kind) => kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring;
 
     /// <summary>A BRING row: the item, what it is for and for which quests, and where to get it.</summary>
     private static RequirementLine BringLine(SessionSnapshot s, RequirementView r) =>
-        new(GlyphOf(r.Kind), r.Text, r.Why, r.ItemId, r.QuestIds, BestSource(s, r.ItemId));
+        new(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, BestSource(s, r));
 
     /// <summary>A tiny cell for an item; its tooltip says what it is, what for, and where to get it.</summary>
     private static NeedChip Chip(SessionSnapshot s, RequirementView r) =>
-        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { r.Text, r.Why, BestSource(s, r.ItemId) }.Where(t => t.Length > 0)));
+        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, BestSource(s, r) }.Where(t => t.Length > 0)));
 
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
     private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>

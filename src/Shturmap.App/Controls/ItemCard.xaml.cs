@@ -48,11 +48,12 @@ public sealed partial class ItemCard : UserControl, ICard
 
     public Visibility Hidden(int count) => count > 0 ? Visibility.Collapsed : Visibility.Visible;
 
-    /// <summary>Segoe Fluent Icons for sources without a trader: craft (wrench), flea (shop), loose (pin).</summary>
+    /// <summary>Segoe Fluent Icons for sources without a trader: craft (wrench), flea market (price tag; the shopping bag
+    /// is the Find-in-raid quest type, owner 2026-10-03), loose (pin on a surface).</summary>
     public static string SourceGlyph(SourceKind kind) => char.ConvertFromUtf32(kind switch
     {
         SourceKind.Craft => 0xE90F,
-        SourceKind.Flea => 0xE719,
+        SourceKind.Flea => 0xE8EC,
         SourceKind.Loose => 0xE707,
         _ => 0xE77B,
     });

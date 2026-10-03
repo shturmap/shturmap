@@ -121,7 +121,7 @@ public sealed class GameDataLoader(CachedHttp http)
     }
 
     /// <summary>
-    /// An objective's targets, exit statuses and set kill conditions, read as it arrived (before translation), or null
+    /// An objective's targets, exit statuses, exit and set kill conditions, read as it arrived (before translation), or null
     /// when it has none. A kill condition counts as set when it narrows the kill: a weapon or weapon mods, body
     /// parts, a distance above 0 (tarkov.dev writes <c>{"value":0,"compareMethod":"&gt;="}</c>, or null, for none),
     /// gear worn or not worn, a time of day (both hours 0 for none), a health effect on the player or the enemy, or
@@ -136,6 +136,8 @@ public sealed class GameDataLoader(CachedHttp http)
 
         var targets = Strings(objective["targetNames"]);
         var status = Strings(objective["exitStatus"]);
+        var exit = objective["type"]?.GetValue<string>() == "extract" && objective["exitName"] is JsonValue e && e.TryGetValue<string>(out var name)
+                   && name.Length > 0 ? name : null;
         var conditions = new List<string>();
         if (objective["type"]?.GetValue<string>() == "shoot")
         {
@@ -160,7 +162,7 @@ public sealed class GameDataLoader(CachedHttp http)
             if (Listed(objective["zones"]))
                 conditions.Add("zone");
         }
-        return targets.Count + status.Count + conditions.Count > 0 ? new ObjectiveFacts(targets, status, conditions) : null;
+        return targets.Count + status.Count + conditions.Count > 0 || exit is not null ? new ObjectiveFacts(targets, status, conditions, exit) : null;
     }
 
     /// <summary>

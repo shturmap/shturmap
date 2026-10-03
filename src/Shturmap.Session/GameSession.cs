@@ -830,7 +830,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
                     string.IsNullOrWhiteSpace(o.Objective.Description) ? "(no description)" : o.Objective.Description!,
                     o.Done, o.Places.Count > 0, distance, direction, height,
-                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
+                    QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
                     bearing, o.Quest.Trader));
             }
             var shownMap = _data.Maps.GetValueOrDefault(_map.Id);

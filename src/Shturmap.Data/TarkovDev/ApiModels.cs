@@ -71,7 +71,10 @@ public sealed record ApiMap(
 public sealed record ApiTraderOffer(string Trader, double Price, string? Currency, double? PriceRUB, int MinTraderLevel, string? TaskUnlock);
 
 /// <param name="Types">Includes "noFlea" for items that can't be sold on the flea market.</param>
-public sealed record ApiItem(string Id, List<string>? Types, int? MinLevelForFlea, double? LastLowPrice, List<ApiTraderOffer>? BuyFromTrader);
+/// <param name="Categories">The game's item categories, most specific first ("Sniper rifle", then "Weapon", then
+/// "Item"), as ids; their names are item-name entries (<see cref="GameData.ItemName"/>).</param>
+public sealed record ApiItem(string Id, List<string>? Types, int? MinLevelForFlea, double? LastLowPrice, List<ApiTraderOffer>? BuyFromTrader,
+    List<string>? Categories = null);
 
 public sealed record ApiCount(string Item, double Count);
 
@@ -98,6 +101,11 @@ public sealed record ApiPossibleLocation(string? Map, List<ApiPosition>? Positio
 /// <param name="UseAny">Items a "useItem" objective accepts, e.g. signal flares.</param>
 /// <param name="RequiredKeys">Ways in: each inner list is a set of alternative keys.</param>
 /// <param name="Wearing">Gear to wear for a kill objective: each inner list is a set worn together; any set will do.</param>
+/// <param name="UsingWeapon">Weapons a kill objective accepts: any one of them will do (a class, such as every
+/// bolt-action rifle, arrives as all its members).</param>
+/// <param name="UsingWeaponMods">Mods a kill objective's weapon must carry: each inner list is a set fitted together;
+/// any set will do.</param>
+/// <param name="NotWearing">Gear a kill objective forbids (body armor, helmets): none of it may be worn.</param>
 public sealed record ApiObjective(
     string Id,
     string? Type,
@@ -113,7 +121,10 @@ public sealed record ApiObjective(
     List<string>? UseAny,
     List<List<string>>? RequiredKeys,
     bool FoundInRaid,
-    List<List<ApiItemRef>>? Wearing = null);
+    List<List<ApiItemRef>>? Wearing = null,
+    List<string>? UsingWeapon = null,
+    List<List<string>>? UsingWeaponMods = null,
+    List<ApiItemRef>? NotWearing = null);
 
 /// <summary>
 /// What an objective asks, in the game's own keys rather than words: tarkov.dev translates these fields, so the
@@ -123,7 +134,10 @@ public sealed record ApiObjective(
 /// <param name="ExitStatus">An extract objective's accepted exit statuses: "ExpBonusSurvived", "marathon Name", …</param>
 /// <param name="Conditions">A kill objective's conditions that are set, by name: "weapon", "distance", "zone", …
 /// (see <see cref="GameDataLoader"/>).</param>
-public sealed record ObjectiveFacts(IReadOnlyList<string> Targets, IReadOnlyList<string> ExitStatus, IReadOnlyList<string> Conditions);
+/// <param name="Exit">An extract objective's exit as the game's internal name ("E9_sniper" for Klimov Street (Flare)),
+/// the same name the map's extracts carry (<see cref="GameData.ExtractKeys"/>); null when it names none.</param>
+public sealed record ObjectiveFacts(IReadOnlyList<string> Targets, IReadOnlyList<string> ExitStatus, IReadOnlyList<string> Conditions,
+    string? Exit = null);
 
 /// <summary>An item named in an objective's conditions.</summary>
 public sealed record ApiItemRef(string Id, string? Name);

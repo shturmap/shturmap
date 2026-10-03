@@ -7,8 +7,12 @@ namespace Shturmap.Session;
 
 /// <summary>Something a raid needs, ready to show: "Dorm room 114 key", "MS2000 Marker ×3", for which quests.</summary>
 /// <param name="ItemId">The item to picture (the first of the alternatives).</param>
-/// <param name="Why">What it is for, then for which quests: "to mark, for Revision", "key for Ballet Lover".</param>
-public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "");
+/// <param name="Why">What it is for, then for which quests: "to mark, for Revision", "key for Ballet Lover",
+/// "to use, for Wet Job", "to leave through Klimov Street (Flare), for Cease Fire!".</param>
+/// <param name="Alternatives">Every item that will do (a weapon class's members), for naming the class once the item
+/// categories are loaded (<see cref="Planning.WeaponText"/>).</param>
+public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "",
+    IReadOnlyList<string>? Alternatives = null);
 
 /// <param name="Synopsis">What it asks on the plan's map in a few words (<see cref="Planning.Synopsis"/>), or empty.</param>
 /// <param name="Group">Its effort group on the plan's map (<see cref="QuestEffort"/>).</param>
@@ -65,15 +69,19 @@ public static class Planning
         return new(
             task.Id,
             task.Name,
-            (task.Objectives ?? []).Select(o => ToPlan(o, data?.ObjectiveFacts.GetValueOrDefault(o.Id))).ToList(),
+            (task.Objectives ?? []).Select(o => ToPlan(o, data?.ObjectiveFacts.GetValueOrDefault(o.Id), data)).ToList(),
             (task.NeededKeys ?? []).Where(k => k.Map is not null)
                 .GroupBy(k => k.Map!)
                 .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.SelectMany(k => k.Keys ?? []).Distinct().ToList()),
             traderOrder);
     }
 
-    private static PlanObjective ToPlan(ApiObjective o, ObjectiveFacts? facts = null)
+    private static PlanObjective ToPlan(ApiObjective o, ObjectiveFacts? facts = null, GameData? data = null)
     {
+        // The exit an extract objective names, and what leaving there takes (owner, 2026-10-03: Cease Fire! didn't say
+        // a flare was needed). The objective names the exit by the game's internal name; so do the map's extracts.
+        var exit = data is not null && facts?.Exit is { } exitKey ? ExitOf(data, o, exitKey) : null;
+        IReadOnlyList<(string ItemId, int Count)> exitItems = exit is null || data is null ? [] : ExtractRules.Items(data, exit);
         var kind = QuestTaxonomy.Classify(o.Type);
         var places = new Dictionary<string, List<WorldPoint>>(StringComparer.Ordinal);
         foreach (var zone in o.Zones ?? [])
@@ -107,8 +115,111 @@ public static class Planning
             facts?.Targets ?? [],
             facts?.ExitStatus ?? [],
             facts?.Conditions ?? [],
-            o.FoundInRaid);
+            o.FoundInRaid,
+            (o.UsingWeapon ?? []).Distinct().ToList(),
+            (o.UsingWeaponMods ?? []).Where(set => set.Count > 0).Select(set => (IReadOnlyList<string>)set.Distinct().ToList()).ToList(),
+            (o.NotWearing ?? []).Select(i => i.Id).Distinct().ToList(),
+            exitItems.Count > 0 ? exit!.Name ?? facts!.Exit : null,
+            exitItems);
     }
+
+    // The extract an objective's exit name stands for: on the objective's own maps first, then on any map.
+    private static ApiExtract? ExitOf(GameData data, ApiObjective o, string exitKey)
+    {
+        var maps = (o.Maps ?? []).Select(id => data.Maps.GetValueOrDefault(id)).OfType<ApiMap>().Concat(data.Maps.Values);
+        return maps.SelectMany(m => m.Extracts ?? [])
+            .FirstOrDefault(e => string.Equals(data.ExtractKeys.GetValueOrDefault(e.Id), exitKey, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A kill objective's weapons, in as few words as the data allows (owner, 2026-10-03: what to bring for a quest must
+    /// be clear). tarkov.dev arrives with a class as all its members, so the weapons are grouped by their item category,
+    /// biggest group first, and said in at most three parts:
+    /// <list type="bullet">
+    /// <item>a group that is most of its category, or too many weapons to name (more than ten), by its category: "Any
+    /// sniper rifle", "Shotgun (13 of 16 kinds)", "Assault rifle (15 of 53 kinds)"; the rest weapon by weapon: "Any
+    /// sniper rifle or MP-18 7.62x54R single-shot rifle";</item>
+    /// <item>if that takes more than three parts and the weapons span several categories, every group of two or more by
+    /// its category: "Any handgun or revolver (3 of 5 kinds)";</item>
+    /// <item>otherwise, and for a few weapons of one category, the weapons themselves, so there is a gun to name:
+    /// "AK-12 assault rifle", "Colt M4A1 or 5 others".</item>
+    /// </list>
+    /// "Any" only when the list is the whole category; a count says how many kinds of it will do. Without the item
+    /// categories (they load after the rest), the list form.
+    /// </summary>
+    public static string WeaponText(GameData data, ItemSources? sources, IReadOnlyList<string> weapons)
+    {
+        var distinct = weapons.Distinct().ToList();
+        if (distinct.Count > 2 && sources is not null && ClassText(data, sources, distinct) is { } named)
+            return named;
+        var names = distinct.Select(data.ItemName).Distinct().ToList();
+        return names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+    }
+
+    // A group is named by its category when it holds at least three quarters of the category's members, or when it has
+    // more weapons than are worth naming one by one.
+    private const double ClassShare = 0.75;
+    private const int MostNamed = 10;
+    private const int MostParts = 3;
+
+    private static string? ClassText(GameData data, ItemSources sources, List<string> weapons)
+    {
+        var groups = weapons.GroupBy(id => sources.Items.GetValueOrDefault(id)?.Categories?.FirstOrDefault())
+            .OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.Ordinal)
+            .Select(g => (Category: g.Key, Weapons: g.ToList(), Members: g.Key is null ? 0 : sources.Members[g.Key].Count()))
+            .ToList();
+
+        // Read in this order: whole categories ("any handgun"), then parts of one ("revolver (3 of 5 kinds)"), then
+        // single weapons; within each, the bigger group first.
+        string? Parts(Func<int, int, bool> byCategory)
+        {
+            var whole = new List<string>();
+            var some = new List<string>();
+            var single = new List<string>();
+            foreach (var (category, list, members) in groups)
+            {
+                if (category is not null && list.Count >= 2 && byCategory(list.Count, members))
+                {
+                    var name = Lower(data.ItemName(category));
+                    if (list.Count >= members)
+                        whole.Add($"any {name}");
+                    else
+                        some.Add($"{name} ({list.Count} of {members} kinds)");
+                }
+                else
+                {
+                    single.AddRange(list.Select(data.ItemName));
+                }
+                if (whole.Count + some.Count + single.Count > MostParts)
+                    return null;
+            }
+            return whole.Count + some.Count > 0 ? Capital(string.Join(" or ", whole.Concat(some).Concat(single))) : null;
+        }
+
+        return Parts((count, members) => count >= ClassShare * members || count > MostNamed)
+               ?? (groups.Count > 1 ? Parts((_, _) => true) : null);
+    }
+
+    /// <summary>
+    /// The gear a kill objective forbids, short: the item categories it falls in when the categories are loaded
+    /// ("armor, headwear"), else "6B43 Zabralo-Sh body armor (EMR) / 54 others".
+    /// </summary>
+    public static string WithoutText(GameData data, ItemSources? sources, IReadOnlyList<string> items)
+    {
+        if (sources is not null)
+        {
+            var kinds = items.Select(id => sources.Items.GetValueOrDefault(id)?.Categories?.FirstOrDefault())
+                .OfType<string>().Distinct().Select(c => Lower(data.ItemName(c))).ToList();
+            if (kinds.Count is > 0 and <= 3)
+                return string.Join(", ", kinds);
+        }
+        return GearText(data, items);
+    }
+
+    // "Sniper rifle" → "sniper rifle"; a name that is all capitals ("SMG") stays as it is.
+    private static string Lower(string name) => name.Length > 1 && char.IsLower(name[1]) ? char.ToLowerInvariant(name[0]) + name[1..] : name;
+
+    private static string Capital(string name) => name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
 
     /// <summary>
     /// Gear for a wear condition, short: "Bomber beanie / RayBench Hipster Reserve sunglasses", or "PACA Soft Armor /
@@ -121,11 +232,21 @@ public static class Planning
         return names.Count <= 2 ? string.Join(" / ", names) : $"{names[0]} / {names.Count - 1} others";
     }
 
-    /// <summary>What an item is brought for, from the objectives that use it: "to plant", "to mark", "to use".</summary>
+    /// <summary>What an item is brought for, from the objectives that use it: "to plant", "to mark", "to use", "to fit",
+    /// "to wear", "to leave through Klimov Street (Flare)".</summary>
     private static string Purpose(GameData data, Requirement r)
     {
-        if (r.Kind == RequirementKind.Wear)
-            return "to wear";
+        switch (r.Kind)
+        {
+            case RequirementKind.Wear:
+                return "to wear";
+            case RequirementKind.Weapon:
+                return "to use";
+            case RequirementKind.WeaponMods:
+                return "to fit";
+            case RequirementKind.Exit:
+                return "to leave through " + r.Exit;
+        }
         var item = r.Alternatives[0];
         var uses = r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>()
             .SelectMany(t => t.Objectives ?? [])
@@ -213,24 +334,31 @@ public static class Planning
     private static PlanQuestView QuestView(GameData data, PlanQuest q) =>
         new(q.Id, q.Name, QuestTaxonomy.QuestKind(q.Objectives.Select(o => o.Kind)), data.Tasks.GetValueOrDefault(q.Id)?.Trader);
 
-    public static RequirementView RequirementText(GameData data, Requirement r)
+    /// <param name="sources">The item categories, to name a weapon class (<see cref="WeaponText"/>); may be null.</param>
+    public static RequirementView RequirementText(GameData data, Requirement r, ItemSources? sources = null)
     {
         var names = r.Alternatives.Select(data.ItemName).Distinct().ToList();
-        var text = r.Kind == RequirementKind.Wear ? GearText(data, r.Alternatives)
-            : names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+        var text = r.Kind switch
+        {
+            RequirementKind.Wear or RequirementKind.WeaponMods => GearText(data, r.Alternatives),
+            RequirementKind.Weapon => WeaponText(data, sources, r.Alternatives),
+            _ => names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others",
+        };
         if (r.Count > 1)
-            text += $" ×{r.Count}";
+            text += " ×" + r.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture);
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
         // Says why it is on the list (the study log: gear cards were opened over and over to find out).
         var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : $"{Purpose(data, r)}, for {quests}";
-        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why);
+        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList());
     }
 
-    /// <summary>"Key: X · Bring: Y" for one objective on one map, or null if it needs nothing.</summary>
+    /// <summary>"Key: X · Bring: Y · Use: Z · Without: armor" for one objective on one map, or null if it needs nothing.</summary>
     /// <param name="hasPlace">Quest-level keys are shown only on objectives with a place, where the key is used.</param>
-    public static string? Needs(GameData data, ApiTask task, ApiObjective objective, IReadOnlySet<string> mapIds, bool hasPlace)
+    /// <param name="sources">The item categories, to name a weapon class and forbidden gear; may be null.</param>
+    public static string? Needs(GameData data, ApiTask task, ApiObjective objective, IReadOnlySet<string> mapIds, bool hasPlace,
+        ItemSources? sources = null)
     {
-        var plan = ToPlan(objective);
+        var plan = ToPlan(objective, data.ObjectiveFacts.GetValueOrDefault(objective.Id), data);
         var parts = new List<string>();
         var keys = plan.Keys.Select(k => string.Join(" or ", k.Select(data.ItemName))).ToList();
         if (hasPlace)
@@ -244,6 +372,15 @@ public static class Planning
             parts.Add("Bring: " + string.Join(", ", plan.Bring.Select(b => data.ItemName(b.ItemId) + (b.Count > 1 ? $" ×{b.Count}" : ""))));
         if (plan.Wear is { Count: > 0 } wear)
             parts.Add("Wear: " + GearText(data, wear.SelectMany(s => s)));
+        if (plan.Weapons is { Count: > 0 } weapons)
+            parts.Add("Use: " + WeaponText(data, sources, weapons));
+        if (plan.Mods is { Count: > 0 } mods)
+            parts.Add("Fit: " + GearText(data, mods.SelectMany(s => s).Distinct()));
+        if (plan.ExitItems is { Count: > 0 } exitItems)
+            parts.Add("Bring: " + string.Join(", ", exitItems.Select(b => data.ItemName(b.ItemId) + (b.Count > 1 ? " ×" + b.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture) : ""))));
+        // Gear the kills forbid isn't something to bring: it is said here, on the objective, only (owner, 2026-10-03).
+        if (plan.NotWearing is { Count: > 0 } without)
+            parts.Add("Without: " + WithoutText(data, sources, without));
         return parts.Count > 0 ? string.Join(" · ", parts) : null;
     }
 }
