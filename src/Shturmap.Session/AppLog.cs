@@ -50,6 +50,10 @@ public static class AppLog
 
     /// <summary>The last lines of today's log, for the diagnostics.</summary>
     public static IReadOnlyList<string> Tail(int count) => _file?.Tail(DateTime.Now, count) ?? [];
+
+    /// <summary>The last lines written from <paramref name="from"/> until before <paramref name="to"/>, across days:
+    /// what a session that ended unexpectedly wrote last.</summary>
+    public static IReadOnlyList<string> TailBetween(DateTime from, DateTime to, int count) => _file?.TailBetween(from, to, count) ?? [];
 }
 
 /// <summary>The app log's files: masking, the daily cap and retention (<see cref="AppLog"/>).</summary>
@@ -155,6 +159,45 @@ public sealed class LogFile(string folder, string? profile, long capBytes = LogF
                 return [];
             }
         }
+    }
+
+    /// <summary>
+    /// The last lines with a time from <paramref name="from"/> until before <paramref name="to"/>, across the days in
+    /// between; a line without a time (an exception's stack) goes with the line before it.
+    /// </summary>
+    public IReadOnlyList<string> TailBetween(DateTime from, DateTime to, int count)
+    {
+        var lines = new Queue<string>();
+        lock (_gate)
+        {
+            for (var day = from.Date; day <= to.Date; day = day.AddDays(1))
+            {
+                try
+                {
+                    var path = PathFor(day);
+                    if (!File.Exists(path))
+                        continue;
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var reader = new StreamReader(stream);
+                    var keep = false;
+                    while (reader.ReadLine() is { } line)
+                    {
+                        if (line.Length >= 23 && DateTime.TryParseExact(line[..23], "yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture,
+                                DateTimeStyles.None, out var at))
+                            keep = at >= from && at < to;
+                        if (!keep)
+                            continue;
+                        lines.Enqueue(Mask(line, _profile));
+                        if (lines.Count > count)
+                            lines.Dequeue();
+                    }
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                }
+            }
+        }
+        return lines.ToList();
     }
 
     /// <summary>

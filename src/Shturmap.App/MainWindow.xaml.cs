@@ -127,7 +127,7 @@ public sealed partial class MainWindow : Window
             Volatile.Write(ref _snapshot, s);
             DispatcherQueue.TryEnqueue(() => Apply(s));
         };
-        session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration));
+        session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration, notice.OffersReport));
         session.Cue += cue => DispatcherQueue.TryEnqueue(() => ShowCue(cue));
     }
 
@@ -1221,11 +1221,12 @@ public sealed partial class MainWindow : Window
         _cueTimer.Start();
     }
 
-    private void ShowNotice(string message, TimeSpan? duration = null)
+    private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false)
     {
         if (DemoQuiet)
             return;
         ViewModel.NoticeText = message;
+        ViewModel.NoticeOffersReport = offersReport;
         ViewModel.NoticeOpen = true;
         _noticeTimer.Stop();
         _noticeTimer.Interval = duration ?? TimeSpan.FromSeconds(6);
@@ -1287,6 +1288,7 @@ public sealed partial class MainWindow : Window
     private void OnHelpOpened(object sender, object e)
     {
         _helpOpenedAt = DateTime.Now;
+        LoadCrashMode();
         Study.Ui("help.open");
     }
 
@@ -1333,6 +1335,16 @@ public sealed partial class MainWindow : Window
             var accelerator = new KeyboardAccelerator { Key = key };
             accelerator.Invoked += (_, e) =>
             {
+                // In the Report dialog keys are text, and Esc closes the dialog.
+                if (ReportOpen)
+                {
+                    if (key == Windows.System.VirtualKey.Escape)
+                    {
+                        CloseReport("esc");
+                        e.Handled = true;
+                    }
+                    return;
+                }
                 Study.Ui("key", ("key", key.ToString()));
                 action();
                 e.Handled = true;
@@ -1359,7 +1371,7 @@ public sealed partial class MainWindow : Window
         Add(Windows.System.VirtualKey.F1, ShowHelp);
         root.CharacterReceived += (_, e) =>
         {
-            if (e.Character == '?')
+            if (e.Character == '?' && !ReportOpen)
             {
                 ShowHelp();
                 e.Handled = true;

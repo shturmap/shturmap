@@ -37,6 +37,15 @@
 
   <ItemGroup>
     <Content Include="Assets\Shturmap.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- The privacy notice for reports, opened from help and the Report dialog (PRIVACY ↗). -->
+    <Content Include="..\..\PRIVACY.md" Link="privacy.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Where reports go: the Sentry DSN, given by eng\release.ps1 (and eng\publish.ps1) from the untracked
+       eng\sentry.dsn or SHTURMAP_SENTRY_DSN. Never in the repository; without it the build can't send reports
+       (docs/DESIGN.md §8, "Reports"). -->
+  <ItemGroup Condition="'$(SentryDsn)' != ''">
+    <AssemblyMetadata Include="SentryDsn" Value="$(SentryDsn)" />
   </ItemGroup>
 
   <!-- Keep the published folder lean. -->

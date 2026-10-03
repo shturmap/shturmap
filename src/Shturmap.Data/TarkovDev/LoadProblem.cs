@@ -34,8 +34,8 @@ public enum LoadFailure
 /// </summary>
 public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, string Advice)
 {
-    /// <summary>Points the player to the help panel's diagnostics, for problems only a report can fix.</summary>
-    public const string Report = "Please report it: Copy diagnostics in help (?).";
+    /// <summary>Asks for a report, for problems only a report can fix; the notice offers the Report dialog.</summary>
+    public const string Report = "Please report it.";
 
     /// <summary>Worth trying again by itself: the connection or tarkov.dev may be back in a while.</summary>
     public bool Transient => Kind is LoadFailure.Unreachable or LoadFailure.TimedOut or LoadFailure.ServerBusy;

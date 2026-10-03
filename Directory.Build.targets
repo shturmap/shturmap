@@ -1,0 +1,7 @@
+<Project>
+  <!-- The Sentry package writes the build machine's project folder into every assembly that references it
+       (AssemblyMetadata "Sentry.ProjectDirectory", for its source-context feature). That folder holds the developer's
+       Windows user name, and Shturmap sends no source context, so the target is replaced by an empty one
+       (2026-10-03; docs/DESIGN.md §8, "Reports"). -->
+  <Target Name="WriteSentryAttributes" />
+</Project>

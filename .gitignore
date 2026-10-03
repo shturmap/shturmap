@@ -10,3 +10,6 @@ publish/
 .local/
 # The owner's own Tasks-screen screenshots from the removed OCR feature (docs/DESIGN.md §3); never commit them
 tests/fixtures/ocr/
+
+# The Sentry DSN reports go to (eng\release.ps1 reads it); never commit it
+eng/sentry.dsn

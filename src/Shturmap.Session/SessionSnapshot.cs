@@ -11,7 +11,8 @@ using Shturmap.Map;
 namespace Shturmap.Session;
 
 /// <summary>A one-line message for the user and how long it stays.</summary>
-public sealed record SessionNotice(string Text, TimeSpan Duration);
+/// <param name="OffersReport">The notice asks the player to report it: the UI offers the Report dialog (docs/DESIGN.md §8, "Reports").</param>
+public sealed record SessionNotice(string Text, TimeSpan Duration, bool OffersReport = false);
 
 public enum CueKind
 {

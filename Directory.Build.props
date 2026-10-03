@@ -10,5 +10,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Windows APIs (OCR, file system, registry) need a Windows TFM; keep one value for every Windows-specific project. -->
     <ShturmapWindowsTfm>net10.0-windows10.0.22621.0</ShturmapWindowsTfm>
+    <!-- Sentry's native crash handler is for Native AOT builds; Shturmap only uses the package's event types. -->
+    <SentryNative>false</SentryNative>
   </PropertyGroup>
 </Project>

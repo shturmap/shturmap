@@ -306,7 +306,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                 else
                 {
                     AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}", e);
-                    Say(DataNotice(problem), 30);
+                    Say(DataNotice(problem), 30, offersReport: problem.Transient || problem.Advice == LoadProblem.Report);
                 }
                 Publish();
             }
@@ -338,7 +338,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
 
     /// <summary>What the player is told when the data didn't load: what failed, what to do, and where to report it.</summary>
     public static string DataNotice(LoadProblem problem) => problem.Transient
-        ? $"No game data. {problem.Text} Shturmap tries again every {DataRetry.TotalMinutes:0} minutes; if it keeps failing, report it with Copy diagnostics in help (?)."
+        ? $"No game data. {problem.Text} Shturmap tries again every {DataRetry.TotalMinutes:0} minutes; if it keeps failing, please report it."
         : $"No game data. {problem.Text}";
 
     private static string LanguageName(string code)
@@ -373,7 +373,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             AppLog.Warn(line);
 
         if (found.Install is null)
-            Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it: Copy diagnostics in help (?).", 30);
+            Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it.", 30, offersReport: true);
         else if (found.LogsFolder is null)
             Say("Found the game, but not its Logs folder, so quests and raids won't follow the game until it has run once.", 30);
     }
@@ -785,10 +785,10 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
         Cue?.Invoke(cue);
     }
 
-    private void Say(string message, double seconds = 6)
+    private void Say(string message, double seconds = 6, bool offersReport = false)
     {
         Study.Game("notice", ("text", message));
-        Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds)));
+        Notice?.Invoke(new SessionNotice(message, TimeSpan.FromSeconds(seconds), offersReport));
     }
 
     private void Publish()

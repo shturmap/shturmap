@@ -33,6 +33,10 @@ registers global hotkeys, captures the screen, draws over the game, edits game f
 launcher settings). `SafetyTests` fails the test run if forbidden APIs appear in `src/`. Keyboard shortcuts work
 only while Shturmap's own window has focus.
 
+Over the network it downloads public data and art (tarkov.dev, the map artwork), and nothing about the player
+leaves the PC unless the player sends a report or allows crash reports (§8, "Reports"). `SafetyTests` fails if the
+code names any other address, or if anything but the reporting code uses Sentry.
+
 BSG's licence agreement (4.3.4, 2018 text), read literally, covers all companion tools; the owner accepted that
 residual risk. Do not widen the boundary.
 
@@ -290,9 +294,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
-  "Map drawing", "Legend"), what Shturmap reads and that it sends nothing, the "Keep a study log" switch, and the
-  links COPY DIAGNOSTICS, LOG FOLDER and LICENCES (§8, "Study log", "Diagnostics"). Opens once by itself on first
-  run.
+  "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
+  crash reports, the "Keep a study log" switch, the "Crash reports" choice (ASK AFTER A CRASH · ALWAYS SEND ·
+  NEVER) with what a crash report holds, and the links REPORT A PROBLEM OR IDEA and COPY DIAGNOSTICS, then LOG
+  FOLDER, PRIVACY and LICENCES (§8, "Study log", "Diagnostics", "Reports"). Opens once by itself on first run.
+- **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
+  an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
+  CANCEL and SEND.
+- **After a crash**: one question under the notices, until answered: SEND · DON'T SEND · ALWAYS SEND · WHAT'S SENT;
+  closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog.
 
 ### Map drawing
 
@@ -585,7 +595,10 @@ Rules:
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs, and writes what Copy
   diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render`; never capture the user's screens.
-  `--verbose` adds the app log's DEBUG lines; `--study` keeps a study log for one session. For website media, `tools\fake-raid.ps1 -Window
+  `--verbose` adds the app log's DEBUG lines; `--study` keeps a study log for one session; `--show-report` opens
+  the Report dialog with an example and what's sent, `--show-crash` the question after a crash (for snapshots;
+  snapshots send nothing); `--send-report <text> <folder>` sends one real report through the dialog's Send and
+  saves the window (a release's delivery check, §8 "Reports"). For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
   (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
@@ -723,25 +736,81 @@ and nothing more is written until the next day. Seven days kept; the old `spotte
 **Error messages** (owner, 2026-10-03). What the player sees says what failed in plain words, with the status where
 there is one, and what to do; the exception goes to the app log only. Data (`LoadProblem`): "Couldn't reach
 tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tarkov.dev didn't answer in time…";
-"tarkov.dev answered 503. It is busy or down for a moment…"; "tarkov.dev answered 404. Please report it: Copy
-diagnostics in help (?)."; "tarkov.dev's data has changed in a way Shturmap can't read. Please report it…";
+"tarkov.dev answered 503. It is busy or down for a moment…"; "tarkov.dev answered 404. Please report it.";
+"tarkov.dev's data has changed in a way Shturmap can't read. Please report it.";
 "Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.", the DATA chip
 says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or 429) is
-tried again every 2 minutes, said once; the notice adds where to report it if it keeps failing. With a saved copy
+tried again every 2 minutes, said once; the notice asks to report it if it keeps failing. A notice that asks for
+a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
 German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
 that quests and raids won't follow the game, and why. A map's artwork that doesn't download: "No map artwork for
 Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map.
 
-**Diagnostics** (owner, 2026-10-03). Help ends with three quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
-`%LOCALAPPDATA%\Shturmap\logs`) and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
+**Diagnostics** (owner, 2026-10-03). Help ends with quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
+`%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
 "Diagnostics copied: paste them into your message.": Shturmap's version with commit and whether it is the single
 exe; Windows' version and build; the install type (Steam, BSG launcher, manual) and whether the game, logs and
 screenshots folders were found; mode; the game's language and tarkov.dev's; the data's state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; the study log
 on or off; and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
-cut to `<id>`, and no quest names or lists go along. Nothing is sent: the player pastes it into a report and can
-read it first. Where to report comes with the production release (docs/NEXT.md).
+cut to `<id>`, and no quest names or lists go along (`Redact`). Copying sends nothing; a report carries the same
+text when the player keeps "Include diagnostics", shown first.
+
+**Reports** (owner, 2026-10-03: "as easy as possible … one coherent easy to use thing, otherwise people won't
+bother", and crash reports as a mode the player chooses; Sentry, EU region; crash reports "Ask after a crash" by
+default). One way to report, from the app, with no account and no browser: no GitHub issue forms, no separate web
+form. Problems and ideas both go through it.
+
+- **The Report dialog.** REPORT A PROBLEM OR IDEA in help, the REPORT link on notices that ask for a report, and
+  ADD A NOTE after a crash report was sent all open it. PROBLEM | IDEA (the placeholder follows: "What happened,
+  and what did you expect?" / "What would help, and when would you use it?"), the text (required, at most 4,000
+  characters), a contact for a reply (optional, e.g. a Discord name or an email, at most 120), "Include
+  diagnostics" (on; SHOW WHAT'S SENT shows exactly what goes: kind, text, contact, version and Windows, and the
+  diagnostics as attached), one line on where it goes with a Privacy link, CANCEL and SEND. Cancel keeps the text
+  for the session; Esc closes it; the map's keys don't fire while it is open. After Send it says "Sent. Thank you.
+  Report 3f2a91c0." (the id the player can quote), or that it couldn't go now and is kept to go by itself at the
+  next start, or that it was refused and is kept on the PC. It never loses the text: a report is written to
+  `%LOCALAPPDATA%\Shturmap\outbox` before it is sent and deleted once it has gone; the outbox is tried again at
+  each start; a refused one is kept as `.refused.txt` and not tried again.
+- **Crash reports.** Unhandled exceptions (the UI's, a background thread's) and unobserved task exceptions are
+  written on the PC at once as crash records in `%LOCALAPPDATA%\Shturmap\crashes` (JSON, masked): the exception
+  chain (outermost first, five at most) with each frame's module, method, file name (never its folder) and line;
+  version, build kind, Windows; the last 50 app-log lines. The same exception is written once; errors the app
+  survives at most three times a session, the same one once. A native crash (Skia, ANGLE) or a kill leaves no
+  exception: each running Shturmap holds `crashes\running-<session>.json` open and a clean end deletes it; at the
+  next start a marker no Shturmap holds, from a session that left no record and from after Windows last started
+  (before that it was a shutdown), becomes a "closed unexpectedly" record with that session's last log lines. The
+  next start then does what "Crash reports" says (`crashReports` in `shturmap.db`): **Ask** (default) shows the one
+  question ("Shturmap closed unexpectedly last time. Send a crash report? It helps to fix it."; for errors it
+  survived, "ran into an error"), with SEND, DON'T SEND, ALWAYS SEND (sends and switches the setting) and WHAT'S
+  SENT (the records as text, exactly what goes); closing it asks again next time. **Always send** sends at the
+  start and logs it. **Never** keeps them on the PC only. A record the player said Send to that couldn't go yet is
+  sent at the next start without asking again; a sent one is deleted; records are kept 30 days, twenty at most.
+  Never sent: memory dumps, screenshots, game files, ids, quest lists.
+- **How it goes out.** Sentry (Functional Software, Inc.), EU data region. Only the SDK's event types and envelope
+  format are used: `ReportEnvelopes` builds the envelope from what the player saw and `ReportSender` posts it, so
+  nothing is added on the way (no machine name, installation id, IP, breadcrumbs, sessions or tracing) and the
+  SDK's automatic client, which would capture on its own, is never created (`SafetyTests`). A problem or idea is
+  Sentry user feedback (contact as email or name) with the diagnostics attached as `diagnostics.txt`; a crash is an
+  event with the exception chain and frames (cause first, caller first, so Sentry groups the same crash; an
+  unexpected exit is one group) and `log.txt` attached. Tags: kind (problem, idea, crash), report id, build kind,
+  source; release `shturmap@<version>`; the time it happened as an extra. The Sentry package also writes the build
+  folder into referencing assemblies (`Sentry.ProjectDirectory`), which holds the developer's user name;
+  `Directory.Build.targets` turns that off, and `SentryNative` is off.
+- **Where to.** The DSN is not in the repository: `eng\release.ps1` and `eng\publish.ps1` pass it from the untracked
+  `eng\sentry.dsn` (gitignored) or `SHTURMAP_SENTRY_DSN` as an assembly attribute. Only `https://…sentry.io` is
+  accepted (or this PC over http, for tests). A build without one (developer builds, forks) shows the Report link
+  greyed with "Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you
+  Shturmap."; notices then link COPY DIAGNOSTICS. Snapshot, fake-game and demo runs never send anything.
+- **Said honestly.** Help, the README and THIRD-PARTY-NOTICES say "Nothing is sent unless you send a report or
+  allow crash reports". `PRIVACY.md` (bundled as `privacy.txt`, opened by PRIVACY ↗ and the dialog's Privacy link)
+  says what a report and a crash report hold, who receives them, why (consent: Send, or Always send), how long and
+  how to ask for deletion (quote the report id). Its controller and contact are placeholders the owner fills in
+  before the public release (docs/NEXT.md).
+- **Checking a release.** `Shturmap.exe --send-report "<text>" <folder>` sends one real report through the dialog's
+  own Send and saves the window: the dialog must say "Sent. Thank you.". Crash reports are only tested against the
+  local stand-in (`FakeSentry` in the tests), never sent for real.
 
 ## 9. Status
 
@@ -756,4 +825,5 @@ read it first. Where to report comes with the production release (docs/NEXT.md).
   so a search finds the app rather than the Woods boss. The old data folder and database move over on first start.
 - The Lab, Labyrinth and Icebreaker are drawn as sheets (§3, "Maps without artwork"; 2026-10-02).
 - Released as one exe (2026-10-03; §8, "Distribution"): 86 MB to download, about 200 MB unpacked.
+- Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").
 - Open: manual quest editing; objective progress; the unpacked size (budget 80–120 MB, needs trimming).

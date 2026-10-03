@@ -11,6 +11,8 @@ if ($running) {
   Write-Error "Shturmap is running from $out (process $($running.ProcessId -join ', ')). Close it and publish again."
   exit 1
 }
-& (Join-Path $PSScriptRoot 'dotnet.ps1') publish (Join-Path $root 'src\Shturmap.App\Shturmap.App.csproj') -c Release -o $out -p:PublishReadyToRun=true
+# Reports go where eng\sentry.dsn says, when it is there (eng\sentry-dsn.ps1).
+$dsn = @(& (Join-Path $PSScriptRoot 'sentry-dsn.ps1'))
+& (Join-Path $PSScriptRoot 'dotnet.ps1') publish (Join-Path $root 'src\Shturmap.App\Shturmap.App.csproj') -c Release -o $out -p:PublishReadyToRun=true @dsn
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Output "Published to $out"

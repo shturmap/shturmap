@@ -15,6 +15,10 @@ Essentials:
   (the wrapper finds the per-user .NET 10 SDK). Publish the folder build (`artifacts\Shturmap`, what
   `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. The release to send, one exe plus a zip:
   `.\eng\release.ps1` (DESIGN.md §8, "Distribution").
+- Reports go to Sentry through the DSN in the untracked `eng\sentry.dsn` (gitignored), which `eng\release.ps1` and
+  `eng\publish.ps1` build in. Never commit the DSN or write its value into docs, tests or commit messages; tests use
+  the local `FakeSentry`. Check a release with `Shturmap.exe --send-report "<text>" <folder>` (it must say "Sent.
+  Thank you."); never send a real crash report to test (DESIGN.md §8, "Reports").
 - The CLI (`tools/Shturmap.Cli`) runs every part headless; `simulate` plays a scripted raid against a fake game.
 - After a tarkov.dev or game update, run `shturmap-cli synopses pve` and `shturmap-cli synopses regular` and look at
   the FALLBACK, LONG and BREAK rows: the quest synopses in Plan are made from tarkov.dev's texts by fixed rules

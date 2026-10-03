@@ -11,4 +11,10 @@
     <ProjectReference Include="..\Shturmap.Data\Shturmap.Data.csproj" />
     <ProjectReference Include="..\Shturmap.Map\Shturmap.Map.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Only its event types and envelope format: reports are built and sent by Reporting\ReportSender, on the
+         player's Send or as the crash setting allows, never by the SDK on its own (docs/DESIGN.md, "Reports"). -->
+    <PackageReference Include="Sentry" />
+  </ItemGroup>
 </Project>

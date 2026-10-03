@@ -22,11 +22,12 @@ downloads at runtime are not part of a build; they are credited in the [README](
 | SQLitePCLRaw 2.1.12 | Apache License 2.0 | SourceGear, LLC |
 | SQLite (e_sqlite3) | Public domain | |
 | System.Numerics.Tensors 9.0.0 | MIT | .NET Foundation and Contributors |
+| Sentry 6.12.0 (only its report format; reports are sent by Shturmap's own code, see PRIVACY.md) | MIT | Sentry |
 
 The Windows App SDK runtime files in a build are licensed by Microsoft under the terms in
 `licenses\Microsoft.WindowsAppSDK\license.txt`, not under Shturmap's MIT licence. Using or passing on a build means
 accepting those terms for those files. They note that the runtime may send diagnostic data to Microsoft; Shturmap's
-own code sends nothing.
+own code sends nothing unless the player sends a report or allows crash reports ([PRIVACY.md](PRIVACY.md)).
 
 The native Skia, HarfBuzz and ANGLE libraries contain further open-source code (FreeType, libjpeg-turbo, libpng,
 libwebp, zlib, expat, ICU and others), listed with their licences in
@@ -40,6 +41,7 @@ libwebp, zlib, expat, ICU and others), listed with their licences in
 - ExCSS: Copyright (c) 2024 Tyler Brinks.
 - Svg.Skia, Svg.Model, Svg.Animation, Svg.SceneGraph, ShimSkiaSharp: Copyright (c) 2020 Wiesław Šoltés.
 - Microsoft.Data.Sqlite: Copyright (c) Microsoft Corporation.
+- Sentry: Copyright (c) 2018 Sentry.
 
 Each is licensed under these terms:
 

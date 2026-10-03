@@ -20,10 +20,13 @@ if ($running) {
 
 $dotnet = Join-Path $PSScriptRoot 'dotnet.ps1'
 $project = Join-Path $root 'src\Shturmap.App\Shturmap.App.csproj'
+# Where reports go: the untracked eng\sentry.dsn (or SHTURMAP_SENTRY_DSN). Without it the release can't send reports.
+$dsn = @(& (Join-Path $PSScriptRoot 'sentry-dsn.ps1'))
+if (-not $dsn) { Write-Warning 'No eng\sentry.dsn: this release has no Report button (docs/DESIGN.md §8, "Reports").' }
 
 # The folder, from empty, so nothing of an older build ends up in the zip; precompiled, like eng\publish.ps1.
 if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
-& $dotnet publish $project -c Release -o $folder -p:PublishReadyToRun=true
+& $dotnet publish $project -c Release -o $folder -p:PublishReadyToRun=true @dsn
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # The single exe: everything inside, licences included, compressed. Not precompiled: as one file, precompiling
@@ -32,7 +35,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $stage = Join-Path $artifacts '.single'
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 & $dotnet publish $project -c Release -o $stage -p:PublishReadyToRun=false -p:PublishSingleFile=true `
-  -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true
+  -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true @dsn
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $left = @(Get-ChildItem $stage -File | Where-Object Name -ne 'Shturmap.exe')
 if ($left) { throw "The single-file publish left files beside the exe: $($left.Name -join ', ')" }

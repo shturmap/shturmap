@@ -44,13 +44,16 @@ It never:
 - sends keystrokes or mouse input, or registers global hotkeys (its shortcuts work only in its own window);
 - captures the screen or draws over the game;
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
-- sends anything about you or your game anywhere. Its only network traffic downloads the public data above, and
-  what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log, and a study log of how you use it only if
-  you switch that on in help. (The Microsoft runtime it is built on has its own terms; see
-  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
+- sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
+  only network traffic downloads the public data above, and what it records stays in `%LOCALAPPDATA%\Shturmap`: a
+  short app log, and a study log of how you use it only if you switch that on in help. (The Microsoft runtime it
+  is built on has its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
-To report a problem, use **Copy diagnostics** in help (?) and paste the text into your message: versions, what it
-found, the data's state and its log, with your user folder masked and no ids.
+To report a problem or suggest an idea, use **Report a problem or idea** in help (?): write what happened, keep
+"Include diagnostics" ticked (Show what's sent shows exactly what goes, with your user folder masked and no ids),
+and press Send. No account needed. After a crash, Shturmap asks at its next start whether to send a crash report;
+"Crash reports" in help can make that Always or Never. What a report holds and who receives it:
+[PRIVACY.md](PRIVACY.md).
 
 A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
 capturing the screen. The full rules are in [docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).

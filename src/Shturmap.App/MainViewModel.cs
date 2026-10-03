@@ -211,6 +211,24 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial string NoticeText { get; set; } = "";
 
+    /// <summary>The notice asks for a report: it shows a REPORT link (COPY DIAGNOSTICS where reporting isn't set up).</summary>
+    [ObservableProperty] public partial bool NoticeOffersReport { get; set; }
+
+    /// <summary>The "Crash reports" setting in help: "Ask", "Always" or "Never".</summary>
+    [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";
+
+    /// <summary>The question after a crash, then what came of the answer; empty when there is nothing to say.</summary>
+    [ObservableProperty] public partial string CrashQuestion { get; set; } = "";
+
+    /// <summary>Still asking: Send, Don't send, Always send.</summary>
+    [ObservableProperty] public partial bool CrashAsking { get; set; }
+
+    /// <summary>Sent: a note can be added through the Report dialog.</summary>
+    [ObservableProperty] public partial bool CrashSent { get; set; }
+
+    /// <summary>Exactly what the crash report would send, when the player asked to see it.</summary>
+    [ObservableProperty] public partial string CrashDetails { get; set; } = "";
+
     [ObservableProperty] public partial string Attribution { get; set; } = "";
 
     [ObservableProperty] public partial IReadOnlyList<FloorChoice> Floors { get; set; } = [];

@@ -45,7 +45,7 @@ public class LoadProblemTests : IDisposable
     {
         var problem = await Fails(new FakeTarkovDev(p => p.EndsWith("/tasks", StringComparison.Ordinal) ? new(HttpStatusCode.NotFound) : Ok(p)));
         Assert.Equal((LoadFailure.Refused, 404, false), (problem.Kind, problem.Status, problem.Transient));
-        Assert.Equal("tarkov.dev answered 404. Please report it: Copy diagnostics in help (?).", problem.Text);
+        Assert.Equal("tarkov.dev answered 404. Please report it.", problem.Text);
     }
 
     [Theory]
@@ -98,6 +98,6 @@ public class LoadProblemTests : IDisposable
             ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{ "data": { "tasks": [ "not", "a", "dictionary" ] }""") }
             : Ok(p)));
         Assert.Equal(LoadFailure.Unreadable, problem.Kind);
-        Assert.Equal("tarkov.dev's data has changed in a way Shturmap can't read. Please report it: Copy diagnostics in help (?).", problem.Text);
+        Assert.Equal("tarkov.dev's data has changed in a way Shturmap can't read. Please report it.", problem.Text);
     }
 }

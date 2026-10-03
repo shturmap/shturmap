@@ -78,4 +78,20 @@ public class AppLogTests : IDisposable
         Assert.Equal(["Line 3", "Line 4"], log.Tail(day, 2).Select(l => l[(l.LastIndexOf("INFO ", StringComparison.Ordinal) + 5)..]));
         Assert.Contains(@"%USERPROFILE%\old", log.Tail(day, 10)[0]);
     }
+
+    [Fact]
+    public void A_sessions_lines_are_found_across_midnight_with_their_stack_and_not_the_next_sessions()
+    {
+        var log = new LogFile(_folder, Profile);
+        var start = new DateTime(2026, 10, 2, 23, 50, 0);
+        log.Write(start.AddMinutes(-5), LogLevel.Info, "Before the session");
+        log.Write(start, LogLevel.Info, "Starting");
+        log.Write(start.AddMinutes(20), LogLevel.Error, "Failed: boom" + Environment.NewLine + @"   at Foo() in C:\Users\Jane Doe\a.cs");
+        log.Write(start.AddMinutes(40), LogLevel.Info, "The next session");
+        var lines = log.TailBetween(start, start.AddMinutes(30), 10);
+        Assert.Equal(3, lines.Count);
+        Assert.EndsWith("INFO Starting", lines[0]);
+        Assert.StartsWith("2026-10-03 00:10:00.000 ERROR Failed: boom", lines[1]);
+        Assert.Equal(@"   at Foo() in %USERPROFILE%\a.cs", lines[2]);
+    }
 }

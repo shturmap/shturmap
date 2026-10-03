@@ -1,16 +1,16 @@
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 using Shturmap.Game.Install;
 
 namespace Shturmap.Session;
 
 /// <summary>
 /// The text "Copy diagnostics" puts on the clipboard, for the player to paste into a report: versions, what was found,
-/// the data's state and the end of today's app log (owner, 2026-10-03; docs/DESIGN.md §8, "Diagnostics"). Nothing is
-/// sent: the player sees it all before pasting. Paths are masked, ids of any kind are cut, no quest lists.
+/// the data's state and the end of today's app log (owner, 2026-10-03; docs/DESIGN.md §8, "Diagnostics"). It sends
+/// nothing itself: the player pastes it, or a report carries it, shown first (§8, "Reports"). Paths are masked, ids
+/// of any kind are cut (<see cref="Redact"/>), no quest lists.
 /// </summary>
-public static partial class Diagnostics
+public static class Diagnostics
 {
     public const int LogLines = 200;
 
@@ -55,7 +55,7 @@ public static partial class Diagnostics
         text.AppendLine($"App log, today's last {LogLines} lines:");
         foreach (var line in logTail.TakeLast(LogLines))
             text.AppendLine(line);
-        return Ids().Replace(LogFile.Mask(text.ToString(), profile), "<id>");
+        return Redact.Text(text.ToString(), profile);
     }
 
     /// <summary>"Windows 11 (10.0.26200)".</summary>
@@ -64,8 +64,4 @@ public static partial class Diagnostics
         var v = Environment.OSVersion.Version;
         return $"Windows {(v.Major == 10 && v.Build >= 22000 ? "11" : v.Major.ToString(CultureInfo.InvariantCulture))} ({v.Major}.{v.Minor}.{v.Build})";
     }
-
-    // Profile, account and quest ids are 24 hex digits in the game's logs and tarkov.dev's data.
-    [GeneratedRegex(@"\b[0-9a-fA-F]{24}\b")]
-    private static partial Regex Ids();
 }

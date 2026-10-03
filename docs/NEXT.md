@@ -161,15 +161,18 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 
 1. **Website media.** Re-record the screenshots and the hero clip (`tools\make-media.ps1` in the site repository),
    only when the owner says so.
-2. **R2: GitHub Issues and Discussions.** Issue forms for bugs and for features; help gets a "Report a problem"
-   link that opens the bug form with the version and Windows prefilled (the same values as Copy diagnostics), and
-   the player pastes the diagnostics. Discussions for questions and ideas.
-3. **R3: a form without an account,** beside the issues (e.g. Tally, hosted in the EU). The owner copies its reports
-   into issues by hand at first; automate it (Tally → Make or Zapier, "create issue") only if there are many.
-   Never a GitHub token in the app and no relay run by the app: Shturmap itself sends nothing. Link both from help,
-   the README and the website's footer.
-
-Until then, friends report with Copy diagnostics and LOG FOLDER in help (R1, done 2026-10-03).
+2. **Reporting is one route: in the app, to Sentry** (owner, 2026-10-03: "don't want to mix github issues and other
+   reporting methods, it should be one coherent easy to use thing"; done, DESIGN.md §8, "Reports"). This replaces
+   the earlier plan of GitHub issue forms plus a separate web form. Before the release:
+   - the release is built with the DSN (`eng\sentry.dsn`, untracked; `eng\release.ps1` warns without it), and
+     `Shturmap.exe --send-report "<text>" <folder>` from the release exe says "Sent. Thank you.";
+   - in the Sentry project, IP addresses aren't stored (Settings → Security & Privacy → "Prevent Storing of IP
+     Addresses") and the data scrubbers are on;
+   - the README and the website point to "Help (?) → Report a problem or idea" (the website only on the owner's
+     word), and the website's "sends nothing" wording becomes "Nothing is sent unless you send a report or allow
+     crash reports";
+   - `PRIVACY.md`: the owner fills in the controller and contact (and the retention of the Sentry plan), and has it
+     checked.
 
 ## Not asked for (owner to decide)
 
