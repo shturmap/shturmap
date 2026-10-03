@@ -5,6 +5,9 @@
   </picture>
 </h1>
 
+> **In private testing.** Expect rough edges. If something is wrong or missing, tell us from the app: help (?) →
+> **Report a problem or idea**.
+
 **A second-monitor map for Escape from Tarkov.** Your active quests' objectives, the extracts and your position on
 the map of the raid you're in: what you'd otherwise look up in the wiki, in one window. Website:
 [shturmap.github.io](https://shturmap.github.io)
@@ -45,9 +48,10 @@ It never:
 - captures the screen or draws over the game;
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
 - sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
-  only network traffic downloads the public data above, and what it records stays in `%LOCALAPPDATA%\Shturmap`: a
-  short app log, and a study log of how you use it only if you switch that on in help. (The Microsoft runtime it
-  is built on has its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
+  only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
+  (turn that off in help, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
+  and a study log of how you use it only if you switch that on in help. (The Microsoft runtime it is built on has
+  its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
 To report a problem or suggest an idea, use **Report a problem or idea** in help (?): write what happened, keep
 "Include diagnostics" ticked (Show what's sent shows exactly what goes, with your user folder masked and no ids),
@@ -63,15 +67,20 @@ third-party software in general, so use it at your own risk.
 
 ## Get it
 
-There are no public releases yet. A release is one file, `Shturmap-<version>-win-x64.exe` (about 90 MB), for 64-bit
-Windows 10 (2004) or later: nothing to install or unzip. The app isn't signed, so Windows warns on its first start;
-click **More info → Run anyway**. The first start takes a second longer while it unpacks itself into your temp
-folder (about 200 MB, reused on later starts; a newer version removes the older one's copy).
+Download **`Shturmap-Setup.exe`** from the [releases](https://github.com/shturmap/shturmap/releases) (marked
+pre-release while Shturmap is in private testing), for 64-bit Windows 10 (2004) or later. It installs for your
+Windows user only, with no admin rights, into `%LOCALAPPDATA%\ShturmapApp`, with a Start-menu and a desktop
+shortcut. The installer isn't signed, so Windows warns about it; click **More info → Run anyway**. To remove
+Shturmap, uninstall it under Windows Settings → Apps; your data in `%LOCALAPPDATA%\Shturmap` stays.
+
+Shturmap keeps itself up to date: it asks GitHub for a newer version at start and every 6 hours, downloads it in
+the background and applies it the next time you start it, never during a raid. Help (?) → **Updates** switches
+between Automatic, Tell me only and Off.
 
 To build it yourself, with the [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```powershell
-.\eng\release.ps1                     # artifacts\Shturmap-<version>-win-x64.exe, plus the same build zipped
+.\eng\release.ps1                     # the Setup and update packages (Velopack): artifacts\releases
 .\eng\publish.ps1                     # or just the folder build: artifacts\Shturmap\Shturmap.exe
 ```
 

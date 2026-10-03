@@ -36,8 +36,13 @@ Essentials:
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
   (the wrapper finds the per-user .NET 10 SDK). Publish the folder build (`artifacts\Shturmap`, what
-  `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. The release to send, one exe plus a zip:
-  `.\eng\release.ps1` (DESIGN.md §8, "Distribution").
+  `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. A release (Velopack; DESIGN.md §8, "Distribution"): set
+  `<Version>` in `Directory.Build.props`, write `docs\release-notes\<version>.md`, commit and push, then
+  `.\eng\release.ps1` (builds `artifacts\releases` and `artifacts\Shturmap-Setup.exe`, nothing uploaded) and, with
+  the owner's go, `.\eng\publish-release.ps1` (a GitHub pre-release "Shturmap <version> (private testing)";
+  `-Draft` to review it on GitHub first). Before publishing, scan `artifacts\releases` (unpack the `.nupkg`) for the
+  Windows user name. Test updates locally with an installed build and `--update-feed <folder>`, never by
+  publishing a test release.
 - Reports go to Sentry through the DSN in the untracked `eng\sentry.dsn` (gitignored), which `eng\release.ps1` and
   `eng\publish.ps1` build in. Never commit the DSN or write its value into docs, tests or commit messages; tests use
   the local `FakeSentry`. Check a release with `Shturmap.exe --send-report "<text>" <folder>` (it must say "Sent.

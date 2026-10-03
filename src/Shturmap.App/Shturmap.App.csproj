@@ -22,6 +22,8 @@
          "Shturmap (1).exe"), and the window failed to load (2026-10-03). -->
     <ProjectPriFileName>resources.pri</ProjectPriFileName>
     <SelfContained>true</SelfContained>
+    <!-- Program.cs starts the exe: Velopack must run before WinUI (docs/DESIGN.md §8, "Distribution"). -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +31,7 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="SkiaSharp.Views.WinUI" />
+    <PackageReference Include="Velopack" />
   </ItemGroup>
 
   <ItemGroup>

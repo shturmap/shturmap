@@ -1,0 +1,81 @@
+namespace Shturmap.Session.Tests;
+
+// New versions through Velopack from GitHub Releases (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution").
+public class UpdateTests
+{
+    [Fact]
+    public void Updates_are_automatic_unless_the_player_says_otherwise()
+    {
+        Assert.Equal(UpdateMode.Automatic, UpdateModes.Parse(null));
+        Assert.Equal(UpdateMode.Automatic, UpdateModes.Parse("something else"));
+        foreach (var mode in Enum.GetValues<UpdateMode>())
+            Assert.Equal(mode, UpdateModes.Parse(UpdateModes.Format(mode)));
+    }
+
+    [Theory]
+    // A build that can't update (not installed, or a developer run) asks nothing and shows nothing.
+    [InlineData(UpdateMode.Automatic, false, false, UpdateStage.None, false, false, "", false, false)]
+    [InlineData(UpdateMode.Automatic, false, false, UpdateStage.Ready, false, false, "", false, false)]
+    // Off: no request at all.
+    [InlineData(UpdateMode.Off, true, false, UpdateStage.None, false, false, "", false, false)]
+    // Automatic: asks, downloads what it finds, says so when it is ready.
+    [InlineData(UpdateMode.Automatic, true, false, UpdateStage.None, true, false, "", false, false)]
+    [InlineData(UpdateMode.Automatic, true, false, UpdateStage.Found, true, true, "", false, false)]
+    [InlineData(UpdateMode.Automatic, true, false, UpdateStage.Downloading, false, false, "Downloading Shturmap 0.2.1…", false, false)]
+    [InlineData(UpdateMode.Automatic, true, false, UpdateStage.Ready, false, false, "Update 0.2.1 ready: applies at next start", false, true)]
+    // In a raid: it may still ask and download, but says nothing and never offers a restart.
+    [InlineData(UpdateMode.Automatic, true, true, UpdateStage.Found, true, true, "", false, false)]
+    [InlineData(UpdateMode.Automatic, true, true, UpdateStage.Ready, false, false, "", false, false)]
+    // Tell me only: asks, and offers the download instead of taking it.
+    [InlineData(UpdateMode.TellOnly, true, false, UpdateStage.Found, true, false, "Shturmap 0.2.1 is available", true, false)]
+    [InlineData(UpdateMode.TellOnly, true, true, UpdateStage.Found, true, false, "", false, false)]
+    [InlineData(UpdateMode.TellOnly, true, false, UpdateStage.Ready, false, false, "Update 0.2.1 ready: applies at next start", false, true)]
+    // A version downloaded before the player chose Off still applies at the next start; the line says so.
+    [InlineData(UpdateMode.Off, true, false, UpdateStage.Ready, false, false, "Update 0.2.1 ready: applies at next start", false, true)]
+    public void What_happens_follows_the_setting_the_build_and_the_raid(UpdateMode mode, bool canUpdate, bool inRaid, UpdateStage stage,
+        bool check, bool download, string line, bool offerDownload, bool offerRestart) =>
+        Assert.Equal(new UpdateDecision(check, download, line, offerDownload, offerRestart),
+            UpdatePolicy.Decide(mode, canUpdate, inRaid, stage, "0.2.1"));
+
+    [Fact]
+    public void Asks_at_start_then_every_six_hours_at_most()
+    {
+        var now = new DateTime(2026, 10, 3, 12, 0, 0);
+        Assert.True(UpdatePolicy.CheckDue(null, now));
+        Assert.False(UpdatePolicy.CheckDue(now.AddHours(-5.9), now));
+        Assert.True(UpdatePolicy.CheckDue(now.AddHours(-6), now));
+    }
+
+    // Velopack installs to %LOCALAPPDATA%\<pack id> and an uninstall deletes that folder: it must never be the data
+    // folder, and the release must pack with the same id.
+    [Fact]
+    public void The_install_folder_is_never_the_data_folder()
+    {
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var install = Path.TrimEndingDirectorySeparator(Distribution.InstallFolder(local)) + Path.DirectorySeparatorChar;
+        var data = Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppPaths.Default.Root)) + Path.DirectorySeparatorChar;
+        Assert.NotEqual("Shturmap", Distribution.PackId, StringComparer.OrdinalIgnoreCase);
+        Assert.False(data.StartsWith(install, StringComparison.OrdinalIgnoreCase), $"{data} lies in {install}");
+        Assert.False(install.StartsWith(data, StringComparison.OrdinalIgnoreCase), $"{install} lies in {data}");
+        foreach (var folder in new[] { AppPaths.Default.Logs, AppPaths.Default.Study, AppPaths.Default.CacheRoot, AppPaths.Default.Database })
+            Assert.False(Path.GetFullPath(folder).StartsWith(install, StringComparison.OrdinalIgnoreCase), folder);
+    }
+
+    [Fact]
+    public void The_release_packs_with_the_apps_id()
+    {
+        var script = File.ReadAllText(Path.Combine(RepositoryRoot(), "eng", "release.ps1"));
+        Assert.Contains($"$packId = '{Distribution.PackId}'", script);
+        Assert.Contains("--packId $packId", script);
+    }
+
+    private static string RepositoryRoot()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "Shturmap.slnx")))
+                return dir.FullName;
+        }
+        throw new InvalidOperationException("Repository root not found.");
+    }
+}

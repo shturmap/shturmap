@@ -2,8 +2,8 @@
 
 Shturmap's own code is under the MIT licence (`LICENSE`). A build of Shturmap also contains the components below,
 each under its own licence. Every build carries the full licence and notice texts, this file and `LICENSE` in its
-`licenses` folder (`eng\notices.ps1` gathers them from the packages); the single-file release carries them inside
-and unpacks them with the app, and the help panel's LICENCES link opens the folder. Data and artwork that Shturmap
+`licenses` folder (`eng\notices.ps1` gathers them from the packages), installed with the app, and the help
+panel's LICENCES link opens the folder. Data and artwork that Shturmap
 downloads at runtime are not part of a build; they are credited in the [README](README.md#credits).
 
 | Component | Licence | Copyright |
@@ -23,6 +23,7 @@ downloads at runtime are not part of a build; they are credited in the [README](
 | SQLite (e_sqlite3) | Public domain | |
 | System.Numerics.Tensors 9.0.0 | MIT | .NET Foundation and Contributors |
 | Sentry 6.12.0 (only its report format; reports are sent by Shturmap's own code, see PRIVACY.md) | MIT | Sentry |
+| Velopack 1.2.161 (the Setup, Update.exe and the update library) | MIT | Velopack Ltd, Caelan Sayler, Kevin Bost |
 
 The Windows App SDK runtime files in a build are licensed by Microsoft under the terms in
 `licenses\Microsoft.WindowsAppSDK\license.txt`, not under Shturmap's MIT licence. Using or passing on a build means
@@ -42,6 +43,8 @@ libwebp, zlib, expat, ICU and others), listed with their licences in
 - Svg.Skia, Svg.Model, Svg.Animation, Svg.SceneGraph, ShimSkiaSharp: Copyright (c) 2020 Wiesław Šoltés.
 - Microsoft.Data.Sqlite: Copyright (c) Microsoft Corporation.
 - Sentry: Copyright (c) 2018 Sentry.
+- Velopack: Copyright (c) Velopack Ltd. (The Setup and Update.exe are built by Velopack's `vpk` from its open-source
+  code and the Rust libraries it uses, listed with their licences at <https://github.com/velopack/velopack>.)
 
 Each is licensed under these terms:
 

@@ -217,6 +217,19 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The "Crash reports" setting in help: "Ask", "Always" or "Never".</summary>
     [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";
 
+    /// <summary>The "Updates" setting in help: "Automatic", "TellOnly" or "Off".</summary>
+    [ObservableProperty] public partial string UpdateMode { get; set; } = "Automatic";
+
+    /// <summary>This build can update itself (installed by its Setup); otherwise help says it can't.</summary>
+    [ObservableProperty] public partial bool UpdatesAvailable { get; set; }
+
+    /// <summary>The one quiet line about a new version, between raids; empty when there is none.</summary>
+    [ObservableProperty] public partial string UpdateLine { get; set; } = "";
+
+    [ObservableProperty] public partial bool UpdateOffersDownload { get; set; }
+
+    [ObservableProperty] public partial bool UpdateOffersRestart { get; set; }
+
     /// <summary>The question after a crash, then what came of the answer; empty when there is nothing to say.</summary>
     [ObservableProperty] public partial string CrashQuestion { get; set; } = "";
 

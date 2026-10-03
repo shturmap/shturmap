@@ -14,7 +14,7 @@ public static class Diagnostics
 {
     public const int LogLines = 200;
 
-    /// <param name="build">"single exe" or "folder build".</param>
+    /// <param name="build">"installed" (its Setup, Velopack) or "folder build".</param>
     /// <param name="profile">The user's profile folder, written as %USERPROFILE%.</param>
     public static string Build(SessionSnapshot s, string version, string windows, string build, IReadOnlyList<string> logTail,
         DateTime now, string? profile)

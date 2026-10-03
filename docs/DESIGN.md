@@ -45,7 +45,7 @@ residual risk. Do not widen the boundary.
 - **Shturmap's own code** is MIT-licensed (`LICENSE`; owner, 2026-10-02, to publish it on GitHub). Everything a
   build redistributes is listed with its licence in `THIRD-PARTY-NOTICES.md`; `eng\notices.ps1`, run by the app
   project before every publish, gathers it, `LICENSE` and every package's own licence files into the build's
-  `licenses` folder, which the single exe carries inside and unpacks with the app (§8, "Distribution"). The help
+  `licenses` folder, which is installed with the app (§8, "Distribution"). The help
   panel's LICENCES link opens it. Update it in the same change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
   (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
@@ -620,28 +620,62 @@ Rules:
 
 ### Distribution
 
-The release is **one file**, `Shturmap-<version>-win-x64.exe` (owner, 2026-10-03: easiest to pass on; nothing to
-unzip, so nobody runs it from inside a zip). `eng\release.ps1` builds it, and the same build as a folder, zipped
-beside it for whoever prefers that, each with a `.sha256`; `eng\publish.ps1` builds only the folder
-(`artifacts\Shturmap`, the developer's copy and what `tools\fake-raid.ps1` runs).
+Releases live in the code repository's **GitHub Releases**, and **Velopack** installs Shturmap and keeps it up to
+date (owner, 2026-10-03: "the releases live with the code in the release section of the project", with an
+auto-update mode; Velopack chosen over MSIX, which Windows installs only with a trusted signature, the Microsoft
+Store, and a hand-made updater). 0.2.0 is the first public release. The 0.1.0 builds given to friends were one
+self-unpacking exe, without updates; they need the Setup once.
 
-- **How it runs.** .NET's single-file publish with everything inside (`IncludeAllContentForSelfExtract`,
-  compressed): WinUI needs its files on disk, so the first start of each build unpacks them (about 200 MB) to
-  `%TEMP%\.net\<exe name>\<bundle id>` and runs from there; later starts reuse that copy. Measured 2026-10-03:
-  86 MB to download; a session is ready 1.3 s after the first start and 0.44 s after later ones. The single exe is
-  not precompiled (ReadyToRun): as one file that builds a 120 MB composite image of the whole framework, which made
-  the exe 110 MB and its unpacked copy 285 MB to start 0.1 s sooner; precompiled without the composite image, it
-  failed to start. The folder build stays precompiled.
+- **What players download.** `Shturmap-Setup.exe` (vpk's `ShturmapApp-win-Setup.exe` under the name the README
+  gives; both are on the release, with Velopack's portable zip). It installs for the Windows user, without admin
+  rights, into `%LOCALAPPDATA%\ShturmapApp`, with a Start-menu and a desktop shortcut and an entry under Windows
+  Settings → Apps. Measured 2026-10-03: the Setup is 106 MB, the installed app 244 MB (precompiled, like the folder
+  build), a delta between two builds 1.7 MB.
+- **The install folder is not the data folder.** Velopack installs to `%LOCALAPPDATA%\<pack id>`, and an uninstall
+  deletes that folder. So the pack id is `ShturmapApp` (`Distribution.PackId`; `eng\release.ps1` packs with the
+  same, a test checks), never `Shturmap`: the database, logs, study log, cache, outbox and crash records in
+  `%LOCALAPPDATA%\Shturmap` outlive the app. Checked 2026-10-03: installing, updating and uninstalling left the data
+  folder's files all there and `shturmap.db` byte for byte the same; the uninstall removed the install folder, its
+  shortcuts and its Apps entry.
+- **Updates.** `Program.Main` runs Velopack first: its Setup, updater and uninstall start the exe with their own
+  arguments, and a version downloaded in an earlier session is applied there, before the app starts (the app then
+  starts again with the same arguments). Then WinUI's own start (`DISABLE_XAML_GENERATED_MAIN`). An installed app
+  asks GitHub at start and then every 6 hours, never more often (`UpdatePolicy`), anonymously: GitHub allows 60
+  such requests an hour per address. A new version downloads in the background (a delta when there is one) and
+  applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
+  start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
+  "Updates" in help: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
+  request at all). A version already downloaded applies at the next start whatever the setting. Builds the Setup
+  didn't install (the folder build, `dotnet run`) and developer runs (snapshots, fake games, the demo) ask nothing;
+  help says "Updates: not available in this build". Checks, finds and downloads are logged at INFO; a failure is a
+  WARN line and a retry at the next check, never a notice.
+- **Pre-releases while in private testing.** Releases are GitHub pre-releases named "Shturmap <version> (private
+  testing)" (owner, 2026-10-03: "we should state that the app is still in private testing"), so the update check
+  includes pre-releases (`Distribution.PreReleases`); with the first stable release it becomes false. The README
+  opens with the same note.
+- **The network.** Asking for a new version is the one request besides tarkov.dev's data and art and the reports
+  a player sends: `api.github.com` for the list, the packages from GitHub's release-asset hosts. Never Velopack's
+  own update service (`SafetyTests`). Help, the README and PRIVACY.md say that GitHub sees the address, as with any
+  download, and nothing else is sent.
+- **Releasing.** `eng\release.ps1` builds the folder (precompiled, with the Sentry DSN), asks GitHub for the last
+  release so `vpk pack` can build a delta, and packs into `artifacts\releases` (the Setup, full and delta packages,
+  `releases.win.json` and `RELEASES`, the portable zip), plus `artifacts\Shturmap-Setup.exe` and its `.sha256`. The
+  notes are `docs\release-notes\<version>.md`. `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
+  `v<version>`, a published pre-release; `-Draft` leaves a draft) and adds `Shturmap-Setup.exe`; it refuses unless
+  the tree is clean, the commit pushed and the build made from that commit. `vpk` is a pinned local tool
+  (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`, the developer's copy
+  and what `tools\fake-raid.ps1` runs). To test the whole update path without GitHub, `--update-feed <folder>` points
+  an installed build at a local feed (local folders only) and lets it update even in a snapshot or a fake game.
+  Velopack's Setup 1.2.161 crashes when given arguments for the app (`-- …`); install silently with `--silent` only.
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
   `<exe name>.pri`, so the project names its PRI file `resources.pri`: named after the project, any other exe
-  name (the release's own, or a browser's "Shturmap (1).exe") made the window fail to load.
-- **No pile of copies.** Each build and each exe name leaves its own unpacked copy. A start from one removes the
-  others in the background (`UnpackedCopies`, logged): only `%TEMP%\.net\Shturmap…\<id>` folders holding
-  `Shturmap.dll`, never its own, and never one in use: a copy is moved aside before it is deleted, which Windows
-  refuses while another Shturmap runs from it. With `DOTNET_BUNDLE_EXTRACT_BASE_DIR` set elsewhere it does nothing.
-- **Nothing beside the exe.** The unpacked folder is a cache: the app writes nothing there and keeps all its data
-  in `%LOCALAPPDATA%\Shturmap`. The "build time" in the study log is the exe's own file time, not the unpacking's.
-- **Unsigned.** Windows SmartScreen asks once ("More info → Run anyway"); the README says so.
+  name made the window fail to load (2026-10-03, with the 0.1.0 single exe).
+- **The 0.1.0 leftovers.** The single exe unpacked about 200 MB per version to `%TEMP%\.net\Shturmap…\<id>`. The
+  installed app removes those once, in the background (`UnpackedCopies`, logged): only folders of that shape
+  holding `Shturmap.dll`, each moved aside before it is deleted, which Windows refuses while an old exe still runs
+  from it; a later start tries again only if one was in use.
+- **Unsigned.** Windows SmartScreen asks once about the Setup ("More info → Run anyway"); the README and the
+  release notes say so. Updates don't ask.
 
 ### How the parts work
 
@@ -723,7 +757,7 @@ runs never keep one. Days older than 30 are removed at start, on or off. Ticking
 unticking writes `study.off` and stops.
 
 **App log** (owner, 2026-10-03). `%LOCALAPPDATA%\Shturmap\logs\shturmap-yyyy-MM-dd.log`: a short support trail,
-not a trace. INFO: the start (version with commit, single exe or folder build, Windows), the game, logs and
+not a trace. INFO: the start (version with commit, installed or folder build, Windows), the game, logs and
 screenshots folders found, the game's language and screenshot key, mode, data loaded (from where, language, counts,
 when checked), raids loading, starting, ending, the study switch. WARN: something degraded but working (the data
 from the saved copy, English instead of the game's language, a folder not found, the item sources or a map's
@@ -828,6 +862,7 @@ form. Problems and ideas both go through it.
 - Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own
   so a search finds the app rather than the Woods boss. The old data folder and database move over on first start.
 - The Lab, Labyrinth and Icebreaker are drawn as sheets (§3, "Maps without artwork"; 2026-10-02).
-- Released as one exe (2026-10-03; §8, "Distribution"): 86 MB to download, about 200 MB unpacked.
+- 0.1.0 went to friends as one self-unpacking exe (2026-10-03). From 0.2.0, the first public release, a Setup from
+  GitHub Releases that keeps itself up to date (Velopack; §8, "Distribution"): 106 MB to download, 244 MB installed.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").
-- Open: manual quest editing; objective progress; the unpacked size (budget 80–120 MB, needs trimming).
+- Open: manual quest editing; objective progress; the installed size (budget 80–120 MB, needs trimming).

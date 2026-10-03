@@ -29,6 +29,10 @@ public partial class App : Application
         // exception is the release's delivery check, "--send-report", which may run in a fake game so the player's
         // own folder and study log stay untouched.
         var developerRun = (cli.Contains("--snapshot") || cli.Contains("--fake-game") || cli.Contains("--demo")) && !cli.Contains("--send-report");
+        // New versions: only an installed app asks, and no developer run; "--update-feed <folder>" tests the whole
+        // path against a local feed (docs/DESIGN.md §8, "Distribution").
+        Updater = new Updater(Arg(cli, "--update-feed"), developerRun || cli.Contains("--send-report"));
+        BuildKind = Updater.Installed ? "installed" : "folder build";
         Reporter = new Reporter(AppRoot(cli), ReportEndpoint.Parse(BuiltDsn()), developerRun,
             new ReportInfo(GameSession.Version, BuildKind, Diagnostics.WindowsVersion()));
         // A session that ended without closing left its marker behind: note it before marking this one. One from
@@ -65,9 +69,15 @@ public partial class App : Application
     private static string AppRoot(string[] cli) =>
         Arg(cli, "--fake-game") is { } root ? Path.Combine(root, "app") : AppPaths.Default.Root;
 
-    /// <summary>"single exe" when run from the release's unpacked copy, else "folder build".</summary>
-    public static string BuildKind { get; } =
-        Shturmap.Core.UnpackedCopies.RunsFromCopy(AppContext.BaseDirectory, Path.GetTempPath()) ? "single exe" : "folder build";
+    /// <summary>"installed" when installed by its Setup (Velopack), else "folder build" (developer builds included).</summary>
+    public static string BuildKind { get; private set; } = "folder build";
+
+    /// <summary>New versions, from GitHub Releases.</summary>
+    public static Updater Updater { get; private set; } = null!;
+
+    /// <summary>Lets go of this session's running marker, so an exit that isn't a close (RESTART NOW for an update)
+    /// isn't taken for a crash at the next start.</summary>
+    public void EndSession() => _marker?.Dispose();
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
@@ -75,19 +85,6 @@ public partial class App : Application
         // The website demo times its clip by its DEBUG lines (tools\fake-raid.ps1 -Demo).
         AppLog.Verbose = cli.Contains("--verbose") || cli.Contains("--demo");
         AppLog.Info($"Starting Shturmap {GameSession.Version} ({BuildKind}) on {Diagnostics.WindowsVersion()}");
-        // Run as the single exe, earlier versions left their unpacked copies in %TEMP%: remove them, off the start.
-        _ = Task.Run(() =>
-        {
-            try
-            {
-                foreach (var line in Shturmap.Core.UnpackedCopies.RemoveOthers())
-                    AppLog.Info("Unpacked copies: " + line);
-            }
-            catch (Exception e)
-            {
-                AppLog.Warn("Removing old unpacked copies failed", e);
-            }
-        });
         // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
         // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.
         if (Arg(cli, "--culture") is { } culture)
@@ -127,6 +124,9 @@ public partial class App : Application
         }
         _window.ReportsReady();
         await HandleReportsAsync();
+        _window.StartUpdates(Updater);
+        if (Updater.Installed && !cli.Contains("--fake-game"))
+            await RemoveSingleExeLeftoversAsync();
         // Developer aids for snapshots of the report dialog and the question after a crash.
         if (cli.Contains("--show-report"))
             _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, "Example: the map stayed on Woods after I loaded into Customs.", "snapshot", showSent: true);
@@ -193,6 +193,28 @@ public partial class App : Application
         catch (Exception e)
         {
             AppLog.Warn("Handling reports at start failed", e);
+        }
+    }
+
+    // The 0.1.0 single exe left unpacked copies in %TEMP%\.net (about 200 MB each): the installed app removes them
+    // once, off the start; again at a later start only if one was in use.
+    private const string LeftoversSetting = "singleExeLeftovers";
+
+    private async Task RemoveSingleExeLeftoversAsync()
+    {
+        if (_session is null || _session.GetSetting(LeftoversSetting) == "removed")
+            return;
+        try
+        {
+            var (done, complete) = await Task.Run(Shturmap.Core.UnpackedCopies.RemoveLeftovers);
+            foreach (var line in done)
+                AppLog.Info("Old unpacked copies: " + line);
+            if (complete)
+                _session.SetSetting(LeftoversSetting, "removed");
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Removing old unpacked copies failed", e);
         }
     }
 

@@ -1,6 +1,6 @@
 # Builds a self-contained Shturmap into artifacts\Shturmap. Run artifacts\Shturmap\Shturmap.exe; no .NET install needed.
 # The licences travel in its licenses\ folder (the app project gathers them, eng\notices.ps1). For the release to
-# send, a single exe, see eng\release.ps1.
+# send (the Setup and update packages, Velopack), see eng\release.ps1.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $out = Join-Path $root 'artifacts\Shturmap'

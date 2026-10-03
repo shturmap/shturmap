@@ -1,47 +1,42 @@
 namespace Shturmap.Core;
 
 /// <summary>
-/// The release is one exe that .NET unpacks on its first start to %TEMP%\.net\&lt;exe name&gt;\&lt;bundle id&gt;, and
-/// every other version or file name leaves its own copy there (about 200 MB each). A start from such a copy removes
-/// the others: only folders of that exact shape, named after Shturmap, holding Shturmap.dll, and none in use.
+/// The 0.1.0 builds were one exe that .NET unpacked on its first start to %TEMP%\.net\&lt;exe name&gt;\&lt;bundle id&gt;,
+/// one copy per version and file name (about 200 MB each). From 0.2.0 Shturmap is installed (Velopack) and nothing
+/// unpacks there; the installed app removes those leftovers once (docs/DESIGN.md §8, "Distribution"): only folders of
+/// that exact shape, named after Shturmap, holding Shturmap.dll, and none in use.
 /// </summary>
 public static class UnpackedCopies
 {
     /// <summary>
-    /// Which of <paramref name="candidates"/> are other unpacked copies of Shturmap that may go: none unless this
-    /// app runs from one itself (<paramref name="baseDirectory"/> is &lt;temp&gt;\.net\Shturmap…\&lt;id&gt;), and
-    /// then only folders of the same shape, never this one. Paths only; whether one is in use is checked on delete.
+    /// Which of <paramref name="candidates"/> are unpacked copies of Shturmap that may go: folders
+    /// &lt;temp&gt;\.net\Shturmap…\&lt;id&gt; and nothing else. Paths only; whether one is in use is checked on delete.
     /// </summary>
-    public static IReadOnlyList<string> Others(string baseDirectory, string tempPath, IEnumerable<string> candidates)
+    public static IReadOnlyList<string> Leftovers(string tempPath, IEnumerable<string> candidates)
     {
         var root = Normalize(Path.Combine(tempPath, ".net"));
-        var own = Normalize(baseDirectory);
-        if (!IsCopy(own, root))
-            return [];
         return candidates.Select(Normalize)
-            .Where(c => IsCopy(c, root) && !string.Equals(c, own, StringComparison.OrdinalIgnoreCase))
+            .Where(c => IsCopy(c, root))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
-    /// <summary>Whether this app runs from a single exe's unpacked copy (else from a folder build or a developer's).</summary>
-    public static bool RunsFromCopy(string baseDirectory, string tempPath) =>
-        IsCopy(Normalize(baseDirectory), Normalize(Path.Combine(tempPath, ".net")));
-
-    /// <summary>Removes the other unpacked copies, in the background of a start; returns what it did, for the log.</summary>
-    public static IReadOnlyList<string> RemoveOthers()
+    /// <summary>Removes the leftovers, in the background of a start: what it did, for the log, and whether none had
+    /// to stay (one in use: an old single exe still running).</summary>
+    public static (IReadOnlyList<string> Done, bool Complete) RemoveLeftovers()
     {
         var done = new List<string>();
+        var complete = true;
         var temp = Path.GetTempPath();
         var root = Path.Combine(temp, ".net");
         if (!Directory.Exists(root))
-            return done;
+            return (done, complete);
         var candidates = Directory.EnumerateDirectories(root).SelectMany(SafeSubdirectories);
-        foreach (var copy in Others(AppContext.BaseDirectory, temp, candidates))
+        foreach (var copy in Leftovers(temp, candidates))
         {
             if (!File.Exists(Path.Combine(copy, "Shturmap.dll")))
                 continue;
-            // Moved aside first: Windows refuses to rename a folder while a file in it is open, so a copy another
+            // Moved aside first: Windows refuses to rename a folder while a file in it is open, so a copy an old
             // Shturmap runs from stays whole instead of losing the files that weren't locked.
             var doomed = copy + ".old";
             try
@@ -53,6 +48,7 @@ public static class UnpackedCopies
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 done.Add($"kept {copy} (in use)");
+                complete = false;
                 continue;
             }
             try
@@ -63,6 +59,7 @@ public static class UnpackedCopies
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 done.Add($"could not remove {doomed}: {e.Message}");
+                complete = false;
             }
             // The exe's own folder (…\.net\Shturmap-0.1.0-win-x64) goes when its last copy has.
             var parent = Path.GetDirectoryName(copy)!;
@@ -75,7 +72,7 @@ public static class UnpackedCopies
             {
             }
         }
-        return done;
+        return (done, complete);
     }
 
     // <root>\<name>\<id>, two levels below the unpack root, under a name that is Shturmap's ("Shturmap",

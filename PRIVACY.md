@@ -6,14 +6,14 @@ whole notice checked.]
 
 Shturmap runs on your PC. It reads the game's log files, your screenshots' file names and public data from
 tarkov.dev, and it keeps its own log on your PC. Nothing about you leaves your PC, with two exceptions that you
-control.
+control; and it asks GitHub for new versions of itself (3).
 
 1. A report you send
 --------------------
 When you press Send in "Report a problem or idea" (help, ?), Shturmap sends:
 
 - whether it is a problem or an idea, the text you wrote, and the contact you gave, if any;
-- Shturmap's version, whether it is the single exe or the folder build, and your Windows version;
+- Shturmap's version, whether it is installed or a folder build, and your Windows version;
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
   how many quests are active, and the last 200 lines of Shturmap's own log.
@@ -24,11 +24,19 @@ After Shturmap crashed or ran into an error, it asks at the next start whether t
 help: Ask after a crash, the default; Always send; Never). A crash report holds the error's type and message, where
 in Shturmap's code it happened, Shturmap's and Windows' versions and the last 50 lines of Shturmap's own log.
 
+3. Checking for a new version
+-----------------------------
+Installed with its Setup, Shturmap asks GitHub (operated by GitHub, Inc., USA) for a newer version of itself at
+start and every 6 hours, and downloads it from there. GitHub sees your internet address, as with any download;
+Shturmap sends nothing else. "Updates" in help: Automatic, the default (a new version downloads in the background and
+applies at the next start); Tell me only (it asks, and downloads only when you click); Off (no request at all).
+
 What is never sent
 ------------------
 Your Windows user folder is masked in everything that is sent (written as %USERPROFILE%), and every game account,
 profile or quest id is cut out. Nothing is sent from memory, no screenshots, no game files, no study log, no list of
-your quests, no machine name and no IP address is stored with a report.
+your quests, no machine name and no IP address is stored with a report. Sentry (below) also sees your internet
+address when a report arrives and keeps your country and town from it; the address itself isn't kept.
 
 Who receives it
 ---------------

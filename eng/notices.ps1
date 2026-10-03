@@ -1,7 +1,7 @@
 # Gathers the licences a build must carry into <Out>\licenses: Shturmap's LICENSE, THIRD-PARTY-NOTICES.md, every
 # licence and notice file the app's packages and the .NET runtime ship, and the texts some packages don't carry
-# themselves (eng\licenses). The app project runs it before every publish and publishes <Out> beside the exe, so a
-# single exe carries them inside (docs/DESIGN.md §3); the help panel's LICENCES link opens the folder.
+# themselves (eng\licenses). The app project runs it before every publish and publishes <Out> beside the exe, so the
+# installed app carries them in its folder (docs/DESIGN.md §3); the help panel's LICENCES link opens the folder.
 # Usage: .\eng\notices.ps1 -Out <folder>
 param([Parameter(Mandatory)] [string] $Out)
 $ErrorActionPreference = 'Stop'

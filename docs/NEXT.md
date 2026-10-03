@@ -8,11 +8,11 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 
 ## Before starting
 
-- **Release 0.1.0** is one exe since 2026-10-03: `eng\release.ps1` builds `artifacts\Shturmap-0.1.0-win-x64.exe`
-  (86 MB, unpacks about 200 MB to `%TEMP%\.net` on its first start) and the folder build zipped beside it, each
-  with a `.sha256` (DESIGN.md §8, "Distribution"). Passed to friends by hand; not published anywhere yet. It
-  refuses while Shturmap runs from `artifacts`; `eng\publish.ps1` alone builds only `artifacts\Shturmap` and
-  doesn't empty it first.
+- **Releases** (2026-10-03): 0.1.0 went to friends by hand as one exe. From **0.2.0**, the first public release,
+  Velopack: `eng\release.ps1` builds the Setup and update packages into `artifacts\releases` (plus
+  `artifacts\Shturmap-Setup.exe`), `eng\publish-release.ps1` publishes them as a GitHub pre-release, and the
+  installed app keeps itself up to date (DESIGN.md §8, "Distribution"). `eng\release.ps1` refuses while Shturmap
+  runs from `artifacts\Shturmap`; `eng\publish.ps1` alone builds only that folder and doesn't empty it first.
 - **Boundary (owner's rule).** Read only `*application_*.log` and `*push-notifications_*.log` in an EFT log
   session folder, never `*.log`: that glob also matches `backend_000.log`, which is off limits. No memory, no
   input, no screen capture.
@@ -195,6 +195,20 @@ Raise these with the owner when the app gets its first public GitHub Release (no
      crash reports";
    - `PRIVACY.md`: the owner fills in the controller and contact (and the retention of the Sentry plan), and has it
      checked.
+3. **Delivery: GitHub Releases with Velopack** (owner, 2026-10-03: releases in the code repository, an auto-update
+   mode, and "we can move for the first public release, but we should state that the app is still in private
+   testing"). Done: the Setup, updates (Automatic / Tell me only / Off, never during a raid), `eng\release.ps1` and
+   `eng\publish-release.ps1`, the README's private-testing note, `docs\release-notes\0.2.0.md`, version 0.2.0; the
+   whole path (install, update to a newer version from a local feed, uninstall with the data folder untouched) was
+   tested on this PC on 2026-10-03. The owner's steps:
+   - make `github.com/shturmap/shturmap` public (the app's update check asks GitHub anonymously, which only works
+     for a public repository);
+   - commit and push, then `.\eng\release.ps1` and `.\eng\publish-release.ps1` (or `-Draft` to look at it on GitHub
+     before publishing). It uses `GITHUB_TOKEN`, `gh`'s login or Git's stored GitHub login;
+   - the first real update check against GitHub happens with the second release (0.2.1): install 0.2.0 from the
+     release, publish 0.2.1, and see that 0.2.0 offers it. Until then the GitHub path is untested; the local feed
+     path is;
+   - friends with the 0.1.0 exe run the Setup once (the release notes say so).
 
 ## Not asked for (owner to decide)
 
