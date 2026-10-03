@@ -66,13 +66,28 @@ and press Send. No account needed. After a crash, Shturmap asks at its next star
 A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
 capturing the screen. The full rules are in [docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).
 
-It shows your position to you only: it never shares it with your squad or anyone else, and it never takes a
-screenshot for you. Some players see a map with your own position as an unfair advantage in PvP; Shturmap is at its
-most useful for learning maps and in PvE.
+## Before you install
 
-Shturmap is an unofficial fan project, not made or endorsed by Battlestate Games. Battlestate discourages
-third-party software in general, and its License Agreement (section 4.3.4) lets it decide which outside software is
-allowed. There is no guarantee against sanctions: use it at your own risk.
+**Can I get banned for using it?** Battlestate hasn't said anything about tools that read screenshot names, for or
+against, and we found no verified ban for using one (our research as of 3 October 2026, not a promise). But its
+License Agreement (section 4.3.4) forbids outside software that "captures, collects, counts or otherwise 'retrieves'
+information reproduced or stored by" the game unless Battlestate permits it, it hasn't permitted any tool like this,
+and it discourages third-party software in general. So there is no guarantee against sanctions: use it at your own
+risk. Shturmap is an unofficial fan project, not made or endorsed by Battlestate Games.
+
+**Is it fair in PvP?** It shows your position to you only: it never shares it with your squad or anyone else, and it
+never takes a screenshot for you. Some players still see a map with your own position as an unfair advantage in PvP;
+Shturmap is at its most useful for learning maps and in PvE.
+
+**What does it send?** Nothing about you or your game, unless you send a report or allow crash reports (above). Its
+other traffic downloads public data and map artwork, and asks GitHub for a newer version (turn that off in settings,
+under Updates).
+
+**What if Battlestate takes the coordinates out of the screenshot names?** Then Shturmap shows no position, and the
+rest keeps working: maps ranked by what you can get done, what to bring, quest cards, and the map with your
+objectives and the extracts.
+
+More questions and answers: [shturmap.github.io/#faq](https://shturmap.github.io/#faq).
 
 ## Get it
 
