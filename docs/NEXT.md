@@ -161,7 +161,27 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
       (offline, 404, 503), and a missing game.
     - Keep it plain and developer-styled. It doesn't follow the product's visual rules, but must never leak into a
       release; DESIGN.md §8 "Developer aids" describes it.
-15. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+15. **A dev build next to the release, always current, with its own icon** (owner, 2026-10-03: "I want to have a dev
+    artifact of the app that always carries the recent updates and is in dev mode. The artifacts should contain a
+    dev and release artifact. The dev version should carry a different icon so it is visually clear.") Plan to
+    propose on Monday, together with items 1 (dev data folder) and 14 (dev view):
+    - **`artifacts\` holds two things:** `artifacts\release\` (the Velopack Setup and packages, as
+      `eng\release.ps1` makes today) and `artifacts\dev\` (the dev build). The old 0.1.0 files go (item 3).
+    - **The dev build is in dev mode:**
+      - the dev view (item 14) and the `Shturmap-dev` data folder (item 1);
+      - no reports to Sentry, or reports marked as environment "dev";
+      - no update check against GitHub;
+      - a window title "Shturmap DEV" and its own app id, Start-menu entry and shortcut names, so it never mixes
+        with the installed release.
+    - **"Always the recent updates":** either (a) Claude rebuilds `artifacts\dev` after every change it commits (a
+      CLAUDE.md rule, with `eng\dev.ps1`), or (b) the dev build is itself a Velopack install on a "dev" channel that
+      updates from a local feed in `artifacts\dev\feed`, so the installed dev app picks up each new build at its
+      next start. (b) is closer to "always current" without thinking about it; propose both.
+    - **Its own icon:** a dev variant made by `brand\build.cs` (exe, window and taskbar icon). Keep the mark and
+      change only something unmistakable but safe, e.g. the plate in the app's cyan, or a small "DEV" band. The
+      owner checks logo changes against symbol resemblances (DESIGN.md §4, "Logo"), so show a panel of two or
+      three variants first.
+16. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
