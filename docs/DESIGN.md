@@ -258,7 +258,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     BRING (keys, items to bring). Each quest row there is the quest's name, then a quiet line of what it asks on
     that map in a few words, at most two lines and then "…" ("Ballet Lover" over "Find balletmeister's apartment ·
     Survive and extract"; see §5, "Quest synopsis"). The raid card keeps names only: its objective lines already
-    say what to do. Clicking another map expands it and shows it on the map; that click is optional.
+    say what to do. COMPLETE and PROGRESS are each in effort order, with a thin hairline where a later group starts
+    and no headings (§7, "Plan order"); the raid card stays nearest first. Clicking another map expands it and
+    shows it on the map; that click is optional.
     Folded cards carry enough to compare without opening them (the study log: ten card clicks in 4.5 minutes to
     compare maps): one quest-type glyph per quest (gold to complete, muted to progress) and up to five cells of
     what to bring. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
@@ -586,6 +588,44 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
   the raid length ("~7 min walking · 35 min raid").
 - Quest-level keys are shown on the objectives that have a place on that map, not on hand-ins or extracts.
 
+### Plan order
+
+**Owner, 2026-10-03:** the order of the quests in Plan wasn't clear (it was the order the quests were stored in).
+Each section, COMPLETE and PROGRESS, is now ordered by what the quest's work on that map involves, from little to a
+lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, applied in `RaidPlanner.Plan`).
+
+- **Effort groups**, named by the activity, not "easy" or "hard": the data supports facts (what an objective asks),
+  not judgements (how hard a player finds it). A quest's group is that of its most demanding objective counted for
+  the map (in-raid, not optional, as the planner counts them):
+  - **Go there**: `visit`, `mark`, `plantItem`, `plantQuestItem`, `useItem`, `findQuestItem`, a `findItem` that may
+    be bought, an `extract` through a named exit without "Survived".
+  - **Find or survive**: `findItem` found in raid, `extract` with the status "Survived", `experience` (staying under
+    a health effect), and kills of Scavs or sniper Scavs without conditions (targets `Savage`, `Marksman`,
+    `assaultGroup`, `Any`; `assaultGroup` is a Scav type: tarkov.dev's English text for it is "Scav").
+  - **Fight**: kills of PMCs (`AnyPmc`, `Bear`), Rogues (`ExUsec`), Raiders (`PmcBot`), Black Division
+    (`blackDivision`, `pmcBotBlackDiv`), the Labyrinth guards (`tagillaHelperAgro`), cultists (`sectant…`), bosses
+    and their guards (`boss…`, `follower…`, `infected…`), and any kill with a condition set: a weapon or weapon mods,
+    body parts, a distance (tarkov.dev writes 0 or null for none), gear worn or not worn, a time of day, a health
+    effect on the player or the enemy, or a zone (an area of the map). A target the rules don't know counts as a
+    fight, the safe side. In PvE, "kill PMCs" means AI PMCs, easier than players in PvP; they stay in Fight, the
+    riskiest kind of objective either way.
+- **Complexity**, within a group: a tuple compared in order, no weights: how many of the quest's objectives count
+  on the map, how many kill conditions they set, and the largest kill count in buckets (none, up to 5, up to 15,
+  more).
+- Then the **trader**, in the order tarkov.dev lists traders (the game's own: Prapor, Therapist, Fence, …), then the
+  **name**.
+- Only tarkov.dev's structured fields count: the objective `type`, `targetNames`, `count`, the kill-condition
+  fields, `exitStatus`, `foundInRaid`; never the description, and no AI. Kill targets and exit statuses are
+  translated by tarkov.dev, so the loader keeps their keys from before translation (`GameData.ObjectiveFacts`): the
+  order is the same in every language. New quests sort by themselves.
+- **Display:** a thin hairline above the first row of each later group, no headings; the quest-type glyph shows
+  why a row is where it is. One line in help: "Quests are ordered from going somewhere, to finding or surviving,
+  to fighting; simpler first within each."
+- **After a tarkov.dev or game update** run `shturmap-cli effort pve` and `… regular`: every Plan row (all quests
+  active) in the plan's order with its group and complexity, kill targets the rules don't know (counted as fights;
+  name them in `QuestEffort`) and objective types they don't know. On 2026-10-03: 614 PvE rows (Go there 214, Find
+  or survive 134, Fight 266) and 620 PvP rows, no unknown targets or types.
+
 ## 8. Engineering
 
 | project | role |
@@ -717,7 +757,8 @@ log session on disk and followed live; newest wins. Prerequisites of active or c
 require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
 Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows; they are ignored (and could never
 reopen a quest the log saw completed). `shturmap-cli quests` lists active quests with every observation.
-`shturmap-cli synopses [mode]` lists every Plan row's synopsis with its flags (§5, "Quest synopsis").
+`shturmap-cli synopses [mode]` lists every Plan row's synopsis with its flags (§5, "Quest synopsis"), and
+`shturmap-cli effort [mode]` every Plan row's effort group and complexity (§7, "Plan order").
 
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next

@@ -50,7 +50,9 @@ Essentials:
 - The CLI (`tools/Shturmap.Cli`) runs every part headless; `simulate` plays a scripted raid against a fake game.
 - After a tarkov.dev or game update, run `shturmap-cli synopses pve` and `shturmap-cli synopses regular` and look at
   the FALLBACK, LONG and BREAK rows: the quest synopses in Plan are made from tarkov.dev's texts by fixed rules
-  (DESIGN.md §5, "Quest synopsis"). Never commit quest texts or a dump of them; tests read the local cache.
+  (DESIGN.md §5, "Quest synopsis"). Never commit quest texts or a dump of them; tests read the local cache. Also run
+  `shturmap-cli effort pve` and `… regular`: Plan's order by effort group (DESIGN.md §7, "Plan order"); name any
+  UNKNOWN TARGET in `QuestEffort` and check any unknown objective type.
 - The website's screenshots and hero clip are re-recorded only when the owner says so (owner, 2026-10-02); remind
   them when a release goes up on GitHub. Then use `tools\make-media.ps1` in `..\shturmap.github.io` (see its
   CLAUDE.md) and go through its hand-check list.

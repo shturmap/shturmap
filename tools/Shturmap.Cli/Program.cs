@@ -37,6 +37,9 @@ switch (command)
     case "synopses":
         await Synopses(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "effort":
+        await Effort(args.ElementAtOrDefault(1) ?? "pve");
+        break;
     case "study":
         Study(args.ElementAtOrDefault(1));
         break;
@@ -52,9 +55,53 @@ switch (command)
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
             shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
+            shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
             shturmap-cli study [on|off]      show or set the "Keep a study log" switch, as help sets it (Shturmap closed)
             """);
         break;
+}
+
+// The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's
+// order, with its effort group and complexity (QuestEffort), and what to look at: UNKNOWN TARGET (a kill target the
+// rules don't know, counted as a fight) and, over all quests, objective types the rules don't know.
+static async Task Effort(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
+    var quests = data.Tasks.Values.Select(t => Shturmap.Session.Planning.ToPlan(t, data)).ToList();
+    var groups = new Dictionary<Shturmap.Core.Planning.EffortGroup, int>();
+    var unknownTargets = new SortedSet<string>(StringComparer.Ordinal);
+    var rows = 0;
+    foreach (var map in Shturmap.Session.Planning.Maps(data).OrderBy(m => m.Name))
+    {
+        var plan = Shturmap.Core.Planning.RaidPlanner.Plan(quests, map);
+        Console.WriteLine($"== {map.Name}");
+        foreach (var (section, list) in new[] { ("COMPLETE", plan.Finish), ("PROGRESS", plan.Progress) })
+        {
+            Console.WriteLine($"  {section}");
+            Shturmap.Core.Planning.EffortGroup? previous = null;
+            foreach (var q in list)
+            {
+                var effort = Shturmap.Core.Planning.QuestEffort.Of(q);
+                if (previous is { } p && p != effort.Group)
+                    Console.WriteLine("    ----");
+                previous = effort.Group;
+                rows++;
+                groups[effort.Group] = groups.GetValueOrDefault(effort.Group) + 1;
+                var unknown = q.Objectives.SelectMany(o => o.Targets ?? []).Where(t => !Shturmap.Core.Planning.QuestEffort.IsKnownTarget(t)).Distinct().ToList();
+                unknownTargets.UnionWith(unknown);
+                Console.WriteLine($"    {effort.Group,-13} {effort.Steps} {effort.Conditions} {effort.KillBucket}  {q.Quest.Name}" +
+                                  (unknown.Count > 0 ? $"  [UNKNOWN TARGET {string.Join(", ", unknown)}]" : ""));
+            }
+        }
+    }
+    var unknownTypes = data.Tasks.Values.SelectMany(t => t.Objectives ?? []).Select(o => o.Type)
+        .Where(t => !Shturmap.Core.Planning.QuestEffort.IsKnownType(t)).Distinct().ToList();
+    Console.WriteLine();
+    Console.WriteLine($"{rows} rows: " + string.Join(", ", groups.OrderBy(g => g.Key).Select(g => $"{Shturmap.Core.Planning.QuestEffort.Label(g.Key)} {g.Value}")));
+    Console.WriteLine($"Unknown kill targets: {(unknownTargets.Count == 0 ? "none" : string.Join(", ", unknownTargets))}");
+    Console.WriteLine($"Unknown objective types: {(unknownTypes.Count == 0 ? "none" : string.Join(", ", unknownTypes.Select(t => t ?? "(none)")))}");
 }
 
 // The help panel's "Keep a study log" switch, in the app's own settings; for setting it without opening the app.

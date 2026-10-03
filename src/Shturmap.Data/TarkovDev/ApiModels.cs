@@ -115,6 +115,16 @@ public sealed record ApiObjective(
     bool FoundInRaid,
     List<List<ApiItemRef>>? Wearing = null);
 
+/// <summary>
+/// What an objective asks, in the game's own keys rather than words: tarkov.dev translates these fields, so the
+/// values below come from before translation and are the same in every language.
+/// </summary>
+/// <param name="Targets">A kill objective's targets: "Savage", "AnyPmc", "bossKnight", …</param>
+/// <param name="ExitStatus">An extract objective's accepted exit statuses: "ExpBonusSurvived", "marathon Name", …</param>
+/// <param name="Conditions">A kill objective's conditions that are set, by name: "weapon", "distance", "zone", …
+/// (see <see cref="GameDataLoader"/>).</param>
+public sealed record ObjectiveFacts(IReadOnlyList<string> Targets, IReadOnlyList<string> ExitStatus, IReadOnlyList<string> Conditions);
+
 /// <summary>An item named in an objective's conditions.</summary>
 public sealed record ApiItemRef(string Id, string? Name);
 

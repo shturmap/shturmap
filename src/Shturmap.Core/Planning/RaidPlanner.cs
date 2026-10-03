@@ -21,6 +21,11 @@ public enum RequirementKind
 /// <param name="Keys">Key alternatives needed for this objective: each inner list is one way in.</param>
 /// <param name="Bring">Items consumed: (item id, count).</param>
 /// <param name="Wear">Gear to wear: each inner list is a set worn together; any set will do.</param>
+/// <param name="Type">tarkov.dev's objective type ("visit", "shoot", …), for its effort group (<see cref="QuestEffort"/>).</param>
+/// <param name="Targets">A kill objective's targets, as the game's keys ("Savage", "AnyPmc", "bossKnight").</param>
+/// <param name="ExitStatus">An extract objective's accepted exit statuses, as the game's keys ("ExpBonusSurvived").</param>
+/// <param name="Conditions">A kill objective's set conditions by name ("weapon", "distance", "zone", …).</param>
+/// <param name="FoundInRaid">A find objective whose items must be found in raid.</param>
 public sealed record PlanObjective(
     string Id,
     ObjectiveKind Kind,
@@ -30,10 +35,18 @@ public sealed record PlanObjective(
     bool Optional,
     IReadOnlyList<IReadOnlyList<string>> Keys,
     IReadOnlyList<(string ItemId, int Count)> Bring,
-    IReadOnlyList<IReadOnlyList<string>>? Wear = null);
+    IReadOnlyList<IReadOnlyList<string>>? Wear = null,
+    string? Type = null,
+    IReadOnlyList<string>? Targets = null,
+    IReadOnlyList<string>? ExitStatus = null,
+    IReadOnlyList<string>? Conditions = null,
+    bool FoundInRaid = false);
 
 /// <param name="NeededKeys">Keys the quest needs, per map id.</param>
-public sealed record PlanQuest(string Id, string Name, IReadOnlyList<PlanObjective> Objectives, IReadOnlyDictionary<string, IReadOnlyList<string>> NeededKeys);
+/// <param name="TraderOrder">The quest giver's place in the trader list as tarkov.dev gives it (the game's own order),
+/// for the plan's order; quests of unknown traders come last.</param>
+public sealed record PlanQuest(string Id, string Name, IReadOnlyList<PlanObjective> Objectives, IReadOnlyDictionary<string, IReadOnlyList<string>> NeededKeys,
+    int TraderOrder = int.MaxValue);
 
 /// <summary>A map as the player picks it in the game; variants that share artwork (Ground Zero 21+) are one map.</summary>
 public sealed record PlanMap(string Id, string Name, IReadOnlySet<string> MapIds, int RaidMinutes);
@@ -103,6 +116,9 @@ public static class RaidPlanner
             }
         }
 
+        // Each section in effort order: going somewhere, then finding or surviving, then fighting (owner, 2026-10-03).
+        finish = QuestEffort.Order(finish).ToList();
+        progress = QuestEffort.Order(progress).ToList();
         var involved = finish.Concat(progress).ToList();
         return new MapPlan(map, Math.Round(score, 2), finish, progress, Requirements(involved, map), RouteLength(involved, map));
     }

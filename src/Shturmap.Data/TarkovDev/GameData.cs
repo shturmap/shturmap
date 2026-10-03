@@ -31,6 +31,9 @@ public sealed class GameData
     /// <summary>Extracts' internal names by id ("Alpinist" for Cliff Descent), from before translation.</summary>
     public IReadOnlyDictionary<string, string> ExtractKeys { get; init; } = new Dictionary<string, string>();
 
+    /// <summary>Objectives' kill targets, exit statuses and set kill conditions by objective id, from before translation.</summary>
+    public IReadOnlyDictionary<string, ObjectiveFacts> ObjectiveFacts { get; init; } = new Dictionary<string, ObjectiveFacts>();
+
     /// <summary>Bosses that can spawn on a map, strongest chance first (AI PMC squads are left out).</summary>
     public IReadOnlyList<(string Name, double Chance)> BossesOn(string mapId) =>
         Maps.TryGetValue(mapId, out var map) && map.Bosses is { } bosses

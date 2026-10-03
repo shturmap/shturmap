@@ -451,7 +451,7 @@ public sealed partial class MainWindow : Window
         if (openIndex < 0)
             openIndex = 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
-        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis };
+        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup };
         vm.Plans = s.Plan.Select((p, i) => new PlanCard(
             p.NormalizedName,
             p.MapName,

@@ -11,7 +11,10 @@ namespace Shturmap.Session;
 public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "");
 
 /// <param name="Synopsis">What it asks on the plan's map in a few words (<see cref="Planning.Synopsis"/>), or empty.</param>
-public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null, string Synopsis = "");
+/// <param name="Group">Its effort group on the plan's map (<see cref="QuestEffort"/>).</param>
+/// <param name="StartsGroup">The first row of a later effort group in its section: a hairline goes above it.</param>
+public sealed record PlanQuestView(string QuestId, string Name, ObjectiveKind Kind, string? TraderId = null, string Synopsis = "",
+    EffortGroup Group = EffortGroup.GoThere, bool StartsGroup = false);
 
 /// <summary>One suggested map for the next raid.</summary>
 public sealed record MapPlanView(
@@ -46,21 +49,30 @@ public static class Planning
         RaidPlanner.AnyMap(Quests(data, activeQuestIds)).Select(q => QuestView(data, q)).ToList();
 
     private static List<PlanQuest> Quests(GameData data, IEnumerable<string> ids) =>
-        ids.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>().Select(ToPlan).ToList();
+        ids.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>().Select(t => ToPlan(t, data)).ToList();
 
     /// <summary>"Kaban 75%": a boss and its spawn chance, without the locale's space before the percent sign.</summary>
     public static string BossText((string Name, double Chance) boss) => $"{boss.Name} {Math.Round(boss.Chance * 100):0}%";
 
     /// <summary>The planner's view of one quest (also used for the per-objective requirement hints).</summary>
-    public static PlanQuest ToPlan(ApiTask task) => new(
-        task.Id,
-        task.Name,
-        (task.Objectives ?? []).Select(ToPlan).ToList(),
-        (task.NeededKeys ?? []).Where(k => k.Map is not null)
-            .GroupBy(k => k.Map!)
-            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.SelectMany(k => k.Keys ?? []).Distinct().ToList()));
+    public static PlanQuest ToPlan(ApiTask task) => ToPlan(task, null);
 
-    private static PlanObjective ToPlan(ApiObjective o)
+    /// <summary>The planner's view of one quest with what orders it in a plan: its objectives' kill targets,
+    /// conditions and exit statuses, and its trader's place in tarkov.dev's trader list (the game's own order).</summary>
+    public static PlanQuest ToPlan(ApiTask task, GameData? data)
+    {
+        var traderOrder = data is not null && task.Trader is { } trader && data.Traders.Keys.ToList().IndexOf(trader) is var at and >= 0 ? at : int.MaxValue;
+        return new(
+            task.Id,
+            task.Name,
+            (task.Objectives ?? []).Select(o => ToPlan(o, data?.ObjectiveFacts.GetValueOrDefault(o.Id))).ToList(),
+            (task.NeededKeys ?? []).Where(k => k.Map is not null)
+                .GroupBy(k => k.Map!)
+                .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.SelectMany(k => k.Keys ?? []).Distinct().ToList()),
+            traderOrder);
+    }
+
+    private static PlanObjective ToPlan(ApiObjective o, ObjectiveFacts? facts = null)
     {
         var kind = QuestTaxonomy.Classify(o.Type);
         var places = new Dictionary<string, List<WorldPoint>>(StringComparer.Ordinal);
@@ -90,7 +102,12 @@ public static class Planning
             count, o.Optional,
             (o.RequiredKeys ?? []).Where(k => k.Count > 0).Select(k => (IReadOnlyList<string>)k).ToList(),
             bring,
-            (o.Wearing ?? []).Select(set => (IReadOnlyList<string>)set.Select(i => i.Id).ToList()).Where(set => set.Count > 0).ToList());
+            (o.Wearing ?? []).Select(set => (IReadOnlyList<string>)set.Select(i => i.Id).ToList()).Where(set => set.Count > 0).ToList(),
+            o.Type,
+            facts?.Targets ?? [],
+            facts?.ExitStatus ?? [],
+            facts?.Conditions ?? [],
+            o.FoundInRaid);
     }
 
     /// <summary>
@@ -151,8 +168,8 @@ public static class Planning
     private static MapPlanView ToView(GameData data, MapPlan plan) => new(
         data.Maps.TryGetValue(plan.Map.Id, out var map) ? map.NormalizedName : plan.Map.Id,
         plan.Map.Name,
-        plan.Finish.Select(q => QuestView(data, q.Quest) with { Synopsis = Synopsis(data, q, plan.Map)?.Text ?? "" }).ToList(),
-        plan.Progress.Select(q => QuestView(data, q.Quest) with { Synopsis = Synopsis(data, q, plan.Map)?.Text ?? "" }).ToList(),
+        Rows(data, plan.Finish, plan.Map),
+        Rows(data, plan.Progress, plan.Map),
         plan.Requirements.Select(r => RequirementText(data, r)).ToList(),
         (int)Math.Ceiling(plan.WalkingMinutes),
         plan.Map.RaidMinutes,
@@ -173,6 +190,24 @@ public static class Planning
             .OfType<SynopsisObjective>();
         var here = map.MapIds.Select(id => data.Maps.GetValueOrDefault(id)?.Name).OfType<string>().ToList();
         return QuestSynopsis.Of(objectives, here, data.Maps.Values.Select(m => m.Name).ToList());
+    }
+
+    /// <summary>One section's rows in the plan's order, each with its effort group; a later group's first row starts a
+    /// new group (the hairline between groups).</summary>
+    public static IReadOnlyList<PlanQuestView> Rows(GameData data, IEnumerable<QuestOnMap> section, PlanMap map)
+    {
+        var rows = new List<PlanQuestView>();
+        foreach (var q in section)
+        {
+            var group = QuestEffort.Of(q).Group;
+            rows.Add(QuestView(data, q.Quest) with
+            {
+                Synopsis = Synopsis(data, q, map)?.Text ?? "",
+                Group = group,
+                StartsGroup = rows.Count > 0 && rows[^1].Group != group,
+            });
+        }
+        return rows;
     }
 
     private static PlanQuestView QuestView(GameData data, PlanQuest q) =>

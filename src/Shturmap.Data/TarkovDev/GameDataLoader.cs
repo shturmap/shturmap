@@ -75,7 +75,22 @@ public sealed class GameDataLoader(CachedHttp http)
                 }
             }
         }, alsoTranslate: ["conditions"]);
-        var tasksData = Translated(tasks.Result, tasksLang.Result, tasksEn.Result);
+        // Kill targets and exit statuses are translated too ("Savage" becomes "Scavs", or German); the plan's effort
+        // groups need the keys, which mean the same in every language.
+        var objectiveFacts = new Dictionary<string, ObjectiveFacts>(StringComparer.Ordinal);
+        var tasksData = Translated(tasks.Result, tasksLang.Result, tasksEn.Result, raw =>
+        {
+            if (raw?["tasks"] is not JsonObject all)
+                return;
+            foreach (var (_, task) in all)
+            {
+                foreach (var objective in (task?["objectives"] as JsonArray ?? []).OfType<JsonObject>())
+                {
+                    if (objective["id"]?.GetValue<string>() is { } id && Facts(objective) is { } facts)
+                        objectiveFacts.TryAdd(id, facts);
+                }
+            }
+        });
         var tradersData = Translated(traders.Result, tradersLang.Result, tradersEn.Result);
 
         var itemNames = ItemNames(JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsLang.Result.FilePath, ct)));
@@ -98,10 +113,54 @@ public sealed class GameDataLoader(CachedHttp http)
             Traders = Section(tradersData, null, ApiJsonContext.Default.DictionaryStringApiTrader),
             ItemNames = itemNames,
             ExtractKeys = extractKeys,
+            ObjectiveFacts = objectiveFacts,
             MapDefinitions = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct)),
             CheckedAt = fetches.Min(f => f.Result.FetchedAt),
             Offline = fetches.Any(f => f.Result.Stale),
         };
+    }
+
+    /// <summary>
+    /// An objective's targets, exit statuses and set kill conditions, read as it arrived (before translation), or null
+    /// when it has none. A kill condition counts as set when it narrows the kill: a weapon or weapon mods, body
+    /// parts, a distance above 0 (tarkov.dev writes <c>{"value":0,"compareMethod":"&gt;="}</c>, or null, for none),
+    /// gear worn or not worn, a time of day (both hours 0 for none), a health effect on the player or the enemy, or
+    /// zones (an area of the map, not the map itself, which is <c>maps</c>).
+    /// </summary>
+    internal static ObjectiveFacts? Facts(JsonObject objective)
+    {
+        static List<string> Strings(JsonNode? node) =>
+            (node as JsonArray ?? []).Select(n => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : null).OfType<string>().ToList();
+        static bool Listed(JsonNode? node) => node is JsonArray { Count: > 0 };
+        static double Number(JsonNode? node) => node is JsonValue v && v.TryGetValue<double>(out var d) ? d : 0;
+
+        var targets = Strings(objective["targetNames"]);
+        var status = Strings(objective["exitStatus"]);
+        var conditions = new List<string>();
+        if (objective["type"]?.GetValue<string>() == "shoot")
+        {
+            if (Listed(objective["usingWeapon"]))
+                conditions.Add("weapon");
+            if (Listed(objective["usingWeaponMods"]))
+                conditions.Add("weapon mods");
+            if (Listed(objective["bodyParts"]))
+                conditions.Add("body parts");
+            if (Number(objective["distance"]?["value"]) > 0)
+                conditions.Add("distance");
+            if (Listed(objective["wearing"]))
+                conditions.Add("wearing");
+            if (Listed(objective["notWearing"]))
+                conditions.Add("not wearing");
+            if (Number(objective["timeFromHour"]) != 0 || Number(objective["timeUntilHour"]) != 0)
+                conditions.Add("time of day");
+            if (objective["playerHealthEffect"] is JsonObject)
+                conditions.Add("player health");
+            if (objective["enemyHealthEffect"] is JsonObject)
+                conditions.Add("enemy health");
+            if (Listed(objective["zones"]))
+                conditions.Add("zone");
+        }
+        return targets.Count + status.Count + conditions.Count > 0 ? new ObjectiveFacts(targets, status, conditions) : null;
     }
 
     /// <summary>

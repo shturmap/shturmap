@@ -36,10 +36,14 @@ public sealed record MapChoice(string NormalizedName, string Name)
 
 /// <param name="Needs">What it needs brought on the map (empty: nothing), or null where bringing doesn't apply.</param>
 /// <param name="Synopsis">What it asks on the map in a few words, under the name; empty for none.</param>
+/// <param name="StartsGroup">The first row of a later effort group in a Plan section (Session.Planning.Rows).</param>
 public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "")
+    IReadOnlyList<Controls.NeedChip>? Needs = null, string Synopsis = "", bool StartsGroup = false)
 {
     public Visibility SynopsisVisibility => Synopsis.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>A hairline above the row where a later effort group starts; no heading (owner, 2026-10-03).</summary>
+    public Thickness GroupLine => StartsGroup ? new Thickness(0, 1, 0, 0) : new Thickness(0);
 }
 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
