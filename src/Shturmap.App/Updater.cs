@@ -126,7 +126,7 @@ public sealed class Updater
         }
     }
 
-    /// <summary>"Uninstall Shturmap…" in help: only in an install Velopack made, the release or the dev build.</summary>
+    /// <summary>"Uninstall Shturmap…" in settings: only in an install Velopack made, the release or the dev build.</summary>
     public bool UninstallOffered => Installed && Uninstall.Offered(AppId);
 
     /// <summary>Velopack's uninstaller is there to start: checked before the session is closed for it.</summary>

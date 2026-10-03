@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Shturmap.Session;
 
 /// <summary>
-/// Removing Shturmap from its help panel (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"): Velopack's own
+/// Removing Shturmap from its settings (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"): Velopack's own
 /// uninstaller, and, only when the player ticks "Also delete my Shturmap data", this install's data folder. The app
 /// leaves a note in its install folder (<see cref="IntentFile"/>) and closes; the uninstaller then starts the exe with
 /// its uninstall hook (Program.Main), which deletes the data folder only on a fresh note, after the app has let go of

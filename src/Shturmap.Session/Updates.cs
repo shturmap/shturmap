@@ -42,7 +42,7 @@ public static class Distribution
         : DataFolderKind.Dev;
 }
 
-/// <summary>What Shturmap does about new versions: the player's choice in help ("Updates").</summary>
+/// <summary>What Shturmap does about new versions: the player's choice in settings ("Updates").</summary>
 public enum UpdateMode
 {
     /// <summary>Asks GitHub at start and every 6 hours, downloads a new version in the background; it applies at the

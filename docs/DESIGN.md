@@ -386,7 +386,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
-  the help button.
+  three buttons of one size (28 px, 6 px apart): **feedback** (a speech bubble, `E939`: the Report dialog, PROBLEM
+  preselected; muted and disabled where the build can't report, its tooltip saying so), **?** (help, F1) and the
+  **gear** (settings, `E713`, Ctrl+,). Owner, 2026-10-03: "It's not clear that the settings are with the
+  questionmark on the top right. It should probably be a questionmark for the help and then a settings button next
+  to it", and "there should be a separate feedback/bugreport button".
   The mode is a plain label from the game's log, with no chooser (owner, 2026-10-03, replacing a PvE/PvP/Seasonal
   dropdown). Evidence: all 21 sessions in the owner's application logs (15 August to 2 October) have `Session
   mode: Pve | Regular | PvpSeason` 8–11 s after the game starts, a switch within a session writes a new line (2
@@ -406,7 +410,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   (§2).
   Everything in the bar shares one middle line (a player's report, 2026-10-03): the status words use the tight
   line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
-  and the lights, the "?" and the help button's frame are centred on the same line; vertical padding keeps the
+  and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
   words with tooltips easy to point at.
 - **Rail** (left, 380 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
@@ -468,10 +472,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   containers and the rest Shturmap doesn't draw) above the attribution.
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
   "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
-  crash reports, the "Keep a study log" switch, the "Crash reports" choice (ASK AFTER A CRASH · ALWAYS SEND ·
-  NEVER) with what a crash report holds, and the links REPORT A PROBLEM OR IDEA and COPY DIAGNOSTICS, then LOG
-  FOLDER, PRIVACY and LICENCES, and in an installed build a muted UNINSTALL SHTURMAP… (§8, "Study log",
-  "Diagnostics", "Reports", "Distribution"). Opens once by itself on first run.
+  crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
+  "Diagnostics"). Opens once by itself on first run.
+- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log", "Crash reports" (ASK AFTER A
+  CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
+  available in this build"); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
+  UNINSTALL SHTURMAP… with its question; at the foot the version and the kind of build (§8, "Study log",
+  "Reports", "Distribution"). It never opens by itself; closing it drops an unanswered uninstall question.
+  Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.
 - **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
   CANCEL and SEND.
@@ -965,10 +973,10 @@ self-unpacking exe, without updates; they need the Setup once.
   `%LOCALAPPDATA%\Shturmap` outlive the app. Checked 2026-10-03: installing, updating and uninstalling left the data
   folder's files all there and `shturmap.db` byte for byte the same; the uninstall removed the install folder, its
   shortcuts and its Apps entry.
-- **Uninstalling from help** (owner, 2026-10-03: "The installer should also be able to uninstall", then: an
-  "Uninstall Shturmap…" in help, with the data only on a tick). Windows' Settings → Apps (and the Start menu's
+- **Uninstalling from settings** (owner, 2026-10-03: "The installer should also be able to uninstall", then: an
+  "Uninstall Shturmap…" in help, with the data only on a tick; in settings since help and settings were split). Windows' Settings → Apps (and the Start menu's
   Uninstall) already ran Velopack's uninstaller; the Setup itself has no repair-or-remove mode, and another installer
-  around Velopack wasn't worth it. Help's quiet link "UNINSTALL SHTURMAP…" shows only in an install Velopack made,
+  around Velopack wasn't worth it. Settings' quiet link "UNINSTALL SHTURMAP…" shows only in an install Velopack made,
   the release (`ShturmapApp`) or the dev build (`ShturmapDev`) (`Uninstall.Offered`), never in a folder build. It
   asks one question, "Remove Shturmap from this PC?", with an unticked "Also delete my Shturmap data" and what that is
   (settings, quest history, logs, study log, reports waiting, crash records, and for the release the download
@@ -992,7 +1000,7 @@ self-unpacking exe, without updates; they need the Setup once.
   such requests an hour per address. A new version downloads in the background (a delta when there is one) and
   applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
   start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
-  "Updates" in help: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
+  "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
   request at all). A version already downloaded applies at the next start whatever the setting. Builds the Setup
   didn't install (the folder build, `dotnet run`) and developer runs (snapshots, fake games, the demo) ask nothing;
   help says "Updates: not available in this build". Checks, finds and downloads are logged at INFO; a failure is a
@@ -1188,7 +1196,7 @@ no note proves nothing, since gear may not have been insured. Only Shturmap's ow
 sent anywhere.
 
 The study log is **the player's choice** (owner, 2026-10-03): off by default, kept only while "Keep a study log" in
-help is ticked, with one line saying what it records, that it stays on this PC (where) and that nothing is sent.
+settings is ticked, with one line saying what it records, that it stays on this PC (where) and that nothing is sent.
 The switch is saved in the app's settings (`studyLog` = `on`/`off` in `shturmap.db`; `shturmap-cli study [on|off]`
 sets it without the app); `--study` keeps it for one session without changing the switch; snapshot and fake-game
 runs never keep one. Days older than 30 are removed at start, on or off. Ticking it mid-session writes `study.on`,
@@ -1235,7 +1243,7 @@ bother", and crash reports as a mode the player chooses; Sentry, EU region; cras
 default). One way to report, from the app, with no account and no browser: no GitHub issue forms, no separate web
 form. Problems and ideas both go through it.
 
-- **The Report dialog.** REPORT A PROBLEM OR IDEA in help, the REPORT link on notices that ask for a report, and
+- **The Report dialog.** The feedback button at the top right, the REPORT link on notices that ask for a report, and
   ADD A NOTE after a crash report was sent all open it. PROBLEM | IDEA (the placeholder follows: "What happened,
   and what did you expect?" / "What would help, and when would you use it?"), the text (required, at most 4,000
   characters), a contact for a reply (optional, e.g. a Discord name or an email, at most 120), "Include

@@ -27,6 +27,14 @@ public sealed partial class MainWindow
 
     public Brush ReportLinkBrush => Resource(Reporter.Configured ? "AmberBrush" : "MutedBrush");
 
+    /// <summary>The feedback button's icon: ink like "?" and the gear, muted where this build can't report.</summary>
+    public Brush FeedbackIconBrush => Resource(Reporter.Configured ? "InkBrush" : "MutedBrush");
+
+    public string FeedbackTooltip => Reporter.Configured ? "Report a problem or idea" : "Reporting isn't set up in this build";
+
+    /// <summary>Help's pointer to the feedback button, which replaced the report link there (owner, 2026-10-03).</summary>
+    public string FeedbackPointer => "To report a problem or suggest an idea, use the feedback button at the top right, beside the ?.";
+
     /// <summary>A notice that asks for a report links to the dialog, or to the diagnostics where there is none.</summary>
     public string ReportOfferText => Reporter.Configured ? "REPORT" : "COPY DIAGNOSTICS";
 
@@ -44,7 +52,7 @@ public sealed partial class MainWindow
     private void OnCrashModeClick(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { Tag: string tag } && Enum.TryParse<CrashMode>(tag, out var mode))
-            SetCrashMode(mode, "help");
+            SetCrashMode(mode, "settings");
     }
 
     private void SetCrashMode(CrashMode mode, string how)
@@ -78,11 +86,8 @@ public sealed partial class MainWindow
 
     // ---- the Report dialog ----
 
-    private void OnReportClick(object sender, RoutedEventArgs e)
-    {
-        HelpFlyout.Hide();
-        OpenReport(ReportKind.Problem, null, "help");
-    }
+    // The feedback button at the top right (owner, 2026-10-03: "a separate feedback/bugreport button").
+    private void OnFeedbackClick(object sender, RoutedEventArgs e) => OpenReport(ReportKind.Problem, null, "button");
 
     private void OnNoticeReportClick(object sender, RoutedEventArgs e)
     {
