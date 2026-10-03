@@ -451,7 +451,8 @@ public static partial class MapRenderer
         var selected = IsSelected(scene, marker) || focused;
         // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
         var kept = marker.Objective is not null && IsSelected(scene, marker);
-        var color = kept ? Kept : ColorOf(marker.Kind);
+        // A lock a picked quest needs the key of is part of the pick: the picks' colour, without their ring.
+        var color = kept || IsKeptKey(scene, marker) ? Kept : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
         // the boss diamond (level 3): a 15 px triangle or diamond.
         var r = marker switch
@@ -556,7 +557,11 @@ public static partial class MapRenderer
 
     // A marker of a picked quest (or a picked marker): the kept look.
     private static bool IsSelected(MapScene scene, MapMarker m) =>
-        scene.Kept.Count > 0 && (scene.Kept.Contains(m.Id) || (m.Group is not null && scene.Kept.Contains(m.Group)));
+        scene.Kept.Count > 0 && (scene.Kept.Contains(m.Id) || (m.Group is not null && scene.Kept.Contains(m.Group)) || IsKeptKey(scene, m));
+
+    // A lock whose key a picked quest needs on this map (MapScene.KeptKeys).
+    private static bool IsKeptKey(MapScene scene, MapMarker m) =>
+        m.Kind == MarkerKind.Lock && m.Group is not null && scene.KeptKeys.Contains(m.Group);
 
     private static bool IsFocused(MapScene scene, MapMarker m) =>
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
@@ -945,7 +950,8 @@ public static partial class MapRenderer
     {
         if (scene.Player is not { } player || scene.Kept.Count == 0)
             return null;
-        var targets = scene.Markers.Where(m => IsSelected(scene, m) && m.Kind != MarkerKind.ObjectiveDone).ToList();
+        // The guide leads to the picked quests' places, never to a door they need (a means, not a goal).
+        var targets = scene.Markers.Where(m => m.Objective is not null && IsSelected(scene, m) && m.Kind != MarkerKind.ObjectiveDone).ToList();
         if (targets.Count == 0)
             return null;
         var nearest = targets.MinBy(m => player.Position.HorizontalDistanceTo(m.Position))!;
