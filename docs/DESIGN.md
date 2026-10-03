@@ -146,10 +146,13 @@ against sanctions); and say that some players see a position map as an unfair ad
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
-   player marker and trail go: out of a raid there is no "you". In a raid, a position older than 2 minutes (or
-   none a minute in) is said at the top of the map in big gold type, "POSITION 7 MIN OLD · PRESS PRTSC OR HOME
-   FOR A NEW ONE", and the banner pops once when the window gets focus (the study log: about one position per 8
-   raid minutes, often several minutes old when the app was looked at).
+   player marker and trail go: out of a raid there is no "you". A position's age is said beside the marker: from
+   a minute, the ring turns dashed and a tag gives the minutes ("4 MIN"); from 2 minutes the tag reads "7 MIN
+   OLD", larger and framed in sand (the study log: about one position per 8 raid minutes, often several minutes
+   old when the app was looked at). Until 2026-10-03 the 2-minute case was also said over the map in big gold type
+   ("POSITION 7 MIN OLD · PRESS PRTSC OR HOME FOR A NEW ONE", and "NO POSITION YET" a minute into a raid without
+   one); the owner had it removed: "Put it next to the marker". No position yet is said by the status bar and the
+   raid card.
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
     loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
     holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop). Its
@@ -236,17 +239,18 @@ Quest **types are shown by glyph, never by colour**; colour stays free for state
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
 portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
 header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind rows; map markers
-not in focus step back to 28 % opacity, easing in and out over 0.18 s, and the focused ones pulse: a ring leaves
-the marker and fades every 1.4 s (motion is noticed before anything else; off, with the easing, when Windows'
-animation effects are off, and only while something is in focus). Losing the focus waits 0.25 s before the map
-follows, so moving from one row to the next switches the highlight straight across instead of making every marker
-blink. Markers on another floor than the one shown are drawn at full strength, highlighted like any other, with a
-small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half strength read as
-"unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate with the chevron
-and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or down alone
-didn't say how far; cartography review, 2026-10-02). Badge places are fixed: the floor at the upper right, a
-cluster's count at the lower right; beside small symbols (Scav and sniper zones, bosses) the floor badge moves out
-so the symbol stays visible. Spawn zone markers carry it too, by the height of their centroid.
+not in focus step back by kind (see "Map drawing", "Stepping back"), easing in and out over 0.18 s, and the focused
+ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
+easing, when Windows' animation effects are off, and only while something is in focus). Losing the focus waits
+0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
+of making every marker blink. Markers on another floor than the one shown are drawn at full strength, highlighted
+like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
+strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
+with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
+down alone didn't say how far; cartography review, 2026-10-02). Badge places are fixed: the floor at the upper
+right, a cluster's count at the lower right, an optional objective's "OPT" at the upper left; beside small symbols
+(Scav and sniper zones, bosses) the floor badge moves out so the symbol stays visible. Spawn zone markers carry it
+too, by the height of their centroid.
 Text says only what the place doesn't: an objective "… on Streets of Tarkov" drops the map's name on that map.
 
 ### Logo
@@ -385,6 +389,30 @@ spawns below).
   Extracts and transits are as large as the boss diamond (15 px across), no longer smaller. A new symbol gets a
   level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
 
+- **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
+  out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
+  What is pointed at or kept stays at full strength; the rest steps back by kind, never out of sight, and less in a
+  raid, where a quest is often kept highlighted all raid:
+
+  | kind | planning | in a raid |
+  | --- | --- | --- |
+  | your side's extracts and transits, bosses | full strength (labels 70 %) | full strength |
+  | other quests' markers | 62 % (labels 45 %) | 80 % (labels 60 %) |
+  | Scav and sniper zones | 60 % (labels 50 %) | 75 % (labels 60 %) |
+
+  Labels step back further than symbols, so the highlighted quest's names stand out without hiding where everything
+  else is. Stepping back by colour (greying) was compared and dropped: a greyed quest marker reads as done (grey
+  means done or after the raid). The candidates (all at 60 %, greyed, by kind) were
+  compared side by side on Customs and Streets, in a raid and in Plan.
+
+- **Optional objectives** (owner, 2026-10-03: they "might still be very relevant for a quest"). tarkov.dev marks 60
+  of 1,418 objectives optional; 45 have places on a map (most on Customs, 15, and Streets, 11: Abandoned Cargo's
+  seven cargos, Pyramid Scheme's ten). Their markers carry a small "OPT" badge at the upper left, in the badge style
+  of the count (dark plate, the marker's colour), and the quest card and the raid card say "(optional)" after the
+  objective. Words, because no shape, colour or ring is free to mean "optional": the hollow ring is a possible
+  place, grey is done, a dashed ring is an old position, and a dotted ring, also tried, read like either. A label
+  suffix was tried too; it disappears with the label.
+
 - **Spawns: one marker per zone, at its centroid** (owner, 2026-10-02: the player needs to know which area has
   Scavs, where the bosses and the snipers are, not each spawn point; "just use the centroid, do not colour code the
   potential spawn area"). tarkov.dev names a zone for each spawn point; the points of one zone get one marker at
@@ -508,13 +536,13 @@ click on the quest itself only keeps its card open. The
 kept quest has its own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among gold didn't
 stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart from gold with
 any colour vision. Its rows keep a cyan tint; on the map its markers turn cyan and grow (14 px radius, against 12 for
-what is pointed at and 10 at rest) inside a steady cyan ring on a dark band, its zones turn cyan, the rest stay
-dimmed, and a dashed cyan line runs from your last fix to its nearest marker. It pulses three times when
-kept, and again when the pointer comes back from something else, then holds still: a marker pulsing all raid would be
-motion at the edge of the player's eye. Pointing at something else shows that instead, for as long as the pointer is
-on it. One quest is kept at a time; another click on it, a click on another quest, or Esc (after the cards) lets it
-go, and it goes by itself when the quest is done. A highlight with nothing on the shown map (a quest kept from
-another map, a quest for any map) dims nothing.
+what is pointed at and 10 at rest) inside a steady cyan ring on a dark band, its zones turn cyan, the rest step
+back a little ("Stepping back"), and a dashed cyan line runs from your last fix to its nearest marker. It pulses
+three times when kept, and again when the pointer comes back from something else, then holds still: a marker
+pulsing all raid would be motion at the edge of the player's eye. Pointing at something else shows that instead,
+for as long as the pointer is on it. One quest is kept at a time; another click on it, a click on another quest,
+or Esc (after the cards) lets it go, and it goes by itself when the quest is done. A highlight with nothing on the
+shown map (a quest kept from another map, a quest for any map) dims nothing.
 
 ### Extract requirements
 
@@ -851,7 +879,7 @@ COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the
 screenshots that gave no position, whether a new position was in view and uses of the edge arrow and F, map
 previews, popped-out-window moves with their final position and whether they were clamped, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
-banners seen, side switches, why a session started (the previous one ended cleanly or not, the build's time), and
+banners seen (until the banner went, 2026-10-03), side switches, why a session started (the previous one ended cleanly or not, the build's time), and
 active-quest count changes outside quest events. Added 2026-10-02: group picks (location, map, time variant) and
 group ready / not ready / start; each raid's loading steps with their seconds since the scene line (in
 `raid.start`); the raid clock in each fix; the insurer's notes (kind, location, item count). How a raid ended

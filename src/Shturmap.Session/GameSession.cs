@@ -828,7 +828,7 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
                     height = Math.Abs(dy) > 3 ? dy : null;
                 }
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
-                    string.IsNullOrWhiteSpace(o.Objective.Description) ? "(no description)" : o.Objective.Description!,
+                    ObjectiveText(o.Objective),
                     o.Done, o.Places.Count > 0, distance, direction, height,
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0),
                     bearing, o.Quest.Trader));
@@ -916,6 +916,13 @@ public sealed class GameSession(AppPaths paths, GameLocations? locations = null)
             return new(true, "Logs live");
         return new(true, "Logs");
     }
+
+    /// <summary>
+    /// An objective's line in the raid card: its description, and "(optional)" when tarkov.dev marks it so, as the
+    /// quest card says it (owner, 2026-10-03: optional places "might still be very relevant for a quest").
+    /// </summary>
+    public static string ObjectiveText(ApiObjective objective) =>
+        (string.IsNullOrWhiteSpace(objective.Description) ? "(no description)" : objective.Description!) + (objective.Optional ? " (optional)" : "");
 
     // ---- study log: why a session started ----
 

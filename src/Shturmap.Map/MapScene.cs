@@ -26,8 +26,9 @@ public enum MarkerKind
 /// <summary>A point of interest drawn at a fixed screen size.</summary>
 /// <param name="Group">Markers of one quest share a group, so selecting a quest highlights all its points.</param>
 /// <param name="Objective">For quest markers, what the objective asks; drawn as a glyph inside the marker.</param>
+/// <param name="Optional">A quest marker of an objective tarkov.dev marks optional: the quest can be finished without it.</param>
 public sealed record MapMarker(string Id, MarkerKind Kind, WorldPoint Position, string Label, string? Group = null,
-    Shturmap.Core.Quests.ObjectiveKind? Objective = null);
+    Shturmap.Core.Quests.ObjectiveKind? Objective = null, bool Optional = false);
 
 /// <summary>An area drawn as an outline, e.g. a quest zone or an extract's footprint.</summary>
 public sealed record MapZone(string Id, MarkerKind Kind, IReadOnlyList<WorldPoint> Outline, string? Group = null);
@@ -163,9 +164,16 @@ public sealed class MapScene
 
     /// <summary>
     /// How far the markers outside the focus have stepped back, 0 to 1. The map view eases it toward 1 while
-    /// something is in focus and back to 0 after, so the highlight fades in and out rather than blinking.
+    /// something is in focus and back to 0 after, so the highlight fades in and out rather than blinking. How far
+    /// each kind steps back at 1 is <see cref="MapRenderer.StepBackOf"/>.
     /// </summary>
     public float Dim { get; set; }
+
+    /// <summary>
+    /// The player is in a raid on this map. Markers outside the focus then step back less than while planning: a quest
+    /// is often kept highlighted all raid, and extracts, nearby objectives and bosses still matter at a glance.
+    /// </summary>
+    public bool InRaid { get; set; }
 
     /// <summary>
     /// What is drawn emphasised: what the pointer is on, else the kept quest, else (while the dimming fades out) what

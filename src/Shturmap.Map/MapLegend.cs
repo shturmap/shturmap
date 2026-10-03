@@ -16,6 +16,7 @@ public enum LegendSymbol
     Objective,
     PossibleLocation,
     Cluster,
+    Optional,
     Done,
     QuestZone,
     Extract,
@@ -43,7 +44,7 @@ public static class MapLegend
 
     public static IReadOnlyList<Row> Rows { get; } =
     [
-        new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it; for the first minute a cone shows which way you faced."),
+        new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it, from two minutes framed and marked OLD (\"7 MIN OLD\"); for the first minute a cone shows which way you faced."),
         new(LegendSymbol.PlayerOutOfView, "You, out of view: click it or press F to show your position."),
         new(LegendSymbol.KeptQuest, "The quest you keep highlighted: cyan, larger, ringed."),
         new(LegendSymbol.Guide, "From you to its nearest place: a dashed cyan line with the distance, as old as your position."),
@@ -51,6 +52,7 @@ public static class MapLegend
         new(LegendSymbol.Objective, "Quest objective: a gold disc; its glyph is the quest type."),
         new(LegendSymbol.PossibleLocation, "One of the places it can be: a hollow gold ring."),
         new(LegendSymbol.Cluster, "Places of one objective close together: one marker with their count. Zoom in to split them."),
+        new(LegendSymbol.Optional, "An optional objective: OPT at the marker's upper left. The quest can be finished without it, but it may still help."),
         new(LegendSymbol.Done, "A done objective: a small grey disc with a check."),
         new(LegendSymbol.QuestZone, "The area an objective covers."),
         new(LegendSymbol.Extract, "Extract for your side: a green (PMC) or teal (Scav) triangle."),
@@ -140,6 +142,9 @@ public static partial class MapRenderer
                 break;
             case LegendSymbol.Cluster:
                 Marker(Quest(MarkerKind.PossibleLocation), change: m => m with { Count = 5 });
+                break;
+            case LegendSymbol.Optional:
+                Marker(Quest(MarkerKind.Objective) with { Optional = true });
                 break;
             case LegendSymbol.Done:
                 Marker(Quest(MarkerKind.ObjectiveDone));

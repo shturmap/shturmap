@@ -733,20 +733,6 @@
             <TextBlock Text="CLICK THE CARD TO PLAN IT" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
           </StackPanel>
         </Border>
-        <!-- In a raid, an old position says so in big type: a glance must not mistake it for where you are now. -->
-        <Border x:Name="StaleBanner" HorizontalAlignment="Center" Padding="18,10" RenderTransformOrigin="0.5,0.5"
-                Background="#F00B0C0B" BorderBrush="{StaticResource AmberBrush}" BorderThickness="2"
-                Visibility="{x:Bind ShownIf(ViewModel.StaleText), Mode=OneWay}" IsHitTestVisible="False">
-          <Border.RenderTransform>
-            <ScaleTransform x:Name="StaleScale" />
-          </Border.RenderTransform>
-          <StackPanel HorizontalAlignment="Center" Spacing="2">
-            <TextBlock Text="{x:Bind ViewModel.StaleText, Mode=OneWay}" HorizontalAlignment="Center" FontSize="22" FontWeight="SemiBold"
-                       FontStretch="SemiCondensed" CharacterSpacing="120" Foreground="{StaticResource AmberBrush}" />
-            <TextBlock Text="{x:Bind ViewModel.StaleHint, Mode=OneWay}" HorizontalAlignment="Center" Style="{StaticResource StatusText}"
-                       Foreground="{StaticResource InkBrush}" />
-          </StackPanel>
-        </Border>
         </StackPanel>
 
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4">

@@ -34,7 +34,9 @@ public static partial class MapRenderer
     private static readonly SKTypeface TypefaceBold =
         SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.SemiBold, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? SKTypeface.Default;
 
-    public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1)
+    /// <param name="stepBack">How markers outside the focus step back; <see cref="StepBackOf"/> unless a developer
+    /// render compares alternatives.</param>
+    public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         canvas.Clear(Background);
         if (scene.Artwork is not null)
@@ -51,23 +53,24 @@ public static partial class MapRenderer
         DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
 
-        // Markers step back when something else is pointed at (easing with the scene's Dim), all in one layer so
-        // overlapping ones fade as one. A marker on another floor stays at full strength and carries an arrow to it
-        // instead (owner, 2026-10-01: half-strength markers read as "not important", and a highlighted one must look
-        // highlighted).
-        var back = layout.Markers.Where(m => !m.Focused).ToList();
-        var alpha = scene.ShownFocus.Count > 0 ? 1 - 0.72f * scene.Dim : 1f;
-        if (alpha < 1 && back.Count > 0)
+        // Markers outside the focus step back while something is highlighted (easing with the scene's Dim), each kind
+        // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
+        // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength markers
+        // read as "not important", and a highlighted one must look highlighted).
+        var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
+        stepBack ??= StepBackOf;
+        foreach (var group in layout.Markers.Where(m => !m.Focused).GroupBy(m => stepBack(m.Marker.Kind, scene.InRaid)))
         {
-            using var layer = new SKPaint { Color = SKColors.White.WithAlpha((byte)(255 * alpha)) };
-            canvas.SaveLayer(layer);
+            using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
+            foreach (var marker in group)
+                DrawMarker(canvas, scene, marker, uiScale);
         }
-        foreach (var marker in back)
-            DrawMarker(canvas, scene, marker, uiScale);
-        foreach (var label in layout.Labels.Where(l => !l.Of.Focused))
-            DrawLabel(canvas, label);
-        if (alpha < 1 && back.Count > 0)
-            canvas.Restore();
+        foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => stepBack(l.Of.Marker.Kind, scene.InRaid).LabelAlpha))
+        {
+            using var layer = new StepBackLayer(canvas, group.Key, 1, dim);
+            foreach (var label in group)
+                DrawLabel(canvas, label);
+        }
         foreach (var marker in layout.Markers.Where(m => m.Focused))
             DrawMarker(canvas, scene, marker, uiScale);
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
@@ -77,6 +80,50 @@ public static partial class MapRenderer
             DrawChevron(canvas, chevron, uiScale);
         DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
+    }
+
+    // ---- stepping back: what is outside the focus while something is highlighted ----
+
+    /// <summary>How far a marker outside the focus steps back once the dimming is complete.</summary>
+    /// <param name="Alpha">Its opacity, 1 for full strength.</param>
+    /// <param name="Saturation">How much of its colour it keeps, 1 for all.</param>
+    /// <param name="LabelAlpha">Its label's opacity: labels step back further than their symbols.</param>
+    public readonly record struct StepBack(float Alpha, float Saturation, float LabelAlpha);
+
+    /// <summary>
+    /// How far each kind steps back while something else is highlighted (owner, 2026-10-03: at 28 % the other markers
+    /// could barely be made out, "but are still pretty important", above all in a raid). Ways out (your side's
+    /// extracts and transits) and bosses never step back: they matter at a glance whatever is highlighted. Other
+    /// quests' markers fade to about two thirds while planning and much less in a raid, where a quest is often kept
+    /// highlighted all raid; spawn rings fade like them. Labels step back further than symbols, so the highlighted
+    /// quest's names stand out without hiding where everything else is.
+    /// </summary>
+    public static StepBack StepBackOf(MarkerKind kind, bool inRaid) => kind switch
+    {
+        MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit or MarkerKind.BossSpawn
+            => new(1f, 1f, inRaid ? 1f : 0.7f),
+        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
+        _ => inRaid ? new(0.8f, 1f, 0.6f) : new(0.62f, 1f, 0.45f),
+    };
+
+    // A layer that steps what is drawn into it back by a measure, eased with the dim; no layer when it changes nothing.
+    private readonly ref struct StepBackLayer
+    {
+        private readonly SKCanvas? _canvas;
+
+        public StepBackLayer(SKCanvas canvas, float alpha, float saturation, float dim)
+        {
+            var a = 1 - (1 - alpha) * dim;
+            var s = 1 - (1 - saturation) * dim;
+            if (a >= 0.999f && s >= 0.999f)
+                return;
+            using var filter = s < 0.999f ? ArtworkColors.Recede(s, 1 - 0.1f * (1 - s)) : null;
+            using var paint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(255 * a)), ColorFilter = filter };
+            canvas.SaveLayer(paint);
+            _canvas = canvas;
+        }
+
+        public void Dispose() => _canvas?.Restore();
     }
 
     // ---- layout: what is drawn where, before anything is drawn ----
@@ -129,6 +176,8 @@ public static partial class MapRenderer
         {
             if (m.Count > 1)
                 taken.Add(CountBadgeBox(m, ui));
+            if (ShowsOptional(m))
+                taken.Add(OptionalBadgeBox(m, ui));
             taken.Add(Square(m.At, m.Reach));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeBox(m, ui));
@@ -140,8 +189,9 @@ public static partial class MapRenderer
             var age = DateTime.Now - player.At;
             if (age >= PlayerOld)
             {
-                using var tagFont = new SKFont(TypefaceBold, 10.5f * ui);
-                taken.Add(AgeTagBox(at, tagFont.MeasureText(AgeText(age)), ui));
+                var (text, stale) = AgeTag(age);
+                using var tagFont = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
+                taken.Add(AgeTagBox(at, tagFont.MeasureText(text), stale, ui));
             }
         }
         var guide = Guide(camera, scene, ui);
@@ -308,6 +358,33 @@ public static partial class MapRenderer
         var width = Math.Max(font.MeasureText(m.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)) + 7 * ui, 14 * ui);
         var c = new SKPoint(m.At.X + m.R * 0.85f, m.At.Y + m.R * 0.85f);
         return SKRect.Create(c.X - width / 2, c.Y - 7 * ui, width, 14 * ui);
+    }
+
+    // An optional objective's marker says so in a small badge at its upper left (owner, 2026-10-03: optional places
+    // "might still be very relevant for a quest"). Words, because no shape, colour or ring on the map is free to mean
+    // "optional" (one symbol, one meaning); the upper right is the floor arrow's, the lower right the count's.
+    private const string OptionalTag = "OPT";
+
+    private static bool ShowsOptional(ShownMarker m) => m.Marker.Optional && m.Marker.Kind is MarkerKind.Objective or MarkerKind.PossibleLocation;
+
+    private static SKRect OptionalBadgeBox(ShownMarker m, float ui)
+    {
+        using var font = new SKFont(TypefaceBold, 8.5f * ui);
+        var width = font.MeasureText(OptionalTag) + 6 * ui;
+        var c = new SKPoint(m.At.X - m.R * 0.85f, m.At.Y - m.R * 0.85f);
+        return SKRect.Create(c.X - width / 2, c.Y - 6 * ui, width, 12 * ui);
+    }
+
+    private static void DrawOptionalBadge(SKCanvas canvas, ShownMarker m, float ui)
+    {
+        var box = OptionalBadgeBox(m, ui);
+        using var plate = new SKPaint { Color = Background, IsAntialias = true };
+        using var edge = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.1f * ui };
+        using var font = new SKFont(TypefaceBold, 8.5f * ui);
+        using var paint = new SKPaint { Color = m.Color, IsAntialias = true };
+        canvas.DrawRect(box, plate);
+        canvas.DrawRect(box, edge);
+        canvas.DrawText(OptionalTag, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
     }
 
     private static void DrawCountBadge(SKCanvas canvas, ShownMarker m, float ui)
@@ -1018,6 +1095,8 @@ public static partial class MapRenderer
             DrawFloorArrow(canvas, shown, ui);
         if (shown.Count > 1)
             DrawCountBadge(canvas, shown, ui);
+        if (ShowsOptional(shown))
+            DrawOptionalBadge(canvas, shown, ui);
     }
 
     // ---- the player's new position: a ping where it is, or an arrow at the edge when it is out of view ----
@@ -1188,26 +1267,48 @@ public static partial class MapRenderer
         canvas.DrawCircle(at, 6.5f * ui, edge);
         if (!old)
             return;
-        var text = AgeText(age);
-        using var font = new SKFont(TypefaceBold, 10.5f * ui);
-        var box = AgeTagBox(at, font.MeasureText(text), ui);
-        using var plate = new SKPaint { Color = Background.WithAlpha(230), IsAntialias = true };
+        // Past PlayerStale the tag says so on its own, larger and framed in sand: it took over from the big
+        // "POSITION 7 MIN OLD" over the map (owner, 2026-10-03: "Put it next to the marker").
+        var (text, stale) = AgeTag(age);
+        using var font = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
+        var box = AgeTagBox(at, font.MeasureText(text), stale, ui);
+        using var plate = new SKPaint { Color = Background.WithAlpha((byte)(stale ? 240 : 230)), IsAntialias = true };
         using var paint = new SKPaint { Color = Player, IsAntialias = true };
         canvas.DrawRect(box, plate);
+        if (stale)
+        {
+            using var frame = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui };
+            canvas.DrawRect(box, frame);
+        }
         canvas.DrawText(text, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
     }
 
     /// <summary>From when the player's ring is dashed and carries an age tag.</summary>
     public static readonly TimeSpan PlayerOld = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    /// From when a position is too old to trust at a glance: the age tag then says "OLD", larger and framed (the same
+    /// two minutes the big banner over the map used before it was removed, owner, 2026-10-03).
+    /// </summary>
+    public static readonly TimeSpan PlayerStale = TimeSpan.FromMinutes(2);
+
     private const float PlayerRing = 12;
 
     /// <summary>A fix's age as the map says it: "4 MIN", "2 H" (whole units, as the top bar).</summary>
     public static string AgeText(TimeSpan age) => age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} MIN" : $"{(int)age.TotalHours} H";
 
+    /// <summary>The tag beside the player once the position is a minute old: "1 MIN", and from <see cref="PlayerStale"/>
+    /// "7 MIN OLD", larger and framed.</summary>
+    public static (string Text, bool Stale) AgeTag(TimeSpan age) => age >= PlayerStale ? (AgeText(age) + " OLD", true) : (AgeText(age), false);
+
+    private static float AgeTagSize(bool stale) => stale ? 12.5f : 10.5f;
+
     // The age tag sits right of the ring.
-    private static SKRect AgeTagBox(SKPoint at, float textWidth, float ui) =>
-        SKRect.Create(at.X + (PlayerRing + 5) * ui, at.Y - 8 * ui, textWidth + 10 * ui, 16 * ui);
+    private static SKRect AgeTagBox(SKPoint at, float textWidth, bool stale, float ui)
+    {
+        var height = (stale ? 20 : 16) * ui;
+        return SKRect.Create(at.X + (PlayerRing + 5) * ui, at.Y - height / 2, textWidth + (stale ? 12 : 10) * ui, height);
+    }
 
     private static SKPath Hexagon(SKPoint at, float r) =>
         Polygon(Enumerable.Range(0, 6).Select(i => new SKPoint(at.X + r * MathF.Cos(MathF.PI / 3 * i), at.Y + r * MathF.Sin(MathF.PI / 3 * i))).ToArray());
