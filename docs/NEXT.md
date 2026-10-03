@@ -139,7 +139,29 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
       snapshots.
     - Say the same in words where objectives are listed (quest card, raid card): "optional".
     - Add a legend row, and record the decision in DESIGN.md.
-14. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+14. **A dev view to play a fake raid from inside the app** (owner, 2026-10-03: "Implement a Dev view that allows to
+    switch between modes and can fake-play a raid that reacts to what I do in the app and 'fake-updates' the
+    position on demand. This one should not be exposed in the production version, only in the dev version. I want
+    to use this to check the UI without having to play the game.") Builds on what exists: `--fake-game <folder>`
+    (the app reads a fake game folder's Logs and Screenshots), `tools\fake-raid.ps1` (scripted lines),
+    `shturmap-cli simulate`, `Demo.cs`. Plan to propose on Monday:
+    - **A side panel, only in dev builds,** compiled out of releases (a build property or `DEBUG`, not just
+      hidden). A test checks that the release assembly has none of it. It runs against its own fake game folder
+      and the dev data folder (item 1), never the real game or the owner's data.
+    - **It writes real log lines and screenshot names** into the fake folder, so the whole pipeline is exercised
+      as in a game:
+      - mode: PvE, PvP, Seasonal (the `Session mode` line, now that the app has no chooser);
+      - map; group pick; loading steps; raid start (PMC or Scav, local or server); raid end;
+      - quests started, objectives done, quests completed or failed (push notifications);
+      - transit.
+    - **The position on demand:** click a spot on the map in the dev view (or press a key) and it writes a
+      screenshot name with that position, the facing (drag for the direction) and the floor height, as the game
+      would. Also "age the position" to check the old-position look, and walk a short path.
+    - **Also useful:** trigger the report dialog, a crash question, the update-ready line, a data-load failure
+      (offline, 404, 503), and a missing game.
+    - Keep it plain and developer-styled. It doesn't follow the product's visual rules, but must never leak into a
+      release; DESIGN.md §8 "Developer aids" describes it.
+15. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
