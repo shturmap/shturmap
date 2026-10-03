@@ -22,6 +22,12 @@ public static class Glyphs
 
     public static readonly string Bring = Code(0xE821);
 
+    /// <summary>A locked door or trunk on the map: a padlock (the key glyph is the key itself).</summary>
+    public static readonly string Lock = Code(0xE72E);
+
+    /// <summary>A switch on the map: the power symbol.</summary>
+    public static readonly string Switch = Code(0xE7E8);
+
     /// <summary>The font character for a type, or null for Elimination, which is drawn from <see cref="CrosshairPath"/>.</summary>
     public static string? Character(ObjectiveKind kind) => kind switch
     {
@@ -39,17 +45,24 @@ public static class Glyphs
     private static readonly Lazy<SKTypeface> Typeface = new(() => SKTypeface.FromFamilyName(FontFamily) ?? SKTypeface.Default);
     private static readonly Lazy<SKPath> Crosshair = new(() => SKPath.ParseSvgPathData(CrosshairPath));
 
+    /// <summary>Draws a font glyph centred on a point, about <paramref name="size"/> pixels tall.</summary>
+    public static void Draw(SKCanvas canvas, string glyph, SKPoint center, float size, SKColor color)
+    {
+        using var paint = new SKPaint { Color = color, IsAntialias = true };
+        using var font = new SKFont(Typeface.Value, size);
+        font.MeasureText(glyph, out var bounds, paint);
+        canvas.DrawText(glyph, center.X - bounds.MidX, center.Y - bounds.MidY, SKTextAlign.Left, font, paint);
+    }
+
     /// <summary>Draws a type glyph centred on a point, about <paramref name="size"/> pixels tall.</summary>
     public static void Draw(SKCanvas canvas, ObjectiveKind kind, SKPoint center, float size, SKColor color)
     {
-        using var paint = new SKPaint { Color = color, IsAntialias = true };
         if (Character(kind) is { } glyph)
         {
-            using var font = new SKFont(Typeface.Value, size);
-            font.MeasureText(glyph, out var bounds, paint);
-            canvas.DrawText(glyph, center.X - bounds.MidX, center.Y - bounds.MidY, SKTextAlign.Left, font, paint);
+            Draw(canvas, glyph, center, size, color);
             return;
         }
+        using var paint = new SKPaint { Color = color, IsAntialias = true };
         canvas.Save();
         canvas.Translate(center.X - size / 2f, center.Y - size / 2f);
         canvas.Scale(size / 16f);

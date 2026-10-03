@@ -28,6 +28,12 @@ public sealed class GameData
 
     public string ItemName(string id) => ItemNames.TryGetValue(id, out var name) ? name : "Unknown item";
 
+    /// <summary>Items' short names by id, as the game prints them on an item ("TGL MO", "314 marked").</summary>
+    public IReadOnlyDictionary<string, string> ItemShortNames { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>An item's short name, else its full name.</summary>
+    public string ItemShortName(string id) => ItemShortNames.TryGetValue(id, out var name) ? name : ItemName(id);
+
     /// <summary>Extracts' internal names by id ("Alpinist" for Cliff Descent), from before translation.</summary>
     public IReadOnlyDictionary<string, string> ExtractKeys { get; init; } = new Dictionary<string, string>();
 

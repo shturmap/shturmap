@@ -25,9 +25,13 @@ public enum LegendSymbol
     Boss,
     Sniper,
     Scav,
+    Lock,
+    Switch,
+    Hazard,
     OtherFloor,
     Trail,
     LooseItem,
+    Containers,
     Sheet,
 }
 
@@ -61,9 +65,13 @@ public static class MapLegend
         new(LegendSymbol.Boss, "Boss spawns, at the centre of a group of spawn points: a red diamond with the boss's chance on this map and, for a boss with several zones, this zone's share (\"Kollontay 75% · 50% here\")."),
         new(LegendSymbol.Sniper, "Sniper Scav spawns, at the centre of a group of spawn points: a hollow hexagon."),
         new(LegendSymbol.Scav, "Scav spawns, at the centre of a group of spawn points: a small ring."),
+        new(LegendSymbol.Lock, "A locked door or car trunk: a padlock, with its key's short name when you zoom in. Point at a key in BRING and the locks it opens light up; point at a padlock for its key."),
+        new(LegendSymbol.Switch, "A switch (power, alarms, elevators, traps): a power symbol, with its name when you zoom in."),
+        new(LegendSymbol.Hazard, "A hazard the map's data outlines, such as Labyrinth's traps: a hatched outline."),
         new(LegendSymbol.OtherFloor, "On another floor: up or down, with the number of floors when it is more than one."),
         new(LegendSymbol.Trail, "Your earlier positions in this raid: a dashed sand line."),
         new(LegendSymbol.LooseItem, "Where an item lies loose, while you point at it: a sand square."),
+        new(LegendSymbol.Containers, "On a map without artwork, where loot containers stand: faint dots, which trace its rooms and corridors."),
         new(LegendSymbol.Sheet, "A map without artwork: a sheet with a 10 m grid, drawn from data only."),
     ];
 
@@ -170,6 +178,19 @@ public static partial class MapRenderer
                 break;
             case LegendSymbol.Scav:
                 Marker(new MapMarker("scav", MarkerKind.ScavSpawn, At(0, 0), ""));
+                break;
+            case LegendSymbol.Lock:
+                Marker(new MapMarker("lock", MarkerKind.Lock, At(0, 0), ""), 1.3f);
+                break;
+            case LegendSymbol.Switch:
+                Marker(new MapMarker("switch", MarkerKind.Switch, At(0, 0), ""), 1.3f);
+                break;
+            case LegendSymbol.Hazard:
+                DrawZone(canvas, camera, scene, new MapZone("hazard", MarkerKind.Hazard, [At(-14, -8), At(14, -8), At(14, 8), At(-14, 8)]), ui);
+                break;
+            case LegendSymbol.Containers:
+                scene.Containers = [At(-18, -6), At(-10, -6), At(-2, -6), At(6, -6), At(14, -6), At(-18, 6), At(-6, 6), At(14, 6), At(14, 0)];
+                DrawContainers(canvas, camera, scene, ui);
                 break;
             case LegendSymbol.OtherFloor:
                 Marker(Quest(MarkerKind.Objective, -14), 0.85f, m => m with { Floor = 1 });

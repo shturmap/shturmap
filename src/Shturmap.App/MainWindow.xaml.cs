@@ -621,6 +621,7 @@ public sealed partial class MainWindow : Window
         scene.Floor = ShownFloor(latest);
         scene.Markers = latest.Content?.Markers ?? [];
         scene.Zones = latest.Content?.Zones ?? [];
+        scene.Containers = latest.Content?.Containers ?? [];
         scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
         Map.Refresh();
@@ -709,7 +710,7 @@ public sealed partial class MainWindow : Window
             return;
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
         var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
-        Map.SetScene(new MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones });
+        Map.SetScene(new MapScene(definition, artwork) { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _sceneKey = null;
         ViewModel.PreviewText = $"PREVIEW · {Caps.Of(map.Name)}";
         Study.Ui("map.preview", ("map", normalizedName));
@@ -879,6 +880,9 @@ public sealed partial class MainWindow : Window
         var ids = new HashSet<string>(focus.Quests);
         if (focus.Marker is { } marker)
             ids.Add(marker);
+        // A key lights the locks it opens.
+        if (focus.Item is { } item)
+            ids.Add(MapContentBuilder.KeyGroup(item));
         return ids;
     }
 
@@ -929,6 +933,12 @@ public sealed partial class MainWindow : Window
                 Linked.Set(Focus.Quest(quest));
                 var p = Map.TransformToVisual(Content).TransformPoint(at);
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
+                break;
+            case { Kind: MarkerKind.Lock } when MapContentBuilder.KeyOf(marker.Group) is { } key:
+                // A padlock: its key's card, the key's rows in BRING and every lock the key opens light up.
+                Linked.Set(new Focus(new HashSet<string>(), Item: key, Marker: marker.Id));
+                var k = Map.TransformToVisual(Content).TransformPoint(at);
+                _cards.Enter(marker, new CardKey.Item(key), new Windows.Foundation.Rect(k.X - 8, k.Y - 8, 16, 16));
                 break;
             case { Group: { } group }:
                 // A boss: all its spawn zones light up together, including zones it shares with another boss.

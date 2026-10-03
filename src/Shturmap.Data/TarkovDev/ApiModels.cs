@@ -28,14 +28,21 @@ public sealed record ApiExtract(
 public sealed record ApiTransit(string Id, string? Description, string? Map, ApiPosition? Position, List<ApiPosition>? Outline,
     string? Conditions = null);
 
-public sealed record ApiSwitch(string Id, string? Name);
+/// <param name="Name">What the game calls it, translated ("Med Elevator Power Button", "Alarm Switch").</param>
+/// <param name="Position">Where it is on the map; null when tarkov.dev places it nowhere.</param>
+public sealed record ApiSwitch(string Id, string? Name, ApiPosition? Position = null);
 
 /// <summary>A spawn point: who can spawn there ("scav", "pmc", "all") and as what ("bot", "player", "boss", "all").</summary>
 public sealed record ApiSpawn(ApiPosition? Position, List<string>? Sides, List<string>? Categories, string? ZoneName);
 
 public sealed record ApiBossLocation(string? Name, double Chance, List<ApiPosition>? Positions);
 
+/// <param name="LockType">"door", "trunk" (a car's) or "container".</param>
+/// <param name="Key">The item id of the key that opens it.</param>
 public sealed record ApiLock(string? Id, string? LockType, string? Key, bool NeedsPower, ApiPosition? Position);
+
+/// <summary>Where a loot container stands (a safe, a PC, a crate…); <paramref name="LootContainer"/> is its type's id.</summary>
+public sealed record ApiContainerSpot(string? LootContainer, ApiPosition? Position);
 
 public sealed record ApiHazard(string? HazardType, string? Name, ApiPosition? Position, List<ApiPosition>? Outline, double? Top, double? Bottom);
 
@@ -63,7 +70,8 @@ public sealed record ApiMap(
     List<ApiBoss>? Bosses,
     List<ApiLootSpawn>? LootLoose = null,
     List<ApiSwitch>? Switches = null,
-    List<ApiSpawn>? Spawns = null);
+    List<ApiSpawn>? Spawns = null,
+    List<ApiContainerSpot>? LootContainers = null);
 
 // Where items come from (json.tarkov.dev items, barters, crafts, hideout). Prices are only used to say which trader
 // offer is the cheap one; Shturmap has no price views (docs/DESIGN.md §1).

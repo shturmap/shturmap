@@ -21,6 +21,15 @@ public enum MarkerKind
 
     /// <summary>Sniper Scav spawns, at the centroid of a group of a zone's points: a hollow hexagon.</summary>
     SniperSpawn,
+
+    /// <summary>A locked door or car trunk (tarkov.dev's locks): a padlock, labelled with its key's short name.</summary>
+    Lock,
+
+    /// <summary>A switch the game knows (power, alarms, elevator buttons, trap switches): a power symbol with its name.</summary>
+    Switch,
+
+    /// <summary>A hazard tarkov.dev outlines as such (Labyrinth's traps): a hatched outline, drawn as a zone.</summary>
+    Hazard,
 }
 
 /// <summary>A point of interest drawn at a fixed screen size.</summary>
@@ -194,6 +203,15 @@ public sealed class MapScene
 
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
+
+    /// <summary>
+    /// Where the map's loot containers stand (tarkov.dev's positions). Drawn only on a sheet, as faint dots: real points
+    /// that sketch rooms and corridors where no artwork does. With artwork they would be clutter.
+    /// </summary>
+    public IReadOnlyList<WorldPoint> Containers { get; set; } = [];
+
+    /// <summary>The map is drawn as a sheet (no artwork): container dots show, and landmarks show at any zoom.</summary>
+    public bool IsSheet => Artwork is null;
 
     public bool ShowLabels { get; set; } = true;
 }
