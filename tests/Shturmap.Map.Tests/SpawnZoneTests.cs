@@ -89,7 +89,7 @@ public class SpawnZoneTests
         [
             new("bossKolontay", 0.75, [new("Klimov Shopping Mall", 0.5, [At(0, 0), At(10, 0)]), new("Ministry of the Interior Academy", 0.5, [At(300, 300)])]),
             new("bossBoar", 0.75, [new("Car Dealership", 1, [At(-200, 0), At(-210, 10), At(-190, 20)])]),
-            new("pmcBot", 0.4, [new("Somewhere", 1, [At(500, 500)])]),
+            new("pmcUSEC", 0.4, [new("Somewhere", 1, [At(500, 500)])]),
         ]);
         var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("bossKolontay", "Kollontay"), new ApiMob("bossBoar", "Kaban")), map);
         Assert.Equal(["Kollontay 75% · 50% here", "Kollontay 75% · 50% here", "Kaban 75%"], markers.Select(m => m.Label));
@@ -125,4 +125,33 @@ public class SpawnZoneTests
         var content = MapContentBuilder.Build(With(map), map.Id, [], new HashSet<string>());
         Assert.Equal(2, content.Markers.Count(m => m.Kind == MarkerKind.ScavSpawn));
     }
+
+    [Fact]
+    public void Ai_squads_are_spawn_markers_and_ai_pmcs_are_not()
+    {
+        // Lighthouse's Chalet lists Rogue groups at 100, 90, 50 and 50 %, and AI PMCs at the same place.
+        var chalet = new List<ApiPosition> { At(0, 0), At(10, 0) };
+        var map = TestMap("lighthouse", bosses:
+        [
+            new("exUsecFree", 1.0, [new("Zone_Chalet", 1, chalet)]),
+            new("exUsecFree", 0.9, [new("Zone_Chalet", 1, chalet)]),
+            new("exUsecFree", 0.5, [new("Zone_Chalet", 1, chalet)]),
+            new("exUsecFree", 0.5, [new("Zone_Chalet", 1, chalet)]),
+            new("pmcUSEC", 0.5, [new("Zone_Chalet", 1, chalet)]),
+            new("pmcBEAR", 0.5, [new("Zone_Chalet", 1, chalet)]),
+        ]);
+        var data = With(map, new ApiMob("exUsecFree", "Rogue"), new ApiMob("pmcUSEC", "USEC"), new ApiMob("pmcBEAR", "BEAR"));
+        var marker = Assert.Single(MapContentBuilder.SpawnZones(data, map));
+        Assert.Equal(MarkerKind.BossSpawn, marker.Kind);
+        Assert.Equal("Rogue 100%, 90%, 50%", marker.Label);
+        Assert.Equal("boss:exUsecFree", marker.Group);
+    }
+
+    [Fact]
+    public void Several_names_and_shares_stay_apart_in_a_label() =>
+        Assert.Equal("Reshala 75% · 33% here / Knight 25% / Raider 40%, 30%",
+            MapContentBuilder.SpawnLabel(
+            [
+                new("Reshala", 75, 33), new("Knight", 25, null), new("Raider", 30, null), new("Raider", 40, null), new("Knight", 25, null),
+            ]));
 }

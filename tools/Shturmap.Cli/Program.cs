@@ -394,7 +394,7 @@ static async Task Spawns(string mode)
                 .Select(s => s.Position!.ToWorld()).ToList(),
             [Shturmap.Map.MarkerKind.SniperSpawn] = scav.Where(s => s.Categories?.Contains("bot") == true && s.Categories?.Contains("sniper") == true)
                 .Select(s => s.Position!.ToWorld()).ToList(),
-            [Shturmap.Map.MarkerKind.BossSpawn] = (map.Bosses ?? []).Where(b => b.Mob.StartsWith("boss", StringComparison.Ordinal))
+            [Shturmap.Map.MarkerKind.BossSpawn] = (map.Bosses ?? []).Where(b => b.Mob is not ("pmcUSEC" or "pmcBEAR"))
                 .SelectMany(b => b.SpawnLocations ?? []).SelectMany(l => l.Positions ?? []).Select(p => p.ToWorld()).ToList(),
         };
         var markers = Shturmap.Map.MapContentBuilder.SpawnZones(data, map);

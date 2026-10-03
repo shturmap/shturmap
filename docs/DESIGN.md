@@ -561,12 +561,18 @@ spawns below).
   point. No areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
   ink, unlabelled and not hoverable. Sniper zones (side "scav", categories "bot" and "sniper"; Ground Zero's
   player spawns tagged "sniper" don't count) are a hollow ink hexagon labelled "Sniper": a shape no other symbol
-  uses, not a reticle, which is the Elimination glyph. Bosses (mobs "boss…") get one red diamond per spawn zone,
-  labelled with the two numbers the data gives, the boss's chance on the map and, for a boss with several zones,
-  that zone's share: "Kollontay 75% · 50% here", "Kaban 75%"; never their product, since the data doesn't say the
-  share is conditional. A boss zone split in groups says this once, on its largest group; the others are bare
-  diamonds that light with it. Bosses whose groups have the same centroid share one marker ("Reshala 75% · 33% here /
-  Knight 25%" on Customs' Stronghold), and pointing at a boss lights all its zones.
+  uses, not a reticle, which is the Elimination glyph. Bosses and AI squads get one red diamond per spawn zone: the
+  red diamond means "boss or AI squad spawn". Every mob in the data's bosses list counts except the AI PMCs
+  (`pmcUSEC`, `pmcBEAR`, which come everywhere): bosses, and since the map audit (owner, 2026-10-03) Rogues
+  (Lighthouse, Icebreaker), Raiders (Reserve, The Lab), cultists (Customs, Woods, Shoreline, Night Factory, Ground Zero
+  21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled with the two
+  numbers the data gives, the chance on the map and, for one with several zones, that zone's share: "Kollontay 75% ·
+  50% here", "Kaban 75%"; never their product, since the data doesn't say the share is conditional. Several entries
+  of one name at one place say their chances in one line, highest first ("Rogue 100%, 90%, 50%" at Lighthouse's
+  Chalet: groups that may each spawn). A zone split in groups says this once, on its largest group; the others are
+  bare diamonds that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
+  Knight 25%" on Customs' Stronghold), and pointing at one lights all its zones. The Lab gets 8, Terminal 16; Ground
+  Zero 21+ gets 9, mostly a 2 % cultist that may spawn at any Scav spawn.
 - **Labels by priority** (`MapRenderer.Layout`). Every symbol is placed before any text, so no label covers a
   symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,
   snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above

@@ -208,11 +208,14 @@ public static class MapContentBuilder
             foreach (var (group, i) in Groups(Distinct(zone.Select(s => s.Position!.ToWorld()))).Select((g, i) => (g, i)))
                 markers.Add(new MapMarker(GroupId("sniper:" + zone.Key, i), MarkerKind.SniperSpawn, Centroid(group), "Sniper"));
 
-        // Per boss and zone: the label parts and the zone's points (the payload can list one boss several times).
-        var zones = new List<(string Mob, string Zone, List<string> Parts, List<WorldPoint> Points)>();
+        // Per boss or AI squad and zone: the label parts and the zone's points (the payload can list one boss several
+        // times). Bosses and the AI squads the bosses list carries (owner, 2026-10-03, from the map audit): Rogues,
+        // Raiders, cultists, Black Division and AF are as deadly and have spawn zones and chances in the data. Only the
+        // AI PMCs (pmcUSEC, pmcBEAR) are left out: they come everywhere and are no squad with a place.
+        var zones = new List<(string Mob, string Zone, List<SpawnPart> Parts, List<WorldPoint> Points)>();
         foreach (var boss in map.Bosses ?? [])
         {
-            if (!boss.Mob.StartsWith("boss", StringComparison.Ordinal))
+            if (boss.Mob is "pmcUSEC" or "pmcBEAR")
                 continue;
             var name = data.Mobs.TryGetValue(boss.Mob, out var mob) ? mob.Name : boss.Mob;
             foreach (var location in boss.SpawnLocations ?? [])
@@ -226,20 +229,20 @@ public static class MapContentBuilder
                     zones.Add((boss.Mob, key, [], []));
                     index = zones.Count - 1;
                 }
-                var part = $"{name} {Percent(boss.SpawnChance)}%" + (location.Chance < 0.995 ? $" · {Percent(location.Chance)}% here" : "");
+                var part = new SpawnPart(name, Percent(boss.SpawnChance), location.Chance < 0.995 ? Percent(location.Chance) : null);
                 if (!zones[index].Parts.Contains(part))
                     zones[index].Parts.Add(part);
                 zones[index].Points.AddRange(positions.Select(p => p.ToWorld()));
             }
         }
-        var placed = new List<(WorldPoint At, List<string> Mobs, List<string> Parts, string Id)>();
+        var placed = new List<(WorldPoint At, List<string> Mobs, List<SpawnPart> Parts, string Id)>();
         foreach (var zone in zones)
         {
             foreach (var (group, i) in Groups(Distinct(zone.Points)).Select((g, i) => (g, i)))
             {
                 var at = Centroid(group);
                 // The zone's share is said once, on its largest group.
-                List<string> parts = i == 0 ? zone.Parts : [];
+                List<SpawnPart> parts = i == 0 ? zone.Parts : [];
                 var same = placed.FindIndex(p => p.At.HorizontalDistanceTo(at) < 3 && Math.Abs(p.At.Y - at.Y) < 3);
                 if (same < 0)
                 {
@@ -252,9 +255,22 @@ public static class MapContentBuilder
             }
         }
         foreach (var p in placed)
-            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, string.Join(" / ", p.Parts), BossGroup(p.Mobs)));
+            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, SpawnLabel(p.Parts), BossGroup(p.Mobs)));
         return markers;
     }
+
+    /// <summary>One entry of a boss or AI squad at a place: its name, its chance on the map, and its zone's share.</summary>
+    public sealed record SpawnPart(string Name, int Chance, int? Here);
+
+    /// <summary>
+    /// A boss marker's label: "Kollontay 75% · 50% here", "Reshala 75% · 33% here / Knight 25%". Several entries of one
+    /// name at one place say their chances in one line, highest first: Lighthouse's Chalet lists Rogues at 100, 90 and
+    /// 50 % ("Rogue 100%, 90%, 50%"), each a group that may spawn.
+    /// </summary>
+    public static string SpawnLabel(IEnumerable<SpawnPart> parts) =>
+        string.Join(" / ", parts.GroupBy(p => (p.Name, p.Here)).Select(g =>
+            $"{g.Key.Name} {string.Join(", ", g.Select(p => p.Chance).Distinct().OrderDescending().Select(c => c + "%"))}" +
+            (g.Key.Here is { } here ? $" · {here}% here" : "")));
 
     // A marker must stand among its points: within 25 m across and 3 m (about a floor) in height of one of them.
     // tarkov.dev's zones can span 450 m (Customs, Interchange) or reach into a bunker (Reserve), and one marker at
@@ -360,5 +376,5 @@ public static class MapContentBuilder
         return kept;
     }
 
-    private static string Percent(double share) => Math.Round(share * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+    private static int Percent(double share) => (int)Math.Round(share * 100);
 }
