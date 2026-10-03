@@ -27,6 +27,21 @@ public partial class App
         return [.. cli, "--fake-game", DevGame.Root];
     }
 
+    // "--uninstall-test keep|delete": help's uninstall at once, before any session starts (so nothing touches the shared
+    // download cache), with Velopack's dialogs off. The check of the uninstall on the dev build's own install.
+    private bool DevUninstallTest(string[] cli)
+    {
+        if (Arg(cli, "--uninstall-test") is not { } what)
+            return false;
+        var deleteData = what == "delete";
+        AppLog.Info($"Uninstall test: the data folder {(deleteData ? "goes" : "stays")}");
+        EndSession();
+        if (!Updater.UninstallerReady || !Updater.StartUninstall(deleteData, silent: true))
+            AppLog.Warn("Uninstall test: not an installed build, or no uninstaller");
+        Exit();
+        return true;
+    }
+
     // After the session has started: the view opens by itself in a dev-view session, and a script plays.
     private async Task StartDevToolsAsync(string[] cli)
     {

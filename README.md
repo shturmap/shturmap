@@ -79,8 +79,11 @@ allowed. There is no guarantee against sanctions: use it at your own risk.
 Download **`Shturmap-Setup.exe`** from the [releases](https://github.com/shturmap/shturmap/releases) (marked
 pre-release while Shturmap is in private testing), for 64-bit Windows 10 (2004) or later. It installs for your
 Windows user only, with no admin rights, into `%LOCALAPPDATA%\ShturmapApp`, with a Start-menu and a desktop
-shortcut. The installer isn't signed, so Windows warns about it; click **More info → Run anyway**. To remove
-Shturmap, uninstall it under Windows Settings → Apps; your data in `%LOCALAPPDATA%\Shturmap` stays.
+shortcut. The installer isn't signed, so Windows warns about it; click **More info → Run anyway**.
+
+Uninstall: Windows Settings → Apps, or Help (?) → **Uninstall Shturmap…**. Your data in `%LOCALAPPDATA%\Shturmap`
+(settings, quest history, logs, study log, download cache) stays for a later install, unless you tick **Also delete
+my Shturmap data** in help's question.
 
 Shturmap keeps itself up to date: it asks GitHub for a newer version at start and every 6 hours, downloads it in
 the background and applies it the next time you start it, never during a raid. Help (?) → **Updates** switches

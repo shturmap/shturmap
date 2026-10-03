@@ -126,6 +126,70 @@ public sealed class Updater
         }
     }
 
+    /// <summary>"Uninstall Shturmap…" in help: only in an install Velopack made, the release or the dev build.</summary>
+    public bool UninstallOffered => Installed && Uninstall.Offered(AppId);
+
+    /// <summary>Velopack's uninstaller is there to start: checked before the session is closed for it.</summary>
+    public bool UninstallerReady
+    {
+        get
+        {
+            try
+            {
+                var locator = Velopack.Locators.VelopackLocator.Current;
+                return UninstallOffered && locator.RootAppDir is not null && locator.UpdateExePath is { } exe && File.Exists(exe);
+            }
+            catch (Exception e)
+            {
+                AppLog.Warn("Uninstall: Velopack couldn't say where its uninstaller is", e);
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Starts Velopack's own uninstaller for this install (the same as Windows' Settings → Apps), after leaving the
+    /// note that asks its hook to delete the data folder, or removing an old one. The caller has closed the session
+    /// first: the uninstaller ends this process. <paramref name="silent"/> (developer checks only) keeps Velopack from
+    /// showing any dialog; otherwise it shows one only when something goes wrong.
+    /// </summary>
+    public bool StartUninstall(bool deleteData, bool silent = false)
+    {
+        try
+        {
+            var locator = Velopack.Locators.VelopackLocator.Current;
+            if (!UninstallOffered || locator.RootAppDir is not { } root || locator.UpdateExePath is not { } exe || !File.Exists(exe))
+                return false;
+            Uninstall.SetIntent(root, deleteData, DateTime.Now);
+            AppLog.Info($"Uninstall: Velopack's uninstaller started{(deleteData ? "; the data folder goes too" : "; the data folder stays")}");
+            var start = new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = false };
+            if (silent)
+                start.ArgumentList.Add("--silent");
+            start.ArgumentList.Add("uninstall");
+            System.Diagnostics.Process.Start(start);
+            return true;
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Uninstall: couldn't start Velopack's uninstaller", e);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// The uninstaller's hook (Program.Main): deletes this install's data folder when the player asked for it, i.e. a
+    /// fresh note is in the install folder; never otherwise, and never anything but that folder (Uninstall.MayDelete).
+    /// </summary>
+    public static void DeleteDataIfAsked()
+    {
+        var locator = Velopack.Locators.VelopackLocator.Current;
+        if (locator.RootAppDir is not { } root || !Uninstall.IntentFresh(root, DateTime.Now))
+            return;
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (Uninstall.DataFolder(locator.AppId, local) is { } data)
+            Uninstall.DeleteData(data, locator.AppId, local, Uninstall.DeletePatience);
+    }
+
     /// <summary>Applies the downloaded version and starts it: Velopack ends this process at once. Only on the player's
     /// click, outside raids.</summary>
     public void RestartNow()

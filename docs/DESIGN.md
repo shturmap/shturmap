@@ -470,7 +470,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, the "Keep a study log" switch, the "Crash reports" choice (ASK AFTER A CRASH · ALWAYS SEND ·
   NEVER) with what a crash report holds, and the links REPORT A PROBLEM OR IDEA and COPY DIAGNOSTICS, then LOG
-  FOLDER, PRIVACY and LICENCES (§8, "Study log", "Diagnostics", "Reports"). Opens once by itself on first run.
+  FOLDER, PRIVACY and LICENCES, and in an installed build a muted UNINSTALL SHTURMAP… (§8, "Study log",
+  "Diagnostics", "Reports", "Distribution"). Opens once by itself on first run.
 - **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
   CANCEL and SEND.
@@ -964,6 +965,26 @@ self-unpacking exe, without updates; they need the Setup once.
   `%LOCALAPPDATA%\Shturmap` outlive the app. Checked 2026-10-03: installing, updating and uninstalling left the data
   folder's files all there and `shturmap.db` byte for byte the same; the uninstall removed the install folder, its
   shortcuts and its Apps entry.
+- **Uninstalling from help** (owner, 2026-10-03: "The installer should also be able to uninstall", then: an
+  "Uninstall Shturmap…" in help, with the data only on a tick). Windows' Settings → Apps (and the Start menu's
+  Uninstall) already ran Velopack's uninstaller; the Setup itself has no repair-or-remove mode, and another installer
+  around Velopack wasn't worth it. Help's quiet link "UNINSTALL SHTURMAP…" shows only in an install Velopack made,
+  the release (`ShturmapApp`) or the dev build (`ShturmapDev`) (`Uninstall.Offered`), never in a folder build. It
+  asks one question, "Remove Shturmap from this PC?", with an unticked "Also delete my Shturmap data" and what that is
+  (settings, quest history, logs, study log, reports waiting, crash records, and for the release the download
+  cache; the dev build's data is `%LOCALAPPDATA%\Shturmap-dev`, and the cache it shares stays with the release's
+  folder). UNINSTALL closes the session as RESTART NOW does (so a reinstall doesn't take the exit for a crash), leaves
+  a note in the install folder when the box is ticked (`Uninstall.IntentFile`, removed when it isn't), starts
+  Velopack's uninstaller (`Update.exe uninstall`, which shows a dialog only when something goes wrong) and ends.
+  Velopack stops what still runs from the install, then starts the exe with its uninstall hook: `Program.Main`'s
+  `OnBeforeUninstallFastCallback` deletes the data folder only on a note at most 5 minutes old, so an uninstall from
+  Windows' Settings never deletes data, and retries for up to 20 s while the closing app still holds a file. The
+  deletion is checked strictly (`Uninstall.MayDelete`): exactly this install's data folder (the release's
+  `%LOCALAPPDATA%\Shturmap`, the dev build's `%LOCALAPPDATA%\Shturmap-dev`), directly in `%LOCALAPPDATA%`, not a
+  link; never a `--data` folder, a parent, a child or another build's folder. Velopack's own hook rather than a
+  script left behind: the deletion runs in Shturmap's code, after the app's files are let go, with the same check the
+  tests cover. Developer check: `--uninstall-test keep|delete` (developer builds) runs it at once, before any
+  session, with Velopack's dialogs off.
 - **Updates.** `Program.Main` runs Velopack first: its Setup, updater and uninstall start the exe with their own
   arguments, and a version downloaded in an earlier session is applied there, before the app starts (the app then
   starts again with the same arguments). Then WinUI's own start (`DISABLE_XAML_GENERATED_MAIN`). An installed app

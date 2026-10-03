@@ -161,6 +161,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool StudyLogOn { get; set; }
 
+    /// <summary>Help's "Uninstall Shturmap…" asks its one question.</summary>
+    [ObservableProperty] public partial bool UninstallAsking { get; set; }
+
+    /// <summary>"Also delete my Shturmap data": unticked until the player ticks it, and each time the question opens.</summary>
+    [ObservableProperty] public partial bool UninstallDeleteData { get; set; }
+
     [ObservableProperty] public partial IReadOnlyList<MapChoice> MapChoices { get; set; } = [];
 
     [ObservableProperty] public partial MapChoice? SelectedMap { get; set; }

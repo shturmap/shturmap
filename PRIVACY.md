@@ -64,3 +64,7 @@ Your rights
 You can ask for a copy of a report you sent, or for it to be corrected or deleted: write to the contact above and
 quote the report id Shturmap showed after sending (8 letters and digits). You can also complain to a data
 protection authority.
+
+Everything Shturmap keeps on your PC (settings, quest history, logs, the study log, reports waiting to be sent,
+crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. To delete all of it, use Help (?) →
+"Uninstall Shturmap…" and tick "Also delete my Shturmap data"; or delete that folder yourself after uninstalling.

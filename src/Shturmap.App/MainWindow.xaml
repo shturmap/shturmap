@@ -306,6 +306,41 @@
                     <TextBlock Text="LICENCES ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
+                <!-- Removing Shturmap from here as well as from Windows' Settings, with the data only on a tick
+                     (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"). Installed builds only. -->
+                <HyperlinkButton Padding="0" Margin="0,2,0,0" Click="OnUninstallClick" Visibility="{x:Bind UninstallVisibility}"
+                                 ToolTipService.ToolTip="Removes Shturmap from this PC, as Windows' Settings → Apps does">
+                  <TextBlock Text="UNINSTALL SHTURMAP…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                </HyperlinkButton>
+                <StackPanel Spacing="6" Margin="0,4,0,0" Padding="12,10" BorderThickness="1" BorderBrush="{StaticResource LineStrongBrush}"
+                            Visibility="{x:Bind ShownIfTrue(ViewModel.UninstallAsking), Mode=OneWay}">
+                  <TextBlock Text="Remove Shturmap from this PC?" FontWeight="SemiBold" />
+                  <ToggleButton IsChecked="{x:Bind ViewModel.UninstallDeleteData, Mode=OneWay}" Click="OnUninstallDataClick"
+                                AutomationProperties.Name="Also delete my Shturmap data">
+                    <ToggleButton.Template>
+                      <ControlTemplate TargetType="ToggleButton">
+                        <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" />
+                      </ControlTemplate>
+                    </ToggleButton.Template>
+                    <StackPanel Orientation="Horizontal" Spacing="9">
+                      <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                              Background="{x:Bind StudyBoxBrush(ViewModel.UninstallDeleteData), Mode=OneWay}">
+                        <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
+                                  Visibility="{x:Bind ShownIfTrue(ViewModel.UninstallDeleteData), Mode=OneWay}" />
+                      </Border>
+                      <TextBlock Text="Also delete my Shturmap data" />
+                    </StackPanel>
+                  </ToggleButton>
+                  <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind UninstallDataText}" />
+                  <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,4,0,0">
+                    <HyperlinkButton Padding="0" Click="OnUninstallConfirmClick">
+                      <TextBlock Text="UNINSTALL" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Click="OnUninstallCancelClick">
+                      <TextBlock Text="CANCEL" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                    </HyperlinkButton>
+                  </StackPanel>
+                </StackPanel>
               </StackPanel>
             </Flyout>
           </Button.Flyout>

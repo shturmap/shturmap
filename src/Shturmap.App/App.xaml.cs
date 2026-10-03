@@ -140,6 +140,10 @@ public partial class App : Application
         // The website demo times its clip by its DEBUG lines (tools\fake-raid.ps1 -Demo).
         AppLog.Verbose = cli.Contains("--verbose") || cli.Contains("--demo");
         AppLog.Info($"Starting Shturmap {GameSession.Version} ({BuildKind}, {AppPaths.Default.KindText} data folder) on {Diagnostics.WindowsVersion()}");
+#if DEVTOOLS
+        if (DevUninstallTest(cli))
+            return;
+#endif
         // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
         // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.
         if (Arg(cli, "--culture") is { } culture)
