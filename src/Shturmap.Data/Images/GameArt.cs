@@ -53,14 +53,23 @@ public sealed class GameArt(HttpClient http, string folder)
             Directory.CreateDirectory(folder);
             using var image = SKImage.FromBitmap(bitmap);
             using var png = image.Encode(SKEncodedImageFormat.Png, 100);
-            var temp = path + ".download";
-            await File.WriteAllBytesAsync(temp, png.ToArray());
-            File.Move(temp, path, overwrite: true);
+            // The cache is shared by every Shturmap on the PC: a temporary file of its own, then one move (CachedHttp).
+            var temp = Http.CachedHttp.TempFor(path);
+            try
+            {
+                await File.WriteAllBytesAsync(temp, png.ToArray());
+                Http.CachedHttp.Replace(temp, path);
+            }
+            finally
+            {
+                Http.CachedHttp.TryDelete(temp);
+            }
             return path;
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
         {
-            return null;
+            // Another Shturmap may have saved the same picture meanwhile.
+            return File.Exists(path) ? path : null;
         }
     }
 }

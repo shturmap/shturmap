@@ -56,17 +56,39 @@ public sealed class MapArtwork : IDisposable
     {
         if (path is not null && File.Exists(path))
         {
-            using var stream = File.OpenRead(path);
-            if (SKPicture.Deserialize(stream) is { } cached)
-                return cached;
+            try
+            {
+                using var stream = File.OpenRead(path);
+                if (SKPicture.Deserialize(stream) is { } cached)
+                    return cached;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Another Shturmap is replacing it this moment: draw it here instead.
+            }
         }
         var picture = render();
         if (path is not null)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var data = picture.Serialize();
-            using var file = File.Create(path);
-            data.SaveTo(file);
+            // The picture cache is shared by every Shturmap on the PC: written to a temporary file of its own and
+            // moved over in one go, so no other process reads half a file (Shturmap.Data.Http.CachedHttp). A copy that
+            // can't be saved now is drawn again next time.
+            var temp = Shturmap.Data.Http.CachedHttp.TempFor(path);
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                using (var data = picture.Serialize())
+                using (var file = File.Create(temp))
+                    data.SaveTo(file);
+                Shturmap.Data.Http.CachedHttp.Replace(temp, path);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+            }
+            finally
+            {
+                Shturmap.Data.Http.CachedHttp.TryDelete(temp);
+            }
         }
         return picture;
     }

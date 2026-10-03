@@ -14,10 +14,11 @@ public static class Diagnostics
 {
     public const int LogLines = 200;
 
-    /// <param name="build">"installed" (its Setup, Velopack) or "folder build".</param>
+    /// <param name="build">"installed" (its Setup, Velopack), "dev build" or "folder build".</param>
     /// <param name="profile">The user's profile folder, written as %USERPROFILE%.</param>
+    /// <param name="dataFolder">Which data folder this build uses (<see cref="AppPaths.KindText"/>).</param>
     public static string Build(SessionSnapshot s, string version, string windows, string build, IReadOnlyList<string> logTail,
-        DateTime now, string? profile)
+        DateTime now, string? profile, string? dataFolder = null)
     {
         var text = new StringBuilder();
         void Line(string key, string value) => text.Append(key).Append(": ").AppendLine(value);
@@ -25,6 +26,8 @@ public static class Diagnostics
 
         text.AppendLine("Shturmap diagnostics");
         Line("Shturmap", $"{version} ({build})");
+        if (dataFolder is not null)
+            Line("Data folder", dataFolder);
         Line("Windows", windows);
         Line("Copied", now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
         var install = s.Locations?.Install;

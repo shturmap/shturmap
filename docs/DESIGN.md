@@ -742,14 +742,15 @@ self-unpacking exe, without updates; they need the Setup once.
   a player sends: `api.github.com` for the list, the packages from GitHub's release-asset hosts. Never Velopack's
   own update service (`SafetyTests`). Help, the README and PRIVACY.md say that GitHub sees the address, as with any
   download, and nothing else is sent.
-- **Releasing.** `eng\release.ps1` builds the folder (precompiled, with the Sentry DSN), asks GitHub for the last
-  release so `vpk pack` can build a delta, and packs into `artifacts\releases` (the Setup, full and delta packages,
-  `releases.win.json` and `RELEASES`, the portable zip), plus `artifacts\Shturmap-Setup.exe` and its `.sha256`. The
-  notes are `docs\release-notes\<version>.md`. `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
+- **Releasing.** `eng\release.ps1` builds into `artifacts\release` (owner, 2026-10-03: "The artifacts should contain
+  a dev and release artifact"; the dev build is `artifacts\dev`, below): the folder `app\` (precompiled, with the
+  Sentry DSN), and after asking GitHub for the last release so `vpk pack` can build a delta, `packages\` (the Setup,
+  full and delta packages, `releases.win.json` and `RELEASES`, the portable zip), plus `Shturmap-Setup.exe` and its
+  `.sha256`. The notes are `docs\release-notes\<version>.md`. `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
   `v<version>`, a published pre-release; `-Draft` leaves a draft) and adds `Shturmap-Setup.exe`; it refuses unless
-  the tree is clean, the commit pushed and the build made from that commit. `vpk` is a pinned local tool
-  (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`, the developer's copy
-  and what `tools\fake-raid.ps1` runs). To test the whole update path without GitHub, `--update-feed <folder>` points
+  the tree is clean, the commit pushed and the build made from that commit (`artifacts\release\app`). `vpk` is a
+  pinned local tool (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`,
+  what `tools\fake-raid.ps1` runs; it keeps the developer data folder). To test the whole update path without GitHub, `--update-feed <folder>` points
   an installed build at a local feed (local folders only) and lets it update even in a snapshot or a fake game.
   Velopack's Setup 1.2.161 crashes when given arguments for the app (`-- …`); install silently with `--silent` only.
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
@@ -761,6 +762,58 @@ self-unpacking exe, without updates; they need the Setup once.
   from it; a later start tries again only if one was in use.
 - **Unsigned.** Windows SmartScreen asks once about the Setup ("More info → Run anyway"); the README and the
   release notes say so. Updates don't ask.
+
+### Data folders
+
+Only the installed release keeps the player's data folder, `%LOCALAPPDATA%\Shturmap`; every other build keeps its
+own, `%LOCALAPPDATA%\Shturmap-dev` (owner, 2026-10-03: the release installed beside the dev build must not share a
+database, settings, app log, study log or reports with it; developer starts were mixing into the owner's study log).
+"Other builds" are the dev build, the folder build (`eng\publish.ps1`, what `tools\fake-raid.ps1` runs), `dotnet
+run`, the CLI and tests. `--data <folder>` picks any folder (the app and the CLI; the CLI reaches the release's data
+with `--data "%LOCALAPPDATA%\Shturmap"`). The app chooses at start, before anything is written: Velopack's id of the
+install (`ShturmapApp` → the release's folder, anything else → the developer folder; `Distribution.DataFolderFor`,
+`AppPaths.Use`). Diagnostics and the app log's first line name the folder ("Data folder: dev").
+
+The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits and icons) stays shared in
+`%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
+to a temporary file of its own (`CachedHttp.TempFor`, the process id and a GUID) and replaces the cached file in one
+move, retried for a moment while another process reads it (`CachedHttp.Replace`); a reader never sees half a file,
+and a copy that can't be saved is fetched or drawn again next time. A test runs eight writers at once.
+
+### Developer aids
+
+**The dev build.** Beside the release, a dev build that is always current and never taken for the release (owner,
+2026-10-03: "a dev artifact of the app that always carries the recent updates and is in dev mode … The dev version
+should carry a different icon so it is visually clear"). `eng\dev.ps1` builds it into `artifacts\dev`; run it after
+committing app changes (CLAUDE.md).
+
+- **Dev mode.** Built with `ShturmapDev=true` (Release configuration, not precompiled: builds come often and deltas
+  stay small), which defines `DEVTOOLS`, as Debug builds do (`Directory.Build.props`): the window says "Shturmap DEV"
+  (`App.Title`), the exe, windows and taskbar show the dev icon, the build kind is "dev build", and the developer
+  tools compile in. Releases never define it.
+- **Its own install.** Velopack's id `ShturmapDev` (`Distribution.DevPackId`): `%LOCALAPPDATA%\ShturmapDev`, shortcuts
+  "Shturmap DEV" on the desktop and in the Start menu, its own Apps entry. Its data is the developer folder above.
+  It never mixes with the release's `ShturmapApp` (a test checks the ids and folders).
+- **Always current.** The dev build updates itself from a local feed, `artifacts\dev\feed`, never from GitHub: each
+  `eng\dev.ps1` run packs a new version (`<version>-dev.<UTC time>`, so each is newer) with a delta from the last,
+  keeps the three newest versions in the feed (and in its lists), and writes the feed's folder to `dev-feed.txt` in
+  the dev install's folder. The installed dev app reads that file at start, asks the feed (at start and every 6
+  hours, `UpdatePolicy` as for the release), downloads in the background and applies at the next start, never during
+  a raid; RESTART NOW applies it at once. No folder of the developer's PC is compiled in, and the dev app follows
+  whichever checkout built last. The first run installs it (`--silent`); `artifacts\dev\Shturmap-DEV-Setup.exe`
+  installs it on purpose. Checked 2026-10-03: two builds in a row, each found in the feed within a second, a 0.2–0.3
+  MB delta downloaded in about 4 s, applied at the next start.
+- **What changed.** Each dev build carries `dev\changelog.json` beside the exe: `build` (the full commit), `built` (UTC
+  time) and `commits`, those since the last release tag `v*` (or the last 50), newest first, each `hash` (short),
+  `date` and `subject` (the commit's title; no authors, no bodies, a user folder masked). The dev view shows it, so
+  the owner can check whether a change is live and what changed lately ("No changelog in this build" without it).
+- **Reports.** None by default (no DSN). `eng\dev.ps1 -WithReports` builds the DSN in; its reports carry the Sentry
+  environment "dev" (`ReportEnvelopes.EnvironmentOf`), so they can be filtered apart.
+- **The icon.** `brand\build.cs` makes `Shturmap-dev.ico`: the same mark, only recoloured, on the app's "kept" cyan
+  (#3FD2E0) plate with the Ш in the plate's dark. `Logo.Dev` picks the variant; `.\eng\dotnet.ps1 run brand\build.cs
+  -- dev-panel <png>` draws all three candidates beside the release icon (a cyan plate, a cyan band across the foot,
+  an amber corner tab). No "DEV" lettering: a stencilled V beside the Ш and its chevron could read as the V of the
+  war symbols the logo rules avoid (§4, "Logo").
 
 ### How the parts work
 

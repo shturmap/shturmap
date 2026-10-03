@@ -2,7 +2,7 @@
 # "Shturmap <version> (private testing)", tag v<version> on the current commit, carrying Velopack's Setup, packages and
 # update feed (vpk upload github), plus Shturmap-Setup.exe, the Setup under the name players look for. The release
 # notes are docs\release-notes\<version>.md (packed into the release by eng\release.ps1).
-# Refuses unless the working tree is clean, the commit is pushed, and artifacts\releases was built from this commit.
+# Refuses unless the working tree is clean, the commit is pushed, and artifacts\release was built from this commit.
 # The token: GITHUB_TOKEN, else the GitHub CLI's (gh auth token), else Git's stored GitHub login (git credential).
 # Usage: .\eng\publish-release.ps1 [-Draft]
 param(
@@ -15,8 +15,8 @@ $git = if (Get-Command git -ErrorAction SilentlyContinue) { 'git' } else { 'C:\P
 $version = (Select-Xml -Path (Join-Path $root 'Directory.Build.props') -XPath '//Version').Node.InnerText
 $repo = 'https://github.com/shturmap/shturmap'
 $api = 'https://api.github.com/repos/shturmap/shturmap'
-$releases = Join-Path $root 'artifacts\releases'
-$setup = Join-Path $root 'artifacts\Shturmap-Setup.exe'
+$releases = Join-Path $root 'artifacts\release\packages'
+$setup = Join-Path $root 'artifacts\release\Shturmap-Setup.exe'
 $tag = "v$version"
 $name = "Shturmap $version (private testing)"
 
@@ -26,10 +26,10 @@ if ($dirty) { throw "The working tree isn't clean:`n$($dirty -join "`n")" }
 & $git -C $root fetch --quiet origin
 $head = (& $git -C $root rev-parse HEAD).Trim()
 if (-not (& $git -C $root branch -r --contains $head)) { throw "Commit $head isn't pushed; push it first." }
-$built = (Get-Item (Join-Path $root 'artifacts\Shturmap\Shturmap.exe')).VersionInfo.ProductVersion
-if ($built -ne "$version+$head") { throw "artifacts\releases is from $built, not $version+${head}: run eng\release.ps1 again." }
+$built = (Get-Item (Join-Path $root 'artifacts\release\app\Shturmap.exe')).VersionInfo.ProductVersion
+if ($built -ne "$version+$head") { throw "artifacts\release is from $built, not $version+${head}: run eng\release.ps1 again." }
 if (-not (Test-Path (Join-Path $releases "ShturmapApp-$version-full.nupkg")) -or -not (Test-Path $setup)) {
-  throw 'No release in artifacts\releases: run eng\release.ps1 first.'
+  throw 'No release in artifacts\release: run eng\release.ps1 first.'
 }
 
 $token = $env:GITHUB_TOKEN

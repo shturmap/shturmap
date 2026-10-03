@@ -1,7 +1,8 @@
-# Builds the release (docs/DESIGN.md §8, "Distribution"): the app as a folder (precompiled, with the Sentry DSN), packed
-# by Velopack's vpk into artifacts\releases: the Setup, the full package (and a delta from the last GitHub release),
-# the update feed (releases.win.json, RELEASES) and a portable zip. Beside it, artifacts\Shturmap-Setup.exe: the
-# Setup under the name players download, with its .sha256. Nothing is uploaded; eng\publish-release.ps1 does that.
+# Builds the release (docs/DESIGN.md §8, "Distribution") into artifacts\release: the app as a folder (app\,
+# precompiled, with the Sentry DSN), packed by Velopack's vpk into packages\: the Setup, the full package (and a delta
+# from the last GitHub release), the update feed (releases.win.json, RELEASES) and a portable zip. Beside them,
+# Shturmap-Setup.exe: the Setup under the name players download, with its .sha256. Nothing is uploaded;
+# eng\publish-release.ps1 does that. The dev build is eng\dev.ps1's, in artifacts\dev.
 # The version comes from Directory.Build.props, the release notes from docs\release-notes\<version>.md.
 # Usage: .\eng\release.ps1 [-NoDelta]
 param(
@@ -11,9 +12,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $version = (Select-Xml -Path (Join-Path $root 'Directory.Build.props') -XPath '//Version').Node.InnerText
-$artifacts = Join-Path $root 'artifacts'
-$folder = Join-Path $artifacts 'Shturmap'
-$releases = Join-Path $artifacts 'releases'
+$out = Join-Path $root 'artifacts\release'
+$folder = Join-Path $out 'app'
+$releases = Join-Path $out 'packages'
 # Velopack's id, and so the install folder %LOCALAPPDATA%\ShturmapApp, which an uninstall deletes: never "Shturmap",
 # the data folder. Keep it equal to Distribution.PackId (src\Shturmap.Session\Updates.cs; a test checks).
 $packId = 'ShturmapApp'
@@ -25,7 +26,7 @@ if (-not (Test-Path $notes)) { throw "No release notes for $version (docs\releas
 $running = Get-CimInstance Win32_Process -Filter "Name LIKE 'Shturmap%'" |
   Where-Object { $_.ExecutablePath -eq (Join-Path $folder 'Shturmap.exe') }
 if ($running) {
-  Write-Error "Shturmap is running from artifacts (process $($running.ProcessId -join ', ')). Close it and release again."
+  Write-Error "Shturmap is running from $folder (process $($running.ProcessId -join ', ')). Close it and release again."
   exit 1
 }
 
@@ -65,8 +66,8 @@ finally {
   Pop-Location
 }
 
-# The Setup under the name players look for; the one in releases\ keeps vpk's name for the upload.
-$setup = Join-Path $artifacts 'Shturmap-Setup.exe'
+# The Setup under the name players look for; the one in packages\ keeps vpk's name for the upload.
+$setup = Join-Path $out 'Shturmap-Setup.exe'
 Copy-Item (Join-Path $releases "$packId-win-Setup.exe") $setup -Force
 foreach ($file in @($setup) + @(Get-ChildItem $releases -File | Where-Object Extension -in '.exe', '.zip', '.nupkg' | ForEach-Object FullName)) {
   $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()

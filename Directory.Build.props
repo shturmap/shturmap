@@ -4,6 +4,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
+    <!-- The SDK's own default, set this early so the DEVTOOLS condition below sees it in a plain "dotnet build" too. -->
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <!-- Paths compiled into the files (each DLL's PDB path, source paths in stack traces) start at the repository
          instead of the build machine's folder, which holds the developer's Windows user name. -->
     <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
@@ -18,5 +20,9 @@
     <!-- Sentry's source generator copies every build property into the assembly, the project folder (and with it the
          developer's Windows user name) among them; it serves the SDK's own client, which Shturmap doesn't create. -->
     <SentryDisableSourceGenerator>true</SentryDisableSourceGenerator>
+  </PropertyGroup>
+  <!-- Developer builds (Debug, or eng\dev.ps1's ShturmapDev=true) compile the developer tools in; releases never do. -->
+  <PropertyGroup Condition="'$(ShturmapDev)' == 'true' or '$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);DEVTOOLS</DefineConstants>
   </PropertyGroup>
 </Project>
