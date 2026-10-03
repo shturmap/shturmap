@@ -262,6 +262,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool GameFolderChoosable { get; set; }
 
+    /// <summary>Settings' "GAME FOLDER" row: where Shturmap found the game, or that it didn't.</summary>
+    [ObservableProperty] public partial string GameFolderText { get; set; } = "";
+
+    /// <summary>Settings' CHOOSE… beside the game folder: whenever a folder can be chosen (not in a fake game).</summary>
+    [ObservableProperty] public partial bool GameFolderChangeable { get; set; }
+
     /// <summary>No game logs to plan from (no game, or it hasn't run): NEXT RAID and its cards step aside for the line.</summary>
     [ObservableProperty] public partial bool NoGameLogs { get; set; }
 

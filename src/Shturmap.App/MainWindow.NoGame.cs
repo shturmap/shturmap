@@ -18,6 +18,9 @@ public sealed partial class MainWindow
         vm.GameFolderChoosable = line?.OffersChoice == true;
         vm.NoGameLogs = line is not null;
         vm.ModeChoosable = s.NoGameFound;
+        // Settings say where the game is, and offer the same choice: a folder found automatically can be overruled.
+        vm.GameFolderText = s.Locations?.Install?.Root is { } root ? "GAME FOLDER: " + root : "GAME FOLDER: NOT FOUND";
+        vm.GameFolderChangeable = s.CanChooseGameFolder;
     }
 
     private async void OnChooseGameFolderClick(object sender, RoutedEventArgs e)

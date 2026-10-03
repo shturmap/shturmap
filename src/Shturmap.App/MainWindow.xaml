@@ -136,12 +136,12 @@
              feedback/bugreport button"). Where the build can't report (no DSN) it is disabled; the tooltip sits on the
              frame around it, since a disabled button shows none. -->
         <Grid Background="Transparent" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind FeedbackTooltip}">
-          <Button x:Name="FeedbackButton" Width="28" Height="28" Padding="0" Click="OnFeedbackClick"
+          <Button x:Name="FeedbackButton" Width="28" Height="28" Padding="0" CornerRadius="0" Click="OnFeedbackClick"
                   IsEnabled="{x:Bind ReportingAvailable}" AutomationProperties.Name="Report a problem or idea">
             <FontIcon Glyph="&#xE939;" FontSize="13" Foreground="{x:Bind FeedbackIconBrush}" />
           </Button>
         </Grid>
-        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
+        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
           <TextBlock Text="?" Style="{StaticResource StatusBarText}" HorizontalAlignment="Center" />
           <Button.Flyout>
             <Flyout x:Name="HelpFlyout" Placement="BottomEdgeAlignedRight" Opened="OnHelpOpened" Closed="OnHelpClosed">
@@ -236,7 +236,7 @@
         </Button>
         <!-- Settings and the app's data, apart from help (owner, 2026-10-03: "It's not clear that the settings are with the
              questionmark on the top right … a settings button next to it"). Same frame as "?", 6 px from it. -->
-        <Button x:Name="SettingsButton" Width="28" Height="28" Padding="0" Margin="-10,0,0,0" VerticalAlignment="Center"
+        <Button x:Name="SettingsButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center"
                 ToolTipService.ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings">
           <FontIcon Glyph="&#xE713;" FontSize="13" Foreground="{StaticResource InkBrush}" />
           <Button.Flyout>
@@ -336,6 +336,16 @@
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{x:Bind ShownIfNot(ViewModel.UpdatesAvailable), Mode=OneWay}"
                            Text="Updates: not available in this build. Installed with Shturmap's Setup, it keeps itself up to date." />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="APP AND DATA" Margin="0,8,0,0" />
+                <!-- Where the game is, and the same choice the no-game line offers (docs/DESIGN.md, "No game on this PC"). -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,2,0,0">
+                  <TextBlock Text="{x:Bind ViewModel.GameFolderText, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11"
+                             Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" MaxWidth="330"
+                             ToolTipService.ToolTip="{x:Bind ViewModel.GameFolderText, Mode=OneWay}" />
+                  <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" Visibility="{x:Bind ShownIfTrue(ViewModel.GameFolderChangeable), Mode=OneWay}"
+                                   ToolTipService.ToolTip="Choose the folder Escape from Tarkov is installed in">
+                    <TextBlock Text="CHOOSE…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  </HyperlinkButton>
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,2,0,0">
                   <HyperlinkButton Padding="0" Click="OnLogFolderClick" ToolTipService.ToolTip="Opens Shturmap's log folder (%LOCALAPPDATA%\Shturmap\logs)">
                     <TextBlock Text="LOG FOLDER ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
