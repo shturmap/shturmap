@@ -35,7 +35,25 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
    can't finish: "needs found-in-raid items", "kills over several raids"), taken from what the planner already knows.
    Check the raid card's rows and the folded cards' glyphs (gold to complete, muted to progress) for the same issue,
    and keep "muted = after the raid / at a trader" (objective rows) as the one meaning of muted. DESIGN.md decision.
-6. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+6. **BRING should also cover weapons and gear that kill objectives require** (owner, 2026-10-03: "There are others
+   that still require items, such as doing kills with certain weapons or weapon classes. This is not reflected in
+   the app, but should still be there. It should be a coherent design so it is still clear what to bring and what is
+   needed to solve a quest. Find the best solution here.") To work out on Monday, then propose before building.
+   Starting points:
+   - **Data** (tarkov.dev `shoot` objectives, PvE, counted 2026-10-03): `usingWeapon` on 64, `usingWeaponMods` on 9,
+     `wearing` on 13, `notWearing` on 5 (item lists, some long: a "class" like bolt-action rifles arrives as every
+     member's id). Check whether tarkov.dev gives a category to name a class by ("any bolt-action rifle, 18 kinds"),
+     and how other objective types carry gear (e.g. `buildWeapon`, `useItem`).
+   - **Today's BRING** lists keys ("key for …"), items to plant or mark ("to plant, for Dandies", "to mark, for
+     Revision"), found-in-raid items, with icon, source (trader level, flea price) and loose spots. A coherent
+     extension keeps that row shape and adds the verb: "to use, for Wet Job" (one of several weapons, or a class),
+     "to fit, for Job for a Patriot" (mods), "to wear, for Dandies" (gear). "Don't wear" (`notWearing`: no armor, no
+     helmet) isn't an item to bring: a short note on the quest instead, not a BRING row.
+   - **Rules that hold:** only what the data says (Shturmap knows no inventory, so never "you have it"); one row per
+     item or class, listing the quests it serves; the same in Plan's BRING, the raid card's BRING and the quest card;
+     the synopsis line already names the weapon in words, BRING adds icon, source and price. Check the effort
+     grouping (kill conditions) and the synopsis stay consistent with it.
+7. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
