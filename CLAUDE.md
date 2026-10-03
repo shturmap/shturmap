@@ -36,8 +36,11 @@ Essentials:
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
   (the wrapper finds the per-user .NET 10 SDK). Publish the folder build (`artifacts\Shturmap`, what
-  `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. A release (Velopack; DESIGN.md §8, "Distribution"): set
-  `<Version>` in `Directory.Build.props`, write `docs\release-notes\<version>.md`, commit and push, then
+  `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. A release (Velopack; DESIGN.md §8, "Distribution"): raise
+  `<Version>` in `Directory.Build.props` by yourself, every release (owner, 2026-10-04): the patch number (0.3.0 →
+  0.3.1) when only small things changed since the last release (fixes, wording, small UI tweaks), the minor number
+  (0.3.x → 0.4.0) when something big did (a new feature, a visible redesign); say which and why. Write
+  `docs\release-notes\<version>.md` (what Shturmap is, plus what's new since the last release), commit and push, then
   `.\eng\release.ps1` (builds `artifacts\release`: `Shturmap-Setup.exe`, `packages\`, `app\`; nothing uploaded) and,
   with the owner's go, `.\eng\publish-release.ps1` (a GitHub pre-release "Shturmap <version> (private testing)";
   `-Draft` to review it on GitHub first). Before publishing, scan `artifacts\release\packages` (unpack the `.nupkg`)
