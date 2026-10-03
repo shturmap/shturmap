@@ -8,7 +8,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- The exe's icon (Explorer, shortcuts); the windows load the same file at runtime. brand\build.cs makes it. -->
     <ApplicationIcon>Assets\Shturmap.ico</ApplicationIcon>
-    <!-- A developer build (Debug, or engdev.ps1's ShturmapDev=true) carries the dev icon, a cyan plate, so it is never taken for
+    <!-- A developer build (Debug, or eng\dev.ps1's ShturmapDev=true) carries the dev icon, a cyan plate, so it is never taken for
          the release (docs/DESIGN.md §8, "Developer aids"). -->
     <ApplicationIcon Condition="'$(ShturmapDev)' == 'true' or '$(Configuration)' == 'Debug'">Assets\Shturmap-dev.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
