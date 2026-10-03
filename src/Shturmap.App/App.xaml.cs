@@ -304,6 +304,20 @@ public partial class App : Application
     // with its own database in <folder>\app (downloads are shared with the real cache).
     private static GameSession CreateSession(string[] cli)
     {
+#if DEVTOOLS
+        // Developer switch "--no-game": as if Escape from Tarkov weren't on this PC, so the no-game fallback can be seen
+        // (docs/DESIGN.md, "No game on this PC"). Discovery then looks only at a folder chosen in the session. It gets
+        // an app folder of its own (a fake game's, or a temporary one), so a folder chosen to try it never sticks in
+        // the real settings. With "--fake-game" the fake game isn't found either, until it is chosen; in the
+        // developer view the "No game" trigger does the same while keeping the fake game's screenshots.
+        if (cli.Contains("--no-game"))
+        {
+            var app = Arg(cli, "--fake-game") is { } fake ? Path.Combine(fake, "app")
+                : Path.Combine(Path.GetTempPath(), "shturmap-nogame-" + Guid.NewGuid().ToString("N")[..8], "app");
+            AppLog.Debug("No game: only a folder chosen in this session counts");
+            return new GameSession(new AppPaths(app, AppPaths.Default.CacheRoot)) { NoGame = true };
+        }
+#endif
         var at = Array.IndexOf(cli, "--fake-game");
         if (at < 0 || at + 1 >= cli.Length)
             return new GameSession(AppPaths.Default);

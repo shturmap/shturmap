@@ -277,6 +277,7 @@ public sealed partial class MainWindow : Window
         var vm = ViewModel;
         vm.ModeText = ModeReading.Text(s.Mode);
         vm.ModeDetail = s.ModeReading.Tooltip(gameFound: s.Locations is null || s.Locations.Install is not null, DateTime.Now);
+        ApplyGameState(s);
         vm.InRaid = s.Raid.Phase != RaidPhase.Menu;
         vm.LogsText = s.Logs.Text;
         vm.LogsOk = s.Logs.Ok;
@@ -531,6 +532,7 @@ public sealed partial class MainWindow : Window
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
+            : vm.NoGameLogs ? "" // the no-game line says why there is nothing to plan
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
             : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
             : "";

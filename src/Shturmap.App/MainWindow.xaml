@@ -97,9 +97,22 @@
       <StackPanel Orientation="Horizontal" Spacing="16">
         <TextBlock Text="SHTURMAP" Style="{StaticResource StatusBarText}" FontWeight="Bold" CharacterSpacing="320" />
         <Rectangle Width="1" Height="16" Fill="{StaticResource LineStrongBrush}" VerticalAlignment="Center" />
-        <!-- The mode as the game's log says it; no chooser (owner, 2026-10-03). The tooltip says where it comes from. -->
+        <!-- The mode as the game's log says it; no chooser (owner, 2026-10-03). The tooltip says where it comes from.
+             Only with no game on this PC is it chosen by hand: there is no log to say it (the no-game fallback). -->
         <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
-                   ToolTipService.ToolTip="{x:Bind ViewModel.ModeDetail, Mode=OneWay}" />
+                   ToolTipService.ToolTip="{x:Bind ViewModel.ModeDetail, Mode=OneWay}"
+                   Visibility="{x:Bind ShownIfNot(ViewModel.ModeChoosable), Mode=OneWay}" />
+        <DropDownButton Content="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12"
+                        Padding="6,2" VerticalAlignment="Center" Visibility="{x:Bind ShownIfTrue(ViewModel.ModeChoosable), Mode=OneWay}"
+                        ToolTipService.ToolTip="No game on this PC: choose the mode whose maps and data to browse">
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="Bottom">
+              <MenuFlyoutItem Text="PvE" Tag="Pve" Click="OnModeChosen" />
+              <MenuFlyoutItem Text="PvP" Tag="Pvp" Click="OnModeChosen" />
+              <MenuFlyoutItem Text="Seasonal" Tag="Seasonal" Click="OnModeChosen" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
         <!-- Only what the log shows: "NOT IN A RAID" outside a raid, never "in the menus" (RaidStatus; owner, 2026-10-03). -->
         <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}" />
@@ -392,8 +405,19 @@
               </StackPanel>
               <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(ViewModel.LastRaidText), Mode=OneWay}"
                          Visibility="{x:Bind ShownIf(ViewModel.LastRaidText), Mode=OneWay}" Margin="0,18,0,0" />
+              <!-- No game on this PC, or it hasn't run yet: said where the Plan card would be, for as long as it lasts
+                   (owner, 2026-10-03: the no-game fallback; GameStateLine). -->
+              <StackPanel Margin="0,18,0,0" Spacing="4" Visibility="{x:Bind ShownIf(ViewModel.GameLine), Mode=OneWay}">
+                <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
+                           Text="{x:Bind local:Caps.Of(ViewModel.GameLine), Mode=OneWay}" />
+                <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" Visibility="{x:Bind ShownIfTrue(ViewModel.GameFolderChoosable), Mode=OneWay}"
+                                 ToolTipService.ToolTip="Pick the folder Escape from Tarkov is installed in">
+                  <TextBlock Text="CHOOSE GAME FOLDER…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                </HyperlinkButton>
+                <TextBlock Text="{x:Bind ViewModel.GameNote, Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />
+              </StackPanel>
               <!-- NEXT RAID, and while quests are picked, the one deliberate way to drop them all (Esc never does). -->
-              <Grid>
+              <Grid Visibility="{x:Bind ShownIfNot(ViewModel.NoGameLogs), Mode=OneWay}">
                 <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
                 <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnClearPicksClick"
                                  Visibility="{x:Bind ShownIfTrue(ViewModel.HasPicks), Mode=OneWay}"
@@ -401,7 +425,7 @@
                   <TextBlock Text="CLEAR PICKS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
               </Grid>
-              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}">
+              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfNot(ViewModel.NoGameLogs), Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,12" Margin="0,0,0,6"

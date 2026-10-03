@@ -399,18 +399,23 @@ ReportGameFolders`) and then an app built around quests it can't know.
 requirements, spawn zones, bosses with chances, map names, loose loot spots) and the help. What doesn't: active
 quests, raid state, positions (all from the game's logs and screenshot names).
 
-**Open questions for the owner before planning:**
-- What the default view is: a map browser (pick a map; extracts, transits, bosses, spawns; the side selectable
-  PMC/Scav), a quest lookup (every quest on a map, clearly labelled as all quests, not "yours", since quest states
-  come only from the game's logs: DESIGN.md), or both.
-- The game mode: without the game's log Shturmap can't know it, and since 2026-10-03 the status bar's mode is a
-  label from the log with no chooser (DESIGN.md, "Screen anatomy"). A PvE / PvP / Seasonal chooser belongs to this
-  mode (tarkov.dev's data differs per mode: bosses, prices).
-- The laptop case: reading the game PC's logs and screenshots over a network share (the folder pickers already
-  allow a manual game folder: "Install: manual") would make the full app work there; is that in scope?
-- How it says so: one quiet line where the Plan card would be ("No game on this PC: browsing maps"), not a notice
-  that disappears; and when the game turns up later (installed, or a share mounted), switching over by itself.
-- Truthfulness: nothing may look like the player's own state (no "complete", no distances without a position).
+**Done (2026-10-03, owner: "Yes, build the fallback 1-5"; DESIGN.md "Screen anatomy", *No game*):**
+1. One line where the Plan card would be, for as long as no game is found: "NO GAME FOUND ON THIS PC" ·
+   **CHOOSE GAME FOLDER…** · "or browse the maps"; a variant when the game is found but hasn't run. No 30 s notice.
+2. **Choose game folder…**: Windows' folder picker, checked with discovery's rules, saved, and followed at once
+   without a restart (logs re-pointed and read for history).
+3. Browse mode: the map as always, a PvE / PvP / Seasonal chooser in place of the mode label, nothing quest-like.
+4. Discovery runs again every 30 s while the game or its logs are missing, and switches over by itself.
+5. Developer switch `--no-game` and the developer view's "No game" trigger, plus its script step `choose`.
+
+**Still open:**
+- The laptop case: reading the game PC's logs over a network folder. A network folder chosen with **Choose game
+  folder…** that holds the game already works; whether to say so (README, FAQ) and support it is the owner's call.
+  Screenshots stay the local Documents folder's, so positions wouldn't arrive over the network.
+- A quest lookup without the game (every quest on a map, labelled as all quests, not "yours") was not built; the
+  browse mode shows nothing quest-like.
+- Once the settings flyout (help / settings split) is on main, add a "GAME FOLDER: <path or 'not found'> ·
+  CHOOSE…" row there, so a found-but-wrong install can be changed too.
 
 ## At the production release on GitHub (owner, 2026-10-03)
 

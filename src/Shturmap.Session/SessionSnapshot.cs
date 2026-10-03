@@ -107,6 +107,15 @@ public sealed record SessionSnapshot
 
     public GameLocations? Locations { get; init; }
 
+    /// <summary>Discovery found no game on this PC (not while still looking): the no-game state.</summary>
+    public bool NoGameFound => Locations is { Install: null };
+
+    /// <summary>The game is found but has no log sessions yet: it hasn't run on this PC.</summary>
+    public bool GameNotRunYet => Locations is { Install: not null, LogsFolder: null };
+
+    /// <summary>"Choose game folder…" can work: discovery isn't overridden by a fake game.</summary>
+    public bool CanChooseGameFolder { get; init; }
+
     public SourceHealth Logs { get; init; } = new(false, "Looking for the game…");
 
     public SourceHealth Screenshots { get; init; } = new(false, "Looking for screenshots…");
