@@ -112,7 +112,18 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
     big type; check the marker's age tag reads well enough at a glance on its own (size, contrast, the collar), maybe
     "7 MIN OLD" once past `StaleAfter`; keep the raid card's note ("Distances from your screenshot 7 min ago").
     DESIGN.md: record that the owner replaced the earlier decision, with the date.
-12. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+12. **Other markers fade too far while a quest is highlighted** (owner, 2026-10-03: "the other markers are rendered
+    too faintly, they can be barely made out anymore, but are still pretty important"). `MapRenderer.Render` draws
+    everything not in focus in one layer at `1 - 0.72 × Dim`, so at full dim other markers keep 28 %, labels
+    included. Rework so the focused quest still stands out, but the rest stays readable:
+    - fade much less, around 55–65 %, and check it on the real artwork, which is already receded;
+    - or step back by colour, not opacity: desaturate other quests' markers and keep their shape and collar crisp;
+    - never fade what's always needed: extracts and transits for your side, the player, boss and sniper markers
+      maybe less than quest markers;
+    - fade the labels of the others more than their symbols.
+    Compare candidates side by side in snapshots (a highlighted quest on Customs and Streets) before choosing, and
+    record the decision in DESIGN.md (the four-level rule in "Map drawing").
+13. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
