@@ -6,6 +6,28 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02); 2, 5 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
+
+1. **A separate data folder for dev builds** (proposed, waiting for the owner's go). Today the installed release
+   (`%LOCALAPPDATA%\ShturmapApp`) and the folder build (`artifacts\Shturmap`) share `%LOCALAPPDATA%\Shturmap`: one
+   database and settings, one app log (diagnostics mix both), one study log (dev starts pollute the owner's data),
+   one outbox; folder builds have the DSN, so their crashes reach Sentry too. Proposal: installed copies keep
+   `%LOCALAPPDATA%\Shturmap`, every other build uses `%LOCALAPPDATA%\Shturmap-dev` (`AppPaths.CreateDefault`), the
+   download cache stays shared (`CacheRoot`), plus a `--data <folder>` switch. Quest states rebuild from the game logs;
+   only manual quest states stay with the release. About 20 minutes with tests. The owner then installs the 0.2.0
+   Setup beside the dev build.
+2. **One symbol, one meaning: the flea market's shopping bag** (owner to decide). `E719` is both the Find-in-raid
+   quest type and the flea-market source on item cards (found by the symbol check, DESIGN.md "one symbol, one
+   meaning"). Suggested: a price tag for the flea market.
+3. **Old release files** in `artifacts`: `Shturmap-0.1.0-win-x64.exe`/`.zip` (+ `.sha256`) are superseded by
+   `Shturmap-Setup.exe` 0.2.0; delete them on the owner's OK so there's one file to send.
+4. **Not yet verified by a click** (snapshots and tests only): the pop-out button, RESTART NOW / DOWNLOAD and the
+   Updates setting, the study-log switch, Copy diagnostics, LOG FOLDER, LICENCES, PRIVACY, the report dialog's Send,
+   the crash question's buttons, the effort hairlines and new labels at 125 % and 150 % display scaling. Ask the owner
+   to try them in the installed 0.2.0, or walk through them together.
+5. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+   which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
+
 ## Before starting
 
 - **Releases** (2026-10-03): 0.1.0 went to friends by hand as one exe. From **0.2.0**, the first public release,
