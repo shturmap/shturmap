@@ -598,7 +598,7 @@ Rules:
   `--verbose` adds the app log's DEBUG lines; `--study` keeps a study log for one session; `--show-report` opens
   the Report dialog with an example and what's sent, `--show-crash` the question after a crash (for snapshots;
   snapshots send nothing); `--send-report <text> <folder>` sends one real report through the dialog's Send and
-  saves the window (a release's delivery check, §8 "Reports"; with `--fake-game <folder>` it leaves the player's own folder and study log alone). For website media, `tools\fake-raid.ps1 -Window
+  saves the window (a release's delivery check, §8 "Reports"; with `--fake-game <folder>` it leaves the player's data and study log alone; its lines still go to the app log). For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
   (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.

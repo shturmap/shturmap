@@ -13,6 +13,7 @@ public sealed class ProgressStore : IDisposable
 {
     private readonly SqliteConnection _db;
     private readonly Lock _gate = new();
+    private bool _closed;
 
     public ProgressStore(string databasePath)
     {
@@ -95,6 +96,8 @@ public sealed class ProgressStore : IDisposable
     {
         lock (_gate)
         {
+            if (_closed)
+                return null;
             using var cmd = _db.CreateCommand();
             cmd.CommandText = "SELECT value FROM settings WHERE key = $key";
             cmd.Parameters.AddWithValue("$key", key);
@@ -106,6 +109,10 @@ public sealed class ProgressStore : IDisposable
     {
         lock (_gate)
         {
+            // The window's last events can come after the session closed the store (the help panel closing with the
+            // window, on a first start): such a setting is dropped. Writing it crashed Shturmap on exit (2026-10-03).
+            if (_closed)
+                return;
             using var cmd = _db.CreateCommand();
             cmd.CommandText = "INSERT INTO settings (key, value) VALUES ($key, $value) ON CONFLICT(key) DO UPDATE SET value = excluded.value";
             cmd.Parameters.AddWithValue("$key", key);
@@ -121,5 +128,12 @@ public sealed class ProgressStore : IDisposable
         cmd.ExecuteNonQuery();
     }
 
-    public void Dispose() => _db.Dispose();
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            _closed = true;
+            _db.Dispose();
+        }
+    }
 }
