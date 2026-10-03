@@ -8,6 +8,20 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 
+**Status, 2026-10-03 evening:** the quota came back the same day and the owner said "go ahead with the open TODOs".
+Done and merged (DESIGN.md has each decision): 1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 13, 14 (with the changelog the
+owner added), 15, 16, and 17 (the design system, §4). Still open:
+- **4, click checks:** in the installed dev build ("Shturmap DEV", F12 for the developer view), with the owner.
+- **10, the FAQ:** drafted, not published. The website changes are on the site repository's branch `work/faq`
+  (worktree `..\Shturmap-wt\g-site`, with the design system's CSS alignment on top), and the README FAQ on the app
+  branch `work/g-readme` (worktree `..\Shturmap-wt\g-readme`). They wait for the owner's choice of heading ("Is this
+  allowed? Can I get banned?" or "Is this cheating?") and their go. Publish both together: the README links to the
+  website's `#faq`.
+- **18:** items 2 and 6 below, and the release checklist (on hold until the release).
+- Version: still 0.2.0, though much has changed since the build sent to a friend; ask before the next one goes out.
+
+The items below are kept as written, for their reasons and quotes.
+
 1. **A separate data folder for dev builds** (proposed, waiting for the owner's go). Today the installed release
    (`%LOCALAPPDATA%\ShturmapApp`) and the folder build (`artifacts\Shturmap`) share `%LOCALAPPDATA%\Shturmap`: one
    database and settings, one app log (diagnostics mix both), one study log (dev starts pollute the owner's data),
