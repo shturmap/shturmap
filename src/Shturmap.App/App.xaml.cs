@@ -25,8 +25,10 @@ public partial class App : Application
         AppLog.Initialize(AppPaths.Default.Logs);
         var cli = Environment.GetCommandLineArgs();
         var started = DateTime.Now;
-        // Developer runs (snapshots, fake games, the website demo) send nothing; a build without a DSN can't.
-        var developerRun = cli.Contains("--snapshot") || cli.Contains("--fake-game") || cli.Contains("--demo");
+        // Developer runs (snapshots, fake games, the website demo) send nothing; a build without a DSN can't. The one
+        // exception is the release's delivery check, "--send-report", which may run in a fake game so the player's
+        // own folder and study log stay untouched.
+        var developerRun = (cli.Contains("--snapshot") || cli.Contains("--fake-game") || cli.Contains("--demo")) && !cli.Contains("--send-report");
         Reporter = new Reporter(AppRoot(cli), ReportEndpoint.Parse(BuiltDsn()), developerRun,
             new ReportInfo(GameSession.Version, BuildKind, Diagnostics.WindowsVersion()));
         // A session that ended without closing left its marker behind: note it before marking this one. One from
