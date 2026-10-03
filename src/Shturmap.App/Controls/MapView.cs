@@ -233,8 +233,9 @@ public sealed partial class MapView : Grid
         var size = _camera.Viewport;
         using var surface = SKSurface.Create(new SKImageInfo(Math.Max(1, (int)size.Width * scale), Math.Max(1, (int)size.Height * scale)));
         surface.Canvas.Scale(scale);
+        // No map yet: the ground, as everywhere (it had a teal tint of its own until the design system, 2026-10-03).
         if (_scene is null)
-            surface.Canvas.Clear(SKColor.Parse("#0e1413"));
+            surface.Canvas.Clear(Palette.Sk(Palette.Ground));
         else
             MapRenderer.Render(surface.Canvas, _camera, _scene, PixelScale);
         using var image = surface.Snapshot();
@@ -252,7 +253,7 @@ public sealed partial class MapView : Grid
         _camera.Resize(new SKSize(e.BackendRenderTarget.Width, e.BackendRenderTarget.Height));
         if (_scene is null)
         {
-            canvas.Clear(SKColor.Parse("#0e1413"));
+            canvas.Clear(Palette.Sk(Palette.Ground));
             return;
         }
         if (_fitPending)

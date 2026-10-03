@@ -7,26 +7,26 @@ namespace Shturmap.Map;
 /// <summary>Draws a <see cref="MapScene"/> through a <see cref="Camera"/>. Markers keep a fixed screen size.</summary>
 public static partial class MapRenderer
 {
-    // The app's palette (App.xaml, docs/DESIGN.md §4): muted gold for quests, the game's green for extracts.
-    private static readonly SKColor Background = SKColor.Parse("#0b0c0b");
-    private static readonly SKColor Amber = SKColor.Parse("#c9ad62");
+    // The design system's palette (Palette, docs/DESIGN.md §4): muted gold for quests, the game's green for extracts.
+    private static readonly SKColor Background = Palette.Sk(Palette.Ground);
+    private static readonly SKColor Amber = Palette.Sk(Palette.Amber);
 
     /// <summary>The quest amber, which nothing else on the map may resemble.</summary>
     public static SKColor QuestAmber => Amber;
-    private static readonly SKColor Green = SKColor.Parse("#8da65e");
-    private static readonly SKColor Teal = SKColor.Parse("#6f9a94");
-    private static readonly SKColor Lime = SKColor.Parse("#b7b77a");
-    private static readonly SKColor Violet = SKColor.Parse("#9c8cc4");
-    private static readonly SKColor Player = SKColor.Parse("#e9e2c8");
-    private static readonly SKColor Ink = SKColor.Parse("#d9d5c4");
-    private static readonly SKColor Muted = SKColor.Parse("#8a8778");
-    private static readonly SKColor Red = SKColor.Parse("#b8604a");
+    private static readonly SKColor Green = Palette.Sk(Palette.Green);
+    private static readonly SKColor Teal = Palette.Sk(Palette.Teal);
+    private static readonly SKColor Lime = Palette.Sk(Palette.Khaki);
+    private static readonly SKColor Violet = Palette.Sk(Palette.Violet);
+    private static readonly SKColor Player = Palette.Sk(Palette.Sand);
+    private static readonly SKColor Ink = Palette.Sk(Palette.Ink);
+    private static readonly SKColor Muted = Palette.Sk(Palette.Muted);
+    private static readonly SKColor Red = Palette.Sk(Palette.Red);
 
     /// <summary>
     /// The quest kept highlighted by a click (owner, 2026-10-01: gold among gold didn't stand out). Cyan is the one
     /// hue nothing else on the map uses, the artwork included, and it stays apart from gold with any colour vision.
     /// </summary>
-    public static readonly SKColor Kept = SKColor.Parse("#3fd2e0");
+    public static readonly SKColor Kept = Palette.Sk(Palette.Kept);
 
     // Bahnschrift (ships with Windows), semi-condensed like the app's labels.
     private static readonly SKTypeface Typeface =
@@ -638,10 +638,10 @@ public static partial class MapRenderer
     // extent tarkov.dev gives the map, not a traced outline) as a panel with a metric grid (10 m, every fifth line
     // stronger), so positions, distances and markers still read true. No walls: the data has none. The 10 m lines go
     // when they would crowd closer than 6 px. A caption in the sheet's corner says what it is.
-    private static readonly SKColor SheetPanel = SKColor.Parse("#121311");
-    private static readonly SKColor SheetEdge = SKColor.Parse("#45463f");
-    private static readonly SKColor SheetMinor = SKColor.Parse("#1c1d1a");
-    private static readonly SKColor SheetMajor = SKColor.Parse("#2a2b27");
+    private static readonly SKColor SheetPanel = Palette.Sk(Palette.SheetPanel);
+    private static readonly SKColor SheetEdge = Palette.Sk(Palette.LineStrong);
+    private static readonly SKColor SheetMinor = Palette.Sk(Palette.SheetMinor);
+    private static readonly SKColor SheetMajor = Palette.Sk(Palette.Line);
     private const double SheetSpacing = 10;
 
     private static void DrawSchematic(SKCanvas canvas, Camera camera, MapScene scene, float ui)

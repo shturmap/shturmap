@@ -183,6 +183,102 @@ against sanctions); and say that some players see a position map as an unfair ad
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
     are no detail pages to open. Finished quests appear nowhere.
 
+### Design system
+
+One set of colours, type, shapes, motion, icons and words for the app, the map, the README, the website and the
+release notes (owner, 2026-10-02: "make sure the colours, fonts and general design are consistent in the app, the
+readme and the future website"; written down 2026-10-03). The sections below ("Visual language", "Logo", "Map
+drawing", §2's wording rules) apply it; when they say a colour or a style, it is one of these.
+
+**Colours.** The table is the source: `Shturmap.Map.Palette` holds it in code, and `DesignTokenTests` fail when
+App.xaml, a XAML colour, the map, `brand\build.cs`, the website's CSS or this table disagrees, or a colour appears that
+isn't here. A colour may appear at a lower alpha (gold at 18 % behind linked rows, ground at 78–94 % behind overlays);
+a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symbol, one meaning, for colour too).
+
+| token | hex | role | where (App.xaml · map · website) |
+| --- | --- | --- | --- |
+| `Ground` | `#0B0C0B` | the page and the map behind everything; dark collars and halos | GroundColor · Background · `--ground` |
+| `Rail` | `#101110` | the rail and status bar | RailColor · — · `--rail` |
+| `Panel` | `#151614` | cards, flyouts, tooltips, the icon's plate | PanelColor · — · `--panel`, `--grid` |
+| `Raised` | `#1E1F1B` | the selected or expanded thing, one step lighter | RaisedColor · — · `--raised` |
+| `Line` | `#2A2B27` | hairlines | LineColor · sheet grid · `--line` |
+| `LineStrong` | `#45463F` | the stronger hairline of what is selected; frames | LineStrongColor · sheet edge · `--line-strong` |
+| `Cell` | `#1A1B18` | the inventory cell behind item icons | CellColor · — · — |
+| `Ink` | `#D9D5C4` | text | InkColor · labels · `--ink` |
+| `Muted` | `#8A8778` | secondary text; what happens after the raid or at a trader; done objectives | MutedColor · Muted · `--muted` |
+| `Amber` | `#C9AD62` | the one accent: quests, objectives, distances, "on" | AmberColor, SystemAccentColor · Amber · `--amber` |
+| `AmberHover` | `#D6BE7E` | the accent under the pointer | SystemAccentColorLight1 · — · `--amber-hover` |
+| `AmberHi` | `#E2CF9C` | focus rings, link hover on the web | SystemAccentColorLight2 · — · `--amber-hi` |
+| `AmberDeep` | `#A88F4E` | the accent pressed | SystemAccentColorDark1 · — · — |
+| `Green` | `#8DA65E` | PMC extracts, success, healthy inputs | GreenColor · Green · — |
+| `Teal` | `#6F9A94` | Scav extracts | TealColor · Teal · `--teal` |
+| `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | — · Lime · — |
+| `Violet` | `#9C8CC4` | transits | — · Violet · — |
+| `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
+| `Sand` | `#E9E2C8` | the player and their trail | SandColor · Player · `--sand` |
+| `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
+| `LightGround` | `#F1F0EC` | the logo's light background | brand |
+| `LightInk` | `#1E1F1B` | the logo's ink on light | brand, README light mode |
+| `LightAmber` | `#8C7436` | the logo's amber on light | brand, README light mode |
+| `LogoMarks` | `#4A4A41` | the icon plate's corner marks | brand |
+| `LogoGrid` | `#171815` | the social preview's grid | brand |
+| `DeveloperPlateEdge` | `#1E6F78` | the dev icon plate's edge | brand |
+| `DeveloperPlateMarks` | `#2A97A3` | the dev icon plate's corner marks | brand |
+| `WebInkSoft` | `#BDB9A8` | long reading on the website (leads, answers) | website `--ink-soft` |
+| `WebDim` | `#6E6C60` | parts of a file name Shturmap doesn't use (website) | website `--dim` |
+| `WebTealText` | `#8FB8B1` | the facing in a file name, as text (website) | website `--teal-text` |
+| `SheetPanel` | `#121311` | the map sheet's panel (maps without artwork) | map |
+| `SheetMinor` | `#1C1D1A` | the map sheet's 10 m lines | map |
+
+**Type.** Bahnschrift in the app and on the map (ships with Windows, DIN-like, close to the game's lettering). It
+may be shown on screen but not served as a web font (Microsoft's font FAQ), so the website uses DIN-like faces with
+the SIL Open Font Licence, self-hosted: Barlow Semi Condensed for what the app sets semi-condensed, Barlow for body
+text, IBM Plex Mono for numbers and file names. The README uses GitHub's own type. Roles, app style and size (px) ·
+website class:
+
+| role | app | website |
+| --- | --- | --- |
+| section label: uppercase, spaced, muted | `EyebrowText` 11, semi-condensed semibold, 0.14 em | `.eb` 12, Barlow SC 600, 0.18 em |
+| status word | `StatusText` / `StatusBarText` 12, semi-condensed semibold, 0.08 em | the route readout 13, 0.12 em |
+| title (map, quest) | `TitleText` 17, semi-condensed semibold | headings, Barlow SC 600: h1 34–56, `.h` 40 (32 on phones), questions 21 |
+| body | the implicit TextBlock style, 14 | body 17, line height 1.6 |
+| note, secondary | `NoteText` 12.5, muted | `.note` 14, captions 13, muted |
+| figure (distances) | `FigureText` 15, semi-condensed semibold, amber; 22 in the glance | IBM Plex Mono: section numbers, legends, code |
+| the big cue | 13 / 48 / 15 | — |
+
+New text uses a role, not a new size; the few in-between sizes in XAML (10, 10.5, 11.5) are badges and hints that
+fit a fixed box.
+
+**Shape and spacing.** Square corners everywhere (`ControlCornerRadius` and `OverlayCornerRadius` 0, no
+`border-radius` on the web); flat panels; 1 px hairlines in `Line`, the selected one in `LineStrong`; map symbols wear
+a dark collar (see "Visual language"). Spacing in the app steps 2–3 px inside a row, 6–10 px between lines, 12–18 px
+between groups, 20 px above a section label; the rail is 384 px, the status bar 40 px. The website lays out on a 96 px
+grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps from 8 to 56 px.
+
+**Motion.** Slow enough to read, never for show: the big cue takes 5 s with its entrance at 1.8 times the original
+pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
+position pings. With Windows' animation effects off the app shows and hides without motion. The website follows the
+reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
+easing; owner, 2026-10-02), the rest stops.
+
+**Icons.** Segoe Fluent Icons in the app, drawn glyphs on the map (`Glyphs`), one symbol with one meaning everywhere
+("Visual language", the list of checked symbols); quest types by glyph, never by colour. Text links that leave
+Shturmap end in "↗". The website draws its few symbols itself, in the same colours.
+
+**Logo.** As in "Logo": the full mark from 48 px, the plain Ш from 16 to 40 px; the lockup at least 30 px tall (the
+website's phone header; 40 px in the README and the website header); keep a free space of at least half the plate's
+height around it; dark and light variants as in the table.
+
+**Words.** Sober and short, units on numbers, no marketing and no jargon (§8, "Rules"); what Shturmap reads and never
+does, the risk named plainly, none of the cheat sellers' vocabulary and no hint of Battlestate's approval (§2). The
+same in the app, the README, the website and the release notes.
+
+**Where each surface takes it from.** The app: `App.xaml` (colour resources, brushes and the text styles) and
+`Shturmap.Map.Palette` for the map. The website: `assets/site.css`'s `:root` (colours under the tokens' names,
+`--f-cond`, `--f-body`, `--f-mono`). The README and the website: `brand/` (the logo files, dark and light). Release
+notes: plain Markdown, the same words. A change to the design system changes this section, `Palette`, App.xaml and the
+website's CSS together, and `DesignTokenTests` check the colours.
+
 ### Visual language
 
 The game's own UI, pared down: what a Tarkov player already reads at a glance, with nothing added for show.
@@ -209,17 +305,9 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
   same collar, since they measured below 3:1 against mid and light streets). Hollow symbols get a collar band
   under the ring, their middle left open.
 
-| meaning | colour |
-| --- | --- |
-| quests, objectives, distances, "on" (one accent) | muted gold `#C9AD62` |
-| extracts (PMC), success, healthy inputs | green `#8DA65E` |
-| Scav extracts | teal `#6F9A94` |
-| shared extracts | khaki `#B7B77A`, the triangle split down the middle |
-| the player and their trail | sand `#E9E2C8` |
-| transits | violet `#9C8CC4` |
-| bosses, danger | red `#B8604A` |
-| text | beige-white `#D9D5C4`, secondary `#8A8778` (also done objectives on the map, with a check mark) |
-| ground, rail, panel, raised | `#0B0C0B`, `#101110`, `#151614`, `#1E1F1B`; hairlines `#2A2B27` / `#45463F` |
+Colours and their one meaning each: the token table in "Design system" above (gold for quests, green / teal /
+khaki for extracts by side, violet for transits, red for bosses, sand for the player, cyan for kept or picked
+quests, muted for what happens after the raid).
 
 **One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
 pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
@@ -273,7 +361,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Lockup.** The gap between the icon's plate and the wordmark is a third of the cap height (owner, 2026-10-02:
   half read too loose); the plate is about 1.36× the cap height; everything is centred on one axis. The README
   shows `brand/logo-dark.svg` or `logo-light.svg` through `<picture>`, 40 px tall.
-- **Colours.** The palette above. On light backgrounds ink is `#1E1F1B` and amber `#8C7436`; the icon keeps its
+- **Colours.** The design system's tokens ("Design system"). On light backgrounds ink is `LightInk` `#1E1F1B` and amber `LightAmber` `#8C7436`; the icon keeps its
   dark plate on both.
 - The lettering is drawn from scratch as paths, never from font outlines (§3).
 

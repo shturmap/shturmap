@@ -3,7 +3,7 @@
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
 read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
 Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) on 2026-10-03. Items 1, 3 and 4 are done
-(2026-10-02); 2, 5 and 6 are open.
+(2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
@@ -201,7 +201,7 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
     - **Zero picks = today's behaviour,** so nobody has to use it. Check it against the effort order (item list
       order), the synopsis lines and the folded cards; one symbol, one meaning (the pen keeps its meaning: "keep
       lit", now for several). DESIGN.md decision, help text, legend.
-17. **Next round: item 5 below, one design system** (owner, 2026-10-03: "Yes, do the design system after this round"), before the website's next update (the FAQ).
+17. **Done (2026-10-03): item 5 below, one design system** (owner: "Yes, do the design system after this round"): DESIGN.md §4 "Design system", `Shturmap.Map.Palette`, `DesignTokenTests`; the website's CSS follows it on the unpublished FAQ branch.
 18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
@@ -345,6 +345,11 @@ allowed logs says it directly, but the insurer writes when insured gear was lost
   compare plans with what happened.
 
 ## 5. One design system for the app, the README and the website
+
+**Done (2026-10-03):** DESIGN.md §4 "Design system" (colour tokens with roles, type roles for app and web, shape and
+spacing, motion, icons, logo use, words, and where each surface takes them from); `Shturmap.Map.Palette` as the
+colour table in code; `DesignTokenTests` keep App.xaml, XAML colours, the map, the brand files, the design doc and
+the website's CSS equal to it.
 
 **Why** (owner, 2026-10-02). With the logo settled (DESIGN.md §4, "Logo"), the colours, type and general look must
 be the same in the app, the README and the coming website, and DESIGN.md has to say how.
