@@ -333,7 +333,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 await session.DevFailDataAsync(new HttpRequestException("Developer view: 503", null, HttpStatusCode.ServiceUnavailable));
                 break;
             case "nogame":
-                session.DevSayNoGame();
+                await session.DevForgetGameAsync();
                 break;
             case "reload":
                 session.DevReloadData();
@@ -471,6 +471,13 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 break;
             case "trigger":
                 await TriggerAsync(step.Arg(0));
+                break;
+            case "choose":
+                // "Choose game folder…" with that folder (no picker); "choose game" is this view's own fake game.
+                var folder = string.Join(' ', step.Args);
+                if (folder is "" or "game")
+                    folder = Game?.Root ?? "";
+                Say(await session.ChooseGameFolderAsync(folder) ? "game folder chosen: " + folder : "not the game: " + folder);
                 break;
             case "wait":
                 await Task.Delay(TimeSpan.FromSeconds(step.Number(0, 1)));

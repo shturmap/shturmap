@@ -255,6 +255,19 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The one quiet line about a new version, between raids; empty when there is none.</summary>
     [ObservableProperty] public partial string UpdateLine { get; set; } = "";
 
+    /// <summary>The rail's line while the game, or its logs, aren't found (<see cref="Shturmap.Session.GameStateLine"/>); empty otherwise.</summary>
+    [ObservableProperty] public partial string GameLine { get; set; } = "";
+
+    [ObservableProperty] public partial string GameNote { get; set; } = "";
+
+    [ObservableProperty] public partial bool GameFolderChoosable { get; set; }
+
+    /// <summary>No game logs to plan from (no game, or it hasn't run): NEXT RAID and its cards step aside for the line.</summary>
+    [ObservableProperty] public partial bool NoGameLogs { get; set; }
+
+    /// <summary>No game on this PC: the mode is chosen by hand instead of read from the log.</summary>
+    [ObservableProperty] public partial bool ModeChoosable { get; set; }
+
     [ObservableProperty] public partial bool UpdateOffersDownload { get; set; }
 
     [ObservableProperty] public partial bool UpdateOffersRestart { get; set; }

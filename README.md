@@ -101,7 +101,8 @@ Builds other than the installed release keep their data in `%LOCALAPPDATA%\Shtur
 
 On first start it finds the game (Steam or the Battlestate Games launcher), its logs and your Screenshots folder,
 downloads data from tarkov.dev and reads your existing logs for quest history. In a raid, press your screenshot
-key: your marker moves, the floor follows your height and objectives re-sort by distance.
+key: your marker moves, the floor follows your height and objectives re-sort by distance. If it doesn't find the
+game, it says so in place of the raid plan: use **Choose game folder…** there, or browse the maps meanwhile.
 
 Limits: quests come from the logs alone, so a quest started before your oldest log isn't known. The Lab, Labyrinth
 and Icebreaker are drawn from tarkov.dev's top-down renders, loaded as you look at them; without a connection and

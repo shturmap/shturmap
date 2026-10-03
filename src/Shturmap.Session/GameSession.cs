@@ -153,7 +153,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Study.Prune(DateTime.Now);
             Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
                 ("build", BuildTime()), ("prevClean", MarkRunning()));
-            _locations = locations ?? new InstallLocator(env).Locate(_store.GetSetting("installFolder"));
+            _env = env;
+            // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
+            // looked for again (the player chose a folder, or the game was installed later).
+            _locate = locations is not null ? null : folder => new InstallLocator(env).Locate(folder, discover: !NoGame);
+            _locations = locations ?? _locate!(_store.GetSetting(InstallFolderSetting));
             ReportGameFolders(_locations);
             _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
             AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
@@ -175,15 +179,189 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
         _ = Task.Run(() => LoadDataAsync(_mode));
         _ = Task.Run(BackfillLogsAsync);
-        if (_locations.LogsFolder is { } logs)
-        {
-            _tailer = new LogTailer(logs);
-            _tailer.Start();
-            _ = Task.Run(ConsumeLogsAsync);
-        }
+        FollowLogs();
         _watcher = new ScreenshotWatcher(_locations.ScreenshotsFolder);
         _watcher.ScreenshotTaken += s => _ = Task.Run(() => OnScreenshotAsync(s));
         _watcher.Start();
+        if (_locate is not null)
+            _ = Task.Run(LookAgainAsync);
+    }
+
+    // ---- the game's folders: found, chosen, or found later (owner, 2026-10-03: the no-game fallback) ----
+
+    /// <summary>The setting that holds the folder the player chose with "Choose game folder…".</summary>
+    public const string InstallFolderSetting = "installFolder";
+
+    /// <summary>While the game or its logs aren't found, discovery runs again this often (registry and file checks
+    /// only), so a game installed or first started later is followed without a restart.</summary>
+    public static readonly TimeSpan LookAgainEvery = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Developer switch <c>--no-game</c>: discovery looks only at a folder the player chose, so the no-game state can
+    /// be seen on a PC that has the game. Set before <see cref="StartAsync"/>.
+    /// </summary>
+    public bool NoGame { get; init; }
+
+    private IGameEnvironment? _env;
+    private Func<string?, GameLocations>? _locate;
+
+    /// <summary>Whether "Choose game folder…" can work here: not with game folders given from outside (fake games).</summary>
+    public bool CanChooseGameFolder => _locate is not null;
+
+    /// <summary>
+    /// The folder the player chose for the game. It counts if it holds the game (the build folder or the one above it,
+    /// as discovery accepts them); then it is saved and followed from now on, without a restart: its logs are read for
+    /// quest history and followed live. If it doesn't, nothing changes and the notice says why.
+    /// </summary>
+    /// <returns>True if the folder holds the game.</returns>
+    public async Task<bool> ChooseGameFolderAsync(string folder)
+    {
+        if (_locate is null)
+            return false;
+        var found = _locate(folder);
+        var chosen = ChosenCandidate(found);
+        if (chosen is not { IsValid: true })
+        {
+            AppLog.Info($"Game folder chosen but not the game: {folder} ({chosen?.Rejected ?? "not considered"})");
+            await SayAsync(InstallLocator.Explain(chosen), 12);
+            return false;
+        }
+        await _gate.WaitAsync();
+        try
+        {
+            _store?.SetSetting(InstallFolderSetting, folder);
+            AppLog.Info("Game folder chosen: " + folder);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+        await FollowAsync(found);
+        return true;
+    }
+
+    // Looks for the game again while it, or its logs, aren't found; stops looking once both are.
+    private async Task LookAgainAsync()
+    {
+        try
+        {
+            while (!_stop.IsCancellationRequested)
+            {
+                await Task.Delay(LookAgainEvery, _stop.Token);
+                if (_locations is { Install: not null, LogsFolder: not null } || _locate is null)
+                    continue;
+                var found = _locate(_store?.GetSetting(InstallFolderSetting));
+                if (SameGame(found, _locations))
+                    continue;
+                await FollowAsync(found);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    /// <summary>The same game in the same place: nothing to switch.</summary>
+    public static bool SameGame(GameLocations a, GameLocations? b) =>
+        string.Equals(a.Install?.Root, b?.Install?.Root, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(a.LogsFolder, b?.LogsFolder, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The chosen folder in what discovery made of it: the game if <see cref="InstallCandidate.IsValid"/>, else why not.</summary>
+    public static InstallCandidate? ChosenCandidate(GameLocations found) => found.Candidates.FirstOrDefault(c => c.Kind == InstallKind.Manual);
+
+    /// <summary>A switch worth saying once: the game's logs are followed now, where none (or others) were before.</summary>
+    public static bool SaysFound(GameLocations? before, GameLocations after) =>
+        after.LogsFolder is not null && !string.Equals(after.LogsFolder, before?.LogsFolder, StringComparison.OrdinalIgnoreCase);
+
+    // Follows other game folders from now on: the settings read again, the old logs let go, the new ones read for quest
+    // history and followed live. Says once when the game is followed now where it wasn't before.
+    private async Task FollowAsync(GameLocations found)
+    {
+        // A choice and the next look-again never switch the logs at the same time.
+        await _following.WaitAsync();
+        try
+        {
+            await FollowNowAsync(found);
+        }
+        finally
+        {
+            _following.Release();
+        }
+    }
+
+    private readonly SemaphoreSlim _following = new(1, 1);
+
+    private async Task FollowNowAsync(GameLocations found)
+    {
+        LogTailer? old;
+        await _gate.WaitAsync();
+        try
+        {
+            var say = SaysFound(_locations, found);
+            old = string.Equals(found.LogsFolder, _locations?.LogsFolder, StringComparison.OrdinalIgnoreCase) ? null : _tailer;
+            if (old is not null)
+                _tailer = null;
+            _locations = found;
+            ReportGameFolders(found, notice: false);
+            if (_env is not null)
+                _settings = new GameSettingsReader(_env).Read(found.SettingsFolder);
+            if (say)
+                Say($"Found Escape from Tarkov in {found.Install!.Root}: quests and raids follow the game now.", 10);
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+        if (old is not null)
+            await old.DisposeAsync();
+        if (_tailer is null)
+            FollowLogs();
+        await BackfillLogsAsync();
+    }
+
+    // Follows the found logs live, if there are any.
+    private void FollowLogs()
+    {
+        if (_locations?.LogsFolder is not { } logs)
+            return;
+        _tailer = new LogTailer(logs);
+        _tailer.Start();
+        _ = Task.Run(ConsumeLogsAsync);
+    }
+
+    /// <summary>
+    /// The mode, chosen by the player: only while no game is found (owner, 2026-10-03: the mode comes from the game's
+    /// log; a chooser belongs to the no-game state, where there is no log to say it). Loads that mode's data.
+    /// </summary>
+    public async Task ChooseModeAsync(GameMode mode)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_locations is not { Install: null })
+                return;
+            Study.Ui("mode.choose", ("mode", mode));
+            SwitchMode(mode);
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task SayAsync(string message, double seconds)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            Say(message, seconds);
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     // ---- inputs from the UI ----
@@ -344,7 +522,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     }
 
     // Said once at start when the game or its logs aren't found: without them quests and raids can't follow the game.
-    private void ReportGameFolders(GameLocations found)
+    // Logs where the game was found. The rail says it as long as the game or its logs are missing (the no-game line),
+    // so no notice says it a second time; notice: true only for the developer view's old trigger.
+    private void ReportGameFolders(GameLocations found, bool notice = false)
     {
         if (found.Install is { } install)
             AppLog.Info($"Game found: {install.Kind} at {install.Root} ({install.Found})");
@@ -361,6 +541,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         else
             AppLog.Warn(line);
 
+        if (!notice)
+            return;
         if (found.Install is null)
             Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it.", 30, offersReport: true);
         else if (found.LogsFolder is null)
@@ -929,6 +1111,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 .ToList(),
             Extracts = extracts.OrderBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
             Locations = _locations,
+            CanChooseGameFolder = _locate is not null,
             Logs = LogsHealth(),
             Screenshots = _locations is null ? new(false, "Looking for screenshots…")
                 : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, "Screenshots") : new(false, "No screenshots yet"),

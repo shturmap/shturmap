@@ -135,4 +135,56 @@ public class InstallLocatorTests
     [InlineData("log_2026.01.01_7-05-00_1.1.0.1.46699", "2026-01-01 07:05:00")]
     public void Session_folder_names(string name, string expected) =>
         Assert.Equal(DateTime.Parse(expected, System.Globalization.CultureInfo.InvariantCulture), InstallLocator.SessionStart(name));
+
+    // ---- a folder the player chose (the no-game fallback, owner 2026-10-03) ----
+
+    private static FakeGameEnvironment SteamGame() => new FakeGameEnvironment()
+        .Registry(RegistryHive.CurrentUser, RegistryView.Default, @"SOFTWARE\Valve\Steam", "SteamPath", @"C:\Steam")
+        .File(@"C:\Steam\steamapps\appmanifest_3932890.acf", "\"AppState\"\n{\n\t\"installdir\"\t\t\"Escape from Tarkov\"\n}")
+        .Game(@"C:\Steam\steamapps\common\Escape from Tarkov\build", Session);
+
+    [Fact]
+    public void Without_discovery_only_the_chosen_folder_counts()
+    {
+        var env = SteamGame().Game(@"D:\EFT", Session);
+        Assert.NotNull(new InstallLocator(env).Locate().Install);
+        Assert.Null(new InstallLocator(env).Locate(null, discover: false).Install);
+        var chosen = new InstallLocator(env).Locate(@"D:\EFT", discover: false);
+        Assert.Equal(InstallKind.Manual, chosen.Install?.Kind);
+        Assert.Single(chosen.Candidates);
+    }
+
+    [Fact]
+    public void A_chosen_folder_may_be_the_build_folder_or_the_one_above_it()
+    {
+        var env = new FakeGameEnvironment().Game(@"E:\Steam\steamapps\common\Escape from Tarkov\build", Session);
+        foreach (var folder in new[] { @"E:\Steam\steamapps\common\Escape from Tarkov\build", @"E:\Steam\steamapps\common\Escape from Tarkov" })
+        {
+            var found = new InstallLocator(env).Locate(folder, discover: false);
+            Assert.Equal(@"E:\Steam\steamapps\common\Escape from Tarkov\build", found.Install?.Root);
+            Assert.Equal(@"E:\Steam\steamapps\common\Escape from Tarkov\build\Logs", found.LogsFolder);
+        }
+    }
+
+    [Fact]
+    public void A_chosen_folder_that_isnt_the_game_says_why_and_a_network_folder_works()
+    {
+        var env = new FakeGameEnvironment().Dir(@"D:\Downloads").Game(@"\\nas\games\EFT", Session);
+        var wrong = new InstallLocator(env).Locate(@"D:\Downloads", discover: false);
+        Assert.Null(wrong.Install);
+        Assert.Contains("doesn't hold Escape from Tarkov", InstallLocator.Explain(wrong.Candidates.Single()));
+        var missing = new InstallLocator(env).Locate(@"D:\Gone", discover: false);
+        Assert.Equal("That folder doesn't exist (any more).", InstallLocator.Explain(missing.Candidates.Single()));
+        var network = new InstallLocator(env).Locate(@"\\nas\games\EFT\", discover: false);
+        Assert.Equal(@"\\nas\games\EFT\Logs", network.LogsFolder);
+        Assert.Equal("", InstallLocator.Explain(network.Install));
+    }
+
+    [Fact]
+    public void A_valid_chosen_folder_wins_over_discovery()
+    {
+        var found = new InstallLocator(SteamGame().Game(@"D:\EFT", Session)).Locate(@"D:\EFT");
+        Assert.Equal(InstallKind.Manual, found.Install?.Kind);
+        Assert.Contains(found.Candidates, c => c.Kind == InstallKind.Steam && c.IsValid);
+    }
 }

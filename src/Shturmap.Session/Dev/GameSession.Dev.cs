@@ -57,9 +57,22 @@ public sealed partial class GameSession
     /// <summary>Developer view: loads tarkov.dev's data again, after a simulated failure.</summary>
     public void DevReloadData() => _ = Task.Run(() => LoadDataAsync(_mode));
 
-    /// <summary>Developer view: says what the start says when the game isn't on this PC (the notice and the log lines);
-    /// the fake game folder itself keeps working.</summary>
-    public void DevSayNoGame() =>
-        ReportGameFolders(new GameLocations(null, [], _locations?.ScreenshotsFolder ?? "", _locations?.SettingsFolder ?? ""));
+    /// <summary>
+    /// Developer view: Shturmap as if no game were on this PC: the no-game line, map browsing and the mode chooser
+    /// (owner, 2026-10-03: the no-game fallback). "Choose game folder…" then works on any folder, the developer view's
+    /// fake game included, so the switch back can be seen too.
+    /// </summary>
+    public async Task DevForgetGameAsync()
+    {
+        // The screenshot watcher stays on the fake game's folder, so its positions still arrive after a folder is chosen.
+        var shots = _locations?.ScreenshotsFolder ?? "";
+        var settings = _locations?.SettingsFolder ?? "";
+        _locate ??= folder => new InstallLocator(_env ?? new WindowsGameEnvironment()).Locate(folder, discover: false) with
+        {
+            ScreenshotsFolder = shots,
+            SettingsFolder = settings,
+        };
+        await FollowAsync(new GameLocations(null, [], shots, settings));
+    }
 }
 #endif

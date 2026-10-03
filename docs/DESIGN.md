@@ -399,7 +399,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   today); before any line, "The mode you last played; follows the game once it starts" (the saved `mode` setting);
   with no game on this PC, "No game on this PC: the mode you last played". A mode name Shturmap doesn't know (a
   future one) keeps the last known mode, says "The game says 'X', which Shturmap doesn't know yet…" and is logged
-  as a WARN. A chooser belongs to the mode without a game (docs/NEXT.md, item 6).
+  as a WARN. With no game on this PC the label becomes a chooser (PvE / PvP / Seasonal, saved like the logged mode):
+  there is no log to say it, and the maps and data to browse differ by mode (owner, 2026-10-03, the no-game
+  fallback; see *No game* below). It goes back to the label as soon as the game is found.
   The raid state says only what the log shows (owner, 2026-10-03: "in the menus" while the game wasn't even
   running was misleading): "LOADING CUSTOMS", "IN RAID · CUSTOMS · PMC · 12 MIN", and otherwise "NOT IN A RAID",
   never "in the menus" (`RaidStatus`). The application log has no line that marks the game quitting: the sequence
@@ -466,6 +468,29 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     zero-length "GameStarting". Those stay unknown and get the PMC view; the side tag is then a switch (PMC ⇄
     SCAV) that holds for the raid. No local Scav raid has been seen in a log yet; if one shows a line that tells,
     it replaces the switch.
+  - *No game* (owner, 2026-10-03: "Yes, build the fallback 1-5"; the one 30 s notice was easy to miss, and a game
+    Shturmap couldn't find left no way to point it there). While discovery finds no game, one line stands where the
+    Plan card would be, for as long as that lasts: "NO GAME FOUND ON THIS PC", **CHOOSE GAME FOLDER…**, and "Or
+    browse the maps: pick one above, everything on it shows. Your quests and raids follow the game once Shturmap
+    finds it; it keeps looking while it runs." (`GameStateLine`). A game found without log sessions says "THE GAME
+    HASN'T RUN ON THIS PC YET", where it was found, and offers the same choice (a wrong install may have been
+    found). NEXT RAID, its cards and the "none of your quests" hint step aside: without the game's logs there are
+    no quests to plan, and nothing quest-like is shown. The map browses as always (extracts, transits, bosses,
+    spawns, landmarks, hazards), and the mode is chosen by hand (status bar, above). No notice says it a second time.
+    - **Choose game folder…** opens Windows' folder picker. The folder counts if discovery accepts it: the game's
+      build folder with `EscapeFromTarkov.exe` or a `Logs` folder with sessions, or the folder above it (Steam's
+      layout). Otherwise a notice says why ("That folder doesn't hold Escape from Tarkov: …") and nothing changes. A
+      chosen folder is saved (`installFolder`) and wins over discovery. It is followed at once, without a restart:
+      the old logs let go, the new ones read for quest history and followed live, the game's settings read again;
+      the screenshot folder is the user's Documents one either way (§2's boundary unchanged). A network folder that
+      holds the game works the same, but isn't offered as a feature (the laptop beside the game PC is undecided).
+    - **It keeps looking.** While the game or its logs aren't found, discovery runs again every 30 s (registry and
+      file checks only), so a game installed or first started later is followed by itself, and a notice says so
+      once ("Found Escape from Tarkov in …: quests and raids follow the game now").
+    - Developer switch `--no-game` (developer builds only): discovery looks only at a folder chosen in the session,
+      with an app folder of its own so a choice never sticks in real settings; with `--fake-game` the fake game isn't
+      found either, until chosen. The developer view's "No game" trigger does the same at runtime and keeps the
+      fake game's screenshots, and its script step `choose <folder> | game` chooses a folder.
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, spawn zones (see "Map drawing"),
   player, trail, guide line to the nearest place of the picks. Map controls bottom-right, with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,

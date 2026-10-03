@@ -63,7 +63,11 @@ public sealed partial class InstallLocator(IGameEnvironment env)
     [GeneratedRegex(@"^log_(?<ts>\d{4}\.\d{2}\.\d{2}_\d{1,2}-\d{2}-\d{2})", RegexOptions.CultureInvariant)]
     private static partial Regex SessionFolder();
 
-    public GameLocations Locate(string? manualInstallFolder = null)
+    /// <param name="manualInstallFolder">The folder the player chose ("Choose game folder…"), which wins when it holds the
+    /// game.</param>
+    /// <param name="discover">False to look only at the chosen folder: the developer switch <c>--no-game</c>, so the
+    /// no-game state can be seen on a PC that has the game.</param>
+    public GameLocations Locate(string? manualInstallFolder = null, bool discover = true)
     {
         var candidates = new List<InstallCandidate>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -79,13 +83,16 @@ public sealed partial class InstallLocator(IGameEnvironment env)
         }
 
         if (manualInstallFolder is not null)
-            Consider(InstallKind.Manual, manualInstallFolder, "chosen in Settings");
+            Consider(InstallKind.Manual, manualInstallFolder, "chosen in Shturmap");
 
-        foreach (var (folder, found) in BsgLauncherFolders())
-            Consider(InstallKind.BsgLauncher, folder, found);
+        if (discover)
+        {
+            foreach (var (folder, found) in BsgLauncherFolders())
+                Consider(InstallKind.BsgLauncher, folder, found);
 
-        foreach (var (folder, found) in SteamFolders())
-            Consider(InstallKind.Steam, folder, found);
+            foreach (var (folder, found) in SteamFolders())
+                Consider(InstallKind.Steam, folder, found);
+        }
 
         var manual = candidates.FirstOrDefault(c => c.Kind == InstallKind.Manual && c.IsValid);
         var chosen = manual ?? candidates
@@ -194,6 +201,15 @@ public sealed partial class InstallLocator(IGameEnvironment env)
     }
 
     private bool HasExe(string folder) => env.FileExists(Path.Combine(folder, "EscapeFromTarkov.exe"));
+
+    /// <summary>Why a chosen folder isn't the game, in the player's words (a candidate's <see cref="InstallCandidate.Rejected"/>).</summary>
+    public static string Explain(InstallCandidate? candidate) => candidate?.Rejected switch
+    {
+        null when candidate is not null => "",
+        "folder does not exist" => "That folder doesn't exist (any more).",
+        _ => "That folder doesn't hold Escape from Tarkov: there's no EscapeFromTarkov.exe and no Logs folder with game " +
+             "sessions in it or in its \"build\" folder. Choose the folder the game is installed in.",
+    };
 
     private DateTime? NewestSession(string logsFolder)
     {
