@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Shturmap.Core.Logs;
 using Shturmap.Session;
 
@@ -18,9 +19,23 @@ public sealed partial class MainWindow
         vm.GameFolderChoosable = line?.OffersChoice == true;
         vm.NoGameLogs = line is not null;
         vm.ModeChoosable = s.NoGameFound;
-        // Settings say where the game is, and offer the same choice: a folder found automatically can be overruled.
-        vm.GameFolderText = s.Locations?.Install?.Root is { } root ? "GAME FOLDER: " + root : "GAME FOLDER: NOT FOUND";
+        // Settings say where the game is and where that comes from, and offer the same choice: a folder found
+        // automatically can be overruled, and a chosen one undone (owner, 2026-10-04).
+        vm.GameFolderText = GameFolder.Label(s.Locations);
         vm.GameFolderChangeable = s.CanChooseGameFolder;
+        vm.FindGameAutomatically = s.CanChooseGameFolder && s.ChosenGameFolder is not null;
+        vm.NewerGameLogs = GameFolder.NewerElsewhere(s.Locations) is { } newer ? $"Newer game logs in {newer.Root}" : "";
+        vm.LogsDetail = GameFolder.LogsTip(s.Locations);
+    }
+
+    private async void OnFindGameAutomaticallyClick(object sender, RoutedEventArgs e) => await FindGameAutomaticallyAsync();
+
+    private async void OnFindGameAutomaticallyLinkClick(Hyperlink sender, HyperlinkClickEventArgs args) => await FindGameAutomaticallyAsync();
+
+    private Task FindGameAutomaticallyAsync()
+    {
+        Study.Ui("gamefolder.auto");
+        return _session.FindGameAutomaticallyAsync();
     }
 
     private async void OnChooseGameFolderClick(object sender, RoutedEventArgs e)

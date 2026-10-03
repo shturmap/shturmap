@@ -148,6 +148,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool LogsOk { get; set; }
 
+    /// <summary>The LOGS light's tooltip: which logs are followed, and newer game logs elsewhere if a folder was chosen.</summary>
+    [ObservableProperty] public partial string LogsDetail { get; set; } = "";
+
     [ObservableProperty] public partial string ScreenshotsText { get; set; } = "Screenshots";
 
     [ObservableProperty] public partial bool ScreenshotsOk { get; set; }
@@ -274,6 +277,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Settings' CHOOSE… beside the game folder: whenever a folder can be chosen (not in a fake game).</summary>
     [ObservableProperty] public partial bool GameFolderChangeable { get; set; }
+
+    /// <summary>Settings' FIND AUTOMATICALLY: only while a chosen folder is saved (owner, 2026-10-04).</summary>
+    [ObservableProperty] public partial bool FindGameAutomatically { get; set; }
+
+    /// <summary>"Newer game logs in C:\…" when another install has newer logs than the chosen folder; empty otherwise.</summary>
+    [ObservableProperty] public partial string NewerGameLogs { get; set; } = "";
 
     /// <summary>No game logs to plan from (no game, or it hasn't run): NEXT RAID and its cards step aside for the line.</summary>
     [ObservableProperty] public partial bool NoGameLogs { get; set; }

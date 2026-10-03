@@ -44,7 +44,7 @@ public static class DevScript
         ["age"] = "<minutes>: the last position becomes older",
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
         ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload (nogame: as if no game were on this PC)",
-        ["choose"] = "<folder> | game: \"Choose game folder…\" with that folder; game is this view's fake game",
+        ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs",
         ["exit"] = "closes the app",

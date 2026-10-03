@@ -516,10 +516,22 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - **It keeps looking.** While the game or its logs aren't found, discovery runs again every 30 s (registry and
       file checks only), so a game installed or first started later is followed by itself, and a notice says so
       once ("Found Escape from Tarkov in …: quests and raids follow the game now").
+    - **Find automatically** (owner, 2026-10-04, asked whether a folder chosen by mistake leaves no way back: "sounds
+      good"). A chosen folder that holds *a* game, just not the one played, wins over discovery for good, and
+      CHOOSE… alone can't undo that. Settings' APP AND DATA row says where the folder comes from: "GAME FOLDER: … (chosen
+      by you)", "(found automatically)" or "NOT FOUND". While a folder is saved (even one that no longer holds the
+      game), **FIND AUTOMATICALLY** stands beside CHOOSE…: it forgets `installFolder` and finds the game again at
+      once, followed live as after a choice, and a notice says what it found ("Found Escape from Tarkov in …", "…
+      hasn't run on this PC yet", or "No game found on this PC…"). When the chosen folder holds the game but another
+      install discovery found has a newer log session, settings say so quietly under the row, "Newer game logs in …
+      · FIND AUTOMATICALLY", and so does the LOGS light's tooltip (`GameFolder`). Nothing pops up and nothing switches
+      by itself: the choice was the player's. Session dates are read from the logs' folder names, so the hint is a
+      fact, not a guess about which install is played; the 30 s look-again keeps it current.
     - Developer switch `--no-game` (developer builds only): discovery looks only at a folder chosen in the session,
       with an app folder of its own so a choice never sticks in real settings; with `--fake-game` the fake game isn't
       found either, until chosen. The developer view's "No game" trigger does the same at runtime and keeps the
-      fake game's screenshots, and its script step `choose <folder> | game` chooses a folder.
+      fake game's screenshots, and its script step `choose <folder> | game | auto` chooses a folder, or finds the
+      game automatically again (with `--no-game` that is the no-game state).
 - **Map** (rest): artwork, quest markers with type glyphs, extracts, transits, spawn zones (see "Map drawing"),
   player, trail, guide line to the nearest place of the picks. Map controls bottom-right (follow my position, show my
   position, show the whole map, zoom in, zoom out), with the floor picker above them on maps with floors;

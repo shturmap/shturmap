@@ -163,7 +163,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
             // looked for again (the player chose a folder, or the game was installed later).
             _locate = locations is not null ? null : folder => new InstallLocator(env).Locate(folder, discover: !NoGame);
-            _locations = locations ?? _locate!(_store.GetSetting(InstallFolderSetting));
+            _chosenFolder = _store.GetSetting(InstallFolderSetting);
+            _locations = locations ?? _locate!(_chosenFolder);
             ReportGameFolders(_locations);
             _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
             AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
@@ -214,6 +215,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private IGameEnvironment? _env;
     private Func<string?, GameLocations>? _locate;
+    // The folder the player chose ("Choose game folder…"), as saved; null while the game is found automatically.
+    private string? _chosenFolder;
 
     /// <summary>Whether "Choose game folder…" can work here: not with game folders given from outside (fake games).</summary>
     public bool CanChooseGameFolder => _locate is not null;
@@ -240,6 +243,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         try
         {
             _store?.SetSetting(InstallFolderSetting, folder);
+            _chosenFolder = folder;
             AppLog.Info("Game folder chosen: " + folder);
         }
         finally
@@ -250,6 +254,37 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         return true;
     }
 
+    /// <summary>
+    /// Forgets the folder the player chose and finds the game by itself again, at once (owner, 2026-10-04: the way
+    /// back from a folder that holds a game, but not the one played). Says what it found, or that it found none.
+    /// </summary>
+    public async Task FindGameAutomaticallyAsync()
+    {
+        if (_locate is null || _store is null)
+            return;
+        GameLocations found;
+        await _gate.WaitAsync();
+        try
+        {
+            found = FindAutomatically(_store, _locate);
+            _chosenFolder = null;
+            AppLog.Info("Game folder: found automatically again");
+        }
+        finally
+        {
+            _gate.Release();
+        }
+        await FollowAsync(found, announce: true);
+    }
+
+    /// <summary>FIND AUTOMATICALLY's finding: the chosen folder forgotten, then the game looked for as at a start
+    /// with nothing chosen.</summary>
+    public static GameLocations FindAutomatically(ProgressStore store, Func<string?, GameLocations> locate)
+    {
+        store.RemoveSetting(InstallFolderSetting);
+        return locate(store.GetSetting(InstallFolderSetting));
+    }
+
     // Looks for the game again while it, or its logs, aren't found; stops looking once both are.
     private async Task LookAgainAsync()
     {
@@ -258,9 +293,20 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             while (!_stop.IsCancellationRequested)
             {
                 await Task.Delay(LookAgainEvery, _stop.Token);
-                if (_locations is { Install: not null, LogsFolder: not null } || _locate is null)
+                if (_locate is null)
                     continue;
-                var found = _locate(_store?.GetSetting(InstallFolderSetting));
+                if (_locations is { Install: { Kind: InstallKind.Manual }, LogsFolder: not null })
+                {
+                    // A chosen folder is kept; looking again only notices newer game logs elsewhere (the hint).
+                    var again = _locate(_chosenFolder);
+                    if (SameGame(again, _locations) &&
+                        !string.Equals(GameFolder.NewerElsewhere(again)?.Root, GameFolder.NewerElsewhere(_locations)?.Root, StringComparison.OrdinalIgnoreCase))
+                        await RefreshLocationsAsync(again);
+                    continue;
+                }
+                if (_locations is { Install: not null, LogsFolder: not null })
+                    continue;
+                var found = _locate(_chosenFolder);
                 if (SameGame(found, _locations))
                     continue;
                 await FollowAsync(found);
@@ -283,15 +329,31 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     public static bool SaysFound(GameLocations? before, GameLocations after) =>
         after.LogsFolder is not null && !string.Equals(after.LogsFolder, before?.LogsFolder, StringComparison.OrdinalIgnoreCase);
 
+    // The same game, seen again with its install list up to date (a newer session elsewhere): nothing to switch.
+    private async Task RefreshLocationsAsync(GameLocations again)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            _locations = again;
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     // Follows other game folders from now on: the settings read again, the old logs let go, the new ones read for quest
-    // history and followed live. Says once when the game is followed now where it wasn't before.
-    private async Task FollowAsync(GameLocations found)
+    // history and followed live. Says once when the game is followed now where it wasn't before; with announce, says
+    // what was found either way (FIND AUTOMATICALLY).
+    private async Task FollowAsync(GameLocations found, bool announce = false)
     {
         // A choice and the next look-again never switch the logs at the same time.
         await _following.WaitAsync();
         try
         {
-            await FollowNowAsync(found);
+            await FollowNowAsync(found, announce);
         }
         finally
         {
@@ -301,7 +363,15 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private readonly SemaphoreSlim _following = new(1, 1);
 
-    private async Task FollowNowAsync(GameLocations found)
+    /// <summary>What finding the game automatically says it found.</summary>
+    public static string FoundText(GameLocations found) => found.Install switch
+    {
+        null => "No game found on this PC: browse the maps, or choose the game folder in settings.",
+        { } install when found.LogsFolder is null => $"Found Escape from Tarkov in {install.Root}; it hasn't run on this PC yet.",
+        { } install => $"Found Escape from Tarkov in {install.Root}: quests and raids follow the game now.",
+    };
+
+    private async Task FollowNowAsync(GameLocations found, bool announce = false)
     {
         LogTailer? old;
         await _gate.WaitAsync();
@@ -315,8 +385,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ReportGameFolders(found, notice: false);
             if (_env is not null)
                 _settings = new GameSettingsReader(_env).Read(found.SettingsFolder);
-            if (say)
-                Say($"Found Escape from Tarkov in {found.Install!.Root}: quests and raids follow the game now.", 10);
+            if (say || announce)
+                Say(FoundText(found), 10);
             Publish();
         }
         finally
@@ -1134,6 +1204,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Extracts = extracts.OrderBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
             Locations = _locations,
             CanChooseGameFolder = _locate is not null,
+            ChosenGameFolder = _chosenFolder,
             Logs = LogsHealth(),
             Screenshots = _locations is null ? new(false, "Looking for screenshots…")
                 : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, "Screenshots") : new(false, "No screenshots yet"),

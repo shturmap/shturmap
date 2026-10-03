@@ -121,6 +121,20 @@ public sealed class ProgressStore : IDisposable
         }
     }
 
+    /// <summary>Forgets a setting, so its default applies again (e.g. finding the game automatically again).</summary>
+    public void RemoveSetting(string key)
+    {
+        lock (_gate)
+        {
+            if (_closed)
+                return;
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = "DELETE FROM settings WHERE key = $key";
+            cmd.Parameters.AddWithValue("$key", key);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
     private void Execute(string sql)
     {
         using var cmd = _db.CreateCommand();

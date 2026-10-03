@@ -121,6 +121,10 @@ public sealed record SessionSnapshot
     /// <summary>"Choose game folder…" can work: discovery isn't overridden by a fake game.</summary>
     public bool CanChooseGameFolder { get; init; }
 
+    /// <summary>The folder the player chose for the game, as saved (it may no longer hold the game), or null: then
+    /// settings offer FIND AUTOMATICALLY.</summary>
+    public string? ChosenGameFolder { get; init; }
+
     public SourceHealth Logs { get; init; } = new(false, "Looking for the game…");
 
     public SourceHealth Screenshots { get; init; } = new(false, "Looking for screenshots…");

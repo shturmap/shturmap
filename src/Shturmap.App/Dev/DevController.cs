@@ -473,8 +473,15 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 await TriggerAsync(step.Arg(0));
                 break;
             case "choose":
-                // "Choose game folder…" with that folder (no picker); "choose game" is this view's own fake game.
+                // "Choose game folder…" with that folder (no picker); "choose game" is this view's own fake game;
+                // "choose auto" is settings' FIND AUTOMATICALLY.
                 var folder = string.Join(' ', step.Args);
+                if (folder == "auto")
+                {
+                    await session.FindGameAutomaticallyAsync();
+                    Say("game folder: found automatically");
+                    break;
+                }
                 if (folder is "" or "game")
                     folder = Game?.Root ?? "";
                 Say(await session.ChooseGameFolderAsync(folder) ? "game folder chosen: " + folder : "not the game: " + folder);
