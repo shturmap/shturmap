@@ -28,6 +28,11 @@ owner added), 15, 16, and 17 (the design system, §4). Still open:
   folder; one line in README and FAQ ("Windows Settings → Apps, or Help → Uninstall"); PRIVACY.md can then say how
   to delete everything. Windows' Apps entry already works (Velopack registers it); the Setup itself has no
   repair/remove mode, and a different installer around Velopack isn't worth it.
+- **Then, once everything is done: the website's media from the newest version** (owner, 2026-10-03: "Once
+  everything is done, update the website with assets from the most recent version"). Re-record with
+  `tools\make-media.ps1` (site repo; its CLAUDE.md and hand-check list) on the branch `work/faq`, so the website
+  goes out as one update: media, FAQ, release wording, design-system CSS. Going live needs the owner's FAQ heading
+  choice; publish the site and merge `work/g-readme` together.
 
 The items below are kept as written, for their reasons and quotes.
 
