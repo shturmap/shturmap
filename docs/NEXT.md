@@ -61,7 +61,16 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
    it, from the cards, the cue and anywhere else it appears (and its DESIGN.md mentions). If the owner wants
    something in its place, only a fact with a clear subject, e.g. "objectives in 3 places" or the straight distance
    between the two farthest places of the listed quests, and never a time.
-8. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
+8. **"IN THE MENUS" while the game isn't even running** (owner, 2026-10-03: "This is misleading. Find a better
+   wording that is coherent.") The status bar shows the raid phase `Menu` by default, so a closed game reads as "in
+   the menus". To work out on Monday, from the logs only: no process checks, since the boundary (DESIGN.md §2) rules
+   out touching the game's process, and listing processes is close enough to keep out. Check the owner's
+   application logs for a line the game writes when it quits, and whether a session's log simply stops. Likely
+   shape: the status says only what the log shows. "GAME CLOSED" after a logged quit; "IN THE MENUS" only while
+   the current log session is live and in the menus; otherwise the plain "NOT IN A RAID", which is always true.
+   Keep the words coherent with the other states (raid loading, in raid, raid over) and the tooltips, and update
+   help and DESIGN.md.
+9. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
    which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
 
 ## Before starting
