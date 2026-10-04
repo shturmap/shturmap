@@ -120,11 +120,31 @@ public class PlannerTests
         var quest = new PlanQuest("ice", "Ice Cream Cones",
         [
             Obj("i1", ObjectiveKind.Exploration, ["streets"], [("streets", new WorldPoint(5, 0, 5))]),
-            Obj("i2", ObjectiveKind.FindInRaid, [], count: 1),
+            Obj("i2", ObjectiveKind.FindInRaid, [], count: 1) with { FoundInRaid = true },
         ], NoKeys);
         var plan = RaidPlanner.Plan([quest], Streets);
         Assert.Empty(plan.Finish);
-        Assert.Equal("ice", Assert.Single(plan.Progress).Quest.Id);
+        var progress = Assert.Single(plan.Progress);
+        Assert.Equal("ice", progress.Quest.Id);
+        Assert.True(RaidPlanner.WhyProgress(progress).FoundInRaid);
+    }
+
+    [Fact]
+    public void An_item_that_may_be_bought_doesnt_keep_a_quest_from_being_finishable()
+    {
+        // tarkov.dev's findItem with foundInRaid false: the item takes no luck, so it isn't "needs items found in raid".
+        var quest = new PlanQuest("buy", "Bring a Salewa",
+        [
+            Obj("b1", ObjectiveKind.Exploration, ["streets"], [("streets", new WorldPoint(5, 0, 5))]),
+            Obj("b2", ObjectiveKind.FindInRaid, [], count: 1) with { Type = "findItem", FoundInRaid = false },
+        ], NoKeys);
+        var plan = RaidPlanner.Plan([quest], Streets);
+        Assert.Empty(plan.Progress);
+        var finish = Assert.Single(plan.Finish);
+        Assert.Equal("buy", finish.Quest.Id);
+        Assert.False(RaidPlanner.WhyProgress(finish).FoundInRaid);
+        // The plan's order makes the same cut: a trip at most, not luck.
+        Assert.Equal(EffortGroup.GoThere, QuestEffort.Of(finish).Group);
     }
 
     [Fact]

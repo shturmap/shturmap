@@ -922,7 +922,7 @@ instead and borrows the game's names and look where one fits, so the labels feel
 | **Exploration** | magnifier `E721` (as in the game) | `visit` | yes, at a place |
 | **Pickup** | pointing hand `E7C9` (as in the game) | `findQuestItem` | yes, at a place |
 | **Place** | pin `E840` | `plantItem`, `plantQuestItem`, `mark`, `useItem` | yes, at a place; needs an item |
-| **Find in raid** | bag `E719` | `findItem` | yes, anywhere (FIR) |
+| **Find in raid** | bag `E719` | `findItem` | yes, anywhere; found in raid (FIR) only where the data's `foundInRaid` says so |
 | **Survive** | runner `E726` | `extract`, `experience` (an in-raid health condition, not XP) | yes |
 | **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
 
@@ -930,6 +930,10 @@ A quest's type is that of its most common in-raid objective type (ties: Eliminat
 Survive, Find in raid); a quest with no in-raid objectives is a Trader quest. This is derived, not the game's own
 label. Requirements use a key glyph `E8D7` for keys and a briefcase `E821` for items to bring. Never use the
 game's icon artwork; the glyphs only echo it.
+
+The type is named after the common case. A `findItem` whose item may be bought (`foundInRaid` false) keeps the type
+and its glyph, but nothing says "found in raid" of it: the planner, the plan's order and the item card go by the
+data's `foundInRaid` (§7; the review of 2026-10-04 found the planner treating every `findItem` as found in raid).
 
 ### Quest synopsis
 
@@ -990,8 +994,9 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
   Collect or Survive. It is **tied** to the map if it names the map or has a place there.
 - A quest counts for a map only if at least one of its doable objectives is tied to it; work that fits any map
   doesn't argue for one map over another.
-- A quest can be **finished** on a map if all its in-raid objectives are doable there, none is Collect (found-in-
-  raid items depend on luck) and no kill count is above 3; otherwise it is **progressed**.
+- A quest can be **finished** on a map if all its in-raid objectives are doable there, none needs items found in
+  raid (they depend on luck; a `findItem` whose item may be bought, `foundInRaid` false, doesn't count as one, the
+  same cut as "Plan order" below) and no kill count is above 3; otherwise it is **progressed**.
 - Score = 3 per finishable quest + 1 per tied objective with a place + 0.6 per tied objective without one + 0.1 per
   untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
   expanded. Maps with picked quests come before them, whatever their score (§4, "Picks").

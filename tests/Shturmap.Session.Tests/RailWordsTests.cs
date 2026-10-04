@@ -58,9 +58,12 @@ public class RailWordsTests
     [Fact]
     public void Found_in_raid_items_and_large_kill_counts_are_said_as_facts()
     {
-        PlanObjective[] all = [Obj("a", ObjectiveKind.FindInRaid, ""), Obj("b", ObjectiveKind.Elimination, "customs", count: 25)];
+        PlanObjective[] all = [Obj("a", ObjectiveKind.FindInRaid, "") with { FoundInRaid = true }, Obj("b", ObjectiveKind.Elimination, "customs", count: 25)];
         Assert.Equal("needs items found in raid · 25 kills in all", Planning.ProgressNote(OnCustoms(all, "a", "b")));
         Assert.Equal(new ProgressFacts(2, 2, true, 25), RaidPlanner.WhyProgress(OnCustoms(all, "a", "b")));
+        // Only where the data says so: an item that may be bought isn't "found in raid".
+        PlanObjective[] bought = [Obj("a", ObjectiveKind.FindInRaid, ""), Obj("b", ObjectiveKind.Elimination, "customs", count: 25)];
+        Assert.Equal("25 kills in all", Planning.ProgressNote(OnCustoms(bought, "a", "b")));
     }
 
     [Fact]

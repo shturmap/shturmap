@@ -40,7 +40,8 @@ public enum RequirementKind
 /// <param name="Targets">A kill objective's targets, as the game's keys ("Savage", "AnyPmc", "bossKnight").</param>
 /// <param name="ExitStatus">An extract objective's accepted exit statuses, as the game's keys ("ExpBonusSurvived").</param>
 /// <param name="Conditions">A kill objective's set conditions by name ("weapon", "distance", "zone", …).</param>
-/// <param name="FoundInRaid">A find objective whose items must be found in raid.</param>
+/// <param name="FoundInRaid">A find objective whose items must be found in raid (tarkov.dev's <c>foundInRaid</c>); false
+/// for one whose item may be bought. Only the first keeps a quest out of COMPLETE (<see cref="RaidPlanner.Plan"/>).</param>
 /// <param name="Weapons">A kill objective's weapons: any one will do.</param>
 /// <param name="Mods">A kill objective's weapon mods: each inner list is a set fitted together; any set will do.</param>
 /// <param name="NotWearing">Gear a kill objective forbids: a note on the objective, nothing to bring.</param>
@@ -139,8 +140,12 @@ public static class RaidPlanner
     public static ProgressFacts WhyProgress(QuestOnMap quest) => new(
         quest.Objectives.Count,
         quest.Quest.Objectives.Count(o => QuestTaxonomy.InRaid(o.Kind) && !o.Optional),
-        quest.Objectives.Any(o => o.Kind == ObjectiveKind.FindInRaid),
+        quest.Objectives.Any(NeedsFoundInRaid),
         quest.Objectives.Where(o => o.Kind == ObjectiveKind.Elimination && o.Count > OneRaidCount).Select(o => o.Count).DefaultIfEmpty(0).Max());
+
+    // Only where the data says the items must be found in raid: a find objective whose item may be bought takes no
+    // luck, and saying "needs items found in raid" of it would be untrue (QuestEffort.GroupOf makes the same cut).
+    private static bool NeedsFoundInRaid(PlanObjective o) => o.Kind == ObjectiveKind.FindInRaid && o.FoundInRaid;
 
     public static MapPlan Plan(IReadOnlyList<PlanQuest> quests, PlanMap map)
     {
@@ -159,7 +164,7 @@ public static class RaidPlanner
             score += tied.Sum(o => Places(o, map).Count > 0 ? 1 : 0.6) + (doable.Count - tied.Count) * 0.1;
             // Found-in-raid items depend on luck, and large kill counts take several raids.
             var finishable = doable.Count == inRaid.Count &&
-                             doable.All(o => o.Kind != ObjectiveKind.FindInRaid && (o.Kind != ObjectiveKind.Elimination || o.Count <= OneRaidCount));
+                             doable.All(o => !NeedsFoundInRaid(o) && (o.Kind != ObjectiveKind.Elimination || o.Count <= OneRaidCount));
             if (finishable)
             {
                 finish.Add(new QuestOnMap(quest, doable));

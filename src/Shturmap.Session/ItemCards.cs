@@ -64,7 +64,8 @@ public static class ItemCards
                     "plantQuestItem" when o.QuestItem == itemId => "Bring, to plant",
                     "findQuestItem" when o.QuestItem == itemId => "Pick up",
                     "giveQuestItem" when o.QuestItem == itemId => "Hand over",
-                    "findItem" when listed => $"Find in raid{times}",
+                    // "In raid" only where the data says the item must be found in raid; one that may be bought is just found.
+                    "findItem" when listed => o.FoundInRaid ? $"Find in raid{times}" : $"Find{times}",
                     "giveItem" when listed => $"Hand over{times}" + (o.FoundInRaid ? ", found in raid" : ""),
                     "sellItem" when listed => $"Sell{times}",
                     _ => null,
