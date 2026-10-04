@@ -146,9 +146,10 @@ Smaller, in privacy and distribution:
   (`Shturmap.App/Updater.cs`: `LocalFolder`). Status: done (2026-10-04).
 - **A23.** "Never" doesn't stop crash records already approved (`App.xaml.cs`: `HandleReportsAsync`). Status: done (2026-10-04).
 - **A24.** Only the exact profile folder is masked in the app log: Documents on another drive, a network host's
-  name and short (8.3) names pass (`Shturmap.Session/Redact.cs`). Status: open.
+  name and short (8.3) names pass (`Shturmap.Session/Redact.cs`). Status: done (2026-10-04).
 - **A25.** Paths from maps.json and wiki links from tarkov.dev are used without checking the host or the scheme.
-  Status: open.
+  Status: done for downloads (2026-10-04: only tarkov.dev's two hosts and GitHub's raw host, over https);
+  the wiki links' scheme and host are open.
 - **A26.** A copy unpacked from the portable zip offers the in-app uninstall; what Velopack then removes is
   unchecked. Status: needs a run.
 - **A28.** `ScreenshotWatcher.WaitUntilCompleteAsync` (unused, from the removed OCR feature) would open a screenshot
