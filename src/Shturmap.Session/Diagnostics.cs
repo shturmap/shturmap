@@ -53,6 +53,8 @@ public static class Diagnostics
             null => "loading",
         });
         Line("Active quests", s.ActiveQuestCount.ToString(CultureInfo.InvariantCulture));
+        // Answers "where did my screenshots go?" in a report.
+        Line("Delete position screenshots", s.DeleteScreenshots ? "on" : "off");
 #if DEVTOOLS
         // Developer builds only: a release has no study log (owner, 2026-10-03).
         Line("Study log", s.StudyLogOn ? "on" : "off");

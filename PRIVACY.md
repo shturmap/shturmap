@@ -16,7 +16,8 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - Shturmap's version, whether it is installed or a folder build, and your Windows version;
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
-  how many quests are active, and the last 200 lines of Shturmap's own log.
+  how many quests are active, whether "Delete position screenshots" is ticked, and the last 200 lines of Shturmap's
+  own log.
 
 2. A crash report, if you allow it
 ----------------------------------

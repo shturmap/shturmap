@@ -43,6 +43,54 @@ public static class MapLegend
 {
     public sealed record Row(LegendSymbol Symbol, string Text);
 
+    /// <summary>
+    /// The symbols that are on a map as it is shown now, for the help panel to list first (owner, 2026-10-04, from the
+    /// review: 25 rows made help 2,350 px tall, most of them for things the map on screen doesn't have). A symbol
+    /// counts when the scene holds what it stands for: a lock when the map has locks, the guide line when a pick has
+    /// a place here and there is a position, the sheet when there is no artwork. The rest stay one click away.
+    /// </summary>
+    public static IReadOnlySet<LegendSymbol> On(MapScene scene)
+    {
+        var on = new HashSet<LegendSymbol>();
+        void If(bool there, LegendSymbol symbol)
+        {
+            if (there)
+                on.Add(symbol);
+        }
+
+        var kinds = scene.Markers.Select(m => m.Kind).ToHashSet();
+        var places = scene.Markers.Where(m => m.Objective is not null).ToList();
+        var picked = places.Any(m => m.Group is { } quest && scene.Kept.Contains(quest));
+        If(scene.Player is not null, LegendSymbol.Player);
+        If(scene.Player is not null, LegendSymbol.PlayerOutOfView);
+        If(picked, LegendSymbol.KeptQuest);
+        If(picked && scene.Player is not null, LegendSymbol.Guide);
+        // Chevrons point to the places of a picked or pointed-at quest that are out of view: any quest place may get one.
+        If(places.Count > 0, LegendSymbol.OutOfView);
+        If(kinds.Contains(MarkerKind.Objective), LegendSymbol.Objective);
+        If(kinds.Contains(MarkerKind.PossibleLocation), LegendSymbol.PossibleLocation);
+        // Marker ids are "objective:<id>:<n>": two places of one objective can merge into a cluster.
+        If(places.GroupBy(m => m.Id[..Math.Max(0, m.Id.LastIndexOf(':'))]).Any(g => g.Count() > 1), LegendSymbol.Cluster);
+        If(places.Any(m => m.Optional), LegendSymbol.Optional);
+        If(kinds.Contains(MarkerKind.ObjectiveDone), LegendSymbol.Done);
+        If(scene.Zones.Any(z => z.Kind is MarkerKind.Objective or MarkerKind.ObjectiveDone), LegendSymbol.QuestZone);
+        If(kinds.Contains(MarkerKind.ExtractPmc) || kinds.Contains(MarkerKind.ExtractScav), LegendSymbol.Extract);
+        If(kinds.Contains(MarkerKind.ExtractShared), LegendSymbol.SharedExtract);
+        If(kinds.Contains(MarkerKind.Transit), LegendSymbol.Transit);
+        If(kinds.Contains(MarkerKind.BossSpawn), LegendSymbol.Boss);
+        If(kinds.Contains(MarkerKind.SniperSpawn), LegendSymbol.Sniper);
+        If(kinds.Contains(MarkerKind.ScavSpawn), LegendSymbol.Scav);
+        If(kinds.Contains(MarkerKind.Lock), LegendSymbol.Lock);
+        If(kinds.Contains(MarkerKind.Switch), LegendSymbol.Switch);
+        If(scene.Zones.Any(z => z.Kind == MarkerKind.Hazard), LegendSymbol.Hazard);
+        If(scene.FloorStack.Count > 1, LegendSymbol.OtherFloor);
+        If(scene.Trail.Count > 0, LegendSymbol.Trail);
+        If(scene.Spawns.Count > 0, LegendSymbol.LooseItem);
+        If(scene.IsSheet && scene.Containers.Count > 0, LegendSymbol.Containers);
+        If(scene.IsSheet, LegendSymbol.Sheet);
+        return on;
+    }
+
     /// <summary>A swatch's size in device-independent pixels.</summary>
     public const float SwatchWidth = 56, SwatchHeight = 34;
 

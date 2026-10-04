@@ -186,6 +186,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Art = new GameArt(http, paths.GameArtCache);
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;
+            _deleteScreenshots = DeleteScreenshotsOn(_store.GetSetting(DeleteScreenshotsSetting));
+            if (_deleteScreenshots)
+                AppLog.Info("Delete position screenshots after reading: on");
 #if DEVTOOLS
             AppLog.Info($"Mode {_mode}; study log {(Study.Enabled ? "on" : "off")}");
 #else
@@ -216,10 +219,55 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         });
         // The watcher keeps going and sets itself up again; each kind of trouble is said once (Failed).
         _watcher.WatchProblem += (what, e) => Failed("Watching for screenshots: " + what, e);
+        // "Delete position screenshots" (settings, off unless ticked): after the position was read from the name above.
+        var watcher = _watcher;
+        _cleaner = new ScreenshotCleaner(watcher.Folder, () => _deleteScreenshots, ScreenshotGrace);
+        _cleaner.Deleted += path =>
+        {
+            watcher.Forget(path);
+            Study.Game("screenshot.deleted");
+        };
+        _cleaner.Problem += (_, e) => Failed("Deleting a position screenshot after reading it", e);
+        _watcher.ScreenshotTaken += _cleaner.Seen;
         _watcher.Start();
         if (_locate is not null)
             _ = Task.Run(LookAgainAsync);
         _ = Task.Run(WatchOpenRaidAsync);
+    }
+
+    // ---- deleting position screenshots after reading (owner, 2026-10-04) ----
+
+    /// <summary>The key of "Delete position screenshots" in the app's settings ("on" or "off"; absent is off).</summary>
+    public const string DeleteScreenshotsSetting = "screenshots.delete";
+
+    private ScreenshotCleaner? _cleaner;
+    private volatile bool _deleteScreenshots;
+
+    /// <summary>How long a position screenshot stays after its name was read, with the setting on.</summary>
+    public TimeSpan ScreenshotGrace { get; init; } = ScreenshotCleaner.Grace;
+
+    /// <summary>Whether the saved setting says on. Only "on" does: deleting the player's files is never a default.</summary>
+    public static bool DeleteScreenshotsOn(string? setting) => setting == "on";
+
+    /// <summary>
+    /// The "Delete position screenshots" tick, saved with the app's settings. On: each screenshot with a position that
+    /// arrives from now on is deleted <see cref="ScreenshotCleaner.Grace"/> after its name was read. Off: nothing is
+    /// deleted, also not the ones still waiting.
+    /// </summary>
+    public async Task SetDeleteScreenshotsAsync(bool on)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            _store?.SetSetting(DeleteScreenshotsSetting, on ? "on" : "off");
+            _deleteScreenshots = on;
+            AppLog.Info("Delete position screenshots after reading: " + (on ? "on" : "off"));
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     // ---- the game's folders: found, chosen, or found later (owner, 2026-10-03: the no-game fallback) ----
@@ -1552,6 +1600,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             DataProblem = _dataProblem,
             GameLanguage = _settings.Language,
             StudyLogOn = Study.Enabled,
+            DeleteScreenshots = _deleteScreenshots,
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
             Picks = Picks,
@@ -1644,6 +1693,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     {
         await _stop.CancelAsync();
         _watcher?.Dispose();
+        _cleaner?.Dispose();
         if (_tailer is not null)
             await _tailer.DisposeAsync();
         Artwork?.Dispose();

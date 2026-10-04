@@ -45,6 +45,21 @@ README says it under "The installer and running programs", with the advice to in
 closed; help says only what holds for Shturmap's own code. Still open: applying updates in a way that looks at no
 other process (an apply step of our own, or applying only on the player's word).
 
+**It changes nothing outside its own folders, with one exception the player turns on** (owner, 2026-10-04: "a mode
+that auto-deletes screenshots after a couple of seconds grace period"). "Delete position screenshots" in settings,
+off unless ticked: a screenshot whose name gave a position is deleted 5 seconds after its name was read
+(`ScreenshotCleaner`), for good, not to the Recycle Bin. The 5 seconds leave the game time to finish writing the
+file and any other tool the player runs time to read its name. What may go is narrow, and checked when the file is
+seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a file the watcher reported as new in this run,
+directly in the screenshots folder, named as the game names a screenshot with a position. What was in the folder
+before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. The
+image is still never opened: the file is removed by name. One that is still open elsewhere (the game writing it)
+can't be removed and is tried again, six times 5 seconds apart, then left with a line in the app log; a file marked
+read-only is left. Unticking within the 5 seconds keeps what still waits, and so does closing Shturmap. The folder
+is the player's own Documents folder, not the game's install: the game is not touched, asked or told anything, and
+"never edits game files" above stands. The setting's note, the README, PRIVACY.md and help say it; the diagnostics
+carry the setting's state, for "where did my screenshots go?".
+
 Over the network it downloads public data and art (tarkov.dev, the map artwork), and nothing about the player
 leaves the PC unless the player sends a report or allows crash reports (§8, "Reports"). `SafetyTests` fails if the
 code names any other address, or if anything but the reporting code uses Sentry. Some addresses come out of the
@@ -694,11 +709,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     point on the glide as it is drawn. Only while it glides, a frame timer asks for frames at the system timer's pace
     (about 64 a second): the map's 16 ms animation timer and the Rendering event each gave only about 30 a second
     (measured with the dev view, 2026-10-03).
-- **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the map symbols (see
-  "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
+- **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the symbols on the map
+  shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
   "Diagnostics"). Opens once by itself on first run.
-- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Crash reports" (ASK AFTER A
+- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
+  position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
   available in this build"); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
   UNINSTALL SHTURMAP… with its question; at the foot the version and the kind of build (§8, "Study log",
@@ -908,7 +924,12 @@ spawns below).
   hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
   four levels, every symbol on the map has one (the done objective, quest zones, the floor arrow, the guide line
   and its plate, the trail, the edge badge and chevrons, clusters and the sheet were missing), and each names
-  shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change.
+  shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change, and a line in
+  `MapLegend.On`. Help lists the symbols the map on screen has under ON THIS MAP, and the others behind one link,
+  "SHOW THE n SYMBOLS THIS MAP DOESN'T HAVE" (owner, 2026-10-04; every symbol of every map made help 2,350 px tall).
+  A symbol counts when the scene holds what it stands for (`MapLegend.On`): a padlock when the map has locks, the
+  guide line when a pick has a place here and there is a position, the sheet when there is no artwork. The list
+  follows the map while help is open; with no map up, all rows stand under ON THE MAP.
 
 ### Quest cards
 
@@ -1628,7 +1649,8 @@ that can't be had: "No map render for The Lab: …", the same way.
 "Diagnostics copied: paste them into your message.": Shturmap's version with commit and whether it is the single
 exe; Windows' version and build; the install type (Steam, BSG launcher, manual) and whether the game, logs and
 screenshots folders were found; mode; the game's language and tarkov.dev's; the data's state (loaded, offline copy
-or failed with the kind, status and plain reason, and when it was checked); the active quest count; the study log
+or failed with the kind, status and plain reason, and when it was checked); the active quest count; whether "Delete
+position screenshots" is on (§2); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
 cut to `<id>`, and no quest names or lists go along (`Redact`). Copying sends nothing; a report carries the same
 text when the player keeps "Include diagnostics", shown first.
@@ -1712,5 +1734,7 @@ form. Problems and ideas both go through it.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").
 - Objective progress: by ticks the player sets on the quest card (2026-10-04; §4, "Quest cards", *Ticks*), since
   the logs don't report it.
+- "Delete position screenshots" (2026-10-04; §2): off unless ticked, the one thing Shturmap changes outside its own
+  folders.
 - Open: the installed size (budget 80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand,
   opening with the game or with Windows, a text size setting.

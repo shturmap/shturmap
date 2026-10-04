@@ -144,6 +144,10 @@ internal sealed class SessionRig : IAsyncDisposable
 
     private int _shots;
 
+    /// <summary>The names of the files in the Screenshots folder now.</summary>
+    public IReadOnlyList<string> Screenshots =>
+        Directory.EnumerateFiles(Path.Combine(_root, "Screenshots")).Select(Path.GetFileName).OfType<string>().Order().ToList();
+
     public Task StartAsync() => Session.StartAsync();
 
     /// <summary>Waits until the session's snapshot shows what the test expects, or fails saying what it showed instead.</summary>

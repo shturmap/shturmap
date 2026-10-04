@@ -184,6 +184,9 @@ public sealed record SessionSnapshot
     /// <summary>Whether the study log is being kept this session.</summary>
     public bool StudyLogOn { get; init; }
 
+    /// <summary>Whether "Delete position screenshots" is ticked: each one is deleted a few seconds after its name was read.</summary>
+    public bool DeleteScreenshots { get; init; }
+
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
 
     /// <summary>Suggested maps for the next raid, best first (maps with picks first).</summary>

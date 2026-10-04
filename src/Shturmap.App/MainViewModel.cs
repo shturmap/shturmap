@@ -191,6 +191,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool StudyLogOn { get; set; }
 
+    /// <summary>"Delete position screenshots" in settings: off unless the player ticked it.</summary>
+    [ObservableProperty] public partial bool DeleteScreenshots { get; set; }
+
     /// <summary>Help's "Uninstall Shturmap…" asks its one question.</summary>
     [ObservableProperty] public partial bool UninstallAsking { get; set; }
 

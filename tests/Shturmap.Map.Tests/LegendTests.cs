@@ -25,4 +25,42 @@ public class LegendTests
     }
 
     public static TheoryData<LegendSymbol> Symbols() => new(Enum.GetValues<LegendSymbol>());
+
+    // Help lists the symbols of the map on screen first (owner, 2026-10-04): a symbol counts when the scene holds
+    // what it stands for.
+    [Fact]
+    public void A_map_lists_the_symbols_it_holds_and_no_others()
+    {
+        var at = new Shturmap.Core.WorldPoint(0, 0, 0);
+        var (_, scene) = TestView.Of(
+        [
+            TestView.Quest("a", 0, 0, "Quest"),
+            new MapMarker("extract:1", MarkerKind.ExtractPmc, at, "Gate"),
+            new MapMarker("boss:1", MarkerKind.BossSpawn, at, "Boss 50%"),
+        ]);
+        var on = MapLegend.On(scene);
+        foreach (var there in new[] { LegendSymbol.Objective, LegendSymbol.Extract, LegendSymbol.Boss, LegendSymbol.OutOfView })
+            Assert.Contains(there, on);
+        // No position, no pick, no lock, no transit, one place only: none of their symbols.
+        foreach (var absent in new[] { LegendSymbol.Player, LegendSymbol.KeptQuest, LegendSymbol.Guide, LegendSymbol.Lock, LegendSymbol.Transit,
+                     LegendSymbol.Cluster, LegendSymbol.Optional, LegendSymbol.Done, LegendSymbol.Sniper, LegendSymbol.Hazard, LegendSymbol.Trail })
+            Assert.DoesNotContain(absent, on);
+    }
+
+    [Fact]
+    public void A_position_a_pick_and_a_second_place_bring_their_symbols()
+    {
+        var at = new Shturmap.Core.WorldPoint(0, 0, 0);
+        var (_, scene) = TestView.Of(
+        [
+            new MapMarker("objective:a:1", MarkerKind.Objective, at, "Quest", "quest-a", Shturmap.Core.Quests.ObjectiveKind.Exploration, Optional: true),
+            new MapMarker("objective:a:2", MarkerKind.PossibleLocation, at, "Quest", "quest-a", Shturmap.Core.Quests.ObjectiveKind.Exploration),
+        ]);
+        scene.Player = new PlayerFix(at, 0, DateTime.UnixEpoch);
+        scene.Kept = new HashSet<string> { "quest-a" };
+        var on = MapLegend.On(scene);
+        foreach (var there in new[] { LegendSymbol.Player, LegendSymbol.PlayerOutOfView, LegendSymbol.KeptQuest, LegendSymbol.Guide,
+                     LegendSymbol.PossibleLocation, LegendSymbol.Cluster, LegendSymbol.Optional })
+            Assert.Contains(there, on);
+    }
 }

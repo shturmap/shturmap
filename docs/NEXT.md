@@ -16,8 +16,10 @@ and the direction of the fix. **Status** is one of: open, in work, done (with th
 
 **Status after two rounds of fixes (2026-10-04):** the items marked done below are merged, with tests (the suite
 went from 614 to 899); DESIGN.md has each change. The second round built D1 (ticking an objective) and E1 (the
-highlight down to the objective). Waiting for the owner: the history rewrite (P1), Velopack's process listing (P2),
-and the items marked "owner to decide" (A5's second part, A21, A27, B4, B14, H3, H4, C1, C3, C5, C9, E2).
+highlight down to the objective). The owner then decided the open questions (2026-10-04): P1 (no game logs in the
+repository; the history rewrite is the owner's to run), P2 (say it precisely), A5, A21, A27, B4, H3, C3, C5, C9 and
+E2 are done as decided, and D3 (deleting position screenshots) was added and built. Still to do from that list: B14
+(fetch a tile map whole), and H4 and C1, each with a picture for the owner first.
 
 **To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
 code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
@@ -244,12 +246,16 @@ for the languages to come).
   state that is nearly always fine; below about 1,090 px the three buttons leave the window, which has no smallest
   size. Status: open.
 - **C5. The boss symbol** is mostly its dark collar around a thin red ring, weaker than a quest's disc, and shares
-  the diamond's outline with transits; boss labels are red where every other label is ink. Status: owner to decide.
+  the diamond's outline with transits; boss labels are red where every other label is ink. Status: done for
+  the symbol (2026-10-04: a solid red octagon of its own, larger than before). The labels' red is unchanged: open.
 - **C6.** Symbols at one place hide each other (an extract's triangle under a transit's diamond on Streets). Status:
   open.
 - **C7.** The guide line's distance plate can stand on a symbol (it covered a boss marker in a snapshot). Status: done
   (2026-10-04).
-- **C9. Help** is 2,350 px tall with 25 legend rows, and opens by itself at the first start. Status: owner to decide.
+- **C9. Help** is 2,350 px tall with 25 legend rows, and opens by itself at the first start. Status: done
+  (2026-10-04, owner: "Rest I follow your suggestions"): help lists the symbols on the map shown, the others behind
+  one link (`MapLegend.On`). In a Streets raid that is 18 rows and 2,280 px; a map with fewer kinds of things is
+  shorter. The texts above the legend are as long as before.
 
 ### D. Features (owner, 2026-10-04: these two; "the rest of d) not")
 
@@ -261,6 +267,14 @@ for the languages to come).
   "Ticks").
 - **D2. Remember the window's monitor, size and whether it is maximised**; first start as today; a saved monitor
   that is gone falls back to today's rule. Status: done (2026-10-04; with a smallest size of 900 × 560).
+- **D3. Delete position screenshots after reading** (owner, 2026-10-04: "a mode that auto-deletes screenshots after
+  a couple of seconds grace period"). Status: done (2026-10-04): a tick in settings, off unless ticked; a screenshot
+  that gave a position is deleted 5 seconds after its name was read, for good; what was in the folder before, menu
+  screenshots and every other file stay (DESIGN.md §2, `ScreenshotCleaner`). For the owner to check: the 5 seconds;
+  for good rather than to the Recycle Bin; menu screenshots staying; the setting's words. The website's "what it
+  never does" needs the same sentence as the README: its wording changes only on the owner's word. Needs a run with
+  the game: that the game's own write is over well within the 5 seconds (a file still open is tried again, so the
+  worst case is a screenshot that stays).
 - **Declined** (owner, 2026-10-04): adding or removing a quest by hand; opening with the game or with Windows; a
   text size setting. Don't propose them again.
 
@@ -270,7 +284,9 @@ for the languages to come).
   whole quest, so the "69 m" line can't be told from the quest's other markers, though markers carry the
   objective's id. Status: done (2026-10-04: the objective's own places pulse, its line carries the tint, both ways).
 - **E2. One tint for three things**: the row pointed at, the same thing elsewhere, and what is only related (an item
-  row lights its quests and, through them, every other BRING row of those quests). Status: open.
+  row lights its quests and, through them, every other BRING row of those quests). Status: done (2026-10-04: the
+  same thing keeps the full tint, what is related gets a weaker one, and an item no longer lights the other items
+  of its quests; `LinkStrength`).
 - **E3. Places that link nothing**: need cells, folded cards' glyphs, boss names in the raid line and on Plan cards,
   the gold "Key: …" line under an objective, an extract's need item, the item card's "Loose on …" row; entering an
   item card drops the item's locks and loose spots; a quest card's frame and headings let the quest go while it is

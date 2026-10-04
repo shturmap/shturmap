@@ -54,6 +54,9 @@ It never:
 - sends keystrokes or mouse input, or registers global hotkeys (its shortcuts work only in its own window);
 - captures the screen or draws over the game;
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
+- changes or deletes anything outside its own folders, with one exception you turn on yourself: **Delete position
+  screenshots** in settings (off unless you tick it) deletes each screenshot that gave a position 5 seconds after
+  its name was read, for good. Screenshots already in the folder, and screenshots from the menus, stay;
 - sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
   only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
   (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log.

@@ -222,10 +222,23 @@ public sealed class ScreenshotWatcher : IDisposable
         }
     }
 
+    /// <summary>
+    /// A reported screenshot was deleted (<see cref="ScreenshotCleaner"/>): a later file of the same name is a new
+    /// screenshot again. The name can repeat: the same minute, place, facing and raid clock.
+    /// </summary>
+    public void Forget(string path) => _known.TryRemove(path, out _);
+
     private void Consider(string path)
     {
         if (!_known.TryAdd(path, 0))
             return;
+        if (!File.Exists(path))
+        {
+            // Gone before it could be looked at (a rescan listed it just as it was deleted): no new screenshot, and
+            // a later file of this name is one. A missing file's creation time would read as the year 1601.
+            _known.TryRemove(path, out _);
+            return;
+        }
         if (TryRead(path) is not { } seen)
             return;
         try

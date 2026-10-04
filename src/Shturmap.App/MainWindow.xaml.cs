@@ -206,13 +206,54 @@ public sealed partial class MainWindow : Window
     /// The map symbols in the help panel, drawn by the map's own renderer so they can't drift from the map (at twice
     /// the DIP size, which stays sharp up to 200 % and in snapshots).
     /// </summary>
-    public IReadOnlyList<MapLegendRow> MapLegendRows { get; } = MapLegend.Rows
+    private readonly IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = MapLegend.Rows
         .Select(row =>
         {
             using var bitmap = MapLegend.Draw(row.Symbol, 2);
-            return new MapLegendRow(bitmap.ToWriteableBitmap(), row.Text);
+            return (row.Symbol, new MapLegendRow(bitmap.ToWriteableBitmap(), row.Text));
         })
         .ToList();
+
+    private IReadOnlySet<LegendSymbol>? _legendOn;
+    private int _legendRest;
+    private bool _legendAll;
+
+    /// <summary>
+    /// Help lists the symbols on the map shown now; the others wait behind a link (owner, 2026-10-04, from the
+    /// review's C9: every symbol of every map made help 2,350 px tall). With no map up, all of them are listed.
+    /// Called when help opens, and while it is open when the map changes (help opens by itself at the first start,
+    /// before a map is up); the link's state then stays as the player left it.
+    /// </summary>
+    private void ShowLegend(bool opened)
+    {
+        var on = Map.Scene is { } scene ? MapLegend.On(scene) : null;
+        if (!opened && (on is null ? _legendOn is null : _legendOn?.SetEquals(on) == true))
+            return;
+        _legendOn = on;
+        LegendHeading.Text = on is null ? "ON THE MAP" : "ON THIS MAP";
+        LegendHere.ItemsSource = _legendRows.Where(r => on?.Contains(r.Symbol) != false).Select(r => r.Row).ToList();
+        var rest = _legendRows.Where(r => on?.Contains(r.Symbol) == false).Select(r => r.Row).ToList();
+        _legendRest = rest.Count;
+        LegendRest.ItemsSource = rest;
+        LegendMore.Visibility = rest.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (opened)
+            _legendAll = false;
+        ShowLegendRest();
+    }
+
+    private void ShowLegendRest()
+    {
+        LegendRest.Visibility = _legendAll && _legendRest > 0 ? Visibility.Visible : Visibility.Collapsed;
+        var symbols = _legendRest == 1 ? "1 SYMBOL" : $"{_legendRest} SYMBOLS";
+        LegendMoreText.Text = _legendAll ? $"HIDE THE {symbols} THIS MAP DOESN'T HAVE" : $"SHOW THE {symbols} THIS MAP DOESN'T HAVE";
+    }
+
+    private void OnLegendMoreClick(object sender, RoutedEventArgs e)
+    {
+        _legendAll = !_legendAll;
+        ShowLegendRest();
+        Study.Ui("help.legend", ("all", _legendAll));
+    }
 
     public Brush OkBrush(bool ok) => Resource(ok ? "GreenBrush" : "AmberBrush");
 
@@ -337,6 +378,18 @@ public sealed partial class MainWindow : Window
     // The study switch's and the uninstall question's box: filled gold with a check when on, an empty gold square when off.
     public Brush StudyBoxBrush(bool on) => on ? Resource("AmberBrush") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
+    // "Delete position screenshots" in settings (owner, 2026-10-04): the one thing Shturmap changes outside its own
+    // folders, so it is off unless ticked and its note says what goes and what stays.
+    public string DeleteScreenshotsNote { get; } =
+        $"Off unless you tick it. Each screenshot that gave Shturmap a position is deleted {Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds:0} seconds after its name was read: for good, not to the Recycle Bin. Only screenshots taken in a raid while Shturmap runs with this ticked. The ones already in the folder and screenshots from the menus stay.";
+
+    private async void OnDeleteScreenshotsClick(object sender, RoutedEventArgs e)
+    {
+        var on = !ViewModel.DeleteScreenshots;
+        await _session.SetDeleteScreenshotsAsync(on);
+        Study.Ui("settings.deleteScreenshots", ("on", on));
+    }
+
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
     // ---- snapshot → view ----
@@ -367,6 +420,7 @@ public sealed partial class MainWindow : Window
             _ => "Loading game data from tarkov.dev…",
         };
         vm.StudyLogOn = s.StudyLogOn;
+        vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
@@ -709,6 +763,8 @@ public sealed partial class MainWindow : Window
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
         Map.Refresh();
+        if (HelpFlyout.IsOpen)
+            ShowLegend(opened: false);
     }
 
     // Who drew what is on the map. The SVG maps' artists by name and licence; the tile renders (Battlestate's level,
@@ -1496,6 +1552,7 @@ public sealed partial class MainWindow : Window
     private void OnHelpOpened(object sender, object e)
     {
         _helpOpenedAt = DateTime.Now;
+        ShowLegend(opened: true);
         Study.Ui("help.open");
     }
 
