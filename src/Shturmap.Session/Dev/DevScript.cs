@@ -47,7 +47,7 @@ public static class DevScript
         ["repeat"] = "a screenshot at the last position again",
         ["age"] = "<minutes>: the last position becomes older",
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
-        ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload (nogame: as if no game were on this PC)",
+        ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload | key <down | up | enter | p | esc> (nogame: as if no game were on this PC; key: the rail's row keys, through the code the key events call, never a key sent)",
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs",

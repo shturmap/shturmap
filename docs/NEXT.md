@@ -27,9 +27,9 @@ caching check (B15) and some 25 of the smaller items, by five agents in worktree
 A17, A20, A32–A36, A39, A40, A42–A46, B2, B3, B5, B9, B11, B13, C2, C4, C5, E3–E5, H7, H9, and C6 for symbols of
 different rank. The suite is at 1,063 tests. Found on the way and fixed: the raid card's lines stood in Segoe UI
 and white instead of the app's typeface; a Scav zone's ring lay over the boss's octagon; "Sniper Roadblock" on
-Customs was told to fire a flare. Still open after it: A10 and A26 (need a run), A37's hatch and floor read, A41,
-B14's website wording, C6 for symbols of the same rank, E3's boss names, E6, H5, and what A40 leaves (settings say
-"not available in this build" when the updater couldn't start).
+Customs was told to fire a flare. The leftovers followed the same day (owner: "Go on with the small leftovers"): A37, A41, C6, E3's boss names,
+E6, H5 and A40's settings text; the suite is at 1,111 tests. Still open: A10 and A26 (need a run) and the website's
+wording (on the owner's word).
 
 **To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
 code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
@@ -42,6 +42,13 @@ held in Plan while a raid starts (it closes); the window narrowed to 900 px in a
 tooltips; moving from a quest's row onto its card and across its gaps and headings (the quest stays lit), and from
 a BRING row onto the item's card (locks and loose squares stay); a padlock on the map (its quests take the weaker
 tint); a second copy of the game started while Shturmap runs (it follows the newer logs, with a notice).
+From the leftovers: Down and Up through the rail's rows in Plan and in a raid, Enter on a quest row, an item row
+and a map row, P on a quest row, Esc; the mouse moved after stepping (the highlight jumps to what is under it) and
+left resting over the rail while stepping (the keyboard's row keeps it); typing P and Enter in the Report dialog
+(they must stay text); the MAP list opened (its arrows choose a map; closed, they step through the rows now);
+Enter on a focused button with no row active (it must still click); a boss's name in the raid line and under a
+map's name in Plan (its spawn zones light up, and a zone tints the name); "ALL 15 ↓" in the EXIT row (the list of
+ways out comes to the top of the rail); two ways out at one place on the map, each with its own tooltip and click.
 
 **Words for the owner to check, from the third round:** "Newer game logs in <folder>: quests and raids follow that
 game now."; "NO POSITION YET · PRESS PRTSC OR MOUSE3" (status bar, in a raid only); "CLICK ITS ROW TO PLAN IT"; the
@@ -49,6 +56,9 @@ lights' tooltips when their words are hidden; the legend's new rows (the ping, a
 chevrons) and "for the first 45 seconds a cone shows…"; "No game data. … Shturmap tries again in 2 minutes; if it
 keeps failing, please report it."; "Showing English: the German texts couldn't be loaded. tarkov.dev answered 503.
 Shturmap tries again in 2 minutes."; "German texts loaded.".
+From the leftovers: help's four new key lines (↓ / ↑, ENTER, P, ESC); "ALL 15 ↓" and its tooltip; settings'
+"Updates: the updater couldn't start this time, so Shturmap isn't asking for new versions. Its log says why (LOG
+FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."; the README's new header.
 
 **Found while fixing:**
 - **A47. The app ended with an access violation when it exited while the map was pulsing** (a quest pointed at): the
@@ -153,7 +163,7 @@ Smaller, in the map:
   Status: done (2026-10-04): the focus, and the layout is kept between frames while nothing it is made
   from changes (how much a frame gains wasn't measured).
 - **A37.** A cluster is left out when its middle place is out of view though others are in view; the hazard hatch
-  runs over a zone's whole box; an SVG floor is read during the first paint that shows it. Status: the cluster done (2026-10-04); the hatch and the floor read are open.
+  runs over a zone's whole box; an SVG floor is read during the first paint that shows it. Status: done (2026-10-04): the cluster; the hatch was clipped already and now draws only its lines in view; floors are read ahead, off the drawing thread.
 - **A38.** "A switch listed for every extract links nothing" uses a strict rule where `ExtractRules` uses "most".
   Status: done in the map (2026-10-04); `ExtractRules` still counts by itself.
 
@@ -182,7 +192,8 @@ Smaller, in planning and data:
 - **A35.** CHOOSE… and FIND AUTOMATICALLY read every log session on the UI thread. Status: done (2026-10-04).
 - **A36.** Closing isn't safe to run twice (`ProgressStore`, `GameSession.DisposeAsync`); the uninstall path can do
   that. Status: done (2026-10-04).
-- **A41.** Log times are local without an offset: an hour off across a clock change. Status: open (two nights a year).
+- **A41.** Log times are local without an offset: an hour off across a clock change. Status: done (2026-10-04): spans of time go through one place (WallClock); a raid
+  that runs across the whole repeated autumn hour still reads an hour short.
 
 Smaller, in the app:
 
@@ -323,7 +334,7 @@ for the languages to come).
   while pointed at).
 - **C6.** Symbols at one place hide each other (an extract's triangle under a transit's diamond on Streets). Status:
   done for symbols of different rank (2026-10-04: the one that matters more lies on top; a Scav zone's ring lay
-  over the boss's octagon and made it read as a ring). Two of the same rank at one place still cover each other: open.
+  over the boss's octagon and made it read as a ring). Two of the same rank at one place: done the same day, they stand side by side, each a few pixels beside its place.
 - **C7.** The guide line's distance plate can stand on a symbol (it covered a boss marker in a snapshot). Status: done
   (2026-10-04).
 - **C9. Help** is 2,350 px tall with 25 legend rows, and opens by itself at the first start. Status: done
@@ -367,7 +378,7 @@ for the languages to come).
   read. Status: done for need cells, the "Key: …" line (when it names one key) and folded cards' glyphs (2026-10-04), and
   since then for a card's whole body, the item card's "Loose on …" row and an extract's need item. Boss names in the raid line and on Plan cards: done the same day (each links to its spawn zones on the map shown).
 - **E4.** An "A or B" row links only A (`Planning`: `Alternatives[0]`). **E5.** A quest lights its doors, a door only
-  its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: E4 and E5 done (2026-10-04); E6 open.
+  its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: done (2026-10-04; E6: Down and Up step through the rail's rows, Enter is the click, P the pen).
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 

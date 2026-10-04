@@ -1705,6 +1705,8 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
+  `trigger key down | up | enter | p | esc` steps through the rail's rows by the code the key events call; no key
+  is ever sent.
 
 ### How the parts work
 
