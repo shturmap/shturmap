@@ -39,7 +39,9 @@ code names any other address, or if anything but the reporting code uses Sentry.
 data instead (maps.json gives each map's artwork and tile paths), so the app's download client itself asks only
 `json.tarkov.dev`, `assets.tarkov.dev` and `raw.githubusercontent.com`, over https, and refuses anything else before
 a request is sent (`CachedHttp.Hosts`; review of 2026-10-04: a changed maps.json could have pointed every Shturmap at
-another host).
+another host). The links that leave Shturmap come out of the data as well (a quest's wiki page, a map's wiki page):
+one is offered only when it is an https address on the Escape from Tarkov wiki (`OutsideLink`); anything else in
+that field is no link, since a click would start whatever program Windows has registered for it.
 
 BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text of 2026-06-15) forbids "outside
 software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game

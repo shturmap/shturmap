@@ -103,6 +103,7 @@ public sealed partial class MainWindow : Window
         ObserveActivation(this);
         Closed += (_, _) =>
         {
+            StopForExit();
             SavePlace();
             // The popped-out cards are saved once, as they stand, before they close with this window: their own
             // closing must not rewrite the list (it would save it empty, or after the session has gone).
@@ -152,6 +153,20 @@ public sealed partial class MainWindow : Window
         };
         session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration, notice.OffersReport));
         session.Cue += cue => DispatcherQueue.TryEnqueue(() => ShowCue(cue));
+    }
+
+    /// <summary>
+    /// The app is ending (the window closes, or the app exits by itself: a snapshot run, RESTART NOW, an uninstall):
+    /// the window's timers stop and the map draws no more. The map's pulse kept asking for frames while the drawing
+    /// surface was taken down, which ended the process with an access violation instead of a clean exit (found
+    /// 2026-10-04). Safe to call twice.
+    /// </summary>
+    public void StopForExit()
+    {
+        _clock.Stop();
+        _noticeTimer.Stop();
+        _focusClear.Stop();
+        Map.StopDrawing();
     }
 
     // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
@@ -609,8 +624,7 @@ public sealed partial class MainWindow : Window
             : "";
         vm.Attribution = AttributionFor(s.Definition);
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
-        vm.WikiMap = s.Map is { } shown && s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki is { Length: > 0 } wiki
-            && Uri.TryCreate(wiki.TrimEnd('/') + "_Interactive_Map", UriKind.Absolute, out var uri) ? uri : null;
+        vm.WikiMap = s.Map is { } shown ? Rules.OutsideLink.WikiMap(s.Data?.Maps.GetValueOrDefault(shown.Id)?.Wiki) : null;
     }
 
     // The loot a Scav raid can find for your quests, up to this many rows; the rest is one line.

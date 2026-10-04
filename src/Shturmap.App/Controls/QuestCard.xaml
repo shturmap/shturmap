@@ -130,7 +130,7 @@
 
         <!-- A link that leaves Shturmap, in the look of the others (WIKI MAP ↗, LOG FOLDER ↗): capitals and the arrow. -->
         <HyperlinkButton NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0"
-                         Visibility="{x:Bind Shown(View.WikiLink)}"
+                         Visibility="{x:Bind ShownIfWiki(View.WikiLink)}"
                          ToolTipService.ToolTip="Opens this quest's page on the Escape from Tarkov wiki in your browser">
           <TextBlock Text="WIKI PAGE ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
         </HyperlinkButton>

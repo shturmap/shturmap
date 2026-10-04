@@ -14,12 +14,21 @@ own snapshots (Plan, a raid, a held quest, The Lab, a local raid, a Scav raid). 
 and the direction of the fix. **Status** is one of: open, in work, done (with the date), owner to decide, needs a run
 (a claim from reading the code that a test on a PC has to confirm first). Paths are under `src\`.
 
-**Status after the first round of fixes (2026-10-04):** the items marked done below are merged, with tests (the
-suite went from 614 to 834); DESIGN.md has each change. Next round: D1 (ticking an objective) and E1 (the highlight
-down to the objective). Waiting for the owner: the history rewrite (P1), Velopack's process listing (P2), and the
-items marked "owner to decide" (A5's second part, A21, A27, B4, B14, H3, H4, C1, C3, C5, C9).
+**Status after two rounds of fixes (2026-10-04):** the items marked done below are merged, with tests (the suite
+went from 614 to 899); DESIGN.md has each change. The second round built D1 (ticking an objective) and E1 (the
+highlight down to the objective). Waiting for the owner: the history rewrite (P1), Velopack's process listing (P2),
+and the items marked "owner to decide" (A5's second part, A21, A27, B4, B14, H3, H4, C1, C3, C5, C9, E2).
 
-**Found while fixing, open:**
+**To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
+code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
+gold "Key: …" line and a folded card's glyph, and a click on each (where their cards open); a quest's name clicked
+at its start (A3); closing the window with Alt+F4 while the pointer rests on a quest (A47).
+
+**Found while fixing:**
+- **A47. The app ended with an access violation when it exited while the map was pulsing** (a quest pointed at): the
+  pulse's timer asked for a frame while the drawing surface was taken down. Every exit path now stops the window's
+  timers and the map's drawing first (`MainWindow.StopForExit`). Status: done (2026-10-04; a script that exits while
+  pointing at a quest ends with exit code 0, before 0xC0000005).
 - **A43.** The LOGS light says "Logs live" for ten minutes after every start, also with the game closed: reading the
   old session at start counts as activity (`LogTailer.LastActivityUtc`, `GameSession.LogsHealth`).
 - **A44.** A log longer than one read (4 MB) is cut short when the game starts a new session before it is read
@@ -32,8 +41,10 @@ items marked "owner to decide" (A5's second part, A21, A27, B4, B14, H3, H4, C1,
   isn't shown."; "Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown."; the
   last-raid line's "end not in the log"; the map's label "LOOKING AT WOODS · THE RAID IS ON CUSTOMS · YOUR NEXT
   POSITION SHOWS IT AGAIN"; the raid card's title "MAP NOT KNOWN".
-- **D1 touches the README**: it says of quest tracking "Nothing to tick off"; with ticks for objectives that
-  sentence changes (the website's wording only on the owner's word).
+- **D1 changed the README's sentence on quest tracking** ("Nothing has to be ticked off", with what a tick is
+  for). The website still says the old sentence: its wording changes only on the owner's word.
+- **Words for the owner to check, from D1:** the tick's tooltip, "Done · ticked by you, 4 Oct" on the card, "DONE"
+  on the raid card's line, and the new paragraph in help.
 
 ### P. Before the repository is public
 
@@ -148,8 +159,8 @@ Smaller, in privacy and distribution:
 - **A24.** Only the exact profile folder is masked in the app log: Documents on another drive, a network host's
   name and short (8.3) names pass (`Shturmap.Session/Redact.cs`). Status: done (2026-10-04).
 - **A25.** Paths from maps.json and wiki links from tarkov.dev are used without checking the host or the scheme.
-  Status: done for downloads (2026-10-04: only tarkov.dev's two hosts and GitHub's raw host, over https);
-  the wiki links' scheme and host are open.
+  Status: done (2026-10-04: downloads only to tarkov.dev's two hosts and GitHub's raw host, over https; a wiki link
+  only when it is an https address on the wiki).
 - **A26.** A copy unpacked from the portable zip offers the in-app uninstall; what Velopack then removes is
   unchecked. Status: needs a run.
 - **A28.** `ScreenshotWatcher.WaitUntilCompleteAsync` (unused, from the removed OCR feature) would open a screenshot
@@ -198,7 +209,7 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
   project table gives Core "name matching" (gone) and calls it pure (`UnpackedCopies` deletes folders); the Steam
   uninstall key isn't mentioned. Status: open.
 - **B12. Quest states set by hand** still have a code path (`SetQuestStateAsync`, "set by you") though the states
-  come from the log alone and the owner declined editing quests by hand (below). Status: open (remove).
+  come from the log alone and the owner declined editing quests by hand (below). Status: done (2026-10-04; old databases' rows of that kind are ignored).
 - **B13.** A Plan card is one button: a click on a row or a pen inside an expanded card of a map that isn't shown
   also switches the map ("two clicks, two meanings"). Status: open.
 
@@ -243,7 +254,8 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
   raids keeps leading to places already dealt with. The drawing is there (the done marker, the legend row). To
   build: a tick on the objective (quest card, outside a raid), kept per mode until the log reports the quest
   completed or failed, shown as done "ticked by you", left out of NEXT, the guide line and the planner's count.
-  Status: open (next round).
+  Status: done (2026-10-04: a tick box at the end of each objective's row on the quest card; DESIGN.md "Quest cards",
+  "Ticks").
 - **D2. Remember the window's monitor, size and whether it is maximised**; first start as today; a saved monitor
   that is gone falls back to today's rule. Status: done (2026-10-04; with a smallest size of 900 × 560).
 - **Declined** (owner, 2026-10-04): adding or removing a quest by hand; opening with the game or with Windows; a
@@ -253,13 +265,13 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
 
 - **E1. It stops at the quest.** An objective line in the raid card, NEXT and a quest card's objective light the
   whole quest, so the "69 m" line can't be told from the quest's other markers, though markers carry the
-  objective's id. Status: open (next round).
+  objective's id. Status: done (2026-10-04: the objective's own places pulse, its line carries the tint, both ways).
 - **E2. One tint for three things**: the row pointed at, the same thing elsewhere, and what is only related (an item
   row lights its quests and, through them, every other BRING row of those quests). Status: open.
 - **E3. Places that link nothing**: need cells, folded cards' glyphs, boss names in the raid line and on Plan cards,
   the gold "Key: …" line under an objective, an extract's need item, the item card's "Loose on …" row; entering an
   item card drops the item's locks and loose spots; a quest card's frame and headings let the quest go while it is
-  read. Status: open.
+  read. Status: done for need cells, the "Key: …" line (when it names one key) and folded cards' glyphs (2026-10-04); the rest is open.
 - **E4.** An "A or B" row links only A (`Planning`: `Alternatives[0]`). **E5.** A quest lights its doors, a door only
   its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: open.
 

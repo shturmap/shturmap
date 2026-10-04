@@ -130,9 +130,16 @@ public partial class App : Application
     /// <summary>New versions, from GitHub Releases.</summary>
     public static Updater Updater { get; private set; } = null!;
 
-    /// <summary>Lets go of this session's running marker, so an exit that isn't a close (RESTART NOW for an update)
-    /// isn't taken for a crash at the next start.</summary>
-    public void EndSession() => _marker?.Dispose();
+    /// <summary>
+    /// Ends the session for an exit that isn't a close (RESTART NOW for an update, an uninstall, a snapshot run): lets
+    /// go of the running marker, so the next start doesn't take the exit for a crash, and stops the window's timers and
+    /// the map's drawing, so nothing asks for a frame while the window is taken down (MainWindow.StopForExit).
+    /// </summary>
+    public void EndSession()
+    {
+        _marker?.Dispose();
+        _window?.StopForExit();
+    }
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
@@ -210,7 +217,7 @@ public partial class App : Application
             await Task.Delay(TimeSpan.FromSeconds(4));
             AppLog.Info("Test report: " + await _window.SendReportForTestAsync(cli[send + 1]));
             await _window.SaveSnapshotAsync(cli[send + 2]);
-            _marker?.Dispose();
+            EndSession();
             Exit();
         }
 
@@ -221,7 +228,7 @@ public partial class App : Application
             var delay = at + 2 < cli.Length && int.TryParse(cli[at + 2], out var s) ? s : 8;
             await Task.Delay(TimeSpan.FromSeconds(delay));
             await _window.SaveSnapshotAsync(cli[at + 1]);
-            _marker?.Dispose();
+            EndSession();
             Exit();
         }
     }

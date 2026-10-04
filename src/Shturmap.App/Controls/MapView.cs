@@ -24,6 +24,29 @@ public sealed partial class MapView : Grid
     private Windows.Foundation.Point? _dragFrom;
     private PlayerFix? _seenFix;
 
+    private bool _stopped;
+
+    // Every frame is asked for here, so that none is asked for once the app is closing.
+    private void Invalidate()
+    {
+        if (!_stopped)
+            _panel.Invalidate();
+    }
+
+    /// <summary>
+    /// The app is closing: no more frames. A timer that asks for one while the window's drawing surface is taken down
+    /// ends the process with an access violation (found 2026-10-04: exiting with a quest pointed at, its markers
+    /// pulsing, ended with 0xC0000005).
+    /// </summary>
+    public void StopDrawing()
+    {
+        _stopped = true;
+        _animation?.Stop();
+        _glideFrames?.Stop();
+        _wheelEnd?.Stop();
+        _panel.PaintSurface -= OnPaintSurface;
+    }
+
     public MapView()
     {
         Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
@@ -56,7 +79,7 @@ public sealed partial class MapView : Grid
         DispatcherQueue.TryEnqueue(() =>
         {
             _tileRedrawQueued = false;
-            _panel.Invalidate();
+            Invalidate();
         });
     }
 
@@ -101,7 +124,7 @@ public sealed partial class MapView : Grid
         _seenFix = null;
         // Following, a new map opens on the player (after it is fitted, at its first paint).
         _centerAfterFit = _follow.On;
-        _panel.Invalidate();
+        Invalidate();
     }
 
     // ---- follow my position (owner, 2026-10-03; docs/DESIGN.md "Follow my position") ----
@@ -147,7 +170,7 @@ public sealed partial class MapView : Grid
         if (!_scene.Pulse)
         {
             _camera.CenterOn(to);
-            _panel.Invalidate();
+            Invalidate();
             return;
         }
         // Each frame works out where the glide is as it is drawn (GlideStep), so none shows a stale centre. The frames
@@ -162,7 +185,7 @@ public sealed partial class MapView : Grid
             _glideFrames.Tick += (_, _) =>
             {
                 GlideStep();
-                _panel.Invalidate();
+                Invalidate();
             };
         }
         _glideFrames.Start();
@@ -190,7 +213,7 @@ public sealed partial class MapView : Grid
         _glideFrames?.Stop();
         if (_scene is not null)
             _scene.Gliding = false;
-        _panel.Invalidate();
+        Invalidate();
     }
 
     // Zooming while following keeps the player in the middle.
@@ -230,7 +253,7 @@ public sealed partial class MapView : Grid
                 Redraw();
             }
         }
-        _panel.Invalidate();
+        Invalidate();
     }
 
     /// <summary>
@@ -239,7 +262,7 @@ public sealed partial class MapView : Grid
     /// </summary>
     public void Redraw()
     {
-        _panel.Invalidate();
+        Invalidate();
         if (_scene is not { } scene)
             return;
         if (!scene.Pulse)
@@ -276,7 +299,7 @@ public sealed partial class MapView : Grid
         {
             // One more frame without it: a ping's last ring would otherwise stay up until the next redraw.
             _animation?.Stop();
-            _panel.Invalidate();
+            Invalidate();
             return;
         }
         var now = DateTime.Now;
@@ -284,7 +307,7 @@ public sealed partial class MapView : Grid
         _lastStep = now;
         var target = DimTarget(scene);
         scene.Dim = scene.Dim < target ? Math.Min(target, scene.Dim + step) : Math.Max(target, scene.Dim - step);
-        _panel.Invalidate();
+        Invalidate();
     }
 
     /// <summary>Moves the view to the player's last position, keeping the zoom (F, the button, the edge arrow).</summary>
@@ -294,7 +317,7 @@ public sealed partial class MapView : Grid
             return;
         StopGlide();
         _camera.CenterOn(_scene.Projection.ToMap(fix.Position));
-        _panel.Invalidate();
+        Invalidate();
     }
 
     /// <summary>Shows the whole map; while following a position, it stops following (the player chose the view).</summary>
@@ -307,14 +330,14 @@ public sealed partial class MapView : Grid
             FollowStopped?.Invoke("fit");
         }
         _fitPending = true;
-        _panel.Invalidate();
+        Invalidate();
     }
 
     public void ZoomBy(double factor)
     {
         _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor);
         KeepPlayerCentered();
-        _panel.Invalidate();
+        Invalidate();
     }
 
     // ---- the website demo's camera moves (players move the view themselves) ----
@@ -336,7 +359,7 @@ public sealed partial class MapView : Grid
             var zoom = Math.Exp(Math.Log(from.Zoom) + (Math.Log(to.Zoom) - Math.Log(from.Zoom)) * e);
             _camera.Restore(new Shturmap.Core.Maps.MapPoint(from.Center.X + (to.Center.X - from.Center.X) * e,
                 from.Center.Y + (to.Center.Y - from.Center.Y) * e), zoom);
-            _panel.Invalidate();
+            Invalidate();
             if (t >= 1)
                 StopViewAnimation();
         };
@@ -550,7 +573,7 @@ public sealed partial class MapView : Grid
         _camera.Pan((float)(to.X - from.X) * PixelScale, (float)(to.Y - from.Y) * PixelScale);
         _dragDistance += Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));
         _dragFrom = to;
-        _panel.Invalidate();
+        Invalidate();
     }
 
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
@@ -591,7 +614,7 @@ public sealed partial class MapView : Grid
         var factor = Math.Pow(1.0015, point.Properties.MouseWheelDelta);
         _camera.ZoomAt(Pixels(point.Position), factor);
         KeepPlayerCentered();
-        _panel.Invalidate();
+        Invalidate();
         e.Handled = true;
 
         // One study event per burst of wheel turns.
@@ -615,7 +638,7 @@ public sealed partial class MapView : Grid
     {
         _camera.ZoomAt(Pixels(e.GetPosition(this)), 2);
         KeepPlayerCentered();
-        _panel.Invalidate();
+        Invalidate();
         Study.Ui("map.zoom", ("factor", 2.0), ("how", "double-click"), ("zoom", _camera.Zoom));
     }
 }

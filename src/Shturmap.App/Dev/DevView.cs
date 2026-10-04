@@ -213,6 +213,7 @@ internal sealed partial class DevView : Window
     private void RestartInDevView()
     {
         Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--dev-view") { UseShellExecute = false });
+        ((App)Application.Current).EndSession();
         Application.Current.Exit();
     }
 

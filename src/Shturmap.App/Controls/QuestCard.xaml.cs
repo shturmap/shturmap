@@ -69,5 +69,8 @@ public sealed partial class QuestCard : UserControl, ICard
 
     public static string NeedGlyph(RequirementKind kind) => kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring;
 
-    public Uri? WikiUri(string? link) => Uri.TryCreate(link, UriKind.Absolute, out var uri) ? uri : null;
+    // The wiki link comes out of tarkov.dev's data: only an https address on the wiki is one (Rules.OutsideLink).
+    public Uri? WikiUri(string? link) => Rules.OutsideLink.Wiki(link);
+
+    public Visibility ShownIfWiki(string? link) => Rules.OutsideLink.Wiki(link) is null ? Visibility.Collapsed : Visibility.Visible;
 }
