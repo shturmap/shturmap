@@ -63,6 +63,23 @@ public class KitTests
     }
 
     [Fact]
+    public void The_cue_pictures_what_the_picks_need_first()
+    {
+        // Owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted".
+        var picks = new HashSet<string> { "dandies", "ballet" };
+        var kit = Planning.Kit(Plan([Marker, Key, Flare, Beanie, Keycard], "revision", "ballet", "cease", "dandies"), picks);
+        var (shown, _) = Planning.CueKit(kit, picks: picks);
+        // The picks' two, in the kit's order; then the rest, in and out first as in the kit.
+        Assert.Equal(["key", "beanie", "keycard", "flare", "marker"], shown.Select(r => r.ItemId));
+        Assert.Equal([true, true, false, false, false], shown.Select(r => Planning.ForPick(r, picks)));
+
+        // Without picks nothing moves and nothing is marked.
+        var (plain, _) = Planning.CueKit(kit);
+        Assert.Equal(["keycard", "flare", "key", "beanie", "marker"], plain.Select(r => r.ItemId));
+        Assert.All(plain, r => Assert.False(Planning.ForPick(r, null)));
+    }
+
+    [Fact]
     public void Only_while_loading_and_never_for_a_scav()
     {
         var plan = Plan([Marker], "revision");

@@ -1381,11 +1381,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private ViewCue KitCue(CueKind kind, MapIdentity map, string when)
     {
         var kit = KitOn(map);
-        var (shown, more) = Planning.CueKit(kit);
         var picks = Picks;
+        var (shown, more) = Planning.CueKit(kit, picks: picks);
         Study.Game("kit.reminder", ("when", when), ("map", map.NormalizedName), ("items", kit.Count),
             ("forPicks", kit.All.Count(r => r.QuestIds.Any(picks.Contains))));
-        return new ViewCue(kind, map.Name, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind)).ToList(), KitMore: more);
+        return new ViewCue(kind, map.Name, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind, Planning.ForPick(r, picks))).ToList(), KitMore: more);
     }
 
     // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now with its kit,

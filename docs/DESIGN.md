@@ -296,9 +296,13 @@ quoting it anywhere new.
      (the entry item, the exits quests name: a flare, climbing gear, money), then what the picks need, then, with
      picks on this map, the rest under ALSO USEFUL. Without picks there it is all one list. Shturmap knows no
      inventory, so it is a list to check, never a claim that something is missing.
-   - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name: up to six items in that order, in
-     BRING's cells at 34 px, and "+3" for the rest; never scaled, like the cue's text. A transit's cue has none (the
-     gear is what the raid had).
+   - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name: up to six items, in
+     BRING's cells at 34 px, and "+3" for the rest; never scaled, like the cue's text. **What the picked quests
+     need comes first, each cell framed in the picks' cyan, then a hairline and the rest in the kit's order**
+     (owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted"; read as
+     the items of the picked quests, not the quests' own glyphs). A cue that pictures a kit stays 7.5 s where the
+     others stay 5 ("The animation can be a bit longer": there are up to six things to check in it). A transit's
+     cue has none (the gear is what the raid had).
    - **The raid card** starts with CHECK YOUR KIT, in BRING's rows, while the raid loads; BRING itself steps aside
      until the raid starts, then is back in its place. A Scav loading (known early when a server raid's setup names
      the Scav profile) gets no kit, and the card's note says why: quest objectives don't count for a Scav.
@@ -409,7 +413,7 @@ a dark collar (see "Visual language"). Spacing in the app steps 2–3 px inside 
 between groups, 20 px above a section label; the rail is 384 px, the status bar 40 px. The website lays out on a 96 px
 grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps from 8 to 56 px.
 
-**Motion.** Slow enough to read, never for show: the big cue takes 5 s with its entrance at 1.8 times the original
+**Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
 position pings, and with Follow my position on the view glides to it over 0.5 s, eased out. With Windows' animation
 effects off the app shows and hides without motion, and following jumps to the position. The website follows the

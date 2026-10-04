@@ -129,12 +129,17 @@ public static class Planning
 
     /// <summary>The big cue's row of item pictures: the first <paramref name="shown"/> items in the kit's order, and
     /// how many more there are ("+3"). One picture per item: an item needed twice over (a beanie to plant and to
-    /// wear) is one thing to check, and two pictures of it read as a mistake (review of 2026-10-04).</summary>
-    public static (IReadOnlyList<RequirementView> Shown, int More) CueKit(KitList kit, int shown = 6)
+    /// wear) is one thing to check, and two pictures of it read as a mistake (review of 2026-10-04). What the picked
+    /// quests need comes first, each kind in the kit's order (owner, 2026-10-04: "it should also show color coded
+    /// the icons first of the quests we highlighted"); <see cref="ForPick"/> says which those are.</summary>
+    public static (IReadOnlyList<RequirementView> Shown, int More) CueKit(KitList kit, int shown = 6, IReadOnlySet<string>? picks = null)
     {
-        var all = kit.All.DistinctBy(r => r.ItemId).ToList();
+        var all = kit.All.DistinctBy(r => r.ItemId).OrderByDescending(r => ForPick(r, picks)).ToList();
         return (all.Take(shown).ToList(), Math.Max(0, all.Count - shown));
     }
+
+    /// <summary>Whether a quest picked for the raid needs this.</summary>
+    public static bool ForPick(RequirementView need, IReadOnlySet<string>? picks) => picks is not null && need.QuestIds.Any(picks.Contains);
 
     /// <summary>The plan for one map (whether or not it ranks), e.g. for the bring-list when a raid loads.</summary>
     /// <param name="done">The objectives the player ticked as done: left out, as in <see cref="Suggest"/>.</param>

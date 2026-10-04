@@ -1480,19 +1480,37 @@ public sealed partial class MainWindow : Window
 
     // ---- the big cue: Shturmap changed its view on its own ----
 
-    // Every cue lasts 5 s; its entrance is played at 1.8 times the original pace (owner, 2026-10-02: the elements
-    // should appear more slowly, the cue shouldn't stay longer).
-    private static TimeSpan CueLength(CueKind kind) => TimeSpan.FromSeconds(5);
+    // A cue lasts 5 s; its entrance is played at 1.8 times the original pace (owner, 2026-10-02: the elements
+    // should appear more slowly, the cue shouldn't stay longer). One that pictures a kit stays 7.5 s: there are up
+    // to six things to check in it (owner, 2026-10-04: "The animation can be a bit longer").
+    private static TimeSpan CueLength(ViewCue cue) => TimeSpan.FromSeconds(cue.Kit is { Count: > 0 } ? 7.5 : 5);
     private const double CuePace = 1.8;
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
     // The kit pictured under the map's name (a raid loading, a group's pick): the cells BRING uses, at 34 px, then "+3".
+    // What the picked quests need comes first, each cell framed in the picks' cyan, then a hairline and the rest
+    // (owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted").
     private void ShowCueKit(ViewCue cue)
     {
         CueKit.Children.Clear();
-        foreach (var item in cue.Kit ?? [])
-            CueKit.Children.Add(new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 34 });
+        var kit = cue.Kit ?? [];
+        for (var i = 0; i < kit.Count; i++)
+        {
+            var item = kit[i];
+            var picture = new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 34 };
+            if (item.ForPick)
+                CueKit.Children.Add(new Border { BorderBrush = Resource("KeptBrush"), BorderThickness = new Thickness(2), Padding = new Thickness(1), Child = picture });
+            else
+                CueKit.Children.Add(picture);
+            if (item.ForPick && i + 1 < kit.Count && !kit[i + 1].ForPick)
+            {
+                CueKit.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
+                {
+                    Width = 1, Height = 26, Margin = new Thickness(2, 0, 2, 0), VerticalAlignment = VerticalAlignment.Center, Fill = Resource("LineStrongBrush"),
+                });
+            }
+        }
         if (cue.KitMore > 0)
         {
             CueKit.Children.Add(new TextBlock
@@ -1552,7 +1570,7 @@ public sealed partial class MainWindow : Window
             if (SnapshotMode)
                 return;
             _cueTimer = DispatcherQueue.CreateTimer();
-            _cueTimer.Interval = CueLength(cue.Kind);
+            _cueTimer.Interval = CueLength(cue);
             _cueTimer.IsRepeating = false;
             _cueTimer.Tick += (_, _) => CuePanel.Visibility = Visibility.Collapsed;
             _cueTimer.Start();
@@ -1576,7 +1594,7 @@ public sealed partial class MainWindow : Window
             Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(frames, property);
             story.Children.Add(frames);
         }
-        var end = CueLength(cue.Kind).TotalSeconds;
+        var end = CueLength(cue).TotalSeconds;
         const double k = CuePace;
         // Developer snapshots keep the last cue up, so it can be looked at.
         if (SnapshotMode)
