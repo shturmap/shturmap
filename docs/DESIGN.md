@@ -530,8 +530,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     The raid, its card, the status words, the cues and the last-raid line are about the raid's own map, as the
     game's log names it (the scene, then the location; `SessionSnapshot.RaidMap`). The MAP list stays usable in a
     raid, as a look: the map shows the picked map without a "you", the rail stays the raid's, and the next position
-    is plotted on the raid's map and brings it back on screen. A raid on a map the data doesn't know names no map
-    ("IN RAID · PMC · 12 MIN", "LOADING") and plots no position, with a notice saying why: the map on screen is
+    is plotted on the raid's map and brings it back on screen. A label at the top of the map says so for as long
+    as it lasts, in the preview label's style: "LOOKING AT WOODS · THE RAID IS ON CUSTOMS · YOUR NEXT POSITION SHOWS
+    IT AGAIN". A raid on a map the data doesn't know names no map ("IN RAID · PMC · 12 MIN", "LOADING"; the raid
+    card is titled "MAP NOT KNOWN") and plots no position, with a notice saying why: the map on screen is
     never taken for the raid's. A map tarkov.dev gives no scene for (Ground Zero 21+) is named by the match
     setup's or the transit line's location a moment after the scene line, and its RAID LOADING cue comes with that
     line.

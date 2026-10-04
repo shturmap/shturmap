@@ -158,16 +158,6 @@ public sealed class Reporter
 
     // ---- crashes ----
 
-    /// <summary>What to do with the crash records waiting at this start, as the setting says.</summary>
-    public CrashAction Decide(CrashMode mode, IReadOnlyList<CrashRecord> waiting)
-    {
-        // The player already said Send for these: they go without asking again.
-        var approved = waiting.Count(r => r.State == CrashState.Approved);
-        var pending = waiting.Count - approved;
-        var action = CrashPolicy.Decide(mode, pending, Configured, Muted);
-        return action == CrashAction.None && approved > 0 && Configured && !Muted ? CrashAction.Send : action;
-    }
-
     /// <summary>Sends crash records the player allowed (now or by the setting); a sent one is deleted, one that
     /// couldn't go yet is marked approved and sent at the next start.</summary>
     public async Task<ReportResult> SendCrashesAsync(IReadOnlyList<CrashRecord> records, CancellationToken ct = default)

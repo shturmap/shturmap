@@ -159,7 +159,7 @@ public sealed partial class MainWindow : Window
     private void OnClockTick()
     {
         UpdateClockTexts();
-        if (_snapshot is not { Fix: { } fix } s)
+        if (_snapshot is not { RaidFix: { } fix } s)
             return;
         var fresh = DateTime.Now - fix.At < FreshFix;
         if (fresh != _fixWasFresh)
@@ -385,7 +385,7 @@ public sealed partial class MainWindow : Window
             return;
         var elapsed = s.Raid.RaidStartedAt is { } started ? DateTime.Now - started : (TimeSpan?)null;
         // Only what the log shows: outside a raid "Not in a raid", never "in the menus" (RaidStatus).
-        ViewModel.RaidText = RaidStatus.Text(s.Raid, s.Map?.Name, DateTime.Now);
+        ViewModel.RaidText = RaidStatus.Text(s, DateTime.Now);
         ViewModel.RaidDetail = RaidStatus.Tooltip(s.Raid, DateTime.Now);
 
         var parts = new List<string>();
@@ -418,10 +418,10 @@ public sealed partial class MainWindow : Window
         }
         // The position's age, in the status bar and in the raid card's line on where its distances come from: both
         // with the clock, so they never say two ages (FixAge).
-        var age = s.Fix is { } at ? DateTime.Now - at.At : (TimeSpan?)null;
+        var age = s.RaidFix is { } at ? DateTime.Now - at.At : (TimeSpan?)null;
         ViewModel.RaidFixNote = FixAge.Note(age, ViewModel.HelpKeys);
-        ViewModel.FixText = s.Fix is { } fix && age is { } old
-            ? $"Fix {FixAge.Text(old)} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
+        ViewModel.FixText = s.RaidFix is { } fix && age is { } old
+            ? $"Fix {FixAge.Text(old)} ago · {s.RaidFloor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
             : $"No position yet · press {ViewModel.HelpKeys} in raid";
     }
 
@@ -451,9 +451,8 @@ public sealed partial class MainWindow : Window
     private void UpdatePlan(SessionSnapshot s)
     {
         var vm = ViewModel;
-        vm.LastRaidText = s.LastRaid is { } last
-            ? $"Last raid · {last.MapName} · {(int)last.Duration.TotalMinutes} min" + (last.Side == RaidSide.Unknown ? "" : $" · {(last.Side == RaidSide.Pmc ? "PMC" : "Scav")}")
-            : "";
+        // A raid the log never ended has no length to say: RaidStatus words it ("end not in the log").
+        vm.LastRaidText = s.LastRaid is { } last ? RaidStatus.LastRaid(last) : "";
 
         // The card for the map on screen is open; if that map isn't suggested, the best one is.
         var openIndex = s.Plan.ToList().FindIndex(p => p.NormalizedName == s.Map?.NormalizedName);
@@ -488,7 +487,7 @@ public sealed partial class MainWindow : Window
     /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
     /// will do (a weapon class), one of them ("e.g. Mosin rifle (Sniper) · …"); empty if unknown.</summary>
     private static string BestSource(SessionSnapshot s, RequirementView r) =>
-        s.Data is { } data ? ItemCards.BestOf(data, s.Sources, r.Kind == RequirementKind.Weapon && r.Alternatives is { Count: > 0 } all ? all : [r.ItemId]) : "";
+        s.Data is { } data ? ItemCards.BestOf(data, s.Sources, r.Kind == RequirementKind.Weapon && r.Alternatives is { Count: > 0 } all ? all : [r.ItemId], s.Quests) : "";
 
     // A weapon row names its class once the item categories are loaded ("Any sniper rifle"); the rest as given.
     private static string RowText(SessionSnapshot s, RequirementView r) =>
@@ -525,13 +524,16 @@ public sealed partial class MainWindow : Window
     private void UpdateRaidLists(SessionSnapshot s)
     {
         var vm = ViewModel;
-        var age = s.Fix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
+        var age = s.RaidFix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
         var fresh = age < FreshFix;
         _fixWasFresh = age is null ? null : fresh;
         string Direction(RelativeDirection? relative, double? mapBearing) =>
             fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
 
-        vm.RaidTitle = Caps.Of(s.Map?.Name);
+        // The raid's own map, never one that is only being looked at; a map the data doesn't know is said, not guessed.
+        vm.RaidTitle = s.RaidMapUnknown ? "MAP NOT KNOWN" : Caps.Of(s.RaidMap?.Name ?? s.Map?.Name);
+        vm.LookText = s.LooksAtAnotherMap ? $"LOOKING AT {Caps.Of(s.Map?.Name)}" : "";
+        vm.LookNote = s.LooksAtAnotherMap ? $"THE RAID IS ON {Caps.Of(s.RaidMap?.Name)} · YOUR NEXT POSITION SHOWS IT AGAIN" : "";
         // When the logs can't tell (PvE), the raid is shown as a PMC's and the tag is a switch to say otherwise.
         vm.RaidSide = s.Raid.Side switch { RaidSide.Scav => "SCAV", RaidSide.Pmc => "PMC", _ => vm.InRaid ? "PMC" : "" };
         vm.SideSwitchable = vm.InRaid && !s.SideFromLogs;
@@ -545,7 +547,7 @@ public sealed partial class MainWindow : Window
             {
                 var first = g.First();
                 var objectives = g.OrderBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
-                    .Select(o => ToItem(o, o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.Map?.Name))
+                    .Select(o => ToItem(o, o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
                     .ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
@@ -591,7 +593,7 @@ public sealed partial class MainWindow : Window
         // With picks, NEXT is the nearest objective among them (the guide line leads there too); else the nearest of all.
         var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null).ToList();
         var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
-        vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.Map?.Name);
+        vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name);
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
@@ -968,7 +970,7 @@ public sealed partial class MainWindow : Window
     /// <summary>"121 m · NE · 3 m up" for an objective on the shown map, from the last fix; empty without one.</summary>
     private string? LiveText(string objectiveId)
     {
-        if (_snapshot is not { Fix: { } fix } s || s.Objectives.FirstOrDefault(o => o.ObjectiveId == objectiveId && o.Distance is not null) is not { } o)
+        if (_snapshot is not { RaidFix: { } fix } s || s.Objectives.FirstOrDefault(o => o.ObjectiveId == objectiveId && o.Distance is not null) is not { } o)
             return null;
         var fresh = DateTime.Now - fix.At < FreshFix;
         var direction = fresh && o.Direction is { } r ? Bearing.Describe(r) : o.MapBearing is { } b ? Bearing.Compass(b) : "";

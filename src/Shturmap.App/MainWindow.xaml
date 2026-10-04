@@ -903,6 +903,14 @@
             <TextBlock Text="CLICK THE CARD TO PLAN IT" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
           </StackPanel>
         </Border>
+        <!-- In a raid, another map picked in the MAP list is a look: the rail stays the raid's, and this says so. -->
+        <Border HorizontalAlignment="Center" Padding="14,6" Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"
+                Visibility="{x:Bind ShownIf(ViewModel.LookText), Mode=OneWay}" IsHitTestVisible="False">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="{x:Bind ViewModel.LookText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
+            <TextBlock Text="{x:Bind ViewModel.LookNote, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
+          </StackPanel>
+        </Border>
         </StackPanel>
 
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4">

@@ -253,6 +253,12 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"PREVIEW · CUSTOMS" while another map is shown from a Plan card under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
 
+    /// <summary>"LOOKING AT WOODS" while another map than the raid's is on screen in a raid (the MAP list); else empty.</summary>
+    [ObservableProperty] public partial string LookText { get; set; } = "";
+
+    /// <summary>Beside <see cref="LookText"/>: where the raid is, and what brings its map back.</summary>
+    [ObservableProperty] public partial string LookNote { get; set; } = "";
+
     [ObservableProperty] public partial string LastRaidText { get; set; } = "";
 
     [ObservableProperty] public partial IReadOnlyList<PlanCard> Plans { get; set; } = [];

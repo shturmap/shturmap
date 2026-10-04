@@ -35,6 +35,20 @@ public class FollowTests
         Assert.False(follow.Fitted());
     }
 
+    // Between raids there is no position to follow: planning on the map must not switch following off for the raid.
+    [Fact]
+    public void Moving_the_map_with_no_position_on_it_leaves_following_alone()
+    {
+        var follow = new FollowState();
+        follow.Set(true);
+        Assert.False(follow.Dragged(hasPosition: false));
+        Assert.False(follow.Fitted(hasPosition: false));
+        Assert.True(follow.On);
+        // With a position, the view is taken back as before.
+        Assert.True(follow.Dragged(hasPosition: true));
+        Assert.False(follow.On);
+    }
+
     [Fact]
     public void Zooming_keeps_following_about_the_player()
     {

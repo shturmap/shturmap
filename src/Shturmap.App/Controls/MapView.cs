@@ -300,7 +300,7 @@ public sealed partial class MapView : Grid
     /// <summary>Shows the whole map; while following a position, it stops following (the player chose the view).</summary>
     public void FitMap()
     {
-        if (HasPosition && _follow.Fitted())
+        if (_follow.Fitted(HasPosition))
         {
             StopGlide();
             _centerAfterFit = false;
@@ -540,7 +540,7 @@ public sealed partial class MapView : Grid
             _dragDistance = 0;
             Hover(null, to);
             // Dragging takes the view back: following stops, so the map never fights the player.
-            if (HasPosition && _follow.Dragged())
+            if (_follow.Dragged(HasPosition))
             {
                 StopGlide();
                 _centerAfterFit = false;
