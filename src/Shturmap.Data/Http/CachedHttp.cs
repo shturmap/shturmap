@@ -126,6 +126,7 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
                 TryDelete(temp);
             }
             WriteMeta(metaPath, new Meta(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, now));
+            TryDelete(MissingNote(body));
             return new CachedResponse(body, true, false, now);
         }
         catch (IOException) when (!cached && File.Exists(body))
@@ -188,6 +189,53 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         var body = Path.Combine(cacheFolder, cacheKey);
         TryDelete(body + ".meta.json");
         TryDelete(body);
+        TryDelete(MissingNote(body));
+    }
+
+    // ---- what a server doesn't have ----
+
+    /// <summary>
+    /// How long "the server has no such file" is remembered: as long as tarkov.dev's image service lets its answers
+    /// be kept, a week (its Cache-Control on a tile, a picture and a "not found" alike; checked 2026-10-04). A tile
+    /// or picture it doesn't have was asked for again in every session (the owner, the same day: no unnecessary load
+    /// on tarkov.dev).
+    /// </summary>
+    public static readonly TimeSpan MissingAge = TimeSpan.FromDays(7);
+
+    /// <summary>Notes that the server has no file for this key (it answered "not found").</summary>
+    public void RememberMissing(string cacheKey) => NoteMissing(Path.Combine(cacheFolder, cacheKey));
+
+    /// <summary>Whether the server said within <paramref name="maxAge"/> that it has no file for this key.</summary>
+    public bool KnownMissing(string cacheKey, TimeSpan maxAge) => NotedMissing(Path.Combine(cacheFolder, cacheKey), maxAge);
+
+    private static string MissingNote(string path) => path + ".none";
+
+    /// <summary>Leaves an empty note beside where <paramref name="path"/> would be saved: the server has no such
+    /// file. A note that can't be written only means it is asked for again.</summary>
+    public static void NoteMissing(string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllBytes(MissingNote(path), []);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    /// <summary>Whether such a note is there and younger than <paramref name="maxAge"/>.</summary>
+    public static bool NotedMissing(string path, TimeSpan maxAge)
+    {
+        try
+        {
+            var note = MissingNote(path);
+            return File.Exists(note) && DateTime.UtcNow - File.GetLastWriteTimeUtc(note) < maxAge;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     // The cache is shared by every Shturmap on the PC (the installed release and developer builds; docs/DESIGN.md §8,

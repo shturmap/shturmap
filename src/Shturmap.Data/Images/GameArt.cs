@@ -32,6 +32,9 @@ public sealed class GameArt(HttpClient http, string folder)
             return Task.FromResult<string?>(null);
         if (File.Exists(PathOf(key)))
             return Task.FromResult<string?>(PathOf(key));
+        // A picture tarkov.dev said it doesn't have isn't asked for again for a week.
+        if (Http.CachedHttp.NotedMissing(PathOf(key), Http.CachedHttp.MissingAge))
+            return Task.FromResult<string?>(null);
         // One download per picture per run; a failure is not retried until the next start.
         return _loads.GetOrAdd(key, _ => DownloadAsync(UrlFor(kind, id), PathOf(key)));
     }
@@ -65,6 +68,12 @@ public sealed class GameArt(HttpClient http, string folder)
                 Http.CachedHttp.TryDelete(temp);
             }
             return path;
+        }
+        catch (HttpRequestException e) when (e.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // tarkov.dev has no picture for this id: remembered, so the next starts don't ask again.
+            Http.CachedHttp.NoteMissing(path);
+            return null;
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
         {

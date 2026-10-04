@@ -219,15 +219,17 @@ for the languages to come).
   but the picture turns soft when zooming in further, and the owner didn't want that ("I would like to avoid
   that"); the same plus deeper tiles outside raids would have left soft and sharp patches side by side in a raid.
   The website's wording follows on the owner's word.
-- **B15. For later (owner, 2026-10-04: "Check if we properly cache the maps so we don't put unneccessary load on
-  tarkov.dev").** What the code does today, from reading it: a map's SVG is kept 7 days, a tile 30 days, the data an
-  hour (items a day); after that a saved file is asked for again with its ETag or date, so an unchanged one costs a
-  short "not modified" answer, and a failed request falls back to the saved copy. Seen so far: a tile tarkov.dev
-  doesn't have (404, at a render's edge) is remembered for the session only, so it is asked for again in every
-  session. To check: how many requests a start with a full cache really sends (count them in a test client), whether
-  assets.tarkov.dev and GitHub's file hosting answer "not modified" at all (else every refresh is a full download),
-  whether an hour for the data is shorter than tarkov.dev's own update rhythm, and what item icons and portraits do.
-  Status: open (for later).
+- **B15. The caching check (owner, 2026-10-04: "Check if we properly cache the maps so we don't put unneccessary
+  load on tarkov.dev").** Status: done (2026-10-04; DESIGN.md §3, "No unnecessary load on tarkov.dev", has the
+  numbers). The cache works as meant: requests go out only at a start or a mode change, a saved copy within its
+  age costs nothing, and all three hosts answer "not modified" to an older copy's ETag (tried against each). A
+  start a day after the last is some 15 requests and about 3 MB compressed; the item sources are the largest part
+  (1.9 MB, they change every few minutes, fetched once a day). Two wastes were found and fixed: a tile or picture
+  the server doesn't have was asked for again in every session (now remembered for a week), and while the data
+  couldn't be loaded every running Shturmap asked again every 2 minutes without end (the wait now grows; with the
+  agents' round, see below). Left as they are, with the reasons in DESIGN.md: the hour for quests and maps, the
+  30 days for tiles (the service says 7 days, but tiles are files that haven't changed since January 2025 and
+  are checked with their ETag after the 30).
 - **B11. DESIGN.md against itself and the code**: §5 calls every `findItem` found-in-raid while §7 has one "that may
   be bought" (A18); §7's "a named exit" isn't what `QuestEffort` tests; §5's Trader types lack `playerLevel`; §8's
   project table gives Core "name matching" (gone) and calls it pure (`UnpackedCopies` deletes folders); the Steam

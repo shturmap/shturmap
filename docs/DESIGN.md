@@ -121,6 +121,25 @@ quoting it anywhere new.
   version without its commit; `CachedHttp.UserAgent`) and are cached with ETags (1 h, 24 h, 7 days by kind).
   Data is downloaded at runtime into the user's cache for personal use and shown with "data tarkov.dev". It is
   never bundled in the repository or a build.
+- **No unnecessary load on tarkov.dev** (owner, 2026-10-04: "Check if we properly cache the maps so we don't put
+  unneccessary load on tarkov.dev"; checked the same day against the servers). What Shturmap asks, and when:
+  - Only at a start and when the mode changes, never on a timer while it runs. A saved copy younger than its age
+    is used without a request: quests, maps and traders 1 hour; item names, item sources and `maps.json` 1 day; a
+    map's SVG 7 days; a map tile 30 days. Portraits and icons are downloaded once and kept.
+  - An older copy is asked for with its ETag. All three hosts (`json.tarkov.dev`, `assets.tarkov.dev`,
+    `raw.githubusercontent.com`) answer "not modified" to that, which costs a few hundred bytes. A file that did
+    change comes compressed: the maps file about 0.8 MB, the quests 0.4 MB, the item sources 1.9 MB (they change
+    every few minutes with the flea market's prices, hence once a day). A start a day after the last one is 13
+    requests (18 in another game language) and about 3 MB if every file changed; a second start within the hour
+    asks nothing.
+  - What the server doesn't have is remembered for a week, the time its own Cache-Control gives its answers
+    (`CachedHttp.MissingAge`): a tile or a picture that answered "not found" was asked for again in every session
+    before. A refusal (403) is not remembered: it can be a block that passes.
+  - The hour for the data stays: it only matters at a start, an unchanged file costs one small answer, and a
+    longer age would keep a corrected quest away for longer after a patch. Tiles are fetched by view (§2, "Never
+    share a position"); a whole map would be hundreds of megabytes.
+  Before anything is added that downloads more or more often (prefetching, a refresh timer, shorter ages, quicker
+  retries), count its requests and bytes per player and say them to the owner.
 - **Map geometry** comes from tarkov.dev's `maps.json` (MIT, Copyright (c) 2019 Oskar Risberg; the test fixture
   snapshot carries that notice).
 - **Map artwork** is the SVG maps by Shebuka and contributors (CC BY-NC-SA 4.0). Their README revokes the licence

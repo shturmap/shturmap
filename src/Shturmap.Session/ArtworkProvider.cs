@@ -52,14 +52,24 @@ public sealed class ArtworkProvider(ArtworkCache cache, string pictureCache, Cac
     /// <summary>A tile from tarkov.dev's image service through the disk cache, or null when it has none there.</summary>
     public static async Task<byte[]?> FetchTileAsync(CachedHttp http, string mapKey, TileKey tile, CancellationToken ct)
     {
+        var key = TileGrid.CacheKey(mapKey, tile);
+        // A tile tarkov.dev said it doesn't have isn't asked for again for a week; it used to be, in every session.
+        if (http.KnownMissing(key, CachedHttp.MissingAge))
+            return null;
         try
         {
-            var response = await http.GetAsync(new Uri(tile.Url), TileGrid.CacheKey(mapKey, tile), TileMaxAge, ct);
+            var response = await http.GetAsync(new Uri(tile.Url), key, TileMaxAge, ct);
             return await File.ReadAllBytesAsync(response.FilePath, ct);
         }
-        catch (HttpRequestException e) when (e.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Forbidden)
+        catch (HttpRequestException e) when (e.StatusCode is HttpStatusCode.NotFound)
         {
             // tarkov.dev has no tile there (an edge of the render, or a zoom it doesn't publish).
+            http.RememberMissing(key);
+            return null;
+        }
+        catch (HttpRequestException e) when (e.StatusCode is HttpStatusCode.Forbidden)
+        {
+            // No tile for this session, but not remembered: "forbidden" can be a block that passes.
             return null;
         }
     }
