@@ -540,7 +540,10 @@ public sealed partial class MainWindow : Window
                 BringLines(s, p.Requirements),
                 (i + 1).ToString(CultureInfo.InvariantCulture),
                 p.Requirements.Select(r => Chip(s, r)).ToList(),
-                sections.Picks.Select(q => OnMap(q, p)).ToList());
+                sections.Picks.Select(q => OnMap(q, p)).ToList())
+            {
+                ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
+            };
         }).ToList();
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
@@ -573,6 +576,16 @@ public sealed partial class MainWindow : Window
         (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r)).ToList();
 
     /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
+    // The same counts in a row of Plan's map list, where the heading and the card say what they count.
+    private static string ShortSummary(int complete, int progress) => (complete, progress) switch
+    {
+        (> 0, > 0) => $"Complete {complete} · progress {progress}",
+        (> 0, _) => $"Complete {complete}",
+        _ => $"Progress {progress}",
+    };
+
+    public Visibility ShownIfSeveral(IReadOnlyList<PlanCard>? plans) => plans is { Count: > 1 } ? Visibility.Visible : Visibility.Collapsed;
+
     private static string Summary(int complete, int progress)
     {
         static string Quests(int n) => n == 1 ? "1 quest" : $"{n} quests";

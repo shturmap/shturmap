@@ -117,6 +117,9 @@ public sealed record PlanCard(
 {
     public string MapTitle => Caps.Of(MapName);
 
+    /// <summary>The summary's counts for the map's row in Plan's list: "Complete 5 · progress 1".</summary>
+    public string ShortSummary { get; init; } = "";
+
     /// <summary>The quests picked for the coming raid on this map, first in the card (owner, 2026-10-03).</summary>
     public IReadOnlyList<QuestLine> Picked => Picks ?? [];
 

@@ -490,22 +490,36 @@
                   <TextBlock Text="CLEAR PICKS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
               </Grid>
-              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfNot(ViewModel.NoGameLogs), Mode=OneWay}">
+              <!-- The suggested maps as a short list, best first, always in view (review of 2026-10-04, H4: the open card
+                   is some 840 px tall and pushed the other maps' cards under the fold). The open map's row is marked;
+                   pointing at a row previews that map, a click opens its card below. One map needs no list. -->
+              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfSeveral(ViewModel.Plans), Mode=OneWay}" Margin="0,0,0,7">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
-                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,12" Margin="0,0,0,6"
-                            Background="{x:Bind CardBackground}" BorderBrush="{x:Bind CardBorder}" BorderThickness="1"
-                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick"
+                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,-1"
+                            Background="{x:Bind CardBackground}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick" AutomationProperties.Name="{x:Bind MapName}"
                             PointerEntered="OnPlanPointerEntered" PointerExited="OnPlanPointerExited">
-                      <StackPanel Spacing="3">
-                        <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
-                        <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
-                                   ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
-                        <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
-                        <!-- Folded: enough to compare without opening it. One glyph per quest (gold: complete, muted:
-                             progress), then what to bring. Each glyph is its quest for the linked highlight, each
-                             cell its item. -->
-                        <Grid Visibility="{x:Bind FoldedVisibility}" Margin="0,5,0,0" ColumnSpacing="10">
+                      <Grid ColumnSpacing="11">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="3" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                          <RowDefinition Height="Auto" />
+                          <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Rectangle Grid.RowSpan="2" Fill="{StaticResource AmberBrush}" Visibility="{x:Bind ExpandedVisibility}" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" FontSize="14" CharacterSpacing="60"
+                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,7" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind ShortSummary}" Foreground="{StaticResource AmberBrush}" FontSize="13"
+                                   VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <!-- Enough to compare without opening it (the study log: ten card clicks in 4.5 minutes to compare
+                             maps). One glyph per quest, the picks first in cyan, then those to complete, a hairline, those
+                             to progress; then what to bring. Each glyph is its quest for the linked highlight, each cell
+                             its item. The open map's row has none: its card below says it all. -->
+                        <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Visibility="{x:Bind FoldedVisibility}" Margin="0,-2,12,8" ColumnSpacing="10">
                           <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -554,6 +568,25 @@
                           </StackPanel>
                           <controls:NeedsStrip Grid.Column="1" Needs="{x:Bind Needs}" Shown="5" />
                         </Grid>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfNot(ViewModel.NoGameLogs), Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:PlanCard">
+                    <!-- Only the open map's card: the others are rows in the list above. -->
+                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,12" Margin="0,0,0,6"
+                            Visibility="{x:Bind ExpandedVisibility}"
+                            Background="{x:Bind CardBackground}" BorderBrush="{x:Bind CardBorder}" BorderThickness="1"
+                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick"
+                            PointerEntered="OnPlanPointerEntered" PointerExited="OnPlanPointerExited">
+                      <StackPanel Spacing="3">
+                        <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
+                        <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
+                                   ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
+                        <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
                         <StackPanel Visibility="{x:Bind ExpandedVisibility}">
                           <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
                                only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->

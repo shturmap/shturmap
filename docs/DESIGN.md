@@ -564,17 +564,20 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
   words with tooltips easy to point at.
 - **Rail** (left, 384 px), content by state:
-  - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
-    line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
-    BRING (keys, items to bring). Each quest row there is the quest's name, then a quiet line of what it asks on
+  - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, as a short list
+    that stays in view, then the open map's card: its line in words ("Complete 7 quests · progress 2 more") with
+    COMPLETE, PROGRESS and BRING (keys, items to bring). A row of the list is the map's name and its counts
+    ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map there is
+    no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps' folded cards sat
+    under it, below the fold). Each quest row in the card is the quest's name, then a quiet line of what it asks on
     that map in a few words, at most two lines and then "…" ("Ballet Lover" over "Find balletmeister's apartment ·
     Survive and extract"; see §5, "Quest synopsis"). The raid card keeps names only: its objective lines already
     say what to do. COMPLETE and PROGRESS are each in effort order, with a thin hairline where a later group starts
-    and no headings (§7, "Plan order"); the raid card stays nearest first. Clicking another map expands it and
-    shows it on the map; that click is optional.
-    Folded cards carry enough to compare without opening them (the study log: ten card clicks in 4.5 minutes to
-    compare maps): one quest-type glyph per quest, all gold, those to complete first, then a hairline, then those
-    to progress, and up to five cells of what to bring.
+    and no headings (§7, "Plan order"); the raid card stays nearest first. Pointing at another map's row previews
+    it on the map; clicking it opens its card and shows it; that click is optional.
+    The rows of the maps that aren't open carry enough to compare without opening them (the study log: ten card
+    clicks in 4.5 minutes to compare maps): one quest-type glyph per quest, all gold, those to complete first, then
+    a hairline, then those to progress, and up to five cells of what to bring.
     **PROGRESS is not less important** (owner, 2026-10-03: muted PROGRESS rows "suggest less importance", while
     these quests are as much this raid's work). Rows in PROGRESS, in ANY MAP and in the raid card's PROGRESS look
     exactly like COMPLETE rows: gold glyph, ink name, trader portrait and bring cells at full strength. The section
