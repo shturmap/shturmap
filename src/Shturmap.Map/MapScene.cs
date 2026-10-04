@@ -78,15 +78,45 @@ public sealed class MapScene
     /// <summary>Where the artwork sits in map units; default when there is no artwork.</summary>
     public SvgPlacement Placement { get; }
 
+    /// <summary>
+    /// Counts the changes to what a frame's layout is made from (markers, zones, the player, the picks, the focus, the
+    /// floor, labels on or off), so that the renderer can keep the last layout while it stands
+    /// (<see cref="MapRenderer.LayoutOf"/>). Every setter that feeds the layout counts; a new one must too.
+    /// </summary>
+    internal int LayoutVersion { get; private set; }
+
+    /// <summary>The last frame's layout with what it was made from (<see cref="MapRenderer.LayoutOf"/>).</summary>
+    internal (MapRenderer.LayoutKey Key, MapRenderer.MapLayout Layout)? LastLayout { get; set; }
+
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>
-    public MapLayer? Floor { get; set; }
+    public MapLayer? Floor
+    {
+        get => _floor;
+        set
+        {
+            _floor = value;
+            LayoutVersion++;
+        }
+    }
+
+    private MapLayer? _floor;
 
     /// <summary>The map's floors with artwork of their own, top first (the base layer as null); empty without floors.</summary>
     public IReadOnlyList<MapLayer?> FloorStack => _floorStack ??= FloorResolver.Stack(Definition);
 
     private IReadOnlyList<MapLayer?>? _floorStack;
 
-    public PlayerFix? Player { get; set; }
+    public PlayerFix? Player
+    {
+        get => _player;
+        set
+        {
+            _player = value;
+            LayoutVersion++;
+        }
+    }
+
+    private PlayerFix? _player;
 
     /// <summary>Earlier fixes in this raid, oldest first.</summary>
     public IReadOnlyList<WorldPoint> Trail { get; set; } = [];
@@ -98,6 +128,7 @@ public sealed class MapScene
         {
             _markers = value;
             _focusShown = null;
+            LayoutVersion++;
         }
     }
 
@@ -110,6 +141,8 @@ public sealed class MapScene
         {
             _zones = value;
             _focusShown = null;
+            // No zone is laid out, but whether the focus shows on this map can turn on one.
+            LayoutVersion++;
         }
     }
 
@@ -139,6 +172,7 @@ public sealed class MapScene
         {
             _kept = value.Count == 0 ? Nothing : value;
             _keptKeys = KeysOf(_kept);
+            LayoutVersion++;
         }
     }
 
@@ -165,6 +199,7 @@ public sealed class MapScene
             _questKeys = value;
             _keptKeys = KeysOf(_kept);
             Focus = _focusAsked;
+            LayoutVersion++;
         }
     }
 
@@ -198,6 +233,7 @@ public sealed class MapScene
             var same = shown.SetEquals(_focus);
             _focus = shown;
             _focusShown = null;
+            LayoutVersion++;
             if (FocusShown && !same)
                 FocusSince = DateTime.Now;
             if (FocusShown)
@@ -229,6 +265,7 @@ public sealed class MapScene
             if (value == _focusObjective)
                 return;
             _focusObjective = value;
+            LayoutVersion++;
             if (!FocusShown)
                 return;
             // Another objective of the same quest: its pulse starts anew, as a new focus's does.
@@ -307,5 +344,15 @@ public sealed class MapScene
     /// </summary>
     public IReadOnlyList<WorldPoint> Containers { get; set; } = [];
 
-    public bool ShowLabels { get; set; } = true;
+    public bool ShowLabels
+    {
+        get => _showLabels;
+        set
+        {
+            _showLabels = value;
+            LayoutVersion++;
+        }
+    }
+
+    private bool _showLabels = true;
 }

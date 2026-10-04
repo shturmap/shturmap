@@ -8,8 +8,11 @@ namespace Shturmap.App.Rules;
 /// </summary>
 public static class FixAge
 {
-    /// <summary>Facing-relative directions are only true briefly after a fix; past this they turn into map directions.</summary>
-    public static readonly TimeSpan Fresh = TimeSpan.FromSeconds(45);
+    /// <summary>
+    /// Facing-relative directions are only true briefly after a fix; past this they turn into map directions. The
+    /// same duration the map draws the facing cone for (<see cref="Shturmap.Core.Navigation.Facing.Fresh"/>).
+    /// </summary>
+    public static readonly TimeSpan Fresh = Shturmap.Core.Navigation.Facing.Fresh;
 
     /// <summary>"12 s", "4 min", "2 h": whole units, never rounded up.</summary>
     public static string Text(TimeSpan age) =>

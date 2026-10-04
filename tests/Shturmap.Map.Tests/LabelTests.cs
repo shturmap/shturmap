@@ -41,6 +41,23 @@ public class LabelTests
         Assert.Empty(layout.Names);
     }
 
+    // The review of 2026-10-04 (C5): a boss's label was red where every other label is ink. The red octagon is the
+    // danger sign; the label reads like the others, and takes its marker's colour only while pointed at, as theirs do.
+    [Fact]
+    public void A_bosss_label_is_ink_like_every_other_at_rest()
+    {
+        var boss = new MapMarker("boss:bossBoar:Z", MarkerKind.BossSpawn, new WorldPoint(0, 0, 0), "Kaban 75% · 50% here", "boss:bossBoar");
+        var (camera, scene) = View([boss, Quest("q", 0, 200, "Dandies"), new MapMarker("extract:1", MarkerKind.ExtractPmc, new WorldPoint(0, 0, -200), "Gate")]);
+        var labels = MapRenderer.Layout(camera, scene, 1).Labels;
+        Assert.Equal(3, labels.Count);
+        Assert.All(labels, l => Assert.Equal(SKColor.Parse(Palette.Ink), l.Color));
+        Assert.Equal("Kaban 75% · 50% here", labels.Single(l => l.Of.Marker.Kind == MarkerKind.BossSpawn).Text);
+
+        scene.Focus = new HashSet<string> { "boss:bossBoar" };
+        var pointed = MapRenderer.Layout(camera, scene, 1).Labels.Single(l => l.Of.Marker.Kind == MarkerKind.BossSpawn);
+        Assert.Equal(SKColor.Parse(Palette.Red), pointed.Color);
+    }
+
     [Fact]
     public void Bosses_are_labelled_before_quests()
     {

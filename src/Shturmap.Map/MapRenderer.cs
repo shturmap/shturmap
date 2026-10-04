@@ -62,7 +62,7 @@ public static partial class MapRenderer
         if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
-        var layout = Layout(camera, scene, uiScale);
+        var layout = LayoutOf(camera, scene, uiScale);
         foreach (var name in layout.Names)
             DrawMapName(canvas, name, uiScale);
         var hazardLabels = new List<(string Text, SKPoint At)>();
@@ -242,6 +242,29 @@ public static partial class MapRenderer
         public IReadOnlyList<EdgeChevron> Chevrons { get; init; } = [];
     }
 
+    /// <summary>What a layout is made from, apart from the scene's own data, which <see cref="MapScene.LayoutVersion"/> counts.</summary>
+    /// <param name="Fading">Whether the last focus is still drawn while its dimming fades out (<see cref="MapScene.ShownFocus"/>).</param>
+    /// <param name="Age">The age tag beside the player and on the guide's plate: the one part that follows the clock.</param>
+    internal readonly record struct LayoutKey(int Scene, MapPoint Center, double Zoom, SKSize Viewport, float Ui, bool Fading, bool Sheet, string Age);
+
+    /// <summary>
+    /// The layout for a frame: the last frame's while nothing it is made from changed, else a new one
+    /// (<see cref="Layout"/>). While a pointed-at quest pulses or a new position pings, the map is drawn again about 60
+    /// times a second and nothing in it moves; placing every marker and label anew for each of those frames was most
+    /// of a frame's work (the review of 2026-10-04, A17). The view, the display's scale and the scene's data decide
+    /// the layout; the clock only through the player's age tag, which changes with the minute.
+    /// </summary>
+    public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui)
+    {
+        var age = scene.Player is { } player && DateTime.Now - player.At is var old && old >= PlayerOld ? AgeTag(old).Text : "";
+        var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age);
+        if (scene.LastLayout is { } last && last.Key == key)
+            return last.Layout;
+        var layout = Layout(camera, scene, ui);
+        scene.LastLayout = (key, layout);
+        return layout;
+    }
+
     /// <summary>
     /// Places symbols first, then labels by priority (cartography review, 2026-10-02): the kept or pointed-at quest,
     /// bosses, quests, extracts and transits, snipers, and the map's own names last. Each marker label tries right,
@@ -312,7 +335,10 @@ public static partial class MapRenderer
             if (box is not { } placed)
                 continue;
             taken.Add(placed);
-            var color = m.Selected ? m.Color : m.Marker.Kind == MarkerKind.BossSpawn ? Red : Ink;
+            // Ink for every label at rest, a boss's too: its red octagon is the danger sign, and red type on the dark
+            // ground read worse than any other label (the review of 2026-10-04). What is picked or pointed at takes its
+            // marker's colour.
+            var color = m.Selected ? m.Color : Ink;
             labels.Add(new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected, color, m));
         }
 
@@ -686,14 +712,15 @@ public static partial class MapRenderer
     }
 
     // The other-floor arrow: a small dark disc with a chevron pointing up or down; two or more floors away, a small
-    // plate with the chevron and the number of floors.
+    // plate with the chevron and the number of floors. In the marker's own colour, like its count and OPT badges: a
+    // marker's badges are the marker's (the review of 2026-10-04: it was the player's sand, which says "you").
     private static void DrawFloorArrow(SKCanvas canvas, ShownMarker m, float ui)
     {
         var c = FloorBadgeCenter(m, ui);
         var offset = m.Floor;
         using var plate = new SKPaint { Color = Background, IsAntialias = true };
-        using var rim = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
-        using var fill = new SKPaint { Color = Player, IsAntialias = true };
+        using var rim = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
+        using var fill = new SKPaint { Color = m.Color, IsAntialias = true };
         var count = Math.Abs(offset);
         if (count > 1)
         {
@@ -722,7 +749,8 @@ public static partial class MapRenderer
     {
         MapMarker? best = null;
         var bestDistance = float.MaxValue;
-        foreach (var shown in ShownMarkers(camera, scene, ui))
+        // The markers of the frame on screen (LayoutOf): a pointer moving over a still map places nothing anew.
+        foreach (var shown in LayoutOf(camera, scene, ui).Markers)
         {
             var marker = shown.Marker;
             // Scav and sniper zones say nothing more on hover.
@@ -929,7 +957,6 @@ public static partial class MapRenderer
             canvas.DrawCircle(p, 3 * ui, dot);
     }
 
-    // Where the item the pointer is on lies loose: small open squares, like an empty inventory cell.
     /// <summary>How strongly a lock's or switch's glyph is drawn when not pointed at (level 4).</summary>
     private const byte LandmarkAlpha = 200;
 
@@ -1017,12 +1044,15 @@ public static partial class MapRenderer
         return new SKPoint((float)((map.X - place.OffsetX) / place.Scale), (float)((map.Y - place.OffsetY) / place.Scale));
     }
 
+    // Where the item the pointer is on lies loose: small open squares, like an empty inventory cell. In ink, as the
+    // padlocks of a key pointed at and the container dots are: what the map's data has, neither a quest's nor the
+    // player's (the review of 2026-10-04: they were the player's sand).
     private static void DrawSpawns(SKCanvas canvas, Camera camera, MapScene scene, float ui)
     {
         if (scene.Spawns.Count == 0)
             return;
         using var cell = new SKPaint { Color = Background.WithAlpha(200), IsAntialias = true };
-        using var edge = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui };
+        using var edge = new SKPaint { Color = Ink, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f * ui };
         var half = 5f * ui;
         foreach (var spawn in scene.Spawns)
         {
@@ -1585,8 +1615,9 @@ public static partial class MapRenderer
         canvas.DrawCircle(at, PlayerRing * ui, band);
         canvas.DrawCircle(at, PlayerRing * ui, ring);
 
-        // The facing is only true for a moment; after a minute the cone would mislead.
-        if (player.YawDegrees is { } yaw && age < TimeSpan.FromSeconds(60))
+        // The facing is only true for a moment; past that the cone would mislead. As long as the cards say directions
+        // relative to it (Facing.Fresh).
+        if (player.YawDegrees is { } yaw && age < Shturmap.Core.Navigation.Facing.Fresh)
         {
             var heading = (float)scene.Projection.ScreenHeadingDegrees(player.Position, yaw);
             canvas.Save();
