@@ -29,14 +29,40 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
 
     private readonly TimeSpan _bodyIdleLimit = bodyIdleLimit ?? BodyIdleLimit;
 
-    public static HttpClient CreateClient()
+    public static HttpClient CreateClient() => CreateClient(new SocketsHttpHandler { AutomaticDecompression = DecompressionMethods.All });
+
+    /// <summary>The app's client over a given transport (tests give their own): only <see cref="Hosts"/> are asked.</summary>
+    public static HttpClient CreateClient(HttpMessageHandler transport)
     {
-        var client = new HttpClient(new SocketsHttpHandler { AutomaticDecompression = DecompressionMethods.All })
+        var client = new HttpClient(new PublicDataOnly(transport))
         {
             Timeout = TimeSpan.FromSeconds(60),
         };
         client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         return client;
+    }
+
+    /// <summary>
+    /// The hosts Shturmap's downloads go to: tarkov.dev's data and its images, and the map definitions on GitHub. The
+    /// code names no other address (SafetyTests), but some addresses come out of the data: maps.json gives each map's
+    /// artwork and tile paths, and it is a file in someone else's repository. A changed file must not be able to send
+    /// every Shturmap to another host, to plain http or into the local network (review of 2026-10-04).
+    /// </summary>
+    public static readonly IReadOnlySet<string> Hosts =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "json.tarkov.dev", "assets.tarkov.dev", "raw.githubusercontent.com" };
+
+    /// <summary>Whether a download may go to this address: https, to one of <see cref="Hosts"/>.</summary>
+    public static bool Allows(Uri? uri) => uri is { IsAbsoluteUri: true } && uri.Scheme == Uri.UriSchemeHttps && Hosts.Contains(uri.IdnHost);
+
+    // Refuses before anything is sent. (A redirect one of these hosts answers with is followed by the transport
+    // below this: where their own files live is theirs to say.)
+    private sealed class PublicDataOnly(HttpMessageHandler transport) : DelegatingHandler(transport)
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Allows(request.RequestUri)
+                ? base.SendAsync(request, ct)
+                : Task.FromException<HttpResponseMessage>(new HttpRequestException(
+                    $"Not asked: {request.RequestUri?.Scheme}://{request.RequestUri?.Host} is not where Shturmap's data comes from"));
     }
 
     /// <summary>

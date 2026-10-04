@@ -35,7 +35,11 @@ only while Shturmap's own window has focus.
 
 Over the network it downloads public data and art (tarkov.dev, the map artwork), and nothing about the player
 leaves the PC unless the player sends a report or allows crash reports (§8, "Reports"). `SafetyTests` fails if the
-code names any other address, or if anything but the reporting code uses Sentry.
+code names any other address, or if anything but the reporting code uses Sentry. Some addresses come out of the
+data instead (maps.json gives each map's artwork and tile paths), so the app's download client itself asks only
+`json.tarkov.dev`, `assets.tarkov.dev` and `raw.githubusercontent.com`, over https, and refuses anything else before
+a request is sent (`CachedHttp.Hosts`; review of 2026-10-04: a changed maps.json could have pointed every Shturmap at
+another host).
 
 BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text of 2026-06-15) forbids "outside
 software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game
