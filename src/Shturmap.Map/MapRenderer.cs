@@ -390,7 +390,9 @@ public static partial class MapRenderer
     /// <summary>
     /// The markers drawn in this view, in drawing order: places of one objective whose markers would overlap (closer
     /// than two marker widths) merge into one at the group's medoid, a real place, with their count; groups split as
-    /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view).
+    /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view),
+    /// and before places are merged: a group that runs out of view keeps a marker for its places in view, at one of
+    /// them. Merged first, the whole group went when its middle place was out of view (the review of 2026-10-04).
     /// </summary>
     public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui)
     {
@@ -400,6 +402,7 @@ public static partial class MapRenderer
         // show anyway, with their floor arrow (The Lab's other floors would otherwise cover the sheet with arrows).
         var landmarks = scene.IsSheet || ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom;
         var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui)))
+            .Where(s => view.Contains(s.Shown.At))
             .Where(s => !IsLandmark(s.Shown.Marker.Kind) || s.Shown.Selected || (landmarks && s.Shown.Floor == 0))
             .ToList();
         var result = new List<(int Index, ShownMarker Shown)>();
@@ -420,7 +423,6 @@ public static partial class MapRenderer
             }
         }
         return result
-            .Where(r => view.Contains(r.Shown.At))
             .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
             .ThenBy(r => r.Index)
             .Select(r => r.Shown)

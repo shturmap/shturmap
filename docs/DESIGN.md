@@ -758,7 +758,9 @@ spawns below).
   Bread Crumbs" lists 16 places on The Lab, which piled up with four labels. Groups split as the view zooms in;
   places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
   too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
-  pointing at a cluster points at its quest.
+  pointing at a cluster points at its quest. Only places in view are merged, so a group that runs out of view keeps
+  a marker for the ones in view, with their count (the review of 2026-10-04: merged first, the whole group went when
+  its middle place was out of view).
 - **Places out of view.** While quests are picked, or one is pointed at, their places outside the view are shown
   as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
   whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,
