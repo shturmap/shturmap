@@ -10,9 +10,12 @@ public enum LegendSymbol
 {
     Player,
     PlayerOutOfView,
+    Ping,
     KeptQuest,
+    KeptLock,
     Guide,
     OutOfView,
+    PointedOutOfView,
     Objective,
     PossibleLocation,
     Cluster,
@@ -63,10 +66,15 @@ public static class MapLegend
         var picked = places.Any(m => m.Group is { } quest && scene.Kept.Contains(quest));
         If(scene.Player is not null, LegendSymbol.Player);
         If(scene.Player is not null, LegendSymbol.PlayerOutOfView);
+        // A position on this map: the next one pings here.
+        If(scene.Player is not null, LegendSymbol.Ping);
         If(picked, LegendSymbol.KeptQuest);
+        If(scene.Markers.Any(m => m.Kind == MarkerKind.Lock && m.Group is not null && scene.KeptKeys.Contains(m.Group)), LegendSymbol.KeptLock);
         If(picked && scene.Player is not null, LegendSymbol.Guide);
-        // Chevrons point to the places of a picked or pointed-at quest that are out of view: any quest place may get one.
-        If(places.Count > 0, LegendSymbol.OutOfView);
+        // Chevrons point to places out of view: cyan to a pick's, so only where a pick has a place; gold to those of
+        // the quest pointed at, and any quest with a place here can be pointed at.
+        If(picked, LegendSymbol.OutOfView);
+        If(places.Count > 0, LegendSymbol.PointedOutOfView);
         If(kinds.Contains(MarkerKind.Objective), LegendSymbol.Objective);
         If(kinds.Contains(MarkerKind.PossibleLocation), LegendSymbol.PossibleLocation);
         // Marker ids are "objective:<id>:<n>": two places of one objective can merge into a cluster.
@@ -96,11 +104,14 @@ public static class MapLegend
 
     public static IReadOnlyList<Row> Rows { get; } =
     [
-        new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it, from two minutes framed and marked OLD (\"7 MIN OLD\"); for the first minute a cone shows which way you faced."),
+        new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it, from two minutes framed and marked OLD (\"7 MIN OLD\"); for the first 45 seconds a cone shows which way you faced."),
         new(LegendSymbol.PlayerOutOfView, "You, out of view: click it or press F to show your position."),
+        new(LegendSymbol.Ping, "A new position: sand rings leave your marker for a few seconds, or its badge at the edge when you are out of view."),
         new(LegendSymbol.KeptQuest, "A quest you picked for the coming raid (its pen in the list): cyan, larger, ringed. Everything else stays as it is."),
+        new(LegendSymbol.KeptLock, "A door one of your picks needs a key for: a cyan padlock, with its key's short name at any zoom."),
         new(LegendSymbol.Guide, "From you to the nearest place of your picks: a dashed cyan line with the distance, as old as your position."),
-        new(LegendSymbol.OutOfView, "Picked places out of view: a chevron at the edge, and how many lie that way."),
+        new(LegendSymbol.OutOfView, "Picked places out of view: a cyan chevron at the edge, and how many lie that way."),
+        new(LegendSymbol.PointedOutOfView, "Places of the quest you point at, out of view: a gold chevron at the edge, and how many lie that way."),
         new(LegendSymbol.Objective, "Quest objective: a gold disc; its glyph is the quest type."),
         new(LegendSymbol.PossibleLocation, "One of the places it can be: a hollow gold ring."),
         new(LegendSymbol.Cluster, "Places of one objective close together: one marker with their count. Zoom in to split them."),
@@ -118,7 +129,7 @@ public static class MapLegend
         new(LegendSymbol.Hazard, "An area that kills you, from the map's data: Labyrinth's traps, and minefields and the border snipers' zones (\"SNIPER ZONE\" when you zoom in) where the map's picture doesn't show them: a hatched outline."),
         new(LegendSymbol.OtherFloor, "On another floor: up or down, with the number of floors when it is more than one."),
         new(LegendSymbol.Trail, "Your earlier positions in this raid: a dashed sand line."),
-        new(LegendSymbol.LooseItem, "Where an item lies loose, while you point at it: a sand square."),
+        new(LegendSymbol.LooseItem, "Where an item lies loose, while you point at it: a small open square."),
         new(LegendSymbol.Containers, "On a map without artwork, where loot containers stand: faint dots, which trace its rooms and corridors."),
         new(LegendSymbol.Sheet, "A map without artwork: a sheet with a 10 m grid, drawn from data only."),
     ];
@@ -171,9 +182,24 @@ public static partial class MapRenderer
                 scene.Player = new PlayerFix(At(1000, 0), null, DateTime.Now);
                 DrawEdge(canvas, camera, scene, ui * 0.7f);
                 break;
+            case LegendSymbol.Ping:
+            {
+                // The two still rings a ping shows with animation effects off, around the player's disc.
+                var u = ui * 0.4f;
+                DrawPing(canvas, center, 0, animate: false, u);
+                using var body = new SKPaint { Color = Player, IsAntialias = true };
+                canvas.DrawCircle(center, 6.5f * u, body);
+                break;
+            }
             case LegendSymbol.KeptQuest:
                 scene.Kept = new HashSet<string> { "legend" };
                 Marker(Quest(MarkerKind.Objective), 0.7f);
+                break;
+            case LegendSymbol.KeptLock:
+                // The door of a key a picked quest needs: the lock's group is the key's, which the quest names.
+                scene.QuestKeys = new Dictionary<string, IReadOnlyList<string>> { ["legend"] = ["key:legend"] };
+                scene.Kept = new HashSet<string> { "legend" };
+                Marker(new MapMarker("lock", MarkerKind.Lock, At(0, 0), "", "key:legend"), 1.3f);
                 break;
             case LegendSymbol.Guide:
             {
@@ -189,6 +215,9 @@ public static partial class MapRenderer
             }
             case LegendSymbol.OutOfView:
                 DrawChevron(canvas, new EdgeChevron(new SKPoint(center.X + 10 * ui, center.Y), 0, 2, Kept), ui);
+                break;
+            case LegendSymbol.PointedOutOfView:
+                DrawChevron(canvas, new EdgeChevron(new SKPoint(center.X + 10 * ui, center.Y), 0, 2, Amber), ui);
                 break;
             case LegendSymbol.Objective:
                 Marker(Quest(MarkerKind.Objective));

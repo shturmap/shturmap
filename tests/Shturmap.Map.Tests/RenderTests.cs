@@ -41,6 +41,43 @@ public class RenderTests
         Near("#b7b77a", bitmap.GetPixel(503, 502));
     }
 
+    // The facing cone shows as long as the cards say directions relative to the facing, and no longer (the review of
+    // 2026-10-04, B9: the cone stayed for 60 s, the directions for 45 s). Its arrow stands outside the marker's ring,
+    // in full sand; without the cone nothing between the ring and 22 px out is.
+    [Theory]
+    [InlineData(-10, true)]
+    [InlineData(10, false)]
+    public void The_facing_cone_goes_when_the_cards_stop_saying_ahead(int secondsPastFresh, bool cone)
+    {
+        var (camera, scene) = Of([]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), 0, DateTime.Now - Shturmap.Core.Navigation.Facing.Fresh - TimeSpan.FromSeconds(secondsPastFresh));
+        using var bitmap = Render(scene, camera);
+        var arrow = false;
+        for (var y = 476; y <= 524; y++)
+        {
+            for (var x = 476; x <= 524; x++)
+            {
+                var r = Math.Sqrt((x - 500) * (x - 500) + (y - 500) * (y - 500));
+                arrow |= r is >= 17 and <= 22 && bitmap.GetPixel(x, y).Red > 200;
+            }
+        }
+        Assert.Equal(cone, arrow);
+        Assert.Equal(TimeSpan.FromSeconds(45), Shturmap.Core.Navigation.Facing.Fresh);
+    }
+
+    [Fact]
+    public void A_loose_items_square_is_ink()
+    {
+        var (camera, scene) = Of([]);
+        scene.Spawns = [new WorldPoint(0, 0, 0)];
+        var bitmap = new SKBitmap(new SKImageInfo(1000, 1000, SKColorType.Rgba8888, SKAlphaType.Premul));
+        using (var canvas = new SKCanvas(bitmap))
+            MapRenderer.Render(canvas, camera, scene, 2);
+        // At twice the size the square's edge is 3 px wide, centred 10 px left of the place.
+        using (bitmap)
+            Near(Palette.Ink, bitmap.GetPixel(490, 500));
+    }
+
     [Fact]
     public void The_trail_is_drawn_in_the_players_sand()
     {

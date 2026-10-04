@@ -255,7 +255,10 @@ quoting it anywhere new.
    it (see "Map drawing"). No "you may be
    anywhere in here" ring: it was tried and is visual noise. Directions relative to your facing
    ("ahead-left") are shown only for 45 s after a fix; after that they become map directions ("NE", map-up is
-   north), which stay true while you move. Distances say how old they are. **A new fix moves the view only while
+   north), which stay true while you move. The map's facing cone shows for the same 45 s, from the same constant
+   (`Facing.Fresh`; the review of 2026-10-04: the cone stayed for 60 s, so for a quarter of a minute it still pointed
+   "ahead" when the cards no longer said so. The shorter of the two, since the facing is only true for a moment).
+   Distances say how old they are. **A new fix moves the view only while
    Follow my position is on** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should
    smooth scroll to the updated player position"). It replaces the rule of 2026-10-01, "a new fix never moves the
    view", made when the study log showed the player zooming back out within seconds of every automatic framing; so
@@ -352,7 +355,7 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `Line` | `#2A2B27` | hairlines | LineColor · sheet grid · `--line` |
 | `LineStrong` | `#45463F` | the stronger hairline of what is selected; frames | LineStrongColor · sheet edge · `--line-strong` |
 | `Cell` | `#1A1B18` | the inventory cell behind item icons | CellColor · — · — |
-| `Ink` | `#D9D5C4` | text | InkColor · labels · `--ink` |
+| `Ink` | `#D9D5C4` | text; on the map every label, and the symbols that are neither a quest's nor the player's (spawn rings, padlocks, switches, an item's loose spots) | InkColor · labels, Ink · `--ink` |
 | `Muted` | `#8A8778` | secondary text; what happens after the raid or at a trader; done objectives | MutedColor · Muted · `--muted` |
 | `Amber` | `#C9AD62` | the one accent: quests, objectives, distances, "on" | AmberColor, SystemAccentColor · Amber · `--amber` |
 | `AmberHover` | `#D6BE7E` | the accent under the pointer | SystemAccentColorLight1 · — · `--amber-hover` |
@@ -363,7 +366,7 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | KhakiColor · Lime · — |
 | `Violet` | `#9C8CC4` | transits | VioletColor · Violet · — |
 | `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
-| `Sand` | `#E9E2C8` | the player and their trail | SandColor · Player · `--sand` |
+| `Sand` | `#E9E2C8` | the player: the marker, the trail, the ping, the edge badge, and nothing else | SandColor · Player · `--sand` |
 | `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
 | `LightGround` | `#F1F0EC` | the logo's light background | brand |
 | `LightInk` | `#1E1F1B` | the logo's ink on light | brand, README light mode |
@@ -485,7 +488,11 @@ needs, the quests a pointed-at item is for); an item that merely shares a quest 
 of its quests; `LinkStrength`); map markers
 not in focus step back by kind (see "Map drawing", "Stepping back"), easing in and out over 0.18 s, and the focused
 ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
-easing, when Windows' animation effects are off, and only while something is in focus). Losing the focus waits
+easing, when Windows' animation effects are off, and only while something is in focus). A pulse or a ping draws the
+map again about 60 times a second and moves nothing, so a frame's layout (which marker, badge and label goes where)
+is kept from frame to frame while what it is made from stands: the view, the display's scale, the scene's data and
+the minute of the player's age tag (`MapRenderer.LayoutOf`, `MapScene.LayoutVersion`; the review of 2026-10-04: every
+frame placed every marker and label anew). The marker under the pointer is looked up in the same layout. Losing the focus waits
 0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
 of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
 any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
@@ -513,7 +520,8 @@ Markers on another floor than the one shown are drawn at full strength, highligh
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
 with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
-down alone didn't say how far; cartography review, 2026-10-02). Badge places are fixed: the floor at the upper
+down alone didn't say how far; cartography review, 2026-10-02). A marker's badges wear the marker's own colour: the
+floor badge like the count and "OPT" (the review of 2026-10-04: it was the player's sand, which says "you"). Badge places are fixed: the floor at the upper
 right, a cluster's count at the lower right, an optional objective's "OPT" at the upper left; beside small symbols
 (Scav and sniper zones, bosses) the floor badge moves out so the symbol stays visible. Spawn zone markers carry it
 too, by the height of their centroid.
@@ -908,7 +916,10 @@ spawns below).
   (Lighthouse, Icebreaker), Raiders (Reserve, The Lab), cultists (Customs, Woods, Shoreline, Night Factory, Ground Zero
   21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled with the two
   numbers the data gives, the chance on the map and, for one with several zones, that zone's share: "Kollontay 75% ·
-  50% here", "Kaban 75%"; never their product, since the data doesn't say the share is conditional. Several entries
+  50% here", "Kaban 75%"; never their product, since the data doesn't say the share is conditional. The label is ink
+  like every other label (the review of 2026-10-04: it was red, which read worse on the dark ground than any other
+  label; the octagon is the danger sign), and red only while the marker is pointed at, as any label takes its
+  marker's colour then. Several entries
   of one name at one place say their chances in one line, highest first ("Rogue 100%, 90%, 50%" at Lighthouse's
   Chalet: groups that may each spawn). A zone split in groups says this once, on its largest group; the others are
   bare octagons that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
@@ -951,12 +962,17 @@ spawns below).
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
   the position is a minute old the ring turns dashed and a small dark tag beside it gives the age in whole units,
-  as the top bar does ("4 MIN", "2 H"). The facing cone (first minute only) has its arrow outside the ring.
+  as the top bar does ("4 MIN", "2 H"). The facing cone has its arrow outside the ring, and shows for the 45 s the
+  cards' directions are relative to the facing (principle 8, `Facing.Fresh`; until the review of 2026-10-04 for 60 s).
 - **One meaning per colour, shape as a second cue.** Simulated colour blindness (Machado 2009) put the quest amber,
   the PMC-extract green and the shared-extract khaki within ΔE 4–7 of each other. Shared extracts are split down
   the middle by a dark line (two sides, one exit), not hollow (hollow means "one of these places"). Done
   objectives are a smaller muted-ink disc with a check mark, no longer translucent green, so green means extracts
-  only; their zones turn muted too. The trail is the player's sand, no longer the Scav-extract teal.
+  only; their zones turn muted too. The trail is the player's sand, no longer the Scav-extract teal. Sand is the
+  player's alone (the review of 2026-10-04: other-floor badges and the squares of an item's loose spots were sand
+  too): a marker's floor badge wears the marker's colour, as its count and "OPT" badges do, and a loose spot's open
+  square is ink, like the padlocks a key pointed at lights and the container dots: what the map's data has, neither
+  a quest's nor the player's.
 - **Clusters of one objective's places.** Places of one objective (and one kind) whose markers would overlap,
   closer than two marker widths on screen, merge into one marker at the group's medoid (a real place, so the
   marker never stands where nothing is) with a count badge at its lower right in the marker's colour: "Following the
@@ -975,12 +991,17 @@ spawns below).
   per symbol, made with the map's own drawing code at twice the DIP size), so they can't drift from the map; the
   hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
   four levels, every symbol on the map has one (the done objective, quest zones, the floor arrow, the guide line
-  and its plate, the trail, the edge badge and chevrons, clusters and the sheet were missing), and each names
+  and its plate, the trail, the edge badge and chevrons, clusters and the sheet were missing; and until the review
+  of 2026-10-04 the gold chevrons of a pointed-at quest, the cyan padlock of a door a pick needs a key for, and the
+  ping of a new position), and each names
   shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change, and a line in
   `MapLegend.On`. Help lists the symbols the map on screen has under ON THIS MAP, and the others behind one link,
   "SHOW THE n SYMBOLS THIS MAP DOESN'T HAVE" (owner, 2026-10-04; every symbol of every map made help 2,350 px tall).
   A symbol counts when the scene holds what it stands for (`MapLegend.On`): a padlock when the map has locks, the
-  guide line when a pick has a place here and there is a position, the sheet when there is no artwork. The list
+  guide line when a pick has a place here and there is a position, the sheet when there is no artwork. What only
+  shows for a moment counts where its cause can occur: the ping wherever there is a position, the cyan chevrons and
+  the cyan padlock where a pick has a place or a door here, the gold chevrons wherever a quest has a place (any of
+  them can be pointed at). The list
   follows the map while help is open; with no map up, all rows stand under ON THE MAP.
 
 ### Quest cards
