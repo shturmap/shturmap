@@ -6,11 +6,11 @@ whole notice checked.]
 
 Shturmap runs on your PC. It reads the game's log files, your screenshots' file names and public data from
 tarkov.dev, and it keeps its own log on your PC. Nothing about you leaves your PC, with two exceptions that you
-control; and it asks GitHub for new versions of itself (3).
+control; and it asks GitHub for new versions of itself (3) and downloads public data and pictures (4).
 
 1. A report you send
 --------------------
-When you press Send in "Report a problem or idea" (help, ?), Shturmap sends:
+When you press Send in "Report a problem or idea" (the feedback button at the top right), Shturmap sends:
 
 - whether it is a problem or an idea, the text you wrote, and the contact you gave, if any;
 - Shturmap's version, whether it is installed or a folder build, and your Windows version;
@@ -21,8 +21,9 @@ When you press Send in "Report a problem or idea" (help, ?), Shturmap sends:
 2. A crash report, if you allow it
 ----------------------------------
 After Shturmap crashed or ran into an error, it asks at the next start whether to send a report ("Crash reports" in
-help: Ask after a crash, the default; Always send; Never). A crash report holds the error's type and message, where
-in Shturmap's code it happened, Shturmap's and Windows' versions and the last 50 lines of Shturmap's own log.
+settings, the gear: Ask after a crash, the default; Always send; Never). A crash report holds the error's type and
+message, where in Shturmap's code it happened, Shturmap's and Windows' versions and the last 50 lines of Shturmap's
+own log.
 
 3. Checking for a new version
 -----------------------------
@@ -31,12 +32,22 @@ start and every 6 hours, and downloads it from there. GitHub sees your internet 
 Shturmap sends nothing else. "Updates" in settings: Automatic, the default (a new version downloads in the background and
 applies at the next start); Tell me only (it asks, and downloads only when you click); Off (no request at all).
 
+4. Downloading public data and pictures
+---------------------------------------
+Quest, map and item data, map artwork, trader portraits, item icons and the pictures of three maps (The Lab,
+Labyrinth, Icebreaker) are downloaded from tarkov.dev's services and from GitHub's file hosting, and kept in the
+download cache on your PC. Those servers see your internet address, as with any download, and which files are asked
+for. Portraits, icons and the parts of those three maps are fetched when they are first shown, so the requests show
+which of them your Shturmap displayed. No account, profile, quest list or position is sent with them.
+
 What is never sent
 ------------------
 Your Windows user folder is masked in everything that is sent (written as %USERPROFILE%), and every game account,
 profile or quest id is cut out. Nothing is sent from memory, no screenshots, no game files, no list of your
-quests, no machine name and no IP address is stored with a report. Sentry (below) also sees your internet
-address when a report arrives and keeps your country and town from it; the address itself isn't kept.
+quests, no machine name and no IP address is stored with a report. Sentry (below) sees your internet address
+when a report arrives, as any server does; each report tells it not to take anything from that address, and the
+project is set not to store it. [OWNER: open a received report in Sentry and confirm it shows no address and no
+location.]
 
 Who receives it
 ---------------
@@ -57,7 +68,8 @@ How long
 --------
 [OWNER: the retention of your Sentry plan, e.g. 30 or 90 days], then reports are deleted automatically. On your
 PC, crash records are kept for 30 days (%LOCALAPPDATA%\Shturmap\crashes), and a report that couldn't be sent waits
-in %LOCALAPPDATA%\Shturmap\outbox until it has gone.
+in %LOCALAPPDATA%\Shturmap\outbox until it has gone. A report the service refused stays there as a ".refused.txt"
+file, with its text and contact, and isn't sent again: delete it yourself, or with the rest of the data (below).
 
 Your rights
 -----------

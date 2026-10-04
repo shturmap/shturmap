@@ -160,7 +160,14 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
   table, and a picked quest's doors step back like any lock. Status: in work.
 - **B9.** The facing cone shows for 60 s, the cards' facing-relative directions for 45 s. Status: open.
 - **B10. PRIVACY.md and README** still place reports in help, say Sentry keeps country and town (it is told not to),
-  and don't say that tarkov.dev's image service sees which icons and map tiles are asked for. Status: open.
+  and don't say that tarkov.dev's image service sees which icons and map tiles are asked for. Status: done for
+  PRIVACY.md (2026-10-04: the feedback button and settings, what Sentry is told, refused reports, a section on
+  downloads; the owner still checks a received report in Sentry for an address or a location).
+- **B14. On the three tile maps the tile requests follow the view**, and with Follow my position on, the view
+  follows the player: the image service could tell roughly where on the map the player is, while DESIGN.md §2 says
+  no position is sent anywhere. Fix: when such a map opens, fetch the whole map's tiles at the zoom levels used (they
+  stay in the cache for a month), so later requests say nothing about the view. Status: owner to decide (a larger
+  first download per map).
 - **B11. DESIGN.md against itself and the code**: §5 calls every `findItem` found-in-raid while §7 has one "that may
   be bought" (A18); §7's "a named exit" isn't what `QuestEffort` tests; §5's Trader types lack `playerLevel`; §8's
   project table gives Core "name matching" (gone) and calls it pure (`UnpackedCopies` deletes folders); the Steam
