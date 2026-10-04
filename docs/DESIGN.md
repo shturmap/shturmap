@@ -812,9 +812,11 @@ Cards behave like the nested tooltips in Crusader Kings III:
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
 2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
    amber border and stays while the pointer is near it. It closes on a click on nothing in particular (bare rail
-   or map), Esc, another click on its quest, a full 0.4 s rest on something else that opens a card in its place,
-   or the pointer moving more than 240 px away from it. Nothing holds by itself (owner, 2026-10-01: the timed hold
-   was dropped).
+   or map), Esc, another click on its quest, a full rest on something else that opens a card in its place (0.65 s
+   from the rail or the map, 0.4 s on a card), or the pointer moving more than 240 px away from both the card and
+   what it was opened from, its row or its marker (`CardReach`; 2026-10-04: measured from the card alone, a click on
+   the left of a row held a card that closed with the next move of the mouse). Nothing holds by itself (owner,
+   2026-10-01: the timed hold was dropped).
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
 4. **Popped out**: the pop-out button (`E8A7`; "pinned" in the code, the settings and the study log) turns a quest
