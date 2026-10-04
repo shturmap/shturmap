@@ -829,7 +829,12 @@ Cards behave like the nested tooltips in Crusader Kings III:
    beside it. The card the button was on closes, with anything opened from it, so the quest isn't shown twice
    (owner, 2026-10-01). In a raid it shows live distances, which is what popping out is for: a tracker for the
    quests you chose, readable without the mouse. Popped-out cards come back after a restart and close by themselves
-   when their quest is completed; the window has no pop-out button of its own. Its title bar is kept inside a
+   when their quest is completed; the window has no pop-out button of its own. A card is forgotten only when its
+   quest is over (completed or failed) or the player closes its window. One whose quest isn't active in the mode
+   shown (the game switched between PvE and PvP) closes but keeps its place in the saved list, and is back at a
+   start where its quest is active; while a mode's data is loading, the cards stay as they are; and closing the
+   main window saves the list once, before the cards close with it (`PinnedCards`; 2026-10-04: a mode change closed
+   every card and saved an empty list). Its title bar is kept inside a
    screen's work area,
    when it comes back and 0.6 s after it was moved, by the least move that does it (the study log: one closed
    twice with its title bar above the screen, where it can't be grabbed).

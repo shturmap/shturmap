@@ -96,7 +96,10 @@ public sealed partial class MainWindow : Window
         Map.MarkerClicked += OnMarkerClicked;
         Closed += (_, _) =>
         {
+            // The popped-out cards are saved once, as they stand, before they close with this window: their own
+            // closing must not rewrite the list (it would save it empty, or after the session has gone).
             SavePinned();
+            _closing = true;
             foreach (var window in _pinned.Values.ToList())
                 window.Close();
         };
@@ -1080,7 +1083,13 @@ public sealed partial class MainWindow : Window
 
     // ---- pinned cards ----
 
-    private const string PinnedSetting = "pinned.cards";
+    // Saved cards that aren't shown now: their quest isn't active in the data shown (the other mode's, after the game
+    // switched between PvE and PvP). They keep their place in the saved list and are back at a start where it is.
+    private readonly Dictionary<string, PinnedCards.Entry> _pinnedWaiting = [];
+    // Windows the program closes itself (the quest done, the mode changed): it has settled the saved list already.
+    private readonly HashSet<QuestWindow> _closedByProgram = [];
+    private bool _closing;
+    private bool _restoringPinned;
 
     private void Pin(QuestCardView view, PointInt32? at)
     {
@@ -1097,58 +1106,101 @@ public sealed partial class MainWindow : Window
         {
             Study.Ui("pinned.close", ("quest", view.QuestId), ("name", view.Name), ("openS", DateTime.Now - pinnedAt),
                 ("x", window.AppWindow.Position.X), ("y", window.AppWindow.Position.Y));
+            // Closed by the player: the card is gone for good. A close the program made (the quest over, the mode
+            // changed, the main window closing) must not rewrite the list.
+            if (_closedByProgram.Remove(window) || _closing)
+                return;
             if (_pinned.Remove(window.QuestId))
                 SavePinned();
         };
         _pinned[view.QuestId] = window;
+        _pinnedWaiting.Remove(view.QuestId);
         window.Activate();
         SavePinned();
     }
 
+    private static PinnedCards.Entry EntryOf(QuestWindow window) =>
+        new(window.QuestId, (window.AppWindow.Position.X, window.AppWindow.Position.Y));
+
     private void SavePinned()
     {
-        if (SnapshotMode)
+        if (SnapshotMode || _restoringPinned)
             return;
-        _session.SetSetting(PinnedSetting, string.Join(";", _pinned.Values.Select(w =>
-            FormattableString.Invariant($"{w.QuestId}@{w.AppWindow.Position.X},{w.AppWindow.Position.Y}"))));
+        _session.SetSetting(PinnedCards.Setting, PinnedCards.Format(_pinned.Values.Select(EntryOf).Concat(_pinnedWaiting.Values)));
     }
 
-    // Pinned cards come back where they were, as long as their quest is still active.
+    // Pinned cards come back where they were, as long as their quest is still active. One whose quest isn't active in
+    // the data shown waits in the list; one whose quest is over is forgotten (PinnedCards.For).
     private void RestorePinnedOnce(SessionSnapshot s)
     {
         if (_pinnedRestored || s.Data is null || SnapshotMode)
             return;
         _pinnedRestored = true;
-        foreach (var entry in (_session.GetSetting(PinnedSetting) ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+        var saved = PinnedCards.Parse(_session.GetSetting(PinnedCards.Setting));
+        // Saved once at the end: each card's own save would write a list that lacks the ones not yet looked at.
+        _restoringPinned = true;
+        try
         {
-            var parts = entry.Split('@', ',');
-            if (parts.Length != 3 || BuildCard(parts[0]) is not { State: QuestState.Active } view)
-                continue;
-            PointInt32? at = int.TryParse(parts[1], CultureInfo.InvariantCulture, out var x) && int.TryParse(parts[2], CultureInfo.InvariantCulture, out var y)
-                && DisplayArea.GetFromPoint(new PointInt32(x + 40, y + 20), DisplayAreaFallback.None) is not null
-                ? new PointInt32(x, y)
-                : null;
-            Pin(view, at);
+            foreach (var entry in saved)
+            {
+                var view = BuildCard(entry.QuestId);
+                switch (PinnedCards.For(view?.State))
+                {
+                    case PinnedCards.Fate.Show:
+                        Pin(view!, entry.At is { } p && DisplayArea.GetFromPoint(new PointInt32(p.X + 40, p.Y + 20), DisplayAreaFallback.None) is not null
+                            ? new PointInt32(p.X, p.Y)
+                            : null);
+                        break;
+                    case PinnedCards.Fate.Wait:
+                        _pinnedWaiting[entry.QuestId] = entry;
+                        break;
+                }
+            }
         }
+        finally
+        {
+            _restoringPinned = false;
+        }
+        if (saved.Count > 0)
+            SavePinned();
     }
 
     // Pinned cards follow the session (status, distances in a raid). A finished quest has nothing left to show:
-    // its card closes.
+    // its card closes and is forgotten. A quest that isn't active in the data shown (the other mode's) closes its
+    // card too, but keeps its place in the saved list.
     private void RefreshPinned()
     {
+        // No data for a moment (the mode changed, its data is loading): nothing can be said about any quest, so the
+        // cards stay as they are (2026-10-04: they all closed, and the list was saved empty).
+        if (_snapshot?.Data is null)
+            return;
+        var changed = false;
         foreach (var window in _pinned.Values.ToList())
         {
             var view = BuildCard(window.QuestId);
-            if (view is { State: QuestState.Active })
+            var fate = PinnedCards.For(view?.State);
+            if (fate == PinnedCards.Fate.Show)
             {
-                window.Update(view);
+                window.Update(view!);
                 window.Stack.Refresh(UpdateCard);
                 continue;
             }
             if (view is { State: QuestState.Completed })
                 ShowNotice($"{view.Name} is complete; its card is closed.");
+            if (fate == PinnedCards.Fate.Wait)
+                _pinnedWaiting[window.QuestId] = EntryOf(window);
+            _pinned.Remove(window.QuestId);
+            _closedByProgram.Add(window);
             window.Close();
+            changed = true;
         }
+        foreach (var quest in _pinnedWaiting.Keys.ToList())
+        {
+            if (PinnedCards.For(BuildCard(quest)?.State) == PinnedCards.Fate.Forget)
+                changed |= _pinnedWaiting.Remove(quest);
+        }
+        if (changed)
+            SavePinned();
     }
 
     // One thin segment per loading step, gold once the log has reported that step, a hairline until then.
