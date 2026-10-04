@@ -264,7 +264,7 @@ public static partial class MapRenderer
     /// </summary>
     public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui)
     {
-        var age = scene.Player is { } player && DateTime.Now - player.At is var old && old >= PlayerOld ? AgeTag(old).Text : "";
+        var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
         var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age);
         if (scene.LastLayout is { } last && last.Key == key)
             return last.Layout;
@@ -297,7 +297,7 @@ public static partial class MapRenderer
         {
             var at = Screen(camera, scene, player.Position);
             taken.Add(Square(at, (PlayerRing + 3) * ui));
-            var age = DateTime.Now - player.At;
+            var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now);
             if (age >= PlayerOld)
             {
                 var (text, stale) = AgeTag(age);
@@ -1216,7 +1216,7 @@ public static partial class MapRenderer
         var to = drawnAt.TryGetValue(nearest.Id, out var drawn) ? drawn : Screen(camera, scene, nearest.Position);
         // The number the card shows: horizontal metres to the nearest place, as old as the position.
         var metres = player.Position.HorizontalDistanceTo(nearest.Position);
-        var age = DateTime.Now - player.At;
+        var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now);
         var text = DistanceText(metres) + (age >= PlayerOld ? " · " + AgeText(age) : "");
         // On the part of the line in view, and only where the line is long enough to carry it clear of its ends.
         var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
@@ -1720,7 +1720,7 @@ public static partial class MapRenderer
             return;
         DrawEdge(canvas, camera, scene, ui);
         var at = Screen(camera, scene, player.Position);
-        var age = DateTime.Now - player.At;
+        var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now);
         if (scene.Pinging)
             DrawPing(canvas, at, (DateTime.Now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui);
 

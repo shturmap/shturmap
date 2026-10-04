@@ -251,7 +251,7 @@ public sealed partial class MapView : Grid
                 if (!_fitPending)
                     GlideToPlayer();
             }
-            if (DateTime.Now - fix.At < PingIfNewerThan)
+            if (Shturmap.Core.Logs.WallClock.Elapsed(fix.At, DateTime.Now) < PingIfNewerThan)
             {
                 scene.PingSince = DateTime.Now;
                 // Before the first paint the view isn't fitted yet; the whole map will be in view then. Following, the
