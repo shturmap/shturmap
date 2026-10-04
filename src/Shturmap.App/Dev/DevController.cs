@@ -378,8 +378,10 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 AppLog.Error($"Developer script line {step.Line} failed", e);
                 Say($"line {step.Line} failed: {e.Message}");
             }
-            // The app reads the logs about twice a second.
-            await Task.Delay(300);
+            // The app reads the logs about twice a second. The pointer's steps write nothing for it to read, and
+            // what they check is a matter of tenths of a second: they follow each other at once.
+            if (step.Verb is not ("hover" or "point" or "trail" or "cards" or "wait"))
+                await Task.Delay(300);
         }
     }
 
@@ -575,6 +577,21 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 if (folder is "" or "game")
                     folder = Game?.Root ?? "";
                 Say(await session.ChooseGameFolderAsync(folder) ? "game folder chosen: " + folder : "not the game: " + folder);
+                break;
+            case "trail":
+                // The pointer's last places in the main window, as pairs of x and y, for the cards to tell where it
+                // is heading (CardAim). No pointer moves: the card stack is told what its window would tell it.
+                var places = new List<Windows.Foundation.Point>();
+                for (var i = 0; i + 1 < step.Args.Count; i += 2)
+                    places.Add(new Windows.Foundation.Point(step.Number(i), step.Number(i + 1)));
+                window.DevTrail(places);
+                break;
+            case "cards":
+                // Which cards are open in the main window, written to the app log with its time: a snapshot takes
+                // too long to catch what holds for a tenth of a second.
+                var open = window.DevCards();
+                Say("cards: " + open);
+                AppLog.Info("Developer view: cards: " + open);
                 break;
             case "wait":
                 await Task.Delay(TimeSpan.FromSeconds(step.Number(0, 1)));

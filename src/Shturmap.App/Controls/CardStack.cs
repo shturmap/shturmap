@@ -25,6 +25,12 @@ public sealed class CardStack
     private static readonly TimeSpan ShowAfter = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan SwapAfter = TimeSpan.FromMilliseconds(120);
     private static readonly TimeSpan SettleAfter = TimeSpan.FromMilliseconds(350);
+    // While the pointer heads for an open card, what would replace or close that card waits, and is looked at again
+    // this often (CardAim): the way to a card leads across the row's other cells and the rows below.
+    private static readonly TimeSpan AimAfter = TimeSpan.FromMilliseconds(300);
+    // The pointer's last few places say where it is going, for as long as the newest of them is this fresh.
+    private const int TrailLength = 6;
+    private static readonly TimeSpan TrailFresh = TimeSpan.FromMilliseconds(200);
     private const int NoSource = -2;
 
     private static readonly Dictionary<XamlRoot, CardStack> Stacks = [];
@@ -55,6 +61,10 @@ public sealed class CardStack
     private CardKey? _sourceKey;
     private int _sourceLevel = NoSource;
     private int _over = -1;
+    private readonly Queue<Point> _trail = new();
+    private long _trailAt;
+    private Point? _showLooked;
+    private Point? _settleLooked;
 
     /// <param name="root">The window content; positions are in its coordinates.</param>
     /// <param name="create">A new card (QuestCard or ItemCard) for a key, or null if there is nothing to show.</param>
@@ -68,7 +78,7 @@ public sealed class CardStack
         _besideRoot = besideRoot;
         _show = root.DispatcherQueue.CreateTimer();
         _show.IsRepeating = false;
-        _show.Tick += (_, _) => ShowPending();
+        _show.Tick += (_, _) => ShowUnlessPassing();
         _settle = root.DispatcherQueue.CreateTimer();
         _settle.IsRepeating = false;
         _settle.Interval = SettleAfter;
@@ -120,7 +130,7 @@ public sealed class CardStack
         _source = source;
         _sourceKey = key;
         _sourceLevel = level;
-        Restart(_settle);
+        SettleSoon();
         if (key is null)
             return;
         var target = level + 1;
@@ -138,6 +148,10 @@ public sealed class CardStack
         _show.Interval = target < _levels.Count && !_levels[target].Held ? SwapAfter
             : level < 0 && !_besideRoot ? ShowFromList
             : ShowAfter;
+        // On its way to the card this would replace, the pointer is only passing over: it waits longer.
+        _showLooked = null;
+        if (HeadingFor(target, ref _showLooked) && _show.Interval < AimAfter)
+            _show.Interval = AimAfter;
         Restart(_show);
     }
 
@@ -149,7 +163,7 @@ public sealed class CardStack
         _sourceKey = null;
         _sourceLevel = NoSource;
         _show.Stop();
-        Restart(_settle);
+        SettleSoon();
     }
 
     /// <summary>A click on an element that shows <paramref name="key"/>: hold its card (open it first if needed), or let go of it if held.</summary>
@@ -206,10 +220,15 @@ public sealed class CardStack
 
     /// <summary>
     /// The pointer moved in the window (root coordinates). A held card closes, with everything opened from it, once
-    /// the pointer is well away from it and from what it was opened from (<see cref="CardReach"/>).
+    /// the pointer is well away from it and from what it was opened from (<see cref="CardReach"/>). And its last
+    /// places are kept, to tell where it is heading (<see cref="CardAim"/>).
     /// </summary>
     public void PointerAt(Point p)
     {
+        _trail.Enqueue(p);
+        if (_trail.Count > TrailLength)
+            _trail.Dequeue();
+        _trailAt = Environment.TickCount64;
         for (var i = 0; i < _levels.Count; i++)
         {
             if (!_levels[i].Held || _over >= i)
@@ -263,7 +282,53 @@ public sealed class CardStack
         var keep = Math.Max(_over, _levels.FindLastIndex(l => l.Held));
         if (_sourceLevel != NoSource)
             keep = Math.Max(keep, _sourceKey is null ? _sourceLevel : _sourceLevel + 1);
+        // The pointer is on its way to a card that would close now, across a gap in its row, say: the card stays,
+        // and this looks again.
+        if (HeadingFor(keep + 1, ref _settleLooked))
+        {
+            Restart(_settle);
+            return;
+        }
+        _settleLooked = null;
         CloseFrom(keep + 1);
+    }
+
+    // Something happened under the pointer: which cards stay is looked at afresh a moment later.
+    private void SettleSoon()
+    {
+        _settleLooked = null;
+        Restart(_settle);
+    }
+
+    // Whether the pointer is heading for the card at a level: since this was last asked (looked), or the first
+    // time over its last few places, if it is still moving. Without a pointer's moves (a script) it never is.
+    private bool HeadingFor(int level, ref Point? looked)
+    {
+        if (level < 0 || level >= _levels.Count || _trail.Count == 0)
+            return false;
+        var now = _trail.Last();
+        Point from;
+        if (looked is { } before)
+            from = before;
+        else if (Environment.TickCount64 - _trailAt <= TrailFresh.TotalMilliseconds)
+            from = _trail.Peek();
+        else
+            return false;
+        looked = now;
+        return CardAim.Toward(from.X, from.Y, now.X, now.Y, Box(Bounds(_levels[level])));
+    }
+
+    // The wait for a card is over. If it would replace a card the pointer is still heading for, it waits on; a
+    // pointer that rests on the new thing, or turns away from the card, gets its card.
+    private void ShowUnlessPassing()
+    {
+        if (_pendingKey is not null && HeadingFor(_pendingLevel, ref _showLooked))
+        {
+            _show.Interval = AimAfter;
+            Restart(_show);
+            return;
+        }
+        ShowPending();
     }
 
     private void ShowPending()
@@ -279,13 +344,13 @@ public sealed class CardStack
             // Moving into a card cancels a card pending from outside it.
             if (_pendingLevel <= level)
                 _show.Stop();
-            Restart(_settle);
+            SettleSoon();
         };
         card.PointerExited += (_, _) =>
         {
             if (_over == level)
                 _over = -1;
-            Restart(_settle);
+            SettleSoon();
         };
         // A click anywhere on a card holds it (rows on it hold their own cards first).
         card.Tapped += (_, _) =>

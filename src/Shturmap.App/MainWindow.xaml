@@ -523,7 +523,11 @@
               <!-- The suggested maps as a short list, best first, always in view (review of 2026-10-04, H4: the open card
                    is some 840 px tall and pushed the other maps' cards under the fold). The open map's row is marked;
                    pointing at a row previews that map, a click shows it and opens its card below. The rows are the
-                   only thing that switches the map. One suggested map that is on screen needs no list (PlanList). -->
+                   only thing that switches the map. One suggested map that is on screen needs no list (PlanList).
+                   Every row is the same, the open map's too: a click on a glyph holds its quest's card and, the row
+                   being a button, shows its map, and what was clicked must still be there afterwards (owner,
+                   2026-10-04: "all the icons disappear ... This is a cognitive dissonance"). So no row changes
+                   height when the map changes, and nothing moves under the pointer. -->
               <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfTrue(ViewModel.PlanListShown), Mode=OneWay}" Margin="0,0,0,7">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
@@ -549,8 +553,8 @@
                         <!-- Enough to compare without opening it (the study log: ten card clicks in 4.5 minutes to compare
                              maps). One glyph per quest, the picks first in cyan, then those to complete, a hairline, those
                              to progress; then what to bring. Each glyph is its quest for the linked highlight, each cell
-                             its item. The open map's row has none: its card below says it all. -->
-                        <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Visibility="{x:Bind FoldedVisibility}" Margin="0,-2,12,8" ColumnSpacing="10">
+                             its item. -->
+                        <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,-2,12,8" ColumnSpacing="10">
                           <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />

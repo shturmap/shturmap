@@ -652,9 +652,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     say what to do. COMPLETE and PROGRESS are each in effort order, with a thin hairline where a later group starts
     and no headings (§7, "Plan order"); the raid card stays nearest first. Pointing at another map's row previews
     it on the map; clicking it opens its card and shows it; that click is optional.
-    The rows of the maps that aren't open carry enough to compare without opening them (the study log: ten card
+    Every row carries enough to compare the maps without opening them (the study log: ten card
     clicks in 4.5 minutes to compare maps): one quest-type glyph per quest, all gold, those to complete first, then
-    a hairline, then those to progress, and up to five cells of what to bring.
+    a hairline, then those to progress, and up to five cells of what to bring. **The open map's row has them too**
+    (owner, 2026-10-04: "when you click on one of the icons to highlight a quest, this map is selected and all the
+    icons disappear that were currently seen before because the map is now the selected one. This is a cognitive
+    dissonance"). Until then the open map's row was its name and counts alone, its card below saying the rest: a
+    click on a glyph holds its quest's card and, the row being a button, shows its map, and the glyph clicked was
+    gone. With every row the same, what was clicked is still there with its card held beside it, the open map can
+    be compared with the others glyph for glyph, and no row changes height when the map changes, so nothing moves
+    under the pointer.
     **PROGRESS is not less important** (owner, 2026-10-03: muted PROGRESS rows "suggest less importance", while
     these quests are as much this raid's work). Rows in PROGRESS, in ANY MAP and in the raid card's PROGRESS look
     exactly like COMPLETE rows: gold glyph, ink name, trader portrait and bring cells at full strength. The section
@@ -1182,6 +1189,17 @@ Cards behave like the nested tooltips in Crusader Kings III:
    or in a popped-out window, and
    its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
+   **On its way to the card the pointer is only passing over** (`CardAim`; owner, 2026-10-04: "When you then move
+   the mouse to the right to mouse-over the quest and you are too slow another quest opens"). A card opens beside
+   its row, so the way to it leads across things with cards of their own: the other glyphs of a map's row, a need
+   cell, the rows below. While the pointer keeps heading for the open card (it moved at least 3 px, came nearer,
+   and its line carried on meets the card, with 16 px of slack), what would replace the card waits and what would
+   close it waits, each looked at again every 0.3 s; a pointer that rests on the other thing, or turns away, gets
+   that thing's card. It is the direction that counts, not the speed (the "safe triangle" of nested menus). A held
+   card is spared the same way. Checked in the app by script on 2026-10-04: onto another quest while heading for
+   the card, the card was still there 0.2 s later and the other quest's 0.6 s after that; not heading, it had
+   swapped within 0.2 s; left into a gap and still heading, it was there after 0.45 s, where a resting pointer
+   had lost it.
 2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
    amber border and stays while the pointer is near it. It closes on a click on nothing in particular (bare rail
    or map), Esc, another click on its quest, a full rest on something else that opens a card in its place (0.65 s
@@ -1713,10 +1731,12 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   with the app's version and commit.
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
   `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
   `trigger key down | up | enter | p | esc` steps through the rail's rows by the code the key events call; no key
-  is ever sent.
+  is ever sent. A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
+  `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
+  second.
 
 ### How the parts work
 

@@ -43,6 +43,8 @@ public static class DevScript
         ["show"] = "<part of a quest's name>: its card held, the first thing it needs beside it, and the quest popped out, as --show-quest does for snapshots",
         ["hover"] = "[<quest id or name> [<n> | cell | key]]: the pointer on the quest's block in the lists, and in it on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's events call; alone, it leaves the innermost of them",
         ["point"] = "[<quest id or name> [<n>] | item <id or name>]: points at the quest, at its n-th objective or at an item, as the pointer on its line would; alone, at nothing again",
+        ["trail"] = "<x> <y> [<x> <y> ...]: where the pointer has been in the main window, for the cards to tell where it is heading; no pointer moves",
+        ["cards"] = "writes the open cards' titles to the app log, with its time",
         ["pos"] = "<x> <y> <z> [yaw]: a screenshot at that world position",
         ["repeat"] = "a screenshot at the last position again",
         ["age"] = "<minutes>: the last position becomes older",

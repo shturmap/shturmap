@@ -162,8 +162,6 @@ public sealed record PlanCard(
 
     public Visibility PickDividerVisibility => Picked.Count > 0 && Finish.Count + Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility FoldedVisibility => Expanded ? Visibility.Collapsed : Visibility.Visible;
-
     public Microsoft.UI.Xaml.Media.Brush CardBorder =>
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "LineStrongBrush" : "LineBrush"];
 

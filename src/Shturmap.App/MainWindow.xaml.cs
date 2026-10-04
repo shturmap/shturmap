@@ -92,8 +92,7 @@ public sealed partial class MainWindow : Window
         };
         root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((_, e) =>
         {
-            if (_cards.AnyHeld)
-                _cards.PointerAt(e.GetCurrentPoint(root).Position);
+            _cards.PointerAt(e.GetCurrentPoint(root).Position);
         }), handledEventsToo: true);
         _focusClear = DispatcherQueue.CreateTimer();
         _focusClear.Interval = TimeSpan.FromMilliseconds(250);

@@ -97,8 +97,7 @@ public sealed partial class QuestWindow : Window
         };
         _root.AddHandler(UIElement.PointerMovedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, e) =>
         {
-            if (Stack.AnyHeld)
-                Stack.PointerAt(e.GetCurrentPoint(_root).Position);
+            Stack.PointerAt(e.GetCurrentPoint(_root).Position);
         }), handledEventsToo: true);
     }
 

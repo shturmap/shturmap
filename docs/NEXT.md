@@ -51,6 +51,10 @@ left resting over the rail while stepping (the keyboard's row keeps it); typing 
 Enter on a focused button with no row active (it must still click); a boss's name in the raid line and under a
 map's name in Plan (its spawn zones light up, and a zone tints the name); "ALL 15 ↓" in the EXIT row (the list of
 ways out comes to the top of the rail); two ways out at one place on the map, each with its own tooltip and click.
+From the evening of 2026-10-04: in Plan's map list, rest on a glyph until its card opens, then move right across
+the other glyphs and need cells to the card, slowly (the card must stay, and no other quest's card may take its
+place; resting on another glyph still opens that one); the same from a quest's row down and right across the rows
+below; a click on a glyph of a map that isn't open (its map shows, the row keeps its glyphs, the card is held).
 
 **Words for the owner to check, from the third round:** "Newer game logs in <folder>: quests and raids follow that
 game now."; "NO POSITION YET · PRESS PRTSC OR MOUSE3" (status bar, in a raid only); "CLICK ITS ROW TO PLAN IT"; the

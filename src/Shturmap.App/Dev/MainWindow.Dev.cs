@@ -122,6 +122,22 @@ public sealed partial class MainWindow
         return null;
     }
 
+    /// <summary>
+    /// Tells the cards where the pointer has been, in the window's coordinates, as the window does with every move
+    /// of the mouse: a script can then check what a pointer heading for a card does (CardAim) without one.
+    /// </summary>
+    internal void DevTrail(IEnumerable<Windows.Foundation.Point> places)
+    {
+        foreach (var place in places)
+            _cards.PointerAt(place);
+    }
+
+    /// <summary>The open cards' titles, first to last ("none" without any), a held one marked.</summary>
+    internal string DevCards()
+    {
+        var cards = _cards.Cards.OfType<ICard>().Select(c => c.Mode == CardMode.Held ? c.Title + " (held)" : c.Title).ToList();
+        return cards.Count == 0 ? "none" : string.Join(" > ", cards);
+    }
     internal void DevShowCrash()
     {
         CrashRecord record;
