@@ -849,8 +849,21 @@ spawns below).
   Where symbols share a place, the one that matters more lies on top: markers are drawn in the order of their
   labels' priority, least first (locks and switches, then Scav and sniper zones, ways out, quests, bosses, then
   what is selected). A Scav zone's ring used to be drawn over the boss's octagon of the same spawn zone, which
-  then read as a red ring (the review of 2026-10-04, C6). Two symbols of the same rank at one place still cover
-  each other (an extract's triangle and a transit's diamond on Streets): open.
+  then read as a red ring (the review of 2026-10-04, C6).
+  Two symbols of the same rank that would cover each other stand **side by side** (`MapRenderer.SideBySide`; the
+  same review: on Streets a transit's diamond lay over an extract's triangle at Scav Checkpoint, and one quest's
+  disc over another's). Each is moved by half of what is missing for both to show, their collars touching, and
+  never further than its own width: such a pair stands beside its true place by a few pixels (two ways out at one
+  spot by 9 each, two quests' places by 12, before the display's scale). They
+  part along the line between their true places, and left and right where they share one, the earlier in the data
+  on the left; so when the places differ in the world, zooming in draws them apart and each symbol comes back to
+  its own. Places of one objective still merge into one marker with their count; symbols of different rank aren't
+  moved (the one on top says enough). The sizes are the symbols' at rest, so nothing moves because the pointer is
+  on it. Everything else follows the symbol where it is drawn: the pointer finds it there, its badges and its label
+  stand by it, the guide line ends on it, and a place counts as in view for the edge chevrons where its symbol is.
+  The distance on the guide's plate stays the place's own. One of such a pair may put its name a line further
+  down than "below", under its neighbour's: the two names read as the pair's caption ("Scav Checkpoint" over
+  "Transit to The Lab (Dark)").
 
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
@@ -917,7 +930,9 @@ spawns below).
     the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.
     Their labels come last in the label order.
   - **Hazards**: tarkov.dev's "hazard" outlines (Labyrinth's 18 traps, 2–27 m²) as a hatched ink outline, an area
-    style nothing else has. Labyrinth's 19th "hazard", 54 × 58 m below the central hall's floor, is left out: the data
+    style nothing else has. The hatch is clipped to the outline, and only its lines that cross the part in view are
+    drawn, at the places they have in the whole area (`MapRenderer.HatchLines`): zoomed in, a border zone's box is
+    thousands of pixels wide, and every line across all of it was drawn for each frame (the review of 2026-10-04). Labyrinth's 19th "hazard", 54 × 58 m below the central hall's floor, is left out: the data
     doesn't say what it is, and hatching it would cover the hall (trap-sized means up to 50 m²). **Minefields**
     (owner, 2026-10-03: "Yes, draw the minefields as hazard areas"): tarkov.dev's "minefield" outlines in the same
     hatched style, whatever their size, wherever the map's picture doesn't draw them itself. The artwork of Woods,
@@ -1716,6 +1731,12 @@ the settings. `shturmap-cli quests` lists active quests with every observation.
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next
 screenshot. Floors without their own artwork (Customs' 4th, Reserve's upper floors) are drawn in the base layer.
+An SVG map's floors are read ahead, in the background, as soon as the map is shown (`MapArtwork.ReadFloorsAsync`,
+started by the map view): a floor's picture used to be read by the first paint that showed the floor, on the
+drawing thread, which stood still for that long (the review of 2026-10-04). A paint never waits now: a floor that
+isn't read yet is left out of that frame and drawn when it arrives (`FloorRead`), one that can't be read is left
+out and said in the app log, and a snapshot waits for the floors. The CLI and the tests, which don't read ahead,
+read a floor when they ask for it, as before.
 On the maps without SVG artwork the floors are tarkov.dev's tile layers: the shown floor's tiles over the base
 layer's, which dims as under an SVG floor (the sheet stands in with the same floors). Map labels with heights
 (tarkov.dev's bottom/top) show only on their floor, as on tarkov.dev; labels without heights show on every floor.

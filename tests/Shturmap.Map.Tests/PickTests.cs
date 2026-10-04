@@ -46,9 +46,13 @@ public class PickTests
         using var bitmap = new SkiaSharp.SKBitmap(new SkiaSharp.SKImageInfo(1000, 1000, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul));
         using var canvas = new SkiaSharp.SKCanvas(bitmap);
         MapRenderer.Render(canvas, camera, scene);
-        // Where the two discs overlap, clear of both glyphs (the pick's own centre holds its glyph): the pick's cyan,
-        // not the other quest's gold.
-        var pixel = bitmap.GetPixel(510, 496);
+        // The two stand side by side (two quests' places that would cover each other, SideBySide), and the pick is
+        // the larger: its ring runs across the other quest's disc. There it is the pick's cyan, not the other's gold.
+        var markers = MapRenderer.Layout(camera, scene, 1).Markers;
+        var (pick, other) = (markers.Single(m => m.Kept), markers.Single(m => m.Marker.Group == "b"));
+        var onRing = new SkiaSharp.SKPoint(pick.At.X + pick.R + 5, pick.At.Y);
+        Assert.True(SkiaSharp.SKPoint.Distance(onRing, other.At) < other.R - 2, "the pick's ring doesn't cross the other disc");
+        var pixel = bitmap.GetPixel((int)onRing.X, (int)onRing.Y);
         var cyan = MapRenderer.Kept;
         Assert.True(Math.Abs(pixel.Red - cyan.Red) <= 3 && Math.Abs(pixel.Green - cyan.Green) <= 3 && Math.Abs(pixel.Blue - cyan.Blue) <= 3,
             $"{pixel} where the pick ({cyan}) and the other quest's marker overlap");

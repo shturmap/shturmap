@@ -226,6 +226,10 @@ public static partial class MapRenderer
         /// focus is lit and holds still.
         /// </summary>
         public bool Pointed { get; init; }
+
+        /// <summary>Drawn beside its true place, for a neighbour of the same rank that would cover it or be covered
+        /// (<see cref="SideBySide"/>): <see cref="At"/> is where the symbol stands, a few pixels off.</summary>
+        public bool Beside { get; init; }
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
@@ -301,12 +305,14 @@ public static partial class MapRenderer
                 taken.Add(AgeTagBox(at, tagFont.MeasureText(text), stale, ui));
             }
         }
-        // After every symbol: the guide's plate gives way to them.
-        var guide = Guide(camera, scene, ui, taken);
+        // After every symbol: the guide's plate gives way to them. The guide ends, and the chevrons count, where the
+        // symbols are drawn: a marker set beside its place (SideBySide) is there for them too.
+        var drawnAt = markers.Where(m => m.Count == 1).GroupBy(m => m.Marker.Id).ToDictionary(g => g.Key, g => g.First().At, StringComparer.Ordinal);
+        var guide = Guide(camera, scene, ui, taken, drawnAt);
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
         var scale = Scale(camera, scene, ui);
-        var chevrons = Chevrons(camera, scene, ui);
+        var chevrons = Chevrons(camera, scene, ui, drawnAt);
         taken.AddRange(chevrons.Select(c => Square(c.At, 10 * ui)));
         taken.Add(scale.Box);
 
@@ -326,7 +332,16 @@ public static partial class MapRenderer
             var width = font.MeasureText(m.Marker.Label);
             var gap = 4 * ui;
             SKRect? box = null;
-            foreach (var candidate in LabelCandidates(m.At, m.Reach + gap, width, font.Size))
+            var candidates = LabelCandidates(m.At, m.Reach + gap, width, font.Size);
+            // One of a pair set side by side has its neighbour on one side and, as often as not, that one's name
+            // below: its own may stand a line further down, where the two read as the pair's caption.
+            if (m.Beside)
+            {
+                // A little further than one line: the neighbour's symbol may be the taller, and its name the lower.
+                var below = candidates.Last();
+                candidates = candidates.Append(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
+            }
+            foreach (var candidate in candidates)
             {
                 if (!taken.Any(t => t.IntersectsWith(candidate)))
                 {
@@ -380,7 +395,12 @@ public static partial class MapRenderer
     public const float LabelRepeat = 250;
 
     // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
-    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Marker.Kind switch
+    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : RestRank(m.Marker.Kind);
+
+    /// <summary>A kind's rank at rest, whatever is picked or pointed at: bosses, quests, ways out, Scav and sniper
+    /// zones, locks and switches. Symbols of one rank are set side by side where they would cover each other
+    /// (<see cref="SideBySide"/>); of two ranks, the one that matters more lies on top.</summary>
+    public static int RestRank(MarkerKind kind) => kind switch
     {
         MarkerKind.BossSpawn => 1,
         MarkerKind.Objective or MarkerKind.PossibleLocation or MarkerKind.ObjectiveDone => 2,
@@ -388,6 +408,73 @@ public static partial class MapRenderer
         MarkerKind.Lock or MarkerKind.Switch => 5,
         _ => 4,
     };
+
+    /// <summary>Half a symbol's width at rest (pixels): the size it is drawn at when nothing is picked or pointed at.</summary>
+    public static float RestHalf(MapMarker marker, float ui) => marker switch
+    {
+        { Kind: MarkerKind.ObjectiveDone } => 8f,
+        { Objective: not null } => 10f,
+        // A triangle is a little wider than its radius, a diamond exactly as wide.
+        { Kind: MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared } => 7.5f * 1.1f,
+        { Kind: MarkerKind.Transit } => 7.5f,
+        { Kind: MarkerKind.BossSpawn } => 6f * 1.2f,
+        { Kind: MarkerKind.SniperSpawn } => 6.5f,
+        { Kind: MarkerKind.ScavSpawn } => 4f,
+        { Kind: MarkerKind.Lock or MarkerKind.Switch } => 5.5f,
+        _ => 6f,
+    } * ui;
+
+    // Three symbols in a row settle in two or three passes; more than that is a crowd no pass count sorts out.
+    private const int SideBySidePasses = 4;
+
+    /// <summary>
+    /// Where symbols stand that would cover each other: two of the same rank (two ways out, two quests' places, a
+    /// lock beside a lock) closer than their widths allow are set side by side, each moved by half of what is missing
+    /// and never further from its true place than its own width. Before, the one drawn later covered the other: on
+    /// Streets a transit's diamond lay over an extract's triangle at the same spot (the review of 2026-10-04, C6).
+    /// They part along the line between their true places, so as the view zooms in and those draw apart, each
+    /// symbol comes straight back to its own; where they share a place, left and right, the earlier one on the left.
+    /// Symbols of different rank aren't moved: the one that matters more lies on top (Render). The sizes are the
+    /// symbols' at rest (<see cref="RestHalf"/>), so nothing moves because the pointer is on it.
+    /// </summary>
+    /// <param name="symbols">Each symbol's true place on screen, half its width at rest, and its rank.</param>
+    /// <param name="gap">The room kept between two symbols' edges: their dark collars.</param>
+    public static SKPoint[] SideBySide(IReadOnlyList<(SKPoint At, float Half, int Rank)> symbols, float gap)
+    {
+        var at = symbols.Select(s => s.At).ToArray();
+        for (var pass = 0; pass < SideBySidePasses; pass++)
+        {
+            var moved = false;
+            for (var i = 0; i < symbols.Count; i++)
+            {
+                for (var j = i + 1; j < symbols.Count; j++)
+                {
+                    if (symbols[i].Rank != symbols[j].Rank)
+                        continue;
+                    var want = symbols[i].Half + symbols[j].Half + gap;
+                    var apart = SKPoint.Distance(at[i], at[j]);
+                    if (apart >= want - 0.01f)
+                        continue;
+                    var line = symbols[j].At - symbols[i].At;
+                    var along = line.Length < 0.5f ? new SKPoint(1, 0) : new SKPoint(line.X / line.Length, line.Y / line.Length);
+                    var push = (want - apart) / 2;
+                    at[i] = Within(new SKPoint(at[i].X - along.X * push, at[i].Y - along.Y * push), symbols[i].At, 2 * symbols[i].Half);
+                    at[j] = Within(new SKPoint(at[j].X + along.X * push, at[j].Y + along.Y * push), symbols[j].At, 2 * symbols[j].Half);
+                    moved = true;
+                }
+            }
+            if (!moved)
+                break;
+        }
+        return at;
+    }
+
+    // A point no further from its origin than a reach.
+    private static SKPoint Within(SKPoint p, SKPoint origin, float reach)
+    {
+        var d = p - origin;
+        return d.Length <= reach ? p : new SKPoint(origin.X + d.X / d.Length * reach, origin.Y + d.Y / d.Length * reach);
+    }
 
     /// <summary>Locks and switches: level-4 landmarks from tarkov.dev's data (docs/DESIGN.md, "Map drawing").</summary>
     public static bool IsLandmark(MarkerKind kind) => kind is MarkerKind.Lock or MarkerKind.Switch;
@@ -431,6 +518,8 @@ public static partial class MapRenderer
     /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view),
     /// and before places are merged: a group that runs out of view keeps a marker for its places in view, at one of
     /// them. Merged first, the whole group went when its middle place was out of view (the review of 2026-10-04).
+    /// Last, symbols of one rank that would still cover each other are set side by side (<see cref="SideBySide"/>):
+    /// their <see cref="ShownMarker.At"/> is where they are drawn, and <see cref="ShownMarker.Beside"/> says so.
     /// </summary>
     public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui)
     {
@@ -460,7 +549,12 @@ public static partial class MapRenderer
                 result.Add((medoid.Index, medoid.Shown with { Count = cluster.Count, Floor = floor }));
             }
         }
+        // Symbols of one rank that would cover each other stand side by side (SideBySide). In the data's order, not
+        // the drawing order below: which of two goes left must not turn on what is pointed at.
+        result.Sort((a, b) => a.Index.CompareTo(b.Index));
+        var places = SideBySide(result.Select(r => (r.Shown.At, RestHalf(r.Shown.Marker, ui), RestRank(r.Shown.Marker.Kind))).ToList(), MarkerCollar * ui);
         return result
+            .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with { At = places[i], Beside = true }))
             .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
             .ThenBy(r => r.Index)
             .Select(r => r.Shown)
@@ -1001,14 +1095,36 @@ public static partial class MapRenderer
         using var edge = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(120 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
         using var hatchOnGround = OnGround(hatch, ground);
         using var edgeOnGround = OnGround(edge, ground);
-        var box = path.Bounds;
         canvas.Save();
         canvas.ClipPath(path, antialias: true);
-        var step = 5 * ui;
-        for (var x = box.Left - box.Height; x < box.Right; x += step)
-            canvas.DrawLine(x, box.Bottom, x + box.Height, box.Top, hatch);
+        // What is left to draw on: the area's part in view.
+        foreach (var (from, to) in HatchLines(path.Bounds, canvas.LocalClipBounds, 5 * ui))
+            canvas.DrawLine(from, to, hatch);
         canvas.Restore();
         canvas.DrawPath(path, edge);
+    }
+
+    /// <summary>
+    /// The hatch of an area: lines at 45°, <paramref name="step"/> apart, counted from the corner of the area's
+    /// <paramref name="box"/> so they keep their places as the view moves, and only the ones that cross the part
+    /// <paramref name="seen"/>, each cut to it. Zoomed in, a border zone's box is thousands of pixels wide and high,
+    /// and every one of its lines was drawn across the whole box for each frame, nearly all of it outside the window
+    /// (the review of 2026-10-04, A37).
+    /// </summary>
+    public static IEnumerable<(SKPoint From, SKPoint To)> HatchLines(SKRect box, SKRect seen, float step)
+    {
+        if (step <= 0 || !seen.IntersectsWith(box))
+            yield break;
+        seen.Intersect(box);
+        // A line is the points with x + y = c; the first runs through the box's upper left corner.
+        var first = box.Left + box.Top;
+        var from = Math.Max(0, (int)Math.Ceiling((seen.Left + seen.Top - first) / step));
+        var to = (int)Math.Floor((seen.Right + seen.Bottom - first) / step);
+        for (var k = from; k <= to; k++)
+        {
+            var c = first + k * step;
+            yield return (new SKPoint(c - seen.Bottom, seen.Bottom), new SKPoint(c - seen.Top, seen.Top));
+        }
     }
 
     // A paint's colour taken through the ground's alpha (a shader in place of the colour); null: as it is.
@@ -1085,7 +1201,9 @@ public static partial class MapRenderer
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
 
     /// <param name="symbols">The boxes of the symbols placed in this frame: the plate stands on none of them.</param>
-    private static GuideLine? Guide(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols)
+    /// <param name="drawnAt">Where this frame's markers are drawn, by id: the line ends on the symbol, also when it
+    /// stands beside its place (<see cref="SideBySide"/>).</param>
+    private static GuideLine? Guide(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols, IReadOnlyDictionary<string, SKPoint> drawnAt)
     {
         if (scene.Player is not { } player || scene.Kept.Count == 0)
             return null;
@@ -1095,7 +1213,7 @@ public static partial class MapRenderer
             return null;
         var nearest = targets.MinBy(m => player.Position.HorizontalDistanceTo(m.Position))!;
         var from = Screen(camera, scene, player.Position);
-        var to = Screen(camera, scene, nearest.Position);
+        var to = drawnAt.TryGetValue(nearest.Id, out var drawn) ? drawn : Screen(camera, scene, nearest.Position);
         // The number the card shows: horizontal metres to the nearest place, as old as the position.
         var metres = player.Position.HorizontalDistanceTo(nearest.Position);
         var age = DateTime.Now - player.At;
@@ -1191,7 +1309,9 @@ public static partial class MapRenderer
     // The picked quests' places out of view, and the pointed-at quest's while the pointer is on it: one chevron per
     // direction (places whose edge points lie within 56 px merge), in the quest's colour. The same vocabulary as the
     // player's edge badge, smaller and without a plate: the player is level 1.
-    private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui)
+    // A place counts as in view where its symbol is drawn: one set beside its place at the very edge (SideBySide) gets
+    // no chevron while its symbol shows, and one while it doesn't.
+    private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui, IReadOnlyDictionary<string, SKPoint> drawnAt)
     {
         var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
         var center = new SKPoint(w / 2, h / 2);
@@ -1201,7 +1321,7 @@ public static partial class MapRenderer
         {
             if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsPointed(scene, marker) || IsSelected(scene, marker)))
                 continue;
-            var at = Screen(camera, scene, marker.Position);
+            var at = drawnAt.TryGetValue(marker.Id, out var drawn) ? drawn : Screen(camera, scene, marker.Position);
             if (at.X >= 0 && at.X <= w && at.Y >= 0 && at.Y <= h)
                 continue;
             var d = at - center;

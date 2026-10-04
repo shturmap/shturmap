@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Shturmap.Map.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Shturmap.Core\Shturmap.Core.csproj" />
     <ProjectReference Include="..\Shturmap.Data\Shturmap.Data.csproj" />
   </ItemGroup>
