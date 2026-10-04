@@ -5,15 +5,25 @@
   </picture>
 </h1>
 
-> **In private testing.** Expect rough edges. If something is wrong or missing, tell us from the app: the
-> **feedback** button at the top right.
-
 **A second-monitor map for Escape from Tarkov.** Your active quests' objectives, the extracts and your position on
-the map of the raid you're in: what you'd otherwise look up in the wiki, in one window. Website:
-[shturmap.github.io](https://shturmap.github.io)
+the map of the raid you're in: what you'd otherwise look up in the wiki, in one window.
 
-Quest status comes from the game's own log files. Your position comes from the name of the screenshot the game saves
-when you press your screenshot key. No macros, no input to the game, nothing read from its memory.
+**[Download for Windows](https://github.com/shturmap/shturmap/releases)** ·
+[Website](https://shturmap.github.io) ·
+[What it reads, and what it never does](#what-it-reads-and-what-it-never-does) ·
+[Before you install](#before-you-install)
+
+- **What it does.** Before a raid it ranks the maps by how many of your active quests they finish or move on, and
+  lists what to bring. In the raid it shows your objectives and the ways out on the map, each with its distance
+  and direction from the spot where you took your last screenshot.
+- **How it knows.** Quest status comes from the game's own log files. Your position comes from the name of the
+  screenshot the game saves when you press your screenshot key. Quest, map and item data come from tarkov.dev.
+- **What it leaves alone.** No macros, no input to the game, nothing read from its memory, nothing drawn over it.
+- **What you need.** 64-bit Windows 10 (2004) or later. Free, no account, MIT licence.
+- **Where it stands.** In private testing: its releases are marked pre-release, and there are rough edges. If
+  something is wrong or missing, tell us from the app with the **feedback** button at the top right.
+- **The risk.** An unofficial fan project, not made or endorsed by Battlestate Games. There is no guarantee against
+  sanctions, so you use it at your own risk; [Before you install](#before-you-install) says why.
 
 <img alt="Shturmap in a raid on Streets of Tarkov: the raid card with the next objective and the nearest extract by distance and direction, and the map with quest markers and your position" src="https://shturmap.github.io/assets/img/raid.webp" width="800">
 
