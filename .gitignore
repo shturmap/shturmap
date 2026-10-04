@@ -10,6 +10,9 @@ publish/
 .local/
 # The owner's own Tasks-screen screenshots from the removed OCR feature (docs/DESIGN.md §3); never commit them
 tests/fixtures/ocr/
+# Real game log sessions for the replay tests (docs/DESIGN.md §3, "Test fixtures"): they stay on the PC that made
+# them (tools/make-log-fixtures.ps1); never commit them, scrubbed or not (owner, 2026-10-04)
+tests/fixtures/logs/
 
 # The Sentry DSN reports go to (eng\release.ps1 reads it); never commit it
 eng/sentry.dsn

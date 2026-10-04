@@ -1,7 +1,9 @@
 # Copies the application and push-notifications logs of chosen EFT log sessions into tests/fixtures/logs,
 # scrubbed of everything that identifies a player. Never copies backend logs (they hold a session token).
-# The repository is public, so the rule is: an id stays only where it is public game data (a quest or trader id in
-# a message's templateId, an item template in "_tpl", a trader as a message's dialogId or uid). Every other id
+# The copies stay on this PC (git ignores tests/fixtures/logs; no game log goes into the repository, owner 2026-10-04),
+# and they are scrubbed all the same, should one ever be passed on: an id stays only where it is public game data
+# (a quest or trader id in a message's templateId, an item template in "_tpl", a trader as a message's dialogId or
+# uid). Every other id
 # becomes a placeholder: profile ids 000…001, 000…002, … (stable, so tests can still tell the PMC profile from the
 # Scav profile, also on the "[Transit] `<id>`" line that names the profile playing), any other id (messages, events,
 # item instances, the stash, raids) ffffffff000…001, …, and the push channel's id zeros. Tokens, session ids, account

@@ -111,7 +111,7 @@ public class UnfinishedRaidTests
     {
         // The Streets session's log, read up to its second raid's start: as if the game had been closed in that raid.
         var events = new List<GameEvent>();
-        foreach (var file in Directory.GetFiles(Fixtures.PathTo("logs", "log_2026.01.01_15-00-00_1.1.5.1.47510"), "*application*.log"))
+        foreach (var file in Directory.GetFiles(Fixtures.LogSession("log_2026.01.01_15-00-00_1.1.5.1.47510"), "*application*.log"))
         {
             var reader = new LogRecordReader();
             var records = reader.Append(File.ReadAllText(file)).ToList();

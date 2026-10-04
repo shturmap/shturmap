@@ -89,7 +89,7 @@ public class LogReplayTests
     private static (List<Raid> Raids, List<QuestEvent> Quests) Replay(string session)
     {
         var events = new List<GameEvent>();
-        foreach (var file in Directory.GetFiles(Fixtures.PathTo("logs", session), "*.log"))
+        foreach (var file in Directory.GetFiles(Fixtures.LogSession(session), "*.log"))
         {
             var reader = new LogRecordReader();
             var records = reader.Append(File.ReadAllText(file)).ToList();
@@ -325,7 +325,7 @@ public class GroupLoadingInsuranceTests
         // The Streets session: its third raid started 16:27:14 and its end line came at 16:32:38; the insurer's note
         // came 20 s before that.
         var events = new List<GameEvent>();
-        foreach (var file in Directory.GetFiles(Fixtures.PathTo("logs", "log_2026.01.01_15-00-00_1.1.5.1.47510"), "*.log"))
+        foreach (var file in Directory.GetFiles(Fixtures.LogSession("log_2026.01.01_15-00-00_1.1.5.1.47510"), "*.log"))
             events.AddRange(Parse(File.ReadAllText(file)));
         var tracker = new RaidTracker();
         var hints = new RaidOutcomeHints();

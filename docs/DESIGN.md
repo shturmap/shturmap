@@ -142,12 +142,16 @@ against sanctions); and say that some players see a position map as an unfair ad
   README says Shturmap is unofficial and that game content belongs to Battlestate Games.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
   the only custom glyph is the crosshair (drawn from a path in `Shturmap.Map.Glyphs`).
-- **Test fixtures** contain only scrubbed logs (`tools/make-log-fixtures.ps1`) and the maps.json snapshot. In the
-  logs an id stays only where it is public game data (a quest or trader id in a message's `templateId`, an item
-  template, a trader as the sender); every other id is a placeholder (profiles, messages, events, item instances,
-  the stash, raids, the push channel), and tokens, session ids, account ids and addresses are masked.
-  `FixtureScrubTests` fail on anything else (review of 2026-10-04: the scrubber had masked profile ids only after
-  "profileid", and ids on other lines stayed). Quest
+- **Test fixtures** in the repository are the maps.json snapshot only. **Game logs are not in the repository**, not
+  even scrubbed (owner, 2026-10-04: "I don't think logs should be in the repo at all if not needed"; until then
+  four scrubbed sessions were committed, and the review of that day found ids the scrubber had missed: profile ids
+  were masked only after "profileid", so ids on other lines stayed. They were taken out of the whole history the
+  same day). The sessions that a few tests replay stay on the PC that made them, in `tests/fixtures/logs`, which git
+  ignores; without them those tests are skipped, and the same logic is tested on log lines written by hand, with
+  made-up ids. `tools/make-log-fixtures.ps1` makes the local copies and still scrubs them: an id stays only where it
+  is public game data (a quest or trader id in a message's `templateId`, an item template, a trader as the sender);
+  every other id is a placeholder (profiles, messages, events, item instances, the stash, raids, the push channel),
+  and tokens, session ids, account ids and addresses are masked. `FixtureScrubTests` check the local copies. Quest
   texts are not committed: the synopsis tests quote a few short objective lines, and the check over all quests
   reads the user's local tarkov.dev cache.
   `tests/fixtures/ocr` is ignored by git: it holds the owner's own Tasks screenshots from the removed OCR feature.
@@ -1249,7 +1253,8 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
 
 Rules:
 
-- Core logic is pure and unit-tested; fixtures come from real logs (scrubbed with `tools/make-log-fixtures.ps1`).
+- Core logic is pure and unit-tested, on log lines written by hand; a few tests also replay real sessions, which stay
+  on the developer's PC and out of the repository (§3, "Test fixtures").
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs, and writes what Copy
   diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render`; never capture the user's screens.

@@ -17,9 +17,11 @@ tracked file, a test or fixture, a commit message, release notes, an issue or a 
   <339214139+shturmap@users.noreply.github.com>`. No email addresses, postal address, phone number, Windows user
   name, machine name, IP addresses, or paths under the user folder (write `%USERPROFILE%`); no screenshots of the
   owner's screen.
-- **Players' data:** game profile and account ids, nicknames, IPs, session tokens. Log fixtures come only through
-  `tools\make-log-fixtures.ps1`, which replaces ids by placeholders; never copy a backend log, a study log, a
-  diagnostics text or a Sentry report into the repository.
+- **Players' data:** game profile and account ids, nicknames, IPs, session tokens. **No game log goes into the
+  repository, scrubbed or not** (owner, 2026-10-04): the sessions a few tests replay stay in `tests\fixtures\logs`,
+  which git ignores (`tools\make-log-fixtures.ps1` makes them; those tests skip without them). A test that needs a
+  log line writes it by hand with made-up ids. Never copy a backend log, a study log, a diagnostics text or a Sentry
+  report into the repository either.
 - **Links to private workspaces:** no claude.ai links (sessions, artifacts), so commit messages end with the
   `Co-Authored-By` line only, without a `Claude-Session` link.
 - **Copyrighted data:** quest texts, tarkov.dev payloads or Battlestate art (see below).

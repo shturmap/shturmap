@@ -7,6 +7,20 @@ internal static class Fixtures
     public static string PathTo(params string[] parts) =>
         Path.Combine([AppContext.BaseDirectory, "fixtures", .. parts]);
 
+    /// <summary>
+    /// The folder of a real game log session, for the tests that replay one. The sessions are not in the repository
+    /// (owner, 2026-10-04: game logs don't belong there if they aren't needed; they come from a player's own game):
+    /// they stay on the PC that made them, in tests\fixtures\logs, which git ignores. Without them the test is
+    /// skipped; the same logic is tested on lines written by hand in the other log tests.
+    /// </summary>
+    public static string LogSession(string session)
+    {
+        var folder = PathTo("logs", session);
+        if (!Directory.Exists(folder))
+            Assert.Skip($@"The game log session {session} isn't on this PC: real logs stay out of the repository (tools\make-log-fixtures.ps1 makes them from your own).");
+        return folder;
+    }
+
     private static readonly Lazy<IReadOnlyList<MapDefinition>> Definitions =
         new(() => MapDefinitionReader.Read(File.ReadAllText(PathTo("tarkov-dev", "maps.json"))));
 

@@ -3,11 +3,12 @@ using System.Text.RegularExpressions;
 namespace Shturmap.Core.Tests;
 
 /// <summary>
-/// The log fixtures come from real game logs, and the repository is public: nothing in them may identify a player.
-/// Every id is either public game data (a quest, a trader, an item template) or a placeholder written by
-/// tools\make-log-fixtures.ps1; tokens, session ids and addresses are masked. See CLAUDE.md, "Players' data", and
-/// docs/DESIGN.md §3, "Test fixtures". A failure names the file, the line and what stands before the value, never
-/// the value itself: test output is public too.
+/// The log fixtures come from real game logs: nothing in them may identify a player. Every id is either public game
+/// data (a quest, a trader, an item template) or a placeholder written by tools\make-log-fixtures.ps1; tokens,
+/// session ids and addresses are masked. See CLAUDE.md, "Players' data", and docs/DESIGN.md §3, "Test fixtures".
+/// Since 2026-10-04 the fixtures are not in the repository at all (they stay on the PC that made them), so this
+/// checks the local copies, should they ever be passed on, and is skipped without them. A failure names the file,
+/// the line and what stands before the value, never the value itself: test output is public.
 /// </summary>
 public partial class FixtureScrubTests
 {
@@ -48,8 +49,10 @@ public partial class FixtureScrubTests
 
     private static IEnumerable<(string File, int Number, string Text)> Lines()
     {
-        var files = Directory.EnumerateFiles(Fixtures.PathTo("logs"), "*.log", SearchOption.AllDirectories).ToList();
-        Assert.NotEmpty(files);
+        var folder = Fixtures.PathTo("logs");
+        var files = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*.log", SearchOption.AllDirectories).ToList() : [];
+        if (files.Count == 0)
+            Assert.Skip("No game log fixtures on this PC: they stay out of the repository.");
         return files.SelectMany(f => File.ReadLines(f).Select((text, i) => (Path.GetFileName(f), i + 1, text)));
     }
 
