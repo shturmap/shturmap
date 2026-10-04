@@ -57,15 +57,6 @@ public class QuestProgressTests
     }
 
     [Fact]
-    public void Manual_holds_until_the_game_says_otherwise()
-    {
-        var result = Resolve(
-            Obs("c", QuestState.Active, ObservationSource.Log, 28),
-            Obs("c", QuestState.NotStarted, ObservationSource.Manual, 29));
-        Assert.Equal(QuestState.NotStarted, result["c"].State);
-    }
-
-    [Fact]
     public void Prerequisites_of_an_active_quest_are_implied_complete()
     {
         var result = Resolve(Obs("c", QuestState.Active, ObservationSource.TasksScan, 30));

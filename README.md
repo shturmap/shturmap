@@ -26,7 +26,9 @@ when you press your screenshot key. No macros, no input to the game, no access t
   distance and direction. No clicks.
 - **Quest cards:** objectives, keys and items for any quest, one hover away. Pop out a card and its distances stay
   live.
-- **Quest tracking:** started, finished, failed, read from the game's own log files. Nothing to tick off.
+- **Quest tracking:** started, finished, failed, read from the game's own log files. Nothing has to be ticked off.
+  The logs don't say when a single objective is done, so you can tick one on its quest's card if you want the map
+  to stop leading you there.
 - **Native Windows app:** C# on .NET and WinUI 3, with the map drawn on your GPU. No Electron; it opens in under a
   second.
 

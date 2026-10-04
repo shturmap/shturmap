@@ -453,6 +453,25 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 else
                     Say("No quest " + pickName);
                 break;
+            case "tick":
+                // Ticks (or unticks) an objective as done, as the box on its quest card does: the quest, then which of
+                // its objectives, counted from 1 in the card's order. For this session only: a script leaves no ticks.
+                var tickName = string.Join(' ', step.Args.Take(Math.Max(1, step.Args.Count - 1)));
+                var number = (int)step.Number(step.Args.Count - 1, 1);
+                if (QuestNamed(tickName) is { } tickQuest && Snapshot?.Data?.Tasks.GetValueOrDefault(tickQuest)?.Objectives is { } all
+                    && number >= 1 && number <= all.Count)
+                {
+                    await session.ToggleTickAsync(all[number - 1].Id, "dev", save: false);
+                    Say($"ticked objective {number} of {tickName}");
+                }
+                else
+                {
+                    Say($"No objective {number} of a quest {tickName}");
+                }
+                break;
+            case "show":
+                window.DevShowQuest(string.Join(' ', step.Args));
+                break;
             case "place":
                 PlaceOnView(step.Number(0, 0.5), step.Number(1, 0.5),
                     step.Args.Count >= 4 ? step.Number(2) : null, step.Args.Count >= 4 ? step.Number(3) : null);

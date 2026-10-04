@@ -281,7 +281,8 @@ public static partial class MapRenderer
         using var bold = new SKFont(TypefaceBold, 13 * ui);
         // A lock's key and a switch's name are said close up, or for the one pointed at.
         var landmarkLabels = ZoomOverOverview(camera, scene, ui) >= LandmarkLabelFromZoom;
-        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && (scene.ShowLabels || m.Selected) && (m.Selected || landmarkLabels || !IsLandmark(m.Marker.Kind)))
+        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && m.Marker.Kind != MarkerKind.ObjectiveDone && (scene.ShowLabels || m.Selected)
+                                             && (m.Selected || landmarkLabels || !IsLandmark(m.Marker.Kind)))
                      .OrderBy(LabelRank).ThenByDescending(m => m.Count))
         {
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
@@ -501,9 +502,13 @@ public static partial class MapRenderer
     {
         var at = Screen(camera, scene, marker.Position);
         var focused = IsFocused(scene, marker);
-        var selected = IsSelected(scene, marker) || focused;
+        // A done objective is no place to go to any more: it keeps its quiet look (a small muted disc with a check),
+        // at its rest size and without a name, also while its quest is picked or pointed at (owner, 2026-10-04: an
+        // objective the player ticked as done).
+        var done = marker.Kind == MarkerKind.ObjectiveDone;
+        var selected = !done && (IsSelected(scene, marker) || focused);
         // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
-        var kept = marker.Objective is not null && IsSelected(scene, marker);
+        var kept = marker.Objective is not null && !done && IsSelected(scene, marker);
         // A lock a picked quest needs the key of is part of the pick: the picks' colour, without their ring.
         var color = kept || IsKeptKey(scene, marker) ? Kept : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
@@ -868,10 +873,12 @@ public static partial class MapRenderer
                 hazardLabels.Add((label, centre));
             return;
         }
-        var kept = zone.Group is not null && scene.Kept.Contains(zone.Group);
+        // A done objective's zone stays muted and quiet, also while its quest is picked or pointed at.
+        var done = zone.Kind == MarkerKind.ObjectiveDone;
+        var kept = !done && zone.Group is not null && scene.Kept.Contains(zone.Group);
         var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
-        var selected = kept || focused;
+        var selected = !done && (kept || focused);
         // Zones outside the focus ease back with the scene's Dim, by the measure of their markers (StepBackOf).
         var strength = ZoneStrength(scene, zone, stepBack);
         using var fill = new SKPaint { Color = color.WithAlpha((byte)Math.Round(selected ? 70 : 35 * strength)), IsAntialias = true };
@@ -1297,7 +1304,7 @@ public static partial class MapRenderer
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
-        if (scene.Pulsing && IsFocused(scene, marker))
+        if (scene.Pulsing && IsFocused(scene, marker) && marker.Kind != MarkerKind.ObjectiveDone)
             DrawPulse(canvas, scene, at, r, color, ui);
         // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band,
         // then the colour, so it reads on light and dark artwork alike.

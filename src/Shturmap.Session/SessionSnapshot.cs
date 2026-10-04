@@ -190,6 +190,15 @@ public sealed record SessionSnapshot
     /// <summary>The quests picked for the coming raid in this mode (<see cref="QuestPicks"/>).</summary>
     public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();
 
+    /// <summary>
+    /// The objectives the player ticked as done in this mode, each with the day it was set (<see cref="ObjectiveTicks"/>).
+    /// The plans, the rail and the map already leave them out; the cards show them as done and say why.
+    /// </summary>
+    public IReadOnlyDictionary<string, DateOnly> Ticks { get; init; } = new Dictionary<string, DateOnly>();
+
+    /// <summary>The ticked objectives' ids.</summary>
+    public IReadOnlySet<string> Done { get; init; } = new HashSet<string>();
+
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];
 

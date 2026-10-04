@@ -161,6 +161,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var env = new WindowsGameEnvironment();
             _store = new ProgressStore(paths.Database);
             _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
+            _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
             Study.Context = StudyContext;
 #if DEVTOOLS
             // Developer builds only (owner, 2026-10-03); a release leaves the study log off and any old days alone.
@@ -561,9 +562,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _gate.Release();
         }
     }
-
-    public Task SetQuestStateAsync(string questId, QuestState state) =>
-        AddObservationsAsync([new QuestObservation(_mode, questId, state, ObservationSource.Manual, DateTime.Now, "manual:" + Guid.NewGuid())]);
 
     // ---- game data ----
 
@@ -1076,7 +1074,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private Planning.KitList KitOn(MapIdentity map)
     {
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-        return _data is null ? Planning.KitList.Empty : Planning.Kit(Planning.PlanFor(_data, active, map.NormalizedName), Picks);
+        return _data is null ? Planning.KitList.Empty : Planning.Kit(Planning.PlanFor(_data, active, map.NormalizedName, _done), Picks);
     }
 
     // A raid loading's or a group pick's cue with the kit pictured (owner, 2026-10-03: the text notice "Loading … ·
@@ -1138,7 +1136,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             case RaidLoading:
                 var rank = _plan.ToList().FindIndex(p => p.NormalizedName == _raidMap?.NormalizedName);
                 var plan = _data is null || _raidMap is null ? null
-                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _raidMap.NormalizedName);
+                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _raidMap.NormalizedName, _done);
                 // The plan's COMPLETE and PROGRESS quests, to check later which of them the raid actually completed.
                 Study.Game("raid.loading", ("raidMap", _raidMap?.NormalizedName), ("planRank", rank < 0 ? null : rank + 1), ("planTop", _plan.FirstOrDefault()?.NormalizedName),
                     ("bring", plan?.Requirements.Select(r => r.Text).ToList() ?? []),
@@ -1284,18 +1282,84 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_store is null)
             return;
         var tasks = _data?.Tasks;
-        // Only the game's own log counts (docs/DESIGN.md §8). Rows from earlier Tasks scans or the TarkovEyes import
-        // may still be in the database; they are ignored.
+        // Only the game's own log counts (docs/DESIGN.md §8). Rows from earlier Tasks scans, the TarkovEyes import or
+        // quest states once set by hand may still be in the database; they are ignored (owner, 2026-10-04: no editing
+        // of quests by hand).
         _quests = QuestProgress.Resolve(
-            _store.Load(_mode).Where(o => o.Source is ObservationSource.Log or ObservationSource.Manual),
+            _store.Load(_mode).Where(o => o.Source is ObservationSource.Log),
             id => tasks?.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new QuestRequirement(r.Task, r.Status ?? [])) ?? [],
             id => tasks?.GetValueOrDefault(id)?.Name ?? id);
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId).ToList();
         // A picked quest the log reports completed or failed has nothing left to do: it leaves the picks by itself.
         foreach (var done in _picks?.Prune(_mode, _quests) ?? [])
             Study.Ui("unpick", ("quest", done), ("how", "done"));
-        _plan = _data is null ? [] : Planning.Suggest(_data, active, Picks);
-        _anyMap = _data is null ? [] : Planning.AnyMap(_data, active);
+        // So do the ticks on its objectives: the quest is over, there is nothing left to leave out.
+        foreach (var gone in _ticks?.Prune(_mode, _quests, QuestOf) ?? [])
+            Study.Ui("untick", ("objective", gone), ("quest", QuestOf(gone)), ("how", "done"));
+        _ticked = _ticks?.Of(_mode) ?? NoTicks;
+        _done = _ticked.Count == 0 ? NothingDone : _ticked.Keys.ToHashSet(StringComparer.Ordinal);
+        _plan = _data is null ? [] : Planning.Suggest(_data, active, Picks, _done);
+        _anyMap = _data is null ? [] : Planning.AnyMap(_data, active, _done);
+    }
+
+    // ---- ticks: the objectives the player says are done ----
+
+    private ObjectiveTicks? _ticks;
+
+    private static readonly IReadOnlyDictionary<string, DateOnly> NoTicks = new Dictionary<string, DateOnly>();
+    private static readonly IReadOnlySet<string> NothingDone = new HashSet<string>();
+
+    // This mode's ticks as of the last RecomputeQuests, and their ids: what the plans, the map and the cards leave out.
+    private IReadOnlyDictionary<string, DateOnly> _ticked = NoTicks;
+    private IReadOnlySet<string> _done = NothingDone;
+
+    // Which quest an objective belongs to, from the data; built once per data set.
+    private (GameData Data, Dictionary<string, string> Quests)? _objectiveQuests;
+
+    private string? QuestOf(string objectiveId)
+    {
+        if (_data is null)
+            return null;
+        if (!ReferenceEquals(_objectiveQuests?.Data, _data))
+        {
+            var quests = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var task in _data.Tasks.Values)
+                foreach (var objective in task.Objectives ?? [])
+                    quests[objective.Id] = task.Id;
+            _objectiveQuests = (_data, quests);
+        }
+        return _objectiveQuests.Value.Quests.GetValueOrDefault(objectiveId);
+    }
+
+    /// <summary>
+    /// Ticks an objective as done, or unticks it (the box on its quest card; owner, 2026-10-04). The game's logs never
+    /// say that a single objective is done, so this is the one thing the player may tell Shturmap about progress: it is
+    /// never asked for, and the quest's own state still comes from the logs alone. Only an active quest's objective
+    /// can be ticked; a tick can always be taken back, and leaves by itself when the log reports the quest completed
+    /// or failed.
+    /// </summary>
+    /// <param name="how">For the study log: "card", "dev", ….</param>
+    /// <param name="save">False for a tick that must not outlive the session (developer snapshots).</param>
+    public async Task ToggleTickAsync(string objectiveId, string how, bool save = true)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (_ticks is null)
+                return;
+            var quest = QuestOf(objectiveId);
+            var ticked = _ticks.Of(_mode).ContainsKey(objectiveId);
+            if (!ticked && (quest is null || _quests.GetValueOrDefault(quest)?.State != QuestState.Active))
+                return;
+            var now = _ticks.Toggle(_mode, objectiveId, DateOnly.FromDateTime(Clock()), save);
+            Study.Ui(now ? "tick" : "untick", ("objective", objectiveId), ("quest", quest), ("how", how));
+            RecomputeQuests();
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     // ---- picks: the quests chosen for the coming raid ----
@@ -1400,7 +1464,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var data = _data;
             MapContent ContentOf(MapIdentity map)
             {
-                var built = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+                var built = MapContentBuilder.Build(data, map.Id, active, _done);
                 if (side == RaidSide.Unknown)
                     return built;
                 var otherSide = side == RaidSide.Scav ? MarkerKind.ExtractPmc : MarkerKind.ExtractScav;
@@ -1418,7 +1482,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             {
                 double? distance = null, height = null, bearing = null;
                 RelativeDirection? direction = null;
-                if (fix is not null && o.Places.Count > 0)
+                // An objective ticked as done isn't measured: it is no place to go to any more.
+                if (fix is not null && o.Places.Count > 0 && !o.Done)
                 {
                     var nearest = o.Places.MinBy(p => fix.Position.HorizontalDistanceTo(p));
                     distance = fix.Position.HorizontalDistanceTo(nearest);
@@ -1490,10 +1555,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
             Picks = Picks,
+            Ticks = _ticked,
+            Done = _done,
             AnyMap = _anyMap,
             MapPlan = _data is not null && railMap is not null
                 ? _plan.FirstOrDefault(p => p.NormalizedName == railMap.NormalizedName)
-                  ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), railMap.NormalizedName)
+                  ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), railMap.NormalizedName, _done)
                 : null,
             LastRaid = _lastRaidState is ({ } state, var endedAt, var endInLog) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
                 ? new LastRaidView(lastMap.Name, endInLog ? endedAt - state.RaidStartedAt!.Value : TimeSpan.Zero, state.Side, endedAt) { LengthKnown = endInLog }

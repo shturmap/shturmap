@@ -72,4 +72,30 @@ public class PickTests
         Assert.True(scene.HasHighlight);
         Assert.Equal(["a"], scene.ShownFocus);
     }
+
+    // An objective the player ticked as done is no place to go to (owner, 2026-10-04): in a picked quest it keeps the
+    // quiet done look, without the pick's size, ring and name, and the guide line leads past it to an open place.
+    [Fact]
+    public void A_done_objective_of_a_picked_quest_keeps_its_quiet_look()
+    {
+        var (camera, scene) = Of([Quest("open", 300, 0, "A", group: "a"), Quest("done", 20, 0, "A", MarkerKind.ObjectiveDone, group: "a")]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
+        scene.Kept = new HashSet<string> { "a" };
+        var layout = MapRenderer.Layout(camera, scene, 1);
+        var done = layout.Markers.Single(m => m.Marker.Kind == MarkerKind.ObjectiveDone);
+        var open = layout.Markers.Single(m => m.Marker.Kind == MarkerKind.Objective);
+        Assert.True(open.Kept);
+        Assert.False(done.Kept);
+        Assert.False(done.Selected);
+        Assert.Equal(10, done.R);
+        Assert.DoesNotContain(layout.Labels, l => l.Of == done);
+        Assert.Equal(300, layout.Guide!.Metres, 3);
+
+        // Pointed at, it is still no bigger and still unnamed.
+        scene.Kept = new HashSet<string>();
+        scene.Focus = new HashSet<string> { "a" };
+        var pointed = MapRenderer.Layout(camera, scene, 1);
+        Assert.Equal(10, pointed.Markers.Single(m => m.Marker.Kind == MarkerKind.ObjectiveDone).R);
+        Assert.Equal(12, pointed.Markers.Single(m => m.Marker.Kind == MarkerKind.Objective).R);
+    }
 }

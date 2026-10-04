@@ -37,8 +37,11 @@ public static class Planning
     /// <param name="picks">The quests picked for the coming raid: maps with picks come first, most picks first, the
     /// player's plan before the planner's (owner, 2026-10-03), also a map the planner ranks below its best four
     /// (<see cref="RaidPlanner.Rank"/>); otherwise the planner's order.</param>
-    public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null) =>
-        RaidPlanner.Rank(Quests(data, activeQuestIds), Maps(data), picks: picks).Select(p => ToView(data, p)).ToList();
+    /// <param name="done">The objectives the player ticked as done (<see cref="ObjectiveTicks"/>): the plan is made
+    /// from the objectives that are left (<see cref="Open"/>).</param>
+    public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null,
+        IReadOnlySet<string>? done = null) =>
+        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), picks: picks).Select(p => ToView(data, p)).ToList();
 
     /// <summary>A plan card's quest sections with the picks taken out to their own group on top (<see cref="Sections"/>).</summary>
     /// <param name="Picks">The picked quests on this map: those that can be completed first, then those that only
@@ -133,11 +136,12 @@ public static class Planning
     }
 
     /// <summary>The plan for one map (whether or not it ranks), e.g. for the bring-list when a raid loads.</summary>
-    public static MapPlanView? PlanFor(GameData data, IEnumerable<string> activeQuestIds, string normalizedName)
+    /// <param name="done">The objectives the player ticked as done: left out, as in <see cref="Suggest"/>.</param>
+    public static MapPlanView? PlanFor(GameData data, IEnumerable<string> activeQuestIds, string normalizedName, IReadOnlySet<string>? done = null)
     {
         var id = data.MapByNormalizedName(normalizedName)?.Id;
         var map = Maps(data).FirstOrDefault(m => id is not null && m.MapIds.Contains(id));
-        return map is null ? null : ToView(data, RaidPlanner.Plan(Quests(data, activeQuestIds), map));
+        return map is null ? null : ToView(data, RaidPlanner.Plan(Quests(data, activeQuestIds, done), map));
     }
 
     /// <summary>
@@ -148,11 +152,22 @@ public static class Planning
         string.Join(" · ", new[] { plan.RaidMinutes > 0 ? $"{plan.RaidMinutes} min raid" : null }.Concat(plan.Bosses).OfType<string>());
 
     /// <summary>Active quests whose in-raid work fits any map.</summary>
-    public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds) =>
-        RaidPlanner.AnyMap(Quests(data, activeQuestIds)).Select(q => QuestView(data, q)).ToList();
+    public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? done = null) =>
+        RaidPlanner.AnyMap(Quests(data, activeQuestIds, done)).Select(q => QuestView(data, q)).ToList();
 
-    private static List<PlanQuest> Quests(GameData data, IEnumerable<string> ids) =>
-        ids.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>().Select(t => ToPlan(t, data)).ToList();
+    private static List<PlanQuest> Quests(GameData data, IEnumerable<string> ids, IReadOnlySet<string>? done = null) =>
+        ids.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>().Select(t => Open(ToPlan(t, data), done)).ToList();
+
+    /// <summary>
+    /// A quest as the planner sees it once the player ticked objectives as done (owner, 2026-10-04): without them.
+    /// Everything a plan says follows from the objectives that are left: COMPLETE or PROGRESS, the score, the
+    /// synopsis, the progress note, the need cells, BRING, the kit and the effort order. A quest with no raid work
+    /// left is tied to no map, so it appears on none.
+    /// </summary>
+    public static PlanQuest Open(PlanQuest quest, IReadOnlySet<string>? done) =>
+        done is not { Count: > 0 } || !quest.Objectives.Any(o => done.Contains(o.Id))
+            ? quest
+            : quest with { Objectives = quest.Objectives.Where(o => !done.Contains(o.Id)).ToList() };
 
     /// <summary>"Kaban 75%": a boss and its spawn chance, without the locale's space before the percent sign.</summary>
     public static string BossText((string Name, double Chance) boss) => $"{boss.Name} {Math.Round(boss.Chance * 100):0}%";
@@ -451,8 +466,12 @@ public static class Planning
         return rows;
     }
 
+    // The quest's type is that of the whole quest, also when some of its objectives are ticked as done: the glyph a
+    // player knows it by must not change as the quest goes on.
     private static PlanQuestView QuestView(GameData data, PlanQuest q) =>
-        new(q.Id, q.Name, QuestTaxonomy.QuestKind(q.Objectives.Select(o => o.Kind)), data.Tasks.GetValueOrDefault(q.Id)?.Trader);
+        data.Tasks.GetValueOrDefault(q.Id) is { } task
+            ? new(q.Id, q.Name, QuestCards.KindOf(task), task.Trader)
+            : new(q.Id, q.Name, QuestTaxonomy.QuestKind(q.Objectives.Select(o => o.Kind)), null);
 
     /// <param name="sources">The item categories, to name a weapon class (<see cref="WeaponText"/>); may be null.</param>
     public static RequirementView RequirementText(GameData data, Requirement r, ItemSources? sources = null)

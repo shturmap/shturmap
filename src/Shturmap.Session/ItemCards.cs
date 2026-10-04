@@ -42,13 +42,19 @@ public static class ItemCards
         public List<string> Purposes { get; } = [];
     }
 
-    public static ItemCardView Build(GameData data, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests, string itemId)
+    /// <param name="done">The objectives the player ticked as done (<see cref="ObjectiveTicks"/>): what they needed is
+    /// no longer a use of the item.</param>
+    public static ItemCardView Build(GameData data, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests, string itemId,
+        IReadOnlySet<string>? done = null)
     {
         var uses = new List<ItemUse>();
         foreach (var status in quests.Values.Where(q => q.State == QuestState.Active))
         {
             if (!data.Tasks.TryGetValue(status.QuestId, out var task))
                 continue;
+            bool Done(ApiObjective o) => done?.Contains(o.Id) == true;
+            var anyDone = (task.Objectives ?? []).Any(Done);
+            var openMaps = (task.Objectives ?? []).Where(o => !Done(o)).SelectMany(QuestCards.MapIds).ToHashSet(StringComparer.Ordinal);
             // One line per way the quest needs it, gathered over its objectives: how many in all and on which maps
             // (the review of 2026-10-04: three "mark" objectives read "Bring, to mark" where BRING said "×3").
             var ways = new List<Way>();
@@ -73,6 +79,8 @@ public static class ItemCards
 
             foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
             {
+                if (Done(o))
+                    continue;
                 var maps = QuestCards.MapIds(o).ToList();
                 var count = Math.Max(1, o.Count ?? 1);
                 if ((o.RequiredKeys ?? []).Any(set => set.Contains(itemId)))
@@ -120,6 +128,9 @@ public static class ItemCards
             }
             foreach (var needed in task.NeededKeys ?? [])
             {
+                // A quest-level key counts only for a map where an open objective is left (as on the quest card).
+                if (anyDone && needed.Map is not null && !openMaps.Contains(needed.Map))
+                    continue;
                 if (needed.Keys?.Contains(itemId) == true)
                     Add("Key", needed.Map is null ? [] : [needed.Map]);
             }

@@ -7,8 +7,14 @@ namespace Shturmap.Session;
 
 /// <param name="Where">Map names, "any map", or empty for work at the trader.</param>
 /// <param name="ItemId">An item the objective is about, to picture next to it.</param>
-/// <param name="Live">In a raid on this objective's map: how far and which way from the last fix ("121 m · NE").</param>
-public sealed record CardObjective(string QuestId, string ObjectiveId, ObjectiveKind Kind, string Text, string Where, string? ItemId, string Live)
+/// <param name="Live">In a raid on this objective's map: how far and which way from the last fix ("121 m · NE"); empty
+/// for an objective ticked as done.</param>
+/// <param name="Done">The player ticked it as done (<see cref="ObjectiveTicks"/>).</param>
+/// <param name="Ticked">Where "done" comes from, in the place of <paramref name="Live"/>: "Done · ticked by you, 4 Oct".</param>
+/// <param name="Tickable">Its tick box shows: the quest is active, or the objective is ticked (a tick can always be
+/// taken back).</param>
+public sealed record CardObjective(string QuestId, string ObjectiveId, ObjectiveKind Kind, string Text, string Where, string? ItemId, string Live,
+    bool Done = false, string Ticked = "", bool Tickable = false)
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
 }
@@ -51,8 +57,10 @@ public static class QuestCards
 
     /// <param name="live">Distance and direction for an objective id, in a raid on its map; null or empty otherwise.</param>
     /// <param name="sources">Where items come from, for one line under each thing to bring.</param>
+    /// <param name="ticks">The objectives the player ticked as done, each with its day (<see cref="ObjectiveTicks"/>):
+    /// they read as done and say why, and BRING lists only what the open objectives need.</param>
     public static QuestCardView? Build(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, string questId,
-        Func<string, string?>? live = null, ItemSources? sources = null)
+        Func<string, string?>? live = null, ItemSources? sources = null, IReadOnlyDictionary<string, DateOnly>? ticks = null)
     {
         if (!data.Tasks.TryGetValue(questId, out var task))
             return null;
@@ -81,8 +89,8 @@ public static class QuestCards
             string.Join(" · ", facts.Where(f => f.Length > 0)),
             StatusText(status),
             status?.State ?? QuestState.NotStarted,
-            objectives.Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "")).ToList(),
-            Needs(data, task, sources, quests),
+            objectives.Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "", status?.State == QuestState.Active, ticks)).ToList(),
+            Needs(data, task, sources, quests, ticks),
             unlocks.Take(ShownUnlocks).ToList(),
             unlocks.Count > ShownUnlocks ? $"and {unlocks.Count - ShownUnlocks} more" : "",
             task.WikiLink);
@@ -108,14 +116,17 @@ public static class QuestCards
         var source = status.Source switch
         {
             ObservationSource.Log => $"from the game log, {day}",
-            ObservationSource.Manual => "set by you",
             _ when status.ImpliedBy is { } later => $"because {later} needs it",
             _ => null,
         };
         return source is null ? state : $"{state} · {source}";
     }
 
-    private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live)
+    /// <summary>"Done · ticked by you, 4 Oct": where an objective's "done" comes from (docs/DESIGN.md §4, "Says why").</summary>
+    public static string TickedText(DateOnly day) =>
+        day == default ? "Done · ticked by you" : $"Done · ticked by you, {day.ToString("d MMM", CultureInfo.CurrentCulture)}";
+
+    private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live, bool active, IReadOnlyDictionary<string, DateOnly>? ticks)
     {
         var kind = QuestTaxonomy.Classify(o.Type);
         var where = MapNames(data, MapIds(o));
@@ -126,7 +137,10 @@ public static class QuestCards
             text += " (optional)";
         var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
             ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id ?? o.UsingWeapon?.FirstOrDefault();
-        return new CardObjective(task.Id, o.Id, kind, text, where, item, live);
+        // A ticked objective isn't measured any more: where its distance stood, it says that it is done and why.
+        return ticks is not null && ticks.TryGetValue(o.Id, out var day)
+            ? new CardObjective(task.Id, o.Id, kind, text, where, item, "", Done: true, Ticked: TickedText(day), Tickable: true)
+            : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active);
     }
 
     internal static IEnumerable<string> MapIds(ApiObjective o) =>
@@ -163,8 +177,14 @@ public static class QuestCards
     // across the quest's objectives, and a key or item needed on two maps names both. One row per objective, dropped
     // when its text was already there, lost both (the review of 2026-10-04: three "mark" objectives read "MS2000
     // Marker" where Plan said "×3", and a key needed on two maps named the first).
-    private static List<CardNeed> Needs(GameData data, ApiTask task, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests)
+    // An objective ticked as done needs nothing brought any more, and a quest-level key counts only for a map where an
+    // open objective is left.
+    private static List<CardNeed> Needs(GameData data, ApiTask task, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests,
+        IReadOnlyDictionary<string, DateOnly>? ticks = null)
     {
+        bool Done(ApiObjective o) => ticks?.ContainsKey(o.Id) == true;
+        var anyDone = (task.Objectives ?? []).Any(Done);
+        var openMaps = (task.Objectives ?? []).Where(o => !Done(o)).SelectMany(MapIds).ToHashSet(StringComparer.Ordinal);
         var rows = new List<Need>();
         var byKey = new Dictionary<string, Need>(StringComparer.Ordinal);
         void Add(RequirementKind kind, IReadOnlyList<string> alternatives, int count, IEnumerable<string> maps, string purpose)
@@ -189,6 +209,8 @@ public static class QuestCards
 
         foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
         {
+            if (Done(o))
+                continue;
             var maps = (o.Maps ?? []).Concat((o.Zones ?? []).Select(z => z.Map)).OfType<string>().ToList();
             foreach (var keys in plan.Keys)
                 Add(RequirementKind.Key, keys, 1, maps, "key");
@@ -210,8 +232,12 @@ public static class QuestCards
                 Add(RequirementKind.Exit, [item], count, maps, "to leave through " + plan.Exit);
         }
         foreach (var needed in task.NeededKeys ?? [])
+        {
+            if (anyDone && needed.Map is not null && !openMaps.Contains(needed.Map))
+                continue;
             foreach (var key in needed.Keys ?? [])
                 Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map], "key");
+        }
 
         var needs = new List<CardNeed>();
         foreach (var need in rows)

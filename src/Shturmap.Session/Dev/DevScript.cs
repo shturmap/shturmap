@@ -39,6 +39,8 @@ public static class DevScript
         ["quest"] = "start | complete | fail <quest id or part of its name>",
         ["place"] = "<fx> <fy> [<to fx> <to fy>]: a click (or drag, for the facing) on the map at fractions of its size",
         ["pick"] = "<id or name>: picks (or unpicks) the quest for the coming raid, as its pen does",
+        ["tick"] = "<quest id or name> <n>: ticks (or unticks) the quest's n-th objective as done, as the box on its card does; not saved",
+        ["show"] = "<part of a quest's name>: its card held, the first thing it needs beside it, and the quest popped out, as --show-quest does for snapshots",
         ["pos"] = "<x> <y> <z> [yaw]: a screenshot at that world position",
         ["repeat"] = "a screenshot at the last position again",
         ["age"] = "<minutes>: the last position becomes older",
