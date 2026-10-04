@@ -726,6 +726,12 @@ spawns below).
   that fits in 120 px and follows the zoom. No range rings (three circles on every view for a question the bar and
   the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
   relative to the facing).
+- **How far the view zooms.** Out to half the zoom that shows the whole map, in to 64 px a map unit. The limit is
+  the drawn map's, set again with every frame (`Camera.LimitTo`): until the review of 2026-10-04 it was the map's that
+  was fitted last, so after a preview of another map the first turn of the wheel jumped to that map's limit. A view
+  outside the limits moves toward them or stays, never jumps. A map fitted while the view has no room (the window
+  minimised, or not laid out yet) is fitted when it has; before, its zoom fell to almost nothing and the map stayed out
+  of sight until "show the whole map".
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once

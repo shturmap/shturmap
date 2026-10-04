@@ -39,6 +39,8 @@ public static partial class MapRenderer
     public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         canvas.Clear(Background);
+        // The zoom limit is the map's that is drawn, not the one's fitted last (a preview leaves its own behind).
+        camera.LimitTo(scene.Projection.WorldRect, 24 * uiScale);
         // Read once: a tile arriving on its own thread may end the sheet in the middle of a frame.
         var sheet = scene.IsSheet;
         if (scene.Artwork is not null)
