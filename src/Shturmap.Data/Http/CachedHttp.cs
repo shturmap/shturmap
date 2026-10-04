@@ -35,9 +35,26 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         {
             Timeout = TimeSpan.FromSeconds(60),
         };
-        // Says who is asking and where to find us, so tarkov.dev can get in touch about Shturmap's traffic.
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Shturmap/0.1 (+https://github.com/shturmap; Escape from Tarkov companion)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         return client;
+    }
+
+    /// <summary>
+    /// Says who is asking, in which version, and where to find us, so tarkov.dev can get in touch about Shturmap's
+    /// traffic and tell a build that misbehaves from the others: "Shturmap/0.3.0 (+https://github.com/shturmap; …)".
+    /// </summary>
+    public static string UserAgent { get; } = $"Shturmap/{BuildVersion()} (+https://github.com/shturmap; Escape from Tarkov companion)";
+
+    // The build's version as every Shturmap assembly carries it (Directory.Build.props), without the commit: "0.3.0",
+    // or a developer build's "0.3.0-dev.<time>".
+    private static string BuildVersion()
+    {
+        var assembly = typeof(CachedHttp).Assembly;
+        var version = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString(3) ?? "0";
+        var commit = version.IndexOf('+');
+        return commit >= 0 ? version[..commit] : version;
     }
 
     public async Task<CachedResponse> GetAsync(Uri uri, string cacheKey, TimeSpan maxAge, CancellationToken ct = default)

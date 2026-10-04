@@ -69,7 +69,8 @@ against sanctions); and say that some players see a position map as an unfair ad
   panel's LICENCES link opens it. Update it in the same change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
   (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
-  terms. Requests say who they are (User-Agent `Shturmap/…`) and are cached with ETags (1 h, 24 h, 7 days by kind).
+  terms. Requests say who they are (User-Agent `Shturmap/<version>` with the project's address, the build's own
+  version without its commit; `CachedHttp.UserAgent`) and are cached with ETags (1 h, 24 h, 7 days by kind).
   Data is downloaded at runtime into the user's cache for personal use and shown with "data tarkov.dev". It is
   never bundled in the repository or a build.
 - **Map geometry** comes from tarkov.dev's `maps.json` (MIT, Copyright (c) 2019 Oskar Risberg; the test fixture
