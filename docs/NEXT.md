@@ -18,8 +18,10 @@ and the direction of the fix. **Status** is one of: open, in work, done (with th
 went from 614 to 899); DESIGN.md has each change. The second round built D1 (ticking an objective) and E1 (the
 highlight down to the objective). The owner then decided the open questions (2026-10-04): P1 (no game logs in the
 repository; the history rewrite is the owner's to run), P2 (say it precisely), A5, A21, A27, B4, H3, C3, C5, C9 and
-E2 are done as decided, and D3 (deleting position screenshots) was added and built. Still to do from that list: B14
-(fetch a tile map whole), and H4 and C1, each with a picture for the owner first.
+E2 are done as decided, and D3 (deleting position screenshots) was added and built. Waiting for the owner again:
+H4 and C1 are built on branches of their own, with a before and after picture each (merge on the owner's word);
+B14 turned out larger than proposed and needs the decision again (three ways, under B14); and the history rewrite
+(P1) is the owner's to run.
 
 **To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
 code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
@@ -252,7 +254,10 @@ for the languages to come).
   Status: done (2026-10-04: "NEAREST · CHECK YOUR LIST IN GAME" under an extract in the glance, with a tooltip and a
   sentence in help).
 - **H4. Plan's other maps are below the fold**: the expanded card is about 840 px with six quests, so the folded
-  cards to compare it with sit under it. Status: owner to decide (a mock first: the maps as a short list on top).
+  cards to compare it with sit under it. Status: built on the branch `work/h4-plan-list` (2026-10-04), not merged:
+  the suggested maps are a short list on top (name and counts; the rows of the maps that aren't open keep the
+  folded card's glyphs and bring cells), then the open map's card. The owner sees the before and after picture
+  first. The fake game has two maps; a look with four real ones is still due.
 - **H5.** In a PMC raid the extract list is below the card. Status: open (with H4).
 - **H7.** What needs a restart today: tiles after an offline start (A7), item sources after one failed download,
   another install's newer session (A20). Status: open.
@@ -262,7 +267,10 @@ for the languages to come).
 ### C. Design elements
 
 - **C1. The raid card's objective lines** are tarkov.dev's full sentences plus "Bring: MS2000 Marker" on each of three
-  lines; Plan has the short synopsis. Status: owner to decide (a snapshot first: the synopsis per objective).
+  lines; Plan has the short synopsis. Status: built on the branch `work/c1-raid-lines` (2026-10-04), not merged:
+  each line and NEXT say the objective by its synopsis phrase ("Mark Stryker"), and a need the quest's lines would
+  all repeat stands once under the quest's name. The owner sees the before and after picture first. To decide with
+  it: whether NEXT should be short too, or keep the full sentence.
 - **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status:
   open.
 - **C3. Plan card**: the rank numbers "1", "2" say what the order says; the dashed empty cell stands on most rows;
