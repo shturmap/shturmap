@@ -82,11 +82,11 @@ public class LegendTests
             return bitmap.Pixels.Any(p => p.Alpha == 255 && Math.Abs(p.Red - c.Red) <= 3 && Math.Abs(p.Green - c.Green) <= 3 && Math.Abs(p.Blue - c.Blue) <= 3);
         }
         using var pointed = MapLegend.Draw(LegendSymbol.PointedOutOfView, 2);
-        Assert.True(Has(pointed, Palette.Amber) && !Has(pointed, Palette.Kept), "a gold chevron");
+        Assert.True(Has(pointed, Palette.Amber) && !Has(pointed, Palette.Pick1), "a gold chevron");
         using var picked = MapLegend.Draw(LegendSymbol.OutOfView, 2);
-        Assert.True(Has(picked, Palette.Kept) && !Has(picked, Palette.Amber), "a cyan chevron");
+        Assert.True(Has(picked, Palette.Pick1) && !Has(picked, Palette.Amber), "a chevron in the pick's colour");
         using var door = MapLegend.Draw(LegendSymbol.KeptLock, 2);
-        Assert.True(Has(door, Palette.Kept), "a cyan padlock");
+        Assert.True(Has(door, Palette.Pick1), "a padlock in the pick's colour");
         using var ping = MapLegend.Draw(LegendSymbol.Ping, 2);
         Assert.True(Has(ping, Palette.Sand), "sand rings");
     }

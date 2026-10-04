@@ -54,18 +54,18 @@ public class PicksTests
     }
 
     [Fact]
-    public void A_fifth_pick_shares_a_colour_and_picks_from_before_get_one()
+    public void A_ninth_pick_shares_a_colour_and_picks_from_before_get_one()
     {
         var picks = NewPicks();
-        foreach (var id in new[] { "a", "b", "c", "d" })
+        foreach (var id in new[] { "a", "b", "c", "d", "e", "f", "g", "h" })
         {
             picks.Toggle(GameMode.Pve, id);
             picks.Slots(GameMode.Pve);
         }
-        picks.Toggle(GameMode.Pve, "e");
+        picks.Toggle(GameMode.Pve, "i");
         var slots = picks.Slots(GameMode.Pve);
-        Assert.Equal([0, 1, 2, 3], new[] { slots["a"], slots["b"], slots["c"], slots["d"] });
-        Assert.Equal(0, slots["e"]);
+        Assert.Equal([0, 1, 2, 3, 4, 5, 6, 7], new[] { slots["a"], slots["b"], slots["c"], slots["d"], slots["e"], slots["f"], slots["g"], slots["h"] });
+        Assert.Equal(0, slots["i"]);
         Assert.All(slots.Values, slot => Assert.InRange(slot, 0, QuestPicks.Colours - 1));
 
         // Picks saved before colours existed: each gets one at the first look.

@@ -26,10 +26,15 @@ public static partial class MapRenderer
     /// The quest kept highlighted by a click (owner, 2026-10-01: gold among gold didn't stand out). Cyan is the one
     /// hue nothing else on the map uses, the artwork included, and it stays apart from gold with any colour vision.
     /// </summary>
-    public static readonly SKColor Kept = Palette.Sk(Palette.Kept);
+    /// <summary>The first pick's colour, and that of a pick nobody gave a number.</summary>
+    public static readonly SKColor Kept = Palette.Sk(Palette.Pick1);
 
     /// <summary>The picks' colours, in the order picks take them (<see cref="MapScene.PickSlots"/>); the first is <see cref="Kept"/>.</summary>
-    public static readonly IReadOnlyList<SKColor> PickColors = [Kept, Palette.Sk(Palette.Pick2), Palette.Sk(Palette.Pick3), Palette.Sk(Palette.Pick4)];
+    public static readonly IReadOnlyList<SKColor> PickColors =
+    [
+        Kept, Palette.Sk(Palette.Pick2), Palette.Sk(Palette.Pick3), Palette.Sk(Palette.Pick4),
+        Palette.Sk(Palette.Pick5), Palette.Sk(Palette.Pick6), Palette.Sk(Palette.Pick7), Palette.Sk(Palette.Pick8),
+    ];
 
     /// <summary>The colour of a picked quest: everything of a pick is drawn in it (marker, ring, badges, name, zone, chevron, guide).</summary>
     public static SKColor PickColor(MapScene scene, string? quest) =>

@@ -36,11 +36,11 @@ public class PickTests
         // The guide leads to the nearest pick's place, in that pick's colour; the place out of view has its pick's chevron.
         Assert.Equal(MapRenderer.PickColors[2], layout.Guide!.Color);
         Assert.Equal(MapRenderer.PickColors[1], Assert.Single(layout.Chevrons).Color);
-        // Four colours, all different, the first the picks' cyan; a pick without a number has the first.
-        Assert.Equal(4, MapRenderer.PickColors.Distinct().Count());
+        // Eight colours, all different; a pick without a number has the first.
+        Assert.Equal(8, MapRenderer.PickColors.Distinct().Count());
         Assert.Equal(MapRenderer.Kept, MapRenderer.PickColors[0]);
         Assert.Equal(MapRenderer.Kept, MapRenderer.PickColor(scene, "unknown"));
-        scene.PickSlots = new Dictionary<string, int> { ["q"] = 5 };
+        scene.PickSlots = new Dictionary<string, int> { ["q"] = 9 };
         Assert.Equal(MapRenderer.PickColors[1], MapRenderer.PickColor(scene, "q"));
     }
 

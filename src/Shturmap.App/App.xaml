@@ -55,8 +55,8 @@
       <SolidColorBrush x:Key="LinkBrush" Color="#2EC9AD62" />
       <!-- What only belongs to what is pointed at (a quest's items, an item's quests): half of it, AmberColor at 9 %. -->
       <SolidColorBrush x:Key="LinkSoftBrush" Color="#17C9AD62" />
-      <!-- The quests kept lit or picked: their own colour, the one the map draws their markers in (MapRenderer.Kept);
-           SelectBrush is KeptColor at 15 % behind their rows. -->
+      <!-- Until 2026-10-04 the one colour of every picked quest. Each pick has a colour of its own now, made in code
+           from the map's (Linked.PickBrush, MapRenderer.PickColors); these two are no longer used by the views. -->
       <SolidColorBrush x:Key="KeptBrush" Color="{StaticResource KeptColor}" />
       <SolidColorBrush x:Key="SelectBrush" Color="#263FD2E0" />
 

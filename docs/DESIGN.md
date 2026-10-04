@@ -374,10 +374,15 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `Violet` | `#9C8CC4` | transits | VioletColor · Violet · — |
 | `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
 | `Sand` | `#E9E2C8` | the player: the marker, the trail, the ping, the edge badge, and nothing else | SandColor · Player · `--sand` |
-| `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
-| `Pick2` | `#F06BD8` | the second pick: its markers, name, badges, row tint and pen | map · code |
-| `Pick3` | `#B6E84A` | the third pick | map · code |
-| `Pick4` | `#FF9248` | the fourth pick; a fifth takes the first colour again | map · code |
+| `Kept` | `#3FD2E0` | the dev build's icon plate (until 2026-10-04 also every picked quest) | KeptColor · — · — |
+| `Pick1` | `#8DD3C7` | the first pick: its markers, name, badges, row tint and pen | map · code |
+| `Pick2` | `#FB8072` | the second pick | map · code |
+| `Pick3` | `#80B1D3` | the third pick | map · code |
+| `Pick4` | `#B3DE69` | the fourth pick | map · code |
+| `Pick5` | `#FFFFB3` | the fifth pick | map · code |
+| `Pick6` | `#FCCDE5` | the sixth pick | map · code |
+| `Pick7` | `#BEBADA` | the seventh pick | map · code |
+| `Pick8` | `#FDB462` | the eighth pick; a ninth takes the first colour again | map · code |
 | `LightGround` | `#F1F0EC` | the logo's light background | brand |
 | `LightInk` | `#1E1F1B` | the logo's ink on light | brand, README light mode |
 | `LightAmber` | `#8C7436` | the logo's amber on light | brand, README light mode |
@@ -1296,10 +1301,20 @@ still only keeps its card open (two clicks, two meanings).
 - **A colour per pick** (owner, 2026-10-04: with several picks "it is then, however, difficult to distinguish on a
   very quick look which items belong together"; from a panel of five ways drawn by the real map, "the A color per
   pick ... is the best solution. Make sure the 'opt' icons attached to it and others change colors as well"). The
-  first pick is cyan as before, the second pink, the third lime, the fourth orange (`Kept`, `Pick2` to `Pick4`;
-  `MapRenderer.PickColors`); a fifth takes the first again. Four strong colours, far apart in hue, against the
-  muted colours of everything else: a strong colour with a ring is a pick, whichever it is, and the ring and the
-  larger size say "picked" without colour. Everything of a pick has its colour: marker, ring, the badges at its
+  colours are eight soft ones, the first eight of ColorBrewer's "Set3", a table made for telling categories apart
+  on maps: aqua, salmon, blue, lime, pale yellow, pink, lavender, orange (`Pick1` to `Pick8`;
+  `MapRenderer.PickColors`); a ninth pick takes the first again. The ring and the larger size say "picked" without
+  colour. **How they were chosen** (owner, 2026-10-04: "When selecting many quests the system chooses currently
+  very similar colors ... Maybe even different shades of pastel colors helps and hand-selecting a few. Make a panel
+  of the best options possible"; then, from that panel, "Go for D"). The first version had four strong colours
+  (cyan, pink, lime, orange) that repeated from the fifth pick. Six palettes were drawn by the real map with ten
+  picks and measured with CIEDE2000, normally, as seen with red-green colour blindness, and against the map's own
+  colours: the four strong ones were 39 apart at their closest but 6 for colour-blind eyes; five colours can be
+  kept 25 apart (16 colour-blind) and were suggested with a second ring from the sixth pick on; this table's eight
+  are 14 apart at their closest (pale yellow and lime), 2 for colour-blind eyes (orange and lime), and its orange
+  is 13 from the quests' gold. The owner chose the soft table: calm on the map, and eight different colours. The
+  order picks take them puts the four easiest to tell first (aqua, salmon, blue, lime) and the orange last, so two
+  to four picks, the usual number, get the best of it. Everything of a pick has its colour: marker, ring, the badges at its
   corners (floor, count, "OPT", "?"), its name, its zone, its chevron at the edge, the padlock of a door it needs a
   key for (the first pick's, where several need it), the guide line and plate when they lead to it; and in the
   rail the tint of its row and of the BRING rows that serve it, its pen, its glyph in a map's row, and the frame
@@ -1307,9 +1322,10 @@ still only keeps its card open (two clicks, two meanings).
   (`QuestPicks.Slots`, the setting `pickslots.<mode>`): unpicking one quest recolours none of the others, and the
   next pick takes the colour that came free. The other ways on the panel: a number per pick (one colour keeps one
   meaning, but it must be read), a line joining a pick's places (reads as a route nobody knows), the names alone
-  in colours (markers without a name get nothing), and numbers in coloured circles. What it costs: cyan no longer
-  means "picked" by itself, and lime and orange come nearer to the extracts' green and the quests' gold than cyan
-  did; they are told apart by strength, the ring and the shape.
+  in colours (markers without a name get nothing), and numbers in coloured circles. What it costs: no single
+  colour means "picked" any more (the heading PICKED is in the headings' grey, and the dev icon keeps the old
+  cyan, `Kept`), soft colours stand out less from the map than the strong cyan did, and with red-green colour
+  blindness several of the eight look alike: the names, and the rows' order, still tell them apart.
 - **Nothing else steps back for picks.** Every other quest marker stays at full strength (the owner's "Still it
   should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
   then picks don't step back either: they are the plan for this raid, as much as the ways out.

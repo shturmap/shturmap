@@ -39,12 +39,20 @@ public static class Palette
     public const string Violet = "#9C8CC4";
     public const string Red = "#B8604A";
     public const string Sand = "#E9E2C8";
+    // The dev build's icon plate; until 2026-10-04 also the one colour of every picked quest.
     public const string Kept = "#3FD2E0";
-    // The second, third and fourth pick: strong like the first, so a pick of any colour reads as a pick among the
-    // muted colours of everything else, and far apart from each other in hue.
-    public const string Pick2 = "#F06BD8";
-    public const string Pick3 = "#B6E84A";
-    public const string Pick4 = "#FF9248";
+    // The picked quests, one colour each: the first eight of ColorBrewer's "Set3", a table of soft colours made for
+    // telling categories apart on maps (owner, 2026-10-04, from a panel of six palettes: "Go for D"). In the order
+    // picks take them: the first four are the ones easiest to tell from each other and from the map's own colours;
+    // the orange, close to the quests' gold and to the lime for red-green colour-blind eyes, comes last.
+    public const string Pick1 = "#8DD3C7";
+    public const string Pick2 = "#FB8072";
+    public const string Pick3 = "#80B1D3";
+    public const string Pick4 = "#B3DE69";
+    public const string Pick5 = "#FFFFB3";
+    public const string Pick6 = "#FCCDE5";
+    public const string Pick7 = "#BEBADA";
+    public const string Pick8 = "#FDB462";
 
     // The logo on light backgrounds (brand files, README in light mode).
     public const string LightGround = "#F1F0EC";

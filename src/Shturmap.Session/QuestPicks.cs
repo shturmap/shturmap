@@ -22,8 +22,8 @@ public sealed class QuestPicks(Func<string, string?> read, Action<string, string
     /// <summary>The setting a mode's picks are kept in: quest ids, comma-separated.</summary>
     public static string Key(GameMode mode) => $"picks.{mode}";
 
-    /// <summary>How many colours the picks have; a fifth pick takes the first again.</summary>
-    public const int Colours = 4;
+    /// <summary>How many colours the picks have; a ninth pick takes the first again.</summary>
+    public const int Colours = 8;
 
     /// <summary>The setting a mode's picks' colours are kept in: "quest id:number", comma-separated.</summary>
     public static string SlotsKey(GameMode mode) => $"pickslots.{mode}";
