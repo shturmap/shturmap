@@ -112,7 +112,10 @@ public static class RaidPlanner
     /// rest fill up to <paramref name="top"/>; maps with picks are all shown, also beyond it. So the list is as long
     /// as the picks make it: one picked quest with work on five maps gives five (decided 2026-10-04: a map a pick
     /// can be worked on is never left out, and Plan shows the maps as a short list, which has the room).</param>
-    public static IReadOnlyList<MapPlan> Rank(IEnumerable<PlanQuest> quests, IEnumerable<PlanMap> maps, int top = 4, IReadOnlySet<string>? picks = null)
+    /// <param name="picksOn">The picks map by map (owner, 2026-10-04: picks are kept per map): where given, a map counts its
+    /// own picks and <paramref name="picks"/> isn't asked. A quest picked on Customs doesn't bring Woods to the top.</param>
+    public static IReadOnlyList<MapPlan> Rank(IEnumerable<PlanQuest> quests, IEnumerable<PlanMap> maps, int top = 4, IReadOnlySet<string>? picks = null,
+        Func<PlanMap, IReadOnlySet<string>?>? picksOn = null)
     {
         var questList = quests.ToList();
         var ranked = maps
@@ -121,11 +124,14 @@ public static class RaidPlanner
             .OrderByDescending(plan => plan.Score)
             .ThenBy(plan => plan.RouteMeters)
             .ToList();
-        if (picks is not { Count: > 0 })
+        if (picks is not { Count: > 0 } && picksOn is null)
             return ranked.Take(top).ToList();
+        int Picked(MapPlan plan) => (picksOn is not null ? picksOn(plan.Map) : picks) is { Count: > 0 } here
+            ? plan.Finish.Concat(plan.Progress).Count(q => here.Contains(q.Quest.Id))
+            : 0;
         // Every map is ranked before the cut: a pick on the map ranked fifth would otherwise never show.
         var picked = ranked
-            .Select((plan, rank) => (Plan: plan, Rank: rank, Picks: plan.Finish.Concat(plan.Progress).Count(q => picks.Contains(q.Quest.Id))))
+            .Select((plan, rank) => (Plan: plan, Rank: rank, Picks: Picked(plan)))
             .Where(x => x.Picks > 0)
             .OrderByDescending(x => x.Picks)
             .ThenBy(x => x.Rank)

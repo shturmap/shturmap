@@ -610,7 +610,9 @@ public sealed partial class MainWindow : Window
         // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections).
         vm.Plans = s.Plan.Select((p, i) =>
         {
-            var sections = Planning.Sections(p, s.Picks);
+            // Each map has its own picks, in its own colours (owner, 2026-10-04).
+            var sections = Planning.Sections(p, s.PicksOn(p.NormalizedName));
+            var slots = s.PickSlotsOn(p.NormalizedName);
             return new PlanCard(
                 p.NormalizedName,
                 p.MapName,
@@ -619,10 +621,10 @@ public sealed partial class MainWindow : Window
                 i == openIndex,
                 sections.Finish.Select(q => OnMap(q, p)).ToList(),
                 sections.Progress.Select(q => OnMap(q, p)).ToList(),
-                BringLines(s, p.Requirements),
+                BringLines(s, p.Requirements, s.PicksOn(p.NormalizedName)),
                 (i + 1).ToString(CultureInfo.InvariantCulture),
                 p.Requirements.Select(r => Chip(s, r)).ToList(),
-                sections.Picks.Select(q => OnMap(q, p)).ToList())
+                sections.Picks.Select(q => OnMap(q, p) with { PickSlot = slots.GetValueOrDefault(q.QuestId, -1) }).ToList())
             {
                 ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
@@ -634,8 +636,8 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
-    private static IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows) =>
-        Planning.BringOrder(rows, s.Picks).Select(b => BringLine(s, b.Row) with { StartsOthers = b.StartsOthers }).ToList();
+    private static IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks) =>
+        Planning.BringOrder(rows, picks).Select(b => BringLine(s, b.Row) with { StartsOthers = b.StartsOthers }).ToList();
 
     /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
     /// will do (a weapon class), one of them ("e.g. Mosin rifle (Sniper) · …"); empty if unknown.</summary>
@@ -751,7 +753,7 @@ public sealed partial class MainWindow : Window
         var kit = Planning.KitWhileLoading(s.Raid, s.MapPlan, s.Picks);
         vm.RaidKit = kit.Main.Select(r => BringLine(s, r)).ToList();
         vm.RaidKitMore = kit.More.Select(r => BringLine(s, r)).ToList();
-        vm.RaidBring = s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? []);
+        vm.RaidBring = s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? [], s.Picks);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
@@ -886,8 +888,9 @@ public sealed partial class MainWindow : Window
         scene.Containers = latest.Content?.Containers ?? [];
         // Before the picks and the focus: a quest brings the locks of the keys it needs here along.
         scene.QuestKeys = latest.Content?.QuestKeys ?? new Dictionary<string, IReadOnlyList<string>>();
-        scene.PickSlots = latest.PickSlots;
-        scene.Kept = latest.Picks;
+        // The picks of the map drawn (picks are kept per map), which in a raid can be another than the raid's.
+        scene.PickSlots = latest.PickSlotsOn(latest.Map?.NormalizedName);
+        scene.Kept = latest.PicksOn(latest.Map?.NormalizedName);
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
         Map.Refresh();
@@ -1323,10 +1326,12 @@ public sealed partial class MainWindow : Window
         Linked.PickSlots = s.PickSlots;
         Linked.Picks = s.Picks;
         ViewModel.HasPicks = s.Picks.Count > 0;
-        if (Map.Scene is { } scene && (!scene.Kept.SetEquals(s.Picks) || !ReferenceEquals(scene.PickSlots, s.PickSlots)))
+        var (onMap, slotsOnMap) = (s.PicksOn(s.Map?.NormalizedName), s.PickSlotsOn(s.Map?.NormalizedName));
+        if (Map.Scene is { } scene && (!scene.Kept.SetEquals(onMap) || scene.PickSlots.Count != slotsOnMap.Count
+            || slotsOnMap.Any(p => !scene.PickSlots.TryGetValue(p.Key, out var slot) || slot != p.Value)))
         {
-            scene.PickSlots = s.PickSlots;
-            scene.Kept = s.Picks;
+            scene.PickSlots = slotsOnMap;
+            scene.Kept = onMap;
             Map.Redraw();
         }
     }

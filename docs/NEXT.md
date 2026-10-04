@@ -77,7 +77,8 @@ FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."; th
 - **A44.** A log longer than one read (4 MB) is cut short when the game starts a new session before it is read
   through: the rest of the old session is skipped. Status: done (2026-10-04: a session is read to its end first).
 - **A45.** With A6, a picked quest that has work on five or more maps gives more than four map cards. Status: done (2026-10-04): kept and said, a
-  pick's maps are always listed (Plan shows the maps as a short list).
+  pick's maps are always listed (Plan shows the maps as a short list). Since that evening picks are kept per map
+  (owner: "Store the selected quests per map"), so a pick brings up only the map it was made on.
 - **A46.** With A31, a translation file that keeps answering with a server error on a first load means no data
   until it recovers (a notice and a retry every two minutes), where it used to fall back to English with an untrue
   notice. Decide whether English with a true notice would serve better. Status: done (2026-10-04): the data loads in English with a notice that

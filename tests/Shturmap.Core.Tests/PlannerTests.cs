@@ -114,6 +114,25 @@ public class PlannerTests
         Assert.Equal(["m6", "m2", "m3", "m4", "m5"], RaidPlanner.Rank(quests, maps, picks: picks).Select(p => p.Map.Id));
     }
 
+    // Picks are kept per map (owner, 2026-10-04): a map counts the picks made on it, and only those.
+    [Fact]
+    public void A_pick_made_on_one_map_leads_with_that_map_and_no_other()
+    {
+        var maps = Enumerable.Range(1, 6).Select(i => new PlanMap($"m{i}", $"Map {i}", new HashSet<string> { $"m{i}" }, 40)).ToList();
+        var (quests, _) = SixMaps();
+        // A quest with work on the fifth and the sixth map, picked on the sixth only.
+        quests.Add(new PlanQuest("wide", "Wide",
+            [Obj("w5", ObjectiveKind.Exploration, ["m5"], [("m5", new WorldPoint(9, 0, 0))]), Obj("w6", ObjectiveKind.Exploration, ["m6"], [("m6", new WorldPoint(9, 0, 0))])], NoKeys));
+        var onSixth = new HashSet<string> { "wide" };
+        var ranked = RaidPlanner.Rank(quests, maps, picksOn: map => map.Id == "m6" ? onSixth : null);
+        // The sixth leads; the fifth, where the quest has work too but wasn't picked, isn't brought up.
+        Assert.Equal(["m6", "m1", "m2", "m3"], ranked.Select(p => p.Map.Id));
+        // The same quest picked everywhere, as picks were until then, brought both.
+        Assert.Equal(["m5", "m6", "m1", "m2"], RaidPlanner.Rank(quests, maps, picks: onSixth).Select(p => p.Map.Id));
+        // No picks on any map: the planner's order.
+        Assert.Equal(["m1", "m2", "m3", "m4"], RaidPlanner.Rank(quests, maps, picksOn: _ => null).Select(p => p.Map.Id));
+    }
+
     // One pick can be enough for more than four maps (review of 2026-10-04, A45): a picked quest's maps are always
     // listed, so the list is as long as the picks make it, and the planner's own suggestions fill only what is left
     // of four.

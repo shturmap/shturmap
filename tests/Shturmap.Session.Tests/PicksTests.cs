@@ -15,17 +15,46 @@ public class PicksTests
 
     private static QuestStatus Status(string id, QuestState state) => new(id, state, ObservationSource.Log, DateTime.Now);
 
+    private const string Customs = "customs";
+    private const string Streets = "streets-of-tarkov";
+
     [Fact]
     public void A_pick_is_kept_across_restarts_and_unpicked_by_a_second_click()
     {
         var picks = NewPicks();
-        Assert.True(picks.Toggle(GameMode.Pve, "q1"));
-        Assert.True(picks.Toggle(GameMode.Pve, "q2"));
-        Assert.Equal(["q1", "q2"], NewPicks().Of(GameMode.Pve).Order());
+        Assert.True(picks.Toggle(GameMode.Pve, Customs, "q1"));
+        Assert.True(picks.Toggle(GameMode.Pve, Customs, "q2"));
+        Assert.Equal(["q1", "q2"], NewPicks().Of(GameMode.Pve, Customs).Order());
 
         var again = NewPicks();
-        Assert.False(again.Toggle(GameMode.Pve, "q1"));
-        Assert.Equal(["q2"], NewPicks().Of(GameMode.Pve));
+        Assert.False(again.Toggle(GameMode.Pve, Customs, "q1"));
+        Assert.Equal(["q2"], NewPicks().Of(GameMode.Pve, Customs));
+    }
+
+    // Owner, 2026-10-04: "Store the selected quests per map and persistent between sessions".
+    [Fact]
+    public void Each_map_has_its_own_picks_and_keeps_them_while_another_is_planned()
+    {
+        var picks = NewPicks();
+        picks.Toggle(GameMode.Pve, Customs, "extortionist");
+        picks.Toggle(GameMode.Pve, Streets, "revision");
+        picks.Toggle(GameMode.Pve, Streets, "audit");
+        // A quest with work on two maps is picked where the player picked it, not on the other.
+        picks.Toggle(GameMode.Pve, Streets, "shared");
+        Assert.Equal(["extortionist"], picks.Of(GameMode.Pve, Customs));
+        Assert.Equal(["audit", "revision", "shared"], picks.Of(GameMode.Pve, Streets).Order());
+        Assert.Empty(picks.Of(GameMode.Pve, "woods"));
+
+        // After a restart every map has what it had.
+        var again = NewPicks();
+        Assert.Equal(["customs", "streets-of-tarkov"], again.ByMap(GameMode.Pve).Keys.Order());
+        Assert.Equal(["extortionist"], again.Of(GameMode.Pve, Customs));
+        Assert.Equal(["audit", "revision", "shared"], again.Of(GameMode.Pve, Streets).Order());
+
+        // Unpicking on one map leaves the other alone.
+        again.Toggle(GameMode.Pve, Streets, "revision");
+        Assert.Equal(["extortionist"], NewPicks().Of(GameMode.Pve, Customs));
+        Assert.Equal(["audit", "shared"], NewPicks().Of(GameMode.Pve, Streets).Order());
     }
 
     // A colour per pick (owner, 2026-10-04: "A color per pick ... is the best solution").
@@ -33,74 +62,101 @@ public class PicksTests
     public void Each_pick_takes_a_colour_of_its_own_and_keeps_it()
     {
         var picks = NewPicks();
-        picks.Toggle(GameMode.Pve, "revision");
-        Assert.Equal(0, picks.Slots(GameMode.Pve)["revision"]);
-        picks.Toggle(GameMode.Pve, "audit");
-        picks.Slots(GameMode.Pve);
-        picks.Toggle(GameMode.Pve, "ballet");
-        var slots = picks.Slots(GameMode.Pve);
+        picks.Toggle(GameMode.Pve, Streets, "revision");
+        Assert.Equal(0, picks.Slots(GameMode.Pve, Streets)["revision"]);
+        picks.Toggle(GameMode.Pve, Streets, "audit");
+        picks.Toggle(GameMode.Pve, Streets, "ballet");
+        var slots = picks.Slots(GameMode.Pve, Streets);
         Assert.Equal([0, 1, 2], new[] { slots["revision"], slots["audit"], slots["ballet"] });
 
         // Unpicking one recolours none of the others, and the next pick takes the colour that came free.
-        picks.Toggle(GameMode.Pve, "revision");
-        slots = picks.Slots(GameMode.Pve);
+        picks.Toggle(GameMode.Pve, Streets, "revision");
+        slots = picks.Slots(GameMode.Pve, Streets);
         Assert.Equal([1, 2], new[] { slots["audit"], slots["ballet"] });
-        picks.Toggle(GameMode.Pve, "dandies");
-        Assert.Equal(0, picks.Slots(GameMode.Pve)["dandies"]);
+        picks.Toggle(GameMode.Pve, Streets, "dandies");
+        Assert.Equal(0, picks.Slots(GameMode.Pve, Streets)["dandies"]);
 
         // Across a restart they are the same.
-        var again = NewPicks().Slots(GameMode.Pve);
+        var again = NewPicks().Slots(GameMode.Pve, Streets);
         Assert.Equal([1, 2, 0], new[] { again["audit"], again["ballet"], again["dandies"] });
     }
 
     [Fact]
-    public void A_ninth_pick_shares_a_colour_and_picks_from_before_get_one()
+    public void Each_map_hands_out_the_colours_from_the_first()
+    {
+        // So a map's two or three picks get the colours that are easiest to tell apart, however many are picked elsewhere.
+        var picks = NewPicks();
+        foreach (var id in new[] { "a", "b", "c" })
+            picks.Toggle(GameMode.Pve, Customs, id);
+        picks.Toggle(GameMode.Pve, Streets, "x");
+        picks.Toggle(GameMode.Pve, Streets, "y");
+        Assert.Equal([0, 1], new[] { picks.Slots(GameMode.Pve, Streets)["x"], picks.Slots(GameMode.Pve, Streets)["y"] });
+        Assert.Equal([0, 1, 2], new[] { picks.Slots(GameMode.Pve, Customs)["a"], picks.Slots(GameMode.Pve, Customs)["b"], picks.Slots(GameMode.Pve, Customs)["c"] });
+    }
+
+    [Fact]
+    public void A_ninth_pick_on_a_map_shares_a_colour()
     {
         var picks = NewPicks();
-        foreach (var id in new[] { "a", "b", "c", "d", "e", "f", "g", "h" })
-        {
-            picks.Toggle(GameMode.Pve, id);
-            picks.Slots(GameMode.Pve);
-        }
-        picks.Toggle(GameMode.Pve, "i");
-        var slots = picks.Slots(GameMode.Pve);
+        foreach (var id in new[] { "a", "b", "c", "d", "e", "f", "g", "h", "i" })
+            picks.Toggle(GameMode.Pve, Customs, id);
+        var slots = picks.Slots(GameMode.Pve, Customs);
         Assert.Equal([0, 1, 2, 3, 4, 5, 6, 7], new[] { slots["a"], slots["b"], slots["c"], slots["d"], slots["e"], slots["f"], slots["g"], slots["h"] });
         Assert.Equal(0, slots["i"]);
         Assert.All(slots.Values, slot => Assert.InRange(slot, 0, QuestPicks.Colours - 1));
+    }
 
-        // Picks saved before colours existed: each gets one at the first look.
-        _settings.Clear();
-        _settings[QuestPicks.Key(GameMode.Pvp)] = "x,y";
-        var old = NewPicks().Slots(GameMode.Pvp);
-        Assert.Equal([0, 1], new[] { old["x"], old["y"] });
+    [Fact]
+    public void Picks_from_before_they_were_kept_per_map_go_to_the_maps_their_quests_have_work_on()
+    {
+        // The setting as it was written until 2026-10-04: quest ids alone, picked wherever the quest had work.
+        _settings[QuestPicks.Key(GameMode.Pve)] = "revision,shared,gone";
+        var picks = NewPicks();
+        // Until the data can say where they belong they are on no map, and they are not lost.
+        Assert.Empty(picks.ByMap(GameMode.Pve));
+        picks.Toggle(GameMode.Pve, Customs, "new");
+        Assert.Contains("revision", _settings[QuestPicks.Key(GameMode.Pve)].Split(','));
+
+        var mapsOf = new Dictionary<string, string[]> { ["revision"] = [Streets], ["shared"] = [Customs, Streets] };
+        picks.Adopt(GameMode.Pve, quest => mapsOf.GetValueOrDefault(quest) ?? []);
+        Assert.Equal(["new", "shared"], picks.Of(GameMode.Pve, Customs).Order());
+        Assert.Equal(["revision", "shared"], picks.Of(GameMode.Pve, Streets).Order());
+        // Saved in the new form, once: a restart finds the same, and nothing is adopted twice.
+        var again = NewPicks();
+        again.Adopt(GameMode.Pve, _ => [Customs]);
+        Assert.Equal(["new", "shared"], again.Of(GameMode.Pve, Customs).Order());
+        Assert.Equal(["revision", "shared"], again.Of(GameMode.Pve, Streets).Order());
+        Assert.DoesNotContain("gone", _settings[QuestPicks.Key(GameMode.Pve)]);
     }
 
     [Fact]
     public void Each_mode_has_its_own_picks() // PvE and PvP progress are separate
     {
         var picks = NewPicks();
-        picks.Toggle(GameMode.Pve, "q1");
-        Assert.Empty(picks.Of(GameMode.Pvp));
-        Assert.Equal("q1", _settings[QuestPicks.Key(GameMode.Pve)]);
+        picks.Toggle(GameMode.Pve, Customs, "q1");
+        Assert.Empty(picks.Of(GameMode.Pvp, Customs));
+        Assert.Equal("customs|q1:0", _settings[QuestPicks.Key(GameMode.Pve)]);
     }
 
     [Fact]
     public void A_snapshots_pick_shows_but_is_never_saved()
     {
         var picks = NewPicks();
-        Assert.True(picks.Toggle(GameMode.Pve, "q1", save: false));
-        Assert.Contains("q1", picks.Of(GameMode.Pve));
-        Assert.Empty(NewPicks().Of(GameMode.Pve));
-        Assert.False(picks.Toggle(GameMode.Pve, "q1"));
-        Assert.Empty(picks.Of(GameMode.Pve));
+        Assert.True(picks.Toggle(GameMode.Pve, Customs, "q1", save: false));
+        Assert.Contains("q1", picks.Of(GameMode.Pve, Customs));
+        Assert.Equal(0, picks.Slots(GameMode.Pve, Customs)["q1"]);
+        Assert.Empty(NewPicks().Of(GameMode.Pve, Customs));
+        Assert.False(picks.Toggle(GameMode.Pve, Customs, "q1"));
+        Assert.Empty(picks.Of(GameMode.Pve, Customs));
     }
 
     [Fact]
-    public void A_quest_the_log_reports_done_or_failed_leaves_the_picks_by_itself()
+    public void A_quest_the_log_reports_done_or_failed_leaves_the_picks_of_every_map_by_itself()
     {
         var picks = NewPicks();
         foreach (var id in new[] { "done", "failed", "active", "unknown" })
-            picks.Toggle(GameMode.Pve, id);
+            picks.Toggle(GameMode.Pve, Customs, id);
+        picks.Toggle(GameMode.Pve, Streets, "done");
         var quests = new Dictionary<string, QuestStatus>
         {
             ["done"] = Status("done", QuestState.Completed),
@@ -109,21 +165,23 @@ public class PicksTests
         };
         Assert.Equal(["done", "failed"], picks.Prune(GameMode.Pve, quests).Order());
         // Only what the log says counts: a quest whose state isn't known stays picked.
-        Assert.Equal(["active", "unknown"], NewPicks().Of(GameMode.Pve).Order());
+        Assert.Equal(["active", "unknown"], NewPicks().Of(GameMode.Pve, Customs).Order());
+        Assert.Empty(NewPicks().Of(GameMode.Pve, Streets));
         Assert.Empty(picks.Prune(GameMode.Pve, quests));
     }
 
     [Fact]
-    public void Clear_unpicks_everything_for_the_mode_only()
+    public void Clear_unpicks_one_maps_picks_only()
     {
         var picks = NewPicks();
-        picks.Toggle(GameMode.Pve, "q1");
-        picks.Toggle(GameMode.Pvp, "q2");
-        picks.Clear(GameMode.Pve);
-        Assert.Empty(NewPicks().Of(GameMode.Pve));
-        Assert.Equal(["q2"], NewPicks().Of(GameMode.Pvp));
+        picks.Toggle(GameMode.Pve, Customs, "q1");
+        picks.Toggle(GameMode.Pve, Streets, "q2");
+        picks.Toggle(GameMode.Pvp, Customs, "q3");
+        picks.Clear(GameMode.Pve, Customs);
+        Assert.Empty(NewPicks().Of(GameMode.Pve, Customs));
+        Assert.Equal(["q2"], NewPicks().Of(GameMode.Pve, Streets));
+        Assert.Equal(["q3"], NewPicks().Of(GameMode.Pvp, Customs));
     }
-
     // ---- the rail ----
 
     private static PlanQuestView Row(string id, EffortGroup group, bool startsGroup = false, string note = "") =>

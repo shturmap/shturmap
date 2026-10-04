@@ -1373,7 +1373,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private Planning.KitList KitOn(MapIdentity map)
     {
         var active = _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-        return _data is null ? Planning.KitList.Empty : Planning.Kit(Planning.PlanFor(_data, active, map.NormalizedName, _done), Picks);
+        return _data is null ? Planning.KitList.Empty : Planning.Kit(Planning.PlanFor(_data, active, map.NormalizedName, _done), PicksOn(map));
     }
 
     // A raid loading's or a group pick's cue with the kit pictured (owner, 2026-10-03: the text notice "Loading … ·
@@ -1381,11 +1381,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private ViewCue KitCue(CueKind kind, MapIdentity map, string when)
     {
         var kit = KitOn(map);
-        var picks = Picks;
+        var picks = PicksOn(map);
         var (shown, more) = Planning.CueKit(kit, picks: picks);
         Study.Game("kit.reminder", ("when", when), ("map", map.NormalizedName), ("items", kit.Count),
             ("forPicks", kit.All.Count(r => r.QuestIds.Any(picks.Contains))));
-        var slots = _picks?.Slots(_mode) ?? new Dictionary<string, int>();
+        var slots = _picks?.Slots(_mode, PickKeyOf(map)) ?? new Dictionary<string, int>();
         return new ViewCue(kind, map.Name, KitMore: more, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind, Planning.ForPick(r, picks),
             r.QuestIds.Where(picks.Contains).Select(q => slots.GetValueOrDefault(q)).DefaultIfEmpty(0).First())).ToList());
     }
@@ -1601,7 +1601,13 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Study.Ui("untick", ("objective", gone), ("quest", QuestOf(gone)), ("how", "done"));
         _ticked = _ticks?.Of(_mode) ?? NoTicks;
         _done = _ticked.Count == 0 ? NothingDone : _ticked.Keys.ToHashSet(StringComparer.Ordinal);
-        _plan = _data is null ? [] : Planning.Suggest(_data, active, Picks, _done);
+        // Picks from before they were kept per map go to the maps their quests have work on, once the data says which.
+        if (_data is not null && _picks is not null)
+        {
+            var mapsOf = new Lazy<IReadOnlyDictionary<string, IReadOnlyList<string>>>(() => Planning.QuestMaps(_data, active));
+            _picks.Adopt(_mode, quest => mapsOf.Value.GetValueOrDefault(quest) ?? []);
+        }
+        _plan = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode));
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active, _done);
     }
 
@@ -1669,7 +1675,20 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private QuestPicks? _picks;
 
-    private IReadOnlySet<string> Picks => _picks?.Of(_mode) ?? new HashSet<string>();
+    // Picks are kept per map (owner, 2026-10-04). The map the pen picks for and CLEAR PICKS clears is the one the
+    // rail's quests are of: in a raid the raid's map; otherwise the map whose card is open in Plan, which is the map
+    // shown or, when that one isn't among the suggested maps, the best of them (as the window opens it).
+    private string? PickMap =>
+        ShownRaid.Phase != RaidPhase.Menu ? (_raidMap is null ? null : PickKeyOf(_raidMap))
+        : _map is null ? _plan.FirstOrDefault()?.NormalizedName
+        : _plan.Count == 0 || _plan.Any(p => p.NormalizedName == _map.NormalizedName) ? PickKeyOf(_map)
+        : _plan[0].NormalizedName;
+
+    private string PickKeyOf(MapIdentity map) => Planning.PickKey(_data, map.NormalizedName);
+
+    private IReadOnlySet<string> PicksOn(MapIdentity? map) => map is not null && _picks is not null ? _picks.Of(_mode, PickKeyOf(map)) : new HashSet<string>();
+
+    private IReadOnlySet<string> Picks => PickMap is { } map && _picks is not null ? _picks.Of(_mode, map) : new HashSet<string>();
 
     /// <summary>
     /// Picks a quest for the coming raid, or unpicks it (the pen on a quest). Only an active quest can be picked; a
@@ -1682,13 +1701,13 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         await _gate.WaitAsync();
         try
         {
-            if (_picks is null)
+            if (_picks is null || PickMap is not { } map)
                 return;
             var picked = Picks.Contains(questId);
             if (!picked && _quests.GetValueOrDefault(questId)?.State != QuestState.Active)
                 return;
-            var now = _picks.Toggle(_mode, questId, save);
-            Study.Ui(now ? "pick" : "unpick", ("quest", questId), ("how", how), ("picks", Picks.Count));
+            var now = _picks.Toggle(_mode, map, questId, save);
+            Study.Ui(now ? "pick" : "unpick", ("quest", questId), ("how", how), ("map", map), ("picks", Picks.Count));
             RecomputeQuests();
             Publish();
         }
@@ -1698,16 +1717,16 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
     }
 
-    /// <summary>Unpicks every quest for this mode (CLEAR PICKS, outside raids).</summary>
+    /// <summary>Unpicks every quest picked on the map shown (CLEAR PICKS, outside raids); other maps keep theirs.</summary>
     public async Task ClearPicksAsync()
     {
         await _gate.WaitAsync();
         try
         {
-            if (_picks is null || Picks.Count == 0)
+            if (_picks is null || PickMap is not { } map || Picks.Count == 0)
                 return;
-            Study.Ui("picks.clear", ("picks", Picks.Count));
-            _picks.Clear(_mode);
+            Study.Ui("picks.clear", ("map", map), ("picks", Picks.Count));
+            _picks.Clear(_mode, map);
             RecomputeQuests();
             Publish();
         }
@@ -1864,7 +1883,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
             Picks = Picks,
-            PickSlots = _picks?.Slots(_mode) ?? new Dictionary<string, int>(),
+            PickSlots = PickMap is { } pickMap && _picks is not null ? _picks.Slots(_mode, pickMap) : new Dictionary<string, int>(),
+            PicksByMap = _picks?.ByMap(_mode) ?? new Dictionary<string, IReadOnlySet<string>>(),
+            PickSlotsByMap = _picks?.ByMap(_mode).Keys.ToDictionary(m => m, m => _picks.Slots(_mode, m)) ?? new Dictionary<string, IReadOnlyDictionary<string, int>>(),
             Ticks = _ticked,
             Done = _done,
             AnyMap = _anyMap,

@@ -201,11 +201,29 @@ public sealed record SessionSnapshot
     /// <summary>Suggested maps for the next raid, best first (maps with picks first).</summary>
     public IReadOnlyList<MapPlanView> Plan { get; init; } = [];
 
-    /// <summary>The quests picked for the coming raid in this mode (<see cref="QuestPicks"/>).</summary>
+    /// <summary>The quests picked for the coming raid on the map the rail is about: the raid's map in a raid, the map
+    /// shown otherwise (<see cref="QuestPicks"/>; picks are kept per map). The pen picks for this map.</summary>
     public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();
 
-    /// <summary>Which colour each pick has (<see cref="QuestPicks.Slots"/>).</summary>
+    /// <summary>Which colour each of those picks has (<see cref="QuestPicks.Slots"/>).</summary>
     public IReadOnlyDictionary<string, int> PickSlots { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>Every map's picks in this mode, by <see cref="Planning.PickKey"/>: Plan's list shows each map's own.</summary>
+    public IReadOnlyDictionary<string, IReadOnlySet<string>> PicksByMap { get; init; } = new Dictionary<string, IReadOnlySet<string>>();
+
+    /// <summary>Every map's picks' colours, by <see cref="Planning.PickKey"/>.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>> PickSlotsByMap { get; init; } = new Dictionary<string, IReadOnlyDictionary<string, int>>();
+
+    private static readonly IReadOnlySet<string> NoPicks = new HashSet<string>();
+    private static readonly IReadOnlyDictionary<string, int> NoSlots = new Dictionary<string, int>();
+
+    /// <summary>The picks of a map (any of its variants' names).</summary>
+    public IReadOnlySet<string> PicksOn(string? map) =>
+        map is not null && PicksByMap.TryGetValue(Planning.PickKey(Data, map), out var picks) ? picks : NoPicks;
+
+    /// <summary>The colours of a map's picks.</summary>
+    public IReadOnlyDictionary<string, int> PickSlotsOn(string? map) =>
+        map is not null && PickSlotsByMap.TryGetValue(Planning.PickKey(Data, map), out var slots) ? slots : NoSlots;
 
     /// <summary>
     /// The objectives the player ticked as done in this mode, each with the day it was set (<see cref="ObjectiveTicks"/>).

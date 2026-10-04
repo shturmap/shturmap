@@ -72,8 +72,11 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 
     public Visibility NoteVisibility => Note.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>Which of the picks' colours the quest has on the map of its row (picks are kept per map), or -1.</summary>
+    public int PickSlot { get; init; } = -1;
+
     /// <summary>The colour the quest has as a pick, for its glyph in a map's row.</summary>
-    public Microsoft.UI.Xaml.Media.Brush PickBrush => Controls.Linked.PickBrush(QuestId);
+    public Microsoft.UI.Xaml.Media.Brush PickBrush => PickSlot >= 0 ? Controls.Linked.PickBrush(PickSlot) : Controls.Linked.PickBrush(QuestId);
 
     /// <summary>A hairline above the row where a later effort group starts; no heading (owner, 2026-10-03).</summary>
     public Thickness GroupLine => StartsGroup ? new Thickness(0, 1, 0, 0) : new Thickness(0);

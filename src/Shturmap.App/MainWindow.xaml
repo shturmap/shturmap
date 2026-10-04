@@ -516,7 +516,7 @@
                 <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
                 <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnClearPicksClick"
                                  Visibility="{x:Bind ShownIfTrue(ViewModel.HasPicks), Mode=OneWay}"
-                                 ToolTipService.ToolTip="Unpicks every quest you picked for the coming raid">
+                                 ToolTipService.ToolTip="Unpicks every quest you picked on this map. Other maps keep their picks">
                   <TextBlock Text="CLEAR PICKS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
               </Grid>

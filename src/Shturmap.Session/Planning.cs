@@ -39,9 +39,34 @@ public static class Planning
     /// (<see cref="RaidPlanner.Rank"/>); otherwise the planner's order.</param>
     /// <param name="done">The objectives the player ticked as done (<see cref="ObjectiveTicks"/>): the plan is made
     /// from the objectives that are left (<see cref="Open"/>).</param>
+    /// <param name="picksByMap">The picks map by map, by <see cref="PickKey"/> (owner, 2026-10-04: picks are kept per
+    /// map): where given, each map counts its own picks.</param>
     public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null,
-        IReadOnlySet<string>? done = null) =>
-        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), picks: picks).Select(p => ToView(data, p)).ToList();
+        IReadOnlySet<string>? done = null, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap = null) =>
+        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), picks: picks,
+            picksOn: picksByMap is null ? null : map => picksByMap.GetValueOrDefault(NameOf(data, map))).Select(p => ToView(data, p)).ToList();
+
+    private static string NameOf(GameData data, PlanMap map) => data.Maps.TryGetValue(map.Id, out var m) ? m.NormalizedName : map.Id;
+
+    /// <summary>
+    /// The name a map's picks are kept under: the map as the player picks it in the game, so variants drawn with the
+    /// same artwork (Ground Zero 21+, Night Factory) share their picks with it.
+    /// </summary>
+    public static string PickKey(GameData? data, string normalizedName)
+    {
+        if (data?.MapByNormalizedName(normalizedName)?.Id is not { } id)
+            return normalizedName;
+        var map = Maps(data).FirstOrDefault(m => m.MapIds.Contains(id));
+        return map is null ? normalizedName : NameOf(data, map);
+    }
+
+    /// <summary>The maps each active quest has work on (by <see cref="PickKey"/>): where a pick from before picks were
+    /// kept per map belongs (<see cref="QuestPicks.Adopt"/>).</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> QuestMaps(GameData data, IEnumerable<string> activeQuestIds) =>
+        RaidPlanner.Rank(Quests(data, activeQuestIds, null), Maps(data), top: int.MaxValue)
+            .SelectMany(p => p.Finish.Concat(p.Progress).Select(q => (Quest: q.Quest.Id, Map: NameOf(data, p.Map))))
+            .GroupBy(x => x.Quest, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(x => x.Map).Distinct(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
 
     /// <summary>A plan card's quest sections with the picks taken out to their own group on top (<see cref="Sections"/>).</summary>
     /// <param name="Picks">The picked quests on this map: those that can be completed first, then those that only

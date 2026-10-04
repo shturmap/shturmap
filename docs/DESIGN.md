@@ -1293,8 +1293,27 @@ still only keeps its card open (two clicks, two meanings).
 
 - **One click per quest while planning, none in the raid.** Picks hold from Plan through loading into the raid
   and across restarts (the settings, `picks.<mode>`; PvE and PvP keep their own, `QuestPicks`).
-- **No upkeep.** A pick stays until the log reports the quest completed or failed (it leaves by itself), its pen
-  is clicked again, or CLEAR PICKS (beside NEXT RAID, outside raids). Picks don't clear at raid end: a quest often
+- **Picks belong to a map** (owner, 2026-10-04: "Store the selected quests per map and persistent between
+  sessions"). A pick is "this quest, on this map": what is picked for Customs waits there while Streets is planned
+  with picks of its own, and comes back when Customs is shown or loads. Until then picks were one set for all
+  maps: a quest with work on five maps was picked on all five and brought all five to the top of Plan, and the
+  colours of one map's picks were used up by another's. Now:
+  - *The pen picks for the map the rail's quests are of*: the map whose card is open in Plan (the map shown; the
+    best suggested one when the map shown isn't among them), in a raid the raid's map. One click as before; there
+    is no map to choose. A quest with work on several maps is picked where the player picked it, and its pen is
+    lit only there.
+  - *Each map shows its own*: its picks first in its card and in its row of Plan's list, the map draws the picks
+    of the map drawn, and a map counts for Plan's order only the picks made on it.
+  - *Each map hands out the colours from the first* ("A colour per pick", below), so a map's two or three picks
+    always get the four colours that are easiest to tell apart, however many quests are picked elsewhere.
+  - *CLEAR PICKS clears the map shown*; other maps keep theirs.
+  - *A map and its variants share their picks* (Ground Zero and Ground Zero 21+, Factory by day and by night:
+    `Planning.PickKey`, the map as the player picks it in the game).
+  - *Kept as one setting per mode*, `picks.<mode>`: "map|quest:colour" entries. Picks saved before 2026-10-04 had
+    no map: each becomes a pick on every map its quest has work on, as it was shown until then, once the data is
+    loaded (`QuestPicks.Adopt`); one whose quest is no longer active is let go.
+- **No upkeep.** A pick stays until the log reports the quest completed or failed (it leaves every map's picks by
+  itself), its pen is clicked again, or CLEAR PICKS (beside NEXT RAID, outside raids). Picks don't clear at raid end: a quest often
   takes several raids, and a plan that empties itself would have to be made again each time. Esc never touches
   picks (it closes the cards): a key that throws a plan away would be too easy to hit. Only an active quest can be
   picked; a quest whose state the log doesn't tell stays picked.
@@ -1327,7 +1346,7 @@ still only keeps its card open (two clicks, two meanings).
   key for (the first pick's, where several need it), the guide line and plate when they lead to it; and in the
   rail the tint of its row and of the BRING rows that serve it, its pen, its glyph in a map's row, and the frame
   of its items in the loading cue. A pick keeps its colour until it is unpicked, across restarts
-  (`QuestPicks.Slots`, the setting `pickslots.<mode>`): unpicking one quest recolours none of the others, and the
+  (`QuestPicks.Slots`, kept with the pick): unpicking one quest recolours none of the others on its map, and the
   next pick takes the colour that came free. The other ways on the panel: a number per pick (one colour keeps one
   meaning, but it must be read), a line joining a pick's places (reads as a route nobody knows), the names alone
   in colours (markers without a name get nothing), and numbers in coloured circles. What it costs: no single
