@@ -843,6 +843,11 @@ spawns below).
 
   Extracts and transits are as large as the boss marker (15 px across), no longer smaller. A new symbol gets a
   level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
+  Where symbols share a place, the one that matters more lies on top: markers are drawn in the order of their
+  labels' priority, least first (locks and switches, then Scav and sniper zones, ways out, quests, bosses, then
+  what is selected). A Scav zone's ring used to be drawn over the boss's octagon of the same spawn zone, which
+  then read as a red ring (the review of 2026-10-04, C6). Two symbols of the same rank at one place still cover
+  each other (an extract's triangle and a transit's diamond on Streets): open.
 
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).

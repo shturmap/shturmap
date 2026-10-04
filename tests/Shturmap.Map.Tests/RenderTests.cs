@@ -41,6 +41,22 @@ public class RenderTests
         Near("#b7b77a", bitmap.GetPixel(503, 502));
     }
 
+    // Where symbols share a place, the one that matters more lies on top (the review of 2026-10-04, C6): a Scav
+    // spawn's ring at a boss's spawn zone was drawn over the red octagon, which then read as a red ring. Whichever
+    // comes first in the data, the octagon is whole: red at its centre and 3 px out, where the ring's line would run.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_boss_lies_on_top_of_a_scav_spawn_at_the_same_place(bool bossFirst)
+    {
+        var boss = new MapMarker("boss:1", MarkerKind.BossSpawn, new WorldPoint(0, 0, 0), "Boss 50%", "boss:one");
+        var scavs = new MapMarker("scav:1", MarkerKind.ScavSpawn, new WorldPoint(0, 0, 0), "", "scav:zone");
+        var (camera, scene) = Of(bossFirst ? [boss, scavs] : [scavs, boss]);
+        using var bitmap = Render(scene, camera);
+        foreach (var (x, y) in new[] { (500, 500), (503, 500), (497, 500), (500, 503), (500, 497), (504, 500) })
+            Near(Palette.Red, bitmap.GetPixel(x, y));
+    }
+
     // The facing cone shows as long as the cards say directions relative to the facing, and no longer (the review of
     // 2026-10-04, B9: the cone stayed for 60 s, the directions for 45 s). Its arrow stands outside the marker's ring,
     // in full sand; without the cone nothing between the ring and 22 px out is.

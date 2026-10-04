@@ -508,7 +508,9 @@ public sealed partial class MainWindow : Window
         // The position's age, in the status bar and in the raid card's line on where its distances come from: both
         // with the clock, so they never say two ages (FixAge).
         var age = s.RaidFix is { } at ? DateTime.Now - at.At : (TimeSpan?)null;
-        ViewModel.RaidFixNote = FixAge.Note(age, ViewModel.HelpKeys);
+        // While the raid loads there is nothing to press for yet: "No position yet" comes with the raid itself, as in
+        // the status bar.
+        ViewModel.RaidFixNote = age is null && s.Raid.Phase != RaidPhase.InRaid ? "" : FixAge.Note(age, ViewModel.HelpKeys);
         ViewModel.FixText = s.RaidFix is { } fix && age is { } old
             ? $"Fix {FixAge.Text(old)} ago · {s.RaidFloor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
             : StatusBarFit.NoPosition(s.Raid.Phase, ViewModel.HelpKeys);

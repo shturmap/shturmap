@@ -93,12 +93,16 @@ public static partial class MapRenderer
         // the doors of the keys they need are part of them. They are level 1, so they get a pass of their own after
         // everything that steps back: grouped by measure with the ways out, which don't step back in a raid either,
         // they were drawn first there and lay under other quests' markers (the review of 2026-10-04).
+        // Where symbols share a place, the one that matters more lies on top: the layers that step back furthest are
+        // drawn first, and within a layer the markers go by their labels' priority, least first (the review of
+        // 2026-10-04, C6: a Scav spawn's ring was drawn over the boss's octagon of the same spawn zone, which then
+        // read as a red ring).
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
         StepBack Measure(ShownMarker m) => StepBackOf(scene, m, stepBack);
-        foreach (var group in layout.Markers.Where(m => !m.Focused && !IsPick(scene, m)).GroupBy(Measure))
+        foreach (var group in layout.Markers.Where(m => !m.Focused && !IsPick(scene, m)).GroupBy(Measure).OrderBy(g => g.Key.Alpha))
         {
             using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
-            foreach (var marker in group)
+            foreach (var marker in group.OrderByDescending(LabelRank))
                 DrawMarker(canvas, scene, marker, uiScale);
         }
         foreach (var marker in layout.Markers.Where(m => !m.Focused && IsPick(scene, m)))
