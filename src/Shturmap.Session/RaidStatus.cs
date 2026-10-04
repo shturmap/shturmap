@@ -1,4 +1,5 @@
 using System.Globalization;
+using Shturmap.Core.Logs;
 using Shturmap.Core.Raid;
 
 namespace Shturmap.Session;
@@ -16,17 +17,23 @@ public static class RaidStatus
     /// The words in the status bar for a snapshot: they name the raid's own map, never one that is only being looked
     /// at (the MAP list in a raid), and no map while the log names one the data doesn't know.
     /// </summary>
-    public static string Text(SessionSnapshot snapshot, DateTime now) => Text(snapshot.Raid, snapshot.RaidMap?.Name, now);
+    public static string Text(SessionSnapshot snapshot, DateTime now, TimeZoneInfo? zone = null) => Text(snapshot.Raid, snapshot.RaidMap?.Name, now, zone);
 
     /// <summary>The words in the status bar ("In raid · Streets of Tarkov · PMC · 12 min").</summary>
     /// <param name="map">The raid's map, or null when it isn't known: then the words name none.</param>
-    public static string Text(RaidState raid, string? map, DateTime now)
+    /// <param name="zone">The time zone of the two clock times, for the minutes passed across a clock change
+    /// (<see cref="WallClock"/>); the PC's own unless a test gives another.</param>
+    public static string Text(RaidState raid, string? map, DateTime now, TimeZoneInfo? zone = null)
     {
         var side = raid.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "Scav", _ => null };
         return raid.Phase switch
         {
             RaidPhase.Loading => $"Loading {map}".TrimEnd(),
-            RaidPhase.InRaid => string.Join(" · ", new[] { "In raid", map, side, raid.RaidStartedAt is { } started ? $"{(int)(now - started).TotalMinutes} min" : null }
+            RaidPhase.InRaid => string.Join(" · ", new[]
+                {
+                    "In raid", map, side,
+                    raid.RaidStartedAt is { } started ? $"{(int)WallClock.Elapsed(started, now, zone).TotalMinutes} min" : null,
+                }
                 .Where(part => !string.IsNullOrEmpty(part))),
             _ => "Not in a raid",
         };

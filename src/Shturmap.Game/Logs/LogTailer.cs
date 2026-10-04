@@ -73,6 +73,10 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
     /// <summary>The time, for telling a quiet log from a growing one; tests set their own.</summary>
     internal Func<DateTime> UtcNow { get; init; } = () => DateTime.UtcNow;
 
+    /// <summary>The time zone of the logs' times, for putting the events of several logs in order across a clock
+    /// change (<see cref="WallClock.Sequence"/>); the PC's own unless a test gives another.</summary>
+    public TimeZoneInfo? Zone { get; init; }
+
     /// <summary>How many bytes of one file a poll reads at most; a longer log takes several polls. Tests make it small.</summary>
     internal int MaxReadPerPoll { get; init; } = 4 * 1024 * 1024;
 
@@ -151,18 +155,18 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             if (_firstSession)
             {
                 foreach (var path in paths)
-                    _files[path] = new FileState { LastGrowth = now, StartsOld = true };
+                    _files[path] = new FileState(Zone) { LastGrowth = now, StartsOld = true };
             }
             _firstSession = false;
         }
 
-        var events = new List<(GameEvent Event, bool Replay)>();
+        var events = new List<(GameEvent Event, bool Replay, DateTime Instant)>();
         try
         {
             foreach (var path in paths)
             {
                 if (!_files.TryGetValue(path, out var state))
-                    _files[path] = state = new FileState { LastGrowth = now };
+                    _files[path] = state = new FileState(Zone) { LastGrowth = now };
                 try
                 {
                     ReadNew(path, state, events, now);
@@ -177,7 +181,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         {
             // What was read is passed on whatever happened after it: its file's offset has moved on, so it would
             // not be read again.
-            foreach (var (e, replay) in events.OrderBy(e => e.Event.At))
+            foreach (var (e, replay, _) in events.OrderBy(e => e.Instant))
                 _events.Writer.TryWrite(new LogEvent(e, newest, replay));
         }
         return finished + events.Count;
@@ -206,13 +210,13 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             return 0;
         }
 
-        var events = new List<(GameEvent Event, bool Replay)>();
+        var events = new List<(GameEvent Event, bool Replay, DateTime Instant)>();
         try
         {
             foreach (var path in paths)
             {
                 if (!_files.TryGetValue(path, out var state))
-                    _files[path] = state = new FileState { LastGrowth = now };
+                    _files[path] = state = new FileState(Zone) { LastGrowth = now };
                 var records = new List<LogRecord>();
                 try
                 {
@@ -231,12 +235,12 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
                     busy = true;
                 }
                 // What was read counts, whatever stopped the reading: the file's offset has moved on.
-                ParseInto(events, records, Parser, path, Report);
+                ParseInto(events, records, Parser, path, Report, state.Clock);
             }
         }
         finally
         {
-            foreach (var (e, replay) in events.OrderBy(e => e.Event.At))
+            foreach (var (e, replay, _) in events.OrderBy(e => e.Instant))
                 _events.Writer.TryWrite(new LogEvent(e, session, replay));
         }
         return events.Count;
@@ -272,7 +276,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         return read > 0;
     }
 
-    private void ReadNew(string path, FileState state, List<(GameEvent Event, bool Replay)> events, DateTime now)
+    private void ReadNew(string path, FileState state, List<(GameEvent Event, bool Replay, DateTime Instant)> events, DateTime now)
     {
         var records = new List<LogRecord>();
         ReadChunk(path, state, records, now);
@@ -283,20 +287,24 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         if (quietFor > TimeSpan.FromSeconds(1) && state.Reader.Flush(force: quietFor > TimeSpan.FromSeconds(10)) is { } pending)
             records.Add(pending);
 
-        ParseInto(events, records, Parser, path, Report);
+        ParseInto(events, records, Parser, path, Report, state.Clock);
     }
 
     // One record at a time: a record the parser throws on is left out, and the ones around it still count. An event
     // is replay when its record began in what the file held at first sight.
-    private static void ParseInto(List<(GameEvent Event, bool Replay)> events, IEnumerable<LogRecord> records, Func<LogRecord, GameEvent?> parse,
-        string path, Action<string, Exception> problem)
+    // Each event gets the instant it is put in order by. Its wall-clock time alone won't do: on the night the clocks
+    // go back a log runs through 02:00 to 03:00 twice, and sorted by those times a raid's end would come before its
+    // start. A log's own times never go backwards, which says which pass a line is in (its file's sequence); a quest
+    // message's time is the server's, an instant of its own.
+    private static void ParseInto(List<(GameEvent Event, bool Replay, DateTime Instant)> events, IEnumerable<LogRecord> records, Func<LogRecord, GameEvent?> parse,
+        string path, Action<string, Exception> problem, WallClock.Sequence clock)
     {
         foreach (var record in records)
         {
             try
             {
                 if (parse(record) is { } e)
-                    events.Add((e, record.IsReplay));
+                    events.Add((e, record.IsReplay, e.At == record.Timestamp ? clock.Next(e.At) : WallClock.Instants(e.At, clock.Zone)[0]));
             }
             catch (Exception e)
             {
@@ -340,12 +348,14 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
     /// or over a file or folder it can't read: those are left out, and what was read counts.
     /// </summary>
     /// <param name="problem">Told what was left out and why, once per kind of exception (see <see cref="ReadProblem"/>).</param>
-    public static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem = null) =>
-        ReadSession(sessionFolder, problem, GameLogParser.Parse);
+    /// <param name="zone">The time zone of the logs' times (<see cref="Zone"/>); the PC's own when null.</param>
+    public static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem = null, TimeZoneInfo? zone = null) =>
+        ReadSession(sessionFolder, problem, GameLogParser.Parse, zone);
 
-    internal static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem, Func<LogRecord, GameEvent?> parse)
+    internal static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem, Func<LogRecord, GameEvent?> parse,
+        TimeZoneInfo? zone = null)
     {
-        var events = new List<(GameEvent Event, bool Replay)>();
+        var events = new List<(GameEvent Event, bool Replay, DateTime Instant)>();
         var reported = new HashSet<Type>();
         void Report(string what, Exception e)
         {
@@ -371,22 +381,25 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
                 var all = records.Append(text).ToList();
                 if (records.Flush(force: true) is { } last)
                     all.Add(last);
-                ParseInto(events, all, parse, path, Report);
+                ParseInto(events, all, parse, path, Report, new WallClock.Sequence(zone));
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             // The folder went away while it was read (the game tidying up, a drive asleep).
         }
-        return events.Select(e => e.Event).OrderBy(e => e.At).ToList();
+        return events.OrderBy(e => e.Instant).Select(e => e.Event).ToList();
     }
 
-    private sealed class FileState
+    private sealed class FileState(TimeZoneInfo? zone)
     {
         public long Offset;
         public Decoder Decoder = new UTF8Encoding(false).GetDecoder();
         public LogRecordReader Reader = new();
         public DateTime LastGrowth;
+
+        /// <summary>The instants of this file's lines, for the order of its events among other logs'.</summary>
+        public WallClock.Sequence Clock = new(zone);
 
         /// <summary>The file was in the session found at start: what it holds when first opened is replay.</summary>
         public bool StartsOld;
@@ -399,6 +412,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             Offset = 0;
             Decoder = new UTF8Encoding(false).GetDecoder();
             Reader = new LogRecordReader();
+            Clock = new WallClock.Sequence(zone);
             StartsOld = false;
             ReplayUntil = 0;
         }

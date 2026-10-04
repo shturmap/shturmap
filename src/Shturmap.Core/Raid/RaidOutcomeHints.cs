@@ -29,11 +29,13 @@ public sealed class RaidOutcomeHints
             _lost = notice;
             return null;
         }
-        if (_ended is { } ended && notice.At >= ended.EndedAt && notice.At - ended.EndedAt <= LateBy &&
+        // How long after the end line, as time passed (WallClock): the two clock times apart are an hour off across a
+        // clock change.
+        if (_ended is { } ended && WallClock.Apart(ended.EndedAt, notice.At) is var after && after >= TimeSpan.Zero && after <= LateBy &&
             Same(notice.LocationId, ended.LocationId, ended.MapNameId))
         {
             _ended = null;
-            return new OutcomeHint(notice.LocationId, ended.EndedAt, (notice.At - ended.EndedAt).TotalSeconds);
+            return new OutcomeHint(notice.LocationId, ended.EndedAt, after.TotalSeconds);
         }
         return null;
     }
@@ -48,7 +50,7 @@ public sealed class RaidOutcomeHints
         if (ended.Previous.RaidStartedAt is null || !ended.EndInLog)
             return null;
         if (lost is not null && Same(lost.LocationId, ended.Previous.LocationId, mapNameId))
-            return new OutcomeHint(lost.LocationId, ended.At, (lost.At - ended.At).TotalSeconds);
+            return new OutcomeHint(lost.LocationId, ended.At, WallClock.Apart(ended.At, lost.At).TotalSeconds);
         _ended = (ended.Previous.LocationId, mapNameId, ended.At);
         return null;
     }

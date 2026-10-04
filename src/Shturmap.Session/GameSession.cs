@@ -142,9 +142,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         yield return ("phase", s.Raid.Phase);
         yield return ("map", s.Map?.NormalizedName);
         if (s.Raid.RaidStartedAt is { } started)
-            yield return ("raidMin", (DateTime.Now - started).TotalMinutes);
+            yield return ("raidMin", WallClock.Elapsed(started, DateTime.Now, Zone).TotalMinutes);
         if (s.RaidFix is { } fix)
-            yield return ("fixAgeS", (DateTime.Now - fix.At).TotalSeconds);
+            yield return ("fixAgeS", WallClock.Elapsed(fix.At, DateTime.Now, Zone).TotalSeconds);
     }
 
     /// <summary>Raised after every change, on a background thread.</summary>
@@ -553,7 +553,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     {
         if (_locations?.LogsFolder is not { } logs)
             return;
-        _tailer = new LogTailer(logs);
+        _tailer = new LogTailer(logs) { Zone = Zone };
         // The tailer leaves out what it can't read and carries on; said once per kind, so the app log shows why an
         // event is missing (the text names the file, never a record's content).
         _tailer.ReadProblem += (what, e) => AppLog.Warn($"Following the game's logs: {what} couldn't be read and was left out", e);
@@ -1068,7 +1068,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     {
                         var mode = GameMode.Unknown;
                         var read = new List<QuestObservation>();
-                        foreach (var e in LogTailer.ReadSession(session, (what, problem) => Failed("Reading the quest history: " + what, problem)))
+                        foreach (var e in LogTailer.ReadSession(session, (what, problem) => Failed("Reading the quest history: " + what, problem), Zone))
                         {
                             if (e is SessionModeEvent m)
                                 mode = m.Mode;
@@ -1268,7 +1268,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (ended.Previous.RaidStartedAt is not null)
             _lastRaidState = (ended.Previous, ended.At, ended.EndInLog);
         if (announce && _lastRaidMap is not null)
-            Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _lastRaidMap.Name, ended.Length));
+            Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _lastRaidMap.Name, ended.LengthIn(Zone)));
     }
 
     // What the app log and the study log keep of a raid's steps (never during the replay at start).
@@ -1293,6 +1293,13 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>The time, for telling whether an open raid can still be running; the PC's clock unless a test gives its own.</summary>
     public Func<DateTime> Clock { get; init; } = () => DateTime.Now;
 
+    /// <summary>
+    /// The time zone of the log's and the clock's times, for the time that passed between two of them across a clock
+    /// change (<see cref="WallClock"/>: a raid's length, whether an open raid can still be running, a screenshot
+    /// against a raid's end). Null is the PC's own; a test gives another, so it doesn't depend on the PC's.
+    /// </summary>
+    public TimeZoneInfo? Zone { get; init; }
+
     // Closes the open raid or load if it can't still be running: the game has started again since, or it began longer
     // ago than its map's raid length allows. Looked at after every batch of log lines, when the data (and with it the
     // raid length) arrives, and every half minute while the app runs, since a log that has fallen silent sends nothing.
@@ -1300,7 +1307,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     {
         var newer = _raidSession is not null && _tailer?.CurrentSession is { } current && !string.Equals(current, _raidSession, StringComparison.OrdinalIgnoreCase);
         var minutes = _raidMap is not null ? _data?.Maps.GetValueOrDefault(_raidMap.Id)?.RaidDuration : null;
-        if (!UnfinishedRaid.CannotStillRun(_tracker.State, Clock(), minutes, newer))
+        if (!UnfinishedRaid.CannotStillRun(_tracker.State, Clock(), minutes, newer, Zone))
             return false;
         return CloseUnfinishedRaid(newer ? "the game started again" : $"it began more than {UnfinishedRaid.Bound(minutes).TotalMinutes:0} min ago", announce);
     }
@@ -1410,7 +1417,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 AppLog.Info($"Raid started: {_raidMap?.Name ?? "unknown map"}, side {started.State.Side}");
                 break;
             case RaidEnded ended:
-                AppLog.Info(ended.Length is { } length
+                AppLog.Info(ended.LengthIn(Zone) is { } length
                     ? $"Raid ended after {length.TotalMinutes:0} min"
                     : ended.Previous.RaidStartedAt is null ? "Raid loading cancelled" : "Raid ended");
                 break;
@@ -1444,7 +1451,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 break;
             case RaidEnded ended:
                 Study.Game("raid.end", ("side", ended.Previous.Side),
-                    ("minutes", ended.Length?.TotalMinutes),
+                    ("minutes", ended.LengthIn(Zone)?.TotalMinutes),
                     ("endInLog", ended.EndInLog),
                     ("lastMap", _lastRaidMap?.NormalizedName));
                 break;
@@ -1494,8 +1501,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var position = seen.Info.Position!.Value;
             var place = PlaceFix(_tracker.State.Phase, _raidMap, _locations?.LogsFolder is not null, _map,
                 onShownMap: _map is not null && _data?.DefinitionFor(_map.NormalizedName) is { } shown && shown.Bounds.Contains(position.X, position.Z),
-                // Taken just before the raid's end line reached the log: the raid is over, and so is its "you".
-                fromEndedRaid: _lastRaidEnded is { } ended && seen.CreatedAt <= ended.AddSeconds(10));
+                // Taken just before the raid's end line reached the log: the raid is over, and so is its "you". By the
+                // time that passed between the two (WallClock), not by the two clock times: those are an hour apart
+                // across a clock change.
+                fromEndedRaid: _lastRaidEnded is { } ended && WallClock.Apart(ended, seen.CreatedAt, Zone) <= TimeSpan.FromSeconds(10));
             if (place.Map is not { } map)
             {
                 Study.Game("screenshot.unplaced", ("phase", _tracker.State.Phase), ("said", place.Why is not null));
@@ -1861,7 +1870,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                   ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), railMap.NormalizedName, _done)
                 : null,
             LastRaid = _lastRaidState is ({ } state, var endedAt, var endInLog) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
-                ? new LastRaidView(lastMap.Name, endInLog ? endedAt - state.RaidStartedAt!.Value : TimeSpan.Zero, state.Side, endedAt) { LengthKnown = endInLog }
+                ? new LastRaidView(lastMap.Name, endInLog ? WallClock.Elapsed(state.RaidStartedAt!.Value, endedAt, Zone) : TimeSpan.Zero, state.Side, endedAt) { LengthKnown = endInLog }
                 : null,
             RaidInfo = railMap is not null && _data?.Maps.GetValueOrDefault(railMap.Id) is { } raidMap
                 ? new RaidInfo(raidMap.RaidDuration ?? 0, _data.BossesOn(raidMap.Id).Take(3).Select(Planning.BossText).ToList(),

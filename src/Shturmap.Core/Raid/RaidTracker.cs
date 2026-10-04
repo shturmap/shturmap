@@ -58,7 +58,13 @@ public sealed record RaidEnded(RaidState Previous, RaidState State, DateTime At,
 {
     /// <summary>How long the raid ran, when the log has both its start and its end; null for a load, and for an end
     /// that isn't in the log.</summary>
-    public TimeSpan? Length => EndInLog && Previous.RaidStartedAt is { } started ? At - started : null;
+    public TimeSpan? Length => LengthIn(null);
+
+    /// <summary><see cref="Length"/> by a given time zone's clock changes (the PC's own when null): the log's times
+    /// are wall-clock times, and a raid across a clock change ran an hour longer or shorter than they are apart
+    /// (<see cref="WallClock"/>).</summary>
+    public TimeSpan? LengthIn(TimeZoneInfo? zone) =>
+        EndInLog && Previous.RaidStartedAt is { } started ? WallClock.Elapsed(started, At, zone) : null;
 }
 
 public sealed record ModeChanged(RaidState State) : RaidTransition(State);
@@ -110,7 +116,7 @@ public sealed class RaidTracker
             case LoadingStepEvent step when State.Phase == RaidPhase.Loading:
                 // Matching can finish before the scene line (then it belongs to no loading) or after it.
                 if (_steps.All(s => s.Step != step.Step))
-                    _steps.Add((step.Step, (e.At - State.LoadingSince!.Value).TotalSeconds));
+                    _steps.Add((step.Step, WallClock.Elapsed(State.LoadingSince!.Value, e.At).TotalSeconds));
                 if (step.Step != Logs.LoadingStep.MatchingCompleted)
                     State = State with { LoadingStep = step.Step, LoadingStepsSeen = State.LoadingStepsSeen | (1 << (int)step.Step) };
                 return null;
@@ -142,7 +148,7 @@ public sealed class RaidTracker
                 return null;
 
             case GameStartedEvent when State.Phase == RaidPhase.Loading:
-                _steps.Add((null, (e.At - State.LoadingSince!.Value).TotalSeconds));
+                _steps.Add((null, WallClock.Elapsed(State.LoadingSince!.Value, e.At).TotalSeconds));
                 LoadingSteps = _steps.ToList();
                 State = State with { Phase = RaidPhase.InRaid, RaidStartedAt = e.At, Side = DetectSide(), LoadingStep = null, LoadingStepsSeen = 0 };
                 return new RaidStarted(State);
@@ -224,14 +230,17 @@ public static class UnfinishedRaid
     /// <summary>
     /// Whether an open raid or load can't still be running: the game has started again since (a newer log session than
     /// the raid's), or it began longer ago than <see cref="Bound"/>. A load counts from its scene line (matching and
-    /// loading take minutes, never that long).
+    /// loading take minutes, never that long). The time since it began is the time that passed, not the two clock
+    /// times apart: on the night the clocks go forward those are an hour more, which closed a raid still running, and
+    /// a raid that began in the hour the autumn change repeats counts from its later reading (<see cref="WallClock"/>).
     /// </summary>
-    public static bool CannotStillRun(RaidState state, DateTime now, int? raidMinutes, bool newerSession)
+    /// <param name="zone">The time zone of the clock times; the PC's own unless a test gives another.</param>
+    public static bool CannotStillRun(RaidState state, DateTime now, int? raidMinutes, bool newerSession, TimeZoneInfo? zone = null)
     {
         if (state.Phase == RaidPhase.Menu)
             return false;
         if (newerSession)
             return true;
-        return (state.RaidStartedAt ?? state.LoadingSince) is { } began && now - began > Bound(raidMinutes);
+        return (state.RaidStartedAt ?? state.LoadingSince) is { } began && WallClock.Elapsed(began, now, zone) > Bound(raidMinutes);
     }
 }
