@@ -35,19 +35,10 @@ public sealed record MapPlanView(
 public static class Planning
 {
     /// <param name="picks">The quests picked for the coming raid: maps with picks come first, most picks first, the
-    /// player's plan before the planner's (owner, 2026-10-03); otherwise the planner's order.</param>
-    public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null)
-    {
-        var plans = RaidPlanner.Rank(Quests(data, activeQuestIds), Maps(data)).Select(p => ToView(data, p)).ToList();
-        if (picks is not { Count: > 0 })
-            return plans;
-        return plans
-            .Select((p, i) => (Plan: p, Rank: i, Picked: p.Finish.Concat(p.Progress).Count(q => picks.Contains(q.QuestId))))
-            .OrderByDescending(x => x.Picked)
-            .ThenBy(x => x.Rank)
-            .Select(x => x.Plan)
-            .ToList();
-    }
+    /// player's plan before the planner's (owner, 2026-10-03), also a map the planner ranks below its best four
+    /// (<see cref="RaidPlanner.Rank"/>); otherwise the planner's order.</param>
+    public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null) =>
+        RaidPlanner.Rank(Quests(data, activeQuestIds), Maps(data), picks: picks).Select(p => ToView(data, p)).ToList();
 
     /// <summary>A plan card's quest sections with the picks taken out to their own group on top (<see cref="Sections"/>).</summary>
     /// <param name="Picks">The picked quests on this map: those that can be completed first, then those that only

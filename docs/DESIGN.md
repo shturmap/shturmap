@@ -69,7 +69,8 @@ against sanctions); and say that some players see a position map as an unfair ad
   panel's LICENCES link opens it. Update it in the same change as any package. Everything Shturmap uses but doesn't ship (data, artwork, ideas) is credited in the README.
 - **Game data** (quests, maps, items, extracts, bosses) comes from tarkov.dev's public JSON service
   (`json.tarkov.dev`), run by The Hideout. Its API page says it is free with no rate limit; there are no written
-  terms. Requests say who they are (User-Agent `Shturmap/…`) and are cached with ETags (1 h, 24 h, 7 days by kind).
+  terms. Requests say who they are (User-Agent `Shturmap/<version>` with the project's address, the build's own
+  version without its commit; `CachedHttp.UserAgent`) and are cached with ETags (1 h, 24 h, 7 days by kind).
   Data is downloaded at runtime into the user's cache for personal use and shown with "data tarkov.dev". It is
   never bundled in the repository or a build.
 - **Map geometry** comes from tarkov.dev's `maps.json` (MIT, Copyright (c) 2019 Oskar Risberg; the test fixture
@@ -773,6 +774,22 @@ opened 10 to 21 times each to find out why and where). Gear a kill objective ask
 RayBench Hipster Reserve sunglasses" (neutral about and/or: the data's sets don't always match the quest's
 wording, which the objective text gives anyway); item cards list it as "Wear, for kills".
 
+**One row per thing, counted as Plan counts it.** A quest card's BRING and the item card's lines are gathered over
+the quest's objectives the way Plan's BRING is (`RaidPlanner`'s requirements): what is used up adds up (three "mark"
+objectives are "MS2000 Marker ×3" and "Bring ×3, to mark"), one item used two ways is one row saying both ("to plant
+and to use"), and a key or item needed on two maps names both. Gear to wear, weapons and mods aren't used up and stay
+rows of their own; an exit's items are counted once per exit. Until 2026-10-04 the card made one row per objective and
+dropped a row whose text was already there, which lost the count and the second map.
+
+**An offer behind a quest isn't a way yet** (the review of 2026-10-04: BRING named "Ragman LL2 · 41,283 ₽ · after
+Dandies" as the easiest source of the beanie Dandies itself asks for). A trader's offer or a barter that tarkov.dev
+ties to a quest (`taskUnlock`) which the game's log hasn't seen completed comes after every other way (other
+offers, barters, crafts, the flea market, loose spots) and says "after <quest>"; so the one line under a BRING row
+names it only when nothing else is known. Once the log has seen that quest completed, the offer is one like any
+other, in its place by price, and the note goes. Of several items that will each do (a weapon class), the line names
+the first with a way open now. Shturmap knows no loyalty level, so "LL2" stays a fact about the offer, never a claim
+that the player has it (`ItemCards.Sources`).
+
 **What kills and exits take** (owner, 2026-10-03: "There are others that still require items, such as doing kills
 with certain weapons or weapon classes … It should be a coherent design so it is still clear what to bring and what
 is needed to solve a quest"; and "in the cease fire quest it is not clear that we need to bring a flare"). BRING
@@ -869,8 +886,11 @@ still only keeps its card open (two clicks, two meanings).
   COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
   a group of their own says "this raid's work" at a glance. BRING lists what the picks need first, then a hairline
   and the rest (`Planning.BringOrder`). A map with picks is suggested first, most picks first: the player's plan
-  before the planner's. A folded card shows its picks' glyphs first, in cyan, then a hairline. The raid card
-  starts with PICKED, nearest first, and NEXT is the nearest objective among the picks.
+  before the planner's. That holds whatever the map's rank: every map is ranked before the list is cut, the maps
+  with picks all come first (also more than four), and the planner's best fill up to four (`RaidPlanner.Rank`;
+  until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
+  shows its picks' glyphs first, in cyan, then a hairline. The raid card starts with PICKED, nearest first, and
+  NEXT is the nearest objective among the picks.
 - **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
 - The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
 
@@ -924,7 +944,7 @@ instead and borrows the game's names and look where one fits, so the labels feel
 | **Exploration** | magnifier `E721` (as in the game) | `visit` | yes, at a place |
 | **Pickup** | pointing hand `E7C9` (as in the game) | `findQuestItem` | yes, at a place |
 | **Place** | pin `E840` | `plantItem`, `plantQuestItem`, `mark`, `useItem` | yes, at a place; needs an item |
-| **Find in raid** | bag `E719` | `findItem` | yes, anywhere (FIR) |
+| **Find in raid** | bag `E719` | `findItem` | yes, anywhere; found in raid (FIR) only where the data's `foundInRaid` says so |
 | **Survive** | runner `E726` | `extract`, `experience` (an in-raid health condition, not XP) | yes |
 | **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
 
@@ -932,6 +952,10 @@ A quest's type is that of its most common in-raid objective type (ties: Eliminat
 Survive, Find in raid); a quest with no in-raid objectives is a Trader quest. This is derived, not the game's own
 label. Requirements use a key glyph `E8D7` for keys and a briefcase `E821` for items to bring. Never use the
 game's icon artwork; the glyphs only echo it.
+
+The type is named after the common case. A `findItem` whose item may be bought (`foundInRaid` false) keeps the type
+and its glyph, but nothing says "found in raid" of it: the planner, the plan's order and the item card go by the
+data's `foundInRaid` (§7; the review of 2026-10-04 found the planner treating every `findItem` as found in raid).
 
 ### Quest synopsis
 
@@ -992,11 +1016,12 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
   Collect or Survive. It is **tied** to the map if it names the map or has a place there.
 - A quest counts for a map only if at least one of its doable objectives is tied to it; work that fits any map
   doesn't argue for one map over another.
-- A quest can be **finished** on a map if all its in-raid objectives are doable there, none is Collect (found-in-
-  raid items depend on luck) and no kill count is above 3; otherwise it is **progressed**.
+- A quest can be **finished** on a map if all its in-raid objectives are doable there, none needs items found in
+  raid (they depend on luck; a `findItem` whose item may be bought, `foundInRaid` false, doesn't count as one, the
+  same cut as "Plan order" below) and no kill count is above 3; otherwise it is **progressed**.
 - Score = 3 per finishable quest + 1 per tied objective with a place + 0.6 per tied objective without one + 0.1 per
   untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
-  expanded.
+  expanded. Maps with picked quests come before them, whatever their score (§4, "Picks").
 - Quests whose in-raid work fits any map are listed once under **Any map**.
 - No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
   walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's
@@ -1304,6 +1329,11 @@ from the maps payload's `lootLoose`.
 `GameDataLoader.ApiLanguage` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
 tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
+Only "not found" (404) says the language is lacking. A translation that fails any other way (no connection, a
+timeout, 5xx) with no saved copy fails the load like any other file: it is said as what it is and tried again
+("Error messages"), never as "No German texts on tarkov.dev" (until 2026-10-04 any failed request read as a missing
+language, so a moment's 503 left the session in English with an untrue notice). A load that fails also looks at the
+downloads it never came to await, so their failures don't turn up later as crash records.
 
 **Study log.** Developer builds only (below), in their data folder: `%LOCALAPPDATA%\Shturmap-dev\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
 `ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI
@@ -1364,7 +1394,10 @@ tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tar
 "tarkov.dev's data has changed in a way Shturmap can't read. Please report it.";
 "Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.", the DATA chip
 says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or 429) is
-tried again every 2 minutes, said once; the notice asks to report it if it keeps failing. A notice that asks for
+tried again every 2 minutes, said once; the notice asks to report it if it keeps failing. A download whose answer
+starts and then stops counts among them: after 30 s of silence it is a timeout, and a connection that breaks off
+mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; the client's own timeout ends with
+the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
 a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
 German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says

@@ -13,9 +13,21 @@ public sealed record CachedResponse(string FilePath, bool FromNetwork, bool Stal
 /// GETs with a disk cache. A copy younger than maxAge is used as is; an older one is revalidated with its ETag
 /// (an unchanged file costs one small request); when the network fails, the last good copy is used.
 /// </summary>
-public sealed class CachedHttp(HttpClient http, string cacheFolder)
+/// <param name="bodyIdleLimit">How long a download may deliver nothing before it counts as stalled
+/// (<see cref="BodyIdleLimit"/> unless a test wants it shorter).</param>
+public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bodyIdleLimit = null)
 {
     private sealed record Meta(string? ETag, DateTimeOffset? LastModified, DateTimeOffset FetchedAt);
+
+    /// <summary>
+    /// How long a download's body may deliver nothing. The client's own Timeout ends once the headers are in (requests
+    /// are sent with ResponseHeadersRead), so without a limit of its own a connection that stalls mid-body never ends:
+    /// "Loading game data…" for good, with no notice and no retry. It is a limit on silence, not on the whole download:
+    /// the items payload is 17 MB, and a slow line that keeps delivering must be let finish.
+    /// </summary>
+    public static readonly TimeSpan BodyIdleLimit = TimeSpan.FromSeconds(30);
+
+    private readonly TimeSpan _bodyIdleLimit = bodyIdleLimit ?? BodyIdleLimit;
 
     public static HttpClient CreateClient()
     {
@@ -23,9 +35,26 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
         {
             Timeout = TimeSpan.FromSeconds(60),
         };
-        // Says who is asking and where to find us, so tarkov.dev can get in touch about Shturmap's traffic.
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Shturmap/0.1 (+https://github.com/shturmap; Escape from Tarkov companion)");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         return client;
+    }
+
+    /// <summary>
+    /// Says who is asking, in which version, and where to find us, so tarkov.dev can get in touch about Shturmap's
+    /// traffic and tell a build that misbehaves from the others: "Shturmap/0.3.0 (+https://github.com/shturmap; …)".
+    /// </summary>
+    public static string UserAgent { get; } = $"Shturmap/{BuildVersion()} (+https://github.com/shturmap; Escape from Tarkov companion)";
+
+    // The build's version as every Shturmap assembly carries it (Directory.Build.props), without the commit: "0.3.0",
+    // or a developer build's "0.3.0-dev.<time>".
+    private static string BuildVersion()
+    {
+        var assembly = typeof(CachedHttp).Assembly;
+        var version = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString(3) ?? "0";
+        var commit = version.IndexOf('+');
+        return commit >= 0 ? version[..commit] : version;
     }
 
     public async Task<CachedResponse> GetAsync(Uri uri, string cacheKey, TimeSpan maxAge, CancellationToken ct = default)
@@ -63,7 +92,7 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
             try
             {
                 await using (var file = File.Create(temp))
-                    await response.Content.CopyToAsync(file, ct);
+                    await CopyBodyAsync(response, file, uri, ct);
                 Replace(temp, body);
             }
             finally
@@ -78,9 +107,48 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder)
             // Another Shturmap wrote the same file a moment ago and still holds it: that copy is as new.
             return new CachedResponse(body, false, false, DateTimeOffset.UtcNow);
         }
-        catch (Exception e) when (cached && e is HttpRequestException or TaskCanceledException or IOException)
+        catch (Exception e) when (cached && e is HttpRequestException or TaskCanceledException or TimeoutException or IOException)
         {
             return new CachedResponse(body, false, true, meta!.FetchedAt);
+        }
+    }
+
+    // The body, read by hand so that each read has the idle limit and a failure says which side failed: the network
+    // (a stall is a TimeoutException, a connection that breaks off an HttpRequestException: both worth trying again,
+    // LoadProblem) or the disk (the file's own IOException).
+    private async Task CopyBodyAsync(HttpResponseMessage response, Stream file, Uri uri, CancellationToken ct)
+    {
+        await using var body = await response.Content.ReadAsStreamAsync(ct);
+        using var stalled = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(81920);
+        try
+        {
+            while (true)
+            {
+                int read;
+                stalled.CancelAfter(_bodyIdleLimit);
+                try
+                {
+                    read = await body.ReadAsync(buffer, stalled.Token);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    throw new TimeoutException($"{uri} sent nothing for {_bodyIdleLimit.TotalSeconds:0} s in the middle of its answer");
+                }
+                catch (IOException e)
+                {
+                    throw new HttpRequestException($"{uri} broke off in the middle of its answer", e);
+                }
+                // Writing to the disk isn't the server's silence.
+                stalled.CancelAfter(Timeout.InfiniteTimeSpan);
+                if (read == 0)
+                    return;
+                await file.WriteAsync(buffer.AsMemory(0, read), ct);
+            }
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
