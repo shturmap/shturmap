@@ -173,6 +173,7 @@ public sealed partial class MainWindow
             if (Linked.Current is null && Linked.RowOf(quest, root.XamlRoot) is { } row)
             {
                 Linked.PointAt(row);
+                AppLog.Debug("Demo: the quest's new row");
                 return;
             }
         }
