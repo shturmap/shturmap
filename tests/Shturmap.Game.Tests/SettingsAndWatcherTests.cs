@@ -84,10 +84,12 @@ public sealed class LogTailerTests : IDisposable
             s.Write(bytes, cut, bytes.Length - cut);
         Append(app, "2026-01-01 15:23:00.000|1.1.5.1.47510|Info|application|PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0\r\n");
         tailer.PollOnce();
-        var live = Drain(tailer);
-        Assert.All(live, e => Assert.False(e.IsReplay));
-        Assert.Contains(live, e => e.Event is MapLoadingEvent { ScenePath: "maps/city_preset.bundle" });
-        Assert.Contains(live, e => e.Event is GameStartedEvent);
+        var later = Drain(tailer);
+        // The scene line was the log's last line at start: only complete now that a line follows it, and replay all
+        // the same (as live it gave a RAID LOADING cue for a raid long over). What was written since is live.
+        Assert.True(Assert.Single(later, e => e.Event is MapLoadingEvent { ScenePath: "maps/city_preset.bundle" }).IsReplay);
+        Assert.False(Assert.Single(later, e => e.Event is GameStartedEvent).IsReplay);
+        Assert.Equal(2, later.Count);
 
         var second = Session("log_2026.01.01_19-00-00_1.1.5.1.47510");
         Append(Path.Combine(second, "2026.01.01_19-00-00_1.1.5.1.47510 application_000.log"),

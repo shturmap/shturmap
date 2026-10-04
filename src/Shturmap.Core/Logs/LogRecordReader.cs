@@ -17,9 +17,18 @@ public sealed partial class LogRecordReader
     private static partial Regex Header();
 
     private readonly StringBuilder _partialLine = new();
+    private bool _partialReplay;
     private LogRecord? _pending;
     private readonly StringBuilder _body = new();
     private bool _bodyOpen;
+
+    /// <summary>
+    /// Whether the text appended from now on was in the log before its follower started (a tailer sets it while it
+    /// reads what a file held at first sight). A record carries the value its header line began under
+    /// (<see cref="LogRecord.IsReplay"/>), however late the rest of it arrives: a log's last line is only known to
+    /// be complete a moment later, or when the next line comes.
+    /// </summary>
+    public bool Replay { get; set; }
 
     /// <summary>Feeds text; returns every record that is now known to be complete.</summary>
     public IReadOnlyList<LogRecord> Append(string text)
@@ -30,13 +39,20 @@ public sealed partial class LogRecordReader
         {
             if (text[i] != '\n')
                 continue;
+            // A line whose start came with an earlier text began under that text's flag.
+            var replay = _partialLine.Length > 0 ? _partialReplay : Replay;
             _partialLine.Append(text, start, i - start);
             start = i + 1;
             var line = _partialLine.ToString().TrimEnd('\r');
             _partialLine.Clear();
-            OnLine(line, done);
+            OnLine(line, replay, done);
         }
-        _partialLine.Append(text, start, text.Length - start);
+        if (start < text.Length)
+        {
+            if (_partialLine.Length == 0)
+                _partialReplay = Replay;
+            _partialLine.Append(text, start, text.Length - start);
+        }
         return done;
     }
 
@@ -52,20 +68,22 @@ public sealed partial class LogRecordReader
         return TakePending();
     }
 
-    private void OnLine(string line, List<LogRecord> done)
+    private void OnLine(string line, bool replay, List<LogRecord> done)
     {
         var header = Header().Match(line);
-        if (header.Success)
+        // Digits in a header's shape that are no time ("2026-13-45 …") are a continuation line, not a reason to stop.
+        if (header.Success && DateTime.TryParseExact(header.Groups["ts"].Value, "yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var timestamp))
         {
             if (_pending is not null)
                 done.Add(TakePending());
             _pending = new LogRecord(
-                DateTime.ParseExact(header.Groups["ts"].Value, "yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture),
+                timestamp,
                 header.Groups["ver"].Value,
                 header.Groups["lvl"].Value,
                 header.Groups["ch"].Value,
                 header.Groups["msg"].Value,
-                null);
+                null) { IsReplay = replay };
             return;
         }
 

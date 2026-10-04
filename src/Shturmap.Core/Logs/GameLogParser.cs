@@ -136,34 +136,30 @@ public static partial class GameLogParser
         if (record.Message.Contains("GroupMatchRaidSettings", StringComparison.Ordinal))
         {
             using var settings = TryParse(record.Body);
-            if (settings is null || !settings.RootElement.TryGetProperty("raidSettings", out var raid) || String(raid, "location") is not { } location)
+            if (settings is null || !Property(settings.RootElement, "raidSettings", out var raid) || String(raid, "location") is not { } location)
                 return null;
             return new GroupRaidSettingsEvent(record.Timestamp, location, String(raid, "timeVariant"));
         }
 
         if (record.Message.Contains("UserConfirmed", StringComparison.Ordinal))
         {
-            var json = TryParse(record.Body);
-            if (json is null)
+            using var json = TryParse(record.Body);
+            if (json is not { RootElement: { ValueKind: JsonValueKind.Object } root })
                 return null;
-            using (json)
-            {
-                var root = json.RootElement;
-                return new MatchSetupEvent(record.Timestamp, String(root, "location"), String(root, "shortId"), String(root, "profileid")?.ToLowerInvariant());
-            }
+            return new MatchSetupEvent(record.Timestamp, String(root, "location"), String(root, "shortId"), String(root, "profileid")?.ToLowerInvariant());
         }
 
         if (!record.Message.Contains("ChatMessageReceived", StringComparison.Ordinal))
             return null;
 
         using var doc = TryParse(record.Body);
-        if (doc is null || !doc.RootElement.TryGetProperty("message", out var message))
+        if (doc is null || !Property(doc.RootElement, "message", out var message) || message.ValueKind != JsonValueKind.Object)
             return null;
 
-        var type = message.TryGetProperty("type", out var t) && t.ValueKind == JsonValueKind.Number ? t.GetInt32() : -1;
+        var type = Property(message, "type", out var t) && t.ValueKind == JsonValueKind.Number && t.TryGetInt32(out var number) ? number : -1;
         // The insurer writes about a raid by its location: a trader message (2) when insured gear was lost, the
         // insurance return (8) with the gear hours later.
-        if (type is 2 or 8 && message.TryGetProperty("systemData", out var system) && String(system, "location") is { } raidLocation)
+        if (type is 2 or 8 && Property(message, "systemData", out var system) && String(system, "location") is { } raidLocation)
             return new InsuranceNoticeEvent(record.Timestamp, type == 2 ? InsuranceNotice.Lost : InsuranceNotice.Returned, raidLocation, ItemsIn(message));
         QuestLogStatus? status = type switch
         {
@@ -180,8 +176,8 @@ public static partial class GameLogParser
         if (questId.Length != 24 || !questId.All(Uri.IsHexDigit))
             return null;
 
-        var at = message.TryGetProperty("dt", out var dt) && dt.ValueKind == JsonValueKind.Number
-            ? DateTimeOffset.FromUnixTimeSeconds(dt.GetInt64()).LocalDateTime
+        var at = Property(message, "dt", out var dt) && UnixSeconds(dt) is { } seconds
+            ? DateTimeOffset.FromUnixTimeSeconds(seconds).LocalDateTime
             : record.Timestamp;
         var eventId = String(doc.RootElement, "eventId") ?? String(message, "_id") ?? $"{questId}:{status}:{at:O}";
         var trader = String(doc.RootElement, "dialogId") ?? String(message, "uid");
@@ -191,10 +187,36 @@ public static partial class GameLogParser
     // The items a message carries, without their attachments: those whose parent is the message's own stash.
     private static int ItemsIn(JsonElement message)
     {
-        if (!message.TryGetProperty("items", out var items) || !items.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+        if (!Property(message, "items", out var items) || !Property(items, "data", out var data) || data.ValueKind != JsonValueKind.Array)
             return 0;
         var stash = String(items, "stash");
         return data.EnumerateArray().Count(i => stash is null || String(i, "parentId") == stash);
+    }
+
+    // A message's "dt" as whole seconds, or null when it isn't a time a DateTimeOffset can hold (a fraction is cut).
+    private static long? UnixSeconds(JsonElement e)
+    {
+        if (e.ValueKind != JsonValueKind.Number)
+            return null;
+        if (!e.TryGetInt64(out var seconds))
+        {
+            if (!e.TryGetDouble(out var value) || double.IsNaN(value) || Math.Abs(value) > MaxUnixSeconds)
+                return null;
+            seconds = (long)value;
+        }
+        return seconds is >= MinUnixSeconds and <= MaxUnixSeconds ? seconds : null;
+    }
+
+    // The years 1 to 9999, the range DateTimeOffset.FromUnixTimeSeconds takes.
+    private const long MinUnixSeconds = -62_135_596_800;
+    private const long MaxUnixSeconds = 253_402_300_799;
+
+    // TryGetProperty throws on anything but an object ("items": null, a message that is a string), and one record
+    // of a shape nobody expected must not cost the rest of the log.
+    private static bool Property(JsonElement e, string name, out JsonElement value)
+    {
+        value = default;
+        return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out value);
     }
 
     private static JsonDocument? TryParse(string json)

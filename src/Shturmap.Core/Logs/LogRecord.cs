@@ -8,4 +8,11 @@ namespace Shturmap.Core.Logs;
 /// <param name="Channel">The log's channel: "application", "push-notifications", ...</param>
 /// <param name="Message">Everything after the channel field; may itself contain '|'.</param>
 /// <param name="Body">Continuation lines (usually JSON), or null.</param>
-public sealed record LogRecord(DateTime Timestamp, string GameVersion, string Level, string Channel, string Message, string? Body);
+public sealed record LogRecord(DateTime Timestamp, string GameVersion, string Level, string Channel, string Message, string? Body)
+{
+    /// <summary>
+    /// Whether the entry began in text its reader was told is a replay (<see cref="LogRecordReader.Replay"/>): it was
+    /// in the log before Shturmap started following it.
+    /// </summary>
+    public bool IsReplay { get; init; }
+}
