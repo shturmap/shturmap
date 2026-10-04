@@ -138,6 +138,33 @@ public class LandmarkTests
     }
 
     [Fact]
+    public void A_switch_listed_for_most_extracts_still_links_none_when_one_extract_is_put_right()
+    {
+        // The review of 2026-10-04: "every extract" was a strict test. With one of four extracts no longer listing the
+        // lever, it would have lit for the other three, though it tells them apart no better than before.
+        var map = MapWith(switches: [new("lever", "Lever", At(0, 0)), new("gate", "Gate button", At(5, 0))]) with
+        {
+            Extracts =
+            [
+                new("a", "Gas Station", "pmc", At(10, 0), null, null, null, ["lever"]),
+                new("b", "Gate", "pmc", At(20, 0), null, null, null, ["lever", "gate"]),
+                new("c", "Crossroads", "pmc", At(30, 0), null, null, null, ["lever"]),
+                new("d", "Smugglers' Boat", "pmc", At(40, 0), null, null, null, null),
+            ],
+        };
+        Assert.True(MapContentBuilder.OnMostExtracts(map, "lever"));
+        Assert.False(MapContentBuilder.OnMostExtracts(map, "gate"));
+        var links = MapContentBuilder.ExtractSwitchLinks(map);
+        Assert.Equal(["extract:b"], links.Keys.Where(k => k.StartsWith("extract:", StringComparison.Ordinal)));
+        Assert.Equal(["switch:gate"], links["extract:b"]);
+        Assert.False(links.ContainsKey("switch:lever"));
+        // A switch on exactly half of the extracts tells them apart; a map's only extract is told apart by any.
+        var two = map with { Extracts = [.. map.Extracts!.Take(1), map.Extracts![3]] };
+        Assert.False(MapContentBuilder.OnMostExtracts(two, "lever"));
+        Assert.False(MapContentBuilder.OnMostExtracts(map with { Extracts = [.. map.Extracts!.Take(1)] }, "lever"));
+    }
+
+    [Fact]
     public void Minefields_are_left_out_over_artwork_that_draws_them()
     {
         // Customs' artwork has no minefields, so the data's show; Woods' has a "Minefield" group, so they don't.

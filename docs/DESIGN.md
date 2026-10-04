@@ -648,11 +648,13 @@ spawns below).
     an extract's `switches` in the data, and a switch that unlocks one of those (a power switch freeing a lever, up to
     four steps through the data's "activates"; not one that locks it). Pointing at the extract (its marker, its row,
     its requirement line) lights its switches at any zoom, and pointing at a switch lights the extracts it opens
-    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists for every extract of
-    a map tells none of them apart, so it links nothing, and today that is all of them: the audit's 34 extracts are
-    Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's three buttons, though
-    most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links yet, and the legend
-    doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
+    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists on most of a
+    map's extracts (more than half; the rule of the extract list's requirement line, `MapContent.OnMostExtracts`) tells
+    none of them apart, so it links nothing. "Most", not "every": with one extract put right in the data, a strict
+    "every" would have lit the lever for all the others (the review of 2026-10-04). Today that is all of them: the
+    audit's 34 extracts are Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's
+    three buttons, though most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links
+    yet, and the legend doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
   - **When they show**: on a map with artwork from 1.5 times the overview (as the shops' names; Streets has 63 locks,
     Customs 36, Reserve 34), on a sheet at any zoom; their labels from 2.5 times or when pointed at; only those on
     the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.
