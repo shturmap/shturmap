@@ -6,6 +6,231 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## Review of 2026-10-04: findings (owner: "Add all findings to docs/NEXT.md and start fixing them")
+
+A review of the code, the design's consistency and hands-off rule, the design elements, missing features, and the
+visual language with its linked highlight. The test suite was green (614 tests); the views were checked in the app's
+own snapshots (Plan, a raid, a held quest, The Lab, a local raid, a Scav raid). Each item says what is wrong, where,
+and the direction of the fix. **Status** is one of: open, in work, done (with the date), owner to decide, needs a run
+(a claim from reading the code that a test on a PC has to confirm first). Paths are under `src\`.
+
+### P. Before the repository is public
+
+- **P1. The fixture scrubber missed ids.** `tools\make-log-fixtures.ps1` masks profile ids only after "profileid";
+  the committed log fixtures kept ids on `[Transit]` lines and the push channel's ids in the notification logs.
+  Fix: mask every id that isn't public game data (quests, traders, item templates), scrub the fixtures, and a test
+  that fails on any id that is neither public nor a placeholder. Then rewrite the history, as on 2026-10-02, before
+  the repository is made public (owner's go needed: it changes every commit). Status: in work.
+- **P2. Velopack's updater lists the running processes.** Its `Update.exe` imports `EnumProcesses`, `OpenProcess`,
+  `QueryFullProcessImageNameW` and `TerminateProcess` and logs "Checking for running processes" (it closes what runs
+  from the install folder, at install, when an update is applied, on RESTART NOW and at uninstall). README and
+  DESIGN.md §2 say Shturmap never opens a handle to the game and checks no processes; `SafetyTests` reads `src\` only.
+  Which access right it asks for is unchecked. Status: owner to decide (word the claim precisely, or change how
+  updates are applied).
+
+### A. Code
+
+The first twelve are the ones a player meets.
+
+- **A1. A map picked in the MAP list during a raid takes the raid with it.** The next position, the status bar, the
+  raid card and RAID OVER go to the picked map (`Shturmap.Session/GameSession.cs`: `MapForFix`, `SelectMapAsync`).
+  Fix: the raid's map comes from the tracker; a pick in a raid is a look, and the raid's map is back with the next
+  position. Status: in work.
+- **A2. A raid whose end never reached the log stays "in raid".** After a game crash or Alt+F4 in a raid, the next
+  start shows "IN RAID · … · 1,310 MIN", and later a day-long last raid (`Shturmap.Core/Raid/RaidTracker.cs`,
+  `Shturmap.Session/RaidStatus.cs`). Fix: an open raid that can't still be running (older than the map's raid length,
+  or followed by a newer log session) is closed as "end not in the log", with no length. Status: in work.
+- **A3. A held card closes on the next mouse move** when the click was on the left of its row: the 240 px rule
+  measures from the card alone (`Shturmap.App/Controls/CardStack.cs`: `PointerAt`). Fix: measure from the card and
+  the row or marker it opened from. Status: in work.
+- **A4. "Distances from your screenshot 1 min ago" stays at 1 min** until the next snapshot
+  (`Shturmap.App/MainWindow.xaml.cs`: `RaidFixNote`). Fix: set it with the clock. Status: in work.
+- **A5. Follow my position switches itself off for good on any drag**, also between raids with no position on the
+  map (`Shturmap.App/Controls/MapView.cs`, `MainWindow.xaml.cs`: `FollowStopped`). Fix now: a drag or fit with no
+  position on the map leaves following alone. Owner to decide: whether a drag in a raid should switch it off for
+  later raids too (today), or only until the next raid starts. Status: in work; the second part owner to decide.
+- **A6. A pick on a map outside the planner's best four never shows** (`Shturmap.Core/Planning/RaidPlanner.cs`:
+  `Rank` cuts to four before `Shturmap.Session/Planning.cs`: `Suggest` puts picks first). Status: in work.
+- **A7. The Lab, Labyrinth and Icebreaker opened offline stay a sheet until restart**: once the tiles count as
+  unavailable, nothing asks for them again (`Shturmap.Map/MapScene.cs`: `IsSheet`, `MapRenderer.Render`). Status:
+  in work.
+- **A8. BRING's source line can need the quest it serves** ("Ragman LL2 · 41,283 ₽ · after Dandies" for the beanie
+  Dandies asks for; `Shturmap.Session/ItemCards.cs`: `Sources`). Fix: an offer that needs a quest the log hasn't
+  seen completed comes after every other way. Status: in work.
+- **A9. One unexpected notification ends log following without a sign**: the tail loop catches only file errors,
+  the parser throws on shapes it doesn't expect, and the backfill has no catch (`Shturmap.Game/Logs/LogTailer.cs`,
+  `Shturmap.Core/Logs/GameLogParser.cs`). Also: what is already in the log at start must all count as replay, the
+  last line and anything past the first 4 MB included. Status: in work.
+- **A10. An ordinary Windows shutdown with Shturmap open likely reads as "closed unexpectedly"** at the next start:
+  with Fast Startup the tick count isn't reset, and nothing handles the Windows session ending
+  (`Shturmap.App/App.xaml.cs`). Status: needs a run (shut down with the app open, then start it).
+- **A11. Popped-out cards all close, and are forgotten, when the mode changes** (the data is empty for a moment;
+  `MainWindow.xaml.cs`: `RefreshPinned`); closing the main window may save an empty list the same way. Status: in
+  work.
+- **A12. The quest card's BRING doesn't add up counts** ("MS2000 Marker" where Plan says "×3";
+  `Shturmap.Session/QuestCards.cs`: `Needs`). Status: in work.
+
+Smaller, in the map:
+
+- **A13.** In a raid, picked markers are drawn under other quests' markers (`MapRenderer.Render` groups by step-back
+  measure). Status: in work.
+- **A14.** A previewed map's zoom limit stays after the preview ends (`Camera.Restore`). Status: in work.
+- **A15.** The scale bar averages both axes: up to 27 % off on Icebreaker (`MapRenderer.Scale`). Status: in work.
+- **A16.** The tile cache (192) is smaller than a 4K view needs, which reloads without end; a tile that doesn't decode
+  counts as missing for the session (`MapTiles`). Status: in work.
+- **A17.** While anything is pointed at, the whole map is drawn again about 60 times a second; a row rebuilt under the
+  pointer keeps its focus (`MapView`, `Linked`). Fix: stop when the window isn't active, let go when the row goes.
+  Status: in work.
+- **A37.** A cluster is left out when its middle place is out of view though others are in view; the hazard hatch
+  runs over a zone's whole box; an SVG floor is read during the first paint that shows it. Status: open.
+- **A38.** "A switch listed for every extract links nothing" uses a strict rule where `ExtractRules` uses "most".
+  Status: open.
+
+Smaller, in planning and data:
+
+- **A18.** Every `findItem` objective is planned as found in raid, also where the data says it may be bought
+  (`RaidPlanner`: `Plan`, `WhyProgress`). Status: in work.
+- **A19.** A download that stalls after its headers never ends: "Loading game data…" for good
+  (`Shturmap.Data/Http/CachedHttp.cs`). Status: in work.
+- **A20.** Another install with a newer log session (a test server, a leftover install) is followed for the whole
+  run; discovery decides once (`Shturmap.Game/Install/InstallLocator.cs`, `GameSession.LookAgainAsync`). Status: open.
+- **A21.** "N min left" is the map's raid length minus the time since the raid's start line: computed, and wrong
+  after a reconnect or for a local Scav raid shown as a PMC's. Status: owner to decide ("40 min raid · started 21:02",
+  or keep).
+- **A31.** The session's background loops (backfill, following, looking again) catch only a cancel: one database or
+  file error ends them silently. Translation downloads left unwatched after a failed load become crash records.
+  Status: in work.
+- **A33.** Key rows: an "A or B" row dropped because A is also needed alone doesn't hand its quests over; quest-level
+  keys are listed one by one even where they are alternatives. Status: open (check the data's meaning first).
+- **A34.** "(Flare)" and "(Co-op)" are looked for in the translated extract name, so the rules are lost in another
+  game language (`Shturmap.Session/ExtractRules.cs`). Status: open.
+- **A35.** CHOOSE… and FIND AUTOMATICALLY read every log session on the UI thread. Status: open.
+- **A36.** Closing isn't safe to run twice (`ProgressStore`, `GameSession.DisposeAsync`); the uninstall path can do
+  that. Status: open.
+- **A41.** Log times are local without an offset: an hour off across a clock change. Status: open (two nights a year).
+
+Smaller, in the app:
+
+- **A29.** Cards have no largest height: a long quest's card is cut at the window's edge. Status: in work.
+- **A32.** A scene's key is set before its artwork arrives, so a second snapshot can fill the old scene. Status: open.
+- **A42.** A held card stays over the map through loading and the raid; "+" doesn't zoom on a US keyboard; a
+  popped-out window has no Esc. Status: open.
+
+Smaller, in privacy and distribution:
+
+- **A22.** `--update-feed` (in release builds, for testing updates) takes `//server/share` as a local folder
+  (`Shturmap.App/Updater.cs`: `LocalFolder`). Status: in work.
+- **A23.** "Never" doesn't stop crash records already approved (`App.xaml.cs`: `HandleReportsAsync`). Status: in work.
+- **A24.** Only the exact profile folder is masked in the app log: Documents on another drive, a network host's
+  name and short (8.3) names pass (`Shturmap.Session/Redact.cs`). Status: open.
+- **A25.** Paths from maps.json and wiki links from tarkov.dev are used without checking the host or the scheme.
+  Status: open.
+- **A26.** A copy unpacked from the portable zip offers the in-app uninstall; what Velopack then removes is
+  unchecked. Status: needs a run.
+- **A28.** `ScreenshotWatcher.WaitUntilCompleteAsync` (unused, from the removed OCR feature) would open a screenshot
+  image; the watcher's rescan catches too little and isn't re-armed after the folder is recreated. Status: in work.
+- **A30.** The User-Agent says "Shturmap/0.1" whatever the version. Status: in work.
+- **A39.** `eng\publish-release.ps1`'s "built from this commit" checks can pass on a build from a changed tree;
+  `--send-report` in a release sends without a click. Status: open.
+- **A40.** If Velopack fails to start, an installed release silently uses the developer data folder. Status: open.
+
+Wording: **A27.** Numbers and dates follow Windows' language inside English text ("5.000 ₽", "3 Okt" on a German
+Windows); snapshots hide it, since they run in en-US. Status: owner to decide (English formats everywhere, or keep).
+
+### B. The design's consistency
+
+- **B1. Cyan has three meanings**: picks, Follow my position "on", the dev icon; the colour table gives "on" to
+  amber. Fix: the toggle's "on" in amber. Status: in work.
+- **B2. Green means "PMC extract" on the map and "any way out" in the rail**: EXIT and every extract row's distance
+  are green, transits and Scav extracts included; a quest card's "ACTIVE" is green too. Fix: the rail's rows in the
+  colour of their kind. Status: in work.
+- **B3. Sand** is the player's, but floor badges and the squares for loose items use it too. Status: open.
+- **B4. "Primary text ≥ 14 px"**: the raid card's objective lines are 13 px, the status bar 12, directions 11, and
+  about fifty places are under 12; "numbers in a monospaced face" isn't true either (figures are Bahnschrift).
+  Status: owner to decide (raise the sizes, or word the principle as it is).
+- **B5. The legend has "a done objective"**, which can't happen yet (D1 makes it real), and lacks the gold chevrons
+  of a pointed-at quest, a picked quest's cyan padlock and the ping. Status: open.
+- **B6. "Never ask" and "no modal dialogs"** have exceptions the principles don't name: the Report dialog, the
+  uninstall and crash questions, the side switch. Status: in work (say them in DESIGN.md).
+- **B7. DESIGN.md housekeeping**: principles are numbered 1–8, 11, 9, 10, 12; the rail is 380 px in one place and
+  384 in another; §9 still says "fading marker"; §6 says "needs Dorm room 114 key" where the app says "Key: …"; help
+  says "pen" and "highlighter"; the quest card's wiki link lacks "↗"; a held card is replaced after 0.65 s from a
+  list, not 0.4 s. Status: in work.
+- **B8. Stepping back**: other quests' zones fall to about 35 % (the table says 62 % and 80 %), hazards aren't in the
+  table, and a picked quest's doors step back like any lock. Status: in work.
+- **B9.** The facing cone shows for 60 s, the cards' facing-relative directions for 45 s. Status: open.
+- **B10. PRIVACY.md and README** still place reports in help, say Sentry keeps country and town (it is told not to),
+  and don't say that tarkov.dev's image service sees which icons and map tiles are asked for. Status: open.
+- **B11. DESIGN.md against itself and the code**: §5 calls every `findItem` found-in-raid while §7 has one "that may
+  be bought" (A18); §7's "a named exit" isn't what `QuestEffort` tests; §5's Trader types lack `playerLevel`; §8's
+  project table gives Core "name matching" (gone) and calls it pure (`UnpackedCopies` deletes folders); the Steam
+  uninstall key isn't mentioned. Status: open.
+- **B12. Quest states set by hand** still have a code path (`SetQuestStateAsync`, "set by you") though the states
+  come from the log alone and the owner declined editing quests by hand (below). Status: open (remove).
+- **B13.** A Plan card is one button: a click on a row or a pen inside an expanded card of a map that isn't shown
+  also switches the map ("two clicks, two meanings"). Status: open.
+
+### H. Hands-off
+
+- **H1.** The window's place isn't remembered (D2). **H2.** Follow can't stay on (A5); off, a position out of view
+  needs F, and F needs the window's focus. **H6.** The MAP list is live in a raid (A1).
+- **H3. EXIT names the nearest exit for your side**, but on most maps the game opens only some exits, by where you
+  spawned, and at the raid's start the nearest is usually not one of yours. The data doesn't say which are open.
+  Status: owner to decide (say it in the row, e.g. "NEAREST EXIT · CHECK YOUR LIST", or list two).
+- **H4. Plan's other maps are below the fold**: the expanded card is about 840 px with six quests, so the folded
+  cards to compare it with sit under it. Status: owner to decide (a mock first: the maps as a short list on top).
+- **H5.** In a PMC raid the extract list is below the card. Status: open (with H4).
+- **H7.** What needs a restart today: tiles after an offline start (A7), item sources after one failed download,
+  another install's newer session (A20). Status: open.
+- **H9.** The first-run help can open during a raid; the crash question stays over the map until answered. Status:
+  open.
+
+### C. Design elements
+
+- **C1. The raid card's objective lines** are tarkov.dev's full sentences plus "Bring: MS2000 Marker" on each of three
+  lines; Plan has the short synopsis. Status: owner to decide (a snapshot first: the synopsis per objective).
+- **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status:
+  open.
+- **C3. Plan card**: the rank numbers "1", "2" say what the order says; the dashed empty cell stands on most rows;
+  the kit cue shows one item twice (to plant, to wear). Status: owner to decide (the empty cell was the owner's
+  choice on 2026-10-01).
+- **C4. Status bar**: "NO POSITION YET · PRESS … IN RAID" also outside raids; three green lights with words for a
+  state that is nearly always fine; below about 1,090 px the three buttons leave the window, which has no smallest
+  size. Status: open.
+- **C5. The boss symbol** is mostly its dark collar around a thin red ring, weaker than a quest's disc, and shares
+  the diamond's outline with transits; boss labels are red where every other label is ink. Status: owner to decide.
+- **C6.** Symbols at one place hide each other (an extract's triangle under a transit's diamond on Streets). Status:
+  open.
+- **C7.** The guide line's distance plate can stand on a symbol (it covered a boss marker in a snapshot). Status: in
+  work.
+- **C9. Help** is 2,350 px tall with 25 legend rows, and opens by itself at the first start. Status: owner to decide.
+
+### D. Features (owner, 2026-10-04: these two; "the rest of d) not")
+
+- **D1. Tick an objective done by hand.** The logs never say an objective is done, so a quest that takes several
+  raids keeps leading to places already dealt with. The drawing is there (the done marker, the legend row). To
+  build: a tick on the objective (quest card, outside a raid), kept per mode until the log reports the quest
+  completed or failed, shown as done "ticked by you", left out of NEXT, the guide line and the planner's count.
+  Status: open (next round).
+- **D2. Remember the window's monitor, size and whether it is maximised**; first start as today; a saved monitor
+  that is gone falls back to today's rule. Status: in work.
+- **Declined** (owner, 2026-10-04): adding or removing a quest by hand; opening with the game or with Windows; a
+  text size setting. Don't propose them again.
+
+### E. The linked highlight
+
+- **E1. It stops at the quest.** An objective line in the raid card, NEXT and a quest card's objective light the
+  whole quest, so the "69 m" line can't be told from the quest's other markers, though markers carry the
+  objective's id. Status: open (next round).
+- **E2. One tint for three things**: the row pointed at, the same thing elsewhere, and what is only related (an item
+  row lights its quests and, through them, every other BRING row of those quests). Status: open.
+- **E3. Places that link nothing**: need cells, folded cards' glyphs, boss names in the raid line and on Plan cards,
+  the gold "Key: …" line under an objective, an extract's need item, the item card's "Loose on …" row; entering an
+  item card drops the item's locks and loose spots; a quest card's frame and headings let the quest go while it is
+  read. Status: open.
+- **E4.** An "A or B" row links only A (`Planning`: `Alternatives[0]`). **E5.** A quest lights its doors, a door only
+  its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: open.
+
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 
 **Status, 2026-10-03 evening:** the quota came back the same day and the owner said "go ahead with the open TODOs".
