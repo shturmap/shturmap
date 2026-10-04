@@ -725,7 +725,10 @@ spawns below).
 - **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
   a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
   card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
-  old as the position). A line too short to carry it clear of its ends has none. A scale bar at the lower left,
+  old as the position). A line too short to carry it clear of its ends has none. Where the middle would cover a
+  symbol, the plate slides along the line to the nearest place that covers none, toward the place first, and keeps
+  the middle only when the line has no free place (the review of 2026-10-04: it stood on a boss marker). A scale bar
+  at the lower left,
   above the wiki link and the credit line, takes the longest round length (1, 2, 5, 10, 25, 50, 100, 200, 500 m …)
   that fits in 120 px and follows the zoom. Its metres are those along the bar, the screen's horizontal (the review of
   2026-10-04: it took the mean of both axes, and on Icebreaker, whose render is stretched 1.75× along one axis, "50 m"

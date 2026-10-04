@@ -61,6 +61,44 @@ public class DistanceTests
         Assert.Equal(plate, guide.Plate);
     }
 
+    // The plate stood on a boss marker in a snapshot (the review of 2026-10-04): it gives way along the line.
+    [Fact]
+    public void The_guide_plate_gives_way_to_a_symbol_under_the_lines_middle()
+    {
+        // The player at the middle of the view, the pick 400 m to the right: the line's middle is at (700, 500).
+        var pick = Quest("far", 400, 0, "Revision", group: "revision");
+        var boss = new MapMarker("boss:1", MarkerKind.BossSpawn, new WorldPoint(200, 0, 0), "Kaban 75%", "boss-zone");
+        var (camera, scene) = Of([pick]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
+        scene.Kept = new HashSet<string> { "revision" };
+        var free = MapRenderer.Layout(camera, scene, 1).Guide!.PlateBox;
+        Assert.Equal(700, free.MidX, 3);
+
+        scene.Markers = [pick, boss];
+        var layout = MapRenderer.Layout(camera, scene, 1);
+        var symbol = layout.Markers.Single(m => m.Marker == boss);
+        var box = layout.Guide!.PlateBox;
+        Assert.False(box.IntersectsWith(new SkiaSharp.SKRect(symbol.At.X - symbol.Reach, symbol.At.Y - symbol.Reach, symbol.At.X + symbol.Reach, symbol.At.Y + symbol.Reach)),
+            $"the plate {box} covers the boss marker at {symbol.At}");
+        // Still on the line, toward the place, and no further than it has to go.
+        Assert.Equal(500, box.MidY, 3);
+        Assert.InRange(box.MidX, 701, 700 + symbol.Reach + box.Width / 2 + 6);
+        Assert.Equal("400 m", layout.Guide.Plate);
+        // No label of another marker goes under it either.
+        Assert.All(layout.Labels, l => Assert.False(l.Box.IntersectsWith(box), $"{l.Text} under the plate"));
+    }
+
+    [Fact]
+    public void With_no_free_place_on_the_line_the_plate_keeps_the_middle()
+    {
+        // Other quests' markers all along the line, every 20 px.
+        var crowd = Enumerable.Range(2, 17).Select(i => Quest($"q{i}", i * 20, 0, "", group: $"other-{i}"));
+        var (camera, scene) = Of([Quest("far", 400, 0, "Revision", group: "revision"), .. crowd]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
+        scene.Kept = new HashSet<string> { "revision" };
+        Assert.Equal(700, MapRenderer.Layout(camera, scene, 1).Guide!.PlateBox.MidX, 3);
+    }
+
     [Fact]
     public void A_short_guide_carries_no_plate()
     {

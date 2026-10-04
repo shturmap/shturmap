@@ -267,7 +267,8 @@ public static partial class MapRenderer
                 taken.Add(AgeTagBox(at, tagFont.MeasureText(text), stale, ui));
             }
         }
-        var guide = Guide(camera, scene, ui);
+        // After every symbol: the guide's plate gives way to them.
+        var guide = Guide(camera, scene, ui, taken);
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
         var scale = Scale(camera, scene, ui);
@@ -1018,7 +1019,8 @@ public static partial class MapRenderer
     /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
 
-    private static GuideLine? Guide(Camera camera, MapScene scene, float ui)
+    /// <param name="symbols">The boxes of the symbols placed in this frame: the plate stands on none of them.</param>
+    private static GuideLine? Guide(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols)
     {
         if (scene.Player is not { } player || scene.Kept.Count == 0)
             return null;
@@ -1041,8 +1043,35 @@ public static partial class MapRenderer
         var height = 18 * ui;
         if (Clip(from, to, view) is not var (a, b) || SKPoint.Distance(a, b) < width + 56 * ui)
             return new GuideLine(from, to, metres, null, SKRect.Empty);
-        var mid = new SKPoint((a.X + b.X) / 2, (a.Y + b.Y) / 2);
-        return new GuideLine(from, to, metres, text, SKRect.Create(mid.X - width / 2, mid.Y - height / 2, width, height));
+        return new GuideLine(from, to, metres, text, PlateBox(a, b, width, height, symbols, ui));
+    }
+
+    // Where the plate stands on the line's part in view: at its middle, or, where that would cover a symbol (it stood
+    // on a boss marker; the review of 2026-10-04), slid along the line to the nearest place that covers none, toward
+    // the place before toward the player. It keeps the middle's distance from the line's ends, and the middle itself
+    // when no place is free.
+    private static SKRect PlateBox(SKPoint a, SKPoint b, float width, float height, IReadOnlyList<SKRect> symbols, float ui)
+    {
+        var length = SKPoint.Distance(a, b);
+        SKRect At(float along)
+        {
+            var t = along / length;
+            return SKRect.Create(a.X + (b.X - a.X) * t - width / 2, a.Y + (b.Y - a.Y) * t - height / 2, width, height);
+        }
+        bool Free(SKRect box) => !symbols.Any(symbol => symbol.IntersectsWith(box));
+        var middle = At(length / 2);
+        if (Free(middle))
+            return middle;
+        var room = (length - width - 56 * ui) / 2;
+        for (var slide = 6 * ui; slide <= room; slide += 6 * ui)
+        {
+            foreach (var box in new[] { At(length / 2 + slide), At(length / 2 - slide) })
+            {
+                if (Free(box))
+                    return box;
+            }
+        }
+        return middle;
     }
 
     /// <summary>A distance as the cards say it: "69 m", "1.2 km".</summary>
