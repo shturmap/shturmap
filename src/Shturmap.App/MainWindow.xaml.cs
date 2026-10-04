@@ -185,7 +185,7 @@ public sealed partial class MainWindow : Window
         new("ESC", "Close the cards"),
         new("F1 / ?", "This help"),
         new("CTRL + ,", StudyLog.Available ? "Settings: updates, crash reports, the study log, the app's folders" : "Settings: updates, crash reports, the app's folders"),
-        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
+        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its pen to pick it for the coming raid"),
     ];
 
     /// <summary>
@@ -1090,7 +1090,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // Clicking a quest marker holds its card, like clicking the quest in the list; the card's highlighter keeps it lit.
+    // Clicking a quest marker holds its card, like clicking the quest in the list; the card's pen picks the quest.
     private void OnMarkerClicked(MapMarker marker)
     {
         if (marker is not { Group: { } quest, Objective: not null })

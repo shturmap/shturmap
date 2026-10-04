@@ -355,7 +355,7 @@ pushpin, so the type beside the trader portrait read as a useless second pin). A
 everywhere: rows, cards, map markers, the legend, buttons. The card's button that keeps it as a window is therefore
 **pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out: keep this card open as a small
 window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
-Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP) end in "↗". A check of all symbols the same day, by rendering
+Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the same day, by rendering
 them side by side:
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
   item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market

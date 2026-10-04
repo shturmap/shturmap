@@ -16,7 +16,7 @@ namespace Shturmap.App;
 // tools\fake-raid.ps1 -Demo writes the screenshot file the game would, and the name the position comes from appears
 // under the key. That position is held back from the view until the pause ends (demo only), so the marker moves, pings
 // and the raid card re-sorts as the dim clears: cause, then effect. Then a drawn pointer goes to the quest in the raid
-// card (the map highlights it, its card opens), clicks its highlighter (kept, cyan), the map zooms to the quest and the
+// card (the map highlights it, its card opens), clicks its pen (picked, cyan), the map zooms to the quest and the
 // player, the pointer rests on the quest's nearest marker on the map (its card stays up to be read), and everything is
 // let go and the view zooms back. It calls the app's own code paths: nothing is sent to the system as input, and
 // nothing is captured here (the recorder is tools\record-window, which records this window only).
