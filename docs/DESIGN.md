@@ -681,12 +681,20 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       build folder with `EscapeFromTarkov.exe` or a `Logs` folder with sessions, or the folder above it (Steam's
       layout). Otherwise a notice says why ("That folder doesn't hold Escape from Tarkov: …") and nothing changes. A
       chosen folder is saved (`installFolder`) and wins over discovery. It is followed at once, without a restart:
-      the old logs let go, the new ones read for quest history and followed live, the game's settings read again;
+      the old logs let go, the new ones read for quest history and followed live, the game's settings read again
+      (all of it off the window's thread, as for FIND AUTOMATICALLY: reading every log session takes a while);
       the screenshot folder is the user's Documents one either way (§2's boundary unchanged). A network folder that
       holds the game works the same, but isn't offered as a feature (the laptop beside the game PC is undecided).
-    - **It keeps looking.** While the game or its logs aren't found, discovery runs again every 30 s (registry and
-      file checks only), so a game installed or first started later is followed by itself, and a notice says so
-      once ("Found Escape from Tarkov in …: quests and raids follow the game now").
+    - **It keeps looking.** Discovery runs again every 30 s for as long as Shturmap runs (registry and file checks
+      only). While the game or its logs aren't found, a game installed or first started later is followed by itself,
+      and a notice says so once ("Found Escape from Tarkov in …: quests and raids follow the game now"). While a
+      game found automatically is followed, the same look notices another copy of the game started since (a test
+      server, the other launcher's install): discovery's rule is that the newest log session wins, so once another
+      install has a newer one, its logs are followed instead, read for quest history, and a notice says what was
+      seen, "Newer game logs in …: quests and raids follow that game now" (`GameSession.FollowsInstead`; review of
+      2026-10-04, A20: discovery decided once, at the start, and the install it found then was followed for the
+      whole run). A followed game is never let go for nothing: a look that finds no game or no logs changes nothing.
+      A folder the player chose is never switched away from (below: the hint).
     - **Find automatically** (owner, 2026-10-04, asked whether a folder chosen by mistake leaves no way back: "sounds
       good"). A chosen folder that holds *a* game, just not the one played, wins over discovery for good, and
       CHOOSE… alone can't undo that. Settings' APP AND DATA row says where the folder comes from: "GAME FOLDER: … (chosen
@@ -1529,7 +1537,8 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
 **Finding the game.** Candidates come from the `EscapeFromTarkov` uninstall key (HKLM 32/64, HKCU), the
 launcher's `gamesRootDir` (older `gameRootDir`) and its subfolders, `C:\Battlestate Games`, and Steam's
 `libraryfolders.vdf` + `appmanifest_3932890.acf`. A candidate needs `EscapeFromTarkov.exe` or a `Logs\log_*`
-session (also under `build`). The newest log session wins; all valid installs feed the quest backfill.
+session (also under `build`). The newest log session wins, at the start and at every look after it (every 30 s; "No
+game", *It keeps looking*); all valid installs feed the quest backfill.
 
 **Screenshot names.** `yyyy-MM-dd[HH-mm]_x, y, z_qx, qy, qz, qw_clock (n).png`; the trailing number is the in-raid
 time of day when a position is present. Facing: `yaw = atan2(2(qx·qz + qw·qy), 1 − 2(qx² + qy²))`.
@@ -1554,6 +1563,17 @@ began longer ago than its map's raid length plus 30 minutes (two hours without a
 log has of it, never at the next session's login line (`UnfinishedRaid`, `RaidTracker.CloseUnfinished`,
 `RaidEnded.EndInLog`; "Screen anatomy", status bar). The raid's map is kept apart from the map on screen
 (`SessionSnapshot.RaidMap`; "Screen anatomy", *The raid's map is not the map on screen*).
+
+**Following the logs** (`LogTailer`). The newest log session's application and notification logs are polled (every
+500 ms while they grow, every 2 s when quiet), at most 4 MB of a file per poll. What a log holds when it is first
+opened at Shturmap's start is replay: it sets the state and shows no cue, notice or ping. When the game starts
+again, the session before is read to its end first, under its own name: the rest of a log longer than one read, a
+file added since the last poll, and its last line, which nothing follows any more. Skipped, a raid's end or a quest
+message was missing for the rest of the run (review of 2026-10-04, A44). A file of the old session that can't be
+opened puts the new session off for three polls at most. The LOGS light says "Logs live" while the game writes: a
+line since Shturmap started following, within the last ten minutes; replay doesn't count, so a start with the game
+closed says "Logs" (A43: it said "live" for ten minutes after every start). Most lines are no event, so the light
+is looked at again every 30 s, with the open raid.
 
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly

@@ -63,6 +63,43 @@ public class GameFolderTests
             GameSession.FoundText(Found(Install(InstallKind.Steam, @"D:\EFT", null))));
     }
 
+    // Looking again while a game is followed (review of 2026-10-04, A20): discovery used to decide once, at the start.
+    [Fact]
+    public void A_followed_game_is_left_only_for_other_logs()
+    {
+        var launcher = Install(InstallKind.BsgLauncher, @"D:\EFT", Older);
+        var steamOld = Install(InstallKind.Steam, @"C:\Steam\EFT", Older.AddDays(-5));
+        var steamNew = Install(InstallKind.Steam, @"C:\Steam\EFT", Newer);
+        var notRunYet = Install(InstallKind.Steam, @"C:\Steam\EFT", null);
+
+        // Nothing found, or a game that hasn't run: whatever else is found is followed.
+        Assert.True(GameSession.FollowsInstead(Found(launcher), Found(null)));
+        Assert.True(GameSession.FollowsInstead(Found(notRunYet), Found(null)));
+        Assert.True(GameSession.FollowsInstead(Found(steamNew), Found(notRunYet)));
+        Assert.False(GameSession.FollowsInstead(Found(null), null));
+        // The same game again: nothing to switch.
+        Assert.False(GameSession.FollowsInstead(Found(launcher, steamOld), Found(launcher, steamOld)));
+        // The other copy was started since: discovery finds it, with the newest session now.
+        Assert.True(GameSession.FollowsInstead(Found(steamNew, launcher), Found(launcher, steamOld)));
+        // A look that finds no game, or one without logs, lets a followed game go for nothing.
+        Assert.False(GameSession.FollowsInstead(Found(null), Found(launcher)));
+        Assert.False(GameSession.FollowsInstead(Found(notRunYet), Found(launcher)));
+    }
+
+    [Fact]
+    public void A_switch_by_itself_says_what_was_seen()
+    {
+        var launcher = Install(InstallKind.BsgLauncher, @"D:\EFT", Older);
+        var steamNew = Install(InstallKind.Steam, @"C:\Steam\EFT", Newer);
+        Assert.Equal(@"Newer game logs in C:\Steam\EFT: quests and raids follow that game now.",
+            GameSession.FollowedText(Found(launcher), Found(steamNew, launcher), asked: false));
+        // The first find, a folder the player chose, and FIND AUTOMATICALLY say what was found.
+        const string found = @"Found Escape from Tarkov in C:\Steam\EFT: quests and raids follow the game now.";
+        Assert.Equal(found, GameSession.FollowedText(Found(null), Found(steamNew), asked: false));
+        Assert.Equal(found, GameSession.FollowedText(Found(launcher), Found(Install(InstallKind.Manual, @"C:\Steam\EFT", Newer), launcher), asked: false));
+        Assert.Equal(found, GameSession.FollowedText(Found(launcher), Found(steamNew, launcher), asked: true));
+    }
+
     [Fact]
     public void Newer_logs_elsewhere_are_hinted_only_when_another_install_is_newer_than_the_chosen_one()
     {

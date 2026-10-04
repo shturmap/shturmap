@@ -173,7 +173,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _env = env;
             // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
             // looked for again (the player chose a folder, or the game was installed later).
-            _locate = locations is not null ? null : folder => new InstallLocator(env).Locate(folder, discover: !NoGame);
+            _locate = locations is not null ? null : Discovery ?? (folder => new InstallLocator(env).Locate(folder, discover: !NoGame));
             _chosenFolder = _store.GetSetting(InstallFolderSetting);
             _locations = locations ?? _locate!(_chosenFolder);
             ReportGameFolders(_locations);
@@ -275,9 +275,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>The setting that holds the folder the player chose with "Choose game folder…".</summary>
     public const string InstallFolderSetting = "installFolder";
 
-    /// <summary>While the game or its logs aren't found, discovery runs again this often (registry and file checks
-    /// only), so a game installed or first started later is followed without a restart.</summary>
+    /// <summary>Discovery runs again this often while Shturmap runs (registry and file checks only), so a game installed
+    /// or first started later, or another copy of it started since, is followed without a restart.</summary>
     public static readonly TimeSpan LookAgainEvery = TimeSpan.FromSeconds(30);
+
+    /// <summary>How often discovery runs again; <see cref="LookAgainEvery"/> unless a test gives a shorter time.</summary>
+    public TimeSpan LookAgain { get; init; } = LookAgainEvery;
+
+    /// <summary>
+    /// How the game is looked for, given the folder the player chose (or null): the registry and the disks
+    /// (<see cref="InstallLocator"/>) unless a test gives its own. Set before <see cref="StartAsync"/>.
+    /// </summary>
+    public Func<string?, GameLocations>? Discovery { get; init; }
 
     /// <summary>
     /// Developer switch <c>--no-game</c>: discovery looks only at a folder the player chose, so the no-game state can
@@ -299,7 +308,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// quest history and followed live. If it doesn't, nothing changes and the notice says why.
     /// </summary>
     /// <returns>True if the folder holds the game.</returns>
-    public async Task<bool> ChooseGameFolderAsync(string folder)
+    /// <remarks>Looking at the folder and reading every log session for the quest history take a while, and the caller
+    /// is the window's thread (a click on CHOOSE…): all of it runs on a pool thread, wherever it was called from
+    /// (review of 2026-10-04, A35).</remarks>
+    public Task<bool> ChooseGameFolderAsync(string folder) => Task.Run(() => ChooseGameFolderOffThreadAsync(folder));
+
+    private async Task<bool> ChooseGameFolderOffThreadAsync(string folder)
     {
         if (_locate is null)
             return false;
@@ -329,8 +343,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>
     /// Forgets the folder the player chose and finds the game by itself again, at once (owner, 2026-10-04: the way
     /// back from a folder that holds a game, but not the one played). Says what it found, or that it found none.
+    /// Off the caller's thread, like a choice.
     /// </summary>
-    public async Task FindGameAutomaticallyAsync()
+    public Task FindGameAutomaticallyAsync() => Task.Run(FindGameAutomaticallyOffThreadAsync);
+
+    private async Task FindGameAutomaticallyOffThreadAsync()
     {
         if (_locate is null || _store is null)
             return;
@@ -384,14 +401,15 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// once per kind of failure, on a background thread.</summary>
     public event Action<string, Exception>? Failure;
 
-    // Looks for the game again while it, or its logs, aren't found; stops looking once both are.
+    // Looks for the game again for as long as Shturmap runs: while it, or its logs, aren't found, and after that for
+    // another copy of the game started since.
     private async Task LookAgainAsync()
     {
         try
         {
             while (!_stop.IsCancellationRequested)
             {
-                await Task.Delay(LookAgainEvery, _stop.Token);
+                await Task.Delay(LookAgain, _stop.Token);
                 try
                 {
                     await LookAgainOnceAsync();
@@ -420,13 +438,21 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 await RefreshLocationsAsync(again);
             return;
         }
-        if (_locations is { Install: not null, LogsFolder: not null })
-            return;
         var found = _locate(_chosenFolder);
-        if (SameGame(found, _locations))
-            return;
-        await FollowAsync(found);
+        if (FollowsInstead(found, _locations))
+            await FollowAsync(found);
     }
+
+    /// <summary>
+    /// Whether what discovery finds now is followed in place of what is followed already. While the game or its logs
+    /// aren't found: anything else it finds. Once a game's logs are followed: only other logs, those of the install
+    /// with the newest log session now (discovery's rule), which is another copy of the game the player has started
+    /// since (a test server, the other launcher's install). Before, discovery decided once, at the start, and the
+    /// first install was followed for the whole run (review of 2026-10-04, A20). A game that is followed is never
+    /// let go for nothing: a look that finds no logs changes nothing.
+    /// </summary>
+    public static bool FollowsInstead(GameLocations found, GameLocations? followed) =>
+        !SameGame(found, followed) && (followed is not { Install: not null, LogsFolder: not null } || found.LogsFolder is not null);
 
     /// <summary>The same game in the same place: nothing to switch.</summary>
     public static bool SameGame(GameLocations a, GameLocations? b) =>
@@ -482,14 +508,25 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         { } install => $"Found Escape from Tarkov in {install.Root}: quests and raids follow the game now.",
     };
 
+    /// <summary>
+    /// What is said when other logs are followed from now on. A switch by itself, from one game's logs to another
+    /// install's newer ones, names what was seen: newer logs there. A folder the player chose, the first find, and
+    /// FIND AUTOMATICALLY (<paramref name="asked"/>) say what was found (<see cref="FoundText"/>).
+    /// </summary>
+    public static string FollowedText(GameLocations? before, GameLocations after, bool asked) =>
+        !asked && before?.LogsFolder is not null && after is { LogsFolder: not null, Install: { Kind: not InstallKind.Manual } install }
+            ? $"Newer game logs in {install.Root}: quests and raids follow that game now."
+            : FoundText(after);
+
     private async Task FollowNowAsync(GameLocations found, bool announce = false)
     {
         LogTailer? old;
         await _gate.WaitAsync();
         try
         {
-            var say = SaysFound(_locations, found);
-            old = string.Equals(found.LogsFolder, _locations?.LogsFolder, StringComparison.OrdinalIgnoreCase) ? null : _tailer;
+            var before = _locations;
+            var say = SaysFound(before, found);
+            old = string.Equals(found.LogsFolder, before?.LogsFolder, StringComparison.OrdinalIgnoreCase) ? null : _tailer;
             if (old is not null)
                 _tailer = null;
             _locations = found;
@@ -497,7 +534,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             if (_env is not null)
                 _settings = new GameSettingsReader(_env).Read(found.SettingsFolder);
             if (say || announce)
-                Say(FoundText(found), 10);
+                Say(FollowedText(before, found, announce), 10);
             Publish();
         }
         finally
@@ -1090,8 +1127,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 await _gate.WaitAsync(_stop.Token);
                 try
                 {
-                    // Long after the start: the view changes now, by itself, so it is announced.
-                    if (CloseRaidThatCannotRun(announce: true))
+                    // Long after the start: the view changes now, by itself, so it is announced. The LOGS light
+                    // changes by itself too: live once the game writes a line (most lines are no event, so nothing
+                    // else would show it), quiet again ten minutes after its last one.
+                    if (CloseRaidThatCannotRun(announce: true) || LogsHealth() != Snapshot.Logs)
                         Publish();
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
@@ -1636,14 +1675,19 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private int _publishedActive = -1;
     private bool _replaying;
 
+    // "Logs live" while the game writes: a line since Shturmap started following, within the last ten minutes. What a
+    // log held at the start doesn't count (LogTailer.LastActivityUtc), so a start with the game closed says "Logs".
     private SourceHealth LogsHealth()
     {
         if (_locations?.LogsFolder is null)
             return new(false, "Game logs not found");
-        if (_tailer?.LastActivityUtc is { } at && DateTime.UtcNow - at < TimeSpan.FromMinutes(10))
+        if (_tailer?.LastActivityUtc is { } at && DateTime.UtcNow - at < LogsLiveFor)
             return new(true, "Logs live");
         return new(true, "Logs");
     }
+
+    /// <summary>How long after the game's last line the LOGS light says "live".</summary>
+    public static readonly TimeSpan LogsLiveFor = TimeSpan.FromMinutes(10);
 
     /// <summary>
     /// An objective's line in the raid card: its description, and "(optional)" when tarkov.dev marks it so, as the

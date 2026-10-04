@@ -98,9 +98,14 @@ public sealed class LogTailerTests : IDisposable
         tailer.PollOnce();
         var next = Drain(tailer);
         Assert.Equal("log_2026.01.01_19-00-00_1.1.5.1.47510", tailer.CurrentSession);
-        var mode = Assert.IsType<SessionModeEvent>(Assert.Single(next).Event);
+        // The session before is read to its end first: its last line, the raid's end, had nothing after it yet.
+        Assert.Equal(2, next.Count);
+        Assert.IsType<ProfileLoadedEvent>(next[0].Event);
+        Assert.Equal("log_2026.01.01_15-00-00_1.1.5.1.47510", next[0].Session);
+        var mode = Assert.IsType<SessionModeEvent>(next[1].Event);
         Assert.Equal(GameMode.Pvp, mode.Mode);
-        Assert.False(next[0].IsReplay);
+        Assert.Equal("log_2026.01.01_19-00-00_1.1.5.1.47510", next[1].Session);
+        Assert.False(next[1].IsReplay);
     }
 
     [Fact]
