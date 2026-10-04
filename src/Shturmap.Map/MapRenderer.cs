@@ -215,6 +215,13 @@ public static partial class MapRenderer
 
         /// <summary>How many places of one objective this marker stands for (1, or a cluster's size).</summary>
         public int Count { get; init; } = 1;
+
+        /// <summary>
+        /// The very thing pointed at, which pulses while the pointer is on it: every marker in focus, or with one
+        /// objective pointed at (<see cref="MapScene.FocusObjective"/>) only that objective's places. The rest of the
+        /// focus is lit and holds still.
+        /// </summary>
+        public bool Pointed { get; init; }
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
@@ -506,7 +513,10 @@ public static partial class MapRenderer
         // at its rest size and without a name, also while its quest is picked or pointed at (owner, 2026-10-04: an
         // objective the player ticked as done).
         var done = marker.Kind == MarkerKind.ObjectiveDone;
-        var selected = !done && (IsSelected(scene, marker) || focused);
+        // With one objective pointed at, the quest's other places stay lit at their rest size; the doors of its keys
+        // belong to no objective and keep the pointed-at look (at rest they wouldn't show from far out at all).
+        var pointed = IsPointed(scene, marker);
+        var selected = !done && (IsSelected(scene, marker) || (marker.Objective is null ? focused : pointed));
         // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
         var kept = marker.Objective is not null && !done && IsSelected(scene, marker);
         // A lock a picked quest needs the key of is part of the pick: the picks' colour, without their ring.
@@ -534,6 +544,7 @@ public static partial class MapRenderer
         return new ShownMarker(marker, at, r, color, selected, kept, inFocus && scene.ShownFocus.Count > 0, FloorOffset(scene, marker.Position))
         {
             Reach = reach + 1 * ui,
+            Pointed = pointed && !done,
         };
     }
 
@@ -623,6 +634,15 @@ public static partial class MapRenderer
 
     private static bool IsFocused(MapScene scene, MapMarker m) =>
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
+
+    // The very thing pointed at: everything in focus, or with one objective pointed at (MapScene.FocusObjective) only
+    // that objective's places. It pulses; the rest of the focus is lit and holds still.
+    private static bool IsPointed(MapScene scene, MapMarker m) =>
+        IsFocused(scene, m) && (scene.ShownFocusObjective is not { } objective || ObjectiveOf(m) == objective);
+
+    // A zone's objective (its id is "zone:<objective id>:<n>"), or null.
+    private static string? ObjectiveOf(MapZone z) =>
+        z.Id.StartsWith("zone:", StringComparison.Ordinal) && z.Id.LastIndexOf(':') is var end and > 5 ? z.Id[5..end] : null;
 
     /// <summary>
     /// How many floors above (+) or below (−) the one shown a point is, or 0 on it, counted in the map's floor list
@@ -877,7 +897,9 @@ public static partial class MapRenderer
         var done = zone.Kind == MarkerKind.ObjectiveDone;
         var kept = !done && zone.Group is not null && scene.Kept.Contains(zone.Group);
         var color = kept ? Kept : ColorOf(zone.Kind);
-        var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
+        // With one objective pointed at, only its own zone takes the pointed-at look; the quest's others stay lit.
+        var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group)
+            && (scene.ShownFocusObjective is not { } objective || ObjectiveOf(zone) == objective);
         var selected = !done && (kept || focused);
         // Zones outside the focus ease back with the scene's Dim, by the measure of their markers (StepBackOf).
         var strength = ZoneStrength(scene, zone, stepBack);
@@ -1143,7 +1165,7 @@ public static partial class MapRenderer
         var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color)>();
         foreach (var marker in scene.Markers)
         {
-            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsFocused(scene, marker) || IsSelected(scene, marker)))
+            if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsPointed(scene, marker) || IsSelected(scene, marker)))
                 continue;
             var at = Screen(camera, scene, marker.Position);
             if (at.X >= 0 && at.X <= w && at.Y >= 0 && at.Y <= h)
@@ -1304,7 +1326,7 @@ public static partial class MapRenderer
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
 
-        if (scene.Pulsing && IsFocused(scene, marker) && marker.Kind != MarkerKind.ObjectiveDone)
+        if (scene.Pulsing && shown.Pointed)
             DrawPulse(canvas, scene, at, r, color, ui);
         // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band,
         // then the colour, so it reads on light and dark artwork alike.

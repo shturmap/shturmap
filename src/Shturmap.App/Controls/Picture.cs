@@ -32,6 +32,17 @@ public sealed partial class Picture : Grid
 
     private string? _shown;
 
+    // Over the cell and its picture: where a linked cell is tinted. Linked paints backgrounds, and this one's is
+    // covered by the cell's own fill and by the picture, which comes with a ground of its own.
+    private readonly Border _tint = new() { IsHitTestVisible = false };
+
+    /// <summary>The linked highlight's tint on the cell, or null.</summary>
+    public Brush? Tint
+    {
+        get => _tint.Background;
+        set => _tint.Background = value;
+    }
+
     public Picture()
     {
         VerticalAlignment = VerticalAlignment.Top;
@@ -87,6 +98,8 @@ public sealed partial class Picture : Grid
             BorderBrush = Brush("LineStrongBrush"),
             BorderThickness = new Thickness(1),
         });
+        Children.Add(_tint);
+        Canvas.SetZIndex(_tint, 1);
         var fallback = new FontIcon
         {
             Glyph = Glyph ?? char.ConvertFromUtf32(IsTrader ? 0xE77B : 0xE7B8),

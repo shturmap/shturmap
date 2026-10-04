@@ -65,7 +65,7 @@ public static class MapLegend
         new(LegendSymbol.Boss, "Boss or AI squad spawns (bosses, Rogues, Raiders, cultists, Black Div., AF), at the centre of a group of spawn points: a red diamond with the chance on this map and, for several zones, this zone's share (\"Kollontay 75% · 50% here\")."),
         new(LegendSymbol.Sniper, "Sniper Scav spawns, at the centre of a group of spawn points: a hollow hexagon."),
         new(LegendSymbol.Scav, "Scav spawns, at the centre of a group of spawn points: a small ring."),
-        new(LegendSymbol.Lock, "A locked door or car trunk: a padlock, with its key's short name when you zoom in. Point at a key in BRING and the locks it opens light up; point at a padlock for its key."),
+        new(LegendSymbol.Lock, "A locked door or car trunk: a padlock, with its key's short name when you zoom in. Point at a key in a list and the locks it opens light up; point at a padlock for its key."),
         new(LegendSymbol.Switch, "A switch (power, alarms, elevators, traps): a power symbol, with its name when you zoom in."),
         new(LegendSymbol.Hazard, "An area that kills you, from the map's data: Labyrinth's traps, and minefields and the border snipers' zones (\"SNIPER ZONE\" when you zoom in) where the map's picture doesn't show them: a hatched outline."),
         new(LegendSymbol.OtherFloor, "On another floor: up or down, with the number of floors when it is more than one."),

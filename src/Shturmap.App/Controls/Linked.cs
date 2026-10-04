@@ -1,11 +1,15 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using Shturmap.App.Rules;
 
 namespace Shturmap.App.Controls;
 
 /// <summary>What the pointer is on: quests (and everything about them), an item, or a map marker such as an extract.</summary>
-public sealed record Focus(IReadOnlySet<string> Quests, string? Item = null, string? Marker = null)
+/// <param name="Objective">One objective of the quest pointed at (its line in a list, one of its places on the map):
+/// the whole quest stays lit, and this objective is marked within it.</param>
+public sealed record Focus(IReadOnlySet<string> Quests, string? Item = null, string? Marker = null, string? Objective = null)
 {
     public static Focus Quest(string id) => new(new HashSet<string> { id });
 }
@@ -13,7 +17,9 @@ public sealed record Focus(IReadOnlySet<string> Quests, string? Item = null, str
 /// <summary>
 /// Linked highlighting (brushing and linking): rows say what they show with attached properties, and pointing at
 /// one highlights every other row, card and map marker that shows the same quest, item or marker. Nothing to
-/// click; the highlight goes when the pointer leaves.
+/// click; the highlight goes when the pointer leaves. Linked elements may lie inside one another (an objective's
+/// line in its quest's block, a need cell in its quest's row): the innermost one around the pointer is the one
+/// pointed at, and leaving it returns to the one around it (<see cref="PointerNest{T}"/>).
 /// </summary>
 public static class Linked
 {
@@ -32,9 +38,35 @@ public static class Linked
     public static readonly DependencyProperty AlsoProperty = DependencyProperty.RegisterAttached(
         "Also", typeof(object), typeof(Linked), new PropertyMetadata(null, OnChanged));
 
+    public static readonly DependencyProperty ObjectiveProperty = DependencyProperty.RegisterAttached(
+        "Objective", typeof(string), typeof(Linked), new PropertyMetadata(null, OnChanged));
+
+    // No change handler: it says how a linked element sits, and links nothing by itself.
+    public static readonly DependencyProperty InlineProperty = DependencyProperty.RegisterAttached(
+        "Inline", typeof(bool), typeof(Linked), new PropertyMetadata(false));
+
     /// <summary>
-    /// Quest ids (an IEnumerable&lt;string&gt;) this element lights up when pointed at, without lighting up itself
-    /// for them: rows on a quest's own card, which would otherwise all glow whenever that quest is in focus.
+    /// The objective (its id) this element shows: its line under its quest in the raid card, its row on the quest's
+    /// card, the glance's NEXT. The element lights up when that objective is pointed at, here or at one of its places
+    /// on the map, and pointing at it marks the objective within its quest (named beside it with Quest or Also): on
+    /// the map only the objective's own places pulse.
+    /// </summary>
+    public static string? GetObjective(DependencyObject d) => (string?)d.GetValue(ObjectiveProperty);
+
+    public static void SetObjective(DependencyObject d, string? value) => d.SetValue(ObjectiveProperty, value);
+
+    /// <summary>
+    /// A small linked thing among others in a row (a need cell, a quest's glyph on a folded Plan card): its card
+    /// opens beside the row it lies in (<see cref="RowAround"/>), and it isn't taken for the quest's row.
+    /// </summary>
+    public static bool GetInline(DependencyObject d) => (bool)d.GetValue(InlineProperty);
+
+    public static void SetInline(DependencyObject d, bool value) => d.SetValue(InlineProperty, value);
+
+    /// <summary>
+    /// Quest ids (an IEnumerable&lt;string&gt;, or one id) this element lights up when pointed at, without lighting up
+    /// itself for them: rows on a quest's own card, which would otherwise all glow whenever that quest is in focus,
+    /// and an objective's line inside its quest's block, which is lit for the quest already.
     /// </summary>
     public static object? GetAlso(DependencyObject d) => d.GetValue(AlsoProperty);
 
@@ -60,7 +92,13 @@ public static class Linked
     // Rows are rebuilt with every snapshot: only loaded ones are kept, and the hook marker doesn't keep them alive.
     private static readonly HashSet<FrameworkElement> Live = [];
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FrameworkElement, object> Hooked = [];
+
+    // The linked elements the pointer is in; the innermost is the one pointed at (_source).
+    private static readonly PointerNest<FrameworkElement> Nest = new(IsWithin);
     private static FrameworkElement? _source;
+
+    // The element the cards were last told about (Hovered), until they are told it was left.
+    private static FrameworkElement? _cardSource;
 
     public static Focus? Current { get; private set; }
 
@@ -93,8 +131,10 @@ public static class Linked
     public static event Action? FocusChanged;
 
     /// <summary>
-    /// The pointer entered a linked element. The key is the card it opens: its item if it has one, else its quest;
-    /// null for rows that only highlight (several quests, a marker).
+    /// The pointer is on a linked element, as far as cards go. The key is the card it opens: its item if it has one,
+    /// else its quest; null for rows that only highlight (several quests, a marker). An element that opens no card
+    /// and lies inside one that does (an objective's line in its quest's block) isn't announced: for the cards the
+    /// pointer is still on the one around it.
     /// </summary>
     public static event Action<FrameworkElement, CardKey?>? Hovered;
 
@@ -121,7 +161,7 @@ public static class Linked
         var seen = new HashSet<string>();
         foreach (var element in Live.ToList())
         {
-            if (element.XamlRoot != viewport.XamlRoot || GetQuest(element) is not { } quest || element.ActualHeight <= 0)
+            if (element.XamlRoot != viewport.XamlRoot || GetQuest(element) is not { } quest || element.ActualHeight <= 0 || GetInline(element))
                 continue;
             if (HalfVisible(element, viewport) && seen.Add(quest))
                 yield return quest;
@@ -147,23 +187,47 @@ public static class Linked
     /// </summary>
     public static void PointAt(FrameworkElement? element)
     {
-        if (_source is { } previous && previous != element)
-            Exit(previous);
-        if (element is not null && element != _source)
-            Enter(element);
+        if (ReferenceEquals(element, _source))
+            return;
+        Nest.Clear();
+        if (element is not null)
+            Nest.Enter(element);
+        Refocus();
     }
 
     /// <summary>The quest's block in a window's lists (the tallest loaded element showing just that quest), or null.</summary>
     public static FrameworkElement? RowOf(string questId, XamlRoot root) =>
-        Live.Where(e => e.XamlRoot == root && GetQuest(e) == questId && CardStack.For(root)?.Contains(e) != true && e.ActualHeight > 0)
+        Live.Where(e => e.XamlRoot == root && GetQuest(e) == questId && !GetInline(e) && CardStack.For(root)?.Contains(e) != true && e.ActualHeight > 0)
             .OrderByDescending(e => e.ActualHeight)
             .FirstOrDefault();
 
     /// <summary>Sets the focus from outside the rows, e.g. a map marker under the pointer.</summary>
     public static void Set(Focus? focus)
     {
+        Nest.Clear();
         _source = null;
         Apply(focus);
+    }
+
+    /// <summary>
+    /// For a small linked thing among others (<see cref="InlineProperty"/>): the row it lies in, which is the
+    /// outermost linked element around it or, failing that, the button around it (a folded Plan card). Null for
+    /// anything else.
+    /// </summary>
+    public static FrameworkElement? RowAround(FrameworkElement element)
+    {
+        if (!GetInline(element))
+            return null;
+        FrameworkElement? row = null;
+        FrameworkElement? button = null;
+        for (var node = VisualTreeHelper.GetParent(element); node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is FrameworkElement linked && Hooked.TryGetValue(linked, out _))
+                row = linked;
+            else if (button is null && node is ButtonBase around)
+                button = around;
+        }
+        return row ?? button;
     }
 
     /// <summary>
@@ -172,10 +236,9 @@ public static class Linked
     /// </summary>
     public static void LetGo()
     {
-        if (_source is { } source)
-            Exit(source);
-        else
-            Apply(null);
+        Nest.Clear();
+        Refocus();
+        Apply(null);
     }
 
     private static void Apply(Focus? focus)
@@ -196,7 +259,13 @@ public static class Linked
         {
             element.PointerEntered += (_, _) => Enter(element);
             element.PointerExited += (_, _) => Exit(element);
-            element.Tapped += (_, _) => Clicked?.Invoke(element, KeyOf(element));
+            // A tap passes from an inner linked element up through the ones around it: only one of them answers, the
+            // one the cards take the pointer to be on.
+            element.Tapped += (_, e) =>
+            {
+                if (ReferenceEquals(CardSourceAt(e.OriginalSource), element))
+                    Clicked?.Invoke(element, KeyOf(element));
+            };
             element.Loaded += (_, _) =>
             {
                 Live.Add(element);
@@ -207,9 +276,13 @@ public static class Linked
                 Live.Remove(element);
                 // Rows are rebuilt with every snapshot, and a row that goes while the pointer is on it gets no
                 // PointerExited: its focus would stay (the quest lit, the map pulsing, its hover card open) until
-                // the pointer entered something else. So it lets go as it leaves.
-                if (ReferenceEquals(_source, element))
-                    Exit(element);
+                // the pointer entered something else. So it lets go as it leaves, and of everything: what lies
+                // around it or inside it is usually leaving with it, and can't be asked where it is any more.
+                if (Nest.Leave(element) || ReferenceEquals(_cardSource, element))
+                {
+                    Nest.Clear();
+                    Refocus();
+                }
             };
             // Rows need a fill to be hit anywhere, not just on their text.
             if (Background(element) is null)
@@ -229,44 +302,122 @@ public static class Linked
                 yield return q;
     }
 
+    private static IEnumerable<string> AlsoOf(FrameworkElement element) => GetAlso(element) switch
+    {
+        string one => [one],
+        IEnumerable<string> several => several,
+        _ => [],
+    };
+
+    private static bool IsWithin(FrameworkElement inner, FrameworkElement outer)
+    {
+        for (var node = VisualTreeHelper.GetParent(inner); node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (ReferenceEquals(node, outer))
+                return true;
+        }
+        return false;
+    }
+
     private static DateTime _enteredAt;
 
     private static void Enter(FrameworkElement element)
     {
-        _source = element;
-        _enteredAt = DateTime.Now;
-        var item = GetItem(element);
-        var marker = GetMarker(element);
+        Nest.Enter(element);
+        Refocus();
+    }
+
+    private static void Exit(FrameworkElement element)
+    {
+        Nest.Leave(element);
+        Refocus();
+    }
+
+#if DEVTOOLS
+    /// <summary>
+    /// Developer scripts: the pointer enters or leaves a linked element, through the code the pointer's own events
+    /// call. A script can't move the mouse, and nothing is sent to the system.
+    /// </summary>
+    internal static void DevPointer(FrameworkElement element, bool enters)
+    {
+        if (enters)
+            Enter(element);
+        else
+            Exit(element);
+    }
+
+    /// <summary>The linked element pointed at now, for a script to leave it.</summary>
+    internal static FrameworkElement? DevSource => _source;
+
+    /// <summary>
+    /// The loaded linked elements in a window, or of those the ones inside another, for a script to find a line or a
+    /// cell.
+    /// </summary>
+    internal static IEnumerable<FrameworkElement> DevLive(XamlRoot root, FrameworkElement? within = null) =>
+        Live.Where(e => e.XamlRoot == root && (within is null || IsWithin(e, within))).ToList();
+#endif
+
+    // The pointer entered or left a linked element: what it points at now is the innermost one it is in.
+    private static void Refocus()
+    {
+        var top = Nest.Top;
+        if (!ReferenceEquals(top, _source))
+        {
+            // Resting on something is the closest the study log gets to "looked at it"; passing over it is not.
+            var dwell = DateTime.Now - _enteredAt;
+            if (_source is { } left && dwell >= TimeSpan.FromMilliseconds(400) && Current is { } focus)
+            {
+                Study.Ui("hover", ("quests", focus.Quests.ToList()), ("item", focus.Item), ("marker", focus.Marker), ("objective", focus.Objective), ("s", dwell),
+                    ("where", CardStack.For(left.XamlRoot) is { } stack ? (stack.Contains(left) ? "card" : stack.Where == "pinned" ? "pinned" : "list") : "list"));
+            }
+            _source = top;
+            _enteredAt = DateTime.Now;
+            Apply(top is null ? null : FocusOf(top));
+        }
+        // For the cards the pointer is on the innermost element that opens one: an objective's line opens none, and
+        // on it the cards stay with its quest's block. With no such element around, the one pointed at counts (a
+        // row that only highlights lets hover cards go, as before).
+        var holder = Nest.Outward().FirstOrDefault(e => KeyOf(e) is not null) ?? top;
+        if (ReferenceEquals(holder, _cardSource))
+            return;
+        if (_cardSource is { } before)
+            Left?.Invoke(before);
+        _cardSource = holder;
+        if (holder is not null)
+            Hovered?.Invoke(holder, KeyOf(holder));
+    }
+
+    private static Focus FocusOf(FrameworkElement element)
+    {
         var quests = QuestsOf(element).ToHashSet();
-        if (GetAlso(element) is IEnumerable<string> also)
-            quests.UnionWith(also);
-        Apply(new Focus(quests, item, marker));
-        Hovered?.Invoke(element, KeyOf(element));
+        quests.UnionWith(AlsoOf(element));
+        return new Focus(quests, GetItem(element), GetMarker(element), GetObjective(element));
     }
 
     // The card an element opens: its item if it has one, else its quest; none for rows that only highlight.
     private static CardKey? KeyOf(FrameworkElement element) =>
         GetItem(element) is { } item ? new CardKey.Item(item) : GetQuest(element) is { } quest ? new CardKey.Quest(quest) : null;
 
-    private static void Exit(FrameworkElement element)
+    // Which linked element a click at a target is for: going outward from it, the first that opens a card; if none
+    // does, the innermost.
+    private static FrameworkElement? CardSourceAt(object? target)
     {
-        Left?.Invoke(element);
-        if (_source != element)
-            return;
-        // Resting on something is the closest the study log gets to "looked at it"; passing over it is not.
-        var dwell = DateTime.Now - _enteredAt;
-        if (dwell >= TimeSpan.FromMilliseconds(400) && Current is { } focus)
+        FrameworkElement? innermost = null;
+        for (var node = target as DependencyObject; node is not null; node = VisualTreeHelper.GetParent(node))
         {
-            Study.Ui("hover", ("quests", focus.Quests.ToList()), ("item", focus.Item), ("marker", focus.Marker), ("s", dwell),
-                ("where", CardStack.For(element.XamlRoot) is { } stack ? (stack.Contains(element) ? "card" : stack.Where == "pinned" ? "pinned" : "list") : "list"));
+            if (node is not FrameworkElement element || !Hooked.TryGetValue(element, out _))
+                continue;
+            if (KeyOf(element) is not null)
+                return element;
+            innermost ??= element;
         }
-        _source = null;
-        Apply(null);
+        return innermost;
     }
 
     private static bool IsLinked(FrameworkElement element, Focus focus) =>
         (GetItem(element) is { } item && item == focus.Item) ||
         (GetMarker(element) is { } marker && marker == focus.Marker) ||
+        (GetObjective(element) is { } objective && objective == focus.Objective) ||
         QuestsOf(element).Any(focus.Quests.Contains);
 
     private static readonly Brush Clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
@@ -278,8 +429,10 @@ public static class Linked
                 ? (Brush)Application.Current.Resources["SelectBrush"]
                 : Clear);
 
+    // A need cell is filled by its own dark cell and its picture: its tint lies over both (Picture.Tint).
     private static Brush? Background(FrameworkElement element) => element switch
     {
+        Picture cell => cell.Tint,
         Panel p => p.Background,
         Border b => b.Background,
         Control c => c.Background,
@@ -290,6 +443,9 @@ public static class Linked
     {
         switch (element)
         {
+            case Picture cell:
+                cell.Tint = brush;
+                break;
             case Panel p:
                 p.Background = brush;
                 break;

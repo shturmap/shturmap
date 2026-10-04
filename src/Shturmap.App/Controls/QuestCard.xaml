@@ -50,8 +50,10 @@
         <ItemsControl ItemsSource="{x:Bind View.Objectives}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="session:CardObjective">
+              <!-- The row is its objective for the linked highlight: pointing at it marks the objective within the
+                   quest (only its places pulse on the map), and it lights up when one of those places is pointed at. -->
               <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3"
-                    controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
+                    controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}" controls:Linked.Objective="{x:Bind ObjectiveId}">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />

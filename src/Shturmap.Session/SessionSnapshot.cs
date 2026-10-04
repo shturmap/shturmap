@@ -45,6 +45,7 @@ public sealed record SourceHealth(bool Ok, string Text);
 /// <param name="Needs">Keys or items this objective needs, e.g. "Key: Dorm room 114 key", or null.</param>
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
 /// <param name="TraderId">The quest giver, for the portrait.</param>
+/// <param name="NeedKey">The key <paramref name="Needs"/> stands for, when it names exactly one (<see cref="Planning.NeedKey"/>).</param>
 public sealed record ObjectiveView(
     string QuestId,
     string QuestName,
@@ -59,7 +60,8 @@ public sealed record ObjectiveView(
     ObjectiveKind Kind,
     string? Needs,
     double? MapBearing = null,
-    string? TraderId = null);
+    string? TraderId = null,
+    string? NeedKey = null);
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
 public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, double? ClockHours);

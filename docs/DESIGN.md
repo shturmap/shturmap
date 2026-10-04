@@ -252,7 +252,10 @@ against sanctions); and say that some players see a position map as an unfair ad
     at start.
 12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
-    are no detail pages to open. Finished quests appear nowhere.
+    are no detail pages to open. Finished quests appear nowhere. The pointer says as much as it is on: on one
+    objective of a quest (its line in the raid card, its row on the quest's card, one of its places on the map) the
+    quest stays lit and that objective is marked within it; on a need cell beside a quest's name, or on the gold
+    line that names one key, it is that item (the review of 2026-10-04; "Visual language", linked highlight).
 
 ### Design system
 
@@ -409,7 +412,26 @@ easing, when Windows' animation effects are off, and only while something is in 
 of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
 any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
 Shturmap's windows is the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
-game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not. Markers on another floor than the one shown are drawn at full strength, highlighted
+game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not.
+**Inside one another** (the review of 2026-10-04): linked things may lie inside a linked row, and the innermost one
+around the pointer is the one pointed at; leaving it gives the pointer back to the row around it, which it never
+left (`PointerNest`; before, the highlight knew one element, and leaving an inner one let go of everything). So
+the highlight goes **down to the objective**: an objective's line under its quest in the raid card, its row on the
+quest's card and the glance's NEXT name their objective. Pointing at one keeps the whole quest lit as before and
+marks the objective: its own line takes the tint (in the raid card once more, over its quest's), and on the map
+only that objective's places pulse, take the pointed-at size and name, and get the chevrons; the quest's other
+places stay at full strength, at their rest size, and hold still, and the doors of its keys keep their pointed-at
+look without the pulse (`MapScene.FocusObjective`). It works the other way too: pointing at one of an objective's
+places on the map lights its line in the raid card and its row on the quest's card. An objective with no place on
+the shown map leaves its quest lit and nothing pulsing. Three smaller things link as well: a **need cell** beside
+a quest's name is its item (its card, its BRING row, the item's other cells, its locks and loose spots; the tint
+lies over the cell), the **gold "Key: …" line** under a raid objective is that key when it names exactly one (with
+alternatives or two doors it couldn't say which, and stays part of its objective's line; `Planning.NeedKey`), and
+a **quest's glyph on a folded Plan card** is that quest. A card opened from one of these small things opens beside
+the row or the Plan card it lies in, at its own height, not over its neighbours. For the cards, an objective's
+line is still its quest's block: it opens no card of its own, and a click on it holds the quest's. One tint
+serves all of it; telling "this", "the same thing elsewhere" and "related" apart by tint is not decided (owner).
+Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
 with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
@@ -705,10 +727,13 @@ spawns below).
   - **Locks**: a door's or a car trunk's (both need a key): a padlock (Segoe Fluent `E72E`) on the dark collar, no
     plate, labelled with the key's short name as printed on the key ("TGL MO", "Dorm 114", "RB-PKPM"; the full name
     when it has none) and "needs power" where the data says so. The key glyph `E8D7` stays the key itself (BRING,
-    need cells); the padlock is where it opens. Pointing at a key (its BRING row, its row on a quest card) lights
-    every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card. The
-    key's need cells and item card don't link yet: a linked element inside a linked row loses the row's highlight
-    when the pointer leaves it. Container locks would mark containers; the data has none.
+    need cells); the padlock is where it opens. Pointing at a key (its BRING row, its row on a quest card, its
+    need cell beside a quest's name, the gold "Key: …" line under a raid objective that names just that key) lights
+    every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card.
+    Leaving a need cell or the gold line returns to the quest's row around it ("Visual language", linked
+    highlight; the review of 2026-10-04: before, a linked element inside a linked row lost the row's highlight
+    when the pointer left it, so these didn't link). The key's item card still lights nothing by itself.
+    Container locks would mark containers; the data has none.
     A quest brings its doors along (owner, 2026-10-03: "For the Golden Swag key the trailer park portable cabin
     marker is not highlighted when the quest is highlighted as goal quest"): pointing at a quest, or picking it,
     lights the locks of the keys it needs on that map (its `neededKeys` there and its objectives' own keys, the
@@ -977,7 +1002,10 @@ objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay i
 the window's edge, a popped-out one at 900 px).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
-but don't light up for their own card's quest, or the whole card would glow.
+but don't light up for their own card's quest, or the whole card would glow. An objective's row is its objective:
+pointing at it marks that objective within the quest (on the map only its places pulse; in the raid card its line
+takes the tint), and the row lights up when one of its places on the map, or its line in the raid card, is pointed
+at (the review of 2026-10-04). Rows that show the same item still light together, as before.
 
 ### Picks: the quests for the coming raid
 
@@ -1406,7 +1434,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
   with the app's version and commit.
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
-  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `place <fx> <fy>
+  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
 

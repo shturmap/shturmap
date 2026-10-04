@@ -522,4 +522,21 @@ public static class Planning
             parts.Add("Without: " + WithoutText(data, sources, without));
         return parts.Count > 0 ? string.Join(" · ", parts) : null;
     }
+
+    /// <summary>
+    /// The key an objective's <see cref="Needs"/> line stands for: the one key it names on that map, counted as
+    /// <see cref="Needs"/> counts them. Null when the line names no key, or several (alternatives, or two doors):
+    /// which of them it would stand for can't be said.
+    /// </summary>
+    public static string? NeedKey(GameData data, ApiTask task, ApiObjective objective, IReadOnlySet<string> mapIds, bool hasPlace)
+    {
+        var plan = ToPlan(objective, data.ObjectiveFacts.GetValueOrDefault(objective.Id), data);
+        var keys = plan.Keys.SelectMany(k => k).ToList();
+        if (hasPlace)
+        {
+            keys.AddRange((task.NeededKeys ?? []).Where(k => k.Map is not null && mapIds.Contains(k.Map))
+                .SelectMany(k => k.Keys ?? []));
+        }
+        return keys.Distinct().Take(2).ToList() is [var only] ? only : null;
+    }
 }

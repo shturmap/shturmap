@@ -61,6 +61,67 @@ public sealed partial class MainWindow
             ShowQuestForSnapshot(s);
     }
 
+    /// <summary>
+    /// Points at a quest, one of its objectives or an item as the pointer on its line would (for a script's
+    /// snapshot): the same focus, with no mouse to hold it or to let go of it. Null points at nothing again.
+    /// </summary>
+    internal void DevPoint(Focus? focus)
+    {
+        ScriptedPointer = focus is not null;
+        Linked.Set(focus);
+    }
+
+    /// <summary>
+    /// Moves the pointer, as far as the linked highlight goes, onto a quest's block in the lists and from there into
+    /// one of its objectives' lines ("&lt;objective id&gt;"), its first need cell ("cell") or a gold line that is a
+    /// key ("key"); with no quest, out of the innermost thing it is in. It runs the code the pointer's own events
+    /// call, so a script can check what a mouse would do without one. Returns what it couldn't find, or null.
+    /// </summary>
+    internal string? DevHover(string? questId, string? objectiveId = null, string? part = null)
+    {
+        if (questId is null)
+        {
+            if (Linked.DevSource is { } source)
+                Linked.DevPointer(source, enters: false);
+            ScriptedPointer = Linked.DevSource is not null;
+            return null;
+        }
+        var root = Content.XamlRoot;
+        // The quest's own block: not the glance's NEXT (an objective's row), not a glyph on a folded card.
+        var row = Linked.DevLive(root)
+            .Where(e => Linked.GetQuest(e) == questId && Linked.GetObjective(e) is null && !Linked.GetInline(e) && e.ActualHeight > 0 && !_cards.Contains(e))
+            .OrderByDescending(e => e.ActualHeight).FirstOrDefault();
+        if (row is null)
+            return "no row of that quest in the lists";
+        var inside = Linked.DevLive(root, row).ToList();
+        var chain = new List<FrameworkElement> { row };
+        switch (part)
+        {
+            case "cell":
+                if (inside.OfType<Picture>().FirstOrDefault(e => Linked.GetItem(e) is not null) is not { } cell)
+                    return "no need cell on that quest's row";
+                chain.Add(cell);
+                break;
+            case "key":
+                if (inside.FirstOrDefault(e => e is Microsoft.UI.Xaml.Controls.Border && Linked.GetItem(e) is not null) is not { } key)
+                    return "no line that is one key under that quest";
+                chain.AddRange(inside.Where(e => Linked.GetObjective(e) is not null && Linked.DevLive(root, e).Contains(key)));
+                chain.Add(key);
+                break;
+            default:
+                if (objectiveId is null)
+                    break;
+                if (inside.FirstOrDefault(e => Linked.GetObjective(e) == objectiveId) is not { } line)
+                    return "no line of that objective under the quest";
+                chain.Add(line);
+                break;
+        }
+        ScriptedPointer = true;
+        foreach (var element in chain)
+            Linked.DevPointer(element, enters: true);
+        return null;
+    }
+
     internal void DevShowCrash()
     {
         CrashRecord record;

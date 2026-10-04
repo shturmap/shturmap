@@ -659,7 +659,7 @@ public sealed partial class MainWindow : Window
         var suffix = " on " + mapName;
         var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
-            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
+            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey);
     }
 
     // The map's guide plate says the same (MapRenderer.DistanceText).
@@ -699,6 +699,7 @@ public sealed partial class MainWindow : Window
         scene.QuestKeys = latest.Content?.QuestKeys ?? new Dictionary<string, IReadOnlyList<string>>();
         scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
+        scene.FocusObjective = Linked.Current?.Objective;
         Map.Refresh();
     }
 
@@ -1020,6 +1021,8 @@ public sealed partial class MainWindow : Window
         if (Map.Scene is not { } scene)
             return;
         scene.Focus = MapFocus();
+        // One objective of the quest pointed at: only its places pulse, the quest's others stay lit.
+        scene.FocusObjective = Linked.Current?.Objective;
         // Pointing at an item shows where it lies loose on the shown map.
         scene.Spawns = Linked.Current?.Item is { } item && _snapshot is { Data: { } data, Map: { } map }
             ? data.SpawnsOf(item).Where(s => data.MapIdsSharing(map.NormalizedName).Contains(s.MapId)).Select(s => s.Position).ToList()
@@ -1052,12 +1055,16 @@ public sealed partial class MainWindow : Window
 
     private void DropPointerFocus()
     {
-        // A snapshot's shown quest and the clip's drawn pointer aren't a mouse: they stay, whichever window is active.
-        if (SnapshotMode || DemoMode)
+        // A snapshot's shown quest, the clip's drawn pointer and a developer script's aren't a mouse: they stay,
+        // whichever window is active.
+        if (SnapshotMode || DemoMode || ScriptedPointer)
             return;
         Map.ClearHover();
         Linked.LetGo();
     }
+
+    /// <summary>A developer script points at something ("point", "hover"): there is no mouse to let go of it.</summary>
+    private bool ScriptedPointer { get; set; }
 
     private DateTime _markerHoveredAt;
 
@@ -1078,7 +1085,9 @@ public sealed partial class MainWindow : Window
                 Linked.Set(null);
                 break;
             case { Group: { } quest, Objective: not null }:
-                Linked.Set(Focus.Quest(quest));
+                // The quest, and within it the objective this place belongs to: its line in the raid card and its row
+                // on the quest's card light up, and only its own places pulse.
+                Linked.Set(new Focus(new HashSet<string> { quest }, Objective: MapRenderer.ObjectiveOf(marker)));
                 var p = Map.TransformToVisual(Content).TransformPoint(at);
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
                 break;

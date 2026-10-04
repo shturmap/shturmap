@@ -5,8 +5,10 @@ using Shturmap.Core.Quests;
 namespace Shturmap.App;
 
 /// <param name="Needs">Keys or items this objective needs, or empty.</param>
+/// <param name="ObjectiveId">The objective, for linked highlighting: its line marks it within its quest.</param>
+/// <param name="KeyId">The key the gold "Key: …" line stands for, when it names exactly one: the line is that key.</param>
 public sealed record ObjectiveItem(string QuestId, string Text, string Quest, string Distance, string Direction, bool Done, ObjectiveKind Kind, string Needs,
-    string? TraderId = null, string? TraderName = null)
+    string? TraderId = null, string? TraderName = null, string? ObjectiveId = null, string? KeyId = null)
 {
     // An objective ticked as done needs nothing any more.
     public Visibility NeedsVisibility => Needs.Length > 0 && !Done ? Visibility.Visible : Visibility.Collapsed;

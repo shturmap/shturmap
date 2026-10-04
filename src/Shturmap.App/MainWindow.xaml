@@ -30,7 +30,9 @@
       </DataTemplate>
 
       <!-- A quest in the raid card: its line as in Plan, then its objectives here with how far and which way.
-           The whole block is one quest: pointing at it lights the quest up everywhere, clicking keeps it lit. -->
+           The whole block is one quest: pointing at it lights the quest up everywhere, clicking keeps it lit. A
+           line in it is one objective: pointing at it marks that objective within the quest (its line tinted once
+           more, only its places pulsing on the map), and a gold line that names one key is that key. -->
       <DataTemplate x:Key="RaidQuestTemplate" x:DataType="local:RaidQuest">
         <StackPanel Padding="6,4,6,6" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
           <Grid ColumnSpacing="10">
@@ -52,14 +54,17 @@
           <ItemsControl ItemsSource="{x:Bind Objectives}" Margin="26,2,0,0">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:ObjectiveItem">
-                <Grid ColumnSpacing="10" Padding="0,3">
+                <Grid ColumnSpacing="10" Padding="6,3" Margin="-6,0" controls:Linked.Objective="{x:Bind ObjectiveId}" controls:Linked.Also="{x:Bind QuestId}">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
                   <StackPanel Spacing="1">
                     <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
-                    <TextBlock Text="{x:Bind Needs}" Visibility="{x:Bind NeedsVisibility}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
+                    <Border Visibility="{x:Bind NeedsVisibility}" HorizontalAlignment="Left" Padding="4,0" Margin="-4,0"
+                            controls:Linked.Item="{x:Bind KeyId}" controls:Linked.Inline="True">
+                      <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
+                    </Border>
                   </StackPanel>
                   <StackPanel Grid.Column="1">
                     <TextBlock Text="{x:Bind Distance}" Visibility="{x:Bind DistanceVisibility}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
@@ -481,7 +486,8 @@
                                    ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
                         <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
                         <!-- Folded: enough to compare without opening it. One glyph per quest (gold: complete, muted:
-                             progress), then what to bring. -->
+                             progress), then what to bring. Each glyph is its quest for the linked highlight, each
+                             cell its item. -->
                         <Grid Visibility="{x:Bind FoldedVisibility}" Margin="0,5,0,0" ColumnSpacing="10">
                           <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -495,7 +501,8 @@
                               </ItemsControl.ItemsPanel>
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource KeptBrush}" ToolTipService.ToolTip="{x:Bind Name}" />
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource KeptBrush}" ToolTipService.ToolTip="{x:Bind Name}"
+                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" />
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -507,7 +514,8 @@
                               </ItemsControl.ItemsPanel>
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}" />
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}"
+                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" />
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -521,7 +529,8 @@
                               </ItemsControl.ItemsPanel>
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}" />
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}"
+                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" />
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -675,7 +684,8 @@
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKitMore, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- The glance: the nearest objective and the nearest way out, big, before anything else. -->
                   <Grid Margin="-6,12,-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
-                        Visibility="{x:Bind ShownIfSet(ViewModel.RaidNext), Mode=OneWay}" controls:Linked.Quest="{x:Bind ViewModel.RaidNext.QuestId, Mode=OneWay}">
+                        Visibility="{x:Bind ShownIfSet(ViewModel.RaidNext), Mode=OneWay}" controls:Linked.Quest="{x:Bind ViewModel.RaidNext.QuestId, Mode=OneWay}"
+                        controls:Linked.Objective="{x:Bind ViewModel.RaidNext.ObjectiveId, Mode=OneWay}">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="48" />
                       <ColumnDefinition Width="*" />
