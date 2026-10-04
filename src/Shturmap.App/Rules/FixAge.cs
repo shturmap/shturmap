@@ -14,6 +14,13 @@ public static class FixAge
     /// </summary>
     public static readonly TimeSpan Fresh = Shturmap.Core.Navigation.Facing.Fresh;
 
+    /// <summary>
+    /// How old a position is: the time that passed since its screenshot, not the two clock times apart, which are an
+    /// hour off across a clock change (<see cref="Shturmap.Core.Logs.WallClock"/>; the review of 2026-10-04, A41).
+    /// </summary>
+    /// <param name="zone">The time zone of the two times; the PC's own unless a test gives another.</param>
+    public static TimeSpan Of(DateTime fixAt, DateTime now, TimeZoneInfo? zone = null) => Shturmap.Core.Logs.WallClock.Elapsed(fixAt, now, zone);
+
     /// <summary>"12 s", "4 min", "2 h": whole units, never rounded up.</summary>
     public static string Text(TimeSpan age) =>
         age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s"

@@ -1703,6 +1703,34 @@ line since Shturmap started following, within the last ten minutes; replay doesn
 closed says "Logs" (A43: it said "live" for ten minutes after every start). Most lines are no event, so the light
 is looked at again every 30 s, with the open raid.
 
+**Clock changes** (`WallClock`; review of 2026-10-04, A41). The log's times are local wall-clock times without an
+offset, a screenshot's time and the PC's clock are local too, and one taken from another is an hour off across a
+clock change, two nights a year. On the spring night a raid begun at 01:50 was 95 minutes old at 03:25 (it is 35)
+and was closed as one that can't still be running; on the autumn night a raid begun at 02:50 and ended at 02:10 ran
+for minus 40 minutes, and a session read back had its events sorted by those times, the end before the start. So
+every span of time goes through one place, which turns wall-clock times into instants by Windows' rules for the
+PC's time zone: a raid's length (the cue, the last-raid line), the minutes in the status bar, whether an open raid
+can still be running, a screenshot against a raid's end, the study log's timings. What the player reads stays the
+local time as written ("started 21:02").
+The hour the autumn change repeats can stand for two instants, and a log's time doesn't say which. No reading is
+fixed; what is known of the order settles it:
+- **Two times in a known order** (a start and an end, a start and now): the reading in which time doesn't run
+  backwards, and of two such the one with the least time between. A raid of 20 minutes rather than 80; and an open
+  raid that began in the repeated hour counts from its later reading, since closing a raid that still runs is the
+  worse mistake. A raid that really ran across the whole repeated hour reads an hour short: its two times alone
+  can't say otherwise.
+- **Two times close together in either order** (the insurer's note around a raid's end, a screenshot around it): the
+  reading that puts them nearest.
+- **The lines of one log**, whose times never go backwards: each takes the earliest reading that isn't before the
+  line above, starting with the first pass through the hour, because only then is the step back to 02:00 seen for
+  what it is. The events of several logs are put in order by these instants (`WallClock.Sequence`, in `LogTailer`).
+- A time that is an instant already counts as that: the PC's clock and a file's time, which .NET marks with the side
+  of the repeated hour they are on, and a quest message's server time.
+A time in the hour the spring change skips, which no clock shows, is read as if the clocks hadn't moved yet.
+Not covered: which of two log sessions is the newer goes by their folder names' times, and two sessions started
+within the repeated hour could be told the wrong way round; the map's age tag, the position's age in the window and
+"recent" screenshots at a start still take one clock time from another (`FixAge.Of` is there for them).
+
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
 require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
