@@ -14,8 +14,22 @@ public class AppLogTests : IDisposable
     [InlineData(@"c:\users\JANE DOE\appdata\local\Shturmap", @"%USERPROFILE%\appdata\local\Shturmap")]
     [InlineData("file:///C:/Users/Jane Doe/AppData/x.svg", "file:///%USERPROFILE%/AppData/x.svg")]
     [InlineData(@"at Foo() in C:\Users\Jane Doe\source\a.cs:line 3 and C:\Users\Jane Doe.", @"at Foo() in %USERPROFILE%\source\a.cs:line 3 and %USERPROFILE%.")]
-    [InlineData(@"C:\Users\Jane Doen\x and C:\Users\Jane Doe.old\y", @"C:\Users\Jane Doen\x and C:\Users\Jane Doe.old\y")]
     public void The_profile_path_is_masked(string text, string masked) => Assert.Equal(masked, LogFile.Mask(text, Profile));
+
+    // What else names the user or their PC (review of 2026-10-04): other folders under Users (another account, or
+    // this one's short name), the user's name as a folder elsewhere, a network host. And what must stay as it is.
+    [Theory]
+    // Another account's folder is not this profile, but it is still someone's name.
+    [InlineData(@"C:\Users\Jane Doen\x and C:\Users\Jane Doe.old\y", @"C:\Users\<user>\x and C:\Users\<user>\y")]
+    [InlineData(@"Leftovers in C:\Users\JANEDO~1\AppData\Local\Temp\.net\Shturmap", @"Leftovers in C:\Users\<user>\AppData\Local\Temp\.net\Shturmap")]
+    [InlineData(@"C:\Users\Bob is missing a folder at D:\x", @"C:\Users\<user> is missing a folder at D:\x")]
+    [InlineData(@"Screenshots: D:\Jane Doe\Documents\Escape from Tarkov\Screenshots", @"Screenshots: D:\<user>\Documents\Escape from Tarkov\Screenshots")]
+    [InlineData(@"Game found: manual at \\GAMEPC\Games\EFT\build", @"Game found: manual at \\<host>\Games\EFT\build")]
+    [InlineData("Chosen: //gamepc/games/EFT", "Chosen: //<host>/games/EFT")]
+    [InlineData(@"{""path"":""C:\\Users\\Jane Doe\\AppData\\x"",""other"":""C:\\Program Files\\y""}", @"{""path"":""%USERPROFILE%\\AppData\\x"",""other"":""C:\\Program Files\\y""}")]
+    [InlineData("https://json.tarkov.dev/pve/maps answered 503", "https://json.tarkov.dev/pve/maps answered 503")]
+    [InlineData("Jane Doe is not a path, and D:\\Games\\Jane Doer\\x is another folder", "Jane Doe is not a path, and D:\\Games\\Jane Doer\\x is another folder")]
+    public void Other_names_of_the_user_and_the_pc_are_masked(string text, string masked) => Assert.Equal(masked, LogFile.Mask(text, Profile));
 
     [Fact]
     public void Written_lines_are_masked_and_levelled()

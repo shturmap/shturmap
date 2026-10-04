@@ -1492,7 +1492,10 @@ of failure, and the work carries on (review of 2026-10-04: one database or file 
 the quest history for the rest of the session, with no line and the LOGS light still "live"). DEBUG only with `--verbose` (and the website demo,
 which times its clip by its lines): notices, the map surface, snapshots, fake games, the demo. Every line is
 written with the profile folder as `%USERPROFILE%` (any case, either slash; that covers Documents, OneDrive and
-AppData under it); no profile or account ids, no game file contents. At most 1 MB a day: a last WARN line says so
+AppData under it); any other folder directly under a `Users` folder (another account's, or the profile's short
+"8.3" name) as `<user>`, the user's name as a folder elsewhere (Documents moved to another drive) as `<user>`, and
+the host of a network path as `<host>` (`PathMask`; review of 2026-10-04: only the exact profile folder was masked);
+no profile or account ids, no game file contents. At most 1 MB a day: a last WARN line says so
 and nothing more is written until the next day. Seven days kept; the old `spotter-*.log` files are removed.
 
 **Error messages** (owner, 2026-10-03). What the player sees says what failed in plain words, with the status where

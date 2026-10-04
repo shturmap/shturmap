@@ -65,7 +65,7 @@ public sealed class LogFile(string folder, string? profile, long capBytes = LogF
     public const int KeepDays = 7;
 
     private readonly Lock _gate = new();
-    private readonly Regex? _profile = ProfilePattern(profile);
+    private readonly PathMask _profile = ProfilePattern(profile);
     private DateOnly _day;
     private long _written;
     private bool _capped;
@@ -201,20 +201,72 @@ public sealed class LogFile(string folder, string? profile, long capBytes = LogF
     }
 
     /// <summary>
-    /// The text with <paramref name="profile"/> (C:\Users\name) written as %USERPROFILE%, in any case and with either
-    /// slash; that covers Documents, OneDrive and AppData under it. "C:\Users\names" stays: a name only ends at a
-    /// separator or a character that can't be part of it.
+    /// The text without what names the user or their PC (<see cref="PathMask"/>): <paramref name="profile"/>
+    /// (C:\Users\name) written as %USERPROFILE%, in any case and with either slash, which covers Documents, OneDrive
+    /// and AppData under it; any other folder under a Users folder, the user's name as a folder elsewhere, and a
+    /// network host's name.
     /// </summary>
-    public static string Mask(string text, string? profile) => Mask(text, ProfilePattern(profile));
-
-    private static string Mask(string text, Regex? profile) => profile is null ? text : profile.Replace(text, "%USERPROFILE%");
-
-    private static Regex? ProfilePattern(string? profile)
+    public static string Mask(string text, string? profile)
     {
+        var mask = _last;
+        if (mask is null || mask.Profile != profile)
+            _last = mask = new PathMask(profile);
+        return mask.Apply(text);
+    }
+
+    // Redact asks with the same profile every time: the patterns are built once.
+    private static PathMask? _last;
+
+    private static string Mask(string text, PathMask mask) => mask.Apply(text);
+
+    private static PathMask ProfilePattern(string? profile) => new(profile);
+}
+
+/// <summary>
+/// What a text loses before it is written to the app log or sent with a report, so that neither names the user or
+/// their PC (review of 2026-10-04: only the exact profile folder was masked, so Documents moved to another drive, a
+/// short "8.3" folder name and a network host's name passed):
+/// the profile folder becomes %USERPROFILE%; any other folder directly under a Users folder (another account's, or
+/// this one's short name, "C:\Users\JANEDO~1") becomes &lt;user&gt;; the user's name as a folder anywhere else
+/// ("D:\Jane Doe\Documents") becomes &lt;user&gt;; the host of a network path ("\\MACHINE\share") becomes &lt;host&gt;.
+/// </summary>
+public sealed partial class PathMask
+{
+    private readonly Regex? _profile;
+    private readonly Regex? _name;
+
+    public PathMask(string? profile)
+    {
+        Profile = profile;
         var trimmed = profile?.TrimEnd('\\', '/');
         if (string.IsNullOrEmpty(trimmed) || trimmed.Length < 4)
-            return null;
+            return;
+        // "C:\Users\names" stays: a name only ends at a separator or a character that can't be part of it.
         var parts = trimmed.Split('\\', '/').Select(Regex.Escape);
-        return new Regex(string.Join(@"[\\/]+", parts) + @"(?![\w\-]|\.\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        _profile = new Regex(string.Join(@"[\\/]+", parts) + @"(?![\w\-]|\.\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        // The name alone, as a whole folder in a path. Very short names would hit ordinary folders too often.
+        var name = trimmed[(trimmed.LastIndexOfAny(['\\', '/']) + 1)..];
+        if (name.Length >= 3)
+            _name = new Regex(@"(?<=[\\/])" + Regex.Escape(name) + @"(?=[\\/]|$|[""'\s,;:)\]])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
+
+    public string? Profile { get; }
+
+    public string Apply(string text)
+    {
+        if (_profile is not null)
+            text = _profile.Replace(text, "%USERPROFILE%");
+        text = AnyProfile().Replace(text, "${root}<user>");
+        text = Host().Replace(text, "${slashes}<host>");
+        return _name is null ? text : _name.Replace(text, "<user>");
+    }
+
+    // X:\Users\<folder>: someone's profile folder. A name with spaces is taken whole when the path goes on after it.
+    [GeneratedRegex(@"(?<root>\b[A-Za-z]:[\\/]+Users[\\/]+)(?:[^\\/\s""'<>|:]+(?: [^\\/\s""'<>|:]+)*?(?=[\\/])|[^\\/\s""'<>|:]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex AnyProfile();
+
+    // \\host\share or //host/share where a path starts: not the doubled backslashes inside a path written as JSON,
+    // and not the slashes of "https://" or "file:///".
+    [GeneratedRegex(@"(?<![\w:\\/.%>])(?<slashes>\\\\|//)[A-Za-z0-9][A-Za-z0-9._\-]*(?=[\\/])", RegexOptions.CultureInvariant)]
+    private static partial Regex Host();
 }
