@@ -213,6 +213,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 Failed("Placing a position", e);
             }
         });
+        // The watcher keeps going and sets itself up again; each kind of trouble is said once (Failed).
+        _watcher.WatchProblem += (what, e) => Failed("Watching for screenshots: " + what, e);
         _watcher.Start();
         if (_locate is not null)
             _ = Task.Run(LookAgainAsync);
@@ -466,6 +468,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_locations?.LogsFolder is not { } logs)
             return;
         _tailer = new LogTailer(logs);
+        // The tailer leaves out what it can't read and carries on; said once per kind, so the app log shows why an
+        // event is missing (the text names the file, never a record's content).
+        _tailer.ReadProblem += (what, e) => AppLog.Warn($"Following the game's logs: {what} couldn't be read and was left out", e);
         _tailer.Start();
         _ = Task.Run(ConsumeLogsAsync);
     }
@@ -775,7 +780,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     {
                         var mode = GameMode.Unknown;
                         var read = new List<QuestObservation>();
-                        foreach (var e in LogTailer.ReadSession(session))
+                        foreach (var e in LogTailer.ReadSession(session, (what, problem) => Failed("Reading the quest history: " + what, problem)))
                         {
                             if (e is SessionModeEvent m)
                                 mode = m.Mode;
