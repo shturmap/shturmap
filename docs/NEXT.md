@@ -408,7 +408,9 @@ for the languages to come).
   geometry, not the look: a hand-drawn map chooses obstacles, stairs and landmarks, and the traced plan has
   floor and not-floor only. `docs/MAP-TRACE.md` has what was measured, the steps, the gates a map must pass and
   what the owner decides; it is written so that a map keeps its render unless every gate passes. Icebreaker is
-  left out. Pictures of the trial are outside the repository.
+  left out. Pictures of the trial are outside the repository. Looked up the same day: re3mr has hand-drawn plans
+  of Labyrinth and Icebreaker under CC BY-NC-SA 4.0, which could be traced in place of the renders (the file's
+  "Other maps that exist"); whether they are to scale is not measured, and using them is the owner's decision.
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 

@@ -121,6 +121,29 @@ commit:
    - README credits, PRIVACY.md and DESIGN.md §2 (the tile sentence no longer names this map), help's legend if a
      symbol changed, `docs/NEXT.md`.
 
+## Other maps that exist (looked up 2026-10-04)
+
+Owner: "Are there other maps for labyrinth and icebreaker out there that might help?"
+
+- **re3mr (reemr.se) has hand-drawn plans of both.** Labyrinth (version 0.6D, March 2025, one level, about
+  118 × 109 m) and Icebreaker (version 1.7, 2026, fourteen decks drawn side by side, built from a model of 3,314
+  objects in Blender, about 34 × 168 m). Flat colours and clean walls; labels, icons and legends are drawn on top,
+  and each map comes with its Photoshop file. Licence: CC BY-NC-SA 4.0, the licence of the SVG maps the app shows
+  already. maps.json names them as these maps' 2D versions (`labyrinth-2d`, `icebreaker-2d`). re3mr has no map of
+  The Lab.
+- **No SVG in the svg-maps repository's style exists for either**, and that repository has no branch, pull request
+  or issue for them (its last addition is Terminal). Other sites (Tarkov Market, gamemaps.net, tarkovwiki.com) show
+  interactive maps of their own or re3mr's; their terms weren't checked.
+- **What they could be.** The plan to trace in place of the render: flat colours trace cleanly, which is what failed
+  on Labyrinth, and Icebreaker's decks are already told apart. And the guide to what a thing is: stairs, locked
+  doors, chambers.
+- **What isn't known.** Whether they are to scale: only the published pictures were looked at. To measure it, fit a
+  plan to the data's extracts and spawns, then run step 6's gates against the render's floor. Whether Labyrinth's
+  plan from March 2025 still matches the level. Whether the label layers come off cleanly in the Photoshop files
+  (another project's README says it removed layers from them).
+- **What it would mean.** A map made from them is an adaptation: CC BY-NC-SA 4.0, credited to re3mr, not for
+  commercial use, and not under Shturmap's MIT. Rule 1 holds until the owner decides. Asking re3mr first is the
+  decent way, and they may have each deck as an export to scale.
 ## For the owner to decide before step 9
 
 - **Is the plan good enough?** From step 8's pictures. A plan shows less than the render (no cars, racks or floor
@@ -129,5 +152,7 @@ commit:
   as every community map is from the game. In the repository it would be Shturmap's own file. Offering it to the
   svg-maps repository instead is possible too; its guidelines ask for a discussion first.
 - **Does the render stay as a choice** for that map, or does the plan replace it?
+- **re3mr's maps as the base for Labyrinth and Icebreaker?** See above: it changes the licence of the result and
+  rule 1.
 - **More than floor?** Obstacles, stairs and locked rooms are what make Factory's map read well. They can't be
   traced by the rule above; drawing them is hand work, or a next trial.
