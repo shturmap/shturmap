@@ -441,7 +441,10 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
 - **Type**: Bahnschrift (ships with Windows, DIN-like, close to the game's lettering). Labels and status words are
   semi-condensed, semibold, uppercase and spaced (`EyebrowText`, `StatusText`); titles semi-condensed semibold
   (`TitleText`); body text regular; numbers semibold gold (`FigureText`). Styles live in `App.xaml`; cards and
-  flyouts set the font themselves (popups don't get the app's implicit text style).
+  flyouts set the font themselves (popups don't get the app's implicit text style), and so does the rail, on its
+  scroll view: the implicit style doesn't reach text inside list templates either, so the raid card's quest names
+  and objective lines, the extract rows and BRING in a raid stood in Segoe UI and white until 2026-10-04, beside
+  Plan's card in Bahnschrift.
 - **Pictures**: trader portraits square in a thin frame; item icons in a dark inventory cell.
 - **Map artwork recedes**: it is drawn at 38 % of its colour and 85 % of its brightness, so its own yellows and
   browns don't compete with the quest amber and Shturmap's markers are found at a glance, while streets and

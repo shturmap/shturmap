@@ -456,7 +456,11 @@
                     SelectedItem="{x:Bind ViewModel.SelectedMap, Mode=TwoWay}"
                     SelectionChanged="OnMapPicked" />
         </StackPanel>
-        <ScrollViewer x:Name="RailScroll" Grid.Row="1" Padding="16,0,16,20" ViewChanged="OnRailScrolled">
+        <!-- The rail's typeface and ink are set here: the app's implicit TextBlock style doesn't reach text inside the
+             list templates below, which fell back to Segoe UI and white (the raid card's quest names and objective
+             lines, the extract rows, BRING in a raid), while Plan's card had the app's own through its button. -->
+        <ScrollViewer x:Name="RailScroll" Grid.Row="1" Padding="16,0,16,20" ViewChanged="OnRailScrolled"
+                      FontFamily="{StaticResource UiFont}" Foreground="{StaticResource InkBrush}">
           <StackPanel>
             <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.Hint), Mode=OneWay}"
                        Style="{StaticResource NoteText}" Margin="0,16,0,0" />
