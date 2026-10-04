@@ -28,8 +28,10 @@ A17, A20, A32–A36, A39, A40, A42–A46, B2, B3, B5, B9, B11, B13, C2, C4, C5, 
 different rank. The suite is at 1,063 tests. Found on the way and fixed: the raid card's lines stood in Segoe UI
 and white instead of the app's typeface; a Scav zone's ring lay over the boss's octagon; "Sniper Roadblock" on
 Customs was told to fire a flare. The leftovers followed the same day (owner: "Go on with the small leftovers"): A37, A41, C6, E3's boss names,
-E6, H5 and A40's settings text; the suite is at 1,111 tests. Still open: A10 and A26 (need a run) and the website's
-wording (on the owner's word).
+E6, H5 and A40's settings text; the suite is at 1,111 tests. Still open: A10 and A26 (need a run). The website's
+wording followed the same day (owner: "build the website if something needs updating and push it"): the installer
+and running programs, the delete setting, the three tile maps, ticking an objective, and where the game is
+installed, each in the README's words.
 
 **To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
 code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
@@ -81,7 +83,7 @@ FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."; th
   last-raid line's "end not in the log"; the map's label "LOOKING AT WOODS · THE RAID IS ON CUSTOMS · YOUR NEXT
   POSITION SHOWS IT AGAIN"; the raid card's title "MAP NOT KNOWN".
 - **D1 changed the README's sentence on quest tracking** ("Nothing has to be ticked off", with what a tick is
-  for). The website still says the old sentence: its wording changes only on the owner's word.
+  for). The website says the same since 2026-10-04.
 - **Words for the owner to check, from D1:** the tick's tooltip, "Done · ticked by you, 4 Oct" on the card, "DONE"
   on the raid card's line, and the new paragraph in help.
 
@@ -102,8 +104,8 @@ FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."; th
   from the install folder, at install, when an update is applied, on RESTART NOW and at uninstall). README and
   DESIGN.md §2 say Shturmap never opens a handle to the game and checks no processes; `SafetyTests` reads `src\` only.
   Which access right it asks for is unchecked. Status: reworded (owner, 2026-10-04): README "The installer and running programs", DESIGN.md §2, help, the release
-  notes; the updater opens every process with the rights to read its path and to end it. Open: the website's
-  wording (on the owner's word), and applying updates without looking at other processes.
+  notes, and the website since the same day; the updater opens every process with the rights to read its path and
+  to end it. Open: applying updates without looking at other processes.
 
 ### A. Code
 
@@ -269,7 +271,7 @@ for the languages to come).
   layer whole up to zoom 4 only (about 10 MB a layer for The Lab) would have ended the view-dependent requests,
   but the picture turns soft when zooming in further, and the owner didn't want that ("I would like to avoid
   that"); the same plus deeper tiles outside raids would have left soft and sharp patches side by side in a raid.
-  The website's wording follows on the owner's word.
+  The website says it too, where it says what is sent (2026-10-04).
 - **B15. The caching check (owner, 2026-10-04: "Check if we properly cache the maps so we don't put unneccessary
   load on tarkov.dev").** Status: done (2026-10-04; DESIGN.md §3, "No unnecessary load on tarkov.dev", has the
   numbers). The cache works as meant: requests go out only at a start or a mode change, a saved copy within its
@@ -372,8 +374,8 @@ for the languages to come).
   a couple of seconds grace period"). Status: done (2026-10-04): a tick in settings, off unless ticked; a screenshot
   that gave a position is deleted 5 seconds after its name was read, for good; what was in the folder before, menu
   screenshots and every other file stay (DESIGN.md §2, `ScreenshotCleaner`). For the owner to check: the 5 seconds;
-  for good rather than to the Recycle Bin; menu screenshots staying; the setting's words. The website's "what it
-  never does" needs the same sentence as the README: its wording changes only on the owner's word. Needs a run with
+  for good rather than to the Recycle Bin; menu screenshots staying; the setting's words. The website's "It never"
+  list and a question of its own say it since 2026-10-04. Needs a run with
   the game: that the game's own write is over well within the 5 seconds (a file still open is tried again, so the
   worst case is a screenshot that stays).
 - **Declined** (owner, 2026-10-04): adding or removing a quest by hand; opening with the game or with Windows; a
