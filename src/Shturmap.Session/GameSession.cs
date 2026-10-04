@@ -1385,7 +1385,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         var (shown, more) = Planning.CueKit(kit, picks: picks);
         Study.Game("kit.reminder", ("when", when), ("map", map.NormalizedName), ("items", kit.Count),
             ("forPicks", kit.All.Count(r => r.QuestIds.Any(picks.Contains))));
-        return new ViewCue(kind, map.Name, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind, Planning.ForPick(r, picks))).ToList(), KitMore: more);
+        var slots = _picks?.Slots(_mode) ?? new Dictionary<string, int>();
+        return new ViewCue(kind, map.Name, KitMore: more, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind, Planning.ForPick(r, picks),
+            r.QuestIds.Where(picks.Contains).Select(q => slots.GetValueOrDefault(q)).DefaultIfEmpty(0).First())).ToList());
     }
 
     // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now with its kit,
@@ -1862,6 +1864,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
             Picks = Picks,
+            PickSlots = _picks?.Slots(_mode) ?? new Dictionary<string, int>(),
             Ticks = _ticked,
             Done = _done,
             AnyMap = _anyMap,

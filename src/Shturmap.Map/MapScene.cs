@@ -179,6 +179,28 @@ public sealed class MapScene
     private IReadOnlySet<string> _kept = Nothing;
 
     /// <summary>
+    /// Which of the picks' colours each picked quest has (<see cref="MapRenderer.PickColors"/>); a pick that isn't in
+    /// here has the first. Each pick has a colour of its own, so its places are told from the other picks' at a
+    /// glance (owner, 2026-10-04).
+    /// </summary>
+    public IReadOnlyDictionary<string, int> PickSlots
+    {
+        get => _pickSlots;
+        set
+        {
+            _pickSlots = value;
+            LayoutVersion++;
+        }
+    }
+
+    private IReadOnlyDictionary<string, int> _pickSlots = new Dictionary<string, int>();
+
+    /// <summary>The pick a lock's key is for: of the picks that need it here, the one with the first colour.</summary>
+    public string? PickOfKey(string keyGroup) =>
+        _kept.Where(q => _questKeys.TryGetValue(q, out var keys) && keys.Contains(keyGroup))
+            .OrderBy(q => _pickSlots.GetValueOrDefault(q)).ThenBy(q => q, StringComparer.Ordinal).FirstOrDefault();
+
+    /// <summary>
     /// The locks of the keys the picked quests need on this map (<see cref="QuestKeys"/>): lit in the picks' colour
     /// with their key's name at every zoom, so the door reads as part of the pick (owner, 2026-10-03: Golden Swag's
     /// trailer park cabin). They are a means, not a goal: the guide line never leads to one.

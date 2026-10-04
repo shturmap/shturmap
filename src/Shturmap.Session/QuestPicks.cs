@@ -22,6 +22,51 @@ public sealed class QuestPicks(Func<string, string?> read, Action<string, string
     /// <summary>The setting a mode's picks are kept in: quest ids, comma-separated.</summary>
     public static string Key(GameMode mode) => $"picks.{mode}";
 
+    /// <summary>How many colours the picks have; a fifth pick takes the first again.</summary>
+    public const int Colours = 4;
+
+    /// <summary>The setting a mode's picks' colours are kept in: "quest id:number", comma-separated.</summary>
+    public static string SlotsKey(GameMode mode) => $"pickslots.{mode}";
+
+    private readonly Dictionary<GameMode, Dictionary<string, int>> _slots = [];
+
+    /// <summary>
+    /// Which colour each pick has (0 to <see cref="Colours"/> - 1), so its markers, its name and its row are told
+    /// from the other picks' (owner, 2026-10-04: "A color per pick ... is the best solution"). A pick takes the
+    /// first colour no other pick has and keeps it until it is unpicked, also across restarts: unpicking one quest
+    /// never recolours the others. With every colour taken, it takes the one used least.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Slots(GameMode mode)
+    {
+        var slots = SlotsOf(mode);
+        var changed = false;
+        var picks = Of(mode);
+        foreach (var gone in slots.Keys.Where(id => !picks.Contains(id)).ToList())
+            changed |= slots.Remove(gone);
+        foreach (var id in picks.Where(id => !slots.ContainsKey(id)).Order(StringComparer.Ordinal))
+        {
+            slots[id] = Enumerable.Range(0, Colours).OrderBy(c => slots.Values.Count(v => v == c)).ThenBy(c => c).First();
+            changed = true;
+        }
+        if (changed)
+            write(SlotsKey(mode), string.Join(",", slots.Where(s => Saved(mode).Contains(s.Key)).OrderBy(s => s.Key, StringComparer.Ordinal).Select(s => $"{s.Key}:{s.Value}")));
+        return new Dictionary<string, int>(slots, StringComparer.Ordinal);
+    }
+
+    private Dictionary<string, int> SlotsOf(GameMode mode)
+    {
+        if (_slots.TryGetValue(mode, out var slots))
+            return slots;
+        slots = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var pair in (read(SlotsKey(mode)) ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var at = pair.LastIndexOf(':');
+            if (at > 0 && int.TryParse(pair[(at + 1)..], out var slot) && slot >= 0 && slot < Colours)
+                slots[pair[..at]] = slot;
+        }
+        return _slots[mode] = slots;
+    }
+
     /// <summary>The picks for a mode: a copy, since snapshots hand it to the UI thread while the session may change
     /// the picks (a quest completing).</summary>
     public IReadOnlySet<string> Of(GameMode mode)

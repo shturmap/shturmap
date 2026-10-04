@@ -40,6 +40,11 @@ public static class Palette
     public const string Red = "#B8604A";
     public const string Sand = "#E9E2C8";
     public const string Kept = "#3FD2E0";
+    // The second, third and fourth pick: strong like the first, so a pick of any colour reads as a pick among the
+    // muted colours of everything else, and far apart from each other in hue.
+    public const string Pick2 = "#F06BD8";
+    public const string Pick3 = "#B6E84A";
+    public const string Pick4 = "#FF9248";
 
     // The logo on light backgrounds (brand files, README in light mode).
     public const string LightGround = "#F1F0EC";

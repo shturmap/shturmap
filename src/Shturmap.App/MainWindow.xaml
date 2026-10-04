@@ -214,7 +214,7 @@
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way. EXIT names the nearest extract for your side; the game opens only some of them each raid, so check its own list." />
                 <TextBlock TextWrapping="Wrap" Text="Quests are ordered from going somewhere, to finding or surviving, to fighting; simpler first within each." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To pick it for the coming raid, click its pen (beside it, or on its card); pick as many as you like. Picks come first in their map's card (PICKED) and in the raid card, what they need comes first under BRING, and on the map their markers turn cyan, larger and ringed, with a line from you to the nearest; every other marker stays as it is. A pick stays until the quest is done, you click its pen again, or CLEAR PICKS. Move into a card and point at a key, an item or a quest in it for that one's card. Pop out a card to keep it as a small window; in a raid it shows how far each objective is." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To pick it for the coming raid, click its pen (beside it, or on its card); pick as many as you like. Picks come first in their map's card (PICKED) and in the raid card, what they need comes first under BRING, and on the map their markers turn larger and ringed, each pick in a colour of its own (cyan, pink, lime, orange) that its name, its row here and its pen share, with a line from you to the nearest; every other marker stays as it is. A pick stays until the quest is done, you click its pen again, or CLEAR PICKS. Move into a card and point at a key, an item or a quest in it for that one's card. Pop out a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock TextWrapping="Wrap" Text="The game's logs say when a quest starts and ends, never when one of its objectives is done. So when you have done one, you can tick it on the quest's card (the small box at the end of its line): the map marks it done, and the guide, NEXT and the plan leave it out. Nobody asks you to; a tick goes by itself when the quest is over, or when you click the box again." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
 
@@ -560,14 +560,14 @@
                             <ColumnDefinition Width="Auto" />
                           </Grid.ColumnDefinitions>
                           <StackPanel Orientation="Horizontal" Spacing="3">
-                            <!-- The picks first, in the picks' cyan, then a hairline (owner, 2026-10-03). -->
+                            <!-- The picks first, each in its pick's colour, then a hairline (owner, 2026-10-03 and 2026-10-04). -->
                             <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind FoldedPicksVisibility}">
                               <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate>
                               </ItemsControl.ItemsPanel>
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource KeptBrush}" ToolTipService.ToolTip="{x:Bind Name}"
+                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{x:Bind PickBrush}" ToolTipService.ToolTip="{x:Bind Name}"
                                                       controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" />
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>

@@ -16,6 +16,34 @@ public class PickTests
         Assert.Equal(50, MapRenderer.Layout(camera, scene, 1).Guide!.Metres, 3);
     }
 
+    // Owner, 2026-10-04: "A color per pick ... Make sure the 'opt' icons attached to it and others change colors as
+    // well": everything of a pick takes its colour from the one place the badges and the name take theirs from.
+    [Fact]
+    public void Each_pick_is_drawn_in_its_own_colour_with_its_guide_and_its_chevron()
+    {
+        var (camera, scene) = Of([Quest("a", 60, 0, "A", group: "a"), Quest("b", -100, 0, "B", group: "b"), Quest("c", 0, 100, "C", group: "c"),
+            Quest("far", 100000, 0, "Far", group: "b")]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
+        scene.Kept = new HashSet<string> { "a", "b" };
+        scene.PickSlots = new Dictionary<string, int> { ["a"] = 2, ["b"] = 1 };
+        var layout = MapRenderer.Layout(camera, scene, 1);
+        var byLabel = layout.Markers.ToDictionary(m => m.Marker.Label);
+        Assert.Equal(MapRenderer.PickColors[2], byLabel["A"].Color);
+        Assert.Equal(MapRenderer.PickColors[1], byLabel["B"].Color);
+        Assert.DoesNotContain(byLabel["C"].Color, MapRenderer.PickColors);
+        // The names follow their markers.
+        Assert.All(layout.Labels.Where(l => l.Of.Kept), l => Assert.Equal(l.Of.Color, l.Color));
+        // The guide leads to the nearest pick's place, in that pick's colour; the place out of view has its pick's chevron.
+        Assert.Equal(MapRenderer.PickColors[2], layout.Guide!.Color);
+        Assert.Equal(MapRenderer.PickColors[1], Assert.Single(layout.Chevrons).Color);
+        // Four colours, all different, the first the picks' cyan; a pick without a number has the first.
+        Assert.Equal(4, MapRenderer.PickColors.Distinct().Count());
+        Assert.Equal(MapRenderer.Kept, MapRenderer.PickColors[0]);
+        Assert.Equal(MapRenderer.Kept, MapRenderer.PickColor(scene, "unknown"));
+        scene.PickSlots = new Dictionary<string, int> { ["q"] = 5 };
+        Assert.Equal(MapRenderer.PickColors[1], MapRenderer.PickColor(scene, "q"));
+    }
+
     [Fact]
     public void Every_pick_is_drawn_kept_and_nothing_steps_back()
     {

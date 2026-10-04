@@ -298,7 +298,7 @@ quoting it anywhere new.
      inventory, so it is a list to check, never a claim that something is missing.
    - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name: up to six items, in
      BRING's cells at 34 px, and "+3" for the rest; never scaled, like the cue's text. **What the picked quests
-     need comes first, each cell framed in the picks' cyan, then a hairline and the rest in the kit's order**
+     need comes first, each cell framed in its pick's colour, then a hairline and the rest in the kit's order**
      (owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted"; read as
      the items of the picked quests, not the quests' own glyphs). A cue that pictures a kit stays 7.5 s where the
      others stay 5 ("The animation can be a bit longer": there are up to six things to check in it). A transit's
@@ -375,6 +375,9 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
 | `Sand` | `#E9E2C8` | the player: the marker, the trail, the ping, the edge badge, and nothing else | SandColor · Player · `--sand` |
 | `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
+| `Pick2` | `#F06BD8` | the second pick: its markers, name, badges, row tint and pen | map · code |
+| `Pick3` | `#B6E84A` | the third pick | map · code |
+| `Pick4` | `#FF9248` | the fourth pick; a fifth takes the first colour again | map · code |
 | `LightGround` | `#F1F0EC` | the logo's light background | brand |
 | `LightInk` | `#1E1F1B` | the logo's ink on light | brand, README light mode |
 | `LightAmber` | `#8C7436` | the logo's amber on light | brand, README light mode |
@@ -1290,6 +1293,23 @@ still only keeps its card open (two clicks, two meanings).
   place of any pick, with the distance on its plate (the raid card's NEXT names the same objective). Their places
   out of view get chevrons. Picks hold still: a marker pulsing all raid would be motion at the edge of the
   player's eye; what the pointer is on pulses.
+- **A colour per pick** (owner, 2026-10-04: with several picks "it is then, however, difficult to distinguish on a
+  very quick look which items belong together"; from a panel of five ways drawn by the real map, "the A color per
+  pick ... is the best solution. Make sure the 'opt' icons attached to it and others change colors as well"). The
+  first pick is cyan as before, the second pink, the third lime, the fourth orange (`Kept`, `Pick2` to `Pick4`;
+  `MapRenderer.PickColors`); a fifth takes the first again. Four strong colours, far apart in hue, against the
+  muted colours of everything else: a strong colour with a ring is a pick, whichever it is, and the ring and the
+  larger size say "picked" without colour. Everything of a pick has its colour: marker, ring, the badges at its
+  corners (floor, count, "OPT", "?"), its name, its zone, its chevron at the edge, the padlock of a door it needs a
+  key for (the first pick's, where several need it), the guide line and plate when they lead to it; and in the
+  rail the tint of its row and of the BRING rows that serve it, its pen, its glyph in a map's row, and the frame
+  of its items in the loading cue. A pick keeps its colour until it is unpicked, across restarts
+  (`QuestPicks.Slots`, the setting `pickslots.<mode>`): unpicking one quest recolours none of the others, and the
+  next pick takes the colour that came free. The other ways on the panel: a number per pick (one colour keeps one
+  meaning, but it must be read), a line joining a pick's places (reads as a route nobody knows), the names alone
+  in colours (markers without a name get nothing), and numbers in coloured circles. What it costs: cyan no longer
+  means "picked" by itself, and lime and orange come nearer to the extracts' green and the quests' gold than cyan
+  did; they are told apart by strength, the ring and the shape.
 - **Nothing else steps back for picks.** Every other quest marker stays at full strength (the owner's "Still it
   should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
   then picks don't step back either: they are the plan for this raid, as much as the ways out.

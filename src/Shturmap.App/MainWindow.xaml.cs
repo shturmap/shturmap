@@ -892,6 +892,7 @@ public sealed partial class MainWindow : Window
         scene.Containers = latest.Content?.Containers ?? [];
         // Before the picks and the focus: a quest brings the locks of the keys it needs here along.
         scene.QuestKeys = latest.Content?.QuestKeys ?? new Dictionary<string, IReadOnlyList<string>>();
+        scene.PickSlots = latest.PickSlots;
         scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
@@ -1321,14 +1322,16 @@ public sealed partial class MainWindow : Window
 
     private Windows.Foundation.Point _markerAt;
 
-    // The picks (the pen on a quest; GameSession keeps them): rows tinted, markers cyan and ringed, a line to the
+    // The picks (the pen on a quest; GameSession keeps them): rows tinted, markers ringed, each pick in its colour, a line to the
     // nearest place, until a quest is done, its pen is clicked again or the picks are cleared.
     private void ShowPicks(SessionSnapshot s)
     {
+        Linked.PickSlots = s.PickSlots;
         Linked.Picks = s.Picks;
         ViewModel.HasPicks = s.Picks.Count > 0;
-        if (Map.Scene is { } scene && !scene.Kept.SetEquals(s.Picks))
+        if (Map.Scene is { } scene && (!scene.Kept.SetEquals(s.Picks) || !ReferenceEquals(scene.PickSlots, s.PickSlots)))
         {
+            scene.PickSlots = s.PickSlots;
             scene.Kept = s.Picks;
             Map.Redraw();
         }
@@ -1489,7 +1492,7 @@ public sealed partial class MainWindow : Window
     private DispatcherQueueTimer? _cueTimer;
 
     // The kit pictured under the map's name (a raid loading, a group's pick): the cells BRING uses, at 34 px, then "+3".
-    // What the picked quests need comes first, each cell framed in the picks' cyan, then a hairline and the rest
+    // What the picked quests need comes first, each cell framed in its pick's colour, then a hairline and the rest
     // (owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted").
     private void ShowCueKit(ViewCue cue)
     {
@@ -1500,7 +1503,7 @@ public sealed partial class MainWindow : Window
             var item = kit[i];
             var picture = new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 34 };
             if (item.ForPick)
-                CueKit.Children.Add(new Border { BorderBrush = Resource("KeptBrush"), BorderThickness = new Thickness(2), Padding = new Thickness(1), Child = picture });
+                CueKit.Children.Add(new Border { BorderBrush = Linked.PickBrush(item.PickSlot), BorderThickness = new Thickness(2), Padding = new Thickness(1), Child = picture });
             else
                 CueKit.Children.Add(picture);
             if (item.ForPick && i + 1 < kit.Count && !kit[i + 1].ForPick)

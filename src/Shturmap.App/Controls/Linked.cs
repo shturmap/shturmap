@@ -153,6 +153,40 @@ public static class Linked
 
     private static IReadOnlySet<string> _picks = new HashSet<string>();
 
+    /// <summary>
+    /// Which of the picks' colours each pick has (QuestPicks.Slots): its row's tint and its pen take it, as its
+    /// markers on the map do, so a row and its places are found by their colour (owner, 2026-10-04).
+    /// </summary>
+    public static IReadOnlyDictionary<string, int> PickSlots
+    {
+        get => _pickSlots;
+        set
+        {
+            if (value.Count == _pickSlots.Count && value.All(p => _pickSlots.TryGetValue(p.Key, out var slot) && slot == p.Value))
+                return;
+            _pickSlots = value;
+            foreach (var element in Live)
+                Paint(element);
+            PicksChanged?.Invoke();
+        }
+    }
+
+    private static IReadOnlyDictionary<string, int> _pickSlots = new Dictionary<string, int>();
+
+    // The map's own colours for the picks, as brushes: full for pens, glyphs and frames, at 15 % behind rows.
+    private static readonly Brush[] PickBrushes = [.. Shturmap.Map.MapRenderer.PickColors.Select(c => (Brush)new SolidColorBrush(Windows.UI.Color.FromArgb(255, c.Red, c.Green, c.Blue)))];
+    private static readonly Brush[] PickTints = [.. Shturmap.Map.MapRenderer.PickColors.Select(c => (Brush)new SolidColorBrush(Windows.UI.Color.FromArgb(0x26, c.Red, c.Green, c.Blue)))];
+
+    private static int Wrap(int slot) => ((slot % PickBrushes.Length) + PickBrushes.Length) % PickBrushes.Length;
+
+    private static int SlotOf(string? quest) => quest is not null && _pickSlots.TryGetValue(quest, out var slot) ? Wrap(slot) : 0;
+
+    /// <summary>A picked quest's colour.</summary>
+    public static Brush PickBrush(string? questId) => PickBrushes[SlotOf(questId)];
+
+    /// <summary>The colour of the n-th of the picks' colours.</summary>
+    public static Brush PickBrush(int slot) => PickBrushes[Wrap(slot)];
+
     /// <summary>Raised when the picks change (the pens follow them).</summary>
     public static event Action? PicksChanged;
 
@@ -589,8 +623,9 @@ public static class Linked
         {
             Rules.LinkLevel.Same => (Brush)Application.Current.Resources["LinkBrush"],
             Rules.LinkLevel.Related => (Brush)Application.Current.Resources["LinkSoftBrush"],
-            _ => _picks.Count > 0 && QuestsOf(element).Any(_picks.Contains)
-                ? (Brush)Application.Current.Resources["SelectBrush"]
+            // A pick's row, and a row that serves picks, in the pick's colour (the first's, where it serves several).
+            _ => _picks.Count > 0 && QuestsOf(element).Where(_picks.Contains).Select(SlotOf).DefaultIfEmpty(-1).Min() is >= 0 and var slot
+                ? PickTints[slot]
                 : Clear,
         });
 

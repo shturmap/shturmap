@@ -832,9 +832,10 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    to flag then: every map row in Plan's list carries its glyphs and need cells, the open map's too (the Plan
    picture); a possible place is a filled marker with a "?" where it was a hollow ring (the raid picture's Audit
    marker, the clip); the pulse of a pointed-at quest is two wider rings (the clip).
-   Open from the same evening, for the owner to choose from pictures (outside the repository): how picked quests
-   are told apart on the map when several are picked. Mock-ups made in the real renderer: a number per pick, a
-   line joining a pick's places, a colour per pick, the names in a colour per pick. Suggested: the number.
+   And since then: each pick has a colour of its own (the Plan picture and the clip show one cyan pick, which is
+   still what a single pick looks like), and following leaves room ahead of the player (the clip).
+   Decided the same evening, from mock-ups made in the real renderer: how picked quests are told apart on the map
+   is a colour per pick (DESIGN.md, "A colour per pick").
 2. **Reporting is one route: in the app, to Sentry** (owner, 2026-10-03: "don't want to mix github issues and other
    reporting methods, it should be one coherent easy to use thing"; done, DESIGN.md §8, "Reports"). This replaces
    the earlier plan of GitHub issue forms plus a separate web form. Before the release:

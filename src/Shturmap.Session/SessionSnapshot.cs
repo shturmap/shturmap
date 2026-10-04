@@ -35,8 +35,9 @@ public enum CueKind
 public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0);
 
 /// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
-/// <param name="ForPick">Needed by a quest picked for this raid: the cue shows these first, in the picks' colour.</param>
-public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKind Kind, bool ForPick = false);
+/// <param name="ForPick">Needed by a quest picked for this raid: the cue shows these first, framed in the pick's colour.</param>
+/// <param name="PickSlot">The colour of the first pick that needs it (<see cref="QuestPicks.Slots"/>).</param>
+public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKind Kind, bool ForPick = false, int PickSlot = 0);
 
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);
@@ -202,6 +203,9 @@ public sealed record SessionSnapshot
 
     /// <summary>The quests picked for the coming raid in this mode (<see cref="QuestPicks"/>).</summary>
     public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();
+
+    /// <summary>Which colour each pick has (<see cref="QuestPicks.Slots"/>).</summary>
+    public IReadOnlyDictionary<string, int> PickSlots { get; init; } = new Dictionary<string, int>();
 
     /// <summary>
     /// The objectives the player ticked as done in this mode, each with the day it was set (<see cref="ObjectiveTicks"/>).

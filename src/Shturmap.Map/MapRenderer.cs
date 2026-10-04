@@ -28,6 +28,13 @@ public static partial class MapRenderer
     /// </summary>
     public static readonly SKColor Kept = Palette.Sk(Palette.Kept);
 
+    /// <summary>The picks' colours, in the order picks take them (<see cref="MapScene.PickSlots"/>); the first is <see cref="Kept"/>.</summary>
+    public static readonly IReadOnlyList<SKColor> PickColors = [Kept, Palette.Sk(Palette.Pick2), Palette.Sk(Palette.Pick3), Palette.Sk(Palette.Pick4)];
+
+    /// <summary>The colour of a picked quest: everything of a pick is drawn in it (marker, ring, badges, name, zone, chevron, guide).</summary>
+    public static SKColor PickColor(MapScene scene, string? quest) =>
+        PickColors[quest is not null && scene.PickSlots.TryGetValue(quest, out var slot) ? ((slot % PickColors.Count) + PickColors.Count) % PickColors.Count : 0];
+
     // Bahnschrift (ships with Windows), semi-condensed like the app's labels.
     private static readonly SKTypeface Typeface =
         SKTypeface.FromFamilyName("Bahnschrift", new SKFontStyle(SKFontStyleWeight.Normal, SKFontStyleWidth.SemiCondensed, SKFontStyleSlant.Upright)) ?? SKTypeface.Default;
@@ -676,7 +683,7 @@ public static partial class MapRenderer
         // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
         var kept = marker.Objective is not null && !done && IsSelected(scene, marker);
         // A lock a picked quest needs the key of is part of the pick: the picks' colour, without their ring.
-        var color = kept || IsKeptKey(scene, marker) ? Kept : ColorOf(marker.Kind);
+        var color = kept ? PickColor(scene, marker.Group) : IsKeptKey(scene, marker) ? PickColor(scene, scene.PickOfKey(marker.Group!)) : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
         // the boss octagon (level 3): a 15 px triangle or diamond.
         var r = marker switch
@@ -1054,7 +1061,7 @@ public static partial class MapRenderer
         // A done objective's zone stays muted and quiet, also while its quest is picked or pointed at.
         var done = zone.Kind == MarkerKind.ObjectiveDone;
         var kept = !done && zone.Group is not null && scene.Kept.Contains(zone.Group);
-        var color = kept ? Kept : ColorOf(zone.Kind);
+        var color = kept ? PickColor(scene, zone.Group) : ColorOf(zone.Kind);
         // With one objective pointed at, only its own zone takes the pointed-at look; the quest's others stay lit.
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group)
             && (scene.ShownFocusObjective is not { } objective || ObjectiveOf(zone) == objective);
@@ -1222,7 +1229,7 @@ public static partial class MapRenderer
             return;
         using var line = new SKPaint
         {
-            Color = Kept.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f * ui,
+            Color = guide.Color.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2f * ui,
             PathEffect = SKPathEffect.CreateDash([6 * ui, 5 * ui], 0),
         };
         canvas.DrawLine(guide.From, guide.To, line);
@@ -1230,7 +1237,8 @@ public static partial class MapRenderer
 
     /// <summary>The guide from the player to the nearest place of the picked quests, and its distance on a plate.</summary>
     /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
-    public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
+    /// <param name="Color">The colour of the pick it leads to.</param>
+    public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox, SKColor Color);
 
     /// <param name="symbols">The boxes of the symbols placed in this frame: the plate stands on none of them.</param>
     /// <param name="drawnAt">Where this frame's markers are drawn, by id: the line ends on the symbol, also when it
@@ -1257,8 +1265,8 @@ public static partial class MapRenderer
         var width = font.MeasureText(text) + 12 * ui;
         var height = 18 * ui;
         if (Clip(from, to, view) is not var (a, b) || SKPoint.Distance(a, b) < width + 56 * ui)
-            return new GuideLine(from, to, metres, null, SKRect.Empty);
-        return new GuideLine(from, to, metres, text, PlateBox(a, b, width, height, symbols, ui));
+            return new GuideLine(from, to, metres, null, SKRect.Empty, PickColor(scene, nearest.Group));
+        return new GuideLine(from, to, metres, text, PlateBox(a, b, width, height, symbols, ui), PickColor(scene, nearest.Group));
     }
 
     // Where the plate stands on the line's part in view: at its middle, or, where that would cover a symbol (it stood
@@ -1321,9 +1329,9 @@ public static partial class MapRenderer
             return;
         var box = guide.PlateBox;
         using var plate = new SKPaint { Color = Background.WithAlpha(235), IsAntialias = true };
-        using var edge = new SKPaint { Color = Kept, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var edge = new SKPaint { Color = guide.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
         using var font = new SKFont(TypefaceBold, 12 * ui);
-        using var paint = new SKPaint { Color = Kept, IsAntialias = true };
+        using var paint = new SKPaint { Color = guide.Color, IsAntialias = true };
         canvas.DrawRect(box, plate);
         canvas.DrawRect(box, edge);
         canvas.DrawText(text, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
@@ -1363,7 +1371,7 @@ public static partial class MapRenderer
             var t = Math.Min(tx, ty);
             var length = Math.Max(1e-3f, d.Length);
             points.Add((new SKPoint(center.X + d.X * t, center.Y + d.Y * t), new SKPoint(d.X / length, d.Y / length),
-                IsSelected(scene, marker) ? Kept : ColorOf(marker.Kind), IsPointed(scene, marker)));
+                IsSelected(scene, marker) ? PickColor(scene, marker.Group) : ColorOf(marker.Kind), IsPointed(scene, marker)));
         }
         return Clusters(points, (a, b) => a.Color == b.Color && a.Pointed == b.Pointed && SKPoint.Distance(a.Edge, b.Edge) < 56 * ui)
             .Select(c =>

@@ -28,6 +28,53 @@ public class PicksTests
         Assert.Equal(["q2"], NewPicks().Of(GameMode.Pve));
     }
 
+    // A colour per pick (owner, 2026-10-04: "A color per pick ... is the best solution").
+    [Fact]
+    public void Each_pick_takes_a_colour_of_its_own_and_keeps_it()
+    {
+        var picks = NewPicks();
+        picks.Toggle(GameMode.Pve, "revision");
+        Assert.Equal(0, picks.Slots(GameMode.Pve)["revision"]);
+        picks.Toggle(GameMode.Pve, "audit");
+        picks.Slots(GameMode.Pve);
+        picks.Toggle(GameMode.Pve, "ballet");
+        var slots = picks.Slots(GameMode.Pve);
+        Assert.Equal([0, 1, 2], new[] { slots["revision"], slots["audit"], slots["ballet"] });
+
+        // Unpicking one recolours none of the others, and the next pick takes the colour that came free.
+        picks.Toggle(GameMode.Pve, "revision");
+        slots = picks.Slots(GameMode.Pve);
+        Assert.Equal([1, 2], new[] { slots["audit"], slots["ballet"] });
+        picks.Toggle(GameMode.Pve, "dandies");
+        Assert.Equal(0, picks.Slots(GameMode.Pve)["dandies"]);
+
+        // Across a restart they are the same.
+        var again = NewPicks().Slots(GameMode.Pve);
+        Assert.Equal([1, 2, 0], new[] { again["audit"], again["ballet"], again["dandies"] });
+    }
+
+    [Fact]
+    public void A_fifth_pick_shares_a_colour_and_picks_from_before_get_one()
+    {
+        var picks = NewPicks();
+        foreach (var id in new[] { "a", "b", "c", "d" })
+        {
+            picks.Toggle(GameMode.Pve, id);
+            picks.Slots(GameMode.Pve);
+        }
+        picks.Toggle(GameMode.Pve, "e");
+        var slots = picks.Slots(GameMode.Pve);
+        Assert.Equal([0, 1, 2, 3], new[] { slots["a"], slots["b"], slots["c"], slots["d"] });
+        Assert.Equal(0, slots["e"]);
+        Assert.All(slots.Values, slot => Assert.InRange(slot, 0, QuestPicks.Colours - 1));
+
+        // Picks saved before colours existed: each gets one at the first look.
+        _settings.Clear();
+        _settings[QuestPicks.Key(GameMode.Pvp)] = "x,y";
+        var old = NewPicks().Slots(GameMode.Pvp);
+        Assert.Equal([0, 1], new[] { old["x"], old["y"] });
+    }
+
     [Fact]
     public void Each_mode_has_its_own_picks() // PvE and PvP progress are separate
     {
