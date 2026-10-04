@@ -298,11 +298,16 @@ public sealed class CardStack
         var face = (ICard)card;
         Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
 
+        // No taller than the room there is: a long quest's card scrolls inside instead of running off the window.
+        card.MaxHeight = Math.Max(MinCardHeight, _space().Height - 16);
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
         popup.IsOpen = true;
         _pendingKey = null;
     }
+
+    // In a window too small for it a card still gets this much height.
+    private const double MinCardHeight = 160;
 
     // Beside whatever it opened from: the row (first card in the main window), the window (first card of a pinned
     // window) or the card it came from. Right if there is room, else left; top-aligned with the row.

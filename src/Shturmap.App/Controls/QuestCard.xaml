@@ -13,7 +13,9 @@
        Keys, items and quests on it are cards of their own: point at them. -->
   <Border x:Name="Frame" Width="360" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}"
           BorderThickness="1" CornerRadius="0">
-    <Grid>
+    <!-- A long quest's card (Collector) is taller than the window: the card takes the room there is (CardStack and
+         QuestWindow give it its largest height) and scrolls inside, so UNLOCKS and the wiki link stay in reach. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
 
       <StackPanel Padding="14,12,14,12" Spacing="10">
         <Grid ColumnSpacing="12" controls:Linked.Also="{x:Bind View.QuestIds}">
@@ -119,6 +121,6 @@
         <HyperlinkButton Content="Open the wiki page" NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0" FontSize="12"
                          Visibility="{x:Bind Shown(View.WikiLink)}" />
       </StackPanel>
-    </Grid>
+    </ScrollViewer>
   </Border>
 </UserControl>

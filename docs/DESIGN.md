@@ -842,6 +842,11 @@ Cards behave like the nested tooltips in Crusader Kings III:
    when it comes back and 0.6 s after it was moved, by the least move that does it (the study log: one closed
    twice with its title bar above the screen, where it can't be grabbed).
 
+A card is never taller than the room there is: the window for a card opened in it, the screen's work area for a
+popped-out window (which moves up by what would hang below it). A longer card (Collector, a quest with many
+objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay in reach (2026-10-04: it was cut at
+the window's edge, a popped-out one at 900 px).
+
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
 
