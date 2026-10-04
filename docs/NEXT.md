@@ -175,8 +175,14 @@ Smaller, in privacy and distribution:
   image; the watcher's rescan catches too little and isn't re-armed after the folder is recreated. Status: done (2026-10-04).
 - **A30.** The User-Agent says "Shturmap/0.1" whatever the version. Status: done (2026-10-04).
 - **A39.** `eng\publish-release.ps1`'s "built from this commit" checks can pass on a build from a changed tree;
-  `--send-report` in a release sends without a click. Status: open.
-- **A40.** If Velopack fails to start, an installed release silently uses the developer data folder. Status: open.
+  `--send-report` in a release sends without a click. Status: done (2026-10-04): `eng\release.ps1` refuses a changed
+  tree (`-AllowDirty` for a local try) and leaves a note that `eng\publish-release.ps1` checks; in a release
+  `--send-report` only opens the Report dialog with the text, and Send is pressed by hand. Neither script was run to
+  the end for this (a release build takes the DSN and packs installers); the next release is their first real run.
+- **A40.** If Velopack fails to start, an installed release silently uses the developer data folder. Status: done
+  (2026-10-04): where the exe runs from then says which install it is, so the release keeps the player's folder,
+  and the app log says that this run doesn't update. Settings still say "Updates: not available in this build" in
+  that case, which isn't the reason: open.
 
 Wording: **A27.** Numbers and dates follow Windows' language inside English text ("5.000 ₽", "3 Okt" on a German
 Windows); snapshots hide it, since they run in en-US. Status: done (2026-10-04: the formats belong to the app's language, English today, in one place, `UiLanguage`,
@@ -733,7 +739,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    reporting methods, it should be one coherent easy to use thing"; done, DESIGN.md §8, "Reports"). This replaces
    the earlier plan of GitHub issue forms plus a separate web form. Before the release:
    - the release is built with the DSN (`eng\sentry.dsn`, untracked; `eng\release.ps1` warns without it), and
-     `Shturmap.exe --send-report "<text>" <folder>` from the release exe says "Sent. Thank you.";
+     `Shturmap.exe --send-report "<text>" <folder>` from the release exe opens the Report dialog with the text;
+     after a click on Send it says "Sent. Thank you.";
    - in the Sentry project, IP addresses aren't stored (Settings → Security & Privacy → "Prevent Storing of IP
      Addresses") and the data scrubbers are on;
    - the README and the website point to "Help (?) → Report a problem or idea" (the website only on the owner's

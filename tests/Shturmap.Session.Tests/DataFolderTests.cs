@@ -52,6 +52,28 @@ public class DataFolderTests
     public void Which_folder_a_build_uses(string? installedAppId, string? dataArgument, DataFolderKind expected) =>
         Assert.Equal(expected, Distribution.DataFolderFor(installedAppId, dataArgument));
 
+    // When Velopack can't start, where the exe runs from still says which install it is (review of 2026-10-04, A40:
+    // an installed release then opened the developer data folder, and the player's history seemed gone).
+    [Theory]
+    [InlineData(@"C:\Local\ShturmapApp\current", "ShturmapApp")]
+    [InlineData(@"C:\Local\ShturmapApp\current\", "ShturmapApp")]
+    [InlineData(@"c:\local\shturmapapp\CURRENT\", "ShturmapApp")]
+    [InlineData(@"C:\Local\ShturmapDev\current", "ShturmapDev")]
+    // Not an install: the data folder, a folder build, a look-alike beside the install, the install's root itself.
+    [InlineData(@"C:\Local\Shturmap", null)]
+    [InlineData(@"D:\Builds\Shturmap", null)]
+    [InlineData(@"C:\Local\ShturmapApp\currently", null)]
+    [InlineData(@"C:\Local\ShturmapApp", null)]
+    [InlineData(@"C:\Local\ShturmapApp-old\current", null)]
+    [InlineData("", null)]
+    public void Where_the_exe_runs_from_says_which_install_it_is(string baseDirectory, string? expected) =>
+        Assert.Equal(expected, Distribution.InstalledIdByFolder(baseDirectory, Local));
+
+    [Fact]
+    public void A_release_that_could_not_start_velopack_keeps_the_players_folder() =>
+        Assert.Equal(DataFolderKind.Release,
+            Distribution.DataFolderFor(Distribution.InstalledIdByFolder(@"C:\Local\ShturmapApp\current\", Local), null));
+
     [Fact]
     public void A_process_that_chose_nothing_uses_the_developer_folder()
     {

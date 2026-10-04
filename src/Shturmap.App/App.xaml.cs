@@ -61,11 +61,15 @@ public partial class App : Application
         Updater = new Updater(Arg(cli, "--update-feed"), developerRun || cli.Contains("--send-report"), IsDevBuild, IsDevBuild ? DeveloperFeed() : null);
         // Only the installed release keeps the player's data folder; every other build its own, "--data" any
         // (docs/DESIGN.md §8, "Data folders"). Chosen before anything writes there, the app log first.
-        var paths = AppPaths.Use(Distribution.DataFolderFor(Updater.AppId, Arg(cli, "--data")), Arg(cli, "--data"));
+        // When Velopack itself couldn't start, where the exe runs from still says which install this is: an installed
+        // release keeps the player's own data folder (it used to open the developer one, without a word).
+        var installedId = Updater.AppId ?? (Updater.StartProblem is null ? null
+            : Distribution.InstalledIdByFolder(AppContext.BaseDirectory, Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)));
+        var paths = AppPaths.Use(Distribution.DataFolderFor(installedId, Arg(cli, "--data")), Arg(cli, "--data"));
         AppLog.Initialize(paths.Logs);
         if (Updater.StartProblem is { } problem)
-            AppLog.Warn("Updates: Velopack couldn't start", problem);
-        BuildKind = IsDevBuild ? "dev build" : Updater.Installed ? "installed" : "folder build";
+            AppLog.Warn($"Updates: Velopack couldn't start, so this run doesn't update{(installedId is null ? "" : "; the install's own data folder is used")}", problem);
+        BuildKind = IsDevBuild ? "dev build" : Updater.Installed || installedId == Distribution.PackId ? "installed" : "folder build";
         Reporter = new Reporter(AppRoot(cli), ReportEndpoint.Parse(BuiltDsn()), developerRun,
             new ReportInfo(GameSession.Version, BuildKind, Diagnostics.WindowsVersion()));
         // A session that ended without closing left its marker behind: note it before marking this one. One from
@@ -211,9 +215,12 @@ public partial class App : Application
         await StartDevToolsAsync(cli);
 #endif
 
-        // Developer aid: "--send-report <text> <folder>" sends one real report through the dialog's own Send (a
-        // release's delivery check), saves the window to the folder and exits.
+        // A release's delivery check: "--send-report <text> <folder>". A developer build sends one real report through
+        // the dialog's own Send, saves the window to the folder and exits. A release only opens the dialog with the
+        // text: there nothing is sent without the player's click, and a command line is not one (review of
+        // 2026-10-04, A39: any shortcut or program could have made an installed Shturmap send a report).
         var send = Array.IndexOf(cli, "--send-report");
+#if DEVTOOLS
         if (send >= 0 && send + 2 < cli.Length)
         {
             await Task.Delay(TimeSpan.FromSeconds(4));
@@ -222,6 +229,13 @@ public partial class App : Application
             EndSession();
             Exit();
         }
+#else
+        if (send >= 0 && send + 1 < cli.Length)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, cli[send + 1], "command line");
+        }
+#endif
 
         // Developer aid: "--snapshot <folder> [seconds]" renders the window and the map to PNGs, then exits.
         var at = Array.IndexOf(cli, "--snapshot");

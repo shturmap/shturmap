@@ -28,6 +28,10 @@ $head = (& $git -C $root rev-parse HEAD).Trim()
 if (-not (& $git -C $root branch -r --contains $head)) { throw "Commit $head isn't pushed; push it first." }
 $built = (Get-Item (Join-Path $root 'artifacts\release\app\Shturmap.exe')).VersionInfo.ProductVersion
 if ($built -ne "$version+$head") { throw "artifacts\release is from $built, not $version+${head}: run eng\release.ps1 again." }
+# The version names the commit only: eng\release.ps1's note says whether the tree it built from was that commit's.
+$note = Join-Path $root 'artifacts\release\built-from.txt'
+$from = if (Test-Path $note) { (Get-Content $note -Raw).Trim() } else { 'unknown' }
+if ($from -ne "$head clean") { throw "artifacts\release was built from '$from', not from a clean tree at ${head}: run eng\release.ps1 again." }
 if (-not (Test-Path (Join-Path $releases "ShturmapApp-$version-full.nupkg")) -or -not (Test-Path $setup)) {
   throw 'No release in artifacts\release: run eng\release.ps1 first.'
 }

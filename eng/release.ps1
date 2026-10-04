@@ -4,13 +4,24 @@
 # Shturmap-Setup.exe: the Setup under the name players download, with its .sha256. Nothing is uploaded;
 # eng\publish-release.ps1 does that. The dev build is eng\dev.ps1's, in artifacts\dev.
 # The version comes from Directory.Build.props, the release notes from docs\release-notes\<version>.md.
-# Usage: .\eng\release.ps1 [-NoDelta]
+# A release is built from a clean working tree: the build's version names the commit only, so a build from a changed
+# tree would pass for that commit's (the review of 2026-10-04, A39). -AllowDirty builds anyway, for a local try, and
+# leaves a note (artifacts\release\built-from.txt) that eng\publish-release.ps1 refuses.
+# Usage: .\eng\release.ps1 [-NoDelta] [-AllowDirty]
 param(
   # Skip asking GitHub for the last release (no delta package then).
-  [switch] $NoDelta
+  [switch] $NoDelta,
+  # Build although the working tree has changes. Such a build can't be published.
+  [switch] $AllowDirty
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+$git = if (Get-Command git -ErrorAction SilentlyContinue) { 'git' } else { 'C:\Program Files\Git\cmd\git.exe' }
+$head = (& $git -C $root rev-parse HEAD).Trim()
+$changed = @(& $git -C $root status --porcelain)
+if ($changed -and -not $AllowDirty) {
+  throw "The working tree isn't clean, so this build wouldn't be the commit's:`n$($changed -join "`n")`nCommit first, or pass -AllowDirty for a local try."
+}
 $version = (Select-Xml -Path (Join-Path $root 'Directory.Build.props') -XPath '//Version').Node.InnerText
 $out = Join-Path $root 'artifacts\release'
 $folder = Join-Path $out 'app'
@@ -65,6 +76,9 @@ try {
 finally {
   Pop-Location
 }
+
+# What this build was made from, for eng\publish-release.ps1: the commit, and whether the tree was the commit's.
+[IO.File]::WriteAllText((Join-Path $out 'built-from.txt'), "$head $(if ($changed) { 'changed' } else { 'clean' })`n")
 
 # The Setup under the name players look for; the one in packages\ keeps vpk's name for the upload.
 $setup = Join-Path $out 'Shturmap-Setup.exe'

@@ -1354,8 +1354,10 @@ Rules:
   diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render`; never capture the user's screens.
   `--verbose` adds the app log's DEBUG lines; `--study` (developer builds) keeps a study log for one session; `--show-report` opens
   the Report dialog with an example and what's sent, `--show-crash` the question after a crash (for snapshots;
-  snapshots send nothing); `--send-report <text> <folder>` sends one real report through the dialog's Send and
-  saves the window (a release's delivery check, §8 "Reports"; with `--fake-game <folder>` it leaves the player's data and study log alone; its lines still go to the app log). For website media, `tools\fake-raid.ps1 -Window
+  snapshots send nothing); `--send-report <text> <folder>` is a release's delivery check (§8 "Reports"; with
+  `--fake-game <folder>` it leaves the player's data and study log alone; its lines still go to the app log): a
+  developer build sends one real report through the dialog's Send and saves the window, a release only opens the
+  dialog with the text, and Send is pressed by hand (nothing is sent without a click, and a command line isn't one). For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
   (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
@@ -1466,7 +1468,11 @@ database, settings, app log, study log or reports with it; developer starts were
 run`, the CLI and tests. `--data <folder>` picks any folder (the app and the CLI; the CLI reaches the release's data
 with `--data "%LOCALAPPDATA%\Shturmap"`). The app chooses at start, before anything is written: Velopack's id of the
 install (`ShturmapApp` → the release's folder, anything else → the developer folder; `Distribution.DataFolderFor`,
-`AppPaths.Use`). Diagnostics and the app log's first line name the folder ("Data folder: dev").
+`AppPaths.Use`). Diagnostics and the app log's first line name the folder ("Data folder: dev"). If Velopack itself
+can't start, where the exe runs from says which install it is (`%LOCALAPPDATA%\ShturmapApp\current`;
+`Distribution.InstalledIdByFolder`), so an installed release keeps the player's folder for that run, without
+updates, and the app log says so (review of 2026-10-04: it used to open the developer folder, and the player's
+history seemed gone).
 
 The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits and icons) stays shared in
 `%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
@@ -1757,8 +1763,10 @@ form. Problems and ideas both go through it.
   says what a report and a crash report hold, who receives them, why (consent: Send, or Always send), how long and
   how to ask for deletion (quote the report id). Its controller and contact are placeholders the owner fills in
   before the public release (docs/NEXT.md).
-- **Checking a release.** `Shturmap.exe --send-report "<text>" <folder>` sends one real report through the dialog's
-  own Send and saves the window: the dialog must say "Sent. Thank you.". Crash reports are only tested against the
+- **Checking a release.** `Shturmap.exe --send-report "<text>" <folder>` opens the Report dialog with the text; press
+  Send: the dialog must say "Sent. Thank you.". A release never sends on a command line alone (review of
+  2026-10-04: any shortcut or program could have made an installed Shturmap send a report); only a developer build
+  sends by itself, saves the window to the folder and exits. Crash reports are only tested against the
   local stand-in (`FakeSentry` in the tests), never sent for real.
 
 ## 9. Status

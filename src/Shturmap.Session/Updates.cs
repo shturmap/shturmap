@@ -40,6 +40,34 @@ public static class Distribution
         !string.IsNullOrWhiteSpace(dataArgument) ? DataFolderKind.Custom
         : installedAppId == PackId ? DataFolderKind.Release
         : DataFolderKind.Dev;
+
+    /// <summary>
+    /// Which install an exe belongs to by where it runs from, for a start in which Velopack itself failed (review of
+    /// 2026-10-04, A40: an installed release then counted as not installed and opened the developer data folder, so
+    /// the player's quest history and settings seemed gone, without a word). Velopack runs the app from
+    /// %LOCALAPPDATA%\&lt;pack id&gt;\current. Null for any other place.
+    /// </summary>
+    public static string? InstalledIdByFolder(string baseDirectory, string localAppData)
+    {
+        if (string.IsNullOrWhiteSpace(baseDirectory) || string.IsNullOrWhiteSpace(localAppData))
+            return null;
+        string exe;
+        try
+        {
+            exe = Path.TrimEndingDirectorySeparator(Path.GetFullPath(baseDirectory)) + Path.DirectorySeparatorChar;
+        }
+        catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+        foreach (var id in new[] { PackId, DeveloperPackId })
+        {
+            var current = Path.Combine(InstallFolder(localAppData, id), "current") + Path.DirectorySeparatorChar;
+            if (exe.StartsWith(current, StringComparison.OrdinalIgnoreCase))
+                return id;
+        }
+        return null;
+    }
 }
 
 /// <summary>What Shturmap does about new versions: the player's choice in settings ("Updates").</summary>
