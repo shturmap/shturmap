@@ -57,19 +57,34 @@ public sealed class GameDataLoader(CachedHttp http)
             throw;
         }
         string? missing = null;
-        if (!await Arrived(translations))
+        LanguageFailure? failed = null;
+        try
         {
-            // tarkov.dev has no text in this language: everything comes in English, so the data stays one language.
-            missing = language;
+            if (await Arrived(translations))
+                fetches.AddRange(translations);
+            else
+                missing = language; // tarkov.dev has no text in this language
+        }
+        catch (Exception e) when (!ct.IsCancellationRequested)
+        {
+            // The texts didn't come, for a reason that says nothing about whether tarkov.dev has them (no connection,
+            // a timeout, a server error, and no saved copy). The data loads in English and says why, so the session
+            // can tell the player and ask again; failing the whole load left a player with no data at all for as
+            // long as one translation file kept failing.
+            failed = new LanguageFailure(language, LoadProblem.Explain(e));
+        }
+        if (missing is not null || failed is not null)
+        {
+            // Everything comes in English, so the data stays one language.
             language = "en";
             (mapsLang, tasksLang, tradersLang, itemsLang) = (mapsEn, tasksEn, tradersEn, itemsEn);
         }
-        else
-            fetches.AddRange(translations);
 
         // Extract names arrive as the game's internal keys ("Alpinist", "RedRebel_alp") and are translated; the keys
-        // tell some requirements that no field does, so they are kept.
+        // tell some requirements that no field does, so they are kept. So are the English names of extracts and
+        // switches: the rules that read a name's words ("(Flare)", "(Co-op)") must find them in every game language.
         var extractKeys = new Dictionary<string, string>(StringComparer.Ordinal);
+        var nameKeys = new Dictionary<string, string>(StringComparer.Ordinal);
         var mapsData = Translated(maps.Result, mapsLang.Result, mapsEn.Result, raw =>
         {
             if (raw?["maps"] is not JsonObject all)
@@ -79,10 +94,20 @@ public sealed class GameDataLoader(CachedHttp http)
                 foreach (var extract in (map?["extracts"] as JsonArray ?? []).OfType<JsonObject>())
                 {
                     if (extract["id"]?.GetValue<string>() is { } id && extract["name"]?.GetValue<string>() is { } key)
+                    {
                         extractKeys.TryAdd(id, key);
+                        nameKeys.TryAdd(id, key);
+                    }
+                }
+                foreach (var toggle in (map?["switches"] as JsonArray ?? []).OfType<JsonObject>())
+                {
+                    if (toggle["id"]?.GetValue<string>() is { } id && toggle["name"]?.GetValue<string>() is { } key)
+                        nameKeys.TryAdd(id, key);
                 }
             }
         }, alsoTranslate: ["conditions"]);
+        var mapTextsEn = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(mapsEn.Result.FilePath, ct));
+        var englishNames = nameKeys.ToDictionary(n => n.Key, n => JsonTranslator.Text(n.Value, mapTextsEn), StringComparer.Ordinal);
         // Kill targets and exit statuses are translated too ("Savage" becomes "Scavs", or German); the plan's effort
         // groups need the keys, which mean the same in every language.
         var objectiveFacts = new Dictionary<string, ObjectiveFacts>(StringComparer.Ordinal);
@@ -120,6 +145,7 @@ public sealed class GameDataLoader(CachedHttp http)
             Mode = mode,
             Language = language,
             MissingLanguage = missing,
+            LanguageFailure = failed,
             Maps = Section(mapsData, "maps", ApiJsonContext.Default.DictionaryStringApiMap),
             Mobs = Section(mapsData, "mobs", ApiJsonContext.Default.DictionaryStringApiMob),
             Tasks = Section(tasksData, "tasks", ApiJsonContext.Default.DictionaryStringApiTask),
@@ -127,6 +153,7 @@ public sealed class GameDataLoader(CachedHttp http)
             ItemNames = itemNames,
             ItemShortNames = shortNames,
             ExtractKeys = extractKeys,
+            EnglishNames = englishNames,
             ObjectiveFacts = objectiveFacts,
             MapDefinitions = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct)),
             CheckedAt = fetches.Min(f => f.Result.FetchedAt),
@@ -249,9 +276,10 @@ public sealed class GameDataLoader(CachedHttp http)
 
     // Whether every translation arrived; false when tarkov.dev has no texts in the language, which only "not found"
     // says (the load then goes on in English). A translation that fails any other way (no connection, a timeout, 5xx;
-    // with a saved copy CachedHttp has used that already) fails the load as any other file would: said as what it is
-    // and tried again, where reading it as a missing language put "No German texts on tarkov.dev" on a moment's 503
-    // and left the session in English (the review of 2026-10-04).
+    // with a saved copy CachedHttp has used that already) throws that failure: it is not a missing language, and
+    // reading it as one put "No German texts on tarkov.dev" on a moment's 503 (the review of 2026-10-04). The game
+    // data then loads in English with the failure named (GameData.LanguageFailure); the item sources fail as a
+    // whole and are asked for again.
     private static async Task<bool> Arrived(IReadOnlyList<Task<CachedResponse>> translations)
     {
         try

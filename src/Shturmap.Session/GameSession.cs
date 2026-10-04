@@ -613,8 +613,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     // ---- game data ----
 
-    // A load that failed for a reason that may pass (no connection, tarkov.dev busy) is tried again this often.
-    private static readonly TimeSpan DataRetry = TimeSpan.FromMinutes(2);
+    /// <summary>
+    /// How long a load that failed for a reason that may pass (no connection, tarkov.dev busy) waits before it is
+    /// tried again, by how many tries in a row have failed: <see cref="RetrySchedule"/> (2, 4, 8 and 16 minutes, then
+    /// every 30), unless a test gives its own. The game data, the game language's texts and the item sources each
+    /// count their own failures; a success, or a change of mode, starts over.
+    /// </summary>
+    public Func<int, TimeSpan> RetryWait { get; init; } = RetrySchedule.Wait;
+
+    // Counted under _gate. A change of mode starts a new round: what an older round still waits for is dropped, and
+    // so is an older load of the item sources when a newer one starts.
+    private int _dataFailures, _languageFailures, _sourcesFailures;
+    private int _loadRound, _sourcesRound;
 
     /// <summary>
     /// Game data given by the caller instead of tarkov.dev's, for a session that never asks the network (tests of the
@@ -622,11 +632,32 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// </summary>
     public Func<GameMode, GameData>? GivenData { get; init; }
 
+    /// <summary>Item sources given by the caller, as <see cref="GivenData"/> gives the data; it may throw, as a
+    /// download fails. Without it, a session with given data loads no item sources.</summary>
+    public Func<GameMode, ItemSources>? GivenSources { get; init; }
+
+    private async Task<GameData> FetchDataAsync(GameMode mode) =>
+        GivenData is { } given ? given(mode) : await _loader!.LoadAsync(mode, _settings.Language ?? "en", _stop.Token);
+
+    // Waits before a retry; false when the session closed meanwhile (its token may be gone by then).
+    private async Task<bool> WaitedAsync(TimeSpan wait)
+    {
+        try
+        {
+            await Task.Delay(wait, _stop.Token);
+            return true;
+        }
+        catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException)
+        {
+            return false;
+        }
+    }
+
     private async Task LoadDataAsync(GameMode mode)
     {
         try
         {
-            var data = GivenData is { } given ? given(mode) : await _loader!.LoadAsync(mode, _settings.Language ?? "en", _stop.Token);
+            var data = await FetchDataAsync(mode);
             await _gate.WaitAsync();
             try
             {
@@ -634,6 +665,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     return; // the mode changed while loading; a newer load is under way
                 _data = data;
                 _dataProblem = null;
+                _dataFailures = 0;
                 RecomputeQuests();
                 ResolveMap();
                 AnnounceLoading();
@@ -646,16 +678,14 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     AppLog.Warn(line);
                 else
                     AppLog.Info(line);
-                if (data.MissingLanguage is { } missing)
-                {
-                    AppLog.Warn($"No '{missing}' texts from tarkov.dev; using English");
-                    if (_languageSaid.Add(missing))
-                        Say($"No {LanguageName(missing)} texts on tarkov.dev; showing English.", 10);
-                }
+                MissingLanguageSaid(data);
+                if (data.LanguageFailure is { } failure)
+                    LanguageNotLoaded(mode, failure);
+                else
+                    _languageFailures = 0;
                 Study.Game("data.loaded", ("mode", mode), ("activeQuests", _quests.Values.Count(q => q.State == QuestState.Active)),
                     ("planTop", _plan.FirstOrDefault()?.NormalizedName));
-                if (GivenData is null)
-                    _ = Task.Run(() => LoadSourcesAsync(mode, data.Language));
+                StartSources(mode, data.Language);
             }
             finally
             {
@@ -665,19 +695,24 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         catch (Exception e) when (!_stop.IsCancellationRequested)
         {
             var problem = LoadProblem.Explain(e);
+            TimeSpan wait;
+            int round;
             await _gate.WaitAsync();
             try
             {
                 if (mode != _mode)
                     return;
+                wait = RetryWait(++_dataFailures);
+                round = _loadRound;
                 var again = _dataProblem?.Kind == problem.Kind;
                 _dataProblem = problem;
+                var next = problem.Transient ? $"; next try in {RetrySchedule.InWords(wait)}" : "";
                 if (again)
-                    AppLog.Warn($"Data load failed again ({problem.Kind}{(problem.Status is { } s ? " " + s : "")}): {e.GetType().Name}: {e.Message}");
+                    AppLog.Warn($"Data load failed again ({problem.Kind}{(problem.Status is { } s ? " " + s : "")}): {e.GetType().Name}: {e.Message}{next}");
                 else
                 {
-                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}", e);
-                    Say(DataNotice(problem), 30, offersReport: problem.Transient || problem.Advice == LoadProblem.Report);
+                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}{next}", e);
+                    Say(DataNotice(problem, wait), 30, offersReport: problem.Transient || problem.Advice == LoadProblem.Report);
                 }
                 Publish();
             }
@@ -686,31 +721,160 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _gate.Release();
             }
             if (problem.Transient)
-                _ = RetryDataAsync(mode);
+                _ = RetryDataAsync(mode, wait, round);
         }
         catch (OperationCanceledException)
         {
         }
     }
 
-    private async Task RetryDataAsync(GameMode mode)
+    private async Task RetryDataAsync(GameMode mode, TimeSpan wait, int round)
     {
-        try
-        {
-            await Task.Delay(DataRetry, _stop.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-        if (mode == _mode && _data is null)
+        if (await WaitedAsync(wait) && round == Volatile.Read(ref _loadRound) && mode == _mode && _data is null)
             await LoadDataAsync(mode);
     }
 
-    /// <summary>What the player is told when the data didn't load: what failed, what to do, and where to report it.</summary>
-    public static string DataNotice(LoadProblem problem) => problem.Transient
-        ? $"No game data. {problem.Text} Shturmap tries again every {DataRetry.TotalMinutes:0} minutes; if it keeps failing, please report it."
+    /// <summary>
+    /// What the player is told when the data didn't load: what failed, what to do, and where to report it. A failure
+    /// that may pass names the wait before the next try, which grows (<see cref="RetrySchedule"/>): the notice is
+    /// said when the failure is new, so the wait it names is the one that follows it.
+    /// </summary>
+    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => problem.Transient
+        ? $"No game data. {problem.Text} Shturmap tries again in {RetrySchedule.InWords(nextTry)}; if it keeps failing, please report it."
         : $"No game data. {problem.Text}";
+
+    /// <summary>The same for a place that stays up while the tries go on (the DATA chip's tooltip): it names no wait,
+    /// since the waits grow from 2 to 30 minutes.</summary>
+    public static string DataNotice(LoadProblem problem) => problem.Transient
+        ? $"No game data. {problem.Text} Shturmap tries again by itself, at first after 2 minutes, then less often; if it keeps failing, please report it."
+        : $"No game data. {problem.Text}";
+
+    // ---- the game language's texts ----
+
+    // Under _gate. tarkov.dev has no texts in the game's language (404): English, said once.
+    private void MissingLanguageSaid(GameData data)
+    {
+        if (data.MissingLanguage is not { } missing)
+            return;
+        AppLog.Warn($"No '{missing}' texts from tarkov.dev; using English");
+        if (_languageSaid.Add(missing))
+            Say($"No {LanguageName(missing)} texts on tarkov.dev; showing English.", 10);
+    }
+
+    /// <summary>
+    /// What the player is told when the game language's texts couldn't be loaded and English is shown instead: what
+    /// failed, and when it is asked for again (a failure that may pass) or what to do (one that won't).
+    /// </summary>
+    public static string LanguageNotice(string languageName, LoadProblem why, TimeSpan nextTry) =>
+        $"Showing English: the {languageName} texts couldn't be loaded. {why.What} " +
+        (why.Transient ? $"Shturmap tries again in {RetrySchedule.InWords(nextTry)}." : why.Advice);
+
+    // Under _gate. The game language's texts didn't come, for a reason that says nothing about whether tarkov.dev has
+    // them (GameData.LanguageFailure): the data is in English. Said once per language and kind of failure, with what
+    // failed and when it is asked for again; then asked for again in the background until the texts load (review of
+    // 2026-10-04, A46: failing the whole load left no data at all for as long as one translation file kept failing,
+    // and before that the failure was said as "No German texts on tarkov.dev", which wasn't true).
+    private void LanguageNotLoaded(GameMode mode, LanguageFailure failure)
+    {
+        var why = failure.Why;
+        var wait = RetryWait(++_languageFailures);
+        AppLog.Warn($"'{failure.Language}' texts not loaded ({why.Kind}{(why.Status is { } s ? " " + s : "")}); using English" +
+                    (why.Transient ? $", asking again in {RetrySchedule.InWords(wait)}" : ""));
+        if (_languageSaid.Add(failure.Language + ":" + why.Kind))
+            Say(LanguageNotice(LanguageName(failure.Language), why, wait), 20, offersReport: !why.Transient && why.Advice == LoadProblem.Report);
+        // One loop asks again, however often the data itself is loaded meanwhile.
+        if (why.Transient && _languageRetryRound != _loadRound)
+        {
+            _languageRetryRound = _loadRound;
+            _ = RetryLanguageAsync(mode, failure.Language, wait, _loadRound);
+        }
+    }
+
+    // The round a loop is asking for the texts again in, or -1 when none is.
+    private int _languageRetryRound = -1;
+
+    // Asks for the game language's texts again until they load, the mode changes or the session ends. A try costs
+    // the translation files only: the rest is answered from the saved copy while it is fresh.
+    private async Task RetryLanguageAsync(GameMode mode, string language, TimeSpan wait, int round)
+    {
+        try
+        {
+            await AskForLanguageAsync(mode, language, wait, round);
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _languageRetryRound, -1, round);
+        }
+    }
+
+    private async Task AskForLanguageAsync(GameMode mode, string language, TimeSpan wait, int round)
+    {
+        while (await WaitedAsync(wait))
+        {
+            if (round != Volatile.Read(ref _loadRound))
+                return;
+            GameData? data = null;
+            try
+            {
+                data = await FetchDataAsync(mode);
+            }
+            catch (Exception e) when (!_stop.IsCancellationRequested)
+            {
+                // Nothing loads at the moment: the English data on screen stays, and the texts are asked for again.
+                AppLog.Warn($"'{language}' texts not loaded again ({LoadProblem.Explain(e).Kind}): {e.GetType().Name}: {e.Message}");
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            await _gate.WaitAsync();
+            try
+            {
+                if (round != _loadRound || mode != _mode)
+                    return;
+                if (data is { LanguageFailure: null })
+                {
+                    _languageFailures = 0;
+                    _data = data;
+                    RecomputeQuests();
+                    RenameMaps();
+                    Publish();
+                    MissingLanguageSaid(data);
+                    if (data.MissingLanguage is null)
+                    {
+                        AppLog.Info($"'{language}' texts loaded: language {data.Language}");
+                        Say($"{LanguageName(language)} texts loaded.");
+                    }
+                    // Station names are part of the texts: the item sources follow the language.
+                    StartSources(mode, data.Language);
+                    return;
+                }
+                if (data is { LanguageFailure.Why.Transient: false })
+                {
+                    AppLog.Warn($"'{language}' texts not loaded ({data.LanguageFailure.Why.Kind}); not asked for again in this session");
+                    return;
+                }
+                wait = RetryWait(++_languageFailures);
+                AppLog.Warn($"'{language}' texts still not loaded; asking again in {RetrySchedule.InWords(wait)}");
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+    }
+
+    // Under _gate. The maps on screen and in the raid lines carry their names: when the texts change language, the
+    // maps are named anew.
+    private void RenameMaps()
+    {
+        MapIdentity? Named(MapIdentity? map) => map is not null && _data?.Maps.GetValueOrDefault(map.Id) is { } m
+            ? new MapIdentity(m.Id, m.NormalizedName, m.NameId, m.ScenePath, m.Name)
+            : map;
+        _map = Named(_map);
+        _raidMap = Named(_raidMap);
+        _lastRaidMap = Named(_lastRaidMap);
+    }
 
     private static string LanguageName(string code)
     {
@@ -753,32 +917,69 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Say("Found the game, but not its Logs folder, so quests and raids won't follow the game until it has run once.", 30);
     }
 
-    // Where items come from: only the item cards need it, so it loads after everything else.
-    private async Task LoadSourcesAsync(GameMode mode, string language)
+    // Under _gate. Loads the item sources in the background; a load still on its way (or waiting to try again) for
+    // an earlier language or mode is dropped.
+    private void StartSources(GameMode mode, string language)
     {
-        try
+        if (GivenData is not null && GivenSources is null)
+            return;
+        var round = ++_sourcesRound;
+        _sourcesFailures = 0;
+        _ = Task.Run(() => LoadSourcesAsync(mode, language, round));
+    }
+
+    // Where items come from: only the item cards need it, so it loads after everything else. A download that fails
+    // for a reason that may pass is asked for again by itself, after the same growing waits as the data (RetryWait);
+    // it used to take a restart (review of 2026-10-04, H7).
+    private async Task LoadSourcesAsync(GameMode mode, string language, int round)
+    {
+        while (true)
         {
-            var sources = await _loader!.LoadSourcesAsync(mode, language, _stop.Token);
-            await _gate.WaitAsync();
+            TimeSpan wait;
             try
             {
-                if (mode != _mode)
-                    return;
-                _sources = sources;
-                Publish();
+                var sources = GivenSources is { } given ? given(mode) : await _loader!.LoadSourcesAsync(mode, language, _stop.Token);
+                await _gate.WaitAsync();
+                try
+                {
+                    if (mode != _mode || round != _sourcesRound)
+                        return;
+                    _sources = sources;
+                    _sourcesFailures = 0;
+                    Publish();
+                }
+                finally
+                {
+                    _gate.Release();
+                }
+                return;
             }
-            finally
+            catch (Exception e) when (!_stop.IsCancellationRequested)
             {
-                _gate.Release();
+                var problem = LoadProblem.Explain(e);
+                await _gate.WaitAsync();
+                try
+                {
+                    if (mode != _mode || round != _sourcesRound)
+                        return;
+                    wait = RetryWait(++_sourcesFailures);
+                }
+                finally
+                {
+                    _gate.Release();
+                }
+                // Only the item cards' "where to get it" is missing; everything else works.
+                AppLog.Warn($"Item sources not loaded ({problem.Kind}): {e.GetType().Name}: {e.Message}" +
+                            (problem.Transient ? $"; asking again in {RetrySchedule.InWords(wait)}" : ""));
+                if (!problem.Transient)
+                    return;
             }
-        }
-        catch (Exception e) when (!_stop.IsCancellationRequested)
-        {
-            // Only the item cards' "where to get it" is missing; everything else works.
-            AppLog.Warn($"Item sources not loaded ({LoadProblem.Explain(e).Kind}): {e.GetType().Name}: {e.Message}");
-        }
-        catch (OperationCanceledException)
-        {
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            if (!await WaitedAsync(wait) || round != Volatile.Read(ref _sourcesRound))
+                return;
         }
     }
 
@@ -793,6 +994,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _data = null;
         _dataProblem = null;
         _sources = null;
+        // A new round: the waits start over at their shortest, and what the old mode still waited for is dropped.
+        _loadRound++;
+        _sourcesRound++;
+        _dataFailures = _languageFailures = _sourcesFailures = 0;
         RecomputeQuests();
         _ = Task.Run(() => LoadDataAsync(mode));
     }
@@ -1694,7 +1899,23 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         return location.Length > 0 && File.Exists(location) ? File.GetLastWriteTime(location) : null;
     }
 
-    public async ValueTask DisposeAsync()
+    private readonly Lock _closeGate = new();
+    private Task? _closing;
+
+    /// <summary>
+    /// Ends the session: stops following the game and closes the database. Closing runs on more than one path (the
+    /// window closing, an uninstall, a restart for an update), so it is safe to call again: every call waits for the
+    /// one close there is, and none runs it a second time (a second call used to fail on the token source the first
+    /// had disposed, or, while the first was still closing, to close everything again beside it; review of
+    /// 2026-10-04, A36).
+    /// </summary>
+    public ValueTask DisposeAsync()
+    {
+        lock (_closeGate)
+            return new ValueTask(_closing ??= CloseAsync());
+    }
+
+    private async Task CloseAsync()
     {
         await _stop.CancelAsync();
         _watcher?.Dispose();

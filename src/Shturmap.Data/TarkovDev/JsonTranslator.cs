@@ -74,6 +74,10 @@ public static partial class JsonTranslator
         return result;
     }
 
+    /// <summary>A key's text in one language, as <see cref="Translate"/> would put it there: the text, else the key
+    /// itself (empty for a key that is an id with no text).</summary>
+    public static string Text(string key, IReadOnlyDictionary<string, string> language) => Lookup(key, language, null);
+
     private static string Lookup(string key, IReadOnlyDictionary<string, string> language, IReadOnlyDictionary<string, string>? fallback)
     {
         if (language.TryGetValue(key, out var text) && !string.IsNullOrEmpty(text))

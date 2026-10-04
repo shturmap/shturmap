@@ -4,6 +4,10 @@ using Shturmap.Core.Maps;
 
 namespace Shturmap.Data.TarkovDev;
 
+/// <summary>A language whose texts couldn't be loaded, and why (<see cref="GameData.LanguageFailure"/>).</summary>
+/// <param name="Language">tarkov.dev's code for the language asked for ("de").</param>
+public sealed record LanguageFailure(string Language, LoadProblem Why);
+
 /// <summary>Everything Shturmap knows about the game world for one mode and language.</summary>
 public sealed class GameData
 {
@@ -13,6 +17,13 @@ public sealed class GameData
 
     /// <summary>The language asked for when tarkov.dev gave no texts in it and English came instead, or null.</summary>
     public string? MissingLanguage { get; init; }
+
+    /// <summary>
+    /// Set when the texts of the language asked for couldn't be loaded and English came instead: which language, and
+    /// why (no connection, a timeout, a server error, with no saved copy). Unlike <see cref="MissingLanguage"/>,
+    /// tarkov.dev may well have them: the session says so and asks again later.
+    /// </summary>
+    public LanguageFailure? LanguageFailure { get; init; }
 
     public required IReadOnlyDictionary<string, ApiMap> Maps { get; init; }
 
@@ -36,6 +47,16 @@ public sealed class GameData
 
     /// <summary>Extracts' internal names by id ("Alpinist" for Cliff Descent), from before translation.</summary>
     public IReadOnlyDictionary<string, string> ExtractKeys { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// Extracts' and switches' English names by id, whatever the game's language. A rule that reads a name's words
+    /// ("(Flare)", "(Co-op)", a switch named after its extract) reads these: other languages translate the words away
+    /// or drop them (German has "Mira-Allee" for "Mira Ave (Flare)").
+    /// </summary>
+    public IReadOnlyDictionary<string, string> EnglishNames { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>An extract's or switch's English name: as recorded at load, else the name it carries (English data).</summary>
+    public string EnglishName(string id, string? name) => EnglishNames.TryGetValue(id, out var english) ? english : name ?? "";
 
     /// <summary>Objectives' kill targets, exit statuses and set kill conditions by objective id, from before translation.</summary>
     public IReadOnlyDictionary<string, ObjectiveFacts> ObjectiveFacts { get; init; } = new Dictionary<string, ObjectiveFacts>();

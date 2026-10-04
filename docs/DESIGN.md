@@ -1141,13 +1141,19 @@ Shown under each extract in the Raid rail, short, in gold, with the item's icon 
 | `transferItem` in roubles, dollars or euros | "Pay 5,000 ₽" (car V-Ex), "Pay €2,400" (Icebreaker heli) |
 | `transferItem`, any other item | "Hand over Note with code word Onyx" (secret extracts) |
 | internal name `Alpinist*` / `RedRebel*` | "Red Rebel ice pick and paracord, no armored rig" (Cliff Descent, Mountain Pass, Climber's Trail) |
-| "(Flare)" in the name, or `sniper` in the internal name | "Fire a red signal flare there" |
-| "(Co-op)" in the name | "Co-op: a PMC and a player Scav leave together" |
-| `switches` | "ZB-013 Power Switch first"; a switch tarkov.dev lists on most of a map's extracts is only shown where its name contains the extract's name (it lists the ZB-013 switch on every Customs extract) |
+| "(Flare)" in the English name, or `sniper` as a word of the internal name (`E9_sniper`, `customs_sniper_exit`) | "Fire a red signal flare there" |
+| "(Co-op)" in the English name | "Co-op: a PMC and a player Scav leave together" |
+| `switches` | "ZB-013 Power Switch first"; a switch tarkov.dev lists on most of a map's extracts is only shown where its English name contains the extract's English name (it lists the ZB-013 switch on every Customs extract) |
 | transit `conditions` | "TerraGroup Labs access keycard required (1)" |
 
 Internal extract names are kept from the payload before translation (`GameData.ExtractKeys`); transit conditions
-are translated although the payload's translation list misses them.
+are translated although the payload's translation list misses them. **The rules never read the name in the game's
+language** (review of 2026-10-04): they looked for "(Flare)" and "(Co-op)" in the translated name, and German has
+"Mira-Allee" for "Mira Ave (Flare)", so the rule was lost there. The loader keeps each extract's and switch's
+English name by id beside the translated one (`GameData.EnglishNames`), and `ExtractRules` reads those and the
+internal names only; a test runs every exit of the cached data through the rules in English and in German and
+expects the same. `sniper` counts as a word of the internal name, between underscores, not anywhere in it:
+Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 
 ### Keyboard (window focused only)
 
@@ -1240,8 +1246,15 @@ labels use, so it stays the thing you recognise.
 
 ## 6. Raid requirements
 
-- **Keys**: the quest's `neededKeys` for that map, and each objective's `requiredKeys` (a list of alternatives:
-  shown as "A or B").
+- **Keys**: each objective's `requiredKeys` (each entry a list of alternatives, shown as "A or B"; several entries
+  are several doors), and of the quest's `neededKeys` for that map only the keys none of its objectives names.
+  tarkov.dev's quest-level list is flat: per map, the keys the quest's objectives name (in its data of 2026-10-04
+  exactly that, for all 58 PvE and 57 PvP quests with keys), so it can't say whether two keys are both needed (the
+  dorm room and the cabin of one quest) or either will do (two keys to one room); the objectives' lists can. Until
+  2026-10-04 both were listed, so "Room 306 key" and "Room 308 key" stood as two rows where either opens the room,
+  and an objective's line repeated every key of the quest (`RaidPlanner`'s requirements, `Planning.QuestOnlyKeys`).
+  A key needed alone also serves any "A or B" row that holds it: that row goes, and its quests are named on the
+  key's row ("key for Quest A, Quest B"; they used to vanish with the row).
 - **Bring**: items a Place objective consumes (`items` of `plantItem`, `markerItem` of `mark`, `useAny` of
   `useItem`, the quest item of `plantQuestItem`), with counts summed per item.
 - Shown aggregated per map in Plan, and inline on the objective in Raid ("Key: Dorm room 114 key", "Bring: MS2000 Marker"),
@@ -1263,7 +1276,10 @@ those the player ticked as done (`Planning.Open`; §4, "Quest cards", *Ticks*):
   same cut as "Plan order" below) and no kill count is above 3; otherwise it is **progressed**.
 - Score = 3 per finishable quest + 1 per tied objective with a place + 0.6 per tied objective without one + 0.1 per
   untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
-  expanded. Maps with picked quests come before them, whatever their score (§4, "Picks").
+  expanded. Maps with picked quests come before them, whatever their score (§4, "Picks"), and all of them: four is
+  how many the planner suggests by itself, not the most the list can hold. One picked quest with work on five maps
+  lists five, and the planner's own suggestions fill only what is left of four (decided 2026-10-04, from the
+  review: a map a pick can be worked on is never left out, and Plan's short list of maps has the room).
 - Quests whose in-raid work fits any map are listed once under **Any map**.
 - No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
   walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's
@@ -1274,7 +1290,8 @@ those the player ticked as done (`Planning.Open`; §4, "Quest cards", *Ticks*):
   "2 of 5 objectives here" (its other in-raid objectives are on other maps; hand-overs and optional ones don't
   count), "needs items found in raid", "25 kills in all" (a kill count above 3; the total the data gives, since the
   logs don't report kill progress). Joined by " · " when several apply.
-- Quest-level keys are shown on the objectives that have a place on that map, not on hand-ins or extracts.
+- A key an objective names is shown on that objective's line. A key only the quest lists (§6) is shown on its
+  objectives that have a place on that map, not on hand-ins or extracts.
 
 ### Plan order
 
@@ -1574,7 +1591,19 @@ layer's, which dims as under an SVG floor (the sheet stands in with the same flo
 
 **Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
-from the maps payload's `lootLoose`.
+from the maps payload's `lootLoose`. A download that fails for a reason that may pass (no connection, a timeout, a
+server error) is asked for again by itself, after the waits of "Asking again" below, until it loads or the mode
+changes; until 2026-10-04 one failed download left the item cards without sources until a restart. A failure that
+won't pass by itself (data Shturmap can't read) is noted in the app log and not asked for again in that session.
+When the game language's texts arrive late (below), the sources load again in that language: station names are
+part of the texts.
+
+**Asking again** (`RetrySchedule`; owner, 2026-10-04: no unnecessary load on tarkov.dev). After a failure that may
+pass, tarkov.dev is asked again after 2, 4, 8 and 16 minutes, then every 30 minutes for as long as it fails; a
+success, or the player changing the game mode, starts over at 2. It was every 2 minutes without end: with tarkov.dev
+down, every running Shturmap asked for up to 11 files every 2 minutes, about 700 rounds a day where there are now
+about 50. One schedule, counted separately, for the game data, the game language's texts and the item sources. A
+try asks only for what is missing or older than its keep time: the rest is answered from the saved copy.
 
 **The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
 with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
@@ -1588,10 +1617,17 @@ texts are translated, the formats follow the language chosen).
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
 tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
 Only "not found" (404) says the language is lacking. A translation that fails any other way (no connection, a
-timeout, 5xx) with no saved copy fails the load like any other file: it is said as what it is and tried again
-("Error messages"), never as "No German texts on tarkov.dev" (until 2026-10-04 any failed request read as a missing
-language, so a moment's 503 left the session in English with an untrue notice). A load that fails also looks at the
-downloads it never came to await, so their failures don't turn up later as crash records.
+timeout, 5xx) with no saved copy is never said as "No German texts on tarkov.dev" (until 2026-10-04 any failed
+request read as a missing language, so a moment's 503 left the session in English with an untrue notice). The data
+then loads in English with the failure named (`GameData.LanguageFailure`), and the session says what is true:
+"Showing English: the German texts couldn't be loaded. tarkov.dev answered 503. Shturmap tries again in 2
+minutes." It asks for the texts again in the background, after the waits of "Asking again" above, until they load;
+then the data, the map names on screen and the item sources change to the game's language, and a quiet notice
+says "German texts loaded." The first fix of 2026-10-04 failed the whole load instead, which was true but left a
+player with no data at all for as long as one translation file kept failing (review of the same day, A46). A
+failure that won't pass by itself (tarkov.dev answers 403, say) is said with "Please report it." and not asked for
+again in that session. A load that fails as a whole also looks at the downloads it never came to await, so their
+failures don't turn up later as crash records.
 
 **Study log.** Developer builds only (below), in their data folder: `%LOCALAPPDATA%\Shturmap-dev\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
 `ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI
@@ -1659,7 +1695,10 @@ tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tar
 "tarkov.dev's data has changed in a way Shturmap can't read. Please report it.";
 "Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.", the DATA chip
 says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or 429) is
-tried again every 2 minutes, said once; the notice asks to report it if it keeps failing. A download whose answer
+tried again after growing waits ("Asking again", above: 2, 4, 8, 16 minutes, then every 30), said once; the notice
+names the wait that follows it ("Shturmap tries again in 2 minutes; if it keeps failing, please report it."), and
+the tooltip, which stays up while the tries go on, names none ("tries again by itself, at first after 2 minutes,
+then less often"). A download whose answer
 starts and then stops counts among them: after 30 s of silence it is a timeout, and a connection that breaks off
 mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; the client's own timeout ends with
 the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
