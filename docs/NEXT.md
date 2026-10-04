@@ -22,10 +22,33 @@ E2 are done as decided, and D3 (deleting position screenshots) was added and bui
 and after pictures and merged on the owner's word, and B14 was measured and decided: it stays as it is, said
 precisely. The owner ran the history rewrite (P1) and force-pushed it.
 
+**Third round (2026-10-04; owner: "start with the caching check. Go on with the smaller open review items"):** the
+caching check (B15) and some 25 of the smaller items, by five agents in worktrees of their own and the main session:
+A17, A20, A32–A36, A39, A40, A42–A46, B2, B3, B5, B9, B11, B13, C2, C4, C5, E3–E5, H7, H9, and C6 for symbols of
+different rank. The suite is at 1,063 tests. Found on the way and fixed: the raid card's lines stood in Segoe UI
+and white instead of the app's typeface; a Scav zone's ring lay over the boss's octagon; "Sniper Roadblock" on
+Customs was told to fire a flare. Still open after it: A10 and A26 (need a run), A37's hatch and floor read, A41,
+B14's website wording, C6 for symbols of the same rank, E3's boss names, E6, H5, and what A40 leaves (settings say
+"not available in this build" when the updater couldn't start).
+
 **To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
 code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
 gold "Key: …" line and a folded card's glyph, and a click on each (where their cards open); a quest's name clicked
 at its start (A3); closing the window with Alt+F4 while the pointer rests on a quest (A47).
+From the third round, with a real mouse and keyboard: "+" on a US layout (Shift and "=") and on the number pad;
+Esc in a popped-out card with a nested card open; with another map picked in the MAP list, a click on a quest row
+and on a pen in the open Plan card (the map must stay), then on the map's row in the list (it switches); a card
+held in Plan while a raid starts (it closes); the window narrowed to 900 px in a raid, and the three lights'
+tooltips; moving from a quest's row onto its card and across its gaps and headings (the quest stays lit), and from
+a BRING row onto the item's card (locks and loose squares stay); a padlock on the map (its quests take the weaker
+tint); a second copy of the game started while Shturmap runs (it follows the newer logs, with a notice).
+
+**Words for the owner to check, from the third round:** "Newer game logs in <folder>: quests and raids follow that
+game now."; "NO POSITION YET · PRESS PRTSC OR MOUSE3" (status bar, in a raid only); "CLICK ITS ROW TO PLAN IT"; the
+lights' tooltips when their words are hidden; the legend's new rows (the ping, a pick's cyan padlock, the gold
+chevrons) and "for the first 45 seconds a cone shows…"; "No game data. … Shturmap tries again in 2 minutes; if it
+keeps failing, please report it."; "Showing English: the German texts couldn't be loaded. tarkov.dev answered 503.
+Shturmap tries again in 2 minutes."; "German texts loaded.".
 
 **Found while fixing:**
 - **A47. The app ended with an access violation when it exited while the map was pulsing** (a quest pointed at): the
@@ -37,10 +60,12 @@ at its start (A3); closing the window with Alt+F4 while the pointer rests on a q
   (2026-10-04: only what the game writes while it is followed counts).
 - **A44.** A log longer than one read (4 MB) is cut short when the game starts a new session before it is read
   through: the rest of the old session is skipped. Status: done (2026-10-04: a session is read to its end first).
-- **A45.** With A6, a picked quest that has work on five or more maps gives more than four map cards.
+- **A45.** With A6, a picked quest that has work on five or more maps gives more than four map cards. Status: done (2026-10-04): kept and said, a
+  pick's maps are always listed (Plan shows the maps as a short list).
 - **A46.** With A31, a translation file that keeps answering with a server error on a first load means no data
   until it recovers (a notice and a retry every two minutes), where it used to fall back to English with an untrue
-  notice. Decide whether English with a true notice would serve better.
+  notice. Decide whether English with a true notice would serve better. Status: done (2026-10-04): the data loads in English with a notice that
+  says so truly, and the game language's texts are asked for again in the background, with a growing wait.
 - **Words for the owner to check** (new with A1 and A2): "Got a position, but the game's log shows no raid, so it
   isn't shown."; "Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown."; the
   last-raid line's "end not in the log"; the map's label "LOOKING AT WOODS · THE RAID IS ON CUSTOMS · YOUR NEXT
@@ -148,12 +173,15 @@ Smaller, in planning and data:
   file error ends them silently. Translation downloads left unwatched after a failed load become crash records.
   Status: done (2026-10-04).
 - **A33.** Key rows: an "A or B" row dropped because A is also needed alone doesn't hand its quests over; quest-level
-  keys are listed one by one even where they are alternatives. Status: open (check the data's meaning first).
+  keys are listed one by one even where they are alternatives. Status: done (2026-10-04): the data's quest-level list is exactly
+  the objectives' keys as one flat list, so a key an objective names is that objective's row, with its alternatives
+  ("306 or 308" as one row), and a key needed alone takes over the quests of an "A or B" row it satisfies.
 - **A34.** "(Flare)" and "(Co-op)" are looked for in the translated extract name, so the rules are lost in another
-  game language (`Shturmap.Session/ExtractRules.cs`). Status: open.
+  game language (`Shturmap.Session/ExtractRules.cs`). Status: done (2026-10-04; the rules read the English and internal names. Found on
+  the way: Customs' "Sniper Roadblock" was told to fire a flare).
 - **A35.** CHOOSE… and FIND AUTOMATICALLY read every log session on the UI thread. Status: done (2026-10-04).
 - **A36.** Closing isn't safe to run twice (`ProgressStore`, `GameSession.DisposeAsync`); the uninstall path can do
-  that. Status: open.
+  that. Status: done (2026-10-04).
 - **A41.** Log times are local without an offset: an hour off across a clock change. Status: open (two nights a year).
 
 Smaller, in the app:
@@ -239,8 +267,8 @@ for the languages to come).
   start a day after the last is some 15 requests and about 3 MB compressed; the item sources are the largest part
   (1.9 MB, they change every few minutes, fetched once a day). Two wastes were found and fixed: a tile or picture
   the server doesn't have was asked for again in every session (now remembered for a week), and while the data
-  couldn't be loaded every running Shturmap asked again every 2 minutes without end (the wait now grows; with the
-  agents' round, see below). Left as they are, with the reasons in DESIGN.md: the hour for quests and maps, the
+  couldn't be loaded every running Shturmap asked again every 2 minutes without end (the wait now grows: 2, 4, 8,
+  16 minutes, then every 30). Left as they are, with the reasons in DESIGN.md: the hour for quests and maps, the
   30 days for tiles (the service says 7 days, but tiles are files that haven't changed since January 2025 and
   are checked with their ETag after the 30).
 - **B11. DESIGN.md against itself and the code**: §5 calls every `findItem` found-in-raid while §7 has one "that may
@@ -269,7 +297,7 @@ for the languages to come).
   four real ones is still due.
 - **H5.** In a PMC raid the extract list is below the card. Status: open (with H4).
 - **H7.** What needs a restart today: tiles after an offline start (A7), item sources after one failed download,
-  another install's newer session (A20). Status: open.
+  another install's newer session (A20). Status: done (2026-10-04; all three recover by themselves now).
 - **H9.** The first-run help can open during a raid; the crash question stays over the map until answered. Status:
   done (2026-10-04): the first-run help opens only outside a raid, a raid's start closes an open help panel, and
   the crash question waits while a raid loads or runs.

@@ -44,6 +44,8 @@ public static class Diagnostics
         Line("Game language", s.GameLanguage ?? "unknown");
         Line("tarkov.dev language", s.Data is { } d
             ? d.Language + (d.MissingLanguage is { } missing ? $" (no '{missing}' texts there)" : "")
+                // Why a session in another game language reads English: its texts couldn't be loaded.
+                + (d.LanguageFailure is { } failed ? $" ('{failed.Language}' texts not loaded: {failed.Why.Kind}{(failed.Why.Status is { } answered ? " " + answered : "")})" : "")
             : "not loaded");
         Line("Data", s.Data switch
         {

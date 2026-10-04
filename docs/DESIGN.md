@@ -135,6 +135,9 @@ quoting it anywhere new.
   - What the server doesn't have is remembered for a week, the time its own Cache-Control gives its answers
     (`CachedHttp.MissingAge`): a tile or a picture that answered "not found" was asked for again in every session
     before. A refusal (403) is not remembered: it can be a block that passes.
+  - While a download fails, each try waits longer than the one before: 2, 4, 8, 16 minutes, then every 30
+    (`RetrySchedule`; §8, "Asking again"). With tarkov.dev down, every running Shturmap asked again every 2
+    minutes before, 720 times a day; now about 50.
   - The hour for the data stays: it only matters at a start, an unchanged file costs one small answer, and a
     longer age would keep a corrected quest away for longer after a patch. Tiles are fetched by view (§2, "Never
     share a position"); a whole map would be hundreds of megabytes.

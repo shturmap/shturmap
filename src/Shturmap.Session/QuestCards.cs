@@ -255,11 +255,15 @@ public static class QuestCards
             foreach (var (item, count) in plan.ExitItems ?? [])
                 Add(RequirementKind.Exit, [item], count, maps, "to leave through " + plan.Exit);
         }
+        // A key an objective names is that objective's row above, with its alternatives ("306 or 308"); the quest's own
+        // list repeats those keys one by one, so only a key no objective names is added from it (Planning.QuestOnlyKeys;
+        // the review of 2026-10-04, A33: "306 or 308" stood beside "306" and "308").
+        var named = (task.Objectives ?? []).SelectMany(o => o.RequiredKeys ?? []).SelectMany(k => k).ToHashSet(StringComparer.Ordinal);
         foreach (var needed in task.NeededKeys ?? [])
         {
             if (anyDone && needed.Map is not null && !openMaps.Contains(needed.Map))
                 continue;
-            foreach (var key in needed.Keys ?? [])
+            foreach (var key in (needed.Keys ?? []).Where(k => !named.Contains(k)))
                 Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map], "key");
         }
 
