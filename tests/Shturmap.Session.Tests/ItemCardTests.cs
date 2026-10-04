@@ -1,4 +1,5 @@
 using Shturmap.Core.Logs;
+using Shturmap.Core.Planning;
 using Shturmap.Core.Quests;
 using Shturmap.Data.TarkovDev;
 
@@ -8,18 +9,21 @@ namespace Shturmap.Session.Tests;
 // said as the data has it.
 public class ItemCardTests
 {
-    private const string Salewa = "salewa", Beanie = "beanie", Glasses = "glasses", Ragman = "ragman";
+    private const string Salewa = "salewa", Beanie = "beanie", Glasses = "glasses", Ragman = "ragman", Marker = "ms2000", Key = "key114";
 
     private static readonly Dictionary<string, string> Names = new()
     {
         [Salewa] = "Salewa first aid kit", [Beanie] = "Bomber beanie", [Glasses] = "RayBench sunglasses", ["bolts"] = "Bolts",
+        [Marker] = "MS2000 Marker", [Key] = "Dorm room 114 key",
     };
+
+    private static ApiMap Map(string id, string name) => new(id, name, id, id, null, null, 40, null, null, null, null, null);
 
     private static GameData Data(params ApiTask[] tasks) => new()
     {
         Mode = GameMode.Pve,
         Language = "en",
-        Maps = new Dictionary<string, ApiMap>(),
+        Maps = new Dictionary<string, ApiMap> { ["streets"] = Map("streets", "Streets of Tarkov"), ["customs"] = Map("customs", "Customs") },
         Tasks = tasks.ToDictionary(t => t.Id),
         Traders = new Dictionary<string, ApiTrader> { [Ragman] = new(Ragman, "Ragman", null, null) },
         ItemNames = Names,
@@ -30,8 +34,9 @@ public class ItemCardTests
     private static ApiTask Task(string id, params ApiObjective[] objectives) =>
         new(id, id, null, null, null, null, false, false, null, null, null, false, null, [.. objectives], null);
 
-    private static ApiObjective Objective(string id, string type, int count = 1, List<string>? items = null, bool foundInRaid = false) =>
-        new(id, type, id, false, null, null, null, count, null, items, null, null, null, foundInRaid);
+    private static ApiObjective Objective(string id, string type, int count = 1, List<string>? items = null, bool foundInRaid = false,
+        string? map = null, string? marker = null, string? key = null) =>
+        new(id, type, id, false, map is null ? null : [map], null, null, count, null, items, marker, null, key is null ? null : [[key]], foundInRaid);
 
     private static Dictionary<string, QuestStatus> States(QuestState state, params string[] ids) =>
         ids.ToDictionary(id => id, id => new QuestStatus(id, state, ObservationSource.Log, DateTime.Now));
@@ -46,6 +51,62 @@ public class ItemCardTests
             Task("Shortage", Objective("s1", "findItem", 3, [Salewa], foundInRaid: true)),
             Task("Supply", Objective("p1", "findItem", 2, [Salewa])));
         Assert.Equal(["Shortage: Find in raid ×3", "Supply: Find ×2"], Uses(data, Salewa, "Shortage", "Supply"));
+    }
+
+    // ---- what a quest takes, added up over its objectives as Plan's BRING adds it up ----
+
+    private static readonly ApiTask Revision = Task("Revision",
+        Objective("r1", "mark", marker: Marker, map: "streets"),
+        Objective("r2", "mark", marker: Marker, map: "streets"),
+        Objective("r3", "mark", marker: Marker, map: "streets"));
+
+    [Fact]
+    public void The_quest_card_adds_up_what_is_used_up_as_the_plan_does()
+    {
+        // The review of 2026-10-04: three "mark" objectives read "MS2000 Marker" on the card where Plan said "×3".
+        var data = Data(Revision);
+        var card = QuestCards.Build(data, States(QuestState.Active, "Revision"), "Revision")!;
+        var need = Assert.Single(card.Needs);
+        Assert.Equal(("MS2000 Marker ×3", "to mark · on Streets of Tarkov"), (need.Text, need.Where));
+
+        var streets = new PlanMap("streets", "Streets of Tarkov", new HashSet<string> { "streets" }, 40);
+        var planned = Assert.Single(RaidPlanner.Plan([Planning.ToPlan(Revision, data)], streets).Requirements);
+        Assert.Equal(Planning.RequirementText(data, planned).Text, need.Text);
+        // The item card says the same of the quest.
+        Assert.Equal(["Revision: Bring ×3, to mark · Streets of Tarkov"], Uses(data, Marker, "Revision"));
+    }
+
+    [Fact]
+    public void A_key_needed_on_two_maps_is_one_row_naming_both()
+    {
+        var task = Task("Ballet", Objective("b1", "visit", map: "customs", key: Key), Objective("b2", "visit", map: "streets", key: Key))
+            with { NeededKeys = [new("streets", [Key])] };
+        var data = Data(task);
+        var need = Assert.Single(QuestCards.Build(data, States(QuestState.Active, "Ballet"), "Ballet")!.Needs);
+        Assert.Equal(("Dorm room 114 key", "key · on Customs, Streets of Tarkov"), (need.Text, need.Where));
+        Assert.Equal(["Ballet: Key · Customs, Streets of Tarkov"], Uses(data, Key, "Ballet"));
+    }
+
+    [Fact]
+    public void One_item_used_two_ways_is_one_row_saying_both_and_gear_to_wear_stays_its_own()
+    {
+        var wear = Objective("d3", "shoot", map: "streets") with { Wearing = [[new(Beanie, null)]] };
+        var task = Task("Dandies",
+            Objective("d1", "plantItem", 2, [Beanie], map: "streets"),
+            Objective("d2", "useItem", map: "customs") with { UseAny = [Beanie] },
+            wear);
+        var data = Data(task);
+        var needs = QuestCards.Build(data, States(QuestState.Active, "Dandies"), "Dandies")!.Needs;
+        Assert.Equal(
+        [
+            ("Bomber beanie ×3", "to plant and to use · on Customs, Streets of Tarkov"),
+            ("Bomber beanie", "to wear · on Streets of Tarkov"),
+        ], needs.Select(n => (n.Text, n.Where)));
+        Assert.Equal(
+        [
+            "Dandies: Bring ×3, to plant and to use · Customs, Streets of Tarkov",
+            "Dandies: Wear, for kills · Streets of Tarkov",
+        ], Uses(data, Beanie, "Dandies"));
     }
 
     // ---- where to get it: an offer behind a quest isn't a way until the log has seen that quest completed ----

@@ -27,6 +27,21 @@ public sealed record ItemCardView(string ItemId, string Name, bool IsKey, IReadO
 
 public static class ItemCards
 {
+    // One way a quest needs the item: "Bring", how many in all (" ×3"), and what for (", to mark"), on these maps.
+    private sealed class Way(string verb, string what)
+    {
+        public string Verb => verb;
+
+        public string What => what;
+
+        public int Count { get; set; }
+
+        public List<string> Maps { get; } = [];
+
+        /// <summary>What it is brought to be used up for ("to plant", "to mark"), in place of <see cref="What"/>.</summary>
+        public List<string> Purposes { get; } = [];
+    }
+
     public static ItemCardView Build(GameData data, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests, string itemId)
     {
         var uses = new List<ItemUse>();
@@ -34,19 +49,32 @@ public static class ItemCards
         {
             if (!data.Tasks.TryGetValue(status.QuestId, out var task))
                 continue;
-            void Add(string how, IEnumerable<string> mapIds)
+            // One line per way the quest needs it, gathered over its objectives: how many in all and on which maps
+            // (the review of 2026-10-04: three "mark" objectives read "Bring, to mark" where BRING said "×3").
+            var ways = new List<Way>();
+            Way Add(string verb, IEnumerable<string> mapIds, int count = 0, string what = "", bool usedUp = true)
             {
-                var where = QuestCards.MapNames(data, mapIds);
-                var text = where.Length > 0 ? $"{how} · {where}" : how;
-                if (!uses.Any(u => u.QuestId == task.Id && u.How == text))
-                    uses.Add(new ItemUse(task.Id, task.Name, QuestCards.KindOf(task), task.Trader, text));
+                var way = ways.FirstOrDefault(w => w.Verb == verb && w.What == what);
+                if (way is null)
+                    ways.Add(way = new Way(verb, what));
+                // What is used up each time adds up; an exit asks the same whichever objective names it.
+                way.Count = usedUp ? way.Count + count : Math.Max(way.Count, count);
+                way.Maps.AddRange(mapIds.Where(m => !way.Maps.Contains(m)).Distinct().ToList());
+                return way;
+            }
+            // What is brought to be used up is one line however it is used ("Bring ×3, to plant and to mark"), as it
+            // is one row in BRING.
+            void Bring(IEnumerable<string> mapIds, int count, string purpose)
+            {
+                var way = Add("Bring", mapIds, count);
+                if (!way.Purposes.Contains(purpose))
+                    way.Purposes.Add(purpose);
             }
 
             foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
             {
                 var maps = QuestCards.MapIds(o).ToList();
                 var count = Math.Max(1, o.Count ?? 1);
-                var times = count > 1 ? $" ×{count}" : "";
                 if ((o.RequiredKeys ?? []).Any(set => set.Contains(itemId)))
                     Add("Key", maps);
                 if ((o.Wearing ?? []).Any(set => set.Any(i => i.Id == itemId)))
@@ -56,29 +84,51 @@ public static class ItemCards
                 if ((o.UsingWeaponMods ?? []).Any(set => set.Contains(itemId)))
                     Add("Fit, for kills", maps);
                 if ((plan.ExitItems ?? []).FirstOrDefault(i => i.ItemId == itemId) is { ItemId: not null } exitItem)
-                    Add($"Bring{(exitItem.Count > 1 ? $" ×{exitItem.Count}" : "")}, to leave through {plan.Exit}", maps);
+                    Add("Bring", maps, exitItem.Count, $", to leave through {plan.Exit}", usedUp: false);
                 var listed = o.Items?.Contains(itemId) == true;
-                var how = o.Type switch
+                switch (o.Type)
                 {
-                    "plantItem" when listed => $"Bring{times}, to plant",
-                    "mark" when o.MarkerItem == itemId => "Bring, to mark",
-                    "useItem" when o.UseAny?.Contains(itemId) == true => $"Bring{times}, to use",
-                    "plantQuestItem" when o.QuestItem == itemId => "Bring, to plant",
-                    "findQuestItem" when o.QuestItem == itemId => "Pick up",
-                    "giveQuestItem" when o.QuestItem == itemId => "Hand over",
+                    case "plantItem" when listed:
+                        Bring(maps, count, "to plant");
+                        break;
+                    case "mark" when o.MarkerItem == itemId:
+                        Bring(maps, 1, "to mark");
+                        break;
+                    case "useItem" when o.UseAny?.Contains(itemId) == true:
+                        Bring(maps, count, "to use");
+                        break;
+                    case "plantQuestItem" when o.QuestItem == itemId:
+                        Bring(maps, count, "to plant");
+                        break;
+                    case "findQuestItem" when o.QuestItem == itemId:
+                        Add("Pick up", maps);
+                        break;
+                    case "giveQuestItem" when o.QuestItem == itemId:
+                        Add("Hand over", []);
+                        break;
                     // "In raid" only where the data says the item must be found in raid; one that may be bought is just found.
-                    "findItem" when listed => o.FoundInRaid ? $"Find in raid{times}" : $"Find{times}",
-                    "giveItem" when listed => $"Hand over{times}" + (o.FoundInRaid ? ", found in raid" : ""),
-                    "sellItem" when listed => $"Sell{times}",
-                    _ => null,
-                };
-                if (how is not null)
-                    Add(how, how.StartsWith("Bring", StringComparison.Ordinal) || how == "Pick up" ? maps : []);
+                    case "findItem" when listed:
+                        Add(o.FoundInRaid ? "Find in raid" : "Find", [], count);
+                        break;
+                    case "giveItem" when listed:
+                        Add("Hand over", [], count, o.FoundInRaid ? ", found in raid" : "");
+                        break;
+                    case "sellItem" when listed:
+                        Add("Sell", [], count);
+                        break;
+                }
             }
             foreach (var needed in task.NeededKeys ?? [])
             {
                 if (needed.Keys?.Contains(itemId) == true)
                     Add("Key", needed.Map is null ? [] : [needed.Map]);
+            }
+            foreach (var way in ways)
+            {
+                var what = way.Purposes.Count > 0 ? ", " + string.Join(" and ", way.Purposes) : way.What;
+                var how = $"{way.Verb}{(way.Count > 1 ? $" ×{way.Count}" : "")}{what}";
+                var where = QuestCards.MapNames(data, way.Maps);
+                uses.Add(new ItemUse(task.Id, task.Name, QuestCards.KindOf(task), task.Trader, where.Length > 0 ? $"{how} · {where}" : how));
             }
         }
         return new ItemCardView(itemId, data.ItemName(itemId), uses.Any(u => u.How.StartsWith("Key", StringComparison.Ordinal)),

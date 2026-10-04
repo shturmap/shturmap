@@ -145,27 +145,46 @@ public static class QuestCards
             .Distinct()
             .Order(StringComparer.CurrentCulture));
 
+    // One thing the quest takes, gathered over its objectives.
+    private sealed class Need(RequirementKind kind, IReadOnlyList<string> alternatives)
+    {
+        public RequirementKind Kind => kind;
+
+        public IReadOnlyList<string> Alternatives => alternatives;
+
+        public int Count { get; set; }
+
+        public List<string> Maps { get; } = [];
+
+        public List<string> Purposes { get; } = [];
+    }
+
+    // One row per thing to take, as Plan's BRING counts it (RaidPlanner's requirements): an item used up is added up
+    // across the quest's objectives, and a key or item needed on two maps names both. One row per objective, dropped
+    // when its text was already there, lost both (the review of 2026-10-04: three "mark" objectives read "MS2000
+    // Marker" where Plan said "×3", and a key needed on two maps named the first).
     private static List<CardNeed> Needs(GameData data, ApiTask task, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests)
     {
-        var needs = new List<CardNeed>();
+        var rows = new List<Need>();
+        var byKey = new Dictionary<string, Need>(StringComparer.Ordinal);
         void Add(RequirementKind kind, IReadOnlyList<string> alternatives, int count, IEnumerable<string> maps, string purpose)
         {
             if (alternatives.Count == 0)
                 return;
-            var names = alternatives.Select(data.ItemName).Distinct().ToList();
-            var text = kind switch
+            // The same thing again: the same items for the same kind of use. An exit's items are per exit, and what is
+            // brought to be used up is one row whatever it is done with ("to plant and to mark").
+            var key = $"{kind}:{string.Join("|", alternatives.Order(StringComparer.Ordinal))}{(kind == RequirementKind.Exit ? ":" + purpose : "")}";
+            if (!byKey.TryGetValue(key, out var need))
             {
-                RequirementKind.Wear or RequirementKind.WeaponMods => Planning.GearText(data, alternatives),
-                RequirementKind.Weapon => Planning.WeaponText(data, sources, alternatives),
-                _ => names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others",
-            };
-            if (count > 1)
-                text += " ×" + count.ToString("N0", CultureInfo.CurrentCulture);
-            var where = MapNames(data, maps);
-            if (needs.Any(n => n.Text == text))
-                return;
-            var why = string.Join(" · ", new[] { purpose, where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
-            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, why, ItemCards.BestOf(data, sources, alternatives, quests)));
+                byKey[key] = need = new Need(kind, alternatives);
+                rows.Add(need);
+            }
+            // Used up each time it is planted or marked: the counts add up. A key, gear and a weapon are taken once,
+            // and an exit asks the same whichever objective names it.
+            need.Count = kind == RequirementKind.Bring ? need.Count + count : Math.Max(need.Count, count);
+            need.Maps.AddRange(maps.Where(m => !need.Maps.Contains(m)).Distinct().ToList());
+            if (!need.Purposes.Contains(purpose))
+                need.Purposes.Add(purpose);
         }
 
         foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
@@ -193,6 +212,25 @@ public static class QuestCards
         foreach (var needed in task.NeededKeys ?? [])
             foreach (var key in needed.Keys ?? [])
                 Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map], "key");
+
+        var needs = new List<CardNeed>();
+        foreach (var need in rows)
+        {
+            var names = need.Alternatives.Select(data.ItemName).Distinct().ToList();
+            var text = need.Kind switch
+            {
+                RequirementKind.Wear or RequirementKind.WeaponMods => Planning.GearText(data, need.Alternatives),
+                RequirementKind.Weapon => Planning.WeaponText(data, sources, need.Alternatives),
+                _ => names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others",
+            };
+            if (need.Count > 1)
+                text += " ×" + need.Count.ToString("N0", CultureInfo.CurrentCulture);
+            var where = MapNames(data, need.Maps);
+            var why = string.Join(" · ", new[] { string.Join(" and ", need.Purposes), where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
+            // Two lists that read the same (a weapon class given twice with one preset more) stay one row.
+            if (!needs.Any(n => n.Kind == need.Kind && n.Text == text && n.Where == why))
+                needs.Add(new CardNeed(task.Id, need.Kind, need.Alternatives[0], text, why, ItemCards.BestOf(data, sources, need.Alternatives, quests)));
+        }
         return needs;
     }
 }

@@ -768,6 +768,13 @@ opened 10 to 21 times each to find out why and where). Gear a kill objective ask
 RayBench Hipster Reserve sunglasses" (neutral about and/or: the data's sets don't always match the quest's
 wording, which the objective text gives anyway); item cards list it as "Wear, for kills".
 
+**One row per thing, counted as Plan counts it.** A quest card's BRING and the item card's lines are gathered over
+the quest's objectives the way Plan's BRING is (`RaidPlanner`'s requirements): what is used up adds up (three "mark"
+objectives are "MS2000 Marker ×3" and "Bring ×3, to mark"), one item used two ways is one row saying both ("to plant
+and to use"), and a key or item needed on two maps names both. Gear to wear, weapons and mods aren't used up and stay
+rows of their own; an exit's items are counted once per exit. Until 2026-10-04 the card made one row per objective and
+dropped a row whose text was already there, which lost the count and the second map.
+
 **An offer behind a quest isn't a way yet** (the review of 2026-10-04: BRING named "Ragman LL2 · 41,283 ₽ · after
 Dandies" as the easiest source of the beanie Dandies itself asks for). A trader's offer or a barter that tarkov.dev
 ties to a quest (`taskUnlock`) which the game's log hasn't seen completed comes after every other way (other
