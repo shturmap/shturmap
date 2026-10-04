@@ -62,7 +62,7 @@ public static class MapLegend
         new(LegendSymbol.Extract, "Extract for your side: a green (PMC) or teal (Scav) triangle."),
         new(LegendSymbol.SharedExtract, "Extract for both sides: a khaki triangle split down the middle."),
         new(LegendSymbol.Transit, "Transit to another map: a violet diamond."),
-        new(LegendSymbol.Boss, "Boss or AI squad spawns (bosses, Rogues, Raiders, cultists, Black Div., AF), at the centre of a group of spawn points: a red diamond with the chance on this map and, for several zones, this zone's share (\"Kollontay 75% · 50% here\")."),
+        new(LegendSymbol.Boss, "Boss or AI squad spawns (bosses, Rogues, Raiders, cultists, Black Div., AF), at the centre of a group of spawn points: a red octagon with the chance on this map and, for several zones, this zone's share (\"Kollontay 75% · 50% here\")."),
         new(LegendSymbol.Sniper, "Sniper Scav spawns, at the centre of a group of spawn points: a hollow hexagon."),
         new(LegendSymbol.Scav, "Scav spawns, at the centre of a group of spawn points: a small ring."),
         new(LegendSymbol.Lock, "A locked door or car trunk: a padlock, with its key's short name when you zoom in. Point at a key in a list and the locks it opens light up; point at a padlock for its key."),

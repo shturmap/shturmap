@@ -522,7 +522,7 @@ public static partial class MapRenderer
         // A lock a picked quest needs the key of is part of the pick: the picks' colour, without their ring.
         var color = kept || IsKeptKey(scene, marker) ? Kept : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
-        // the boss diamond (level 3): a 15 px triangle or diamond.
+        // the boss octagon (level 3): a 15 px triangle or diamond.
         var r = marker switch
         {
             { Objective: not null } => kept ? 14f : selected ? 12f : 10f,
@@ -1391,15 +1391,15 @@ public static partial class MapRenderer
                 }
                 break;
             case MarkerKind.BossSpawn:
-                // A red diamond with a dark centre: not to be confused with the violet transit diamond.
-                using (var plate = Diamond(at, r * 1.25f))
+                // A solid red octagon: a shape no other marker has, and all red (owner, 2026-10-04, from the review:
+                // the red diamond with a dark centre was mostly collar and centre, weaker than a quest's disc, and it
+                // shared its outline with the violet transit diamond).
+                using (var plate = Octagon(at, r * 1.2f))
                 {
                     DrawCollar(canvas, plate, ui);
                     canvas.DrawPath(plate, fill);
                     canvas.DrawPath(plate, outline);
                 }
-                using (var dot = new SKPaint { Color = Background, IsAntialias = true })
-                    canvas.DrawCircle(at, r * 0.32f, dot);
                 break;
             case MarkerKind.Transit:
                 using (var diamond = Diamond(at, r))
@@ -1659,6 +1659,10 @@ public static partial class MapRenderer
 
     private static SKPath Hexagon(SKPoint at, float r) =>
         Polygon(Enumerable.Range(0, 6).Select(i => new SKPoint(at.X + r * MathF.Cos(MathF.PI / 3 * i), at.Y + r * MathF.Sin(MathF.PI / 3 * i))).ToArray());
+
+    // Flat on top, like a stop sign.
+    private static SKPath Octagon(SKPoint at, float r) =>
+        Polygon(Enumerable.Range(0, 8).Select(i => new SKPoint(at.X + r * MathF.Cos(MathF.PI / 4 * i + MathF.PI / 8), at.Y + r * MathF.Sin(MathF.PI / 4 * i + MathF.PI / 8))).ToArray());
 
     private static SKPath Polygon(params SKPoint[] points)
     {

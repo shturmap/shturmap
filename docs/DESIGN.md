@@ -429,7 +429,11 @@ same day, by rendering them side by side:
 Quest **types are shown by glyph, never by colour**; colour stays free for state (open, done, selected).
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
 portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
-header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind rows; map markers
+header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind the rows that show the very thing pointed at (the same quest, item,
+objective or way out, here and elsewhere), and at 9 % behind what only belongs to it (the items a pointed-at quest
+needs, the quests a pointed-at item is for); an item that merely shares a quest with the item pointed at is not lit
+(owner, 2026-10-04, from the review: one tint stood for all three, and pointing at an item lit every other item
+of its quests; `LinkStrength`); map markers
 not in focus step back by kind (see "Map drawing", "Stepping back"), easing in and out over 0.18 s, and the focused
 ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
 easing, when Windows' animation effects are off, and only while something is in focus). Losing the focus waits
@@ -721,7 +725,7 @@ spawns below).
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
   | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
 
-  Extracts and transits are as large as the boss diamond (15 px across), no longer smaller. A new symbol gets a
+  Extracts and transits are as large as the boss marker (15 px across), no longer smaller. A new symbol gets a
   level, a shape no other symbol uses, a colour from the palette (no new hues) and the collar.
 
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
@@ -828,8 +832,10 @@ spawns below).
   point. No areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
   ink, unlabelled and not hoverable. Sniper zones (side "scav", categories "bot" and "sniper"; Ground Zero's
   player spawns tagged "sniper" don't count) are a hollow ink hexagon labelled "Sniper": a shape no other symbol
-  uses, not a reticle, which is the Elimination glyph. Bosses and AI squads get one red diamond per spawn zone: the
-  red diamond means "boss or AI squad spawn". Every mob in the data's bosses list counts except the AI PMCs
+  uses, not a reticle, which is the Elimination glyph. Bosses and AI squads get one solid red octagon per spawn zone:
+  the red octagon means "boss or AI squad spawn" (owner, 2026-10-04, from the review: until then a red diamond with a
+  dark centre, which at its size was mostly collar and centre, weaker than a quest's disc, and shared its outline
+  with the violet transit diamond; the octagon is a shape nothing else uses, and all red). Every mob in the data's bosses list counts except the AI PMCs
   (`pmcUSEC`, `pmcBEAR`, which come everywhere): bosses, and since the map audit (owner, 2026-10-03) Rogues
   (Lighthouse, Icebreaker), Raiders (Reserve, The Lab), cultists (Customs, Woods, Shoreline, Night Factory, Ground Zero
   21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled with the two
@@ -837,7 +843,7 @@ spawns below).
   50% here", "Kaban 75%"; never their product, since the data doesn't say the share is conditional. Several entries
   of one name at one place say their chances in one line, highest first ("Rogue 100%, 90%, 50%" at Lighthouse's
   Chalet: groups that may each spawn). A zone split in groups says this once, on its largest group; the others are
-  bare diamonds that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
+  bare octagons that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
   Knight 25%" on Customs' Stronghold), and pointing at one lights all its zones. The Lab gets 8, Terminal 16; Ground
   Zero 21+ gets 9, mostly a 2 % cultist that may spawn at any Scav spawn.
 - **Labels by priority** (`MapRenderer.Layout`). Every symbol is placed before any text, so no label covers a

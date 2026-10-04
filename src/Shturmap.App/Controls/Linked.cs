@@ -414,20 +414,23 @@ public static class Linked
         return innermost;
     }
 
-    private static bool IsLinked(FrameworkElement element, Focus focus) =>
-        (GetItem(element) is { } item && item == focus.Item) ||
-        (GetMarker(element) is { } marker && marker == focus.Marker) ||
-        (GetObjective(element) is { } objective && objective == focus.Objective) ||
-        QuestsOf(element).Any(focus.Quests.Contains);
+    // How strongly an element is lit by the focus: fully when it shows the very thing pointed at, weakly when it only
+    // belongs to it, not at all otherwise (Rules.LinkStrength; owner, 2026-10-04).
+    private static Rules.LinkLevel LevelOf(FrameworkElement element, Focus focus) =>
+        Rules.LinkStrength.Of(GetQuest(element), GetQuests(element) as IEnumerable<string> ?? [], GetItem(element), GetMarker(element),
+            GetObjective(element), focus.Quests, focus.Item, focus.Marker, focus.Objective);
 
     private static readonly Brush Clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
     private static void Paint(FrameworkElement element) =>
-        SetBackground(element, Current is { } focus && IsLinked(element, focus)
-            ? (Brush)Application.Current.Resources["LinkBrush"]
-            : _picks.Count > 0 && QuestsOf(element).Any(_picks.Contains)
+        SetBackground(element, (Current is { } focus ? LevelOf(element, focus) : Rules.LinkLevel.None) switch
+        {
+            Rules.LinkLevel.Same => (Brush)Application.Current.Resources["LinkBrush"],
+            Rules.LinkLevel.Related => (Brush)Application.Current.Resources["LinkSoftBrush"],
+            _ => _picks.Count > 0 && QuestsOf(element).Any(_picks.Contains)
                 ? (Brush)Application.Current.Resources["SelectBrush"]
-                : Clear);
+                : Clear,
+        });
 
     // A need cell is filled by its own dark cell and its picture: its tint lies over both (Picture.Tint).
     private static Brush? Background(FrameworkElement element) => element switch

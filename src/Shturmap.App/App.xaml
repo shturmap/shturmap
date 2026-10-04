@@ -53,6 +53,8 @@
       <SolidColorBrush x:Key="CellBrush" Color="{StaticResource CellColor}" />
       <!-- Linked highlighting: everything that belongs to what the pointer is on (AmberColor at 18 %). -->
       <SolidColorBrush x:Key="LinkBrush" Color="#2EC9AD62" />
+      <!-- What only belongs to what is pointed at (a quest's items, an item's quests): half of it, AmberColor at 9 %. -->
+      <SolidColorBrush x:Key="LinkSoftBrush" Color="#17C9AD62" />
       <!-- The quests kept lit or picked: their own colour, the one the map draws their markers in (MapRenderer.Kept);
            SelectBrush is KeptColor at 15 % behind their rows. -->
       <SolidColorBrush x:Key="KeptBrush" Color="{StaticResource KeptColor}" />
