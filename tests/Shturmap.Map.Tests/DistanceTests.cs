@@ -27,6 +27,26 @@ public class DistanceTests
         Assert.Equal(100, scale.Pixels, 3);
     }
 
+    // A render stretched along one axis has no one scale: the bar is true the way it lies (the review of 2026-10-04:
+    // it took the mean of both axes, which made "50 m" span 69 m on Icebreaker).
+    [Fact]
+    public void On_a_stretched_map_the_scale_bar_is_true_along_the_bar()
+    {
+        var scene = new MapScene(Fixtures.Definition("icebreaker"), null);
+        var camera = new Camera();
+        camera.Resize(new SkiaSharp.SKSize(1600, 1000));
+        camera.Fit(scene.Projection.WorldRect);
+        var bar = MapRenderer.Layout(camera, scene, 1).Scale;
+
+        // The bar's two ends, back in the world, are as many metres apart as it says.
+        var from = scene.Projection.ToWorld(camera.ToMap(bar.Origin));
+        var to = scene.Projection.ToWorld(camera.ToMap(new SkiaSharp.SKPoint(bar.Origin.X + bar.Pixels, bar.Origin.Y)));
+        Assert.Equal(bar.Metres, Math.Sqrt(Math.Pow(to.X - from.X, 2) + Math.Pow(to.Z - from.Z, 2)), 3);
+        // Icebreaker's transform: 2.0 map units a metre across the screen, 3.5 down it. The bar takes the first, not
+        // their mean (2.75).
+        Assert.Equal(2.0 * camera.Zoom, bar.Pixels / bar.Metres, 6);
+    }
+
     [Theory]
     [InlineData(0, "69 m")]
     [InlineData(4.5, "69 m · 4 MIN")]

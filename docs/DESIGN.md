@@ -723,7 +723,10 @@ spawns below).
   card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
   old as the position). A line too short to carry it clear of its ends has none. A scale bar at the lower left,
   above the wiki link and the credit line, takes the longest round length (1, 2, 5, 10, 25, 50, 100, 200, 500 m …)
-  that fits in 120 px and follows the zoom. No range rings (three circles on every view for a question the bar and
+  that fits in 120 px and follows the zoom. Its metres are those along the bar, the screen's horizontal (the review of
+  2026-10-04: it took the mean of both axes, and on Icebreaker, whose render is stretched 1.75× along one axis, "50 m"
+  spanned 69 m; there a metre up or down the screen is 1.75 times a metre across it, so the bar holds across only).
+  No range rings (three circles on every view for a question the bar and
   the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
   relative to the facing).
 - **How far the view zooms.** Out to half the zoom that shows the whole map, in to 64 px a map unit. The limit is

@@ -1133,15 +1133,18 @@ public static partial class MapRenderer
     public static double ScaleBarMetres(double pixelsPerMetre, float maxPixels) =>
         ScaleSteps.Where(s => s * pixelsPerMetre <= maxPixels).DefaultIfEmpty(ScaleSteps[0]).Max();
 
-    // Bottom left, above the wiki link and the credit line the window lays over that corner.
+    // Bottom left, above the wiki link and the credit line the window lays over that corner. Its metres are measured
+    // the way the bar lies, along the screen's horizontal: a render stretched along one axis (Icebreaker, 1.75×) has
+    // no one scale, and the mean of both axes made the bar 27 % wrong there (the review of 2026-10-04).
     private static ScaleBar Scale(Camera camera, MapScene scene, float ui)
     {
-        var origin = Screen(camera, scene, new WorldPoint(0, 0, 0));
-        var perMetre = (SKPoint.Distance(origin, Screen(camera, scene, new WorldPoint(100, 0, 0))) +
-                        SKPoint.Distance(origin, Screen(camera, scene, new WorldPoint(0, 0, 100)))) / 200;
+        var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
+        var from = scene.Projection.ToWorld(camera.ToMap(at));
+        var to = scene.Projection.ToWorld(camera.ToMap(new SKPoint(at.X + 100, at.Y)));
+        var metresIn100 = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Z - from.Z) * (to.Z - from.Z));
+        var perMetre = metresIn100 > 0 ? 100 / metresIn100 : 1;
         var metres = ScaleBarMetres(perMetre, 120 * ui);
         var pixels = (float)(metres * perMetre);
-        var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
         return new ScaleBar(metres, pixels, at, new SKRect(at.X - 6 * ui, at.Y - 20 * ui, at.X + pixels + 34 * ui, at.Y + 4 * ui));
     }
 
