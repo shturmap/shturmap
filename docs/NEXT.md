@@ -353,8 +353,10 @@ for the languages to come).
     (`KindGlyph`); the licence is in `THIRD-PARTY-NOTICES.md`, the credit in the README, the table in DESIGN.md §5.
   - Keys, the bring glyph, padlocks and switches still come from the icon font, so the README's Windows 10 note
     stays unless those are redrawn too.
-  - Left: the website's and README's pictures show the icons from before; they are re-recorded on the owner's
-    word.
+  - The website's pictures and clip, and with them the README's picture, were re-recorded the same day (owner:
+    "Make it so") and published. What had to follow in the site repository: Plan is rendered in a taller window
+    (the map list pushed BRING out of a 900 px one), the quest card is shorter, the floor picker sits one button
+    higher, and four callouts moved.
 
 ### D. Features (owner, 2026-10-04: these two; "the rest of d) not")
 
@@ -793,8 +795,8 @@ quests, raid state, positions (all from the game's logs and screenshot names).
   Screenshots stay the local Documents folder's, so positions wouldn't arrive over the network.
 - A quest lookup without the game (every quest on a map, labelled as all quests, not "yours") was not built; the
   browse mode shows nothing quest-like.
-- Once the settings flyout (help / settings split) is on main, add a "GAME FOLDER: <path or 'not found'> ·
-  CHOOSE…" row there, so a found-but-wrong install can be changed too.
+- Done since: settings have the "GAME FOLDER: <path or 'not found'>" row with CHOOSE… and FIND AUTOMATICALLY, so
+  a found-but-wrong install can be changed too.
 
 ## At the production release on GitHub (owner, 2026-10-03)
 
