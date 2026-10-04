@@ -25,6 +25,12 @@ public sealed record CardObjective(string QuestId, string ObjectiveId, Objective
 public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemId, string Text, string Where, string Source = "")
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
+
+    /// <summary>
+    /// Every item the row stands for ("A or B", gear worn together, a weapon class): it is each of them for the linked
+    /// highlight, though it pictures <see cref="ItemId"/>, the first. One item for a plain row.
+    /// </summary>
+    public IReadOnlyList<string> Alternatives { get; init; } = [ItemId];
 }
 
 /// <summary>A quest named on a card (e.g. one this quest unlocks), to point at for its own card.</summary>
@@ -133,6 +139,8 @@ public static class QuestCards
         if (where.Length == 0 && QuestTaxonomy.WorksAnywhere(kind))
             where = "any map";
         var text = string.IsNullOrWhiteSpace(o.Description) ? QuestTaxonomy.Label(kind) : o.Description!;
+        if (SaysWhere(data, text, where))
+            where = "";
         if (o.Optional)
             text += " (optional)";
         var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
@@ -141,6 +149,22 @@ public static class QuestCards
         return ticks is not null && ticks.TryGetValue(o.Id, out var day)
             ? new CardObjective(task.Id, o.Id, kind, text, where, item, "", Done: true, Ticked: TickedText(day), Tickable: true)
             : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active);
+    }
+
+    /// <summary>
+    /// Whether an objective's own text already says where it is: then the line of map names under it would say the
+    /// same again ("… on Streets of Tarkov" over "Streets of Tarkov"; the review of 2026-10-04, C2) and is left out.
+    /// It does when the sentence names one of the maps as a place, alone or in a list ("on Woods, Ground Zero, or
+    /// Customs": <see cref="QuestSynopsis.MapList"/>, which doesn't take "at Factory gate" for the map), and every
+    /// name the line would show stands in the text. A text that names only some of its maps keeps the whole line.
+    /// The pattern knows English prepositions: in another game language both lines stay.
+    /// </summary>
+    internal static bool SaysWhere(GameData data, string text, string where)
+    {
+        var shown = where.Split(", ", StringSplitOptions.RemoveEmptyEntries);
+        if (shown.Length == 0 || !shown.All(name => text.Contains(name, StringComparison.OrdinalIgnoreCase)))
+            return false;
+        return QuestSynopsis.MapList(shown, data.Maps.Values.Select(m => m.Name).ToList())?.IsMatch(text) == true;
     }
 
     internal static IEnumerable<string> MapIds(ApiObjective o) =>
@@ -255,7 +279,12 @@ public static class QuestCards
             var why = string.Join(" · ", new[] { string.Join(" and ", need.Purposes), where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
             // Two lists that read the same (a weapon class given twice with one preset more) stay one row.
             if (!needs.Any(n => n.Kind == need.Kind && n.Text == text && n.Where == why))
-                needs.Add(new CardNeed(task.Id, need.Kind, need.Alternatives[0], text, why, ItemCards.BestOf(data, sources, need.Alternatives, quests)));
+            {
+                needs.Add(new CardNeed(task.Id, need.Kind, need.Alternatives[0], text, why, ItemCards.BestOf(data, sources, need.Alternatives, quests))
+                {
+                    Alternatives = need.Alternatives.Distinct(StringComparer.Ordinal).ToList(),
+                });
+            }
         }
         return needs;
     }

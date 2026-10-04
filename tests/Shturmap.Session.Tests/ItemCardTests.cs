@@ -9,12 +9,12 @@ namespace Shturmap.Session.Tests;
 // said as the data has it.
 public class ItemCardTests
 {
-    private const string Salewa = "salewa", Beanie = "beanie", Glasses = "glasses", Ragman = "ragman", Marker = "ms2000", Key = "key114";
+    private const string Salewa = "salewa", Beanie = "beanie", Glasses = "glasses", Ragman = "ragman", Marker = "ms2000", Key = "key114", OtherKey = "key203";
 
     private static readonly Dictionary<string, string> Names = new()
     {
         [Salewa] = "Salewa first aid kit", [Beanie] = "Bomber beanie", [Glasses] = "RayBench sunglasses", ["bolts"] = "Bolts",
-        [Marker] = "MS2000 Marker", [Key] = "Dorm room 114 key",
+        [Marker] = "MS2000 Marker", [Key] = "Dorm room 114 key", [OtherKey] = "Dorm room 203 key",
     };
 
     private static ApiMap Map(string id, string name) => new(id, name, id, id, null, null, 40, null, null, null, null, null);
@@ -107,6 +107,66 @@ public class ItemCardTests
             "Dandies: Bring ×3, to plant and to use · Customs, Streets of Tarkov",
             "Dandies: Wear, for kills · Streets of Tarkov",
         ], Uses(data, Beanie, "Dandies"));
+    }
+
+    // ---- what the cards say for the linked highlight (the review of 2026-10-04, E3 and E4) ----
+
+    [Fact]
+    public void A_row_for_either_of_two_keys_stands_for_both()
+    {
+        // It pictures the first key and was linked to it alone.
+        var task = Task("Ballet", Objective("b1", "visit", map: "customs") with { RequiredKeys = [[Key, OtherKey]] });
+        var need = Assert.Single(QuestCards.Build(Data(task), States(QuestState.Active, "Ballet"), "Ballet")!.Needs);
+        Assert.Equal("Dorm room 114 key or Dorm room 203 key", need.Text);
+        Assert.Equal(Key, need.ItemId);
+        Assert.Equal([Key, OtherKey], need.Alternatives);
+        // A plain row stands for its one item.
+        var plain = Assert.Single(QuestCards.Build(Data(Revision), States(QuestState.Active, "Revision"), "Revision")!.Needs);
+        Assert.Equal([Marker], plain.Alternatives);
+    }
+
+    [Fact]
+    public void An_item_card_names_each_quest_that_needs_the_item_once()
+    {
+        // What the card keeps lit beside its item while it is read: Dandies uses the beanie two ways, and is one quest.
+        var wear = Objective("d3", "shoot", map: "streets") with { Wearing = [[new(Beanie, null)]] };
+        var data = Data(Task("Dandies", Objective("d1", "plantItem", 2, [Beanie], map: "streets"), wear),
+            Task("Other", Objective("o1", "plantItem", 1, [Beanie], map: "customs")),
+            Task("Idle", Objective("i1", "plantItem", 1, [Beanie], map: "customs")));
+        var card = ItemCards.Build(data, null, States(QuestState.Active, "Dandies", "Other"), Beanie);
+        Assert.Equal(3, card.Uses.Count);
+        Assert.Equal(["Dandies", "Other"], card.QuestIds);
+    }
+
+    // ---- the quest card's objective rows: the map is said once (the review of 2026-10-04, C2) ----
+
+    private static CardObjective Row(string text, string[] maps, string type = "visit", bool optional = false)
+    {
+        var objective = Objective("o1", type) with { Description = text, Maps = [.. maps], Optional = optional };
+        return QuestCards.Build(Data(Task("Quest", objective)), States(QuestState.Active, "Quest"), "Quest")!.Objectives.Single();
+    }
+
+    [Fact]
+    public void An_objective_whose_text_names_its_map_does_not_say_the_map_again()
+    {
+        Assert.Equal("", Row("Locate the convoy on Streets of Tarkov", ["streets"]).Where);
+        // In a list that holds all of them, too.
+        Assert.Equal("", Row("Eliminate Scavs on Customs or Streets of Tarkov", ["customs", "streets"], "shoot").Where);
+        // "(optional)" is added after the text was looked at.
+        var row = Row("Locate the convoy on Streets of Tarkov", ["streets"], optional: true);
+        Assert.Equal(("Locate the convoy on Streets of Tarkov (optional)", ""), (row.Text, row.Where));
+    }
+
+    [Fact]
+    public void The_map_stays_under_a_text_that_does_not_say_where()
+    {
+        Assert.Equal("Streets of Tarkov", Row("Locate the convoy", ["streets"]).Where);
+        // The map's name in the text, but not as the place: a gate, not the map.
+        Assert.Equal("Customs", Row("Stash the package at Customs gate", ["customs"]).Where);
+        // One of its two maps named: the line keeps both.
+        Assert.Equal("Customs, Streets of Tarkov", Row("Eliminate Scavs on Customs", ["customs", "streets"], "shoot").Where);
+        // No map at all: "any map" stays.
+        Assert.Equal("any map", Row("Eliminate Scavs", [], "shoot").Where);
     }
 
     // ---- where to get it: an offer behind a quest isn't a way until the log has seen that quest completed ----

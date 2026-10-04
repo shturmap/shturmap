@@ -23,7 +23,11 @@ public sealed record ItemSource(SourceKind Kind, string? TraderId, string Text, 
 
 /// <summary>The item card: what it is, where to get it, and which of your active quests need it and how.</summary>
 /// <param name="Get">Where to get it, the easiest first; empty until the item sources have loaded.</param>
-public sealed record ItemCardView(string ItemId, string Name, bool IsKey, IReadOnlyList<ItemSource> Get, IReadOnlyList<ItemUse> Uses);
+public sealed record ItemCardView(string ItemId, string Name, bool IsKey, IReadOnlyList<ItemSource> Get, IReadOnlyList<ItemUse> Uses)
+{
+    /// <summary>The active quests that need the item, each once: what the card keeps lit beside the item while it is read.</summary>
+    public IReadOnlyList<string> QuestIds => Uses.Select(u => u.QuestId).Distinct(StringComparer.Ordinal).ToList();
+}
 
 public static class ItemCards
 {
