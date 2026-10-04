@@ -431,6 +431,35 @@ public static class Planning
     }
 
     /// <summary>
+    /// Each objective on a map in a few words, by its id: its phrase in its quest's synopsis there
+    /// (<see cref="QuestSynopsis"/>, the same rules as Plan's line, so "Mark Stryker" for "Locate and mark the Stryker
+    /// with an MS2000 Marker"), for the raid card's lines (owner, 2026-10-04). A quest's objectives are phrased
+    /// together, so two that would read the same keep the places that tell them apart. Empty when the data isn't in
+    /// English: the rules are written for English texts.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> ObjectiveSynopses(GameData data, IEnumerable<Shturmap.Map.ObjectiveOnMap> objectives, IReadOnlySet<string> mapIds)
+    {
+        var lines = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (data.Language != "en")
+            return lines;
+        var here = mapIds.Select(id => data.Maps.GetValueOrDefault(id)?.Name).OfType<string>().ToList();
+        var all = data.Maps.Values.Select(m => m.Name).ToList();
+        foreach (var quest in objectives.GroupBy(o => o.Quest.Id))
+        {
+            var sources = quest
+                .Select(o => (o.Objective.Id, Source: new SynopsisObjective(o.Objective.Description ?? "", Math.Max(1, o.Objective.Count ?? 1), o.Objective.Type, o.Places.Count > 0)))
+                .ToList();
+            foreach (var phrase in QuestSynopsis.Of(sources.Select(s => s.Source), here, all).Phrases)
+            {
+                var id = sources.First(s => ReferenceEquals(s.Source, phrase.Source)).Id;
+                if (phrase.Text.Length > 0)
+                    lines[id] = phrase.Text;
+            }
+        }
+        return lines;
+    }
+
+    /// <summary>
     /// Why a PROGRESS row can't be finished on this map, in a few words from the planner's facts (owner, 2026-10-03:
     /// a PROGRESS quest is as much this raid's work as a COMPLETE one, so its row isn't dimmed; it says why instead):
     /// "2 of 5 objectives here", "needs items found in raid", "25 kills in all". Empty when none applies.

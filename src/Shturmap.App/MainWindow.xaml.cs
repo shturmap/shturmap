@@ -713,6 +713,13 @@ public sealed partial class MainWindow : Window
     {
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
+        // In a few words where the data allows it (owner, 2026-10-04: the raid card is read in seconds; the quest's
+        // card keeps tarkov.dev's sentence).
+        if (o.Short is { Length: > 0 } few)
+        {
+            return new ObjectiveItem(o.QuestId, few, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
+                Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey);
+        }
         // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
         // "(optional)" at the end.
         const string optional = " (optional)";

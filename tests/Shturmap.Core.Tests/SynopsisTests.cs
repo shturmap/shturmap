@@ -114,6 +114,18 @@ public class SynopsisTests
             O("Locate and mark the Stryker with an MS2000 Marker on Streets of Tarkov", type: "mark", place: true),
             O("Locate and mark the second LAV III with an MS2000 Marker on Streets of Tarkov", type: "mark", place: true)));
 
+    // The raid card says each objective by its own phrase (owner, 2026-10-04): the same words as Plan's line, unmerged.
+    [Fact]
+    public void Each_objective_has_its_own_phrase()
+    {
+        var line = QuestSynopsis.Of(
+        [
+            O("Locate and mark the first LAV III with an MS2000 Marker on Streets of Tarkov", type: "mark", place: true),
+            O("Locate and mark the Stryker with an MS2000 Marker on Streets of Tarkov", type: "mark", place: true),
+        ], ["Streets of Tarkov"], AllMaps);
+        Assert.Equal(new[] { "Mark first LAV III", "Mark Stryker" }, line.Phrases.Select(p => p.Text).ToArray());
+    }
+
     [Fact]
     public void Merged_objects_say_shared_words_once() =>
         Assert.Equal("Stash AK-50 body, handguard, barrel", Line("Customs",

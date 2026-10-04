@@ -1526,6 +1526,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             // Degrees clockwise from map-up: unlike "ahead-left", still true after the player has turned.
             double? MapBearing(WorldPoint target) =>
                 fix is not null && projection is not null ? projection.ScreenHeadingDegrees(fix.Position, Bearing.YawTo(fix.Position, target)) : null;
+            // Each objective in a few words, for the raid card's lines (English data only).
+            var shorts = Planning.ObjectiveSynopses(_data, railContent?.Objectives ?? [], sameArtwork);
             foreach (var o in railContent?.Objectives ?? [])
             {
                 double? distance = null, height = null, bearing = null;
@@ -1545,7 +1547,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     ObjectiveText(o.Objective),
                     o.Done, o.Places.Count > 0, distance, direction, height,
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
-                    bearing, o.Quest.Trader, Planning.NeedKey(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0)));
+                    bearing, o.Quest.Trader, Planning.NeedKey(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0))
+                {
+                    Short = shorts.GetValueOrDefault(o.Objective.Id) is { } few ? few + (o.Objective.Optional ? " (optional)" : "") : null,
+                });
             }
             var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);
             foreach (var m in (railContent?.Markers ?? []).Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))

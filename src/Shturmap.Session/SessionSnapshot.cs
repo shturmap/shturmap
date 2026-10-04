@@ -61,7 +61,14 @@ public sealed record ObjectiveView(
     string? Needs,
     double? MapBearing = null,
     string? TraderId = null,
-    string? NeedKey = null);
+    string? NeedKey = null)
+{
+    /// <summary>
+    /// The objective in a few words, as Plan's synopsis says it ("Mark Stryker"), for the raid card's lines; null
+    /// when the data isn't in English (<see cref="Planning.ObjectiveSynopses"/>): then <see cref="Text"/> stands.
+    /// </summary>
+    public string? Short { get; init; }
+}
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
 public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, double? ClockHours);

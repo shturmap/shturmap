@@ -603,7 +603,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
-    fixed place, "after the raid" (muted) for hand-overs. Objectives inside a quest go nearest first, and quests
+    fixed place, "after the raid" (muted) for hand-overs. The text is the objective in a few words, in these lines
+    and in NEXT: its phrase from the quest's synopsis ("Mark Stryker" for "Locate and mark the Stryker with an
+    MS2000 Marker"; §5, "Quest synopsis"; `Planning.ObjectiveSynopses`), since the card is read in seconds; the
+    quest's own card keeps tarkov.dev's sentence, and so do these lines when the data isn't in English (review of
+    2026-10-04, C1: three full sentences were the card's longest part). The need stays on every line, also when
+    three lines in a row say "Bring: MS2000 Marker": each place needs one of its own (owner, 2026-10-04: "keep the
+    item with each sub-item so it's clear that one is needed"; saying it once under the quest's name was tried and
+    declined). Objectives inside a quest go nearest first, and quests
     by their nearest objective, so the top of the list is still where to go next. An objective the player ticked
     as done ("Quest cards", *Ticks*) comes after the quest's open lines, muted, with "DONE" where its distance was
     and without its needs; NEXT and the guide line pass it by, and a quest with nothing open on this map isn't
@@ -1219,7 +1226,8 @@ labels use, so it stays the thing you recognise.
   shown as "A or B").
 - **Bring**: items a Place objective consumes (`items` of `plantItem`, `markerItem` of `mark`, `useAny` of
   `useItem`, the quest item of `plantQuestItem`), with counts summed per item.
-- Shown aggregated per map in Plan, and inline on the objective in Raid ("Key: Dorm room 114 key", "Bring: MS2000 Marker").
+- Shown aggregated per map in Plan, and inline on the objective in Raid ("Key: Dorm room 114 key", "Bring: MS2000 Marker"),
+  on every objective that needs it.
 - Shturmap cannot see the stash; it lists what is needed, not what is missing.
 
 ## 7. Raid planner
