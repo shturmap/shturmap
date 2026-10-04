@@ -87,16 +87,21 @@ public static partial class MapRenderer
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
         // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength markers
         // read as "not important", and a highlighted one must look highlighted).
-        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03).
+        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03). They
+        // are level 1, so they get a pass of their own after everything that steps back: grouped by measure with the
+        // ways out, which don't step back in a raid either, they were drawn first there and lay under other quests'
+        // markers (the review of 2026-10-04).
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
         stepBack ??= StepBackOf;
         StepBack Measure(ShownMarker m) => m.Kept ? Full : stepBack(m.Marker.Kind, scene.InRaid);
-        foreach (var group in layout.Markers.Where(m => !m.Focused).GroupBy(Measure))
+        foreach (var group in layout.Markers.Where(m => !m.Focused && !m.Kept).GroupBy(Measure))
         {
             using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
             foreach (var marker in group)
                 DrawMarker(canvas, scene, marker, uiScale);
         }
+        foreach (var marker in layout.Markers.Where(m => !m.Focused && m.Kept))
+            DrawMarker(canvas, scene, marker, uiScale);
         foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => Measure(l.Of).LabelAlpha))
         {
             using var layer = new StepBackLayer(canvas, group.Key, 1, dim);

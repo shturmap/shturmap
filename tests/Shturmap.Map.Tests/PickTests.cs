@@ -29,6 +29,31 @@ public class PickTests
         Assert.All(markers, m => Assert.False(m.Focused));
     }
 
+    // Picks are level 1, "drawn last" (the review of 2026-10-04: in a raid the ways out don't step back either, and
+    // drawn in one group with them the picks came first and lay under other quests' markers).
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_pick_is_never_covered_by_another_quests_marker(bool inRaid)
+    {
+        var (camera, scene) = Of([
+            new MapMarker("extract:e", MarkerKind.ExtractPmc, new WorldPoint(-200, 0, 0), "Exit"),
+            Quest("a", 0, 0, "A", group: "a"),
+            Quest("b", 16, 0, "B", group: "b"),
+        ]);
+        scene.InRaid = inRaid;
+        scene.Kept = new HashSet<string> { "a" };
+        using var bitmap = new SkiaSharp.SKBitmap(new SkiaSharp.SKImageInfo(1000, 1000, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul));
+        using var canvas = new SkiaSharp.SKCanvas(bitmap);
+        MapRenderer.Render(canvas, camera, scene);
+        // Where the two discs overlap, clear of both glyphs (the pick's own centre holds its glyph): the pick's cyan,
+        // not the other quest's gold.
+        var pixel = bitmap.GetPixel(510, 496);
+        var cyan = MapRenderer.Kept;
+        Assert.True(Math.Abs(pixel.Red - cyan.Red) <= 3 && Math.Abs(pixel.Green - cyan.Green) <= 3 && Math.Abs(pixel.Blue - cyan.Blue) <= 3,
+            $"{pixel} where the pick ({cyan}) and the other quest's marker overlap");
+    }
+
     [Fact]
     public void Without_picks_there_is_no_guide()
     {
