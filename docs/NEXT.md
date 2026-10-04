@@ -184,7 +184,10 @@ Smaller, in planning and data:
   (2026-10-04): discovery runs every 30 s for the whole run, another install's newer log session is followed with a
   notice, and a folder the player chose is never left.
 - **A21.** "N min left" is the map's raid length minus the time since the raid's start line: computed, and wrong
-  after a reconnect or for a local Scav raid shown as a PMC's. Status: done (2026-10-04: "40 min raid · started 21:02").
+  after a reconnect or for a local Scav raid shown as a PMC's. Status: done (2026-10-04: "40 min raid · started 21:02"),
+  and changed again that evening on the owner's word ("how much time we're in the raid and how much time is left.
+  This is crucial information"): "12 min in · 28 min left" on a line of its own, with a tooltip that says how it
+  is made; a Scav gets no time left.
 - **A31.** The session's background loops (backfill, following, looking again) catch only a cancel: one database or
   file error ends them silently. Translation downloads left unwatched after a failed load become crash records.
   Status: done (2026-10-04).
@@ -832,6 +835,7 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    to flag then: every map row in Plan's list carries its glyphs and need cells, the open map's too (the Plan
    picture); a possible place is a filled marker with a "?" where it was a hollow ring (the raid picture's Audit
    marker, the clip); the pulse of a pointed-at quest is two wider rings (the clip).
+   The raid card says "12 min in · 28 min left" where the raid picture and the clip say "40 min raid · started".
    And since then: each pick has a colour of its own (the Plan picture and the clip show one cyan pick, which is
    still what a single pick looks like), and following leaves room ahead of the player (the clip).
    Decided the same evening, from mock-ups made in the real renderer: how picked quests are told apart on the map

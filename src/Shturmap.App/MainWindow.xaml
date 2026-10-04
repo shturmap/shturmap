@@ -756,6 +756,12 @@
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                              ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
+                  <!-- How long the raid has run and how long it still runs: what one looks for in a raid, so it stands
+                       above the other facts, in the size of the summary and in ink (owner, 2026-10-04: "This is crucial
+                       information"; Rules.RaidTime). -->
+                  <TextBlock Text="{x:Bind ViewModel.RaidTime, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidTime), Mode=OneWay}"
+                             Foreground="{StaticResource InkBrush}" FontSize="16" FontWeight="SemiBold" FontStretch="SemiCondensed" TextWrapping="Wrap"
+                             ToolTipService.ToolTip="{x:Bind ViewModel.RaidTimeTip, Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLineParts, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}"
                                 ItemTemplate="{StaticResource LinePartTemplate}" ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False"
                                 AutomationProperties.Name="{x:Bind ViewModel.RaidLine, Mode=OneWay}" />

@@ -694,9 +694,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     there is always a row to click, the list is also there for one suggested map while another map is on screen.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
-    line ("Complete 5 quests · progress 1 more"), the raid line (the raid's length on this map and when the log says it started, "40 min raid · started 21:02";
-    the time of day; bosses with spawn chance. No "min left": that was the one minus the other, a figure the game
-    never states and a wrong one after a reconnect; owner, 2026-10-04, facts only)
+    line ("Complete 5 quests · progress 1 more"), **the raid's time on a line of its own, "12 min in · 28 min left"**,
+    in ink and the summary's size, then the bosses with their spawn chances
+    (owner, 2026-10-04, in the evening: "In the raid we do not care when the start time was and all this info, we
+    typically want to see how much time we're in the raid and how much time is left. This is crucial
+    information". It replaces the same day's "40 min raid · started 21:02" with the game's time of day, made when
+    the review called "N min left" a figure the game never states. The owner wants it back, so it is back, said
+    honestly: the time in the raid counts from the raid's start line in the log, the time left is the map's raid
+    length from tarkov.dev minus that, the tooltip says so and that a reconnect can throw it off; past the raid's
+    length it says "47 min in · past the raid's 40 min", never a time left below one; a Scav, who joins a raid
+    under way, gets "7 min in · time left not known"; a map without a raid length in the data gets the time in
+    alone (`Rules.RaidTime`). While the raid loads, "40 min raid" stands with the bosses, as in Plan.)
     and, when the distances aren't from a fresh screenshot, where they are from. While the raid loads, one quiet
     line under the raid line names the last loading step the game's log reported ("LOADING · MAP", then "MAP
     LOADED", "RAID PREPARED", "RAID CREATED", "PLAYER SPAWNED", "GAME POOLED", "GAME RUNNING"), over six thin

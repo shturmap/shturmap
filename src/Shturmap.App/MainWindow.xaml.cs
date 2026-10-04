@@ -477,25 +477,19 @@ public sealed partial class MainWindow : Window
         ViewModel.RaidText = RaidStatus.Text(s, DateTime.Now);
         ViewModel.RaidDetail = RaidStatus.Tooltip(s.Raid, DateTime.Now);
 
+        // In a raid: how long it has run and how long it still runs, on a line of its own (owner, 2026-10-04: "we
+        // do not care when the start time was and all this info ... how much time we're in the raid and how much
+        // time is left. This is crucial information"). Until then the line said "40 min raid · started 21:02" and
+        // the game's time of day, and no time left (the same day's review: a figure the game never states). It is
+        // back on the owner's word, with its tooltip saying how it is made; a Scav gets none (Rules.RaidTime).
+        var inRaid = s.Raid.Phase == RaidPhase.InRaid;
+        var time = Rules.RaidTime.Of(inRaid, s.Raid.Side == RaidSide.Scav, s.Raid.RaidStartedAt, s.RaidInfo?.RaidMinutes ?? 0, DateTime.Now);
+        ViewModel.RaidTime = time?.Text ?? "";
+        ViewModel.RaidTimeTip = time?.Tip ?? "";
         var parts = new List<string>();
-        if (s.RaidInfo is { } info)
-        {
-            // Facts only (owner, 2026-10-04): how long a raid on this map is and when the log says this one started.
-            // "N min left" was the one minus the other, a figure the game never states and a wrong one after a
-            // reconnect. A Scav joins a raid already under way: its start line is when it joined.
-            var scav = s.Raid.Side == RaidSide.Scav && s.Raid.Phase == RaidPhase.InRaid;
-            if (info.RaidMinutes > 0 && !scav)
-                parts.Add($"{info.RaidMinutes} min raid");
-            if (s.Raid.Phase == RaidPhase.InRaid && s.Raid.RaidStartedAt is { } started)
-                parts.Add(scav ? $"joined {started:HH:mm}" : $"started {started:HH:mm}");
-            else if (scav)
-                parts.Add("joined under way");
-            if (info.ClockHours is { } clock)
-            {
-                var minutes = (int)Math.Round(clock * 60) % (24 * 60);
-                parts.Add($"{minutes / 60:00}:{minutes % 60:00} in raid");
-            }
-        }
+        // Before the raid runs (it loads) the map's raid length stands in the facts; once it runs, the line above says more.
+        if (s.RaidInfo is { RaidMinutes: > 0 } info && time is null && !(inRaid && s.Raid.Side == RaidSide.Scav))
+            parts.Add($"{info.RaidMinutes} min raid");
         // The bosses are parts of their own: each is linked to its spawn zones on the map.
         var raidParts = LinePart.Line(parts.Select(p => new LinePart(p)).Concat(BossParts(s, s.RaidMap?.NormalizedName, s.RaidInfo?.Bosses ?? [])));
         ViewModel.RaidLine = string.Join(" · ", raidParts.Select(p => p.Text));

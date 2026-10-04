@@ -312,6 +312,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial string RaidLine { get; set; } = "";
 
+    /// <summary>"12 min in · 28 min left" while a raid runs (Rules.RaidTime), or empty.</summary>
+    [ObservableProperty] public partial string RaidTime { get; set; } = "";
+
+    /// <summary>Where the raid time's figures come from.</summary>
+    [ObservableProperty] public partial string RaidTimeTip { get; set; } = "";
+
     /// <summary>The raid line part by part (<see cref="RaidLine"/> is the same as one text): its bosses are linked to
     /// their markers.</summary>
     [ObservableProperty] public partial IReadOnlyList<LinePart> RaidLineParts { get; set; } = [];
