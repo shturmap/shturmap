@@ -270,8 +270,8 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `AmberDeep` | `#A88F4E` | the accent pressed | SystemAccentColorDark1 · — · — |
 | `Green` | `#8DA65E` | PMC extracts, success, healthy inputs | GreenColor · Green · — |
 | `Teal` | `#6F9A94` | Scav extracts | TealColor · Teal · `--teal` |
-| `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | — · Lime · — |
-| `Violet` | `#9C8CC4` | transits | — · Violet · — |
+| `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | KhakiColor · Lime · — |
+| `Violet` | `#9C8CC4` | transits | VioletColor · Violet · — |
 | `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
 | `Sand` | `#E9E2C8` | the player and their trail | SandColor · Player · `--sand` |
 | `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
@@ -373,8 +373,8 @@ pushpin, so the type beside the trader portrait read as a useless second pin). A
 everywhere: rows, cards, map markers, the legend, buttons. The card's button that keeps it as a window is therefore
 **pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out: keep this card open as a small
 window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
-Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP) end in "↗". A check of all symbols the same day, by rendering
-them side by side:
+Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the
+same day, by rendering them side by side:
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
   item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market
   became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
@@ -393,7 +393,10 @@ not in focus step back by kind (see "Map drawing", "Stepping back"), easing in a
 ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
 easing, when Windows' animation effects are off, and only while something is in focus). Losing the focus waits
 0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
-of making every marker blink. Markers on another floor than the one shown are drawn at full strength, highlighted
+of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
+any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
+Shturmap's windows is the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
+game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not. Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
 with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
@@ -428,6 +431,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 ### Screen anatomy
 
+- **The window** (owner, 2026-10-04: remember the window's monitor and size). It opens where the player left it: on
+  the same monitor, at its bounds, maximised or not (`WindowPlace`; `window.place` in shturmap.db, saved 0.6 s after
+  a move or resize has settled and when the window closes; a minimised window keeps what was saved before). At a
+  first start, and whenever the saved monitor is no longer connected in the same place, the first start's rule
+  applies: maximised on the first monitor that isn't the primary one (the game's), or on the only monitor at
+  1600×1000. Until then that rule ran at every start, so a third monitor or the player's own size was lost each
+  time. A maximised window sent to another monitor comes back maximised there. The window is never smaller than
+  900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
+  its last word, the last fix, trims. Snapshot and demo runs and a given size (`--window`) place the window
+  themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
   three buttons of one size (28 px, 6 px apart): **feedback** (a speech bubble, `E939`: the Report dialog, PROBLEM
@@ -508,8 +521,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for hand-overs. Objectives inside a quest go nearest first, and quests
     by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
-    transits for your side, each with what it takes to leave there (see "Extract requirements"). ANY MAP closes
-    the rail in both states.
+    transits for your side, each with what it takes to leave there (see "Extract requirements"). A way out wears
+    the colour of its kind here as on the map, in EXIT's label and distance and in each row's distance: a PMC
+    extract green, a Scav's teal, one for both sides khaki, a transit violet (2026-10-04: every way out was green
+    in the rail, the PMC extract's colour on the map). ANY MAP closes the rail in both states.
   - *The raid's map is not the map on screen* (review of 2026-10-04: a map picked in the MAP list during a raid
     took the raid with it; the next position, the status bar, the raid card and RAID OVER went to the picked map).
     The raid, its card, the status words, the cues and the last-raid line are about the raid's own map, as the
@@ -581,8 +596,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Follow my position** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should smooth
   scroll to the updated player position"; it replaces 2026-10-01's "a new fix never moves the view", principle 8):
   a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
-  "Follow my position (Shift+F)"; on, its symbol and frame are the kept cyan. Off by default, and kept between runs
-  (`followPosition` in shturmap.db).
+  "Follow my position (Shift+F)"; on, its symbol and frame are amber, the app's colour for "on" (2026-10-04: it was
+  the picks' cyan, which then had two meanings; "Design system", one meaning per colour). Off by default, and kept
+  between runs (`followPosition` in shturmap.db).
   - **On**, each new position glides into the middle of the view over 0.5 s, eased out, at the current zoom; the
     floor follows the height as always, and the position pings as it arrives. Turning it on glides to the last
     position at once. With Windows' animation effects off the view jumps there instead. While it glides the edge
@@ -590,7 +606,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - **Taking the view back:** dragging the map or showing the whole map (0, the button) turns following off, and the
     toggle shows it, with no notice or cue. Zooming (the wheel, double-click, + / −) keeps following, about the
     player: the player stays in the middle. F and the show-my-position button centre at once, as before. Pointing
-    at a quest or holding a card never moves the view, so they leave following alone.
+    at a quest or holding a card never moves the view, so they leave following alone. With no position on the map
+    (between raids, or in a raid before the first screenshot) there is nothing to take the view back from: a drag
+    or showing the whole map leaves following as the player set it, and nothing is saved (2026-10-04: panning a map
+    while planning switched it off for the next raid and for later starts). Whether a drag in a raid should switch
+    it off for later raids too, as it does, or only until the next raid starts, is the owner's to decide
+    (docs/NEXT.md, A5).
   - A map opened while following (a raid loading) is fitted first, then centred on the player once there is a
     position. Snapshot and demo runs leave the saved choice alone; `--follow` turns it on from the start (snapshots,
     the dev view).
@@ -889,9 +910,11 @@ Cards behave like the nested tooltips in Crusader Kings III:
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
 2. **Held**: a click holds it: on the quest (row or marker), or anywhere on the card. A held card is solid with an
    amber border and stays while the pointer is near it. It closes on a click on nothing in particular (bare rail
-   or map), Esc, another click on its quest, a full 0.4 s rest on something else that opens a card in its place,
-   or the pointer moving more than 240 px away from it. Nothing holds by itself (owner, 2026-10-01: the timed hold
-   was dropped).
+   or map), Esc, another click on its quest, a full rest on something else that opens a card in its place (0.65 s
+   from the rail or the map, 0.4 s on a card), or the pointer moving more than 240 px away from both the card and
+   what it was opened from, its row or its marker (`CardReach`; 2026-10-04: measured from the card alone, a click on
+   the left of a row held a card that closed with the next move of the mouse). Nothing holds by itself (owner,
+   2026-10-01: the timed hold was dropped).
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
 4. **Popped out**: the pop-out button (`E8A7`; "pinned" in the code, the settings and the study log) turns a quest
@@ -899,10 +922,20 @@ Cards behave like the nested tooltips in Crusader Kings III:
    beside it. The card the button was on closes, with anything opened from it, so the quest isn't shown twice
    (owner, 2026-10-01). In a raid it shows live distances, which is what popping out is for: a tracker for the
    quests you chose, readable without the mouse. Popped-out cards come back after a restart and close by themselves
-   when their quest is completed; the window has no pop-out button of its own. Its title bar is kept inside a
+   when their quest is completed; the window has no pop-out button of its own. A card is forgotten only when its
+   quest is over (completed or failed) or the player closes its window. One whose quest isn't active in the mode
+   shown (the game switched between PvE and PvP) closes but keeps its place in the saved list, and is back at a
+   start where its quest is active; while a mode's data is loading, the cards stay as they are; and closing the
+   main window saves the list once, before the cards close with it (`PinnedCards`; 2026-10-04: a mode change closed
+   every card and saved an empty list). Its title bar is kept inside a
    screen's work area,
    when it comes back and 0.6 s after it was moved, by the least move that does it (the study log: one closed
    twice with its title bar above the screen, where it can't be grabbed).
+
+A card is never taller than the room there is: the window for a card opened in it, the screen's work area for a
+popped-out window (which moves up by what would hang below it). A longer card (Collector, a quest with many
+objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay in reach (2026-10-04: it was cut at
+the window's edge, a popped-out one at 900 px).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow.
@@ -1236,7 +1269,9 @@ self-unpacking exe, without updates; they need the Setup once.
   the tree is clean, the commit pushed and the build made from that commit (`artifacts\release\app`). `vpk` is a
   pinned local tool (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`,
   what `tools\fake-raid.ps1` runs; it keeps the developer data folder). To test the whole update path without GitHub, `--update-feed <folder>` points
-  an installed build at a local feed (local folders only) and lets it update even in a snapshot or a fake game.
+  an installed build at a local feed and lets it update even in a snapshot or a fake game. The folder must be on a
+  fixed local drive (`LocalFeed`): no network share in either slash form, no device path, no mapped or removable
+  drive, since an update is code that runs as the player (2026-10-04: `//server/share` passed as local).
   Velopack's Setup 1.2.161 crashes when given arguments for the app (`-- …`); install silently with `--silent` only.
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
   `<exe name>.pri`, so the project names its PRI file `resources.pri`: named after the project, any other exe
@@ -1508,7 +1543,9 @@ form. Problems and ideas both go through it.
   survived, "ran into an error"), with SEND, DON'T SEND, ALWAYS SEND (sends and switches the setting) and WHAT'S
   SENT (the records as text, exactly what goes); closing it asks again next time. **Always send** sends at the
   start and logs it. **Never** keeps them on the PC only. A record the player said Send to that couldn't go yet is
-  sent at the next start without asking again; a sent one is deleted; records are kept 30 days, twenty at most.
+  sent at the next start without asking again, unless the setting is Never by then: choosing Never takes back an
+  earlier Send too, at once and at the next start, and such a record stays on the PC (2026-10-04: approved records
+  went out before the setting was read). A sent one is deleted; records are kept 30 days, twenty at most.
   Never sent: memory dumps, screenshots, game files, ids, quest lists.
 - **How it goes out.** Sentry (Functional Software, Inc.), EU data region. Only the SDK's event types and envelope
   format are used: `ReportEnvelopes` builds the envelope from what the player saw and `ReportSender` posts it, so

@@ -17,4 +17,10 @@
   <ItemGroup>
     <None Include="..\fixtures\**\*" LinkBase="fixtures" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- The app's rules that need no window (src\Shturmap.App\Rules). Its project is WinUI and can't be referenced from
+       a test, so these files, which use nothing of WinUI, are compiled in here as they are. -->
+  <ItemGroup>
+    <Compile Include="..\..\src\Shturmap.App\Rules\*.cs" LinkBase="App" />
+  </ItemGroup>
 </Project>

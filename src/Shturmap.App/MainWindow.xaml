@@ -89,20 +89,28 @@
           <Setter Property="TextLineBounds" Value="Tight" />
         </Style>
       </Grid.Resources>
+      <!-- The inputs and the three buttons keep their place at the right; the left takes the rest, and in a narrow
+           window the last fix, its last word, trims instead of pushing them out of the window (2026-10-04). -->
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <StackPanel Orientation="Horizontal" Spacing="16">
+      <Grid ColumnSpacing="16">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
         <TextBlock Text="SHTURMAP" Style="{StaticResource StatusBarText}" FontWeight="Bold" CharacterSpacing="320" />
-        <Rectangle Width="1" Height="16" Fill="{StaticResource LineStrongBrush}" VerticalAlignment="Center" />
+        <Rectangle Grid.Column="1" Width="1" Height="16" Fill="{StaticResource LineStrongBrush}" VerticalAlignment="Center" />
         <!-- The mode as the game's log says it; no chooser (owner, 2026-10-03). The tooltip says where it comes from.
              Only with no game on this PC is it chosen by hand: there is no log to say it (the no-game fallback). -->
-        <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
+        <TextBlock Grid.Column="2" Text="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    ToolTipService.ToolTip="{x:Bind ViewModel.ModeDetail, Mode=OneWay}"
                    Visibility="{x:Bind ShownIfNot(ViewModel.ModeChoosable), Mode=OneWay}" />
-        <DropDownButton Content="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12"
+        <DropDownButton Grid.Column="2" Content="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12"
                         Padding="6,2" VerticalAlignment="Center" Visibility="{x:Bind ShownIfTrue(ViewModel.ModeChoosable), Mode=OneWay}"
                         ToolTipService.ToolTip="No game on this PC: choose the mode whose maps and data to browse">
           <DropDownButton.Flyout>
@@ -114,11 +122,12 @@
           </DropDownButton.Flyout>
         </DropDownButton>
         <!-- Only what the log shows: "NOT IN A RAID" outside a raid, never "in the menus" (RaidStatus; owner, 2026-10-03). -->
-        <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
+        <TextBlock Grid.Column="3" Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}" />
-        <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}" />
-      </StackPanel>
-      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16">
+        <TextBlock Grid.Column="4" Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
+                   HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+      </Grid>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
                     ToolTipService.ToolTip="{x:Bind ViewModel.LogsDetail, Mode=OneWay}">
           <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.LogsOk), Mode=OneWay}" VerticalAlignment="Center" />
@@ -689,14 +698,16 @@
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="EXIT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource GreenBrush}" Margin="0,12,0,0" />
+                    <!-- In the colour of its kind, as its symbol on the map: a PMC extract green, a Scav's teal, one for
+                         both sides khaki, a transit violet (2026-10-04: every way out was green here). -->
+                    <TextBlock Text="EXIT" Style="{StaticResource EyebrowText}" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" Margin="0,12,0,0" />
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,9">
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Name, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Needs, Mode=OneWay}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
                                  Visibility="{x:Bind ShownIf(ViewModel.RaidExit.Needs), Mode=OneWay}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Padding="10,8,0,8">
-                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{StaticResource GreenBrush}" HorizontalAlignment="Right" />
+                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Right" />
                       <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.Direction), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11.5"
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
                     </StackPanel>
@@ -738,7 +749,7 @@
                         </StackPanel>
                       </StackPanel>
                       <StackPanel Grid.Column="1">
-                        <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" Foreground="{StaticResource GreenBrush}" />
+                        <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" Foreground="{x:Bind KindBrush}" />
                         <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
                       </StackPanel>
                     </Grid>
@@ -911,19 +922,20 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <!-- Follow my position (owner, 2026-10-03): on, a new position glides into the middle; dragging or showing the
-               whole map turns it off. Its own symbol (four arrows about a centre); on, in the kept cyan. -->
+               whole map turns it off. Its own symbol (four arrows about a centre); on, in amber, the app's colour for
+               "on" (cyan is the picks' alone; 2026-10-04). -->
           <ToggleButton x:Name="FollowButton" Style="{StaticResource MapToggleButton}" Click="OnFollowClick"
                         ToolTipService.ToolTip="Follow my position (Shift+F)" AutomationProperties.Name="Follow my position">
             <ToggleButton.Resources>
               <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="ToggleButtonBackground" />
               <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="ToggleButtonBackgroundPointerOver" />
               <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="ToggleButtonBackgroundPressed" />
-              <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonBorderBrushChecked" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPointerOver" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPressed" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushChecked" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPointerOver" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPressed" ResourceKey="AmberBrush" />
             </ToggleButton.Resources>
             <FontIcon Glyph="&#xE759;" FontSize="15" />
           </ToggleButton>

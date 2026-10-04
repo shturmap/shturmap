@@ -26,6 +26,8 @@
       <Color x:Key="AmberColor">#C9AD62</Color>
       <Color x:Key="TealColor">#6F9A94</Color>
       <Color x:Key="GreenColor">#8DA65E</Color>
+      <Color x:Key="KhakiColor">#B7B77A</Color>
+      <Color x:Key="VioletColor">#9C8CC4</Color>
       <Color x:Key="RedColor">#B8604A</Color>
       <Color x:Key="SandColor">#E9E2C8</Color>
       <Color x:Key="KeptColor">#3FD2E0</Color>
@@ -41,6 +43,10 @@
       <SolidColorBrush x:Key="AmberBrush" Color="{StaticResource AmberColor}" />
       <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
       <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
+      <!-- The ways out wear their kind's colour in the rail as on the map: PMC extracts green, Scav extracts teal,
+           extracts for both sides khaki, transits violet. -->
+      <SolidColorBrush x:Key="KhakiBrush" Color="{StaticResource KhakiColor}" />
+      <SolidColorBrush x:Key="VioletBrush" Color="{StaticResource VioletColor}" />
       <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
       <SolidColorBrush x:Key="SandBrush" Color="{StaticResource SandColor}" />
       <!-- An inventory cell behind item icons. -->

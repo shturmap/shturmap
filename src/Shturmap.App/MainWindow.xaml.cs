@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Shturmap.App.Controls;
+using Shturmap.App.Rules;
 using Shturmap.Core.Logs;
 using Shturmap.Core.Maps;
 using Shturmap.Core.Navigation;
@@ -42,7 +43,10 @@ public sealed partial class MainWindow : Window
     private DateTime? _floorPickFix;
     private int _shownFloor = -1;
 
-    public MainWindow(GameSession session, SizeInt32? size = null)
+    /// <param name="size">A size to open at (developer runs: "--window"); kept as is, and nothing is remembered.</param>
+    /// <param name="savedPlace">Where the window stood when it was last closed (<see cref="WindowPlace"/>), or null.</param>
+    /// <param name="rememberPlace">Whether this run restores and saves the window's place (not snapshots or the demo).</param>
+    public MainWindow(GameSession session, SizeInt32? size = null, string? savedPlace = null, bool rememberPlace = false)
     {
         _session = session;
         InitializeComponent();
@@ -57,7 +61,7 @@ public sealed partial class MainWindow : Window
         AppWindow.TitleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
         AppWindow.TitleBar.ButtonForegroundColor = (Windows.UI.Color)Application.Current.Resources["InkColor"];
         AppWindow.TitleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RaisedColor"];
-        PlaceOnSecondMonitor(size);
+        PlaceWindow(size, savedPlace, rememberPlace);
 #if DEVTOOLS
         AddStudySwitch();
 #endif
@@ -70,7 +74,8 @@ public sealed partial class MainWindow : Window
         HookPins(_cards, this);
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
-        Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
+        // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
+        Linked.Left += CardStack.Leave;
         // A click on a quest keeps its card open; the pen beside it (rows, cards) picks it for the coming raid.
         Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
         Linked.KeepRequested += quest => _ = _session.TogglePickAsync(quest, "pen");
@@ -93,9 +98,14 @@ public sealed partial class MainWindow : Window
         _focusClear.Tick += (_, _) => ApplyMapFocus();
         Map.MarkerHovered += OnMarkerHovered;
         Map.MarkerClicked += OnMarkerClicked;
+        ObserveActivation(this);
         Closed += (_, _) =>
         {
+            SavePlace();
+            // The popped-out cards are saved once, as they stand, before they close with this window: their own
+            // closing must not rewrite the list (it would save it empty, or after the session has gone).
             SavePinned();
+            _closing = true;
             foreach (var window in _pinned.Values.ToList())
                 window.Close();
         };
@@ -143,7 +153,7 @@ public sealed partial class MainWindow : Window
     }
 
     // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
-    private static readonly TimeSpan FreshFix = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan FreshFix = FixAge.Fresh;
     private bool? _fixWasFresh;
 
     private void OnClockTick()
@@ -179,7 +189,7 @@ public sealed partial class MainWindow : Window
         new("ESC", "Close the cards"),
         new("F1 / ?", "This help"),
         new("CTRL + ,", StudyLog.Available ? "Settings: updates, crash reports, the study log, the app's folders" : "Settings: updates, crash reports, the app's folders"),
-        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its highlighter to keep it lit on the map"),
+        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its pen to pick it for the coming raid"),
     ];
 
     /// <summary>
@@ -406,14 +416,13 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.LoadingText = "";
         }
-        if (s.Fix is not { } fix)
-        {
-            ViewModel.FixText = $"No position yet · press {ViewModel.HelpKeys} in raid";
-            return;
-        }
-        var age = DateTime.Now - fix.At;
-        var ago = age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s" : age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} min" : $"{(int)age.TotalHours} h";
-        ViewModel.FixText = $"Fix {ago} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m";
+        // The position's age, in the status bar and in the raid card's line on where its distances come from: both
+        // with the clock, so they never say two ages (FixAge).
+        var age = s.Fix is { } at ? DateTime.Now - at.At : (TimeSpan?)null;
+        ViewModel.RaidFixNote = FixAge.Note(age, ViewModel.HelpKeys);
+        ViewModel.FixText = s.Fix is { } fix && age is { } old
+            ? $"Fix {FixAge.Text(old)} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
+            : $"No position yet · press {ViewModel.HelpKeys} in raid";
     }
 
     private void UpdatePicker(SessionSnapshot s)
@@ -528,13 +537,6 @@ public sealed partial class MainWindow : Window
         vm.SideSwitchable = vm.InRaid && !s.SideFromLogs;
         vm.ScavRaid = vm.InRaid && s.Raid.Side == RaidSide.Scav;
         vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
-        vm.RaidFixNote = age switch
-        {
-            null => $"No position yet: press {vm.HelpKeys} for distances",
-            _ when fresh => "",
-            { TotalMinutes: < 60 } a => $"Distances from your screenshot {Math.Max(1, (int)a.TotalMinutes)} min ago",
-            _ => "Distances from your last screenshot",
-        };
         var complete = s.MapPlan?.Finish.Select(q => q.QuestId).ToHashSet() ?? [];
         var kinds = (s.MapPlan?.Finish ?? []).Concat(s.MapPlan?.Progress ?? []).ToDictionary(q => q.QuestId, q => q.Kind);
         var quests = s.Objectives
@@ -581,7 +583,8 @@ public sealed partial class MainWindow : Window
             Distance(e.Distance),
             Direction(e.Direction, e.MapBearing),
             e.Needs,
-            e.NeedItemId)).ToList();
+            e.NeedItemId,
+            e.Kind)).ToList();
 
         // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
         // log: in a raid the app got glances with a median of 3.9 s).
@@ -1016,6 +1019,38 @@ public sealed partial class MainWindow : Window
         Map.Redraw();
     }
 
+    // ---- nobody looking ----
+
+    private DispatcherQueueTimer? _nobodyLooking;
+
+    // While something is pointed at, the map draws its pulse about 60 times a second. A pointer left resting on a row
+    // when the player turns to the game would keep that up behind the game for the whole raid. So when none of
+    // Shturmap's windows is the active one any more, the pointer's focus goes; moving the pointer onto something
+    // lights it again, active window or not. The short wait lets the focus pass between Shturmap's own windows (the
+    // main one and the popped-out cards): the next one's activation cancels it.
+    private void ObserveActivation(Window window) => window.Activated += (_, e) =>
+    {
+        if (_nobodyLooking is null)
+        {
+            _nobodyLooking = DispatcherQueue.CreateTimer();
+            _nobodyLooking.Interval = TimeSpan.FromMilliseconds(200);
+            _nobodyLooking.IsRepeating = false;
+            _nobodyLooking.Tick += (_, _) => DropPointerFocus();
+        }
+        _nobodyLooking.Stop();
+        if (e.WindowActivationState == WindowActivationState.Deactivated)
+            _nobodyLooking.Start();
+    };
+
+    private void DropPointerFocus()
+    {
+        // A snapshot's shown quest and the clip's drawn pointer aren't a mouse: they stay, whichever window is active.
+        if (SnapshotMode || DemoMode)
+            return;
+        Map.ClearHover();
+        Linked.LetGo();
+    }
+
     private DateTime _markerHoveredAt;
 
     private void OnMarkerHovered(MapMarker? marker, Windows.Foundation.Point at)
@@ -1059,7 +1094,7 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // Clicking a quest marker holds its card, like clicking the quest in the list; the card's highlighter keeps it lit.
+    // Clicking a quest marker holds its card, like clicking the quest in the list; the card's pen picks the quest.
     private void OnMarkerClicked(MapMarker marker)
     {
         if (marker is not { Group: { } quest, Objective: not null })
@@ -1087,7 +1122,13 @@ public sealed partial class MainWindow : Window
 
     // ---- pinned cards ----
 
-    private const string PinnedSetting = "pinned.cards";
+    // Saved cards that aren't shown now: their quest isn't active in the data shown (the other mode's, after the game
+    // switched between PvE and PvP). They keep their place in the saved list and are back at a start where it is.
+    private readonly Dictionary<string, PinnedCards.Entry> _pinnedWaiting = [];
+    // Windows the program closes itself (the quest done, the mode changed): it has settled the saved list already.
+    private readonly HashSet<QuestWindow> _closedByProgram = [];
+    private bool _closing;
+    private bool _restoringPinned;
 
     private void Pin(QuestCardView view, PointInt32? at)
     {
@@ -1104,58 +1145,102 @@ public sealed partial class MainWindow : Window
         {
             Study.Ui("pinned.close", ("quest", view.QuestId), ("name", view.Name), ("openS", DateTime.Now - pinnedAt),
                 ("x", window.AppWindow.Position.X), ("y", window.AppWindow.Position.Y));
+            // Closed by the player: the card is gone for good. A close the program made (the quest over, the mode
+            // changed, the main window closing) must not rewrite the list.
+            if (_closedByProgram.Remove(window) || _closing)
+                return;
             if (_pinned.Remove(window.QuestId))
                 SavePinned();
         };
         _pinned[view.QuestId] = window;
+        _pinnedWaiting.Remove(view.QuestId);
+        ObserveActivation(window);
         window.Activate();
         SavePinned();
     }
 
+    private static PinnedCards.Entry EntryOf(QuestWindow window) =>
+        new(window.QuestId, (window.AppWindow.Position.X, window.AppWindow.Position.Y));
+
     private void SavePinned()
     {
-        if (SnapshotMode)
+        if (SnapshotMode || _restoringPinned)
             return;
-        _session.SetSetting(PinnedSetting, string.Join(";", _pinned.Values.Select(w =>
-            FormattableString.Invariant($"{w.QuestId}@{w.AppWindow.Position.X},{w.AppWindow.Position.Y}"))));
+        _session.SetSetting(PinnedCards.Setting, PinnedCards.Format(_pinned.Values.Select(EntryOf).Concat(_pinnedWaiting.Values)));
     }
 
-    // Pinned cards come back where they were, as long as their quest is still active.
+    // Pinned cards come back where they were, as long as their quest is still active. One whose quest isn't active in
+    // the data shown waits in the list; one whose quest is over is forgotten (PinnedCards.For).
     private void RestorePinnedOnce(SessionSnapshot s)
     {
         if (_pinnedRestored || s.Data is null || SnapshotMode)
             return;
         _pinnedRestored = true;
-        foreach (var entry in (_session.GetSetting(PinnedSetting) ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+        var saved = PinnedCards.Parse(_session.GetSetting(PinnedCards.Setting));
+        // Saved once at the end: each card's own save would write a list that lacks the ones not yet looked at.
+        _restoringPinned = true;
+        try
         {
-            var parts = entry.Split('@', ',');
-            if (parts.Length != 3 || BuildCard(parts[0]) is not { State: QuestState.Active } view)
-                continue;
-            PointInt32? at = int.TryParse(parts[1], CultureInfo.InvariantCulture, out var x) && int.TryParse(parts[2], CultureInfo.InvariantCulture, out var y)
-                && DisplayArea.GetFromPoint(new PointInt32(x + 40, y + 20), DisplayAreaFallback.None) is not null
-                ? new PointInt32(x, y)
-                : null;
-            Pin(view, at);
+            foreach (var entry in saved)
+            {
+                var view = BuildCard(entry.QuestId);
+                switch (PinnedCards.For(view?.State))
+                {
+                    case PinnedCards.Fate.Show:
+                        Pin(view!, entry.At is { } p && DisplayArea.GetFromPoint(new PointInt32(p.X + 40, p.Y + 20), DisplayAreaFallback.None) is not null
+                            ? new PointInt32(p.X, p.Y)
+                            : null);
+                        break;
+                    case PinnedCards.Fate.Wait:
+                        _pinnedWaiting[entry.QuestId] = entry;
+                        break;
+                }
+            }
         }
+        finally
+        {
+            _restoringPinned = false;
+        }
+        if (saved.Count > 0)
+            SavePinned();
     }
 
     // Pinned cards follow the session (status, distances in a raid). A finished quest has nothing left to show:
-    // its card closes.
+    // its card closes and is forgotten. A quest that isn't active in the data shown (the other mode's) closes its
+    // card too, but keeps its place in the saved list.
     private void RefreshPinned()
     {
+        // No data for a moment (the mode changed, its data is loading): nothing can be said about any quest, so the
+        // cards stay as they are (2026-10-04: they all closed, and the list was saved empty).
+        if (_snapshot?.Data is null)
+            return;
+        var changed = false;
         foreach (var window in _pinned.Values.ToList())
         {
             var view = BuildCard(window.QuestId);
-            if (view is { State: QuestState.Active })
+            var fate = PinnedCards.For(view?.State);
+            if (fate == PinnedCards.Fate.Show)
             {
-                window.Update(view);
+                window.Update(view!);
                 window.Stack.Refresh(UpdateCard);
                 continue;
             }
             if (view is { State: QuestState.Completed })
                 ShowNotice($"{view.Name} is complete; its card is closed.");
+            if (fate == PinnedCards.Fate.Wait)
+                _pinnedWaiting[window.QuestId] = EntryOf(window);
+            _pinned.Remove(window.QuestId);
+            _closedByProgram.Add(window);
             window.Close();
+            changed = true;
         }
+        foreach (var quest in _pinnedWaiting.Keys.ToList())
+        {
+            if (PinnedCards.For(BuildCard(quest)?.State) == PinnedCards.Fate.Forget)
+                changed |= _pinnedWaiting.Remove(quest);
+        }
+        if (changed)
+            SavePinned();
     }
 
     // One thin segment per loading step, gold once the log has reported that step, a hairline until then.
@@ -1443,6 +1528,63 @@ public sealed partial class MainWindow : Window
             _session.SetSetting("help.seen", "1");
     }
 
+    // ---- the window's place (owner, 2026-10-04: remember the window's monitor and size; docs/DESIGN.md "Screen
+    // anatomy", "The window") ----
+
+    private bool _rememberPlace;
+    private bool _sizeGiven;
+    private WindowPlace.Rect _unmaximised;
+    private DispatcherQueueTimer? _placeSettled;
+
+    // Where the player left it: on its monitor, at its bounds, maximised or not, as long as that monitor is still
+    // there. Otherwise, and at a first start, the rule below. A given size (developer runs) is kept as is.
+    private void PlaceWindow(SizeInt32? size, string? saved, bool remember)
+    {
+        _sizeGiven = size is not null;
+        _rememberPlace = remember && size is null;
+        var last = _rememberPlace ? WindowPlace.Restorable(WindowPlace.Parse(saved), Monitors()) : null;
+        if (last is { } place)
+        {
+            AppWindow.MoveAndResize(new RectInt32(place.Bounds.X, place.Bounds.Y, place.Bounds.Width, place.Bounds.Height));
+            _unmaximised = place.Bounds;
+            if (place.Maximised && AppWindow.Presenter is OverlappedPresenter presenter)
+                presenter.Maximize();
+        }
+        else
+        {
+            PlaceOnSecondMonitor(size);
+        }
+        var now = BoundsNow();
+        AppLog.Info($"Window {(last is null ? "placed anew" : "where it was last")}: {now.Width}×{now.Height} at {now.X},{now.Y}" +
+                    (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized } ? ", maximised" : ""));
+        AppWindow.Changed += (_, e) =>
+        {
+            if (e.DidPositionChange || e.DidSizeChange || e.DidPresenterChange)
+                OnPlaceChanged();
+        };
+        // The smallest size needs the monitor's scale, which the content knows once it is loaded.
+        var root = (FrameworkElement)Content;
+        root.Loaded += (_, _) =>
+        {
+            ApplySmallestSize();
+            root.XamlRoot.Changed += (_, _) => ApplySmallestSize();
+        };
+    }
+
+    private static List<WindowPlace.Rect> Monitors()
+    {
+        var displays = DisplayArea.FindAll();
+        var monitors = new List<WindowPlace.Rect>();
+        for (var i = 0; i < displays.Count; i++)
+        {
+            var area = displays[i].OuterBounds;
+            monitors.Add(new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height));
+        }
+        return monitors;
+    }
+
+    private WindowPlace.Rect BoundsNow() => new(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
+
     // Maximised on the second monitor, or on the only one at 1600×1000; a given size (developer runs) is kept as is.
     private void PlaceOnSecondMonitor(SizeInt32? size)
     {
@@ -1458,14 +1600,58 @@ public sealed partial class MainWindow : Window
         }
         if (target is null)
         {
-            AppWindow.Resize(size ?? new SizeInt32(1600, 1000));
+            AppWindow.Resize(size ?? new SizeInt32(WindowPlace.DefaultWidth, WindowPlace.DefaultHeight));
+            _unmaximised = BoundsNow();
             return;
         }
         AppWindow.Move(new PointInt32(target.WorkArea.X + 40, target.WorkArea.Y + 40));
         if (size is { } fixedSize)
             AppWindow.Resize(fixedSize);
-        else if (AppWindow.Presenter is OverlappedPresenter presenter)
+        _unmaximised = BoundsNow();
+        if (size is null && AppWindow.Presenter is OverlappedPresenter presenter)
             presenter.Maximize();
+    }
+
+    // The window moved, was resized, maximised or put back: its bounds while it isn't maximised are what it goes back
+    // to, and its place is saved once the change has settled (a drag is a stream of changes).
+    private void OnPlaceChanged()
+    {
+        if (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Restored })
+            _unmaximised = BoundsNow();
+        if (!_rememberPlace)
+            return;
+        if (_placeSettled is null)
+        {
+            _placeSettled = DispatcherQueue.CreateTimer();
+            _placeSettled.Interval = TimeSpan.FromMilliseconds(600);
+            _placeSettled.IsRepeating = false;
+            _placeSettled.Tick += (_, _) => SavePlace();
+        }
+        _placeSettled.Stop();
+        _placeSettled.Start();
+    }
+
+    private void SavePlace()
+    {
+        // Minimised, the window has no place of its own: what was saved before stands.
+        if (!_rememberPlace || AppWindow.Presenter is not OverlappedPresenter presenter || presenter.State == OverlappedPresenterState.Minimized)
+            return;
+        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).OuterBounds;
+        var monitor = new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height);
+        var maximised = presenter.State == OverlappedPresenterState.Maximized;
+        // A maximised window sent to another monitor still has its unmaximised bounds on the one before: they follow it.
+        var bounds = maximised ? WindowPlace.OnMonitor(_unmaximised, monitor) : _unmaximised;
+        _session.SetSetting(WindowPlace.Setting, WindowPlace.Format(new WindowPlace.Saved(bounds, maximised, monitor)));
+    }
+
+    // No smaller than the status bar needs to keep its three buttons in view, with the last fix trimmed, at this
+    // monitor's scale (the presenter counts in pixels). A size given by a developer run is left as it is.
+    private void ApplySmallestSize()
+    {
+        if (_sizeGiven || AppWindow.Presenter is not OverlappedPresenter presenter || Content.XamlRoot is not { } xaml)
+            return;
+        presenter.PreferredMinimumWidth = (int)Math.Ceiling(WindowPlace.MinWidth * xaml.RasterizationScale);
+        presenter.PreferredMinimumHeight = (int)Math.Ceiling(WindowPlace.MinHeight * xaml.RasterizationScale);
     }
 
     // ---- keyboard (only while this window has focus; Shturmap registers no global hotkeys) ----

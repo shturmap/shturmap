@@ -131,12 +131,23 @@ public sealed partial class QuestWindow : Window
         _placing = false;
     }
 
+    // As tall as its card, up to the screen's work area: a longer card scrolls inside the window. A window that then
+    // reaches below the work area moves up by what is over, so its last rows aren't off the screen.
     private void FitToContent()
     {
         var scale = Content.XamlRoot?.RasterizationScale ?? 1;
         _card.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
         var size = _card.DesiredSize;
-        AppWindow.ResizeClient(new SizeInt32((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(Math.Min(size.Height, 900) * scale)));
+        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
+        var frame = Math.Max(0, AppWindow.Size.Height - AppWindow.ClientSize.Height);
+        var room = Math.Max((int)(200 * scale), area.Height - frame);
+        AppWindow.ResizeClient(new SizeInt32((int)Math.Ceiling(size.Width * scale), Math.Min((int)Math.Ceiling(size.Height * scale), room)));
+        var over = AppWindow.Position.Y + AppWindow.Size.Height - (area.Y + area.Height);
+        if (over <= 0)
+            return;
+        _placing = true;
+        AppWindow.Move(new PointInt32(AppWindow.Position.X, Math.Max(area.Y, AppWindow.Position.Y - over)));
+        _placing = false;
     }
 
     // The screen's work area around this window, in its content's coordinates: nested cards open outside the window.

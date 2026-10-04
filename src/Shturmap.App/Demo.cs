@@ -16,7 +16,7 @@ namespace Shturmap.App;
 // tools\fake-raid.ps1 -Demo writes the screenshot file the game would, and the name the position comes from appears
 // under the key. That position is held back from the view until the pause ends (demo only), so the marker moves, pings
 // and the raid card re-sorts as the dim clears: cause, then effect. Then a drawn pointer goes to the quest in the raid
-// card (the map highlights it, its card opens), clicks its highlighter (kept, cyan), the map zooms to the quest and the
+// card (the map highlights it, its card opens), clicks its pen (picked, cyan), the map zooms to the quest and the
 // player, the pointer rests on the quest's nearest marker on the map (its card stays up to be read), and everything is
 // let go and the view zooms back. It calls the app's own code paths: nothing is sent to the system as input, and
 // nothing is captured here (the recorder is tools\record-window, which records this window only).
@@ -124,6 +124,7 @@ public sealed partial class MainWindow
             await MovePointer(Inside(toggle, root, toggle.ActualWidth / 2, toggle.ActualHeight / 2), 450);
         await PressPointer();
         Linked.RequestKeep(quest);
+        DemoPointAgain(quest, root);
 
         // The quest's objectives and the player, framed.
         var markers = scene.Markers.Where(m => m.Group == quest && m.Objective is not null).ToList();
@@ -159,6 +160,23 @@ public sealed partial class MainWindow
         Map.AnimateView(startView, TimeSpan.FromMilliseconds(1300));
         await Task.Delay(1400);
         AppLog.Debug("Demo: end");
+    }
+
+    // Picking a quest moves its row into PICKED: the row the drawn pointer was on is gone, and the pointer's focus with
+    // it (Linked lets go of a row that unloads). A mouse would be over whatever lies there now; the clip keeps the
+    // quest lit through the zoom, so its pointer points at the quest's new row as soon as that is there.
+    private async void DemoPointAgain(string quest, FrameworkElement root)
+    {
+        for (var i = 0; i < 50 && DemoMode; i++)
+        {
+            await Task.Delay(30);
+            if (Linked.Current is null && Linked.RowOf(quest, root.XamlRoot) is { } row)
+            {
+                Linked.PointAt(row);
+                AppLog.Debug("Demo: the quest's new row");
+                return;
+            }
+        }
     }
 
     // ---- the drawn screenshot key, large in the middle of a dimmed window: what makes the position change ----

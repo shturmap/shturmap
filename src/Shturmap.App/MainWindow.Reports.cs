@@ -61,6 +61,9 @@ public sealed partial class MainWindow
         ViewModel.CrashMode = mode.ToString();
         Study.Ui("crash.mode", ("mode", mode), ("how", how));
         AppLog.Info("Crash reports: " + CrashModes.Format(mode));
+        // Never takes back a Send given earlier, at once: a record approved but not yet sent stays on this PC.
+        if (mode == CrashMode.Never && !Reporter.Muted)
+            Reporter.Keep(Reporter.Crashes.Waiting().Where(r => r.State == CrashState.Approved).ToList());
     }
 
     // The privacy notice, bundled with the build (PRIVACY.md as privacy.txt beside the exe).

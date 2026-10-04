@@ -13,7 +13,9 @@
        Keys, items and quests on it are cards of their own: point at them. -->
   <Border x:Name="Frame" Width="360" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}"
           BorderThickness="1" CornerRadius="0">
-    <Grid>
+    <!-- A long quest's card (Collector) is taller than the window: the card takes the room there is (CardStack and
+         QuestWindow give it its largest height) and scrolls inside, so UNLOCKS and the wiki link stay in reach. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
 
       <StackPanel Padding="14,12,14,12" Spacing="10">
         <Grid ColumnSpacing="12" controls:Linked.Also="{x:Bind View.QuestIds}">
@@ -35,7 +37,7 @@
             <TextBlock Text="{x:Bind View.Facts}" Style="{StaticResource NoteText}" />
             <TextBlock Text="{x:Bind local:Caps.Of(View.Status)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource GreenBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
           </StackPanel>
-          <!-- Two different things: light the quest up on the map (the highlighter), keep this card as a window (pop out). -->
+          <!-- Two different things: pick the quest for the coming raid (the pen), keep this card as a window (pop out). -->
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
             <controls:KeepToggle QuestId="{x:Bind View.QuestId}" Framed="True" />
             <Button x:Name="PinButton" Padding="7,5" VerticalAlignment="Top" Click="OnPinClick"
@@ -116,9 +118,13 @@
                      Visibility="{x:Bind Shown(View.UnlocksMore)}" />
         </StackPanel>
 
-        <HyperlinkButton Content="Open the wiki page" NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0" FontSize="12"
-                         Visibility="{x:Bind Shown(View.WikiLink)}" />
+        <!-- A link that leaves Shturmap, in the look of the others (WIKI MAP ↗, LOG FOLDER ↗): capitals and the arrow. -->
+        <HyperlinkButton NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0"
+                         Visibility="{x:Bind Shown(View.WikiLink)}"
+                         ToolTipService.ToolTip="Opens this quest's page on the Escape from Tarkov wiki in your browser">
+          <TextBlock Text="WIKI PAGE ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+        </HyperlinkButton>
       </StackPanel>
-    </Grid>
+    </ScrollViewer>
   </Border>
 </UserControl>

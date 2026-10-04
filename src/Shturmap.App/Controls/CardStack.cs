@@ -2,6 +2,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using Shturmap.App.Rules;
 using Windows.Foundation;
 
 namespace Shturmap.App.Controls;
@@ -12,7 +13,7 @@ namespace Shturmap.App.Controls;
 /// while the pointer is on it, so things on it can open their own cards, and goes when the pointer leaves. A click
 /// on the quest (or on the card) holds it: it turns solid and stays while the pointer is near it, until a click
 /// elsewhere, Esc, another click on the quest, a full rest on something else that opens a card in its place, or the
-/// pointer moving well away from it.
+/// pointer moving well away from it and from what it was opened from.
 /// One stack per window: the main window, and each pinned card window.
 /// </summary>
 public sealed class CardStack
@@ -28,7 +29,8 @@ public sealed class CardStack
 
     private static readonly Dictionary<XamlRoot, CardStack> Stacks = [];
 
-    private sealed record Level(Popup Popup, FrameworkElement Card, DateTime Opened)
+    /// <param name="Anchor">What the card was opened from (its row, or its marker), in root coordinates.</param>
+    private sealed record Level(Popup Popup, FrameworkElement Card, DateTime Opened, Rect Anchor)
     {
         public ICard Face => (ICard)Card;
 
@@ -82,6 +84,16 @@ public sealed class CardStack
     }
 
     public static CardStack? For(XamlRoot? root) => root is not null && Stacks.TryGetValue(root, out var stack) ? stack : null;
+
+    /// <summary>
+    /// The pointer left a source, in whichever window it was: a row that has just been unloaded can't say which any
+    /// more, and only the stack it was the source of takes it.
+    /// </summary>
+    public static void Leave(object source)
+    {
+        foreach (var stack in Stacks.Values.ToList())
+            stack.Exit(source);
+    }
 
     /// <summary>A card was created (to hook its pin button, for example).</summary>
     public event Action<FrameworkElement>? CardOpened;
@@ -162,6 +174,8 @@ public sealed class CardStack
             }
             else
             {
+                // Held from here now (the card may have opened from the quest's marker and be clicked in the list).
+                _levels[target] = _levels[target] with { Anchor = anchor };
                 Hold(target);
             }
             return;
@@ -190,12 +204,9 @@ public sealed class CardStack
     /// <summary>Whether any card is held (a click elsewhere lets go of it).</summary>
     public bool AnyHeld => _levels.Any(l => l.Held);
 
-    /// <summary>How far the pointer may wander from a held card before it closes.</summary>
-    private const double FarAway = 240;
-
     /// <summary>
     /// The pointer moved in the window (root coordinates). A held card closes, with everything opened from it, once
-    /// the pointer is well away from it: holding is for reading it, not for keeping it forever.
+    /// the pointer is well away from it and from what it was opened from (<see cref="CardReach"/>).
     /// </summary>
     public void PointerAt(Point p)
     {
@@ -203,10 +214,7 @@ public sealed class CardStack
         {
             if (!_levels[i].Held || _over >= i)
                 continue;
-            var box = Bounds(_levels[i]);
-            var dx = Math.Max(0, Math.Max(box.Left - p.X, p.X - box.Right));
-            var dy = Math.Max(0, Math.Max(box.Top - p.Y, p.Y - box.Bottom));
-            if (dx * dx + dy * dy > FarAway * FarAway)
+            if (CardReach.Away(p.X, p.Y, Box(Bounds(_levels[i])), Box(_levels[i].Anchor)))
             {
                 Study.Ui("card.release", ("card", _levels[i].Face.Key.ToString()), ("name", _levels[i].Face.Title), ("level", i),
                     ("window", Where), ("how", "away"));
@@ -285,16 +293,21 @@ public sealed class CardStack
             if (level < _levels.Count && _levels[level].Card == card)
                 Hold(level);
         };
-        _levels.Add(new Level(popup, card, DateTime.Now));
+        _levels.Add(new Level(popup, card, DateTime.Now, _pendingAnchor));
         CardOpened?.Invoke(card);
         var face = (ICard)card;
         Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
 
+        // No taller than the room there is: a long quest's card scrolls inside instead of running off the window.
+        card.MaxHeight = Math.Max(MinCardHeight, _space().Height - 16);
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
         popup.IsOpen = true;
         _pendingKey = null;
     }
+
+    // In a window too small for it a card still gets this much height.
+    private const double MinCardHeight = 160;
 
     // Beside whatever it opened from: the row (first card in the main window), the window (first card of a pinned
     // window) or the card it came from. Right if there is room, else left; top-aligned with the row.
@@ -313,6 +326,8 @@ public sealed class CardStack
 
     private static Rect Bounds(Level level) =>
         new(level.Popup.HorizontalOffset, level.Popup.VerticalOffset, level.Card.ActualWidth, level.Card.ActualHeight);
+
+    private static CardReach.Box Box(Rect rect) => new(rect.Left, rect.Top, rect.Right, rect.Bottom);
 
     private void CloseFrom(int level)
     {

@@ -119,6 +119,11 @@ public sealed partial class MapView : Grid
     /// <summary>Following stopped because the player moved the view themselves ("drag" or "fit").</summary>
     public event Action<string>? FollowStopped;
 
+    // Taking the view back means taking it from a position the view follows. With none on the map (between raids, or
+    // in a raid before the first screenshot) there is nothing to take back: a drag or a fit leaves following as the
+    // player set it (2026-10-04: panning a map while planning switched it off for the next raid, and for later starts).
+    private bool HasPosition => _scene?.Player is not null;
+
     /// <summary>Turns following on or off; on, the view glides to the player's position at once.</summary>
     public void SetFollow(bool on)
     {
@@ -292,10 +297,10 @@ public sealed partial class MapView : Grid
         _panel.Invalidate();
     }
 
-    /// <summary>Shows the whole map; while following, it stops following (the player chose the view).</summary>
+    /// <summary>Shows the whole map; while following a position, it stops following (the player chose the view).</summary>
     public void FitMap()
     {
-        if (_follow.Fitted())
+        if (HasPosition && _follow.Fitted())
         {
             StopGlide();
             _centerAfterFit = false;
@@ -497,6 +502,9 @@ public sealed partial class MapView : Grid
         MarkerHovered?.Invoke(marker, at);
     }
 
+    /// <summary>Lets go of the marker under the pointer, as if the pointer had left the map.</summary>
+    public void ClearHover() => Hover(null, default);
+
     // The edge arrow of an out-of-view player is a button: it shows them.
     private bool OverEdge(Windows.Foundation.Point at) =>
         _scene is not null && MapRenderer.EdgeOf(_camera, _scene, PixelScale) is { } edge
@@ -532,7 +540,7 @@ public sealed partial class MapView : Grid
             _dragDistance = 0;
             Hover(null, to);
             // Dragging takes the view back: following stops, so the map never fights the player.
-            if (_follow.Dragged())
+            if (HasPosition && _follow.Dragged())
             {
                 StopGlide();
                 _centerAfterFit = false;

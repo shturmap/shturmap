@@ -12,7 +12,8 @@
   <!-- A key or an item: what it is, where to get it, which of your active quests need it. Point at a source's
        loose spots to see them on the map; point at a quest for its card. -->
   <Border x:Name="Frame" Width="340" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
-    <Grid>
+    <!-- An item many quests need makes a long card: it scrolls inside the room there is, like the quest card. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
 
       <StackPanel Padding="14,14,14,14" Spacing="8">
         <Grid ColumnSpacing="12">
@@ -72,6 +73,6 @@
         </StackPanel>
         <TextBlock Text="None of your active quests needs it." Style="{StaticResource NoteText}" Visibility="{x:Bind Hidden(View.Uses.Count)}" />
       </StackPanel>
-    </Grid>
+    </ScrollViewer>
   </Border>
 </UserControl>
