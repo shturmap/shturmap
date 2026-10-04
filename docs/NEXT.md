@@ -836,6 +836,13 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    still what a single pick looks like), and following leaves room ahead of the player (the clip).
    Decided the same evening, from mock-ups made in the real renderer: how picked quests are told apart on the map
    is a colour per pick (DESIGN.md, "A colour per pick").
+   Open, for the owner to choose from a second panel (outside the repository): which colours, once many quests
+   are picked (owner: "when many quests are selected we need to be a bit better at distinguishing them"). Measured
+   with CIEDE2000, also as seen with red-green colour blindness, and against the map's own colours: today's four
+   are 39 apart at their closest but 6 for colour-blind eyes (cyan and pink), and repeat from the fifth pick; five
+   colours can be kept 25 apart (16 colour-blind); eight only 15 (9); today's four with their pastels 12 (3); the
+   standard tables (ColorBrewer Set3, Okabe-Ito) 13 to 14 here, and they sit on the quests' gold. Suggested: the
+   five far-apart colours, and from the sixth pick the same colours with a second ring.
 2. **Reporting is one route: in the app, to Sentry** (owner, 2026-10-03: "don't want to mix github issues and other
    reporting methods, it should be one coherent easy to use thing"; done, DESIGN.md §8, "Reports"). This replaces
    the earlier plan of GitHub issue forms plus a separate web form. Before the release:
