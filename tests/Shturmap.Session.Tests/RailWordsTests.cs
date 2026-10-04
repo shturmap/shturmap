@@ -81,6 +81,9 @@ public class RailWordsTests
         var plan = new MapPlanView("streets-of-tarkov", "Streets of Tarkov", [], [], [], 40, ["Kaban 75%", "Kollontay 75%"]);
         Assert.Equal("40 min raid · Kaban 75% · Kollontay 75%", Planning.FactsLine(plan));
         Assert.Equal("Kaban 75%", Planning.FactsLine(plan with { RaidMinutes = 0, Bosses = ["Kaban 75%"] }));
+        // The window shows the line part by part (each boss is linked to its markers): the length is the first part.
+        Assert.Equal("40 min raid", Planning.LengthText(plan));
+        Assert.Equal("", Planning.LengthText(plan with { RaidMinutes = 0 }));
         Assert.Null(typeof(MapPlanView).GetProperty("WalkingMinutes"));
         Assert.Null(typeof(MapPlan).GetProperty("WalkingMinutes"));
     }

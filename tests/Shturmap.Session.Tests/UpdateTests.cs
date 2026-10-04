@@ -46,6 +46,18 @@ public class UpdateTests
         Assert.True(UpdatePolicy.CheckDue(now.AddHours(-6), now));
     }
 
+    // Settings say why a run can't update (the review of 2026-10-04, A40): an installed Shturmap whose updater
+    // couldn't start was told "not available in this build", which wasn't the reason.
+    [Fact]
+    public void Settings_say_why_this_run_does_not_update()
+    {
+        var failed = Distribution.NoUpdatesText(installed: true, updaterFailed: true);
+        Assert.Contains("couldn't start", failed, StringComparison.Ordinal);
+        Assert.Contains("Setup", failed, StringComparison.Ordinal);
+        foreach (var notInstalled in new[] { Distribution.NoUpdatesText(false, false), Distribution.NoUpdatesText(false, true), Distribution.NoUpdatesText(true, false) })
+            Assert.StartsWith("Updates: not available in this build", notInstalled, StringComparison.Ordinal);
+    }
+
     // Velopack installs to %LOCALAPPDATA%\<pack id> and an uninstall deletes that folder: it must never be the data
     // folder, and the release must pack with the same id.
     // Both installs (the release's and the dev build's) against every data folder, the shared cache included.

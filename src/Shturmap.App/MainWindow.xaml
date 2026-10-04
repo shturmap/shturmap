@@ -29,6 +29,21 @@
         </Grid>
       </DataTemplate>
 
+      <!-- One part of a line of facts under a map's name ("40 min raid", "Kaban 75%"), with the dot that follows it.
+           A boss's part is linked to its spawn zones on the map: pointing at the name lights them, and pointing at
+           one of them tints the name. -->
+      <DataTemplate x:Key="LinePartTemplate" x:DataType="local:LinePart">
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <Border Padding="2,0" Margin="-2,0" controls:Linked.Quests="{x:Bind Groups}" controls:Linked.Inline="True">
+            <TextBlock Text="{x:Bind Text}" Style="{StaticResource NoteText}" />
+          </Border>
+          <TextBlock Text="·" Style="{StaticResource NoteText}" Visibility="{x:Bind DotVisibility}" />
+        </StackPanel>
+      </DataTemplate>
+      <ItemsPanelTemplate x:Key="LinePartsPanel">
+        <controls:WrapRow HorizontalSpacing="5" />
+      </ItemsPanelTemplate>
+
       <!-- A map symbol in help. Its swatch is drawn by the map's own renderer (MapLegend). -->
       <DataTemplate x:Key="MapLegendRowTemplate" x:DataType="local:MapLegendRow">
         <Grid ColumnSpacing="10" Margin="0,1">
@@ -366,7 +381,7 @@
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}"
                            Text="A new version downloads in the background and applies the next time Shturmap starts, never during a raid. GitHub sees your internet address, as with any download; nothing else is sent." />
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{x:Bind ShownIfNot(ViewModel.UpdatesAvailable), Mode=OneWay}"
-                           Text="Updates: not available in this build. Installed with Shturmap's Setup, it keeps itself up to date." />
+                           Text="{x:Bind ViewModel.UpdatesNote, Mode=OneWay}" />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="APP AND DATA" Margin="0,8,0,0" />
                 <!-- Where the game is and where that comes from, and the same choice the no-game line offers, with the way
                      back from it (docs/DESIGN.md, "No game on this PC"; owner, 2026-10-04). The line wraps: the source
@@ -608,7 +623,8 @@
                           <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
                           <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                                      ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
-                          <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
+                          <ItemsControl ItemsSource="{x:Bind DetailParts}" ItemTemplate="{StaticResource LinePartTemplate}"
+                                        ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False" AutomationProperties.Name="{x:Bind Detail}" />
                           <StackPanel Visibility="{x:Bind ExpandedVisibility}">
                             <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
                                  only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
@@ -736,7 +752,9 @@
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                              ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
-                  <TextBlock Text="{x:Bind ViewModel.RaidLine, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}" Style="{StaticResource NoteText}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLineParts, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}"
+                                ItemTemplate="{StaticResource LinePartTemplate}" ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False"
+                                AutomationProperties.Name="{x:Bind ViewModel.RaidLine, Mode=OneWay}" />
                   <!-- While the raid loads: the last step the game's log reported, and one segment per loading step that
                        lights once the log reports that step; nothing estimated (LoadingProgress). Gone once the raid starts. -->
                   <StackPanel Spacing="5" Margin="0,8,0,2" Visibility="{x:Bind ShownIf(ViewModel.LoadingText), Mode=OneWay}"
@@ -800,6 +818,15 @@
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Right" />
                       <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.Direction), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11.5"
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
+                      <!-- The other ways out stand under the card, a long way down in a raid with several quests (the
+                           review of 2026-10-04, H5), and the nearest is often not one of the player's: one click
+                           brings the whole list up. -->
+                      <HyperlinkButton Padding="0" HorizontalAlignment="Right" Margin="0,4,0,0" Click="OnAllExitsClick"
+                                       Visibility="{x:Bind ShownIf(ViewModel.AllExitsText), Mode=OneWay}"
+                                       ToolTipService.ToolTip="Shows the list of every extract and transit for your side, nearest first">
+                        <TextBlock Text="{x:Bind ViewModel.AllExitsText, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
+                                   Foreground="{StaticResource AmberBrush}" />
+                      </HyperlinkButton>
                     </StackPanel>
                   </Grid>
                   <!-- The picks first, nearest first, as in Plan. -->
@@ -820,7 +847,7 @@
                 </StackPanel>
               </Border>
 
-              <TextBlock Style="{StaticResource EyebrowText}" Text="EXTRACTS AND TRANSITS" />
+              <TextBlock x:Name="ExtractsHeading" Style="{StaticResource EyebrowText}" Text="EXTRACTS AND TRANSITS" />
               <ItemsControl ItemsSource="{x:Bind ViewModel.Extracts, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:ExtractItem">

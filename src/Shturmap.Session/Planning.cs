@@ -150,7 +150,11 @@ public static class Planning
     /// was an estimate, for quests the line didn't name, and players rarely just walk (owner, 2026-10-03).
     /// </summary>
     public static string FactsLine(MapPlanView plan) =>
-        string.Join(" · ", new[] { plan.RaidMinutes > 0 ? $"{plan.RaidMinutes} min raid" : null }.Concat(plan.Bosses).OfType<string>());
+        string.Join(" · ", new[] { LengthText(plan) }.Concat(plan.Bosses).Where(part => part.Length > 0));
+
+    /// <summary>The first of those facts by itself, "40 min raid", or empty when the data gives no length: the window
+    /// shows the line part by part, so each boss can be linked to its markers.</summary>
+    public static string LengthText(MapPlanView plan) => plan.RaidMinutes > 0 ? $"{plan.RaidMinutes} min raid" : "";
 
     /// <summary>Active quests whose in-raid work fits any map.</summary>
     public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? done = null) =>

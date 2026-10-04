@@ -535,9 +535,11 @@ lights up when any of them is pointed at, and pointing at it lights every row an
 on the map puts the quests that need its key on this map in the focus beside the key (`LinkDoor`, from the map's
 `QuestKeys` read the other way round), so their rows take the weaker tint, as the quests of any pointed-at item do.
 The rail's BRING rows, the need cells and the map follow the same rules: a row of several items lights each one's
-locks and loose spots, and an extract row's item picture is that item. Not linked yet: boss names in the raid line
-and on Plan cards (they are part of one line of text, and the data names bosses by another id than their markers'
-groups).
+locks and loose spots, and an extract row's item picture is that item. **A boss's name is its spawn zones**: in the
+raid line and under a map's name in Plan, each fact is a part of its own (`LinePart`, laid out by `WrapRow` so the
+line still reads and wraps as one), and a boss's part stands for the groups of its markers on the map shown
+(`GameData.BossMobsOn` gives the id those groups are made of). Pointing at "Kaban 75%" lights Kaban's zones, and
+pointing at one of them tints the name with the weaker tint. While another map is shown the names are plain text.
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
@@ -679,7 +681,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     direction), and EXIT, the nearest extract or transit for your side (and what it takes). Under an extract it says "NEAREST ·
     CHECK YOUR LIST IN GAME": the game opens only some extracts in each raid, by where the player started, and
     neither its logs nor tarkov.dev's data say which, so at a raid's start the nearest is usually not one of the
-    player's (owner, 2026-10-04: say it in the row; a transit is open to everyone and gets no note). In a raid the app gets
+    player's (owner, 2026-10-04: say it in the row; a transit is open to everyone and gets no note). Under the
+    direction, a small gold "ALL 15 ↓" brings the whole list of ways out, which stands under the card, to the top of
+    the rail (the review of 2026-10-04, H5: with several quests that list is a long way down, and it is the one to
+    read when the nearest exit isn't the player's). In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
@@ -817,7 +822,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
   position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
-  available in this build"); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
+  available in this build"; an installed Shturmap whose updater couldn't start says that instead, with where the
+  reason is and that the Setup repairs it, `Distribution.NoUpdatesText`); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
   UNINSTALL SHTURMAP… with its question; at the foot the version and the kind of build (§8, "Study log",
   "Reports", "Distribution"). It never opens by itself; closing it drops an unanswered uninstall question.
   Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.

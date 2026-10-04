@@ -63,10 +63,15 @@ public sealed class GameData
 
     /// <summary>Bosses that can spawn on a map, strongest chance first (AI PMC squads are left out).</summary>
     public IReadOnlyList<(string Name, double Chance)> BossesOn(string mapId) =>
+        BossMobsOn(mapId).Select(b => (b.Name, b.Chance)).ToList();
+
+    /// <summary>The same list with each boss's id in the data ("bossBoar"), which its markers' groups are made of:
+    /// a boss's name in a line of text can then light its spawn zones on the map.</summary>
+    public IReadOnlyList<(string Mob, string Name, double Chance)> BossMobsOn(string mapId) =>
         Maps.TryGetValue(mapId, out var map) && map.Bosses is { } bosses
             ? bosses.Where(b => b.Mob.StartsWith("boss", StringComparison.Ordinal))
                 .GroupBy(b => b.Mob)
-                .Select(g => (Name: Mobs.TryGetValue(g.Key, out var mob) ? mob.Name : g.Key, Chance: g.Max(b => b.SpawnChance)))
+                .Select(g => (Mob: g.Key, Name: Mobs.TryGetValue(g.Key, out var mob) ? mob.Name : g.Key, Chance: g.Max(b => b.SpawnChance)))
                 .OrderByDescending(b => b.Chance)
                 .ToList()
             : [];

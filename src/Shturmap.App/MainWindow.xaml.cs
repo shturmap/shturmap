@@ -493,9 +493,12 @@ public sealed partial class MainWindow : Window
                 var minutes = (int)Math.Round(clock * 60) % (24 * 60);
                 parts.Add($"{minutes / 60:00}:{minutes % 60:00} in raid");
             }
-            parts.AddRange(info.Bosses);
         }
-        ViewModel.RaidLine = string.Join(" · ", parts);
+        // The bosses are parts of their own: each is linked to its spawn zones on the map.
+        var raidParts = LinePart.Line(parts.Select(p => new LinePart(p)).Concat(BossParts(s, s.RaidMap?.NormalizedName, s.RaidInfo?.Bosses ?? [])));
+        ViewModel.RaidLine = string.Join(" · ", raidParts.Select(p => p.Text));
+        if (!LinePart.Same(ViewModel.RaidLineParts, raidParts))
+            ViewModel.RaidLineParts = raidParts;
         if (s.Raid.Phase == RaidPhase.Loading)
         {
             ViewModel.LoadingText = LoadingProgress.Text(s.Raid);
@@ -626,6 +629,7 @@ public sealed partial class MainWindow : Window
                 sections.Picks.Select(q => OnMap(q, p)).ToList())
             {
                 ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
+                DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
             };
         }).ToList();
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
@@ -662,6 +666,23 @@ public sealed partial class MainWindow : Window
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
     private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
         (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r)).ToList();
+
+    /// <summary>
+    /// A map's bosses as parts of a line of facts, each linked to its spawn zones' markers while that map is the one
+    /// shown: pointing at "Kaban 75%" lights Kaban's zones, and pointing at one of them tints the name (the review of
+    /// 2026-10-04, E3). The names are the session's; the ids the markers' groups are made of come from the same list
+    /// in the data, and if the two don't line up the names stay plain text.
+    /// </summary>
+    private static IEnumerable<LinePart> BossParts(SessionSnapshot s, string? normalizedName, IReadOnlyList<string> texts)
+    {
+        var mobs = s.Data is { } data && data.Maps.Values.FirstOrDefault(m => m.NormalizedName == normalizedName) is { } map
+            ? data.BossMobsOn(map.Id).Take(texts.Count).ToList()
+            : [];
+        var linked = s.Map?.NormalizedName == normalizedName && mobs.Select(b => Planning.BossText((b.Name, b.Chance))).SequenceEqual(texts);
+        var groups = linked ? (s.Content?.Markers ?? []).Select(m => m.Group).OfType<string>().Distinct().ToList() : [];
+        return texts.Select((text, i) => new LinePart(text,
+            linked ? groups.Where(g => MapContentBuilder.BossesOf(g).Contains(mobs[i].Mob)).ToList() : null));
+    }
 
     // The same counts in a row of Plan's map list, where the heading and the card say what they count.
     private static string ShortSummary(int complete, int progress) => (complete, progress) switch
@@ -763,6 +784,7 @@ public sealed partial class MainWindow : Window
         var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
         vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name);
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
+        vm.AllExitsText = vm.RaidExit is not null && vm.Extracts.Count > 1 ? $"ALL {vm.Extracts.Count} ↓" : "";
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : vm.NoGameLogs ? "" // the no-game line says why there is nothing to plan
@@ -2052,6 +2074,13 @@ public sealed partial class MainWindow : Window
     {
         if (!e.IsIntermediate && sender is ScrollViewer scroll)
             Study.Ui("rail.scroll", ("y", scroll.VerticalOffset), ("of", scroll.ScrollableHeight));
+    }
+
+    // The EXIT row's "ALL n ↓": the list of every way out, under the raid card, comes to the top of the rail.
+    private void OnAllExitsClick(object sender, RoutedEventArgs e)
+    {
+        ExtractsHeading.StartBringIntoView(new BringIntoViewOptions { VerticalAlignmentRatio = 0, AnimationDesired = true });
+        Study.Ui("rail.exits");
     }
 
     // ---- developer aid ----

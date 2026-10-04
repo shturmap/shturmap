@@ -215,8 +215,7 @@ Smaller, in privacy and distribution:
   the end for this (a release build takes the DSN and packs installers); the next release is their first real run.
 - **A40.** If Velopack fails to start, an installed release silently uses the developer data folder. Status: done
   (2026-10-04): where the exe runs from then says which install it is, so the release keeps the player's folder,
-  and the app log says that this run doesn't update. Settings still say "Updates: not available in this build" in
-  that case, which isn't the reason: open.
+  and the app log says that this run doesn't update. Settings say in that case that the updater couldn't start, where the reason is and that the Setup repairs it.
 
 Wording: **A27.** Numbers and dates follow Windows' language inside English text ("5.000 ₽", "3 Okt" on a German
 Windows); snapshots hide it, since they run in en-US. Status: done (2026-10-04: the formats belong to the app's language, English today, in one place, `UiLanguage`,
@@ -295,7 +294,9 @@ for the languages to come).
   picture): the suggested maps are a short list on top (name and counts; the rows of the maps that aren't open keep
   the folded card's glyphs and bring cells), then the open map's card. The fake game has two maps; a look with
   four real ones is still due.
-- **H5.** In a PMC raid the extract list is below the card. Status: open (with H4).
+- **H5.** In a PMC raid the extract list is below the card. Status: done (2026-10-04): the list stays where it is, and the
+  EXIT row carries "ALL 15 ↓", which brings it to the top of the rail. Another place for the list (above the
+  quests, or folded) was not tried: say so if one click is one too many.
 - **H7.** What needs a restart today: tiles after an offline start (A7), item sources after one failed download,
   another install's newer session (A20). Status: done (2026-10-04; all three recover by themselves now).
 - **H9.** The first-run help can open during a raid; the crash question stays over the map until answered. Status:
@@ -364,8 +365,7 @@ for the languages to come).
   the gold "Key: …" line under an objective, an extract's need item, the item card's "Loose on …" row; entering an
   item card drops the item's locks and loose spots; a quest card's frame and headings let the quest go while it is
   read. Status: done for need cells, the "Key: …" line (when it names one key) and folded cards' glyphs (2026-10-04), and
-  since then for a card's whole body, the item card's "Loose on …" row and an extract's need item. Boss names in the
-  raid line and on Plan cards: open.
+  since then for a card's whole body, the item card's "Loose on …" row and an extract's need item. Boss names in the raid line and on Plan cards: done the same day (each links to its spawn zones on the map shown).
 - **E4.** An "A or B" row links only A (`Planning`: `Alternatives[0]`). **E5.** A quest lights its doors, a door only
   its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: E4 and E5 done (2026-10-04); E6 open.
 

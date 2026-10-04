@@ -25,6 +25,7 @@ public sealed partial class MainWindow
     {
         _updater = updater;
         ViewModel.UpdatesAvailable = updater.CanUpdate;
+        ViewModel.UpdatesNote = Distribution.NoUpdatesText(App.BuildKind == "installed", updater.StartProblem is not null);
         ViewModel.UpdateMode = CurrentUpdateMode.ToString();
         updater.Changed += () => DispatcherQueue.TryEnqueue(RefreshUpdates);
         ViewModel.PropertyChanged += (_, e) =>

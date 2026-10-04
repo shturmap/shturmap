@@ -42,6 +42,15 @@ public static class Distribution
         : DataFolderKind.Dev;
 
     /// <summary>
+    /// What settings say under "Updates" when this run can't update. A build that wasn't installed has no updater. An
+    /// installed one whose updater couldn't start says that, and what repairs it: "not available in this build" was
+    /// said there too, which wasn't the reason (review of 2026-10-04, A40).
+    /// </summary>
+    public static string NoUpdatesText(bool installed, bool updaterFailed) => installed && updaterFailed
+        ? "Updates: the updater couldn't start this time, so Shturmap isn't asking for new versions. Its log says why (LOG FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."
+        : "Updates: not available in this build. Installed with Shturmap's Setup, it keeps itself up to date.";
+
+    /// <summary>
     /// Which install an exe belongs to by where it runs from, for a start in which Velopack itself failed (review of
     /// 2026-10-04, A40: an installed release then counted as not installed and opened the developer data folder, so
     /// the player's quest history and settings seemed gone, without a word). Velopack runs the app from

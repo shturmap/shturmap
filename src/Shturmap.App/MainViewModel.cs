@@ -103,6 +103,31 @@ public sealed record FloorChoice(int Index, string Name, bool Shown, bool Player
     public Visibility PlayerVisibility => PlayerHere ? Visibility.Visible : Visibility.Collapsed;
 }
 
+/// <summary>
+/// One part of a line of facts ("40 min raid", "Kaban 75%"), an element of its own so that a boss's name can be
+/// linked to its spawn zones on the map (the review of 2026-10-04, E3: the line was one text).
+/// </summary>
+/// <param name="Groups">The map markers' groups this part stands for (a boss's spawn zones), or null: plain text.</param>
+public sealed record LinePart(string Text, IReadOnlyList<string>? Groups = null)
+{
+    /// <summary>The last part of its line: no dot after it.</summary>
+    public bool Last { get; init; }
+
+    public Visibility DotVisibility => Last ? Visibility.Collapsed : Visibility.Visible;
+
+    /// <summary>The parts of a line, the last one marked.</summary>
+    public static IReadOnlyList<LinePart> Line(IEnumerable<LinePart> parts)
+    {
+        var list = parts.Where(p => p.Text.Length > 0).ToList();
+        return list.Select((p, i) => p with { Last = i == list.Count - 1 }).ToList();
+    }
+
+    /// <summary>Whether two lines say and link the same: then the one on screen stays, with the pointer's state on it.</summary>
+    public static bool Same(IReadOnlyList<LinePart> a, IReadOnlyList<LinePart> b) =>
+        a.Count == b.Count && a.Zip(b).All(p => p.First.Text == p.Second.Text && p.First.Last == p.Second.Last
+            && (p.First.Groups ?? []).SequenceEqual(p.Second.Groups ?? []) && (p.First.Groups is null) == (p.Second.Groups is null));
+}
+
 /// <summary>One suggested map in Plan. Only the expanded card shows its quests and requirements.</summary>
 /// <param name="Summary">"Complete 8 quests · progress 2 more".</param>
 /// <param name="Rank">Its place in the suggestions: "1", "2", ….</param>
@@ -123,6 +148,9 @@ public sealed record PlanCard(
 
     /// <summary>The summary's counts for the map's row in Plan's list: "Complete 5 · progress 1".</summary>
     public string ShortSummary { get; init; } = "";
+
+    /// <summary><see cref="Detail"/> part by part: the raid's length, then each boss, linked to its markers.</summary>
+    public IReadOnlyList<LinePart> DetailParts { get; init; } = [];
 
     /// <summary>The quests picked for the coming raid on this map, first in the card (owner, 2026-10-03).</summary>
     public IReadOnlyList<QuestLine> Picked => Picks ?? [];
@@ -275,9 +303,17 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial IReadOnlyList<ExtractItem> Extracts { get; set; } = [];
 
+    /// <summary>The EXIT row's link to the whole list under the card, "ALL 11 ↓", or empty when the list holds no more
+    /// than the row shows.</summary>
+    [ObservableProperty] public partial string AllExitsText { get; set; } = "";
+
     [ObservableProperty] public partial string Hint { get; set; } = "";
 
     [ObservableProperty] public partial string RaidLine { get; set; } = "";
+
+    /// <summary>The raid line part by part (<see cref="RaidLine"/> is the same as one text): its bosses are linked to
+    /// their markers.</summary>
+    [ObservableProperty] public partial IReadOnlyList<LinePart> RaidLineParts { get; set; } = [];
 
     /// <summary>"LOADING · PLAYER SPAWNED" (the last step the log reported) while the raid loads, else empty.</summary>
     [ObservableProperty] public partial string LoadingText { get; set; } = "";
@@ -311,6 +347,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>The "Crash reports" setting in settings: "Ask", "Always" or "Never".</summary>
     [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";
+
+    /// <summary>What settings say under "Updates" when this run can't update, and why (Distribution.NoUpdatesText).</summary>
+    [ObservableProperty] public partial string UpdatesNote { get; set; } = Shturmap.Session.Distribution.NoUpdatesText(false, false);
 
     /// <summary>The "Updates" setting in settings: "Automatic", "TellOnly" or "Off".</summary>
     [ObservableProperty] public partial string UpdateMode { get; set; } = "Automatic";
