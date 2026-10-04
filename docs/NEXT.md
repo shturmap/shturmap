@@ -239,7 +239,8 @@ for the languages to come).
 - **B11. DESIGN.md against itself and the code**: §5 calls every `findItem` found-in-raid while §7 has one "that may
   be bought" (A18); §7's "a named exit" isn't what `QuestEffort` tests; §5's Trader types lack `playerLevel`; §8's
   project table gives Core "name matching" (gone) and calls it pure (`UnpackedCopies` deletes folders); the Steam
-  uninstall key isn't mentioned. Status: open.
+  uninstall key isn't mentioned. Status: done (2026-10-04; the first point had gone with A18, the other four are
+  corrected in DESIGN.md).
 - **B12. Quest states set by hand** still have a code path (`SetQuestStateAsync`, "set by you") though the states
   come from the log alone and the owner declined editing quests by hand (below). Status: done (2026-10-04; old databases' rows of that kind are ignored).
 - **B13.** A Plan card is one button: a click on a row or a pen inside an expanded card of a map that isn't shown

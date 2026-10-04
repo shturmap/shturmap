@@ -1205,7 +1205,7 @@ instead and borrows the game's names and look where one fits, so the labels feel
 | **Place** | pin `E840` | `plantItem`, `plantQuestItem`, `mark`, `useItem` | yes, at a place; needs an item |
 | **Find in raid** | bag `E719` | `findItem` | yes, anywhere; found in raid (FIR) only where the data's `foundInRaid` says so |
 | **Survive** | runner `E726` | `extract`, `experience` (an in-raid health condition, not XP) | yes |
-| **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
+| **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `playerLevel`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
 
 A quest's type is that of its most common in-raid objective type (ties: Elimination, Pickup, Place, Exploration,
 Survive, Find in raid); a quest with no in-raid objectives is a Trader quest. This is derived, not the game's own
@@ -1305,7 +1305,8 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
   not judgements (how hard a player finds it). A quest's group is that of its most demanding objective counted for
   the map (in-raid, not optional, as the planner counts them):
   - **Go there**: `visit`, `mark`, `plantItem`, `plantQuestItem`, `useItem`, `findQuestItem`, a `findItem` that may
-    be bought, an `extract` through a named exit without "Survived".
+    be bought, an `extract` that doesn't ask for the status "Survived" (whether it names an exit or not: the status
+    is what `QuestEffort` looks at).
   - **Find or survive**: `findItem` found in raid, `extract` with the status "Survived", `experience` (staying under
     a health effect), and kills of Scavs or sniper Scavs without conditions (targets `Savage`, `Marksman`,
     `assaultGroup`, `Any`; `assaultGroup` is a Scav type: tarkov.dev's English text for it is "Scav").
@@ -1337,7 +1338,7 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
 
 | project | role |
 | --- | --- |
-| `Shturmap.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, name matching |
+| `Shturmap.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, quest synopsis. Rules without side effects, with one exception: `UnpackedCopies` deletes the 0.1.0 builds' leftover folders under %TEMP% ("Distribution") |
 | `Shturmap.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher, game settings |
 | `Shturmap.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, game art cache (portraits, icons) |
 | `Shturmap.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
@@ -1552,8 +1553,9 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
 ### How the parts work
 
 **Finding the game.** Candidates come from the `EscapeFromTarkov` uninstall key (HKLM 32/64, HKCU), the
-launcher's `gamesRootDir` (older `gameRootDir`) and its subfolders, `C:\Battlestate Games`, and Steam's
-`libraryfolders.vdf` + `appmanifest_3932890.acf`. A candidate needs `EscapeFromTarkov.exe` or a `Logs\log_*`
+launcher's `gamesRootDir` (older `gameRootDir`) and its subfolders, `C:\Battlestate Games`, Steam's own uninstall
+key for the game (`Steam App 3932890`, the same three places), and Steam's `libraryfolders.vdf` +
+`appmanifest_3932890.acf`. A candidate needs `EscapeFromTarkov.exe` or a `Logs\log_*`
 session (also under `build`). The newest log session wins; all valid installs feed the quest backfill.
 
 **Screenshot names.** `yyyy-MM-dd[HH-mm]_x, y, z_qx, qy, qz, qw_clock (n).png`; the trailing number is the in-raid
