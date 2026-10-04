@@ -32,6 +32,18 @@ public static class RaidStatus
         };
     }
 
+    /// <summary>
+    /// The last raid in one line: "Last raid · Customs · 12 min · PMC". A raid the log never ended (the game was
+    /// closed or crashed in it) has no length to say: "Last raid · Customs · end not in the log · PMC".
+    /// </summary>
+    public static string LastRaid(LastRaidView last) => string.Join(" · ", new[]
+    {
+        "Last raid",
+        last.MapName,
+        last.LengthKnown ? $"{(int)last.Duration.TotalMinutes} min" : "end not in the log",
+        last.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "Scav", _ => null },
+    }.Where(part => !string.IsNullOrEmpty(part)));
+
     /// <summary>Where the words come from, for the tooltip.</summary>
     public static string Tooltip(RaidState raid, DateTime now) => raid.Phase switch
     {

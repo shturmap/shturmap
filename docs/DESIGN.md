@@ -441,6 +441,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   ordinary line. So the log can't tell the menus from a closed game, and "GAME CLOSED" can't be said truthfully; the
   tooltip says so ("The game's log shows no raid. It doesn't say whether the game is open…"). No process checks
   (§2).
+  **A raid whose end never reached the log** (review of 2026-10-04). For the same reason a raid the game was closed
+  or crashed in keeps its start line and never gets its end line: read back at the next start it showed "IN RAID ·
+  CUSTOMS · PMC · 1,310 MIN", and the next game start's login line then ended it as a raid of 22 hours. Only two
+  things the log does show say such a raid can't still be running: a newer log session than the raid's (the game
+  has started again), and the time since it began. So an open raid or load is closed, as "end not in the log", when
+  the game has started again, or when it began longer ago than its map's raid length plus 30 minutes (two hours
+  where the length isn't known; `UnfinishedRaid`). The margin is generous on purpose, since dropping a live raid
+  would be the worse mistake: tarkov.dev's length may be behind a patch, a Scav's or a transit's timer isn't the
+  map's, and the end line only comes after the screens that follow a raid. It is looked at after every batch of log
+  lines, when the data arrives, and every 30 s while the app runs (a log that has fallen silent sends nothing). The
+  state is then "NOT IN A RAID"; the last-raid line says "LAST RAID · CUSTOMS · END NOT IN THE LOG", with no
+  length, since nothing says how long it ran; RAID OVER comes without minutes, and not at all while the logs are
+  read back at start. A raid within its bound is still shown as a raid: the log shows one, and can't say more.
   Everything in the bar shares one middle line (a player's report, 2026-10-03): the status words use the tight
   line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
   and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
@@ -1288,7 +1301,12 @@ for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageRecei
 because their bodies (and the invites') hold other players' profiles, which Shturmap never reads. The insurer:
 `ChatMessageReceived` type 2 (a trader message) with `systemData.location` when insured gear was lost, type 8 (the
 insurance return) with the gear hours later. Each notification is logged twice ("Got notification" with its body,
-then "Received notification"); only the first counts.
+then "Received notification"); only the first counts. A raid or load the log leaves open (no end line: the game was
+closed or crashed in it) is closed without a length once the game has started again (a newer log session) or it
+began longer ago than its map's raid length plus 30 minutes (two hours without a known length), at the last line the
+log has of it, never at the next session's login line (`UnfinishedRaid`, `RaidTracker.CloseUnfinished`,
+`RaidEnded.EndInLog`; "Screen anatomy", status bar). The raid's map is kept apart from the map on screen
+(`SessionSnapshot.RaidMap`; "Screen anatomy", *The raid's map is not the map on screen*).
 
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly

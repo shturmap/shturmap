@@ -19,7 +19,7 @@ public sealed class RaidOutcomeHints
     private (string? LocationId, string? MapNameId, DateTime EndedAt)? _ended;
 
     /// <summary>A notice arrived. Returns a hint when it belongs to a raid that has already ended.</summary>
-    /// <param name="mapNameId">The shown map's nameId, for raids whose location the log didn't name.</param>
+    /// <param name="mapNameId">The raid's map's nameId, for raids whose location the log didn't name.</param>
     public OutcomeHint? Notice(InsuranceNoticeEvent notice, RaidState raid, string? mapNameId)
     {
         if (notice.Kind != InsuranceNotice.Lost)
@@ -44,7 +44,8 @@ public sealed class RaidOutcomeHints
         var lost = _lost;
         _lost = null;
         _ended = null;
-        if (ended.Previous.RaidStartedAt is null)
+        // An end the log never told has no time to measure a note from: no hint from it.
+        if (ended.Previous.RaidStartedAt is null || !ended.EndInLog)
             return null;
         if (lost is not null && Same(lost.LocationId, ended.Previous.LocationId, mapNameId))
             return new OutcomeHint(lost.LocationId, ended.At, (lost.At - ended.At).TotalSeconds);

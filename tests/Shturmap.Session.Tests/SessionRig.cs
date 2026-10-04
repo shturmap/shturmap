@@ -22,16 +22,15 @@ internal sealed class SessionRig : IAsyncDisposable
     private string _log = "";
 
     /// <param name="logSessionStarted">When the game "started": the log session's folder is named by it.</param>
-    public SessionRig(DateTime? logSessionStarted = null)
+    /// <param name="configure">Makes the session, for a test that sets more than the data (a clock, a shorter check).</param>
+    public SessionRig(DateTime? logSessionStarted = null, Func<AppPaths, GameLocations, GameSession>? configure = null)
     {
         Directory.CreateDirectory(Path.Combine(_root, "Screenshots"));
         NewLogSession(logSessionStarted ?? DateTime.Now.AddMinutes(-30));
         var install = new InstallCandidate(InstallKind.Manual, _root, Path.Combine(_root, "Logs"), DateTime.Now, "test", null);
-        Session = new GameSession(new AppPaths(Path.Combine(_root, "app")),
-            new GameLocations(install, [install], Path.Combine(_root, "Screenshots"), Path.Combine(_root, "Settings")))
-        {
-            GivenData = Data,
-        };
+        var paths = new AppPaths(Path.Combine(_root, "app"));
+        var locations = new GameLocations(install, [install], Path.Combine(_root, "Screenshots"), Path.Combine(_root, "Settings"));
+        Session = configure?.Invoke(paths, locations) ?? new GameSession(paths, locations) { GivenData = Data };
         Session.Notice += notice =>
         {
             lock (_notices)

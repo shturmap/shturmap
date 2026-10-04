@@ -61,8 +61,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private DateTime? _lastRaidEnded;
     private IReadOnlyList<MapPlanView> _plan = [];
     private IReadOnlyList<PlanQuestView> _anyMap = [];
-    // Kept raw: a raid replayed at startup ends before the map data has loaded to name it.
-    private (RaidState State, DateTime EndedAt)? _lastRaidState;
+    // Kept raw: a raid replayed at startup ends before the map data has loaded to name it. EndInLog is false for a
+    // raid the log never ended: then its length isn't known.
+    private (RaidState State, DateTime EndedAt, bool EndInLog)? _lastRaidState;
     private double? _lastClock;
     private Dictionary<string, QuestStatus> _quests = new();
 
@@ -205,6 +206,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _watcher.Start();
         if (_locate is not null)
             _ = Task.Run(LookAgainAsync);
+        _ = Task.Run(WatchOpenRaidAsync);
     }
 
     // ---- the game's folders: found, chosen, or found later (owner, 2026-10-03: the no-game fallback) ----
@@ -535,6 +537,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 RecomputeQuests();
                 ResolveMap();
                 AnnounceLoading();
+                // The raid length is known now: an open raid may be past it.
+                CloseRaidThatCannotRun(announce: !_replaying);
                 Publish();
                 var how = data.Offline ? "from the saved copy (tarkov.dev unreachable)" : "from tarkov.dev";
                 var line = $"Data loaded {how}: {mode}, language {data.Language}, {data.Tasks.Count} quests, {data.Maps.Count} maps, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}";
@@ -741,6 +745,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 {
                     while (reader.TryRead(out var item))
                         Apply(item);
+                    // What the log left open, read back at start or gone silent since, may not still be running.
+                    CloseRaidThatCannotRun(announce: !_replaying);
                     Publish();
                 }
                 finally
@@ -757,6 +763,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private void Apply(LogEvent item)
     {
         _replaying = item.IsReplay;
+        // The game has started again (a newer log session) while a raid of the session before was still open: its end
+        // never reached the log. It is closed at what that session last said, not at this session's login line, which
+        // would make it a raid as long as the game was closed.
+        if (_raidSession is not null && !string.Equals(item.Session, _raidSession, StringComparison.OrdinalIgnoreCase))
+            CloseUnfinishedRaid("the game started again", announce: !item.IsReplay);
         if (item.Event is QuestEvent quest)
         {
             var mode = _tracker.State.Mode == GameMode.Unknown ? _mode : _tracker.State.Mode;
@@ -774,6 +785,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             return;
         }
 
+        // A quest message's time is the server's; every other line's is the log's own.
+        _lastLogAt = item.Event.At;
         switch (item.Event)
         {
             case GroupRaidSettingsEvent pick:
@@ -812,6 +825,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 SwitchMode(changed.State.Mode);
                 break;
             case RaidLoading:
+                _raidSession = item.Session;
                 _sideSaid = null;
                 _lastClock = null;
                 _trail.Clear();
@@ -837,23 +851,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 }
                 break;
             case RaidEnded ended:
-                _sideSaid = null;
-                _loadingCueOwed = null;
-                // The raid's own map, never one that was only being looked at.
-                _lastRaidMap = _raidMap;
-                _raidMap = null;
-                _lastRaidEnded = ended.At;
-                // Out of the raid there is no "you" on the map (owner, 2026-10-01).
-                _fix = null;
-                _fixMapId = null;
-                _trail.Clear();
-                if (ended.Previous.RaidStartedAt is not null)
-                    _lastRaidState = (ended.Previous, ended.At);
-                if (!item.IsReplay && _lastRaidMap is not null)
-                {
-                    Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _lastRaidMap.Name,
-                        ended.Previous.RaidStartedAt is { } began ? ended.At - began : null));
-                }
+                RaidOver(ended, announce: !item.IsReplay);
                 break;
             case null when _raidMap is null && _tracker.State.Phase != RaidPhase.Menu && _tracker.State.LocationId != locationBefore:
                 // A map tarkov.dev gives no scene for is named by the match setup's or the transit line's location, a
@@ -863,11 +861,102 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 break;
         }
         if (!item.IsReplay)
+            Record(transition);
+    }
+
+    // A raid (or a load) is over: back to planning. Its cue says how long it ran only when the log has its end.
+    private void RaidOver(RaidEnded ended, bool announce)
+    {
+        _sideSaid = null;
+        _loadingCueOwed = null;
+        _raidSession = null;
+        // The raid's own map, never one that was only being looked at.
+        _lastRaidMap = _raidMap;
+        _raidMap = null;
+        _lastRaidEnded = ended.At;
+        // Out of the raid there is no "you" on the map (owner, 2026-10-01).
+        _fix = null;
+        _fixMapId = null;
+        _trail.Clear();
+        if (ended.Previous.RaidStartedAt is not null)
+            _lastRaidState = (ended.Previous, ended.At, ended.EndInLog);
+        if (announce && _lastRaidMap is not null)
+            Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _lastRaidMap.Name, ended.Length));
+    }
+
+    // What the app log and the study log keep of a raid's steps (never during the replay at start).
+    private void Record(RaidTransition? transition)
+    {
+        LogRaid(transition);
+        StudyRaid(transition);
+        if (transition is RaidEnded over && _hints.Ended(over, _lastRaidMap?.NameId) is { } hint)
+            StudyHint(hint);
+    }
+
+    // ---- a raid whose end never reached the log (Shturmap.Core.Raid.UnfinishedRaid) ----
+
+    // The log session the open raid's lines are in, and when the log last said anything (not a quest message, whose
+    // time is the server's).
+    private string? _raidSession;
+    private DateTime? _lastLogAt;
+
+    /// <summary>How often an open raid is looked at again: can it still be running?</summary>
+    public TimeSpan OpenRaidCheck { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>The time, for telling whether an open raid can still be running; the PC's clock unless a test gives its own.</summary>
+    public Func<DateTime> Clock { get; init; } = () => DateTime.Now;
+
+    // Closes the open raid or load if it can't still be running: the game has started again since, or it began longer
+    // ago than its map's raid length allows. Looked at after every batch of log lines, when the data (and with it the
+    // raid length) arrives, and every half minute while the app runs, since a log that has fallen silent sends nothing.
+    private bool CloseRaidThatCannotRun(bool announce)
+    {
+        var newer = _raidSession is not null && _tailer?.CurrentSession is { } current && !string.Equals(current, _raidSession, StringComparison.OrdinalIgnoreCase);
+        var minutes = _raidMap is not null ? _data?.Maps.GetValueOrDefault(_raidMap.Id)?.RaidDuration : null;
+        if (!UnfinishedRaid.CannotStillRun(_tracker.State, Clock(), minutes, newer))
+            return false;
+        return CloseUnfinishedRaid(newer ? "the game started again" : $"it began more than {UnfinishedRaid.Bound(minutes).TotalMinutes:0} min ago", announce);
+    }
+
+    // The raid's end isn't in the log: it is over all the same, and nothing says how long it ran. Not announced while
+    // the logs are read back at start: no cue then, and nothing for the study log.
+    private bool CloseUnfinishedRaid(string why, bool announce)
+    {
+        var wasInRaid = _tracker.State.RaidStartedAt is not null;
+        if (_tracker.CloseUnfinished(_lastLogAt ?? Clock()) is not { } ended)
+            return false;
+        var map = _raidMap?.Name ?? "unknown map";
+        RaidOver(ended, announce);
+        AppLog.Info($"{(wasInRaid ? "Raid" : "Raid loading")} on {map} closed: its end isn't in the game's log ({why})");
+        // No hint from an end without a time; the hints only forget the raid.
+        _hints.Ended(ended, _lastRaidMap?.NameId);
+        if (announce)
+            StudyRaid(ended);
+        return true;
+    }
+
+    private async Task WatchOpenRaidAsync()
+    {
+        try
         {
-            LogRaid(transition);
-            StudyRaid(transition);
-            if (transition is RaidEnded over && _hints.Ended(over, _lastRaidMap?.NameId) is { } hint)
-                StudyHint(hint);
+            while (!_stop.IsCancellationRequested)
+            {
+                await Task.Delay(OpenRaidCheck, _stop.Token);
+                await _gate.WaitAsync(_stop.Token);
+                try
+                {
+                    // Long after the start: the view changes now, by itself, so it is announced.
+                    if (CloseRaidThatCannotRun(announce: true))
+                        Publish();
+                }
+                finally
+                {
+                    _gate.Release();
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 
@@ -928,9 +1017,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 AppLog.Info($"Raid started: {_raidMap?.Name ?? "unknown map"}, side {started.State.Side}");
                 break;
             case RaidEnded ended:
-                AppLog.Info(ended.Previous.RaidStartedAt is { } at
-                    ? $"Raid ended after {(ended.At - at).TotalMinutes:0} min"
-                    : "Raid loading cancelled");
+                AppLog.Info(ended.Length is { } length
+                    ? $"Raid ended after {length.TotalMinutes:0} min"
+                    : ended.Previous.RaidStartedAt is null ? "Raid loading cancelled" : "Raid ended");
                 break;
         }
     }
@@ -962,7 +1051,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 break;
             case RaidEnded ended:
                 Study.Game("raid.end", ("side", ended.Previous.Side),
-                    ("minutes", ended.Previous.RaidStartedAt is { } at ? (ended.At - at).TotalMinutes : null),
+                    ("minutes", ended.Length?.TotalMinutes),
+                    ("endInLog", ended.EndInLog),
                     ("lastMap", _lastRaidMap?.NormalizedName));
                 break;
         }
@@ -1302,8 +1392,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 ? _plan.FirstOrDefault(p => p.NormalizedName == railMap.NormalizedName)
                   ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), railMap.NormalizedName)
                 : null,
-            LastRaid = _lastRaidState is ({ } state, var endedAt) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
-                ? new LastRaidView(lastMap.Name, endedAt - state.RaidStartedAt!.Value, state.Side, endedAt)
+            LastRaid = _lastRaidState is ({ } state, var endedAt, var endInLog) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
+                ? new LastRaidView(lastMap.Name, endInLog ? endedAt - state.RaidStartedAt!.Value : TimeSpan.Zero, state.Side, endedAt) { LengthKnown = endInLog }
                 : null,
             RaidInfo = railMap is not null && _data?.Maps.GetValueOrDefault(railMap.Id) is { } raidMap
                 ? new RaidInfo(raidMap.RaidDuration ?? 0, _data.BossesOn(raidMap.Id).Take(3).Select(Planning.BossText).ToList(),

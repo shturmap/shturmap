@@ -64,8 +64,17 @@ public sealed record ObjectiveView(
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
 public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, double? ClockHours);
 
-/// <summary>The raid that just ended, for one line in Plan.</summary>
-public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Side, DateTime EndedAt);
+/// <summary>The raid that just ended, for one line in Plan (<see cref="RaidStatus.LastRaid"/> words it).</summary>
+/// <param name="Duration">How long it ran, when <see cref="LengthKnown"/>; zero otherwise.</param>
+/// <param name="EndedAt">When the log ended it; for an end the log never told, the last the log said of it.</param>
+public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Side, DateTime EndedAt)
+{
+    /// <summary>
+    /// False for a raid whose end never reached the log (the game was closed or crashed in it): it is over, but
+    /// nothing says how long it ran, so no length is shown (review of 2026-10-04).
+    /// </summary>
+    public bool LengthKnown { get; init; } = true;
+}
 
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
 /// <param name="Needs">What it takes to leave here ("Pay 5,000 ₽"), or empty.</param>
