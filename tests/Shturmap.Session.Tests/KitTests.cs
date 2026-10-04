@@ -49,11 +49,18 @@ public class KitTests
     }
 
     [Fact]
-    public void The_cue_pictures_six_and_counts_the_rest()
+    public void The_cue_pictures_three_rows_of_eight_and_counts_the_rest()
     {
-        var rows = Enumerable.Range(1, 9).Select(i => Row(RequirementKind.Bring, "item" + i, "q")).ToList();
+        // Owner, 2026-10-04: many items "get quickly hidden behind a +x mark while we still have plenty of screen
+        // space". Nine of them all show; only past twenty-four the rest is counted.
+        var nine = Enumerable.Range(1, 9).Select(i => Row(RequirementKind.Bring, "item" + i, "q")).ToList();
+        var (all, noMore) = Planning.CueKit(Planning.Kit(Plan(nine, "q"), new HashSet<string>()));
+        Assert.Equal(9, all.Count);
+        Assert.Equal(0, noMore);
+
+        var rows = Enumerable.Range(1, 27).Select(i => Row(RequirementKind.Bring, "item" + i, "q")).ToList();
         var (shown, more) = Planning.CueKit(Planning.Kit(Plan(rows, "q"), new HashSet<string>()));
-        Assert.Equal(6, shown.Count);
+        Assert.Equal(24, shown.Count);
         Assert.Equal("item1", shown[0].ItemId);
         Assert.Equal(3, more);
 

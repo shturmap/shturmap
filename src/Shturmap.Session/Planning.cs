@@ -11,8 +11,9 @@ namespace Shturmap.Session;
 /// "to use, for Wet Job", "to leave through Klimov Street (Flare), for Cease Fire!".</param>
 /// <param name="Alternatives">Every item that will do (a weapon class's members), for naming the class once the item
 /// categories are loaded (<see cref="Planning.WeaponText"/>).</param>
+/// <param name="Count">How many of it are needed (the "×3" at the end of <paramref name="Text"/>).</param>
 public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "",
-    IReadOnlyList<string>? Alternatives = null);
+    IReadOnlyList<string>? Alternatives = null, int Count = 1);
 
 /// <param name="Synopsis">What it asks on the plan's map in a few words (<see cref="Planning.Synopsis"/>), or empty.</param>
 /// <param name="Group">Its effort group on the plan's map (<see cref="QuestEffort"/>).</param>
@@ -152,12 +153,14 @@ public static class Planning
     public static KitList KitWhileLoading(Core.Raid.RaidState raid, MapPlanView? plan, IReadOnlySet<string> picks) =>
         raid.Phase == Core.Raid.RaidPhase.Loading && raid.Side != Core.Raid.RaidSide.Scav ? Kit(plan, picks) : KitList.Empty;
 
-    /// <summary>The big cue's row of item pictures: the first <paramref name="shown"/> items in the kit's order, and
-    /// how many more there are ("+3"). One picture per item: an item needed twice over (a beanie to plant and to
+    /// <summary>The big cue's item pictures: the first <paramref name="shown"/> items in the kit's order, and how many
+    /// more there are ("+3"). Twenty-four, three rows of eight: the cue has the room, and six hid most of a long
+    /// kit behind "+9" (owner, 2026-10-04: "those get quickly hidden behind a +x mark while we still have plenty of
+    /// screen space"). One picture per item: an item needed twice over (a beanie to plant and to
     /// wear) is one thing to check, and two pictures of it read as a mistake (review of 2026-10-04). What the picked
     /// quests need comes first, each kind in the kit's order (owner, 2026-10-04: "it should also show color coded
     /// the icons first of the quests we highlighted"); <see cref="ForPick"/> says which those are.</summary>
-    public static (IReadOnlyList<RequirementView> Shown, int More) CueKit(KitList kit, int shown = 6, IReadOnlySet<string>? picks = null)
+    public static (IReadOnlyList<RequirementView> Shown, int More) CueKit(KitList kit, int shown = 24, IReadOnlySet<string>? picks = null)
     {
         var all = kit.All.DistinctBy(r => r.ItemId).OrderByDescending(r => ForPick(r, picks)).ToList();
         return (all.Take(shown).ToList(), Math.Max(0, all.Count - shown));
@@ -552,7 +555,7 @@ public static class Planning
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
         // Says why it is on the list (the study log: gear cards were opened over and over to find out).
         var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : r.ForQuests.Count == 0 ? Purpose(data, r) : $"{Purpose(data, r)}, for {quests}";
-        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList());
+        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList(), Math.Max(1, r.Count));
     }
 
     /// <summary>

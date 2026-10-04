@@ -297,12 +297,20 @@ quoting it anywhere new.
      (the entry item, the exits quests name: a flare, climbing gear, money), then what the picks need, then, with
      picks on this map, the rest under ALSO USEFUL. Without picks there it is all one list. Shturmap knows no
      inventory, so it is a list to check, never a claim that something is missing.
-   - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name: up to six items, in
-     BRING's cells at 34 px, and "+3" for the rest; never scaled, like the cue's text. **What the picked quests
-     need comes first, each cell framed in its pick's colour, then a hairline and the rest in the kit's order**
-     (owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted"; read as
-     the items of the picked quests, not the quests' own glyphs). A cue that pictures a kit stays 7.5 s where the
-     others stay 5 ("The animation can be a bit longer": there are up to six things to check in it). A transit's
+   - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name, under a small "CHECK YOUR KIT":
+     **every item, in rows of eight, up to three rows** (then "+3"), in 52 px cells, with "×3" on a picture where
+     several are needed; never scaled, like the cue's text. It is a reminder to take in at a glance, not a list to
+     read (owner, 2026-10-04: "when many items are required, those get quickly hidden behind a +x mark while we
+     still have plenty of screen space ... this should not be something that requires a lot of 'reading', it
+     should be a gentle reminder of 'did I pack everything?' that might trigger a cancel when loading to stock up
+     on missing items"; until then six pictures of 34 px in one row). The pictures come in one after another once
+     the title stands, 50 ms apart, so the eye is led along them. **With picks, what they need comes first, each
+     cell framed in its pick's colour, then a hairline and the rest in the kit's order** (owner, the same day: "it
+     should also show color coded the icons first of the quests we highlighted"; read as the items of the picked
+     quests, not the quests' own glyphs). **Without picks it is one plain grid** in the kit's order, what gets in
+     and out of the map first ("some people are not working with highlighting missions at all, so it has to
+     account for this"). A cue that pictures a kit stays 7.5 s where the others stay 5 ("The animation can be a
+     bit longer"), and a quarter of a second more for each picture past the first row, up to 11 s. A transit's
      cue has none (the gear is what the raid had).
    - **The raid card** starts with CHECK YOUR KIT, in BRING's rows, while the raid loads; BRING itself steps aside
      until the raid starts, then is back in its place. A Scav loading (known early when a server raid's setup names
@@ -706,7 +714,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     length it says "47 min in · past the raid's 40 min", never a time left below one; a Scav, who joins a raid
     under way, gets "7 min in · time left not known"; a map without a raid length in the data gets the time in
     alone (`Rules.RaidTime`). While the raid loads, "40 min raid" stands with the bosses, as in Plan.)
-    and, when the distances aren't from a fresh screenshot, where they are from. While the raid loads, one quiet
+    and, when the distances aren't from a fresh screenshot, where they are from. **No loading progress** (owner,
+    2026-10-04: "we really don't need the loading progress bar in the upper left, the game already shows a loading
+    progress bar"): the line and the segments described next were shown from 2026-10-02 until then, and the
+    tracker still keeps the steps for the study log. What was shown: while the raid loads, one quiet
     line under the raid line names the last loading step the game's log reported ("LOADING · MAP", then "MAP
     LOADED", "RAID PREPARED", "RAID CREATED", "PLAYER SPAWNED", "GAME POOLED", "GAME RUNNING"), over six thin
     segments, one per step, each gold only once its own step is in the log (owner, 2026-10-02: loading takes

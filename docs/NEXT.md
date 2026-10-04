@@ -723,6 +723,9 @@ server-hosted on 25, 26 and 30 September, local for two raids on 26 September an
 
 ## 3. Loading progress in the RAID LOADING cue
 
+**Taken out again on 2026-10-04** (owner: "we really don't need the loading progress bar in the upper left, the game
+already shows a loading progress bar"); the tracker still keeps the steps for the study log.
+
 **Done (2026-10-02)**, as a line in the raid card naming the last step the log reported, over one segment per step
 that lights only when the log reports it; nothing estimated (owner). The cue stays 5 s, with a slower entrance. In
 49 loads: location loaded at 25 s, spawned 42 s, pooled 47 s, raid start 71 s (31–139 s). Each raid's step timings

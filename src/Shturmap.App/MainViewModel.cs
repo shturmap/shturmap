@@ -326,7 +326,6 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial IReadOnlyList<LinePart> RaidLineParts { get; set; } = [];
 
     /// <summary>"LOADING · PLAYER SPAWNED" (the last step the log reported) while the raid loads, else empty.</summary>
-    [ObservableProperty] public partial string LoadingText { get; set; } = "";
 
     /// <summary>"PREVIEW · CUSTOMS" while another map is shown from its row in Plan under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";

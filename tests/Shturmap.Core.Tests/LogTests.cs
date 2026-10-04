@@ -292,25 +292,22 @@ public class GroupLoadingInsuranceTests
     }
 
     [Fact]
-    public void Shows_only_the_loading_steps_the_log_reported()
+    public void Keeps_the_loading_steps_the_log_reported() // for the study log; the raid card shows none (owner, 2026-10-04)
     {
         var t0 = new DateTime(2026, 1, 1, 13, 0, 0);
         var tracker = new RaidTracker();
         tracker.Apply(new MapLoadingEvent(t0, "maps/customs_preset.bundle", null));
-        Assert.Equal("LOADING · MAP", LoadingProgress.Text(tracker.State));
-        Assert.Equal([false, false, false, false, false, false], LoadingProgress.Done(tracker.State));
+        Assert.Null(tracker.State.LoadingStep);
 
-        // Only what the log reported lights up: GamePrepared never came, so its segment stays dark.
+        // Only what the log reported counts: GamePrepared never came.
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(25), LoadingStep.LocationLoaded));
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(26), LoadingStep.GameCreated));
         Assert.Equal(LoadingStep.GameCreated, tracker.State.LoadingStep);
-        Assert.Equal("LOADING · RAID CREATED", LoadingProgress.Text(tracker.State));
-        Assert.Equal([true, false, true, false, false, false], LoadingProgress.Done(tracker.State));
+
 
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(42), LoadingStep.PlayerSpawned));
         tracker.Apply(new LoadingStepEvent(t0.AddSeconds(47), LoadingStep.GamePooled));
-        Assert.Equal("LOADING · GAME POOLED", LoadingProgress.Text(tracker.State));
-        Assert.Equal([true, false, true, true, true, false], LoadingProgress.Done(tracker.State));
+        Assert.Equal(LoadingStep.GamePooled, tracker.State.LoadingStep);
 
         Assert.IsType<RaidStarted>(tracker.Apply(new GameStartedEvent(t0.AddSeconds(71))));
         Assert.Null(tracker.State.LoadingStep);

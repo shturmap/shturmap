@@ -495,15 +495,7 @@ public sealed partial class MainWindow : Window
         ViewModel.RaidLine = string.Join(" · ", raidParts.Select(p => p.Text));
         if (!LinePart.Same(ViewModel.RaidLineParts, raidParts))
             ViewModel.RaidLineParts = raidParts;
-        if (s.Raid.Phase == RaidPhase.Loading)
-        {
-            ViewModel.LoadingText = LoadingProgress.Text(s.Raid);
-            ShowLoadingSteps(LoadingProgress.Done(s.Raid));
-        }
-        else
-        {
-            ViewModel.LoadingText = "";
-        }
+
         // The position's age, in the status bar and in the raid card's line on where its distances come from: both
         // with the clock, so they never say two ages (FixAge).
         var age = s.RaidFix is { } at ? FixAge.Of(at.At, DateTime.Now) : (TimeSpan?)null;
@@ -1461,70 +1453,96 @@ public sealed partial class MainWindow : Window
             SavePinned();
     }
 
-    // One thin segment per loading step, gold once the log has reported that step, a hairline until then.
-    private void ShowLoadingSteps(bool[] done)
-    {
-        if (LoadingSegments.Children.Count != done.Length)
-        {
-            LoadingSegments.Children.Clear();
-            LoadingSegments.ColumnDefinitions.Clear();
-            for (var i = 0; i < done.Length; i++)
-            {
-                LoadingSegments.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                var segment = new Border();
-                Grid.SetColumn(segment, i);
-                LoadingSegments.Children.Add(segment);
-            }
-        }
-        for (var i = 0; i < done.Length; i++)
-            ((Border)LoadingSegments.Children[i]).Background = Resource(done[i] ? "AmberBrush" : "LineBrush");
-    }
 
     // ---- the big cue: Shturmap changed its view on its own ----
 
     // A cue lasts 5 s; its entrance is played at 1.8 times the original pace (owner, 2026-10-02: the elements
-    // should appear more slowly, the cue shouldn't stay longer). One that pictures a kit stays 7.5 s: there are up
-    // to six things to check in it (owner, 2026-10-04: "The animation can be a bit longer").
-    private static TimeSpan CueLength(ViewCue cue) => TimeSpan.FromSeconds(cue.Kit is { Count: > 0 } ? 7.5 : 5);
+    // should appear more slowly, the cue shouldn't stay longer). One that pictures a kit stays 7.5 s (owner,
+    // 2026-10-04: "The animation can be a bit longer"), and a quarter of a second more for each picture past the
+    // first row of eight, up to 11 s: a long kit takes longer to look over.
+    private static TimeSpan CueLength(ViewCue cue) =>
+        TimeSpan.FromSeconds(cue.Kit is { Count: > 0 } kit ? Math.Min(11, 7.5 + 0.25 * Math.Max(0, kit.Count - CueKitRow)) : 5);
     private const double CuePace = 1.8;
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
 
-    // The kit pictured under the map's name (a raid loading, a group's pick): the cells BRING uses, at 34 px, then "+3".
-    // What the picked quests need comes first, each cell framed in its pick's colour, then a hairline and the rest
-    // (owner, 2026-10-04: "it should also show color coded the icons first of the quests we highlighted").
-    private void ShowCueKit(ViewCue cue)
+    // How many pictures stand in one row of the cue's kit.
+    private const int CueKitRow = 8;
+
+    // The kit pictured under the map's name (a raid loading, a group's pick): a reminder to take in at a glance, "did
+    // I pack everything?", that may make the player cancel the load and stock up; nothing in it has to be read
+    // (owner, 2026-10-04). So: the items' pictures, larger than BRING's (52 px), every one of them up to three rows
+    // of eight (then "+3": it was six in one row, and a long kit sat behind "+9" beside empty space), with "×3" on
+    // a picture where several are needed. With picks, what they need comes first, each framed in its pick's colour,
+    // then a hairline and the rest; without picks (many players never pick) it is one plain grid, what gets in and
+    // out of the map first. Returns the cells in their order, for the entrance to bring them in one after another.
+    private List<FrameworkElement> ShowCueKit(ViewCue cue)
     {
         CueKit.Children.Clear();
+        var cells = new List<FrameworkElement>();
         var kit = cue.Kit ?? [];
+        StackPanel? row = null;
+        var inRow = 0;
+        StackPanel Row()
+        {
+            if (row is null || inRow == CueKitRow)
+            {
+                row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, HorizontalAlignment = HorizontalAlignment.Center };
+                CueKit.Children.Add(row);
+                inRow = 0;
+            }
+            return row;
+        }
         for (var i = 0; i < kit.Count; i++)
         {
             var item = kit[i];
-            var picture = new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 34 };
-            if (item.ForPick)
-                CueKit.Children.Add(new Border { BorderBrush = Linked.PickBrush(item.PickSlot), BorderThickness = new Thickness(2), Padding = new Thickness(1), Child = picture });
-            else
-                CueKit.Children.Add(picture);
-            if (item.ForPick && i + 1 < kit.Count && !kit[i + 1].ForPick)
+            var cell = new Grid();
+            cell.Children.Add(new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 52 });
+            if (item.Count > 1)
             {
-                CueKit.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
+                cell.Children.Add(new Border
                 {
-                    Width = 1, Height = 26, Margin = new Thickness(2, 0, 2, 0), VerticalAlignment = VerticalAlignment.Center, Fill = Resource("LineStrongBrush"),
+                    HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Padding = new Thickness(3, 0, 3, 1),
+                    Background = Resource("GroundBrush"),
+                    Child = new TextBlock
+                    {
+                        Text = "×" + item.Count.ToString("N0", UiLanguage.Culture), Style = (Style)Application.Current.Resources["FigureText"],
+                        FontSize = 13, Foreground = Resource("InkBrush"),
+                    },
+                });
+            }
+            // Every cell has the frame's room, so framed and plain ones stand in one grid.
+            var framed = new Border
+            {
+                BorderBrush = item.ForPick ? Linked.PickBrush(item.PickSlot) : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(2), Padding = new Thickness(1), Child = cell,
+            };
+            Row().Children.Add(framed);
+            inRow++;
+            cells.Add(framed);
+            if (item.ForPick && i + 1 < kit.Count && !kit[i + 1].ForPick && inRow < CueKitRow)
+            {
+                row!.Children.Add(new Microsoft.UI.Xaml.Shapes.Rectangle
+                {
+                    Width = 1, Height = 38, Margin = new Thickness(1, 0, 1, 0), VerticalAlignment = VerticalAlignment.Center, Fill = Resource("LineStrongBrush"),
                 });
             }
         }
-        if (cue.KitMore > 0)
+        if (cue.KitMore > 0 && row is not null)
         {
-            CueKit.Children.Add(new TextBlock
+            var more = new TextBlock
             {
                 Text = $"+{cue.KitMore}",
                 Style = (Style)Application.Current.Resources["FigureText"],
                 Foreground = Resource("MutedBrush"),
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(4, 0, 0, 0),
-            });
+            };
+            row.Children.Add(more);
+            cells.Add(more);
         }
-        CueKit.Visibility = CueKit.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        CueKit.Visibility = CueKitLabel.Visibility = cells.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        return cells;
     }
 
     private (string Eyebrow, string Title, string Detail) CueText(ViewCue cue)
@@ -1556,7 +1574,7 @@ public sealed partial class MainWindow : Window
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-        ShowCueKit(cue);
+        var kitCells = ShowCueKit(cue);
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();
@@ -1608,6 +1626,14 @@ public sealed partial class MainWindow : Window
         Animate(CueRuleTopScale, "ScaleX", spring, (0, 0), (0.15 * k, 0), (0.75 * k, 1));
         Animate(CueRuleBottomScale, "ScaleX", spring, (0, 0), (0.15 * k, 0), (0.75 * k, 1));
         Animate(CueTitleShift, "Y", easeOut, (0, 22), (0.1 * k, 22), (0.55 * k, 0));
+        // The kit's pictures come in one after another once the title stands, 50 ms apart: the eye is led along
+        // them, and all are there within two and a half seconds.
+        for (var i = 0; i < kitCells.Count; i++)
+        {
+            var at = 0.6 * k + i * 0.05;
+            kitCells[i].Opacity = 0;
+            Animate(kitCells[i], "Opacity", easeOut, (0, 0), (at, 0), (at + 0.2, 1));
+        }
         story.Completed += (_, _) =>
         {
             if (ReferenceEquals(story, _cueStory) && !SnapshotMode)

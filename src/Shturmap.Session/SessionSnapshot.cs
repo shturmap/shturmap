@@ -37,7 +37,8 @@ public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength 
 /// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
 /// <param name="ForPick">Needed by a quest picked for this raid: the cue shows these first, framed in the pick's colour.</param>
 /// <param name="PickSlot">The colour of the first pick that needs it (<see cref="QuestPicks.Slots"/>).</param>
-public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKind Kind, bool ForPick = false, int PickSlot = 0);
+/// <param name="Count">How many of it are needed; the cue says it on the picture from two up.</param>
+public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKind Kind, bool ForPick = false, int PickSlot = 0, int Count = 1);
 
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);

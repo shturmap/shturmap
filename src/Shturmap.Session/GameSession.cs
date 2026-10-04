@@ -1387,7 +1387,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ("forPicks", kit.All.Count(r => r.QuestIds.Any(picks.Contains))));
         var slots = _picks?.Slots(_mode, PickKeyOf(map)) ?? new Dictionary<string, int>();
         return new ViewCue(kind, map.Name, KitMore: more, Kit: shown.Select(r => new CueItem(r.ItemId, r.Kind, Planning.ForPick(r, picks),
-            r.QuestIds.Where(picks.Contains).Select(q => slots.GetValueOrDefault(q)).DefaultIfEmpty(0).First())).ToList());
+            r.QuestIds.Where(picks.Contains).Select(q => slots.GetValueOrDefault(q)).DefaultIfEmpty(0).First(), r.Count)).ToList());
     }
 
     // The group's leader picked a raid, 20–70 s before loading starts (owner's logs): show that map now with its kit,

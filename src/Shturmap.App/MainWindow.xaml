@@ -765,13 +765,9 @@
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLineParts, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}"
                                 ItemTemplate="{StaticResource LinePartTemplate}" ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False"
                                 AutomationProperties.Name="{x:Bind ViewModel.RaidLine, Mode=OneWay}" />
-                  <!-- While the raid loads: the last step the game's log reported, and one segment per loading step that
-                       lights once the log reports that step; nothing estimated (LoadingProgress). Gone once the raid starts. -->
-                  <StackPanel Spacing="5" Margin="0,8,0,2" Visibility="{x:Bind ShownIf(ViewModel.LoadingText), Mode=OneWay}"
-                              ToolTipService.ToolTip="The loading steps the game has reported in its log">
-                    <TextBlock Text="{x:Bind ViewModel.LoadingText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
-                    <Grid x:Name="LoadingSegments" Height="2" ColumnSpacing="3" />
-                  </StackPanel>
+                  <!-- No loading progress here (owner, 2026-10-04: "we really don't need the loading progress bar in the
+                       upper left, the game already shows a loading progress bar"). Until then a line named the last
+                       loading step the log reported, over one segment per step. -->
                   <TextBlock Text="{x:Bind ViewModel.RaidFixNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidFixNote), Mode=OneWay}" Style="{StaticResource NoteText}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidNote), Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />
                   <!-- While the raid loads: the kit to check, while matching can still be cancelled (owner, 2026-10-03). What
@@ -944,9 +940,11 @@
             </TextBlock>
             <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
                        Foreground="{StaticResource MutedBrush}" />
-            <!-- A raid loading's or a group pick's kit, pictured: up to six items in the kit's order, "+3" for the rest
-                 (owner, 2026-10-03: "with icon previews"). Never scaled, like the text. -->
-            <StackPanel x:Name="CueKit" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="0,4,0,0" Visibility="Collapsed" />
+            <!-- A raid loading's or a group pick's kit, pictured (owner, 2026-10-03: "with icon previews"): a reminder
+                 to take in at a glance, "did I pack everything?", so pictures and nothing to read (owner, 2026-10-04).
+                 Rows of eight, up to three, built in ShowCueKit; never scaled, like the text. -->
+            <TextBlock x:Name="CueKitLabel" Text="CHECK YOUR KIT" HorizontalAlignment="Center" Style="{StaticResource EyebrowText}" Margin="0,8,0,0" Visibility="Collapsed" />
+            <StackPanel x:Name="CueKit" HorizontalAlignment="Center" Spacing="8" Visibility="Collapsed" />
             <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
               <Rectangle.RenderTransform>
                 <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
