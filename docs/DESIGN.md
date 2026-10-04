@@ -864,8 +864,11 @@ still only keeps its card open (two clicks, two meanings).
   COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
   a group of their own says "this raid's work" at a glance. BRING lists what the picks need first, then a hairline
   and the rest (`Planning.BringOrder`). A map with picks is suggested first, most picks first: the player's plan
-  before the planner's. A folded card shows its picks' glyphs first, in cyan, then a hairline. The raid card
-  starts with PICKED, nearest first, and NEXT is the nearest objective among the picks.
+  before the planner's. That holds whatever the map's rank: every map is ranked before the list is cut, the maps
+  with picks all come first (also more than four), and the planner's best fill up to four (`RaidPlanner.Rank`;
+  until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
+  shows its picks' glyphs first, in cyan, then a hairline. The raid card starts with PICKED, nearest first, and
+  NEXT is the nearest objective among the picks.
 - **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
 - The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
 
@@ -991,7 +994,7 @@ For each map (variants sharing artwork, like Ground Zero 21+, count as one), usi
   raid items depend on luck) and no kill count is above 3; otherwise it is **progressed**.
 - Score = 3 per finishable quest + 1 per tied objective with a place + 0.6 per tied objective without one + 0.1 per
   untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
-  expanded.
+  expanded. Maps with picked quests come before them, whatever their score (§4, "Picks").
 - Quests whose in-raid work fits any map are listed once under **Any map**.
 - No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
   walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's

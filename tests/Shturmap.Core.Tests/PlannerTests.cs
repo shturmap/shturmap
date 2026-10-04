@@ -78,6 +78,42 @@ public class PlannerTests
         Assert.Equal("kills", Assert.Single(RaidPlanner.AnyMap([Audit, Revision, Swift, AnyKills])).Id);
     }
 
+    // Six maps with one quest each, the earlier ones worth more: "m1" ranks first, "m6" last.
+    private static (List<PlanQuest> Quests, List<PlanMap> Maps) SixMaps()
+    {
+        var maps = Enumerable.Range(1, 6).Select(i => new PlanMap($"m{i}", $"Map {i}", new HashSet<string> { $"m{i}" }, 40)).ToList();
+        var quests = Enumerable.Range(1, 6).Select(i => new PlanQuest($"q{i}", $"Quest {i}",
+            Enumerable.Range(0, 7 - i).Select(n => Obj($"q{i}-{n}", ObjectiveKind.Exploration, [$"m{i}"], [($"m{i}", new WorldPoint(n, 0, 0))])).ToList(),
+            NoKeys)).ToList();
+        return (quests, maps);
+    }
+
+    [Fact]
+    public void A_pick_on_a_map_below_the_best_four_is_still_suggested_first()
+    {
+        var (quests, maps) = SixMaps();
+        Assert.Equal(["m1", "m2", "m3", "m4"], RaidPlanner.Rank(quests, maps).Select(p => p.Map.Id));
+
+        // The player's plan before the planner's: the sixth map leads, and the best three fill up to four.
+        var picked = RaidPlanner.Rank(quests, maps, picks: new HashSet<string> { "q6" });
+        Assert.Equal(["m6", "m1", "m2", "m3"], picked.Select(p => p.Map.Id));
+
+        // Several maps with picks: the planner's order among them, all shown, then the rest up to four.
+        Assert.Equal(["m5", "m6", "m1", "m2"], RaidPlanner.Rank(quests, maps, picks: new HashSet<string> { "q6", "q5" }).Select(p => p.Map.Id));
+        // A quest that isn't on any map (or isn't active) changes nothing.
+        Assert.Equal(["m1", "m2", "m3", "m4"], RaidPlanner.Rank(quests, maps, picks: new HashSet<string> { "elsewhere" }).Select(p => p.Map.Id));
+    }
+
+    [Fact]
+    public void Maps_with_picks_are_all_shown_most_picks_first()
+    {
+        var (quests, maps) = SixMaps();
+        // A second quest on the sixth map: two picks there, one each on the others.
+        quests.Add(new PlanQuest("q6b", "Quest 6b", [Obj("q6b-0", ObjectiveKind.Exploration, ["m6"], [("m6", new WorldPoint(9, 0, 0))])], NoKeys));
+        var picks = new HashSet<string> { "q2", "q3", "q4", "q5", "q6", "q6b" };
+        Assert.Equal(["m6", "m2", "m3", "m4", "m5"], RaidPlanner.Rank(quests, maps, picks: picks).Select(p => p.Map.Id));
+    }
+
     [Fact]
     public void Found_in_raid_items_never_make_a_quest_finishable()
     {

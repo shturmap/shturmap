@@ -105,16 +105,31 @@ public static class RaidPlanner
 {
     public const int OneRaidCount = 3;
 
-    public static IReadOnlyList<MapPlan> Rank(IEnumerable<PlanQuest> quests, IEnumerable<PlanMap> maps, int top = 4)
+    /// <param name="top">How many maps are suggested.</param>
+    /// <param name="picks">The quests picked for the coming raid. Every map with a pick comes first, most picks first,
+    /// then in the planner's order, whatever its rank: the player's plan before the planner's (owner, 2026-10-03). The
+    /// rest fill up to <paramref name="top"/>; maps with picks are all shown, also beyond it.</param>
+    public static IReadOnlyList<MapPlan> Rank(IEnumerable<PlanQuest> quests, IEnumerable<PlanMap> maps, int top = 4, IReadOnlySet<string>? picks = null)
     {
         var questList = quests.ToList();
-        return maps
+        var ranked = maps
             .Select(map => Plan(questList, map))
             .Where(plan => plan.Score > 0)
             .OrderByDescending(plan => plan.Score)
             .ThenBy(plan => plan.RouteMeters)
-            .Take(top)
             .ToList();
+        if (picks is not { Count: > 0 })
+            return ranked.Take(top).ToList();
+        // Every map is ranked before the cut: a pick on the map ranked fifth would otherwise never show.
+        var picked = ranked
+            .Select((plan, rank) => (Plan: plan, Rank: rank, Picks: plan.Finish.Concat(plan.Progress).Count(q => picks.Contains(q.Quest.Id))))
+            .Where(x => x.Picks > 0)
+            .OrderByDescending(x => x.Picks)
+            .ThenBy(x => x.Rank)
+            .Select(x => x.Plan)
+            .ToList();
+        var first = picked.Select(p => p.Map.Id).ToHashSet(StringComparer.Ordinal);
+        return [.. picked, .. ranked.Where(p => !first.Contains(p.Map.Id)).Take(Math.Max(0, top - picked.Count))];
     }
 
     /// <summary>

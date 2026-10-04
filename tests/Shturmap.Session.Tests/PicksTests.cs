@@ -154,7 +154,39 @@ public class PicksTests
 
         var picked = Planning.Suggest(data, active, new HashSet<string> { pick });
         Assert.Contains(pick, picked[0].Finish.Concat(picked[0].Progress).Select(q => q.QuestId));
-        Assert.Equal(plans.Count, picked.Count);
+        // Every map the pick is on, then the planner's best up to four.
+        Assert.True(picked.Count >= plans.Count);
         Assert.Equal(plans.Select(p => p.NormalizedName), Planning.Suggest(data, active, new HashSet<string>()).Select(p => p.NormalizedName));
+    }
+
+    // A pick on a map the planner ranks below its best four still brings that map up (the review of 2026-10-04: the
+    // list was cut to four before the picks were looked at, so such a pick never showed). Same cache as above.
+    [Fact]
+    public async Task A_pick_on_a_map_outside_the_best_four_brings_it_first()
+    {
+        var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+        if (!File.Exists(Path.Combine(cache, "pve_tasks.json")))
+            Assert.Skip($"No tarkov.dev cache at {cache}: run Shturmap or shturmap-cli once to download it.");
+        var data = await new GameDataLoader(new CachedHttp(new HttpClient(new Offline()), cache)).LoadAsync(GameMode.Pve, "en", TestContext.Current.CancellationToken);
+        var active = data.Tasks.Keys.ToList();
+        var all = RaidPlanner.Rank(active.Select(id => Planning.ToPlan(data.Tasks[id], data)), Planning.Maps(data), top: int.MaxValue);
+        Assert.True(all.Count > 4, "the data has more maps with quests than the four suggested");
+        var low = all[^1];
+        var lowName = data.Maps[low.Map.Id].NormalizedName;
+        Assert.DoesNotContain(lowName, Planning.Suggest(data, active).Select(p => p.NormalizedName));
+
+        // A quest of the lowest map, one that is on no other map if there is one (then that map alone leads).
+        var elsewhere = all.Take(all.Count - 1).SelectMany(p => p.Finish.Concat(p.Progress)).Select(q => q.Quest.Id).ToHashSet();
+        var here = low.Finish.Concat(low.Progress).Select(q => q.Quest.Id).ToList();
+        var pick = here.FirstOrDefault(id => !elsewhere.Contains(id)) ?? here[0];
+
+        var picked = Planning.Suggest(data, active, new HashSet<string> { pick });
+        Assert.Contains(lowName, picked.Select(p => p.NormalizedName));
+        Assert.Contains(pick, picked[0].Finish.Concat(picked[0].Progress).Select(q => q.QuestId));
+        if (!elsewhere.Contains(pick))
+        {
+            Assert.Equal(lowName, picked[0].NormalizedName);
+            Assert.Equal(4, picked.Count);
+        }
     }
 }
