@@ -68,6 +68,9 @@ internal sealed class SessionRig : IAsyncDisposable
     /// <summary>The raid length the data gives Customs, in minutes.</summary>
     public const int CustomsMinutes = 40;
 
+    /// <summary>The one quest the data has, so that the snapshot shows its state (quests the catalog doesn't list aren't shown).</summary>
+    public const string QuestId = "5967733e86f774602332fc84";
+
     public static GameData Data(GameMode mode) => new()
     {
         Mode = mode,
@@ -79,7 +82,10 @@ internal sealed class SessionRig : IAsyncDisposable
             // A map tarkov.dev gives no scene for: only the match setup's or the transit line's location names it.
             new ApiMap("map-gz21", "Ground Zero 21+", "ground-zero-21", "Sandbox_high", null, null, 35, [], [], [], [], []),
         }.ToDictionary(m => m.Id),
-        Tasks = new Dictionary<string, ApiTask>(),
+        Tasks = new Dictionary<string, ApiTask>
+        {
+            [QuestId] = new(QuestId, "A quest", null, null, null, null, false, false, null, null, null, false, null, [], null),
+        },
         Traders = new Dictionary<string, ApiTrader>(),
         MapDefinitions = new[] { "customs", "woods", "ground-zero" }
             .Select(key => new MapDefinition { Key = key, Transform = [1, 0, 1, 0], Bounds = new WorldBox(-500, -500, 500, 500) })
@@ -94,6 +100,16 @@ internal sealed class SessionRig : IAsyncDisposable
         var folder = Path.Combine(_root, "Logs", $"log_{stamp}_{Build}");
         Directory.CreateDirectory(folder);
         _log = Path.Combine(folder, $"{stamp}_{Build} application_000.log");
+        _pushLog = Path.Combine(folder, $"{stamp}_{Build} push-notifications_000.log");
+    }
+
+    private string _pushLog = "";
+
+    /// <summary>One notification in the session's push-notifications log: its header line, then its JSON body.</summary>
+    public void Notification(string kind, string body, DateTime? at = null)
+    {
+        var stamp = (at ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+        File.AppendAllText(_pushLog, $"{stamp}|{Build}|Info|push-notifications|Got notification | {kind}\r\n{body.ReplaceLineEndings("\r\n")}\r\n");
     }
 
     /// <summary>

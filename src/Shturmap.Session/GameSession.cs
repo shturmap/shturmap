@@ -202,7 +202,17 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _ = Task.Run(BackfillLogsAsync);
         FollowLogs();
         _watcher = new ScreenshotWatcher(_locations.ScreenshotsFolder);
-        _watcher.ScreenshotTaken += s => _ = Task.Run(() => OnScreenshotAsync(s));
+        _watcher.ScreenshotTaken += s => _ = Task.Run(async () =>
+        {
+            try
+            {
+                await OnScreenshotAsync(s);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                Failed("Placing a position", e);
+            }
+        });
         _watcher.Start();
         if (_locate is not null)
             _ = Task.Run(LookAgainAsync);
@@ -296,6 +306,33 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         return locate(store.GetSetting(InstallFolderSetting));
     }
 
+    // ---- background work that outlives one failure ----
+
+    // A step of the session's background work failed: reading a line of the game's log, the quest history of a log
+    // session, a look for the game, a position. It is said in the app log, once per kind of failure, and the work
+    // carries on. One database or file error used to end log following, the quest history or the look for the game
+    // for the rest of the session without a sign, while the LOGS light stayed "live" (review of 2026-10-04, A31).
+    // Cancelling is no failure, and neither is what goes wrong while the session closes.
+    private readonly HashSet<string> _failuresSaid = [];
+    private const int FailuresSaidAtMost = 20;
+
+    private void Failed(string what, Exception e)
+    {
+        if (e is OperationCanceledException || _stop.IsCancellationRequested)
+            return;
+        lock (_failuresSaid)
+        {
+            if (_failuresSaid.Count >= FailuresSaidAtMost || !_failuresSaid.Add($"{what}|{e.GetType().FullName}|{e.Message}"))
+                return;
+        }
+        AppLog.Error($"{what} failed; carrying on", e);
+        Failure?.Invoke(what, e);
+    }
+
+    /// <summary>A step of the session's background work failed and the work carried on (it is in the app log too); raised
+    /// once per kind of failure, on a background thread.</summary>
+    public event Action<string, Exception>? Failure;
+
     // Looks for the game again while it, or its logs, aren't found; stops looking once both are.
     private async Task LookAgainAsync()
     {
@@ -304,28 +341,40 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             while (!_stop.IsCancellationRequested)
             {
                 await Task.Delay(LookAgainEvery, _stop.Token);
-                if (_locate is null)
-                    continue;
-                if (_locations is { Install: { Kind: InstallKind.Manual }, LogsFolder: not null })
+                try
                 {
-                    // A chosen folder is kept; looking again only notices newer game logs elsewhere (the hint).
-                    var again = _locate(_chosenFolder);
-                    if (SameGame(again, _locations) &&
-                        !string.Equals(GameFolder.NewerElsewhere(again)?.Root, GameFolder.NewerElsewhere(_locations)?.Root, StringComparison.OrdinalIgnoreCase))
-                        await RefreshLocationsAsync(again);
-                    continue;
+                    await LookAgainOnceAsync();
                 }
-                if (_locations is { Install: not null, LogsFolder: not null })
-                    continue;
-                var found = _locate(_chosenFolder);
-                if (SameGame(found, _locations))
-                    continue;
-                await FollowAsync(found);
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    Failed("Looking for the game again", e);
+                }
             }
         }
         catch (OperationCanceledException)
         {
         }
+    }
+
+    private async Task LookAgainOnceAsync()
+    {
+        if (_locate is null)
+            return;
+        if (_locations is { Install: { Kind: InstallKind.Manual }, LogsFolder: not null })
+        {
+            // A chosen folder is kept; looking again only notices newer game logs elsewhere (the hint).
+            var again = _locate(_chosenFolder);
+            if (SameGame(again, _locations) &&
+                !string.Equals(GameFolder.NewerElsewhere(again)?.Root, GameFolder.NewerElsewhere(_locations)?.Root, StringComparison.OrdinalIgnoreCase))
+                await RefreshLocationsAsync(again);
+            return;
+        }
+        if (_locations is { Install: not null, LogsFolder: not null })
+            return;
+        var found = _locate(_chosenFolder);
+        if (SameGame(found, _locations))
+            return;
+        await FollowAsync(found);
     }
 
     /// <summary>The same game in the same place: nothing to switch.</summary>
@@ -699,37 +748,65 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     // ---- logs ----
 
+    // The quest history from every log session on disk. A session that can't be read (a file error, a line in a shape
+    // the parser doesn't expect) costs its own quests only, never the history of all the others.
     private async Task BackfillLogsAsync()
     {
         if (_locations is null || _store is null)
             return;
-        var observations = new List<QuestObservation>();
-        foreach (var logs in _locations.AllLogsFolders)
-        {
-            foreach (var session in Directory.EnumerateDirectories(logs, "log_*").OrderBy(d => InstallLocator.SessionStart(Path.GetFileName(d))))
-            {
-                var mode = GameMode.Unknown;
-                foreach (var e in LogTailer.ReadSession(session))
-                {
-                    if (e is SessionModeEvent m)
-                        mode = m.Mode;
-                    else if (e is QuestEvent q && mode != GameMode.Unknown)
-                        observations.Add(FromLog(mode, q));
-                }
-            }
-        }
-        var added = _store.Add(observations);
-        if (added == 0)
-            return;
-        await _gate.WaitAsync();
         try
         {
-            RecomputeQuests();
-            Publish();
+            var observations = new List<QuestObservation>();
+            foreach (var logs in _locations.AllLogsFolders)
+            {
+                List<string> sessions;
+                try
+                {
+                    sessions = Directory.EnumerateDirectories(logs, "log_*").OrderBy(d => InstallLocator.SessionStart(Path.GetFileName(d))).ToList();
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    Failed("Reading the quest history: listing the log sessions", e);
+                    continue;
+                }
+                foreach (var session in sessions)
+                {
+                    try
+                    {
+                        var mode = GameMode.Unknown;
+                        var read = new List<QuestObservation>();
+                        foreach (var e in LogTailer.ReadSession(session))
+                        {
+                            if (e is SessionModeEvent m)
+                                mode = m.Mode;
+                            else if (e is QuestEvent q && mode != GameMode.Unknown)
+                                read.Add(FromLog(mode, q));
+                        }
+                        observations.AddRange(read);
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        Failed("Reading the quest history of a log session", e);
+                    }
+                }
+            }
+            var added = _store.Add(observations);
+            if (added == 0)
+                return;
+            await _gate.WaitAsync();
+            try
+            {
+                RecomputeQuests();
+                Publish();
+            }
+            finally
+            {
+                _gate.Release();
+            }
         }
-        finally
+        catch (Exception e) when (e is not OperationCanceledException)
         {
-            _gate.Release();
+            Failed("Reading the quest history", e);
         }
     }
 
@@ -743,11 +820,28 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 await _gate.WaitAsync(_stop.Token);
                 try
                 {
+                    // Line by line: one that can't be applied doesn't take the rest of the batch, or the following, with it.
                     while (reader.TryRead(out var item))
-                        Apply(item);
-                    // What the log left open, read back at start or gone silent since, may not still be running.
-                    CloseRaidThatCannotRun(announce: !_replaying);
-                    Publish();
+                    {
+                        try
+                        {
+                            Apply(item);
+                        }
+                        catch (Exception e) when (e is not OperationCanceledException)
+                        {
+                            Failed("Applying a line of the game's log", e);
+                        }
+                    }
+                    try
+                    {
+                        // What the log left open, read back at start or gone silent since, may not still be running.
+                        CloseRaidThatCannotRun(announce: !_replaying);
+                        Publish();
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        Failed("Showing what the game's log said", e);
+                    }
                 }
                 finally
                 {
@@ -948,6 +1042,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     // Long after the start: the view changes now, by itself, so it is announced.
                     if (CloseRaidThatCannotRun(announce: true))
                         Publish();
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    Failed("Looking at the open raid", e);
                 }
                 finally
                 {

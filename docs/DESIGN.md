@@ -1380,7 +1380,10 @@ not a trace. INFO: the start (version with commit, installed or folder build, Wi
 screenshots folders found, the game's language and screenshot key, mode, data loaded (from where, language, counts,
 when checked), raids loading, starting, ending, the study switch (developer builds). WARN: something degraded but working (the data
 from the saved copy, English instead of the game's language, a folder not found, the item sources or a map's
-artwork not loaded). ERROR: what failed, with the exception. DEBUG only with `--verbose` (and the website demo,
+artwork not loaded). ERROR: what failed, with the exception. A step of the session's background work that fails (a
+line of the game's log, one log session's quest history, a look for the game, a position) is one ERROR line per kind
+of failure, and the work carries on (review of 2026-10-04: one database or file error used to end log following or
+the quest history for the rest of the session, with no line and the LOGS light still "live"). DEBUG only with `--verbose` (and the website demo,
 which times its clip by its lines): notices, the map surface, snapshots, fake games, the demo. Every line is
 written with the profile folder as `%USERPROFILE%` (any case, either slash; that covers Documents, OneDrive and
 AppData under it); no profile or account ids, no game file contents. At most 1 MB a day: a last WARN line says so
