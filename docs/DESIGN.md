@@ -252,8 +252,8 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `AmberDeep` | `#A88F4E` | the accent pressed | SystemAccentColorDark1 · — · — |
 | `Green` | `#8DA65E` | PMC extracts, success, healthy inputs | GreenColor · Green · — |
 | `Teal` | `#6F9A94` | Scav extracts | TealColor · Teal · `--teal` |
-| `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | — · Lime · — |
-| `Violet` | `#9C8CC4` | transits | — · Violet · — |
+| `Khaki` | `#B7B77A` | extracts for both sides (the split triangle) | KhakiColor · Lime · — |
+| `Violet` | `#9C8CC4` | transits | VioletColor · Violet · — |
 | `Red` | `#B8604A` | bosses, danger | RedColor · Red · — |
 | `Sand` | `#E9E2C8` | the player and their trail | SandColor · Player · `--sand` |
 | `Kept` | `#3FD2E0` | quests kept lit or picked; the dev build's icon plate | KeptColor · Kept · — |
@@ -480,8 +480,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for hand-overs. Objectives inside a quest go nearest first, and quests
     by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
-    transits for your side, each with what it takes to leave there (see "Extract requirements"). ANY MAP closes
-    the rail in both states.
+    transits for your side, each with what it takes to leave there (see "Extract requirements"). A way out wears
+    the colour of its kind here as on the map, in EXIT's label and distance and in each row's distance: a PMC
+    extract green, a Scav's teal, one for both sides khaki, a transit violet (2026-10-04: every way out was green
+    in the rail, the PMC extract's colour on the map). ANY MAP closes the rail in both states.
   - *Scav raid* (owner, 2026-10-01: a Scav needs a different view): the same card, with SCAV beside the map's
     name (PMC in a PMC raid; nothing when the logs can't tell). Quest objectives only count for the PMC, but items
     found in raid count whoever found them, so the card's summary is "Find items for 4 quests" and its one

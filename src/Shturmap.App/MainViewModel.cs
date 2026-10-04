@@ -22,11 +22,26 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 
 /// <param name="Id">The map marker's id, for linked highlighting.</param>
 /// <param name="Needs">What it takes to leave ("Pay 5,000 ₽", "Red Rebel ice pick and paracord, no armored rig"), or empty.</param>
-public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction, string Needs = "", string? NeedItemId = null)
+/// <param name="Marker">What kind of way out it is on the map: its colour here is its symbol's there.</param>
+public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction, string Needs = "", string? NeedItemId = null,
+    Shturmap.Map.MarkerKind Marker = Shturmap.Map.MarkerKind.ExtractPmc)
 {
     public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility ItemVisibility => NeedItemId is null ? Visibility.Collapsed : Visibility.Visible;
+
+    /// <summary>
+    /// A way out wears the colour of its kind, in the rail as on the map: a PMC extract green, a Scav's teal, one for
+    /// both sides khaki, a transit violet (one colour, one meaning; 2026-10-04: in the rail every way out was green,
+    /// which is the PMC extract's on the map).
+    /// </summary>
+    public Microsoft.UI.Xaml.Media.Brush KindBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Marker switch
+    {
+        Shturmap.Map.MarkerKind.ExtractScav => "TealBrush",
+        Shturmap.Map.MarkerKind.ExtractShared => "KhakiBrush",
+        Shturmap.Map.MarkerKind.Transit => "VioletBrush",
+        _ => "GreenBrush",
+    }];
 }
 
 public sealed record MapChoice(string NormalizedName, string Name)

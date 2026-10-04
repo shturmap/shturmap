@@ -579,7 +579,8 @@ public sealed partial class MainWindow : Window
             Distance(e.Distance),
             Direction(e.Direction, e.MapBearing),
             e.Needs,
-            e.NeedItemId)).ToList();
+            e.NeedItemId,
+            e.Kind)).ToList();
 
         // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
         // log: in a raid the app got glances with a median of 3.9 s).

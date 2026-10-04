@@ -689,14 +689,16 @@
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="EXIT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource GreenBrush}" Margin="0,12,0,0" />
+                    <!-- In the colour of its kind, as its symbol on the map: a PMC extract green, a Scav's teal, one for
+                         both sides khaki, a transit violet (2026-10-04: every way out was green here). -->
+                    <TextBlock Text="EXIT" Style="{StaticResource EyebrowText}" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" Margin="0,12,0,0" />
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,9">
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Name, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Needs, Mode=OneWay}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
                                  Visibility="{x:Bind ShownIf(ViewModel.RaidExit.Needs), Mode=OneWay}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Padding="10,8,0,8">
-                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{StaticResource GreenBrush}" HorizontalAlignment="Right" />
+                      <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Right" />
                       <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.Direction), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11.5"
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
                     </StackPanel>
@@ -738,7 +740,7 @@
                         </StackPanel>
                       </StackPanel>
                       <StackPanel Grid.Column="1">
-                        <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" Foreground="{StaticResource GreenBrush}" />
+                        <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" Foreground="{x:Bind KindBrush}" />
                         <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
                       </StackPanel>
                     </Grid>
