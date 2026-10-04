@@ -417,8 +417,10 @@ The items below are kept as written, for their reasons and quotes.
     item 5: risk line, article 437, PvP sentence; the "nothing is sent" wording; media refresh), and draft before
     publishing.
     - **New players:** what it is and what it isn't (a quest planner and a map of where your last screenshot was
-      taken); do I need to know the maps; how the position works (press your screenshot key); PvE and PvP; which
+      taken); how the position works (press your screenshot key); PvE and PvP; which
       maps; game languages; what it costs (nothing) and what it sends (only reports you send, the update check).
+      "Do I need to know the maps?" was in the first version and came out again (owner, 2026-10-04: "Remove the
+      'Do I need to know the maps?' question from the FAQ"); don't put it back.
     - **Experienced players, "is this cheating?":** answered from the research (DESIGN.md §2): what it reads and
       never does; BSG's support article 437 describes the coordinates in screenshot names (a source, not an
       endorsement); the License Agreement 4.3.4 and no guarantee against sanctions; no BSG statement on such tools
