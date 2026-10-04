@@ -89,20 +89,28 @@
           <Setter Property="TextLineBounds" Value="Tight" />
         </Style>
       </Grid.Resources>
+      <!-- The inputs and the three buttons keep their place at the right; the left takes the rest, and in a narrow
+           window the last fix, its last word, trims instead of pushing them out of the window (2026-10-04). -->
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <StackPanel Orientation="Horizontal" Spacing="16">
+      <Grid ColumnSpacing="16">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
         <TextBlock Text="SHTURMAP" Style="{StaticResource StatusBarText}" FontWeight="Bold" CharacterSpacing="320" />
-        <Rectangle Width="1" Height="16" Fill="{StaticResource LineStrongBrush}" VerticalAlignment="Center" />
+        <Rectangle Grid.Column="1" Width="1" Height="16" Fill="{StaticResource LineStrongBrush}" VerticalAlignment="Center" />
         <!-- The mode as the game's log says it; no chooser (owner, 2026-10-03). The tooltip says where it comes from.
              Only with no game on this PC is it chosen by hand: there is no log to say it (the no-game fallback). -->
-        <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
+        <TextBlock Grid.Column="2" Text="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    ToolTipService.ToolTip="{x:Bind ViewModel.ModeDetail, Mode=OneWay}"
                    Visibility="{x:Bind ShownIfNot(ViewModel.ModeChoosable), Mode=OneWay}" />
-        <DropDownButton Content="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12"
+        <DropDownButton Grid.Column="2" Content="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12"
                         Padding="6,2" VerticalAlignment="Center" Visibility="{x:Bind ShownIfTrue(ViewModel.ModeChoosable), Mode=OneWay}"
                         ToolTipService.ToolTip="No game on this PC: choose the mode whose maps and data to browse">
           <DropDownButton.Flyout>
@@ -114,11 +122,12 @@
           </DropDownButton.Flyout>
         </DropDownButton>
         <!-- Only what the log shows: "NOT IN A RAID" outside a raid, never "in the menus" (RaidStatus; owner, 2026-10-03). -->
-        <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
+        <TextBlock Grid.Column="3" Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}" />
-        <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}" />
-      </StackPanel>
-      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16">
+        <TextBlock Grid.Column="4" Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
+                   HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+      </Grid>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
                     ToolTipService.ToolTip="{x:Bind ViewModel.LogsDetail, Mode=OneWay}">
           <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.LogsOk), Mode=OneWay}" VerticalAlignment="Center" />

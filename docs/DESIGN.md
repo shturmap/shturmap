@@ -355,8 +355,8 @@ pushpin, so the type beside the trader portrait read as a useless second pin). A
 everywhere: rows, cards, map markers, the legend, buttons. The card's button that keeps it as a window is therefore
 **pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out: keep this card open as a small
 window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
-Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the same day, by rendering
-them side by side:
+Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the
+same day, by rendering them side by side:
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
   item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market
   became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
@@ -413,6 +413,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 ### Screen anatomy
 
+- **The window** (owner, 2026-10-04: remember the window's monitor and size). It opens where the player left it: on
+  the same monitor, at its bounds, maximised or not (`WindowPlace`; `window.place` in shturmap.db, saved 0.6 s after
+  a move or resize has settled and when the window closes; a minimised window keeps what was saved before). At a
+  first start, and whenever the saved monitor is no longer connected in the same place, the first start's rule
+  applies: maximised on the first monitor that isn't the primary one (the game's), or on the only monitor at
+  1600×1000. Until then that rule ran at every start, so a third monitor or the player's own size was lost each
+  time. A maximised window sent to another monitor comes back maximised there. The window is never smaller than
+  900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
+  its last word, the last fix, trims. Snapshot and demo runs and a given size (`--window`) place the window
+  themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
   three buttons of one size (28 px, 6 px apart): **feedback** (a speech bubble, `E939`: the Report dialog, PROBLEM

@@ -43,7 +43,10 @@ public sealed partial class MainWindow : Window
     private DateTime? _floorPickFix;
     private int _shownFloor = -1;
 
-    public MainWindow(GameSession session, SizeInt32? size = null)
+    /// <param name="size">A size to open at (developer runs: "--window"); kept as is, and nothing is remembered.</param>
+    /// <param name="savedPlace">Where the window stood when it was last closed (<see cref="WindowPlace"/>), or null.</param>
+    /// <param name="rememberPlace">Whether this run restores and saves the window's place (not snapshots or the demo).</param>
+    public MainWindow(GameSession session, SizeInt32? size = null, string? savedPlace = null, bool rememberPlace = false)
     {
         _session = session;
         InitializeComponent();
@@ -58,7 +61,7 @@ public sealed partial class MainWindow : Window
         AppWindow.TitleBar.ButtonInactiveBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RailColor"];
         AppWindow.TitleBar.ButtonForegroundColor = (Windows.UI.Color)Application.Current.Resources["InkColor"];
         AppWindow.TitleBar.ButtonHoverBackgroundColor = (Windows.UI.Color)Application.Current.Resources["RaisedColor"];
-        PlaceOnSecondMonitor(size);
+        PlaceWindow(size, savedPlace, rememberPlace);
 #if DEVTOOLS
         AddStudySwitch();
 #endif
@@ -98,6 +101,7 @@ public sealed partial class MainWindow : Window
         ObserveActivation(this);
         Closed += (_, _) =>
         {
+            SavePlace();
             // The popped-out cards are saved once, as they stand, before they close with this window: their own
             // closing must not rewrite the list (it would save it empty, or after the session has gone).
             SavePinned();
@@ -1524,6 +1528,63 @@ public sealed partial class MainWindow : Window
             _session.SetSetting("help.seen", "1");
     }
 
+    // ---- the window's place (owner, 2026-10-04: remember the window's monitor and size; docs/DESIGN.md "Screen
+    // anatomy", "The window") ----
+
+    private bool _rememberPlace;
+    private bool _sizeGiven;
+    private WindowPlace.Rect _unmaximised;
+    private DispatcherQueueTimer? _placeSettled;
+
+    // Where the player left it: on its monitor, at its bounds, maximised or not, as long as that monitor is still
+    // there. Otherwise, and at a first start, the rule below. A given size (developer runs) is kept as is.
+    private void PlaceWindow(SizeInt32? size, string? saved, bool remember)
+    {
+        _sizeGiven = size is not null;
+        _rememberPlace = remember && size is null;
+        var last = _rememberPlace ? WindowPlace.Restorable(WindowPlace.Parse(saved), Monitors()) : null;
+        if (last is { } place)
+        {
+            AppWindow.MoveAndResize(new RectInt32(place.Bounds.X, place.Bounds.Y, place.Bounds.Width, place.Bounds.Height));
+            _unmaximised = place.Bounds;
+            if (place.Maximised && AppWindow.Presenter is OverlappedPresenter presenter)
+                presenter.Maximize();
+        }
+        else
+        {
+            PlaceOnSecondMonitor(size);
+        }
+        var now = BoundsNow();
+        AppLog.Info($"Window {(last is null ? "placed anew" : "where it was last")}: {now.Width}×{now.Height} at {now.X},{now.Y}" +
+                    (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized } ? ", maximised" : ""));
+        AppWindow.Changed += (_, e) =>
+        {
+            if (e.DidPositionChange || e.DidSizeChange || e.DidPresenterChange)
+                OnPlaceChanged();
+        };
+        // The smallest size needs the monitor's scale, which the content knows once it is loaded.
+        var root = (FrameworkElement)Content;
+        root.Loaded += (_, _) =>
+        {
+            ApplySmallestSize();
+            root.XamlRoot.Changed += (_, _) => ApplySmallestSize();
+        };
+    }
+
+    private static List<WindowPlace.Rect> Monitors()
+    {
+        var displays = DisplayArea.FindAll();
+        var monitors = new List<WindowPlace.Rect>();
+        for (var i = 0; i < displays.Count; i++)
+        {
+            var area = displays[i].OuterBounds;
+            monitors.Add(new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height));
+        }
+        return monitors;
+    }
+
+    private WindowPlace.Rect BoundsNow() => new(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
+
     // Maximised on the second monitor, or on the only one at 1600×1000; a given size (developer runs) is kept as is.
     private void PlaceOnSecondMonitor(SizeInt32? size)
     {
@@ -1539,14 +1600,58 @@ public sealed partial class MainWindow : Window
         }
         if (target is null)
         {
-            AppWindow.Resize(size ?? new SizeInt32(1600, 1000));
+            AppWindow.Resize(size ?? new SizeInt32(WindowPlace.DefaultWidth, WindowPlace.DefaultHeight));
+            _unmaximised = BoundsNow();
             return;
         }
         AppWindow.Move(new PointInt32(target.WorkArea.X + 40, target.WorkArea.Y + 40));
         if (size is { } fixedSize)
             AppWindow.Resize(fixedSize);
-        else if (AppWindow.Presenter is OverlappedPresenter presenter)
+        _unmaximised = BoundsNow();
+        if (size is null && AppWindow.Presenter is OverlappedPresenter presenter)
             presenter.Maximize();
+    }
+
+    // The window moved, was resized, maximised or put back: its bounds while it isn't maximised are what it goes back
+    // to, and its place is saved once the change has settled (a drag is a stream of changes).
+    private void OnPlaceChanged()
+    {
+        if (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Restored })
+            _unmaximised = BoundsNow();
+        if (!_rememberPlace)
+            return;
+        if (_placeSettled is null)
+        {
+            _placeSettled = DispatcherQueue.CreateTimer();
+            _placeSettled.Interval = TimeSpan.FromMilliseconds(600);
+            _placeSettled.IsRepeating = false;
+            _placeSettled.Tick += (_, _) => SavePlace();
+        }
+        _placeSettled.Stop();
+        _placeSettled.Start();
+    }
+
+    private void SavePlace()
+    {
+        // Minimised, the window has no place of its own: what was saved before stands.
+        if (!_rememberPlace || AppWindow.Presenter is not OverlappedPresenter presenter || presenter.State == OverlappedPresenterState.Minimized)
+            return;
+        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).OuterBounds;
+        var monitor = new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height);
+        var maximised = presenter.State == OverlappedPresenterState.Maximized;
+        // A maximised window sent to another monitor still has its unmaximised bounds on the one before: they follow it.
+        var bounds = maximised ? WindowPlace.OnMonitor(_unmaximised, monitor) : _unmaximised;
+        _session.SetSetting(WindowPlace.Setting, WindowPlace.Format(new WindowPlace.Saved(bounds, maximised, monitor)));
+    }
+
+    // No smaller than the status bar needs to keep its three buttons in view, with the last fix trimmed, at this
+    // monitor's scale (the presenter counts in pixels). A size given by a developer run is left as it is.
+    private void ApplySmallestSize()
+    {
+        if (_sizeGiven || AppWindow.Presenter is not OverlappedPresenter presenter || Content.XamlRoot is not { } xaml)
+            return;
+        presenter.PreferredMinimumWidth = (int)Math.Ceiling(WindowPlace.MinWidth * xaml.RasterizationScale);
+        presenter.PreferredMinimumHeight = (int)Math.Ceiling(WindowPlace.MinHeight * xaml.RasterizationScale);
     }
 
     // ---- keyboard (only while this window has focus; Shturmap registers no global hotkeys) ----

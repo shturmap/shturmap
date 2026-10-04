@@ -153,14 +153,17 @@ public partial class App : Application
         }
         SizeInt32? windowSize = Arg(cli, "--window")?.Split('x') is [var w, var h] && int.TryParse(w, out var width)
             && int.TryParse(h, out var height) ? new SizeInt32(width, height) : null;
-        _session = CreateSession(cli);
+        _session = CreateSession(cli, out var paths);
         _session.Notice += notice => AppLog.Debug("Notice: " + notice.Text);
 #if DEVTOOLS
         // The study log (developer builds only, owner 2026-10-03) follows the switch in settings; "--study" keeps it for
         // one session; snapshot and fake-game runs stay out of it.
         _session.StudyOverride = GameSession.StudyOverrideFor(cli);
 #endif
-        _window = new MainWindow(_session, windowSize)
+        // The window comes back where the player left it (owner, 2026-10-04). Snapshots, the demo and a given size
+        // place it themselves and remember nothing.
+        var rememberPlace = windowSize is null && !cli.Contains("--snapshot") && !cli.Contains("--demo");
+        _window = new MainWindow(_session, windowSize, rememberPlace ? SavedWindowPlace(paths) : null, rememberPlace)
         {
             SnapshotMode = cli.Contains("--snapshot"),
             SnapshotScale = int.TryParse(Arg(cli, "--snapshot-scale"), out var snapshotScale) ? Math.Clamp(snapshotScale, 1, 4) : 1,
@@ -313,9 +316,28 @@ public partial class App : Application
         return at >= 0 && at + 1 < cli.Length ? cli[at + 1] : null;
     }
 
+    // The session opens its settings only as it starts, when the window is already up. The window's place is read
+    // ahead of that, from the same database, so the window opens where it was instead of jumping there a moment later.
+    private static string? SavedWindowPlace(AppPaths paths)
+    {
+        try
+        {
+            if (!File.Exists(paths.Database))
+                return null;
+            using var store = new Shturmap.Data.Progress.ProgressStore(paths.Database);
+            return store.GetSetting(Rules.WindowPlace.Setting);
+        }
+        catch (Exception e) when (e is System.Data.Common.DbException or IOException or UnauthorizedAccessException)
+        {
+            AppLog.Warn("Reading the window's saved place failed", e);
+            return null;
+        }
+    }
+
     // Developer aid: "--fake-game <folder>" reads <folder>\Logs and <folder>\Screenshots instead of the real game,
-    // with its own database in <folder>\app (downloads are shared with the real cache).
-    private static GameSession CreateSession(string[] cli)
+    // with its own database in <folder>\app (downloads are shared with the real cache). "paths" is where the session
+    // keeps its database and settings.
+    private static GameSession CreateSession(string[] cli, out AppPaths paths)
     {
 #if DEVTOOLS
         // Developer switch "--no-game": as if Escape from Tarkov weren't on this PC, so the no-game fallback can be seen
@@ -328,18 +350,23 @@ public partial class App : Application
             var app = Arg(cli, "--fake-game") is { } fake ? Path.Combine(fake, "app")
                 : Path.Combine(Path.GetTempPath(), "shturmap-nogame-" + Guid.NewGuid().ToString("N")[..8], "app");
             AppLog.Debug("No game: only a folder chosen in this session counts");
-            return new GameSession(new AppPaths(app, AppPaths.Default.CacheRoot)) { NoGame = true };
+            paths = new AppPaths(app, AppPaths.Default.CacheRoot);
+            return new GameSession(paths) { NoGame = true };
         }
 #endif
         var at = Array.IndexOf(cli, "--fake-game");
         if (at < 0 || at + 1 >= cli.Length)
-            return new GameSession(AppPaths.Default);
+        {
+            paths = AppPaths.Default;
+            return new GameSession(paths);
+        }
         var root = cli[at + 1];
         var install = new Shturmap.Game.Install.InstallCandidate(Shturmap.Game.Install.InstallKind.Manual, root, Path.Combine(root, "Logs"),
             DateTime.Now, "fake game", null);
         var settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Battlestate Games", "Escape from Tarkov", "Settings");
         AppLog.Debug("Using a fake game folder: " + root);
-        return new GameSession(new AppPaths(Path.Combine(root, "app"), AppPaths.Default.CacheRoot),
+        paths = new AppPaths(Path.Combine(root, "app"), AppPaths.Default.CacheRoot);
+        return new GameSession(paths,
             new Shturmap.Game.Install.GameLocations(install, [install], Path.Combine(root, "Screenshots"), settings));
     }
 }
