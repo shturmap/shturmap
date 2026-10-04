@@ -12,7 +12,8 @@ public sealed record LogEvent(GameEvent Event, string Session, bool IsReplay);
 /// <summary>
 /// Follows the newest EFT log session. Reads the application and notification logs with shared access, keeps a
 /// stateful UTF-8 decoder and a record reader per file (so multi-byte characters and JSON blocks may be split
-/// across reads), and switches to a new session folder when the game starts again.
+/// across reads), and switches to a new session folder when the game starts again, once the session before is read
+/// to its end.
 /// Appends from the game's open handle are not reliably reported by file notifications, so this polls:
 /// every 500 ms while the log is active, every 2 s when it has been quiet for a while.
 /// Nothing in a log ends the following: a file that can't be opened is read at the next poll, and a record the
@@ -33,6 +34,13 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private Task? _loop;
     private bool _firstSession = true;
+    // When anything was last read, old text or new: what the polling's pace goes by.
+    private DateTime? _lastRead;
+    // Polls that put off a new session because a file of the one before couldn't be opened.
+    private int _putOff;
+
+    /// <summary>How many polls a new session waits for a file of the session before that can't be opened; then it goes on without it.</summary>
+    internal const int PutOffAtMost = 3;
 
     public string LogsRoot { get; } = logsRoot;
 
@@ -41,7 +49,11 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
     /// <summary>Folder name of the session being followed, e.g. "log_2026.01.01_15-00-00_1.1.5.1.47510".</summary>
     public string? CurrentSession { get; private set; }
 
-    /// <summary>When a followed log last grew.</summary>
+    /// <summary>
+    /// When the game last wrote to a followed log while Shturmap was following it. What a log already held when it
+    /// was first opened doesn't count, whenever it is read: reading the last session at start is no sign of a game
+    /// that runs (the LOGS light said "live" for ten minutes after every start, with the game closed).
+    /// </summary>
     public DateTime? LastActivityUtc { get; private set; }
 
     /// <summary>
@@ -101,7 +113,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
                 // app would stop following the game with nothing to show for it.
                 Report("a poll of the game's logs", e);
             }
-            var quiet = LastActivityUtc is null || UtcNow() - LastActivityUtc > IdleAfter;
+            var quiet = _lastRead is null || UtcNow() - _lastRead > IdleAfter;
             await Task.Delay(quiet ? IdlePoll : ActivePoll, ct);
         }
     }
@@ -115,10 +127,20 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             return 0;
 
         // Listed before anything is noted: a folder that can't be read now is met again, as new, at the next poll.
-        var sessionFolder = Path.Combine(LogsRoot, newest);
-        var paths = Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)).Order(StringComparer.OrdinalIgnoreCase).ToList();
+        var paths = WatchedFiles(Path.Combine(LogsRoot, newest));
+        var finished = 0;
         if (!string.Equals(newest, CurrentSession, StringComparison.OrdinalIgnoreCase))
         {
+            // The game has started again. What the session before still holds unread goes first: the rest of a log
+            // longer than one read, a file added since the last poll, the last line. Skipped, a raid's end or a
+            // quest's message was missing for the rest of the run (review of 2026-10-04, A44).
+            if (CurrentSession is { } before)
+            {
+                finished = FinishSession(before, now, out var busy);
+                if (busy && ++_putOff <= PutOffAtMost)
+                    return finished;
+            }
+            _putOff = 0;
             CurrentSession = newest;
             _files.Clear();
             _reported.Clear();
@@ -158,36 +180,102 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             foreach (var (e, replay) in events.OrderBy(e => e.Event.At))
                 _events.Writer.TryWrite(new LogEvent(e, newest, replay));
         }
+        return finished + events.Count;
+    }
+
+    private static List<string> WatchedFiles(string sessionFolder) =>
+        Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)).Order(StringComparer.OrdinalIgnoreCase).ToList();
+
+    // Reads the session before to its end, and passes its events on under its own name. A file or folder that is gone
+    // has nothing left to read; one that can't be opened now is busy, and the new session waits a few polls for it.
+    private int FinishSession(string session, DateTime now, out bool busy)
+    {
+        busy = false;
+        List<string> paths;
+        try
+        {
+            paths = WatchedFiles(Path.Combine(LogsRoot, session));
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return 0;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            busy = true;
+            return 0;
+        }
+
+        var events = new List<(GameEvent Event, bool Replay)>();
+        try
+        {
+            foreach (var path in paths)
+            {
+                if (!_files.TryGetValue(path, out var state))
+                    _files[path] = state = new FileState { LastGrowth = now };
+                var records = new List<LogRecord>();
+                try
+                {
+                    while (ReadChunk(path, state, records, now))
+                    {
+                    }
+                    // Nothing more will follow its last line.
+                    if (state.Reader.Flush(force: true) is { } last)
+                        records.Add(last);
+                }
+                catch (Exception e) when (e is FileNotFoundException or DirectoryNotFoundException)
+                {
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    busy = true;
+                }
+                // What was read counts, whatever stopped the reading: the file's offset has moved on.
+                ParseInto(events, records, Parser, path, Report);
+            }
+        }
+        finally
+        {
+            foreach (var (e, replay) in events.OrderBy(e => e.Event.At))
+                _events.Writer.TryWrite(new LogEvent(e, session, replay));
+        }
         return events.Count;
+    }
+
+    // Reads what a file has gained, one read's worth at most; false when it has nothing more.
+    private bool ReadChunk(string path, FileState state, List<LogRecord> records, DateTime now)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        if (stream.Length < state.Offset)
+            state.Reset(); // truncated or replaced: what it holds now is new
+        // Where the replay ends: the file's length when it is first opened (it can only have shrunk since by
+        // being cut, and then what is left is all there was).
+        state.ReplayUntil = Math.Min(state.ReplayUntil ?? (state.StartsOld ? stream.Length : 0), stream.Length);
+        // Old and new text are read apart, so that a read is wholly one or the other.
+        var old = state.Offset < state.ReplayUntil;
+        var end = old ? state.ReplayUntil.Value : stream.Length;
+        if (end <= state.Offset)
+            return false;
+        stream.Seek(state.Offset, SeekOrigin.Begin);
+        var buffer = new byte[Math.Min(end - state.Offset, MaxReadPerPoll)];
+        var read = stream.Read(buffer, 0, buffer.Length);
+        state.Offset += read;
+        var chars = new char[state.Decoder.GetCharCount(buffer, 0, read)];
+        state.Decoder.GetChars(buffer, 0, read, chars, 0);
+        state.Reader.Replay = old;
+        records.AddRange(state.Reader.Append(new string(chars)));
+        state.LastGrowth = now;
+        _lastRead = now;
+        // Only what the game wrote while it was followed is a sign of a game that runs.
+        if (!old)
+            LastActivityUtc = now;
+        return read > 0;
     }
 
     private void ReadNew(string path, FileState state, List<(GameEvent Event, bool Replay)> events, DateTime now)
     {
         var records = new List<LogRecord>();
-        using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-        {
-            if (stream.Length < state.Offset)
-                state.Reset(); // truncated or replaced: what it holds now is new
-            // Where the replay ends: the file's length when it is first opened (it can only have shrunk since by
-            // being cut, and then what is left is all there was).
-            state.ReplayUntil = Math.Min(state.ReplayUntil ?? (state.StartsOld ? stream.Length : 0), stream.Length);
-            // Old and new text are read apart, so that a read is wholly one or the other.
-            var old = state.Offset < state.ReplayUntil;
-            var end = old ? state.ReplayUntil.Value : stream.Length;
-            if (end > state.Offset)
-            {
-                stream.Seek(state.Offset, SeekOrigin.Begin);
-                var buffer = new byte[Math.Min(end - state.Offset, MaxReadPerPoll)];
-                var read = stream.Read(buffer, 0, buffer.Length);
-                state.Offset += read;
-                var chars = new char[state.Decoder.GetCharCount(buffer, 0, read)];
-                state.Decoder.GetChars(buffer, 0, read, chars, 0);
-                state.Reader.Replay = old;
-                records.AddRange(state.Reader.Append(new string(chars)));
-                state.LastGrowth = now;
-                LastActivityUtc = now;
-            }
-        }
+        ReadChunk(path, state, records, now);
 
         // A lone header line is complete once the file has been quiet briefly; a half-written JSON block only
         // after a long silence.
