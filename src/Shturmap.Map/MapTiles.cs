@@ -12,7 +12,10 @@ public enum TileStatus
     /// <summary>At least one tile arrived: the render is shown.</summary>
     Showing,
 
-    /// <summary>Every tile asked for so far failed (offline without a saved copy, or tarkov.dev has none): the grid sheet stands in.</summary>
+    /// <summary>
+    /// Every tile asked for so far failed (offline without a saved copy, or tarkov.dev has none): the grid sheet stands
+    /// in. It stays so while the tiles are asked for again, until one arrives.
+    /// </summary>
     Unavailable,
 }
 
@@ -20,7 +23,9 @@ public enum TileStatus
 /// A map's top-down tile render from tarkov.dev's image service (The Lab, Labyrinth, Icebreaker; docs/DESIGN.md §3,
 /// "Maps without SVG artwork"): the tiles a view needs, at the zoom level that matches the screen, loaded in the
 /// background a few at a time, kept decoded in memory (least recently used go first) and on disk by the fetcher.
-/// While a tile loads, the nearest coarser tile that is loaded stands in, stretched.
+/// While a tile loads, the nearest coarser tile that is loaded stands in, stretched. A tile that couldn't be had is
+/// asked for again by itself while the view still needs it, so a render that failed offline appears once the
+/// network is back.
 /// </summary>
 public sealed class MapTiles : IDisposable
 {
@@ -29,6 +34,7 @@ public sealed class MapTiles : IDisposable
 
     private readonly Fetch _fetch;
     private readonly int _capacity;
+    private readonly TimeSpan _retryAfter;
     private readonly Lock _gate = new();
     private readonly Dictionary<TileKey, LinkedListNode<(TileKey Key, SKImage Image)>> _images = [];
     // Most recently used first.
@@ -36,22 +42,36 @@ public sealed class MapTiles : IDisposable
     private readonly HashSet<TileKey> _missing = [];
     private readonly Dictionary<TileKey, DateTime> _failedAt = [];
     private readonly Dictionary<TileKey, Task> _pending = [];
+    // What the view last asked for, per layer (its URL template): what is asked for again after a failure, and what
+    // never leaves memory while it is the view (a 4K view needs more tiles than the capacity).
+    private readonly Dictionary<string, HashSet<TileKey>> _view = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _slots = new(4);
     private readonly CancellationTokenSource _stop = new();
     private int _imagePixels = 256;
     private int _arrived;
     private int _failed;
+    private bool _unavailable;
+    private bool _retrying;
 
-    // A tile that couldn't be had is asked for again after this long (the network may be back).
-    private static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(30);
+    /// <summary>A tile that couldn't be had is asked for again after this long (the network may be back).</summary>
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(30);
 
-    /// <param name="capacity">How many decoded tiles stay in memory (a 256 px tile takes 256 KB).</param>
-    public MapTiles(MapDefinition definition, Fetch fetch, int capacity = 192)
+    /// <param name="capacity">How many decoded tiles stay in memory (a 256 px tile takes 256 KB), beyond what the view
+    /// on screen needs: its own tiles always stay, however many they are.</param>
+    /// <param name="retryAfter">How long a tile that couldn't be had waits before it is asked for again;
+    /// <see cref="RetryAfter"/> unless a test gives another.</param>
+    /// <param name="undecodable">Told when a tile's file was there but isn't an image (a download cut short): the
+    /// saved copy shouldn't be trusted, so whoever keeps it can throw it away before the tile is asked for again.</param>
+    public MapTiles(MapDefinition definition, Fetch fetch, int capacity = 192, TimeSpan? retryAfter = null, Action<TileKey>? undecodable = null)
     {
         Definition = definition;
         _fetch = fetch;
         _capacity = Math.Max(16, capacity);
+        _retryAfter = retryAfter ?? RetryAfter;
+        _undecodable = undecodable;
     }
+
+    private readonly Action<TileKey>? _undecodable;
 
     public MapDefinition Definition { get; }
 
@@ -60,7 +80,7 @@ public sealed class MapTiles : IDisposable
         get
         {
             lock (_gate)
-                return _arrived > 0 ? TileStatus.Showing : _pending.Count == 0 && _failed + _missing.Count > 0 ? TileStatus.Unavailable : TileStatus.Loading;
+                return _arrived > 0 ? TileStatus.Showing : _unavailable ? TileStatus.Unavailable : TileStatus.Loading;
         }
     }
 
@@ -91,17 +111,30 @@ public sealed class MapTiles : IDisposable
     /// and where it goes in map units) and starts loading the ones that aren't here yet. <paramref name="draw"/> runs
     /// while no tile can be thrown out of memory, so it must only draw.
     /// </summary>
-    public void Draw(string template, MapRect view, MapRect bounds, double screenPerUnit, Action<SKImage, SKRect, MapRect> draw)
+    public void Draw(string template, MapRect view, MapRect bounds, double screenPerUnit, Action<SKImage, SKRect, MapRect> draw) =>
+        Visit(template, view, bounds, screenPerUnit, draw);
+
+    /// <summary>
+    /// Asks for the tiles a view of one layer needs without drawing any: what the renderer does while the sheet stands
+    /// in for a render that couldn't be had. A tile that failed is asked for again only once its wait is over, so
+    /// asking with every frame starts no more requests than one round per <see cref="RetryAfter"/>.
+    /// </summary>
+    public void Ask(string template, MapRect view, MapRect bounds, double screenPerUnit) =>
+        Visit(template, view, bounds, screenPerUnit, null);
+
+    private void Visit(string template, MapRect view, MapRect bounds, double screenPerUnit, Action<SKImage, SKRect, MapRect>? draw)
     {
         var z = ZoomFor(screenPerUnit);
+        var wanted = new HashSet<TileKey>();
         lock (_gate)
         {
             foreach (var (x, y) in TileGrid.Visible(view, bounds, TileSize, z))
             {
                 var key = new TileKey(template, z, x, y);
+                wanted.Add(key);
                 if (Touch(key) is { } image)
                 {
-                    draw(image, SKRect.Create(image.Width, image.Height), TileGrid.TileRect(TileSize, z, x, y));
+                    draw?.Invoke(image, SKRect.Create(image.Width, image.Height), TileGrid.TileRect(TileSize, z, x, y));
                     continue;
                 }
                 Request(key);
@@ -111,10 +144,12 @@ public sealed class MapTiles : IDisposable
                 {
                     if (Touch(parent) is not { } coarse)
                         continue;
+                    // It stands in for this frame, so it stays for this view like the tiles themselves.
+                    wanted.Add(parent);
                     var cells = 1 << depth;
                     var size = coarse.Width / (float)cells;
                     var source = SKRect.Create((x - (parent.X << depth)) * size, (y - (parent.Y << depth)) * size, size, size);
-                    draw(coarse, source, TileGrid.TileRect(TileSize, z, x, y));
+                    draw?.Invoke(coarse, source, TileGrid.TileRect(TileSize, z, x, y));
                     break;
                 }
             }
@@ -123,8 +158,28 @@ public sealed class MapTiles : IDisposable
             if (coarseZoom < z)
             {
                 foreach (var (x, y) in TileGrid.Visible(view, bounds, TileSize, coarseZoom))
-                    Request(new TileKey(template, coarseZoom, x, y));
+                {
+                    var key = new TileKey(template, coarseZoom, x, y);
+                    wanted.Add(key);
+                    Request(key);
+                }
             }
+            _view[template] = wanted;
+            Trim();
+        }
+    }
+
+    /// <summary>
+    /// The layers the view shows now (their URL templates): what earlier views asked for on any other layer, a floor
+    /// no longer shown, may leave memory again.
+    /// </summary>
+    public void Shows(params string?[] templates)
+    {
+        lock (_gate)
+        {
+            foreach (var gone in _view.Keys.Where(t => !templates.Contains(t, StringComparer.Ordinal)).ToList())
+                _view.Remove(gone);
+            Trim();
         }
     }
 
@@ -133,15 +188,19 @@ public sealed class MapTiles : IDisposable
     {
         var z = ZoomFor(screenPerUnit);
         var waits = new List<Task>();
+        var wanted = new HashSet<TileKey>();
         lock (_gate)
         {
             foreach (var (x, y) in TileGrid.Visible(view, bounds, TileSize, z))
             {
                 var key = new TileKey(template, z, x, y);
+                wanted.Add(key);
                 Request(key);
                 if (_pending.TryGetValue(key, out var task))
                     waits.Add(task);
             }
+            _view[template] = wanted;
+            Trim();
         }
         return Task.WhenAll(waits);
     }
@@ -161,9 +220,57 @@ public sealed class MapTiles : IDisposable
     {
         if (_images.ContainsKey(key) || _pending.ContainsKey(key) || _missing.Contains(key) || _stop.IsCancellationRequested)
             return;
-        if (_failedAt.TryGetValue(key, out var at) && DateTime.UtcNow - at < RetryAfter)
+        if (_failedAt.TryGetValue(key, out var at) && DateTime.UtcNow - at < _retryAfter)
             return;
         _pending[key] = Task.Run(() => LoadAsync(key));
+    }
+
+    // Under _gate. Over the capacity, the least recently used tiles go, but never one the view on screen needs: a view
+    // that needs more than the capacity (a 4K window; a floor's layer over the base) would otherwise throw out a tile
+    // with each one that arrives, ask for it again at the next frame, and never finish loading (the review of
+    // 2026-10-04).
+    private void Trim()
+    {
+        var node = _order.Last;
+        while (_images.Count > _capacity && node is not null)
+        {
+            var previous = node.Previous;
+            if (!_view.Values.Any(keys => keys.Contains(node.Value.Key)))
+            {
+                _order.Remove(node);
+                _images.Remove(node.Value.Key);
+                node.Value.Image.Dispose();
+            }
+            node = previous;
+        }
+    }
+
+    // Under _gate. One wait at a time: when it is over, the view's tiles that couldn't be had are asked for again,
+    // whether or not a frame is drawn meanwhile (a map nobody touches is drawn only when something changes).
+    private void RetryLater()
+    {
+        if (_retrying || _stop.IsCancellationRequested)
+            return;
+        _retrying = true;
+        _ = Task.Delay(_retryAfter, _stop.Token).ContinueWith(_ => Retry(), _stop.Token,
+            TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
+    }
+
+    private void Retry()
+    {
+        lock (_gate)
+        {
+            _retrying = false;
+            var waiting = false;
+            foreach (var key in _view.Values.SelectMany(keys => keys))
+            {
+                Request(key);
+                // Failed a little later than the tile this wait began with: its own wait isn't over yet.
+                waiting |= _failedAt.ContainsKey(key) && !_pending.ContainsKey(key);
+            }
+            if (waiting)
+                RetryLater();
+        }
     }
 
     private async Task LoadAsync(TileKey key)
@@ -183,17 +290,27 @@ public sealed class MapTiles : IDisposable
                     // frame only copies pixels.
                     using var data = SKData.CreateCopy(bytes);
                     using var encoded = SKImage.FromEncodedData(data);
-                    if (encoded is not null)
+                    if (encoded is null)
                     {
-                        using var surface = SKSurface.Create(new SKImageInfo(encoded.Width, encoded.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
-                        using var paint = new SKPaint { ColorFilter = ArtworkColors.Filter };
-                        surface.Canvas.Clear(SKColors.Transparent);
-                        surface.Canvas.DrawImage(encoded, 0, 0, paint);
-                        image = surface.Snapshot();
+                        // A file that isn't an image (a download cut short) is a failure to try again, not a tile
+                        // tarkov.dev doesn't have: counted as missing, it left a hole there for the whole session.
+                        _undecodable?.Invoke(key);
+                        throw new InvalidDataException($"Tile {key.Z}/{key.X}/{key.Y} is not an image.");
                     }
+                    using var surface = SKSurface.Create(new SKImageInfo(encoded.Width, encoded.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
+                    using var paint = new SKPaint { ColorFilter = ArtworkColors.Filter };
+                    surface.Canvas.Clear(SKColors.Transparent);
+                    surface.Canvas.DrawImage(encoded, 0, 0, paint);
+                    image = surface.Snapshot();
                 }
                 lock (_gate)
                 {
+                    // Closed while this tile was on its way: nothing is kept (it would never be let go).
+                    if (ct.IsCancellationRequested)
+                    {
+                        image?.Dispose();
+                        return;
+                    }
                     _failedAt.Remove(key);
                     if (image is null)
                     {
@@ -204,12 +321,7 @@ public sealed class MapTiles : IDisposable
                         _imagePixels = image.Width;
                         _images[key] = _order.AddFirst((key, image));
                         _arrived++;
-                        while (_images.Count > _capacity && _order.Last is { } oldest)
-                        {
-                            _order.RemoveLast();
-                            _images.Remove(oldest.Value.Key);
-                            oldest.Value.Image.Dispose();
-                        }
+                        Trim();
                     }
                 }
             }
@@ -228,12 +340,19 @@ public sealed class MapTiles : IDisposable
             {
                 _failedAt[key] = DateTime.UtcNow;
                 _failed++;
+                RetryLater();
             }
         }
         finally
         {
             lock (_gate)
+            {
                 _pending.Remove(key);
+                // Nothing arrived and nothing is on its way: the sheet stands in, and stays through later tries
+                // until a tile arrives (a try that fails again must not blank the map while it runs).
+                if (_arrived == 0 && _pending.Count == 0 && _failed + _missing.Count > 0)
+                    _unavailable = true;
+            }
         }
         if (!ct.IsCancellationRequested)
             Changed?.Invoke();

@@ -39,13 +39,27 @@ public static partial class MapRenderer
     public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         canvas.Clear(Background);
+        // The zoom limit is the map's that is drawn, not the one's fitted last (a preview leaves its own behind).
+        camera.LimitTo(scene.Projection.WorldRect, 24 * uiScale);
+        // Read once: a tile arriving on its own thread may end the sheet in the middle of a frame.
+        var sheet = scene.IsSheet;
         if (scene.Artwork is not null)
+        {
             DrawArtwork(canvas, camera, scene, scene.Artwork);
-        else if (!scene.IsSheet && scene.Tiles is { } tiles)
+        }
+        else if (!sheet && scene.Tiles is { } tiles)
+        {
             DrawTiles(canvas, camera, scene, tiles);
+        }
         else
+        {
             DrawSchematic(canvas, camera, scene, uiScale);
-        if (scene.IsSheet)
+            // The sheet stands in for a render that couldn't be had (offline): keep asking for this view's tiles, so
+            // the render comes by itself once they can be had, without a restart (the review of 2026-10-04).
+            if (scene.Tiles is { } missing)
+                AskForTiles(camera, scene, missing);
+        }
+        if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
         var layout = Layout(camera, scene, uiScale);
@@ -55,7 +69,7 @@ public static partial class MapRenderer
         using (var ground = GroundShader(camera, scene))
         {
             foreach (var zone in scene.Zones)
-                DrawZone(canvas, camera, scene, zone, uiScale, hazardLabels, ground);
+                DrawZone(canvas, camera, scene, zone, uiScale, hazardLabels, ground, stepBack);
         }
         // Over every hatch, and once per group of neighbouring areas (border zones overlap along an edge).
         var labelled = new List<SKPoint>();
@@ -65,7 +79,7 @@ public static partial class MapRenderer
             if (labelled.Any(p => SKPoint.Distance(p, at) < 260 * uiScale))
                 continue;
             labelled.Add(at);
-            DrawHazardLabel(canvas, text, at, uiScale);
+            DrawHazardLabel(canvas, text, at, uiScale, HazardLabelStrength(scene, stepBack));
         }
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
@@ -75,16 +89,20 @@ public static partial class MapRenderer
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
         // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength markers
         // read as "not important", and a highlighted one must look highlighted).
-        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03).
+        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03), and
+        // the doors of the keys they need are part of them. They are level 1, so they get a pass of their own after
+        // everything that steps back: grouped by measure with the ways out, which don't step back in a raid either,
+        // they were drawn first there and lay under other quests' markers (the review of 2026-10-04).
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
-        stepBack ??= StepBackOf;
-        StepBack Measure(ShownMarker m) => m.Kept ? Full : stepBack(m.Marker.Kind, scene.InRaid);
-        foreach (var group in layout.Markers.Where(m => !m.Focused).GroupBy(Measure))
+        StepBack Measure(ShownMarker m) => StepBackOf(scene, m, stepBack);
+        foreach (var group in layout.Markers.Where(m => !m.Focused && !IsPick(scene, m)).GroupBy(Measure))
         {
             using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
             foreach (var marker in group)
                 DrawMarker(canvas, scene, marker, uiScale);
         }
+        foreach (var marker in layout.Markers.Where(m => !m.Focused && IsPick(scene, m)))
+            DrawMarker(canvas, scene, marker, uiScale);
         foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => Measure(l.Of).LabelAlpha))
         {
             using var layer = new StepBackLayer(canvas, group.Key, 1, dim);
@@ -118,16 +136,48 @@ public static partial class MapRenderer
     /// could barely be made out, "but are still pretty important", above all in a raid). Ways out (your side's
     /// extracts and transits) and bosses never step back: they matter at a glance whatever is highlighted. Other
     /// quests' markers fade to about two thirds while planning and much less in a raid, where a quest is often kept
-    /// highlighted all raid; spawn rings fade like them. Labels step back further than symbols, so the highlighted
-    /// quest's names stand out without hiding where everything else is.
+    /// highlighted all raid; spawn rings fade like them, and so do the hazard areas (level 4, with locks and
+    /// switches). Labels step back further than symbols, so the highlighted quest's names stand out without hiding
+    /// where everything else is. A zone steps back by the measure of its kind's markers (<see cref="ZoneStrength"/>).
     /// </summary>
     public static StepBack StepBackOf(MarkerKind kind, bool inRaid) => kind switch
     {
         MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit or MarkerKind.BossSpawn
             => new(1f, 1f, inRaid ? 1f : 0.7f),
-        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn or MarkerKind.Lock or MarkerKind.Switch => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
+        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn or MarkerKind.Lock or MarkerKind.Switch or MarkerKind.Hazard
+            => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
         _ => inRaid ? new(0.8f, 1f, 0.6f) : new(0.62f, 1f, 0.45f),
     };
+
+    // A picked quest's marker, or the door of a key a picked quest needs: part of the pick.
+    private static bool IsPick(MapScene scene, ShownMarker m) => m.Kept || IsKeptKey(scene, m.Marker);
+
+    /// <summary>
+    /// How far a marker steps back while something else is pointed at: not at all for the picks and for the doors of the
+    /// keys they need, which read as part of the pick (the review of 2026-10-04: the doors stepped back like any
+    /// lock), else by its kind.
+    /// </summary>
+    /// <param name="byKind"><see cref="StepBackOf(MarkerKind, bool)"/> unless a developer render compares alternatives.</param>
+    public static StepBack StepBackOf(MapScene scene, ShownMarker marker, Func<MarkerKind, bool, StepBack>? byKind = null) =>
+        IsPick(scene, marker) ? Full : (byKind ?? StepBackOf)(marker.Marker.Kind, scene.InRaid);
+
+    /// <summary>
+    /// How strongly a zone is drawn while something is pointed at, 1 for full strength: a picked or pointed-at
+    /// quest's zone at full strength, any other by the measure of its kind's markers, eased with the scene's Dim (the
+    /// review of 2026-10-04: other quests' zones fell to about 35 % where their markers keep 62 % and, in a raid, 80 %).
+    /// </summary>
+    public static float ZoneStrength(MapScene scene, MapZone zone, Func<MarkerKind, bool, StepBack>? byKind = null)
+    {
+        if (scene.ShownFocus.Count == 0)
+            return 1;
+        if (zone.Group is not null && (scene.Kept.Contains(zone.Group) || scene.ShownFocus.Contains(zone.Group)))
+            return 1;
+        return 1 - (1 - (byKind ?? StepBackOf)(zone.Kind, scene.InRaid).Alpha) * scene.Dim;
+    }
+
+    // A hazard area's name steps back as its kind's labels do.
+    private static float HazardLabelStrength(MapScene scene, Func<MarkerKind, bool, StepBack>? byKind) =>
+        scene.ShownFocus.Count == 0 ? 1 : 1 - (1 - (byKind ?? StepBackOf)(MarkerKind.Hazard, scene.InRaid).LabelAlpha) * scene.Dim;
 
     // A layer that steps what is drawn into it back by a measure, eased with the dim; no layer when it changes nothing.
     private readonly ref struct StepBackLayer
@@ -217,7 +267,8 @@ public static partial class MapRenderer
                 taken.Add(AgeTagBox(at, tagFont.MeasureText(text), stale, ui));
             }
         }
-        var guide = Guide(camera, scene, ui);
+        // After every symbol: the guide's plate gives way to them.
+        var guide = Guide(camera, scene, ui, taken);
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
         var scale = Scale(camera, scene, ui);
@@ -339,7 +390,9 @@ public static partial class MapRenderer
     /// <summary>
     /// The markers drawn in this view, in drawing order: places of one objective whose markers would overlap (closer
     /// than two marker widths) merge into one at the group's medoid, a real place, with their count; groups split as
-    /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view).
+    /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view),
+    /// and before places are merged: a group that runs out of view keeps a marker for its places in view, at one of
+    /// them. Merged first, the whole group went when its middle place was out of view (the review of 2026-10-04).
     /// </summary>
     public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui)
     {
@@ -349,6 +402,7 @@ public static partial class MapRenderer
         // show anyway, with their floor arrow (The Lab's other floors would otherwise cover the sheet with arrows).
         var landmarks = scene.IsSheet || ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom;
         var shown = scene.Markers.Select((m, i) => (Index: i, Shown: Show(camera, scene, m, ui)))
+            .Where(s => view.Contains(s.Shown.At))
             .Where(s => !IsLandmark(s.Shown.Marker.Kind) || s.Shown.Selected || (landmarks && s.Shown.Floor == 0))
             .ToList();
         var result = new List<(int Index, ShownMarker Shown)>();
@@ -369,7 +423,6 @@ public static partial class MapRenderer
             }
         }
         return result
-            .Where(r => view.Contains(r.Shown.At))
             .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
             .ThenBy(r => r.Index)
             .Select(r => r.Shown)
@@ -688,9 +741,7 @@ public static partial class MapRenderer
     {
         if (scene.Definition.TilePath is not { } basePath)
             return;
-        var corner1 = camera.ToMap(new SKPoint(0, 0));
-        var corner2 = camera.ToMap(new SKPoint(camera.Viewport.Width, camera.Viewport.Height));
-        var view = new MapRect(Math.Min(corner1.X, corner2.X), Math.Min(corner1.Y, corner2.Y), Math.Max(corner1.X, corner2.X), Math.Max(corner1.Y, corner2.Y));
+        var view = ViewOf(camera);
         var bounds = scene.Projection.WorldRect;
         var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
         using var plain = new SKPaint();
@@ -713,6 +764,30 @@ public static partial class MapRenderer
             canvas.DrawRect(canvas.LocalClipBounds, dim);
             Layer(floorPath);
         }
+        // What this frame drew stays in memory; a floor no longer shown may go.
+        tiles.Shows(basePath, scene.Floor?.TilePath);
+    }
+
+    // The part of the map a camera shows, in map units.
+    private static MapRect ViewOf(Camera camera)
+    {
+        var corner1 = camera.ToMap(new SKPoint(0, 0));
+        var corner2 = camera.ToMap(new SKPoint(camera.Viewport.Width, camera.Viewport.Height));
+        return new MapRect(Math.Min(corner1.X, corner2.X), Math.Min(corner1.Y, corner2.Y), Math.Max(corner1.X, corner2.X), Math.Max(corner1.Y, corner2.Y));
+    }
+
+    // While the sheet stands in: the tiles DrawTiles would draw are asked for, none drawn. A tile that failed waits
+    // out MapTiles.RetryAfter before it is asked for again, so a frame costs no request by itself.
+    private static void AskForTiles(Camera camera, MapScene scene, MapTiles tiles)
+    {
+        if (scene.Definition.TilePath is not { } basePath)
+            return;
+        var view = ViewOf(camera);
+        var bounds = scene.Projection.WorldRect;
+        tiles.Ask(basePath, view, bounds, camera.Zoom);
+        if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
+            tiles.Ask(floorPath, view, bounds, camera.Zoom);
+        tiles.Shows(basePath, scene.Floor?.TilePath);
     }
 
     // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the
@@ -775,7 +850,7 @@ public static partial class MapRenderer
     /// <param name="ground">The artwork's ground in screen space (<see cref="GroundShader"/>) that keeps a hazard to the
     /// drawn map; null draws it whole.</param>
     private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1,
-        List<(string Text, SKPoint At)>? hazardLabels = null, SKShader? ground = null)
+        List<(string Text, SKPoint At)>? hazardLabels = null, SKShader? ground = null, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         if (zone.Outline.Count < 3)
             return;
@@ -785,7 +860,7 @@ public static partial class MapRenderer
         {
             if (!HazardShown(zone, scene.Artwork))
                 return;
-            DrawHazard(canvas, path, scene, ui, ground);
+            DrawHazard(canvas, path, ZoneStrength(scene, zone, stepBack), ui, ground);
             // Named where it lies on the drawn map, not out in the empty space past its edge.
             var centre = new SKPoint(points.Average(p => p.X), points.Average(p => p.Y));
             if (hazardLabels is not null && HazardLabel(zone) is { } label && ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom
@@ -797,10 +872,10 @@ public static partial class MapRenderer
         var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
         var selected = kept || focused;
-        // Zones outside the focus ease back with the scene's Dim, like the markers.
-        var fade = scene.ShownFocus.Count > 0 && !focused && !kept ? scene.Dim : 0f;
-        using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35 - 23 * fade)), IsAntialias = true };
-        using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : 140 - 90 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
+        // Zones outside the focus ease back with the scene's Dim, by the measure of their markers (StepBackOf).
+        var strength = ZoneStrength(scene, zone, stepBack);
+        using var fill = new SKPaint { Color = color.WithAlpha((byte)Math.Round(selected ? 70 : 35 * strength)), IsAntialias = true };
+        using var stroke = new SKPaint { Color = color.WithAlpha((byte)Math.Round(selected ? 230 : 140 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
         canvas.DrawPath(path, fill);
         canvas.DrawPath(path, stroke);
     }
@@ -847,11 +922,11 @@ public static partial class MapRenderer
     }
 
     // A hazard area's name, set like a street name (Ink at 59 % on a halo of the ground), centred on the area.
-    private static void DrawHazardLabel(SKCanvas canvas, string text, SKPoint at, float ui)
+    private static void DrawHazardLabel(SKCanvas canvas, string text, SKPoint at, float ui, float strength = 1)
     {
         using var font = new SKFont(Typeface, 10.5f * ui);
         using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
-        using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
+        using var paint = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(150 * strength)), IsAntialias = true };
         canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, halo);
         canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, paint);
     }
@@ -859,11 +934,11 @@ public static partial class MapRenderer
     // A hazard tarkov.dev outlines (traps, minefields, border-sniper zones): a thin ink outline, hatched, an area style
     // nothing else uses. Thin and sparse, so the artwork reads through it (owner, 2026-10-03, on Customs' minefields: "big
     // white rectangles"), and over artwork only where it draws the map (GroundShader).
-    private static void DrawHazard(SKCanvas canvas, SKPath path, MapScene scene, float ui, SKShader? ground = null)
+    // Its strength is 1, or less while something else is pointed at (ZoneStrength).
+    private static void DrawHazard(SKCanvas canvas, SKPath path, float strength, float ui, SKShader? ground = null)
     {
-        var fade = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
-        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)(80 - 35 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.8f * ui };
-        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)(120 - 55 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(80 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.8f * ui };
+        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(120 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
         using var hatchOnGround = OnGround(hatch, ground);
         using var edgeOnGround = OnGround(edge, ground);
         var box = path.Bounds;
@@ -946,7 +1021,8 @@ public static partial class MapRenderer
     /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox);
 
-    private static GuideLine? Guide(Camera camera, MapScene scene, float ui)
+    /// <param name="symbols">The boxes of the symbols placed in this frame: the plate stands on none of them.</param>
+    private static GuideLine? Guide(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols)
     {
         if (scene.Player is not { } player || scene.Kept.Count == 0)
             return null;
@@ -969,8 +1045,35 @@ public static partial class MapRenderer
         var height = 18 * ui;
         if (Clip(from, to, view) is not var (a, b) || SKPoint.Distance(a, b) < width + 56 * ui)
             return new GuideLine(from, to, metres, null, SKRect.Empty);
-        var mid = new SKPoint((a.X + b.X) / 2, (a.Y + b.Y) / 2);
-        return new GuideLine(from, to, metres, text, SKRect.Create(mid.X - width / 2, mid.Y - height / 2, width, height));
+        return new GuideLine(from, to, metres, text, PlateBox(a, b, width, height, symbols, ui));
+    }
+
+    // Where the plate stands on the line's part in view: at its middle, or, where that would cover a symbol (it stood
+    // on a boss marker; the review of 2026-10-04), slid along the line to the nearest place that covers none, toward
+    // the place before toward the player. It keeps the middle's distance from the line's ends, and the middle itself
+    // when no place is free.
+    private static SKRect PlateBox(SKPoint a, SKPoint b, float width, float height, IReadOnlyList<SKRect> symbols, float ui)
+    {
+        var length = SKPoint.Distance(a, b);
+        SKRect At(float along)
+        {
+            var t = along / length;
+            return SKRect.Create(a.X + (b.X - a.X) * t - width / 2, a.Y + (b.Y - a.Y) * t - height / 2, width, height);
+        }
+        bool Free(SKRect box) => !symbols.Any(symbol => symbol.IntersectsWith(box));
+        var middle = At(length / 2);
+        if (Free(middle))
+            return middle;
+        var room = (length - width - 56 * ui) / 2;
+        for (var slide = 6 * ui; slide <= room; slide += 6 * ui)
+        {
+            foreach (var box in new[] { At(length / 2 + slide), At(length / 2 - slide) })
+            {
+                if (Free(box))
+                    return box;
+            }
+        }
+        return middle;
     }
 
     /// <summary>A distance as the cards say it: "69 m", "1.2 km".</summary>
@@ -1092,15 +1195,18 @@ public static partial class MapRenderer
     public static double ScaleBarMetres(double pixelsPerMetre, float maxPixels) =>
         ScaleSteps.Where(s => s * pixelsPerMetre <= maxPixels).DefaultIfEmpty(ScaleSteps[0]).Max();
 
-    // Bottom left, above the wiki link and the credit line the window lays over that corner.
+    // Bottom left, above the wiki link and the credit line the window lays over that corner. Its metres are measured
+    // the way the bar lies, along the screen's horizontal: a render stretched along one axis (Icebreaker, 1.75×) has
+    // no one scale, and the mean of both axes made the bar 27 % wrong there (the review of 2026-10-04).
     private static ScaleBar Scale(Camera camera, MapScene scene, float ui)
     {
-        var origin = Screen(camera, scene, new WorldPoint(0, 0, 0));
-        var perMetre = (SKPoint.Distance(origin, Screen(camera, scene, new WorldPoint(100, 0, 0))) +
-                        SKPoint.Distance(origin, Screen(camera, scene, new WorldPoint(0, 0, 100)))) / 200;
+        var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
+        var from = scene.Projection.ToWorld(camera.ToMap(at));
+        var to = scene.Projection.ToWorld(camera.ToMap(new SKPoint(at.X + 100, at.Y)));
+        var metresIn100 = Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Z - from.Z) * (to.Z - from.Z));
+        var perMetre = metresIn100 > 0 ? 100 / metresIn100 : 1;
         var metres = ScaleBarMetres(perMetre, 120 * ui);
         var pixels = (float)(metres * perMetre);
-        var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
         return new ScaleBar(metres, pixels, at, new SKRect(at.X - 6 * ui, at.Y - 20 * ui, at.X + pixels + 34 * ui, at.Y + 4 * ui));
     }
 

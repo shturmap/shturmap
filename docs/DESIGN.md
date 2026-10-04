@@ -89,7 +89,9 @@ against sanctions); and say that some players see a position map as an unfair ad
   used and the sheet below stood in): fetched from tarkov.dev's image service as a view needs them (the zoom level
   that matches the screen, the base layer and the shown floor's layer, at most four at a time; while one loads the
   nearest coarser tile stands in, stretched), kept in the user's cache (`cache\map-tiles\<map>\<layer>\<z>\<x>_<y>.png`,
-  checked again after a month) and decoded in memory (the 192 most recently used), never in the repository, a build
+  checked again after a month) and decoded in memory (the 192 most recently used, and beyond that
+  every tile the view on screen needs: a 4K window takes more than 192, and a tile thrown out and asked for again with
+  each frame never finished loading; the review of 2026-10-04), never in the repository, a build
   or the test fixtures, credited on the map ("Map: Tarkov.dev · data tarkov.dev"). Screenshots of Shturmap may show
   them, as with icons. They are placed with tarkov.dev's own transform, through its Leaflet CRS: a map unit is a pixel
   at zoom 0, so the tile (z, x, y) covers [x·T, (x+1)·T] ÷ 2^z map units each way, T being maps.json's tileSize (175
@@ -112,6 +114,11 @@ against sanctions); and say that some players see a position map as an unfair ad
   map render for The Lab: couldn't download it…"). With tarkov.dev's transform kept, Icebreaker's 10 m squares are
   oblong on its sheet (the lines are still 10 m apart); a map with neither SVG nor tiles would get one scale for both
   axes, so its squares stay square. The credit line names an artist only where their SVG is drawn.
+  A sheet that stands in for a render that couldn't be had gives way by itself (the review of 2026-10-04: The Lab
+  opened offline stayed a sheet until the app was started again): the tiles the view needs are asked for again
+  every 30 s, each tile once a round, whether or not the map is touched meanwhile, and the sheet stays until the
+  first tile arrives (`MapTiles`: `Ask`, `RetryAfter`). A tile tarkov.dev doesn't have (404) is not asked for again; one whose
+  file isn't an image (a download cut short) counts as one that couldn't be had, and is.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
@@ -633,9 +640,13 @@ spawns below).
   | kind | planning | in a raid |
   | --- | --- | --- |
   | your side's extracts and transits, bosses | full strength (labels 70 %) | full strength |
-  | other quests' markers | 62 % (labels 45 %) | 80 % (labels 60 %) |
-  | Scav and sniper zones, locks and switches | 60 % (labels 50 %) | 75 % (labels 60 %) |
+  | other quests' markers and their zones | 62 % (labels 45 %) | 80 % (labels 60 %) |
+  | Scav and sniper zones, locks and switches, hazard areas | 60 % (labels 50 %) | 75 % (labels 60 %) |
 
+  A zone steps back as far as its kind's markers, and a picked quest's doors (the locks of the keys it needs) not at
+  all, like the pick they belong to (`MapRenderer.ZoneStrength`, `StepBackOf`). Until the review of 2026-10-04 other
+  quests' zones fell to about 35 % whatever this table said, hazard areas to about 55 % (they weren't in it), and a
+  pick's doors stepped back like any lock.
   Labels step back further than symbols, so the highlighted quest's names stand out without hiding where everything
   else is. Stepping back by colour (greying) was compared and dropped: a greyed quest marker reads as done (grey
   means done or after the raid). The candidates (all at 60 %, greyed, by kind) were
@@ -671,11 +682,13 @@ spawns below).
     an extract's `switches` in the data, and a switch that unlocks one of those (a power switch freeing a lever, up to
     four steps through the data's "activates"; not one that locks it). Pointing at the extract (its marker, its row,
     its requirement line) lights its switches at any zoom, and pointing at a switch lights the extracts it opens
-    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists for every extract of
-    a map tells none of them apart, so it links nothing, and today that is all of them: the audit's 34 extracts are
-    Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's three buttons, though
-    most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links yet, and the legend
-    doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
+    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists on most of a
+    map's extracts (more than half; the rule of the extract list's requirement line, `MapContent.OnMostExtracts`) tells
+    none of them apart, so it links nothing. "Most", not "every": with one extract put right in the data, a strict
+    "every" would have lit the lever for all the others (the review of 2026-10-04). Today that is all of them: the
+    audit's 34 extracts are Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's
+    three buttons, though most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links
+    yet, and the legend doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
   - **When they show**: on a map with artwork from 1.5 times the overview (as the shops' names; Streets has 63 locks,
     Customs 36, Reserve 34), on a sheet at any zoom; their labels from 2.5 times or when pointed at; only those on
     the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.
@@ -748,11 +761,23 @@ spawns below).
 - **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
   a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
   card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
-  old as the position). A line too short to carry it clear of its ends has none. A scale bar at the lower left,
+  old as the position). A line too short to carry it clear of its ends has none. Where the middle would cover a
+  symbol, the plate slides along the line to the nearest place that covers none, toward the place first, and keeps
+  the middle only when the line has no free place (the review of 2026-10-04: it stood on a boss marker). A scale bar
+  at the lower left,
   above the wiki link and the credit line, takes the longest round length (1, 2, 5, 10, 25, 50, 100, 200, 500 m …)
-  that fits in 120 px and follows the zoom. No range rings (three circles on every view for a question the bar and
+  that fits in 120 px and follows the zoom. Its metres are those along the bar, the screen's horizontal (the review of
+  2026-10-04: it took the mean of both axes, and on Icebreaker, whose render is stretched 1.75× along one axis, "50 m"
+  spanned 69 m; there a metre up or down the screen is 1.75 times a metre across it, so the bar holds across only).
+  No range rings (three circles on every view for a question the bar and
   the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
   relative to the facing).
+- **How far the view zooms.** Out to half the zoom that shows the whole map, in to 64 px a map unit. The limit is
+  the drawn map's, set again with every frame (`Camera.LimitTo`): until the review of 2026-10-04 it was the map's that
+  was fitted last, so after a preview of another map the first turn of the wheel jumped to that map's limit. A view
+  outside the limits moves toward them or stays, never jumps. A map fitted while the view has no room (the window
+  minimised, or not laid out yet) is fitted when it has; before, its zoom fell to almost nothing and the map stayed out
+  of sight until "show the whole map".
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
@@ -769,7 +794,9 @@ spawns below).
   Bread Crumbs" lists 16 places on The Lab, which piled up with four labels. Groups split as the view zooms in;
   places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
   too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
-  pointing at a cluster points at its quest.
+  pointing at a cluster points at its quest. Only places in view are merged, so a group that runs out of view keeps
+  a marker for the ones in view, with their count (the review of 2026-10-04: merged first, the whole group went when
+  its middle place was out of view).
 - **Places out of view.** While quests are picked, or one is pointed at, their places outside the view are shown
   as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
   whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,
