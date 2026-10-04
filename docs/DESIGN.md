@@ -1383,7 +1383,10 @@ tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tar
 "tarkov.dev's data has changed in a way Shturmap can't read. Please report it.";
 "Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.", the DATA chip
 says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or 429) is
-tried again every 2 minutes, said once; the notice asks to report it if it keeps failing. A notice that asks for
+tried again every 2 minutes, said once; the notice asks to report it if it keeps failing. A download whose answer
+starts and then stops counts among them: after 30 s of silence it is a timeout, and a connection that breaks off
+mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; the client's own timeout ends with
+the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
 a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
 German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
