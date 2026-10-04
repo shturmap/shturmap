@@ -51,7 +51,15 @@ public sealed record RaidLoading(RaidState State) : RaidTransition(State);
 public sealed record RaidStarted(RaidState State) : RaidTransition(State);
 
 /// <summary>The raid ended (or the load was abandoned) and the game is back in the menus.</summary>
-public sealed record RaidEnded(RaidState Previous, RaidState State, DateTime At) : RaidTransition(State);
+/// <param name="At">When the log said so. For an end the log never told, the last the log said of the raid: not its end.</param>
+/// <param name="EndInLog">False when no line of the log ended it (the game was closed or crashed in the raid, see
+/// <see cref="UnfinishedRaid"/>): the raid is over, but nobody may take its length from <paramref name="At"/>.</param>
+public sealed record RaidEnded(RaidState Previous, RaidState State, DateTime At, bool EndInLog = true) : RaidTransition(State)
+{
+    /// <summary>How long the raid ran, when the log has both its start and its end; null for a load, and for an end
+    /// that isn't in the log.</summary>
+    public TimeSpan? Length => EndInLog && Previous.RaidStartedAt is { } started ? At - started : null;
+}
 
 public sealed record ModeChanged(RaidState State) : RaidTransition(State);
 
@@ -151,6 +159,13 @@ public sealed class RaidTracker
         }
     }
 
+    /// <summary>
+    /// Closes a raid or a load whose end the log never told (<see cref="UnfinishedRaid"/>): back to the menus, with the
+    /// end marked as not in the log. Null when no raid is open.
+    /// </summary>
+    /// <param name="lastSaid">The last the log said of the raid; kept as the transition's time, never as the raid's end.</param>
+    public RaidEnded? CloseUnfinished(DateTime lastSaid) => State.Phase == RaidPhase.Menu ? null : EndRaid(lastSaid, endInLog: false);
+
     /// <summary>What the side of the last raid start was decided from, for the study log: "setup:same,starting:yes".</summary>
     public string SideEvidence { get; private set; } = "";
 
@@ -171,12 +186,52 @@ public sealed class RaidTracker
         return _sawStarting ? RaidSide.Unknown : RaidSide.Scav;
     }
 
-    private RaidEnded EndRaid(DateTime at)
+    private RaidEnded EndRaid(DateTime at, bool endInLog = true)
     {
         var previous = State;
         _setupProfileId = null;
         _sawStarting = false;
         State = new RaidState { Mode = State.Mode };
-        return new RaidEnded(previous, State, at);
+        return new RaidEnded(previous, State, at, endInLog);
+    }
+}
+
+/// <summary>
+/// A raid or a load the log left open. The application log has no line for the game quitting, so a raid the game was
+/// closed or crashed in never gets its end line: read back the next day it would still be "in raid", 1,310 minutes
+/// long, and the next game start's login line would then end it as a raid of 22 hours (review of 2026-10-04). Two
+/// things the log does show say that such a raid can't still be running, and nothing else may: a newer log session
+/// (the game has started again), and the time since it began.
+/// </summary>
+public static class UnfinishedRaid
+{
+    /// <summary>
+    /// How long past its map's raid length an open raid still counts as running. Generous on purpose, because dropping
+    /// a live raid would be the worse mistake: tarkov.dev's length may be behind a patch (raid timers have moved by 5
+    /// to 15 minutes), a Scav's or a transit's timer isn't the map's, and the end line only comes after the screens
+    /// that follow a raid. A raid left open the evening before is hours past it.
+    /// </summary>
+    public static readonly TimeSpan Margin = TimeSpan.FromMinutes(30);
+
+    /// <summary>The bound for a map whose raid length isn't known (no data yet, or a map the data doesn't have): well
+    /// past the longest raid length in the data, with the same margin.</summary>
+    public static readonly TimeSpan WithoutLength = TimeSpan.FromHours(2);
+
+    /// <summary>How long after it began an open raid or load can still be running.</summary>
+    /// <param name="raidMinutes">The map's raid length in the data, in minutes; null or 0 when it isn't known.</param>
+    public static TimeSpan Bound(int? raidMinutes) => raidMinutes is > 0 ? TimeSpan.FromMinutes(raidMinutes.Value) + Margin : WithoutLength;
+
+    /// <summary>
+    /// Whether an open raid or load can't still be running: the game has started again since (a newer log session than
+    /// the raid's), or it began longer ago than <see cref="Bound"/>. A load counts from its scene line (matching and
+    /// loading take minutes, never that long).
+    /// </summary>
+    public static bool CannotStillRun(RaidState state, DateTime now, int? raidMinutes, bool newerSession)
+    {
+        if (state.Phase == RaidPhase.Menu)
+            return false;
+        if (newerSession)
+            return true;
+        return (state.RaidStartedAt ?? state.LoadingSince) is { } began && now - began > Bound(raidMinutes);
     }
 }

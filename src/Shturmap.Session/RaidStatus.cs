@@ -12,18 +12,37 @@ namespace Shturmap.Session;
 /// </summary>
 public static class RaidStatus
 {
+    /// <summary>
+    /// The words in the status bar for a snapshot: they name the raid's own map, never one that is only being looked
+    /// at (the MAP list in a raid), and no map while the log names one the data doesn't know.
+    /// </summary>
+    public static string Text(SessionSnapshot snapshot, DateTime now) => Text(snapshot.Raid, snapshot.RaidMap?.Name, now);
+
     /// <summary>The words in the status bar ("In raid · Streets of Tarkov · PMC · 12 min").</summary>
+    /// <param name="map">The raid's map, or null when it isn't known: then the words name none.</param>
     public static string Text(RaidState raid, string? map, DateTime now)
     {
-        var side = raid.Side switch { RaidSide.Pmc => " · PMC", RaidSide.Scav => " · Scav", _ => "" };
+        var side = raid.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "Scav", _ => null };
         return raid.Phase switch
         {
             RaidPhase.Loading => $"Loading {map}".TrimEnd(),
-            RaidPhase.InRaid when raid.RaidStartedAt is { } started => $"In raid · {map}{side} · {(int)(now - started).TotalMinutes} min",
-            RaidPhase.InRaid => $"In raid · {map}{side}",
+            RaidPhase.InRaid => string.Join(" · ", new[] { "In raid", map, side, raid.RaidStartedAt is { } started ? $"{(int)(now - started).TotalMinutes} min" : null }
+                .Where(part => !string.IsNullOrEmpty(part))),
             _ => "Not in a raid",
         };
     }
+
+    /// <summary>
+    /// The last raid in one line: "Last raid · Customs · 12 min · PMC". A raid the log never ended (the game was
+    /// closed or crashed in it) has no length to say: "Last raid · Customs · end not in the log · PMC".
+    /// </summary>
+    public static string LastRaid(LastRaidView last) => string.Join(" · ", new[]
+    {
+        "Last raid",
+        last.MapName,
+        last.LengthKnown ? $"{(int)last.Duration.TotalMinutes} min" : "end not in the log",
+        last.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "Scav", _ => null },
+    }.Where(part => !string.IsNullOrEmpty(part)));
 
     /// <summary>Where the words come from, for the tooltip.</summary>
     public static string Tooltip(RaidState raid, DateTime now) => raid.Phase switch

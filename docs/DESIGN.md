@@ -173,7 +173,12 @@ against sanctions); and say that some players see a position map as an unfair ad
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
-   player marker and trail go: out of a raid there is no "you". A position's age is said beside the marker: from
+   player marker and trail go: out of a raid there is no "you". So while the game's logs are followed, a position
+   the log shows no raid for isn't plotted, and a notice says so ("Got a position, but the game's log shows no
+   raid, so it isn't shown."; nothing is said for a screenshot taken just before the raid's end line reached the
+   log). Only with no game logs at all, when nothing can say where the game is, does the shown map take a position
+   that lies on it (review of 2026-10-04: with the logs followed, a position in the menus used to be plotted on the
+   shown map whenever it fell inside its bounds). A position's age is said beside the marker: from
    a minute, the ring turns dashed and a tag gives the minutes ("4 MIN"); from 2 minutes the tag reads "7 MIN
    OLD", larger and framed in sand (the study log: about one position per 8 raid minutes, often several minutes
    old when the app was looked at). Until 2026-10-03 the 2-minute case was also said over the map in big gold type
@@ -442,6 +447,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   ordinary line. So the log can't tell the menus from a closed game, and "GAME CLOSED" can't be said truthfully; the
   tooltip says so ("The game's log shows no raid. It doesn't say whether the game is open…"). No process checks
   (§2).
+  **A raid whose end never reached the log** (review of 2026-10-04). For the same reason a raid the game was closed
+  or crashed in keeps its start line and never gets its end line: read back at the next start it showed "IN RAID ·
+  CUSTOMS · PMC · 1,310 MIN", and the next game start's login line then ended it as a raid of 22 hours. Only two
+  things the log does show say such a raid can't still be running: a newer log session than the raid's (the game
+  has started again), and the time since it began. So an open raid or load is closed, as "end not in the log", when
+  the game has started again, or when it began longer ago than its map's raid length plus 30 minutes (two hours
+  where the length isn't known; `UnfinishedRaid`). The margin is generous on purpose, since dropping a live raid
+  would be the worse mistake: tarkov.dev's length may be behind a patch, a Scav's or a transit's timer isn't the
+  map's, and the end line only comes after the screens that follow a raid. It is looked at after every batch of log
+  lines, when the data arrives, and every 30 s while the app runs (a log that has fallen silent sends nothing). The
+  state is then "NOT IN A RAID"; the last-raid line says "LAST RAID · CUSTOMS · END NOT IN THE LOG", with no
+  length, since nothing says how long it ran; RAID OVER comes without minutes, and not at all while the logs are
+  read back at start. A raid within its bound is still shown as a raid: the log shows one, and can't say more.
   Everything in the bar shares one middle line (a player's report, 2026-10-03): the status words use the tight
   line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
   and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
@@ -485,6 +503,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
     transits for your side, each with what it takes to leave there (see "Extract requirements"). ANY MAP closes
     the rail in both states.
+  - *The raid's map is not the map on screen* (review of 2026-10-04: a map picked in the MAP list during a raid
+    took the raid with it; the next position, the status bar, the raid card and RAID OVER went to the picked map).
+    The raid, its card, the status words, the cues and the last-raid line are about the raid's own map, as the
+    game's log names it (the scene, then the location; `SessionSnapshot.RaidMap`). The MAP list stays usable in a
+    raid, as a look: the map shows the picked map without a "you", the rail stays the raid's, and the next position
+    is plotted on the raid's map and brings it back on screen. A raid on a map the data doesn't know names no map
+    ("IN RAID · PMC · 12 MIN", "LOADING") and plots no position, with a notice saying why: the map on screen is
+    never taken for the raid's. A map tarkov.dev gives no scene for (Ground Zero 21+) is named by the match
+    setup's or the transit line's location a moment after the scene line, and its RAID LOADING cue comes with that
+    line.
   - *Scav raid* (owner, 2026-10-01: a Scav needs a different view): the same card, with SCAV beside the map's
     name (PMC in a PMC raid; nothing when the logs can't tell). Quest objectives only count for the PMC, but items
     found in raid count whoever found them, so the card's summary is "Find items for 4 quests" and its one
@@ -1303,7 +1331,12 @@ for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageRecei
 because their bodies (and the invites') hold other players' profiles, which Shturmap never reads. The insurer:
 `ChatMessageReceived` type 2 (a trader message) with `systemData.location` when insured gear was lost, type 8 (the
 insurance return) with the gear hours later. Each notification is logged twice ("Got notification" with its body,
-then "Received notification"); only the first counts.
+then "Received notification"); only the first counts. A raid or load the log leaves open (no end line: the game was
+closed or crashed in it) is closed without a length once the game has started again (a newer log session) or it
+began longer ago than its map's raid length plus 30 minutes (two hours without a known length), at the last line the
+log has of it, never at the next session's login line (`UnfinishedRaid`, `RaidTracker.CloseUnfinished`,
+`RaidEnded.EndInLog`; "Screen anatomy", status bar). The raid's map is kept apart from the map on screen
+(`SessionSnapshot.RaidMap`; "Screen anatomy", *The raid's map is not the map on screen*).
 
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
@@ -1346,7 +1379,8 @@ button or key), fit, follow, floor picks, map picks (picker or plan card), selec
 (events named `pinned…`),
 help open/close, keys, rail scrolls, notice dismissals. Added after the first study (2026-10-01): the plan's
 COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the evidence for each side decision,
-screenshots that gave no position, whether a new position was in view and uses of the edge arrow and F, map
+screenshots that gave no position, positions that weren't shown (no raid in the log, or the raid's map not known),
+whether a new position was in view and uses of the edge arrow and F, map
 previews, popped-out-window moves with their final position and whether they were clamped, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
 banners seen (until the banner went, 2026-10-03), side switches, why a session started (the previous one ended cleanly or not, the build's time), and
@@ -1381,7 +1415,10 @@ not a trace. INFO: the start (version with commit, installed or folder build, Wi
 screenshots folders found, the game's language and screenshot key, mode, data loaded (from where, language, counts,
 when checked), raids loading, starting, ending, the study switch (developer builds). WARN: something degraded but working (the data
 from the saved copy, English instead of the game's language, a folder not found, the item sources or a map's
-artwork not loaded). ERROR: what failed, with the exception. DEBUG only with `--verbose` (and the website demo,
+artwork not loaded). ERROR: what failed, with the exception. A step of the session's background work that fails (a
+line of the game's log, one log session's quest history, a look for the game, a position) is one ERROR line per kind
+of failure, and the work carries on (review of 2026-10-04: one database or file error used to end log following or
+the quest history for the rest of the session, with no line and the LOGS light still "live"). DEBUG only with `--verbose` (and the website demo,
 which times its clip by its lines): notices, the map surface, snapshots, fake games, the demo. Every line is
 written with the profile folder as `%USERPROFILE%` (any case, either slash; that covers Documents, OneDrive and
 AppData under it); no profile or account ids, no game file contents. At most 1 MB a day: a last WARN line says so
