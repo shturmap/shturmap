@@ -40,7 +40,7 @@ public sealed record CueItem(string ItemId, Shturmap.Core.Planning.RequirementKi
 /// <summary>How one input is doing, for the status chips: "Logs ✓", "Screenshots ✓", "Data 1 h ago".</summary>
 public sealed record SourceHealth(bool Ok, string Text);
 
-/// <summary>An objective on the shown map, measured from the last position fix.</summary>
+/// <summary>An objective on the rail's map (the raid's own in a raid, else the shown one), measured from the last position fix.</summary>
 /// <param name="HeightDifference">Metres above (+) or below (−) the player, when it matters (over 3 m).</param>
 /// <param name="Needs">Keys or items this objective needs, e.g. "Key: Dorm room 114 key", or null.</param>
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
@@ -86,16 +86,49 @@ public sealed record SessionSnapshot
     /// <summary>What the game's log said about the mode, for the status bar's tooltip.</summary>
     public ModeReading ModeReading { get; init; } = new();
 
-    /// <summary>The map on screen: the raid's map while in a raid, otherwise the last raid's or the one picked.</summary>
+    /// <summary>
+    /// The map on screen: the raid's map while in a raid, unless the player looks at another one (the MAP list; the
+    /// next position brings the raid's back), otherwise the last raid's or the one picked. What the map view draws
+    /// (<see cref="Definition"/>, <see cref="Content"/>, <see cref="Fix"/>, <see cref="Trail"/>, <see cref="Floor"/>)
+    /// is this map's.
+    /// </summary>
     public MapIdentity? Map { get; init; }
+
+    /// <summary>
+    /// The raid's own map while one loads or runs, as the game's log names it; null in the menus, and in a raid on a
+    /// map the data doesn't know (<see cref="RaidMapUnknown"/>). What the rail and the status words say in a raid
+    /// (<see cref="Objectives"/>, <see cref="Extracts"/>, <see cref="MapPlan"/>, <see cref="RaidInfo"/>,
+    /// <see cref="RaidFix"/>) is this map's, whatever map is on screen.
+    /// </summary>
+    public MapIdentity? RaidMap { get; init; }
+
+    /// <summary>A raid loads or runs on a map the data doesn't know: no map is named for it and no position is plotted.</summary>
+    public bool RaidMapUnknown => Raid.Phase != RaidPhase.Menu && RaidMap is null;
+
+    /// <summary>
+    /// In a raid, another map than the raid's is on screen (picked in the MAP list): the rail stays the raid's, the map
+    /// shows no "you", and the next position brings the raid's map back.
+    /// </summary>
+    public bool LooksAtAnotherMap => Raid.Phase != RaidPhase.Menu && RaidMap is not null && Map is not null && RaidMap.Id != Map.Id;
 
     public MapDefinition? Definition { get; init; }
 
+    /// <summary>The last position as the map draws it: only while the map it was taken on is on screen.</summary>
     public PlayerFix? Fix { get; init; }
 
     public IReadOnlyList<WorldPoint> Trail { get; init; } = [];
 
+    /// <summary>The floor of <see cref="Fix"/> on the shown map.</summary>
     public MapLayer? Floor { get; init; }
+
+    /// <summary>
+    /// The last position in this raid, whatever map is on screen: what the rail's distances, the fix's age and the
+    /// status bar's "fix … ago" are about. (With no game logs to follow, the last position on the shown map.)
+    /// </summary>
+    public PlayerFix? RaidFix { get; init; }
+
+    /// <summary>The floor of <see cref="RaidFix"/> on its map.</summary>
+    public MapLayer? RaidFloor { get; init; }
 
     public GameData? Data { get; init; }
 
@@ -151,7 +184,7 @@ public sealed record SessionSnapshot
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];
 
-    /// <summary>The plan for the map on screen (ranked or not): the raid view is this plan, live.</summary>
+    /// <summary>The plan for the raid's map in a raid, else for the map on screen (ranked or not): the raid view is this plan, live.</summary>
     public MapPlanView? MapPlan { get; init; }
 
     public RaidInfo? RaidInfo { get; init; }

@@ -167,7 +167,12 @@ against sanctions); and say that some players see a position map as an unfair ad
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
-   player marker and trail go: out of a raid there is no "you". A position's age is said beside the marker: from
+   player marker and trail go: out of a raid there is no "you". So while the game's logs are followed, a position
+   the log shows no raid for isn't plotted, and a notice says so ("Got a position, but the game's log shows no
+   raid, so it isn't shown."; nothing is said for a screenshot taken just before the raid's end line reached the
+   log). Only with no game logs at all, when nothing can say where the game is, does the shown map take a position
+   that lies on it (review of 2026-10-04: with the logs followed, a position in the menus used to be plotted on the
+   shown map whenever it fell inside its bounds). A position's age is said beside the marker: from
    a minute, the ring turns dashed and a tag gives the minutes ("4 MIN"); from 2 minutes the tag reads "7 MIN
    OLD", larger and framed in sand (the study log: about one position per 8 raid minutes, often several minutes
    old when the app was looked at). Until 2026-10-03 the 2-minute case was also said over the map in big gold type
@@ -479,6 +484,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
     transits for your side, each with what it takes to leave there (see "Extract requirements"). ANY MAP closes
     the rail in both states.
+  - *The raid's map is not the map on screen* (review of 2026-10-04: a map picked in the MAP list during a raid
+    took the raid with it; the next position, the status bar, the raid card and RAID OVER went to the picked map).
+    The raid, its card, the status words, the cues and the last-raid line are about the raid's own map, as the
+    game's log names it (the scene, then the location; `SessionSnapshot.RaidMap`). The MAP list stays usable in a
+    raid, as a look: the map shows the picked map without a "you", the rail stays the raid's, and the next position
+    is plotted on the raid's map and brings it back on screen. A raid on a map the data doesn't know names no map
+    ("IN RAID · PMC · 12 MIN", "LOADING") and plots no position, with a notice saying why: the map on screen is
+    never taken for the raid's. A map tarkov.dev gives no scene for (Ground Zero 21+) is named by the match
+    setup's or the transit line's location a moment after the scene line, and its RAID LOADING cue comes with that
+    line.
   - *Scav raid* (owner, 2026-10-01: a Scav needs a different view): the same card, with SCAV beside the map's
     name (PMC in a PMC raid; nothing when the logs can't tell). Quest objectives only count for the PMC, but items
     found in raid count whoever found them, so the card's summary is "Find items for 4 quests" and its one
@@ -1311,7 +1326,8 @@ button or key), fit, follow, floor picks, map picks (picker or plan card), selec
 (events named `pinned…`),
 help open/close, keys, rail scrolls, notice dismissals. Added after the first study (2026-10-01): the plan's
 COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the evidence for each side decision,
-screenshots that gave no position, whether a new position was in view and uses of the edge arrow and F, map
+screenshots that gave no position, positions that weren't shown (no raid in the log, or the raid's map not known),
+whether a new position was in view and uses of the edge arrow and F, map
 previews, popped-out-window moves with their final position and whether they were clamped, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
 banners seen (until the banner went, 2026-10-03), side switches, why a session started (the previous one ended cleanly or not, the build's time), and

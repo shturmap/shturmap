@@ -45,7 +45,16 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private ItemSources? _sources;
     private LoadProblem? _dataProblem;
     private readonly HashSet<string> _languageSaid = [];
+    // The map on screen. In a raid that is the raid's map, unless the player looks at another one (the MAP list);
+    // the next position brings the raid's map back.
     private MapIdentity? _map;
+    // The raid's own map while one loads or runs, as the game's log names it: where positions go, and what the rail,
+    // the status words and the cues are about, whatever map is on screen. Null in the menus, and while the log names
+    // a map the data doesn't know: then the raid's map is unknown, and the shown map is never taken for it.
+    private MapIdentity? _raidMap;
+    // The RAID LOADING or TRANSIT cue still to show: the scene line didn't name a map the data knows, so the cue waits
+    // for the line that does (the match setup's or the transit's location).
+    private CueKind? _loadingCueOwed;
     private PlayerFix? _fix;
     private string? _fixMapId;
     private MapIdentity? _lastRaidMap;
@@ -133,7 +142,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         yield return ("map", s.Map?.NormalizedName);
         if (s.Raid.RaidStartedAt is { } started)
             yield return ("raidMin", (DateTime.Now - started).TotalMinutes);
-        if (s.Fix is { } fix)
+        if (s.RaidFix is { } fix)
             yield return ("fixAgeS", (DateTime.Now - fix.At).TotalSeconds);
     }
 
@@ -446,7 +455,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     // ---- inputs from the UI ----
 
-    /// <summary>Shows another map (browsing between raids). During a raid the raid's map comes back on the next fix.</summary>
     /// <summary>
     /// The side for this raid, said by the player because the logs can't tell (PvE raids are hosted locally and look
     /// the same for PMC and Scav). Holds until the raid ends; ignored when the logs know the side.
@@ -476,6 +484,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ? _tracker.State with { Side = said }
             : _tracker.State;
 
+    /// <summary>
+    /// Shows another map (browsing between raids). During a raid it is only a look: the raid, its rail and its status
+    /// words stay on the raid's own map, and the raid's map comes back on screen with the next position.
+    /// </summary>
     public async Task SelectMapAsync(string normalizedName)
     {
         await _gate.WaitAsync();
@@ -502,11 +514,17 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     // A load that failed for a reason that may pass (no connection, tarkov.dev busy) is tried again this often.
     private static readonly TimeSpan DataRetry = TimeSpan.FromMinutes(2);
 
+    /// <summary>
+    /// Game data given by the caller instead of tarkov.dev's, for a session that never asks the network (tests of the
+    /// session itself: a fake game folder's logs and screenshots through the real tailer, tracker and watcher).
+    /// </summary>
+    public Func<GameMode, GameData>? GivenData { get; init; }
+
     private async Task LoadDataAsync(GameMode mode)
     {
         try
         {
-            var data = await _loader!.LoadAsync(mode, _settings.Language ?? "en", _stop.Token);
+            var data = GivenData is { } given ? given(mode) : await _loader!.LoadAsync(mode, _settings.Language ?? "en", _stop.Token);
             await _gate.WaitAsync();
             try
             {
@@ -516,6 +534,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _dataProblem = null;
                 RecomputeQuests();
                 ResolveMap();
+                AnnounceLoading();
                 Publish();
                 var how = data.Offline ? "from the saved copy (tarkov.dev unreachable)" : "from tarkov.dev";
                 var line = $"Data loaded {how}: {mode}, language {data.Language}, {data.Tasks.Count} quests, {data.Maps.Count} maps, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}";
@@ -531,7 +550,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 }
                 Study.Game("data.loaded", ("mode", mode), ("activeQuests", _quests.Values.Count(q => q.State == QuestState.Active)),
                     ("planTop", _plan.FirstOrDefault()?.NormalizedName));
-                _ = Task.Run(() => LoadSourcesAsync(mode, data.Language));
+                if (GivenData is null)
+                    _ = Task.Run(() => LoadSourcesAsync(mode, data.Language));
             }
             finally
             {
@@ -768,7 +788,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 if (!item.IsReplay)
                 {
                     Study.Game("insurance", ("kind", notice.Kind), ("location", notice.LocationId), ("items", notice.ItemCount));
-                    if (_hints.Notice(notice, _tracker.State, _map?.NameId) is { } late)
+                    if (_hints.Notice(notice, _tracker.State, _raidMap?.NameId) is { } late)
                         StudyHint(late);
                 }
                 return;
@@ -784,6 +804,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
 
         var phaseBefore = _tracker.State.Phase;
+        var locationBefore = _tracker.State.LocationId;
         var transition = _tracker.Apply(item.Event);
         switch (transition)
         {
@@ -796,30 +817,31 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _trail.Clear();
                 _fix = null;
                 _fixMapId = null;
+                // A transit loads another map: the raid's map is worked out anew, never carried over.
+                _raidMap = null;
                 ResolveMap();
-                if (!item.IsReplay && _map is not null)
-                {
-                    // The scene line comes 1–2 s after matching starts (owner's logs: 30 loads), while matching can
-                    // still be cancelled: the cue pictures the kit, the raid card lists it until the raid starts. A
-                    // transit's gear is what the raid had, so its cue shows none.
-                    if (phaseBefore == RaidPhase.InRaid)
-                        Announce(new ViewCue(CueKind.Transit, _map.Name));
-                    else
-                        Announce(KitCue(CueKind.RaidLoading, _map, "loading"));
-                }
+                // The scene line comes 1–2 s after matching starts (owner's logs: 30 loads), while matching can
+                // still be cancelled: the cue pictures the kit, the raid card lists it until the raid starts. A
+                // transit's gear is what the raid had, so its cue shows none.
+                _loadingCueOwed = item.IsReplay ? null : phaseBefore == RaidPhase.InRaid ? CueKind.Transit : CueKind.RaidLoading;
+                AnnounceLoading();
                 break;
             case RaidStarted started:
+                _loadingCueOwed = null;
                 ResolveMap();
                 // The side is only certain now; the kit shown while loading was a PMC's, unless a setup said Scav.
-                if (!item.IsReplay && started.State.Side == RaidSide.Scav && _map is not null)
+                if (!item.IsReplay && started.State.Side == RaidSide.Scav && _raidMap is not null)
                 {
-                    Say($"Scav raid on {_map.Name} · quest objectives don't count, items found in raid do", 8);
-                    Announce(new ViewCue(CueKind.ScavRaid, _map.Name));
+                    Say($"Scav raid on {_raidMap.Name} · quest objectives don't count, items found in raid do", 8);
+                    Announce(new ViewCue(CueKind.ScavRaid, _raidMap.Name));
                 }
                 break;
             case RaidEnded ended:
                 _sideSaid = null;
-                _lastRaidMap = _map;
+                _loadingCueOwed = null;
+                // The raid's own map, never one that was only being looked at.
+                _lastRaidMap = _raidMap;
+                _raidMap = null;
                 _lastRaidEnded = ended.At;
                 // Out of the raid there is no "you" on the map (owner, 2026-10-01).
                 _fix = null;
@@ -827,20 +849,35 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _trail.Clear();
                 if (ended.Previous.RaidStartedAt is not null)
                     _lastRaidState = (ended.Previous, ended.At);
-                if (!item.IsReplay && _map is not null)
+                if (!item.IsReplay && _lastRaidMap is not null)
                 {
-                    Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _map.Name,
+                    Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _lastRaidMap.Name,
                         ended.Previous.RaidStartedAt is { } began ? ended.At - began : null));
                 }
+                break;
+            case null when _raidMap is null && _tracker.State.Phase != RaidPhase.Menu && _tracker.State.LocationId != locationBefore:
+                // A map tarkov.dev gives no scene for is named by the match setup's or the transit line's location, a
+                // moment after the scene line: the raid's map is known from here, and the loading cue comes now.
+                ResolveMap();
+                AnnounceLoading();
                 break;
         }
         if (!item.IsReplay)
         {
             LogRaid(transition);
             StudyRaid(transition);
-            if (transition is RaidEnded over && _hints.Ended(over, _map?.NameId) is { } hint)
+            if (transition is RaidEnded over && _hints.Ended(over, _lastRaidMap?.NameId) is { } hint)
                 StudyHint(hint);
         }
+    }
+
+    // The RAID LOADING (or TRANSIT) cue that is owed, once the raid's map can be named; until then it waits.
+    private void AnnounceLoading()
+    {
+        if (_loadingCueOwed is not { } kind || _raidMap is null || _tracker.State.Phase != RaidPhase.Loading)
+            return;
+        _loadingCueOwed = null;
+        Announce(kind == CueKind.Transit ? new ViewCue(CueKind.Transit, _raidMap.Name) : KitCue(CueKind.RaidLoading, _raidMap, "loading"));
     }
 
     // The kit reminder for a map (Planning.Kit): what every active quest needs there, picks first.
@@ -885,10 +922,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         switch (transition)
         {
             case RaidLoading:
-                AppLog.Info($"Raid loading: {_map?.Name ?? "unknown map"}");
+                AppLog.Info($"Raid loading: {_raidMap?.Name ?? "unknown map"}");
                 break;
             case RaidStarted started:
-                AppLog.Info($"Raid started: {_map?.Name ?? "unknown map"}, side {started.State.Side}");
+                AppLog.Info($"Raid started: {_raidMap?.Name ?? "unknown map"}, side {started.State.Side}");
                 break;
             case RaidEnded ended:
                 AppLog.Info(ended.Previous.RaidStartedAt is { } at
@@ -907,11 +944,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 Study.Game("mode", ("mode", changed.State.Mode));
                 break;
             case RaidLoading:
-                var rank = _plan.ToList().FindIndex(p => p.NormalizedName == _map?.NormalizedName);
-                var plan = _data is null || _map is null ? null
-                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _map.NormalizedName);
+                var rank = _plan.ToList().FindIndex(p => p.NormalizedName == _raidMap?.NormalizedName);
+                var plan = _data is null || _raidMap is null ? null
+                    : Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _raidMap.NormalizedName);
                 // The plan's COMPLETE and PROGRESS quests, to check later which of them the raid actually completed.
-                Study.Game("raid.loading", ("raidMap", _map?.NormalizedName), ("planRank", rank < 0 ? null : rank + 1), ("planTop", _plan.FirstOrDefault()?.NormalizedName),
+                Study.Game("raid.loading", ("raidMap", _raidMap?.NormalizedName), ("planRank", rank < 0 ? null : rank + 1), ("planTop", _plan.FirstOrDefault()?.NormalizedName),
                     ("bring", plan?.Requirements.Select(r => r.Text).ToList() ?? []),
                     ("complete", plan?.Finish.Select(q => q.QuestId).ToList() ?? []),
                     ("progress", plan?.Progress.Select(q => q.QuestId).ToList() ?? []));
@@ -919,7 +956,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             case RaidStarted started:
                 // How long each loading step took ("LocationLoaded:24.9", seconds since the scene line), to tune the
                 // loading line's stages.
-                Study.Game("raid.start", ("raidMap", _map?.NormalizedName), ("side", started.State.Side), ("sideEvidence", _tracker.SideEvidence),
+                Study.Game("raid.start", ("raidMap", _raidMap?.NormalizedName), ("side", started.State.Side), ("sideEvidence", _tracker.SideEvidence),
                     ("loadingSteps", _tracker.LoadingSteps.Select(s => string.Create(System.Globalization.CultureInfo.InvariantCulture,
                         $"{s.Step?.ToString() ?? "GameStarted"}:{s.Seconds:0.0}")).ToList()));
                 break;
@@ -931,16 +968,21 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
     }
 
-    /// <summary>Picks the map to show: the raid's while one is loading or running, otherwise keep the current.</summary>
+    /// <summary>
+    /// Works out the raid's own map while one is loading or running, from what the log names (the scene, then the
+    /// location), and shows it; otherwise keeps the map on screen. A raid on a map the data doesn't know has no map:
+    /// the one on screen is not taken for it.
+    /// </summary>
     private void ResolveMap()
     {
         if (_data is null)
             return;
         var state = _tracker.State;
-        if (state.Phase != RaidPhase.Menu && _data.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } raidMap)
+        _raidMap = state.Phase == RaidPhase.Menu ? null : _data.CreateResolver().Resolve(state.ScenePath, state.LocationId);
+        if (_raidMap is not null)
         {
-            _map = raidMap;
-            _store?.SetSetting("lastMap", raidMap.NormalizedName);
+            _map = _raidMap;
+            _store?.SetSetting("lastMap", _raidMap.NormalizedName);
             return;
         }
         if (_map is null)
@@ -966,12 +1008,19 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         await _gate.WaitAsync();
         try
         {
-            var map = MapForFix(seen);
-            if (map is null)
+            var position = seen.Info.Position!.Value;
+            var place = PlaceFix(_tracker.State.Phase, _raidMap, _locations?.LogsFolder is not null, _map,
+                onShownMap: _map is not null && _data?.DefinitionFor(_map.NormalizedName) is { } shown && shown.Bounds.Contains(position.X, position.Z),
+                // Taken just before the raid's end line reached the log: the raid is over, and so is its "you".
+                fromEndedRaid: _lastRaidEnded is { } ended && seen.CreatedAt <= ended.AddSeconds(10));
+            if (place.Map is not { } map)
             {
-                Say("Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.");
+                Study.Game("screenshot.unplaced", ("phase", _tracker.State.Phase), ("said", place.Why is not null));
+                if (place.Why is not null)
+                    Say(place.Why);
                 return;
             }
+            // A position is on the raid's map: it brings that map back on screen when another was being looked at.
             if (map.Id != _map?.Id)
                 _map = map;
             if (_fix is not null && _fixMapId == map.Id)
@@ -991,17 +1040,30 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
     }
 
-    private MapIdentity? MapForFix(ScreenshotSeen seen)
+    /// <summary>Where a position from a screenshot goes.</summary>
+    /// <param name="Map">The map it is plotted on, or null: it isn't shown.</param>
+    /// <param name="Why">What the player is told when it isn't shown; null to say nothing.</param>
+    public sealed record FixPlace(MapIdentity? Map, string? Why = null);
+
+    /// <summary>
+    /// Where a position from a screenshot goes (docs/DESIGN.md §4, principle 8). In a raid: on the raid's own map,
+    /// whatever map is on screen, and nowhere while the log names a map the data doesn't know (the shown map is never
+    /// taken for the raid's). Out of a raid there is no "you": while the game's logs are followed, a position the log
+    /// shows no raid for isn't shown. Only with no game logs at all, when nothing can say where the game is, does the
+    /// shown map take it, if the position lies on it.
+    /// </summary>
+    /// <param name="logsFollowed">The game's logs are found, so they say whether a raid runs.</param>
+    /// <param name="onShownMap">The position lies within the shown map's bounds.</param>
+    /// <param name="fromEndedRaid">The screenshot was taken before the raid's end line reached the log: nothing to say.</param>
+    public static FixPlace PlaceFix(RaidPhase phase, MapIdentity? raidMap, bool logsFollowed, MapIdentity? shownMap, bool onShownMap, bool fromEndedRaid)
     {
-        if (_tracker.State.Phase != RaidPhase.Menu && _map is not null)
-            return _map;
-        // Taken just before the raid-end line reached the log.
-        if (_lastRaidMap is not null && _lastRaidEnded is { } ended && seen.CreatedAt <= ended.AddSeconds(10))
-            return _lastRaidMap;
-        // No logs to go by: accept the shown map if the position lies on it.
-        if (_map is not null && _data?.DefinitionFor(_map.NormalizedName) is { } def && def.Bounds.Contains(seen.Info.Position!.Value.X, seen.Info.Position.Value.Z))
-            return _map;
-        return null;
+        if (phase != RaidPhase.Menu)
+            return raidMap is not null ? new(raidMap) : new(null, "Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown.");
+        if (logsFollowed)
+            return new(null, fromEndedRaid ? null : "Got a position, but the game's log shows no raid, so it isn't shown.");
+        return shownMap is not null && onShownMap
+            ? new(shownMap)
+            : new(null, "Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.");
     }
 
     // ---- quests ----
@@ -1121,30 +1183,45 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private void Publish()
     {
+        var raid = ShownRaid;
+        var inRaid = raid.Phase != RaidPhase.Menu;
+        // The rail follows the raid: its objectives, ways out, plan and raid facts are the raid's own map's, also while
+        // another map is looked at (the MAP list); between raids they are the shown map's. A raid on a map the data
+        // doesn't know has none of them: the shown map is never taken for the raid's.
+        var railMap = inRaid ? _raidMap : _map;
         var definition = _map is not null ? _data?.DefinitionFor(_map.NormalizedName) : null;
-        var fix = _fix is not null && _fixMapId == _map?.Id ? _fix : null;
+        var railDefinition = railMap is null ? null : railMap.Id == _map?.Id ? definition : _data?.DefinitionFor(railMap.NormalizedName);
+        // The position as the map draws it, only on the map it was taken on; the rail measures from it whatever is shown.
+        var shownFix = _fix is not null && _fixMapId == _map?.Id ? _fix : null;
+        var fix = _fix is not null && _fixMapId == railMap?.Id ? _fix : null;
         MapContent? content = null;
         var objectives = new List<ObjectiveView>();
         var extracts = new List<ExtractView>();
 
-        if (_data is not null && _map is not null)
+        if (_data is not null)
         {
             // In a raid the map shows what counts for the side you play: no quest objectives for a Scav (they only
             // count for the PMC), and only your side's extracts.
-            var side = ShownRaid.Phase == RaidPhase.Menu ? RaidSide.Unknown : ShownRaid.Side;
-            var active = side == RaidSide.Scav ? [] : _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-            content = MapContentBuilder.Build(_data, _map.Id, active, new HashSet<string>());
-            if (side != RaidSide.Unknown)
+            var side = inRaid ? raid.Side : RaidSide.Unknown;
+            var active = side == RaidSide.Scav ? [] : _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId).ToList();
+            var data = _data;
+            MapContent ContentOf(MapIdentity map)
             {
+                var built = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+                if (side == RaidSide.Unknown)
+                    return built;
                 var otherSide = side == RaidSide.Scav ? MarkerKind.ExtractPmc : MarkerKind.ExtractScav;
-                content = content with { Markers = content.Markers.Where(m => m.Kind != otherSide).ToList() };
+                return built with { Markers = built.Markers.Where(m => m.Kind != otherSide).ToList() };
             }
-            var sameArtwork = _data.MapIdsSharing(_map.NormalizedName);
-            var projection = definition is not null ? MapProjection.For(definition) : null;
+            if (_map is not null)
+                content = ContentOf(_map);
+            var railContent = railMap is null ? null : railMap.Id == _map?.Id ? content : ContentOf(railMap);
+            var sameArtwork = railMap is null ? new HashSet<string>() : _data.MapIdsSharing(railMap.NormalizedName);
+            var projection = railDefinition is not null ? MapProjection.For(railDefinition) : null;
             // Degrees clockwise from map-up: unlike "ahead-left", still true after the player has turned.
             double? MapBearing(WorldPoint target) =>
                 fix is not null && projection is not null ? projection.ScreenHeadingDegrees(fix.Position, Bearing.YawTo(fix.Position, target)) : null;
-            foreach (var o in content.Objectives)
+            foreach (var o in railContent?.Objectives ?? [])
             {
                 double? distance = null, height = null, bearing = null;
                 RelativeDirection? direction = null;
@@ -1164,8 +1241,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
                     bearing, o.Quest.Trader));
             }
-            var shownMap = _data.Maps.GetValueOrDefault(_map.Id);
-            foreach (var m in content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))
+            var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);
+            foreach (var m in (railContent?.Markers ?? []).Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit))
             {
                 if ((side == RaidSide.Scav && m.Kind == MarkerKind.ExtractPmc) || (side != RaidSide.Scav && m.Kind == MarkerKind.ExtractScav))
                     continue;
@@ -1182,15 +1259,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
         Snapshot = new SessionSnapshot
         {
-            Raid = ShownRaid,
+            Raid = raid,
             SideFromLogs = _tracker.State.Side != RaidSide.Unknown,
             Mode = _mode,
             ModeReading = _modeReading,
             Map = _map,
+            RaidMap = inRaid ? _raidMap : null,
             Definition = definition,
-            Fix = fix,
-            Trail = fix is not null ? _trail.ToList() : [],
-            Floor = definition is not null && fix is not null ? FloorResolver.LayerFor(definition, fix.Position) : null,
+            Fix = shownFix,
+            Trail = shownFix is not null ? _trail.ToList() : [],
+            Floor = definition is not null && shownFix is not null ? FloorResolver.LayerFor(definition, shownFix.Position) : null,
+            RaidFix = fix,
+            RaidFloor = railDefinition is not null && fix is not null ? FloorResolver.LayerFor(railDefinition, fix.Position) : null,
             Data = _data,
             Sources = _sources,
             // Repeatable (daily/weekly) tasks have ids no catalog lists; they are kept in the store but not shown.
@@ -1218,14 +1298,14 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Plan = _plan,
             Picks = Picks,
             AnyMap = _anyMap,
-            MapPlan = _data is not null && _map is not null
-                ? _plan.FirstOrDefault(p => p.NormalizedName == _map.NormalizedName)
-                  ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), _map.NormalizedName)
+            MapPlan = _data is not null && railMap is not null
+                ? _plan.FirstOrDefault(p => p.NormalizedName == railMap.NormalizedName)
+                  ?? Planning.PlanFor(_data, _quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId), railMap.NormalizedName)
                 : null,
             LastRaid = _lastRaidState is ({ } state, var endedAt) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
                 ? new LastRaidView(lastMap.Name, endedAt - state.RaidStartedAt!.Value, state.Side, endedAt)
                 : null,
-            RaidInfo = _map is not null && _data?.Maps.GetValueOrDefault(_map.Id) is { } raidMap
+            RaidInfo = railMap is not null && _data?.Maps.GetValueOrDefault(railMap.Id) is { } raidMap
                 ? new RaidInfo(raidMap.RaidDuration ?? 0, _data.BossesOn(raidMap.Id).Take(3).Select(Planning.BossText).ToList(),
                     _tracker.State.Phase == RaidPhase.InRaid ? _lastClock : null)
                 : null,
