@@ -549,7 +549,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - **Taking the view back:** dragging the map or showing the whole map (0, the button) turns following off, and the
     toggle shows it, with no notice or cue. Zooming (the wheel, double-click, + / −) keeps following, about the
     player: the player stays in the middle. F and the show-my-position button centre at once, as before. Pointing
-    at a quest or holding a card never moves the view, so they leave following alone.
+    at a quest or holding a card never moves the view, so they leave following alone. With no position on the map
+    (between raids, or in a raid before the first screenshot) there is nothing to take the view back from: a drag
+    or showing the whole map leaves following as the player set it, and nothing is saved (2026-10-04: panning a map
+    while planning switched it off for the next raid and for later starts). Whether a drag in a raid should switch
+    it off for later raids too, as it does, or only until the next raid starts, is the owner's to decide
+    (docs/NEXT.md, A5).
   - A map opened while following (a raid loading) is fitted first, then centred on the player once there is a
     position. Snapshot and demo runs leave the saved choice alone; `--follow` turns it on from the start (snapshots,
     the dev view).
