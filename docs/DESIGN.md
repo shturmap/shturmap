@@ -1324,6 +1324,11 @@ from the maps payload's `lootLoose`.
 `GameDataLoader.ApiLanguage` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
 tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
+Only "not found" (404) says the language is lacking. A translation that fails any other way (no connection, a
+timeout, 5xx) with no saved copy fails the load like any other file: it is said as what it is and tried again
+("Error messages"), never as "No German texts on tarkov.dev" (until 2026-10-04 any failed request read as a missing
+language, so a moment's 503 left the session in English with an untrue notice). A load that fails also looks at the
+downloads it never came to await, so their failures don't turn up later as crash records.
 
 **Study log.** Developer builds only (below), in their data folder: `%LOCALAPPDATA%\Shturmap-dev\study\yyyy-MM-dd.jsonl`, one JSON object per line: `t`, `src` (`game` or
 `ui`), `ev`, event fields, and `ctx.*` (raid phase, map, raid minutes, age of the last fix) on every line, so UI

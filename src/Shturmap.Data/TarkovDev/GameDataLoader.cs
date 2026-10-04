@@ -47,7 +47,15 @@ public sealed class GameDataLoader(CachedHttp http)
         var itemsLang = language == "en" ? itemsEn : Fetch($"{slug}/items_{language}", TimeSpan.FromHours(24), translation: true);
         var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct);
         fetches.Add(definitions);
-        await Task.WhenAll(fetches);
+        try
+        {
+            await Task.WhenAll(fetches);
+        }
+        catch
+        {
+            Observe(translations);
+            throw;
+        }
         string? missing = null;
         if (!await Arrived(translations))
         {
@@ -189,7 +197,15 @@ public sealed class GameDataLoader(CachedHttp http)
         var hideout = Fetch($"{slug}/hideout");
         var hideoutEn = Fetch($"{slug}/hideout_en");
         var hideoutLang = language == "en" ? hideoutEn : Fetch($"{slug}/hideout_{language}");
-        await Task.WhenAll(items, barters, crafts, hideout, hideoutEn);
+        try
+        {
+            await Task.WhenAll(items, barters, crafts, hideout, hideoutEn);
+        }
+        catch
+        {
+            Observe([hideoutLang]);
+            throw;
+        }
         if (!await Arrived([hideoutLang]))
             hideoutLang = hideoutEn;
 
@@ -231,7 +247,11 @@ public sealed class GameDataLoader(CachedHttp http)
         var code => code,
     };
 
-    // Whether every translation arrived; tarkov.dev answering one with an error must not cost the player the data.
+    // Whether every translation arrived; false when tarkov.dev has no texts in the language, which only "not found"
+    // says (the load then goes on in English). A translation that fails any other way (no connection, a timeout, 5xx;
+    // with a saved copy CachedHttp has used that already) fails the load as any other file would: said as what it is
+    // and tried again, where reading it as a missing language put "No German texts on tarkov.dev" on a moment's 503
+    // and left the session in English (the review of 2026-10-04).
     private static async Task<bool> Arrived(IReadOnlyList<Task<CachedResponse>> translations)
     {
         try
@@ -239,10 +259,28 @@ public sealed class GameDataLoader(CachedHttp http)
             await Task.WhenAll(translations);
             return true;
         }
-        catch (HttpRequestException)
+        catch (Exception)
         {
+            // All of them have ended. The failure worth telling comes first: awaiting them together throws whichever
+            // failed first in the list, which may be the 404 beside a 503.
+            var failures = translations.Where(t => t.IsFaulted).SelectMany(t => t.Exception!.InnerExceptions).ToList();
+            if (failures.FirstOrDefault(e => e is not HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound }) is { } other)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(other);
+            // A timeout, or the caller stopping.
+            if (translations.FirstOrDefault(t => t.IsCanceled) is { } cancelled)
+                await cancelled;
             return false;
         }
+    }
+
+    // A load that fails leaves the downloads it never came to await, the translations, still on their way. Their own
+    // failures (usually the same lost connection) would surface later as unobserved task exceptions, which the app
+    // notes as crash records and asks about at the next start: so they are looked at here.
+    private static void Observe(IEnumerable<Task> tasks)
+    {
+        foreach (var task in tasks)
+            _ = task.ContinueWith(static t => _ = t.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     /// <summary>The payload's "data" with every translatable string replaced by the chosen language's text.</summary>
