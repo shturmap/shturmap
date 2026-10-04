@@ -543,8 +543,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Follow my position** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should smooth
   scroll to the updated player position"; it replaces 2026-10-01's "a new fix never moves the view", principle 8):
   a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
-  "Follow my position (Shift+F)"; on, its symbol and frame are the kept cyan. Off by default, and kept between runs
-  (`followPosition` in shturmap.db).
+  "Follow my position (Shift+F)"; on, its symbol and frame are amber, the app's colour for "on" (2026-10-04: it was
+  the picks' cyan, which then had two meanings; "Design system", one meaning per colour). Off by default, and kept
+  between runs (`followPosition` in shturmap.db).
   - **On**, each new position glides into the middle of the view over 0.5 s, eased out, at the current zoom; the
     floor follows the height as always, and the position pings as it arrives. Turning it on glides to the last
     position at once. With Windows' animation effects off the view jumps there instead. While it glides the edge

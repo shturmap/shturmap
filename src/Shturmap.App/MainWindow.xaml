@@ -911,19 +911,20 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <!-- Follow my position (owner, 2026-10-03): on, a new position glides into the middle; dragging or showing the
-               whole map turns it off. Its own symbol (four arrows about a centre); on, in the kept cyan. -->
+               whole map turns it off. Its own symbol (four arrows about a centre); on, in amber, the app's colour for
+               "on" (cyan is the picks' alone; 2026-10-04). -->
           <ToggleButton x:Name="FollowButton" Style="{StaticResource MapToggleButton}" Click="OnFollowClick"
                         ToolTipService.ToolTip="Follow my position (Shift+F)" AutomationProperties.Name="Follow my position">
             <ToggleButton.Resources>
               <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="ToggleButtonBackground" />
               <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="ToggleButtonBackgroundPointerOver" />
               <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="ToggleButtonBackgroundPressed" />
-              <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonBorderBrushChecked" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPointerOver" ResourceKey="KeptBrush" />
-              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPressed" ResourceKey="KeptBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushChecked" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPointerOver" ResourceKey="AmberBrush" />
+              <StaticResource x:Key="ToggleButtonBorderBrushCheckedPressed" ResourceKey="AmberBrush" />
             </ToggleButton.Resources>
             <FontIcon Glyph="&#xE759;" FontSize="15" />
           </ToggleButton>
