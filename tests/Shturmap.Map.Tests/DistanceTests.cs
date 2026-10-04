@@ -49,8 +49,8 @@ public class DistanceTests
 
     [Theory]
     [InlineData(0, "69 m")]
-    [InlineData(4.5, "69 m · 4 MIN")]
-    public void The_guide_plate_says_the_cards_distance_and_the_fixs_age(double minutes, string plate)
+    [InlineData(4.5, "69 m")] // the position's age isn't said beside a distance: it read as minutes to get there
+    public void The_guide_plate_says_the_cards_distance_and_nothing_else(double minutes, string plate)
     {
         var (camera, scene) = Of([Quest("near", 69, 0, "Revision", group: "revision"), Quest("far", -300, 0, "Revision", group: "revision")]);
         camera.ZoomAt(new SkiaSharp.SKPoint(500, 500), 4);

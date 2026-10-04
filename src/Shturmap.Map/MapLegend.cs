@@ -104,12 +104,12 @@ public static class MapLegend
 
     public static IReadOnlyList<Row> Rows { get; } =
     [
-        new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it, from two minutes framed and marked OLD (\"7 MIN OLD\"); for the first 45 seconds a cone shows which way you faced."),
+        new(LegendSymbol.Player, "You, at your last screenshot: a sand disc in a ring. Once the position is a minute old the ring is dashed and its age shows beside it (\"1 MIN OLD\"), from two minutes larger and framed; for the first 45 seconds a cone shows which way you faced."),
         new(LegendSymbol.PlayerOutOfView, "You, out of view: click it or press F to show your position."),
         new(LegendSymbol.Ping, "A new position: sand rings leave your marker for a few seconds, or its badge at the edge when you are out of view."),
         new(LegendSymbol.KeptQuest, "A quest you picked for the coming raid (its pen in the list): larger, ringed, and in a soft colour of its own, one of eight. Its name, its badges and its row in the list have the same colour. Everything else stays as it is."),
         new(LegendSymbol.KeptLock, "A door one of your picks needs a key for: a padlock in that pick's colour, with its key's short name at any zoom."),
-        new(LegendSymbol.Guide, "From you to the nearest place of your picks: a dashed line in that pick's colour with the distance, as old as your position."),
+        new(LegendSymbol.Guide, "From you to the nearest place of your picks: a dashed line in that pick's colour with the distance from your last position."),
         new(LegendSymbol.OutOfView, "Picked places out of view: a chevron in the pick's colour at the edge, and how many lie that way."),
         new(LegendSymbol.PointedOutOfView, "Places of the quest you point at, out of view: a larger gold chevron at the edge that pulses, and how many lie that way."),
         new(LegendSymbol.Objective, "Quest objective: a gold disc; its glyph is the quest type."),

@@ -278,8 +278,9 @@ quoting it anywhere new.
    log). Only with no game logs at all, when nothing can say where the game is, does the shown map take a position
    that lies on it (review of 2026-10-04: with the logs followed, a position in the menus used to be plotted on the
    shown map whenever it fell inside its bounds). A position's age is said beside the marker: from
-   a minute, the ring turns dashed and a tag gives the minutes ("4 MIN"); from 2 minutes the tag reads "7 MIN
-   OLD", larger and framed in sand (the study log: about one position per 8 raid minutes, often several minutes
+   a minute, the ring turns dashed and a tag gives the age ("1 MIN OLD"; with "OLD" from the first minute since
+   2026-10-04, bare minutes on a map read as a time to get somewhere); from 2 minutes the tag ("7 MIN
+   OLD") is larger and framed in sand (the study log: about one position per 8 raid minutes, often several minutes
    old when the app was looked at). Until 2026-10-03 the 2-minute case was also said over the map in big gold type
    ("POSITION 7 MIN OLD · PRESS PRTSC OR HOME FOR A NEW ONE", and "NO POSITION YET" a minute into a raid without
    one); the owner had it removed: "Put it next to the marker". No position yet is said by the status bar and the
@@ -1054,8 +1055,11 @@ spawns below).
   names are placed first. Names out of view aren't placed.
 - **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
   a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
-  card, `MapRenderer.DistanceText`), with the fix's age once it is a minute old ("69 m · 4 MIN": the distance is as
-  old as the position). A line too short to carry it clear of its ends has none. Where the middle would cover a
+  card, `MapRenderer.DistanceText`). **The distance and nothing else** (owner, 2026-10-04: "The 'minutes' numbers
+  when showing distances on the map are completely off. Either be precise or scrap them at all"): until then the
+  plate added the position's age once it was a minute old ("69 m · 4 MIN"), and minutes beside a distance read as
+  the time it takes to get there, which Shturmap can't know. The age is said at the player's marker, always with
+  "OLD". A line too short to carry it clear of its ends has none. Where the middle would cover a
   symbol, the plate slides along the line to the nearest place that covers none, toward the place first, and keeps
   the middle only when the line has no free place (the review of 2026-10-04: it stood on a boss marker). A scale bar
   at the lower left,
@@ -1076,7 +1080,7 @@ spawns below).
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
   the position is a minute old the ring turns dashed and a small dark tag beside it gives the age in whole units,
-  as the top bar does ("4 MIN", "2 H"). The facing cone has its arrow outside the ring, and shows for the 45 s the
+  as the top bar does, with "OLD" ("4 MIN OLD", "2 H OLD"). The facing cone has its arrow outside the ring, and shows for the 45 s the
   cards' directions are relative to the facing (principle 8, `Facing.Fresh`; until the review of 2026-10-04 for 60 s).
 - **One meaning per colour, shape as a second cue.** Simulated colour blindness (Machado 2009) put the quest amber,
   the PMC-extract green and the shared-extract khaki within ΔE 4–7 of each other. Shared extracts are split down

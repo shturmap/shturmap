@@ -127,12 +127,12 @@ public class FocusTests
     // ---- the position's age, beside the marker (owner, 2026-10-03: "Put it next to the marker") ----
 
     [Theory]
-    [InlineData(1.2, "1 MIN", false)]
-    [InlineData(1.99, "1 MIN", false)]
+    [InlineData(1.2, "1 MIN OLD", false)]
+    [InlineData(1.99, "1 MIN OLD", false)]
     [InlineData(2, "2 MIN OLD", true)]
     [InlineData(7.5, "7 MIN OLD", true)]
     [InlineData(75, "1 H OLD", true)]
-    public void The_age_tag_says_old_from_two_minutes(double minutes, string text, bool stale) =>
+    public void The_age_tag_always_says_old_and_stands_out_from_two_minutes(double minutes, string text, bool stale) =>
         Assert.Equal((text, stale), MapRenderer.AgeTag(TimeSpan.FromMinutes(minutes)));
 
     // ---- optional objectives (owner, 2026-10-03: they "might still be very relevant for a quest") ----

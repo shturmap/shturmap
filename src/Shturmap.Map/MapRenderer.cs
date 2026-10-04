@@ -1241,7 +1241,7 @@ public static partial class MapRenderer
     }
 
     /// <summary>The guide from the player to the nearest place of the picked quests, and its distance on a plate.</summary>
-    /// <param name="Plate">"69 m", with the fix's age once it is a minute old ("69 m · 4 MIN"); null when the line is too short to carry it.</param>
+    /// <param name="Plate">"69 m"; null when the line is too short to carry it. The distance alone: the position's age stood beside it until 2026-10-04 ("69 m · 4 MIN") and read as the minutes it takes to get there.</param>
     /// <param name="Color">The colour of the pick it leads to.</param>
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox, SKColor Color);
 
@@ -1261,8 +1261,10 @@ public static partial class MapRenderer
         var to = drawnAt.TryGetValue(nearest.Id, out var drawn) ? drawn : Screen(camera, scene, nearest.Position);
         // The number the card shows: horizontal metres to the nearest place, as old as the position.
         var metres = player.Position.HorizontalDistanceTo(nearest.Position);
-        var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now);
-        var text = DistanceText(metres) + (age >= PlayerOld ? " · " + AgeText(age) : "");
+        // The distance and nothing else (owner, 2026-10-04: "The 'minutes' numbers when showing distances on the map
+        // are completely off. Either be precise or scrap them"). The minutes were the position's age; beside a
+        // distance they read as the time to get there, which nobody can know. The age is said at the player's marker.
+        var text = DistanceText(metres);
         // On the part of the line in view, and only where the line is long enough to carry it clear of its ends.
         var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
         view.Inflate(-24 * ui, -24 * ui);
@@ -1857,9 +1859,10 @@ public static partial class MapRenderer
     /// <summary>A fix's age as the map says it: "4 MIN", "2 H" (whole units, as the top bar).</summary>
     public static string AgeText(TimeSpan age) => age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} MIN" : $"{(int)age.TotalHours} H";
 
-    /// <summary>The tag beside the player once the position is a minute old: "1 MIN", and from <see cref="PlayerStale"/>
-    /// "7 MIN OLD", larger and framed.</summary>
-    public static (string Text, bool Stale) AgeTag(TimeSpan age) => age >= PlayerStale ? (AgeText(age) + " OLD", true) : (AgeText(age), false);
+    /// <summary>The tag beside the player once the position is a minute old: "1 MIN OLD", and from <see cref="PlayerStale"/>
+    /// larger and framed ("7 MIN OLD"). Always with "OLD": bare minutes on a map read as a time to get somewhere
+    /// (owner, 2026-10-04).</summary>
+    public static (string Text, bool Stale) AgeTag(TimeSpan age) => (AgeText(age) + " OLD", age >= PlayerStale);
 
     private static float AgeTagSize(bool stale) => stale ? 12.5f : 10.5f;
 
