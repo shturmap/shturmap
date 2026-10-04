@@ -96,7 +96,7 @@
     </Grid.RowDefinitions>
 
     <!-- Status bar: mode, raid, last fix on the left; the inputs as small status lights and help on the right. -->
-    <Grid Padding="16,0,10,0" ColumnSpacing="16" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
+    <Grid x:Name="StatusBar" Padding="16,0,10,0" ColumnSpacing="16" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
       <Grid.Resources>
         <!-- A status word's box is exactly its capitals (Tight), so centring a word centres its capitals: the words, the
              lights, the "?" and the help button's frame share one middle line, at any display scaling (a player's
@@ -106,8 +106,10 @@
           <Setter Property="TextLineBounds" Value="Tight" />
         </Style>
       </Grid.Resources>
-      <!-- The inputs and the three buttons keep their place at the right; the left takes the rest, and in a narrow
-           window the last fix, its last word, trims instead of pushing them out of the window (2026-10-04). -->
+      <!-- The inputs and the three buttons keep their place at the right; the left takes the rest. In a window too
+           narrow for all the bar says, the lights' words go first (the lights stay, each with its tooltip), then the
+           last fix, its last word, trims; nothing is pushed out of the window (2026-10-04; StatusBarFit,
+           FitStatusBar). -->
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
@@ -139,25 +141,34 @@
           </DropDownButton.Flyout>
         </DropDownButton>
         <!-- Only what the log shows: "NOT IN A RAID" outside a raid, never "in the menus" (RaidStatus; owner, 2026-10-03). -->
-        <TextBlock Grid.Column="3" Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
+        <TextBlock x:Name="RaidWord" Grid.Column="3" Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}" />
         <TextBlock Grid.Column="4" Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
                    HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
       </Grid>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
-                    ToolTipService.ToolTip="{x:Bind ViewModel.LogsDetail, Mode=OneWay}">
-          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.LogsOk), Mode=OneWay}" VerticalAlignment="Center" />
-          <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.LogsText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.ScreenshotsOk), Mode=OneWay}" VerticalAlignment="Center" />
-          <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.ScreenshotsText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}" />
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
-                    ToolTipService.ToolTip="{x:Bind ViewModel.DataDetail, Mode=OneWay}">
-          <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}" VerticalAlignment="Center" />
-          <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.DataText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}" />
+      <StackPanel x:Name="StatusRight" Grid.Column="1" Orientation="Horizontal" Spacing="16">
+        <!-- The three lights. Their words are the first thing a narrow window drops (ViewModel.LightWords); a light
+             alone still says its word, and what is behind it, in its tooltip. FitStatusBar counts with these
+             numbers: a 6 px square, 6 px to its word, 16 px between lights. -->
+        <StackPanel x:Name="StatusLights" Orientation="Horizontal" Spacing="16">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
+                      ToolTipService.ToolTip="{x:Bind LightTip(ViewModel.LogsText, ViewModel.LogsDetail, ViewModel.LightWords), Mode=OneWay}">
+            <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.LogsOk), Mode=OneWay}" VerticalAlignment="Center" />
+            <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.LogsText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
+                       Visibility="{x:Bind ShownIfTrue(ViewModel.LightWords), Mode=OneWay}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
+                      ToolTipService.ToolTip="{x:Bind LightWord(ViewModel.ScreenshotsText, ViewModel.LightWords), Mode=OneWay}">
+            <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.ScreenshotsOk), Mode=OneWay}" VerticalAlignment="Center" />
+            <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.ScreenshotsText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
+                       Visibility="{x:Bind ShownIfTrue(ViewModel.LightWords), Mode=OneWay}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Background="Transparent" Padding="0,10"
+                      ToolTipService.ToolTip="{x:Bind LightTip(ViewModel.DataText, ViewModel.DataDetail, ViewModel.LightWords), Mode=OneWay}">
+            <Rectangle Width="6" Height="6" Fill="{x:Bind OkBrush(ViewModel.DataOk), Mode=OneWay}" VerticalAlignment="Center" />
+            <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.DataText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
+                       Visibility="{x:Bind ShownIfTrue(ViewModel.LightWords), Mode=OneWay}" />
+          </StackPanel>
         </StackPanel>
         <!-- A problem or an idea, straight to the Report dialog (owner, 2026-10-03: "there should be a separate
              feedback/bugreport button"). Where the build can't report (no DSN) it is disabled; the tooltip sits on the
@@ -492,8 +503,9 @@
               </Grid>
               <!-- The suggested maps as a short list, best first, always in view (review of 2026-10-04, H4: the open card
                    is some 840 px tall and pushed the other maps' cards under the fold). The open map's row is marked;
-                   pointing at a row previews that map, a click opens its card below. One map needs no list. -->
-              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfSeveral(ViewModel.Plans), Mode=OneWay}" Margin="0,0,0,7">
+                   pointing at a row previews that map, a click shows it and opens its card below. The rows are the
+                   only thing that switches the map. One suggested map that is on screen needs no list (PlanList). -->
+              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfTrue(ViewModel.PlanListShown), Mode=OneWay}" Margin="0,0,0,7">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,-1"
@@ -576,113 +588,120 @@
               <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfNot(ViewModel.NoGameLogs), Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
-                    <!-- Only the open map's card: the others are rows in the list above. -->
-                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,12" Margin="0,0,0,6"
-                            Visibility="{x:Bind ExpandedVisibility}"
+                    <!-- Only the open map's card: the others are rows in the list above. No button: a click in it is a
+                         click on the quest's row or the pen under the pointer, never also a change of map (it was one
+                         button until 2026-10-04, "two clicks, two meanings"). Resting on it still previews its map
+                         when another one is on screen. -->
+                    <Border Padding="14,12" Margin="0,0,0,6" Visibility="{x:Bind ExpandedVisibility}"
                             Background="{x:Bind CardBackground}" BorderBrush="{x:Bind CardBorder}" BorderThickness="1"
-                            Tag="{x:Bind NormalizedName}" Click="OnPlanClick"
+                            Tag="{x:Bind NormalizedName}"
                             PointerEntered="OnPlanPointerEntered" PointerExited="OnPlanPointerExited">
-                      <StackPanel Spacing="3">
-                        <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
-                        <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
-                                   ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
-                        <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
-                        <StackPanel Visibility="{x:Bind ExpandedVisibility}">
-                          <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
-                               only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
-                          <TextBlock Style="{StaticResource EyebrowText}" Text="PICKED" Foreground="{StaticResource KeptBrush}" Margin="0,14,0,4"
-                                     Visibility="{x:Bind PicksVisibility}" />
-                          <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind PicksVisibility}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="local:QuestLine">
-                                <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                  </Grid.ColumnDefinitions>
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
-                                  <StackPanel Grid.Column="1" Spacing="1">
-                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
-                                               MaxLines="2" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
-                                               FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
-                                               TextTrimming="CharacterEllipsis" />
-                                  </StackPanel>
-                                  <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
-                                  <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
-                                  <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
-                                </Grid>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
-                          <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
-                          <ItemsControl ItemsSource="{x:Bind Finish}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="local:QuestLine">
-                                <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}"
-                                      BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind GroupLine}">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                  </Grid.ColumnDefinitions>
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
-                                  <!-- The name, then what the quest asks here in a few words (QuestSynopsis), at most two lines. -->
-                                  <StackPanel Grid.Column="1" Spacing="1">
-                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
-                                               MaxLines="2" TextTrimming="CharacterEllipsis" />
-                                  </StackPanel>
-                                  <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
-                                  <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
-                                  <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
-                                </Grid>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
-                          <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ProgressVisibility}" />
-                          <ItemsControl ItemsSource="{x:Bind Progress}" Visibility="{x:Bind ProgressVisibility}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="local:QuestLine">
-                                <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}"
-                                      BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind GroupLine}">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                  </Grid.ColumnDefinitions>
-                                  <!-- As strong as a COMPLETE row; instead of dimming, a short note says why it only
-                                       progresses here (Planning.ProgressNote; owner, 2026-10-03). -->
-                                  <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
-                                  <StackPanel Grid.Column="1" Spacing="1">
-                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
-                                    <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
-                                               MaxLines="2" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
-                                               FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
-                                               TextTrimming="CharacterEllipsis" />
-                                  </StackPanel>
-                                  <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
-                                  <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
-                                  <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
-                                </Grid>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
-                          <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
-                          <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
-                                        ItemTemplate="{StaticResource RequirementTemplate}" />
+                      <!-- Text in a data template takes its face and colour from the control around it, as it did from the
+                           button this card was (the implicit TextBlock style doesn't reach in here). -->
+                      <ContentControl FontFamily="{StaticResource UiFont}" Foreground="{StaticResource InkBrush}" IsTabStop="False"
+                                      HorizontalContentAlignment="Stretch">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
+                          <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
+                                     ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
+                          <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
+                          <StackPanel Visibility="{x:Bind ExpandedVisibility}">
+                            <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
+                                 only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="PICKED" Foreground="{StaticResource KeptBrush}" Margin="0,14,0,4"
+                                       Visibility="{x:Bind PicksVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind PicksVisibility}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:QuestLine">
+                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                      <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                      <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
+                                                 MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                      <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
+                                                 FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                 TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
+                                    <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                                    <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Finish}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:QuestLine">
+                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}"
+                                        BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind GroupLine}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
+                                    <!-- The name, then what the quest asks here in a few words (QuestSynopsis), at most two lines. -->
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                      <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                      <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
+                                                 MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
+                                    <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                                    <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ProgressVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Progress}" Visibility="{x:Bind ProgressVisibility}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:QuestLine">
+                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}"
+                                        BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind GroupLine}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- As strong as a COMPLETE row; instead of dimming, a short note says why it only
+                                         progresses here (Planning.ProgressNote; owner, 2026-10-03). -->
+                                    <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,1,0,0" />
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                      <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                      <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
+                                                 MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                      <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
+                                                 FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                 TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
+                                    <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
+                                    <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
+                                          ItemTemplate="{StaticResource RequirementTemplate}" />
+                          </StackPanel>
                         </StackPanel>
-                      </StackPanel>
-                    </Button>
+                      </ContentControl>
+                    </Border>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
@@ -920,10 +939,11 @@
             </StackPanel>
           </Grid>
         </Border>
-        <!-- After a crash: the one question, until answered (docs/DESIGN.md §8, "Reports"). -->
+        <!-- After a crash: the one question, until answered (docs/DESIGN.md §8, "Reports"). Not in a raid: it lies
+             over the map and waits for a click nobody is there to make; it is back when the raid is over. -->
         <Border HorizontalAlignment="Center" MaxWidth="900" Padding="14,10,10,10"
                 Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1"
-                Visibility="{x:Bind ShownIf(ViewModel.CrashQuestion), Mode=OneWay}">
+                Visibility="{x:Bind ShownUnlessHeldBack(ViewModel.CrashQuestion, ViewModel.RaidHoldsBack), Mode=OneWay}">
           <Grid ColumnSpacing="12">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="Auto" />
@@ -962,12 +982,12 @@
             </Button>
           </Grid>
         </Border>
-        <!-- Another map shown for a moment from a Plan card under the pointer. -->
+        <!-- Another map shown for a moment from its row in Plan under the pointer. -->
         <Border HorizontalAlignment="Center" Padding="14,6" Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"
                 Visibility="{x:Bind ShownIf(ViewModel.PreviewText), Mode=OneWay}" IsHitTestVisible="False">
           <StackPanel Orientation="Horizontal" Spacing="10">
             <TextBlock Text="{x:Bind ViewModel.PreviewText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
-            <TextBlock Text="CLICK THE CARD TO PLAN IT" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
+            <TextBlock Text="CLICK ITS ROW TO PLAN IT" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
           </StackPanel>
         </Border>
         <!-- In a raid, another map picked in the MAP list is a look: the rail stays the raid's, and this says so. -->

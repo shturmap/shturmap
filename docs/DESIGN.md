@@ -576,7 +576,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   1600×1000. Until then that rule ran at every start, so a third monitor or the player's own size was lost each
   time. A maximised window sent to another monitor comes back maximised there. The window is never smaller than
   900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
-  its last word, the last fix, trims. Snapshot and demo runs and a given size (`--window`) place the window
+  the lights' words go first, then its last word, the last fix, trims (see "Status bar"). Snapshot and demo runs and a given size (`--window`) place the window
   themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
@@ -621,13 +621,21 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
   and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
   words with tooltips easy to point at.
+  **Words where they apply, and what gives way** (review of 2026-10-04, C4; `StatusBarFit`). While there is no
+  position the bar says "NO POSITION YET · PRESS PRTSC" only in a raid, where the key gives one; outside a raid and
+  while one loads it says nothing there ("… IN RAID" stood there all the time). When the bar is too narrow for all
+  it says (the raid state, the whole last fix, the lights with their words, the three buttons), the lights' words
+  go first: the three squares stay, and each says its word and what is behind it in its tooltip. They come back
+  once there is 40 px to spare, so a figure more in the last fix doesn't switch them on and off. Only then does the
+  last fix trim. At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
+  one trims), three squares and the buttons; outside a raid the words fit.
 - **Rail** (left, 384 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, as a short list
     that stays in view, then the open map's card: its line in words ("Complete 7 quests · progress 2 more") with
     COMPLETE, PROGRESS and BRING (keys, items to bring). A row of the list is the map's name and its counts
-    ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map there is
-    no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps' folded cards sat
-    under it, below the fold). Each quest row in the card is the quest's name, then a quiet line of what it asks on
+    ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map that is
+    on screen there is no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps'
+    folded cards sat under it, below the fold). Each quest row in the card is the quest's name, then a quiet line of what it asks on
     that map in a few words, at most two lines and then "…" ("Ballet Lover" over "Find balletmeister's apartment ·
     Survive and extract"; see §5, "Quest synopsis"). The raid card keeps names only: its objective lines already
     say what to do. COMPLETE and PROGRESS are each in effort order, with a thin hairline where a later group starts
@@ -641,9 +649,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     exactly like COMPLETE rows: gold glyph, ink name, trader portrait and bring cells at full strength. The section
     heading says which, and a PROGRESS row in Plan adds one short line in small muted capitals saying why it only
     progresses ("2 OF 5 OBJECTIVES HERE"; §7, "Raid planner"). Muted keeps one meaning in quest rows: an objective
-    done after the raid, at a trader. Resting on a folded card for 0.6 s **previews** its map with its quests on it, labelled
-    "PREVIEW · CUSTOMS · CLICK THE CARD TO PLAN IT"; moving to the next card switches at once, leaving puts the
-    shown map back exactly as it was (pan and zoom), and a click keeps it. A raid loading ends a preview.
+    done after the raid, at a trader. Resting on a map's row for 0.6 s **previews** its map with its quests on it, labelled
+    "PREVIEW · CUSTOMS · CLICK ITS ROW TO PLAN IT"; moving to the next row switches at once, leaving puts the
+    shown map back exactly as it was (pan and zoom), and a click on the row keeps it. A raid loading ends a preview.
+    **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
+    card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
+    on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
+    a click on what is under the pointer. Resting on it still previews its map while another is on screen. So that
+    there is always a row to click, the list is also there for one suggested map while another map is on screen.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
     line ("Complete 5 quests · progress 1 more"), the raid line (the raid's length on this map and when the log says it started, "40 min raid · started 21:02";
@@ -758,7 +771,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   player, trail, guide line to the nearest place of the picks. Map controls bottom-right (follow my position, show my
   position, show the whole map, zoom in, zoom out), with the floor picker above them on maps with floors;
   one-line notices top-centre; bottom-left a WIKI MAP link (the map's interactive map on the EFT wiki, for loot,
-  containers and the rest Shturmap doesn't draw) above the attribution.
+  containers and the rest Shturmap doesn't draw) above the attribution. A map's scene goes into the view once its
+  artwork has arrived, and a snapshot is written only into the scene of its own map (`SceneGate`; review of
+  2026-10-04: the map counted as shown from the moment it was asked for, so a snapshot that came before the artwork
+  put the new map's markers and position onto the old map's picture). Until then the map before stays as it was.
 - **Follow my position** (owner, 2026-10-03: "It should be a toggle in the map view and the camera should smooth
   scroll to the updated player position"; it replaces 2026-10-01's "a new fix never moves the view", principle 8):
   a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
@@ -788,7 +804,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
-  "Diagnostics"). Opens once by itself on first run.
+  "Diagnostics"). Opens once by itself on first run, outside a raid: at a first start during a raid it waits until
+  the raid is over. A step into a raid (it loads, it starts) closes the panel, since it stays open while the game
+  has the focus and lay over the raid card; if it had opened by itself, it isn't counted as seen and comes back
+  after the raid (`WhileInRaid`; review of 2026-10-04, H9).
 - **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
   position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
@@ -800,7 +819,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
   CANCEL and SEND.
 - **After a crash**: one question under the notices, until answered: SEND · DON'T SEND · ALWAYS SEND · WHAT'S SENT;
-  closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog.
+  closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog. It lies over the map and
+  waits for a click, so it is shown outside raids only: while a raid loads or runs it steps aside, unanswered, and
+  is back when the raid is over (`WhileInRaid`; review of 2026-10-04, H9).
 
 ### Map drawing
 
@@ -1132,7 +1153,10 @@ Cards behave like the nested tooltips in Crusader Kings III:
    from the rail or the map, 0.4 s on a card), or the pointer moving more than 240 px away from both the card and
    what it was opened from, its row or its marker (`CardReach`; 2026-10-04: measured from the card alone, a click on
    the left of a row held a card that closed with the next move of the mouse). Nothing holds by itself (owner,
-   2026-10-01: the timed hold was dropped).
+   2026-10-01: the timed hold was dropped). And every card in the main window closes at a step into a raid, when
+   it begins to load and when it starts (`WhileInRaid`; review of 2026-10-04: a card held in Plan stayed over the
+   map through the loading and the whole raid, with nobody at the mouse to click it away). A card opened during
+   the raid stays as any held card does; popped-out cards are windows of their own and stay.
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
 4. **Popped out**: the pop-out button (`E8A7`; "pinned" in the code, the settings and the study log) turns a quest
@@ -1228,15 +1252,18 @@ are translated although the payload's translation list misses them.
 | --- | --- |
 | F | show my position, once |
 | Shift+F | Follow my position on / off |
-| + / − | zoom in / out (following, about the player) |
+| + / − | zoom in / out (following, about the player); "+" with or without Shift, and the number pad's keys |
 | 0 | show the whole map (following stays on: the next position centres on you at that zoom) |
 | PgUp / PgDn | show the floor above / below |
-| Esc | close the cards (it never drops picks) |
+| Esc | close the cards (it never drops picks); in a popped-out window, the cards opened from it (never the window) |
 | F1 or ? | help |
 | Ctrl+, | settings |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
-one's key as a tooltip over the whole window.
+one's key as a tooltip over the whole window. "+" is a key of its own on some keyboards and Shift with "=" on
+others (US); both are one virtual key, and a shortcut without Shift never saw the second, so "+" didn't zoom on a
+US keyboard (`ZoomKeys`; review of 2026-10-04). A popped-out window has its own Esc for the cards opened from it;
+it had none.
 
 Mouse: drag to pan (following stays on: the next position brings the view back), wheel to zoom at the cursor
 (following with the view on the player, about the player), double-click to
@@ -1704,7 +1731,9 @@ closed, the quests visible in the rail and the rail's scroll position when the w
 banners seen (until the banner went, 2026-10-03), side switches, why a session started (the previous one ended cleanly or not, the build's time), and
 active-quest count changes outside quest events. Added 2026-10-02: group picks (location, map, time variant) and
 group ready / not ready / start; each raid's loading steps with their seconds since the scene line (in
-`raid.start`); the raid clock in each fix; the insurer's notes (kind, location, item count). How a raid ended
+`raid.start`); the raid clock in each fix; the insurer's notes (kind, location, item count). Added 2026-10-04:
+cards closed by a step into a raid (`cards.raid`), whether help was closed by the player or by a raid, and the
+status bar's words going or coming back with the bar's width (`statusbar.words`). How a raid ended
 (survived, killed) is in none of the allowed logs. The nearest thing is `raid.outcomeHint` `{ lostInsured: true }`:
 the insurer's "lost" note came during the raid or within 5 minutes after it, on the same location (in the owner's
 logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;

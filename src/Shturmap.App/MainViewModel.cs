@@ -172,7 +172,17 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool InRaid { get; set; }
 
-    [ObservableProperty] public partial string FixText { get; set; } = "No position yet";
+    /// <summary>A raid is loading or running: what comes up by itself and waits for a click stays away until it is
+    /// over (<see cref="Rules.WhileInRaid.Waits"/>).</summary>
+    [ObservableProperty] public partial bool RaidHoldsBack { get; set; }
+
+    /// <summary>The last fix in the status bar ("Fix 4 s ago · ground · height 4 m"); in a raid without one, how to
+    /// get one; else empty (<see cref="Rules.StatusBarFit.NoPosition"/>).</summary>
+    [ObservableProperty] public partial string FixText { get; set; } = "";
+
+    /// <summary>Whether the status bar's three lights keep their words: the first thing to go in a narrow window
+    /// (<see cref="Rules.StatusBarFit.Words"/>).</summary>
+    [ObservableProperty] public partial bool LightWords { get; set; } = true;
 
     [ObservableProperty] public partial string LogsText { get; set; } = "Logs";
 
@@ -268,7 +278,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"LOADING · PLAYER SPAWNED" (the last step the log reported) while the raid loads, else empty.</summary>
     [ObservableProperty] public partial string LoadingText { get; set; } = "";
 
-    /// <summary>"PREVIEW · CUSTOMS" while another map is shown from a Plan card under the pointer; else empty.</summary>
+    /// <summary>"PREVIEW · CUSTOMS" while another map is shown from its row in Plan under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
 
     /// <summary>"LOOKING AT WOODS" while another map than the raid's is on screen in a raid (the MAP list); else empty.</summary>
@@ -280,6 +290,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string LastRaidText { get; set; } = "";
 
     [ObservableProperty] public partial IReadOnlyList<PlanCard> Plans { get; set; } = [];
+
+    /// <summary>Whether Plan lists the suggested maps above the open map's card (<see cref="Rules.PlanList.Shown"/>).</summary>
+    [ObservableProperty] public partial bool PlanListShown { get; set; }
 
     [ObservableProperty] public partial IReadOnlyList<QuestLine> AnyMap { get; set; } = [];
 
