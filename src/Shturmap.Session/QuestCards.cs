@@ -82,7 +82,7 @@ public static class QuestCards
             StatusText(status),
             status?.State ?? QuestState.NotStarted,
             objectives.Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "")).ToList(),
-            Needs(data, task, sources),
+            Needs(data, task, sources, quests),
             unlocks.Take(ShownUnlocks).ToList(),
             unlocks.Count > ShownUnlocks ? $"and {unlocks.Count - ShownUnlocks} more" : "",
             task.WikiLink);
@@ -145,7 +145,7 @@ public static class QuestCards
             .Distinct()
             .Order(StringComparer.CurrentCulture));
 
-    private static List<CardNeed> Needs(GameData data, ApiTask task, ItemSources? sources)
+    private static List<CardNeed> Needs(GameData data, ApiTask task, ItemSources? sources, IReadOnlyDictionary<string, QuestStatus> quests)
     {
         var needs = new List<CardNeed>();
         void Add(RequirementKind kind, IReadOnlyList<string> alternatives, int count, IEnumerable<string> maps, string purpose)
@@ -165,7 +165,7 @@ public static class QuestCards
             if (needs.Any(n => n.Text == text))
                 return;
             var why = string.Join(" · ", new[] { purpose, where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
-            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, why, ItemCards.BestOf(data, sources, alternatives)));
+            needs.Add(new CardNeed(task.Id, kind, alternatives[0], text, why, ItemCards.BestOf(data, sources, alternatives, quests)));
         }
 
         foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))

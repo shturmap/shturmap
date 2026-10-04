@@ -768,6 +768,15 @@ opened 10 to 21 times each to find out why and where). Gear a kill objective ask
 RayBench Hipster Reserve sunglasses" (neutral about and/or: the data's sets don't always match the quest's
 wording, which the objective text gives anyway); item cards list it as "Wear, for kills".
 
+**An offer behind a quest isn't a way yet** (the review of 2026-10-04: BRING named "Ragman LL2 · 41,283 ₽ · after
+Dandies" as the easiest source of the beanie Dandies itself asks for). A trader's offer or a barter that tarkov.dev
+ties to a quest (`taskUnlock`) which the game's log hasn't seen completed comes after every other way (other
+offers, barters, crafts, the flea market, loose spots) and says "after <quest>"; so the one line under a BRING row
+names it only when nothing else is known. Once the log has seen that quest completed, the offer is one like any
+other, in its place by price, and the note goes. Of several items that will each do (a weapon class), the line names
+the first with a way open now. Shturmap knows no loyalty level, so "LL2" stays a fact about the offer, never a claim
+that the player has it (`ItemCards.Sources`).
+
 **What kills and exits take** (owner, 2026-10-03: "There are others that still require items, such as doing kills
 with certain weapons or weapon classes … It should be a coherent design so it is still clear what to bring and what
 is needed to solve a quest"; and "in the cease fire quest it is not clear that we need to bring a flare"). BRING
