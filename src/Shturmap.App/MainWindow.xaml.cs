@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Shturmap.App.Controls;
+using Shturmap.App.Rules;
 using Shturmap.Core.Logs;
 using Shturmap.Core.Maps;
 using Shturmap.Core.Navigation;
@@ -143,7 +144,7 @@ public sealed partial class MainWindow : Window
     }
 
     // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
-    private static readonly TimeSpan FreshFix = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan FreshFix = FixAge.Fresh;
     private bool? _fixWasFresh;
 
     private void OnClockTick()
@@ -406,14 +407,13 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.LoadingText = "";
         }
-        if (s.Fix is not { } fix)
-        {
-            ViewModel.FixText = $"No position yet · press {ViewModel.HelpKeys} in raid";
-            return;
-        }
-        var age = DateTime.Now - fix.At;
-        var ago = age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s" : age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} min" : $"{(int)age.TotalHours} h";
-        ViewModel.FixText = $"Fix {ago} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m";
+        // The position's age, in the status bar and in the raid card's line on where its distances come from: both
+        // with the clock, so they never say two ages (FixAge).
+        var age = s.Fix is { } at ? DateTime.Now - at.At : (TimeSpan?)null;
+        ViewModel.RaidFixNote = FixAge.Note(age, ViewModel.HelpKeys);
+        ViewModel.FixText = s.Fix is { } fix && age is { } old
+            ? $"Fix {FixAge.Text(old)} ago · {s.Floor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
+            : $"No position yet · press {ViewModel.HelpKeys} in raid";
     }
 
     private void UpdatePicker(SessionSnapshot s)
@@ -528,13 +528,6 @@ public sealed partial class MainWindow : Window
         vm.SideSwitchable = vm.InRaid && !s.SideFromLogs;
         vm.ScavRaid = vm.InRaid && s.Raid.Side == RaidSide.Scav;
         vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
-        vm.RaidFixNote = age switch
-        {
-            null => $"No position yet: press {vm.HelpKeys} for distances",
-            _ when fresh => "",
-            { TotalMinutes: < 60 } a => $"Distances from your screenshot {Math.Max(1, (int)a.TotalMinutes)} min ago",
-            _ => "Distances from your last screenshot",
-        };
         var complete = s.MapPlan?.Finish.Select(q => q.QuestId).ToHashSet() ?? [];
         var kinds = (s.MapPlan?.Finish ?? []).Concat(s.MapPlan?.Progress ?? []).ToDictionary(q => q.QuestId, q => q.Kind);
         var quests = s.Objectives
