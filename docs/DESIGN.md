@@ -99,6 +99,14 @@ And one for every text about Shturmap (README, website, release notes): say what
 never use the vocabulary cheat sellers use for their tools ("radar", "minimap", "GPS", "tracker", "undetected",
 "safe", "allowed", "ban-proof"); never suggest BSG approves of it; name the risk plainly (4.3.4, no guarantee
 against sanctions); and say that some players see a position map as an unfair advantage in PvP.
+Where the risk is named, a text may add that 4.3.4, read literally, speaks against companion tools players have
+used for years as well (owner, 2026-10-04: "also state that this would also speak against other popular companion
+apps that people use for years"; on the website's "Is this allowed? Can I get banned?"). It names tools with what
+each reads, from their own pages: TarkovMonitor (The Hideout, the makers of tarkov.dev; on GitHub since July 2022;
+it watches the game's log files and reads positions from screenshots) and RatScanner (since March 2020; it takes a
+screenshot to identify an item). Neither claims Battlestate's permission. The sentence is context and never the
+last word: the risk line follows it, for them and for Shturmap alike. Check the two tools' pages again before
+quoting it anywhere new.
 
 ## 3. Copyright and data use
 

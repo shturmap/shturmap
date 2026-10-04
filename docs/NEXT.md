@@ -20,7 +20,7 @@ highlight down to the objective). The owner then decided the open questions (202
 repository; the history rewrite is the owner's to run), P2 (say it precisely), A5, A21, A27, B4, H3, C3, C5, C9 and
 E2 are done as decided, and D3 (deleting position screenshots) was added and built. H4 and C1 were shown as before
 and after pictures and merged on the owner's word, and B14 was measured and decided: it stays as it is, said
-precisely. Waiting for the owner: the history rewrite (P1), which is the owner's to run.
+precisely. The owner ran the history rewrite (P1) and force-pushed it.
 
 **To try with a mouse** (built and checked through the developer script's `hover` and `point` steps, which call the
 code behind the pointer's events; no real pointer moved over them): a raid card's objective line, a need cell, a
@@ -57,7 +57,10 @@ at its start (A3); closing the window with Alt+F4 while the pointer rests on a q
   that fails on any id that is neither public nor a placeholder. Then rewrite the history, as on 2026-10-02, before
   the repository is made public (owner's go needed: it changes every commit). Status: done in the tree (2026-10-04, owner: "I don't think logs should be in the repo at all if not needed"): the game
   logs are out of the repository (ignored by git, kept on the PC; the replay tests skip without them). The history
-  rewrite is prepared and has the owner's go, but a history rewrite and a force push are the owner's to run.
+  was rewritten and force-pushed by the owner the same day: no commit holds `tests/fixtures/logs` any more, and a
+  check of every commit against the list of the real ids found none. Left for the day the repository goes public:
+  GitHub can keep the old commits reachable by their hashes for a while, so ask GitHub's support to remove them, or
+  publish from a fresh repository. Every commit's hash changed with the rewrite.
 - **P2. Velopack's updater lists the running processes.** Its `Update.exe` imports `EnumProcesses`, `OpenProcess`,
   `QueryFullProcessImageNameW` and `TerminateProcess` and logs "Checking for running processes" (it closes what runs
   from the install folder, at install, when an update is applied, on RESTART NOW and at uninstall). README and
