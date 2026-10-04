@@ -70,6 +70,9 @@ public sealed partial class MapView : Grid
 
     private bool _tileRedrawQueued;
 
+    // The artworks whose unreadable floors are logged: an artwork is kept for the session and shown again and again.
+    private readonly HashSet<MapArtwork> _floorsWatched = [];
+
     // Raised on a loader thread, often several tiles at once: one redraw on the UI thread for them all.
     private void OnTilesChanged()
     {
@@ -114,6 +117,17 @@ public sealed partial class MapView : Grid
             before.Changed -= OnTilesChanged;
         if (scene?.Tiles is { } after)
             after.Changed += OnTilesChanged;
+        // SVG artwork: its floors are read ahead in the background, so the first paint of a floor doesn't wait for
+        // its picture (the review of 2026-10-04, A37); a floor that arrives while it is the one shown redraws.
+        if (_scene?.Artwork is { } artBefore)
+            artBefore.FloorRead -= OnTilesChanged;
+        if (scene?.Artwork is { } artwork)
+        {
+            artwork.FloorRead += OnTilesChanged;
+            if (_floorsWatched.Add(artwork))
+                artwork.FloorFailed += (id, e) => Shturmap.Session.AppLog.Warn($"Map artwork: the floor '{id}' couldn't be read and isn't drawn", e);
+            _ = artwork.ReadFloorsAsync();
+        }
         StopGlide();
         _scene = scene;
         if (scene is not null)
@@ -380,9 +394,12 @@ public sealed partial class MapView : Grid
         return new(p.X / PixelScale, p.Y / PixelScale);
     }
 
-    /// <summary>Waits until the tiles the current view needs are loaded (a snapshot of a tile render), at most <paramref name="limit"/>.</summary>
+    /// <summary>Waits until the tiles the current view needs are loaded (a snapshot of a tile render), or an SVG
+    /// artwork's floors are read, at most <paramref name="limit"/>.</summary>
     public async Task TilesLoadedAsync(TimeSpan limit)
     {
+        if (_scene?.Artwork is { } artwork)
+            await Task.WhenAny(artwork.ReadFloorsAsync(), Task.Delay(limit));
         if (_scene is not { Tiles: { } tiles } scene || scene.Definition.TilePath is not { } basePath)
             return;
         var a = _camera.ToMap(new SKPoint(0, 0));
@@ -401,6 +418,9 @@ public sealed partial class MapView : Grid
         var size = _camera.Viewport;
         using var surface = SKSurface.Create(new SKImageInfo(Math.Max(1, (int)size.Width * scale), Math.Max(1, (int)size.Height * scale)));
         surface.Canvas.Scale(scale);
+        // A picture of a floor shows that floor: its artwork is waited for here (a moment at most, and only in this
+        // developer aid; the map on screen never waits).
+        _scene?.Artwork?.ReadFloorsAsync().Wait(TimeSpan.FromSeconds(10));
         // No map yet: the ground, as everywhere (it had a teal tint of its own until the design system, 2026-10-03).
         if (_scene is null)
             surface.Canvas.Clear(Palette.Sk(Palette.Ground));

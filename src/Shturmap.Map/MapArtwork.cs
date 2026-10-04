@@ -10,11 +10,15 @@ namespace Shturmap.Map;
 /// A map's SVG artwork as Skia pictures: the base picture (everything except the floor groups the map
 /// definition lists as layers) and one picture per floor layer, mirroring tarkov.dev, which hides the layer
 /// groups until a floor is selected. Parsing SVG is slow, so floors are parsed on first use and every picture
-/// is cached on disk in Skia's own format.
+/// is cached on disk in Skia's own format. A view that draws frame after frame has them read ahead instead
+/// (<see cref="ReadFloorsAsync"/>): then no paint waits for one.
 /// </summary>
 public sealed class MapArtwork : IDisposable
 {
     private readonly Dictionary<string, Lazy<SKPicture?>> _layers;
+    private readonly Lock _gate = new();
+    private Task? _reading;
+    private volatile bool _disposed;
 
     private MapArtwork(SKPicture basePicture, Dictionary<string, Lazy<SKPicture?>> layers, SKRect viewBox, bool showsMinefields,
         bool showsSniperZones)
@@ -57,7 +61,66 @@ public sealed class MapArtwork : IDisposable
     /// <summary>The SVG's viewBox, the coordinate system of the pictures.</summary>
     public SKRect ViewBox { get; }
 
-    public SKPicture? Layer(string? svgLayer) => svgLayer is not null && _layers.TryGetValue(svgLayer, out var p) ? p.Value : null;
+    /// <summary>
+    /// A floor's picture, or null for a floor the artwork doesn't have. It is read on first use, which takes a while
+    /// (the SVG is parsed, or its saved picture read from disk), unless the floors are being read ahead
+    /// (<see cref="ReadFloorsAsync"/>): then this never waits, gives null for a floor that isn't there yet, and
+    /// <see cref="FloorRead"/> says when it is.
+    /// </summary>
+    public SKPicture? Layer(string? svgLayer)
+    {
+        if (svgLayer is null || !_layers.TryGetValue(svgLayer, out var layer))
+            return null;
+        if (layer.IsValueCreated)
+            return layer.Value;
+        return _reading is null ? layer.Value : null;
+    }
+
+    /// <summary>A floor was read ahead (<see cref="ReadFloorsAsync"/>); raised on a pool thread.</summary>
+    public event Action? FloorRead;
+
+    /// <summary>A floor couldn't be read ahead and is left out: its SVG group's id and why; raised on a pool thread.</summary>
+    public event Action<string, Exception>? FloorFailed;
+
+    /// <summary>Called before each floor is read ahead, with its SVG group's id (tests hold a read back with it).</summary>
+    internal Action<string>? BeforeFloorRead { get; set; }
+
+    /// <summary>
+    /// Reads every floor in the background, one after the other, once: the task ends when all are there. A floor's
+    /// picture used to be read by the first paint that showed it, on the drawing thread, which stood still for that
+    /// long (the review of 2026-10-04, A37). From this call on <see cref="Layer"/> never waits. A floor that can't be
+    /// drawn is left out, like one the artwork doesn't have.
+    /// </summary>
+    public Task ReadFloorsAsync()
+    {
+        lock (_gate)
+            return _reading ??= Task.Run(ReadFloors);
+    }
+
+    private void ReadFloors()
+    {
+        foreach (var (id, layer) in _layers)
+        {
+            if (_disposed)
+                return;
+            try
+            {
+                BeforeFloorRead?.Invoke(id);
+                var picture = layer.Value;
+                // Closed while this floor was read: nothing keeps it.
+                if (_disposed)
+                    picture?.Dispose();
+            }
+            catch (Exception e)
+            {
+                // Whatever the SVG library makes of a group it can't draw: this floor is left out, the others are
+                // still read, and the task ends well for whoever waits for it.
+                FloorFailed?.Invoke(id, e);
+                continue;
+            }
+            FloorRead?.Invoke();
+        }
+    }
 
     /// <param name="cacheFolder">Where parsed pictures are kept between runs; null to always parse.</param>
     public static MapArtwork Load(string svgPath, MapDefinition map, string? cacheFolder = null)
@@ -188,6 +251,7 @@ public sealed class MapArtwork : IDisposable
 
     public void Dispose()
     {
+        _disposed = true;
         Base.Dispose();
         Ground?.Dispose();
         foreach (var layer in _layers.Values.Where(l => l.IsValueCreated))
