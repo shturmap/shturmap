@@ -176,7 +176,7 @@ public sealed partial class MainWindow : Window
         UpdateClockTexts();
         if (_snapshot is not { RaidFix: { } fix } s)
             return;
-        var fresh = DateTime.Now - fix.At < FreshFix;
+        var fresh = FixAge.Of(fix.At, DateTime.Now) < FreshFix;
         if (fresh != _fixWasFresh)
         {
             // "ahead-left" turns into "NE": in the rail and on the cards.
@@ -510,7 +510,7 @@ public sealed partial class MainWindow : Window
         }
         // The position's age, in the status bar and in the raid card's line on where its distances come from: both
         // with the clock, so they never say two ages (FixAge).
-        var age = s.RaidFix is { } at ? DateTime.Now - at.At : (TimeSpan?)null;
+        var age = s.RaidFix is { } at ? FixAge.Of(at.At, DateTime.Now) : (TimeSpan?)null;
         // While the raid loads there is nothing to press for yet: "No position yet" comes with the raid itself, as in
         // the status bar.
         ViewModel.RaidFixNote = age is null && s.Raid.Phase != RaidPhase.InRaid ? "" : FixAge.Note(age, ViewModel.HelpKeys);
@@ -709,7 +709,7 @@ public sealed partial class MainWindow : Window
     private void UpdateRaidLists(SessionSnapshot s)
     {
         var vm = ViewModel;
-        var age = s.RaidFix is { } fix ? DateTime.Now - fix.At : (TimeSpan?)null;
+        var age = s.RaidFix is { } fix ? FixAge.Of(fix.At, DateTime.Now) : (TimeSpan?)null;
         var fresh = age < FreshFix;
         _fixWasFresh = age is null ? null : fresh;
         string Direction(RelativeDirection? relative, double? mapBearing) =>
@@ -1175,7 +1175,7 @@ public sealed partial class MainWindow : Window
     {
         if (_snapshot is not { RaidFix: { } fix } s || s.Objectives.FirstOrDefault(o => o.ObjectiveId == objectiveId && o.Distance is not null) is not { } o)
             return null;
-        var fresh = DateTime.Now - fix.At < FreshFix;
+        var fresh = FixAge.Of(fix.At, DateTime.Now) < FreshFix;
         var direction = fresh && o.Direction is { } r ? Bearing.Describe(r) : o.MapBearing is { } b ? Bearing.Compass(b) : "";
         var parts = new[] { Distance(o.Distance), direction, o.HeightDifference is { } h ? $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}" : "" };
         return string.Join(" · ", parts.Where(p => p.Length > 0));

@@ -82,11 +82,12 @@ public sealed class ScreenshotWatcher : IDisposable
     {
         if (!Directory.Exists(Folder))
             return [];
-        var since = DateTime.Now - window;
+        // By the time that passed, not by the two clock times, which are an hour apart across a clock change.
+        var now = DateTime.Now;
         return Directory.EnumerateFiles(Folder)
             .Select(TryRead)
             .OfType<ScreenshotSeen>()
-            .Where(s => s.CreatedAt >= since)
+            .Where(s => Shturmap.Core.Logs.WallClock.Elapsed(s.CreatedAt, now) <= window)
             .OrderByDescending(s => s.CreatedAt)
             .ToList();
     }
