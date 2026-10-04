@@ -69,7 +69,7 @@ public static partial class MapRenderer
         using (var ground = GroundShader(camera, scene))
         {
             foreach (var zone in scene.Zones)
-                DrawZone(canvas, camera, scene, zone, uiScale, hazardLabels, ground);
+                DrawZone(canvas, camera, scene, zone, uiScale, hazardLabels, ground, stepBack);
         }
         // Over every hatch, and once per group of neighbouring areas (border zones overlap along an edge).
         var labelled = new List<SKPoint>();
@@ -79,7 +79,7 @@ public static partial class MapRenderer
             if (labelled.Any(p => SKPoint.Distance(p, at) < 260 * uiScale))
                 continue;
             labelled.Add(at);
-            DrawHazardLabel(canvas, text, at, uiScale);
+            DrawHazardLabel(canvas, text, at, uiScale, HazardLabelStrength(scene, stepBack));
         }
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
@@ -89,20 +89,19 @@ public static partial class MapRenderer
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
         // floor stays at full strength and carries an arrow to it instead (owner, 2026-10-01: half-strength markers
         // read as "not important", and a highlighted one must look highlighted).
-        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03). They
-        // are level 1, so they get a pass of their own after everything that steps back: grouped by measure with the
-        // ways out, which don't step back in a raid either, they were drawn first there and lay under other quests'
-        // markers (the review of 2026-10-04).
+        // Picks never step back: they are the plan for this raid, as much as the ways out (owner, 2026-10-03), and
+        // the doors of the keys they need are part of them. They are level 1, so they get a pass of their own after
+        // everything that steps back: grouped by measure with the ways out, which don't step back in a raid either,
+        // they were drawn first there and lay under other quests' markers (the review of 2026-10-04).
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
-        stepBack ??= StepBackOf;
-        StepBack Measure(ShownMarker m) => m.Kept ? Full : stepBack(m.Marker.Kind, scene.InRaid);
-        foreach (var group in layout.Markers.Where(m => !m.Focused && !m.Kept).GroupBy(Measure))
+        StepBack Measure(ShownMarker m) => StepBackOf(scene, m, stepBack);
+        foreach (var group in layout.Markers.Where(m => !m.Focused && !IsPick(scene, m)).GroupBy(Measure))
         {
             using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
             foreach (var marker in group)
                 DrawMarker(canvas, scene, marker, uiScale);
         }
-        foreach (var marker in layout.Markers.Where(m => !m.Focused && m.Kept))
+        foreach (var marker in layout.Markers.Where(m => !m.Focused && IsPick(scene, m)))
             DrawMarker(canvas, scene, marker, uiScale);
         foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => Measure(l.Of).LabelAlpha))
         {
@@ -137,16 +136,48 @@ public static partial class MapRenderer
     /// could barely be made out, "but are still pretty important", above all in a raid). Ways out (your side's
     /// extracts and transits) and bosses never step back: they matter at a glance whatever is highlighted. Other
     /// quests' markers fade to about two thirds while planning and much less in a raid, where a quest is often kept
-    /// highlighted all raid; spawn rings fade like them. Labels step back further than symbols, so the highlighted
-    /// quest's names stand out without hiding where everything else is.
+    /// highlighted all raid; spawn rings fade like them, and so do the hazard areas (level 4, with locks and
+    /// switches). Labels step back further than symbols, so the highlighted quest's names stand out without hiding
+    /// where everything else is. A zone steps back by the measure of its kind's markers (<see cref="ZoneStrength"/>).
     /// </summary>
     public static StepBack StepBackOf(MarkerKind kind, bool inRaid) => kind switch
     {
         MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit or MarkerKind.BossSpawn
             => new(1f, 1f, inRaid ? 1f : 0.7f),
-        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn or MarkerKind.Lock or MarkerKind.Switch => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
+        MarkerKind.ScavSpawn or MarkerKind.SniperSpawn or MarkerKind.Lock or MarkerKind.Switch or MarkerKind.Hazard
+            => inRaid ? new(0.75f, 1f, 0.6f) : new(0.6f, 1f, 0.5f),
         _ => inRaid ? new(0.8f, 1f, 0.6f) : new(0.62f, 1f, 0.45f),
     };
+
+    // A picked quest's marker, or the door of a key a picked quest needs: part of the pick.
+    private static bool IsPick(MapScene scene, ShownMarker m) => m.Kept || IsKeptKey(scene, m.Marker);
+
+    /// <summary>
+    /// How far a marker steps back while something else is pointed at: not at all for the picks and for the doors of the
+    /// keys they need, which read as part of the pick (the review of 2026-10-04: the doors stepped back like any
+    /// lock), else by its kind.
+    /// </summary>
+    /// <param name="byKind"><see cref="StepBackOf(MarkerKind, bool)"/> unless a developer render compares alternatives.</param>
+    public static StepBack StepBackOf(MapScene scene, ShownMarker marker, Func<MarkerKind, bool, StepBack>? byKind = null) =>
+        IsPick(scene, marker) ? Full : (byKind ?? StepBackOf)(marker.Marker.Kind, scene.InRaid);
+
+    /// <summary>
+    /// How strongly a zone is drawn while something is pointed at, 1 for full strength: a picked or pointed-at
+    /// quest's zone at full strength, any other by the measure of its kind's markers, eased with the scene's Dim (the
+    /// review of 2026-10-04: other quests' zones fell to about 35 % where their markers keep 62 % and, in a raid, 80 %).
+    /// </summary>
+    public static float ZoneStrength(MapScene scene, MapZone zone, Func<MarkerKind, bool, StepBack>? byKind = null)
+    {
+        if (scene.ShownFocus.Count == 0)
+            return 1;
+        if (zone.Group is not null && (scene.Kept.Contains(zone.Group) || scene.ShownFocus.Contains(zone.Group)))
+            return 1;
+        return 1 - (1 - (byKind ?? StepBackOf)(zone.Kind, scene.InRaid).Alpha) * scene.Dim;
+    }
+
+    // A hazard area's name steps back as its kind's labels do.
+    private static float HazardLabelStrength(MapScene scene, Func<MarkerKind, bool, StepBack>? byKind) =>
+        scene.ShownFocus.Count == 0 ? 1 : 1 - (1 - (byKind ?? StepBackOf)(MarkerKind.Hazard, scene.InRaid).LabelAlpha) * scene.Dim;
 
     // A layer that steps what is drawn into it back by a measure, eased with the dim; no layer when it changes nothing.
     private readonly ref struct StepBackLayer
@@ -816,7 +847,7 @@ public static partial class MapRenderer
     /// <param name="ground">The artwork's ground in screen space (<see cref="GroundShader"/>) that keeps a hazard to the
     /// drawn map; null draws it whole.</param>
     private static void DrawZone(SKCanvas canvas, Camera camera, MapScene scene, MapZone zone, float ui = 1,
-        List<(string Text, SKPoint At)>? hazardLabels = null, SKShader? ground = null)
+        List<(string Text, SKPoint At)>? hazardLabels = null, SKShader? ground = null, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         if (zone.Outline.Count < 3)
             return;
@@ -826,7 +857,7 @@ public static partial class MapRenderer
         {
             if (!HazardShown(zone, scene.Artwork))
                 return;
-            DrawHazard(canvas, path, scene, ui, ground);
+            DrawHazard(canvas, path, ZoneStrength(scene, zone, stepBack), ui, ground);
             // Named where it lies on the drawn map, not out in the empty space past its edge.
             var centre = new SKPoint(points.Average(p => p.X), points.Average(p => p.Y));
             if (hazardLabels is not null && HazardLabel(zone) is { } label && ZoomOverOverview(camera, scene, ui) >= LandmarkFromZoom
@@ -838,10 +869,10 @@ public static partial class MapRenderer
         var color = kept ? Kept : ColorOf(zone.Kind);
         var focused = zone.Group is not null && scene.ShownFocus.Contains(zone.Group);
         var selected = kept || focused;
-        // Zones outside the focus ease back with the scene's Dim, like the markers.
-        var fade = scene.ShownFocus.Count > 0 && !focused && !kept ? scene.Dim : 0f;
-        using var fill = new SKPaint { Color = color.WithAlpha((byte)(selected ? 70 : 35 - 23 * fade)), IsAntialias = true };
-        using var stroke = new SKPaint { Color = color.WithAlpha((byte)(selected ? 230 : 140 - 90 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
+        // Zones outside the focus ease back with the scene's Dim, by the measure of their markers (StepBackOf).
+        var strength = ZoneStrength(scene, zone, stepBack);
+        using var fill = new SKPaint { Color = color.WithAlpha((byte)Math.Round(selected ? 70 : 35 * strength)), IsAntialias = true };
+        using var stroke = new SKPaint { Color = color.WithAlpha((byte)Math.Round(selected ? 230 : 140 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = selected ? 2 : 1.2f };
         canvas.DrawPath(path, fill);
         canvas.DrawPath(path, stroke);
     }
@@ -888,11 +919,11 @@ public static partial class MapRenderer
     }
 
     // A hazard area's name, set like a street name (Ink at 59 % on a halo of the ground), centred on the area.
-    private static void DrawHazardLabel(SKCanvas canvas, string text, SKPoint at, float ui)
+    private static void DrawHazardLabel(SKCanvas canvas, string text, SKPoint at, float ui, float strength = 1)
     {
         using var font = new SKFont(Typeface, 10.5f * ui);
         using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
-        using var paint = new SKPaint { Color = Ink.WithAlpha(150), IsAntialias = true };
+        using var paint = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(150 * strength)), IsAntialias = true };
         canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, halo);
         canvas.DrawText(text, at.X, at.Y + 4 * ui, SKTextAlign.Center, font, paint);
     }
@@ -900,11 +931,11 @@ public static partial class MapRenderer
     // A hazard tarkov.dev outlines (traps, minefields, border-sniper zones): a thin ink outline, hatched, an area style
     // nothing else uses. Thin and sparse, so the artwork reads through it (owner, 2026-10-03, on Customs' minefields: "big
     // white rectangles"), and over artwork only where it draws the map (GroundShader).
-    private static void DrawHazard(SKCanvas canvas, SKPath path, MapScene scene, float ui, SKShader? ground = null)
+    // Its strength is 1, or less while something else is pointed at (ZoneStrength).
+    private static void DrawHazard(SKCanvas canvas, SKPath path, float strength, float ui, SKShader? ground = null)
     {
-        var fade = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
-        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)(80 - 35 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.8f * ui };
-        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)(120 - 55 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
+        using var hatch = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(80 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 0.8f * ui };
+        using var edge = new SKPaint { Color = Ink.WithAlpha((byte)Math.Round(120 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui };
         using var hatchOnGround = OnGround(hatch, ground);
         using var edgeOnGround = OnGround(edge, ground);
         var box = path.Bounds;

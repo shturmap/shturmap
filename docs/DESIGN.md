@@ -606,9 +606,13 @@ spawns below).
   | kind | planning | in a raid |
   | --- | --- | --- |
   | your side's extracts and transits, bosses | full strength (labels 70 %) | full strength |
-  | other quests' markers | 62 % (labels 45 %) | 80 % (labels 60 %) |
-  | Scav and sniper zones, locks and switches | 60 % (labels 50 %) | 75 % (labels 60 %) |
+  | other quests' markers and their zones | 62 % (labels 45 %) | 80 % (labels 60 %) |
+  | Scav and sniper zones, locks and switches, hazard areas | 60 % (labels 50 %) | 75 % (labels 60 %) |
 
+  A zone steps back as far as its kind's markers, and a picked quest's doors (the locks of the keys it needs) not at
+  all, like the pick they belong to (`MapRenderer.ZoneStrength`, `StepBackOf`). Until the review of 2026-10-04 other
+  quests' zones fell to about 35 % whatever this table said, hazard areas to about 55 % (they weren't in it), and a
+  pick's doors stepped back like any lock.
   Labels step back further than symbols, so the highlighted quest's names stand out without hiding where everything
   else is. Stepping back by colour (greying) was compared and dropped: a greyed quest marker reads as done (grey
   means done or after the raid). The candidates (all at 60 %, greyed, by kind) were

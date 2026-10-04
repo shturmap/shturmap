@@ -48,6 +48,82 @@ public class FocusTests
         Assert.True(plan.LabelAlpha < plan.Alpha);
     }
 
+    // ---- zones, hazards and the picks' doors follow the same table (the review of 2026-10-04: zones fell to about
+    // 35 % whatever their markers kept, hazards had a measure of their own, and a pick's doors stepped back) ----
+
+    private static MapZone Zone(string id, MarkerKind kind, string? group, double x) =>
+        new(id, kind, [new WorldPoint(x, 0, 0), new WorldPoint(x + 20, 0, 0), new WorldPoint(x + 20, 0, 20), new WorldPoint(x, 0, 20)], group);
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Another_quests_zone_steps_back_as_far_as_its_markers(bool inRaid)
+    {
+        var (_, scene) = TestView.Of([TestView.Quest("a", 0, 0, "A", group: "a"), TestView.Quest("b", 100, 0, "B", group: "b"),
+            TestView.Quest("c", 200, 0, "C", group: "c")]);
+        var (pointedAt, other, picked) = (Zone("zone:a:1", MarkerKind.Objective, "a", 0), Zone("zone:b:1", MarkerKind.Objective, "b", 100),
+            Zone("zone:c:1", MarkerKind.Objective, "c", 200));
+        scene.Zones = [pointedAt, other, picked];
+        scene.InRaid = inRaid;
+        scene.Kept = new HashSet<string> { "c" };
+
+        // Nothing pointed at: every zone at full strength.
+        Assert.Equal(1f, MapRenderer.ZoneStrength(scene, other));
+
+        scene.Focus = new HashSet<string> { "a" };
+        scene.Dim = 1;
+        var markers = MapRenderer.StepBackOf(MarkerKind.Objective, inRaid).Alpha;
+        Assert.Equal(inRaid ? 0.8f : 0.62f, markers);
+        Assert.Equal(markers, MapRenderer.ZoneStrength(scene, other), 5);
+        Assert.Equal(1f, MapRenderer.ZoneStrength(scene, pointedAt));
+        Assert.Equal(1f, MapRenderer.ZoneStrength(scene, picked));
+        // Half-way through the ease, half-way back.
+        scene.Dim = 0.5f;
+        Assert.Equal(1 - (1 - markers) / 2, MapRenderer.ZoneStrength(scene, other), 5);
+    }
+
+    [Theory]
+    [InlineData(true, 0.75f, 0.6f)]
+    [InlineData(false, 0.6f, 0.5f)]
+    public void Hazard_areas_step_back_like_the_zones_locks_and_switches(bool inRaid, float alpha, float labels)
+    {
+        var step = MapRenderer.StepBackOf(MarkerKind.Hazard, inRaid);
+        Assert.Equal(MapRenderer.StepBackOf(MarkerKind.Lock, inRaid), step);
+        Assert.Equal((alpha, labels), (step.Alpha, step.LabelAlpha));
+
+        var (_, scene) = TestView.Of([TestView.Quest("a", 0, 0, "A", group: "a")]);
+        var minefield = Zone("minefield:1", MarkerKind.Hazard, MapContentBuilder.MinefieldGroup, 100);
+        scene.Zones = [minefield];
+        scene.InRaid = inRaid;
+        Assert.Equal(1f, MapRenderer.ZoneStrength(scene, minefield));
+        scene.Focus = new HashSet<string> { "a" };
+        scene.Dim = 1;
+        Assert.Equal(alpha, MapRenderer.ZoneStrength(scene, minefield), 5);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_picked_quests_doors_dont_step_back(bool inRaid)
+    {
+        var door = new MapMarker("lock:1", MarkerKind.Lock, new WorldPoint(40, 0, 0), "Dorm 114", MapContentBuilder.KeyGroup("key-1"));
+        var otherDoor = new MapMarker("lock:2", MarkerKind.Lock, new WorldPoint(-40, 0, 0), "Dorm 220", MapContentBuilder.KeyGroup("key-2"));
+        var (camera, scene) = TestView.Of([TestView.Quest("a", 0, 0, "A", group: "a"), TestView.Quest("b", 100, 0, "B", group: "b"), door, otherDoor]);
+        scene.QuestKeys = new Dictionary<string, IReadOnlyList<string>> { ["a"] = [MapContentBuilder.KeyGroup("key-1")] };
+        scene.InRaid = inRaid;
+        scene.Kept = new HashSet<string> { "a" };
+        scene.Focus = new HashSet<string> { "b" };
+        scene.Dim = 1;
+
+        var shown = MapRenderer.Layout(camera, scene, 1).Markers;
+        var full = new MapRenderer.StepBack(1f, 1f, 1f);
+        // The pick and the door of the key it needs: at full strength, their names too.
+        Assert.Equal(full, MapRenderer.StepBackOf(scene, shown.Single(m => m.Marker.Group == "a")));
+        Assert.Equal(full, MapRenderer.StepBackOf(scene, shown.Single(m => m.Marker == door)));
+        // Any other door steps back as locks do.
+        Assert.Equal(MapRenderer.StepBackOf(MarkerKind.Lock, inRaid), MapRenderer.StepBackOf(scene, shown.Single(m => m.Marker == otherDoor)));
+    }
+
     // ---- the position's age, beside the marker (owner, 2026-10-03: "Put it next to the marker") ----
 
     [Theory]
