@@ -85,6 +85,13 @@ called a "radar", and pressing the screenshot key automatically a "bot". Hence t
 - **Never share a position.** Shturmap shows the player's position to that player only: no squad map, no syncing
   between players, no live sending of positions anywhere. The app log records no positions (only demo runs do, at
   DEBUG), so a report doesn't carry them either.
+  One thing comes close, and PRIVACY.md says it: The Lab, Labyrinth and Icebreaker are drawn from tile renders
+  (§3), fetched for the part of the map on screen, and in a raid that part is usually where the player is. So
+  tarkov.dev's image service can tell roughly where on such a map the player looks. It gets no position, no
+  account and no raid, and a tile stays in the cache for a month, so a part seen once isn't asked for again. The
+  ways around it were measured and not taken (owner, 2026-10-04): a whole map at every zoom level is about 290 MB
+  a layer for The Lab, and a whole map up to zoom 4 only would turn the picture soft when zooming in ("I would
+  like to avoid that").
 - **Never take a screenshot for the player.** A position comes only from a screenshot the player took with their
   own key press; no timer, no synthesised key, no "auto" mode (on top of "never sends input" above).
 
