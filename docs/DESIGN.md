@@ -488,8 +488,24 @@ lies over the cell), the **gold "Key: …" line** under a raid objective is that
 alternatives or two doors it couldn't say which, and stays part of its objective's line; `Planning.NeedKey`), and
 a **quest's glyph on a folded Plan card** is that quest. A card opened from one of these small things opens beside
 the row or the Plan card it lies in, at its own height, not over its neighbours. For the cards, an objective's
-line is still its quest's block: it opens no card of its own, and a click on it holds the quest's. One tint
-serves all of it; telling "this", "the same thing elsewhere" and "related" apart by tint is not decided (owner).
+line is still its quest's block: it opens no card of its own, and a click on it holds the quest's.
+**A card is its subject while it is read** (the review of 2026-10-04, E3): the whole body of a quest's card (its
+header, the gaps between rows, the headings, the frame's padding) keeps the quest in focus, and the body of an
+item's card keeps the item and the quests it is for, so moving from a row onto the card it opened no longer lets go:
+the quest's places stay lit, and a key's locks and an item's loose spots stay on the map, also while the pointer is
+on the card's "Loose on …" rows. The body isn't tinted for it and opens no card (`Linked.Also`, `Linked.AlsoItem`,
+`LinkFocus`); rows on the card are still their own thing, the innermost around the pointer.
+**A row that stands for several items is each of them** (E4): "A or B" (either key opens the door), gear worn
+together, a weapon class. It pictures the first, and until 2026-10-04 it was linked to the first alone. Now it
+lights up when any of them is pointed at, and pointing at it lights every row and cell of each of them
+(`Linked.Items`, `Focus.Alternatives`, `LinkStrength`); its card is still the pictured item's.
+**A door is its key, and it is for quests** (E5): a quest lit its doors, a door only its key. Pointing at a padlock
+on the map puts the quests that need its key on this map in the focus beside the key (`LinkDoor`, from the map's
+`QuestKeys` read the other way round), so their rows take the weaker tint, as the quests of any pointed-at item do.
+Not wired yet, in files outside the cards: the padlock's focus on the map (it still names the key alone), the
+alternatives of the rail's BRING rows and need cells and on the map (their rows are linked to the first item, and
+only its locks light), an extract row's item picture, and boss names in the raid line and on Plan cards (they are
+part of one line of text, and the data names bosses by another id than their markers' groups).
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
@@ -963,6 +979,13 @@ Lightkeeper; the state and where it came from ("Active · from the game log, 25 
 glyph, where it is, the item it is about and, in a raid on its map, how far and which way it is from the last fix
 ("69 m · ahead-left"); BRING (keys and items, with icons and maps); UNLOCKS (the quests it opens); a link to the
 wiki page. Nothing else: no rewards, no guides.
+The state line is in the accent while the quest is active ("on") and muted for every other state. It was green,
+which on the map and in the rail is a PMC extract (one colour, one meaning; the review of 2026-10-04, B2).
+An objective says where it is once (the review, C2): the line of map names under its text is left out when the
+text itself names the map as its place ("… on Streets of Tarkov" stood over "Streets of Tarkov"), alone or in a list
+that holds every map the line would show. A text that names none of its maps, or only some, keeps the whole line;
+"at Factory gate" is a gate, not the map (`QuestCards.SaysWhere`, with the synopsis' map pattern; English texts
+only, so in another game language both lines stay).
 
 **Ticks: an objective the player says is done** (owner, 2026-10-04; UX principle 7). The game's logs never say that
 a single objective is done, so a quest that takes several raids kept leading to places already dealt with.
@@ -1085,7 +1108,9 @@ objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay i
 the window's edge, a popped-out one at 900 px).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
-but don't light up for their own card's quest, or the whole card would glow. An objective's row is its objective:
+but don't light up for their own card's quest, or the whole card would glow. The card's body keeps its subject in
+focus all the same, without a tint: the quest on a quest's card, the item and its quests on an item's card
+("Visual language", linked highlight; 2026-10-04). A BRING row that stands for several items is each of them. An objective's row is its objective:
 pointing at it marks that objective within the quest (on the map only its places pulse; in the raid card its line
 takes the tint), and the row lights up when one of its places on the map, or its line in the raid card, is pointed
 at (the review of 2026-10-04). Rows that show the same item still light together, as before.

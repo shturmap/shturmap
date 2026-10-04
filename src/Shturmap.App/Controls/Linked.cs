@@ -12,6 +12,15 @@ namespace Shturmap.App.Controls;
 public sealed record Focus(IReadOnlySet<string> Quests, string? Item = null, string? Marker = null, string? Objective = null)
 {
     public static Focus Quest(string id) => new(new HashSet<string> { id });
+
+    /// <summary>
+    /// Every item the thing pointed at stands for when it stands for several (an "A or B" key row, gear worn together,
+    /// a weapon class); empty for one item. <see cref="Item"/> is the one it pictures, whose card opens.
+    /// </summary>
+    public IReadOnlyList<string> Alternatives { get; init; } = [];
+
+    /// <summary>The items in focus: <see cref="Item"/> and its <see cref="Alternatives"/>, each once.</summary>
+    public IEnumerable<string> Items => Item is null ? Alternatives : Alternatives.Prepend(Item).Distinct();
 }
 
 /// <summary>
@@ -40,6 +49,31 @@ public static class Linked
 
     public static readonly DependencyProperty ObjectiveProperty = DependencyProperty.RegisterAttached(
         "Objective", typeof(string), typeof(Linked), new PropertyMetadata(null, OnChanged));
+
+    public static readonly DependencyProperty ItemsProperty = DependencyProperty.RegisterAttached(
+        "Items", typeof(object), typeof(Linked), new PropertyMetadata(null, OnChanged));
+
+    public static readonly DependencyProperty AlsoItemProperty = DependencyProperty.RegisterAttached(
+        "AlsoItem", typeof(string), typeof(Linked), new PropertyMetadata(null, OnChanged));
+
+    /// <summary>
+    /// Every item (an IEnumerable&lt;string&gt;) this element stands for when it stands for several: an "A or B" key
+    /// row, gear worn together, a weapon class. It lights up when any of them is pointed at, and pointing at it
+    /// lights them all; its card is still that of <see cref="ItemProperty"/>, the one it pictures (the review of
+    /// 2026-10-04, E4: such a row was linked to its first item alone).
+    /// </summary>
+    public static object? GetItems(DependencyObject d) => d.GetValue(ItemsProperty);
+
+    public static void SetItems(DependencyObject d, object? value) => d.SetValue(ItemsProperty, value);
+
+    /// <summary>
+    /// An item this element keeps in focus while the pointer is on it, without lighting up itself for it and without
+    /// opening its card: the body of the item's own card. Moving from a row onto the card it opened used to let go
+    /// of the item, and with it of its locks and loose spots on the map (the review of 2026-10-04, E3).
+    /// </summary>
+    public static string? GetAlsoItem(DependencyObject d) => (string?)d.GetValue(AlsoItemProperty);
+
+    public static void SetAlsoItem(DependencyObject d, string? value) => d.SetValue(AlsoItemProperty, value);
 
     // No change handler: it says how a linked element sits, and links nothing by itself.
     public static readonly DependencyProperty InlineProperty = DependencyProperty.RegisterAttached(
@@ -389,9 +423,9 @@ public static class Linked
 
     private static Focus FocusOf(FrameworkElement element)
     {
-        var quests = QuestsOf(element).ToHashSet();
-        quests.UnionWith(AlsoOf(element));
-        return new Focus(quests, GetItem(element), GetMarker(element), GetObjective(element));
+        var parts = LinkFocus.Of(GetQuest(element), GetQuests(element) as IEnumerable<string>, AlsoOf(element), GetItem(element),
+            GetAlsoItem(element), GetItems(element) as IEnumerable<string>, GetMarker(element), GetObjective(element));
+        return new Focus(parts.Quests, parts.Item, parts.Marker, parts.Objective) { Alternatives = parts.Alternatives };
     }
 
     // The card an element opens: its item if it has one, else its quest; none for rows that only highlight.
@@ -418,7 +452,8 @@ public static class Linked
     // belongs to it, not at all otherwise (Rules.LinkStrength; owner, 2026-10-04).
     private static Rules.LinkLevel LevelOf(FrameworkElement element, Focus focus) =>
         Rules.LinkStrength.Of(GetQuest(element), GetQuests(element) as IEnumerable<string> ?? [], GetItem(element), GetMarker(element),
-            GetObjective(element), focus.Quests, focus.Item, focus.Marker, focus.Objective);
+            GetObjective(element), focus.Quests, focus.Item, focus.Marker, focus.Objective,
+            GetItems(element) as IEnumerable<string>, focus.Alternatives);
 
     private static readonly Brush Clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 

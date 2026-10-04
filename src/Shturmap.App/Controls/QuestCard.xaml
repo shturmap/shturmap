@@ -17,8 +17,11 @@
          QuestWindow give it its largest height) and scrolls inside, so UNLOCKS and the wiki link stay in reach. -->
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
 
-      <StackPanel Padding="14,12,14,12" Spacing="10">
-        <Grid ColumnSpacing="12" controls:Linked.Also="{x:Bind View.QuestIds}">
+      <!-- The whole card is its quest for the pointer, without glowing itself: the header, the gaps between rows,
+           the headings and the frame's padding keep the quest lit while it is read (the review of 2026-10-04, E3:
+           only the header did, so the quest went dark between two rows). Rows on it are still their own thing. -->
+      <StackPanel Padding="14,12,14,12" Spacing="10" controls:Linked.Also="{x:Bind View.QuestIds}">
+        <Grid ColumnSpacing="12">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
@@ -35,7 +38,10 @@
               <TextBlock Grid.Column="1" Text="{x:Bind View.Name}" Style="{StaticResource TitleText}" />
             </Grid>
             <TextBlock Text="{x:Bind View.Facts}" Style="{StaticResource NoteText}" />
-            <TextBlock Text="{x:Bind local:Caps.Of(View.Status)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource GreenBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+            <!-- The accent while the quest is active ("on"), muted for every other state. Not green: green is a PMC
+                 extract, on the map and in the rail (one colour, one meaning; the review of 2026-10-04, B2). -->
+            <TextBlock Text="{x:Bind local:Caps.Of(View.Status)}" Style="{StaticResource StatusText}" FontSize="11"
+                       Foreground="{x:Bind StatusBrush(View.State)}" TextWrapping="Wrap" Margin="0,2,0,0" />
           </StackPanel>
           <!-- Two different things: pick the quest for the coming raid (the pen), keep this card as a window (pop out). -->
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
@@ -86,8 +92,10 @@
           <ItemsControl ItemsSource="{x:Bind View.Needs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="session:CardNeed">
+                <!-- A row that stands for several items ("A or B", gear worn together) is each of them: it lights up
+                     for any, and pointing at it lights them all. Its card is the pictured one's. -->
                 <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3"
-                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
+                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Items="{x:Bind Alternatives}" controls:Linked.Also="{x:Bind QuestIds}">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />

@@ -63,6 +63,13 @@ public sealed partial class QuestCard : UserControl, ICard
     /// <summary>An objective's type glyph: muted once it is ticked as done (grey means done, on the map too).</summary>
     public static Brush GlyphBrush(bool done) => (Brush)Application.Current.Resources[done ? "MutedBrush" : "AmberBrush"];
 
+    /// <summary>
+    /// The state line's colour: the accent while the quest is active, muted for every other state. It was green,
+    /// which on the map and in the rail is a PMC extract (one colour, one meaning; the review of 2026-10-04, B2).
+    /// </summary>
+    public Brush StatusBrush(Shturmap.Core.Quests.QuestState state) =>
+        (Brush)Application.Current.Resources[state == Shturmap.Core.Quests.QuestState.Active ? "AmberBrush" : "MutedBrush"];
+
     public Visibility Shown(string? text) => ShownIf(text);
 
     public Visibility ShownIfAny(IEnumerable? items) => items?.GetEnumerator().MoveNext() == true ? Visibility.Visible : Visibility.Collapsed;

@@ -27,22 +27,35 @@ public static class LinkStrength
     /// <param name="item">The item a row shows, or null.</param>
     /// <param name="marker">The map marker a row stands for (a way out), or null.</param>
     /// <param name="objective">The objective a row is, or null.</param>
+    /// <param name="alternatives">Every item a row stands for when it stands for several (an "A or B" key row, gear
+    /// worn together, a weapon class), or null: the row is each of them, not only the one it pictures (the review
+    /// of 2026-10-04, E4: such a row was linked to its first item alone).</param>
+    /// <param name="focusAlternatives">The same of the thing pointed at, or null.</param>
     public static LinkLevel Of(string? quest, IEnumerable<string> serves, string? item, string? marker, string? objective,
-        IReadOnlySet<string> focusQuests, string? focusItem, string? focusMarker, string? focusObjective)
+        IReadOnlySet<string> focusQuests, string? focusItem, string? focusMarker, string? focusObjective,
+        IEnumerable<string>? alternatives = null, IEnumerable<string>? focusAlternatives = null)
     {
-        if ((item is not null && item == focusItem) || (marker is not null && marker == focusMarker)
+        if (SharesItem(item, alternatives, focusItem, focusAlternatives) || (marker is not null && marker == focusMarker)
             || (objective is not null && objective == focusObjective))
             return LinkLevel.Same;
-        if (focusItem is not null)
+        if (focusItem is not null || focusAlternatives?.Any() == true)
         {
-            // An item is pointed at. The quests it is for are related; another item is neither, whatever quests the
-            // two share.
-            return item is null && quest is not null && focusQuests.Contains(quest) ? LinkLevel.Related : LinkLevel.None;
+            // An item is pointed at (or a door, which is its key). The quests it is for are related; another item is
+            // neither, whatever quests the two share.
+            var showsItem = item is not null || alternatives?.Any() == true;
+            return !showsItem && quest is not null && focusQuests.Contains(quest) ? LinkLevel.Related : LinkLevel.None;
         }
         // A quest is pointed at (or a place of one on the map): its own rows are the same thing, the rows of what it
         // needs are related.
         if (quest is not null && focusQuests.Contains(quest))
             return LinkLevel.Same;
         return serves.Any(focusQuests.Contains) ? LinkLevel.Related : LinkLevel.None;
+    }
+
+    // Whether a row and the thing pointed at have an item in common, each counted with its alternatives.
+    private static bool SharesItem(string? item, IEnumerable<string>? alternatives, string? focusItem, IEnumerable<string>? focusAlternatives)
+    {
+        bool Pointed(string id) => id == focusItem || focusAlternatives?.Contains(id) == true;
+        return (item is not null && Pointed(item)) || alternatives?.Any(Pointed) == true;
     }
 }

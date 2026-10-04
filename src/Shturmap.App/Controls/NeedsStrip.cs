@@ -5,7 +5,14 @@ using Microsoft.UI.Xaml.Media;
 namespace Shturmap.App.Controls;
 
 /// <summary>Something a quest needs brought on this map: its icon (glyph until it arrives) and name.</summary>
-public sealed record NeedChip(string ItemId, string Glyph, string Title);
+public sealed record NeedChip(string ItemId, string Glyph, string Title)
+{
+    /// <summary>
+    /// Every item the cell stands for when it stands for several ("A or B", gear worn together, a weapon class): it
+    /// is each of them for the linked highlight, though it pictures <see cref="ItemId"/>. Null for one item.
+    /// </summary>
+    public IReadOnlyList<string>? Alternatives { get; init; }
+}
 
 /// <summary>
 /// What a quest needs brought, as tiny inventory cells beside its name (owner, 2026-10-01: BRING didn't show at a
@@ -62,6 +69,8 @@ public sealed partial class NeedsStrip : StackPanel
             var cell = new Picture { ItemId = need.ItemId, Glyph = need.Glyph, Title = need.Title, Size = Cell };
             Linked.SetInline(cell, true);
             Linked.SetItem(cell, need.ItemId);
+            if (need.Alternatives is { Count: > 1 } several)
+                Linked.SetItems(cell, several);
             Children.Add(cell);
         }
         if (Needs.Count > Shown)

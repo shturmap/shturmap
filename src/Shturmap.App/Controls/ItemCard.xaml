@@ -9,13 +9,17 @@
     xmlns:session="using:Shturmap.Session"
     xmlns:local="using:Shturmap.App">
 
-  <!-- A key or an item: what it is, where to get it, which of your active quests need it. Point at a source's
-       loose spots to see them on the map; point at a quest for its card. -->
+  <!-- A key or an item: what it is, where to get it, which of your active quests need it. Point at a quest for
+       its card. -->
   <Border x:Name="Frame" Width="340" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
     <!-- An item many quests need makes a long card: it scrolls inside the room there is, like the quest card. -->
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
 
-      <StackPanel Padding="14,14,14,14" Spacing="8">
+      <!-- The whole card is its item for the pointer, with the quests the item is for, without glowing itself and
+           without opening a card: moving from a BRING row onto the card keeps the item's rows lit, and its locks
+           and loose spots on the map, the "Loose on …" rows' included (the review of 2026-10-04, E3). -->
+      <StackPanel Padding="14,14,14,14" Spacing="8"
+                  controls:Linked.AlsoItem="{x:Bind View.ItemId}" controls:Linked.Also="{x:Bind View.QuestIds}">
         <Grid ColumnSpacing="12">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />

@@ -60,4 +60,49 @@ public class LinkStrengthTests
         Assert.Equal(LinkLevel.Same, LinkStrength.Of("revision", None, null, null, "mark-stryker", Quests("revision"), null, null, null));
         Assert.Equal(LinkLevel.Same, LinkStrength.Of("revision", None, null, null, "mark-stryker", Quests("other"), null, null, "mark-stryker"));
     }
+
+    // ---- a row that stands for several items: "A or B", gear worn together (the review's E4) ----
+
+    // An "A or B" row pictures A; until 2026-10-04 it was linked to A alone.
+    private static LinkLevel EitherKeyRow(string? focusItem, string[]? focusAlternatives = null) =>
+        LinkStrength.Of(null, ["ballet"], "key-a", null, null, Quests("ballet"), focusItem, null, null, ["key-a", "key-b"], focusAlternatives);
+
+    [Fact]
+    public void A_row_that_stands_for_several_items_is_lit_for_each_of_them()
+    {
+        Assert.Equal(LinkLevel.Same, EitherKeyRow("key-a"));
+        Assert.Equal(LinkLevel.Same, EitherKeyRow("key-b"));
+        // Another key of the same quest is still another item.
+        Assert.Equal(LinkLevel.None, EitherKeyRow("key-c"));
+    }
+
+    [Fact]
+    public void Pointing_at_a_row_that_stands_for_several_items_lights_each_of_them()
+    {
+        // The "A or B" row is under the pointer: the focus is A, the one it pictures, and both as its alternatives.
+        var focus = Quests("ballet");
+        string[] both = ["key-a", "key-b"];
+        Assert.Equal(LinkLevel.Same, LinkStrength.Of(null, ["ballet"], "key-b", null, null, focus, "key-a", null, null, null, both));
+        Assert.Equal(LinkLevel.Same, LinkStrength.Of(null, ["other"], "key-a", null, null, focus, "key-a", null, null, null, both));
+        Assert.Equal(LinkLevel.None, LinkStrength.Of(null, ["ballet"], "key-c", null, null, focus, "key-a", null, null, null, both));
+        // Its quest is what it is for: related, as for any item.
+        Assert.Equal(LinkLevel.Related, LinkStrength.Of("ballet", None, null, null, null, focus, "key-a", null, null, null, both));
+        // Two rows of several items light together when they share one.
+        Assert.Equal(LinkLevel.Same, EitherKeyRow("key-b", ["key-b", "key-d"]));
+        Assert.Equal(LinkLevel.None, EitherKeyRow("key-c", ["key-c", "key-d"]));
+    }
+
+    // ---- a door on the map (the review's E5): its key fully, the quests it is for weakly ----
+
+    [Fact]
+    public void Pointing_at_a_door_lights_its_key_fully_and_the_quests_it_is_for_weakly()
+    {
+        // The door's focus: its key, its own marker, and the quests that need the key here (LinkDoor).
+        var focus = Quests("ballet");
+        Assert.Equal(LinkLevel.Same, LinkStrength.Of(null, ["ballet"], "key-a", null, null, focus, "key-a", "lock:7", null));
+        Assert.Equal(LinkLevel.Related, LinkStrength.Of("ballet", None, null, null, null, focus, "key-a", "lock:7", null));
+        Assert.Equal(LinkLevel.None, LinkStrength.Of("revision", None, null, null, null, focus, "key-a", "lock:7", null));
+        // What else the quest needs is another item: not lit.
+        Assert.Equal(LinkLevel.None, LinkStrength.Of(null, ["ballet"], "marker", null, null, focus, "key-a", "lock:7", null));
+    }
 }
