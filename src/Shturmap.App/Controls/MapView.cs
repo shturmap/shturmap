@@ -147,8 +147,11 @@ public sealed partial class MapView : Grid
     private bool _centerAfterFit;
     private (Shturmap.Core.Maps.MapPoint From, Shturmap.Core.Maps.MapPoint To, DateTime Started)? _glide;
 
-    /// <summary>How long the view takes to glide to a new position while following.</summary>
-    public static readonly TimeSpan FollowPan = TimeSpan.FromMilliseconds(500);
+    /// <summary>
+    /// How long the view takes to glide to a new position while following: slow enough to see where it comes from and
+    /// where it goes (owner, 2026-10-04: "that smooth panning should be way slower"; it was 0.5 s).
+    /// </summary>
+    public static readonly TimeSpan FollowPan = TimeSpan.FromMilliseconds(2400);
 
     /// <summary>Whether the view follows the player's position.</summary>
     public bool Follow => _follow.On;
@@ -167,10 +170,11 @@ public sealed partial class MapView : Grid
             GlideToPlayer();
     }
 
-    // Glides to the player at the current zoom, eased out; with Windows' animation effects off it jumps.
+    // Glides to the player at the current zoom, eased in and out, to where the player has room ahead
+    // (FollowState.Target); with Windows' animation effects off it jumps.
     private void GlideToPlayer()
     {
-        if (_scene is null || FollowState.Target(_scene) is not { } to)
+        if (_scene is null || FollowState.Target(_scene, _camera, DateTime.Now) is not { } to)
             return;
         _follow.Centred();
         StopGlide();
@@ -223,10 +227,10 @@ public sealed partial class MapView : Grid
         Invalidate();
     }
 
-    // Zooming while following keeps the player in the middle.
+    // Zooming while following keeps the player where following puts them.
     private void KeepPlayerCentered()
     {
-        if (!_follow.Zoomed() || _scene is null || FollowState.Target(_scene) is not { } to)
+        if (!_follow.Zoomed() || _scene is null || FollowState.Target(_scene, _camera, DateTime.Now) is not { } to)
             return;
         StopGlide();
         _camera.CenterOn(to);
@@ -320,11 +324,11 @@ public sealed partial class MapView : Grid
     /// <summary>Moves the view to the player's last position, keeping the zoom (F, the button, the edge arrow).</summary>
     public void CenterOnPlayer()
     {
-        if (_scene?.Player is not { } fix)
+        if (_scene is null || FollowState.Target(_scene, _camera, DateTime.Now) is not { } to)
             return;
         _follow.Centred();
         StopGlide();
-        _camera.CenterOn(_scene.Projection.ToMap(fix.Position));
+        _camera.CenterOn(to);
         Invalidate();
     }
 
@@ -450,7 +454,7 @@ public sealed partial class MapView : Grid
             _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale);
         }
         // Following: once the view has its size (and a new map is fitted), it starts on the player.
-        if (_centerAfterFit && FollowState.Target(_scene) is { } player)
+        if (_centerAfterFit && FollowState.Target(_scene, _camera, DateTime.Now) is { } player)
         {
             _centerAfterFit = false;
             _follow.Centred();

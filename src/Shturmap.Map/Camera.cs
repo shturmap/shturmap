@@ -111,11 +111,13 @@ public sealed class Camera
 
     /// <summary>
     /// Where a pan from <paramref name="from"/> to <paramref name="to"/> is at <paramref name="t"/> (0 to 1) of its
-    /// time, eased out: quick at first, settling at the end (following the player, docs/DESIGN.md "Follow my position").
+    /// time, eased in and out: it sets off gently, travels, and settles (following the player, docs/DESIGN.md "Follow
+    /// my position"). Until 2026-10-04 it eased out only, most of the way in the first moment, which read as a jump.
     /// </summary>
     public static MapPoint PanAt(MapPoint from, MapPoint to, double t)
     {
-        var e = 1 - Math.Pow(1 - Math.Clamp(t, 0, 1), 3);
+        t = Math.Clamp(t, 0, 1);
+        var e = t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
         return new MapPoint(from.X + (to.X - from.X) * e, from.Y + (to.Y - from.Y) * e);
     }
 

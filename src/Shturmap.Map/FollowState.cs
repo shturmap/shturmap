@@ -39,6 +39,34 @@ public sealed class FollowState
     /// <summary>The map was zoomed. True when the view should centre on the player again: following, and not away.</summary>
     public bool Zoomed() => On && !Away;
 
-    /// <summary>Where the view's centre goes to follow: the player's last position, or nowhere without one.</summary>
+    /// <summary>Where the player is on the map: the player's last position, or nowhere without one.</summary>
     public static MapPoint? Target(MapScene scene) => scene.Player is { } fix ? scene.Projection.ToMap(fix.Position) : null;
+
+    /// <summary>
+    /// How far ahead of the player the middle of the view lies, as a share of the view's size that way: a sixth, so the
+    /// player stands a third of the way in from the edge behind and two thirds of the view lie ahead (the rule of
+    /// thirds; a quarter put the player too near the edge to see what is beside and behind).
+    /// </summary>
+    public const double Lead = 1.0 / 6;
+
+    /// <summary>
+    /// Where the view's centre goes to show the player: ahead of the position, the way the player faces, so more of
+    /// the map lies where they are looking (owner, 2026-10-04: "it should not dead-center on the player, but rather
+    /// show more of the map in the area where the player is looking"). Only while the facing is still shown
+    /// (<see cref="Shturmap.Core.Navigation.Facing.Fresh"/>): an old position is put in the middle, since nothing
+    /// says any more which way the player looks.
+    /// </summary>
+    public static MapPoint? Target(MapScene scene, Camera camera, DateTime now)
+    {
+        if (scene.Player is not { } fix)
+            return null;
+        var at = scene.Projection.ToMap(fix.Position);
+        if (fix.YawDegrees is not { } yaw || Shturmap.Core.Logs.WallClock.Elapsed(fix.At, now) >= Shturmap.Core.Navigation.Facing.Fresh)
+            return at;
+        // Clockwise from "up" on the screen; map units grow to the right and downward, a pixel is 1 / zoom of them.
+        var heading = scene.Projection.ScreenHeadingDegrees(fix.Position, yaw) * Math.PI / 180;
+        return new MapPoint(
+            at.X + Math.Sin(heading) * camera.Viewport.Width * Lead / camera.Zoom,
+            at.Y - Math.Cos(heading) * camera.Viewport.Height * Lead / camera.Zoom);
+    }
 }

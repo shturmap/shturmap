@@ -415,7 +415,7 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
-position pings, and with Follow my position on the view glides to it over 0.5 s, eased out. With Windows' animation
+position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out. With Windows' animation
 effects off the app shows and hides without motion, and following jumps to the position. The website follows the
 reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
 easing; owner, 2026-10-02), the rest stops.
@@ -811,9 +811,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   "Follow my position (Shift+F)"; on, its symbol and frame are amber, the app's colour for "on" (2026-10-04: it was
   the picks' cyan, which then had two meanings; "Design system", one meaning per colour). Off by default, and kept
   between runs (`followPosition` in shturmap.db).
-  - **On**, each new position glides into the middle of the view over 0.5 s, eased out, at the current zoom; the
+  - **On**, each new position glides into view over 2.4 s, eased in and out, at the current zoom; the
     floor follows the height as always, and the position pings as it arrives. Turning it on glides to the last
-    position at once. With Windows' animation effects off the view jumps there instead. While it glides the edge
+    position at once. **Slow, and with room ahead** (owner, 2026-10-04: "that smooth panning should be way slower.
+    Also, it should not dead-center on the player, but rather show more of the map in the area where the player is
+    looking. Find a good ratio here"). It was 0.5 s, eased out only, so most of the way was done in the first
+    moment and it read as a jump; now it sets off gently, travels and settles (`Camera.PanAt`, `MapView.FollowPan`).
+    And the view's middle lies a sixth of the view ahead of the player, the way they face (`FollowState.Lead`), so
+    the player stands a third in from the edge behind and two thirds of the view lie ahead: the rule of thirds. A
+    quarter was the other candidate; it leaves three quarters ahead but puts the player 25 % from the edge, with
+    little to see beside and behind. The lead is taken only while the facing is still shown (45 s, `Facing.Fresh`)
+    and the screenshot's name gave one: an older position goes in the middle, since nothing says any more which
+    way the player looks. Zooming while on the player keeps this place, and F and the button use it too. With Windows' animation effects off the view jumps there instead. While it glides the edge
     badge waits (the position is on its way into view) and no notice says the position is out of view.
   - **Only the toggle turns it off** (owner, 2026-10-04: "when you have the follow on you should be able to drag and
     zoom. When a position is updated, it should center back to the player but at the current zoom level"; until

@@ -88,7 +88,7 @@ public class FollowTests
     }
 
     [Fact]
-    public void The_glide_goes_straight_and_eases_out()
+    public void The_glide_goes_straight_and_eases_in_and_out()
     {
         var previous = 0.0;
         var steps = new List<double>();
@@ -102,11 +102,52 @@ public class FollowTests
             steps.Add(done - previous);
             previous = done;
         }
-        // Ease-out: quick at first, slowing into the target.
-        for (var i = 1; i < steps.Count; i++)
+        // It sets off gently, is quickest in the middle and settles: each step of the first half is longer than the
+        // one before, each of the second half shorter (owner, 2026-10-04: eased out only, most of the way was done
+        // in the first moment).
+        for (var i = 1; i < 10; i++)
+            Assert.True(steps[i] > steps[i - 1], $"step {i + 1} ({steps[i]}) not quicker than step {i} ({steps[i - 1]})");
+        for (var i = 11; i < steps.Count; i++)
             Assert.True(steps[i] < steps[i - 1], $"step {i + 1} ({steps[i]}) not slower than step {i} ({steps[i - 1]})");
-        // Half the time gone, most of the way there.
-        Assert.True(Camera.PanAt(From, To, 0.5).X - From.X > 0.8 * (To.X - From.X));
+        // Half the time gone, half the way there.
+        Assert.Equal(0.5, (Camera.PanAt(From, To, 0.5).X - From.X) / (To.X - From.X), 9);
+    }
+
+    [Fact]
+    public void Following_leaves_two_thirds_of_the_view_ahead_of_the_player()
+    {
+        // Owner, 2026-10-04: "it should not dead-center on the player, but rather show more of the map in the area
+        // where the player is looking".
+        var (camera, scene) = Of([]);
+        var now = new DateTime(2026, 10, 4, 21, 0, 0);
+        camera.Restore(new MapPoint(0, 0), 2.5);
+        var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
+        foreach (var yaw in new double[] { 0, 90, 180, 270, 37 })
+        {
+            scene.Player = new PlayerFix(new WorldPoint(120, 0, -80), yaw, now.AddSeconds(-3));
+            camera.CenterOn(FollowState.Target(scene, camera, now)!.Value);
+            var at = camera.ToScreen(scene.Projection.ToMap(scene.Player.Position));
+            var heading = scene.Projection.ScreenHeadingDegrees(scene.Player.Position, yaw) * Math.PI / 180;
+            // The player stands a sixth of the view behind its middle, against the way they face.
+            Assert.Equal(w / 2 - Math.Sin(heading) * w / 6, at.X, 2);
+            Assert.Equal(h / 2 + Math.Cos(heading) * h / 6, at.Y, 2);
+            Assert.Equal(2.5, camera.Zoom);
+        }
+    }
+
+    [Fact]
+    public void A_position_whose_facing_is_no_longer_shown_goes_in_the_middle()
+    {
+        var (camera, scene) = Of([]);
+        var now = new DateTime(2026, 10, 4, 21, 0, 0);
+        // Older than the facing stays fresh: nothing says which way the player looks now.
+        scene.Player = new PlayerFix(new WorldPoint(120, 0, -80), 90, now.AddMinutes(-3));
+        Assert.Equal(FollowState.Target(scene), FollowState.Target(scene, camera, now));
+        // No facing in the screenshot's name.
+        scene.Player = new PlayerFix(new WorldPoint(120, 0, -80), null, now);
+        Assert.Equal(FollowState.Target(scene), FollowState.Target(scene, camera, now));
+        scene.Player = null;
+        Assert.Null(FollowState.Target(scene, camera, now));
     }
 
     [Fact]
