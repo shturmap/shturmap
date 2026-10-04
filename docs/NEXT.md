@@ -396,6 +396,18 @@ for the languages to come).
 - **E4.** An "A or B" row links only A (`Planning`: `Alternatives[0]`). **E5.** A quest lights its doors, a door only
   its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: done (2026-10-04; E6: Down and Up step through the rail's rows, Enter is the click, P the pen).
 
+### F. Floor plans for the maps without SVG artwork
+
+- **F1. The Lab, Labyrinth and Icebreaker in the style of the SVG maps** (owner, 2026-10-04: "convert it to the
+  same style and color coding as the ones where we have proper maps … only do this if we are sure that we can
+  achieve high quality"). Status: owner to decide, from pictures. A trial the same day traced a floor plan out of
+  the cached tile renders (`tools\map-trace`): to scale and with straight walls on The Lab's main level (the plan
+  differs from the render's floor by 0.003 % beyond 2 px of an edge), ragged on Labyrinth. That settles the
+  geometry, not the look: a hand-drawn map chooses obstacles, stairs and landmarks, and the traced plan has
+  floor and not-floor only. `docs/MAP-TRACE.md` has what was measured, the steps, the gates a map must pass and
+  what the owner decides; it is written so that a map keeps its render unless every gate passes. Icebreaker is
+  left out. Pictures of the trial are outside the repository.
+
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 
 **Status, 2026-10-03 evening:** the quota came back the same day and the owner said "go ahead with the open TODOs".
