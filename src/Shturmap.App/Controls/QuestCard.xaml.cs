@@ -55,6 +55,14 @@ public sealed partial class QuestCard : UserControl, ICard
 
     public static Visibility ShownIf(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
+    public static Visibility ShownIfTrue(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>An objective's text: muted once it is ticked as done.</summary>
+    public static Brush TextBrush(bool done) => (Brush)Application.Current.Resources[done ? "MutedBrush" : "InkBrush"];
+
+    /// <summary>An objective's type glyph: muted once it is ticked as done (grey means done, on the map too).</summary>
+    public static Brush GlyphBrush(bool done) => (Brush)Application.Current.Resources[done ? "MutedBrush" : "AmberBrush"];
+
     public Visibility Shown(string? text) => ShownIf(text);
 
     public Visibility ShownIfAny(IEnumerable? items) => items?.GetEnumerator().MoveNext() == true ? Visibility.Visible : Visibility.Collapsed;

@@ -185,6 +185,31 @@ public class BringTests
         Assert.Equal("Use: Mosin rifle or 2 others · Without: PACA armor / SSh-68 helmet", Planning.Needs(data, task, objective, new HashSet<string> { "streets" }, false));
     }
 
+    // The gold "Key: …" line under a raid objective is that key for the linked highlight, but only when it names
+    // exactly one: with alternatives or two doors it couldn't say which (the review of 2026-10-04).
+    [Fact]
+    public void A_needs_line_stands_for_its_key_only_when_it_names_exactly_one()
+    {
+        var streets = new HashSet<string> { "streets" };
+        var plain = Objective("o1", "visit");
+        var oneDoor = plain with { RequiredKeys = [["key-a"]] };
+        var eitherKey = plain with { RequiredKeys = [["key-a", "key-b"]] };
+        var twoDoors = plain with { RequiredKeys = [["key-a"], ["key-b"]] };
+        var task = Task("Quest", [plain]);
+        var data = Data(tasks: new Dictionary<string, ApiTask> { [task.Id] = task });
+        Assert.Null(Planning.NeedKey(data, task, plain, streets, true));
+        Assert.Equal("key-a", Planning.NeedKey(data, task, oneDoor, streets, true));
+        Assert.Null(Planning.NeedKey(data, task, eitherKey, streets, true));
+        Assert.Null(Planning.NeedKey(data, task, twoDoors, streets, true));
+
+        // A key the quest needs on this map counts on its objectives with a place, as in the line itself.
+        var keyed = task with { NeededKeys = [new ApiNeededKeys("streets", ["key-a"]), new ApiNeededKeys("customs", ["key-c"])] };
+        Assert.Equal("key-a", Planning.NeedKey(data, keyed, plain, streets, true));
+        Assert.Null(Planning.NeedKey(data, keyed, plain, streets, false));
+        Assert.Equal("key-a", Planning.NeedKey(data, keyed, oneDoor, streets, true));
+        Assert.Null(Planning.NeedKey(data, keyed with { NeededKeys = [new ApiNeededKeys("streets", ["key-b"])] }, oneDoor, streets, true));
+    }
+
     // ---- what it takes to enter the map ----
 
     [Fact]

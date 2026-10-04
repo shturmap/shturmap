@@ -5,19 +5,23 @@ using Shturmap.Core.Quests;
 namespace Shturmap.App;
 
 /// <param name="Needs">Keys or items this objective needs, or empty.</param>
+/// <param name="ObjectiveId">The objective, for linked highlighting: its line marks it within its quest.</param>
+/// <param name="KeyId">The key the gold "Key: …" line stands for, when it names exactly one: the line is that key.</param>
 public sealed record ObjectiveItem(string QuestId, string Text, string Quest, string Distance, string Direction, bool Done, ObjectiveKind Kind, string Needs,
-    string? TraderId = null, string? TraderName = null)
+    string? TraderId = null, string? TraderName = null, string? ObjectiveId = null, string? KeyId = null)
 {
-    public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+    // An objective ticked as done needs nothing any more.
+    public Visibility NeedsVisibility => Needs.Length > 0 && !Done ? Visibility.Visible : Visibility.Collapsed;
 
     // Without a position there is no distance and no direction; an empty line would still take its height.
     public Visibility DistanceVisibility => Distance.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility DirectionVisibility => Direction.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>Muted for what is done at a trader after the raid: nothing to do about it here.</summary>
+    /// <summary>Muted for what is done at a trader after the raid, and for what the player ticked as done: nothing to
+    /// do about either here.</summary>
     public Microsoft.UI.Xaml.Media.Brush TextBrush =>
-        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[QuestTaxonomy.InRaid(Kind) ? "InkBrush" : "MutedBrush"];
+        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[QuestTaxonomy.InRaid(Kind) && !Done ? "InkBrush" : "MutedBrush"];
 }
 
 /// <param name="Id">The map marker's id, for linked highlighting.</param>

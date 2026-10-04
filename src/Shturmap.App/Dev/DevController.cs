@@ -453,6 +453,88 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 else
                     Say("No quest " + pickName);
                 break;
+            case "tick":
+                // Ticks (or unticks) an objective as done, as the box on its quest card does: the quest, then which of
+                // its objectives, counted from 1 in the card's order. For this session only: a script leaves no ticks.
+                var tickName = string.Join(' ', step.Args.Take(Math.Max(1, step.Args.Count - 1)));
+                var number = (int)step.Number(step.Args.Count - 1, 1);
+                if (QuestNamed(tickName) is { } tickQuest && Snapshot?.Data?.Tasks.GetValueOrDefault(tickQuest)?.Objectives is { } all
+                    && number >= 1 && number <= all.Count)
+                {
+                    await session.ToggleTickAsync(all[number - 1].Id, "dev", save: false);
+                    Say($"ticked objective {number} of {tickName}");
+                }
+                else
+                {
+                    Say($"No objective {number} of a quest {tickName}");
+                }
+                break;
+            case "show":
+                window.DevShowQuest(string.Join(' ', step.Args));
+                break;
+            case "hover":
+                // The pointer, as far as the linked highlight goes: onto a quest's block in the lists, and from there
+                // into its n-th objective's line, its first need cell ("cell") or a gold line that is a key ("key");
+                // alone, out of the innermost thing it is in. The code the pointer's own events call.
+                if (step.Args.Count == 0)
+                {
+                    window.DevHover(null);
+                    break;
+                }
+                var hoverPart = step.Args.Count > 1 && step.Args[^1] is "cell" or "key" ? step.Args[^1] : null;
+                var hoverNumbered = hoverPart is null && step.Args.Count > 1 && int.TryParse(step.Args[^1], out _);
+                var hoverName = string.Join(' ', hoverPart is not null || hoverNumbered ? step.Args.Take(step.Args.Count - 1) : step.Args);
+                if (QuestNamed(hoverName) is not { } hoverQuest)
+                {
+                    Say("No quest " + hoverName);
+                    break;
+                }
+                var hoverAll = Snapshot?.Data?.Tasks.GetValueOrDefault(hoverQuest)?.Objectives ?? [];
+                var hoverNumber = hoverNumbered ? (int)step.Number(step.Args.Count - 1) : 0;
+                if (hoverNumbered && (hoverNumber < 1 || hoverNumber > hoverAll.Count))
+                {
+                    Say($"No objective {hoverNumber} of a quest {hoverName}");
+                    break;
+                }
+                if (window.DevHover(hoverQuest, hoverNumbered ? hoverAll[hoverNumber - 1].Id : null, hoverPart) is { } missing)
+                    Say($"hover {hoverName}: {missing}");
+                break;
+            case "point":
+                // Points at a quest, at one of its objectives (counted from 1 in the card's order, as "tick" counts
+                // them) or at an item, as the pointer on its line would; without arguments, at nothing again.
+                if (step.Args.Count == 0)
+                {
+                    window.DevPoint(null);
+                    break;
+                }
+                if (step.Args.Count > 1 && step.Arg(0).Equals("item", StringComparison.OrdinalIgnoreCase))
+                {
+                    var itemName = string.Join(' ', step.Args.Skip(1));
+                    var names = Snapshot?.Data?.ItemNames;
+                    var item = names?.ContainsKey(itemName) == true ? itemName
+                        : names?.Where(n => n.Value.Contains(itemName, StringComparison.OrdinalIgnoreCase)).OrderBy(n => n.Value.Length).Select(n => n.Key).FirstOrDefault();
+                    if (item is null)
+                        Say("No item " + itemName);
+                    else
+                        window.DevPoint(new Controls.Focus(new HashSet<string>(), Item: item));
+                    break;
+                }
+                var numbered = step.Args.Count > 1 && int.TryParse(step.Args[^1], out _);
+                var pointName = string.Join(' ', numbered ? step.Args.Take(step.Args.Count - 1) : step.Args);
+                if (QuestNamed(pointName) is not { } pointQuest)
+                {
+                    Say("No quest " + pointName);
+                    break;
+                }
+                var pointAll = Snapshot?.Data?.Tasks.GetValueOrDefault(pointQuest)?.Objectives ?? [];
+                var pointNumber = numbered ? (int)step.Number(step.Args.Count - 1) : 0;
+                if (numbered && (pointNumber < 1 || pointNumber > pointAll.Count))
+                {
+                    Say($"No objective {pointNumber} of a quest {pointName}");
+                    break;
+                }
+                window.DevPoint(new Controls.Focus(new HashSet<string> { pointQuest }, Objective: numbered ? pointAll[pointNumber - 1].Id : null));
+                break;
             case "place":
                 PlaceOnView(step.Number(0, 0.5), step.Number(1, 0.5),
                     step.Args.Count >= 4 ? step.Number(2) : null, step.Args.Count >= 4 ? step.Number(3) : null);

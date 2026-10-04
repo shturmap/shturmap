@@ -11,7 +11,9 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title);
 /// <summary>
 /// What a quest needs brought, as tiny inventory cells beside its name (owner, 2026-10-01: BRING didn't show at a
 /// glance which item is for which quest). A quest that needs nothing shows one empty cell, the inventory's own way of
-/// saying "nothing here". No list at all (null) shows nothing, for lists where bringing doesn't apply.
+/// saying "nothing here". No list at all (null) shows nothing, for lists where bringing doesn't apply. Each cell is
+/// its item for the linked highlight (its card, its BRING row, its locks and loose spots on the map); leaving it
+/// returns to the row's quest.
 /// </summary>
 public sealed partial class NeedsStrip : StackPanel
 {
@@ -66,7 +68,12 @@ public sealed partial class NeedsStrip : StackPanel
                 return;
         }
         foreach (var need in Needs.Take(Shown))
-            Children.Add(new Picture { ItemId = need.ItemId, Glyph = need.Glyph, Title = need.Title, Size = Cell });
+        {
+            var cell = new Picture { ItemId = need.ItemId, Glyph = need.Glyph, Title = need.Title, Size = Cell };
+            Linked.SetInline(cell, true);
+            Linked.SetItem(cell, need.ItemId);
+            Children.Add(cell);
+        }
         if (Needs.Count > Shown)
         {
             var more = new TextBlock

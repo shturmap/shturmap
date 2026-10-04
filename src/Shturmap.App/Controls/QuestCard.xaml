@@ -50,22 +50,32 @@
         <ItemsControl ItemsSource="{x:Bind View.Objectives}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="session:CardObjective">
+              <!-- The row is its objective for the linked highlight: pointing at it marks the objective within the
+                   quest (only its places pulse on the map), and it lights up when one of those places is pointed at. -->
               <Grid ColumnSpacing="10" Margin="-4,1" Padding="4,3"
-                    controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}">
+                    controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Also="{x:Bind QuestIds}" controls:Linked.Objective="{x:Bind ObjectiveId}">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />
                   <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,2,0,0" />
+                <!-- An objective the player ticked as done is muted, as done objectives are on the map, and says where
+                     "done" comes from in the place of its distance (owner, 2026-10-04). -->
+                <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{x:Bind controls:QuestCard.GlyphBrush(Done)}" Margin="0,2,0,0" />
                 <StackPanel Grid.Column="1">
-                  <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                  <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" Foreground="{x:Bind controls:QuestCard.TextBrush(Done)}" />
                   <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
                   <TextBlock Text="{x:Bind Live}" Style="{StaticResource StatusText}" FontSize="12" Foreground="{StaticResource AmberBrush}"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Live)}" />
+                  <TextBlock Text="{x:Bind Ticked}" Style="{StaticResource StatusText}" FontSize="12" Foreground="{StaticResource MutedBrush}"
+                             Visibility="{x:Bind controls:QuestCard.ShownIf(Ticked)}" />
                 </StackPanel>
                 <controls:Picture Grid.Column="2" ItemId="{x:Bind ItemId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}" />
+                <!-- The one thing the player may tell Shturmap about progress: this objective is done. Never asked for. -->
+                <controls:TickBox Grid.Column="3" ObjectiveId="{x:Bind ObjectiveId}" Ticked="{x:Bind Done}"
+                                  Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Tickable)}" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>

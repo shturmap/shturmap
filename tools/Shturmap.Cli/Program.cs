@@ -263,8 +263,8 @@ static async Task Quests(string mode)
     var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
     using var store = new Shturmap.Data.Progress.ProgressStore(Shturmap.Session.AppPaths.Default.Database);
     var stored = store.Load(gameMode);
-    // As the app does: only the game's log (and manual changes) count; older scan and import rows are ignored.
-    var observations = stored.Where(o => o.Source is Shturmap.Core.Quests.ObservationSource.Log or Shturmap.Core.Quests.ObservationSource.Manual).ToList();
+    // As the app does: only the game's log counts; rows of older sources (scans, imports, states set by hand) are ignored.
+    var observations = stored.Where(o => o.Source is Shturmap.Core.Quests.ObservationSource.Log).ToList();
     var statuses = Shturmap.Core.Quests.QuestProgress.Resolve(observations,
         id => data.Tasks.GetValueOrDefault(id)?.TaskRequirements?.Select(r => new Shturmap.Core.Quests.QuestRequirement(r.Task, r.Status ?? [])) ?? [],
         id => data.Tasks.GetValueOrDefault(id)?.Name ?? id);

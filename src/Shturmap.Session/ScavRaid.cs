@@ -16,7 +16,9 @@ public static class ScavRaid
 {
     /// <summary>Items your active quests need found in raid, the ones lying loose on this map first.</summary>
     /// <param name="mapIds">The shown map's ids (variants drawn with the same artwork count as one).</param>
-    public static IReadOnlyList<LootView> Loot(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, IReadOnlySet<string> mapIds)
+    /// <param name="done">The objectives the player ticked as done: what they asked for is no longer looked for.</param>
+    public static IReadOnlyList<LootView> Loot(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, IReadOnlySet<string> mapIds,
+        IReadOnlySet<string>? done = null)
     {
         // One need per set of items that would do; a quest that asks to find them and then hand them over needs
         // them once.
@@ -27,7 +29,7 @@ public static class ScavRaid
                 continue;
             foreach (var o in task.Objectives ?? [])
             {
-                if (o.Type is not ("findItem" or "giveItem") || !o.FoundInRaid || o.Items is not { Count: > 0 } items)
+                if (o.Type is not ("findItem" or "giveItem") || !o.FoundInRaid || o.Items is not { Count: > 0 } items || done?.Contains(o.Id) == true)
                     continue;
                 var key = string.Join('|', items.Order(StringComparer.Ordinal));
                 if (!needs.TryGetValue(key, out var need))

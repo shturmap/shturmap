@@ -167,13 +167,20 @@ against sanctions); and say that some players see a position map as an unfair ad
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
    to the objective that needs it during the raid.
 6. **Says why.** Every quest state can say where it came from (the game log and when, or implied by a later
-   quest).
+   quest). So can an objective shown as done: "Done · ticked by you, 4 Oct" (below, and "Quest cards", *Ticks*).
 7. **Never ask.** No confirmations, no prompts. Quest states come from the game's logs alone (owner, 2026-10-01:
    players don't screenshot their Tasks screen, so Tasks-screen reading and the TarkovEyes import were removed).
    The exceptions, each named where it is described (review of 2026-10-04: the principle didn't name them): the
    one question after a crash (send a report?), the question before an uninstall the player started, and the
    PMC ⇄ SCAV tag of a raid whose side the logs can't tell, which is a switch the player may use, never a prompt.
    Nothing else asks, and nothing asks during a raid's play.
+   **One thing the player may tell Shturmap about progress, and is never asked for: that an objective is done**
+   (owner, 2026-10-04: "Tick an objective done by hand makes sense"). The logs say when a quest starts, completes or
+   fails, never when one of its objectives is done, so a quest that takes several raids kept leading to places
+   already dealt with. A tick on the quest's card takes that objective out ("Quest cards", *Ticks*). The quest's own
+   state still comes from the logs alone: a quest with every objective ticked is active until the log says
+   otherwise. Editing a quest's state by hand stays declined (owner, 2026-10-04); the code for it is gone, and rows a
+   database may still hold from it are ignored like the Tasks-scan and import rows (§8, "Quest progress").
 8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
    the "you are here" parts works without a fix. A fix shows its age; the marker stays at full strength and says
    it (see "Map drawing"). No "you may be
@@ -249,7 +256,10 @@ against sanctions); and say that some players see a position map as an unfair ad
     at start.
 12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
-    are no detail pages to open. Finished quests appear nowhere.
+    are no detail pages to open. Finished quests appear nowhere. The pointer says as much as it is on: on one
+    objective of a quest (its line in the raid card, its row on the quest's card, one of its places on the map) the
+    quest stays lit and that objective is marked within it; on a need cell beside a quest's name, or on the gold
+    line that names one key, it is that item (the review of 2026-10-04; "Visual language", linked highlight).
 
 ### Design system
 
@@ -406,7 +416,26 @@ easing, when Windows' animation effects are off, and only while something is in 
 of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
 any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
 Shturmap's windows is the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
-game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not. Markers on another floor than the one shown are drawn at full strength, highlighted
+game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not.
+**Inside one another** (the review of 2026-10-04): linked things may lie inside a linked row, and the innermost one
+around the pointer is the one pointed at; leaving it gives the pointer back to the row around it, which it never
+left (`PointerNest`; before, the highlight knew one element, and leaving an inner one let go of everything). So
+the highlight goes **down to the objective**: an objective's line under its quest in the raid card, its row on the
+quest's card and the glance's NEXT name their objective. Pointing at one keeps the whole quest lit as before and
+marks the objective: its own line takes the tint (in the raid card once more, over its quest's), and on the map
+only that objective's places pulse, take the pointed-at size and name, and get the chevrons; the quest's other
+places stay at full strength, at their rest size, and hold still, and the doors of its keys keep their pointed-at
+look without the pulse (`MapScene.FocusObjective`). It works the other way too: pointing at one of an objective's
+places on the map lights its line in the raid card and its row on the quest's card. An objective with no place on
+the shown map leaves its quest lit and nothing pulsing. Three smaller things link as well: a **need cell** beside
+a quest's name is its item (its card, its BRING row, the item's other cells, its locks and loose spots; the tint
+lies over the cell), the **gold "Key: …" line** under a raid objective is that key when it names exactly one (with
+alternatives or two doors it couldn't say which, and stays part of its objective's line; `Planning.NeedKey`), and
+a **quest's glyph on a folded Plan card** is that quest. A card opened from one of these small things opens beside
+the row or the Plan card it lies in, at its own height, not over its neighbours. For the cards, an objective's
+line is still its quest's block: it opens no card of its own, and a click on it holds the quest's. One tint
+serves all of it; telling "this", "the same thing elsewhere" and "related" apart by tint is not decided (owner).
+Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
 with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
@@ -530,7 +559,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for hand-overs. Objectives inside a quest go nearest first, and quests
-    by their nearest objective, so the top of the list is still where to go next. Below the card, extracts and
+    by their nearest objective, so the top of the list is still where to go next. An objective the player ticked
+    as done ("Quest cards", *Ticks*) comes after the quest's open lines, muted, with "DONE" where its distance was
+    and without its needs; NEXT and the guide line pass it by, and a quest with nothing open on this map isn't
+    listed. Below the card, extracts and
     transits for your side, each with what it takes to leave there (see "Extract requirements"). A way out wears
     the colour of its kind here as on the map, in EXIT's label and distance and in each row's distance: a PMC
     extract green, a Scav's teal, one for both sides khaki, a transit violet (2026-10-04: every way out was green
@@ -699,10 +731,13 @@ spawns below).
   - **Locks**: a door's or a car trunk's (both need a key): a padlock (Segoe Fluent `E72E`) on the dark collar, no
     plate, labelled with the key's short name as printed on the key ("TGL MO", "Dorm 114", "RB-PKPM"; the full name
     when it has none) and "needs power" where the data says so. The key glyph `E8D7` stays the key itself (BRING,
-    need cells); the padlock is where it opens. Pointing at a key (its BRING row, its row on a quest card) lights
-    every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card. The
-    key's need cells and item card don't link yet: a linked element inside a linked row loses the row's highlight
-    when the pointer leaves it. Container locks would mark containers; the data has none.
+    need cells); the padlock is where it opens. Pointing at a key (its BRING row, its row on a quest card, its
+    need cell beside a quest's name, the gold "Key: …" line under a raid objective that names just that key) lights
+    every lock it opens, at any zoom, and shows where it lies loose; pointing at a padlock opens its key's card.
+    Leaving a need cell or the gold line returns to the quest's row around it ("Visual language", linked
+    highlight; the review of 2026-10-04: before, a linked element inside a linked row lost the row's highlight
+    when the pointer left it, so these didn't link). The key's item card still lights nothing by itself.
+    Container locks would mark containers; the data has none.
     A quest brings its doors along (owner, 2026-10-03: "For the Golden Swag key the trailer park portable cabin
     marker is not highlighted when the quest is highlighted as goal quest"): pointing at a quest, or picking it,
     lights the locks of the keys it needs on that map (its `neededKeys` there and its objectives' own keys, the
@@ -850,6 +885,27 @@ glyph, where it is, the item it is about and, in a raid on its map, how far and 
 ("69 m · ahead-left"); BRING (keys and items, with icons and maps); UNLOCKS (the quests it opens); a link to the
 wiki page. Nothing else: no rewards, no guides.
 
+**Ticks: an objective the player says is done** (owner, 2026-10-04; UX principle 7). The game's logs never say that
+a single objective is done, so a quest that takes several raids kept leading to places already dealt with.
+- **Where.** Each objective's row on an active quest's card (hover, held, popped out) ends in a small square box, the
+  look of the ticks in settings (hairline; amber with a check when ticked). One click ticks, another unticks. Its
+  tooltip says what it does and that the logs don't say it. Nothing is asked, and the rail has no tick: it stays
+  calm, and the card is one point away. A tick can be set any time, also in a raid, but nothing ever needs it.
+- **Says why.** A ticked objective is muted, as done things are on the map, and where its distance stood it says
+  "Done · ticked by you, 4 Oct" (the day of the tick). The quest's state line is untouched: it is the log's.
+- **Kept.** Per game mode, in the settings beside the picks (`ticks.<mode>`, each with its day; `ObjectiveTicks`).
+  A tick leaves by itself when the log reports its quest completed or failed; one whose objective the data doesn't
+  know stays. Only an active quest's objective can be ticked; a tick can always be taken back.
+- **What follows**, all from the one set of ticked objectives: the map draws the objective's markers and zones as
+  done (the small muted disc with a check, at its rest size and without a name, also while the quest is picked or
+  pointed at); its places leave the guide line, the chevrons and NEXT; the raid card mutes its line ("Screen
+  anatomy"); the planner sees the quest without it (§7), so COMPLETE and PROGRESS, the summary, the synopsis, the
+  progress note, the need cells, BRING, the kit and the effort order all speak of what is left; the quest card's
+  BRING and the item card's uses list only what open objectives need; a Scav raid's FIND IN RAID drops what a ticked
+  objective asked for. A quest with no raid work left appears on no map. Its type glyph stays the whole quest's.
+- Developer builds: the study log records `tick` and `untick` (objective, quest, how: card, done, dev); the
+  developer script's `tick <quest> <n>` sets one for the session only, and `show <quest>` holds a card for a snapshot.
+
 The **item card** (a key or an item): its icon and name; GET IT, easiest first: traders that sell it (loyalty level,
 price, quest unlock), barters, hideout crafts, the flea market (from which level), and where it lies loose ("Loose
 on Customs · 3 spots"); then which of your active quests need it and how ("Key · Customs", "Bring ×3, to plant ·
@@ -950,7 +1006,10 @@ objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay i
 the window's edge, a popped-out one at 900 px).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
-but don't light up for their own card's quest, or the whole card would glow.
+but don't light up for their own card's quest, or the whole card would glow. An objective's row is its objective:
+pointing at it marks that objective within the quest (on the map only its places pulse; in the raid card its line
+takes the tint), and the row lights up when one of its places on the map, or its line in the raid card, is pointed
+at (the review of 2026-10-04). Rows that show the same item still light together, as before.
 
 ### Picks: the quests for the coming raid
 
@@ -1110,8 +1169,9 @@ labels use, so it stays the thing you recognise.
 
 ## 7. Raid planner
 
-For each map (variants sharing artwork, like Ground Zero 21+, count as one), using active quests only
-(objective progress is unknown to Shturmap):
+For each map (variants sharing artwork, like Ground Zero 21+, count as one), using active quests only, and of each
+quest the objectives that are left: the logs don't report objective progress, so every objective counts except
+those the player ticked as done (`Planning.Open`; §4, "Quest cards", *Ticks*):
 
 - An objective is **doable** on a map if it names that map or has a place there, or names no map and is Kill,
   Collect or Survive. It is **tied** to the map if it names the map or has a place there.
@@ -1378,7 +1438,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
   with the app's version and commit.
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
-  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `place <fx> <fy>
+  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
 
@@ -1416,8 +1476,10 @@ log has of it, never at the next session's login line (`UnfinishedRaid`, `RaidTr
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
 log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
 require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
-Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows; they are ignored (and could never
-reopen a quest the log saw completed). `shturmap-cli quests` lists active quests with every observation.
+Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows, or quest states once set by hand;
+they are ignored (and could never reopen a quest the log saw completed). The logs say nothing of single objectives:
+the only word on those is the player's own tick (§4, "Quest cards", *Ticks*), kept apart from the quest states, in
+the settings. `shturmap-cli quests` lists active quests with every observation.
 `shturmap-cli synopses [mode]` lists every Plan row's synopsis with its flags (§5, "Quest synopsis"), and
 `shturmap-cli effort [mode]` every Plan row's effort group and complexity (§7, "Plan order").
 
@@ -1607,6 +1669,7 @@ form. Problems and ideas both go through it.
 - 0.1.0 went to friends as one self-unpacking exe (2026-10-03). From 0.2.0, the first public release, a Setup from
   GitHub Releases that keeps itself up to date (Velopack; §8, "Distribution"): 106 MB to download, 244 MB installed.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").
-- Open: objective progress, by ticks the player sets (owner, 2026-10-04; docs/NEXT.md, D1); the installed size (budget
-  80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand, opening with the game or with
-  Windows, a text size setting.
+- Objective progress: by ticks the player sets on the quest card (2026-10-04; §4, "Quest cards", *Ticks*), since
+  the logs don't report it.
+- Open: the installed size (budget 80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand,
+  opening with the game or with Windows, a text size setting.

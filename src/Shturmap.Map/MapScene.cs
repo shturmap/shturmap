@@ -201,7 +201,10 @@ public sealed class MapScene
             if (FocusShown && !same)
                 FocusSince = DateTime.Now;
             if (FocusShown)
+            {
                 LastFocus = shown;
+                _lastFocusObjective = _focusObjective;
+            }
         }
     }
 
@@ -212,6 +215,35 @@ public sealed class MapScene
 
     /// <summary>The last non-empty focus: still emphasised while the dimming fades out.</summary>
     public IReadOnlySet<string> LastFocus { get; private set; } = new HashSet<string>();
+
+    /// <summary>
+    /// The objective the pointer is on, within the quest in <see cref="Focus"/> (its id, as its markers' ids carry
+    /// it), or null when the pointer is on the quest as a whole. With one, only that objective's places pulse and
+    /// take the pointed-at size; the quest's other places stay lit and hold still.
+    /// </summary>
+    public string? FocusObjective
+    {
+        get => _focusObjective;
+        set
+        {
+            if (value == _focusObjective)
+                return;
+            _focusObjective = value;
+            if (!FocusShown)
+                return;
+            // Another objective of the same quest: its pulse starts anew, as a new focus's does.
+            FocusSince = DateTime.Now;
+            _lastFocusObjective = value;
+        }
+    }
+
+    private string? _focusObjective;
+
+    // The objective of the last focus shown: its places keep their size while the dimming fades out.
+    private string? _lastFocusObjective;
+
+    /// <summary>The objective marked within what is drawn emphasised (<see cref="ShownFocus"/>), or null.</summary>
+    public string? ShownFocusObjective => FocusShown ? _focusObjective : Dim > 0 ? _lastFocusObjective : null;
 
     /// <summary>
     /// How far the markers outside the focus have stepped back, 0 to 1. The map view eases it toward 1 while
@@ -242,8 +274,9 @@ public sealed class MapScene
     public bool Pulse { get; set; } = true;
 
     /// <summary>
-    /// Whether the emphasised markers pulse now: all the while the pointer is on something. Picks hold still: a pick
-    /// pulsing all raid would be motion at the edge of the player's eye.
+    /// Whether the emphasised markers pulse now: all the while the pointer is on something (with an objective pointed
+    /// at, only that objective's places: <see cref="FocusObjective"/>). Picks hold still: a pick pulsing all raid
+    /// would be motion at the edge of the player's eye.
     /// </summary>
     public bool Pulsing => Pulse && FocusShown;
 

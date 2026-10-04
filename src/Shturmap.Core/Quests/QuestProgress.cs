@@ -11,8 +11,9 @@ public enum QuestState
 }
 
 /// <summary>
-/// Where a stored observation came from. Only Log (and Manual) are used; TasksScan and Import rows from earlier
-/// versions may still be in a database and are ignored (docs/DESIGN.md §8, "Quest progress").
+/// Where a stored observation came from. Only Log is used: quest states come from the game's log alone. TasksScan,
+/// Manual and Import rows from earlier versions may still be in a database and are ignored (docs/DESIGN.md §8,
+/// "Quest progress"; the owner declined editing quests by hand on 2026-10-04).
 /// </summary>
 public enum ObservationSource
 {
@@ -45,9 +46,9 @@ public static class QuestProgress
     };
 
     /// <summary>
-    /// Current state per quest. The newest observation wins, so a log event after a scan overrides it and a manual
-    /// change holds until the game says otherwise; but once the log has seen a quest completed or failed, only a
-    /// later log event can make it active again. Quests nobody observed are marked
+    /// Current state per quest. The newest observation wins; and once the log has seen a quest completed or failed,
+    /// only a later log event can make it active again (rows of other sources, which the session no longer passes in,
+    /// could never reopen it). Quests nobody observed are marked
     /// completed when an active or completed quest strictly requires them; that is inferred, not stored.
     /// </summary>
     /// <param name="requirements">Prerequisites of a quest; only those requiring "complete" alone are used for inference.</param>

@@ -45,6 +45,7 @@ public sealed record SourceHealth(bool Ok, string Text);
 /// <param name="Needs">Keys or items this objective needs, e.g. "Key: Dorm room 114 key", or null.</param>
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
 /// <param name="TraderId">The quest giver, for the portrait.</param>
+/// <param name="NeedKey">The key <paramref name="Needs"/> stands for, when it names exactly one (<see cref="Planning.NeedKey"/>).</param>
 public sealed record ObjectiveView(
     string QuestId,
     string QuestName,
@@ -59,7 +60,8 @@ public sealed record ObjectiveView(
     ObjectiveKind Kind,
     string? Needs,
     double? MapBearing = null,
-    string? TraderId = null);
+    string? TraderId = null,
+    string? NeedKey = null);
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
 public sealed record RaidInfo(int RaidMinutes, IReadOnlyList<string> Bosses, double? ClockHours);
@@ -189,6 +191,15 @@ public sealed record SessionSnapshot
 
     /// <summary>The quests picked for the coming raid in this mode (<see cref="QuestPicks"/>).</summary>
     public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();
+
+    /// <summary>
+    /// The objectives the player ticked as done in this mode, each with the day it was set (<see cref="ObjectiveTicks"/>).
+    /// The plans, the rail and the map already leave them out; the cards show them as done and say why.
+    /// </summary>
+    public IReadOnlyDictionary<string, DateOnly> Ticks { get; init; } = new Dictionary<string, DateOnly>();
+
+    /// <summary>The ticked objectives' ids.</summary>
+    public IReadOnlySet<string> Done { get; init; } = new HashSet<string>();
 
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];

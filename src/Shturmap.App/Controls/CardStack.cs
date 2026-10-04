@@ -357,8 +357,19 @@ public sealed class CardStack
         return -1;
     }
 
-    // An element's bounds in root coordinates; elements on a card are measured from the card's popup.
+    // What a card opens beside. A small thing among others in a row (a need cell, a glyph on a folded Plan card)
+    // opens its card beside that row, at its own height: beside itself, the card would lie over the row's other cells.
     private Rect AnchorOf(FrameworkElement element, int level)
+    {
+        var box = BoundsOf(element, level);
+        if (Linked.RowAround(element) is not { } row)
+            return box;
+        var wide = BoundsOf(row, level);
+        return new Rect(wide.X, box.Y, wide.Width, box.Height);
+    }
+
+    // An element's bounds in root coordinates; elements on a card are measured from the card's popup.
+    private Rect BoundsOf(FrameworkElement element, int level)
     {
         var size = new Rect(0, 0, element.ActualWidth, element.ActualHeight);
         if (level < 0)

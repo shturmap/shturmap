@@ -79,6 +79,8 @@ public sealed partial class MainWindow : Window
         // A click on a quest keeps its card open; the pen beside it (rows, cards) picks it for the coming raid.
         Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
         Linked.KeepRequested += quest => _ = _session.TogglePickAsync(quest, "pen");
+        // The tick at the end of an objective's row on a quest card: done, the player says (the logs never do).
+        TickBox.Requested += objective => _ = _session.ToggleTickAsync(objective, "card");
         Linked.FocusChanged += OnFocusChanged;
         // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
         // handle their own clicks.
@@ -541,13 +543,17 @@ public sealed partial class MainWindow : Window
         vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
         var complete = s.MapPlan?.Finish.Select(q => q.QuestId).ToHashSet() ?? [];
         var kinds = (s.MapPlan?.Finish ?? []).Concat(s.MapPlan?.Progress ?? []).ToDictionary(q => q.QuestId, q => q.Kind);
+        // A quest whose objectives here are all ticked as done has nothing left to do on this map: it isn't listed.
+        // Otherwise its open lines come first, nearest first, then the ticked ones, muted, with "done" where the
+        // distance was (owner, 2026-10-04).
         var quests = s.Objectives
             .GroupBy(o => o.QuestId)
+            .Where(g => g.Any(o => !o.Done))
             .Select(g =>
             {
                 var first = g.First();
-                var objectives = g.OrderBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
-                    .Select(o => ToItem(o, o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
+                var objectives = g.OrderBy(o => o.Done ? 1 : 0).ThenBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
+                    .Select(o => ToItem(o, o.Done ? "done" : o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
                     .ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
@@ -591,7 +597,7 @@ public sealed partial class MainWindow : Window
         // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
         // log: in a raid the app got glances with a median of 3.9 s).
         // With picks, NEXT is the nearest objective among them (the guide line leads there too); else the nearest of all.
-        var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null).ToList();
+        var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null && !o.Done).ToList();
         var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
         vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name);
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
@@ -599,7 +605,7 @@ public sealed partial class MainWindow : Window
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : vm.NoGameLogs ? "" // the no-game line says why there is nothing to plan
             : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
-            : vm.InRaid && !vm.ScavRaid && s.Objectives.Count == 0 ? $"None of your {s.ActiveQuestCount} active quests has an objective on this map."
+            : vm.InRaid && !vm.ScavRaid && !s.Objectives.Any(o => !o.Done) ? $"None of your {s.ActiveQuestCount} active quests has an objective left on this map."
             : "";
         vm.Attribution = AttributionFor(s.Definition);
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
@@ -615,7 +621,7 @@ public sealed partial class MainWindow : Window
     private void ShowScavRaid(SessionSnapshot s)
     {
         var vm = ViewModel;
-        var loot = s is { Data: { } data, Map: { } map } ? ScavRaid.Loot(data, s.Quests, data.MapIdsSharing(map.NormalizedName)) : [];
+        var loot = s is { Data: { } data, Map: { } map } ? ScavRaid.Loot(data, s.Quests, data.MapIdsSharing(map.NormalizedName), s.Done) : [];
         var quests = loot.SelectMany(l => l.QuestIds).Distinct().Count();
         vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
         // Loading as a Scav (a server-hosted raid's setup says so early) has no kit to check: nothing counts for quests.
@@ -653,7 +659,7 @@ public sealed partial class MainWindow : Window
         var suffix = " on " + mapName;
         var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
-            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader);
+            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey);
     }
 
     // The map's guide plate says the same (MapRenderer.DistanceText).
@@ -693,6 +699,7 @@ public sealed partial class MainWindow : Window
         scene.QuestKeys = latest.Content?.QuestKeys ?? new Dictionary<string, IReadOnlyList<string>>();
         scene.Kept = latest.Picks;
         scene.Focus = MapFocus();
+        scene.FocusObjective = Linked.Current?.Objective;
         Map.Refresh();
     }
 
@@ -813,7 +820,7 @@ public sealed partial class MainWindow : Window
         if (_previewing != normalizedName)
             return;
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
-        var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+        var content = MapContentBuilder.Build(data, map.Id, active, s.Done);
         Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _sceneKey = null;
@@ -927,12 +934,12 @@ public sealed partial class MainWindow : Window
     // ---- quest cards and linked highlighting ----
 
     private QuestCardView? BuildCard(string questId) =>
-        _snapshot is { Data: { } data } s ? QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources) : null;
+        _snapshot is { Data: { } data } s ? QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources, s.Ticks) : null;
 
     private FrameworkElement? CreateCard(CardKey key) => key switch
     {
         CardKey.Quest q when BuildCard(q.Id) is { } view => new QuestCard(view),
-        CardKey.Item i when _snapshot is { Data: { } data } s => new ItemCard(ItemCards.Build(data, s.Sources, s.Quests, i.Id)),
+        CardKey.Item i when _snapshot is { Data: { } data } s => new ItemCard(ItemCards.Build(data, s.Sources, s.Quests, i.Id, s.Done)),
         _ => null,
     };
 
@@ -945,7 +952,7 @@ public sealed partial class MainWindow : Window
                 quest.Show(view);
                 return true;
             case ItemCard item when _snapshot is { Data: { } data } s:
-                item.Show(ItemCards.Build(data, s.Sources, s.Quests, item.View.ItemId));
+                item.Show(ItemCards.Build(data, s.Sources, s.Quests, item.View.ItemId, s.Done));
                 return true;
             default:
                 return false;
@@ -1014,6 +1021,8 @@ public sealed partial class MainWindow : Window
         if (Map.Scene is not { } scene)
             return;
         scene.Focus = MapFocus();
+        // One objective of the quest pointed at: only its places pulse, the quest's others stay lit.
+        scene.FocusObjective = Linked.Current?.Objective;
         // Pointing at an item shows where it lies loose on the shown map.
         scene.Spawns = Linked.Current?.Item is { } item && _snapshot is { Data: { } data, Map: { } map }
             ? data.SpawnsOf(item).Where(s => data.MapIdsSharing(map.NormalizedName).Contains(s.MapId)).Select(s => s.Position).ToList()
@@ -1046,12 +1055,16 @@ public sealed partial class MainWindow : Window
 
     private void DropPointerFocus()
     {
-        // A snapshot's shown quest and the clip's drawn pointer aren't a mouse: they stay, whichever window is active.
-        if (SnapshotMode || DemoMode)
+        // A snapshot's shown quest, the clip's drawn pointer and a developer script's aren't a mouse: they stay,
+        // whichever window is active.
+        if (SnapshotMode || DemoMode || ScriptedPointer)
             return;
         Map.ClearHover();
         Linked.LetGo();
     }
+
+    /// <summary>A developer script points at something ("point", "hover"): there is no mouse to let go of it.</summary>
+    private bool ScriptedPointer { get; set; }
 
     private DateTime _markerHoveredAt;
 
@@ -1072,7 +1085,9 @@ public sealed partial class MainWindow : Window
                 Linked.Set(null);
                 break;
             case { Group: { } quest, Objective: not null }:
-                Linked.Set(Focus.Quest(quest));
+                // The quest, and within it the objective this place belongs to: its line in the raid card and its row
+                // on the quest's card light up, and only its own places pulse.
+                Linked.Set(new Focus(new HashSet<string> { quest }, Objective: MapRenderer.ObjectiveOf(marker)));
                 var p = Map.TransformToVisual(Content).TransformPoint(at);
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
                 break;
