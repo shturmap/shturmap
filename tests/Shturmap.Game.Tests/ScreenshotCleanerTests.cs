@@ -162,22 +162,35 @@ public sealed class ScreenshotCleanerTests : IDisposable
     }
 
     [Fact]
-    public void A_deleted_screenshots_name_counts_as_new_again()
+    public async Task A_deleted_screenshots_name_counts_as_new_again()
     {
         using var watcher = new ScreenshotWatcher(_folder);
-        var seen = new List<string>();
-        watcher.ScreenshotTaken += s => seen.Add(s.Path);
+        // Once the folder is watched, a new file is reported by its notification's thread or by the rescan, whichever
+        // comes first: the list is shared, and a report can arrive a moment after Rescan returns.
+        var seen = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        watcher.ScreenshotTaken += s => seen.Enqueue(s.Path);
+        async Task Reported(int count)
+        {
+            var until = DateTime.UtcNow.AddSeconds(10);
+            while (seen.Count < count && DateTime.UtcNow < until)
+                await Task.Delay(10, TestContext.Current.CancellationToken);
+            // And no more than that: a little time for a second report that must not come.
+            await Task.Delay(100, TestContext.Current.CancellationToken);
+            Assert.Equal(count, seen.Count);
+        }
+
         var shot = Make(Shot);
         watcher.Rescan();
-        Assert.Equal(new[] { shot }, seen);
+        await Reported(1);
 
         // Deleted after reading; the same place, facing and minute give the same name again.
         File.Delete(shot);
         watcher.Forget(shot);
         watcher.Rescan();
-        Assert.Single(seen);
+        await Reported(1);
         Make(Shot);
         watcher.Rescan();
-        Assert.Equal(new[] { shot, shot }, seen);
+        await Reported(2);
+        Assert.All(seen, path => Assert.Equal(shot, path));
     }
 }
