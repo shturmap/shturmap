@@ -119,7 +119,13 @@ public static partial class MapRenderer
             DrawLabel(canvas, label);
         DrawGuidePlate(canvas, layout.Guide, uiScale);
         foreach (var chevron in layout.Chevrons)
+        {
+            // What is pointed at pulses where it is in view; out of view, its chevron does (owner, 2026-10-04: "if a
+            // quest marker is outside of the current viewport, it should probably indicate that").
+            if (chevron.Pointed && scene.Pulsing)
+                DrawPulse(canvas, scene, chevron.At, 7 * uiScale, chevron.Color, uiScale);
             DrawChevron(canvas, chevron, uiScale);
+        }
         DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
     }
@@ -289,6 +295,8 @@ public static partial class MapRenderer
                 taken.Add(CountBadgeBox(m, ui));
             if (ShowsOptional(m))
                 taken.Add(OptionalBadgeBox(m, ui));
+            if (ShowsPossible(m))
+                taken.Add(PossibleBadgeBox(m, ui));
             taken.Add(Square(m.At, m.Reach));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeBox(m, ui));
@@ -615,6 +623,30 @@ public static partial class MapRenderer
         canvas.DrawRect(box, plate);
         canvas.DrawRect(box, edge);
         canvas.DrawText(OptionalTag, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
+    }
+
+    // One of the places the thing can be: a "?" at the marker's lower left (the floor is upper right, the count
+    // lower right, "OPT" upper left).
+    private const string PossibleTag = "?";
+
+    private static bool ShowsPossible(ShownMarker m) => m.Marker.Kind == MarkerKind.PossibleLocation;
+
+    private static SKRect PossibleBadgeBox(ShownMarker m, float ui)
+    {
+        var c = new SKPoint(m.At.X - m.R * 0.85f, m.At.Y + m.R * 0.85f);
+        return SKRect.Create(c.X - 5.5f * ui, c.Y - 6 * ui, 11 * ui, 12 * ui);
+    }
+
+    private static void DrawPossibleBadge(SKCanvas canvas, ShownMarker m, float ui)
+    {
+        var box = PossibleBadgeBox(m, ui);
+        using var plate = new SKPaint { Color = Background, IsAntialias = true };
+        using var edge = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.1f * ui };
+        using var font = new SKFont(TypefaceBold, 10 * ui);
+        using var paint = new SKPaint { Color = m.Color, IsAntialias = true };
+        canvas.DrawRect(box, plate);
+        canvas.DrawRect(box, edge);
+        canvas.DrawText(PossibleTag, box.MidX, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, paint);
     }
 
     private static void DrawCountBadge(SKCanvas canvas, ShownMarker m, float ui)
@@ -1301,7 +1333,8 @@ public static partial class MapRenderer
 
     /// <summary>A chevron at the edge of the view pointing toward places out of view, with how many lie that way.</summary>
     /// <param name="Degrees">The direction it points, clockwise from the right.</param>
-    public sealed record EdgeChevron(SKPoint At, float Degrees, int Count, SKColor Color);
+    /// <param name="Pointed">Places of what is pointed at: drawn larger, and pulsing as its markers in view do.</param>
+    public sealed record EdgeChevron(SKPoint At, float Degrees, int Count, SKColor Color, bool Pointed = false);
 
     /// <summary>How far in from the edge of the view the chevrons sit (pixels, before scaling).</summary>
     private const float ChevronInset = 18;
@@ -1316,7 +1349,7 @@ public static partial class MapRenderer
         var (w, h) = (camera.Viewport.Width, camera.Viewport.Height);
         var center = new SKPoint(w / 2, h / 2);
         var inset = ChevronInset * ui;
-        var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color)>();
+        var points = new List<(SKPoint Edge, SKPoint Direction, SKColor Color, bool Pointed)>();
         foreach (var marker in scene.Markers)
         {
             if (marker.Objective is null || marker.Kind == MarkerKind.ObjectiveDone || !(IsPointed(scene, marker) || IsSelected(scene, marker)))
@@ -1330,14 +1363,14 @@ public static partial class MapRenderer
             var t = Math.Min(tx, ty);
             var length = Math.Max(1e-3f, d.Length);
             points.Add((new SKPoint(center.X + d.X * t, center.Y + d.Y * t), new SKPoint(d.X / length, d.Y / length),
-                IsSelected(scene, marker) ? Kept : ColorOf(marker.Kind)));
+                IsSelected(scene, marker) ? Kept : ColorOf(marker.Kind), IsPointed(scene, marker)));
         }
-        return Clusters(points, (a, b) => a.Color == b.Color && SKPoint.Distance(a.Edge, b.Edge) < 56 * ui)
+        return Clusters(points, (a, b) => a.Color == b.Color && a.Pointed == b.Pointed && SKPoint.Distance(a.Edge, b.Edge) < 56 * ui)
             .Select(c =>
             {
                 var at = new SKPoint(c.Average(p => p.Edge.X), c.Average(p => p.Edge.Y));
                 var direction = new SKPoint(c.Sum(p => p.Direction.X), c.Sum(p => p.Direction.Y));
-                return new EdgeChevron(at, (float)(Math.Atan2(direction.Y, direction.X) * 180 / Math.PI), c.Count, c[0].Color);
+                return new EdgeChevron(at, (float)(Math.Atan2(direction.Y, direction.X) * 180 / Math.PI), c.Count, c[0].Color, c[0].Pointed);
             })
             .ToList();
     }
@@ -1345,6 +1378,10 @@ public static partial class MapRenderer
     private static void DrawChevron(SKCanvas canvas, EdgeChevron chevron, float ui)
     {
         var at = chevron.At;
+        // Half as large again for what is pointed at: the small chevron went unseen.
+        var scale = ui;
+        if (chevron.Pointed)
+            ui *= 1.5f;
         using var halo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui, StrokeJoin = SKStrokeJoin.Round };
         using var fill = new SKPaint { Color = chevron.Color, IsAntialias = true };
         canvas.Save();
@@ -1360,8 +1397,8 @@ public static partial class MapRenderer
         // The count sits inward of the chevron, toward the middle of the view.
         var radians = chevron.Degrees * Math.PI / 180;
         var label = new SKPoint(at.X - (float)Math.Cos(radians) * 14 * ui, at.Y - (float)Math.Sin(radians) * 14 * ui);
-        using var font = new SKFont(TypefaceBold, 10.5f * ui);
-        using var textHalo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
+        using var font = new SKFont(TypefaceBold, (chevron.Pointed ? 12.5f : 10.5f) * scale);
+        using var textHalo = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * scale };
         var count = chevron.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
         canvas.DrawText(count, label.X, label.Y + font.Size * 0.36f, SKTextAlign.Center, font, textHalo);
         canvas.DrawText(count, label.X, label.Y + font.Size * 0.36f, SKTextAlign.Center, font, fill);
@@ -1422,17 +1459,30 @@ public static partial class MapRenderer
     /// <summary>How long one pulse of a focused marker takes; the map keeps redrawing while something is in focus.</summary>
     public static readonly TimeSpan PulsePeriod = TimeSpan.FromSeconds(1.4);
 
-    // A ring that leaves the marker and fades, like a ping: motion is what the eye notices before anything else, so
-    // the focused markers are found at once even among many.
+    // Rings that leave the marker and fade, like a ping: motion is what the eye notices before anything else, so
+    // the focused markers are found at once even among many. Two rings half a period apart, so one is always well
+    // out; each starts 4.5 px wide and travels 38 px, on a dark band so it shows on light streets too (owner,
+    // 2026-10-04: "I really like it, but the effect is too subtle"; it was one ring, 2.5 px wide, that travelled
+    // 26 px and faded with the square of the way).
     private static void DrawPulse(SKCanvas canvas, MapScene scene, SKPoint at, float r, SKColor color, float ui)
     {
-        var t = (float)((DateTime.Now - scene.FocusSince).TotalSeconds % PulsePeriod.TotalSeconds / PulsePeriod.TotalSeconds);
-        var fade = (1 - t) * (1 - t);
-        using var ring = new SKPaint
+        var phase = (DateTime.Now - scene.FocusSince).TotalSeconds % PulsePeriod.TotalSeconds / PulsePeriod.TotalSeconds;
+        for (var i = 0; i < 2; i++)
         {
-            Color = color.WithAlpha((byte)(220 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui,
-        };
-        canvas.DrawCircle(at, r + (3 + 26 * t) * ui, ring);
+            var t = (float)((phase + i * 0.5) % 1);
+            var fade = (float)Math.Pow(1 - t, 1.5);
+            var width = (4.5f - 2 * t) * ui;
+            using var band = new SKPaint
+            {
+                Color = Background.WithAlpha((byte)(150 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = width + 2.5f * ui,
+            };
+            using var ring = new SKPaint
+            {
+                Color = color.WithAlpha((byte)(255 * fade)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = width,
+            };
+            canvas.DrawCircle(at, r + (4 + 34 * t) * ui, band);
+            canvas.DrawCircle(at, r + (4 + 34 * t) * ui, ring);
+        }
     }
 
     // Every symbol stands on a dark collar (3 px, the ground at 67 %), so it keeps an edge on light streets, where
@@ -1495,21 +1545,14 @@ public static partial class MapRenderer
         switch (marker.Kind)
         {
             case MarkerKind.Objective or MarkerKind.PossibleLocation when marker.Objective is { } kind:
-                if (marker.Kind == MarkerKind.PossibleLocation)
-                {
-                    // A possible location: hollow, so the eye reads "maybe here".
-                    using var ring = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
-                    DrawRingCollar(canvas, at, r - ui, 2 * ui, ui);
-                    canvas.DrawCircle(at, r - ui, ring);
-                    Glyphs.Draw(canvas, kind, at, r * 1.05f, color);
-                }
-                else
-                {
-                    DrawCollar(canvas, at, r, ui);
-                    canvas.DrawCircle(at, r, fill);
-                    canvas.DrawCircle(at, r, outline);
-                    Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);
-                }
+                // Every quest marker is the type's dark glyph on the marker's colour (owner, 2026-10-04: "it should
+                // always be a black icon surrounded by the marker color"). A possible location was a hollow ring with
+                // a coloured glyph until then, and read as another kind of marker, not as "maybe here": it says so
+                // with a "?" at its corner now (DrawPossibleBadge).
+                DrawCollar(canvas, at, r, ui);
+                canvas.DrawCircle(at, r, fill);
+                canvas.DrawCircle(at, r, outline);
+                Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);
                 break;
             case MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared:
                 using (var tri = Triangle(at, r))
@@ -1598,6 +1641,8 @@ public static partial class MapRenderer
             DrawCountBadge(canvas, shown, ui);
         if (ShowsOptional(shown))
             DrawOptionalBadge(canvas, shown, ui);
+        if (ShowsPossible(shown))
+            DrawPossibleBadge(canvas, shown, ui);
     }
 
     // ---- the player's new position: a ping where it is, or an arrow at the edge when it is out of view ----

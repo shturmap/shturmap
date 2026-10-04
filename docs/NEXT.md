@@ -826,6 +826,12 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 
 1. **Website media.** Re-record the screenshots and the hero clip (`tools\make-media.ps1` in the site repository),
    only when the owner says so.
+   Owner, 2026-10-04: "Only update the assets for the website when I say so, but flag if it needs doing when we
+   want to do a release and the assets are showing outdated information." So: never by itself, and at a release
+   say what the pictures no longer show. Last recorded on 2026-10-04 (the quest types' new icons). Outdated since,
+   to flag then: every map row in Plan's list carries its glyphs and need cells, the open map's too (the Plan
+   picture); a possible place is a filled marker with a "?" where it was a hollow ring (the raid picture's Audit
+   marker, the clip); the pulse of a pointed-at quest is two wider rings (the clip).
 2. **Reporting is one route: in the app, to Sentry** (owner, 2026-10-03: "don't want to mix github issues and other
    reporting methods, it should be one coherent easy to use thing"; done, DESIGN.md §8, "Reports"). This replaces
    the earlier plan of GitHub issue forms plus a separate web form. Before the release:

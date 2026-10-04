@@ -111,9 +111,9 @@ public static class MapLegend
         new(LegendSymbol.KeptLock, "A door one of your picks needs a key for: a cyan padlock, with its key's short name at any zoom."),
         new(LegendSymbol.Guide, "From you to the nearest place of your picks: a dashed cyan line with the distance, as old as your position."),
         new(LegendSymbol.OutOfView, "Picked places out of view: a cyan chevron at the edge, and how many lie that way."),
-        new(LegendSymbol.PointedOutOfView, "Places of the quest you point at, out of view: a gold chevron at the edge, and how many lie that way."),
+        new(LegendSymbol.PointedOutOfView, "Places of the quest you point at, out of view: a larger gold chevron at the edge that pulses, and how many lie that way."),
         new(LegendSymbol.Objective, "Quest objective: a gold disc; its glyph is the quest type."),
-        new(LegendSymbol.PossibleLocation, "One of the places it can be: a hollow gold ring."),
+        new(LegendSymbol.PossibleLocation, "One of the places it can be: a ? at the marker's corner."),
         new(LegendSymbol.Cluster, "Places of one objective close together: one marker with their count. Zoom in to split them."),
         new(LegendSymbol.Optional, "An optional objective: OPT at the marker's upper left. The quest can be finished without it, but it may still help."),
         new(LegendSymbol.Done, "A done objective: a small grey disc with a check."),
@@ -217,7 +217,7 @@ public static partial class MapRenderer
                 DrawChevron(canvas, new EdgeChevron(new SKPoint(center.X + 10 * ui, center.Y), 0, 2, Kept), ui);
                 break;
             case LegendSymbol.PointedOutOfView:
-                DrawChevron(canvas, new EdgeChevron(new SKPoint(center.X + 10 * ui, center.Y), 0, 2, Amber), ui);
+                DrawChevron(canvas, new EdgeChevron(new SKPoint(center.X + 10 * ui, center.Y), 0, 2, Amber, Pointed: true), ui);
                 break;
             case LegendSymbol.Objective:
                 Marker(Quest(MarkerKind.Objective));

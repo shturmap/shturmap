@@ -493,7 +493,12 @@ needs, the quests a pointed-at item is for); an item that merely shares a quest 
 (owner, 2026-10-04, from the review: one tint stood for all three, and pointing at an item lit every other item
 of its quests; `LinkStrength`); map markers
 not in focus step back by kind (see "Map drawing", "Stepping back"), easing in and out over 0.18 s, and the focused
-ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
+ones pulse: rings leave the marker and fade, one every 0.7 s (owner, 2026-10-04: "I really like it, but the effect
+is too subtle": two rings half the 1.4 s period apart now, each 4.5 px wide at the start and travelling 38 px on a
+dark band, where there was one of 2.5 px that travelled 26 px and faded with the square of the way; and the
+pointed-at quest's places out of view get the same pulse at their chevron on the edge, drawn half as large
+again, since the small chevron went unseen: "if a quest marker is outside of the current viewport, it should
+probably indicate that") (motion is noticed before anything else; off, with the
 easing, when Windows' animation effects are off, and only while something is in focus). A pulse or a ping draws the
 map again about 60 times a second and moves nothing, so a frame's layout (which marker, badge and label goes where)
 is kept from frame to frame while what it is made from stands: the view, the display's scale, the scene's data and
@@ -905,8 +910,9 @@ spawns below).
   of 1,418 objectives optional; 45 have places on a map (most on Customs, 15, and Streets, 11: Abandoned Cargo's
   seven cargos, Pyramid Scheme's ten). Their markers carry a small "OPT" badge at the upper left, in the badge style
   of the count (dark plate, the marker's colour), and the quest card and the raid card say "(optional)" after the
-  objective. Words, because no shape, colour or ring is free to mean "optional": the hollow ring is a possible
-  place, grey is done, a dashed ring is an old position, and a dotted ring, also tried, read like either. A label
+  objective. Words, because no shape, colour or ring is free to mean "optional": grey is done, a dashed ring is an
+  old position, and a dotted ring, also tried, read like either (the hollow ring was a possible place until
+  2026-10-04, see "Possible places" below). A label
   suffix was tried too; it disappears with the label.
 
 - **Landmarks from tarkov.dev's data** (owner, 2026-10-03: "Do B and A"; B, landmarks, came with the question of
@@ -1045,7 +1051,7 @@ spawns below).
   cards' directions are relative to the facing (principle 8, `Facing.Fresh`; until the review of 2026-10-04 for 60 s).
 - **One meaning per colour, shape as a second cue.** Simulated colour blindness (Machado 2009) put the quest amber,
   the PMC-extract green and the shared-extract khaki within ΔE 4–7 of each other. Shared extracts are split down
-  the middle by a dark line (two sides, one exit), not hollow (hollow means "one of these places"). Done
+  the middle by a dark line (two sides, one exit), not hollow. Done
   objectives are a smaller muted-ink disc with a check mark, no longer translucent green, so green means extracts
   only; their zones turn muted too. The trail is the player's sand, no longer the Scav-extract teal. Sand is the
   player's alone (the review of 2026-10-04: other-floor badges and the squares of an item's loose spots were sand
@@ -1056,8 +1062,14 @@ spawns below).
   closer than two marker widths on screen, merge into one marker at the group's medoid (a real place, so the
   marker never stands where nothing is) with a count badge at its lower right in the marker's colour: "Following the
   Bread Crumbs" lists 16 places on The Lab, which piled up with four labels. Groups split as the view zooms in;
-  places of different objectives never merge; possible places stay hollow; the kept or pointed-at quest clusters
-  too. A group with any place on another floor shows the floor arrow. The largest group carries the label;
+  places of different objectives never merge; possible places keep their "?"; the kept or pointed-at quest clusters
+  too. **Possible places** (one of several places a thing can be) are drawn like every quest marker, the type's
+  dark glyph on the marker's colour, with a "?" at the lower left, in the badges' look (owner, 2026-10-04: "The
+  'Mark' icon is the pin needle, which is black on background. The 'Get' icon is a hand that is color on
+  transparent background. I think it should always be a black icon surrounded by the marker color"). Until then a
+  possible place was a hollow ring with the glyph in colour, meant to read as "maybe here"; it read as another kind
+  of marker, its glyph taken for the difference. The four corners are then: floor upper right, count lower right,
+  "OPT" upper left, "?" lower left. A group with any place on another floor shows the floor arrow. The largest group carries the label;
   pointing at a cluster points at its quest. Only places in view are merged, so a group that runs out of view keeps
   a marker for the ones in view, with their count (the review of 2026-10-04: merged first, the whole group went when
   its middle place was out of view).
