@@ -150,7 +150,16 @@ public sealed record PlanCard(
 /// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
 /// <param name="Complete">Whether this raid can complete it (Plan's COMPLETE), or only progress it.</param>
 public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null);
+    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null)
+{
+    /// <summary>What every line of the quest needs, said once under its name (<see cref="Rules.RaidLines.SharedNeed"/>), or empty.</summary>
+    public string SharedNeeds { get; init; } = "";
+
+    /// <summary>The key <see cref="SharedNeeds"/> stands for, when it names exactly one: the line is that key.</summary>
+    public string? SharedKeyId { get; init; }
+
+    public Visibility SharedNeedsVisibility => SharedNeeds.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+}
 
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);
 

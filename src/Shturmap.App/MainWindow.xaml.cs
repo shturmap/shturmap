@@ -618,9 +618,16 @@ public sealed partial class MainWindow : Window
                 var objectives = g.OrderBy(o => o.Done ? 1 : 0).ThenBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
                     .Select(o => ToItem(o, o.Done ? "done" : o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
                     .ToList();
+                var shared = RaidLines.SharedNeed(objectives.Select(o => (o.Needs, o.Done)).ToList());
+                if (shared.Length > 0)
+                    objectives = objectives.Select(o => o.Needs == shared ? o with { Needs = "", KeyId = null } : o).ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
-                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key), Chips(s, s.MapPlan, g.Key)));
+                    first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key), Chips(s, s.MapPlan, g.Key))
+                {
+                    SharedNeeds = shared,
+                    SharedKeyId = shared.Length > 0 ? g.Where(o => !o.Done && o.Needs == shared).Select(o => o.NeedKey).Distinct().ToList() is [{ } key] ? key : null : null,
+                });
             })
             .OrderBy(q => q.Nearest)
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
@@ -713,6 +720,13 @@ public sealed partial class MainWindow : Window
     {
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
+        // In a few words where the data allows it (owner, 2026-10-04: the raid card is read in seconds; the quest's
+        // card keeps tarkov.dev's sentence).
+        if (o.Short is { Length: > 0 } few)
+        {
+            return new ObjectiveItem(o.QuestId, few, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
+                Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey);
+        }
         // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
         // "(optional)" at the end.
         const string optional = " (optional)";

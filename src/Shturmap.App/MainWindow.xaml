@@ -63,6 +63,11 @@
             <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
             <controls:Picture Grid.Column="4" TraderId="{x:Bind TraderId}" Title="{x:Bind TraderName}" Size="20" />
           </Grid>
+          <!-- What every line below needs, said once (three places to mark with the same marker). -->
+          <Border Visibility="{x:Bind SharedNeedsVisibility}" HorizontalAlignment="Left" Padding="4,0" Margin="22,1,0,0"
+                  controls:Linked.Item="{x:Bind SharedKeyId}" controls:Linked.Inline="True">
+            <TextBlock Text="{x:Bind SharedNeeds}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
+          </Border>
           <ItemsControl ItemsSource="{x:Bind Objectives}" Margin="26,2,0,0">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:ObjectiveItem">
