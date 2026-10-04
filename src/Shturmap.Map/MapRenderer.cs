@@ -39,13 +39,25 @@ public static partial class MapRenderer
     public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null)
     {
         canvas.Clear(Background);
+        // Read once: a tile arriving on its own thread may end the sheet in the middle of a frame.
+        var sheet = scene.IsSheet;
         if (scene.Artwork is not null)
+        {
             DrawArtwork(canvas, camera, scene, scene.Artwork);
-        else if (!scene.IsSheet && scene.Tiles is { } tiles)
+        }
+        else if (!sheet && scene.Tiles is { } tiles)
+        {
             DrawTiles(canvas, camera, scene, tiles);
+        }
         else
+        {
             DrawSchematic(canvas, camera, scene, uiScale);
-        if (scene.IsSheet)
+            // The sheet stands in for a render that couldn't be had (offline): keep asking for this view's tiles, so
+            // the render comes by itself once they can be had, without a restart (the review of 2026-10-04).
+            if (scene.Tiles is { } missing)
+                AskForTiles(camera, scene, missing);
+        }
+        if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
         var layout = Layout(camera, scene, uiScale);
@@ -688,9 +700,7 @@ public static partial class MapRenderer
     {
         if (scene.Definition.TilePath is not { } basePath)
             return;
-        var corner1 = camera.ToMap(new SKPoint(0, 0));
-        var corner2 = camera.ToMap(new SKPoint(camera.Viewport.Width, camera.Viewport.Height));
-        var view = new MapRect(Math.Min(corner1.X, corner2.X), Math.Min(corner1.Y, corner2.Y), Math.Max(corner1.X, corner2.X), Math.Max(corner1.Y, corner2.Y));
+        var view = ViewOf(camera);
         var bounds = scene.Projection.WorldRect;
         var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
         using var plain = new SKPaint();
@@ -713,6 +723,27 @@ public static partial class MapRenderer
             canvas.DrawRect(canvas.LocalClipBounds, dim);
             Layer(floorPath);
         }
+    }
+
+    // The part of the map a camera shows, in map units.
+    private static MapRect ViewOf(Camera camera)
+    {
+        var corner1 = camera.ToMap(new SKPoint(0, 0));
+        var corner2 = camera.ToMap(new SKPoint(camera.Viewport.Width, camera.Viewport.Height));
+        return new MapRect(Math.Min(corner1.X, corner2.X), Math.Min(corner1.Y, corner2.Y), Math.Max(corner1.X, corner2.X), Math.Max(corner1.Y, corner2.Y));
+    }
+
+    // While the sheet stands in: the tiles DrawTiles would draw are asked for, none drawn. A tile that failed waits
+    // out MapTiles.RetryAfter before it is asked for again, so a frame costs no request by itself.
+    private static void AskForTiles(Camera camera, MapScene scene, MapTiles tiles)
+    {
+        if (scene.Definition.TilePath is not { } basePath)
+            return;
+        var view = ViewOf(camera);
+        var bounds = scene.Projection.WorldRect;
+        tiles.Ask(basePath, view, bounds, camera.Zoom);
+        if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
+            tiles.Ask(floorPath, view, bounds, camera.Zoom);
     }
 
     // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the

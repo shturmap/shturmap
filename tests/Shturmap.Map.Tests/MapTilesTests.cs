@@ -96,6 +96,123 @@ public class MapTilesTests
         Assert.Equal(TileStatus.Showing, working.Status);
     }
 
+    // ---- a render that couldn't be had comes back by itself (the review of 2026-10-04: The Lab opened offline stayed
+    // a sheet until the app was started again) ----
+
+    // A tile server that is off the network until told otherwise, counting what it is asked for.
+    private sealed class Network
+    {
+        private int _online;
+        private int _asked;
+
+        public bool Online
+        {
+            get => Volatile.Read(ref _online) == 1;
+            set => Volatile.Write(ref _online, value ? 1 : 0);
+        }
+
+        public int Asked => Volatile.Read(ref _asked);
+
+        public MapTiles Tiles(TimeSpan retryAfter) => new(Map, (_, _) =>
+        {
+            Interlocked.Increment(ref _asked);
+            return Online ? Task.FromResult<byte[]?>(Png(SKColors.Gray)) : throw new HttpRequestException("offline");
+        }, retryAfter: retryAfter);
+    }
+
+    private static async Task Showing(MapTiles tiles)
+    {
+        var shown = new TaskCompletionSource();
+        void Check()
+        {
+            if (tiles.Status == TileStatus.Showing)
+                shown.TrySetResult();
+        }
+        tiles.Changed += Check;
+        Check();
+        await shown.Task.WaitAsync(TimeSpan.FromSeconds(20), TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task A_render_that_couldnt_be_had_comes_by_itself_once_the_network_is_back()
+    {
+        var network = new Network();
+        using var tiles = network.Tiles(TimeSpan.FromMilliseconds(60));
+        await tiles.LoadAsync(Template, Bounds, Bounds, 2);
+        var scene = new MapScene(Map, null, tiles);
+        Assert.Equal(TileStatus.Unavailable, tiles.Status);
+
+        // Still offline: the tiles are tried again and fail again, and the sheet stays all the while (a try under way
+        // must not blank the map).
+        var asked = network.Asked;
+        var statuses = new List<TileStatus>();
+        tiles.Changed += () => { lock (statuses) statuses.Add(tiles.Status); };
+        for (var i = 0; i < 40 && network.Asked == asked; i++)
+            await Task.Delay(25, TestContext.Current.CancellationToken);
+        Assert.True(network.Asked > asked, "the view's tiles weren't asked for again");
+        Assert.True(scene.IsSheet);
+
+        // Nobody draws a frame or touches the map: the render still arrives.
+        network.Online = true;
+        await Showing(tiles);
+        Assert.False(scene.IsSheet);
+        lock (statuses)
+            Assert.DoesNotContain(TileStatus.Loading, statuses);
+        Assert.NotEmpty(Drawn(tiles, Bounds, 2));
+    }
+
+    [Fact]
+    public async Task While_the_sheet_stands_in_drawing_it_asks_for_the_tiles_but_only_once_per_wait()
+    {
+        var network = new Network();
+        using var tiles = network.Tiles(TimeSpan.FromHours(1));
+        var scene = new MapScene(Map, null, tiles);
+        var camera = new Camera();
+        camera.Resize(new SKSize(512, 512));
+        camera.Fit(scene.Projection.WorldRect, 0);
+        using var bitmap = new SKBitmap(512, 512);
+        using var canvas = new SKCanvas(bitmap);
+
+        // The first frame asks for the view's tiles; none can be had.
+        MapRenderer.Render(canvas, camera, scene);
+        var view = new MapRect(0, 0, 256, 256);
+        await tiles.LoadAsync(Template, view, Bounds, camera.Zoom);
+        Assert.Equal(TileStatus.Unavailable, tiles.Status);
+        var asked = network.Asked;
+        Assert.True(asked > 0);
+
+        // A hundred frames of the sheet, and asking outright: no tile is asked for a second time before its wait is over.
+        for (var i = 0; i < 100; i++)
+            MapRenderer.Render(canvas, camera, scene);
+        tiles.Ask(Template, view, Bounds, camera.Zoom);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(asked, network.Asked);
+        Assert.True(scene.IsSheet);
+    }
+
+    [Fact]
+    public async Task A_frame_of_the_sheet_asks_for_the_view_it_shows_now()
+    {
+        var network = new Network();
+        using var tiles = network.Tiles(TimeSpan.FromHours(1));
+        var scene = new MapScene(Map, null, tiles);
+        var camera = new Camera();
+        camera.Resize(new SKSize(512, 512));
+        camera.Fit(scene.Projection.WorldRect, 0);
+        using var bitmap = new SKBitmap(512, 512);
+        using var canvas = new SKCanvas(bitmap);
+        await tiles.LoadAsync(Template, new MapRect(0, 0, 256, 256), Bounds, camera.Zoom);
+        Assert.True(scene.IsSheet);
+        var asked = network.Asked;
+
+        // Zoomed in on the sheet: other tiles are needed now, and the frame asks for those (they never failed).
+        camera.ZoomAt(new SKPoint(256, 256), 2);
+        MapRenderer.Render(canvas, camera, scene);
+        await tiles.LoadAsync(Template, new MapRect(64, 64, 192, 192), Bounds, camera.Zoom);
+        Assert.True(network.Asked > asked, "the frame didn't ask for the zoomed view's tiles");
+        Assert.True(scene.IsSheet);
+    }
+
     [Fact]
     public void A_map_with_svg_artwork_never_takes_tiles()
     {

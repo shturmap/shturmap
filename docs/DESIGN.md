@@ -111,6 +111,10 @@ against sanctions); and say that some players see a position map as an unfair ad
   map render for The Lab: couldn't download it…"). With tarkov.dev's transform kept, Icebreaker's 10 m squares are
   oblong on its sheet (the lines are still 10 m apart); a map with neither SVG nor tiles would get one scale for both
   axes, so its squares stay square. The credit line names an artist only where their SVG is drawn.
+  A sheet that stands in for a render that couldn't be had gives way by itself (the review of 2026-10-04: The Lab
+  opened offline stayed a sheet until the app was started again): the tiles the view needs are asked for again
+  every 30 s, each tile once a round, whether or not the map is touched meanwhile, and the sheet stays until the
+  first tile arrives (`MapTiles`: `Ask`, `RetryAfter`). A tile tarkov.dev doesn't have (404) is not asked for again.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is
