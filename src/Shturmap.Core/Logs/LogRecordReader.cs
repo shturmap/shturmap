@@ -55,12 +55,14 @@ public sealed partial class LogRecordReader
     private void OnLine(string line, List<LogRecord> done)
     {
         var header = Header().Match(line);
-        if (header.Success)
+        // Digits in a header's shape that are no time ("2026-13-45 …") are a continuation line, not a reason to stop.
+        if (header.Success && DateTime.TryParseExact(header.Groups["ts"].Value, "yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var timestamp))
         {
             if (_pending is not null)
                 done.Add(TakePending());
             _pending = new LogRecord(
-                DateTime.ParseExact(header.Groups["ts"].Value, "yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture),
+                timestamp,
                 header.Groups["ver"].Value,
                 header.Groups["lvl"].Value,
                 header.Groups["ch"].Value,

@@ -242,6 +242,9 @@ public sealed partial class InstallLocator(IGameEnvironment env)
         try
         {
             using var doc = JsonDocument.Parse(settingsJson);
+            // TryGetProperty throws on anything but an object; a settings file of another shape names no folder.
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                return null;
             foreach (var name in new[] { "gamesRootDir", "gameRootDir" })
             {
                 if (doc.RootElement.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String &&
@@ -249,7 +252,7 @@ public sealed partial class InstallLocator(IGameEnvironment env)
                     return value.GetString();
             }
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or InvalidOperationException)
         {
         }
         return null;

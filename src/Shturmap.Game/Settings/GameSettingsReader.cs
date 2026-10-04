@@ -25,20 +25,21 @@ public sealed class GameSettingsReader(IGameEnvironment env)
         try
         {
             using var doc = JsonDocument.Parse(controlJson);
-            if (!doc.RootElement.TryGetProperty("keyBindings", out var bindings) || bindings.ValueKind != JsonValueKind.Array)
+            if (!Property(doc.RootElement, "keyBindings", out var bindings) || bindings.ValueKind != JsonValueKind.Array)
                 return [];
             foreach (var binding in bindings.EnumerateArray())
             {
-                if (!binding.TryGetProperty("keyName", out var name) || name.GetString() != "MakeScreenshot")
+                if (!Property(binding, "keyName", out var name) || name.ValueKind != JsonValueKind.String || name.GetString() != "MakeScreenshot")
                     continue;
                 var keys = new List<string>();
-                if (binding.TryGetProperty("variants", out var variants) && variants.ValueKind == JsonValueKind.Array)
+                if (Property(binding, "variants", out var variants) && variants.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var variant in variants.EnumerateArray())
                     {
-                        if (!variant.TryGetProperty("keyCode", out var codes) || codes.ValueKind != JsonValueKind.Array)
+                        if (!Property(variant, "keyCode", out var codes) || codes.ValueKind != JsonValueKind.Array)
                             continue;
-                        var combo = codes.EnumerateArray().Select(c => DisplayName(c.GetString() ?? "")).Where(s => s.Length > 0).ToList();
+                        var combo = codes.EnumerateArray().Where(c => c.ValueKind == JsonValueKind.String)
+                            .Select(c => DisplayName(c.GetString() ?? "")).Where(s => s.Length > 0).ToList();
                         if (combo.Count > 0)
                             keys.Add(string.Join("+", combo));
                     }
@@ -46,8 +47,9 @@ public sealed class GameSettingsReader(IGameEnvironment env)
                 return keys;
             }
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or InvalidOperationException)
         {
+            // Not JSON, or JSON of another shape than the game writes today: no keys known, never a crash.
         }
         return [];
     }
@@ -57,12 +59,19 @@ public sealed class GameSettingsReader(IGameEnvironment env)
         try
         {
             using var doc = JsonDocument.Parse(gameJson);
-            return doc.RootElement.TryGetProperty("Language", out var lang) && lang.ValueKind == JsonValueKind.String ? lang.GetString() : null;
+            return Property(doc.RootElement, "Language", out var lang) && lang.ValueKind == JsonValueKind.String ? lang.GetString() : null;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or InvalidOperationException)
         {
             return null;
         }
+    }
+
+    // TryGetProperty throws on anything but an object (a number where a binding should be, a file that is a list).
+    private static bool Property(JsonElement e, string name, out JsonElement value)
+    {
+        value = default;
+        return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out value);
     }
 
     // Unity KeyCode names → what is printed on the key.

@@ -15,6 +15,8 @@ public sealed record LogEvent(GameEvent Event, string Session, bool IsReplay);
 /// across reads), and switches to a new session folder when the game starts again.
 /// Appends from the game's open handle are not reliably reported by file notifications, so this polls:
 /// every 500 ms while the log is active, every 2 s when it has been quiet for a while.
+/// Nothing in a log ends the following: a file that can't be opened is read at the next poll, and a record the
+/// parser can't take is left out (<see cref="ReadProblem"/> says so).
 /// </summary>
 public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
 {
@@ -28,6 +30,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
 
     private readonly Channel<LogEvent> _events = Channel.CreateUnbounded<LogEvent>(new UnboundedChannelOptions { SingleReader = true });
     private readonly Dictionary<string, FileState> _files = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<Type> _reported = [];
     private readonly CancellationTokenSource _stop = new();
     private Task? _loop;
     private bool _firstSession = true;
@@ -41,6 +44,23 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
 
     /// <summary>When a followed log last grew.</summary>
     public DateTime? LastActivityUtc { get; private set; }
+
+    /// <summary>
+    /// Something in the logs couldn't be read and was left out, while the following goes on: what ("a record in
+    /// … application_000.log", "a poll of the game's logs") and why. The log isn't a documented format, so a patch
+    /// may write a record the parser throws on. Raised on the polling thread, once per kind of exception per log
+    /// session; the text names the file, never the record's content (which may hold ids).
+    /// </summary>
+    public event Action<string, Exception>? ReadProblem;
+
+    /// <summary>How many records and polls were left out so far (see <see cref="ReadProblem"/>).</summary>
+    public int ReadProblems { get; private set; }
+
+    /// <summary>What turns a record into an event; tests put a parser that throws here.</summary>
+    internal Func<LogRecord, GameEvent?> Parser { get; init; } = GameLogParser.Parse;
+
+    /// <summary>The time, for telling a quiet log from a growing one; tests set their own.</summary>
+    internal Func<DateTime> UtcNow { get; init; } = () => DateTime.UtcNow;
 
     public void Start() => _loop ??= Task.Run(() => RunAsync(_stop.Token));
 
@@ -73,7 +93,13 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             {
                 // Folder briefly unavailable (game updating, drive asleep): try again next poll.
             }
-            var quiet = LastActivityUtc is null || DateTime.UtcNow - LastActivityUtc > IdleAfter;
+            catch (Exception e)
+            {
+                // Whatever else goes wrong in one poll must not be the last poll: the task would end unseen, and the
+                // app would stop following the game with nothing to show for it.
+                Report("a poll of the game's logs", e);
+            }
+            var quiet = LastActivityUtc is null || UtcNow() - LastActivityUtc > IdleAfter;
             await Task.Delay(quiet ? IdlePoll : ActivePoll, ct);
         }
     }
@@ -81,6 +107,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
     /// <summary>One polling pass; returns the number of events written. Exposed for tests.</summary>
     internal int PollOnce()
     {
+        var now = UtcNow();
         var newest = NewestSession(LogsRoot);
         if (newest is null)
             return 0;
@@ -90,25 +117,40 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         {
             CurrentSession = newest;
             _files.Clear();
+            _reported.Clear();
             replay = _firstSession;
             _firstSession = false;
         }
 
         var sessionFolder = Path.Combine(LogsRoot, newest);
         var events = new List<GameEvent>();
-        foreach (var path in Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)).Order(StringComparer.OrdinalIgnoreCase))
+        try
         {
-            if (!_files.TryGetValue(path, out var state))
-                _files[path] = state = new FileState();
-            events.AddRange(ReadNew(path, state));
+            foreach (var path in Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)).Order(StringComparer.OrdinalIgnoreCase))
+            {
+                if (!_files.TryGetValue(path, out var state))
+                    _files[path] = state = new FileState { LastGrowth = now };
+                try
+                {
+                    ReadNew(path, state, events, now);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    // This file is busy or gone for a moment; the others still count, and it is read at the next poll.
+                }
+            }
         }
-
-        foreach (var e in events.OrderBy(e => e.At))
-            _events.Writer.TryWrite(new LogEvent(e, newest, replay));
+        finally
+        {
+            // What was read is passed on whatever happened after it: its file's offset has moved on, so it would
+            // not be read again.
+            foreach (var e in events.OrderBy(e => e.At))
+                _events.Writer.TryWrite(new LogEvent(e, newest, replay));
+        }
         return events.Count;
     }
 
-    private IEnumerable<GameEvent> ReadNew(string path, FileState state)
+    private void ReadNew(string path, FileState state, List<GameEvent> events, DateTime now)
     {
         var records = new List<LogRecord>();
         using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
@@ -124,18 +166,51 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
                 var chars = new char[state.Decoder.GetCharCount(buffer, 0, read)];
                 state.Decoder.GetChars(buffer, 0, read, chars, 0);
                 records.AddRange(state.Reader.Append(new string(chars)));
-                state.LastGrowth = DateTime.UtcNow;
-                LastActivityUtc = state.LastGrowth;
+                state.LastGrowth = now;
+                LastActivityUtc = now;
             }
         }
 
         // A lone header line is complete once the file has been quiet briefly; a half-written JSON block only
         // after a long silence.
-        var quietFor = DateTime.UtcNow - state.LastGrowth;
+        var quietFor = now - state.LastGrowth;
         if (quietFor > TimeSpan.FromSeconds(1) && state.Reader.Flush(force: quietFor > TimeSpan.FromSeconds(10)) is { } pending)
             records.Add(pending);
 
-        return records.Select(GameLogParser.Parse).OfType<GameEvent>();
+        ParseInto(events, records, Parser, path, Report);
+    }
+
+    // One record at a time: a record the parser throws on is left out, and the ones around it still count.
+    private static void ParseInto(List<GameEvent> events, IEnumerable<LogRecord> records, Func<LogRecord, GameEvent?> parse, string path,
+        Action<string, Exception> problem)
+    {
+        foreach (var record in records)
+        {
+            try
+            {
+                if (parse(record) is { } e)
+                    events.Add(e);
+            }
+            catch (Exception e)
+            {
+                problem("a record in " + Path.GetFileName(path), e);
+            }
+        }
+    }
+
+    private void Report(string what, Exception e)
+    {
+        ReadProblems++;
+        if (!_reported.Add(e.GetType()))
+            return;
+        try
+        {
+            ReadProblem?.Invoke(what, e);
+        }
+        catch (Exception)
+        {
+            // A listener's own failure is no reason to stop following either.
+        }
     }
 
     /// <summary>Folder name of the newest log_* session under a Logs folder.</summary>
@@ -153,28 +228,48 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
             .FirstOrDefault();
     }
 
-    /// <summary>Reads a whole session folder at once, e.g. to backfill quest history.</summary>
-    public static IReadOnlyList<GameEvent> ReadSession(string sessionFolder)
+    /// <summary>
+    /// Reads a whole session folder at once, e.g. to backfill quest history. It never throws over what a log holds
+    /// or over a file or folder it can't read: those are left out, and what was read counts.
+    /// </summary>
+    /// <param name="problem">Told what was left out and why, once per kind of exception (see <see cref="ReadProblem"/>).</param>
+    public static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem = null) =>
+        ReadSession(sessionFolder, problem, GameLogParser.Parse);
+
+    internal static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem, Func<LogRecord, GameEvent?> parse)
     {
         var events = new List<GameEvent>();
-        foreach (var path in Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)))
+        var reported = new HashSet<Type>();
+        void Report(string what, Exception e)
         {
-            string text;
-            try
+            if (reported.Add(e.GetType()))
+                problem?.Invoke(what, e);
+        }
+        try
+        {
+            foreach (var path in Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)))
             {
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                text = reader.ReadToEnd();
+                string text;
+                try
+                {
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    text = reader.ReadToEnd();
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    continue;
+                }
+                var records = new LogRecordReader();
+                var all = records.Append(text).ToList();
+                if (records.Flush(force: true) is { } last)
+                    all.Add(last);
+                ParseInto(events, all, parse, path, Report);
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-            {
-                continue;
-            }
-            var records = new LogRecordReader();
-            var all = records.Append(text).ToList();
-            if (records.Flush(force: true) is { } last)
-                all.Add(last);
-            events.AddRange(all.Select(GameLogParser.Parse).OfType<GameEvent>());
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // The folder went away while it was read (the game tidying up, a drive asleep).
         }
         return events.OrderBy(e => e.At).ToList();
     }
@@ -184,7 +279,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         public long Offset;
         public Decoder Decoder = new UTF8Encoding(false).GetDecoder();
         public LogRecordReader Reader = new();
-        public DateTime LastGrowth = DateTime.UtcNow;
+        public DateTime LastGrowth;
 
         public void Reset()
         {
