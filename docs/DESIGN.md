@@ -128,7 +128,12 @@ against sanctions); and say that some players see a position map as an unfair ad
   README says Shturmap is unofficial and that game content belongs to Battlestate Games.
 - **Icons** are the Segoe Fluent Icons font that ships with Windows, used in place, never copied into the repo;
   the only custom glyph is the crosshair (drawn from a path in `Shturmap.Map.Glyphs`).
-- **Test fixtures** contain only scrubbed logs (`tools/make-log-fixtures.ps1`) and the maps.json snapshot. Quest
+- **Test fixtures** contain only scrubbed logs (`tools/make-log-fixtures.ps1`) and the maps.json snapshot. In the
+  logs an id stays only where it is public game data (a quest or trader id in a message's `templateId`, an item
+  template, a trader as the sender); every other id is a placeholder (profiles, messages, events, item instances,
+  the stash, raids, the push channel), and tokens, session ids, account ids and addresses are masked.
+  `FixtureScrubTests` fail on anything else (review of 2026-10-04: the scrubber had masked profile ids only after
+  "profileid", and ids on other lines stayed). Quest
   texts are not committed: the synopsis tests quote a few short objective lines, and the check over all quests
   reads the user's local tarkov.dev cache.
   `tests/fixtures/ocr` is ignored by git: it holds the owner's own Tasks screenshots from the removed OCR feature.
