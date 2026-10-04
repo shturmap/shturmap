@@ -402,7 +402,8 @@ for the languages to come).
 
 - **F1. The Lab, Labyrinth and Icebreaker in the style of the SVG maps** (owner, 2026-10-04: "convert it to the
   same style and color coding as the ones where we have proper maps … only do this if we are sure that we can
-  achieve high quality"). Status: owner to decide, from pictures. A trial the same day traced a floor plan out of
+  achieve high quality"). Status: on hold (owner, 2026-10-04: "Write this up and put in on hold for now"); don't
+  take it up or propose it until the owner says so. A trial the same day traced a floor plan out of
   the cached tile renders (`tools\map-trace`): to scale and with straight walls on The Lab's main level (the plan
   differs from the render's floor by 0.003 % beyond 2 px of an edge), ragged on Labyrinth. That settles the
   geometry, not the look: a hand-drawn map chooses obstacles, stairs and landmarks, and the traced plan has
@@ -411,6 +412,7 @@ for the languages to come).
   left out. Pictures of the trial are outside the repository. Looked up the same day: re3mr has hand-drawn plans
   of Labyrinth and Icebreaker under CC BY-NC-SA 4.0, which could be traced in place of the renders (the file's
   "Other maps that exist"); whether they are to scale is not measured, and using them is the owner's decision.
+  The file's "Where this stands" has what is known, what isn't, and the order to take it up in.
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 

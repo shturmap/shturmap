@@ -1,14 +1,52 @@
 # Floor plans for the maps without SVG artwork
 
-**Status: a trial, not decided.** Owner, 2026-10-04: "Is it possible we can convert the maps where we do not have
-great quality like labs to convert it to the same style and color coding as the ones where we have proper maps,
-like customs? If you say it's possible, put instructions for a less capable model so it still works. We should
-only do this if we are sure that we can achieve high quality, crappy maps will defeat the whole purpose of the
-project."
+**Status: on hold** (owner, 2026-10-04: "Write this up and put in on hold for now"). Nothing in the app changed:
+The Lab, Labyrinth and Icebreaker are drawn from tarkov.dev's renders as before. Don't take this up again, and
+don't propose it, until the owner says so.
 
-This file is those instructions. It is written so that a bad map can't ship: every step ends in a number or a
-picture, and the map keeps its render unless every gate passes and the owner approves the pictures.
-`docs/DESIGN.md` stays the binding spec; nothing here changes it until the owner decides (step 9).
+The question (owner, 2026-10-04): "Is it possible we can convert the maps where we do not have great quality like
+labs to convert it to the same style and color coding as the ones where we have proper maps, like customs? If you
+say it's possible, put instructions for a less capable model so it still works. We should only do this if we are
+sure that we can achieve high quality, crappy maps will defeat the whole purpose of the project."
+
+## Where this stands
+
+**The answer so far: not sure, so nothing was built into the app.** Two things are known, one is not:
+
+- *Known:* a floor plan to scale can be traced out of the renders by machine and measured. On The Lab's main level
+  it came out with straight walls and the right rooms at the first try.
+- *Known:* that alone is not a map of the quality of the hand-drawn ones. The traced plan has floor and not-floor
+  only; obstacles, stairs and landmarks are what a cartographer chooses, and a plan shows less than today's render.
+- *Not known:* whether a finished plan would look good enough. No finished plan was made, and none was seen in the
+  app with markers and names on it.
+
+**What exists.** `tools\map-trace\stitch.cs` and `trace.cs` (both run; they are in no build and no test), this
+file's steps and gates, and the trial's pictures outside the repository (render beside plan, for The Lab's main
+level and Labyrinth). No SVG is in the repository, the trace read only tiles already in the cache, and DESIGN.md
+says nothing of it.
+
+**What was found on the way.** re3mr has hand-drawn plans of Labyrinth and Icebreaker under CC BY-NC-SA 4.0
+("Other maps that exist", below). They are the likelier base for those two maps than the renders. For The Lab
+there is no such plan.
+
+**When this is taken up again, in this order:**
+
+1. *The owner looks at the trial's pictures of The Lab:* is a plan like this, cleaned, wanted at all, or does the
+   render serve better? A no ends it for The Lab.
+2. *For Labyrinth and Icebreaker, the owner decides on re3mr's plans as the base:* it makes the result CC BY-NC-SA
+   4.0 and lifts rule 1 for those two maps. A word with re3mr comes first.
+3. *Then the measuring, which costs little:* step 5's four clean-up rules on The Lab (written down, never run),
+   and whether re3mr's plans are to scale (fit one to the data's extracts and spawns, then step 6's gates against
+   the render's floor).
+4. *Only then steps 7 to 9.* The map keeps its render unless every gate passes and the owner approves the pictures.
+
+**Not checked:** the terms of the other sites that show maps of their own; whether the label layers come off
+re3mr's Photoshop files; whether Labyrinth's plan of March 2025 still matches the level; The Lab's two other
+levels; how a plan reads in the app.
+
+The rest of this file is the instructions as they were written for whoever continues, a less capable model
+included: every step ends in a number or a picture. `docs/DESIGN.md` stays the binding spec; nothing here changes
+it until the owner decides (step 9).
 
 ## What was tried, and what it showed (2026-10-04)
 
@@ -34,8 +72,11 @@ apart by floor colour or glass, the plan has one area.
 So, by map:
 
 - **The Lab: worth finishing as a trial.** Three levels, right angles nearly everywhere.
-- **Labyrinth: only after The Lab passed**, and only if step 5's rules clean it without hand work. Expect it to fail.
-- **Icebreaker: don't.** Sixteen deck layers on one narrow ship, in a render stretched 1.75 times along one axis.
+- **Labyrinth, from the render: only after The Lab passed**, and only if step 5's rules clean it without hand work.
+  Expect it to fail.
+- **Icebreaker, from the render: don't.** Sixteen deck layers on one narrow ship, in a render stretched 1.75 times
+  along one axis.
+- **Both, from re3mr's plans: open.** See "Other maps that exist".
 
 A side effect worth having: a map with a plan of its own asks tarkov.dev for no tiles, so what PRIVACY.md and
 DESIGN.md §2 say about tile requests following the view no longer applies to it.
