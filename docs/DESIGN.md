@@ -375,7 +375,10 @@ not in focus step back by kind (see "Map drawing", "Stepping back"), easing in a
 ones pulse: a ring leaves the marker and fades every 1.4 s (motion is noticed before anything else; off, with the
 easing, when Windows' animation effects are off, and only while something is in focus). Losing the focus waits
 0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
-of making every marker blink. Markers on another floor than the one shown are drawn at full strength, highlighted
+of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
+any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
+Shturmap's windows is the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
+game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not. Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
 with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
