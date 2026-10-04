@@ -33,9 +33,10 @@ at its start (A3); closing the window with Alt+F4 while the pointer rests on a q
   timers and the map's drawing first (`MainWindow.StopForExit`). Status: done (2026-10-04; a script that exits while
   pointing at a quest ends with exit code 0, before 0xC0000005).
 - **A43.** The LOGS light says "Logs live" for ten minutes after every start, also with the game closed: reading the
-  old session at start counts as activity (`LogTailer.LastActivityUtc`, `GameSession.LogsHealth`).
+  old session at start counts as activity (`LogTailer.LastActivityUtc`, `GameSession.LogsHealth`). Status: done
+  (2026-10-04: only what the game writes while it is followed counts).
 - **A44.** A log longer than one read (4 MB) is cut short when the game starts a new session before it is read
-  through: the rest of the old session is skipped.
+  through: the rest of the old session is skipped. Status: done (2026-10-04: a session is read to its end first).
 - **A45.** With A6, a picked quest that has work on five or more maps gives more than four map cards.
 - **A46.** With A31, a translation file that keeps answering with a server error on a first load means no data
   until it recovers (a notice and a retry every two minutes), where it used to fall back to English with an untrue
@@ -124,7 +125,8 @@ Smaller, in the map:
   thrown away).
 - **A17.** While anything is pointed at, the whole map is drawn again about 60 times a second; a row rebuilt under the
   pointer keeps its focus (`MapView`, `Linked`). Fix: stop when the window isn't active, let go when the row goes.
-  Status: done for the focus (2026-10-04); the cost of one redraw (the whole layout every frame) is open.
+  Status: done (2026-10-04): the focus, and the layout is kept between frames while nothing it is made
+  from changes (how much a frame gains wasn't measured).
 - **A37.** A cluster is left out when its middle place is out of view though others are in view; the hazard hatch
   runs over a zone's whole box; an SVG floor is read during the first paint that shows it. Status: the cluster done (2026-10-04); the hatch and the floor read are open.
 - **A38.** "A switch listed for every extract links nothing" uses a strict rule where `ExtractRules` uses "most".
@@ -137,7 +139,9 @@ Smaller, in planning and data:
 - **A19.** A download that stalls after its headers never ends: "Loading game data…" for good
   (`Shturmap.Data/Http/CachedHttp.cs`). Status: done (2026-10-04; 30 s without a byte ends it).
 - **A20.** Another install with a newer log session (a test server, a leftover install) is followed for the whole
-  run; discovery decides once (`Shturmap.Game/Install/InstallLocator.cs`, `GameSession.LookAgainAsync`). Status: open.
+  run; discovery decides once (`Shturmap.Game/Install/InstallLocator.cs`, `GameSession.LookAgainAsync`). Status: done
+  (2026-10-04): discovery runs every 30 s for the whole run, another install's newer log session is followed with a
+  notice, and a folder the player chose is never left.
 - **A21.** "N min left" is the map's raid length minus the time since the raid's start line: computed, and wrong
   after a reconnect or for a local Scav raid shown as a PMC's. Status: done (2026-10-04: "40 min raid · started 21:02").
 - **A31.** The session's background loops (backfill, following, looking again) catch only a cancel: one database or
@@ -147,7 +151,7 @@ Smaller, in planning and data:
   keys are listed one by one even where they are alternatives. Status: open (check the data's meaning first).
 - **A34.** "(Flare)" and "(Co-op)" are looked for in the translated extract name, so the rules are lost in another
   game language (`Shturmap.Session/ExtractRules.cs`). Status: open.
-- **A35.** CHOOSE… and FIND AUTOMATICALLY read every log session on the UI thread. Status: open.
+- **A35.** CHOOSE… and FIND AUTOMATICALLY read every log session on the UI thread. Status: done (2026-10-04).
 - **A36.** Closing isn't safe to run twice (`ProgressStore`, `GameSession.DisposeAsync`); the uninstall path can do
   that. Status: open.
 - **A41.** Log times are local without an offset: an hour off across a clock change. Status: open (two nights a year).
@@ -155,9 +159,11 @@ Smaller, in planning and data:
 Smaller, in the app:
 
 - **A29.** Cards have no largest height: a long quest's card is cut at the window's edge. Status: done (2026-10-04).
-- **A32.** A scene's key is set before its artwork arrives, so a second snapshot can fill the old scene. Status: open.
+- **A32.** A scene's key is set before its artwork arrives, so a second snapshot can fill the old scene. Status: done (2026-10-04).
 - **A42.** A held card stays over the map through loading and the raid; "+" doesn't zoom on a US keyboard; a
-  popped-out window has no Esc. Status: open.
+  popped-out window has no Esc. Status: done (2026-10-04): cards in the main window close at each step into a raid,
+  Shift with "+" zooms too, and Esc in a popped-out window closes the cards opened from it. The two keys are to try
+  by hand.
 
 Smaller, in privacy and distribution:
 
@@ -194,13 +200,14 @@ for the languages to come).
   amber. Fix: the toggle's "on" in amber. Status: done (2026-10-04).
 - **B2. Green means "PMC extract" on the map and "any way out" in the rail**: EXIT and every extract row's distance
   are green, transits and Scav extracts included; a quest card's "ACTIVE" is green too. Fix: the rail's rows in the
-  colour of their kind. Status: done for the ways out (2026-10-04); a quest card's "ACTIVE" is still green: open.
-- **B3. Sand** is the player's, but floor badges and the squares for loose items use it too. Status: open.
+  colour of their kind. Status: done for the ways out (2026-10-04); a quest card's "ACTIVE" is amber since the same day.
+- **B3. Sand** is the player's, but floor badges and the squares for loose items use it too. Status: done
+  (2026-10-04): a floor badge wears its marker's colour, a loose item's square is ink.
 - **B4. "Primary text ≥ 14 px"**: the raid card's objective lines are 13 px, the status bar 12, directions 11, and
   about fifty places are under 12; "numbers in a monospaced face" isn't true either (figures are Bahnschrift).
   Status: done (2026-10-04; owner: "the 14px rule is not necessary"; the principle no longer says either).
 - **B5. The legend has "a done objective"**, which can't happen yet (D1 makes it real), and lacks the gold chevrons
-  of a pointed-at quest, a picked quest's cyan padlock and the ping. Status: open.
+  of a pointed-at quest, a picked quest's cyan padlock and the ping. Status: done (2026-10-04).
 - **B6. "Never ask" and "no modal dialogs"** have exceptions the principles don't name: the Report dialog, the
   uninstall and crash questions, the side switch. Status: done (2026-10-04).md).
 - **B7. DESIGN.md housekeeping**: principles are numbered 1–8, 11, 9, 10, 12; the rail is 380 px in one place and
@@ -209,7 +216,7 @@ for the languages to come).
   list, not 0.4 s. Status: done (2026-10-04).
 - **B8. Stepping back**: other quests' zones fall to about 35 % (the table says 62 % and 80 %), hazards aren't in the
   table, and a picked quest's doors step back like any lock. Status: done (2026-10-04).
-- **B9.** The facing cone shows for 60 s, the cards' facing-relative directions for 45 s. Status: open.
+- **B9.** The facing cone shows for 60 s, the cards' facing-relative directions for 45 s. Status: done (2026-10-04): 45 s for both.
 - **B10. PRIVACY.md and README** still place reports in help, say Sentry keeps country and town (it is told not to),
   and don't say that tarkov.dev's image service sees which icons and map tiles are asked for. Status: done for
   PRIVACY.md (2026-10-04: the feedback button and settings, what Sentry is told, refused reports, a section on
@@ -244,7 +251,8 @@ for the languages to come).
 - **B12. Quest states set by hand** still have a code path (`SetQuestStateAsync`, "set by you") though the states
   come from the log alone and the owner declined editing quests by hand (below). Status: done (2026-10-04; old databases' rows of that kind are ignored).
 - **B13.** A Plan card is one button: a click on a row or a pen inside an expanded card of a map that isn't shown
-  also switches the map ("two clicks, two meanings"). Status: open.
+  also switches the map ("two clicks, two meanings"). Status: done (2026-10-04): the open card is no button;
+  only a row of the map list switches the map.
 
 ### H. Hands-off
 
@@ -263,7 +271,8 @@ for the languages to come).
 - **H7.** What needs a restart today: tiles after an offline start (A7), item sources after one failed download,
   another install's newer session (A20). Status: open.
 - **H9.** The first-run help can open during a raid; the crash question stays over the map until answered. Status:
-  open.
+  done (2026-10-04): the first-run help opens only outside a raid, a raid's start closes an open help panel, and
+  the crash question waits while a raid loads or runs.
 
 ### C. Design elements
 
@@ -272,18 +281,20 @@ for the languages to come).
   picture): each line and NEXT say the objective by its synopsis phrase ("Mark Stryker"). The need stays on every
   line (owner: "keep the item with each sub-item so it's clear that one is needed"); saying it once under the
   quest's name was tried and declined.
-- **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status:
-  open.
+- **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status: done (2026-10-04; English texts).
 - **C3. Plan card**: the rank numbers "1", "2" say what the order says; the dashed empty cell stands on most rows;
   the kit cue shows one item twice (to plant, to wear). Status: done (2026-10-04: all three gone).
 - **C4. Status bar**: "NO POSITION YET · PRESS … IN RAID" also outside raids; three green lights with words for a
   state that is nearly always fine; below about 1,090 px the three buttons leave the window, which has no smallest
-  size. Status: open.
+  size. Status: done for the two faults (2026-10-04): the position hint shows only in a raid, and a narrow bar
+  drops the lights' words first (they stay in the tooltips). The three lights themselves are as they were.
 - **C5. The boss symbol** is mostly its dark collar around a thin red ring, weaker than a quest's disc, and shares
-  the diamond's outline with transits; boss labels are red where every other label is ink. Status: done for
-  the symbol (2026-10-04: a solid red octagon of its own, larger than before). The labels' red is unchanged: open.
+  the diamond's outline with transits; boss labels are red where every other label is ink. Status: done
+  (2026-10-04: a solid red octagon of its own, larger than before; its label is ink like every other, red only
+  while pointed at).
 - **C6.** Symbols at one place hide each other (an extract's triangle under a transit's diamond on Streets). Status:
-  open.
+  done for symbols of different rank (2026-10-04: the one that matters more lies on top; a Scav zone's ring lay
+  over the boss's octagon and made it read as a ring). Two of the same rank at one place still cover each other: open.
 - **C7.** The guide line's distance plate can stand on a symbol (it covered a boss marker in a snapshot). Status: done
   (2026-10-04).
 - **C9. Help** is 2,350 px tall with 25 legend rows, and opens by itself at the first start. Status: done
@@ -324,9 +335,11 @@ for the languages to come).
 - **E3. Places that link nothing**: need cells, folded cards' glyphs, boss names in the raid line and on Plan cards,
   the gold "Key: …" line under an objective, an extract's need item, the item card's "Loose on …" row; entering an
   item card drops the item's locks and loose spots; a quest card's frame and headings let the quest go while it is
-  read. Status: done for need cells, the "Key: …" line (when it names one key) and folded cards' glyphs (2026-10-04); the rest is open.
+  read. Status: done for need cells, the "Key: …" line (when it names one key) and folded cards' glyphs (2026-10-04), and
+  since then for a card's whole body, the item card's "Loose on …" row and an extract's need item. Boss names in the
+  raid line and on Plan cards: open.
 - **E4.** An "A or B" row links only A (`Planning`: `Alternatives[0]`). **E5.** A quest lights its doors, a door only
-  its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: open.
+  its key. **E6.** The highlight needs a pointer: rows can't be reached by keyboard. Status: E4 and E5 done (2026-10-04); E6 open.
 
 ## Queued for Monday, 2026-10-05 (owner, 2026-10-03: record now, implement when there's quota again)
 
