@@ -155,7 +155,9 @@ against sanctions); and say that some players see a position map as an unfair ad
    dark ground, the important line first. No animation beyond what helps the eye follow a change.
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
-   popped out; they are owned by the main window and never topmost, so they can't cover the game.
+   popped out; they are owned by the main window and never topmost, so they can't cover the game. One thing does
+   cover the window, and only because the player opened it: the Report dialog (review of 2026-10-04: the
+   principle didn't name it).
 4. **Minimal surface.** Every control earns its place. Prefer an automatic behaviour over a button, a sensible
    default over a setting. Messages are one line and dismiss themselves.
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
@@ -164,6 +166,10 @@ against sanctions); and say that some players see a position map as an unfair ad
    quest).
 7. **Never ask.** No confirmations, no prompts. Quest states come from the game's logs alone (owner, 2026-10-01:
    players don't screenshot their Tasks screen, so Tasks-screen reading and the TarkovEyes import were removed).
+   The exceptions, each named where it is described (review of 2026-10-04: the principle didn't name them): the
+   one question after a crash (send a report?), the question before an uninstall the player started, and the
+   PMC ⇄ SCAV tag of a raid whose side the logs can't tell, which is a switch the player may use, never a prompt.
+   Nothing else asks, and nothing asks during a raid's play.
 8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
    the "you are here" parts works without a fix. A fix shows its age; the marker stays at full strength and says
    it (see "Map drawing"). No "you may be
@@ -192,18 +198,6 @@ against sanctions); and say that some players see a position map as an unfair ad
    ("POSITION 7 MIN OLD · PRESS PRTSC OR HOME FOR A NEW ONE", and "NO POSITION YET" a minute into a raid without
    one); the owner had it removed: "Put it next to the marker". No position yet is said by the status bar and the
    raid card.
-11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
-    loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
-    holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop). Its
-    entrance plays at 1.8 times its first pace, about 1.6 s (owner, 2026-10-02: the elements should appear more
-    slowly; a briefly tried 8 s RAID LOADING cue was too long): a dark band springs open
-    behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
-    map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
-    flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
-    suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
-    list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
-    ping say it. With animation effects off it shows and goes without motion. Never during the log replay
-    at start.
 9. **Say it before it matters.** When a raid starts loading, Shturmap shows what to bring for that map, while there
    is still time to back out of matching. **The kit reminder** (owner, 2026-10-03: the one-line "Loading … · bring:
    …" notice came too late to read and as a list of words; "it could still be a good reminder what to bring … with
@@ -237,6 +231,18 @@ against sanctions); and say that some players see a position map as an unfair ad
     pointed at or picked, and always on its card beside the pop-out button) picks it for the coming raid: lit on the
     map and first in the rail, several at once ("Picks"; owner, 2026-10-01: one click doing both was misleading; the
     study log had the player toggling quests on and off and losing held cards on the way to the map).
+11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
+    loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
+    holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop). Its
+    entrance plays at 1.8 times its first pace, about 1.6 s (owner, 2026-10-02: the elements should appear more
+    slowly; a briefly tried 8 s RAID LOADING cue was too long): a dark band springs open
+    behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
+    map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
+    flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
+    suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
+    list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
+    ping say it. With animation effects off it shows and goes without motion. Never during the log replay
+    at start.
 12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
     appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
     are no detail pages to open. Finished quests appear nowhere.
@@ -484,7 +490,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   line box of their capitals (`StatusBarText`, `TextLineBounds="Tight"`), so centring a word centres its capitals,
   and the lights, the three buttons' frames and their symbols are centred on the same line; vertical padding keeps the
   words with tooltips easy to point at.
-- **Rail** (left, 380 px), content by state:
+- **Rail** (left, 384 px), content by state:
   - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, each with one
     line in words ("Complete 7 quests · progress 2 more"), the best one expanded with COMPLETE, PROGRESS and
     BRING (keys, items to bring). Each quest row there is the quest's name, then a quiet line of what it asks on
@@ -1012,6 +1018,7 @@ are translated although the payload's translation list misses them.
 | PgUp / PgDn | show the floor above / below |
 | Esc | close the cards (it never drops picks) |
 | F1 or ? | help |
+| Ctrl+, | settings |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window.
@@ -1094,7 +1101,7 @@ labels use, so it stays the thing you recognise.
   shown as "A or B").
 - **Bring**: items a Place objective consumes (`items` of `plantItem`, `markerItem` of `mark`, `useAny` of
   `useItem`, the quest item of `plantQuestItem`), with counts summed per item.
-- Shown aggregated per map in Plan, and inline on the objective in Raid ("needs Dorm room 114 key").
+- Shown aggregated per map in Plan, and inline on the objective in Raid ("Key: Dorm room 114 key", "Bring: MS2000 Marker").
 - Shturmap cannot see the stash; it lists what is needed, not what is missing.
 
 ## 7. Raid planner
@@ -1582,7 +1589,7 @@ form. Problems and ideas both go through it.
 - Done: discovery, watchers, raid tracking, map with floors, player, facing, trail, extracts, transits, quest
   markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
-  occasional-position UX (fix age, fading marker, compass directions), kit reminder on raid load (cue pictures, CHECK YOUR KIT), linked
+  occasional-position UX (fix age beside the marker, compass directions), kit reminder on raid load (cue pictures, CHECK YOUR KIT), linked
   highlighting, quest cards (hover, held, nested, popped out with live distances), item cards with sources and loose
   spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
 - Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).
@@ -1593,4 +1600,6 @@ form. Problems and ideas both go through it.
 - 0.1.0 went to friends as one self-unpacking exe (2026-10-03). From 0.2.0, the first public release, a Setup from
   GitHub Releases that keeps itself up to date (Velopack; §8, "Distribution"): 106 MB to download, 244 MB installed.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").
-- Open: manual quest editing; objective progress; the installed size (budget 80–120 MB, needs trimming).
+- Open: objective progress, by ticks the player sets (owner, 2026-10-04; docs/NEXT.md, D1); the installed size (budget
+  80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand, opening with the game or with
+  Windows, a text size setting.
