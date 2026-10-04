@@ -29,7 +29,8 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherQueueTimer _clock;
     private readonly DispatcherQueueTimer _noticeTimer;
     private SessionSnapshot? _snapshot;
-    private string? _sceneKey;
+    private readonly SceneGate _scenes = new();
+    private RaidPhase _phase = RaidPhase.Menu;
     private readonly HashSet<string> _sheetNoticeShown = new(StringComparer.Ordinal);
     private bool _updatingPicker;
     private bool _helpShownOnce;
@@ -137,6 +138,10 @@ public sealed partial class MainWindow : Window
         };
         Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
         AddShortcuts((UIElement)Content);
+        // The status bar gives way in a narrow window (FitStatusBar): looked at when its size or its words' change.
+        StatusBar.SizeChanged += (_, _) => FitStatusBar();
+        RaidWord.SizeChanged += (_, _) => FitStatusBar();
+        StatusRight.SizeChanged += (_, _) => FitStatusBar();
 
         // Snapshots arrive on background threads; only the newest one is applied.
         session.Changed += s =>
@@ -406,6 +411,7 @@ public sealed partial class MainWindow : Window
         vm.ModeDetail = s.ModeReading.Tooltip(gameFound: s.Locations is null || s.Locations.Install is not null, DateTime.Now);
         ApplyGameState(s);
         vm.InRaid = s.Raid.Phase != RaidPhase.Menu;
+        vm.RaidHoldsBack = WhileInRaid.Waits(s.Raid.Phase);
         vm.LogsText = s.Logs.Text;
         vm.LogsOk = s.Logs.Ok;
         vm.ScreenshotsText = s.Screenshots.Text;
@@ -428,6 +434,24 @@ public sealed partial class MainWindow : Window
             _previewTimer?.Stop();
             EndPreview(restore: false);
         }
+        // And at each step into a raid (it loads, it starts) the cards open then let go of the map (WhileInRaid). A
+        // snapshot's and the demo's shown card is their picture: it stays.
+        if (WhileInRaid.LetsGo(_phase, s.Raid.Phase) && !SnapshotMode && !DemoMode)
+        {
+            if (_cards.Cards.Count > 0)
+            {
+                Study.Ui("cards.raid", ("open", _cards.Cards.Count), ("held", _cards.AnyHeld), ("phase", s.Raid.Phase));
+                _cards.CloseAll();
+            }
+            // The help panel too: it stays open while the game has the focus, over the raid card. If it had opened
+            // by itself, it comes back when the raid is over (OnHelpClosed).
+            if (HelpFlyout.IsOpen)
+            {
+                _helpClosedForRaid = true;
+                HelpFlyout.Hide();
+            }
+        }
+        _phase = s.Raid.Phase;
         ShowPicks(s);
         UpdateClockTexts();
         UpdatePicker(s);
@@ -487,8 +511,65 @@ public sealed partial class MainWindow : Window
         ViewModel.RaidFixNote = FixAge.Note(age, ViewModel.HelpKeys);
         ViewModel.FixText = s.RaidFix is { } fix && age is { } old
             ? $"Fix {FixAge.Text(old)} ago · {s.RaidFloor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
-            : $"No position yet · press {ViewModel.HelpKeys} in raid";
+            : StatusBarFit.NoPosition(s.Raid.Phase, ViewModel.HelpKeys);
+        FitStatusBar();
     }
+
+    // ---- the status bar in a narrow window (StatusBarFit; review of 2026-10-04, C4) ----
+
+    // As in MainWindow.xaml: a light is a 6 px square and, 6 px on, its word; 16 px lie between the lights, between
+    // the words on the left, and between the bar's two halves; the bar ends 10 px before the window's edge.
+    private const double LightSquare = 6;
+    private const double LightGap = 6;
+    private const double StatusSpacing = 16;
+    private const double StatusEnd = 10;
+    private TextBlock? _statusMeasure;
+
+    // The width a status word takes, whether it is shown now or not.
+    private double StatusWidth(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return 0;
+        _statusMeasure ??= new TextBlock { Style = (Style)StatusBar.Resources["StatusBarText"] };
+        _statusMeasure.Text = Caps.Of(text);
+        _statusMeasure.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        return _statusMeasure.DesiredSize.Width;
+    }
+
+    /// <summary>
+    /// Whether the bar has room for all it says. If not, the lights' words go first: the lights stay, with their
+    /// tooltips, and the raid state and the last fix keep their room. Called when the bar's size or its words change.
+    /// </summary>
+    private void FitStatusBar()
+    {
+        if (StatusBar.ActualWidth <= 0)
+            return;
+        // Side by side: everything up to the raid state as it is laid out, the whole last fix, the lights with their
+        // words, and the three buttons (the right half less its lights, whatever they show at the moment).
+        var left = RaidWord.TransformToVisual(StatusBar).TransformPoint(new Windows.Foundation.Point(RaidWord.ActualWidth, 0)).X;
+        var fix = StatusWidth(ViewModel.FixText);
+        var lights = new[] { ViewModel.LogsText, ViewModel.ScreenshotsText, ViewModel.DataText }
+            .Sum(word => LightSquare + (StatusWidth(word) is > 0 and var width ? LightGap + width : 0)) + 2 * StatusSpacing;
+        var buttons = Math.Max(0, StatusRight.ActualWidth - StatusLights.ActualWidth);
+        var needed = left + (fix > 0 ? StatusSpacing + fix : 0) + StatusSpacing + lights + buttons + StatusEnd;
+        var words = StatusBarFit.Words(ViewModel.LightWords, StatusBar.ActualWidth, needed);
+        if (words != ViewModel.LightWords)
+        {
+            ViewModel.LightWords = words;
+            Study.Ui("statusbar.words", ("shown", words), ("width", StatusBar.ActualWidth));
+        }
+    }
+
+    /// <summary>A light's tooltip: what is behind it, and its word first when the bar is too narrow to show it.</summary>
+    public string? LightTip(string word, string detail, bool wordShown) =>
+        wordShown ? (detail.Length > 0 ? detail : null) : detail.Length > 0 ? $"{word}\n{detail}" : word;
+
+    /// <summary>The tooltip of a light with nothing more to say than its word: only while the word is hidden.</summary>
+    public string? LightWord(string word, bool wordShown) => wordShown ? null : word;
+
+    /// <summary>Something that waits for a click (the question after a crash), shown outside raids only.</summary>
+    public Visibility ShownUnlessHeldBack(string? text, bool heldBack) =>
+        string.IsNullOrEmpty(text) || heldBack ? Visibility.Collapsed : Visibility.Visible;
 
     private void UpdatePicker(SessionSnapshot s)
     {
@@ -545,6 +626,8 @@ public sealed partial class MainWindow : Window
                 ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
             };
         }).ToList();
+        // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
+        vm.PlanListShown = PlanList.Shown(s.Plan.Count, s.Plan.ElementAtOrDefault(openIndex)?.NormalizedName, s.Map?.NormalizedName);
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
 
@@ -575,7 +658,6 @@ public sealed partial class MainWindow : Window
     private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
         (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r)).ToList();
 
-    /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
     // The same counts in a row of Plan's map list, where the heading and the card say what they count.
     private static string ShortSummary(int complete, int progress) => (complete, progress) switch
     {
@@ -584,8 +666,7 @@ public sealed partial class MainWindow : Window
         _ => $"Progress {progress}",
     };
 
-    public Visibility ShownIfSeveral(IReadOnlyList<PlanCard>? plans) => plans is { Count: > 1 } ? Visibility.Visible : Visibility.Collapsed;
-
+    /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
     private static string Summary(int complete, int progress)
     {
         static string Quests(int n) => n == 1 ? "1 quest" : $"{n} quests";
@@ -754,11 +835,13 @@ public sealed partial class MainWindow : Window
         if (s.Definition is null || _session.Artwork is null || _previewing is not null)
             return;
         var key = s.Definition.Key;
-        if (key != _sceneKey)
+        // The map's scene is made once its artwork is here. Until then the view holds the scene of the map before,
+        // and nothing about this map goes into it (SceneGate): a snapshot that arrives meanwhile waits for the scene.
+        if (_scenes.Wants(key))
         {
-            _sceneKey = key;
             var artwork = await ArtworkFor(s.Definition, s.Map?.Name);
-            if (_sceneKey != key)
+            // Another map was asked for meanwhile, or a preview took the view: its end makes the scene anew.
+            if (_previewing is not null || !_scenes.Arrived(key))
                 return;
             // Without SVG artwork, tarkov.dev's tile render where it has one (The Lab, Labyrinth, Icebreaker).
             var tiles = artwork is null ? TilesFor(s.Definition, s.Map?.Name) : null;
@@ -768,7 +851,8 @@ public sealed partial class MainWindow : Window
             Map.SetScene(new MapScene(s.Definition, artwork, tiles), _restoreView);
             _restoreView = null;
         }
-        if (Map.Scene is not { } scene || _snapshot is not { } latest)
+        // The newest snapshot fills the scene, if the scene in the view is its map's.
+        if (Map.Scene is not { } scene || _snapshot is not { } latest || !_scenes.Holds(latest.Definition?.Key))
             return;
         scene.Player = latest.Fix;
         scene.InRaid = latest.Raid.Phase == RaidPhase.InRaid;
@@ -852,8 +936,9 @@ public sealed partial class MainWindow : Window
 
     // ---- previewing another map from Plan ----
 
-    // Resting on a folded Plan card shows its map for as long as the pointer stays, without switching to it; the
-    // view of the shown map comes back as it was (the study log: ten card clicks in 4.5 minutes to compare maps).
+    // Resting on a map's row in Plan's list (or on the open card, when its map isn't the one on screen) shows that
+    // map for as long as the pointer stays, without switching to it; the view of the shown map comes back as it was
+    // (the study log: ten card clicks in 4.5 minutes to compare maps). Only a click on a row switches the map.
     private static readonly TimeSpan PreviewAfter = TimeSpan.FromMilliseconds(600);
     private static readonly TimeSpan PreviewEndAfter = TimeSpan.FromMilliseconds(300);
     private DispatcherQueueTimer? _previewTimer;
@@ -863,7 +948,7 @@ public sealed partial class MainWindow : Window
 
     private void OnPlanPointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        if (sender is Button { Tag: string map } && !ViewModel.InRaid && map != _snapshot?.Map?.NormalizedName)
+        if (sender is FrameworkElement { Tag: string map } && !ViewModel.InRaid && map != _snapshot?.Map?.NormalizedName)
             Preview(map, PreviewAfter);
     }
 
@@ -907,7 +992,7 @@ public sealed partial class MainWindow : Window
         var content = MapContentBuilder.Build(data, map.Id, active, s.Done);
         Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
-        _sceneKey = null;
+        _scenes.Forget();
         ViewModel.PreviewText = $"PREVIEW · {Caps.Of(map.Name)}";
         Study.Ui("map.preview", ("map", normalizedName));
     }
@@ -919,7 +1004,7 @@ public sealed partial class MainWindow : Window
         _previewing = null;
         _previewWanted = null;
         ViewModel.PreviewText = "";
-        _sceneKey = null;
+        _scenes.Forget();
         if (!restore)
             _restoreView = null;
         if (_snapshot is { } s)
@@ -1551,20 +1636,31 @@ public sealed partial class MainWindow : Window
         });
     }
 
-    // The help panel opens by itself once, the first time the app has something to show.
+    // The help panel opens by itself once, the first time the app has something to show. Not in a raid, where it
+    // would lie over the raid card until someone clicks it away: then it opens at the next chance, when the raid is
+    // over (WhileInRaid). A snapshot run opens it for its picture, whatever the state.
     private void ShowHelpOnFirstRun(SessionSnapshot s)
     {
         if (_helpShownOnce || s.Data is null || DemoMode)
             return;
+        if (!SnapshotMode && WhileInRaid.Waits(s.Raid.Phase))
+            return;
         _helpShownOnce = true;
         if (SnapshotMode || _session.GetSetting("help.seen") is null)
-            ShowHelp();
+            _helpByItself = ShowHelp();
     }
 
-    private void ShowHelp()
+    // The help panel is open because it opened by itself (the first start), not because the player asked for it.
+    private bool _helpByItself;
+    // A raid began under the open help panel and closed it (WhileInRaid.LetsGo).
+    private bool _helpClosedForRaid;
+
+    private bool ShowHelp()
     {
-        if (HelpButton.XamlRoot is not null)
-            HelpFlyout.ShowAt(HelpButton);
+        if (HelpButton.XamlRoot is null)
+            return false;
+        HelpFlyout.ShowAt(HelpButton);
+        return true;
     }
 
     private DateTime _helpOpenedAt;
@@ -1625,7 +1721,18 @@ public sealed partial class MainWindow : Window
 
     private void OnHelpClosed(object sender, object e)
     {
-        Study.Ui("help.close", ("s", DateTime.Now - _helpOpenedAt));
+        var forRaid = _helpClosedForRaid;
+        var byItself = _helpByItself;
+        _helpClosedForRaid = false;
+        _helpByItself = false;
+        Study.Ui("help.close", ("s", DateTime.Now - _helpOpenedAt), ("how", forRaid ? "raid" : "player"));
+        // The first start's help, closed by a raid before the player closed it: not seen yet. It opens again at the
+        // next chance, when the raid is over.
+        if (forRaid && byItself)
+        {
+            _helpShownOnce = false;
+            return;
+        }
         if (!SnapshotMode)
             _session.SetSetting("help.seen", "1");
     }
@@ -1762,9 +1869,11 @@ public sealed partial class MainWindow : Window
     {
         // Accelerators on the root would otherwise show their key ("F") as a tooltip over the whole window.
         root.KeyboardAcceleratorPlacementMode = KeyboardAcceleratorPlacementMode.Hidden;
-        void Add(Windows.System.VirtualKey key, Action action)
+        void AddKey(Windows.System.VirtualKey key, bool shift, Action action)
         {
             var accelerator = new KeyboardAccelerator { Key = key };
+            if (shift)
+                accelerator.Modifiers = Windows.System.VirtualKeyModifiers.Shift;
             accelerator.Invoked += (_, e) =>
             {
                 // In the Report dialog keys are text, and Esc closes the dialog.
@@ -1777,18 +1886,20 @@ public sealed partial class MainWindow : Window
                     }
                     return;
                 }
-                Study.Ui("key", ("key", key.ToString()));
+                Study.Ui("key", ("key", shift ? "Shift+" + key : key.ToString()));
                 action();
                 e.Handled = true;
             };
             root.KeyboardAccelerators.Add(accelerator);
         }
+        void Add(Windows.System.VirtualKey key, Action action) => AddKey(key, false, action);
 
         Add(Windows.System.VirtualKey.F, ShowMe);
-        Add(Windows.System.VirtualKey.Add, () => ZoomBy(1.5, "key"));
-        Add((Windows.System.VirtualKey)187, () => ZoomBy(1.5, "key")); // the +/= key
-        Add(Windows.System.VirtualKey.Subtract, () => ZoomBy(1 / 1.5, "key"));
-        Add((Windows.System.VirtualKey)189, () => ZoomBy(1 / 1.5, "key")); // the -/_ key
+        // "+" is Shift and the "=" key on a US keyboard, a key of its own on others (ZoomKeys).
+        foreach (var (key, shift) in ZoomKeys.In)
+            AddKey((Windows.System.VirtualKey)key, shift, () => ZoomBy(1.5, "key"));
+        foreach (var (key, shift) in ZoomKeys.Out)
+            AddKey((Windows.System.VirtualKey)key, shift, () => ZoomBy(1 / 1.5, "key"));
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
         // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press
@@ -1796,7 +1907,7 @@ public sealed partial class MainWindow : Window
         Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
-        Add(Windows.System.VirtualKey.F1, ShowHelp);
+        Add(Windows.System.VirtualKey.F1, () => ShowHelp());
         // Ctrl+, opens settings, as in many Windows apps (the gear beside "?").
         var settingsKey = new KeyboardAccelerator { Key = (Windows.System.VirtualKey)188, Modifiers = Windows.System.VirtualKeyModifiers.Control };
         settingsKey.Invoked += (_, e) =>
@@ -1842,6 +1953,8 @@ public sealed partial class MainWindow : Window
         await _session.SelectMapAsync(choice.NormalizedName);
     }
 
+    // A map's row in Plan's list. The open map's card is no button: a click in it is a click on what is under the
+    // pointer, a quest's row or its pen, and never also a change of map (PlanList).
     private async void OnPlanClick(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string map } && map != _snapshot?.Map?.NormalizedName)

@@ -77,6 +77,18 @@ public sealed partial class QuestWindow : Window
             }
         };
         Closed += (_, _) => Stack.CloseAll();
+        // Esc closes the cards opened from this window, as it does in the main window. The window itself stays: it
+        // was popped out to be kept, and closes by its own close button (as Esc never drops a pick). Placement
+        // hidden, or the key would show as a tooltip over the whole card.
+        _root.KeyboardAcceleratorPlacementMode = Microsoft.UI.Xaml.Input.KeyboardAcceleratorPlacementMode.Hidden;
+        var escape = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = Windows.System.VirtualKey.Escape };
+        escape.Invoked += (_, e) =>
+        {
+            Study.Ui("key", ("key", "Escape"), ("where", "pinned"));
+            Stack.CloseAll();
+            e.Handled = true;
+        };
+        _root.KeyboardAccelerators.Add(escape);
         // As in the main window: a click on nothing in particular lets go of held cards.
         _root.Tapped += (_, e) =>
         {
