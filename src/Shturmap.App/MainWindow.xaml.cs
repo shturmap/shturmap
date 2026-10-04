@@ -201,7 +201,10 @@ public sealed partial class MainWindow : Window
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
-        new("ESC", "Close the cards"),
+        new("↓ / ↑", "Step through the rows on the left: the row lights up everywhere it appears, as when you point at it"),
+        new("ENTER", "On a row: what a click does. Keeps the quest's or item's card open; on a map in the list, shows that map"),
+        new("P", "On a quest's row: pick it for the coming raid, or unpick it"),
+        new("ESC", "Close the cards and let the row go"),
         new("F1 / ?", "This help"),
         new("CTRL + ,", StudyLog.Available ? "Settings: updates, crash reports, the study log, the app's folders" : "Settings: updates, crash reports, the app's folders"),
         new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its pen to pick it for the coming raid"),
@@ -1908,9 +1911,16 @@ public sealed partial class MainWindow : Window
             AddKey((Windows.System.VirtualKey)key, shift, () => ZoomBy(1 / 1.5, "key"));
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
-        // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press
-        // that throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way).
-        Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
+        // Esc closes the cards and lets the keyboard's row go. It leaves the picks alone: they are the plan for the
+        // coming raids, and a key press that throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR
+        // PICKS is the deliberate way).
+        Add(Windows.System.VirtualKey.Escape, () =>
+        {
+            LeaveKeyRow();
+            _cards.CloseAll();
+        });
+        // Down, Up, Enter and P reach the rail's rows without a pointer (MainWindow.Keyboard.cs).
+        AddRowKeys(root);
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, () => ShowHelp());

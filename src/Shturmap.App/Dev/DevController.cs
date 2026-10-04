@@ -552,6 +552,14 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 await WalkAsync(step.Number(0, 3));
                 break;
             case "trigger":
+                // "trigger key down | up | enter | p | esc": one of the keys that reach the rail's rows, through the
+                // code the key's own event calls (nothing is sent to the system).
+                if (step.Arg(0).Equals("key", StringComparison.OrdinalIgnoreCase))
+                {
+                    var problem = window.DevKey(step.Arg(1));
+                    Say(problem ?? $"key {step.Arg(1)}: the keyboard is on {window.DevKeyRow}");
+                    break;
+                }
                 await TriggerAsync(step.Arg(0));
                 break;
             case "choose":

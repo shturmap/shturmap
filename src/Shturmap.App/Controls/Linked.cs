@@ -223,6 +223,7 @@ public static class Linked
     {
         if (ReferenceEquals(element, _source))
             return;
+        DropKeyRow();
         Nest.Clear();
         if (element is not null)
             Nest.Enter(element);
@@ -238,10 +239,129 @@ public static class Linked
     /// <summary>Sets the focus from outside the rows, e.g. a map marker under the pointer.</summary>
     public static void Set(Focus? focus)
     {
+        DropKeyRow();
         Nest.Clear();
         _source = null;
         Apply(focus);
     }
+
+    // ---- the keyboard's row (the review of 2026-10-04, E6: the highlight needed a pointer) ----
+
+    // The linked row the keyboard is on, and the window whose rows it walks. While it walks them, that window's
+    // pointer waits: it only takes over again when it moves (PointerTakesOver), since a row scrolled under a resting
+    // pointer must not take the highlight from the row the keyboard has just reached.
+    private static FrameworkElement? _keyRow;
+    private static XamlRoot? _keyWindow;
+
+    /// <summary>The linked row the keyboard is on, or null.</summary>
+    public static FrameworkElement? KeyRow => _keyRow;
+
+    /// <summary>
+    /// The keyboard's row went by something other than the keyboard: the pointer pointed at something elsewhere (the
+    /// map, another window), or nobody is looking any more.
+    /// </summary>
+    public static event Action? KeyRowTaken;
+
+    /// <summary>
+    /// The element of the keyboard's row shows something else now. The lists reuse their rows' elements when a
+    /// snapshot fills them anew, so the element stays and what it is linked to changes: the window looks for the
+    /// row that shows the thing now.
+    /// </summary>
+    public static event Action? KeyRowChanged;
+
+    /// <summary>
+    /// The keyboard reaches a row: it is in focus exactly as if the pointer were on it (the same focus, the same
+    /// tint, the map lighting the same things), but no card opens by itself. With no row, the keyboard is on
+    /// something in that window that isn't a linked row (a map of Plan's list): nothing is in focus, and the window's
+    /// pointer still waits. The pointer's own row and its hover card let go first, as if the pointer had left.
+    /// </summary>
+    public static void ReachByKey(XamlRoot window, FrameworkElement? row)
+    {
+        Nest.Clear();
+        Refocus();
+        _keyWindow = window;
+        _keyRow = row;
+        var focus = row is null ? null : FocusOf(row);
+        if (!Same(focus, Current))
+            Apply(focus);
+    }
+
+    /// <summary>The keyboard lets its row go (Esc): nothing is in focus until the pointer moves onto something.</summary>
+    public static void LeaveByKey()
+    {
+        if (_keyWindow is null)
+            return;
+        _keyRow = null;
+        _keyWindow = null;
+        Apply(null);
+    }
+
+    /// <summary>
+    /// The pointer moved in the window whose rows the keyboard walks: it takes over at once, and is on whatever lies
+    /// under it now (<paramref name="under"/>: the elements at its place, topmost first, as a hit test gives them).
+    /// </summary>
+    public static void PointerTakesOver(IEnumerable<UIElement> under)
+    {
+        if (_keyWindow is null)
+            return;
+        _keyRow = null;
+        _keyWindow = null;
+        Nest.Clear();
+        foreach (var element in under.OfType<FrameworkElement>().Where(e => Hooked.TryGetValue(e, out _)).Reverse())
+            Nest.Enter(element);
+        if (Nest.Top is null)
+            Apply(null);
+        Refocus();
+    }
+
+    /// <summary>A click on the keyboard's row (Enter): what a click on it with the mouse does.</summary>
+    public static void ClickByKey()
+    {
+        if (_keyRow is { } row && CardSourceAt(row) is { } source)
+            Clicked?.Invoke(source, KeyOf(source));
+    }
+
+    /// <summary>The quest the keyboard's row is about (its own, or the one its objective belongs to), for its pen;
+    /// null for a row of none or of several.</summary>
+    public static string? KeyRowQuest =>
+        _keyRow is not { } row ? null
+        : GetQuest(row) is { } quest ? quest
+        : AlsoOf(row).Take(2).ToList() is [var only] ? only
+        : null;
+
+    /// <summary>The linked rows inside an area (the rail): not the small things among others (need cells, glyphs).</summary>
+    public static IReadOnlyList<FrameworkElement> RowsWithin(FrameworkElement area) =>
+        Live.Where(e => !GetInline(e) && IsWithin(e, area)).ToList();
+
+    /// <summary>What a row shows, to find it again after the rows were made anew.</summary>
+    public static RowId IdOf(FrameworkElement row) => RowId.Linked(GetQuest(row), GetObjective(row), GetItem(row), GetMarker(row));
+
+    private static void DropKeyRow()
+    {
+        if (_keyWindow is null)
+            return;
+        _keyRow = null;
+        _keyWindow = null;
+        KeyRowTaken?.Invoke();
+    }
+
+    // The pointer entered or left something in the window whose rows the keyboard walks: it waits.
+    private static bool KeyboardHolds(FrameworkElement element)
+    {
+        if (_keyWindow is null)
+            return false;
+        if (element.XamlRoot == _keyWindow)
+            return true;
+        // Another window's pointer (a popped-out card): it points, and the keyboard's row goes.
+        DropKeyRow();
+        Apply(null);
+        return false;
+    }
+
+    private static bool Same(Focus? a, Focus? b) =>
+        a is null || b is null ? a is null && b is null
+        : a.Quests.SetEquals(b.Quests) && a.Item == b.Item && a.Marker == b.Marker && a.Objective == b.Objective
+          && a.Alternatives.SequenceEqual(b.Alternatives);
 
     /// <summary>
     /// For a small linked thing among others (<see cref="InlineProperty"/>): the row it lies in, which is the
@@ -270,6 +390,7 @@ public static class Linked
     /// </summary>
     public static void LetGo()
     {
+        DropKeyRow();
         Nest.Clear();
         Refocus();
         Apply(null);
@@ -325,6 +446,8 @@ public static class Linked
                 Live.Add(element);
         }
         Paint(element);
+        if (ReferenceEquals(element, _keyRow))
+            KeyRowChanged?.Invoke();
     }
 
     private static IEnumerable<string> QuestsOf(FrameworkElement element)
@@ -357,12 +480,16 @@ public static class Linked
 
     private static void Enter(FrameworkElement element)
     {
+        if (KeyboardHolds(element))
+            return;
         Nest.Enter(element);
         Refocus();
     }
 
     private static void Exit(FrameworkElement element)
     {
+        if (KeyboardHolds(element))
+            return;
         Nest.Leave(element);
         Refocus();
     }

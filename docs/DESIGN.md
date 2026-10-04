@@ -538,6 +538,9 @@ The rail's BRING rows, the need cells and the map follow the same rules: a row o
 locks and loose spots, and an extract row's item picture is that item. Not linked yet: boss names in the raid line
 and on Plan cards (they are part of one line of text, and the data names bosses by another id than their markers'
 groups).
+**Without a pointer** (E6): the highlight needed one. Down and Up reach the rail's rows from the keyboard, and the
+row reached is in focus exactly as under the pointer ("Keyboard (window focused only)", *The rail's rows by
+keyboard*); the pointer takes over again when it moves.
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
@@ -1272,7 +1275,10 @@ Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 | + / − | zoom in / out (following, about the player); "+" with or without Shift, and the number pad's keys |
 | 0 | show the whole map (following stays on: the next position centres on you at that zoom) |
 | PgUp / PgDn | show the floor above / below |
-| Esc | close the cards (it never drops picks); in a popped-out window, the cards opened from it (never the window) |
+| ↓ / ↑ | step through the rail's rows; the row reached is in focus as if pointed at |
+| Enter | on the keyboard's row: what a click on it does (keep the quest's or item's card open; on a map of Plan's list, show that map) |
+| P | on a quest's row or one of its objective lines: pick the quest for the coming raid, or unpick it (its pen) |
+| Esc | close the cards and let the keyboard's row go (it never drops picks); in a popped-out window, the cards opened from it (never the window) |
 | F1 or ? | help |
 | Ctrl+, | settings |
 
@@ -1281,6 +1287,26 @@ one's key as a tooltip over the whole window. "+" is a key of its own on some ke
 others (US); both are one virtual key, and a shortcut without Shift never saw the second, so "+" didn't zoom on a
 US keyboard (`ZoomKeys`; review of 2026-10-04). A popped-out window has its own Esc for the cards opened from it;
 it had none.
+
+**The rail's rows by keyboard** (the review of 2026-10-04, E6: the linked highlight needed a pointer; `RowSteps`,
+`MainWindow.Keyboard.cs`). Nothing in the app needs it; it is there for whoever has a hand on the keyboard. Down
+and Up step through the rows in the order they stand on screen: in Plan the maps of the list, then the open card's
+quests and its BRING rows; in a raid NEXT, EXIT, each quest with its objective lines, BRING, the ways out. The row
+reached gets the same focus the pointer would give it (the same tint, the same things lit on the map, the pen
+showing), and the rail scrolls so it is in view; a map of Plan's list wears the tint and previews its map. No card
+opens by itself: Enter is the click, P the pen. There is no wrapping: Down on the last row stays there. With no
+row yet, Down starts at the first row in view and Up at the last, so a scrolled rail is entered where it is being
+looked at.
+The keyboard's row is the thing shown, not the element: a snapshot makes the rows anew (new elements, or the same
+ones filled with something else), and the row is found again by what it shows, so a quest picked with P is
+followed up into PICKED; when nothing shows it any more (the quest was completed, the raid ended) it is let go.
+The pointer takes over the moment it moves (4 px or more): the keyboard's row goes, and the pointer is on whatever
+lies under it. Until then a row that scrolls under a resting pointer doesn't take the highlight. Nobody looking
+(none of Shturmap's windows active) lets the row go, as it does the pointer's.
+The keys are the rows' only while nothing else wants them: not in the Report dialog, not while help, settings or
+an open list (the MAP list) is up, not in a text box; Enter and P do nothing without a row, so a focused button
+keeps its Enter. The MAP list, closed, gives its arrows to the rows: the window's focus rests on it at the start,
+and its arrows would switch the map with every press (open it to choose a map by keyboard).
 
 Mouse: drag to pan (following stays on: the next position brings the view back), wheel to zoom at the cursor
 (following with the view on the player, about the player), double-click to
