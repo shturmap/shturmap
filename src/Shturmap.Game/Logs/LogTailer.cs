@@ -26,7 +26,6 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
     private static readonly TimeSpan ActivePoll = TimeSpan.FromMilliseconds(500);
     private static readonly TimeSpan IdlePoll = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan IdleAfter = TimeSpan.FromMinutes(2);
-    private const int MaxReadPerPoll = 4 * 1024 * 1024;
 
     private readonly Channel<LogEvent> _events = Channel.CreateUnbounded<LogEvent>(new UnboundedChannelOptions { SingleReader = true });
     private readonly Dictionary<string, FileState> _files = new(StringComparer.OrdinalIgnoreCase);
@@ -61,6 +60,9 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
 
     /// <summary>The time, for telling a quiet log from a growing one; tests set their own.</summary>
     internal Func<DateTime> UtcNow { get; init; } = () => DateTime.UtcNow;
+
+    /// <summary>How many bytes of one file a poll reads at most; a longer log takes several polls. Tests make it small.</summary>
+    internal int MaxReadPerPoll { get; init; } = 4 * 1024 * 1024;
 
     public void Start() => _loop ??= Task.Run(() => RunAsync(_stop.Token));
 
@@ -112,21 +114,30 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         if (newest is null)
             return 0;
 
-        var replay = false;
+        // Listed before anything is noted: a folder that can't be read now is met again, as new, at the next poll.
+        var sessionFolder = Path.Combine(LogsRoot, newest);
+        var paths = Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)).Order(StringComparer.OrdinalIgnoreCase).ToList();
         if (!string.Equals(newest, CurrentSession, StringComparison.OrdinalIgnoreCase))
         {
             CurrentSession = newest;
             _files.Clear();
             _reported.Clear();
-            replay = _firstSession;
+            // The session found at start was written before Shturmap looked. Whatever its files hold when they are
+            // first opened is replay, whenever it is read: a file busy at the first poll, a log longer than one
+            // read, the last line that is only complete a moment later. A session the game starts later, or a file
+            // it adds to this one, is live from its first line.
+            if (_firstSession)
+            {
+                foreach (var path in paths)
+                    _files[path] = new FileState { LastGrowth = now, StartsOld = true };
+            }
             _firstSession = false;
         }
 
-        var sessionFolder = Path.Combine(LogsRoot, newest);
-        var events = new List<GameEvent>();
+        var events = new List<(GameEvent Event, bool Replay)>();
         try
         {
-            foreach (var path in Directory.EnumerateFiles(sessionFolder, "*.log").Where(p => WatchedFile().IsMatch(p)).Order(StringComparer.OrdinalIgnoreCase))
+            foreach (var path in paths)
             {
                 if (!_files.TryGetValue(path, out var state))
                     _files[path] = state = new FileState { LastGrowth = now };
@@ -144,27 +155,34 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         {
             // What was read is passed on whatever happened after it: its file's offset has moved on, so it would
             // not be read again.
-            foreach (var e in events.OrderBy(e => e.At))
+            foreach (var (e, replay) in events.OrderBy(e => e.Event.At))
                 _events.Writer.TryWrite(new LogEvent(e, newest, replay));
         }
         return events.Count;
     }
 
-    private void ReadNew(string path, FileState state, List<GameEvent> events, DateTime now)
+    private void ReadNew(string path, FileState state, List<(GameEvent Event, bool Replay)> events, DateTime now)
     {
         var records = new List<LogRecord>();
         using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
         {
             if (stream.Length < state.Offset)
-                state.Reset(); // truncated or replaced
-            if (stream.Length > state.Offset)
+                state.Reset(); // truncated or replaced: what it holds now is new
+            // Where the replay ends: the file's length when it is first opened (it can only have shrunk since by
+            // being cut, and then what is left is all there was).
+            state.ReplayUntil = Math.Min(state.ReplayUntil ?? (state.StartsOld ? stream.Length : 0), stream.Length);
+            // Old and new text are read apart, so that a read is wholly one or the other.
+            var old = state.Offset < state.ReplayUntil;
+            var end = old ? state.ReplayUntil.Value : stream.Length;
+            if (end > state.Offset)
             {
                 stream.Seek(state.Offset, SeekOrigin.Begin);
-                var buffer = new byte[Math.Min(stream.Length - state.Offset, MaxReadPerPoll)];
+                var buffer = new byte[Math.Min(end - state.Offset, MaxReadPerPoll)];
                 var read = stream.Read(buffer, 0, buffer.Length);
                 state.Offset += read;
                 var chars = new char[state.Decoder.GetCharCount(buffer, 0, read)];
                 state.Decoder.GetChars(buffer, 0, read, chars, 0);
+                state.Reader.Replay = old;
                 records.AddRange(state.Reader.Append(new string(chars)));
                 state.LastGrowth = now;
                 LastActivityUtc = now;
@@ -180,16 +198,17 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         ParseInto(events, records, Parser, path, Report);
     }
 
-    // One record at a time: a record the parser throws on is left out, and the ones around it still count.
-    private static void ParseInto(List<GameEvent> events, IEnumerable<LogRecord> records, Func<LogRecord, GameEvent?> parse, string path,
-        Action<string, Exception> problem)
+    // One record at a time: a record the parser throws on is left out, and the ones around it still count. An event
+    // is replay when its record began in what the file held at first sight.
+    private static void ParseInto(List<(GameEvent Event, bool Replay)> events, IEnumerable<LogRecord> records, Func<LogRecord, GameEvent?> parse,
+        string path, Action<string, Exception> problem)
     {
         foreach (var record in records)
         {
             try
             {
                 if (parse(record) is { } e)
-                    events.Add(e);
+                    events.Add((e, record.IsReplay));
             }
             catch (Exception e)
             {
@@ -238,7 +257,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
 
     internal static IReadOnlyList<GameEvent> ReadSession(string sessionFolder, Action<string, Exception>? problem, Func<LogRecord, GameEvent?> parse)
     {
-        var events = new List<GameEvent>();
+        var events = new List<(GameEvent Event, bool Replay)>();
         var reported = new HashSet<Type>();
         void Report(string what, Exception e)
         {
@@ -271,7 +290,7 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         {
             // The folder went away while it was read (the game tidying up, a drive asleep).
         }
-        return events.OrderBy(e => e.At).ToList();
+        return events.Select(e => e.Event).OrderBy(e => e.At).ToList();
     }
 
     private sealed class FileState
@@ -281,11 +300,19 @@ public sealed partial class LogTailer(string logsRoot) : IAsyncDisposable
         public LogRecordReader Reader = new();
         public DateTime LastGrowth;
 
+        /// <summary>The file was in the session found at start: what it holds when first opened is replay.</summary>
+        public bool StartsOld;
+
+        /// <summary>Up to this byte the file is replay; null until the file has been opened once.</summary>
+        public long? ReplayUntil;
+
         public void Reset()
         {
             Offset = 0;
             Decoder = new UTF8Encoding(false).GetDecoder();
             Reader = new LogRecordReader();
+            StartsOld = false;
+            ReplayUntil = 0;
         }
     }
 }

@@ -51,6 +51,25 @@ public class LogRecordReaderTests
     }
 
     [Fact]
+    public void A_record_is_replay_when_its_header_line_began_as_replay()
+    {
+        const string first = "2026-01-01 18:00:10.250|1.1.5.1.47510|Info|application|Session mode: Pve\r\n";
+        const string second = "2026-01-01 18:01:00.000|1.1.5.1.47510|Info|application|scene preset path:maps/city_preset.bundle\r\n";
+        const string third = "2026-01-01 18:02:00.000|1.1.5.1.47510|Info|application|GameStarted:1(1) real:1(1) diff:0\r\n";
+
+        // What a file held at first sight ends in the middle of the second line; the rest is written later.
+        var reader = new LogRecordReader { Replay = true };
+        var records = reader.Append(first + second[..20]).ToList();
+        reader.Replay = false;
+        records.AddRange(reader.Append(second[20..] + third));
+        records.Add(reader.Flush()!);
+
+        Assert.Equal(new[] { "Session mode: Pve", "scene preset path:maps/city_preset.bundle", "GameStarted:1(1) real:1(1) diff:0" },
+            records.Select(r => r.Message).ToArray());
+        Assert.Equal(new[] { true, true, false }, records.Select(r => r.IsReplay).ToArray());
+    }
+
+    [Fact]
     public void Parses_a_quest_notification()
     {
         var reader = new LogRecordReader();
