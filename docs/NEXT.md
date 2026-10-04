@@ -343,20 +343,18 @@ for the languages to come).
   shorter. The texts above the legend are as long as before.
 - **C10. The quest types' icons** (owner, 2026-10-04: "the iconography of the quests can be improved. Find the best
   possible icons for each type used, compile a panel of different solutions and how they would look in the app to
-  let me decide"). Status: owner to decide. A panel was made outside the repository: today's glyphs and five sets
-  from open icon families, each drawn in the real app (help's legend, Plan, the map) by a throwaway build, plus
-  every candidate looked at, by type. What it shows: today's thin outlines are faint in a map marker, where the
-  glyph is about 10 px; filled shapes read at that size.
-  - Today: Windows' icon font (Segoe Fluent Icons) and the app's own crosshair.
-  - A: Phosphor Icons, fill (MIT): skull, magnifier, grabbing hand, flag, backpack, runner, shop. Suggested.
-  - B: the same family, other pictures: crosshair, binoculars, open hand, push pin, box, exit, handshake.
-  - C: Material Symbols, filled (Apache 2.0). D: Phosphor Icons, bold outlines (MIT). E: Fluent UI System Icons,
-    filled (MIT). Pictures can be mixed across A and B, type by type.
-  To adopt a set: its seven shapes become paths in `Glyphs`, as the crosshair is (`PathIcon` in the lists,
-  `SKPath` on the map; the trial did exactly that), the family's licence goes into `THIRD-PARTY-NOTICES.md`,
-  DESIGN.md §5's table and the legend's row texts follow, and the website's and README's pictures are re-recorded
-  (on the owner's word). Keys, the bring glyph, padlocks and switches still come from the icon font, so the
-  README's Windows 10 note stays unless those are redrawn too.
+  let me decide"). Status: done (2026-10-04, owner, from the panel: "B Solid Other Pictures but with the
+  exploration icon from A Solid and with Survive icon from A solid"). The panel was made outside the repository:
+  the glyphs until then (Windows' icon font and the app's own crosshair) and five sets from open icon families,
+  each drawn in the real app (help's legend, Plan, the map) by a throwaway build. What it showed: thin outlines
+  are faint in a map marker, where the glyph is about 10 px; filled shapes read at that size.
+  - Now, all from Phosphor Icons (MIT): crosshair, magnifier, open hand, push pin, box, runner, handshake. Seven
+    paths in `Glyphs`, drawn filled and fitted by their bounds on the map (`SKPath`) and in the lists
+    (`KindGlyph`); the licence is in `THIRD-PARTY-NOTICES.md`, the credit in the README, the table in DESIGN.md §5.
+  - Keys, the bring glyph, padlocks and switches still come from the icon font, so the README's Windows 10 note
+    stays unless those are redrawn too.
+  - Left: the website's and README's pictures show the icons from before; they are re-recorded on the owner's
+    word.
 
 ### D. Features (owner, 2026-10-04: these two; "the rest of d) not")
 

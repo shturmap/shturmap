@@ -24,6 +24,7 @@ downloads at runtime are not part of a build; they are credited in the [README](
 | System.Numerics.Tensors 9.0.0 | MIT | .NET Foundation and Contributors |
 | Sentry 6.12.0 (only its report format; reports are sent by Shturmap's own code, see PRIVACY.md) | MIT | Sentry |
 | Velopack 1.2.161 (the Setup, Update.exe and the update library) | MIT | Velopack Ltd, Caelan Sayler, Kevin Bost |
+| Phosphor Icons (seven icons, the quest types' glyphs, as path data in the code) | MIT | Phosphor Icons |
 
 The Windows App SDK runtime files in a build are licensed by Microsoft under the terms in
 `licenses\Microsoft.WindowsAppSDK\license.txt`, not under Shturmap's MIT licence. Using or passing on a build means
@@ -37,7 +38,7 @@ libwebp, zlib, expat, ICU and others), listed with their licences in
 - This software is based in part on the work of the Independent JPEG Group.
 - Portions of this software are copyright © The FreeType Project (www.freetype.org). All rights reserved.
 
-## MIT notices for packages that ship no licence file
+## MIT notices for packages and artwork that ship no licence file
 
 - ExCSS: Copyright (c) 2024 Tyler Brinks.
 - Svg.Skia, Svg.Model, Svg.Animation, Svg.SceneGraph, ShimSkiaSharp: Copyright (c) 2020 Wiesław Šoltés.
@@ -45,6 +46,8 @@ libwebp, zlib, expat, ICU and others), listed with their licences in
 - Sentry: Copyright (c) 2018 Sentry.
 - Velopack: Copyright (c) Velopack Ltd. (The Setup and Update.exe are built by Velopack's `vpk` from its open-source
   code and the Rust libraries it uses, listed with their licences at <https://github.com/velopack/velopack>.)
+- Phosphor Icons: Copyright (c) 2023 Phosphor Icons. (<https://github.com/phosphor-icons/core>; the icons crosshair,
+  hand, push-pin, package, person-simple-run and handshake in the "fill" weight, and magnifying-glass in "bold".)
 
 Each is licensed under these terms:
 

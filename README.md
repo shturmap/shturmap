@@ -180,6 +180,7 @@ Segoe Fluent Icons font for the glyphs.
 - Escape from Tarkov and its game content and materials are trademarks and copyrights of Battlestate Games and its
   licensors. Trader portraits and item icons are Battlestate's art, shown from tarkov.dev at runtime and never
   bundled.
+- The quest types' icons: [Phosphor Icons](https://phosphoricons.com), MIT licence.
 - Bundled libraries and their licences: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Licence

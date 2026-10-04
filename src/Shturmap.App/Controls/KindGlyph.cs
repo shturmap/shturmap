@@ -16,8 +16,6 @@ public sealed partial class KindGlyph : Grid
     public static readonly DependencyProperty BrushProperty = DependencyProperty.Register(
         nameof(Brush), typeof(Brush), typeof(KindGlyph), new PropertyMetadata(null, (d, _) => ((KindGlyph)d).Update()));
 
-    private static readonly FontFamily IconFont = new(Glyphs.FontFamily);
-
     public KindGlyph()
     {
         Width = 16;
@@ -41,12 +39,16 @@ public sealed partial class KindGlyph : Grid
     private void Update()
     {
         Children.Clear();
-        IconElement icon = Glyphs.Character(Kind) is { } character
-            ? new FontIcon { Glyph = character, FontFamily = IconFont, FontSize = 15 }
-            // XAML path markup fills even-odd unless told otherwise; the crosshair is drawn for nonzero.
-            : new PathIcon { Data = (Geometry)XamlBindingHelper.ConvertValue(typeof(Geometry), "F1 " + Glyphs.CrosshairPath) };
-        if (Brush is not null)
-            icon.Foreground = Brush;
+        // The type's shape, fitted into 15 px by its own bounds, as the map fits it into a marker. XAML path markup
+        // fills even-odd unless told otherwise; the shapes are drawn for nonzero ("F1").
+        var icon = new Microsoft.UI.Xaml.Shapes.Path
+        {
+            Data = (Geometry)XamlBindingHelper.ConvertValue(typeof(Geometry), "F1 " + Glyphs.Path(Kind)),
+            Stretch = Stretch.Uniform,
+            Width = 15,
+            Height = 15,
+            Fill = Brush ?? (Brush)Application.Current.Resources["InkBrush"],
+        };
         ToolTipService.SetToolTip(this, $"{QuestTaxonomy.Label(Kind)}: {QuestTaxonomy.Explanation(Kind)}");
         Children.Add(icon);
     }

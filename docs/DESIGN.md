@@ -1344,18 +1344,28 @@ instead and borrows the game's names and look where one fits, so the labels feel
 
 | type | glyph | objective types | in raid? |
 | --- | --- | --- | --- |
-| **Elimination** | crosshair (custom; the game uses a skull) | `shoot` | yes |
-| **Exploration** | magnifier `E721` (as in the game) | `visit` | yes, at a place |
-| **Pickup** | pointing hand `E7C9` (as in the game) | `findQuestItem` | yes, at a place |
-| **Place** | pin `E840` | `plantItem`, `plantQuestItem`, `mark`, `useItem` | yes, at a place; needs an item |
-| **Find in raid** | bag `E719` | `findItem` | yes, anywhere; found in raid (FIR) only where the data's `foundInRaid` says so |
-| **Survive** | runner `E726` | `extract`, `experience` (an in-raid health condition, not XP) | yes |
-| **Trader** | people `E716` | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `playerLevel`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
+| **Elimination** | crosshair (the game uses a skull) | `shoot` | yes |
+| **Exploration** | magnifier (as in the game) | `visit` | yes, at a place |
+| **Pickup** | open hand (the game has a hand) | `findQuestItem` | yes, at a place |
+| **Place** | push pin | `plantItem`, `plantQuestItem`, `mark`, `useItem` | yes, at a place; needs an item |
+| **Find in raid** | box | `findItem` | yes, anywhere; found in raid (FIR) only where the data's `foundInRaid` says so |
+| **Survive** | runner | `extract`, `experience` (an in-raid health condition, not XP) | yes |
+| **Trader** | handshake | `giveItem`, `giveQuestItem`, `sellItem`, `buildWeapon`, `traderLevel`, `traderStanding`, `playerLevel`, `skill`, `taskStatus`, `dialogue`, `globalVariable`, anything new | no |
 
 A quest's type is that of its most common in-raid objective type (ties: Elimination, Pickup, Place, Exploration,
 Survive, Find in raid); a quest with no in-raid objectives is a Trader quest. This is derived, not the game's own
-label. Requirements use a key glyph `E8D7` for keys and a briefcase `E821` for items to bring. Never use the
-game's icon artwork; the glyphs only echo it.
+label. Never use the game's icon artwork; the glyphs only echo it.
+
+**The types' icons are filled shapes from Phosphor Icons** (MIT; `THIRD-PARTY-NOTICES.md`), chosen by the owner on
+2026-10-04 from a panel of six sets, each tried in the real app: "B Solid Other Pictures but with the exploration
+icon from A Solid and with Survive icon from A solid". Until then they were thin outlines from Windows' icon font
+(Segoe Fluent Icons) and a crosshair of the app's own; inside a map marker, where the glyph is about 10 px, those
+were faint, and filled shapes read at that size. All seven are the family's "fill" weight, except the magnifier,
+which is its "bold" one (a filled lens reads as a dot). Each is the family's path as published, in `Glyphs`, drawn
+filled and fitted by its own bounds: 15 px in the lists (`KindGlyph`), the marker's glyph size on the map. One
+drawing serves both, so the two can't drift. Requirements keep Windows' font: a key glyph `E8D7` for keys, a
+briefcase `E821` for items to bring, the padlock and the power symbol on the map; on Windows 10 that font has to
+be installed for those (README).
 
 The type is named after the common case. A `findItem` whose item may be bought (`foundInRaid` false) keeps the type
 and its glyph, but nothing says "found in raid" of it: the planner, the plan's order and the item card go by the
