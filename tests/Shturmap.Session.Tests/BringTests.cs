@@ -210,6 +210,36 @@ public class BringTests
         Assert.Null(Planning.NeedKey(data, keyed with { NeededKeys = [new ApiNeededKeys("streets", ["key-b"])] }, oneDoor, streets, true));
     }
 
+    // tarkov.dev's quest-level keys are the keys the quest's objectives name, as one flat list: a key an objective
+    // names is shown on that objective, with its alternatives, and not again on every line (review of 2026-10-04, A33).
+    [Fact]
+    public void A_key_an_objective_names_is_on_its_line_alone()
+    {
+        var streets = new HashSet<string> { "streets" };
+        var either = Objective("o1", "visit") with { RequiredKeys = [["key-a", "key-b"]] };
+        var door = Objective("o2", "visit") with { RequiredKeys = [["key-c"]] };
+        var open = Objective("o3", "visit");
+        var task = Task("Quest", [either, door, open]) with { NeededKeys = [new ApiNeededKeys("streets", ["key-a", "key-b", "key-c", "key-d"])] };
+        var names = new Dictionary<string, string> { ["key-a"] = "Key A", ["key-b"] = "Key B", ["key-c"] = "Key C", ["key-d"] = "Key D" };
+        var data = new GameData
+        {
+            Mode = GameMode.Pve, Language = "en", Maps = new Dictionary<string, ApiMap>(), Tasks = new Dictionary<string, ApiTask> { [task.Id] = task },
+            Traders = new Dictionary<string, ApiTrader>(), ItemNames = names, MapDefinitions = [], CheckedAt = DateTimeOffset.Now,
+        };
+        // "Key A or Key B" used to be followed by "Key A, Key B, Key C, Key D" on each line with a place.
+        Assert.Equal("Key: Key A or Key B, Key D", Planning.Needs(data, task, either, streets, true));
+        Assert.Equal("Key: Key C, Key D", Planning.Needs(data, task, door, streets, true));
+        // Only the key no objective names is the quest's own: on the lines with a place, not on the others.
+        Assert.Equal("Key: Key D", Planning.Needs(data, task, open, streets, true));
+        Assert.Null(Planning.Needs(data, task, open, streets, false));
+        Assert.Equal(["key-d"], Planning.QuestOnlyKeys(task, streets));
+        Assert.Empty(Planning.QuestOnlyKeys(task, new HashSet<string> { "customs" }));
+        // The line stands for one key only when it names exactly one.
+        Assert.Equal("key-d", Planning.NeedKey(data, task, open, streets, true));
+        Assert.Null(Planning.NeedKey(data, task, door, streets, true));
+        Assert.Equal("key-c", Planning.NeedKey(data, task with { NeededKeys = [new ApiNeededKeys("streets", ["key-c"])] }, door, streets, true));
+    }
+
     // ---- what it takes to enter the map ----
 
     [Fact]

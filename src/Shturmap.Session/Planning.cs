@@ -521,8 +521,26 @@ public static class Planning
         return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList());
     }
 
+    /// <summary>
+    /// The keys a quest lists for these maps that none of its objectives names. tarkov.dev's quest-level list
+    /// (<c>neededKeys</c>) is, per map, the keys the quest's objectives name, as one flat list: in its data of
+    /// 2026-10-04 exactly that, for every quest with keys in both modes. So it can't say whether two keys are both
+    /// needed (two doors) or either will do (two keys to one room); the objectives' own lists (<c>requiredKeys</c>)
+    /// can. A key an objective names is therefore that objective's to show, with its alternatives, and only a key no
+    /// objective names is the quest's (review of 2026-10-04, A33: "306 or 308" stood beside "306" and "308").
+    /// </summary>
+    /// <param name="objective">An objective to count beside the quest's own (the one a line is made for).</param>
+    public static IReadOnlyList<string> QuestOnlyKeys(ApiTask task, IReadOnlySet<string> mapIds, ApiObjective? objective = null)
+    {
+        var named = (task.Objectives ?? []).Append(objective).OfType<ApiObjective>()
+            .SelectMany(o => o.RequiredKeys ?? []).SelectMany(k => k).ToHashSet(StringComparer.Ordinal);
+        return (task.NeededKeys ?? []).Where(k => k.Map is not null && mapIds.Contains(k.Map))
+            .SelectMany(k => k.Keys ?? []).Where(k => !named.Contains(k)).Distinct().ToList();
+    }
+
     /// <summary>"Key: X · Bring: Y · Use: Z · Without: armor" for one objective on one map, or null if it needs nothing.</summary>
-    /// <param name="hasPlace">Quest-level keys are shown only on objectives with a place, where the key is used.</param>
+    /// <param name="hasPlace">Keys only the quest lists (<see cref="QuestOnlyKeys"/>) are shown on its objectives with
+    /// a place, where a key is used; a key an objective names is shown on that objective alone.</param>
     /// <param name="sources">The item categories, to name a weapon class and forbidden gear; may be null.</param>
     public static string? Needs(GameData data, ApiTask task, ApiObjective objective, IReadOnlySet<string> mapIds, bool hasPlace,
         ItemSources? sources = null)
@@ -531,10 +549,7 @@ public static class Planning
         var parts = new List<string>();
         var keys = plan.Keys.Select(k => string.Join(" or ", k.Select(data.ItemName))).ToList();
         if (hasPlace)
-        {
-            keys.AddRange((task.NeededKeys ?? []).Where(k => k.Map is not null && mapIds.Contains(k.Map))
-                .SelectMany(k => k.Keys ?? []).Select(data.ItemName));
-        }
+            keys.AddRange(QuestOnlyKeys(task, mapIds, objective).Select(data.ItemName));
         if (keys.Count > 0)
             parts.Add("Key: " + string.Join(", ", keys.Distinct()));
         if (plan.Bring.Count > 0)
@@ -563,10 +578,7 @@ public static class Planning
         var plan = ToPlan(objective, data.ObjectiveFacts.GetValueOrDefault(objective.Id), data);
         var keys = plan.Keys.SelectMany(k => k).ToList();
         if (hasPlace)
-        {
-            keys.AddRange((task.NeededKeys ?? []).Where(k => k.Map is not null && mapIds.Contains(k.Map))
-                .SelectMany(k => k.Keys ?? []));
-        }
+            keys.AddRange(QuestOnlyKeys(task, mapIds, objective));
         return keys.Distinct().Take(2).ToList() is [var only] ? only : null;
     }
 }

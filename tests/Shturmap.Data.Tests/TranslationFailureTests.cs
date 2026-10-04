@@ -50,35 +50,61 @@ public class TranslationFailureTests : IDisposable
         Assert.Equal(("en", "de"), (data.Language, data.MissingLanguage));
     }
 
+    // A translation that fails for a reason that may pass doesn't cost the whole load any more (review of 2026-10-04,
+    // A46: no data at all for as long as one translation file kept failing): the data comes in English and says which
+    // language didn't load and why, so the session can say it truthfully and ask again.
     [Fact]
     public async Task A_busy_answer_to_a_translation_is_not_a_missing_language()
     {
-        var e = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            Loader(_ => Status(HttpStatusCode.ServiceUnavailable)).LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken));
-        var problem = LoadProblem.Explain(e);
+        var data = await Loader(_ => Status(HttpStatusCode.ServiceUnavailable)).LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken);
+        Assert.Equal(("en", null), (data.Language, data.MissingLanguage));
+        var failure = Assert.IsType<LanguageFailure>(data.LanguageFailure);
         // Said as what it is, and tried again by itself.
-        Assert.Equal((LoadFailure.ServerBusy, 503, true), (problem.Kind, problem.Status, problem.Transient));
+        Assert.Equal(("de", LoadFailure.ServerBusy, 503, true), (failure.Language, failure.Why.Kind, failure.Why.Status, failure.Why.Transient));
     }
 
     [Fact]
     public async Task A_translation_that_doesnt_answer_in_time_is_a_timeout()
     {
         var timeout = Task.FromException<HttpResponseMessage>(new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout"));
-        var e = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            Loader(name => name.StartsWith("tasks", StringComparison.Ordinal) ? timeout : Status(HttpStatusCode.NotFound))
-                .LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken));
-        Assert.Equal(LoadFailure.TimedOut, LoadProblem.Explain(e).Kind);
+        var data = await Loader(name => name.StartsWith("tasks", StringComparison.Ordinal) ? timeout : Status(HttpStatusCode.NotFound))
+            .LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken);
+        Assert.Equal(LoadFailure.TimedOut, data.LanguageFailure?.Why.Kind);
+        Assert.Null(data.MissingLanguage);
     }
 
     [Fact]
     public async Task Beside_a_missing_file_the_failure_that_may_pass_is_the_one_told()
     {
-        // "maps_de" comes first and is not found; "tasks_de" is busy: the load fails as busy (and is tried again), not as
-        // "404, please report it".
-        var e = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            Loader(name => Status(name.StartsWith("maps", StringComparison.Ordinal) ? HttpStatusCode.NotFound : HttpStatusCode.BadGateway))
-                .LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken));
-        Assert.Equal(HttpStatusCode.BadGateway, e.StatusCode);
+        // "maps_de" comes first and is not found; "tasks_de" is busy: the language counts as not loaded (and is asked
+        // for again), not as one tarkov.dev lacks.
+        var data = await Loader(name => Status(name.StartsWith("maps", StringComparison.Ordinal) ? HttpStatusCode.NotFound : HttpStatusCode.BadGateway))
+            .LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken);
+        Assert.Equal((LoadFailure.ServerBusy, 502), (data.LanguageFailure?.Why.Kind, data.LanguageFailure?.Why.Status));
+        Assert.Null(data.MissingLanguage);
+    }
+
+    [Fact]
+    public async Task The_language_comes_with_a_later_load()
+    {
+        var busy = true;
+        var loader = Loader(_ => busy ? Status(HttpStatusCode.ServiceUnavailable) : null);
+        Assert.NotNull((await loader.LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken)).LanguageFailure);
+        busy = false;
+        var data = await loader.LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken);
+        Assert.Equal(("de", null, null), (data.Language, data.LanguageFailure, data.MissingLanguage));
+    }
+
+    [Fact]
+    public async Task The_caller_stopping_is_no_language_failure()
+    {
+        // The translations don't answer until the caller gives up.
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var unanswered = new TaskCompletionSource<HttpResponseMessage>();
+        using var given = stop.Token.Register(() => unanswered.TrySetCanceled(stop.Token));
+        var load = Loader(_ => unanswered.Task).LoadAsync(GameMode.Pve, "ge", stop.Token);
+        stop.CancelAfter(100);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => load);
     }
 
     [Fact]

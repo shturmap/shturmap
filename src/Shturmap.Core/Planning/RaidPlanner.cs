@@ -106,10 +106,12 @@ public static class RaidPlanner
 {
     public const int OneRaidCount = 3;
 
-    /// <param name="top">How many maps are suggested.</param>
+    /// <param name="top">How many maps are suggested without picks. With picks it is no upper bound: see <paramref name="picks"/>.</param>
     /// <param name="picks">The quests picked for the coming raid. Every map with a pick comes first, most picks first,
     /// then in the planner's order, whatever its rank: the player's plan before the planner's (owner, 2026-10-03). The
-    /// rest fill up to <paramref name="top"/>; maps with picks are all shown, also beyond it.</param>
+    /// rest fill up to <paramref name="top"/>; maps with picks are all shown, also beyond it. So the list is as long
+    /// as the picks make it: one picked quest with work on five maps gives five (decided 2026-10-04: a map a pick
+    /// can be worked on is never left out, and Plan shows the maps as a short list, which has the room).</param>
     public static IReadOnlyList<MapPlan> Rank(IEnumerable<PlanQuest> quests, IEnumerable<PlanMap> maps, int top = 4, IReadOnlySet<string>? picks = null)
     {
         var questList = quests.ToList();
@@ -233,10 +235,16 @@ public static class RaidPlanner
 
         foreach (var (quest, objectives) in involved)
         {
+            // The quest's own list of keys is flat: per map, the keys its objectives name, with nothing to say whether
+            // two of them are both needed or either will do (tarkov.dev's neededKeys; in its data of 2026-10-04 exactly
+            // the keys the objectives name). The objectives' lists say it, so a key one of them names here is left to
+            // that objective, and only what no objective names is a row by itself. "Room 306 key" and "Room 308 key"
+            // stood as two rows where either opens the room.
+            var named = objectives.SelectMany(o => o.Keys).SelectMany(k => k).ToHashSet(StringComparer.Ordinal);
             foreach (var (mapId, needed) in quest.NeededKeys)
             {
                 if (map.MapIds.Contains(mapId))
-                    foreach (var key in needed)
+                    foreach (var key in needed.Where(k => !named.Contains(k)))
                         AddKey([key], quest.Id);
             }
             foreach (var objective in objectives)
@@ -272,8 +280,19 @@ public static class RaidPlanner
             }
         }
 
-        // A key listed alone also satisfies any alternative set that contains it.
-        var singles = keys.Values.Where(k => k.Alternatives.Count == 1).Select(k => k.Alternatives[0]).ToHashSet(StringComparer.Ordinal);
+        // A key listed alone also satisfies any alternative set that contains it: the set's row goes, and its quests
+        // are named on the key's row, which serves them too ("key for Quest A, Quest B"; the set's quests used to
+        // vanish with its row).
+        var alone = keys.Values.Where(k => k.Alternatives.Count == 1).ToDictionary(k => k.Alternatives[0], k => k.Quests, StringComparer.Ordinal);
+        foreach (var set in keys.Values.Where(k => k.Alternatives.Count > 1))
+        {
+            foreach (var key in set.Alternatives)
+            {
+                if (alone.TryGetValue(key, out var quests))
+                    quests.UnionWith(set.Quests);
+            }
+        }
+        var singles = alone.Keys.ToHashSet(StringComparer.Ordinal);
         // What it takes to enter the map comes first: without it there is no raid (owner, 2026-10-03, from the map audit).
         var entryItems = (map.EntryItems ?? []).Distinct().Select(id => new Requirement(RequirementKind.Entry, [id], 1, [], Enter: map.Name));
         return entryItems.Concat(keys.Values

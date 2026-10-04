@@ -114,6 +114,26 @@ public class PlannerTests
         Assert.Equal(["m6", "m2", "m3", "m4", "m5"], RaidPlanner.Rank(quests, maps, picks: picks).Select(p => p.Map.Id));
     }
 
+    // One pick can be enough for more than four maps (review of 2026-10-04, A45): a picked quest's maps are always
+    // listed, so the list is as long as the picks make it, and the planner's own suggestions fill only what is left
+    // of four.
+    [Fact]
+    public void One_picked_quest_with_work_on_five_maps_lists_all_five()
+    {
+        var maps = Enumerable.Range(1, 6).Select(i => new PlanMap($"m{i}", $"Map {i}", new HashSet<string> { $"m{i}" }, 40)).ToList();
+        var wide = new PlanQuest("wide", "Wide",
+            Enumerable.Range(1, 5).Select(i => Obj($"w{i}", ObjectiveKind.Exploration, [$"m{i}"], [($"m{i}", new WorldPoint(i, 0, 0))])).ToList(), NoKeys);
+        // The sixth map is the planner's best by far, and still not shown: five maps with a pick leave it no room.
+        var other = new PlanQuest("other", "Other",
+            Enumerable.Range(0, 6).Select(n => Obj($"o{n}", ObjectiveKind.Exploration, ["m6"], [("m6", new WorldPoint(n, 0, 0))])).ToList(), NoKeys);
+
+        Assert.Equal("m6", RaidPlanner.Rank([wide, other], maps)[0].Map.Id);
+        var picked = RaidPlanner.Rank([wide, other], maps, picks: new HashSet<string> { "wide" });
+        Assert.Equal(["m1", "m2", "m3", "m4", "m5"], picked.Select(p => p.Map.Id).Order());
+        // With a second pick on it, the sixth map is listed too: six rows.
+        Assert.Equal(6, RaidPlanner.Rank([wide, other], maps, picks: new HashSet<string> { "wide", "other" }).Count);
+    }
+
     [Fact]
     public void Found_in_raid_items_never_make_a_quest_finishable()
     {
@@ -167,6 +187,60 @@ public class PlannerTests
         var marker = Assert.Single(plan.Requirements, r => r.Kind == RequirementKind.Bring);
         Assert.Equal("ms2000", marker.Alternatives[0]);
         Assert.Equal(2, marker.Count);
+    }
+
+    // ---- keys (review of 2026-10-04, A33) ----
+
+    private static IReadOnlyList<Requirement> KeyRows(params PlanQuest[] quests) =>
+        RaidPlanner.Plan(quests, Streets).Requirements.Where(r => r.Kind == RequirementKind.Key).ToList();
+
+    private static Dictionary<string, IReadOnlyList<string>> OnStreets(params string[] keys) => new() { ["streets"] = keys };
+
+    private static PlanObjective Door(string id, params string[][] keys) =>
+        Obj(id, ObjectiveKind.Pickup, ["streets"], [("streets", new WorldPoint(1, 0, 1))], keys: keys);
+
+    [Fact]
+    public void Two_keys_to_one_room_are_one_row_though_the_quest_lists_them_one_by_one()
+    {
+        // The quest's own list is flat: it names both keys, as it would if both were needed. The objective says
+        // either will do.
+        var quest = new PlanQuest("cargo", "Cargo", [Door("c1", ["room-306", "room-308"])], OnStreets("room-306", "room-308"));
+        var row = Assert.Single(KeyRows(quest));
+        Assert.Equal(["room-306", "room-308"], row.Alternatives);
+        Assert.Equal(["cargo"], row.ForQuests);
+    }
+
+    [Fact]
+    public void Two_doors_are_two_rows()
+    {
+        var quest = new PlanQuest("swag", "Swag", [Door("s1", ["room-303"]), Door("s2", ["cabin"])], OnStreets("room-303", "cabin"));
+        Assert.Equal(["cabin", "room-303"], KeyRows(quest).Select(r => Assert.Single(r.Alternatives)).Order());
+    }
+
+    [Fact]
+    public void A_key_only_the_quest_lists_is_a_row_of_its_own()
+    {
+        var quest = new PlanQuest("lists", "Lists", [Door("l1", ["room-306", "room-308"]), Door("l2")], OnStreets("room-306", "room-308", "gate"));
+        var rows = KeyRows(quest);
+        Assert.Equal(2, rows.Count);
+        Assert.Contains(rows, r => r.Alternatives is ["gate"]);
+        Assert.Contains(rows, r => r.Alternatives is ["room-306", "room-308"]);
+        // On another map the quest's list says nothing: the row is the objective's own there.
+        var elsewhere = quest with { NeededKeys = new Dictionary<string, IReadOnlyList<string>> { ["customs"] = ["gate"] } };
+        Assert.Equal(["room-306", "room-308"], Assert.Single(KeyRows(elsewhere)).Alternatives);
+    }
+
+    [Fact]
+    public void A_key_needed_alone_takes_over_the_quests_of_an_either_or_row_it_satisfies()
+    {
+        // One quest needs room-306's key; another is served by it or by room-308's. One key to bring, for both.
+        var alone = new PlanQuest("alone", "Alone", [Door("a1", ["room-306"])], NoKeys);
+        var either = new PlanQuest("either", "Either", [Door("e1", ["room-306", "room-308"])], NoKeys);
+        var row = Assert.Single(KeyRows(alone, either));
+        Assert.Equal(["room-306"], row.Alternatives);
+        Assert.Equal(["alone", "either"], row.ForQuests.Order());
+        // The other way round in the list gives the same row.
+        Assert.Equal(["alone", "either"], Assert.Single(KeyRows(either, alone)).ForQuests.Order());
     }
 
     [Fact]

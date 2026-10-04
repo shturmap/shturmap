@@ -42,6 +42,10 @@ public sealed class ProgressStore : IDisposable
     {
         lock (_gate)
         {
+            // After the store was closed nothing is stored and nothing read: a background step still on its way
+            // while the app closes must not fail on the closed database.
+            if (_closed)
+                return 0;
             using var tx = _db.BeginTransaction();
             using var cmd = _db.CreateCommand();
             cmd.Transaction = tx;
@@ -75,6 +79,8 @@ public sealed class ProgressStore : IDisposable
     {
         lock (_gate)
         {
+            if (_closed)
+                return [];
             using var cmd = _db.CreateCommand();
             cmd.CommandText = "SELECT quest_id, state, source, observed_at, evidence FROM observations WHERE mode = $mode";
             cmd.Parameters.AddWithValue("$mode", mode.ToString());
@@ -142,10 +148,14 @@ public sealed class ProgressStore : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>Closes the database. Safe to call again: closing runs on several paths (the window closing, an
+    /// uninstall), and the second call finds nothing left to do.</summary>
     public void Dispose()
     {
         lock (_gate)
         {
+            if (_closed)
+                return;
             _closed = true;
             _db.Dispose();
         }
