@@ -77,6 +77,85 @@ public class MapTilesTests
         Assert.Equal(16, Drawn(tiles, Bounds, 4).Count);
     }
 
+    // ---- the view's own tiles always stay (the review of 2026-10-04: a 4K view needs more than 192 tiles, and each
+    // tile that arrived threw out one the next frame asked for again, without end) ----
+
+    [Fact]
+    public async Task A_view_that_needs_more_tiles_than_the_capacity_keeps_them_all_and_stops_loading()
+    {
+        var asked = 0;
+        using var tiles = new MapTiles(Map, (_, _) =>
+        {
+            Interlocked.Increment(ref asked);
+            return Task.FromResult<byte[]?>(Png(SKColors.Gray));
+        }, capacity: 16);
+        await tiles.LoadAsync(Template, Bounds, Bounds, 8); // zoom 3: 64 tiles, four times the capacity
+        Assert.Equal(64, tiles.Cached);
+
+        // The first frame draws all 64 from memory and asks for the coarse level under them (zoom 1: 4 tiles).
+        Assert.Equal(64, Drawn(tiles, Bounds, 8).Count(d => d.Source == SKRect.Create(256, 256)));
+        for (var i = 0; i < 300 && tiles.Cached < 68; i++)
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        Assert.Equal(68, tiles.Cached);
+
+        // Every later frame finds them all: nothing is thrown out, so nothing is asked for again.
+        var loaded = Volatile.Read(ref asked);
+        for (var frame = 0; frame < 5; frame++)
+            Assert.Equal(64, Drawn(tiles, Bounds, 8).Count(d => d.Source == SKRect.Create(256, 256)));
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Assert.Equal(loaded, Volatile.Read(ref asked));
+        Assert.Equal(68, tiles.Cached);
+    }
+
+    [Fact]
+    public async Task A_floor_no_longer_shown_gives_its_tiles_back()
+    {
+        const string floor = "https://assets.tarkov.dev/maps/test/2nd/{z}/{x}/{y}.png";
+        using var tiles = Tiles(_ => Png(SKColors.Gray), capacity: 16);
+        await tiles.LoadAsync(Template, Bounds, Bounds, 4); // the base layer: 16 tiles
+        await tiles.LoadAsync(floor, Bounds, Bounds, 4);    // a floor's layer over it: 16 more, both on screen
+        Assert.Equal(32, tiles.Cached);
+        tiles.Shows(Template);                               // back on the ground
+        Assert.Equal(16, tiles.Cached);
+        Assert.Equal(16, Drawn(tiles, Bounds, 4).Count(d => d.Source == SKRect.Create(256, 256)));
+    }
+
+    [Fact]
+    public async Task A_tile_that_isnt_an_image_is_tried_again_and_not_taken_as_missing()
+    {
+        var broken = 1;
+        var distrusted = new HashSet<TileKey>();
+        using var tiles = new MapTiles(Map, (_, _) => Task.FromResult<byte[]?>(Volatile.Read(ref broken) == 1 ? new byte[] { 1, 2, 3 } : Png(SKColors.Gray)),
+            retryAfter: TimeSpan.FromMilliseconds(60), undecodable: tile => { lock (distrusted) distrusted.Add(tile); });
+        await tiles.LoadAsync(Template, Bounds, Bounds, 2); // zoom 1: 4 tiles, each a download cut short
+        Assert.Equal(TileStatus.Unavailable, tiles.Status);
+        // Whoever keeps the files is told which ones not to trust.
+        lock (distrusted)
+            Assert.Equal(4, distrusted.Count);
+
+        // A tile tarkov.dev doesn't have is never asked for again; these are, and arrive once the file is whole.
+        Volatile.Write(ref broken, 0);
+        await Showing(tiles);
+    }
+
+    [Fact]
+    public async Task A_tile_that_arrives_after_closing_isnt_kept()
+    {
+        var asked = new TaskCompletionSource();
+        var arriving = new TaskCompletionSource<byte[]?>();
+        var tiles = new MapTiles(Map, (_, _) =>
+        {
+            asked.TrySetResult();
+            return arriving.Task;
+        });
+        var load = tiles.LoadAsync(Template, new MapRect(0, 0, 64, 64), Bounds, 2); // one tile
+        await asked.Task.WaitAsync(TimeSpan.FromSeconds(20), TestContext.Current.CancellationToken);
+        tiles.Dispose();
+        arriving.SetResult(Png(SKColors.Gray));
+        await load;
+        Assert.Equal(0, tiles.Cached);
+    }
+
     [Fact]
     public async Task Without_any_tile_the_render_is_unavailable_and_the_sheet_stands_in()
     {

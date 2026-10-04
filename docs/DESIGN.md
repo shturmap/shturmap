@@ -88,7 +88,9 @@ against sanctions); and say that some players see a position map as an unfair ad
   used and the sheet below stood in): fetched from tarkov.dev's image service as a view needs them (the zoom level
   that matches the screen, the base layer and the shown floor's layer, at most four at a time; while one loads the
   nearest coarser tile stands in, stretched), kept in the user's cache (`cache\map-tiles\<map>\<layer>\<z>\<x>_<y>.png`,
-  checked again after a month) and decoded in memory (the 192 most recently used), never in the repository, a build
+  checked again after a month) and decoded in memory (the 192 most recently used, and beyond that
+  every tile the view on screen needs: a 4K window takes more than 192, and a tile thrown out and asked for again with
+  each frame never finished loading; the review of 2026-10-04), never in the repository, a build
   or the test fixtures, credited on the map ("Map: Tarkov.dev · data tarkov.dev"). Screenshots of Shturmap may show
   them, as with icons. They are placed with tarkov.dev's own transform, through its Leaflet CRS: a map unit is a pixel
   at zoom 0, so the tile (z, x, y) covers [x·T, (x+1)·T] ÷ 2^z map units each way, T being maps.json's tileSize (175
@@ -114,7 +116,8 @@ against sanctions); and say that some players see a position map as an unfair ad
   A sheet that stands in for a render that couldn't be had gives way by itself (the review of 2026-10-04: The Lab
   opened offline stayed a sheet until the app was started again): the tiles the view needs are asked for again
   every 30 s, each tile once a round, whether or not the map is touched meanwhile, and the sheet stays until the
-  first tile arrives (`MapTiles`: `Ask`, `RetryAfter`). A tile tarkov.dev doesn't have (404) is not asked for again.
+  first tile arrives (`MapTiles`: `Ask`, `RetryAfter`). A tile tarkov.dev doesn't have (404) is not asked for again; one whose
+  file isn't an image (a download cut short) counts as one that couldn't be had, and is.
 - **Trader portraits and item icons** are Battlestate's art. They are never in the repository, a build or the
   test fixtures. Shturmap fetches each one from tarkov.dev's image service (`assets.tarkov.dev`) the first time it
   is shown, keeps it in the user's cache (`cache\game-art`), and shows a glyph when it can't be had. This is

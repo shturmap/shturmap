@@ -42,7 +42,8 @@ public sealed class MapTiles : IDisposable
     private readonly HashSet<TileKey> _missing = [];
     private readonly Dictionary<TileKey, DateTime> _failedAt = [];
     private readonly Dictionary<TileKey, Task> _pending = [];
-    // What the view last asked for, per layer (its URL template): what is asked for again after a failure.
+    // What the view last asked for, per layer (its URL template): what is asked for again after a failure, and what
+    // never leaves memory while it is the view (a 4K view needs more tiles than the capacity).
     private readonly Dictionary<string, HashSet<TileKey>> _view = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _slots = new(4);
     private readonly CancellationTokenSource _stop = new();
@@ -55,16 +56,22 @@ public sealed class MapTiles : IDisposable
     /// <summary>A tile that couldn't be had is asked for again after this long (the network may be back).</summary>
     public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(30);
 
-    /// <param name="capacity">How many decoded tiles stay in memory (a 256 px tile takes 256 KB).</param>
+    /// <param name="capacity">How many decoded tiles stay in memory (a 256 px tile takes 256 KB), beyond what the view
+    /// on screen needs: its own tiles always stay, however many they are.</param>
     /// <param name="retryAfter">How long a tile that couldn't be had waits before it is asked for again;
     /// <see cref="RetryAfter"/> unless a test gives another.</param>
-    public MapTiles(MapDefinition definition, Fetch fetch, int capacity = 192, TimeSpan? retryAfter = null)
+    /// <param name="undecodable">Told when a tile's file was there but isn't an image (a download cut short): the
+    /// saved copy shouldn't be trusted, so whoever keeps it can throw it away before the tile is asked for again.</param>
+    public MapTiles(MapDefinition definition, Fetch fetch, int capacity = 192, TimeSpan? retryAfter = null, Action<TileKey>? undecodable = null)
     {
         Definition = definition;
         _fetch = fetch;
         _capacity = Math.Max(16, capacity);
         _retryAfter = retryAfter ?? RetryAfter;
+        _undecodable = undecodable;
     }
+
+    private readonly Action<TileKey>? _undecodable;
 
     public MapDefinition Definition { get; }
 
@@ -137,6 +144,8 @@ public sealed class MapTiles : IDisposable
                 {
                     if (Touch(parent) is not { } coarse)
                         continue;
+                    // It stands in for this frame, so it stays for this view like the tiles themselves.
+                    wanted.Add(parent);
                     var cells = 1 << depth;
                     var size = coarse.Width / (float)cells;
                     var source = SKRect.Create((x - (parent.X << depth)) * size, (y - (parent.Y << depth)) * size, size, size);
@@ -156,6 +165,21 @@ public sealed class MapTiles : IDisposable
                 }
             }
             _view[template] = wanted;
+            Trim();
+        }
+    }
+
+    /// <summary>
+    /// The layers the view shows now (their URL templates): what earlier views asked for on any other layer, a floor
+    /// no longer shown, may leave memory again.
+    /// </summary>
+    public void Shows(params string?[] templates)
+    {
+        lock (_gate)
+        {
+            foreach (var gone in _view.Keys.Where(t => !templates.Contains(t, StringComparer.Ordinal)).ToList())
+                _view.Remove(gone);
+            Trim();
         }
     }
 
@@ -176,6 +200,7 @@ public sealed class MapTiles : IDisposable
                     waits.Add(task);
             }
             _view[template] = wanted;
+            Trim();
         }
         return Task.WhenAll(waits);
     }
@@ -198,6 +223,26 @@ public sealed class MapTiles : IDisposable
         if (_failedAt.TryGetValue(key, out var at) && DateTime.UtcNow - at < _retryAfter)
             return;
         _pending[key] = Task.Run(() => LoadAsync(key));
+    }
+
+    // Under _gate. Over the capacity, the least recently used tiles go, but never one the view on screen needs: a view
+    // that needs more than the capacity (a 4K window; a floor's layer over the base) would otherwise throw out a tile
+    // with each one that arrives, ask for it again at the next frame, and never finish loading (the review of
+    // 2026-10-04).
+    private void Trim()
+    {
+        var node = _order.Last;
+        while (_images.Count > _capacity && node is not null)
+        {
+            var previous = node.Previous;
+            if (!_view.Values.Any(keys => keys.Contains(node.Value.Key)))
+            {
+                _order.Remove(node);
+                _images.Remove(node.Value.Key);
+                node.Value.Image.Dispose();
+            }
+            node = previous;
+        }
     }
 
     // Under _gate. One wait at a time: when it is over, the view's tiles that couldn't be had are asked for again,
@@ -245,17 +290,27 @@ public sealed class MapTiles : IDisposable
                     // frame only copies pixels.
                     using var data = SKData.CreateCopy(bytes);
                     using var encoded = SKImage.FromEncodedData(data);
-                    if (encoded is not null)
+                    if (encoded is null)
                     {
-                        using var surface = SKSurface.Create(new SKImageInfo(encoded.Width, encoded.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
-                        using var paint = new SKPaint { ColorFilter = ArtworkColors.Filter };
-                        surface.Canvas.Clear(SKColors.Transparent);
-                        surface.Canvas.DrawImage(encoded, 0, 0, paint);
-                        image = surface.Snapshot();
+                        // A file that isn't an image (a download cut short) is a failure to try again, not a tile
+                        // tarkov.dev doesn't have: counted as missing, it left a hole there for the whole session.
+                        _undecodable?.Invoke(key);
+                        throw new InvalidDataException($"Tile {key.Z}/{key.X}/{key.Y} is not an image.");
                     }
+                    using var surface = SKSurface.Create(new SKImageInfo(encoded.Width, encoded.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
+                    using var paint = new SKPaint { ColorFilter = ArtworkColors.Filter };
+                    surface.Canvas.Clear(SKColors.Transparent);
+                    surface.Canvas.DrawImage(encoded, 0, 0, paint);
+                    image = surface.Snapshot();
                 }
                 lock (_gate)
                 {
+                    // Closed while this tile was on its way: nothing is kept (it would never be let go).
+                    if (ct.IsCancellationRequested)
+                    {
+                        image?.Dispose();
+                        return;
+                    }
                     _failedAt.Remove(key);
                     if (image is null)
                     {
@@ -266,12 +321,7 @@ public sealed class MapTiles : IDisposable
                         _imagePixels = image.Width;
                         _images[key] = _order.AddFirst((key, image));
                         _arrived++;
-                        while (_images.Count > _capacity && _order.Last is { } oldest)
-                        {
-                            _order.RemoveLast();
-                            _images.Remove(oldest.Value.Key);
-                            oldest.Value.Image.Dispose();
-                        }
+                        Trim();
                     }
                 }
             }

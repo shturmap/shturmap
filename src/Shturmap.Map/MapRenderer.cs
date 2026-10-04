@@ -723,6 +723,8 @@ public static partial class MapRenderer
             canvas.DrawRect(canvas.LocalClipBounds, dim);
             Layer(floorPath);
         }
+        // What this frame drew stays in memory; a floor no longer shown may go.
+        tiles.Shows(basePath, scene.Floor?.TilePath);
     }
 
     // The part of the map a camera shows, in map units.
@@ -744,6 +746,7 @@ public static partial class MapRenderer
         tiles.Ask(basePath, view, bounds, camera.Zoom);
         if (scene.Floor?.TilePath is { } floorPath && floorPath != basePath)
             tiles.Ask(floorPath, view, bounds, camera.Zoom);
+        tiles.Shows(basePath, scene.Floor?.TilePath);
     }
 
     // Maps without usable artwork (docs/DESIGN.md §3) get a sheet instead, drawn from data only: maps.json's bounds (the
