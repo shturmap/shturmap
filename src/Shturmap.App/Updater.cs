@@ -1,3 +1,4 @@
+using Shturmap.App.Rules;
 using Shturmap.Session;
 using Velopack;
 using Velopack.Sources;
@@ -17,7 +18,7 @@ public sealed class Updater
     private UpdateInfo? _found;
 
     /// <param name="testFeed">Developer aid ("--update-feed &lt;folder&gt;"): a local folder holding a release feed
-    /// stands in for GitHub, and updates work even in a developer run. Local folders only.</param>
+    /// stands in for GitHub, and updates work even in a developer run. A folder on a fixed local drive only.</param>
     /// <param name="developerRun">Snapshots, fake games and the demo ask nothing.</param>
     /// <param name="devBuild">A developer build (DEVTOOLS): never GitHub.</param>
     /// <param name="devFeed">The dev build's own feed, the local folder eng\dev.ps1 packs into (baked into the build).</param>
@@ -50,8 +51,8 @@ public sealed class Updater
         }
     }
 
-    private static bool LocalFolder(string? folder) =>
-        folder is not null && Path.IsPathFullyQualified(folder) && !folder.StartsWith(@"\\", StringComparison.Ordinal) && Directory.Exists(folder);
+    // On a fixed local drive only: no network share in either slash form, no mapped or removable drive (LocalFeed).
+    private static bool LocalFolder(string? folder) => LocalFeed.IsLocalFolder(folder);
 
     /// <summary>Velopack couldn't start: logged by the app once its log is open (the data folder depends on this).</summary>
     public Exception? StartProblem { get; }

@@ -1171,7 +1171,9 @@ self-unpacking exe, without updates; they need the Setup once.
   the tree is clean, the commit pushed and the build made from that commit (`artifacts\release\app`). `vpk` is a
   pinned local tool (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`,
   what `tools\fake-raid.ps1` runs; it keeps the developer data folder). To test the whole update path without GitHub, `--update-feed <folder>` points
-  an installed build at a local feed (local folders only) and lets it update even in a snapshot or a fake game.
+  an installed build at a local feed and lets it update even in a snapshot or a fake game. The folder must be on a
+  fixed local drive (`LocalFeed`): no network share in either slash form, no device path, no mapped or removable
+  drive, since an update is code that runs as the player (2026-10-04: `//server/share` passed as local).
   Velopack's Setup 1.2.161 crashes when given arguments for the app (`-- …`); install silently with `--silent` only.
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
   `<exe name>.pri`, so the project names its PRI file `resources.pri`: named after the project, any other exe
