@@ -1428,7 +1428,9 @@ form. Problems and ideas both go through it.
   survived, "ran into an error"), with SEND, DON'T SEND, ALWAYS SEND (sends and switches the setting) and WHAT'S
   SENT (the records as text, exactly what goes); closing it asks again next time. **Always send** sends at the
   start and logs it. **Never** keeps them on the PC only. A record the player said Send to that couldn't go yet is
-  sent at the next start without asking again; a sent one is deleted; records are kept 30 days, twenty at most.
+  sent at the next start without asking again, unless the setting is Never by then: choosing Never takes back an
+  earlier Send too, at once and at the next start, and such a record stays on the PC (2026-10-04: approved records
+  went out before the setting was read). A sent one is deleted; records are kept 30 days, twenty at most.
   Never sent: memory dumps, screenshots, game files, ids, quest lists.
 - **How it goes out.** Sentry (Functional Software, Inc.), EU data region. Only the SDK's event types and envelope
   format are used: `ReportEnvelopes` builds the envelope from what the player saw and `ReportSender` posts it, so

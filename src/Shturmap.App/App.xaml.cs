@@ -233,12 +233,21 @@ public partial class App : Application
         try
         {
             Reporter.Crashes.Prune(DateTime.Now);
+            var mode = CrashModes.Parse(_session?.GetSetting(CrashModes.Setting));
             var waiting = Reporter.Crashes.Waiting();
             var approved = waiting.Where(r => r.State == CrashState.Approved).ToList();
             var pending = waiting.Where(r => r.State == CrashState.Pending).ToList();
-            if (approved.Count > 0 && Reporter.Configured && !Reporter.Muted)
+            // "Never" takes back a Send given earlier too: a record that was approved but couldn't go out yet stays on
+            // this PC (PRIVACY.md: consent is withdrawn by choosing Never). Developer runs leave the records alone.
+            if (approved.Count > 0 && mode == CrashMode.Never && !Reporter.Muted)
+            {
+                Reporter.Keep(approved);
+                AppLog.Info($"{approved.Count} approved crash record(s) kept on this PC: crash reports are set to never");
+            }
+            else if (approved.Count > 0 && Reporter.Configured && !Reporter.Muted)
+            {
                 await Reporter.SendCrashesAsync(approved);
-            var mode = CrashModes.Parse(_session?.GetSetting(CrashModes.Setting));
+            }
             var action = CrashPolicy.Decide(mode, pending.Count, Reporter.Configured, Reporter.Muted);
             if (pending.Count > 0)
                 AppLog.Info($"{pending.Count} crash record(s) not answered; crash reports {CrashModes.Format(mode)}: {action.ToString().ToLowerInvariant()}");
