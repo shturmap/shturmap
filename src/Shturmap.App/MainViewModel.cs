@@ -35,6 +35,14 @@ public sealed record ExtractItem(string Id, string Name, string Kind, string Dis
     public Visibility ItemVisibility => NeedItemId is null ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>
+    /// Under the glance's EXIT. An extract is the nearest one for the player's side, but the game opens only some
+    /// extracts in each raid, by where the player started, and neither its logs nor tarkov.dev's data say which
+    /// (owner, 2026-10-04: say so in the row). At a raid's start the nearest is usually not one of the player's. A
+    /// transit is open to everyone: no note.
+    /// </summary>
+    public string NearestNote => Marker == Shturmap.Map.MarkerKind.Transit ? "" : "Nearest · check your list in game";
+
+    /// <summary>
     /// A way out wears the colour of its kind, in the rail as on the map: a PMC extract green, a Scav's teal, one for
     /// both sides khaki, a transit violet (one colour, one meaning; 2026-10-04: in the rail every way out was green,
     /// which is the PMC extract's on the map).

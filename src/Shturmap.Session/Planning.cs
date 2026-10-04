@@ -128,10 +128,11 @@ public static class Planning
         raid.Phase == Core.Raid.RaidPhase.Loading && raid.Side != Core.Raid.RaidSide.Scav ? Kit(plan, picks) : KitList.Empty;
 
     /// <summary>The big cue's row of item pictures: the first <paramref name="shown"/> items in the kit's order, and
-    /// how many more there are ("+3").</summary>
+    /// how many more there are ("+3"). One picture per item: an item needed twice over (a beanie to plant and to
+    /// wear) is one thing to check, and two pictures of it read as a mistake (review of 2026-10-04).</summary>
     public static (IReadOnlyList<RequirementView> Shown, int More) CueKit(KitList kit, int shown = 6)
     {
-        var all = kit.All.ToList();
+        var all = kit.All.DistinctBy(r => r.ItemId).ToList();
         return (all.Take(shown).ToList(), Math.Max(0, all.Count - shown));
     }
 

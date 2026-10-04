@@ -171,10 +171,10 @@
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance. The map stays where you put it: your new position pings, and an arrow at the edge points to it when it is out of view (F shows it). Or turn on Follow my position (Shift+F), and the map moves with you until you drag it." />
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance. The map stays where you put it: your new position pings, and an arrow at the edge points to it when it is out of view (F shows it). Or turn on Follow my position (Shift+F): each new position brings the map back to you at the zoom you chose, and you can drag and zoom in between." />
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
-                <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way." />
+                <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way. EXIT names the nearest extract for your side; the game opens only some of them each raid, so check its own list." />
                 <TextBlock TextWrapping="Wrap" Text="Quests are ordered from going somewhere, to finding or surviving, to fighting; simpler first within each." />
                 <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To pick it for the coming raid, click its pen (beside it, or on its card); pick as many as you like. Picks come first in their map's card (PICKED) and in the raid card, what they need comes first under BRING, and on the map their markers turn cyan, larger and ringed, with a line from you to the nearest; every other marker stays as it is. A pick stays until the quest is done, you click its pen again, or CLEAR PICKS. Move into a card and point at a key, an item or a quest in it for that one's card. Pop out a card to keep it as a small window; in a raid it shows how far each objective is." />
                 <TextBlock TextWrapping="Wrap" Text="The game's logs say when a quest starts and ends, never when one of its objectives is done. So when you have done one, you can tick it on the quest's card (the small box at the end of its line): the map marks it done, and the guide, NEXT and the plan leave it out. Nobody asks you to; a tick goes by itself when the quest is over, or when you click the box again." />
@@ -233,7 +233,7 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
-                           Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data, and it never touches the game. Nothing is sent unless you send a report or allow crash reports; installed with its Setup, it asks GitHub for a newer version at start (Updates, in settings). Its own log stays on this PC, in %LOCALAPPDATA%\Shturmap\logs." />
+                           Text="Shturmap only reads your screenshots' names, the game's logs and public tarkov.dev data. It reads nothing from the game itself and sends it nothing. Nothing is sent unless you send a report or allow crash reports; installed with its Setup, it asks GitHub for a newer version at start (Updates, in settings). Its own log stays on this PC, in %LOCALAPPDATA%\Shturmap\logs." />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="HELP AND FEEDBACK" Margin="0,8,0,0" />
                 <!-- Reports go through the feedback button at the top right (owner, 2026-10-03: "there should be a separate
                      feedback/bugreport button"); help keeps the diagnostics to paste elsewhere. -->
@@ -478,10 +478,7 @@
                             Tag="{x:Bind NormalizedName}" Click="OnPlanClick"
                             PointerEntered="OnPlanPointerEntered" PointerExited="OnPlanPointerExited">
                       <StackPanel Spacing="3">
-                        <Grid>
-                          <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
-                          <TextBlock Text="{x:Bind Rank}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
-                        </Grid>
+                        <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
                         <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                                    ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
                         <TextBlock Text="{x:Bind Detail}" Style="{StaticResource NoteText}" />
@@ -716,6 +713,12 @@
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Name, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Needs, Mode=OneWay}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
                                  Visibility="{x:Bind ShownIf(ViewModel.RaidExit.Needs), Mode=OneWay}" />
+                      <!-- The game opens only some extracts each raid, and nothing Shturmap reads says which (owner,
+                           2026-10-04): the nearest is named as that, with what to check. -->
+                      <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.NearestNote), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
+                                 Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
+                                 Visibility="{x:Bind ShownIf(ViewModel.RaidExit.NearestNote), Mode=OneWay}"
+                                 ToolTipService.ToolTip="The nearest extract for your side. The game opens only some extracts in each raid, by where you started, and neither its logs nor tarkov.dev's data say which: check the list in the game" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Padding="10,8,0,8">
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Distance, Mode=OneWay}" Style="{StaticResource FigureText}" FontSize="22" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Right" />

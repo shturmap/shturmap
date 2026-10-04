@@ -13,7 +13,7 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
 [shturmap.github.io](https://shturmap.github.io)
 
 Quest status comes from the game's own log files. Your position comes from the name of the screenshot the game saves
-when you press your screenshot key. No macros, no input to the game, no access to its process.
+when you press your screenshot key. No macros, no input to the game, nothing read from its memory.
 
 <img alt="Shturmap in a raid on Streets of Tarkov: the raid card with the next objective and the nearest extract by distance and direction, and the map with quest markers and your position" src="https://shturmap.github.io/assets/img/raid.webp" width="800">
 
@@ -49,7 +49,8 @@ Shturmap works only from files the game writes for you and from public community
 
 It never:
 
-- opens the game process, reads or writes its memory, or loads anything into it;
+- reads or writes the game's memory, or loads anything into the game;
+- opens the game's process from its own code (its installer is the one exception, said below);
 - sends keystrokes or mouse input, or registers global hotkeys (its shortcuts work only in its own window);
 - captures the screen or draws over the game;
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
@@ -64,8 +65,18 @@ and press Send. No account needed. After a crash, Shturmap asks at its next star
 "Crash reports" in settings (the gear beside ?) can make that Always or Never. What a report holds and who receives it:
 [PRIVACY.md](PRIVACY.md).
 
-A test fails if the code ever calls the Windows APIs for reading other processes, sending input, hooking or
-capturing the screen. The full rules are in [docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).
+**The installer and running programs.** Shturmap is installed, updated and removed by
+[Velopack](https://velopack.io), an open-source installer that comes with it. While it installs Shturmap, applies an
+update (at Shturmap's start when one was downloaded, or on RESTART NOW) or uninstalls it, Velopack goes through the
+programs running on the PC to close running copies of Shturmap. To do that it asks Windows for a handle to each
+running program, with the rights to read where its file is and to end it, and it ends only programs that run from
+Shturmap's own folder. If the game is running at that moment, it is asked about like every other program; nothing is
+read from it, written to it or sent to it. To keep even this away from a running game, install Shturmap and let it
+update while the game is closed (under Updates in settings, "Tell me only" lets you choose the moment).
+
+A test fails if Shturmap's own code ever calls the Windows APIs for opening or reading other processes, sending
+input, hooking or capturing the screen. The full rules are in
+[docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).
 
 ## Before you install
 

@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Shapes;
 
 namespace Shturmap.App.Controls;
 
@@ -10,8 +9,8 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title);
 
 /// <summary>
 /// What a quest needs brought, as tiny inventory cells beside its name (owner, 2026-10-01: BRING didn't show at a
-/// glance which item is for which quest). A quest that needs nothing shows one empty cell, the inventory's own way of
-/// saying "nothing here". No list at all (null) shows nothing, for lists where bringing doesn't apply. Each cell is
+/// glance which item is for which quest). A quest that needs nothing shows no cell (until 2026-10-04 it showed one
+/// empty, dashed cell). Each cell is
 /// its item for the linked highlight (its card, its BRING row, its locks and loose spots on the map); leaving it
 /// returns to the row's quest.
 /// </summary>
@@ -54,17 +53,8 @@ public sealed partial class NeedsStrip : StackPanel
             case null:
                 return;
             case { Count: 0 }:
-                // An empty cell, dashed like an empty slot.
-                var empty = new Rectangle
-                {
-                    Width = Cell,
-                    Height = Cell,
-                    Stroke = (Brush)Application.Current.Resources["LineStrongBrush"],
-                    StrokeThickness = 1,
-                    StrokeDashArray = [2, 2],
-                };
-                ToolTipService.SetToolTip(empty, "Nothing to bring");
-                Children.Add(empty);
+                // Nothing to bring, nothing shown (owner, 2026-10-04: the dashed empty cell stood on most rows and said
+                // no more than its absence does).
                 return;
         }
         foreach (var need in Needs.Take(Shown))

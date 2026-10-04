@@ -27,11 +27,23 @@ Shturmap reads only files the game writes for the player, plus public community 
 - `application_*.log` and `push-notifications_*.log` in the game's `Logs` folder, with shared read access;
 - `Control.ini` and `Game.ini`, read-only.
 
-It never opens a handle to `EscapeFromTarkov.exe`, reads or writes its memory, injects, hooks, sends input,
+Its own code never opens a handle to `EscapeFromTarkov.exe`, reads or writes its memory, injects, hooks, sends input,
 registers global hotkeys, captures the screen, draws over the game, edits game files (including
 `Logging.config`), or reads `backend_000.log` or launcher credentials (only `gamesRootDir` is read from the
 launcher settings). `SafetyTests` fails the test run if forbidden APIs appear in `src/`. Keyboard shortcuts work
 only while Shturmap's own window has focus.
+
+**The installer is the one exception, and the texts say so** (review of 2026-10-04; owner the same day: say it
+precisely rather than change how updates work, for now). Velopack's `Update.exe`, which installs, updates and
+removes Shturmap (§8, "Distribution"), closes running copies of Shturmap first. For that it lists every running
+process and opens each one with `PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE`, reads the path of its
+executable, and ends only those under Shturmap's install folder (its `get_processes_running_in_directory`; checked
+in the installed 1.2.161 binary's imports and in Velopack's source). So while it runs (the Setup, an update being
+applied at Shturmap's start or on RESTART NOW, an uninstall) a running game is asked for such a handle like every
+other process; nothing is read from it or written to it. `SafetyTests` reads `src/` only and can't see this. The
+README says it under "The installer and running programs", with the advice to install and update while the game is
+closed; help says only what holds for Shturmap's own code. Still open: applying updates in a way that looks at no
+other process (an apply step of our own, or applying only on the player's word).
 
 Over the network it downloads public data and art (tarkov.dev, the map artwork), and nothing about the player
 leaves the PC unless the player sends a report or allows crash reports (§8, "Reports"). `SafetyTests` fails if the
@@ -161,8 +173,10 @@ against sanctions); and say that some players see a position map as an unfair ad
 
 1. **No clicks in a raid.** Shturmap follows the game: the logs decide the view, the map, the mode and the side;
    screenshots move the player. Nothing in a raid requires input. Defaults must be right without configuration.
-2. **Glanceable from a second monitor.** Primary text ≥ 14 px, numbers in a monospaced face, high contrast on a
-   dark ground, the important line first. No animation beyond what helps the eye follow a change.
+2. **Glanceable from a second monitor.** High contrast on a dark ground, the important line first and largest (the
+   glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
+   change. (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
+   kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
    popped out; they are owned by the main window and never topmost, so they can't cover the game. One thing does
@@ -241,8 +255,9 @@ against sanctions); and say that some players see a position map as an unfair ad
    screenshots' raid clocks, but which of the two times each name means couldn't be checked without a group raid
    with a screenshot; the study log now records both to settle it. What a quest needs is also beside its name wherever
    it is listed for a map (Plan cards, the raid card): up to three tiny inventory cells with the items' icons,
-   "+N" for more; a quest that needs nothing shows one empty, dashed cell, the inventory's way of saying "nothing
-   here" (owner, 2026-10-01: BRING alone didn't show which item is for which quest). ANY MAP rows show no cells:
+   "+N" for more (owner, 2026-10-01: BRING alone didn't show which item is for which quest); a quest that needs
+   nothing shows no cell (owner, 2026-10-04: the empty, dashed cell of 2026-10-01 stood on most rows and said no
+   more than its absence; the Plan cards' rank numbers "1", "2" went the same day, the order says it). ANY MAP rows show no cells:
    bringing doesn't apply there.
 10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **pen** (on the row while the quest is
     pointed at or picked, and always on its card beside the pop-out button) picks it for the coming raid: lit on the
@@ -551,7 +566,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     shown map back exactly as it was (pan and zoom), and a click keeps it. A raid loading ends a preview.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
-    line ("Complete 5 quests · progress 1 more"), the raid line (time left, time of day, bosses with spawn chance)
+    line ("Complete 5 quests · progress 1 more"), the raid line (the raid's length on this map and when the log says it started, "40 min raid · started 21:02";
+    the time of day; bosses with spawn chance. No "min left": that was the one minus the other, a figure the game
+    never states and a wrong one after a reconnect; owner, 2026-10-04, facts only)
     and, when the distances aren't from a fresh screenshot, where they are from. While the raid loads, one quiet
     line under the raid line names the last loading step the game's log reported ("LOADING · MAP", then "MAP
     LOADED", "RAID PREPARED", "RAID CREATED", "PLAYER SPAWNED", "GAME POOLED", "GAME RUNNING"), over six thin
@@ -560,7 +577,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     rule creeps by typical times). No time estimate. While it loads, CHECK YOUR KIT follows (the kit reminder, UX
     principle 9), and BRING waits below until the raid starts. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
-    direction), and EXIT, the nearest extract or transit for your side (and what it takes); in a raid the app gets
+    direction), and EXIT, the nearest extract or transit for your side (and what it takes). Under an extract it says "NEAREST ·
+    CHECK YOUR LIST IN GAME": the game opens only some extracts in each raid, by where the player started, and
+    neither its logs nor tarkov.dev's data say which, so at a raid's start the nearest is usually not one of the
+    player's (owner, 2026-10-04: say it in the row; a transit is open to everyone and gets no note). In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
@@ -591,7 +611,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     section is FIND IN RAID: the items your active quests need found in raid (find/hand-over objectives marked
     found-in-raid), as BRING rows with icon, count and quests, the ones lying loose on this map first ("Loose
     here · 3 spots"; pointing at a row draws the spots), at most eight and one line for the rest. One note line
-    says why. The raid line drops "min left" (a Scav joins under way; the logs don't say how long is left). The
+    says why. The raid line says "joined 21:02" in place of the raid's length and start (a Scav joins under way; the logs don't
+    say how long the raid has run or how long is left). The
     map draws no quest objectives, and in any raid only your side's extracts. ANY MAP is hidden (a Scav's kills
     don't count). When the raid starts as a Scav, a notice says so; a server raid's setup tells it while loading
     already, and then no PMC kit is shown (the kit reminder, UX principle 9). The side is set from the setup then,
@@ -653,15 +674,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     floor follows the height as always, and the position pings as it arrives. Turning it on glides to the last
     position at once. With Windows' animation effects off the view jumps there instead. While it glides the edge
     badge waits (the position is on its way into view) and no notice says the position is out of view.
-  - **Taking the view back:** dragging the map or showing the whole map (0, the button) turns following off, and the
-    toggle shows it, with no notice or cue. Zooming (the wheel, double-click, + / −) keeps following, about the
-    player: the player stays in the middle. F and the show-my-position button centre at once, as before. Pointing
-    at a quest or holding a card never moves the view, so they leave following alone. With no position on the map
-    (between raids, or in a raid before the first screenshot) there is nothing to take the view back from: a drag
-    or showing the whole map leaves following as the player set it, and nothing is saved (2026-10-04: panning a map
-    while planning switched it off for the next raid and for later starts). Whether a drag in a raid should switch
-    it off for later raids too, as it does, or only until the next raid starts, is the owner's to decide
-    (docs/NEXT.md, A5).
+  - **Only the toggle turns it off** (owner, 2026-10-04: "when you have the follow on you should be able to drag and
+    zoom. When a position is updated, it should center back to the player but at the current zoom level"; until
+    then a drag or showing the whole map switched following off, also for later raids and starts, so it could never
+    stay on). Dragging the map or showing the whole map (0, the button) takes the view for now; the next position
+    glides it back onto the player, at the zoom the view then has. Zooming (the wheel, double-click, + / −) keeps
+    the player in the middle while the view is on the player, and is free, at the cursor, once the view was dragged
+    away (`FollowState.Away`). F and the show-my-position button centre at once, as before, and put the view back on
+    the player. Pointing at a quest or holding a card never moves the view. While the view is away and the position
+    is out of it, the edge badge points to it, as without following.
   - A map opened while following (a raid loading) is fitted first, then centred on the player once there is a
     position. Snapshot and demo runs leave the saved choice alone; `--follow` turns it on from the start (snapshots,
     the dev view).
@@ -1083,7 +1104,7 @@ are translated although the payload's translation list misses them.
 | F | show my position, once |
 | Shift+F | Follow my position on / off |
 | + / − | zoom in / out (following, about the player) |
-| 0 | show the whole map (it stops following) |
+| 0 | show the whole map (following stays on: the next position centres on you at that zoom) |
 | PgUp / PgDn | show the floor above / below |
 | Esc | close the cards (it never drops picks) |
 | F1 or ? | help |
@@ -1092,7 +1113,8 @@ are translated although the payload's translation list misses them.
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window.
 
-Mouse: drag to pan (it stops following), wheel to zoom at the cursor (following, about the player), double-click to
+Mouse: drag to pan (following stays on: the next position brings the view back), wheel to zoom at the cursor
+(following with the view on the player, about the player), double-click to
 zoom in, point at anything to see what belongs to
 it, click a quest (in the list or on the map) to keep its card open, click its pen to pick it for the coming raid,
 click the edge badge to show your position.
@@ -1500,6 +1522,12 @@ layer's, which dims as under an SVG floor (the sheet stands in with the same flo
 **Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
 from the maps payload's `lootLoose`.
+
+**The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
+with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
+no code asks Windows for its formats (owner, 2026-10-04, on a German Windows showing "5.000 ₽" inside English
+sentences: other languages are likely to come, so the formats belong to the app's language, in one place; when the
+texts are translated, the formats follow the language chosen).
 
 **Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
 `<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:

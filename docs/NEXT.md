@@ -52,14 +52,16 @@ at its start (A3); closing the window with Alt+F4 while the pointer rests on a q
   the committed log fixtures kept ids on `[Transit]` lines and the push channel's ids in the notification logs.
   Fix: mask every id that isn't public game data (quests, traders, item templates), scrub the fixtures, and a test
   that fails on any id that is neither public nor a placeholder. Then rewrite the history, as on 2026-10-02, before
-  the repository is made public (owner's go needed: it changes every commit). Status: done in the tree (2026-10-04: the scrubber, the fixtures, `FixtureScrubTests`, and one event id in
-  `LogTests.cs`); the history rewrite is open, on the owner's go.
+  the repository is made public (owner's go needed: it changes every commit). Status: done in the tree (2026-10-04, owner: "I don't think logs should be in the repo at all if not needed"): the game
+  logs are out of the repository (ignored by git, kept on the PC; the replay tests skip without them). The history
+  rewrite is prepared and has the owner's go, but a history rewrite and a force push are the owner's to run.
 - **P2. Velopack's updater lists the running processes.** Its `Update.exe` imports `EnumProcesses`, `OpenProcess`,
   `QueryFullProcessImageNameW` and `TerminateProcess` and logs "Checking for running processes" (it closes what runs
   from the install folder, at install, when an update is applied, on RESTART NOW and at uninstall). README and
   DESIGN.md §2 say Shturmap never opens a handle to the game and checks no processes; `SafetyTests` reads `src\` only.
-  Which access right it asks for is unchecked. Status: owner to decide (word the claim precisely, or change how
-  updates are applied).
+  Which access right it asks for is unchecked. Status: reworded (owner, 2026-10-04): README "The installer and running programs", DESIGN.md §2, help, the release
+  notes; the updater opens every process with the rights to read its path and to end it. Open: the website's
+  wording (on the owner's word), and applying updates without looking at other processes.
 
 ### A. Code
 
@@ -82,7 +84,8 @@ The first twelve are the ones a player meets.
 - **A5. Follow my position switches itself off for good on any drag**, also between raids with no position on the
   map (`Shturmap.App/Controls/MapView.cs`, `MainWindow.xaml.cs`: `FollowStopped`). Fix now: a drag or fit with no
   position on the map leaves following alone. Owner to decide: whether a drag in a raid should switch it off for
-  later raids too (today), or only until the next raid starts. Status: the first part done (2026-10-04); the second part owner to decide.
+  later raids too (today), or only until the next raid starts. Status: done (2026-10-04; owner: only the toggle turns following off, a drag or a zoom is free, and the next position
+  centres the view on the player at the current zoom).
 - **A6. A pick on a map outside the planner's best four never shows** (`Shturmap.Core/Planning/RaidPlanner.cs`:
   `Rank` cuts to four before `Shturmap.Session/Planning.cs`: `Suggest` puts picks first). Status: done (2026-10-04; every map with a pick is shown, also beyond four).
 - **A7. The Lab, Labyrinth and Icebreaker opened offline stay a sheet until restart**: once the tiles count as
@@ -130,8 +133,7 @@ Smaller, in planning and data:
 - **A20.** Another install with a newer log session (a test server, a leftover install) is followed for the whole
   run; discovery decides once (`Shturmap.Game/Install/InstallLocator.cs`, `GameSession.LookAgainAsync`). Status: open.
 - **A21.** "N min left" is the map's raid length minus the time since the raid's start line: computed, and wrong
-  after a reconnect or for a local Scav raid shown as a PMC's. Status: owner to decide ("40 min raid · started 21:02",
-  or keep).
+  after a reconnect or for a local Scav raid shown as a PMC's. Status: done (2026-10-04: "40 min raid · started 21:02").
 - **A31.** The session's background loops (backfill, following, looking again) catch only a cancel: one database or
   file error ends them silently. Translation downloads left unwatched after a failed load become crash records.
   Status: done (2026-10-04).
@@ -171,7 +173,8 @@ Smaller, in privacy and distribution:
 - **A40.** If Velopack fails to start, an installed release silently uses the developer data folder. Status: open.
 
 Wording: **A27.** Numbers and dates follow Windows' language inside English text ("5.000 ₽", "3 Okt" on a German
-Windows); snapshots hide it, since they run in en-US. Status: owner to decide (English formats everywhere, or keep).
+Windows); snapshots hide it, since they run in en-US. Status: done (2026-10-04: the formats belong to the app's language, English today, in one place, `UiLanguage`,
+for the languages to come).
 
 ### B. The design's consistency
 
@@ -183,7 +186,7 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
 - **B3. Sand** is the player's, but floor badges and the squares for loose items use it too. Status: open.
 - **B4. "Primary text ≥ 14 px"**: the raid card's objective lines are 13 px, the status bar 12, directions 11, and
   about fifty places are under 12; "numbers in a monospaced face" isn't true either (figures are Bahnschrift).
-  Status: owner to decide (raise the sizes, or word the principle as it is).
+  Status: done (2026-10-04; owner: "the 14px rule is not necessary"; the principle no longer says either).
 - **B5. The legend has "a done objective"**, which can't happen yet (D1 makes it real), and lacks the gold chevrons
   of a pointed-at quest, a picked quest's cyan padlock and the ping. Status: open.
 - **B6. "Never ask" and "no modal dialogs"** have exceptions the principles don't name: the Report dialog, the
@@ -219,7 +222,8 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
   needs F, and F needs the window's focus. **H6.** The MAP list is live in a raid (A1).
 - **H3. EXIT names the nearest exit for your side**, but on most maps the game opens only some exits, by where you
   spawned, and at the raid's start the nearest is usually not one of yours. The data doesn't say which are open.
-  Status: owner to decide (say it in the row, e.g. "NEAREST EXIT · CHECK YOUR LIST", or list two).
+  Status: done (2026-10-04: "NEAREST · CHECK YOUR LIST IN GAME" under an extract in the glance, with a tooltip and a
+  sentence in help).
 - **H4. Plan's other maps are below the fold**: the expanded card is about 840 px with six quests, so the folded
   cards to compare it with sit under it. Status: owner to decide (a mock first: the maps as a short list on top).
 - **H5.** In a PMC raid the extract list is below the card. Status: open (with H4).
@@ -235,8 +239,7 @@ Windows); snapshots hide it, since they run in en-US. Status: owner to decide (E
 - **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status:
   open.
 - **C3. Plan card**: the rank numbers "1", "2" say what the order says; the dashed empty cell stands on most rows;
-  the kit cue shows one item twice (to plant, to wear). Status: owner to decide (the empty cell was the owner's
-  choice on 2026-10-01).
+  the kit cue shows one item twice (to plant, to wear). Status: done (2026-10-04: all three gone).
 - **C4. Status bar**: "NO POSITION YET · PRESS … IN RAID" also outside raids; three green lights with words for a
   state that is nearly always fine; below about 1,090 px the three buttons leave the window, which has no smallest
   size. Status: open.

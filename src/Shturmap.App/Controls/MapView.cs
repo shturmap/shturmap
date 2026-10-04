@@ -139,14 +139,6 @@ public sealed partial class MapView : Grid
     /// <summary>Whether the view follows the player's position.</summary>
     public bool Follow => _follow.On;
 
-    /// <summary>Following stopped because the player moved the view themselves ("drag" or "fit").</summary>
-    public event Action<string>? FollowStopped;
-
-    // Taking the view back means taking it from a position the view follows. With none on the map (between raids, or
-    // in a raid before the first screenshot) there is nothing to take back: a drag or a fit leaves following as the
-    // player set it (2026-10-04: panning a map while planning switched it off for the next raid, and for later starts).
-    private bool HasPosition => _scene?.Player is not null;
-
     /// <summary>Turns following on or off; on, the view glides to the player's position at once.</summary>
     public void SetFollow(bool on)
     {
@@ -166,6 +158,7 @@ public sealed partial class MapView : Grid
     {
         if (_scene is null || FollowState.Target(_scene) is not { } to)
             return;
+        _follow.Centred();
         StopGlide();
         if (!_scene.Pulse)
         {
@@ -315,20 +308,18 @@ public sealed partial class MapView : Grid
     {
         if (_scene?.Player is not { } fix)
             return;
+        _follow.Centred();
         StopGlide();
         _camera.CenterOn(_scene.Projection.ToMap(fix.Position));
         Invalidate();
     }
 
-    /// <summary>Shows the whole map; while following a position, it stops following (the player chose the view).</summary>
+    /// <summary>Shows the whole map. Following stays on: the next position centres the view on the player, at this zoom.</summary>
     public void FitMap()
     {
-        if (_follow.Fitted(HasPosition))
-        {
-            StopGlide();
-            _centerAfterFit = false;
-            FollowStopped?.Invoke("fit");
-        }
+        _follow.Fitted();
+        StopGlide();
+        _centerAfterFit = false;
         _fitPending = true;
         Invalidate();
     }
@@ -442,6 +433,7 @@ public sealed partial class MapView : Grid
         if (_centerAfterFit && FollowState.Target(_scene) is { } player)
         {
             _centerAfterFit = false;
+            _follow.Centred();
             _camera.CenterOn(player);
         }
         GlideStep();
@@ -562,13 +554,11 @@ public sealed partial class MapView : Grid
             _dragStarted = DateTime.Now;
             _dragDistance = 0;
             Hover(null, to);
-            // Dragging takes the view back: following stops, so the map never fights the player.
-            if (_follow.Dragged(HasPosition))
-            {
-                StopGlide();
-                _centerAfterFit = false;
-                FollowStopped?.Invoke("drag");
-            }
+            // Dragging takes the view for now: a glide under way ends, and the next position brings the view back
+            // (following stays on; owner, 2026-10-04).
+            _follow.Dragged();
+            StopGlide();
+            _centerAfterFit = false;
         }
         _camera.Pan((float)(to.X - from.X) * PixelScale, (float)(to.Y - from.Y) * PixelScale);
         _dragDistance += Math.Sqrt((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y));

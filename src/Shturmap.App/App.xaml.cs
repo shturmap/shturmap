@@ -151,6 +151,8 @@ public partial class App : Application
         if (DevUninstallTest(cli))
             return;
 #endif
+        // Numbers and dates follow the language of Shturmap's own texts (English), not Windows' (UiLanguage).
+        UiLanguage.Apply();
         // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
         // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.
         if (Arg(cli, "--culture") is { } culture)

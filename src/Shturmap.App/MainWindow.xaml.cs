@@ -136,13 +136,6 @@ public sealed partial class MainWindow : Window
                 ShowNotice("Your new position is outside the part of the map shown: press F, or click the arrow at the edge.", TimeSpan.FromSeconds(5));
         };
         Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
-        // Dragging the map or showing the whole map takes the view back: the toggle goes off and shows it.
-        Map.FollowStopped += how =>
-        {
-            FollowButton.IsChecked = false;
-            SaveFollow(false);
-            Study.Ui("map.follow", ("on", false), ("how", how));
-        };
         AddShortcuts((UIElement)Content);
 
         // Snapshots arrive on background threads; only the newest one is applied.
@@ -199,7 +192,7 @@ public sealed partial class MainWindow : Window
     public IReadOnlyList<KeyHelp> Keys { get; } =
     [
         new("F", "Show my position"),
-        new("SHIFT + F", "Follow my position: the map moves with you until you drag it or show the whole map"),
+        new("SHIFT + F", "Follow my position: each new position brings the map back to you, at the zoom you chose; drag and zoom as you like in between"),
         new("+ / −", "Zoom in / out (or the mouse wheel)"),
         new("0", "Show the whole map"),
         new("PGUP / PGDN", "Show the floor above / below"),
@@ -400,7 +393,6 @@ public sealed partial class MainWindow : Window
     {
         if (_snapshot is not { } s)
             return;
-        var elapsed = s.Raid.RaidStartedAt is { } started ? DateTime.Now - started : (TimeSpan?)null;
         // Only what the log shows: outside a raid "Not in a raid", never "in the menus" (RaidStatus).
         ViewModel.RaidText = RaidStatus.Text(s, DateTime.Now);
         ViewModel.RaidDetail = RaidStatus.Tooltip(s.Raid, DateTime.Now);
@@ -408,14 +400,16 @@ public sealed partial class MainWindow : Window
         var parts = new List<string>();
         if (s.RaidInfo is { } info)
         {
-            // A Scav joins a raid already under way, and how long is left isn't in the logs: better no time than a
-            // wrong one.
-            if (s.Raid.Side == RaidSide.Scav && s.Raid.Phase == RaidPhase.InRaid)
-                parts.Add("joined under way");
-            else if (elapsed is { } e && info.RaidMinutes > 0)
-                parts.Add($"{Math.Max(0, info.RaidMinutes - (int)e.TotalMinutes)} min left");
-            else if (info.RaidMinutes > 0)
+            // Facts only (owner, 2026-10-04): how long a raid on this map is and when the log says this one started.
+            // "N min left" was the one minus the other, a figure the game never states and a wrong one after a
+            // reconnect. A Scav joins a raid already under way: its start line is when it joined.
+            var scav = s.Raid.Side == RaidSide.Scav && s.Raid.Phase == RaidPhase.InRaid;
+            if (info.RaidMinutes > 0 && !scav)
                 parts.Add($"{info.RaidMinutes} min raid");
+            if (s.Raid.Phase == RaidPhase.InRaid && s.Raid.RaidStartedAt is { } started)
+                parts.Add(scav ? $"joined {started:HH:mm}" : $"started {started:HH:mm}");
+            else if (scav)
+                parts.Add("joined under way");
             if (info.ClockHours is { } clock)
             {
                 var minutes = (int)Math.Round(clock * 60) % (24 * 60);

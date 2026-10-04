@@ -14,49 +14,67 @@ public class FollowTests
     [Fact]
     public void Following_is_off_at_first() => Assert.False(new FollowState().On);
 
+    // Owner, 2026-10-04: "when you have the follow on you should be able to drag and zoom. When a position is updated,
+    // it should center back to the player but at the current zoom level." Only the toggle turns following off.
     [Fact]
-    public void Dragging_the_map_stops_following_and_says_so()
+    public void Dragging_the_map_takes_the_view_for_now_and_following_stays_on()
     {
         var follow = new FollowState();
         follow.Set(true);
-        Assert.True(follow.Dragged());
-        Assert.False(follow.On);
-        // Off already: nothing to show on the toggle.
-        Assert.False(follow.Dragged());
-    }
-
-    [Fact]
-    public void Showing_the_whole_map_stops_following()
-    {
-        var follow = new FollowState();
-        follow.Set(true);
-        Assert.True(follow.Fitted());
-        Assert.False(follow.On);
-        Assert.False(follow.Fitted());
-    }
-
-    // Between raids there is no position to follow: planning on the map must not switch following off for the raid.
-    [Fact]
-    public void Moving_the_map_with_no_position_on_it_leaves_following_alone()
-    {
-        var follow = new FollowState();
-        follow.Set(true);
-        Assert.False(follow.Dragged(hasPosition: false));
-        Assert.False(follow.Fitted(hasPosition: false));
+        follow.Dragged();
         Assert.True(follow.On);
-        // With a position, the view is taken back as before.
-        Assert.True(follow.Dragged(hasPosition: true));
-        Assert.False(follow.On);
+        Assert.True(follow.Away);
+        // The next position brings the view back, and it is on the player again.
+        follow.Centred();
+        Assert.True(follow.On);
+        Assert.False(follow.Away);
     }
 
     [Fact]
-    public void Zooming_keeps_following_about_the_player()
+    public void Showing_the_whole_map_keeps_following_too()
+    {
+        var follow = new FollowState();
+        follow.Set(true);
+        follow.Fitted();
+        Assert.True(follow.On);
+        Assert.True(follow.Away);
+    }
+
+    [Fact]
+    public void Not_following_a_drag_changes_nothing()
+    {
+        var follow = new FollowState();
+        follow.Dragged();
+        follow.Fitted();
+        Assert.False(follow.On);
+        Assert.False(follow.Away);
+    }
+
+    [Fact]
+    public void Zooming_keeps_the_player_in_the_middle_until_the_view_was_dragged_away()
     {
         var follow = new FollowState();
         Assert.False(follow.Zoomed());
         follow.Set(true);
         Assert.True(follow.Zoomed());
+        // Dragged away, the zoom is free: it must not pull the view back to the player.
+        follow.Dragged();
+        Assert.False(follow.Zoomed());
+        // Back on the player (a new position, or F), zooming is about the player again.
+        follow.Centred();
+        Assert.True(follow.Zoomed());
         Assert.True(follow.On);
+    }
+
+    [Fact]
+    public void Turning_following_on_starts_on_the_player()
+    {
+        var follow = new FollowState();
+        follow.Set(true);
+        follow.Dragged();
+        follow.Set(false);
+        follow.Set(true);
+        Assert.False(follow.Away);
     }
 
     [Fact]
