@@ -502,6 +502,9 @@ public sealed partial class MapView : Grid
         MarkerHovered?.Invoke(marker, at);
     }
 
+    /// <summary>Lets go of the marker under the pointer, as if the pointer had left the map.</summary>
+    public void ClearHover() => Hover(null, default);
+
     // The edge arrow of an out-of-view player is a button: it shows them.
     private bool OverEdge(Windows.Foundation.Point at) =>
         _scene is not null && MapRenderer.EdgeOf(_camera, _scene, PixelScale) is { } edge

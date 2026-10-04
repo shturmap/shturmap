@@ -71,7 +71,8 @@ public sealed partial class MainWindow : Window
         HookPins(_cards, this);
         // Rows in any window (this one or a pinned card) open their cards in that window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
-        Linked.Left += element => CardStack.For(element.XamlRoot)?.Exit(element);
+        // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
+        Linked.Left += CardStack.Leave;
         // A click on a quest keeps its card open; the pen beside it (rows, cards) picks it for the coming raid.
         Linked.Clicked += (element, key) => CardStack.For(element.XamlRoot)?.Click(element, key);
         Linked.KeepRequested += quest => _ = _session.TogglePickAsync(quest, "pen");
@@ -94,6 +95,7 @@ public sealed partial class MainWindow : Window
         _focusClear.Tick += (_, _) => ApplyMapFocus();
         Map.MarkerHovered += OnMarkerHovered;
         Map.MarkerClicked += OnMarkerClicked;
+        ObserveActivation(this);
         Closed += (_, _) =>
         {
             // The popped-out cards are saved once, as they stand, before they close with this window: their own
@@ -1012,6 +1014,38 @@ public sealed partial class MainWindow : Window
         Map.Redraw();
     }
 
+    // ---- nobody looking ----
+
+    private DispatcherQueueTimer? _nobodyLooking;
+
+    // While something is pointed at, the map draws its pulse about 60 times a second. A pointer left resting on a row
+    // when the player turns to the game would keep that up behind the game for the whole raid. So when none of
+    // Shturmap's windows is the active one any more, the pointer's focus goes; moving the pointer onto something
+    // lights it again, active window or not. The short wait lets the focus pass between Shturmap's own windows (the
+    // main one and the popped-out cards): the next one's activation cancels it.
+    private void ObserveActivation(Window window) => window.Activated += (_, e) =>
+    {
+        if (_nobodyLooking is null)
+        {
+            _nobodyLooking = DispatcherQueue.CreateTimer();
+            _nobodyLooking.Interval = TimeSpan.FromMilliseconds(200);
+            _nobodyLooking.IsRepeating = false;
+            _nobodyLooking.Tick += (_, _) => DropPointerFocus();
+        }
+        _nobodyLooking.Stop();
+        if (e.WindowActivationState == WindowActivationState.Deactivated)
+            _nobodyLooking.Start();
+    };
+
+    private void DropPointerFocus()
+    {
+        // A snapshot's shown quest and the clip's drawn pointer aren't a mouse: they stay, whichever window is active.
+        if (SnapshotMode || DemoMode)
+            return;
+        Map.ClearHover();
+        Linked.LetGo();
+    }
+
     private DateTime _markerHoveredAt;
 
     private void OnMarkerHovered(MapMarker? marker, Windows.Foundation.Point at)
@@ -1115,6 +1149,7 @@ public sealed partial class MainWindow : Window
         };
         _pinned[view.QuestId] = window;
         _pinnedWaiting.Remove(view.QuestId);
+        ObserveActivation(window);
         window.Activate();
         SavePinned();
     }

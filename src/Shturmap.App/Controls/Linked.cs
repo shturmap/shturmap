@@ -166,6 +166,18 @@ public static class Linked
         Apply(focus);
     }
 
+    /// <summary>
+    /// Lets go of what the pointer is on, as if it had left: when nobody is looking any more (Shturmap's windows are
+    /// no longer the active ones), the highlight and the map's pulse stop instead of running on behind the game.
+    /// </summary>
+    public static void LetGo()
+    {
+        if (_source is { } source)
+            Exit(source);
+        else
+            Apply(null);
+    }
+
     private static void Apply(Focus? focus)
     {
         if (focus == Current)
@@ -190,7 +202,15 @@ public static class Linked
                 Live.Add(element);
                 Paint(element);
             };
-            element.Unloaded += (_, _) => Live.Remove(element);
+            element.Unloaded += (_, _) =>
+            {
+                Live.Remove(element);
+                // Rows are rebuilt with every snapshot, and a row that goes while the pointer is on it gets no
+                // PointerExited: its focus would stay (the quest lit, the map pulsing, its hover card open) until
+                // the pointer entered something else. So it lets go as it leaves.
+                if (ReferenceEquals(_source, element))
+                    Exit(element);
+            };
             // Rows need a fill to be hit anywhere, not just on their text.
             if (Background(element) is null)
                 SetBackground(element, new SolidColorBrush(Microsoft.UI.Colors.Transparent));

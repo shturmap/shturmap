@@ -85,6 +85,16 @@ public sealed class CardStack
 
     public static CardStack? For(XamlRoot? root) => root is not null && Stacks.TryGetValue(root, out var stack) ? stack : null;
 
+    /// <summary>
+    /// The pointer left a source, in whichever window it was: a row that has just been unloaded can't say which any
+    /// more, and only the stack it was the source of takes it.
+    /// </summary>
+    public static void Leave(object source)
+    {
+        foreach (var stack in Stacks.Values.ToList())
+            stack.Exit(source);
+    }
+
     /// <summary>A card was created (to hook its pin button, for example).</summary>
     public event Action<FrameworkElement>? CardOpened;
 
