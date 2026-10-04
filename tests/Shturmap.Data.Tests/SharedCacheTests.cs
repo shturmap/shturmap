@@ -32,6 +32,37 @@ public class SharedCacheTests : IDisposable
         Assert.Equal(["pve_maps.json", "pve_maps.json.meta.json"], Directory.GetFiles(_folder).Select(Path.GetFileName).Order());
     }
 
+    private sealed class CountingServer : HttpMessageHandler
+    {
+        public int Requests;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Requests++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("tile " + Requests) });
+        }
+    }
+
+    // A saved copy that turned out to be no use (a map tile that isn't an image) must not be read again for its
+    // whole month: forgotten, it is downloaded afresh.
+    [Fact]
+    public async Task A_forgotten_copy_is_downloaded_again()
+    {
+        var server = new CountingServer();
+        var cache = new CachedHttp(new HttpClient(server), _folder);
+        var uri = new Uri("https://example.test/tile");
+        var first = await cache.GetAsync(uri, "map/layer/2/1_1.png", TimeSpan.FromDays(30));
+        Assert.True(first.FromNetwork);
+        Assert.False((await cache.GetAsync(uri, "map/layer/2/1_1.png", TimeSpan.FromDays(30))).FromNetwork);
+
+        cache.Forget("map/layer/2/1_1.png");
+
+        var again = await cache.GetAsync(uri, "map/layer/2/1_1.png", TimeSpan.FromDays(30));
+        Assert.True(again.FromNetwork);
+        Assert.Equal(2, server.Requests);
+        Assert.Equal("tile 2", File.ReadAllText(again.FilePath));
+    }
+
     [Fact]
     public void Each_writer_gets_its_own_temporary_file()
     {

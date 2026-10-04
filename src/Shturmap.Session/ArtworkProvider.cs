@@ -39,7 +39,12 @@ public sealed class ArtworkProvider(ArtworkCache cache, string pictureCache, Cac
         lock (_gate)
         {
             if (!_tiles.TryGetValue(definition.Key, out var render))
-                _tiles[definition.Key] = render = new MapTiles(definition, (tile, ct) => FetchTileAsync(tiles, definition.Key, tile, ct));
+            {
+                // A saved tile that isn't an image (a download cut short) is thrown away, so the retry downloads it
+                // instead of reading the same broken file until the cache's month is over.
+                _tiles[definition.Key] = render = new MapTiles(definition, (tile, ct) => FetchTileAsync(tiles, definition.Key, tile, ct),
+                    undecodable: tile => tiles.Forget(TileGrid.CacheKey(definition.Key, tile)));
+            }
             return render;
         }
     }

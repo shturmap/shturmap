@@ -152,6 +152,18 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         }
     }
 
+    /// <summary>
+    /// Throws a saved copy away, so the next <see cref="GetAsync"/> downloads it afresh: for a copy that turned out
+    /// to be no use (a map tile that isn't an image). The note beside it goes first; without it the copy no longer
+    /// counts as saved, whatever happens to the file.
+    /// </summary>
+    public void Forget(string cacheKey)
+    {
+        var body = Path.Combine(cacheFolder, cacheKey);
+        TryDelete(body + ".meta.json");
+        TryDelete(body);
+    }
+
     // The cache is shared by every Shturmap on the PC (the installed release and developer builds; docs/DESIGN.md §8,
     // "Data folders"). Each download goes to a temporary file of its own and replaces the cached one in one move, so
     // two processes never write the same file and a reader never sees half of one.
