@@ -207,8 +207,33 @@ for the languages to come).
 - **B14. On the three tile maps the tile requests follow the view**, and with Follow my position on, the view
   follows the player: the image service could tell roughly where on the map the player is, while DESIGN.md §2 says
   no position is sent anywhere. Fix: when such a map opens, fetch the whole map's tiles at the zoom levels used (they
-  stay in the cache for a month), so later requests say nothing about the view. Status: owner to decide (a larger
-  first download per map).
+  stay in the cache for a month), so later requests say nothing about the view. Status: owner to decide again
+  (2026-10-04). The owner agreed to the fix as proposed, but measuring it changed the proposal: a whole map at every
+  zoom level is far too much (The Lab: 3,525 tiles a layer, about 290 MB, three layers; Labyrinth 4,486 tiles;
+  Icebreaker 17 layers), and the owner asked the same day not to load tarkov.dev more than needed (B15). What is
+  possible:
+  - **(a) The whole layer up to zoom 4, nothing deeper.** About 255 tiles and 10 MB a layer for The Lab, fetched
+    once a month in a fixed order when the layer is first shown; deeper zoom stretches those tiles. No request
+    depends on the view any more. The price: the picture turns soft beyond about 3× the whole-map view on a 1440p
+    screen (markers and labels stay sharp; they are drawn, not downloaded). It asks for less than deep zooming does
+    today (this PC's cache holds 629 Lab tiles, 34 MB, most of it zoom 5 and 6). The floor shown is still visible to
+    the service (a layer is fetched when its floor is first shown); fetching all 17 of Icebreaker's at once would be
+    about 5,800 requests.
+  - **(b) As today, said precisely.** PRIVACY.md now says that on these three maps the requests can show roughly
+    where on the map the player is (done 2026-10-04, as the interim). DESIGN.md §2's "no live sending of positions
+    anywhere" then needs the same exception in words.
+  - **(c) As (a), plus deeper tiles by view outside raids only** (there is no position then). Sharp when planning,
+    and in a raid wherever it was looked at before; soft and sharp patches side by side in a raid otherwise.
+  Suggested: (a). Nothing built yet beyond the sentence in PRIVACY.md.
+- **B15. For later (owner, 2026-10-04: "Check if we properly cache the maps so we don't put unneccessary load on
+  tarkov.dev").** What the code does today, from reading it: a map's SVG is kept 7 days, a tile 30 days, the data an
+  hour (items a day); after that a saved file is asked for again with its ETag or date, so an unchanged one costs a
+  short "not modified" answer, and a failed request falls back to the saved copy. Seen so far: a tile tarkov.dev
+  doesn't have (404, at a render's edge) is remembered for the session only, so it is asked for again in every
+  session. To check: how many requests a start with a full cache really sends (count them in a test client), whether
+  assets.tarkov.dev and GitHub's file hosting answer "not modified" at all (else every refresh is a full download),
+  whether an hour for the data is shorter than tarkov.dev's own update rhythm, and what item icons and portraits do.
+  Status: open (for later).
 - **B11. DESIGN.md against itself and the code**: §5 calls every `findItem` found-in-raid while §7 has one "that may
   be bought" (A18); §7's "a named exit" isn't what `QuestEffort` tests; §5's Trader types lack `playerLevel`; §8's
   project table gives Core "name matching" (gone) and calls it pure (`UnpackedCopies` deletes folders); the Steam

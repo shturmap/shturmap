@@ -39,7 +39,9 @@ Quest, map and item data, map artwork, trader portraits, item icons and the pict
 Labyrinth, Icebreaker) are downloaded from tarkov.dev's services and from GitHub's file hosting, and kept in the
 download cache on your PC. Those servers see your internet address, as with any download, and which files are asked
 for. Portraits, icons and the parts of those three maps are fetched when they are first shown, so the requests show
-which of them your Shturmap displayed. No account, profile, quest list or position is sent with them.
+which of them your Shturmap displayed. No account, profile, quest list or position is sent with them. On those
+three maps the part displayed in a raid is usually the part you are in, so the requests for its picture can show
+roughly where on the map that is, to tarkov.dev's image service and to no one else.
 
 What is never sent
 ------------------
