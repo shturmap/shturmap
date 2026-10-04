@@ -528,10 +528,10 @@ lights up when any of them is pointed at, and pointing at it lights every row an
 **A door is its key, and it is for quests** (E5): a quest lit its doors, a door only its key. Pointing at a padlock
 on the map puts the quests that need its key on this map in the focus beside the key (`LinkDoor`, from the map's
 `QuestKeys` read the other way round), so their rows take the weaker tint, as the quests of any pointed-at item do.
-Not wired yet, in files outside the cards: the padlock's focus on the map (it still names the key alone), the
-alternatives of the rail's BRING rows and need cells and on the map (their rows are linked to the first item, and
-only its locks light), an extract row's item picture, and boss names in the raid line and on Plan cards (they are
-part of one line of text, and the data names bosses by another id than their markers' groups).
+The rail's BRING rows, the need cells and the map follow the same rules: a row of several items lights each one's
+locks and loose spots, and an extract row's item picture is that item. Not linked yet: boss names in the raid line
+and on Plan cards (they are part of one line of text, and the data names bosses by another id than their markers'
+groups).
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate

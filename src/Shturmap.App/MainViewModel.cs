@@ -83,6 +83,10 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 public sealed record RequirementLine(string Glyph, string Text, string For, string ItemId, IReadOnlyList<string> QuestIds, string Source,
     bool StartsOthers = false)
 {
+    /// <summary>Every item the row stands for when it stands for several ("A or B", gear worn together, a weapon
+    /// class): the row is each of them for the linked highlight.</summary>
+    public IReadOnlyList<string>? Alternatives { get; init; }
+
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);

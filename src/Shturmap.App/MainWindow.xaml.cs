@@ -648,11 +648,14 @@ public sealed partial class MainWindow : Window
 
     /// <summary>A BRING row: the item, what it is for and for which quests, and where to get it.</summary>
     private static RequirementLine BringLine(SessionSnapshot s, RequirementView r) =>
-        new(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, BestSource(s, r));
+        new(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, BestSource(s, r)) { Alternatives = r.Alternatives };
 
     /// <summary>A tiny cell for an item; its tooltip says what it is, what for, and where to get it.</summary>
     private static NeedChip Chip(SessionSnapshot s, RequirementView r) =>
-        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, BestSource(s, r) }.Where(t => t.Length > 0)));
+        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, BestSource(s, r) }.Where(t => t.Length > 0)))
+        {
+            Alternatives = r.Alternatives,
+        };
 
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
     private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
@@ -1166,8 +1169,8 @@ public sealed partial class MainWindow : Window
             if (_snapshot?.Content?.Links.TryGetValue(marker, out var linked) == true)
                 ids.UnionWith(linked);
         }
-        // A key lights the locks it opens.
-        if (focus.Item is { } item)
+        // A key lights the locks it opens; a row that stands for several keys ("A or B"), those of each.
+        foreach (var item in focus.Items)
             ids.Add(MapContentBuilder.KeyGroup(item));
         return ids;
     }
@@ -1192,9 +1195,9 @@ public sealed partial class MainWindow : Window
         scene.Focus = MapFocus();
         // One objective of the quest pointed at: only its places pulse, the quest's others stay lit.
         scene.FocusObjective = Linked.Current?.Objective;
-        // Pointing at an item shows where it lies loose on the shown map.
-        scene.Spawns = Linked.Current?.Item is { } item && _snapshot is { Data: { } data, Map: { } map }
-            ? data.SpawnsOf(item).Where(s => data.MapIdsSharing(map.NormalizedName).Contains(s.MapId)).Select(s => s.Position).ToList()
+        // Pointing at an item shows where it lies loose on the shown map; a row of several items, where each does.
+        scene.Spawns = Linked.Current is { } pointed && _snapshot is { Data: { } data, Map: { } map }
+            ? pointed.Items.SelectMany(data.SpawnsOf).Where(s => data.MapIdsSharing(map.NormalizedName).Contains(s.MapId)).Select(s => s.Position).Distinct().ToList()
             : [];
         Map.Redraw();
     }
@@ -1261,8 +1264,9 @@ public sealed partial class MainWindow : Window
                 _cards.Enter(marker, new CardKey.Quest(quest), new Windows.Foundation.Rect(p.X - 8, p.Y - 8, 16, 16));
                 break;
             case { Kind: MarkerKind.Lock } when MapContentBuilder.KeyOf(marker.Group) is { } key:
-                // A padlock: its key's card, the key's rows in BRING and every lock the key opens light up.
-                Linked.Set(new Focus(new HashSet<string>(), Item: key, Marker: marker.Id));
+                // A padlock: its key's card, the key's rows in BRING and every lock the key opens light up, and the
+                // quests the key is for here take the weaker tint (a door is its key, and it is for quests).
+                Linked.Set(new Focus(Rules.LinkDoor.Quests(marker.Group, _snapshot?.Content?.QuestKeys), Item: key, Marker: marker.Id));
                 var k = Map.TransformToVisual(Content).TransformPoint(at);
                 _cards.Enter(marker, new CardKey.Item(key), new Windows.Foundation.Rect(k.X - 8, k.Y - 8, 16, 16));
                 break;

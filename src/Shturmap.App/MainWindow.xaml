@@ -13,7 +13,7 @@
            picks (linked highlighting), then a hairline and the rest. -->
       <DataTemplate x:Key="RequirementTemplate" x:DataType="local:RequirementLine">
         <Grid ColumnSpacing="12" Padding="6,4" Margin="-6,0"
-              controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Quests="{x:Bind QuestIds}"
+              controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Items="{x:Bind Alternatives}" controls:Linked.Quests="{x:Bind QuestIds}"
               BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind OthersLine}">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -830,7 +830,8 @@
                         <TextBlock Text="{x:Bind local:Caps.Of(Kind)}" Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" />
                         <!-- What it takes to leave here: money, an item, a switch, climbing gear, a flare, a partner. -->
                         <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind NeedsVisibility}" Margin="0,2,0,0">
-                          <controls:Picture ItemId="{x:Bind NeedItemId}" Size="20" Visibility="{x:Bind ItemVisibility}" />
+                          <controls:Picture ItemId="{x:Bind NeedItemId}" Size="20" Visibility="{x:Bind ItemVisibility}"
+                                            controls:Linked.Item="{x:Bind NeedItemId}" controls:Linked.Inline="True" />
                           <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" MaxWidth="250" VerticalAlignment="Center" />
                         </StackPanel>
                       </StackPanel>
