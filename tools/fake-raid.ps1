@@ -213,7 +213,8 @@ if ($Demo) {
     Start-Sleep -Seconds 9 # the 8 s raid cue is over
     # One short walk on Primorsky Ave toward the taxi extract, about 29 m: the player stands at the first position,
     # and the key press brings the second. These are the only two positions the app gets.
-    Shot $walkFrom 0 # "Demo: armed"; the demo starts six seconds later
+    # The first screenshot shows the extract list, as in the stills: the clip's raid card names an extract on it.
+    ShotWithList $walkFrom $streetsList 0 # "Demo: armed"; the demo starts six seconds later
     Start-Sleep -Seconds 3
     $rec = Start-Process $recorder -ArgumentList '--seconds', $RecordSeconds, '--out', "`"$capture`"", '--ffmpeg', "`"$ffmpegExe`"" -PassThru -NoNewWindow
     $null = $rec.Handle # without it PowerShell loses the exit code
