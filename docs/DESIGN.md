@@ -1939,6 +1939,11 @@ committing app changes (CLAUDE.md).
   `game.build` in the study log (`GameBuild`, `GameSession.NoticeGameBuilds`). The first build ever seen is only kept;
   an older one (a test server's install) is no news; snapshot and fake-game runs leave it alone. A release has none
   of it: the checks are the developer's.
+- **The icon.** `brand\build.cs` makes `Shturmap-dev.ico`: the same mark, only recoloured, on the app's "kept" cyan
+  (#3FD2E0) plate with the Ш in the plate's dark. `Logo.Dev` picks the variant; `.\eng\dotnet.ps1 run brand\build.cs
+  -- dev-panel <png>` draws all three candidates beside the release icon (a cyan plate, a cyan band across the foot,
+  an amber corner tab). No "DEV" lettering: a stencilled V beside the Ш and its chevron could read as the V of the
+  war symbols the logo rules avoid (§4, "Logo").
 
 **Continuous integration** (owner, 2026-10-05). Every push builds the solution in Debug (so the developer tools
 compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/ci.yml`), with the same
@@ -1946,11 +1951,6 @@ compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/c
 cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
 public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
 mail. The daily data check is designed in docs/NEXT.md, not built yet.
-- **The icon.** `brand\build.cs` makes `Shturmap-dev.ico`: the same mark, only recoloured, on the app's "kept" cyan
-  (#3FD2E0) plate with the Ш in the plate's dark. `Logo.Dev` picks the variant; `.\eng\dotnet.ps1 run brand\build.cs
-  -- dev-panel <png>` draws all three candidates beside the release icon (a cyan plate, a cyan band across the foot,
-  an amber corner tab). No "DEV" lettering: a stencilled V beside the Ш and its chevron could read as the V of the
-  war symbols the logo rules avoid (§4, "Logo").
 
 **The developer view** (owner, 2026-10-03: "a Dev view that allows to switch between modes and can fake-play a raid
 that reacts to what I do in the app and 'fake-updates' the position on demand … not exposed in the production
