@@ -34,6 +34,10 @@ Essentials:
 
 - Never touch the game process, send input, hook, register global hotkeys or capture the screen. `SafetyTests`
   enforces this.
+- A screenshot's picture is opened for one thing only: the game's extract list in its top right corner, read on the PC
+  with Windows' own text recognition (`ExitListReader`; owner, 2026-10-05; DESIGN.md §2). Reading anything else from
+  a picture is the owner's decision, never a side effect of a change. Real screenshots never go into the repository:
+  the reader's tests draw their own list, and read the ones in the git-ignored `tests\fixtures\ocr` where they exist.
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`

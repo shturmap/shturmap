@@ -6,6 +6,43 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-05: the raid's time as a readout, and the extract list from a screenshot
+
+Built on the owner's word (DESIGN.md §2, "One corner of a screenshot's picture is read", and §4, "Screen anatomy" and
+"Map drawing"): the raid card's time is its largest figure over a rule of the raid's length; a screenshot taken in a
+raid is looked at for the game's extract list, and the rail and the map say which extracts are the player's. The
+example raid of `tools\fake-raid.ps1` is a real walk now, 27 minutes into the raid, with the list read.
+
+**Decided here, for the owner to confirm:** the reading is on unless unticked (settings), which changes what the
+README, PRIVACY.md, help and the website say Shturmap reads ("the images are never read" no longer holds).
+
+**To try in the game** (checked against three real screenshots at 2560×1440 and drawn lists at 1080p, 4K and
+ultrawide; never in a running raid):
+- a screenshot at a raid's start while the list still shows, and one after O twice: the notice, the rail's rows, the
+  hollow triangles;
+- a screenshot while standing in an extract (the "Stay in the extraction point" box must not be taken for the list);
+- a long list (Streets as a Scav, Customs): whether every row fits the corner that is read (62 % of the height);
+- the game in another language, with and without that language's text recognition in Windows;
+- "Delete position screenshots" ticked at the same time (the list is read within the 5 seconds);
+- the readout through a minute change (the figure decodes, one notch runs along the rule) and into the last ten
+  minutes (red); with Windows' animation effects off (nothing moves).
+
+**Open:**
+- The time left is still the map's raid length minus the time since the start line. The game's own timer stands
+  beside the list and alone in many screenshots, but Windows' text recognition doesn't read the game's digits; a
+  small digit reader of our own would give a Scav a time left and survive a reconnect. Owner to decide (it reads one
+  more thing from the picture).
+- Whether "???" should also change which extract EXIT names (today: the nearest on the list, marked or not).
+- The website's hero clip still shows the old raid card (re-record when the owner says so).
+
+**Words for the owner to check:** "13 MIN LEFT" / "27 MIN IN" / "PAST THE RAID'S 40 MIN" / "TIME LEFT NOT KNOWN";
+"NEAREST · NOT CHECKED AGAINST YOUR LIST", "ON YOUR LIST THIS RAID", "ON YOUR LIST · ??? IN GAME"; the line under
+EXTRACTS AND TRANSITS ("Not checked against your list yet. Take a screenshot while the game shows your extracts (at
+the raid's start, or O twice by default) and Shturmap reads them from it." / "Your list this raid: 6 of 12 extracts,
+read from your screenshot at 16:40."); "· NOT ON YOUR LIST"; the notice "Your extract list is read: 6 extracts for
+this raid"; the setting "Read the extract list from screenshots" and its note; the legend's new row; help's two
+changed sentences.
+
 ## Review of 2026-10-04: findings (owner: "Add all findings to docs/NEXT.md and start fixing them")
 
 A review of the code, the design's consistency and hands-off rule, the design elements, missing features, and the

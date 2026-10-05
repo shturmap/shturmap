@@ -92,7 +92,11 @@ public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Si
 /// <param name="Needs">What it takes to leave here ("Pay 5,000 ₽"), or empty.</param>
 /// <param name="NeedItemId">An item to hand over, to picture next to it.</param>
 public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction, double? MapBearing = null,
-    string Needs = "", string? NeedItemId = null);
+    string Needs = "", string? NeedItemId = null)
+{
+    /// <summary>Whether the game's own list names it this raid, once a screenshot showed that list (<see cref="ExitState"/>).</summary>
+    public ExitState State { get; init; }
+}
 
 /// <summary>Everything the UI shows, replaced as a whole whenever something changes.</summary>
 public sealed record SessionSnapshot
@@ -196,6 +200,21 @@ public sealed record SessionSnapshot
 
     /// <summary>Whether "Delete position screenshots" is ticked: each one is deleted a few seconds after its name was read.</summary>
     public bool DeleteScreenshots { get; init; }
+
+    /// <summary>Whether "Read the extract list from screenshots" is ticked (on unless unticked).</summary>
+    public bool ReadExits { get; init; } = true;
+
+    /// <summary>
+    /// When the screenshot was taken that last showed the game's extract list this raid; null while none did. With
+    /// it, each of <see cref="Extracts"/> says whether the list names it.
+    /// </summary>
+    public DateTime? ExitsReadAt { get; init; }
+
+    /// <summary>The language Windows reads the list in ("en-US"), once a raid's screenshot asked for it; else null.</summary>
+    public string? ExitReaderLanguage { get; init; }
+
+    /// <summary>Windows has no text recognition language, so no list can be read (known once a raid's screenshot asked).</summary>
+    public bool ExitReaderMissing { get; init; }
 
     public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
 

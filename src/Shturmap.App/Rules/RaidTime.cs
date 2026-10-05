@@ -10,14 +10,43 @@ namespace Shturmap.App.Rules;
 /// the game's log never states, so it is given only where the two it is made from are known, and its tooltip says
 /// how it is made and when it can be off. A Scav joins a raid already under way, and the log doesn't say how long
 /// that raid still runs: no time left for a Scav.
+/// The raid card shows it as its largest figure over a rule of the raid's length (owner, 2026-10-05: "The remaining
+/// time is a crucial piece of information and should be more visible"; Controls.RaidClock), so a reading also
+/// carries its numbers.
 /// </summary>
 public static class RaidTime
 {
     /// <param name="Text">"12 min in · 28 min left".</param>
     /// <param name="Tip">Where the figures come from.</param>
-    public sealed record Reading(string Text, string Tip);
+    public sealed record Reading(string Text, string Tip)
+    {
+        /// <summary>Whole minutes since the raid's start line.</summary>
+        public int In { get; init; }
 
-    public const string Tip = "Time in the raid: since the raid's start in the game's log. Time left: this map's raid length minus that. It can be off after a reconnect.";
+        /// <summary>Whole minutes left, at least 1; null where it isn't known (a Scav, a map without a raid length) or
+        /// the raid's length is over.</summary>
+        public int? Left { get; init; }
+
+        /// <summary>The map's raid length in minutes; 0 where the reading has none to show against.</summary>
+        public int RaidMinutes { get; init; }
+
+        /// <summary>A Scav's raid: the time left isn't known, and the readout says so.</summary>
+        public bool Scav { get; init; }
+
+        /// <summary>Past the raid's length: the figure is the time in the raid, and nothing is left to count.</summary>
+        public bool Over => RaidMinutes > 0 && Left is null;
+
+        /// <summary>The last <see cref="LowMinutes"/> minutes, or past them: shown in red, as the game's own timer is.</summary>
+        public bool Low => Over || Left <= LowMinutes;
+
+        /// <summary>The share of the raid's length that is gone, 0 to 1; 0 where no length is known.</summary>
+        public double Gone => RaidMinutes <= 0 ? 0 : Math.Clamp((double)In / RaidMinutes, 0, 1);
+    }
+
+    /// <summary>From this many minutes left the time is shown in red: the game's own timer turns red for its last ten.</summary>
+    public const int LowMinutes = 10;
+
+    public const string Tip = "Time left: this map's raid length minus the time since the raid's start in the game's log. It can be off after a reconnect.";
     public const string ScavTip = "Time in the raid: since you joined, by the game's log. A Scav joins a raid already under way, and the log doesn't say how long it still runs.";
     public const string NoLengthTip = "Time in the raid: since the raid's start in the game's log. The data gives no raid length for this map, so there is no time left to show.";
 
@@ -29,10 +58,12 @@ public static class RaidTime
             return null;
         var gone = Math.Max(0, (int)WallClock.Elapsed(started, now).TotalMinutes);
         if (scav)
-            return new Reading($"{gone} min in · time left not known", ScavTip);
+            return new Reading($"{gone} min in · time left not known", ScavTip) { In = gone, Scav = true };
         if (raidMinutes <= 0)
-            return new Reading($"{gone} min in", NoLengthTip);
+            return new Reading($"{gone} min in", NoLengthTip) { In = gone };
         var left = raidMinutes - gone;
-        return new Reading(left > 0 ? $"{gone} min in · {left} min left" : $"{gone} min in · past the raid's {raidMinutes} min", Tip);
+        return left > 0
+            ? new Reading($"{gone} min in · {left} min left", Tip) { In = gone, Left = left, RaidMinutes = raidMinutes }
+            : new Reading($"{gone} min in · past the raid's {raidMinutes} min", Tip) { In = gone, RaidMinutes = raidMinutes };
     }
 }

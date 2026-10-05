@@ -30,17 +30,46 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 public sealed record ExtractItem(string Id, string Name, string Kind, string Distance, string Direction, string Needs = "", string? NeedItemId = null,
     Shturmap.Map.MarkerKind Marker = Shturmap.Map.MarkerKind.ExtractPmc)
 {
-    public Visibility NeedsVisibility => Needs.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>Whether the game's own list names it this raid, once a screenshot showed that list (owner, 2026-10-05).</summary>
+    public Shturmap.Session.ExitState State { get; init; }
+
+    /// <summary>The list can be read from a screenshot: the setting is ticked and Windows has text recognition.</summary>
+    public bool ListReadable { get; init; }
+
+    private bool Listed => State == Shturmap.Session.ExitState.Listed;
+
+    private bool Unsure => State == Shturmap.Session.ExitState.Unsure;
+
+    private bool NotListed => State == Shturmap.Session.ExitState.NotListed;
+
+    // What an exit that isn't the player's this raid would take doesn't matter.
+    public Visibility NeedsVisibility => Needs.Length > 0 && !NotListed ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility ItemVisibility => NeedItemId is null ? Visibility.Collapsed : Visibility.Visible;
 
+    /// <summary>The row's small line: its kind, and once the list was read whether it is on it ("PMC extract · on your list").</summary>
+    public string KindLine => Rules.ExitsNote.Row(Listed, Unsure, NotListed) is { Length: > 0 } said ? $"{Kind} · {said}" : Kind;
+
     /// <summary>
-    /// Under the glance's EXIT. An extract is the nearest one for the player's side, but the game opens only some
-    /// extracts in each raid, by where the player started, and neither its logs nor tarkov.dev's data say which
-    /// (owner, 2026-10-04: say so in the row). At a raid's start the nearest is usually not one of the player's. A
-    /// transit is open to everyone: no note.
+    /// Under the glance's EXIT. Unchecked, an extract is only the nearest one for the player's side: the game opens
+    /// only some extracts in each raid, by where the player started (owner, 2026-10-04: say so in the row), and at a
+    /// raid's start the nearest is usually not one of the player's. Once a screenshot showed the game's list, it says
+    /// that the list names it (owner, 2026-10-05). A transit is open to everyone: no note.
     /// </summary>
-    public string NearestNote => Marker == Shturmap.Map.MarkerKind.Transit ? "" : "Nearest · check your list in game";
+    public string NearestNote => Marker == Shturmap.Map.MarkerKind.Transit ? "" : Rules.ExitsNote.Glance(Listed, Unsure, ListReadable);
+
+    public string NearestTip => Rules.ExitsNote.GlanceTip(Listed, Unsure, ListReadable);
+
+    /// <summary>The note in the way out's colour once the list names it; muted while it is only the nearest.</summary>
+    public Microsoft.UI.Xaml.Media.Brush NoteBrush => Listed || Unsure ? KindBrush : (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["MutedBrush"];
+
+    /// <summary>An exit the list doesn't name steps back: its name and distance muted.</summary>
+    public Microsoft.UI.Xaml.Media.Brush NameBrush => (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[NotListed ? "MutedBrush" : "InkBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush DistanceBrush => NotListed ? (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["MutedBrush"] : KindBrush;
+
+    /// <summary>The kind line in the way out's colour while the list names it, muted otherwise.</summary>
+    public Microsoft.UI.Xaml.Media.Brush KindLineBrush => Listed || Unsure ? KindBrush : (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["MutedBrush"];
 
     /// <summary>
     /// A way out wears the colour of its kind, in the rail as on the map: a PMC extract green, a Scav's teal, one for
@@ -243,6 +272,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"Delete position screenshots" in settings: off unless the player ticked it.</summary>
     [ObservableProperty] public partial bool DeleteScreenshots { get; set; }
 
+    /// <summary>"Read the extract list from screenshots" in settings: on unless the player unticked it.</summary>
+    [ObservableProperty] public partial bool ReadExits { get; set; } = true;
+
     /// <summary>Help's "Uninstall Shturmap…" asks its one question.</summary>
     [ObservableProperty] public partial bool UninstallAsking { get; set; }
 
@@ -315,11 +347,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial string RaidLine { get; set; } = "";
 
-    /// <summary>"12 min in · 28 min left" while a raid runs (Rules.RaidTime), or empty.</summary>
-    [ObservableProperty] public partial string RaidTime { get; set; } = "";
+    /// <summary>The raid's time while a raid runs, for the raid card's readout (Rules.RaidTime, Controls.RaidClock); else null.</summary>
+    [ObservableProperty] public partial Rules.RaidTime.Reading? RaidClock { get; set; }
 
-    /// <summary>Where the raid time's figures come from.</summary>
-    [ObservableProperty] public partial string RaidTimeTip { get; set; } = "";
+    /// <summary>Under EXTRACTS AND TRANSITS in a raid: whether the game's extract list was read, or how to have it
+    /// read (Rules.ExitsNote); empty outside a raid and with the reading unticked.</summary>
+    [ObservableProperty] public partial string ExitsNote { get; set; } = "";
 
     /// <summary>The raid line part by part (<see cref="RaidLine"/> is the same as one text): its bosses are linked to
     /// their markers.</summary>

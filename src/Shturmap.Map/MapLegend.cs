@@ -24,6 +24,7 @@ public enum LegendSymbol
     QuestZone,
     Extract,
     SharedExtract,
+    ExtractNotListed,
     Transit,
     Boss,
     Sniper,
@@ -84,6 +85,8 @@ public static class MapLegend
         If(scene.Zones.Any(z => z.Kind is MarkerKind.Objective or MarkerKind.ObjectiveDone), LegendSymbol.QuestZone);
         If(kinds.Contains(MarkerKind.ExtractPmc) || kinds.Contains(MarkerKind.ExtractScav), LegendSymbol.Extract);
         If(kinds.Contains(MarkerKind.ExtractShared), LegendSymbol.SharedExtract);
+        // Once a screenshot showed the game's own extract list this raid.
+        If(scene.ExitsNotListed.Count > 0 || scene.ExitsUnsure.Count > 0, LegendSymbol.ExtractNotListed);
         If(kinds.Contains(MarkerKind.Transit), LegendSymbol.Transit);
         If(kinds.Contains(MarkerKind.BossSpawn), LegendSymbol.Boss);
         If(kinds.Contains(MarkerKind.SniperSpawn), LegendSymbol.Sniper);
@@ -120,6 +123,7 @@ public static class MapLegend
         new(LegendSymbol.QuestZone, "The area an objective covers."),
         new(LegendSymbol.Extract, "Extract for your side: a green (PMC) or teal (Scav) triangle."),
         new(LegendSymbol.SharedExtract, "Extract for both sides: a khaki triangle split down the middle."),
+        new(LegendSymbol.ExtractNotListed, "Once your screenshot showed the game's extract list: an extract that isn't on your list this raid is hollow, its name fainter; one the game marks ??:??:?? (it may be closed, or needs something) carries a ?."),
         new(LegendSymbol.Transit, "Transit to another map: a violet diamond."),
         new(LegendSymbol.Boss, "Boss or AI squad spawns (bosses, Rogues, Raiders, cultists, Black Div., AF), at the centre of a group of spawn points: a red octagon with the chance on this map and, for several zones, this zone's share (\"Kollontay 75% · 50% here\")."),
         new(LegendSymbol.Sniper, "Sniper Scav spawns, at the centre of a group of spawn points: a hollow hexagon."),
@@ -240,6 +244,10 @@ public static partial class MapRenderer
             case LegendSymbol.Extract:
                 Marker(new MapMarker("pmc", MarkerKind.ExtractPmc, At(-11, 0), ""));
                 Marker(new MapMarker("scav", MarkerKind.ExtractScav, At(11, 0), ""));
+                break;
+            case LegendSymbol.ExtractNotListed:
+                Marker(new MapMarker("not-listed", MarkerKind.ExtractPmc, At(-11, 0), ""), change: m => m with { NotListed = true });
+                Marker(new MapMarker("unsure", MarkerKind.ExtractPmc, At(11, 0), ""), change: m => m with { Unsure = true });
                 break;
             case LegendSymbol.SharedExtract:
                 Marker(new MapMarker("shared", MarkerKind.ExtractShared, At(0, 0), ""));

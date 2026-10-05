@@ -187,6 +187,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             if (Enum.TryParse<GameMode>(_store.GetSetting("mode"), out var savedMode) && savedMode != GameMode.Unknown)
                 _mode = savedMode;
             _deleteScreenshots = DeleteScreenshotsOn(_store.GetSetting(DeleteScreenshotsSetting));
+            _readExits = ReadExitsOn(_store.GetSetting(ReadExitsSetting));
+            if (!_readExits)
+                AppLog.Info("Read the extract list from screenshots: off");
             if (_deleteScreenshots)
                 AppLog.Info("Delete position screenshots after reading: on");
 #if DEVTOOLS
@@ -215,6 +218,17 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 Failed("Placing a position", e);
+            }
+            // Then, in a raid, the picture's top right corner: the game's extract list, if it shows there (settings,
+            // on unless unticked). After the position, which never waits for it.
+            try
+            {
+                if (s.Info.HasPosition)
+                    await ReadExitsAsync(s);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                Failed("Reading the extract list from a screenshot", e);
             }
         });
         // The watcher keeps going and sets itself up again; each kind of trouble is said once (Failed).
@@ -1216,6 +1230,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _sideSaid = null;
                 _lastClock = null;
                 _trail.Clear();
+                ForgetExits();
                 _fix = null;
                 _fixMapId = null;
                 // A transit loads another map: the raid's map is worked out anew, never carried over.
@@ -1265,6 +1280,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _fix = null;
         _fixMapId = null;
         _trail.Clear();
+        ForgetExits();
         if (ended.Previous.RaidStartedAt is not null)
             _lastRaidState = (ended.Previous, ended.At, ended.EndInLog);
         if (announce && _lastRaidMap is not null)
@@ -1488,7 +1504,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     // ---- screenshots ----
 
-    // Screenshots only give positions (from their names); quest states come from the logs alone.
+    // A screenshot gives a position (from its name) and, in a raid, the extract list if its picture shows it
+    // (ReadExitsAsync); quest states come from the logs alone.
     private async Task OnScreenshotAsync(ScreenshotSeen seen)
     {
         if (!seen.Info.HasPosition)
@@ -1838,7 +1855,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 var (needs, item) = m.Kind == MarkerKind.Transit
                     ? (shownMap?.Transits?.FirstOrDefault(t => t.Id == id) is { } transit ? ExtractRules.Needs(transit) : "", (string?)null)
                     : shownMap?.Extracts?.FirstOrDefault(e => e.Id == id) is { } extract ? ExtractRules.Needs(_data, shownMap, extract) : ("", null);
-                extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction, MapBearing(m.Position), needs, item));
+                extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction, MapBearing(m.Position), needs, item)
+                {
+                    State = inRaid ? ExitStateOf(m.Id, m.Kind == MarkerKind.Transit) : ExitState.NotChecked,
+                });
             }
         }
 
@@ -1866,7 +1886,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 .ThenBy(o => o.Distance ?? double.MaxValue)
                 .ThenBy(o => o.QuestName, StringComparer.CurrentCulture)
                 .ToList(),
-            Extracts = extracts.OrderBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
+            // Nearest first; once the game's list was read, the exits it doesn't name come last (they are no way out this raid).
+            Extracts = extracts.OrderBy(e => e.State == ExitState.NotListed ? 1 : 0).ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
+            ExitsReadAt = inRaid ? _exitsReadAt : null,
+            ReadExits = _readExits,
+            ExitReaderLanguage = _exitReaderLanguage,
+            ExitReaderMissing = _exitReaderLooked && _exitReader is null && ExitReader is null,
             Locations = _locations,
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,

@@ -57,6 +57,10 @@ public static class Diagnostics
         Line("Active quests", s.ActiveQuestCount.ToString(CultureInfo.InvariantCulture));
         // Answers "where did my screenshots go?" in a report.
         Line("Delete position screenshots", s.DeleteScreenshots ? "on" : "off");
+        // And "why doesn't it show my extracts?": the setting, and whether Windows can read the list at all.
+        Line("Read the extract list from screenshots", !s.ReadExits ? "off"
+            : s.ExitReaderMissing ? "on, but Windows has no text recognition language"
+            : s.ExitReaderLanguage is { } language ? $"on ({language})" : "on");
 #if DEVTOOLS
         // Developer builds only: a release has no study log (owner, 2026-10-03).
         Line("Study log", s.StudyLogOn ? "on" : "off");

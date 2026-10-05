@@ -390,6 +390,18 @@ public sealed partial class MainWindow : Window
     public string DeleteScreenshotsNote { get; } =
         $"Off unless you tick it. Each screenshot that gave Shturmap a position is deleted {Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds:0} seconds after its name was read: for good, not to the Recycle Bin. Only screenshots taken in a raid while Shturmap runs with this ticked. The ones already in the folder and screenshots from the menus stay.";
 
+    // "Read the extract list from screenshots" in settings (owner, 2026-10-05): the one case where Shturmap opens a
+    // screenshot's picture, so its note says what is looked at, and unticking it stops it.
+    public string ReadExitsNote { get; } =
+        "On unless you untick it. The game shows the extracts it gave you this raid in a list at the top right: at the raid's start, and when you ask for it (O twice by default). When you take a screenshot in a raid, Shturmap looks at the top right corner of its picture; if the list is there, it reads which extracts are yours, with the text recognition built into Windows. This happens on your PC: nothing of the picture is kept or sent. Unticked, no picture is opened; positions come from the file names either way.";
+
+    private async void OnReadExitsClick(object sender, RoutedEventArgs e)
+    {
+        var on = !ViewModel.ReadExits;
+        await _session.SetReadExitsAsync(on);
+        Study.Ui("settings.readExits", ("on", on));
+    }
+
     private async void OnDeleteScreenshotsClick(object sender, RoutedEventArgs e)
     {
         var on = !ViewModel.DeleteScreenshots;
@@ -429,6 +441,7 @@ public sealed partial class MainWindow : Window
         };
         vm.StudyLogOn = s.StudyLogOn;
         vm.DeleteScreenshots = s.DeleteScreenshots;
+        vm.ReadExits = s.ReadExits;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
@@ -484,8 +497,9 @@ public sealed partial class MainWindow : Window
         // back on the owner's word, with its tooltip saying how it is made; a Scav gets none (Rules.RaidTime).
         var inRaid = s.Raid.Phase == RaidPhase.InRaid;
         var time = Rules.RaidTime.Of(inRaid, s.Raid.Side == RaidSide.Scav, s.Raid.RaidStartedAt, s.RaidInfo?.RaidMinutes ?? 0, DateTime.Now);
-        ViewModel.RaidTime = time?.Text ?? "";
-        ViewModel.RaidTimeTip = time?.Tip ?? "";
+        // A snapshot's or the demo clip's picture must not catch the readout's figure half decoded.
+        Controls.RaidClock.Still = SnapshotMode || DemoMode;
+        ViewModel.RaidClock = time;
         var parts = new List<string>();
         // Before the raid runs (it loads) the map's raid length stands in the facts; once it runs, the line above says more.
         if (s.RaidInfo is { RaidMinutes: > 0 } info && time is null && !(inRaid && s.Raid.Side == RaidSide.Scav))
@@ -765,7 +779,13 @@ public sealed partial class MainWindow : Window
             Direction(e.Direction, e.MapBearing),
             e.Needs,
             e.NeedItemId,
-            e.Kind)).ToList();
+            e.Kind)
+        {
+            State = e.State,
+            ListReadable = s.ReadExits && !s.ExitReaderMissing,
+        }).ToList();
+        vm.ExitsNote = Rules.ExitsNote.Of(s.Raid.Phase == RaidPhase.InRaid, s.ReadExits, s.ExitReaderMissing, s.ExitsReadAt,
+            s.Extracts.Count(e => e.State is ExitState.Listed or ExitState.Unsure), s.Extracts.Count(e => e.Kind != MarkerKind.Transit));
 
         // The glance: where to go next and the nearest way out, the two things a few seconds' look is for (the study
         // log: in a raid the app got glances with a median of 3.9 s).
@@ -773,7 +793,8 @@ public sealed partial class MainWindow : Window
         var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null && !o.Done).ToList();
         var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
         vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name);
-        vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
+        // The nearest way out; once the game's list was read, the nearest one on it (or a transit), never one it left out.
+        vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0 && e.State != ExitState.NotListed) ?? vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
         vm.AllExitsText = vm.RaidExit is not null && vm.Extracts.Count > 1 ? $"ALL {vm.Extracts.Count} ↓" : "";
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
@@ -883,12 +904,19 @@ public sealed partial class MainWindow : Window
         // The picks of the map drawn (picks are kept per map), which in a raid can be another than the raid's.
         scene.PickSlots = latest.PickSlotsOn(latest.Map?.NormalizedName);
         scene.Kept = latest.PicksOn(latest.Map?.NormalizedName);
+        // The extracts the game's own list named this raid, once a screenshot showed it (owner, 2026-10-05): the others
+        // are drawn hollow, the ones marked "??:??:??" carry a "?". Only on the raid's own map.
+        var exitsRead = latest.ExitsReadAt is not null && !latest.LooksAtAnotherMap;
+        scene.ExitsNotListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.NotListed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
+        scene.ExitsUnsure = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Unsure).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
         Map.Refresh();
         if (HelpFlyout.IsOpen)
             ShowLegend(opened: false);
     }
+
+    private static readonly IReadOnlySet<string> NoExits = new HashSet<string>();
 
     // Who drew what is on the map. The SVG maps' artists by name and licence; the tile renders (Battlestate's level,
     // rendered by tarkov.dev or TarkovBOT.eu; docs/DESIGN.md §3) by who maps.json names; the sheet says what it is.

@@ -8,7 +8,8 @@ public sealed record ScreenshotSeen(string Path, ScreenshotInfo Info, DateTime C
 
 /// <summary>
 /// Reports new screenshots the game writes. Only the file name is needed for a position, so a fix is reported
-/// as soon as the file is created; the images are never opened. Screenshots already in the folder at start are
+/// as soon as the file is created; the watcher never opens a picture (ExitListReader does, for the extract list in one
+/// corner of it, when the session asks). Screenshots already in the folder at start are
 /// remembered, not reported.
 /// A slow rescan backs up the file notifications, which can drop events when many arrive at once, and sets the
 /// watching up again when the folder was deleted and made anew or its notifications stopped.

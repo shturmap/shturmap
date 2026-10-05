@@ -17,7 +17,8 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
   lists what to bring. In the raid it shows your objectives and the ways out on the map, each with its distance
   and direction from the spot where you took your last screenshot.
 - **How it knows.** Quest status comes from the game's own log files. Your position comes from the name of the
-  screenshot the game saves when you press your screenshot key. Quest, map and item data come from tarkov.dev.
+  screenshot the game saves when you press your screenshot key, and your extracts for the raid from the game's own
+  list, when that screenshot shows it. Quest, map and item data come from tarkov.dev.
 - **What it leaves alone.** No macros, no input to the game, nothing read from its memory, nothing drawn over it.
 - **What you need.** 64-bit Windows 10 (2004) or later. Free, no account, MIT licence.
 - **Where it stands.** In private testing: its releases are marked pre-release, and there are rough edges. If
@@ -25,7 +26,7 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
 - **The risk.** An unofficial fan project, not made or endorsed by Battlestate Games. There is no guarantee against
   sanctions, so you use it at your own risk; [Before you install](#before-you-install) says why.
 
-<img alt="Shturmap in a raid on Streets of Tarkov: the raid card with the next objective and the nearest extract by distance and direction, and the map with quest markers and your position" src="https://shturmap.github.io/assets/img/raid.webp" width="800">
+<img alt="Shturmap in a raid on Streets of Tarkov: the raid card with the time left, the next objective and the nearest extract on your list by distance and direction, and the map with quest markers, your extracts and your position" src="https://shturmap.github.io/assets/img/raid.webp" width="800">
 
 <sub>A raid on Streets of Tarkov, rendered by the app. Map © Shebuka and contributors, CC BY-NC-SA 4.0.</sub>
 
@@ -33,7 +34,11 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
   to get it. Pick the quests you want to tackle with the pen beside them: they come first and stay lit on the map
   until they are done.
 - **In the raid:** press your screenshot key and your marker drops; objectives and the nearest extract are sorted by
-  distance and direction. No clicks.
+  distance and direction, with the time the raid still runs above them. No clicks.
+- **Your extracts:** the game gives each raid its own extracts and shows them in a list at the top right, at the
+  raid's start and when you ask for it (O twice by default). Take a screenshot while it shows and Shturmap reads it:
+  the extracts on your list stay solid on the map and come first, the others turn hollow. Until then it says that
+  the nearest extract isn't checked against your list.
 - **Quest cards:** objectives, keys and items for any quest, one hover away. Pop out a card and its distances stay
   live.
 - **Quest tracking:** started, finished, failed, read from the game's own log files. Nothing has to be ticked off.
@@ -46,10 +51,14 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
 
 Shturmap works only from files the game writes for you and from public community data:
 
-- the **file names** of your screenshots, which the game fills with your position and facing (the images are
-  never read). Battlestate's own support article on
+- the **file names** of your screenshots, which the game fills with your position and facing. Battlestate's own
+  support article on
   [reporting a bug](https://www.escapefromtarkov.com/support/knowledge/437) describes these coordinates in the name;
   that is where they come from, not an endorsement of Shturmap;
+- of a screenshot you take in a raid, **the top right corner of its picture**: if the game's extract list shows
+  there, Shturmap reads which extracts are yours this raid, with the text recognition built into Windows. It happens
+  on your PC, nothing of the picture is kept or sent, and no other part of any picture is looked at. Untick **Read
+  the extract list from screenshots** in settings and no picture is opened at all;
 - the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
   quests started, failed and completed;
 - `Control.ini` and `Game.ini`, read-only: your screenshot key and the game language;
@@ -62,7 +71,7 @@ It never:
 - reads or writes the game's memory, or loads anything into the game;
 - opens the game's process from its own code (its installer is the one exception, said below);
 - sends keystrokes or mouse input, or registers global hotkeys (its shortcuts work only in its own window);
-- captures the screen or draws over the game;
+- captures the screen or draws over the game (the pictures it looks at are screenshots you took yourself);
 - changes game files or settings, or reads the launcher's login data or the game's backend log;
 - changes or deletes anything outside its own folders, with one exception you turn on yourself: **Delete position
   screenshots** in settings (off unless you tick it) deletes each screenshot that gave a position 5 seconds after
@@ -110,7 +119,8 @@ under Updates).
 
 **What if Battlestate takes the coordinates out of the screenshot names?** Then Shturmap shows no position, and the
 rest keeps working: maps ranked by what you can get done, what to bring, quest cards, and the map with your
-objectives and the extracts.
+objectives and the extracts. (A screenshot without a position in its name isn't looked at for the extract list
+either.)
 
 More questions and answers: [shturmap.github.io/#faq](https://shturmap.github.io/#faq).
 

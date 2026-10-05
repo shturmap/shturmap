@@ -245,6 +245,12 @@ public static partial class MapRenderer
         /// </summary>
         public bool Pointed { get; init; }
 
+        /// <summary>An extract the game's own list didn't name this raid (<see cref="MapScene.ExitsNotListed"/>): hollow.</summary>
+        public bool NotListed { get; init; }
+
+        /// <summary>A listed extract the game marked "??:??:??" (<see cref="MapScene.ExitsUnsure"/>): a "?" at its corner.</summary>
+        public bool Unsure { get; init; }
+
         /// <summary>Drawn beside its true place, for a neighbour of the same rank that would cover it or be covered
         /// (<see cref="SideBySide"/>): <see cref="At"/> is where the symbol stands, a few pixels off.</summary>
         public bool Beside { get; init; }
@@ -377,7 +383,8 @@ public static partial class MapRenderer
             // Ink for every label at rest, a boss's too: its red octagon is the danger sign, and red type on the dark
             // ground read worse than any other label (the review of 2026-10-04). What is picked or pointed at takes its
             // marker's colour.
-            var color = m.Selected ? m.Color : Ink;
+            // An extract that isn't on the player's list this raid steps back, name and symbol (MapScene.ExitsNotListed).
+            var color = m.Selected ? m.Color : m.NotListed ? Muted : Ink;
             labels.Add(new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected, color, m));
         }
 
@@ -641,7 +648,8 @@ public static partial class MapRenderer
     // lower right, "OPT" upper left).
     private const string PossibleTag = "?";
 
-    private static bool ShowsPossible(ShownMarker m) => m.Marker.Kind == MarkerKind.PossibleLocation;
+    // An extract the game's list marked "??:??:??" carries it too: maybe open (MapScene.ExitsUnsure).
+    private static bool ShowsPossible(ShownMarker m) => m.Marker.Kind == MarkerKind.PossibleLocation || m.Unsure;
 
     private static SKRect PossibleBadgeBox(ShownMarker m, float ui)
     {
@@ -713,6 +721,8 @@ public static partial class MapRenderer
         {
             Reach = reach + 1 * ui,
             Pointed = pointed && !done,
+            NotListed = scene.ExitsNotListed.Contains(marker.Id),
+            Unsure = scene.ExitsUnsure.Contains(marker.Id),
         };
     }
 
@@ -1573,6 +1583,16 @@ public static partial class MapRenderer
                 using (var tri = Triangle(at, r))
                 {
                     DrawCollar(canvas, tri, ui);
+                    if (shown.NotListed)
+                    {
+                        // Not on the player's list this raid (read from their screenshot; owner, 2026-10-05): the
+                        // triangle's outline alone, on the collar's dark, so the solid ones are the ways out.
+                        using var ground = new SKPaint { Color = Background.WithAlpha(215), IsAntialias = true };
+                        using var edge = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f * ui, StrokeJoin = SKStrokeJoin.Round };
+                        canvas.DrawPath(tri, ground);
+                        canvas.DrawPath(tri, edge);
+                        break;
+                    }
                     canvas.DrawPath(tri, fill);
                     canvas.DrawPath(tri, outline);
                 }

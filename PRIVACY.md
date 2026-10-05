@@ -5,7 +5,10 @@ DRAFT, 2026-10-03. [OWNER: fill in everything in square brackets before the firs
 whole notice checked.]
 
 Shturmap runs on your PC. It reads the game's log files, your screenshots' file names and public data from
-tarkov.dev, and it keeps its own log on your PC. Nothing about you leaves your PC, with two exceptions that you
+tarkov.dev, and it keeps its own log on your PC. Of a screenshot you take in a raid it also looks at the top right
+corner of the picture: if the game's extract list shows there, it reads which extracts are yours this raid, with the
+text recognition built into Windows. That happens on your PC; nothing of the picture is kept or sent, and unticking
+"Read the extract list from screenshots" in settings stops it. Nothing about you leaves your PC, with two exceptions that you
 control; and it asks GitHub for new versions of itself (3) and downloads public data and pictures (4).
 
 1. A report you send
@@ -16,8 +19,8 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - Shturmap's version, whether it is installed or a folder build, and your Windows version;
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
-  how many quests are active, whether "Delete position screenshots" is ticked, and the last 200 lines of Shturmap's
-  own log.
+  how many quests are active, whether "Delete position screenshots" and "Read the extract list from screenshots" are
+  ticked (and the language Windows reads the list in), and the last 200 lines of Shturmap's own log.
 
 2. A crash report, if you allow it
 ----------------------------------

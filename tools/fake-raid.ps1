@@ -45,8 +45,12 @@ $start = Get-Date
 $session = 'log_' + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510'
 New-Item -ItemType Directory -Force (Join-Path $root "Logs\$session"), (Join-Path $root 'Screenshots') | Out-Null
 $log = Join-Path $root ("Logs\$session\" + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510 application_000.log')
+# The raid has run for a while when its picture is taken: every log line is written this many minutes in the past, so
+# the raid card's time fits the walk the map shows ("13 min left · 27 min in"), where it used to say 0 min beside a
+# trail from one spawn to another (owner, 2026-10-05).
+$minutesIn = if ($Map -eq 'streets') { 27 } else { 12 }
 function Log([string]$message) {
-  $line = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|application|$message`r`n"
+  $line = (Get-Date).AddMinutes(-$minutesIn).ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|application|$message`r`n"
   [IO.File]::AppendAllText($log, $line)
 }
 # Quests come only from the game's notification log, so the fake game "starts" some Streets quests there.
@@ -63,9 +67,55 @@ function Shot([string]$position, [int]$n = 0) {
   $name = (Get-Date).ToString('yyyy-MM-dd[HH-mm]') + "_$position ($n).png"
   [IO.File]::WriteAllText((Join-Path $root "Screenshots\$name"), '')
 }
-# Two places on Streets: A, then B near the Primorsky Ave taxi extract.
-$posA = '-60.00, 3.50, 300.00_-0.02500, 0.23500, -0.00500, -0.97150_6.45'
-$posB = '40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13'
+# A screenshot whose picture shows the game's extract list at its top right, as the game shows it at a raid's start:
+# a green bar, a row per exit, "??:??:??" beside the ones that may be closed. Drawn here in a Windows typeface (no
+# game art), in the game's layout at 2560x1440; Shturmap reads it as it reads a real one (ExitListReader).
+function ShotWithList([string]$position, [object[]]$rows, [int]$n = 0) {
+  Add-Type -AssemblyName System.Drawing
+  $name = (Get-Date).ToString('yyyy-MM-dd[HH-mm]') + "_$position ($n).png"
+  $bitmap = New-Object System.Drawing.Bitmap 2560, 1440
+  $g = [System.Drawing.Graphics]::FromImage($bitmap)
+  try {
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
+    $g.Clear([System.Drawing.Color]::FromArgb(96, 104, 92))
+    $left = 2560 - 768
+    $panel = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(14, 16, 14))
+    $green = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(124, 167, 14))
+    $dark = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(10, 12, 10))
+    $light = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(205, 210, 205))
+    $big = New-Object System.Drawing.Font 'Bahnschrift', 30, ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+    $small = New-Object System.Drawing.Font 'Bahnschrift', 24, ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+    $g.FillRectangle($panel, $left, 5, 768, 74 + 70 * $rows.Count)
+    $g.FillRectangle($green, $left, 5, 573, 74)
+    $g.DrawString('Find an extraction point', $big, $dark, $left + 70, 24)
+    for ($i = 0; $i -lt $rows.Count; $i++) {
+      $y = 5 + 74 + 70 * $i + 20
+      $g.DrawString($rows[$i][0], $big, $light, $left + 10, $y)
+      $g.DrawString($rows[$i][1], $small, $light, $left + 24 + $g.MeasureString($rows[$i][0], $big).Width, $y + 5)
+      $g.DrawString($rows[$i][2], $big, $light, $left + 600, $y)
+    }
+  }
+  finally { $g.Dispose() }
+  # Written beside the folder and moved in: the file appears whole, and its name is what the watcher sees.
+  $temp = Join-Path $root $name
+  $bitmap.Save($temp, [System.Drawing.Imaging.ImageFormat]::Png)
+  $bitmap.Dispose()
+  Move-Item -LiteralPath $temp (Join-Path $root "Screenshots\$name")
+}
+# A PMC raid on Streets, as it was walked (positions from a raid's own screenshots' names, each a few minutes after
+# the one before): from the spawn at the map's south-east up Primorsky Ave. The first screenshot is taken at the
+# raid's start, while the game shows the extract list; the last is the position the pictures show (B).
+$streetsList = @(
+  @('EXFIL01', 'Courtyard', '??:??:??'), @('EXFIL02', 'Primorsky Ave Taxi V-Ex', '??:??:??'), @('EXFIL03', 'Crash Site', ''),
+  @('EXFIL04', 'Damaged House', ''), @('EXFIL05', 'Klimov Street (Flare)', ''), @('EXFIL06', 'Pinewood Basement (Co-Op)', ''),
+  @('TRANSIT01', 'Transit to Ground Zero', '0:00:50'), @('TRANSIT02', 'Transit to Interchange', '0:00:50'), @('TRANSIT03', 'Transit to The Lab', '0:00:50'))
+$streetsWalk = @(
+  '230.68, 1.96, 208.60_-0.03961, 0.59470, -0.02947, -0.80243_17.93',
+  '148.55, 3.39, 199.90_-0.03455, -0.94940, 0.11243, -0.29121_18.33',
+  '178.94, 4.53, 233.60_0.08900, -0.57194, 0.06117, 0.81315_18.73',
+  '274.51, 6.26, 517.28_0.06415, -0.86147, 0.11255, 0.49101_8.23')
+$posA = '257.35, -4.43, 51.14_0.02679, -0.27945, 0.00780, 0.95976_17.40'
+$posB = '174.81, 4.95, 418.12_0.04140, -0.63128, 0.03257, 0.77376_8.59'
 # The demo's walk: south on Primorsky Ave, facing the way it goes.
 $walkFrom = '13.02, 3.92, 381.30_0.00500, 0.04500, -0.00050, 0.99900_14.13'
 $walkTo = '12.50, 4.00, 410.00_0.00500, 0.04500, -0.00050, 0.99900_14.15'
@@ -212,9 +262,18 @@ Start-Sleep -Seconds 4
 StartRaid
 if (-not $HoldLoading) {
   Start-Sleep -Seconds 3
-  Shot $raidMap.A
-  Start-Sleep -Seconds 3
-  Shot $raidMap.B
+  if ($Map -eq 'streets' -and -not $Scav) {
+    # The raid's first screenshot shows the extract list; then the walk, and the position the picture is taken at.
+    ShotWithList $raidMap.A $streetsList
+    Start-Sleep -Milliseconds 1500
+    foreach ($at in $streetsWalk) { Shot $at; Start-Sleep -Milliseconds 400 }
+    Shot $raidMap.B
+  }
+  else {
+    Shot $raidMap.A
+    Start-Sleep -Seconds 3
+    Shot $raidMap.B
+  }
 }
 $null = $p.WaitForExit(($SnapshotAfter + 45) * 1000)
 if (-not $p.HasExited) { Stop-Process -Id $p.Id }

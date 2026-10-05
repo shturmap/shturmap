@@ -13,4 +13,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shturmap.Game\Shturmap.Game.csproj" />
   </ItemGroup>
+
+  <!-- The extract list reader's tests draw their own picture of a list (SkiaSharp), and also read real screenshots
+       where a PC has them: tests\fixtures\ocr, which git ignores (a player's screenshots stay out of the repository). -->
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
+    <None Include="..\fixtures\ocr\exits-*.png;..\fixtures\ocr\no-list-*.png" LinkBase="fixtures\ocr" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

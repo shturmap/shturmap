@@ -22,8 +22,9 @@ dashboards, a settings maze.
 
 Shturmap reads only files the game writes for the player, plus public community data:
 
-- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots` (positions only; Shturmap never opens the
-  images);
+- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots`, for positions; and, of a screenshot taken
+  in a raid, **the top right corner of its picture**, for the game's extract list (below; the player can turn that
+  off, and no other part of any picture is looked at);
 - `application_*.log` and `push-notifications_*.log` in the game's `Logs` folder, with shared read access;
 - `Control.ini` and `Game.ini`, read-only.
 
@@ -45,6 +46,40 @@ README says it under "The installer and running programs", with the advice to in
 closed; help says only what holds for Shturmap's own code. Still open: applying updates in a way that looks at no
 other process (an apply step of our own, or applying only on the player's word).
 
+**One corner of a screenshot's picture is read, for the extract list** (owner, 2026-10-05: "The currently open exits
+are displayed on the upper right corner of a screenshot ... It would be great if we could check a screenshot if it's
+taken if it contains this information ... read it and update the map accordingly"). Until then no picture was ever
+opened: positions come from the names, and the Tasks-screen reading of September was removed on 2026-10-01. The game
+gives each raid its own extracts, by where the player starts, and neither its logs nor tarkov.dev's data say which;
+it shows them in a list at the top right, when a raid starts and when the player asks for it (O twice by default).
+That list is the one thing read from a picture, and the reading is kept this narrow (`ExitListReader`,
+`Shturmap.Core.Screenshots.ExitList`):
+
+- **Which pictures:** only a screenshot the watcher reported as new, named with a position, while the log shows a raid
+  running on a map the data knows. Never a menu screenshot, never one already in the folder, never while a raid loads.
+- **How much of it:** the top right corner (0.60 by 0.62 of the picture's height). If no green bar stands near its top
+  (the list's header), nothing is read and the picture is let go. With the bar, the words in the corner are read with
+  the text recognition built into Windows (`Windows.Media.Ocr`): on the PC, with no download, no model of Shturmap's
+  own and nothing sent. In the owner's 2560×1440 screenshots a look takes 110–180 ms, most of it decoding the PNG.
+- **What is kept:** which of the raid map's extracts the rows name, and whether the game marked a row "??:??:??".
+  No pixel and no other word is kept, logged or sent; the study log notes counts only (`exits.read`). It is forgotten
+  when the raid ends.
+- **How:** the file is opened for reading, shared with the game that may still be writing it, and only once it is
+  written to its end (a PNG's IEND chunk; half a list read as the whole would call the missing rows' exits closed);
+  it is tried for about three seconds, then left. Nothing is written to the screenshots folder. This is a file the
+  game saved for the player, like the logs: no screen is captured (`SafetyTests` still forbids that), nothing is asked
+  of the game, and a list is read only from a screenshot the player took with their own key press (the rule below,
+  "never take a screenshot for the player", stands).
+- **The player's say:** "Read the extract list from screenshots" in settings, on unless unticked (a setting that had to
+  be found first would leave EXIT guessing for most players; principle 1). Unticked, no picture is opened. Its note,
+  help, the README, PRIVACY.md and the website say what is looked at; the diagnostics carry the setting's state and
+  the recognition's language.
+
+This widens what Shturmap takes from the game's files by one thing, on the owner's word; BSG's 4.3.4 (below) speaks of
+"information reproduced ... by the Game" either way, and the texts that named the risk still do. Nothing else of a
+picture may be read without the owner deciding it anew: not the raid timer beside the list (Windows' recognition
+doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks screen, not the inventory.
+
 **It changes nothing outside its own folders, with one exception the player turns on** (owner, 2026-10-04: "a mode
 that auto-deletes screenshots after a couple of seconds grace period"). "Delete position screenshots" in settings,
 off unless ticked: a screenshot whose name gave a position is deleted 5 seconds after its name was read
@@ -53,7 +88,7 @@ file and any other tool the player runs time to read its name. What may go is na
 seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a file the watcher reported as new in this run,
 directly in the screenshots folder, named as the game names a screenshot with a position. What was in the folder
 before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. The
-image is still never opened: the file is removed by name. One that is still open elsewhere (the game writing it)
+cleaner never opens the image: the file is removed by name. One that is still open elsewhere (the game writing it)
 can't be removed and is tried again, six times 5 seconds apart, then left with a line in the app log; a file marked
 read-only is left. Unticking within the 5 seconds keeps what still waits, and so does closing Shturmap. The folder
 is the player's own Documents folder, not the game's install: the game is not touched, asked or told anything, and
@@ -73,7 +108,8 @@ that field is no link, since a click would start whatever program Windows has re
 BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text of 2026-06-15) forbids "outside
 software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game
 Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
-been permitted. The owner accepted that residual risk. Do not widen the boundary.
+been permitted. The owner accepted that residual risk. Do not widen the boundary: only the owner does, as with the
+extract list's corner of a screenshot (above, 2026-10-05).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -218,7 +254,9 @@ quoting it anywhere new.
   and tokens, session ids, account ids and addresses are masked. `FixtureScrubTests` check the local copies. Quest
   texts are not committed: the synopsis tests quote a few short objective lines, and the check over all quests
   reads the user's local tarkov.dev cache.
-  `tests/fixtures/ocr` is ignored by git: it holds the owner's own Tasks screenshots from the removed OCR feature.
+  `tests/fixtures/ocr` is ignored by git: it holds the owner's own screenshots (Tasks screens from the removed OCR
+  feature, and since 2026-10-05 raid screenshots with and without the extract list, which `ExitListReaderTests` read
+  where a PC has them and skip elsewhere; the same reader is tested everywhere on a list the tests draw themselves).
   Never commit or publish it; it was removed from the whole history on 2026-10-02, before going public.
 
 ## 4. UX principles
@@ -432,7 +470,9 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
-position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out. With Windows' animation
+position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; the raid card's time
+moves only when its minute changes (its figure decodes over half a second as the cue's title does, and one dark notch
+runs along what is left of its rule in 1.1 s), and holds still in between. With Windows' animation
 effects off the app shows and hides without motion, and following jumps to the position. The website follows the
 reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
 easing; owner, 2026-10-02), the rest stops.
@@ -703,8 +743,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     there is always a row to click, the list is also there for one suggested map while another map is on screen.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
-    line ("Complete 5 quests · progress 1 more"), **the raid's time on a line of its own, "12 min in · 28 min left"**,
-    in ink and the summary's size, then the bosses with their spawn chances
+    line ("Complete 5 quests · progress 1 more"), the bosses with their spawn chances, and, right under the map's name,
+    **the raid's time as the card's largest figure** (below; until 2026-10-05 a line of its own, "12 min in · 28 min
+    left", in ink and the summary's size)
     (owner, 2026-10-04, in the evening: "In the raid we do not care when the start time was and all this info, we
     typically want to see how much time we're in the raid and how much time is left. This is crucial
     information". It replaces the same day's "40 min raid · started 21:02" with the game's time of day, made when
@@ -714,6 +755,25 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     length it says "47 min in · past the raid's 40 min", never a time left below one; a Scav, who joins a raid
     under way, gets "7 min in · time left not known"; a map without a raid length in the data gets the time in
     alone (`Rules.RaidTime`). While the raid loads, "40 min raid" stands with the bosses, as in Plan.)
+    **The readout** (owner, 2026-10-05: "The remaining time is a crucial piece of information and should be more
+    visible. I would make it a prominent item in the UI and maybe even have a cool animation that is in-line with the
+    style of the app. It should not be too crazy though to not steer away the attention through its movement";
+    `Controls.RaidClock`). The minutes left stand in 44 px, semi-condensed semibold, in ink: the largest type on the
+    card, twice the glance's distances. Beside its foot "MIN LEFT", and at the right "27 MIN IN", muted, both in the
+    status words' style. Under them a rule of the raid's length, 4 px: the time gone in the hairline's colour, the time
+    left in ink, a mark where now is, and a tick every ten minutes (and at both ends), so it reads as a scale like the
+    map's. **The last ten minutes are red** (figure, words, the rule's light part), the colour of danger and what the
+    game's own timer does (the owner's screenshots: white at 0:33:47, red at 0:08:34). Where no time left is known
+    the figure is the time in the raid, said as "MIN IN": a Scav's ("TIME LEFT NOT KNOWN" at the right, no rule), a
+    map without a raid length (no rule), and past the raid's length ("PAST THE RAID'S 40 MIN" in red, the rule all
+    gone). The tooltip says how the figures are made, as before. **It moves only when it changes** (principle 2):
+    at a new minute the figure decodes as the big cue's title does, its digits flickering in gold for half a second
+    and settling left to right in ink, and one dark notch runs from the mark to the rule's end; a raid's first figure
+    just decodes. Nothing moves in between, so it never pulls at the eye from the second monitor (a mark that
+    breathes all raid was considered and left out for the reason picks hold still), and with Windows' animation
+    effects off, in snapshots and in the demo clip it doesn't move at all. The time left is still the map's raid
+    length minus the time since the start line: reading the game's own timer from a screenshot was looked at the
+    same day and not built (§2).
     and, when the distances aren't from a fresh screenshot, where they are from. **No loading progress** (owner,
     2026-10-04: "we really don't need the loading progress bar in the upper left, the game already shows a loading
     progress bar"): the line and the segments described next were shown from 2026-10-02 until then, and the
@@ -725,10 +785,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     rule creeps by typical times). No time estimate. While it loads, CHECK YOUR KIT follows (the kit reminder, UX
     principle 9), and BRING waits below until the raid starts. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
-    direction), and EXIT, the nearest extract or transit for your side (and what it takes). Under an extract it says "NEAREST ·
-    CHECK YOUR LIST IN GAME": the game opens only some extracts in each raid, by where the player started, and
-    neither its logs nor tarkov.dev's data say which, so at a raid's start the nearest is usually not one of the
-    player's (owner, 2026-10-04: say it in the row; a transit is open to everyone and gets no note). Under the
+    direction), and EXIT, the nearest extract or transit for your side (and what it takes). The game opens only some extracts in each raid,
+    by where the player started, and neither its logs nor tarkov.dev's data say which, so at a raid's start the
+    nearest is usually not one of the player's (owner, 2026-10-04: say it in the row; a transit is open to everyone and
+    gets no note). **Checked or not is said** (owner, 2026-10-05: "Since the app shows the nearest exit upon placing a
+    marker it should also be visible if the exfils [are] not verified yet"; `Rules.ExitsNote`). Until a screenshot
+    showed the game's own list (§2; *The extract list*, below) the row says "NEAREST · NOT CHECKED AGAINST YOUR
+    LIST", muted, its tooltip saying how to check; with the reading unticked, or on a Windows without text
+    recognition, the words of 2026-10-04, "NEAREST · CHECK YOUR LIST IN GAME". Once the list was read, EXIT is the
+    nearest way out that is on it (or a transit), never an extract it leaves out, and says "ON YOUR LIST THIS RAID" in
+    the way out's colour, or "ON YOUR LIST · ??? IN GAME" for one the game marks "??:??:??". Under the
     direction, a small gold "ALL 15 ↓" brings the whole list of ways out, which stands under the card, to the top of
     the rail (the review of 2026-10-04, H5: with several quests that list is a long way down, and it is the one to
     read when the nearest exit isn't the player's). In a raid the app gets
@@ -747,7 +813,25 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     as done ("Quest cards", *Ticks*) comes after the quest's open lines, muted, with "DONE" where its distance was
     and without its needs; NEXT and the guide line pass it by, and a quest with nothing open on this map isn't
     listed. Below the card, extracts and
-    transits for your side, each with what it takes to leave there (see "Extract requirements"). A way out wears
+    transits for your side, each with what it takes to leave there (see "Extract requirements").
+    **The extract list** (owner, 2026-10-05). Under the heading one line in the note style says where things stand:
+    "Not checked against your list yet. Take a screenshot while the game shows your extracts (at the raid's start, or
+    O twice by default) and Shturmap reads them from it.", then "Your list this raid: 6 of 12 extracts, read from
+    your screenshot at 16:40." (or that this Windows has no text recognition language; nothing with the reading
+    unticked). Once read, each extract's small line adds "· ON YOUR LIST" or "· ON YOUR LIST · ??? IN GAME" and takes
+    the way out's colour; one the list leaves out says "· NOT ON YOUR LIST", its name and distance muted, without
+    what it would take, and comes after everything else (the others stay nearest first, transits among them). A
+    notice says it once ("Your extract list is read: 6 extracts for this raid"). What a raid's screenshots name adds
+    up: a later list adds extracts and renews the "???" marks of the ones it names, and never takes one away (a
+    reading that missed a row must not close an exit). A transit is never said to be on or off the list: it is open
+    to everyone, and its rows aren't matched. **What counts as the list**: rows that name two or more of the map's
+    extracts for the player's side; one named extract counts only under the header "Find an extraction point", since
+    the box the game shows while the player stands in an exit ("Stay in the extraction point") has the same green bar
+    and one row, and taking it for the list would call every other exit closed (so in another game language a list
+    of one exit isn't taken). Names are matched in the game's language and in English, letter by letter with what a
+    reader confuses folded together (the slashed zero comes back as "Ø", 1 as "I"), one letter in five may be off,
+    and a row that fits two exits equally names neither (`ExitList.Match`). Every map is unchecked again when the
+    raid ends or a transit loads the next map. A way out wears
     the colour of its kind here as on the map, in EXIT's label and distance and in each row's distance: a PMC
     extract green, a Scav's teal, one for both sides khaki, a transit violet (2026-10-04: every way out was green
     in the rail, the PMC extract's colour on the map). ANY MAP closes the rail in both states.
@@ -876,7 +960,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   has the focus and lay over the raid card; if it had opened by itself, it isn't counted as seen and comes back
   after the raid (`WhileInRaid`; review of 2026-10-04, H9).
 - **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
-  position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Crash reports" (ASK AFTER A
+  position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
+  screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
+  §2), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
   available in this build"; an installed Shturmap whose updater couldn't start says that instead, with where the
   reason is and that the Setup repairs it, `Distribution.NoUpdatesText`); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
@@ -927,6 +1013,15 @@ spawns below).
   down than "below", under its neighbour's: the two names read as the pair's caption ("Scav Checkpoint" over
   "Transit to The Lab (Dark)").
 
+- **The player's extracts this raid** (owner, 2026-10-05: "update the map accordingly, highlighting the open exfils").
+  Once a screenshot showed the game's extract list (§2), the extracts on it are the solid triangles they always were,
+  and **an extract the list leaves out is hollow**: its outline in its colour on the collar's dark, its name in muted
+  instead of ink (`MapScene.ExitsNotListed`). So the ways out are found by being the filled ones, and no new colour,
+  ring or size had to mean "open" (a ring is a pick's, a pulse is the pointer's). An extract the game marks
+  "??:??:??" (it may be closed, or it needs something) is solid and carries the "?" badge at its lower left that a
+  possible location carries: maybe here, maybe open (`MapScene.ExitsUnsure`). Transits are drawn as ever. Nothing is
+  hidden: a hollow extract is still a place on the map, and the list could have been read wrong. Until a list was
+  read, and outside raids, every extract is solid. The legend gets one row for the two, shown once a list was read.
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less

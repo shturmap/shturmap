@@ -357,6 +357,39 @@ public sealed class MapScene
     /// </summary>
     public bool Gliding { get; set; }
 
+    /// <summary>
+    /// The extracts the game's own list didn't name this raid (marker ids), once that list was read from a screenshot
+    /// (owner, 2026-10-05): drawn hollow, their names fainter, so the ones the player can leave by are the solid ones.
+    /// Empty while no list was read: then every extract is drawn solid, as outside a raid.
+    /// </summary>
+    public IReadOnlySet<string> ExitsNotListed
+    {
+        get => _exitsNotListed;
+        set
+        {
+            _exitsNotListed = value.Count == 0 ? Nothing : value;
+            LayoutVersion++;
+        }
+    }
+
+    private IReadOnlySet<string> _exitsNotListed = Nothing;
+
+    /// <summary>
+    /// The listed extracts the game marked "??:??:??" (marker ids): it may be closed, or it needs something. They
+    /// carry the "?" a possible location carries: maybe here.
+    /// </summary>
+    public IReadOnlySet<string> ExitsUnsure
+    {
+        get => _exitsUnsure;
+        set
+        {
+            _exitsUnsure = value.Count == 0 ? Nothing : value;
+            LayoutVersion++;
+        }
+    }
+
+    private IReadOnlySet<string> _exitsUnsure = Nothing;
+
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
 
