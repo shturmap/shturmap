@@ -1284,8 +1284,8 @@ detectable from the quest text or layout itself").
 - **Which.** A hand-over folds into the objective of the same quest that gets the same thing (`Handovers`), by the
   data's ids, so it holds in every game language: `giveQuestItem` with the `findQuestItem` of the same quest item;
   `giveItem` with the `findItem` of the same set of items (any order), the same count and the same found-in-raid.
-  Each pairs once, in the quest's order (two quests list the hand-over first). Checked on 2026-10-05: in PvE 211 of
-  391 hand-overs fold (95 of 99 quest items); in PvP 211 of 403. What doesn't fold is the quest's own work at the
+  Each pairs once, in the quest's order (two quests list the hand-over first). Checked on 2026-10-05: in PvE 217 of
+  391 hand-overs fold (95 of 99 quest items); in PvP 217 of 403. What doesn't fold is the quest's own work at the
   trader and stays a line, as before: money, "any found in raid medicine items", figurines, and a quest item got in
   an earlier quest (Postman Pat - Part 2's letter, Kind of Sabotage's folder, A Healthy Alternative's journal,
   Shipping Delay - Part 1's package). Words weren't used: the hand-over's text is often just "Hand over the items".
@@ -1766,7 +1766,7 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
 | `Shturmap.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
 | `Shturmap.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
 | `Shturmap.App` | WinUI 3 window; reads snapshots, never game files |
-| `tools/Shturmap.Cli` | headless runner: locate, replay, data, ocr, render, watch, simulate |
+| `tools/Shturmap.Cli` | headless runner: locate, replay, data, render, watch, simulate, quests; the audits after an update: synopses, effort, bring, handovers, spawns (docs/UPDATES.md) |
 
 Rules:
 
@@ -2056,7 +2056,8 @@ they are ignored (and could never reopen a quest the log saw completed). The log
 the only word on those is the player's own tick (§4, "Quest cards", *Ticks*), kept apart from the quest states, in
 the settings. `shturmap-cli quests` lists active quests with every observation.
 `shturmap-cli synopses [mode]` lists every Plan row's synopsis with its flags (§5, "Quest synopsis"), and
-`shturmap-cli effort [mode]` every Plan row's effort group and complexity (§7, "Plan order").
+`shturmap-cli effort [mode]` every Plan row's effort group and complexity (§7, "Plan order"). What to run and look at after a
+game patch or a tarkov.dev update, and what each rule assumes of the data and the game: docs/UPDATES.md.
 
 **Floors.** The floor shown is the player's, from the height of the last fix. The picker lists floors that have
 artwork of their own, top first, with a dot on the player's; a pick (click or PgUp/PgDn) holds until the next

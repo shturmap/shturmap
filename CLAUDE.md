@@ -64,11 +64,11 @@ Essentials:
   the local `FakeSentry`. Check a release with `Shturmap.exe --send-report "<text>" <folder>` (it must say "Sent.
   Thank you."); never send a real crash report to test (DESIGN.md §8, "Reports").
 - The CLI (`tools/Shturmap.Cli`) runs every part headless; `simulate` plays a scripted raid against a fake game.
-- After a tarkov.dev or game update, run `shturmap-cli synopses pve` and `shturmap-cli synopses regular` and look at
-  the FALLBACK, LONG and BREAK rows: the quest synopses in Plan are made from tarkov.dev's texts by fixed rules
-  (DESIGN.md §5, "Quest synopsis"). Never commit quest texts or a dump of them; tests read the local cache. Also run
-  `shturmap-cli effort pve` and `… regular`: Plan's order by effort group (DESIGN.md §7, "Plan order"); name any
-  UNKNOWN TARGET in `QuestEffort` and check any unknown objective type.
+- After a tarkov.dev or game update, and before a release, go through `docs\UPDATES.md` (owner, 2026-10-05): refresh
+  the data, run the audits in both modes (`synopses`, `effort`, `bring`, `handovers`, `spawns`) and the tests against
+  the fresh cache, and after a game patch the played-raid steps. It lists what each rule assumes of the data and the
+  game, and what has no check yet. Fix drift with a test on made-up ids, update DESIGN.md, and add a line to its log.
+  Never commit quest texts or a dump of them; tests read the local cache.
 - The website's screenshots and hero clip are re-recorded only when the owner says so (owner, 2026-10-02); remind
   them when a release goes up on GitHub. Then use `tools\make-media.ps1` in `..\shturmap.github.io` (see its
   CLAUDE.md) and go through its hand-check list.
