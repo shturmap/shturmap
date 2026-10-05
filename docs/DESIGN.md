@@ -584,8 +584,8 @@ left (`PointerNest`; before, the highlight knew one element, and leaving an inne
 the highlight goes **down to the objective**: an objective's line under its quest in the raid card, its row on the
 quest's card and the glance's NEXT name their objective. Pointing at one keeps the whole quest lit as before and
 marks the objective: its own line takes the tint (in the raid card once more, over its quest's), and on the map
-only that objective's places pulse, take the pointed-at size and name, and get the chevrons; the quest's other
-places stay at full strength, at their rest size, and hold still, and the doors of its keys keep their pointed-at
+only that objective's places pulse, take the pointed-at name, and get the chevrons; the quest's other
+places stay at full strength and hold still (no symbol grows when pointed at since 2026-10-05), and the doors of its keys keep their pointed-at
 look without the pulse (`MapScene.FocusObjective`). It works the other way too: pointing at one of an objective's
 places on the map lights its line in the raid card and its row on the quest's card. An objective with no place on
 the shown map leaves its quest lit and nothing pulsing. Three smaller things link as well: a **need cell** beside
@@ -1033,6 +1033,25 @@ spawns below).
   down than "below", under its neighbour's: the two names read as the pair's caption ("Scav Checkpoint" over
   "Transit to The Lab (Dark)").
 
+- **Symbols that cover each other** (owner, 2026-10-05: "Can there something be done about overlapping icons … Especially
+  for selected Quest icons"; chosen from a panel of six ways drawn by the real map on three Streets spots: "Go for F").
+  - **Nothing grows.** A pick and whatever is pointed at keep their rest size; colour, the pick's ring and the
+    pointer's pulse say it, and the ring and the pulse lie under every symbol (`MapRenderer.DrawUnderlay`). Before, a
+    pick grew to 14 px with a ring reaching 7.5 px further and a pointed-at quest to 12 px, over neighbours set
+    side by side for 10, so the symbol that mattered most covered the ones around it. Side by side (above) now holds
+    for every state, since the sizes it works with are the sizes drawn.
+  - **A stack opens where the pointer rests** (`MapScene.FanAt`, `MapView`). Resting 0.35 s on a symbol another one
+    lies well over (centres closer than 60 % of their bodies together, `MapRenderer.Stacked`) opens the stack: every
+    symbol that touches it goes out onto a ring around its place, in the order their places lie around it so no two
+    lines cross, each joined to its own place by a hairline in its colour with a dot where it belongs, on a dark
+    plate. It eases open over 0.16 s (at once with Windows' animation effects off), sooner than a card opens (0.65 s),
+    so the card that comes is the one of the symbol meant. It stays open while the pointer is on its plate, so each
+    symbol can be pointed at and clicked there, and closes when the pointer leaves it or the map, and when the view
+    moves (a drag, the wheel, a double-click, show my position, show the whole map, another map). Symbols that only
+    touch don't open: each can be pointed at as it is. The study log notes `map.fan` with the number of symbols.
+  - Also drawn and rejected (the panel, `shturmap-cli overlap-panel`, removed with the choice): the upper symbol faint
+    where it lies over another (muddy ghosts of glyphs), and neighbours stepping aside for a pick or what is pointed
+    at (symbols moving whenever the pointer moves).
 - **The player's extracts this raid** (owner, 2026-10-05: "update the map accordingly, highlighting the open exfils").
   Once a screenshot showed the game's extract list (§2), three steps:
   - **On the list: lit** (owner, 2026-10-05, the same evening: "The exits that are verified should be highlighted
@@ -1495,8 +1514,9 @@ still only keeps its card open (two clicks, two meanings).
 - **The look.** Picks have their own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among
   gold didn't stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart
   from gold with any colour vision. Their rows, and the BRING rows that serve them, keep a cyan tint; on the map
-  their markers turn cyan and grow (14 px radius, against 12 for what is pointed at and 10 at rest) inside a steady
-  cyan ring on a dark band, their zones turn cyan, and a dashed cyan line runs from your last fix to the nearest
+  their markers turn cyan, at their rest size, inside a steady cyan ring on a dark band that lies under every symbol
+  (until 2026-10-05 they grew to 14 px, and what was pointed at to 12, over neighbours set apart for 10; "Map
+  drawing", *Symbols that cover each other*), their zones turn cyan, and a dashed cyan line runs from your last fix to the nearest
   place of any pick, with the distance on its plate (the raid card's NEXT names the same objective). Their places
   out of view get chevrons. Picks hold still: a marker pulsing all raid would be motion at the edge of the
   player's eye; what the pointer is on pulses.

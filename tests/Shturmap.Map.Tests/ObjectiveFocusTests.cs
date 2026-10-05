@@ -25,7 +25,7 @@ public class ObjectiveFocusTests
         scene.Focus = new HashSet<string> { "a" };
         scene.Dim = 1;
         var shown = MapRenderer.Layout(camera, scene, 1).Markers;
-        Assert.All(shown.Where(m => m.Marker.Group == "a"), m => Assert.True(m.Pointed && m.Focused && m.Selected && m.R == 12));
+        Assert.All(shown.Where(m => m.Marker.Group == "a"), m => Assert.True(m.Pointed && m.Focused && m.Selected && m.R == 10));
         Assert.False(Place(shown, "objective:other:1").Pointed);
     }
 
@@ -39,13 +39,13 @@ public class ObjectiveFocusTests
         var layout = MapRenderer.Layout(camera, scene, 1);
         var shown = layout.Markers;
 
-        // Both places of the objective: the pointed-at size, their names bold, and the pulse.
+        // Both places of the objective: their names bold and the pulse, at their rest size (owner, 2026-10-05: "Go for F").
         foreach (var id in new[] { "objective:plant:1", "objective:plant:2" })
         {
             var place = Place(shown, id);
             Assert.True(place.Pointed);
             Assert.True(place.Selected);
-            Assert.Equal(12, place.R);
+            Assert.Equal(10, place.R);
             Assert.True(layout.Labels.Single(l => l.Of == place).Bold);
         }
 
@@ -110,7 +110,7 @@ public class ObjectiveFocusTests
     }
 
     [Fact]
-    public void While_the_highlight_fades_out_the_objectives_places_keep_their_size()
+    public void While_the_highlight_fades_out_the_objectives_places_keep_their_emphasis_and_every_symbol_its_size()
     {
         var (camera, scene) = Streets();
         scene.Focus = new HashSet<string> { "a" };
@@ -121,7 +121,8 @@ public class ObjectiveFocusTests
         scene.FocusObjective = null;
         scene.Dim = 0.5f;
         var shown = MapRenderer.Layout(camera, scene, 1).Markers;
-        Assert.Equal(12, Place(shown, "objective:plant:1").R);
+        Assert.True(Place(shown, "objective:plant:1").Selected);
+        Assert.Equal(10, Place(shown, "objective:plant:1").R);
         Assert.Equal(10, Place(shown, "objective:find:1").R);
         Assert.False(scene.Pulsing);
         // Faded out: everything at rest.

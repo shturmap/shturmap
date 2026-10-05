@@ -99,6 +99,8 @@ public static partial class MapRenderer
         // The extracts on the player's list this raid are lit, under every symbol, so a glow never covers one.
         foreach (var marker in layout.Markers.Where(m => m.Listed))
             DrawListedGlow(canvas, marker);
+        DrawUnderlay(canvas, scene, layout.Markers, uiScale);
+        void Draw(ShownMarker marker) => DrawMarker(canvas, scene, marker, uiScale);
 
         // Markers outside the focus step back while something is highlighted (easing with the scene's Dim), each kind
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
@@ -118,10 +120,10 @@ public static partial class MapRenderer
         {
             using var layer = new StepBackLayer(canvas, group.Key.Alpha, group.Key.Saturation, dim);
             foreach (var marker in group.OrderByDescending(LabelRank))
-                DrawMarker(canvas, scene, marker, uiScale);
+                Draw(marker);
         }
         foreach (var marker in layout.Markers.Where(m => !m.Focused && IsPick(scene, m)))
-            DrawMarker(canvas, scene, marker, uiScale);
+            Draw(marker);
         foreach (var group in layout.Labels.Where(l => !l.Of.Focused).GroupBy(l => Measure(l.Of).LabelAlpha))
         {
             using var layer = new StepBackLayer(canvas, group.Key, 1, dim);
@@ -129,7 +131,7 @@ public static partial class MapRenderer
                 DrawLabel(canvas, label);
         }
         foreach (var marker in layout.Markers.Where(m => m.Focused))
-            DrawMarker(canvas, scene, marker, uiScale);
+            Draw(marker);
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
             DrawLabel(canvas, label);
         DrawGuidePlate(canvas, layout.Guide, uiScale);
@@ -253,6 +255,13 @@ public static partial class MapRenderer
 
         /// <summary>An extract on the player's list this raid (<see cref="MapScene.ExitsListed"/>): lit.</summary>
         public bool Listed { get; init; }
+
+        /// <summary>Its true place, while it stands on an opened stack's ring (<see cref="MapScene.FanAt"/>): a hairline
+        /// joins the two.</summary>
+        public SKPoint? Home { get; init; }
+
+        /// <summary>The middle of the opened stack it stands in (the place of the symbol the pointer rested on).</summary>
+        public SKPoint FanHub { get; init; }
 
         /// <summary>A listed extract the game marked "??:??:??" (<see cref="MapScene.ExitsUnsure"/>): a "?" at its corner.</summary>
         public bool Unsure { get; init; }
@@ -589,12 +598,80 @@ public static partial class MapRenderer
         // the drawing order below: which of two goes left must not turn on what is pointed at.
         result.Sort((a, b) => a.Index.CompareTo(b.Index));
         var places = SideBySide(result.Select(r => (r.Shown.At, RestHalf(r.Shown.Marker, ui), RestRank(r.Shown.Marker.Kind))).ToList(), MarkerCollar * ui);
-        return result
+        var list = result
             .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with { At = places[i], Beside = true }))
             .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
             .ThenBy(r => r.Index)
             .Select(r => r.Shown)
             .ToList();
+        if (scene.FanAt is { } fan)
+            FanOut(list, fan, scene.FanProgress, ui);
+        return list;
+    }
+
+    // A symbol's body, without the pick's ring: what a neighbour must keep clear of.
+    private static float Body(ShownMarker m, float ui) => m.Reach - 1 * ui - (m.Kept ? 7.5f * ui : 0);
+
+    // The symbols that touch one: the stack an opened fan stands on its ring.
+    private static List<int> StackOf(IReadOnlyList<ShownMarker> list, int f, float ui) =>
+        Enumerable.Range(0, list.Count).Where(i => SKPoint.Distance(list[i].At, list[f].At) < list[f].Reach + Body(list[i], ui)).ToList();
+
+    /// <summary>
+    /// Whether resting the pointer on this marker opens its stack: another symbol lies well over it, centres closer
+    /// than 60 % of their bodies together, so one of them is mostly hidden. Symbols that only touch can each be
+    /// pointed at as they are, and their cards open as ever.
+    /// </summary>
+    public static bool Stacked(IReadOnlyList<ShownMarker> markers, string markerId, float ui)
+    {
+        var list = markers.ToList();
+        var f = list.FindIndex(m => m.Marker.Id == markerId && m.Home is null);
+        return f >= 0 && list.Where((m, i) => i != f && m.Home is null)
+            .Any(m => SKPoint.Distance(m.At, list[f].At) < 0.6f * (Body(m, ui) + Body(list[f], ui)));
+    }
+
+    /// <summary>The opened stack's plate, where the pointer keeps it open: its middle and radius; null with none.</summary>
+    public static (SKPoint Hub, float Radius)? FanPlate(IReadOnlyList<ShownMarker> markers, float ui)
+    {
+        var moved = markers.Where(m => m.Home is not null).ToList();
+        if (moved.Count == 0)
+            return null;
+        var hub = moved[0].FanHub;
+        return (hub, moved.Max(m => SKPoint.Distance(m.At, hub) + m.Reach) + 3 * ui);
+    }
+
+    // The symbols that touch the one the pointer rests on, and it, stand on a ring around its place, each joined to its
+    // own place by a hairline (owner, 2026-10-05, from the overlap panel: "Go for F"). They go out along the ring as
+    // the stack opens (progress 0 to 1, eased out).
+    private static void FanOut(List<ShownMarker> list, string fanAt, float progress, float ui)
+    {
+        var f = list.FindIndex(m => m.Marker.Id == fanAt);
+        if (f < 0)
+            return;
+        var hub = list[f].At;
+        // Round the ring in the order the symbols' own places lie around the hub, from the first of them, so the
+        // hairlines don't cross; one at the hub itself goes last.
+        float? AngleOf(int i) => (list[i].At - hub).Length < 0.5f ? null : MathF.Atan2(list[i].At.Y - hub.Y, list[i].At.X - hub.X);
+        var stack = StackOf(list, f, ui).OrderBy(i => AngleOf(i) ?? float.MaxValue).ToList();
+        if (stack.Count < 2)
+            return;
+        var widest = stack.Max(i => list[i].Reach);
+        var gap = MarkerCollar * ui;
+        var radius = Math.Max(widest * 1.7f + gap, stack.Count * (2 * widest + gap) / (2 * MathF.PI));
+        var start = AngleOf(stack[0]) ?? -MathF.PI / 2;
+        var eased = 1 - MathF.Pow(1 - Math.Clamp(progress, 0, 1), 3);
+        for (var k = 0; k < stack.Count; k++)
+        {
+            var angle = start + k * 2 * MathF.PI / stack.Count;
+            var i = stack[k];
+            var home = list[i].At;
+            var ring = new SKPoint(hub.X + radius * MathF.Cos(angle), hub.Y + radius * MathF.Sin(angle));
+            list[i] = list[i] with
+            {
+                At = new SKPoint(home.X + (ring.X - home.X) * eased, home.Y + (ring.Y - home.Y) * eased),
+                Home = home,
+                FanHub = hub,
+            };
+        }
     }
 
     // Single linkage: items closer than the test (directly or through others) end up in one cluster.
@@ -702,18 +779,20 @@ public static partial class MapRenderer
         // belong to no objective and keep the pointed-at look (at rest they wouldn't show from far out at all).
         var pointed = IsPointed(scene, marker);
         var selected = !done && (IsSelected(scene, marker) || (marker.Objective is null ? focused : pointed));
-        // Picked quests' markers are drawn in their own colour and larger than anything pointed at.
+        // Picked quests' markers are drawn in their own colour, with a ring.
         var kept = marker.Objective is not null && !done && IsSelected(scene, marker);
         // A lock a picked quest needs the key of is part of the pick: the picks' colour, without their ring.
         var color = kept ? PickColor(scene, marker.Group) : IsKeptKey(scene, marker) ? PickColor(scene, scene.PickOfKey(marker.Group!)) : ColorOf(marker.Kind);
         // Quest markers carry a type glyph, so they are drawn largest. Extracts and transits (level 2) are as large as
-        // the boss octagon (level 3): a 15 px triangle or diamond.
+        // the boss octagon (level 3): a 15 px triangle or diamond. Every symbol keeps its size when picked or pointed
+        // at; its colour, ring and pulse say it (owner, 2026-10-05, from the overlap panel: "Go for F"). Until then a
+        // pick grew to 14 px and anything pointed at by a fifth, over neighbours set apart for their rest size.
         var r = marker switch
         {
-            { Objective: not null } => kept ? 14f : selected ? 12f : 10f,
-            { Kind: MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit } => selected ? 9.5f : 7.5f,
-            { Kind: MarkerKind.Lock or MarkerKind.Switch } => selected ? 7.5f : 5.5f,
-            _ => selected ? 8f : 6f,
+            { Objective: not null } => 10f,
+            { Kind: MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared or MarkerKind.Transit } => 7.5f,
+            { Kind: MarkerKind.Lock or MarkerKind.Switch } => 5.5f,
+            _ => 6f,
         } * ui;
         var reach = marker.Kind switch
         {
@@ -1573,6 +1652,45 @@ public static partial class MapRenderer
         canvas.DrawCircle(m.At, radius, paint);
     }
 
+    // What lies under every symbol (owner, 2026-10-05, from the overlap panel: "Go for F"): a pick's ring and a
+    // pointed-at symbol's pulse, around symbols that keep their rest size, so neither covers a neighbour; and where a
+    // stack stands opened, its dark plate and the hairlines from each symbol to its own place.
+    private static void DrawUnderlay(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui)
+    {
+        foreach (var m in markers.Where(m => m.Kept))
+            DrawPickRing(canvas, m, ui);
+        foreach (var m in markers.Where(m => m.Pointed && scene.Pulsing))
+            DrawPulse(canvas, scene, m.At, m.R, m.Color, ui);
+        if (FanPlate(markers, ui) is not { } plate)
+            return;
+        using (var ground = new SKPaint { Color = Background.WithAlpha((byte)(190 * Math.Clamp(scene.FanProgress, 0, 1))), IsAntialias = true })
+        using (var edge = new SKPaint { Color = Palette.Sk(Palette.LineStrong), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui })
+        {
+            canvas.DrawCircle(plate.Hub, plate.Radius, ground);
+            canvas.DrawCircle(plate.Hub, plate.Radius, edge);
+        }
+        foreach (var m in markers.Where(m => m.Home is not null))
+        {
+            using var under = new SKPaint { Color = Background.WithAlpha(170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui, StrokeCap = SKStrokeCap.Round };
+            using var line = new SKPaint { Color = m.Color.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.3f * ui, StrokeCap = SKStrokeCap.Round };
+            using var dot = new SKPaint { Color = m.Color, IsAntialias = true };
+            canvas.DrawLine(m.Home!.Value, m.At, under);
+            canvas.DrawLine(m.Home!.Value, m.At, line);
+            canvas.DrawCircle(m.Home!.Value, 2.4f * ui, under);
+            canvas.DrawCircle(m.Home!.Value, 2.2f * ui, dot);
+        }
+    }
+
+    // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band, then the colour, so it
+    // reads on light and dark artwork alike.
+    private static void DrawPickRing(SKCanvas canvas, ShownMarker m, float ui)
+    {
+        using var band = new SKPaint { Color = Background.WithAlpha(200), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4.5f * ui };
+        using var halo = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui };
+        canvas.DrawCircle(m.At, m.R + 5 * ui, band);
+        canvas.DrawCircle(m.At, m.R + 5 * ui, halo);
+    }
+
     private static SKPath Triangle(SKPoint at, float r) =>
         Polygon(new(at.X, at.Y - r * 1.2f), new(at.X + r * 1.1f, at.Y + r * 0.8f), new(at.X - r * 1.1f, at.Y + r * 0.8f));
 
@@ -1582,21 +1700,9 @@ public static partial class MapRenderer
     private static void DrawMarker(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui)
     {
         var (marker, at, r, color) = (shown.Marker, shown.At, shown.R, shown.Color);
-        var kept = shown.Kept;
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
-
-        if (scene.Pulsing && shown.Pointed)
-            DrawPulse(canvas, scene, at, r, color, ui);
-        // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band,
-        // then the colour, so it reads on light and dark artwork alike.
-        if (kept)
-        {
-            using var band = new SKPaint { Color = Background.WithAlpha(200), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4.5f * ui };
-            using var halo = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f * ui };
-            canvas.DrawCircle(at, r + 5 * ui, band);
-            canvas.DrawCircle(at, r + 5 * ui, halo);
-        }
+        // A pick's ring and a pointed-at symbol's pulse lie under every symbol (DrawUnderlay).
 
         switch (marker.Kind)
         {

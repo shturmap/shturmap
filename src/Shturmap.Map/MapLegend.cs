@@ -175,7 +175,11 @@ public static partial class MapRenderer
         void Marker(MapMarker marker, float scale = 1, Func<ShownMarker, ShownMarker>? change = null)
         {
             var shown = Show(camera, scene, marker, ui * scale);
-            DrawMarker(canvas, scene, change?.Invoke(shown) ?? shown, ui * scale);
+            shown = change?.Invoke(shown) ?? shown;
+            // A pick's ring lies under the symbols on the map (DrawUnderlay); here it is the one symbol.
+            if (shown.Kept)
+                DrawPickRing(canvas, shown, ui * scale);
+            DrawMarker(canvas, scene, shown, ui * scale);
         }
 
         switch (symbol)
@@ -200,7 +204,7 @@ public static partial class MapRenderer
             }
             case LegendSymbol.KeptQuest:
                 scene.Kept = new HashSet<string> { "legend" };
-                Marker(Quest(MarkerKind.Objective), 0.7f);
+                Marker(Quest(MarkerKind.Objective), 0.85f);
                 break;
             case LegendSymbol.KeptLock:
                 // The door of a key a picked quest needs: the lock's group is the key's, which the quest names.

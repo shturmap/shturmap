@@ -62,7 +62,7 @@ public class PickTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void A_pick_is_never_covered_by_another_quests_marker(bool inRaid)
+    public void A_pick_keeps_its_size_and_its_ring_lies_under_its_neighbours(bool inRaid)
     {
         var (camera, scene) = Of([
             new MapMarker("extract:e", MarkerKind.ExtractPmc, new WorldPoint(-200, 0, 0), "Exit"),
@@ -74,16 +74,19 @@ public class PickTests
         using var bitmap = new SkiaSharp.SKBitmap(new SkiaSharp.SKImageInfo(1000, 1000, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul));
         using var canvas = new SkiaSharp.SKCanvas(bitmap);
         MapRenderer.Render(canvas, camera, scene);
-        // The two stand side by side (two quests' places that would cover each other, SideBySide), and the pick is
-        // the larger: its ring runs across the other quest's disc. There it is the pick's cyan, not the other's gold.
+        // The two stand side by side (two quests' places that would cover each other, SideBySide). The pick keeps its
+        // rest size, and its ring, which reaches into the other quest's disc, lies under it: there the disc is the
+        // other's gold, whole (owner, 2026-10-05, from the overlap panel: "Go for F"; until then the pick grew to 14 px
+        // and its ring ran over the neighbour).
         var markers = MapRenderer.Layout(camera, scene, 1).Markers;
         var (pick, other) = (markers.Single(m => m.Kept), markers.Single(m => m.Marker.Group == "b"));
-        var onRing = new SkiaSharp.SKPoint(pick.At.X + pick.R + 5, pick.At.Y);
-        Assert.True(SkiaSharp.SKPoint.Distance(onRing, other.At) < other.R - 2, "the pick's ring doesn't cross the other disc");
+        Assert.Equal(10, pick.R);
+        var onRing = new SkiaSharp.SKPoint(pick.At.X + pick.R + 6, pick.At.Y);
+        Assert.True(SkiaSharp.SKPoint.Distance(onRing, other.At) < other.R - 2, "the pick's ring doesn't reach the other disc");
         var pixel = bitmap.GetPixel((int)onRing.X, (int)onRing.Y);
-        var cyan = MapRenderer.Kept;
-        Assert.True(Math.Abs(pixel.Red - cyan.Red) <= 3 && Math.Abs(pixel.Green - cyan.Green) <= 3 && Math.Abs(pixel.Blue - cyan.Blue) <= 3,
-            $"{pixel} where the pick ({cyan}) and the other quest's marker overlap");
+        var gold = Palette.Sk(Palette.Amber);
+        Assert.True(Math.Abs(pixel.Red - gold.Red) <= 3 && Math.Abs(pixel.Green - gold.Green) <= 3 && Math.Abs(pixel.Blue - gold.Blue) <= 3,
+            $"{pixel} where the pick's ring meets the other quest's disc ({gold})");
     }
 
     [Fact]
@@ -123,11 +126,11 @@ public class PickTests
         Assert.DoesNotContain(layout.Labels, l => l.Of == done);
         Assert.Equal(300, layout.Guide!.Metres, 3);
 
-        // Pointed at, it is still no bigger and still unnamed.
+        // Pointed at, it is still unnamed; nothing grows when pointed at.
         scene.Kept = new HashSet<string>();
         scene.Focus = new HashSet<string> { "a" };
         var pointed = MapRenderer.Layout(camera, scene, 1);
         Assert.Equal(10, pointed.Markers.Single(m => m.Marker.Kind == MarkerKind.ObjectiveDone).R);
-        Assert.Equal(12, pointed.Markers.Single(m => m.Marker.Kind == MarkerKind.Objective).R);
+        Assert.Equal(10, pointed.Markers.Single(m => m.Marker.Kind == MarkerKind.Objective).R);
     }
 }
