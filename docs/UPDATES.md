@@ -8,8 +8,8 @@ What it prints stays here: no quest texts, logs, screenshots or dumps go into th
 ## When
 
 - **tarkov.dev's data changed**: new quests or items, an event, a wipe. At the latest before each release.
-- **The game was patched**: the log folders' names carry the build (`log_2026.01.01_…_1.1.5.1.47510`); a new
-  number means a new build.
+- **The game was patched**: the log folders' names carry the build (`log_2026.01.01_…_1.1.5.1.47510`). The dev build
+  says it once: "Game build … is new: time for the checks after a patch".
 - **A player reports** something missing or wrong on a map or a card.
 
 ## 1. Refresh the data (2 min)

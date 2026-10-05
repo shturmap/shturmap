@@ -88,6 +88,34 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>The key of the study-log switch in the app's settings ("on" or "off"; absent is on in a dev build).</summary>
     public const string StudySetting = "studyLog";
 
+    /// <summary>
+    /// Whether to watch the game's build in its log folders and say when a newer one comes, for the checks after a
+    /// patch (docs/UPDATES.md; owner, 2026-10-05). Developer builds only; off in snapshot and fake-game runs, whose
+    /// logs are made up.
+    /// </summary>
+    public bool NoticeGameBuilds { get; set; }
+
+    /// <summary>The key of the newest game build seen in the logs, in the app's settings.</summary>
+    public const string GameBuildSetting = "gameBuild";
+
+    private string? _buildSession;
+
+    // A log session of a game build newer than any seen before, live or read back at start: the game was patched, and
+    // the checks after a patch are due. Said once; the first build ever seen is only kept.
+    private void SeeGameBuild(string? session)
+    {
+        _buildSession = session;
+        var before = _store?.GetSetting(GameBuildSetting);
+        var (keep, notice) = GameBuild.Seen(GameBuild.Of(session), before);
+        if (keep is null || _store is null)
+            return;
+        _store.SetSetting(GameBuildSetting, keep);
+        AppLog.Info(before is null ? $"Game build {keep}" : $"Game build {keep}, newer than {before}: the checks after a patch are due");
+        Study.Game("game.build", ("build", keep), ("before", before));
+        if (notice)
+            Say($"Game build {keep} is new: time for the checks after a patch (docs/UPDATES.md)", 20);
+    }
+
     /// <summary>The override a command line asks for: snapshot and fake-game runs never keep one, <c>--study</c> does.</summary>
     public static bool? StudyOverrideFor(IReadOnlyCollection<string> cli) =>
         cli.Contains("--snapshot") || cli.Contains("--fake-game") ? false : cli.Contains("--study") ? true : null;
@@ -1164,6 +1192,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private void Apply(LogEvent item)
     {
         _replaying = item.IsReplay;
+#if DEVTOOLS
+        if (NoticeGameBuilds && !string.Equals(item.Session, _buildSession, StringComparison.OrdinalIgnoreCase))
+            SeeGameBuild(item.Session);
+#endif
         // The game has started again (a newer log session) while a raid of the session before was still open: its end
         // never reached the log. It is closed at what that session last said, not at this session's login line, which
         // would make it a raid as long as the game was closed.

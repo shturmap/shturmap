@@ -1,0 +1,45 @@
+# Build and test every push (owner, 2026-10-05; docs/DESIGN.md §8, "Continuous integration"). Windows, since the app,
+# the game reader, the session and the CLI build for Windows only. Tests that need what only the owner's PC has (the
+# tarkov.dev cache, the game's logs, real screenshots, a Release build, the website beside the repository) skip here.
+# The repository is public, and so are this workflow's logs: nothing here prints quest texts, logs or secrets.
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v4
+        with:
+          path: ~\.nuget\packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # The same wrapper as on the developer's PC (CLAUDE.md); it takes the SDK setup-dotnet put in DOTNET_ROOT.
+      - name: Build
+        shell: pwsh
+        run: .\eng\dotnet.ps1 build Shturmap.slnx
+
+      - name: Test
+        shell: pwsh
+        run: .\eng\dotnet.ps1 test --solution Shturmap.slnx --no-build

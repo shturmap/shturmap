@@ -93,14 +93,15 @@ internal sealed class SessionRig : IAsyncDisposable
         CheckedAt = DateTimeOffset.Now,
     };
 
-    /// <summary>A new log session folder, as the game makes one each time it starts; lines go there from now on.</summary>
-    public void NewLogSession(DateTime started)
+    /// <summary>A new log session folder, as the game makes one each time it starts (of this build, or the rig's); lines go
+    /// there from now on.</summary>
+    public void NewLogSession(DateTime started, string build = Build)
     {
         var stamp = started.ToString("yyyy.MM.dd_HH-mm-ss", CultureInfo.InvariantCulture);
-        var folder = Path.Combine(_root, "Logs", $"log_{stamp}_{Build}");
+        var folder = Path.Combine(_root, "Logs", $"log_{stamp}_{build}");
         Directory.CreateDirectory(folder);
-        _log = Path.Combine(folder, $"{stamp}_{Build} application_000.log");
-        _pushLog = Path.Combine(folder, $"{stamp}_{Build} push-notifications_000.log");
+        _log = Path.Combine(folder, $"{stamp}_{build} application_000.log");
+        _pushLog = Path.Combine(folder, $"{stamp}_{build} push-notifications_000.log");
     }
 
     private string _pushLog = "";

@@ -1932,6 +1932,20 @@ committing app changes (CLAUDE.md).
   the owner can check whether a change is live and what changed lately ("No changelog in this build" without it).
 - **Reports.** None by default (no DSN). `eng\dev.ps1 -WithReports` builds the DSN in; its reports carry the Sentry
   environment "dev" (`ReportEnvelopes.EnvironmentOf`), so they can be filtered apart.
+- **A new game build** (owner, 2026-10-05: the patch notice). The game's log folders carry its build
+  ("log_2026.01.01_15-00-00_1.1.5.1.47510"). A developer build keeps the newest it has seen (`gameBuild` in its
+  settings), and when the logs come from a newer one, live or read back at start, it says once, for 20 s, "Game build
+  1.1.6.0.48001 is new: time for the checks after a patch (docs/UPDATES.md)", with a line in the app log and
+  `game.build` in the study log (`GameBuild`, `GameSession.NoticeGameBuilds`). The first build ever seen is only kept;
+  an older one (a test server's install) is no news; snapshot and fake-game runs leave it alone. A release has none
+  of it: the checks are the developer's.
+
+**Continuous integration** (owner, 2026-10-05). Every push builds the solution in Debug (so the developer tools
+compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/ci.yml`), with the same
+`eng\dotnet.ps1` as on the PC and the SDK global.json names. Tests that need the owner's PC skip there: the tarkov.dev
+cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
+public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
+mail. The daily data check is designed in docs/NEXT.md, not built yet.
 - **The icon.** `brand\build.cs` makes `Shturmap-dev.ico`: the same mark, only recoloured, on the app's "kept" cyan
   (#3FD2E0) plate with the Ш in the plate's dark. `Logo.Dev` picks the variant; `.\eng\dotnet.ps1 run brand\build.cs
   -- dev-panel <png>` draws all three candidates beside the release icon (a cyan plate, a cyan band across the foot,

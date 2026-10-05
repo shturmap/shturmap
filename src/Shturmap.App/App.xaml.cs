@@ -172,6 +172,8 @@ public partial class App : Application
         // The study log (developer builds only, owner 2026-10-03) follows the switch in settings; "--study" keeps it for
         // one session; snapshot and fake-game runs stay out of it.
         _session.StudyOverride = GameSession.StudyOverrideFor(cli);
+        // A newer game build says the checks after a patch are due (docs/UPDATES.md); a made-up log has no news.
+        _session.NoticeGameBuilds = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
 #endif
         // The window comes back where the player left it (owner, 2026-10-04). Snapshots, the demo and a given size
         // place it themselves and remember nothing.

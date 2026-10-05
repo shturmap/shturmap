@@ -6,6 +6,81 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## Designed 2026-10-05, to build later: the daily data check
+
+The owner asked for "something … through github automations that regularly checks if new content is out and if we
+need to update the app", chose daily and an issue, and said: "The schedule should only be designed now and added to
+NEXT.md, we will do this later". Built the same day: CI on every push and the dev build's notice of a new game build
+(DESIGN.md §8, "Developer aids" and "Continuous integration"). This is the rest.
+
+**What it does.** Once a day a GitHub Actions run on a Windows runner refreshes tarkov.dev's data and runs what
+docs/UPDATES.md steps 1–3 run by hand: the five audits in both modes and the tests that read the data. It compares the
+result with the previous run's. When something changed that the rules may not cover, or something broke, it opens one
+GitHub issue, or comments on the one still open. It can't see game patches (logs and screenshots are on the owner's PC):
+the dev build's notice covers those, with UPDATES.md step 4.
+
+**`.github/workflows/data-check.yml`**
+- `on: schedule` at `17 4 * * *` (04:17 UTC, 06:17 CEST; off the full hour, when GitHub's scheduler is busiest), and `workflow_dispatch` for a run by hand. Never on pushes or pull requests: a fork's pull request must
+  not reach the data cache or a token that can write issues.
+- `runs-on: windows-latest`, `timeout-minutes: 30`, `permissions: contents: read, issues: write`.
+- Steps:
+  1. Checkout, setup-dotnet from global.json, the NuGet cache (as in ci.yml).
+  2. Restore the tarkov.dev cache with `actions/cache` (key `tarkov-dev-<run id>`, restore keys `tarkov-dev-`) into
+     `%LOCALAPPDATA%\Shturmap\cache\tarkov-dev`, so unchanged files are asked for with their ETags.
+  3. Build (Debug).
+  4. `shturmap-cli check --out check.json`: refresh `pve`, `regular` and `pve de`, run the audits in process, write
+     the summary below and print it in the safe form.
+  5. The tests, against the fresh cache: the cache-reading tests run here; their results go into the summary.
+  6. Restore the last summary (`actions/cache`, key `data-check-<run id>`, restore keys `data-check-`) and run
+     `shturmap-cli check --compare last.json check.json --issue issue.md`, which writes the issue's text and says
+     whether to report.
+  7. To report: with `gh`, comment on the open issue labelled `data-check`, or open one. If an earlier step failed
+     (the build, a download), report that instead, once ("Data check didn't run: …").
+  8. Save `check.json` as the next run's "last".
+
+**The summary (`check.json`).** Per mode:
+- Counts: quests, objectives, maps, extracts, transits, traders, items the quests name.
+- A fingerprint per quest: a hash over its objectives' ids, types, item and quest-item ids, maps, counts,
+  found-in-raid and optional. Per map: its extracts' and transits' ids and names, and its bosses' ids. No prices and
+  no texts, so the flea market's prices and new translations don't count as changes.
+- The audits' flags, each as audit, kind and the quest's or item's name (FALLBACK, LONG, BREAK, UNKNOWN TARGET,
+  unknown objective type, UNKNOWN ITEM, LIST, NO EXIT, NEAR, a quest item handed over with no pickup, a spawn marker
+  far from its spawn points), and the totals UPDATES.md's log keeps (effort groups, hand-over folds).
+- The tests: passed, failed, skipped, and the failing tests' names.
+
+**When to report.** New, changed or removed quests, maps, extracts or transits; an objective type or kill target the
+rules don't know; a flag the last run didn't have; a failing test. Nothing when only prices, texts or the order of
+things changed. The first run only keeps its summary.
+
+**The issue.** One open issue at a time, labelled `data-check`, titled like "Data check 2026-10-12: 3 new quests, 2
+flags". Its text: the modes; quests new, changed and gone (names); maps and extracts new, changed and gone; the flags by
+audit with names; failing tests; a link to the run and to docs/UPDATES.md ("run the audits on the PC for the
+details"). A later run comments only with what is new against its own last run. The owner closes the issue after
+going through UPDATES.md, which gets a line in its log; it is never closed by itself.
+
+**Public by design.** The repository, its runs' logs and its issues are public. So the check prints and writes
+names and counts only: no quest texts, objective descriptions or synopsis phrases (the audits print those on the PC
+only), no ids beyond the game's own. tarkov.dev's files stay in the Actions cache, never in an artifact, which anyone
+signed in can download from a public repository. No secret beyond the run's own GitHub token.
+
+**Load and cost** (DESIGN.md §3: count before downloading more). One more client, once a day: about 15 requests
+(tasks, maps, traders and item names for two modes, the item sources, barters, crafts and hideout, maps.json, German
+texts). An unchanged file costs a "not modified" of a few hundred bytes; the item sources change every few minutes
+with the flea market's prices, so about 2–3 MB a day. Nothing per player. GitHub's Windows runners are free for public
+repositories; about 10 minutes a day.
+
+**To build.**
+1. `shturmap-cli check [--out <file>] [--compare <last> <now> --issue <file>]`, in the CLI, with the audits moved
+   into functions that return their flags instead of printing them; tests on made-up data for the comparison (what
+   counts as a change, what doesn't, the first run).
+2. `.github/workflows/data-check.yml` as above, and the `data-check` label.
+3. DESIGN.md §8 ("Continuous integration") and docs/UPDATES.md ("When") say it.
+4. Two runs by hand (`workflow_dispatch`) on the current data: the first keeps its summary without an issue, the
+   second finds nothing new and reports nothing.
+
+**Open for the owner:** should a clean run close an open issue by itself (proposed: no, the owner closes it after the
+checks)?
+
 ## 2026-10-05: the raid's time as a readout, and the extract list from a screenshot
 
 Built on the owner's word (DESIGN.md §2, "One corner of a screenshot's picture is read", and §4, "Screen anatomy" and
