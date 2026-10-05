@@ -809,7 +809,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the way out's colour, or "ON YOUR LIST · ??? IN GAME" for one the game marks "??:??:??". Under the
     direction, a small gold "ALL 15 ↓" brings the whole list of ways out, which stands under the card, to the top of
     the rail (the review of 2026-10-04, H5: with several quests that list is a long way down, and it is the one to
-    read when the nearest exit isn't the player's). In a raid the app gets
+    read when the nearest exit isn't the player's). **OR** (owner, 2026-10-05: "also show the next one you sure is
+    open and where you don't need to bring extra things or do extra things - where you can simply exfil"): under EXIT,
+    a smaller row with the nearest extract the list names without "??:??:??" that takes nothing (no item, money,
+    flare, climbing gear, switch or second player: an empty `ExtractRules.Needs`), "NOTHING NEEDED · ON YOUR LIST", in
+    its kind's colour, with its distance and direction (`Rules.ExitsNote.Plain`). Only once the list was read (nothing
+    is sure to be open before), never a transit, and not where EXIT is that one already. The glance's rows hide with
+    `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
+    stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no

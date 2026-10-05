@@ -44,4 +44,28 @@ public static class ExitsNote
 
     public static string GlanceTip(bool listed, bool unsure, bool readable) =>
         listed ? GlanceListedTip : unsure ? GlanceUnsureTip : readable ? GlanceUncheckedTip : GlanceNoReadingTip;
+
+    /// <summary>
+    /// The nearest way out the player can simply leave by, under EXIT where EXIT isn't it (owner, 2026-10-05: "also
+    /// show the next one you sure is open and where you don't need to bring extra things or do extra things - where you
+    /// can simply exfil"): an extract the game's list names without "??:??:??" that takes nothing (no item, money,
+    /// flare, climbing gear, switch or second player; ExtractRules.Needs). Null while no list was read (nothing is
+    /// sure to be open then), and where EXIT is that one already.
+    /// </summary>
+    /// <param name="exits">The ways out, nearest first: measured from a position, on the list without "???", a transit,
+    /// and what leaving there takes.</param>
+    /// <param name="exit">EXIT's place in that list.</param>
+    public static int? Plain(IReadOnlyList<(bool Measured, bool Listed, bool Transit, string Needs)> exits, int? exit)
+    {
+        for (var i = 0; i < exits.Count; i++)
+        {
+            if (exits[i] is { Measured: true, Listed: true, Transit: false, Needs.Length: 0 })
+                return i == exit ? null : i;
+        }
+        return null;
+    }
+
+    public const string PlainNote = "Nothing needed · on your list";
+
+    public const string PlainTip = "The nearest extract on your list this raid that takes nothing: no item, money, flare, switch or second player.";
 }

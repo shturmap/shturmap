@@ -306,6 +306,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The nearest extract or transit for your side, from the last position.</summary>
     [ObservableProperty] public partial ExtractItem? RaidExit { get; set; }
 
+    /// <summary>Under EXIT: the nearest extract on the list that takes nothing, where EXIT isn't it (Rules.ExitsNote.Plain).</summary>
+    [ObservableProperty] public partial ExtractItem? RaidPlainExit { get; set; }
+
     /// <summary>The picked quests on the raid's map, first in the raid card, nearest first.</summary>
     [ObservableProperty] public partial IReadOnlyList<RaidQuest> RaidPicks { get; set; } = [];
 

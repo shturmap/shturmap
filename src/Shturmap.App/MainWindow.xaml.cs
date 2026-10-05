@@ -192,6 +192,11 @@ public sealed partial class MainWindow : Window
 
     public Brush RaidBrush(bool inRaid) => Resource(inRaid ? "AmberBrush" : "InkBrush");
 
+    // The OR row under EXIT (Rules.ExitsNote.Plain).
+    public string PlainExitNote { get; } = Caps.Of(Rules.ExitsNote.PlainNote);
+
+    public string PlainExitTip => Rules.ExitsNote.PlainTip;
+
     /// <summary>The keys in the help panel.</summary>
     public IReadOnlyList<KeyHelp> Keys { get; } =
     [
@@ -799,6 +804,12 @@ public sealed partial class MainWindow : Window
         // The nearest way out; once the game's list was read, the nearest one on it (or a transit), never one it left out.
         vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0 && e.State != ExitState.NotListed) ?? vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
         vm.AllExitsText = vm.RaidExit is not null && vm.Extracts.Count > 1 ? $"ALL {vm.Extracts.Count} ↓" : "";
+        // Under it, where EXIT takes something or isn't sure: the nearest one on the list that takes nothing (owner,
+        // 2026-10-05: "where you can simply exfil").
+        var plain = Rules.ExitsNote.Plain(
+            vm.Extracts.Select(e => (e.Distance.Length > 0, e.State == ExitState.Listed, e.Marker == MarkerKind.Transit, e.Needs)).ToList(),
+            vm.RaidExit is null ? null : vm.Extracts.ToList().IndexOf(vm.RaidExit));
+        vm.RaidPlainExit = plain is { } p ? vm.Extracts[p] : null;
 
         vm.Hint = s.Data is null ? "Loading quests and maps…"
             : vm.NoGameLogs ? "" // the no-game line says why there is nothing to plan
