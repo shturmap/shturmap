@@ -621,7 +621,11 @@ Markers on another floor than the one shown are drawn at full strength, highligh
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
 with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
-down alone didn't say how far; cartography review, 2026-10-02). A marker's badges wear the marker's own colour: the
+down alone didn't say how far; cartography review, 2026-10-02). A floor without artwork of its own isn't in that list
+(Customs' 4th floor in the oil rig, drawn in the base layer); a place on it counts by its building's floors in height
+order (`FloorResolver.Ladder`), so it reads "▲ 2" from the 2nd floor (owner, 2026-10-05: the first WI-FI camera of
+Provide Viewership, 14 m up, said "7 M UP" in the raid card and showed a down arrow: counted as the ground it is drawn
+in). A marker's badges wear the marker's own colour: the
 floor badge like the count and "OPT" (the review of 2026-10-04: it was the player's sand, which says "you"). Badge places are fixed: the floor at the upper
 right, a cluster's count at the lower right, an optional objective's "OPT" at the upper left; beside small symbols
 (Scav and sniper zones, bosses) the floor badge moves out so the symbol stays visible. Spawn zone markers carry it

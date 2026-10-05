@@ -842,6 +842,13 @@ public static partial class MapRenderer
         if (stack.Count == 0)
             return 0;
         var layer = FloorResolver.LayerFor(scene.Definition, p);
+        // A floor without artwork of its own isn't in the floor list: its building's floors in height order say which
+        // way it is from the floor shown. Customs' 4th floor in the oil rig is drawn in the base layer, and counted as
+        // the ground it read as below the 2nd floor (owner, 2026-10-05: a camera "7m up but the icon showing down").
+        if (layer is not null && !stack.Contains(layer)
+            && FloorResolver.Ladder(scene.Definition, p).ToList() is var ladder
+            && ladder.IndexOf(scene.Floor) is var shown and >= 0 && ladder.IndexOf(layer) is var at and >= 0)
+            return shown - at;
         int IndexOf(MapLayer? l)
         {
             // The same layer object, not the same SvgLayer: maps without artwork have no SvgLayer on any floor.

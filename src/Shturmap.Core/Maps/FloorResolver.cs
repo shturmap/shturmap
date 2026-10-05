@@ -29,6 +29,27 @@ public static class FloorResolver
     }
 
     /// <summary>
+    /// The floors of the building a point stands in, from the top down, the base layer as null: every layer with an
+    /// extent over the point's place, those without artwork of their own too, ordered as <see cref="Stack"/> orders
+    /// floors but by their extents here. For telling which way another floor is (owner, 2026-10-05: on Customs' oil rig
+    /// the first WI-FI camera, at 14 m on the 4th floor, which has no artwork, read as below the 2nd floor shown, since
+    /// a floor drawn in the base layer counted as the ground). Only the base layer when no floor covers the place.
+    /// </summary>
+    public static IReadOnlyList<MapLayer?> Ladder(MapDefinition map, WorldPoint p)
+    {
+        static double Clamp(double v) => Math.Clamp(v, -1000, 1000);
+        return map.Layers
+            .Select(l => (Layer: (MapLayer?)l, Here: l.Extents.Where(e => e.Boxes.Count == 0 || e.Boxes.Any(b => b.Contains(p.X, p.Z))).ToList()))
+            .Where(f => f.Here.Count > 0)
+            .Select(f => (f.Layer, Low: f.Here.Min(e => Clamp(e.Height.Min)), High: f.Here.Max(e => Clamp(e.Height.Max))))
+            .Append((Layer: null, Low: Clamp(map.BaseHeight.Min), High: Clamp(map.BaseHeight.Max)))
+            .OrderByDescending(f => f.Low)
+            .ThenByDescending(f => f.High)
+            .Select(f => f.Layer)
+            .ToList();
+    }
+
+    /// <summary>
     /// The map's floors that have artwork of their own, from the top down, the base layer as null ("Ground").
     /// Ordered by where each floor's height bands start (open-ended bands count as ±1000 m), then by where they
     /// end, so a basement sharing the base layer's lower bound still sorts below it. Floors without their own
