@@ -41,15 +41,16 @@ public class UpdateTests
     // always that the update is available even though i downloaded and restarted"): the line says what to do, RESTART
     // NOW stays, and a notice says it once.
     [Fact]
-    public void A_version_that_didnt_apply_says_to_close_the_game()
+    public void A_version_that_didnt_apply_says_what_to_close()
     {
-        Assert.Equal(new UpdateDecision(false, false, "Update 0.2.1 didn't apply: close the game, then restart", false, true),
+        Assert.Equal(new UpdateDecision(false, false, "Update 0.2.1 didn't apply: close what Shturmap opened, then restart", false, true),
             UpdatePolicy.Decide(UpdateMode.Automatic, canUpdate: true, inRaid: false, UpdateStage.Ready, "0.2.1", notApplied: true));
         // In a raid it says nothing, as ever.
         Assert.Equal("", UpdatePolicy.Decide(UpdateMode.Automatic, true, inRaid: true, UpdateStage.Ready, "0.2.1", notApplied: true).Line);
         var notice = UpdatePolicy.NotAppliedNotice("0.2.1");
         Assert.StartsWith("Update 0.2.1 couldn't be applied", notice, StringComparison.Ordinal);
-        Assert.Contains("Close the game", notice, StringComparison.Ordinal);
+        Assert.Contains("browser", notice, StringComparison.Ordinal);
+        Assert.DoesNotContain("game", notice, StringComparison.Ordinal);
     }
 
     [Fact]

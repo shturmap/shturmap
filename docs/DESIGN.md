@@ -1876,14 +1876,20 @@ self-unpacking exe, without updates; they need the Setup once.
   **When applying fails** (owner, 2026-10-05: "it tells me always that the update is available even though i
   downloaded and restarted"). Velopack applies a version by moving the install's `current` folder aside, and that
   fails while another program holds one of its files: it tried for 10 s, gave up and started the old version again,
-  without a word (its log, `%LOCALAPPDATA%\velopack\velopack_<id>.log`: "being used by another process"). That day
-  it failed three times in a row while the game ran and never while it was closed: the game's anti-cheat keeps other
-  programs' files open, out of Velopack's sight. Velopack applies a downloaded version before every start (Program),
-  so one still waiting when the app starts is one that couldn't be applied (`Updater.NotApplied`): the app log says so
-  (WARN), a notice says it once, "Update 0.3.1 couldn't be applied: another program, most often the game, kept
-  Shturmap's files open. Close the game, then restart Shturmap.", and the line says "Update 0.3.1 didn't apply:
-  close the game, then restart", with RESTART NOW. Nothing checks whether the game runs (§2): the text names it as the
-  usual cause. Builds the Setup
+  without a word (its log, `%LOCALAPPDATA%\velopack\velopack_<id>.log`: "being used by another process").
+  **The cause that day: a browser Shturmap had started.** Velopack starts the app in the install's `current` folder,
+  and what the app opens inherits its working folder: Firefox, started by a wiki link while it wasn't running, worked
+  in `ShturmapDev\current` (with its crash helper) and held the folder for as long as it ran, so every update failed,
+  with or without the game. No file in the folder was open, which is why Restart Manager named none; the processes'
+  working folders did (read from their PEB). The game and a second Shturmap window were suspected first and ruled out
+  by trying. So the app leaves that folder before its window opens: `Program` sets its working folder to the user's
+  own, which nothing needs to move (`WorkingFolderTests`; every file beside the exe is found from
+  `AppContext.BaseDirectory`). A browser an earlier version started keeps the old folder until it is closed.
+  Velopack applies a downloaded version before every start (Program), so one still waiting when the app starts is
+  one that couldn't be applied (`Updater.NotApplied`): the app log says so (WARN), a notice says it once, "Update
+  0.3.1 couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it,
+  then restart Shturmap.", and the line says "Update 0.3.1 didn't apply: close what Shturmap opened, then restart",
+  with RESTART NOW. Builds the Setup
   didn't install (the folder build, `dotnet run`) and developer runs (snapshots, fake games, the demo) ask nothing;
   help says "Updates: not available in this build". Checks, finds and downloads are logged at INFO; a failure is a
   WARN line and a retry at the next check, never a notice.

@@ -145,12 +145,12 @@ public static class UpdatePolicy
     /// <summary>
     /// Said once at a start that finds a downloaded version still waiting (owner, 2026-10-05: "it tells me always that
     /// the update is available even though i downloaded and restarted"). Velopack applies a downloaded version before
-    /// the app starts, by moving the install's folder aside; while another program holds one of its files that fails,
-    /// and the old version starts again without a word. On 2026-10-05 it failed three times in a row while the game ran
-    /// and never while it was closed: the game's anti-cheat keeps files of other programs open.
+    /// the app starts, by moving the install's folder aside; while another program holds the folder or a file in it
+    /// that fails, and the old version starts again without a word. That day it was a browser Shturmap had opened a
+    /// wiki link in, working in the install's folder (Program now starts the app in the user's folder instead).
     /// </summary>
     public static string NotAppliedNotice(string? version) =>
-        $"Update {version} couldn't be applied: another program, most often the game, kept Shturmap's files open. Close the game, then restart Shturmap.";
+        $"Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.";
 
     /// <summary>
     /// What happens about updates. A build that can't update (not installed by Velopack, or a developer run) does
@@ -170,7 +170,7 @@ public static class UpdatePolicy
         {
             UpdateStage.Found when mode == UpdateMode.TellOnly => $"Shturmap {version} is available",
             UpdateStage.Downloading => $"Downloading Shturmap {version}…",
-            UpdateStage.Ready when notApplied => $"Update {version} didn't apply: close the game, then restart",
+            UpdateStage.Ready when notApplied => $"Update {version} didn't apply: close what Shturmap opened, then restart",
             UpdateStage.Ready => $"Update {version} ready: applies at next start",
             _ => "",
         };

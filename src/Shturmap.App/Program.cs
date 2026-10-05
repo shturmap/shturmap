@@ -16,6 +16,13 @@ public static class Program
         VelopackApp.Build()
             .OnBeforeUninstallFastCallback(_ => Updater.DeleteDataIfAsked())
             .Run();
+        // Velopack starts the app in the install's current folder, and whatever the app opens (the browser for a wiki
+        // link, Explorer for a folder, an editor for privacy.txt) inherits its working folder. A browser started that
+        // way held the folder for as long as it ran, Velopack couldn't move it aside to apply an update, and no update
+        // applied (owner, 2026-10-05: "it tells me always that the update is available"; found that day: Firefox
+        // working in ShturmapDev\current). The user's own folder instead, which nothing ever needs to move. Every file
+        // the app reads beside the exe is found from AppContext.BaseDirectory.
+        Environment.CurrentDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         XamlGeneratedProgram.XamlGeneratedMain();
     }
 }
