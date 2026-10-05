@@ -75,6 +75,7 @@ public static class MapContentBuilder
             {
                 var done = doneObjectives.Contains(objective.Id);
                 var kind = QuestTaxonomy.Classify(objective.Type);
+                var optional = Handovers.Optional(quest, objective);
                 var places = new List<WorldPoint>();
 
                 foreach (var zone in objective.Zones ?? [])
@@ -86,7 +87,7 @@ public static class MapContentBuilder
                         continue;
                     places.Add(zone.Position.ToWorld());
                     markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.Objective,
-                        zone.Position.ToWorld(), quest.Name, quest.Id, kind, objective.Optional));
+                        zone.Position.ToWorld(), quest.Name, quest.Id, kind, optional));
                     if (zone.Outline is { Count: >= 3 } outline)
                         zones.Add(new MapZone($"zone:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.Objective,
                             outline.Select(p => p.ToWorld()).ToList(), quest.Id));
@@ -100,7 +101,7 @@ public static class MapContentBuilder
                     {
                         places.Add(position.ToWorld());
                         markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.PossibleLocation,
-                            position.ToWorld(), quest.Name, quest.Id, kind, objective.Optional));
+                            position.ToWorld(), quest.Name, quest.Id, kind, optional));
                     }
                 }
 

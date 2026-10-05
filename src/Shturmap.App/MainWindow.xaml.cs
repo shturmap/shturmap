@@ -850,7 +850,7 @@ public sealed partial class MainWindow : Window
         if (o.Short is { Length: > 0 } few)
         {
             return new ObjectiveItem(o.QuestId, few, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
-                Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey);
+                Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover);
         }
         // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
         // "(optional)" at the end.
@@ -860,7 +860,7 @@ public sealed partial class MainWindow : Window
         var suffix = " on " + mapName;
         var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
-            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey);
+            Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover);
     }
 
     // The map's guide plate says the same (MapRenderer.DistanceText).

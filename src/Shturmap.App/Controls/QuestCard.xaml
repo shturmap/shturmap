@@ -78,7 +78,10 @@
                   <TextBlock Text="{x:Bind Ticked}" Style="{StaticResource StatusText}" FontSize="12" Foreground="{StaticResource MutedBrush}"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Ticked)}" />
                 </StackPanel>
-                <controls:Picture Grid.Column="2" ItemId="{x:Bind ItemId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}" />
+                <!-- What it gets goes to the trader after the raid: a handshake in the cell's corner, where the hand-over's
+                     own row stood (owner, 2026-10-05; Handovers). Pointing at the row opens the item's card, which says it. -->
+                <controls:Picture Grid.Column="2" ItemId="{x:Bind ItemId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}"
+                                  Handover="{x:Bind controls:QuestCard.Has(Handover)}" />
                 <!-- The one thing the player may tell Shturmap about progress: this objective is done. Never asked for. -->
                 <controls:TickBox Grid.Column="3" ObjectiveId="{x:Bind ObjectiveId}" Ticked="{x:Bind Done}"
                                   Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Tickable)}" />

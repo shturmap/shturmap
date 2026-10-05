@@ -54,6 +54,9 @@ switch (command)
     case "bring":
         await Bring(args.ElementAtOrDefault(1) ?? "pve");
         break;
+    case "handovers":
+        await HandoversAudit(args.ElementAtOrDefault(1) ?? "pve");
+        break;
 #if DEVTOOLS
     case "study":
         Study(args.ElementAtOrDefault(1));
@@ -75,6 +78,7 @@ switch (command)
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
             shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
+            shturmap-cli handovers [mode]    which hand-overs fold into the objective that gets their thing, with near misses flagged
             shturmap-cli study [on|off]      developer builds: show or set the "Keep a study log" switch (Shturmap closed)
 
             --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
@@ -170,6 +174,56 @@ static async Task Effort(string mode)
     Console.WriteLine($"{rows} rows: " + string.Join(", ", groups.OrderBy(g => g.Key).Select(g => $"{Shturmap.Core.Planning.QuestEffort.Label(g.Key)} {g.Value}")));
     Console.WriteLine($"Unknown kill targets: {(unknownTargets.Count == 0 ? "none" : string.Join(", ", unknownTargets))}");
     Console.WriteLine($"Unknown objective types: {(unknownTypes.Count == 0 ? "none" : string.Join(", ", unknownTypes.Select(t => t ?? "(none)")))}");
+}
+
+// The audit of hand-overs after a tarkov.dev update (Handovers; docs/DESIGN.md, "Quest cards", *Hand-overs*): how many
+// fold into the objective that gets their thing, and what to look at: NEAR (a hand-over that shares items with a find
+// or pickup of its quest but doesn't fold, and why), and the hand-overs of quest items no objective of the quest picks
+// up (normal for a letter from an earlier quest; new ones are worth a look).
+static async Task HandoversAudit(string mode)
+{
+    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
+    var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
+    int folded = 0, ownLines = 0, near = 0;
+    var questItems = new List<string>();
+    foreach (var task in data.Tasks.Values.OrderBy(t => t.Name, StringComparer.Ordinal))
+    {
+        var objectives = task.Objectives ?? [];
+        foreach (var handover in objectives.Where(o => Handovers.IsHandover(o.Type)))
+        {
+            if (Handovers.GetOf(task, handover.Id) is { } get)
+            {
+                folded++;
+                Console.WriteLine($"  FOLDS  {task.Name}: {get.Type} → {handover.Type} ×{Math.Max(1, handover.Count ?? 1)}");
+                continue;
+            }
+            ownLines++;
+            IReadOnlyList<string> given = handover.QuestItem is { } q ? [q] : handover.Items ?? [];
+            foreach (var other in objectives.Where(o => o.Type is "findItem" or "findQuestItem" && Handovers.HandoverOf(task, o.Id) is null))
+            {
+                IReadOnlyList<string> got = other.QuestItem is { } oq ? [oq] : other.Items ?? [];
+                if (!got.Intersect(given).Any())
+                    continue;
+                near++;
+                var why = new List<string>();
+                if (!got.ToHashSet().SetEquals(given))
+                    why.Add($"items {got.Count} / {given.Count}");
+                if (Math.Max(1, other.Count ?? 1) != Math.Max(1, handover.Count ?? 1))
+                    why.Add($"count {other.Count} / {handover.Count}");
+                if (other.FoundInRaid != handover.FoundInRaid)
+                    why.Add("found in raid differs");
+                if ((other.Type, handover.Type) is not (("findItem", "giveItem") or ("findQuestItem", "giveQuestItem")))
+                    why.Add($"types {other.Type} / {handover.Type}");
+                Console.WriteLine($"  NEAR   {task.Name}: {other.Type} / {handover.Type} [{string.Join(", ", why)}]");
+            }
+            if (handover.Type == "giveQuestItem")
+                questItems.Add($"{task.Name} ({data.ItemName(handover.QuestItem ?? "")})");
+        }
+    }
+    Console.WriteLine();
+    Console.WriteLine($"Hand-overs: {folded} fold into the objective that gets the thing, {ownLines} stay lines of their own; {near} NEAR");
+    Console.WriteLine($"Quest items handed over with no pickup in their quest: {(questItems.Count == 0 ? "none" : string.Join("; ", questItems))}");
 }
 
 #if DEVTOOLS

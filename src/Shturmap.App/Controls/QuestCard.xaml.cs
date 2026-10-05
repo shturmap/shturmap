@@ -57,6 +57,8 @@ public sealed partial class QuestCard : UserControl, ICard
 
     public static Visibility ShownIfTrue(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
 
+    public static bool Has(string? text) => !string.IsNullOrEmpty(text);
+
     /// <summary>An objective's text: muted once it is ticked as done.</summary>
     public static Brush TextBrush(bool done) => (Brush)Application.Current.Resources[done ? "MutedBrush" : "InkBrush"];
 

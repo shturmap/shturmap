@@ -80,6 +80,8 @@ public static class ItemCards
                 if (!way.Purposes.Contains(purpose))
                     way.Purposes.Add(purpose);
             }
+            string Then(ApiObjective get) => Handovers.HandoverOf(task, get.Id) is not null ? ", then hand over" : "";
+            bool FoldsOpen(ApiObjective handover) => Handovers.GetOf(task, handover.Id) is { } get && !Done(get);
 
             foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
             {
@@ -112,17 +114,19 @@ public static class ItemCards
                     case "plantQuestItem" when o.QuestItem == itemId:
                         Bring(maps, count, "to plant");
                         break;
+                    // A hand-over of what another objective gets is said with that objective ("Pick up, then hand
+                    // over"), while it is open; once it is ticked, the hand-over is what is left and says so itself.
                     case "findQuestItem" when o.QuestItem == itemId:
-                        Add("Pick up", maps);
+                        Add("Pick up", maps, what: Then(o));
                         break;
-                    case "giveQuestItem" when o.QuestItem == itemId:
+                    case "giveQuestItem" when o.QuestItem == itemId && !FoldsOpen(o):
                         Add("Hand over", []);
                         break;
                     // "In raid" only where the data says the item must be found in raid; one that may be bought is just found.
                     case "findItem" when listed:
-                        Add(o.FoundInRaid ? "Find in raid" : "Find", [], count);
+                        Add(o.FoundInRaid ? "Find in raid" : "Find", [], count, Then(o));
                         break;
-                    case "giveItem" when listed:
+                    case "giveItem" when listed && !FoldsOpen(o):
                         Add("Hand over", [], count, o.FoundInRaid ? ", found in raid" : "");
                         break;
                     case "sellItem" when listed:

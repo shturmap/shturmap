@@ -1817,9 +1817,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             // Degrees clockwise from map-up: unlike "ahead-left", still true after the player has turned.
             double? MapBearing(WorldPoint target) =>
                 fix is not null && projection is not null ? projection.ScreenHeadingDegrees(fix.Position, Bearing.YawTo(fix.Position, target)) : null;
+            // A hand-over of what another objective gets is a mark on that objective's line, not a line of its own
+            // (Handovers; owner, 2026-10-05).
+            var railObjectives = (railContent?.Objectives ?? []).Where(o => !Handovers.Folds(o.Quest, o.Objective.Id)).ToList();
             // Each objective in a few words, for the raid card's lines (English data only).
-            var shorts = Planning.ObjectiveSynopses(_data, railContent?.Objectives ?? [], sameArtwork);
-            foreach (var o in railContent?.Objectives ?? [])
+            var shorts = Planning.ObjectiveSynopses(_data, railObjectives, sameArtwork);
+            foreach (var o in railObjectives)
             {
                 double? distance = null, height = null, bearing = null;
                 RelativeDirection? direction = null;
@@ -1834,13 +1837,15 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     var dy = nearest.Y - fix.Position.Y;
                     height = Math.Abs(dy) > 3 ? dy : null;
                 }
+                var optional = Handovers.Optional(o.Quest, o.Objective);
                 objectives.Add(new ObjectiveView(o.Quest.Id, o.Quest.Name, _data.TraderName(o.Quest.Trader), o.Objective.Id,
-                    ObjectiveText(o.Objective),
+                    ObjectiveText(o.Objective, optional),
                     o.Done, o.Places.Count > 0, distance, direction, height,
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
                     bearing, o.Quest.Trader, Planning.NeedKey(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0))
                 {
-                    Short = shorts.GetValueOrDefault(o.Objective.Id) is { } few ? few + (o.Objective.Optional ? " (optional)" : "") : null,
+                    Short = shorts.GetValueOrDefault(o.Objective.Id) is { } few ? few + (optional ? " (optional)" : "") : null,
+                    Handover = QuestCards.HandoverText(_data, o.Quest, o.Objective.Id),
                 });
             }
             var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);
@@ -1956,8 +1961,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// An objective's line in the raid card: its description, and "(optional)" when tarkov.dev marks it so, as the
     /// quest card says it (owner, 2026-10-03: optional places "might still be very relevant for a quest").
     /// </summary>
-    public static string ObjectiveText(ApiObjective objective) =>
-        (string.IsNullOrWhiteSpace(objective.Description) ? "(no description)" : objective.Description!) + (objective.Optional ? " (optional)" : "");
+    /// <param name="optional">Whether it reads as optional, where that isn't the data's flag (<see cref="Handovers.Optional"/>).</param>
+    public static string ObjectiveText(ApiObjective objective, bool? optional = null) =>
+        (string.IsNullOrWhiteSpace(objective.Description) ? "(no description)" : objective.Description!) + (optional ?? objective.Optional ? " (optional)" : "");
 
     // ---- study log: why a session started ----
 

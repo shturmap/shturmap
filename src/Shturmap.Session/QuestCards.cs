@@ -13,8 +13,10 @@ namespace Shturmap.Session;
 /// <param name="Ticked">Where "done" comes from, in the place of <paramref name="Live"/>: "Done · ticked by you, 4 Oct".</param>
 /// <param name="Tickable">Its tick box shows: the quest is active, or the objective is ticked (a tick can always be
 /// taken back).</param>
+/// <param name="Handover">What the hand-over mark on its item says ("Hand over ×3 to Therapist after the raid"), when a
+/// hand-over of the quest gives what this objective gets (<see cref="Handovers"/>); empty otherwise.</param>
 public sealed record CardObjective(string QuestId, string ObjectiveId, ObjectiveKind Kind, string Text, string Where, string? ItemId, string Live,
-    bool Done = false, string Ticked = "", bool Tickable = false)
+    bool Done = false, string Ticked = "", bool Tickable = false, string Handover = "")
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
 }
@@ -95,7 +97,9 @@ public static class QuestCards
             string.Join(" · ", facts.Where(f => f.Length > 0)),
             StatusText(status),
             status?.State ?? QuestState.NotStarted,
-            objectives.Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "", status?.State == QuestState.Active, ticks)).ToList(),
+            // A hand-over of what another objective gets is that objective's mark, not a row of its own.
+            objectives.Where(o => !Handovers.Folds(task, o.Id))
+                .Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "", status?.State == QuestState.Active, ticks)).ToList(),
             Needs(data, task, sources, quests, ticks),
             unlocks.Take(ShownUnlocks).ToList(),
             unlocks.Count > ShownUnlocks ? $"and {unlocks.Count - ShownUnlocks} more" : "",
@@ -141,14 +145,28 @@ public static class QuestCards
         var text = string.IsNullOrWhiteSpace(o.Description) ? QuestTaxonomy.Label(kind) : o.Description!;
         if (SaysWhere(data, text, where))
             where = "";
-        if (o.Optional)
+        if (Handovers.Optional(task, o))
             text += " (optional)";
         var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
             ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id ?? o.UsingWeapon?.FirstOrDefault();
-        // A ticked objective isn't measured any more: where its distance stood, it says that it is done and why.
+        var handover = HandoverText(data, task, o.Id);
+        // A ticked objective isn't measured any more: where its distance stood, it says that it is done and why. Its
+        // hand-over mark stays: what was got still goes to the trader.
         return ticks is not null && ticks.TryGetValue(o.Id, out var day)
-            ? new CardObjective(task.Id, o.Id, kind, text, where, item, "", Done: true, Ticked: TickedText(day), Tickable: true)
-            : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active);
+            ? new CardObjective(task.Id, o.Id, kind, text, where, item, "", Done: true, Ticked: TickedText(day), Tickable: true, Handover: handover)
+            : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active, Handover: handover);
+    }
+
+    /// <summary>
+    /// What the hand-over mark on an objective says, when a hand-over of the quest gives what it gets
+    /// (<see cref="Handovers"/>): "Hand over ×3 to Therapist after the raid". Empty otherwise.
+    /// </summary>
+    public static string HandoverText(GameData data, ApiTask task, string objectiveId)
+    {
+        if (Handovers.HandoverOf(task, objectiveId) is not { } handover)
+            return "";
+        var count = Math.Max(1, handover.Count ?? 1);
+        return $"Hand over{(count > 1 ? $" ×{count}" : "")} to {data.TraderName(task.Trader)} after the raid";
     }
 
     /// <summary>

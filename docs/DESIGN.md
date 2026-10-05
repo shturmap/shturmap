@@ -806,7 +806,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
-    fixed place, "after the raid" (muted) for hand-overs. The text is the objective in a few words, in these lines
+    fixed place, "after the raid" (muted) for a hand-over of its own (one that gives what another line gets is a
+    handshake after that line's words, "Quest cards", *Hand-overs*). The text is the objective in a few words, in these lines
     and in NEXT: its phrase from the quest's synopsis ("Mark Stryker" for "Locate and mark the Stryker with an
     MS2000 Marker"; §5, "Quest synopsis"; `Planning.ObjectiveSynopses`), since the card is read in seconds; the
     quest's own card keeps tarkov.dev's sentence, and so do these lines when the data isn't in English (review of
@@ -1274,6 +1275,40 @@ a single objective is done, so a quest that takes several raids kept leading to 
   objective asked for. A quest with no raid work left appears on no map. Its type glyph stays the whole quest's.
 - Developer builds: the study log records `tick` and `untick` (objective, quest, how: card, done, dev); the
   developer script's `tick <quest> <n>` sets one for the session only, and `show <quest>` holds a card for a snapshot.
+
+**Hand-overs: a mark on what gets the thing, not a line** (owner, 2026-10-05: "many quests have a thing where you
+have to get something or pick up something and then at a later step you need to hand it off after the raid. That
+last step is out of raid but still takes up a 'ToDo' line in the quest overview. I feel this should rather be an
+icon associated with the corresponding item or quest item. It should not be AI derived per quest, it should be
+detectable from the quest text or layout itself").
+- **Which.** A hand-over folds into the objective of the same quest that gets the same thing (`Handovers`), by the
+  data's ids, so it holds in every game language: `giveQuestItem` with the `findQuestItem` of the same quest item;
+  `giveItem` with the `findItem` of the same set of items (any order), the same count and the same found-in-raid.
+  Each pairs once, in the quest's order (two quests list the hand-over first). Checked on 2026-10-05: in PvE 211 of
+  391 hand-overs fold (95 of 99 quest items); in PvP 211 of 403. What doesn't fold is the quest's own work at the
+  trader and stays a line, as before: money, "any found in raid medicine items", figurines, and a quest item got in
+  an earlier quest (Postman Pat - Part 2's letter, Kind of Sabotage's folder, A Healthy Alternative's journal,
+  Shipping Delay - Part 1's package). Words weren't used: the hand-over's text is often just "Hand over the items".
+- **Optional.** Where the find is optional and its hand-over isn't (the game counts the finding as optional where
+  the items may be bought or found anywhere: A Bitter Victory, Reserve Expert, The Huntsman Path - Eraser), the
+  line reads as required, without "(optional)" or OPT (`Handovers.Optional`): what is handed over has to be got. The
+  planner still goes by the data's flag.
+- **The mark** is the Trader type's handshake (one symbol, one meaning: work at the trader), muted (the colour of
+  what happens after the raid). On a quest card (hover, held, popped out) it sits in the lower right corner of the
+  objective's item cell on a small dark plate, where the game marks an item found in raid; pointing at the row
+  opens the item's card, which says it in words, so the mark has no tooltip of its own. In the raid card it stands
+  right after the line's words, 12 px (`Controls.Trailing`), with the tooltip "Hand over ×3 to Therapist after the
+  raid"; NEXT has none (a glance is for where to go). A ticked line keeps its mark: what was got still goes to the
+  trader.
+- **What follows.** The quest card and the raid card lose the hand-over's line; a quest whose lines on this map are
+  all ticked leaves the raid card (the hand-over line used to keep it there, "after the raid", with nothing to do in
+  the raid). The item card says it once, "Pick up, then hand over · Ground Zero", "Find in raid ×3, then hand over";
+  once the find is ticked, the hand-over is what is left and says so itself ("Hand over ×3, found in raid"). Plan
+  never listed hand-overs (it counts in-raid work only), and FIND IN RAID already counted a find and its hand-over
+  once.
+- `shturmap-cli handovers [mode]` lists every fold and flags NEAR (a hand-over sharing items with a find or pickup
+  of its quest that doesn't fold, and why) and quest items handed over with no pickup in their quest; run it after
+  a tarkov.dev update ("Updates and checks", docs/UPDATES.md).
 
 The **item card** (a key or an item): its icon and name; GET IT, easiest first: traders that sell it (loyalty level,
 price, quest unlock), barters, hideout crafts, the flea market (from which level), and where it lies loose ("Loose

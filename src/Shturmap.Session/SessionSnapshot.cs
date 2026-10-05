@@ -71,6 +71,12 @@ public sealed record ObjectiveView(
     /// when the data isn't in English (<see cref="Planning.ObjectiveSynopses"/>): then <see cref="Text"/> stands.
     /// </summary>
     public string? Short { get; init; }
+
+    /// <summary>
+    /// What the hand-over mark on the line says ("Hand over to Therapist after the raid"), when a hand-over of the
+    /// quest gives what this objective gets (<see cref="Shturmap.Data.TarkovDev.Handovers"/>); empty otherwise.
+    /// </summary>
+    public string Handover { get; init; } = "";
 }
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>
