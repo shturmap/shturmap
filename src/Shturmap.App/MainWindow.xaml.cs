@@ -660,16 +660,19 @@ public sealed partial class MainWindow : Window
     private static RequirementLine BringLine(SessionSnapshot s, RequirementView r) =>
         new(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, BestSource(s, r)) { Alternatives = r.Alternatives };
 
-    /// <summary>A tiny cell for an item; its tooltip says what it is, what for, and where to get it.</summary>
-    private static NeedChip Chip(SessionSnapshot s, RequirementView r) =>
+    /// <summary>A tiny cell for an item, with how many (the row's, or one quest's); its tooltip says what it is, what
+    /// for, and where to get it.</summary>
+    private static NeedChip Chip(SessionSnapshot s, RequirementView r, int? count = null) =>
         new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, BestSource(s, r) }.Where(t => t.Length > 0)))
         {
             Alternatives = r.Alternatives,
+            Count = count ?? r.Count,
         };
 
-    /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name (empty: nothing).</summary>
+    /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name, each with that quest's own
+    /// number (empty: nothing).</summary>
     private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
-        (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r)).ToList();
+        (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r, r.CountFor(questId))).ToList();
 
     /// <summary>
     /// A map's bosses as parts of a line of facts, each linked to its spawn zones' markers while that map is the one

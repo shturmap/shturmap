@@ -73,7 +73,7 @@ public sealed record ObjectiveView(
     public string? Short { get; init; }
 
     /// <summary>
-    /// What the hand-over mark on the line says ("Hand over to Therapist after the raid"), when a hand-over of the
+    /// What the hand-over tag after the line says ("Hand over to Therapist"), when a hand-over of the
     /// quest gives what this objective gets (<see cref="Shturmap.Data.TarkovDev.Handovers"/>); empty otherwise.
     /// </summary>
     public string Handover { get; init; } = "";

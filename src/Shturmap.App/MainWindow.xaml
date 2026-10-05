@@ -87,16 +87,15 @@
                     <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
                   <StackPanel Spacing="1">
-                    <!-- What this line gets goes to the trader after the raid: a mark after its words, in the place of
-                         the hand-over's own line (owner, 2026-10-05; Handovers). -->
-                    <controls:Trailing>
-                      <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
-                      <controls:HandoverMark Text="{x:Bind Handover}" />
-                    </controls:Trailing>
+                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
                     <Border Visibility="{x:Bind NeedsVisibility}" HorizontalAlignment="Left" Padding="4,0" Margin="-4,0"
                             controls:Linked.Item="{x:Bind KeyId}" controls:Linked.Inline="True">
                       <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
                     </Border>
+                    <!-- What this line gets goes to the trader after the raid: a tag under its words, in the place of the
+                         hand-over's own line (owner, 2026-10-05; Handovers). Under, not after: a tag beside the words
+                         took its width from every line of them. -->
+                    <controls:HandoverMark Label="{x:Bind HandoverLabel}" Tip="{x:Bind HandoverTip}" Margin="0,2,0,1" />
                   </StackPanel>
                   <StackPanel Grid.Column="1">
                     <TextBlock Text="{x:Bind Distance}" Visibility="{x:Bind DistanceVisibility}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
@@ -222,7 +221,7 @@
                 <TextBlock TextWrapping="Wrap" Text="Quest order: go somewhere, then find or survive, then fight; simplest first." />
                 <TextBlock TextWrapping="Wrap" Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Pop a card out to keep it as a small window." />
                 <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest. They stay until done, unpicked, or CLEAR PICKS." />
-                <TextBlock TextWrapping="Wrap" Text="Done an objective? The logs can't tell, so tick its box on the quest's card: the map, NEXT and the plan then skip it. Ticks clear when the quest ends. A handshake on an item or after a line: hand it over to the trader after the raid." />
+                <TextBlock TextWrapping="Wrap" Text="Done an objective? The logs can't tell, so tick its box on the quest's card: the map, NEXT and the plan then skip it. Ticks clear when the quest ends. HAND OVER on a line: take what it gets to the trader after the raid." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs only: one started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />

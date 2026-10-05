@@ -12,6 +12,9 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title)
     /// is each of them for the linked highlight, though it pictures <see cref="ItemId"/>. Null for one item.
     /// </summary>
     public IReadOnlyList<string>? Alternatives { get; init; }
+
+    /// <summary>How many of it: from two up, "×3" beside the cell.</summary>
+    public int Count { get; init; } = 1;
 }
 
 /// <summary>
@@ -72,6 +75,21 @@ public sealed partial class NeedsStrip : StackPanel
             if (need.Alternatives is { Count: > 1 } several)
                 Linked.SetItems(cell, several);
             Children.Add(cell);
+            // Several of one item: the number right after its cell, as the kit's pictures carry it (owner, 2026-10-05:
+            // "If multiple of the same, it should say so with a number"). Beside, since a figure inside an 18 px cell
+            // would hide the item.
+            if (need.Count > 1)
+            {
+                Children.Add(new TextBlock
+                {
+                    Text = "×" + need.Count.ToString("N0", Shturmap.Session.UiLanguage.Culture),
+                    FontSize = 11,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Foreground = (Brush)Application.Current.Resources["InkBrush"],
+                    Margin = new Thickness(-1, 0, 2, 0),
+                });
+            }
         }
         if (Needs.Count > Shown)
         {

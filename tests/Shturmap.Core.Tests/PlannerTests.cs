@@ -208,6 +208,21 @@ public class PlannerTests
         Assert.Equal(2, marker.Count);
     }
 
+    // The cells beside a quest's name say its own number (owner, 2026-10-05: "If multiple of the same, it should say so
+    // with a number"): the row adds up, each quest keeps its part.
+    [Fact]
+    public void A_shared_row_knows_how_many_each_quest_needs()
+    {
+        var other = new PlanQuest("other", "Other", [Obj("o1", ObjectiveKind.Place, ["streets"], [("streets", new WorldPoint(9, 0, 9))], bring: [("ms2000", 1)])], NoKeys);
+        var marker = Assert.Single(RaidPlanner.Plan([Revision, other], Streets).Requirements, r => r.Kind == RequirementKind.Bring);
+        Assert.Equal(3, marker.Count);
+        Assert.Equal(2, marker.CountFor("revision"));
+        Assert.Equal(1, marker.CountFor("other"));
+        // A key has no count by quest: one opens the door for all of them.
+        var key = Assert.Single(RaidPlanner.Plan([Audit], Streets).Requirements, r => r.Kind == RequirementKind.Key);
+        Assert.Equal(1, key.CountFor("audit"));
+    }
+
     // ---- keys (review of 2026-10-04, A33) ----
 
     private static IReadOnlyList<Requirement> KeyRows(params PlanQuest[] quests) =>

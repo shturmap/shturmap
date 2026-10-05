@@ -112,10 +112,10 @@ public class HandoverTests
     {
         var card = QuestCards.Build(Data(Scientist), Active(Drive), Drive)!;
         var row = Assert.Single(card.Objectives);
-        Assert.Equal(("o-pick", HardDrive, "Hand over to Therapist after the raid"), (row.ObjectiveId, row.ItemId, row.Handover));
+        Assert.Equal(("o-pick", HardDrive, "Hand over to Therapist"), (row.ObjectiveId, row.ItemId, row.Handover));
 
         var items = QuestCards.Build(Data(Sanitary), Active(Analyzers), Analyzers)!;
-        Assert.Equal("Hand over ×3 to Therapist after the raid", Assert.Single(items.Objectives).Handover);
+        Assert.Equal("Hand over ×3 to Therapist", Assert.Single(items.Objectives).Handover);
 
         // A hand-over of its own stays a row, without a mark.
         Assert.Equal("", Assert.Single(QuestCards.Build(Data(Postman), Active(Letter), Letter)!.Objectives).Handover);
@@ -158,7 +158,7 @@ public class HandoverTests
                                      s.Quests.GetValueOrDefault(Letter)?.State == QuestState.Active, "the raid and its quests");
         // The pickup carries the hand-over; the letter, got in an earlier quest, keeps its own line.
         Assert.Equal(["o-letter", "o-pick"], s.Objectives.Select(o => o.ObjectiveId).Order());
-        Assert.Equal("Hand over to Therapist after the raid", s.Objectives.Single(o => o.ObjectiveId == "o-pick").Handover);
+        Assert.Equal("Hand over to Therapist", s.Objectives.Single(o => o.ObjectiveId == "o-pick").Handover);
         Assert.Equal("", s.Objectives.Single(o => o.ObjectiveId == "o-letter").Handover);
     }
 

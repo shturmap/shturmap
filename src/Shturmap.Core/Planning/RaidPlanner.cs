@@ -8,7 +8,18 @@ namespace Shturmap.Core.Planning;
 /// <param name="Exit">For <see cref="RequirementKind.Exit"/>: the exit it is for, by its name ("Klimov Street (Flare)").</param>
 /// <param name="Enter">For <see cref="RequirementKind.Entry"/>: the map it lets you into ("The Lab").</param>
 public sealed record Requirement(RequirementKind Kind, IReadOnlyList<string> Alternatives, int Count, IReadOnlyList<string> ForQuests,
-    string? Exit = null, string? Enter = null);
+    string? Exit = null, string? Enter = null)
+{
+    /// <summary>
+    /// How many each quest needs, where that isn't <see cref="Count"/> for all of them: what is used up adds up over
+    /// the quests (Revision's three markers and another quest's one are a row of four), and a quest's cell beside its
+    /// name says its own number. Empty: every quest needs <see cref="Count"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> CountByQuest { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>How many of it this quest needs.</summary>
+    public int CountFor(string questId) => CountByQuest.TryGetValue(questId, out var n) ? n : Count;
+}
 
 public enum RequirementKind
 {
@@ -212,7 +223,7 @@ public static class RaidPlanner
     private static List<Requirement> Requirements(List<QuestOnMap> involved, PlanMap map)
     {
         var keys = new Dictionary<string, (List<string> Alternatives, HashSet<string> Quests)>(StringComparer.Ordinal);
-        var items = new Dictionary<string, (int Count, HashSet<string> Quests)>(StringComparer.Ordinal);
+        var items = new Dictionary<string, (int Count, HashSet<string> Quests, Dictionary<string, int> ByQuest)>(StringComparer.Ordinal);
         var wear = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
         var weapons = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
         var mods = new Dictionary<string, (List<string> Items, HashSet<string> Quests)>(StringComparer.Ordinal);
@@ -260,9 +271,10 @@ public static class RaidPlanner
                 foreach (var (itemId, count) in objective.Bring)
                 {
                     if (!items.TryGetValue(itemId, out var entry))
-                        entry = (0, new HashSet<string>());
+                        entry = (0, new HashSet<string>(), new Dictionary<string, int>(StringComparer.Ordinal));
                     entry.Quests.Add(quest.Id);
-                    items[itemId] = (entry.Count + count, entry.Quests);
+                    entry.ByQuest[quest.Id] = entry.ByQuest.GetValueOrDefault(quest.Id) + count;
+                    items[itemId] = (entry.Count + count, entry.Quests, entry.ByQuest);
                 }
                 // Gear is worn, not used up: one requirement per objective's choice of sets.
                 if (objective.Wear is { Count: > 0 } sets)
@@ -304,7 +316,7 @@ public static class RaidPlanner
         return entryItems.Concat(keys.Values
             .Where(k => k.Alternatives.Count == 1 || !k.Alternatives.Any(singles.Contains))
             .Select(k => new Requirement(RequirementKind.Key, k.Alternatives, 1, k.Quests.ToList()))
-            .Concat(items.Select(i => new Requirement(RequirementKind.Bring, [i.Key], i.Value.Count, i.Value.Quests.ToList())))
+            .Concat(items.Select(i => new Requirement(RequirementKind.Bring, [i.Key], i.Value.Count, i.Value.Quests.ToList()) { CountByQuest = i.Value.ByQuest }))
             .Concat(exits.Values.Select(e => new Requirement(RequirementKind.Exit, [e.Item], e.Count, e.Quests.ToList(), e.Exit)))
             .Concat(wear.Values.Select(w => new Requirement(RequirementKind.Wear, w.Items, 1, w.Quests.ToList())))
             .Concat(weapons.Values.Select(w => new Requirement(RequirementKind.Weapon, w.Items, 1, w.Quests.ToList())))

@@ -13,7 +13,7 @@ namespace Shturmap.Session;
 /// <param name="Ticked">Where "done" comes from, in the place of <paramref name="Live"/>: "Done · ticked by you, 4 Oct".</param>
 /// <param name="Tickable">Its tick box shows: the quest is active, or the objective is ticked (a tick can always be
 /// taken back).</param>
-/// <param name="Handover">What the hand-over mark on its item says ("Hand over ×3 to Therapist after the raid"), when a
+/// <param name="Handover">What its hand-over tag says ("Hand over ×3 to Therapist"), when a
 /// hand-over of the quest gives what this objective gets (<see cref="Handovers"/>); empty otherwise.</param>
 public sealed record CardObjective(string QuestId, string ObjectiveId, ObjectiveKind Kind, string Text, string Where, string? ItemId, string Live,
     bool Done = false, string Ticked = "", bool Tickable = false, string Handover = "")
@@ -158,15 +158,15 @@ public static class QuestCards
     }
 
     /// <summary>
-    /// What the hand-over mark on an objective says, when a hand-over of the quest gives what it gets
-    /// (<see cref="Handovers"/>): "Hand over ×3 to Therapist after the raid". Empty otherwise.
+    /// What the hand-over tag on an objective says, when a hand-over of the quest gives what it gets
+    /// (<see cref="Handovers"/>): "Hand over ×3 to Therapist". Empty otherwise.
     /// </summary>
     public static string HandoverText(GameData data, ApiTask task, string objectiveId)
     {
         if (Handovers.HandoverOf(task, objectiveId) is not { } handover)
             return "";
         var count = Math.Max(1, handover.Count ?? 1);
-        return $"Hand over{(count > 1 ? $" ×{count}" : "")} to {data.TraderName(task.Trader)} after the raid";
+        return $"Hand over{(count > 1 ? $" ×{count}" : "")} to {data.TraderName(task.Trader)}";
     }
 
     /// <summary>

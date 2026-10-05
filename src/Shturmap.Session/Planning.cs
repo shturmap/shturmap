@@ -13,7 +13,14 @@ namespace Shturmap.Session;
 /// categories are loaded (<see cref="Planning.WeaponText"/>).</param>
 /// <param name="Count">How many of it are needed (the "×3" at the end of <paramref name="Text"/>).</param>
 public sealed record RequirementView(RequirementKind Kind, string Text, string ForQuests, string ItemId, IReadOnlyList<string> QuestIds, string Why = "",
-    IReadOnlyList<string>? Alternatives = null, int Count = 1);
+    IReadOnlyList<string>? Alternatives = null, int Count = 1)
+{
+    /// <summary>How many each quest needs where it isn't <see cref="Count"/> (<see cref="Requirement.CountByQuest"/>).</summary>
+    public IReadOnlyDictionary<string, int> CountByQuest { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>How many of it this quest needs: the number on its cell beside the quest's name.</summary>
+    public int CountFor(string questId) => CountByQuest.TryGetValue(questId, out var n) ? n : Count;
+}
 
 /// <param name="Synopsis">What it asks on the plan's map in a few words (<see cref="Planning.Synopsis"/>), or empty.</param>
 /// <param name="Group">Its effort group on the plan's map (<see cref="QuestEffort"/>).</param>
@@ -555,7 +562,10 @@ public static class Planning
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
         // Says why it is on the list (the study log: gear cards were opened over and over to find out).
         var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : r.ForQuests.Count == 0 ? Purpose(data, r) : $"{Purpose(data, r)}, for {quests}";
-        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList(), Math.Max(1, r.Count));
+        return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList(), Math.Max(1, r.Count))
+        {
+            CountByQuest = r.CountByQuest,
+        };
     }
 
     /// <summary>

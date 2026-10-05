@@ -27,9 +27,6 @@ public sealed partial class Picture : Grid
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
         nameof(Title), typeof(string), typeof(Picture), new PropertyMetadata(null, (d, e) => ToolTipService.SetToolTip(d, e.NewValue)));
 
-    public static readonly DependencyProperty HandoverProperty = DependencyProperty.Register(
-        nameof(Handover), typeof(bool), typeof(Picture), new PropertyMetadata(false, (d, _) => ((Picture)d).Update()));
-
     /// <summary>Where pictures come from; set once by the main window.</summary>
     public static Func<GameArt?> Art { get; set; } = () => null;
 
@@ -84,16 +81,6 @@ public sealed partial class Picture : Grid
         set => SetValue(TitleProperty, value);
     }
 
-    /// <summary>
-    /// The item goes to the trader after the raid (<see cref="Shturmap.Data.TarkovDev.Handovers"/>): a small
-    /// handshake in the cell's lower right corner, where the game marks an item found in raid. Its card says it in words.
-    /// </summary>
-    public bool Handover
-    {
-        get => (bool)GetValue(HandoverProperty);
-        set => SetValue(HandoverProperty, value);
-    }
-
     private bool IsTrader => TraderId is not null;
 
     private void Update()
@@ -121,12 +108,6 @@ public sealed partial class Picture : Grid
             Foreground = Brush("MutedBrush"),
         };
         Children.Add(fallback);
-        if (Handover)
-        {
-            var mark = HandoverMark.Plate(Size);
-            Canvas.SetZIndex(mark, 2);
-            Children.Add(mark);
-        }
 
         if (id is null || Art() is not { } art)
             return;
