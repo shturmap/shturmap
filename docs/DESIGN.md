@@ -1861,7 +1861,18 @@ self-unpacking exe, without updates; they need the Setup once.
   applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
   start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
   "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
-  request at all). A version already downloaded applies at the next start whatever the setting. Builds the Setup
+  request at all). A version already downloaded applies at the next start whatever the setting.
+  **When applying fails** (owner, 2026-10-05: "it tells me always that the update is available even though i
+  downloaded and restarted"). Velopack applies a version by moving the install's `current` folder aside, and that
+  fails while another program holds one of its files: it tried for 10 s, gave up and started the old version again,
+  without a word (its log, `%LOCALAPPDATA%\velopack\velopack_<id>.log`: "being used by another process"). That day
+  it failed three times in a row while the game ran and never while it was closed: the game's anti-cheat keeps other
+  programs' files open, out of Velopack's sight. Velopack applies a downloaded version before every start (Program),
+  so one still waiting when the app starts is one that couldn't be applied (`Updater.NotApplied`): the app log says so
+  (WARN), a notice says it once, "Update 0.3.1 couldn't be applied: another program, most often the game, kept
+  Shturmap's files open. Close the game, then restart Shturmap.", and the line says "Update 0.3.1 didn't apply:
+  close the game, then restart", with RESTART NOW. Nothing checks whether the game runs (§2): the text names it as the
+  usual cause. Builds the Setup
   didn't install (the folder build, `dotnet run`) and developer runs (snapshots, fake games, the demo) ask nothing;
   help says "Updates: not available in this build". Checks, finds and downloads are logged at INFO; a failure is a
   WARN line and a retry at the next check, never a notice.

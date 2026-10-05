@@ -37,6 +37,21 @@ public class UpdateTests
         Assert.Equal(new UpdateDecision(check, download, line, offerDownload, offerRestart),
             UpdatePolicy.Decide(mode, canUpdate, inRaid, stage, "0.2.1"));
 
+    // A version downloaded before this start and still waiting couldn't be applied (owner, 2026-10-05: "it tells me
+    // always that the update is available even though i downloaded and restarted"): the line says what to do, RESTART
+    // NOW stays, and a notice says it once.
+    [Fact]
+    public void A_version_that_didnt_apply_says_to_close_the_game()
+    {
+        Assert.Equal(new UpdateDecision(false, false, "Update 0.2.1 didn't apply: close the game, then restart", false, true),
+            UpdatePolicy.Decide(UpdateMode.Automatic, canUpdate: true, inRaid: false, UpdateStage.Ready, "0.2.1", notApplied: true));
+        // In a raid it says nothing, as ever.
+        Assert.Equal("", UpdatePolicy.Decide(UpdateMode.Automatic, true, inRaid: true, UpdateStage.Ready, "0.2.1", notApplied: true).Line);
+        var notice = UpdatePolicy.NotAppliedNotice("0.2.1");
+        Assert.StartsWith("Update 0.2.1 couldn't be applied", notice, StringComparison.Ordinal);
+        Assert.Contains("Close the game", notice, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Asks_at_start_then_every_six_hours_at_most()
     {

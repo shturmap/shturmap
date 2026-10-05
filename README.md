@@ -94,7 +94,9 @@ programs running on the PC to close running copies of Shturmap. To do that it as
 running program, with the rights to read where its file is and to end it, and it ends only programs that run from
 Shturmap's own folder. If the game is running at that moment, it is asked about like every other program; nothing is
 read from it, written to it or sent to it. To keep even this away from a running game, install Shturmap and let it
-update while the game is closed (under Updates in settings, "Tell me only" lets you choose the moment).
+update while the game is closed (under Updates in settings, "Tell me only" lets you choose the moment). An update
+usually can't be applied while the game runs anyway: the game's anti-cheat keeps Shturmap's files open, so the old
+version starts again, and Shturmap says so. Close the game and restart Shturmap.
 
 A test fails if Shturmap's own code ever calls the Windows APIs for opening or reading other processes, sending
 input, hooking or capturing the screen. The full rules are in

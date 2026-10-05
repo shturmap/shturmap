@@ -43,6 +43,9 @@ public sealed class Updater
             {
                 Stage = UpdateStage.Ready;
                 Version = pending.Version.ToString();
+                // Velopack applies a downloaded version before the app starts (Program): still waiting here, applying
+                // it failed (UpdatePolicy.NotAppliedNotice).
+                NotApplied = true;
             }
         }
         catch (Exception e)
@@ -68,6 +71,9 @@ public sealed class Updater
     public bool CanUpdate { get; }
 
     public UpdateStage Stage { get; private set; }
+
+    /// <summary>A version downloaded before this start is still waiting: applying it failed.</summary>
+    public bool NotApplied { get; }
 
     /// <summary>The version found or downloaded.</summary>
     public string? Version { get; private set; }

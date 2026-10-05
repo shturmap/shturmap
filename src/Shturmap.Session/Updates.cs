@@ -143,12 +143,24 @@ public static class UpdatePolicy
     public static bool CheckDue(DateTime? lastCheck, DateTime now) => lastCheck is null || now - lastCheck.Value >= Interval;
 
     /// <summary>
+    /// Said once at a start that finds a downloaded version still waiting (owner, 2026-10-05: "it tells me always that
+    /// the update is available even though i downloaded and restarted"). Velopack applies a downloaded version before
+    /// the app starts, by moving the install's folder aside; while another program holds one of its files that fails,
+    /// and the old version starts again without a word. On 2026-10-05 it failed three times in a row while the game ran
+    /// and never while it was closed: the game's anti-cheat keeps files of other programs open.
+    /// </summary>
+    public static string NotAppliedNotice(string? version) =>
+        $"Update {version} couldn't be applied: another program, most often the game, kept Shturmap's files open. Close the game, then restart Shturmap.";
+
+    /// <summary>
     /// What happens about updates. A build that can't update (not installed by Velopack, or a developer run) does
     /// nothing; "Off" asks nothing; "Automatic" downloads what it finds; "Tell me only" offers the download. The line
     /// shows only outside raids, and so does RESTART NOW: Shturmap never restarts by itself, and never during a raid.
     /// A downloaded version applies at the next start whatever the setting.
     /// </summary>
-    public static UpdateDecision Decide(UpdateMode mode, bool canUpdate, bool inRaid, UpdateStage stage, string? version)
+    /// <param name="notApplied">The version was downloaded before this start and is still waiting: applying it failed
+    /// (<see cref="NotAppliedNotice"/>).</param>
+    public static UpdateDecision Decide(UpdateMode mode, bool canUpdate, bool inRaid, UpdateStage stage, string? version, bool notApplied = false)
     {
         if (!canUpdate)
             return new(false, false, "", false, false);
@@ -158,6 +170,7 @@ public static class UpdatePolicy
         {
             UpdateStage.Found when mode == UpdateMode.TellOnly => $"Shturmap {version} is available",
             UpdateStage.Downloading => $"Downloading Shturmap {version}…",
+            UpdateStage.Ready when notApplied => $"Update {version} didn't apply: close the game, then restart",
             UpdateStage.Ready => $"Update {version} ready: applies at next start",
             _ => "",
         };

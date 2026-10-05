@@ -34,6 +34,11 @@ public sealed partial class MainWindow
                 RefreshUpdates();
         };
         RefreshUpdates();
+        if (updater.NotApplied)
+        {
+            AppLog.Warn($"Updates: {updater.Version} was downloaded but couldn't be applied at this start; Velopack's log says why");
+            ShowNotice(UpdatePolicy.NotAppliedNotice(updater.Version), TimeSpan.FromSeconds(20));
+        }
         if (!updater.CanUpdate)
             return;
         _updateTimer = DispatcherQueue.CreateTimer();
@@ -66,7 +71,8 @@ public sealed partial class MainWindow
     }
 
     private UpdateDecision Decide() =>
-        UpdatePolicy.Decide(CurrentUpdateMode, _updater?.CanUpdate == true, ViewModel.InRaid, _updater?.Stage ?? UpdateStage.None, _updater?.Version);
+        UpdatePolicy.Decide(CurrentUpdateMode, _updater?.CanUpdate == true, ViewModel.InRaid, _updater?.Stage ?? UpdateStage.None, _updater?.Version,
+            _updater?.NotApplied == true);
 
     private void RefreshUpdates()
     {
