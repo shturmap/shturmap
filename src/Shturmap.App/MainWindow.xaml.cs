@@ -801,8 +801,9 @@ public sealed partial class MainWindow : Window
         var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null && !o.Done).ToList();
         var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
         vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name);
-        // The nearest way out; once the game's list was read, the nearest one on it (or a transit), never one it left out.
-        vm.RaidExit = vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0 && e.State != ExitState.NotListed) ?? vm.Extracts.FirstOrDefault(e => e.Distance.Length > 0);
+        // The nearest extract, never a transit (Rules.ExitsNote.Exit).
+        var exit = Rules.ExitsNote.Exit(vm.Extracts.Select(e => (e.Distance.Length > 0, e.State == ExitState.NotListed, e.Marker == MarkerKind.Transit)).ToList());
+        vm.RaidExit = exit is { } at ? vm.Extracts[at] : null;
         vm.AllExitsText = vm.RaidExit is not null && vm.Extracts.Count > 1 ? $"ALL {vm.Extracts.Count} ↓" : "";
         // Under it, where EXIT takes something or isn't sure: the nearest one on the list that takes nothing (owner,
         // 2026-10-05: "where you can simply exfil").

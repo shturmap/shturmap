@@ -46,6 +46,26 @@ public static class ExitsNote
         listed ? GlanceListedTip : unsure ? GlanceUnsureTip : readable ? GlanceUncheckedTip : GlanceNoReadingTip;
 
     /// <summary>
+    /// EXIT: the nearest extract, the nearest on the game's list once it was read, never one it left out (one it left
+    /// out only where nothing else is measured). Never a transit: it leads to another map, not out (owner, 2026-10-05:
+    /// "It counts transits as exfils. I would show primarily exfils"); transits stand in the list under the card.
+    /// </summary>
+    /// <param name="exits">The ways out, nearest first: measured from a position, left out by the list, a transit.</param>
+    public static int? Exit(IReadOnlyList<(bool Measured, bool NotListed, bool Transit)> exits)
+    {
+        int? leftOut = null;
+        for (var i = 0; i < exits.Count; i++)
+        {
+            if (!exits[i].Measured || exits[i].Transit)
+                continue;
+            if (!exits[i].NotListed)
+                return i;
+            leftOut ??= i;
+        }
+        return leftOut;
+    }
+
+    /// <summary>
     /// The nearest way out the player can simply leave by, under EXIT where EXIT isn't it (owner, 2026-10-05: "also
     /// show the next one you sure is open and where you don't need to bring extra things or do extra things - where you
     /// can simply exfil"): an extract the game's list names without "??:??:??" that takes nothing (no item, money,

@@ -38,6 +38,21 @@ public class ExitsNoteTests
         Assert.Equal("not on your list", ExitsNote.Row(listed: false, unsure: false, notListed: true));
     }
 
+    // EXIT is an extract, never a transit (owner, 2026-10-05: "It counts transits as exfils. I would show primarily
+    // exfils"), and once the list was read one on it.
+    [Fact]
+    public void Exit_is_the_nearest_extract_never_a_transit()
+    {
+        (bool, bool, bool) Way(bool transit = false, bool notListed = false, bool measured = true) => (measured, notListed, transit);
+        Assert.Equal(1, ExitsNote.Exit([Way(transit: true), Way(), Way()]));
+        // One the list left out is passed by, and taken only where there is nothing else.
+        Assert.Equal(2, ExitsNote.Exit([Way(notListed: true), Way(transit: true), Way()]));
+        Assert.Equal(0, ExitsNote.Exit([Way(notListed: true), Way(transit: true)]));
+        // Only transits, or nothing measured: no EXIT.
+        Assert.Null(ExitsNote.Exit([Way(transit: true)]));
+        Assert.Null(ExitsNote.Exit([Way(measured: false)]));
+    }
+
     // Under EXIT, the nearest way out the player can simply leave by (owner, 2026-10-05: "also show the next one you
     // sure is open and where you don't need to bring extra things or do extra things - where you can simply exfil").
     [Fact]

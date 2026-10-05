@@ -1924,7 +1924,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 .ThenBy(o => o.QuestName, StringComparer.CurrentCulture)
                 .ToList(),
             // Nearest first; once the game's list was read, the exits it doesn't name come last (they are no way out this raid).
-            Extracts = extracts.OrderBy(e => e.State == ExitState.NotListed ? 1 : 0).ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
+            // Extracts first, nearest first; then transits, which lead to another map, not out (owner, 2026-10-05: "It
+            // counts transits as exfils. I would show primarily exfils"); last the extracts the game's list left out.
+            Extracts = extracts.OrderBy(e => e.State == ExitState.NotListed ? 2 : e.Kind == MarkerKind.Transit ? 1 : 0)
+                .ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
             ExitsReadAt = inRaid ? _exitsReadAt : null,
             ReadExits = _readExits,
             ExitReaderLanguage = _exitReaderLanguage,

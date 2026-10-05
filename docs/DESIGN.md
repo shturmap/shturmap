@@ -797,7 +797,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     rule creeps by typical times). No time estimate. While it loads, CHECK YOUR KIT follows (the kit reminder, UX
     principle 9), and BRING waits below until the raid starts. Then **the glance**, two rows in
     big type between hairlines: NEXT, the nearest objective with a place (its text, its quest, the distance and
-    direction), and EXIT, the nearest extract or transit for your side (and what it takes). The game opens only some extracts in each raid,
+    direction), and EXIT, the nearest extract for your side (and what it takes), never a transit (owner, 2026-10-05:
+    "It counts transits as exfils. I would show primarily exfils"; a transit leads to another map, not out; until then
+    EXIT was the nearest way out of either kind; `Rules.ExitsNote.Exit`). The game opens only some extracts in each raid,
     by where the player started, and neither its logs nor tarkov.dev's data say which, so at a raid's start the
     nearest is usually not one of the player's (owner, 2026-10-04: say it in the row; a transit is open to everyone and
     gets no note). **Checked or not is said** (owner, 2026-10-05: "Since the app shows the nearest exit upon placing a
@@ -805,7 +807,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     showed the game's own list (§2; *The extract list*, below) the row says "NEAREST · NOT CHECKED AGAINST YOUR
     LIST", muted, its tooltip saying how to check; with the reading unticked, or on a Windows without text
     recognition, the words of 2026-10-04, "NEAREST · CHECK YOUR LIST IN GAME". Once the list was read, EXIT is the
-    nearest way out that is on it (or a transit), never an extract it leaves out, and says "ON YOUR LIST THIS RAID" in
+    nearest extract that is on it, never one it leaves out, and says "ON YOUR LIST THIS RAID" in
     the way out's colour, or "ON YOUR LIST · ??? IN GAME" for one the game marks "??:??:??". Under the
     direction, a small gold "ALL 15 ↓" brings the whole list of ways out, which stands under the card, to the top of
     the rail (the review of 2026-10-04, H5: with several quests that list is a long way down, and it is the one to
@@ -840,7 +842,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     language; nothing with the reading
     unticked). Once read, each extract's small line adds "· ON YOUR LIST" or "· ON YOUR LIST · ??? IN GAME" and takes
     the way out's colour; one the list leaves out says "· NOT ON YOUR LIST", its name and distance muted, without
-    what it would take, and comes after everything else (the others stay nearest first, transits among them). A
+    what it would take, and comes after everything else. The list puts extracts first, nearest first, then the
+    transits, then the extracts the list left out (owner, 2026-10-05: "I would show primarily exfils"). A
     notice says it once ("Your extract list is read: 6 extracts for this raid"). What a raid's screenshots name adds
     up: a later list adds extracts and renews the "???" marks of the ones it names, and never takes one away (a
     reading that missed a row must not close an exit). A transit is never said to be on or off the list: it is open

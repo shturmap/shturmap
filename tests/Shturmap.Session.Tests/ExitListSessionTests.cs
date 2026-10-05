@@ -66,8 +66,9 @@ public class ExitListSessionTests
         var s = await rig.Until(s => s.RaidFix is not null, "the position");
         Assert.Null(s.ExitsReadAt);
         Assert.All(s.Extracts, e => Assert.Equal(ExitState.NotChecked, e.State));
-        // Nearest first, as always; the Scav's exit isn't a PMC's.
-        Assert.Equal(["Crossroads", "Trailer Park", "Transit to another map", "ZB-1011"], s.Extracts.Select(e => e.Name));
+        // Extracts nearest first, then transits (owner, 2026-10-05: "I would show primarily exfils"); the Scav's exit
+        // isn't a PMC's.
+        Assert.Equal(["Crossroads", "Trailer Park", "ZB-1011", "Transit to another map"], s.Extracts.Select(e => e.Name));
     }
 
     [Fact]
@@ -81,8 +82,8 @@ public class ExitListSessionTests
         Assert.Equal(ExitState.NotListed, StateOf(s, "Crossroads"));
         // A transit is open to everyone, and the list isn't read for it.
         Assert.Equal(ExitState.NotChecked, StateOf(s, "Transit to another map"));
-        // Crossroads is the nearest, and not on the list: it comes last.
-        Assert.Equal(["Trailer Park", "Transit to another map", "ZB-1011", "Crossroads"], s.Extracts.Select(e => e.Name));
+        // Crossroads is the nearest, and not on the list: it comes last, after the transit.
+        Assert.Equal(["Trailer Park", "ZB-1011", "Transit to another map", "Crossroads"], s.Extracts.Select(e => e.Name));
         Assert.Contains(rig.Notices, n => n.Contains("2 extracts", StringComparison.Ordinal));
     }
 
