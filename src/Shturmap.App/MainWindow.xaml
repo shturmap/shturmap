@@ -218,7 +218,7 @@
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="Map, raid and quests follow the game's logs. No clicks needed while you play." />
                 <TextBlock TextWrapping="Wrap" Text="Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction." />
-                <TextBlock TextWrapping="Wrap" Text="EXIT is the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice) and Shturmap reads it: yours stay solid, the rest turn hollow." />
+                <TextBlock TextWrapping="Wrap" Text="EXIT is the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice) and Shturmap reads it: yours light up, the rest turn hollow." />
                 <TextBlock TextWrapping="Wrap" Text="Quest order: go somewhere, then find or survive, then fight; simplest first." />
                 <TextBlock TextWrapping="Wrap" Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Pop a card out to keep it as a small window." />
                 <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest. They stay until done, unpicked, or CLEAR PICKS." />

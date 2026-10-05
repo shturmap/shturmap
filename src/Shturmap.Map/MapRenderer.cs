@@ -96,6 +96,9 @@ public static partial class MapRenderer
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
+        // The extracts on the player's list this raid are lit, under every symbol, so a glow never covers one.
+        foreach (var marker in layout.Markers.Where(m => m.Listed))
+            DrawListedGlow(canvas, marker);
 
         // Markers outside the focus step back while something is highlighted (easing with the scene's Dim), each kind
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
@@ -248,6 +251,9 @@ public static partial class MapRenderer
         /// <summary>An extract the game's own list didn't name this raid (<see cref="MapScene.ExitsNotListed"/>): hollow.</summary>
         public bool NotListed { get; init; }
 
+        /// <summary>An extract on the player's list this raid (<see cref="MapScene.ExitsListed"/>): lit.</summary>
+        public bool Listed { get; init; }
+
         /// <summary>A listed extract the game marked "??:??:??" (<see cref="MapScene.ExitsUnsure"/>): a "?" at its corner.</summary>
         public bool Unsure { get; init; }
 
@@ -354,7 +360,8 @@ public static partial class MapRenderer
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
             if (labels.Any(l => l.Text == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
                 continue;
-            var font = m.Selected ? bold : regular;
+            // An extract on the player's list this raid says its name in bold, as what is picked or pointed at does.
+            var font = m.Selected || m.Listed ? bold : regular;
             var width = font.MeasureText(m.Marker.Label);
             var gap = 4 * ui;
             SKRect? box = null;
@@ -385,7 +392,7 @@ public static partial class MapRenderer
             // marker's colour.
             // An extract that isn't on the player's list this raid steps back, name and symbol (MapScene.ExitsNotListed).
             var color = m.Selected ? m.Color : m.NotListed ? Muted : Ink;
-            labels.Add(new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected, color, m));
+            labels.Add(new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m));
         }
 
         var names = new List<PlacedName>();
@@ -422,7 +429,9 @@ public static partial class MapRenderer
     public const float LabelRepeat = 250;
 
     // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
-    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : RestRank(m.Marker.Kind);
+    // An extract on the player's list this raid is placed with the bosses, ahead of other ways out and of quests: at
+    // the raid's end it is the name to find.
+    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Listed ? 1 : RestRank(m.Marker.Kind);
 
     /// <summary>A kind's rank at rest, whatever is picked or pointed at: bosses, quests, ways out, Scav and sniper
     /// zones, locks and switches. Symbols of one rank are set side by side where they would cover each other
@@ -722,6 +731,7 @@ public static partial class MapRenderer
             Reach = reach + 1 * ui,
             Pointed = pointed && !done,
             NotListed = scene.ExitsNotListed.Contains(marker.Id),
+            Listed = scene.ExitsListed.Contains(marker.Id),
             Unsure = scene.ExitsUnsure.Contains(marker.Id),
         };
     }
@@ -1540,6 +1550,20 @@ public static partial class MapRenderer
             StrokeWidth = width + 2 * MarkerCollar * ui,
         };
         canvas.DrawCircle(at, r, collar);
+    }
+
+    // An extract on the player's list this raid is lit (owner, 2026-10-05: "highlighted better on the map so it can be
+    // seen that they are active"): a steady glow in its own colour around the triangle. A glow, since a ring is a
+    // pick's and a pulse the pointer's; steady, since nothing moves for long on a second monitor.
+    private const float ListedGlowReach = 2.8f;
+
+    internal static void DrawListedGlow(SKCanvas canvas, ShownMarker m)
+    {
+        var radius = m.R * ListedGlowReach;
+        using var shader = SKShader.CreateRadialGradient(m.At, radius,
+            [m.Color.WithAlpha(210), m.Color.WithAlpha(120), m.Color.WithAlpha(0)], [0.3f, 0.55f, 1f], SKShaderTileMode.Clamp);
+        using var paint = new SKPaint { Shader = shader, IsAntialias = true };
+        canvas.DrawCircle(m.At, radius, paint);
     }
 
     private static SKPath Triangle(SKPoint at, float r) =>

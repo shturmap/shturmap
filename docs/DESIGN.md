@@ -994,7 +994,7 @@ spawns below).
   | level | members | treatment |
   | --- | --- | --- |
   | 1 | the player; the picked quests, the guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
-  | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink |
+  | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink; the extracts on your list this raid lit, their names in bold |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
   | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
 
@@ -1020,14 +1020,22 @@ spawns below).
   "Transit to The Lab (Dark)").
 
 - **The player's extracts this raid** (owner, 2026-10-05: "update the map accordingly, highlighting the open exfils").
-  Once a screenshot showed the game's extract list (§2), the extracts on it are the solid triangles they always were,
-  and **an extract the list leaves out is hollow**: its outline in its colour on the collar's dark, its name in muted
-  instead of ink (`MapScene.ExitsNotListed`). So the ways out are found by being the filled ones, and no new colour,
-  ring or size had to mean "open" (a ring is a pick's, a pulse is the pointer's). An extract the game marks
-  "??:??:??" (it may be closed, or it needs something) is solid and carries the "?" badge at its lower left that a
-  possible location carries: maybe here, maybe open (`MapScene.ExitsUnsure`). Transits are drawn as ever. Nothing is
-  hidden: a hollow extract is still a place on the map, and the list could have been read wrong. Until a list was
-  read, and outside raids, every extract is solid. The legend gets one row for the two, shown once a list was read.
+  Once a screenshot showed the game's extract list (§2), three steps:
+  - **On the list: lit** (owner, 2026-10-05, the same evening: "The exits that are verified should be highlighted
+    better on the map so it can be seen that they are active"; `MapScene.ExitsListed`). A steady glow in the
+    extract's own colour around its solid triangle, about 2.8 times its size across, strongest near the symbol and
+    gone at its edge, drawn under every symbol so it covers none; its name in the bold label face, in ink, placed with
+    the bosses' names ahead of other ways out and quests. A glow because the other ways to say it are taken: a ring is
+    a pick's, a pulse the pointer's, a new hue isn't allowed. It never moves (principle 2). Until then the listed
+    extracts were the solid triangles they always were, found only by the others being hollow, and didn't read as
+    "active".
+  - **On the list but marked "??:??:??"** (it may be closed, or it needs something): solid, not lit, with the "?" badge
+    at its lower left that a possible location carries: maybe here, maybe open (`MapScene.ExitsUnsure`).
+  - **Left out: hollow**: its outline in its colour on the collar's dark, its name in muted instead of ink
+    (`MapScene.ExitsNotListed`). Nothing is hidden: a hollow extract is still a place on the map, and the list could
+    have been read wrong.
+  Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
+  for the lit ones and one for the other two, each shown once a list was read.
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less

@@ -904,10 +904,11 @@ public sealed partial class MainWindow : Window
         // The picks of the map drawn (picks are kept per map), which in a raid can be another than the raid's.
         scene.PickSlots = latest.PickSlotsOn(latest.Map?.NormalizedName);
         scene.Kept = latest.PicksOn(latest.Map?.NormalizedName);
-        // The extracts the game's own list named this raid, once a screenshot showed it (owner, 2026-10-05): the others
-        // are drawn hollow, the ones marked "??:??:??" carry a "?". Only on the raid's own map.
+        // The extracts the game's own list named this raid, once a screenshot showed it (owner, 2026-10-05): they are lit,
+        // the others are drawn hollow, the ones marked "??:??:??" carry a "?". Only on the raid's own map.
         var exitsRead = latest.ExitsReadAt is not null && !latest.LooksAtAnotherMap;
         scene.ExitsNotListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.NotListed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
+        scene.ExitsListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Listed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.ExitsUnsure = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Unsure).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;

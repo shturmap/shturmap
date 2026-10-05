@@ -375,6 +375,23 @@ public sealed class MapScene
     private IReadOnlySet<string> _exitsNotListed = Nothing;
 
     /// <summary>
+    /// The extracts the game's own list named this raid without "??:??:??" (marker ids): they are lit, a steady glow in
+    /// their colour and their names in bold (owner, 2026-10-05: "highlighted better on the map so it can be seen that
+    /// they are active"). Empty while no list was read.
+    /// </summary>
+    public IReadOnlySet<string> ExitsListed
+    {
+        get => _exitsListed;
+        set
+        {
+            _exitsListed = value.Count == 0 ? Nothing : value;
+            LayoutVersion++;
+        }
+    }
+
+    private IReadOnlySet<string> _exitsListed = Nothing;
+
+    /// <summary>
     /// The listed extracts the game marked "??:??:??" (marker ids): it may be closed, or it needs something. They
     /// carry the "?" a possible location carries: maybe here.
     /// </summary>

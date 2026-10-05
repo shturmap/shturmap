@@ -37,7 +37,7 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
   distance and direction, with the time the raid still runs above them. No clicks.
 - **Your extracts:** the game gives each raid its own extracts and shows them in a list at the top right, at the
   raid's start and when you ask for it (O twice by default). Take a screenshot while it shows and Shturmap reads it:
-  the extracts on your list stay solid on the map and come first, the others turn hollow. Until then it says that
+  the extracts on your list light up on the map and come first, the others turn hollow. Until then it says that
   the nearest extract isn't checked against your list.
 - **Quest cards:** objectives, keys and items for any quest, one hover away. Pop out a card and its distances stay
   live.

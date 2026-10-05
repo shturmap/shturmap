@@ -24,6 +24,7 @@ public enum LegendSymbol
     QuestZone,
     Extract,
     SharedExtract,
+    ExtractListed,
     ExtractNotListed,
     Transit,
     Boss,
@@ -86,6 +87,7 @@ public static class MapLegend
         If(kinds.Contains(MarkerKind.ExtractPmc) || kinds.Contains(MarkerKind.ExtractScav), LegendSymbol.Extract);
         If(kinds.Contains(MarkerKind.ExtractShared), LegendSymbol.SharedExtract);
         // Once a screenshot showed the game's own extract list this raid.
+        If(scene.ExitsListed.Count > 0, LegendSymbol.ExtractListed);
         If(scene.ExitsNotListed.Count > 0 || scene.ExitsUnsure.Count > 0, LegendSymbol.ExtractNotListed);
         If(kinds.Contains(MarkerKind.Transit), LegendSymbol.Transit);
         If(kinds.Contains(MarkerKind.BossSpawn), LegendSymbol.Boss);
@@ -123,6 +125,7 @@ public static class MapLegend
         new(LegendSymbol.QuestZone, "An objective's area."),
         new(LegendSymbol.Extract, "Extract for your side: green (PMC) or teal (Scav) triangle."),
         new(LegendSymbol.SharedExtract, "Extract for both sides: khaki split triangle."),
+        new(LegendSymbol.ExtractListed, "On your extract list this raid: lit, a glow in its colour, name in bold."),
         new(LegendSymbol.ExtractNotListed, "Not on your extract list this raid: hollow, name faint. With a ?: the game shows ??:??:?? (closed, or needs something)."),
         new(LegendSymbol.Transit, "Transit to another map: violet diamond."),
         new(LegendSymbol.Boss, "Boss or AI squad spawn: red octagon, with the chance (and this zone's share)."),
@@ -245,6 +248,15 @@ public static partial class MapRenderer
                 Marker(new MapMarker("pmc", MarkerKind.ExtractPmc, At(-11, 0), ""));
                 Marker(new MapMarker("scav", MarkerKind.ExtractScav, At(11, 0), ""));
                 break;
+            case LegendSymbol.ExtractListed:
+            {
+                // A little smaller than on the map, so the whole glow fits the swatch.
+                var u = ui * 0.75f;
+                var shown = Show(camera, scene, new MapMarker("listed", MarkerKind.ExtractPmc, At(0, 0), ""), u) with { Listed = true };
+                DrawListedGlow(canvas, shown);
+                DrawMarker(canvas, scene, shown, u);
+                break;
+            }
             case LegendSymbol.ExtractNotListed:
                 Marker(new MapMarker("not-listed", MarkerKind.ExtractPmc, At(-11, 0), ""), change: m => m with { NotListed = true });
                 Marker(new MapMarker("unsure", MarkerKind.ExtractPmc, At(11, 0), ""), change: m => m with { Unsure = true });
