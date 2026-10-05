@@ -91,7 +91,7 @@ public sealed partial class KeepToggle : Grid
             _icon.FontSize = 14;
         }
         ToolTipService.SetToolTip(this, kept
-            ? "Picked for the coming raid: in this colour on the map, first in its card. Click to unpick"
-            : "Pick for the coming raid: keeps this quest lit on the map in a colour of its own and first in its card, until it is done or you click again");
+            ? "Picked for the coming raid. Click to unpick"
+            : "Pick for the coming raid: lit on the map in its own colour, first in its card");
     }
 }

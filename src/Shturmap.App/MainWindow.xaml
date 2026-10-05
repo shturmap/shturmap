@@ -209,14 +209,16 @@
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The game names each screenshot with your position; Shturmap moves your marker, picks the floor and sorts your objectives by distance. The map stays where you put it: your new position pings, and an arrow at the edge points to it when it is out of view (F shows it). Or turn on Follow my position (Shift+F): each new position brings the map back to you at the zoom you chose, and you can drag and zoom in between." />
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The screenshot's name holds your position: your marker, floor and distances update. The map stays put; F shows you, Shift+F follows you." />
                 </TextBlock>
-                <TextBlock TextWrapping="Wrap" Text="The map, the raid and your quest progress follow the game's logs on their own. Nothing needs clicking while you play." />
-                <TextBlock TextWrapping="Wrap" Text="Between raids, Shturmap suggests where to go next, what you can complete there and what to bring. In a raid, the same card stays up for the map you're on, with each quest's objectives under it: how far, which way. EXIT names the nearest extract for your side. The game opens only some of them each raid and shows them in a list at the top right, at the raid's start and when you ask for it (O twice by default): take a screenshot while it shows, and Shturmap reads it. The extracts on your list stay solid on the map and come first; the others turn hollow." />
-                <TextBlock TextWrapping="Wrap" Text="Quests are ordered from going somewhere, to finding or surviving, to fighting; simpler first within each." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest, in the list or on the map, to see its card and light up everywhere else it appears. Click it to keep its card open. To pick it for the coming raid, click its pen (beside it, or on its card); pick as many as you like. Picks come first in their map's card (PICKED) and in the raid card, what they need comes first under BRING, and on the map their markers turn larger and ringed, each pick in a soft colour of its own (one of eight) that its name, its row here and its pen share, with a line from you to the nearest; every other marker stays as it is. A pick stays until the quest is done, you click its pen again, or CLEAR PICKS. Move into a card and point at a key, an item or a quest in it for that one's card. Pop out a card to keep it as a small window; in a raid it shows how far each objective is." />
-                <TextBlock TextWrapping="Wrap" Text="The game's logs say when a quest starts and ends, never when one of its objectives is done. So when you have done one, you can tick it on the quest's card (the small box at the end of its line): the map marks it done, and the guide, NEXT and the plan leave it out. Nobody asks you to; a tick goes by itself when the quest is over, or when you click the box again." />
-                <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs alone, so a quest started before your oldest log isn't shown." />
+                <TextBlock TextWrapping="Wrap" Text="Map, raid and quests follow the game's logs. No clicks needed while you play." />
+                <TextBlock TextWrapping="Wrap" Text="Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction." />
+                <TextBlock TextWrapping="Wrap" Text="EXIT is the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice) and Shturmap reads it: yours stay solid, the rest turn hollow." />
+                <TextBlock TextWrapping="Wrap" Text="Quest order: go somewhere, then find or survive, then fight; simplest first." />
+                <TextBlock TextWrapping="Wrap" Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Pop a card out to keep it as a small window." />
+                <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest. They stay until done, unpicked, or CLEAR PICKS." />
+                <TextBlock TextWrapping="Wrap" Text="Done an objective? The logs can't tell, so tick its box on the quest's card: the map, NEXT and the plan then skip it. Ticks clear when the quest ends." />
+                <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs only: one started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
                 <ItemsControl ItemsSource="{x:Bind Keys}">
@@ -264,14 +266,14 @@
                 </HyperlinkButton>
                 <ItemsControl x:Name="LegendRest" ItemTemplate="{StaticResource MapLegendRowTemplate}" Visibility="Collapsed" />
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
-                           Text="Shturmap reads your screenshots' names, the game's logs and public tarkov.dev data, and, of a screenshot taken in a raid, the top right corner of its picture, for the game's extract list (untick Read the extract list from screenshots in settings to stop that). It reads nothing from the game itself and sends it nothing. It changes nothing outside its own folders, unless you tick Delete position screenshots in settings. Nothing is sent unless you send a report or allow crash reports; installed with its Setup, it asks GitHub for a newer version at start (Updates, in settings). Its own log stays on this PC, in %LOCALAPPDATA%\Shturmap\logs." />
+                           Text="Reads screenshot names, the game's logs, public tarkov.dev data, and the extract list in a raid screenshot's top right corner (settings can turn that off). Reads nothing from the game, sends it nothing. Changes nothing outside its folders, unless you tick Delete position screenshots. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Its log stays on this PC." />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="HELP AND FEEDBACK" Margin="0,8,0,0" />
                 <!-- Reports go through the feedback button at the top right (owner, 2026-10-03: "there should be a separate
                      feedback/bugreport button"); help keeps the diagnostics to paste elsewhere. -->
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind FeedbackPointer}" />
                 <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,4,0,0">
                   <HyperlinkButton Padding="0" Click="OnCopyDiagnosticsClick"
-                                   ToolTipService.ToolTip="Copies the app's version, what it found, the data's state and today's log (no names or ids), to paste into a message">
+                                   ToolTipService.ToolTip="Copies version, what was found, data state and today's log (no names or ids), to paste anywhere">
                     <TextBlock Text="COPY DIAGNOSTICS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
@@ -337,7 +339,7 @@
                      docs/DESIGN.md §8, "Reports"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0">
                   <TextBlock Text="Crash reports" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <HyperlinkButton Padding="0" Tag="Ask" Click="OnCrashModeClick" ToolTipService.ToolTip="After a crash, the next start asks whether to send a report">
+                  <HyperlinkButton Padding="0" Tag="Ask" Click="OnCrashModeClick" ToolTipService.ToolTip="The next start asks before sending">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
@@ -345,7 +347,7 @@
                                  Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Always" Click="OnCrashModeClick" ToolTipService.ToolTip="After a crash, the next start sends the report without asking">
+                  <HyperlinkButton Padding="0" Tag="Always" Click="OnCrashModeClick" ToolTipService.ToolTip="The next start sends it without asking">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
@@ -353,7 +355,7 @@
                                  Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Never" Click="OnCrashModeClick" ToolTipService.ToolTip="Crashes are only noted on this PC">
+                  <HyperlinkButton Padding="0" Tag="Never" Click="OnCrashModeClick" ToolTipService.ToolTip="Crashes stay on this PC">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
@@ -363,12 +365,12 @@
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap"
-                           Text="A crash report holds the error, where in Shturmap it happened, the versions and the last 50 lines of Shturmap's log, with your user folder masked. Never memory, screenshots, game files or ids." />
+                           Text="Holds the error, where it happened, versions and the last 50 log lines, user folder masked. No memory, screenshots, game files or ids." />
                 <!-- New versions from GitHub Releases, as the player says here (owner, 2026-10-03: default Automatic;
                      docs/DESIGN.md §8, "Distribution"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}">
                   <TextBlock Text="Updates" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <HyperlinkButton Padding="0" Tag="Automatic" Click="OnUpdateModeClick" ToolTipService.ToolTip="Asks GitHub at start and every 6 hours; a new version downloads in the background and applies at the next start">
+                  <HyperlinkButton Padding="0" Tag="Automatic" Click="OnUpdateModeClick" ToolTipService.ToolTip="Checks GitHub at start and every 6 h; installs at the next start">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
@@ -376,7 +378,7 @@
                                  Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="TellOnly" Click="OnUpdateModeClick" ToolTipService.ToolTip="Asks GitHub and tells you about a new version; it downloads only when you click">
+                  <HyperlinkButton Padding="0" Tag="TellOnly" Click="OnUpdateModeClick" ToolTipService.ToolTip="Checks GitHub and tells you; downloads only on your click">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
@@ -384,7 +386,7 @@
                                  Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Off" Click="OnUpdateModeClick" ToolTipService.ToolTip="Shturmap doesn't ask GitHub at all">
+                  <HyperlinkButton Padding="0" Tag="Off" Click="OnUpdateModeClick" ToolTipService.ToolTip="Never checks GitHub">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
@@ -394,7 +396,7 @@
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}"
-                           Text="A new version downloads in the background and applies the next time Shturmap starts, never during a raid. GitHub sees your internet address, as with any download; nothing else is sent." />
+                           Text="Downloads in the background, applies at the next start, never in a raid. GitHub sees your internet address, nothing more." />
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{x:Bind ShownIfNot(ViewModel.UpdatesAvailable), Mode=OneWay}"
                            Text="{x:Bind ViewModel.UpdatesNote, Mode=OneWay}" />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="APP AND DATA" Margin="0,8,0,0" />
@@ -404,11 +406,11 @@
                 <TextBlock Text="{x:Bind ViewModel.GameFolderText, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11" Margin="0,2,0,0"
                            Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="18" Visibility="{x:Bind ShownIfTrue(ViewModel.GameFolderChangeable), Mode=OneWay}">
-                  <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" ToolTipService.ToolTip="Choose the folder Escape from Tarkov is installed in">
+                  <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" ToolTipService.ToolTip="Pick the game's install folder">
                     <TextBlock Text="CHOOSE…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <HyperlinkButton Padding="0" Click="OnFindGameAutomaticallyClick" Visibility="{x:Bind ShownIfTrue(ViewModel.FindGameAutomatically), Mode=OneWay}"
-                                   ToolTipService.ToolTip="Forget the chosen folder and find the game by itself again">
+                                   ToolTipService.ToolTip="Forget the chosen folder, find the game again">
                     <TextBlock Text="FIND AUTOMATICALLY" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
@@ -420,19 +422,19 @@
                   <HyperlinkButton Padding="0" Click="OnLogFolderClick" ToolTipService.ToolTip="Opens Shturmap's log folder (%LOCALAPPDATA%\Shturmap\logs)">
                     <TextBlock Text="LOG FOLDER ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Click="OnPrivacyClick" ToolTipService.ToolTip="What a report and a crash report hold, who receives them, and for how long">
+                  <HyperlinkButton Padding="0" Click="OnPrivacyClick" ToolTipService.ToolTip="What reports hold, who gets them, how long they're kept">
                     <TextBlock Text="PRIVACY ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <!-- The licences of the code a build carries (eng\notices.ps1), installed with the app. -->
                   <HyperlinkButton Padding="0" Click="OnLicencesClick" Visibility="{x:Bind LicencesVisibility}"
-                                   ToolTipService.ToolTip="Opens the folder with Shturmap's licence and those of the code it is built with">
+                                   ToolTipService.ToolTip="Shturmap's licence and those of the code it uses">
                     <TextBlock Text="LICENCES ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
                 <!-- Removing Shturmap from here as well as from Windows' Settings, with the data only on a tick
                      (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"). Installed builds only. -->
                 <HyperlinkButton Padding="0" Margin="0,2,0,0" Click="OnUninstallClick" Visibility="{x:Bind UninstallVisibility}"
-                                 ToolTipService.ToolTip="Removes Shturmap from this PC, as Windows' Settings → Apps does">
+                                 ToolTipService.ToolTip="Removes Shturmap, as Windows' Settings → Apps does">
                   <TextBlock Text="UNINSTALL SHTURMAP…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
                 <StackPanel Spacing="6" Margin="0,4,0,0" Padding="12,10" BorderThickness="1" BorderBrush="{StaticResource LineStrongBrush}"
@@ -531,7 +533,7 @@
                 <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
                 <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnClearPicksClick"
                                  Visibility="{x:Bind ShownIfTrue(ViewModel.HasPicks), Mode=OneWay}"
-                                 ToolTipService.ToolTip="Unpicks every quest you picked on this map. Other maps keep their picks">
+                                 ToolTipService.ToolTip="Unpicks this map's quests; other maps keep theirs">
                   <TextBlock Text="CLEAR PICKS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
               </Grid>
@@ -641,7 +643,7 @@
                         <StackPanel Spacing="3">
                           <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
                           <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
-                                     ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
+                                     ToolTipService.ToolTip="Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here." />
                           <ItemsControl ItemsSource="{x:Bind DetailParts}" ItemTemplate="{StaticResource LinePartTemplate}"
                                         ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False" AutomationProperties.Name="{x:Bind Detail}" />
                           <StackPanel Visibility="{x:Bind ExpandedVisibility}">
@@ -761,7 +763,7 @@
                          Scav: then the tag is a switch. -->
                     <Button HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6,1" Click="OnSideClick"
                             Visibility="{x:Bind ShownIfTrue(ViewModel.SideSwitchable), Mode=OneWay}"
-                            ToolTipService.ToolTip="This raid runs on your own machine, and then the game's log doesn't say which side you play. Click to switch between PMC and Scav for this raid.">
+                            ToolTipService.ToolTip="Raid hosted on your PC: the log doesn't say your side. Click to switch PMC / Scav.">
                       <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" />
                         <FontIcon Glyph="&#xE8AB;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
@@ -775,7 +777,7 @@
                   <controls:RaidClock Reading="{x:Bind ViewModel.RaidClock, Mode=OneWay}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
-                             ToolTipService.ToolTip="A quest counts as one to complete when all its raid objectives can be done on this map in one raid, and none needs found-in-raid items or more than 3 kills. The others only progress here." />
+                             ToolTipService.ToolTip="Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here." />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLineParts, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}"
                                 ItemTemplate="{StaticResource LinePartTemplate}" ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False"
                                 AutomationProperties.Name="{x:Bind ViewModel.RaidLine, Mode=OneWay}" />
@@ -845,7 +847,7 @@
                            brings the whole list up. -->
                       <HyperlinkButton Padding="0" HorizontalAlignment="Right" Margin="0,4,0,0" Click="OnAllExitsClick"
                                        Visibility="{x:Bind ShownIf(ViewModel.AllExitsText), Mode=OneWay}"
-                                       ToolTipService.ToolTip="Shows the list of every extract and transit for your side, nearest first">
+                                       ToolTipService.ToolTip="Every extract and transit for your side, nearest first">
                         <TextBlock Text="{x:Bind ViewModel.AllExitsText, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
                                    Foreground="{StaticResource AmberBrush}" />
                       </HyperlinkButton>
@@ -1065,7 +1067,7 @@
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4">
           <!-- Floors, top first. Shturmap shows yours (dot) from each screenshot; a pick here holds until the next one. -->
           <ItemsControl ItemsSource="{x:Bind ViewModel.Floors, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,0,12"
-                        ToolTipService.ToolTip="Floors. Shturmap shows yours (dot) from each screenshot; pick another, or use PgUp / PgDn, to look around until your next screenshot.">
+                        ToolTipService.ToolTip="Floors. The dot is yours, from your last screenshot; pick another or use PgUp / PgDn to look around.">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:FloorChoice">
                 <Button Tag="{x:Bind Index}" Click="OnFloorClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
@@ -1106,7 +1108,7 @@
           <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
           <HyperlinkButton Padding="0" NavigateUri="{x:Bind ViewModel.WikiMap, Mode=OneWay}" Click="OnWikiMapClick"
                            Visibility="{x:Bind ShownIfLink(ViewModel.WikiMap), Mode=OneWay}"
-                           ToolTipService.ToolTip="Opens this map's interactive map on the Escape from Tarkov wiki in your browser">
+                           ToolTipService.ToolTip="This map's interactive map on the Escape from Tarkov wiki">
             <TextBlock Text="WIKI MAP ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
           </HyperlinkButton>
           <TextBlock Text="{x:Bind ViewModel.Attribution, Mode=OneWay}" Style="{StaticResource NoteText}" FontSize="11" />

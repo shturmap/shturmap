@@ -83,7 +83,7 @@ public sealed partial class TickBox : Grid
         _check.Visibility = Ticked ? Visibility.Visible : Visibility.Collapsed;
         AutomationProperties.SetName(this, Ticked ? "Done, ticked by you" : "Tick as done");
         ToolTipService.SetToolTip(this, Ticked
-            ? "Ticked as done by you: the map, NEXT and the plan leave it out. Click to untick"
-            : "Tick when you have done this objective. The game's logs don't say it, so until then the map and the plan keep leading here");
+            ? "Done (your tick): the map, NEXT and the plan skip it. Click to untick"
+            : "Tick when done. The logs can't tell, so until then the map and the plan lead here");
     }
 }

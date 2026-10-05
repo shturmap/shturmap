@@ -33,7 +33,7 @@ public sealed partial class MainWindow
     public string FeedbackTooltip => Reporter.Configured ? "Report a problem or idea" : "Reporting isn't set up in this build";
 
     /// <summary>Help's pointer to the feedback button, which replaced the report link there (owner, 2026-10-03).</summary>
-    public string FeedbackPointer => "To report a problem or suggest an idea, use the feedback button at the top right, beside the ?.";
+    public string FeedbackPointer => "Problem or idea? Use the feedback button beside the ?.";
 
     /// <summary>A notice that asks for a report links to the dialog, or to the diagnostics where there is none.</summary>
     public string ReportOfferText => Reporter.Configured ? "REPORT" : "COPY DIAGNOSTICS";

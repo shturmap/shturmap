@@ -18,7 +18,7 @@ public class RailWordsTests
     {
         var menu = new RaidState();
         Assert.Equal("Not in a raid", RaidStatus.Text(menu, "Customs", Now));
-        Assert.Contains("doesn't say whether the game is open", RaidStatus.Tooltip(menu, Now));
+        Assert.Contains("can't tell the menus from a closed game", RaidStatus.Tooltip(menu, Now));
         Assert.DoesNotContain("menus", RaidStatus.Text(menu, null, Now), StringComparison.OrdinalIgnoreCase);
     }
 

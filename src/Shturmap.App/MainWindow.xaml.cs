@@ -196,17 +196,17 @@ public sealed partial class MainWindow : Window
     public IReadOnlyList<KeyHelp> Keys { get; } =
     [
         new("F", "Show my position"),
-        new("SHIFT + F", "Follow my position: each new position brings the map back to you, at the zoom you chose; drag and zoom as you like in between"),
-        new("+ / −", "Zoom in / out (or the mouse wheel)"),
-        new("0", "Show the whole map"),
-        new("PGUP / PGDN", "Show the floor above / below"),
-        new("↓ / ↑", "Step through the rows on the left: the row lights up everywhere it appears, as when you point at it"),
-        new("ENTER", "On a row: what a click does. Keeps the quest's or item's card open; on a map in the list, shows that map"),
-        new("P", "On a quest's row: pick it for the coming raid, or unpick it"),
-        new("ESC", "Close the cards and let the row go"),
+        new("SHIFT + F", "Follow my position"),
+        new("+ / −", "Zoom in / out (or mouse wheel)"),
+        new("0", "Whole map"),
+        new("PGUP / PGDN", "Floor up / down"),
+        new("↓ / ↑", "Step through the rows on the left"),
+        new("ENTER", "On a row: same as a click"),
+        new("P", "On a quest's row: pick / unpick"),
+        new("ESC", "Close cards, let the row go"),
         new("F1 / ?", "This help"),
-        new("CTRL + ,", StudyLog.Available ? "Settings: updates, crash reports, the study log, the app's folders" : "Settings: updates, crash reports, the app's folders"),
-        new("MOUSE", "Drag to move the map, double-click to zoom in. Click a quest to keep its card open; click its pen to pick it for the coming raid"),
+        new("CTRL + ,", "Settings"),
+        new("MOUSE", "Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it"),
     ];
 
     /// <summary>
@@ -376,7 +376,7 @@ public sealed partial class MainWindow : Window
         StudySwitch.Children.Add(new TextBlock
         {
             Style = (Style)Application.Current.Resources["NoteText"], Margin = new Thickness(22, 0, 0, 0),
-            Text = @"Developer builds only. Records your raids, quest changes, screenshot positions and how you use Shturmap, to make it better. It stays on this PC, in the dev data folder's study folder (%LOCALAPPDATA%\Shturmap-dev\study), for 30 days, and is never sent, not even with a report.",
+            Text = @"Developer builds only. Records raids, quest changes, positions and app use, to improve Shturmap. Stays on this PC (%LOCALAPPDATA%\Shturmap-dev\study) for 30 days; never sent, not even with a report.",
         });
         StudySwitch.Visibility = Visibility.Visible;
     }
@@ -388,12 +388,12 @@ public sealed partial class MainWindow : Window
     // "Delete position screenshots" in settings (owner, 2026-10-04): the one thing Shturmap changes outside its own
     // folders, so it is off unless ticked and its note says what goes and what stays.
     public string DeleteScreenshotsNote { get; } =
-        $"Off unless you tick it. Each screenshot that gave Shturmap a position is deleted {Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds:0} seconds after its name was read: for good, not to the Recycle Bin. Only screenshots taken in a raid while Shturmap runs with this ticked. The ones already in the folder and screenshots from the menus stay.";
+        $"Deletes each position screenshot {Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds:0} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.";
 
     // "Read the extract list from screenshots" in settings (owner, 2026-10-05): the one case where Shturmap opens a
     // screenshot's picture, so its note says what is looked at, and unticking it stops it.
     public string ReadExitsNote { get; } =
-        "On unless you untick it. The game shows the extracts it gave you this raid in a list at the top right: at the raid's start, and when you ask for it (O twice by default). When you take a screenshot in a raid, Shturmap looks at the top right corner of its picture; if the list is there, it reads which extracts are yours, with the text recognition built into Windows. This happens on your PC: nothing of the picture is kept or sent. Unticked, no picture is opened; positions come from the file names either way.";
+        "Looks at the top right corner of each raid screenshot. If the game's extract list is there (raid start, or O twice), Windows' own text recognition reads which extracts are yours. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
 
     private async void OnReadExitsClick(object sender, RoutedEventArgs e)
     {
@@ -820,8 +820,8 @@ public sealed partial class MainWindow : Window
         vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
         // Loading as a Scav (a server-hosted raid's setup says so early) has no kit to check: nothing counts for quests.
         vm.RaidNote = s.Raid.Phase == RaidPhase.Loading
-            ? "As a Scav, quest objectives don't count, so there is nothing to bring for them; items you find in raid do."
-            : "As a Scav, quest objectives don't count; items you find in raid do.";
+            ? "Scav: quest objectives don't count, so nothing to bring; found-in-raid items do."
+            : "Scav: quest objectives don't count; found-in-raid items do.";
         vm.RaidKit = [];
         vm.RaidKitMore = [];
         vm.RaidPicks = [];

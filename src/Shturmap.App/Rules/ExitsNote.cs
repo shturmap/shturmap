@@ -10,15 +10,15 @@ namespace Shturmap.App.Rules;
 /// </summary>
 public static class ExitsNote
 {
-    public const string HowToCheck = "Not checked against your list yet. Take a screenshot while the game shows your extracts (at the raid's start, or O twice by default) and Shturmap reads them from it.";
-    public const string NoReader = "Your extract list can't be read: this Windows has no text recognition language. Adding one (Windows Settings, Time & language, Language) turns it on.";
+    public const string HowToCheck = "Not checked against your list yet. Screenshot the game's extract list (raid start, or O twice) to check.";
+    public const string NoReader = "Can't read your extract list: Windows has no text recognition language. Add one in Windows Settings → Time & language → Language.";
 
     /// <summary>The line under EXTRACTS AND TRANSITS; empty outside a raid and with the reading unticked.</summary>
     /// <param name="listed">How many of the side's extracts the list names.</param>
     /// <param name="extracts">How many extracts the side has on this map.</param>
     public static string Of(bool inRaid, bool readOn, bool noReader, DateTime? readAt, int listed, int extracts) =>
         !inRaid || !readOn ? ""
-        : readAt is { } at ? $"Your list this raid: {listed} of {extracts} extracts, read from your screenshot at {at.ToString("HH:mm", CultureInfo.InvariantCulture)}."
+        : readAt is { } at ? $"Your list this raid: {listed} of {extracts} extracts (screenshot at {at.ToString("HH:mm", CultureInfo.InvariantCulture)})."
         : noReader ? NoReader
         : HowToCheck;
 
@@ -37,10 +37,10 @@ public static class ExitsNote
         : readable ? "Nearest · not checked against your list"
         : "Nearest · check your list in game";
 
-    public const string GlanceListedTip = "The game's own list names this extract for you this raid: read from your screenshot.";
-    public const string GlanceUnsureTip = "On your list, but the game marks it ??:??:??: it may be closed, or it needs something first.";
-    public const string GlanceUncheckedTip = "The nearest extract for your side. The game opens only some extracts in each raid, by where you started. Take a screenshot while the game shows your extract list (at the raid's start, or O twice by default) and Shturmap reads which are yours.";
-    public const string GlanceNoReadingTip = "The nearest extract for your side. The game opens only some extracts in each raid, by where you started, and neither its logs nor tarkov.dev's data say which: check the list in the game.";
+    public const string GlanceListedTip = "On the game's extract list for this raid, read from your screenshot.";
+    public const string GlanceUnsureTip = "On your list, but the game shows ??:??:??: maybe closed, or needs something first.";
+    public const string GlanceUncheckedTip = "Nearest extract for your side, maybe not open this raid. Screenshot the game's extract list (raid start, or O twice) to check.";
+    public const string GlanceNoReadingTip = "Nearest extract for your side, maybe not open this raid. Check your list in the game.";
 
     public static string GlanceTip(bool listed, bool unsure, bool readable) =>
         listed ? GlanceListedTip : unsure ? GlanceUnsureTip : readable ? GlanceUncheckedTip : GlanceNoReadingTip;

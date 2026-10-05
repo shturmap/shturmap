@@ -47,7 +47,7 @@
           <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
             <controls:KeepToggle QuestId="{x:Bind View.QuestId}" Framed="True" />
             <Button x:Name="PinButton" Padding="7,5" VerticalAlignment="Top" Click="OnPinClick"
-                    ToolTipService.ToolTip="Pop out: keep this card open as a small window you can place anywhere">
+                    ToolTipService.ToolTip="Pop out as a small window">
               <FontIcon x:Name="PinGlyph" FontSize="14" />
             </Button>
           </StackPanel>
@@ -139,7 +139,7 @@
         <!-- A link that leaves Shturmap, in the look of the others (WIKI MAP ↗, LOG FOLDER ↗): capitals and the arrow. -->
         <HyperlinkButton NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0"
                          Visibility="{x:Bind ShownIfWiki(View.WikiLink)}"
-                         ToolTipService.ToolTip="Opens this quest's page on the Escape from Tarkov wiki in your browser">
+                         ToolTipService.ToolTip="This quest on the Escape from Tarkov wiki">
           <TextBlock Text="WIKI PAGE ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
         </HyperlinkButton>
       </StackPanel>

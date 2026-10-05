@@ -46,9 +46,9 @@ public static class RaidTime
     /// <summary>From this many minutes left the time is shown in red: the game's own timer turns red for its last ten.</summary>
     public const int LowMinutes = 10;
 
-    public const string Tip = "Time left: this map's raid length minus the time since the raid's start in the game's log. It can be off after a reconnect.";
-    public const string ScavTip = "Time in the raid: since you joined, by the game's log. A Scav joins a raid already under way, and the log doesn't say how long it still runs.";
-    public const string NoLengthTip = "Time in the raid: since the raid's start in the game's log. The data gives no raid length for this map, so there is no time left to show.";
+    public const string Tip = "Time left: the map's raid length minus the time since the raid's start in the log. Can be off after a reconnect.";
+    public const string ScavTip = "Time since you joined, by the log. A Scav joins mid-raid, so the time left isn't known.";
+    public const string NoLengthTip = "Time since the raid's start, by the log. No raid length for this map, so no time left.";
 
     /// <summary>The reading for a raid that is running, or null outside one and where the log has no start for it.</summary>
     /// <param name="raidMinutes">The map's raid length; 0 when the data gives none.</param>

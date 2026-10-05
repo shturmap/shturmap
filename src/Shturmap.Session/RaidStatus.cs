@@ -58,6 +58,6 @@ public static class RaidStatus
         RaidPhase.InRaid when raid.RaidStartedAt is { } started =>
             "The game's log shows a raid, started " + started.ToString(started.Date == now.Date ? "HH:mm" : "d MMM HH:mm", CultureInfo.CurrentCulture),
         RaidPhase.InRaid => "The game's log shows a raid",
-        _ => "The game's log shows no raid. It doesn't say whether the game is open, so Shturmap doesn't claim the menus",
+        _ => "The game's log shows no raid (it can't tell the menus from a closed game)",
     };
 }

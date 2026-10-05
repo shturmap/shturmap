@@ -47,8 +47,8 @@ public static class Distribution
     /// said there too, which wasn't the reason (review of 2026-10-04, A40).
     /// </summary>
     public static string NoUpdatesText(bool installed, bool updaterFailed) => installed && updaterFailed
-        ? "Updates: the updater couldn't start this time, so Shturmap isn't asking for new versions. Its log says why (LOG FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."
-        : "Updates: not available in this build. Installed with Shturmap's Setup, it keeps itself up to date.";
+        ? "Updates: the updater couldn't start, so no update checks. The log says why (LOG FOLDER). Running the Setup again repairs it; your data stays."
+        : "Updates: not available in this build. Installed with the Setup, Shturmap updates itself.";
 
     /// <summary>
     /// Which install an exe belongs to by where it runs from, for a start in which Velopack itself failed (review of

@@ -20,13 +20,11 @@ public sealed record GameStateLine(string Title, string Note, bool OffersChoice)
             return null;
         if (locations.Install is null)
             return new("No game found on this PC",
-                "Or browse the maps: pick one above, everything on it shows. Your quests and raids follow the game once " +
-                "Shturmap finds it; it keeps looking while it runs.",
+                "Or browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking.",
                 canChoose);
         if (locations.LogsFolder is null)
             return new("The game hasn't run on this PC yet",
-                $"Found Escape from Tarkov in {locations.Install.Root}. Your quests and raids follow it once it has run " +
-                "here; until then, browse the maps above.",
+                $"Found in {locations.Install.Root}. Quests and raids follow once it has run here; until then, browse the maps above.",
                 canChoose);
         return null;
     }

@@ -64,12 +64,12 @@ public static class QuestTaxonomy
 
     public static string Explanation(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Elimination => "Kill targets, sometimes with conditions",
+        ObjectiveKind.Elimination => "Kill targets, maybe with conditions",
         ObjectiveKind.Exploration => "Go to a place",
-        ObjectiveKind.Pickup => "Pick up a quest item at a place",
-        ObjectiveKind.Place => "Plant, mark or use an item at a place; bring the item",
-        ObjectiveKind.FindInRaid => "Find items in raid (FIR), on any map",
-        ObjectiveKind.Survive => "Survive and extract, or stay under a condition",
-        _ => "Hand over or other progress at a trader, outside the raid",
+        ObjectiveKind.Pickup => "Pick up a quest item",
+        ObjectiveKind.Place => "Plant, mark or use an item you bring",
+        ObjectiveKind.FindInRaid => "Find items in raid (FIR), any map",
+        ObjectiveKind.Survive => "Survive and extract, or meet a condition",
+        _ => "Hand over at a trader, after the raid",
     };
 }

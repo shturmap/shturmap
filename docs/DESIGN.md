@@ -488,6 +488,12 @@ height around it; dark and light variants as in the table.
 **Words.** Sober and short, units on numbers, no marketing and no jargon (§8, "Rules"); what Shturmap reads and never
 does, the risk named plainly, none of the cheat sellers' vocabulary and no hint of Battlestate's approval (§2). The
 same in the app, the README, the website and the release notes.
+**Explanations in the app are terse** (owner, 2026-10-05: "The explanation text in the app and in the settings are
+way too long. Make them more concise, not exactly caveman style but in that direction"). Help, settings' notes,
+tooltips and the legend say what a thing is or does in as few words as stay clear: fragments are fine ("Crashes stay
+on this PC"), one point per sentence, no "Shturmap does X so that Y" when X is enough, nothing the control or the
+swatch beside it already shows. What a text must say (§2: what is read, kept or sent; what a setting deletes; the
+legend's shape and colour, "Legend") stays, in fewer words; the reasons belong here, not on screen.
 
 **Where each surface takes it from.** The app: `App.xaml` (colour resources, brushes and the text styles) and
 `Shturmap.Map.Palette` for the map. The website: `assets/site.css`'s `:root` (colours under the tokens' names,
@@ -531,8 +537,7 @@ quests, muted for what happens after the raid).
 **One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
 pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
 everywhere: rows, cards, map markers, the legend, buttons. The card's button that keeps it as a window is therefore
-**pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out: keep this card open as a small
-window you can place anywhere"; the pushpin `E840` is only the Place type. Text links that open something outside
+**pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out as a small window"; the pushpin `E840` is only the Place type. Text links that open something outside
 Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the
 same day, by rendering them side by side:
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
@@ -679,7 +684,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   "Disposing BEClient … BEClient exit successfully … Dll released" that ends some sessions also comes right after
   startup and between raids, and about half of the owner's 22 sessions (15 August to 3 October) simply stop after an
   ordinary line. So the log can't tell the menus from a closed game, and "GAME CLOSED" can't be said truthfully; the
-  tooltip says so ("The game's log shows no raid. It doesn't say whether the game is open…"). No process checks
+  tooltip says so ("The game's log shows no raid (it can't tell the menus from a closed game)"). No process checks
   (§2).
   **A raid whose end never reached the log** (review of 2026-10-04). For the same reason a raid the game was closed
   or crashed in keeps its start line and never gets its end line: read back at the next start it showed "IN RAID ·
@@ -815,9 +820,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     listed. Below the card, extracts and
     transits for your side, each with what it takes to leave there (see "Extract requirements").
     **The extract list** (owner, 2026-10-05). Under the heading one line in the note style says where things stand:
-    "Not checked against your list yet. Take a screenshot while the game shows your extracts (at the raid's start, or
-    O twice by default) and Shturmap reads them from it.", then "Your list this raid: 6 of 12 extracts, read from
-    your screenshot at 16:40." (or that this Windows has no text recognition language; nothing with the reading
+    "Not checked against your list yet. Screenshot the game's extract list (raid start, or O twice) to check.", then
+    "Your list this raid: 6 of 12 extracts (screenshot at 16:40)." (or that this Windows has no text recognition
+    language; nothing with the reading
     unticked). Once read, each extract's small line adds "· ON YOUR LIST" or "· ON YOUR LIST · ??? IN GAME" and takes
     the way out's colour; one the list leaves out says "· NOT ON YOUR LIST", its name and distance muted, without
     what it would take, and comes after everything else (the others stay nearest first, transits among them). A
@@ -869,8 +874,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - *No game* (owner, 2026-10-03: "Yes, build the fallback 1-5"; the one 30 s notice was easy to miss, and a game
     Shturmap couldn't find left no way to point it there). While discovery finds no game, one line stands where the
     Plan card would be, for as long as that lasts: "NO GAME FOUND ON THIS PC", **CHOOSE GAME FOLDER…**, and "Or
-    browse the maps: pick one above, everything on it shows. Your quests and raids follow the game once Shturmap
-    finds it; it keeps looking while it runs." (`GameStateLine`). A game found without log sessions says "THE GAME
+    browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking."
+    (`GameStateLine`). A game found without log sessions says "THE GAME
     HASN'T RUN ON THIS PC YET", where it was found, and offers the same choice (a wrong install may have been
     found). NEXT RAID, its cards and the "none of your quests" hint step aside: without the game's logs there are
     no quests to plan, and nothing quest-like is shown. The map browses as always (extracts, transits, bosses,

@@ -12,7 +12,7 @@ public class ExitsNoteTests
     public void In_a_raid_the_heading_says_how_to_check_until_the_list_was_read()
     {
         Assert.Equal(ExitsNote.HowToCheck, ExitsNote.Of(inRaid: true, readOn: true, noReader: false, readAt: null, listed: 0, extracts: 9));
-        Assert.Equal("Your list this raid: 6 of 9 extracts, read from your screenshot at 21:04.",
+        Assert.Equal("Your list this raid: 6 of 9 extracts (screenshot at 21:04).",
             ExitsNote.Of(inRaid: true, readOn: true, noReader: false, readAt: At, listed: 6, extracts: 9));
     }
 
