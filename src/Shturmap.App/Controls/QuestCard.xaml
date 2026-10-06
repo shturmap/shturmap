@@ -73,6 +73,15 @@
                   <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" Foreground="{x:Bind controls:QuestCard.TextBrush(Done)}" />
                   <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                  <!-- The map's "?" said in words, beside the "?" as the map draws it: one of several places (owner,
+                       2026-10-06: "It should be displayed in the raid tooltip to explain"). -->
+                  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,0,1" Visibility="{x:Bind controls:QuestCard.ShownIf(Possible)}">
+                    <Border Background="{StaticResource GroundBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1"
+                            Padding="3,0" VerticalAlignment="Center">
+                      <TextBlock Text="?" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" />
+                    </Border>
+                    <TextBlock Text="{x:Bind Possible}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                  </StackPanel>
                   <TextBlock Text="{x:Bind Live}" Style="{StaticResource StatusText}" FontSize="12" Foreground="{StaticResource AmberBrush}"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Live)}" />
                   <TextBlock Text="{x:Bind Ticked}" Style="{StaticResource StatusText}" FontSize="12" Foreground="{StaticResource MutedBrush}"

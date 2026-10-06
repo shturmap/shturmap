@@ -25,6 +25,9 @@ public sealed record CardObjective(string QuestId, string ObjectiveId, Objective
 
     /// <summary>The trader it goes to (the quest's), pictured in the hand-over mark; null without a hand-over.</summary>
     public string? HandoverTraderId { get; init; }
+
+    /// <summary>What the map's "?" means for it: "One of 4 places it can be"; empty where it has one place, or is done.</summary>
+    public string Possible { get; init; } = "";
 }
 
 /// <summary>A key or an item to take into the raid for this quest.</summary>
@@ -161,7 +164,14 @@ public static class QuestCards
         var row = ticks is not null && ticks.TryGetValue(o.Id, out var day)
             ? new CardObjective(task.Id, o.Id, kind, text, where, item, "", Done: true, Ticked: TickedText(day), Tickable: true, Handover: handover)
             : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active, Handover: handover);
-        return row with { HandoverCount = count, HandoverTraderId = count > 0 ? task.Trader : null };
+        // Where its thing can be at several places, the card says what the map's "?" on each of them means.
+        var places = Shturmap.Map.MapContentBuilder.PlacesItCanBe(o);
+        return row with
+        {
+            HandoverCount = count,
+            HandoverTraderId = count > 0 ? task.Trader : null,
+            Possible = places > 1 && !row.Done ? $"One of {places} places it can be" : "",
+        };
     }
 
     /// <summary>The item an objective is about, to picture beside it: what it finds, picks up, marks, uses or wears.</summary>

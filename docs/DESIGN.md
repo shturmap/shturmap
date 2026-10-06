@@ -1281,7 +1281,12 @@ spawns below).
   transparent background. I think it should always be a black icon surrounded by the marker color"). Until then a
   possible place was a hollow ring with the glyph in colour, meant to read as "maybe here"; it read as another kind
   of marker, its glyph taken for the difference. The four corners are then: floor upper right, count lower right,
-  "OPT" upper left, "?" lower left. A group with any place on another floor shows the floor arrow. The largest group carries the label;
+  "OPT" upper left, "?" lower left. **Only where there are several**: tarkov.dev lists every quest item's spot as a
+  possible location, also where it is the only one (57 of 109 such objectives in PvE, 2026-10-06: Population Census's
+  journal, Audit's records, Golden Swag's lighter), and those were drawn with a "?" that said nothing true (owner,
+  2026-10-06: "Why does the Population Census have a question mark in the icon?"). A thing with one place is drawn at
+  it as a place like any other (`MapContentBuilder.PlacesItCanBe`); with more, across every map, each is a possible
+  place, and the quest's card says so ("Quest cards"). A group with any place on another floor shows the floor arrow. The largest group carries the label;
   pointing at a cluster points at its quest. Only places in view are merged, so a group that runs out of view keeps
   a marker for the ones in view, with their count (the review of 2026-10-04: merged first, the whole group went when
   its middle place was out of view).
@@ -1339,6 +1344,10 @@ text itself names the map as its place ("… on Streets of Tarkov" stood over "S
 that holds every map the line would show. A text that names none of its maps, or only some, keeps the whole line;
 "at Factory gate" is a gate, not the map (`QuestCards.SaysWhere`, with the synopsis' map pattern; English texts
 only, so in another game language both lines stay).
+**The map's "?" in words** (owner, 2026-10-06: "It should be displayed in the raid tooltip to explain"): an objective
+whose thing can be at several places has a line under its map names, the "?" as the map draws it (a small dark plate
+with a gold hairline) and "One of 4 places it can be", on every card, held, popped out or on hover in a raid
+(`CardObjective.Possible`); its distance is to the nearest of them. A done one has no such line.
 
 **Ticks: an objective the player says is done** (owner, 2026-10-04; UX principle 7). The game's logs never say that
 a single objective is done, so a quest that takes several raids kept leading to places already dealt with.

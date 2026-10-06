@@ -93,6 +93,10 @@ public static class MapContentBuilder
                             outline.Select(p => p.ToWorld()).ToList(), quest.Id));
                 }
 
+                // "Maybe here" only where the thing has several places: tarkov.dev lists every quest item's spot as a
+                // possible location, also where there is just one (owner, 2026-10-06: Population Census's journal had a
+                // "?"; 57 of 109 such objectives in PvE have one place). One place is a place like any other.
+                var possible = PlacesItCanBe(objective) > 1;
                 foreach (var location in objective.PossibleLocations ?? [])
                 {
                     if (location.Map is null || !sameArtwork.Contains(location.Map))
@@ -100,7 +104,8 @@ public static class MapContentBuilder
                     foreach (var position in location.Positions ?? [])
                     {
                         places.Add(position.ToWorld());
-                        markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}", done ? MarkerKind.ObjectiveDone : MarkerKind.PossibleLocation,
+                        markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}",
+                            done ? MarkerKind.ObjectiveDone : possible ? MarkerKind.PossibleLocation : MarkerKind.Objective,
                             position.ToWorld(), quest.Name, quest.Id, kind, optional));
                     }
                 }
@@ -199,6 +204,12 @@ public static class MapContentBuilder
 
     /// <summary>The group a lock's marker carries: pointing at its key (anywhere in the window) lights it.</summary>
     public static string KeyGroup(string keyId) => "key:" + keyId;
+
+    /// <summary>
+    /// How many places, on every map, the thing an objective is about can be at (tarkov.dev's possible locations): more
+    /// than one makes each a "maybe here" place, with a "?" on the map and a line on the quest's card saying so.
+    /// </summary>
+    public static int PlacesItCanBe(ApiObjective objective) => (objective.PossibleLocations ?? []).Sum(l => l.Positions?.Count ?? 0);
 
     /// <summary>The key a lock marker's group names, or null for any other group.</summary>
     public static string? KeyOf(string? group) =>
