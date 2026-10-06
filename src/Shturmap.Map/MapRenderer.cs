@@ -266,6 +266,9 @@ public static partial class MapRenderer
         /// <summary>Its true place, where it was set so far from it that it no longer covers it (<see cref="Repel"/>): a
         /// leader joins the two, with a dot at the place.</summary>
         public SKPoint? Leader { get; init; }
+
+        /// <summary>The objectives of its quest on its spot it stands for, itself first (<see cref="JoinSpots"/>); empty for one.</summary>
+        public IReadOnlyList<MapMarker> Joined { get; init; } = [];
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
@@ -328,6 +331,8 @@ public static partial class MapRenderer
             if (ShowsPossible(m))
                 taken.Add(PossibleBadgeBox(m, ui));
             taken.Add(Square(m.At, m.Reach));
+            if (HasTab(m))
+                taken.Add(SKRect.Inflate(TabBox(m, ui), MarkerCollar * ui, MarkerCollar * ui));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeBox(m, ui));
             // No label covers a leader or the dot at its end (Repel).
@@ -380,6 +385,12 @@ public static partial class MapRenderer
             var gap = 4 * ui;
             SKRect? box = null;
             var candidates = LabelCandidates(m.At, m.Reach + gap, width, font.Size);
+            // A marker with a tab says its name after the tab: "◉×2 Gratitude".
+            if (HasTab(m))
+            {
+                var right = candidates.First();
+                candidates = candidates.Skip(1).Prepend(SKRect.Create(TabBox(m, ui).Right + MarkerCollar * ui + gap, right.Top, right.Width, right.Height));
+            }
             // One of a pair set side by side has its neighbour on one side and, as often as not, that one's name
             // below: its own may stand a line further down, where the two read as the pair's caption.
             if (m.Beside)
@@ -693,7 +704,7 @@ public static partial class MapRenderer
     /// <summary>Half a symbol's width as the repel sees it: its body at rest, and a little more where a badge stands
     /// out at a corner (a floor arrow, a count, "OPT", "?"), so no neighbour is pushed under a badge.</summary>
     public static float RepelHalf(ShownMarker m, float ui) =>
-        RestHalf(m.Marker, ui) + (m.Floor != 0 || m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? 3 * ui : 0);
+        RestHalf(m.Marker, ui) + (m.Floor != 0 || m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? 3 * ui : 0) + JoinedExtra(m, ui);
 
     /// <summary>How far a symbol must stand from its place before a leader joins the two: clear of its own body, so
     /// the dot at the place shows. Closer, it still covers its place and needs none.</summary>
@@ -781,6 +792,7 @@ public static partial class MapRenderer
             }
         }
         // In the data's order, not the drawing order below: which of two goes left must not turn on what is pointed at.
+        JoinSpots(result, ui);
         result.Sort((a, b) => a.Index.CompareTo(b.Index));
         var places = SetApart(scene, result.Select(r => r.Shown).ToList(), camera.Zoom, ui, result.Select(r => r.Index));
         return result
@@ -1095,7 +1107,8 @@ public static partial class MapRenderer
             _ => m.R,
         };
         var d = r < 8 * ui ? r + 3 * ui : r * 0.8f;
-        return new SKPoint(m.At.X + d, m.At.Y - d);
+        // Above a tab (MapJoin), not on it.
+        return new SKPoint(m.At.X + d, m.At.Y - d - (HasTab(m) ? 4 * ui : 0));
     }
 
     private static SKRect FloorBadgeBox(ShownMarker m, float ui)
@@ -1159,6 +1172,9 @@ public static partial class MapRenderer
         }
         if (best is not null)
             return best;
+        // A marker's tab (MapJoin) is the marker.
+        if (LayoutOf(camera, scene, ui).Markers.FirstOrDefault(m => HasTab(m) && SKRect.Inflate(TabBox(m, ui), 2 * ui, 2 * ui).Contains(screen)) is { } tabbed)
+            return tabbed.Marker;
         // The dot at the end of a leader is its symbol's place: pointing at it points at the symbol.
         return LayoutOf(camera, scene, ui).Markers
             .Where(m => m.Leader is { } place && SKPoint.Distance(place, screen) <= 6 * ui)
@@ -1857,6 +1873,9 @@ public static partial class MapRenderer
 
         switch (marker.Kind)
         {
+            case MarkerKind.Objective when HasTab(shown):
+                DrawTabbed(canvas, shown, ui);
+                break;
             case MarkerKind.Objective or MarkerKind.PossibleLocation when marker.Objective is { } kind:
                 // Every quest marker is the type's dark glyph on the marker's colour (owner, 2026-10-04: "it should
                 // always be a black icon surrounded by the marker color"). A possible location was a hollow ring with

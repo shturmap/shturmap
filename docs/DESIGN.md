@@ -1277,6 +1277,24 @@ spawns below).
   pointing at a cluster points at its quest. Only places in view are merged, so a group that runs out of view keeps
   a marker for the ones in view, with their count (the review of 2026-10-04: merged first, the whole group went when
   its middle place was out of view).
+- **Objectives of one quest on one spot: one marker that says how many** (owner, 2026-10-06: "Sometimes you have two
+  objectives to do on exactly the same spot. For example, for Gratitude on Woods you have to stash Shemagh and Ray
+  Bench glasses on exactly the same spot and it shows as two icons marking the same spot … we should join the two and
+  annotate the icon properly"; chosen from a panel of five ways drawn by the real map on four spots: "D, count, but
+  make it look nice"; `MapRenderer.JoinSpots`, `MapJoin.cs`). Places of different objectives of one quest within
+  1.5 m across and up are one spot (in PvE 65 pairs on 2026-10-06: Gratitude's two stashes, Hobby Club's four,
+  Bullshit's three, a "locate" and its stash or mark, as in Fishing Gear, Drug Trafficking, Humanitarian Supplies). The
+  first open objective's disc stands for them, and **a tab** joined to its right says how many are open there: "×2". Disc
+  and tab are one shape, gold with the marker's dark outline and collar, the tab's far end rounded as the disc is, and
+  a soft dark hairline where the tab leaves the disc so the disc still reads as one; in the tab "×" a little smaller than
+  its figure, both dark as the glyph. A tab, not the corner count: that one is a cluster's, places of one objective
+  that part as the view zooms in, where these stay one spot. The name stands after the tab; the floor arrow moves
+  above it; the tab is the marker for the pointer, and pointing at any of its objectives (a row on the card, a line in
+  the raid card) points at the spot. A ticked objective leaves the count: with one left open the marker is a plain disc,
+  with none a done one. "Maybe here" places don't join: a "?" couldn't say which objective is only maybe there.
+  Also drawn and rejected (the panel, `shturmap-cli join-panel`, removed with the choice): each objective on its own
+  disc set apart on leaders to the one spot (as before); a pile of discs; the glyphs side by side in one wider shape;
+  the pile with the things' names in the label.
 - **Places out of view.** While quests are picked, or one is pointed at, their places outside the view are shown
   as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
   whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,

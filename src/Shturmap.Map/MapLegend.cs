@@ -19,6 +19,7 @@ public enum LegendSymbol
     Objective,
     PossibleLocation,
     Cluster,
+    Joined,
     Leader,
     Optional,
     Done,
@@ -82,6 +83,9 @@ public static class MapLegend
         If(kinds.Contains(MarkerKind.PossibleLocation), LegendSymbol.PossibleLocation);
         // Marker ids are "objective:<id>:<n>": two places of one objective can merge into a cluster.
         If(places.GroupBy(m => m.Id[..Math.Max(0, m.Id.LastIndexOf(':'))]).Any(g => g.Count() > 1), LegendSymbol.Cluster);
+        // Two objectives of one quest on one spot (MapRenderer.OneSpot).
+        If(places.Where(m => m.Kind == MarkerKind.Objective).GroupBy(m => m.Group).Any(g => g.Any(a => g.Any(b => b.Id != a.Id
+            && MapRenderer.ObjectiveOf(a) != MapRenderer.ObjectiveOf(b) && MapRenderer.OneSpot(a.Position, b.Position)))), LegendSymbol.Joined);
         // Any two symbols that are set apart can crowd one spot at some zoom (MapRenderer.Repel).
         If(scene.Markers.Count(m => MapRenderer.Repels(m.Kind)) > 1, LegendSymbol.Leader);
         If(places.Any(m => m.Optional), LegendSymbol.Optional);
@@ -123,6 +127,7 @@ public static class MapLegend
         new(LegendSymbol.Objective, "Quest objective: gold disc, its glyph the quest type."),
         new(LegendSymbol.PossibleLocation, "One of several places it can be: ? at the corner."),
         new(LegendSymbol.Cluster, "Close places of one objective: one marker with a count. Zoom in to split."),
+        new(LegendSymbol.Joined, "Several objectives of one quest on one spot: one marker, with how many are open."),
         new(LegendSymbol.Leader, "Moved off a crowded spot: a line in its colour to a dot where it is."),
         new(LegendSymbol.Optional, "Optional objective: OPT at the upper left."),
         new(LegendSymbol.Done, "Done objective: small grey disc with a check."),
@@ -242,6 +247,9 @@ public static partial class MapRenderer
                 break;
             case LegendSymbol.Cluster:
                 Marker(Quest(MarkerKind.PossibleLocation), change: m => m with { Count = 5 });
+                break;
+            case LegendSymbol.Joined:
+                Marker(Quest(MarkerKind.Objective, -9), 0.85f, m => m with { Joined = [m.Marker, Quest(MarkerKind.Objective, -9) with { Id = "objective:legend-2:1" }] });
                 break;
             case LegendSymbol.Leader:
             {
