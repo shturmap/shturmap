@@ -256,10 +256,12 @@ public static class Planning
         }
 
         var count = Math.Max(1, o.Count ?? 1);
+        // A quest item to stash ("plantQuestItem") is nothing to bring: it is got in the quest (or one before), goes to
+        // the quest items on pickup, and into every raid from there by itself (owner, 2026-10-06: One Less Loose End's
+        // lab journal stood in BRING; QuestItemFrom says where it comes from instead).
         (string, int)[] bring = o.Type switch
         {
             "plantItem" when o.Items is [var item, ..] => [(item, count)],
-            "plantQuestItem" when o.QuestItem is { } questItem => [(questItem, count)],
             "mark" when o.MarkerItem is { } marker => [(marker, 1)],
             "useItem" when o.UseAny is [var usable, ..] => [(usable, count)],
             _ => [],
@@ -414,7 +416,6 @@ public static class Planning
             .Select(o => o.Type switch
             {
                 "plantItem" when o.Items?.Contains(item) == true => "to plant",
-                "plantQuestItem" when o.QuestItem == item => "to plant",
                 "mark" when o.MarkerItem == item => "to mark",
                 "useItem" when o.UseAny?.Contains(item) == true => "to use",
                 _ => null,
@@ -601,6 +602,8 @@ public static class Planning
             parts.Add("Key: " + string.Join(", ", keys.Distinct()));
         if (plan.Bring.Count > 0)
             parts.Add("Bring: " + string.Join(", ", plan.Bring.Select(b => data.ItemName(b.ItemId) + (b.Count > 1 ? $" ×{b.Count}" : ""))));
+        if (QuestItemFrom(data, task, objective) is { } with)
+            parts.Add("With: " + with);
         if (plan.Wear is { Count: > 0 } wear)
             parts.Add("Wear: " + GearText(data, wear.SelectMany(s => s)));
         if (plan.Weapons is { Count: > 0 } weapons)
@@ -613,6 +616,27 @@ public static class Planning
         if (plan.NotWearing is { Count: > 0 } without)
             parts.Add("Without: " + WithoutText(data, sources, without));
         return parts.Count > 0 ? string.Join(" · ", parts) : null;
+    }
+
+    /// <summary>
+    /// A quest item an objective stashes, and where it is got: "Lab journal, found on Factory" when another objective of
+    /// the quest gets it, "AK-50 handguard with gas block, from Fair Price - Part 2" when a quest before does; null for any
+    /// other objective. Not brought: a quest item goes into every raid from the quest items by itself (<see cref="ToPlan(ApiTask, GameData?)"/>).
+    /// </summary>
+    public static string? QuestItemFrom(GameData data, ApiTask task, ApiObjective objective)
+    {
+        if (objective.Type != "plantQuestItem" || objective.QuestItem is not { } item)
+            return null;
+        var name = data.ItemName(item);
+        if ((task.Objectives ?? []).FirstOrDefault(o => o.Type == "findQuestItem" && o.QuestItem == item) is { } get)
+        {
+            var maps = (get.Maps ?? []).Concat((get.PossibleLocations ?? []).Select(l => l.Map)).Concat((get.Zones ?? []).Select(z => z.Map))
+                .OfType<string>().Select(id => data.Maps.GetValueOrDefault(id)?.Name).OfType<string>().Distinct().ToList();
+            return maps.Count > 0 ? $"{name}, found on {string.Join(" or ", maps)}" : $"{name}, found first";
+        }
+        return data.Tasks.Values.FirstOrDefault(t => t.Id != task.Id && (t.Objectives ?? []).Any(o => o.Type == "findQuestItem" && o.QuestItem == item)) is { } earlier
+            ? $"{name}, from {earlier.Name}"
+            : name;
     }
 
     /// <summary>

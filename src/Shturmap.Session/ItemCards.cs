@@ -111,8 +111,9 @@ public static class ItemCards
                     case "useItem" when o.UseAny?.Contains(itemId) == true:
                         Bring(maps, count, "to use");
                         break;
+                    // A quest item goes into the raid by itself, from the quest items: stashed there, not brought.
                     case "plantQuestItem" when o.QuestItem == itemId:
-                        Bring(maps, count, "to plant");
+                        Add("Stash", maps);
                         break;
                     // A hand-over of what another objective gets is said with that objective ("Pick up, then hand
                     // over"), while it is open; once it is ticked, the hand-over is what is left and says so itself.

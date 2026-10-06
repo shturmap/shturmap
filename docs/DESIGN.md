@@ -1432,6 +1432,16 @@ and to use"), and a key or item needed on two maps names both. Gear to wear, wea
 rows of their own; an exit's items are counted once per exit. Until 2026-10-04 the card made one row per objective and
 dropped a row whose text was already there, which lost the count and the second map.
 
+**A quest item is never brought** (owner, 2026-10-06: "In mission one less loose end, the lab journal is marked as a item
+to bring, but it is one you actually have to collect first as part of the mission"). A quest item an objective stashes
+(`plantQuestItem`) is got by a "locate and obtain" of the same quest (14 of the 15 such objectives on 2026-10-06) or of
+one before (Hobby Club's handguard, from Fair Price - Part 2). On pickup it goes to the quest items, and from there into
+every raid by itself (the game asks "You have quest items in your inventory! Proceed?"; it is lost only with a death, or
+left behind when parked in the quest items stash): there is nothing to pack. So it is in no BRING row, need cell or kit,
+and the item card says "Stash · Woods", not "Bring, to plant". The raid card's line says where it comes from instead,
+in the place of a "Bring:" line: "With: Lab journal, found on Factory", "With: AK-50 handguard, from Fair Price - Part 2"
+(`Planning.QuestItemFrom`). Until then each stood in BRING as an item to take along.
+
 **An offer behind a quest isn't a way yet** (the review of 2026-10-04: BRING named "Ragman LL2 · 41,283 ₽ · after
 Dandies" as the easiest source of the beanie Dandies itself asks for). A trader's offer or a barter that tarkov.dev
 ties to a quest (`taskUnlock`) which the game's log hasn't seen completed comes after every other way (other

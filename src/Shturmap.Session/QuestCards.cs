@@ -286,7 +286,7 @@ public static class QuestCards
             foreach (var (item, count) in plan.Bring)
                 Add(RequirementKind.Bring, [item], count, maps, o.Type switch
                 {
-                    "plantItem" or "plantQuestItem" => "to plant",
+                    "plantItem" => "to plant",
                     "mark" => "to mark",
                     "useItem" => "to use",
                     _ => "to bring",
