@@ -680,7 +680,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             if (_data?.MapByNormalizedName(normalizedName) is { } map)
             {
                 _map = new MapIdentity(map.Id, map.NormalizedName, map.NameId, map.ScenePath, map.Name);
-                _store?.SetSetting("lastMap", map.NormalizedName);
+                // The player's own pick, never a line read back from the log.
+                _store?.SetSetting(LastMapSetting, map.NormalizedName);
                 Publish();
             }
         }
@@ -1307,6 +1308,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         // The raid's own map, never one that was only being looked at.
         _lastRaidMap = _raidMap;
         _raidMap = null;
+        // Back to the map just played, also from one looked at during the raid (owner, 2026-10-06: "return to that one
+        // when a raid ends"). A raid read back from the log at start is older than the map the app was closed on: that
+        // one comes back instead.
+        _map = _replaying ? RememberedMap() ?? _lastRaidMap ?? _map : _lastRaidMap ?? _map;
+        if (_lastRaidMap is not null)
+            RememberMap(_lastRaidMap);
         _lastRaidEnded = ended.At;
         // Out of the raid there is no "you" on the map (owner, 2026-10-01).
         _fix = null;
@@ -1447,7 +1454,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_tracker.State.Phase != RaidPhase.Menu || map is null)
             return;
         _map = map;
-        _store?.SetSetting("lastMap", map.NormalizedName);
+        RememberMap(map);
         Announce(KitCue(CueKind.GroupPick, map, "groupPick"));
     }
 
@@ -1522,17 +1529,30 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_raidMap is not null)
         {
             _map = _raidMap;
-            _store?.SetSetting("lastMap", _raidMap.NormalizedName);
+            RememberMap(_raidMap);
             return;
         }
-        if (_map is null)
-        {
-            // Between raids, open on the best suggestion for the next one.
-            var last = _plan.FirstOrDefault()?.NormalizedName ?? _store?.GetSetting("lastMap") ?? "customs";
-            if (_data.MapByNormalizedName(last) is { } m)
-                _map = new MapIdentity(m.Id, m.NormalizedName, m.NameId, m.ScenePath, m.Name);
-        }
+        // Between raids, open on the map that was on screen when the app last closed (owner, 2026-10-06: "remember
+        // the last open map when the app closes and re-open it"); at a first start, the best suggestion for the next
+        // raid, until 2026-10-06 the rule at every start.
+        _map ??= RememberedMap() ?? Known(_plan.FirstOrDefault()?.NormalizedName) ?? Known("customs");
     }
+
+    /// <summary>The setting that keeps the map last on screen: picked, raided or the group's pick (owner, 2026-10-06).</summary>
+    public const string LastMapSetting = "lastMap";
+
+    // The map on screen is kept for the next start, but not while the log of earlier sessions is read back at start:
+    // a raid in it is older than the map the app was closed on.
+    private void RememberMap(MapIdentity map)
+    {
+        if (!_replaying)
+            _store?.SetSetting(LastMapSetting, map.NormalizedName);
+    }
+
+    private MapIdentity? RememberedMap() => Known(_store?.GetSetting(LastMapSetting));
+
+    private MapIdentity? Known(string? normalizedName) =>
+        normalizedName is not null && _data?.MapByNormalizedName(normalizedName) is { } m ? new MapIdentity(m.Id, m.NormalizedName, m.NameId, m.ScenePath, m.Name) : null;
 
     // ---- screenshots ----
 

@@ -30,20 +30,37 @@ internal sealed class SessionRig : IAsyncDisposable
         var install = new InstallCandidate(InstallKind.Manual, _root, Path.Combine(_root, "Logs"), DateTime.Now, "test", null);
         var paths = new AppPaths(Path.Combine(_root, "app"));
         var locations = new GameLocations(install, [install], Path.Combine(_root, "Screenshots"), Path.Combine(_root, "Settings"));
-        Session = configure?.Invoke(paths, locations) ?? new GameSession(paths, locations) { GivenData = Data };
-        Session.Notice += notice =>
+        _make = () => configure?.Invoke(paths, locations) ?? new GameSession(paths, locations) { GivenData = Data };
+        Session = Listened(_make());
+    }
+
+    private readonly Func<GameSession> _make;
+
+    // A session whose notices and cues the rig collects.
+    private GameSession Listened(GameSession session)
+    {
+        session.Notice += notice =>
         {
             lock (_notices)
                 _notices.Add(notice.Text);
         };
-        Session.Cue += cue =>
+        session.Cue += cue =>
         {
             lock (_cues)
                 _cues.Add(cue);
         };
+        return session;
     }
 
-    public GameSession Session { get; }
+    public GameSession Session { get; private set; }
+
+    /// <summary>Closes the app and opens it again on the same folders: its database, the game's logs, the screenshots.
+    /// Started again with <see cref="StartAsync"/>, it reads the logs back as at any start.</summary>
+    public async Task RestartAsync()
+    {
+        await Session.DisposeAsync();
+        Session = Listened(_make());
+    }
 
     public SessionSnapshot Snapshot => Session.Snapshot;
 

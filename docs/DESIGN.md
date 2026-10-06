@@ -667,6 +667,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
   the lights' words go first, then its last word, the last fix, trims (see "Status bar"). Snapshot and demo runs and a given size (`--window`) place the window
   themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
+- **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when
+  a raid ends and b) remember the last open map when the app closes and re-open it"). The map last on screen is kept
+  (`lastMap` in shturmap.db, `GameSession.LastMapSetting`): one picked in the MAP list or Plan's list, a raid's own map
+  as it loads, a group's pick. The app opens on it; only at a first start, with none kept, on the best suggestion for
+  the next raid (until 2026-10-06 the rule at every start, so the map the player had chosen was lost with each start).
+  When a raid ends its own map is on screen, also when another was being looked at during it, and is the map kept. The
+  log read back at start leaves the kept map alone: a raid in it, over before the app started, is older than the map
+  it was closed on; a raid still running at start shows its own map.
 - **Status bar** (top): mode (PvE/PvP/Seasonal), raid state, last fix, as uppercase words; on the right the inputs
   (logs, screenshots, data), each with a small square light that turns gold when something needs attention, and
   three buttons of one size (28 px, 6 px apart): **feedback** (a speech bubble, `E939`: the Report dialog, PROBLEM
@@ -863,7 +871,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     The raid, its card, the status words, the cues and the last-raid line are about the raid's own map, as the
     game's log names it (the scene, then the location; `SessionSnapshot.RaidMap`). The MAP list stays usable in a
     raid, as a look: the map shows the picked map without a "you", the rail stays the raid's, and the next position
-    is plotted on the raid's map and brings it back on screen. A label at the top of the map says so for as long
+    is plotted on the raid's map and brings it back on screen, as the raid's end does (2026-10-06). A label at the top of the map says so for as long
     as it lasts, in the preview label's style: "LOOKING AT WOODS · THE RAID IS ON CUSTOMS · YOUR NEXT POSITION SHOWS
     IT AGAIN". A raid on a map the data doesn't know names no map ("IN RAID · PMC · 12 MIN", "LOADING"; the raid
     card is titled "MAP NOT KNOWN") and plots no position, with a notice saying why: the map on screen is
