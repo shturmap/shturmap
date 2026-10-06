@@ -85,6 +85,7 @@
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
                   <StackPanel Spacing="1">
                     <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
@@ -92,12 +93,16 @@
                             controls:Linked.Item="{x:Bind KeyId}" controls:Linked.Inline="True">
                       <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
                     </Border>
-                    <!-- What this line gets goes to the trader after the raid: a tag under its words, in the place of the
-                         hand-over's own line (owner, 2026-10-05; Handovers). Under, not after: a tag beside the words
-                         took its width from every line of them. -->
-                    <controls:HandoverMark Label="{x:Bind HandoverLabel}" Tip="{x:Bind HandoverTip}" Margin="0,2,0,1" />
                   </StackPanel>
-                  <StackPanel Grid.Column="1">
+                  <!-- What this line gets goes to the trader after the raid: the thing's cell, its count, an arrow and the
+                       trader's portrait, before the distance, in the place of the hand-over's own line (owner,
+                       2026-10-06, "Hand-over: E"; Handovers). The cell is that item, as a need cell is. -->
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Visibility="{x:Bind HandoverVisibility}">
+                    <controls:Picture ItemId="{x:Bind ItemId}" Size="20" Visibility="{x:Bind ItemVisibility}"
+                                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Inline="True" />
+                    <controls:HandoverMark TraderId="{x:Bind TraderId}" Count="{x:Bind HandoverCount}" PortraitSize="20" Tip="{x:Bind HandoverTip}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
                     <TextBlock Text="{x:Bind Distance}" Visibility="{x:Bind DistanceVisibility}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
                     <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Visibility="{x:Bind DirectionVisibility}" Style="{StaticResource StatusText}" FontSize="11"
                                Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />

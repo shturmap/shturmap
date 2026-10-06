@@ -13,12 +13,18 @@ namespace Shturmap.Session;
 /// <param name="Ticked">Where "done" comes from, in the place of <paramref name="Live"/>: "Done · ticked by you, 4 Oct".</param>
 /// <param name="Tickable">Its tick box shows: the quest is active, or the objective is ticked (a tick can always be
 /// taken back).</param>
-/// <param name="Handover">What its hand-over tag says ("Hand over ×3 to Therapist"), when a
-/// hand-over of the quest gives what this objective gets (<see cref="Handovers"/>); empty otherwise.</param>
+/// <param name="Handover">What its hand-over mark's tooltip says ("Hand over ×3 to Therapist"), when a hand-over of the
+/// quest gives what this objective gets (<see cref="Handovers"/>); empty otherwise.</param>
 public sealed record CardObjective(string QuestId, string ObjectiveId, ObjectiveKind Kind, string Text, string Where, string? ItemId, string Live,
     bool Done = false, string Ticked = "", bool Tickable = false, string Handover = "")
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
+
+    /// <summary>How many of what it gets go to the trader after the raid; 0 without a hand-over.</summary>
+    public int HandoverCount { get; init; }
+
+    /// <summary>The trader it goes to (the quest's), pictured in the hand-over mark; null without a hand-over.</summary>
+    public string? HandoverTraderId { get; init; }
 }
 
 /// <summary>A key or an item to take into the raid for this quest.</summary>
@@ -147,26 +153,37 @@ public static class QuestCards
             where = "";
         if (Handovers.Optional(task, o))
             text += " (optional)";
-        var item = o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
-            ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id ?? o.UsingWeapon?.FirstOrDefault();
+        var item = ItemOf(o);
         var handover = HandoverText(data, task, o.Id);
+        var count = HandoverCount(task, o.Id);
         // A ticked objective isn't measured any more: where its distance stood, it says that it is done and why. Its
         // hand-over mark stays: what was got still goes to the trader.
-        return ticks is not null && ticks.TryGetValue(o.Id, out var day)
+        var row = ticks is not null && ticks.TryGetValue(o.Id, out var day)
             ? new CardObjective(task.Id, o.Id, kind, text, where, item, "", Done: true, Ticked: TickedText(day), Tickable: true, Handover: handover)
             : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active, Handover: handover);
+        return row with { HandoverCount = count, HandoverTraderId = count > 0 ? task.Trader : null };
     }
 
+    /// <summary>The item an objective is about, to picture beside it: what it finds, picks up, marks, uses or wears.</summary>
+    public static string? ItemOf(ApiObjective o) =>
+        o.Items?.FirstOrDefault() ?? o.QuestItem ?? o.MarkerItem ?? o.UseAny?.FirstOrDefault()
+        ?? o.Wearing?.FirstOrDefault()?.FirstOrDefault()?.Id ?? o.UsingWeapon?.FirstOrDefault();
+
     /// <summary>
-    /// What the hand-over tag on an objective says, when a hand-over of the quest gives what it gets
+    /// How many of what an objective gets go to the quest's trader after the raid, when a hand-over of the quest gives
+    /// it (<see cref="Handovers"/>); 0 otherwise.
+    /// </summary>
+    public static int HandoverCount(ApiTask task, string objectiveId) =>
+        Handovers.HandoverOf(task, objectiveId) is { } handover ? Math.Max(1, handover.Count ?? 1) : 0;
+
+    /// <summary>
+    /// What the hand-over mark on an objective says in its tooltip, when a hand-over of the quest gives what it gets
     /// (<see cref="Handovers"/>): "Hand over ×3 to Therapist". Empty otherwise.
     /// </summary>
     public static string HandoverText(GameData data, ApiTask task, string objectiveId)
     {
-        if (Handovers.HandoverOf(task, objectiveId) is not { } handover)
-            return "";
-        var count = Math.Max(1, handover.Count ?? 1);
-        return $"Hand over{(count > 1 ? $" ×{count}" : "")} to {data.TraderName(task.Trader)}";
+        var count = HandoverCount(task, objectiveId);
+        return count == 0 ? "" : $"Hand over{(count > 1 ? $" ×{count}" : "")} to {data.TraderName(task.Trader)}";
     }
 
     /// <summary>

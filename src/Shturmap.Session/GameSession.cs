@@ -1878,6 +1878,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 {
                     Short = shorts.GetValueOrDefault(o.Objective.Id) is { } few ? few + (optional ? " (optional)" : "") : null,
                     Handover = QuestCards.HandoverText(_data, o.Quest, o.Objective.Id),
+                    HandoverCount = QuestCards.HandoverCount(o.Quest, o.Objective.Id),
+                    ItemId = QuestCards.ItemOf(o.Objective),
                 });
             }
             var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);

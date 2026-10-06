@@ -8,11 +8,17 @@ namespace Shturmap.App;
 /// <param name="ObjectiveId">The objective, for linked highlighting: its line marks it within its quest.</param>
 /// <param name="KeyId">The key the gold "Key: …" line stands for, when it names exactly one: the line is that key.</param>
 /// <param name="Handover">What the line gets goes to the trader after the raid ("Hand over ×3 to Therapist"), or empty.</param>
+/// <param name="HandoverCount">How many go, 0 without a hand-over.</param>
+/// <param name="ItemId">The item the line is about, pictured before a hand-over's mark.</param>
 public sealed record ObjectiveItem(string QuestId, string Text, string Quest, string Distance, string Direction, bool Done, ObjectiveKind Kind, string Needs,
-    string? TraderId = null, string? TraderName = null, string? ObjectiveId = null, string? KeyId = null, string Handover = "")
+    string? TraderId = null, string? TraderName = null, string? ObjectiveId = null, string? KeyId = null, string Handover = "",
+    int HandoverCount = 0, string? ItemId = null)
 {
-    /// <summary>The hand-over tag after the line's words: short, the line is read in seconds; its tooltip says whom to.</summary>
-    public string HandoverLabel => Handover.Length > 0 ? "Hand over" : "";
+    /// <summary>The hand-over mark before the distance (the item's cell, its count, an arrow, the trader); the tooltip
+    /// says it in words.</summary>
+    public Visibility HandoverVisibility => Handover.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility ItemVisibility => ItemId is not null ? Visibility.Visible : Visibility.Collapsed;
 
     public string HandoverTip => Handover.Length > 0 ? Handover + " after the raid" : "";
 

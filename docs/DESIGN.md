@@ -1352,16 +1352,22 @@ detectable from the quest text or layout itself").
   the items may be bought or found anywhere: A Bitter Victory, Reserve Expert, The Huntsman Path - Eraser), the
   line reads as required, without "(optional)" or OPT (`Handovers.Optional`): what is handed over has to be got. The
   planner still goes by the data's flag.
-- **The tag** (`Controls.HandoverMark`): the Trader type's handshake (one symbol, one meaning: work at the trader) and
-  the words, in ink in the status words' capitals on a dark plate with a hairline, as the map's badges are. On a quest
-  card (hover, held, popped out) it stands under the objective's lines and names the trader and the count: "HAND
-  OVER ×3 TO THERAPIST". In the raid card it stands under the line's words, where the gold "Bring: …" line goes, and
-  says only "HAND OVER"; its tooltip names the trader ("Hand over ×3 to Therapist after the raid"). NEXT has none (a
-  glance is for where to go). A ticked line keeps its tag: what was got still goes to the trader.
-  Words, since the first mark, the handshake alone, 12 px and muted, in the corner of the item's cell and after the
-  raid line's words, was "barely visible and you cannot tell what that actually is nor what it means" (owner, the
-  same evening). Under the words, not after them: a tag beside the words took its width from every line of them, and
-  a raid line of four words wrapped to five lines.
+- **The mark: the item, to the trader** (`Controls.HandoverMark`; owner, 2026-10-06: "Right now this icon uses up an
+  entire row in each quest. It should be a proper symbol, but maybe attached to the left or the right of the icon of
+  the item"; chosen from a panel of five ways drawn at the app's sizes from the real data: "Hand-over: E"). Right
+  after the cell of what the objective gets: its count when more than one ("×4", as after a need cell; a find's text
+  from the data doesn't say it), a small solid arrow in muted (Phosphor's "arrow-right") and the portrait of the
+  trader it goes to, the quest's: "battery ×4 → Therapist". No symbol to learn, and the portrait says to whom. On a
+  quest card (hover, held, popped out) it follows the objective's 30 px cell, with a 22 px portrait; in the raid
+  card the line gets the item's 20 px cell with the mark, a 20 px portrait, between its words and its distance (the
+  cell is that item, as a need cell is). The tooltip says it in words: "Hand over ×3 to Therapist after the raid".
+  NEXT has none (a glance is for where to go). A ticked line keeps its mark: what was got still goes to the trader.
+  Before it: the handshake alone, 12 px and muted, in the corner of the item's cell, "barely visible and you cannot
+  tell what that actually is nor what it means" (owner, 2026-10-05); then a tag with the handshake and the words
+  ("HAND OVER ×3 TO THERAPIST") under the objective's lines, which took a line on every hand-over. Also drawn and
+  rejected (the panel, `shturmap-cli handover-panel`, removed with the choice): a tab on the cell's right or left
+  with a hand passing something up (Phosphor's "hand-arrow-up", bold), and the tab with a forward arrow; a new
+  symbol to learn, where the portrait needs none.
 - **What follows.** The quest card and the raid card lose the hand-over's line; a quest whose lines on this map are
   all ticked leaves the raid card (the hand-over line used to keep it there, "after the raid", with nothing to do in
   the raid). The item card says it once, "Pick up, then hand over · Ground Zero", "Find in raid ×3, then hand over";

@@ -73,10 +73,17 @@ public sealed record ObjectiveView(
     public string? Short { get; init; }
 
     /// <summary>
-    /// What the hand-over tag after the line says ("Hand over to Therapist"), when a hand-over of the
-    /// quest gives what this objective gets (<see cref="Shturmap.Data.TarkovDev.Handovers"/>); empty otherwise.
+    /// What the hand-over mark's tooltip says ("Hand over to Therapist"), when a hand-over of the quest gives what this
+    /// objective gets (<see cref="Shturmap.Data.TarkovDev.Handovers"/>); empty otherwise. It goes to the quest's
+    /// trader, <see cref="TraderId"/>.
     /// </summary>
     public string Handover { get; init; } = "";
+
+    /// <summary>How many of what it gets go to the trader after the raid; 0 without a hand-over.</summary>
+    public int HandoverCount { get; init; }
+
+    /// <summary>The item it is about (<see cref="QuestCards.ItemOf"/>), pictured beside a hand-over's mark; or null.</summary>
+    public string? ItemId { get; init; }
 }
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>

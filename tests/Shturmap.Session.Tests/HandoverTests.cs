@@ -113,12 +113,15 @@ public class HandoverTests
         var card = QuestCards.Build(Data(Scientist), Active(Drive), Drive)!;
         var row = Assert.Single(card.Objectives);
         Assert.Equal(("o-pick", HardDrive, "Hand over to Therapist"), (row.ObjectiveId, row.ItemId, row.Handover));
+        // The mark pictures the trader it goes to (the quest's), and says how many.
+        Assert.Equal((1, Therapist), (row.HandoverCount, row.HandoverTraderId));
 
-        var items = QuestCards.Build(Data(Sanitary), Active(Analyzers), Analyzers)!;
-        Assert.Equal("Hand over ×3 to Therapist", Assert.Single(items.Objectives).Handover);
+        var items = Assert.Single(QuestCards.Build(Data(Sanitary), Active(Analyzers), Analyzers)!.Objectives);
+        Assert.Equal(("Hand over ×3 to Therapist", 3, Therapist), (items.Handover, items.HandoverCount, items.HandoverTraderId));
 
         // A hand-over of its own stays a row, without a mark.
-        Assert.Equal("", Assert.Single(QuestCards.Build(Data(Postman), Active(Letter), Letter)!.Objectives).Handover);
+        var own = Assert.Single(QuestCards.Build(Data(Postman), Active(Letter), Letter)!.Objectives);
+        Assert.Equal(("", 0, null), (own.Handover, own.HandoverCount, own.HandoverTraderId));
     }
 
     [Fact]
@@ -158,8 +161,9 @@ public class HandoverTests
                                      s.Quests.GetValueOrDefault(Letter)?.State == QuestState.Active, "the raid and its quests");
         // The pickup carries the hand-over; the letter, got in an earlier quest, keeps its own line.
         Assert.Equal(["o-letter", "o-pick"], s.Objectives.Select(o => o.ObjectiveId).Order());
-        Assert.Equal("Hand over to Therapist", s.Objectives.Single(o => o.ObjectiveId == "o-pick").Handover);
-        Assert.Equal("", s.Objectives.Single(o => o.ObjectiveId == "o-letter").Handover);
+        var pickup = s.Objectives.Single(o => o.ObjectiveId == "o-pick");
+        Assert.Equal(("Hand over to Therapist", 1, HardDrive, Therapist), (pickup.Handover, pickup.HandoverCount, pickup.ItemId, pickup.TraderId));
+        Assert.Equal(("", 0), (s.Objectives.Single(o => o.ObjectiveId == "o-letter").Handover, s.Objectives.Single(o => o.ObjectiveId == "o-letter").HandoverCount));
     }
 
     private static string QuestStarted(string quest, DateTime at) => $$"""

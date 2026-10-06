@@ -2,41 +2,61 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
-using Shturmap.Core.Quests;
 using Shturmap.Map;
 
 namespace Shturmap.App.Controls;
 
 /// <summary>
-/// "This goes to the trader after the raid" (owner, 2026-10-05; <see cref="Shturmap.Data.TarkovDev.Handovers"/>): a
-/// tag with the Trader type's handshake and the words, "HAND OVER" after a raid card line, "HAND OVER ×3 TO
-/// THERAPIST" on a quest card. Words beside the symbol, since the handshake alone, 12 px and muted, was "barely visible
-/// and you cannot tell what that actually is nor what it means" (owner, the same evening). In the badges' style: a
-/// dark plate with a hairline, the words and the symbol in ink.
+/// "This goes to the trader after the raid" (owner, 2026-10-05; <see cref="Shturmap.Data.TarkovDev.Handovers"/>): right
+/// after the cell of what an objective gets, its count when more than one, an arrow and the portrait of the trader it
+/// goes to: "battery ×4 → Therapist" (owner, 2026-10-06, from a panel of five ways: "Hand-over: E"). No symbol to
+/// learn, and no line of its own. The first mark, the Trader type's handshake alone, 12 px and muted in the corner of
+/// the cell, was "barely visible and you cannot tell what that actually is nor what it means"; the second, a tag
+/// with the words under the objective's lines, took a line on every hand-over. The tooltip says it in words.
 /// </summary>
-public sealed partial class HandoverMark : Grid
+public sealed partial class HandoverMark : StackPanel
 {
-    public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(
-        nameof(Label), typeof(string), typeof(HandoverMark), new PropertyMetadata("", (d, _) => ((HandoverMark)d).Update()));
+    public static readonly DependencyProperty TraderIdProperty = DependencyProperty.Register(
+        nameof(TraderId), typeof(string), typeof(HandoverMark), new PropertyMetadata(null, (d, _) => ((HandoverMark)d).Update()));
+
+    public static readonly DependencyProperty CountProperty = DependencyProperty.Register(
+        nameof(Count), typeof(int), typeof(HandoverMark), new PropertyMetadata(0, (d, _) => ((HandoverMark)d).Update()));
+
+    public static readonly DependencyProperty PortraitSizeProperty = DependencyProperty.Register(
+        nameof(PortraitSize), typeof(double), typeof(HandoverMark), new PropertyMetadata(22.0, (d, _) => ((HandoverMark)d).Update()));
 
     public static readonly DependencyProperty TipProperty = DependencyProperty.Register(
         nameof(Tip), typeof(string), typeof(HandoverMark), new PropertyMetadata("", (d, _) => ((HandoverMark)d).Update()));
 
     public HandoverMark()
     {
-        VerticalAlignment = VerticalAlignment.Top;
-        HorizontalAlignment = HorizontalAlignment.Left;
+        Orientation = Orientation.Horizontal;
+        VerticalAlignment = VerticalAlignment.Center;
         Update();
     }
 
-    /// <summary>The words on the tag, in capitals ("Hand over ×3 to Therapist"); empty hides it.</summary>
-    public string Label
+    /// <summary>The trader it goes to; empty hides the mark.</summary>
+    public string? TraderId
     {
-        get => (string)GetValue(LabelProperty);
-        set => SetValue(LabelProperty, value);
+        get => (string?)GetValue(TraderIdProperty);
+        set => SetValue(TraderIdProperty, value);
     }
 
-    /// <summary>The tooltip, where the tag says less than the whole ("Hand over to Therapist after the raid"); empty for none.</summary>
+    /// <summary>How many go: said as "×4" when more than one.</summary>
+    public int Count
+    {
+        get => (int)GetValue(CountProperty);
+        set => SetValue(CountProperty, value);
+    }
+
+    /// <summary>The portrait's size: 22 beside a quest card's 30 px cell, 20 beside a raid line's.</summary>
+    public double PortraitSize
+    {
+        get => (double)GetValue(PortraitSizeProperty);
+        set => SetValue(PortraitSizeProperty, value);
+    }
+
+    /// <summary>The tooltip, the mark in words ("Hand over ×4 to Therapist after the raid").</summary>
     public string Tip
     {
         get => (string)GetValue(TipProperty);
@@ -45,37 +65,37 @@ public sealed partial class HandoverMark : Grid
 
     private void Update()
     {
-        var shown = !string.IsNullOrEmpty(Label);
+        var shown = !string.IsNullOrEmpty(TraderId);
         Visibility = shown ? Visibility.Visible : Visibility.Collapsed;
         ToolTipService.SetToolTip(this, string.IsNullOrEmpty(Tip) ? null : Tip);
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
-        row.Children.Add(new Microsoft.UI.Xaml.Shapes.Path
-        {
-            // The handshake as the Trader type draws it everywhere (Glyphs; docs/DESIGN.md §5), fitted by its own bounds.
-            Data = (Geometry)XamlBindingHelper.ConvertValue(typeof(Geometry), "F1 " + Glyphs.Path(ObjectiveKind.Trader)),
-            Stretch = Stretch.Uniform,
-            Width = 12,
-            Height = 12,
-            Fill = Brush("InkBrush"),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        row.Children.Add(new TextBlock
-        {
-            Text = shown ? Caps.Of(Label) : "",
-            Style = (Style)Application.Current.Resources["StatusText"],
-            FontSize = 10.5,
-            Foreground = Brush("InkBrush"),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
         Children.Clear();
-        Children.Add(new Border
+        if (!shown)
+            return;
+        var small = PortraitSize < 21;
+        // The count first, beside the cell as a need cell's is: it is the item's.
+        if (Count > 1)
         {
-            Background = Brush("GroundBrush"),
-            BorderBrush = Brush("LineStrongBrush"),
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(3, 1, 5, 1),
-            Child = row,
+            Children.Add(new TextBlock
+            {
+                Text = "×" + Count.ToString("N0", Shturmap.Session.UiLanguage.Culture),
+                FontSize = small ? 11 : 12,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = Brush("InkBrush"),
+                Margin = new Thickness(3, 0, 0, 0),
+            });
+        }
+        Children.Add(new Microsoft.UI.Xaml.Shapes.Path
+        {
+            Data = (Geometry)XamlBindingHelper.ConvertValue(typeof(Geometry), "F1 " + Glyphs.HandoverArrow),
+            Stretch = Stretch.Uniform,
+            Width = small ? 8 : 10,
+            Height = small ? 8 : 10,
+            Fill = Brush("MutedBrush"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 0, 4, 0),
         });
+        Children.Add(new Picture { TraderId = TraderId, Size = PortraitSize, VerticalAlignment = VerticalAlignment.Center });
     }
 
     private static Brush Brush(string key) => (Brush)Application.Current.Resources[key];
