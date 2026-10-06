@@ -203,6 +203,30 @@ public class RepelTests
         }
     }
 
+    // The player is a symbol too (owner, 2026-10-06: "if you are right next to a objective the player icon is drawn on
+    // top of the quest icon"): it never moves, and nothing stands under it or its age tag.
+    [Fact]
+    public void A_quest_beside_the_player_steps_off_it_on_a_leader()
+    {
+        var (camera, scene) = Of([Quest("a", 5, 0, "A")]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
+        var quest = Assert.Single(MapRenderer.ShownMarkers(camera, scene, 1));
+        Assert.True(SKPoint.Distance(quest.At, new SKPoint(500, 500)) >= 10 + 14.5f + Gap - 0.5f, $"{quest.At} under the player");
+        Assert.Equal(new SKPoint(505, 500), quest.Leader);
+    }
+
+    [Fact]
+    public void Nor_under_an_old_positions_age_tag()
+    {
+        // The tag stands right of the ring once the position is a minute old ("2 MIN OLD").
+        var (camera, scene) = Of([Quest("a", 35, 0, "A")]);
+        scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now.AddMinutes(-2));
+        var quest = Assert.Single(MapRenderer.Layout(camera, scene, 1).Markers);
+        var tag = MapRenderer.PlayerAgeTag(camera, scene, 1)!.Value.Box;
+        Assert.False(SKRect.Create(quest.At.X - 10, quest.At.Y - 10, 20, 20).IntersectsWith(tag), $"{quest.At} on the age tag {tag}");
+        Assert.NotNull(quest.Leader);
+    }
+
     [Fact]
     public void The_guide_ends_on_the_symbol_where_it_is_drawn()
     {

@@ -1064,8 +1064,13 @@ spawns below).
     draw apart, each symbol comes back to its own and its leader goes. A corner badge (floor, count, OPT, "?")
     counts in its symbol's width, so no neighbour is pushed under it. Leaders lie under every symbol and step back
     with their symbols while something else is pointed at; no label covers a leader or its dot; pointing at the
-    dot points at its symbol. Positions turn only on the places, the zoom and the symbols' sizes and ranks at rest,
-    never on picks or the pointer, so nothing moves when something is picked or pointed at. Locks, switches and
+    dot points at its symbol. **The player is a symbol too** (owner, 2026-10-06: "keep in mind that the player icon is
+    also an icon - if you are right next to a objective the player icon is drawn on top of the quest icon"): level 1,
+    it never moves, and no symbol stands under its ring or, once the position is a minute old, its age tag; one beside
+    you steps off on a leader to its place, as from any symbol that matters more (`MapRenderer.PlayerObstacles`). The
+    facing cone and the glow are see-through and hide nothing. Positions turn only on the places, where the player
+    is, the zoom and the symbols' sizes and ranks at rest, never on picks or the pointer, so nothing moves when
+    something is picked or pointed at, and a new position moves only what stood in its way. Locks, switches and
     Scav zones' rings take no part (their leaders were a web of ink between the quests in the panel): they stand side
     by side among themselves, under the rest. A pan moves every place alike, so the repel's offsets are kept while
     the same symbols are in view at the same zoom (`MapScene.LastRepel`): it is most of a layout's work (3 to 6 ms

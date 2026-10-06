@@ -564,11 +564,15 @@ public static partial class MapRenderer
     /// <param name="placeClear">Above 0: how far every symbol keeps from the places of the others (but locks' and switches'),
     /// beyond its own half width, so the dot at the end of each leader shows.</param>
     /// <param name="minLine">Above 0: how far beyond its own edge a symbol that has left its place stands from it.</param>
-    public static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear = 0, float minLine = 0)
+    /// <param name="fixedAround">What no symbol may cover and that never moves itself: the player's marker and its age tag,
+    /// as circles (centre, half width).</param>
+    public static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear = 0, float minLine = 0,
+        IReadOnlyList<(SKPoint At, float Half)>? fixedAround = null)
     {
         var n = symbols.Count;
         var at = symbols.Select(s => s.At).ToArray();
-        if (n < 2)
+        var obstacles = fixedAround ?? [];
+        if (n == 0 || (n < 2 && obstacles.Count == 0))
             return at;
         // A crowd at one place: the k-th of it starts a hair off, round the place by the golden angle, the first to the
         // left (as side by side had it).
@@ -658,6 +662,23 @@ public static partial class MapRenderer
                     }
                 }
             }
+            // Off what never moves (the player and its age tag), by the whole step; from the very middle, to the left,
+            // away from the age tag.
+            foreach (var i in order)
+            {
+                foreach (var (centre, half) in obstacles)
+                {
+                    var want = symbols[i].Half + half + gap;
+                    var line = at[i] - centre;
+                    var apart = line.Length;
+                    if (apart >= want - 0.01f)
+                        continue;
+                    var away = apart > 0.001f ? new SKPoint(line.X / apart, line.Y / apart)
+                        : SKPoint.Distance(symbols[i].At, centre) > 0.001f ? Unit(symbols[i].At - centre) : new SKPoint(-1, 0);
+                    at[i] = new SKPoint(at[i].X + away.X * (want - apart), at[i].Y + away.Y * (want - apart));
+                    moved = true;
+                }
+            }
             if (pass < RepelPasses)
             {
                 foreach (var i in order)
@@ -671,7 +692,8 @@ public static partial class MapRenderer
         // A lesser symbol can be wedged between two that keep their places, pushed back and forth for good: whatever
         // still covers another goes to the nearest place round it where it covers none, the least important first.
         bool Clear(int i, SKPoint p) => order.All(j => j == i || SKPoint.Distance(p, at[j]) >= symbols[i].Half + symbols[j].Half + gap - 0.01f)
-                                        && places.All(j => !OnPlace(i, p, j));
+                                        && places.All(j => !OnPlace(i, p, j))
+                                        && obstacles.All(o => SKPoint.Distance(p, o.At) >= symbols[i].Half + o.Half + gap - 0.01f);
         foreach (var i in order.OrderByDescending(i => symbols[i].Rank).ThenBy(i => i))
         {
             if (Clear(i, at[i]))
@@ -794,7 +816,7 @@ public static partial class MapRenderer
         // In the data's order, not the drawing order below: which of two goes left must not turn on what is pointed at.
         JoinSpots(result, ui);
         result.Sort((a, b) => a.Index.CompareTo(b.Index));
-        var places = SetApart(scene, result.Select(r => r.Shown).ToList(), camera.Zoom, ui, result.Select(r => r.Index));
+        var places = SetApart(camera, scene, result.Select(r => r.Shown).ToList(), ui, result.Select(r => r.Index));
         return result
             .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with
             {
@@ -812,14 +834,15 @@ public static partial class MapRenderer
     // and Scav zones' rings side by side among themselves, under the rest (their leaders were a web of ink between the
     // quests). Panning moves every place alike, so while the same symbols are in view at the same zoom the last repel's
     // offsets hold: it is most of a layout's work, and a pan lays the map out for every frame.
-    private static SKPoint[] SetApart(MapScene scene, List<ShownMarker> markers, double zoom, float ui, IEnumerable<int> indices)
+    private static SKPoint[] SetApart(Camera camera, MapScene scene, List<ShownMarker> markers, float ui, IEnumerable<int> indices)
     {
         var places = SideBySide(markers.Select(m => (m.At, RestHalf(m.Marker, ui), RestRank(m.Marker.Kind))).ToList(), MarkerCollar * ui);
-        var key = $"{scene.LayoutVersion}|{zoom:R}|{ui:R}|{string.Join(",", indices.Zip(markers, (i, m) => $"{i}:{m.Count}"))}";
+        var (player, ageTag) = PlayerObstacles(camera, scene, ui);
+        var key = $"{scene.LayoutVersion}|{camera.Zoom:R}|{ui:R}|{ageTag}|{string.Join(",", indices.Zip(markers, (i, m) => $"{i}:{m.Count}"))}";
         if (scene.LastRepel is not { } last || last.Key != key)
         {
             var repelled = Repel(markers.Select(m => (m.At, RepelHalf(m, ui), RestRank(m.Marker.Kind), Repels(m.Marker.Kind))).ToList(),
-                MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui);
+                MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui, player);
             last = (key, repelled.Select((p, i) => p - markers[i].At).ToArray());
             scene.LastRepel = last;
         }
@@ -829,6 +852,39 @@ public static partial class MapRenderer
                 places[i] = markers[i].At + last.Offsets[i];
         }
         return places;
+    }
+
+    // What no symbol may cover (owner, 2026-10-06: "the player icon is also an icon - if you are right next to a
+    // objective the player icon is drawn on top of the quest icon"): the player's ring with its dark band, and the age
+    // tag beside it, as circles along it. The player is level 1 and never moves for a symbol; the facing cone and the
+    // glow are see-through and hide nothing. With the tag's words, for the repel's memo: they change with the minute.
+    private static (List<(SKPoint At, float Half)> Circles, string AgeTag) PlayerObstacles(Camera camera, MapScene scene, float ui)
+    {
+        if (scene.Player is not { } player)
+            return ([], "");
+        var at = Screen(camera, scene, player.Position);
+        var circles = new List<(SKPoint, float)> { (at, (PlayerRing + 2.5f) * ui) };
+        if (PlayerAgeTag(camera, scene, ui) is not { } tag)
+            return (circles, "");
+        var (box, text) = tag;
+        var r = box.Height / 2;
+        for (var x = box.Left + r; ; x += r)
+        {
+            circles.Add((new SKPoint(Math.Min(x, box.Right - r), box.MidY), r + 1 * ui));
+            if (x >= box.Right - r)
+                break;
+        }
+        return (circles, text);
+    }
+
+    /// <summary>The player's age tag, where it stands and what it says, once the position is a minute old; else null.</summary>
+    internal static (SKRect Box, string Text)? PlayerAgeTag(Camera camera, MapScene scene, float ui)
+    {
+        if (scene.Player is not { } player || Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now) is var age && age < PlayerOld)
+            return null;
+        var (text, stale) = AgeTag(age);
+        using var font = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
+        return (AgeTagBox(Screen(camera, scene, player.Position), font.MeasureText(text), stale, ui), text);
     }
 
     // Single linkage: items closer than the test (directly or through others) end up in one cluster.
