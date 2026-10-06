@@ -44,7 +44,6 @@ public sealed partial class MapView : Grid
         _animation?.Stop();
         _glideFrames?.Stop();
         _wheelEnd?.Stop();
-        _fanRest?.Stop();
         _panel.PaintSurface -= OnPaintSurface;
     }
 
@@ -57,11 +56,7 @@ public sealed partial class MapView : Grid
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerCaptureLost += (_, _) => _dragFrom = null;
-        PointerExited += (_, e) =>
-        {
-            CloseFan();
-            Hover(null, e.GetCurrentPoint(this).Position);
-        };
+        PointerExited += (_, e) => Hover(null, e.GetCurrentPoint(this).Position);
         PointerWheelChanged += OnPointerWheelChanged;
         DoubleTapped += OnDoubleTapped;
         // A tap on a marker is that marker's click (MarkerClicked); only taps on the bare map reach the window, where
@@ -134,7 +129,6 @@ public sealed partial class MapView : Grid
             _ = artwork.ReadFloorsAsync();
         }
         StopGlide();
-        CloseFan();
         _scene = scene;
         if (scene is not null)
             scene.Pulse = AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
@@ -146,71 +140,6 @@ public sealed partial class MapView : Grid
         _centerAfterFit = _follow.On;
         Invalidate();
     }
-
-    // ---- a stack opens where the pointer rests on it (owner, 2026-10-05, from the overlap panel: "Go for F") ----
-
-    /// <summary>
-    /// How long the pointer rests on a symbol another one lies well over before the stack opens: sooner than a card
-    /// (0.65 s on the map), so that the card that comes is the one of the symbol meant.
-    /// </summary>
-    public static readonly TimeSpan FanRest = TimeSpan.FromMilliseconds(350);
-
-    /// <summary>How long the stack takes to open: long enough for the eye to follow each symbol out.</summary>
-    private static readonly TimeSpan FanEase = TimeSpan.FromMilliseconds(160);
-
-    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _fanRest;
-    private string? _fanCandidate;
-    private Windows.Foundation.Point _pointer;
-
-    // The pointer rests on a marker: if another lies well over it, its stack opens after FanRest. While a stack stands
-    // open, nothing else opens.
-    private void ArmFan(MapMarker? marker)
-    {
-        if (_scene?.FanAt is not null || marker?.Id == _fanCandidate)
-            return;
-        _fanCandidate = marker?.Id;
-        _fanRest?.Stop();
-        if (marker is null)
-            return;
-        if (_fanRest is null)
-        {
-            _fanRest = DispatcherQueue.CreateTimer();
-            _fanRest.Interval = FanRest;
-            _fanRest.IsRepeating = false;
-            _fanRest.Tick += (_, _) => OpenFan();
-        }
-        _fanRest.Start();
-    }
-
-    private void OpenFan()
-    {
-        if (_scene is not { } scene || _fanCandidate is not { } id || _hovered?.Id != id || _dragFrom is not null
-            || !MapRenderer.Stacked(MapRenderer.LayoutOf(_camera, scene, PixelScale).Markers, id, PixelScale))
-            return;
-        scene.FanAt = id;
-        scene.FanProgress = scene.Pulse ? 0 : 1;
-        var opened = MapRenderer.LayoutOf(_camera, scene, PixelScale).Markers.Count(m => m.Home is not null);
-        Study.Ui("map.fan", ("symbols", opened));
-        // The symbol under the pointer has gone out to the ring: what is under it now is what is pointed at.
-        Hover(MapRenderer.HitTest(_camera, scene, Pixels(_pointer), PixelScale), _pointer);
-        Redraw();
-    }
-
-    /// <summary>Closes an opened stack: the pointer left its plate or the map, or the view moved.</summary>
-    public void CloseFan()
-    {
-        _fanRest?.Stop();
-        _fanCandidate = null;
-        if (_scene is not { FanAt: not null } scene)
-            return;
-        scene.FanAt = null;
-        Invalidate();
-    }
-
-    // Whether a point (DIPs) lies on the opened stack's plate, with a little room around it for the hand.
-    private bool OnFan(Windows.Foundation.Point at) =>
-        _scene is { FanAt: not null } scene && MapRenderer.FanPlate(MapRenderer.LayoutOf(_camera, scene, PixelScale).Markers, PixelScale) is { } plate
-        && SKPoint.Distance(plate.Hub, Pixels(at)) <= plate.Radius + 6 * PixelScale;
 
     // ---- follow my position (owner, 2026-10-03; docs/DESIGN.md "Follow my position") ----
 
@@ -373,7 +302,7 @@ public sealed partial class MapView : Grid
     private static float DimTarget(MapScene scene) => scene.HasHighlight ? 1f : 0f;
 
     private static bool Animating(MapScene scene) =>
-        scene.Pulsing || scene.Pinging || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f || (scene.FanAt is not null && scene.FanProgress < 1);
+        scene.Pulsing || scene.Pinging || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
 
     private void Step()
     {
@@ -389,15 +318,12 @@ public sealed partial class MapView : Grid
         _lastStep = now;
         var target = DimTarget(scene);
         scene.Dim = scene.Dim < target ? Math.Min(target, scene.Dim + step) : Math.Max(target, scene.Dim - step);
-        if (scene.FanAt is not null && scene.FanProgress < 1)
-            scene.FanProgress = Math.Min(1, scene.FanProgress + (float)(step * DimEase.TotalMilliseconds / FanEase.TotalMilliseconds));
         Invalidate();
     }
 
     /// <summary>Moves the view to the player's last position, keeping the zoom (F, the button, the edge arrow).</summary>
     public void CenterOnPlayer()
     {
-        CloseFan();
         if (_scene is null || FollowState.Target(_scene, _camera, DateTime.Now) is not { } to)
             return;
         _follow.Centred();
@@ -409,7 +335,6 @@ public sealed partial class MapView : Grid
     /// <summary>Shows the whole map. Following stays on: the next position centres the view on the player, at this zoom.</summary>
     public void FitMap()
     {
-        CloseFan();
         _follow.Fitted();
         StopGlide();
         _centerAfterFit = false;
@@ -419,7 +344,6 @@ public sealed partial class MapView : Grid
 
     public void ZoomBy(double factor)
     {
-        CloseFan();
         _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor);
         KeepPlayerCentered();
         Invalidate();
@@ -432,7 +356,6 @@ public sealed partial class MapView : Grid
     /// <summary>Moves the view to a centre and zoom over <paramref name="duration"/>, eased in and out.</summary>
     public void AnimateView((Shturmap.Core.Maps.MapPoint Center, double Zoom) to, TimeSpan duration)
     {
-        CloseFan();
         StopViewAnimation();
         StopGlide();
         var from = View;
@@ -635,7 +558,6 @@ public sealed partial class MapView : Grid
         if (_dragFrom is not { } from)
         {
             var at = e.GetCurrentPoint(this).Position;
-            _pointer = at;
             var overEdge = OverEdge(at);
             if (overEdge != _overEdge)
             {
@@ -643,12 +565,8 @@ public sealed partial class MapView : Grid
                 ProtectedCursor = overEdge || _hovered is not null ? InputSystemCursor.Create(InputSystemCursorShape.Hand) : null;
                 ToolTipService.SetToolTip(this, overEdge ? "Show my position (F)" : null);
             }
-            // An opened stack stays while the pointer is on its plate, so each of its symbols can be pointed at.
-            if (_scene?.FanAt is not null && !OnFan(at))
-                CloseFan();
             var hit = _scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), PixelScale);
             Hover(hit, at);
-            ArmFan(hit);
             return;
         }
         var to = e.GetCurrentPoint(this).Position;
@@ -660,7 +578,6 @@ public sealed partial class MapView : Grid
             _dragging = true;
             _dragStarted = DateTime.Now;
             _dragDistance = 0;
-            CloseFan();
             Hover(null, to);
             // Dragging takes the view for now: a glide under way ends, and the next position brings the view back
             // (following stays on; owner, 2026-10-04).
@@ -710,7 +627,6 @@ public sealed partial class MapView : Grid
     {
         var point = e.GetCurrentPoint(this);
         var factor = Math.Pow(1.0015, point.Properties.MouseWheelDelta);
-        CloseFan();
         _camera.ZoomAt(Pixels(point.Position), factor);
         KeepPlayerCentered();
         Invalidate();
@@ -735,7 +651,6 @@ public sealed partial class MapView : Grid
 
     private void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
-        CloseFan();
         _camera.ZoomAt(Pixels(e.GetPosition(this)), 2);
         KeepPlayerCentered();
         Invalidate();

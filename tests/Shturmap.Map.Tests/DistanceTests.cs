@@ -91,8 +91,8 @@ public class DistanceTests
     [Fact]
     public void With_no_free_place_on_the_line_the_plate_keeps_the_middle()
     {
-        // Other quests' markers all along the line, every 20 px.
-        var crowd = Enumerable.Range(2, 17).Select(i => Quest($"q{i}", i * 20, 0, "", group: $"other-{i}"));
+        // Other quests' markers all along the line, every 24 px: touching, so none is set apart off the line (Repel).
+        var crowd = Enumerable.Range(2, 14).Select(i => Quest($"q{i}", i * 24, 0, "", group: $"other-{i}"));
         var (camera, scene) = Of([Quest("far", 400, 0, "Revision", group: "revision"), .. crowd]);
         scene.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, DateTime.Now);
         scene.Kept = new HashSet<string> { "revision" };

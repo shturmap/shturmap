@@ -1021,40 +1021,55 @@ spawns below).
   labels' priority, least first (locks and switches, then Scav and sniper zones, ways out, quests, bosses, then
   what is selected). A Scav zone's ring used to be drawn over the boss's octagon of the same spawn zone, which
   then read as a red ring (the review of 2026-10-04, C6).
-  Two symbols of the same rank that would cover each other stand **side by side** (`MapRenderer.SideBySide`; the
-  same review: on Streets a transit's diamond lay over an extract's triangle at Scav Checkpoint, and one quest's
-  disc over another's). Each is moved by half of what is missing for both to show, their collars touching, and
-  never further than its own width: such a pair stands beside its true place by a few pixels (two ways out at one
-  spot by 9 each, two quests' places by 12, before the display's scale). They
-  part along the line between their true places, and left and right where they share one, the earlier in the data
-  on the left; so when the places differ in the world, zooming in draws them apart and each symbol comes back to
-  its own. Places of one objective still merge into one marker with their count; symbols of different rank aren't
-  moved (the one on top says enough). The sizes are the symbols' at rest, so nothing moves because the pointer is
-  on it. Everything else follows the symbol where it is drawn: the pointer finds it there, its badges and its label
-  stand by it, the guide line ends on it, and a place counts as in view for the edge chevrons where its symbol is.
-  The distance on the guide's plate stays the place's own. One of such a pair may put its name a line further
-  down than "below", under its neighbour's: the two names read as the pair's caption ("Scav Checkpoint" over
-  "Transit to The Lab (Dark)").
+  Symbols that would cover each other are **set apart, on leaders** (below, "Symbols that cover each other"); the
+  receded ones, locks, switches and Scav zones' rings, only **side by side** with their own rank
+  (`MapRenderer.SideBySide`; the same review: on Streets a transit's diamond lay over an extract's triangle at Scav
+  Checkpoint, and one quest's disc over another's; until 2026-10-06 every symbol was set side by side). Each of such
+  a pair is moved by half of what is missing for both to show, their collars touching, and never further than its
+  own width, along the line between their true places, left and right where they share one, the earlier in the data
+  on the left; so zooming in draws them apart and each comes back to its own. Places of one objective still merge
+  into one marker with their count. Everything follows the symbol where it is drawn: the pointer finds it there,
+  its badges and its label stand by it, the guide line ends on it, and a place counts as in view for the edge
+  chevrons where its symbol is. The distance on the guide's plate stays the place's own. A symbol set off its place
+  may put its name a line further down than "below", under its neighbour's: two names read as a pair's caption
+  ("Scav Checkpoint" over "Transit to The Lab (Dark)").
 
 - **Symbols that cover each other** (owner, 2026-10-05: "Can there something be done about overlapping icons … Especially
   for selected Quest icons"; chosen from a panel of six ways drawn by the real map on three Streets spots: "Go for F").
   - **Nothing grows.** A pick and whatever is pointed at keep their rest size; colour, the pick's ring and the
     pointer's pulse say it, and the ring and the pulse lie under every symbol (`MapRenderer.DrawUnderlay`). Before, a
     pick grew to 14 px with a ring reaching 7.5 px further and a pointed-at quest to 12 px, over neighbours set
-    side by side for 10, so the symbol that mattered most covered the ones around it. Side by side (above) now holds
-    for every state, since the sizes it works with are the sizes drawn.
-  - **A stack opens where the pointer rests** (`MapScene.FanAt`, `MapView`). Resting 0.35 s on a symbol another one
-    lies well over (centres closer than 60 % of their bodies together, `MapRenderer.Stacked`) opens the stack: every
-    symbol that touches it goes out onto a ring around its place, in the order their places lie around it so no two
-    lines cross, each joined to its own place by a hairline in its colour with a dot where it belongs, on a dark
-    plate. It eases open over 0.16 s (at once with Windows' animation effects off), sooner than a card opens (0.65 s),
-    so the card that comes is the one of the symbol meant. It stays open while the pointer is on its plate, so each
-    symbol can be pointed at and clicked there, and closes when the pointer leaves it or the map, and when the view
-    moves (a drag, the wheel, a double-click, show my position, show the whole map, another map). Symbols that only
-    touch don't open: each can be pointed at as it is. The study log notes `map.fan` with the number of symbols.
-  - Also drawn and rejected (the panel, `shturmap-cli overlap-panel`, removed with the choice): the upper symbol faint
-    where it lies over another (muddy ghosts of glyphs), and neighbours stepping aside for a pick or what is pointed
-    at (symbols moving whenever the pointer moves).
+    side by side for 10, so the symbol that mattered most covered the ones around it. Symbols are set apart (below)
+    by the sizes they are drawn at.
+  - **Set apart, on leaders, without a click** (owner, 2026-10-06: "learning from the ggrepel ggplot package.
+    Whenever there is overplotting going on, it automatically draws a line between the datapoint and its annotation …
+    it should not be the case that I need to interact with the map with the mouse in order to see the spots
+    properly"; chosen from a panel of five ways drawn by the real map on four Streets spots: "Overlap: D";
+    `MapRenderer.Repel`). Quests, bosses, extracts and transits that would cover each other are pushed clear of each
+    other and pulled back toward their places, as ggrepel sets labels apart: where ranks differ, the lesser one
+    yields and the one that matters more keeps its place (bosses, quests, ways out); of one rank, both yield alike.
+    No symbol may stand on another's place either (ggrepel's point padding, 7 px beyond its own half width), so where
+    two share a spot both step off it. A symbol that has to leave its place stands at least 10 px beyond its edge
+    from it and is joined to it by a **leader**: a hairline in the symbol's colour on a dark band, with a dot on a
+    dark rim where it belongs (the opened stack's hairline of 2026-10-05, now always there). One only nudged (by
+    less than about half its width) keeps to its place without a leader, and as the view zooms in and the places
+    draw apart, each symbol comes back to its own and its leader goes. A corner badge (floor, count, OPT, "?")
+    counts in its symbol's width, so no neighbour is pushed under it. Leaders lie under every symbol and step back
+    with their symbols while something else is pointed at; no label covers a leader or its dot; pointing at the
+    dot points at its symbol. Positions turn only on the places, the zoom and the symbols' sizes and ranks at rest,
+    never on picks or the pointer, so nothing moves when something is picked or pointed at. Locks, switches and
+    Scav zones' rings take no part (their leaders were a web of ink between the quests in the panel): they stand side
+    by side among themselves, under the rest. A pan moves every place alike, so the repel's offsets are kept while
+    the same symbols are in view at the same zoom (`MapScene.LastRepel`): it is most of a layout's work (3 to 6 ms
+    for a 1600 × 1000 view of Streets with every quest active), and a pan lays the map out for every frame.
+  - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol
+    another lay well over put every symbol touching it on a ring around its place, on a dark plate, each on a
+    hairline to its own place. It needed the mouse, so it went with the leaders, which leave nothing stacked.
+  - Also drawn and rejected (the panels, `shturmap-cli overlap-panel` and `repel-panel`, removed with the choices):
+    the upper symbol faint where it lies over another (muddy ghosts of glyphs); neighbours stepping aside for a pick
+    or what is pointed at (symbols moving whenever the pointer moves); repelled with only the lesser symbol leaving
+    (its dot often lay under the symbol that stayed); every place kept in sight but with leaders as short as the
+    room allows (stubs between symbols, no lines to follow); and the leaders in ink rather than the symbol's colour.
 - **The player's extracts this raid** (owner, 2026-10-05: "update the map accordingly, highlighting the open exfils").
   Once a screenshot showed the game's extract list (§2), three steps:
   - **On the list: lit** (owner, 2026-10-05, the same evening: "The exits that are verified should be highlighted

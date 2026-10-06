@@ -19,6 +19,7 @@ public enum LegendSymbol
     Objective,
     PossibleLocation,
     Cluster,
+    Leader,
     Optional,
     Done,
     QuestZone,
@@ -81,6 +82,8 @@ public static class MapLegend
         If(kinds.Contains(MarkerKind.PossibleLocation), LegendSymbol.PossibleLocation);
         // Marker ids are "objective:<id>:<n>": two places of one objective can merge into a cluster.
         If(places.GroupBy(m => m.Id[..Math.Max(0, m.Id.LastIndexOf(':'))]).Any(g => g.Count() > 1), LegendSymbol.Cluster);
+        // Any two symbols that are set apart can crowd one spot at some zoom (MapRenderer.Repel).
+        If(scene.Markers.Count(m => MapRenderer.Repels(m.Kind)) > 1, LegendSymbol.Leader);
         If(places.Any(m => m.Optional), LegendSymbol.Optional);
         If(kinds.Contains(MarkerKind.ObjectiveDone), LegendSymbol.Done);
         If(scene.Zones.Any(z => z.Kind is MarkerKind.Objective or MarkerKind.ObjectiveDone), LegendSymbol.QuestZone);
@@ -112,7 +115,7 @@ public static class MapLegend
         new(LegendSymbol.Player, "You, at your last screenshot: sand disc in a ring. Dashed with its age from 1 min, framed from 2. Cone: your facing (45 s)."),
         new(LegendSymbol.PlayerOutOfView, "You, out of view: sand badge at the edge. Click it or press F."),
         new(LegendSymbol.Ping, "A new position: sand rings."),
-        new(LegendSymbol.KeptQuest, "A picked quest: larger, ringed, in its pick's colour."),
+        new(LegendSymbol.KeptQuest, "A picked quest: ringed, in its pick's colour."),
         new(LegendSymbol.KeptLock, "A door a pick needs a key for: padlock in the pick's colour, with the key's name."),
         new(LegendSymbol.Guide, "To your picks' nearest place: dashed line in the pick's colour, with the distance."),
         new(LegendSymbol.OutOfView, "Picked places out of view: chevron in the pick's colour, with a count."),
@@ -120,6 +123,7 @@ public static class MapLegend
         new(LegendSymbol.Objective, "Quest objective: gold disc, its glyph the quest type."),
         new(LegendSymbol.PossibleLocation, "One of several places it can be: ? at the corner."),
         new(LegendSymbol.Cluster, "Close places of one objective: one marker with a count. Zoom in to split."),
+        new(LegendSymbol.Leader, "Moved off a crowded spot: a line in its colour to a dot where it is."),
         new(LegendSymbol.Optional, "Optional objective: OPT at the upper left."),
         new(LegendSymbol.Done, "Done objective: small grey disc with a check."),
         new(LegendSymbol.QuestZone, "An objective's area."),
@@ -239,6 +243,15 @@ public static partial class MapRenderer
             case LegendSymbol.Cluster:
                 Marker(Quest(MarkerKind.PossibleLocation), change: m => m with { Count = 5 });
                 break;
+            case LegendSymbol.Leader:
+            {
+                // A quest's place at the dot, its symbol set off to the right as on a crowded spot.
+                var place = camera.ToScreen(new MapPoint(-15, 0));
+                var shown = Show(camera, scene, Quest(MarkerKind.Objective, 7), ui * 0.85f);
+                DrawLeader(canvas, place, shown.At, shown.Color, ui * 0.85f);
+                DrawMarker(canvas, scene, shown, ui * 0.85f);
+                break;
+            }
             case LegendSymbol.Optional:
                 Marker(Quest(MarkerKind.Objective) with { Optional = true });
                 break;

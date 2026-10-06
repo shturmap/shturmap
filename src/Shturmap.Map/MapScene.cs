@@ -88,6 +88,10 @@ public sealed class MapScene
     /// <summary>The last frame's layout with what it was made from (<see cref="MapRenderer.LayoutOf"/>).</summary>
     internal (MapRenderer.LayoutKey Key, MapRenderer.MapLayout Layout)? LastLayout { get; set; }
 
+    /// <summary>The last repel's input and how far it set each symbol off its place (<see cref="MapRenderer.Repel"/>):
+    /// panning moves every place alike, so the same symbols at the same zoom are set off alike.</summary>
+    internal (string Key, SkiaSharp.SKPoint[] Offsets)? LastRepel { get; set; }
+
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>
     public MapLayer? Floor
     {
@@ -390,41 +394,6 @@ public sealed class MapScene
     }
 
     private IReadOnlySet<string> _exitsListed = Nothing;
-
-    /// <summary>
-    /// The marker the pointer rested on where symbols cover each other: its stack stands opened on a ring around its
-    /// place, each symbol on a hairline to its own (owner, 2026-10-05, from the overlap panel: "Go for F"). Null: none.
-    /// </summary>
-    public string? FanAt
-    {
-        get => _fanAt;
-        set
-        {
-            if (value == _fanAt)
-                return;
-            _fanAt = value;
-            FanProgress = value is null ? 0 : FanProgress;
-            LayoutVersion++;
-        }
-    }
-
-    private string? _fanAt;
-
-    /// <summary>How far the stack has opened, 0 to 1: the map view eases it open over a moment, so the eye follows each
-    /// symbol out; 1 at once with Windows' animation effects off.</summary>
-    public float FanProgress
-    {
-        get => _fanProgress;
-        set
-        {
-            if (Math.Abs(value - _fanProgress) < 0.0001f)
-                return;
-            _fanProgress = value;
-            LayoutVersion++;
-        }
-    }
-
-    private float _fanProgress;
 
     /// <summary>
     /// The listed extracts the game marked "??:??:??" (marker ids): it may be closed, or it needs something. They

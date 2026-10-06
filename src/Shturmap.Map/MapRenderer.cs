@@ -256,19 +256,16 @@ public static partial class MapRenderer
         /// <summary>An extract on the player's list this raid (<see cref="MapScene.ExitsListed"/>): lit.</summary>
         public bool Listed { get; init; }
 
-        /// <summary>Its true place, while it stands on an opened stack's ring (<see cref="MapScene.FanAt"/>): a hairline
-        /// joins the two.</summary>
-        public SKPoint? Home { get; init; }
-
-        /// <summary>The middle of the opened stack it stands in (the place of the symbol the pointer rested on).</summary>
-        public SKPoint FanHub { get; init; }
-
         /// <summary>A listed extract the game marked "??:??:??" (<see cref="MapScene.ExitsUnsure"/>): a "?" at its corner.</summary>
         public bool Unsure { get; init; }
 
-        /// <summary>Drawn beside its true place, for a neighbour of the same rank that would cover it or be covered
-        /// (<see cref="SideBySide"/>): <see cref="At"/> is where the symbol stands, a few pixels off.</summary>
+        /// <summary>Drawn off its true place, for a neighbour that would cover it or be covered (<see cref="Repel"/>,
+        /// <see cref="SideBySide"/>): <see cref="At"/> is where the symbol stands.</summary>
         public bool Beside { get; init; }
+
+        /// <summary>Its true place, where it was set so far from it that it no longer covers it (<see cref="Repel"/>): a
+        /// leader joins the two, with a dot at the place.</summary>
+        public SKPoint? Leader { get; init; }
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
@@ -333,6 +330,14 @@ public static partial class MapRenderer
             taken.Add(Square(m.At, m.Reach));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeBox(m, ui));
+            // No label covers a leader or the dot at its end (Repel).
+            if (m.Leader is { } place)
+            {
+                taken.Add(Square(place, 3.5f * ui));
+                var length = SKPoint.Distance(place, m.At);
+                for (var d = 4 * ui; d < length; d += 5 * ui)
+                    taken.Add(Square(new SKPoint(place.X + (m.At.X - place.X) * d / length, place.Y + (m.At.Y - place.Y) * d / length), 1.5f * ui));
+            }
         }
         if (scene.Player is { } player)
         {
@@ -347,7 +352,7 @@ public static partial class MapRenderer
             }
         }
         // After every symbol: the guide's plate gives way to them. The guide ends, and the chevrons count, where the
-        // symbols are drawn: a marker set beside its place (SideBySide) is there for them too.
+        // symbols are drawn: a marker set off its place (Repel, SideBySide) is there for them too.
         var drawnAt = markers.Where(m => m.Count == 1).GroupBy(m => m.Marker.Id).ToDictionary(g => g.Key, g => g.First().At, StringComparer.Ordinal);
         var guide = Guide(camera, scene, ui, taken, drawnAt);
         if (guide?.Plate is not null)
@@ -443,8 +448,8 @@ public static partial class MapRenderer
     private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Listed ? 1 : RestRank(m.Marker.Kind);
 
     /// <summary>A kind's rank at rest, whatever is picked or pointed at: bosses, quests, ways out, Scav and sniper
-    /// zones, locks and switches. Symbols of one rank are set side by side where they would cover each other
-    /// (<see cref="SideBySide"/>); of two ranks, the one that matters more lies on top.</summary>
+    /// zones, locks and switches. Where symbols would cover each other, the lesser one yields (<see cref="Repel"/>), and
+    /// where they still share a spot (locks under a quest), the one that matters more lies on top.</summary>
     public static int RestRank(MarkerKind kind) => kind switch
     {
         MarkerKind.BossSpawn => 1,
@@ -473,14 +478,14 @@ public static partial class MapRenderer
     private const int SideBySidePasses = 4;
 
     /// <summary>
-    /// Where symbols stand that would cover each other: two of the same rank (two ways out, two quests' places, a
-    /// lock beside a lock) closer than their widths allow are set side by side, each moved by half of what is missing
-    /// and never further from its true place than its own width. Before, the one drawn later covered the other: on
-    /// Streets a transit's diamond lay over an extract's triangle at the same spot (the review of 2026-10-04, C6).
-    /// They part along the line between their true places, so as the view zooms in and those draw apart, each
-    /// symbol comes straight back to its own; where they share a place, left and right, the earlier one on the left.
-    /// Symbols of different rank aren't moved: the one that matters more lies on top (Render). The sizes are the
-    /// symbols' at rest (<see cref="RestHalf"/>), so nothing moves because the pointer is on it.
+    /// Where the receded symbols stand that would cover each other (locks, switches, Scav zones' rings; the rest is
+    /// <see cref="Repel"/>'s): two of the same rank closer than their widths allow are set side by side, each moved by
+    /// half of what is missing and never further from its true place than its own width (the review of 2026-10-04,
+    /// C6, for every symbol until 2026-10-06). They part along the line between their true places, so as the view
+    /// zooms in and those draw apart, each symbol comes straight back to its own; where they share a place, left and
+    /// right, the earlier one on the left. Symbols of different rank aren't moved: the one that matters more lies on
+    /// top (Render). The sizes are the symbols' at rest (<see cref="RestHalf"/>), so nothing moves because the pointer
+    /// is on it.
     /// </summary>
     /// <param name="symbols">Each symbol's true place on screen, half its width at rest, and its rank.</param>
     /// <param name="gap">The room kept between two symbols' edges: their dark collars.</param>
@@ -513,6 +518,186 @@ public static partial class MapRenderer
         }
         return at;
     }
+
+    private const int RepelPasses = 80;
+    private const int RepelSettlePasses = 30;
+
+    // How strongly a symbol is drawn back toward its place on each pass.
+    private const float RepelPull = 0.12f;
+
+    /// <summary>How far beyond its own half width no symbol comes to another's place (pixels, before scaling; ggrepel's
+    /// point padding): the dot at the end of a leader, with its dark rim, and a little air.</summary>
+    public const float PlaceClear = 7;
+
+    /// <summary>How far beyond its own edge a symbol that has to leave its place stands from it (pixels, before
+    /// scaling), so its leader is long enough to follow.</summary>
+    public const float LeaderLeast = 10;
+
+    /// <summary>
+    /// Where symbols stand that would cover each other, as ggrepel sets labels apart (owner, 2026-10-06: "Whenever there is
+    /// overplotting going on, it automatically draws a line between the datapoint and its annotation … it should not be
+    /// the case that I need to interact with the map with the mouse in order to see the spots properly"; chosen from a
+    /// panel of five ways drawn by the real map on four Streets spots: "Overlap: D"). Each pass pushes every two symbols
+    /// that overlap apart along the line between them, keeps every symbol off the others' places, then pulls each a
+    /// little back toward its own; the last passes only push, so none is left covering another or another's place.
+    /// Before them, a symbol that had to leave its place (more than half its width off it) is set off it by
+    /// <paramref name="minLine"/> beyond its edge, so its leader can be followed; one only nudged keeps to its place and
+    /// needs no leader. Where ranks differ, the lesser symbol takes the whole step and the one that matters more keeps its
+    /// place (<see cref="RestRank"/>); of one rank, each takes half. Symbols sharing one place start a hair apart round
+    /// it, the first to the left, so a crowd opens in every direction. Whatever is still wedged at the end goes to the
+    /// nearest free spot. Positions depend only on the symbols' places, sizes and ranks at rest, never on what is picked
+    /// or pointed at, so nothing moves with the pointer.
+    /// </summary>
+    /// <param name="symbols">Each symbol's true place on screen, half its width at rest, its rank, and whether it takes part.</param>
+    /// <param name="gap">The room kept between two symbols' edges: their dark collars.</param>
+    /// <param name="placeClear">Above 0: how far every symbol keeps from the places of the others (but locks' and switches'),
+    /// beyond its own half width, so the dot at the end of each leader shows.</param>
+    /// <param name="minLine">Above 0: how far beyond its own edge a symbol that has left its place stands from it.</param>
+    public static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear = 0, float minLine = 0)
+    {
+        var n = symbols.Count;
+        var at = symbols.Select(s => s.At).ToArray();
+        if (n < 2)
+            return at;
+        // A crowd at one place: the k-th of it starts a hair off, round the place by the golden angle, the first to the
+        // left (as side by side had it).
+        for (var i = 0; i < n; i++)
+        {
+            var k = 0;
+            for (var j = 0; j < i; j++)
+            {
+                if (SKPoint.Distance(symbols[j].At, symbols[i].At) < 0.01f)
+                    k++;
+            }
+            if (k > 0)
+            {
+                var angle = MathF.PI + k * 2.39996f;
+                at[i] = new SKPoint(at[i].X + 0.5f * MathF.Cos(angle), at[i].Y + 0.5f * MathF.Sin(angle));
+            }
+            else if (Enumerable.Range(i + 1, n - i - 1).Any(j => SKPoint.Distance(symbols[j].At, symbols[i].At) < 0.01f))
+            {
+                at[i] = new SKPoint(at[i].X - 0.5f, at[i].Y);
+            }
+        }
+        var widest = symbols.Where(s => s.Moves).Select(s => s.Half).DefaultIfEmpty(0).Max();
+        var order = Enumerable.Range(0, n).Where(i => symbols[i].Moves).ToArray();
+        // The places kept in sight, by x, for a sweep: those of every symbol taking part but locks and switches (level 4).
+        var places = placeClear <= 0 ? [] : order.Where(i => symbols[i].Rank < 5).OrderBy(i => symbols[i].At.X).ToArray();
+        var placeXs = places.Select(i => symbols[i].At.X).ToArray();
+        bool OnPlace(int i, SKPoint p, int j) => j != i && SKPoint.Distance(p, symbols[j].At) < symbols[i].Half + placeClear - 0.01f;
+        for (var pass = 0; pass < RepelPasses + RepelSettlePasses; pass++)
+        {
+            // Before the last passes: a symbol that had to leave its place (more than half its width off it) stands off
+            // it by its leader's least length; one only nudged stays where it is.
+            if (pass == RepelPasses && minLine > 0)
+            {
+                foreach (var i in order)
+                {
+                    var off = at[i] - symbols[i].At;
+                    var least = symbols[i].Half + gap + minLine;
+                    if (off.Length > symbols[i].Half * 0.6f && off.Length < least)
+                        at[i] = new SKPoint(symbols[i].At.X + off.X / off.Length * least, symbols[i].At.Y + off.Y / off.Length * least);
+                }
+            }
+            // A sweep along x: only symbols closer than the two widest together can overlap.
+            Array.Sort(order, (a, b) => at[a].X.CompareTo(at[b].X));
+            var moved = false;
+            for (var a = 0; a < order.Length; a++)
+            {
+                var i = order[a];
+                for (var b = a + 1; b < order.Length; b++)
+                {
+                    var j = order[b];
+                    if (at[j].X - at[i].X >= 2 * widest + gap)
+                        break;
+                    var want = symbols[i].Half + symbols[j].Half + gap;
+                    var line = at[j] - at[i];
+                    var apart = line.Length;
+                    if (apart >= want - 0.01f)
+                        continue;
+                    var along = apart < 0.001f ? new SKPoint(1, 0) : new SKPoint(line.X / apart, line.Y / apart);
+                    var (shareI, shareJ) = symbols[i].Rank == symbols[j].Rank ? (0.5f, 0.5f)
+                        : symbols[i].Rank < symbols[j].Rank ? (0f, 1f) : (1f, 0f);
+                    var push = want - apart;
+                    at[i] = new SKPoint(at[i].X - along.X * push * shareI, at[i].Y - along.Y * push * shareI);
+                    at[j] = new SKPoint(at[j].X + along.X * push * shareJ, at[j].Y + along.Y * push * shareJ);
+                    moved = true;
+                }
+            }
+            // Off the others' places, by the whole step: a place doesn't move.
+            if (places.Length > 0)
+            {
+                foreach (var i in order)
+                {
+                    var reach = symbols[i].Half + placeClear;
+                    var from = Array.BinarySearch(placeXs, at[i].X - reach);
+                    for (var b = from < 0 ? ~from : from; b < places.Length && placeXs[b] <= at[i].X + reach; b++)
+                    {
+                        var j = places[b];
+                        if (!OnPlace(i, at[i], j))
+                            continue;
+                        var line = at[i] - symbols[j].At;
+                        var apart = line.Length;
+                        // On the very place: out the way its own place lies from it, or to the left.
+                        var away = apart > 0.001f ? new SKPoint(line.X / apart, line.Y / apart)
+                            : SKPoint.Distance(symbols[i].At, symbols[j].At) > 0.001f ? Unit(symbols[i].At - symbols[j].At) : new SKPoint(-1, 0);
+                        var push = reach - apart;
+                        at[i] = new SKPoint(at[i].X + away.X * push, at[i].Y + away.Y * push);
+                        moved = true;
+                    }
+                }
+            }
+            if (pass < RepelPasses)
+            {
+                foreach (var i in order)
+                    at[i] = new SKPoint(at[i].X + (symbols[i].At.X - at[i].X) * RepelPull, at[i].Y + (symbols[i].At.Y - at[i].Y) * RepelPull);
+            }
+            else if (!moved)
+            {
+                break;
+            }
+        }
+        // A lesser symbol can be wedged between two that keep their places, pushed back and forth for good: whatever
+        // still covers another goes to the nearest place round it where it covers none, the least important first.
+        bool Clear(int i, SKPoint p) => order.All(j => j == i || SKPoint.Distance(p, at[j]) >= symbols[i].Half + symbols[j].Half + gap - 0.01f)
+                                        && places.All(j => !OnPlace(i, p, j));
+        foreach (var i in order.OrderByDescending(i => symbols[i].Rank).ThenBy(i => i))
+        {
+            if (Clear(i, at[i]))
+                continue;
+            var from = at[i];
+            for (var radius = 1f; radius < 40 * (symbols[i].Half + gap) && !Clear(i, at[i]); radius += 1)
+            {
+                // Round the ring from the side its own place lies on, so it stays as near to it as it can.
+                var toward = MathF.Atan2(symbols[i].At.Y - from.Y, symbols[i].At.X - from.X);
+                for (var k = 0; k < 24; k++)
+                {
+                    var angle = toward + (k % 2 == 0 ? 1 : -1) * ((k + 1) / 2) * MathF.PI / 12;
+                    var p = new SKPoint(from.X + radius * MathF.Cos(angle), from.Y + radius * MathF.Sin(angle));
+                    if (Clear(i, p))
+                    {
+                        at[i] = p;
+                        break;
+                    }
+                }
+            }
+        }
+        return at;
+    }
+
+    private static SKPoint Unit(SKPoint v) => new(v.X / v.Length, v.Y / v.Length);
+
+    /// <summary>Whether a kind is set apart by <see cref="Repel"/>: all but the receded level 4 and the Scav zones' rings.</summary>
+    public static bool Repels(MarkerKind kind) => kind is not (MarkerKind.ScavSpawn or MarkerKind.Lock or MarkerKind.Switch);
+
+    /// <summary>Half a symbol's width as the repel sees it: its body at rest, and a little more where a badge stands
+    /// out at a corner (a floor arrow, a count, "OPT", "?"), so no neighbour is pushed under a badge.</summary>
+    public static float RepelHalf(ShownMarker m, float ui) =>
+        RestHalf(m.Marker, ui) + (m.Floor != 0 || m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? 3 * ui : 0);
+
+    /// <summary>How far a symbol must stand from its place before a leader joins the two: clear of its own body, so
+    /// the dot at the place shows. Closer, it still covers its place and needs none.</summary>
+    public static float LeaderFrom(MapMarker marker, float ui) => RestHalf(marker, ui) + (MarkerCollar + 2) * ui;
 
     // A point no further from its origin than a reach.
     private static SKPoint Within(SKPoint p, SKPoint origin, float reach)
@@ -563,8 +748,9 @@ public static partial class MapRenderer
     /// the view zooms in. Markers out of view are left out (their labels would take the place of the ones in view),
     /// and before places are merged: a group that runs out of view keeps a marker for its places in view, at one of
     /// them. Merged first, the whole group went when its middle place was out of view (the review of 2026-10-04).
-    /// Last, symbols of one rank that would still cover each other are set side by side (<see cref="SideBySide"/>):
-    /// their <see cref="ShownMarker.At"/> is where they are drawn, and <see cref="ShownMarker.Beside"/> says so.
+    /// Last, symbols that would still cover each other are set apart (<see cref="Repel"/>; the receded ones side by side,
+    /// <see cref="SideBySide"/>): their <see cref="ShownMarker.At"/> is where they are drawn, <see cref="ShownMarker.Beside"/>
+    /// says so, and <see cref="ShownMarker.Leader"/> holds the place of one set so far off it that a leader joins them.
     /// </summary>
     public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui)
     {
@@ -594,84 +780,43 @@ public static partial class MapRenderer
                 result.Add((medoid.Index, medoid.Shown with { Count = cluster.Count, Floor = floor }));
             }
         }
-        // Symbols of one rank that would cover each other stand side by side (SideBySide). In the data's order, not
-        // the drawing order below: which of two goes left must not turn on what is pointed at.
+        // In the data's order, not the drawing order below: which of two goes left must not turn on what is pointed at.
         result.Sort((a, b) => a.Index.CompareTo(b.Index));
-        var places = SideBySide(result.Select(r => (r.Shown.At, RestHalf(r.Shown.Marker, ui), RestRank(r.Shown.Marker.Kind))).ToList(), MarkerCollar * ui);
-        var list = result
-            .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with { At = places[i], Beside = true }))
+        var places = SetApart(scene, result.Select(r => r.Shown).ToList(), camera.Zoom, ui, result.Select(r => r.Index));
+        return result
+            .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with
+            {
+                At = places[i],
+                Beside = true,
+                Leader = Repels(r.Shown.Marker.Kind) && SKPoint.Distance(places[i], r.Shown.At) > LeaderFrom(r.Shown.Marker, ui) ? r.Shown.At : null,
+            }))
             .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
             .ThenBy(r => r.Index)
             .Select(r => r.Shown)
             .ToList();
-        if (scene.FanAt is { } fan)
-            FanOut(list, fan, scene.FanProgress, ui);
-        return list;
     }
 
-    // A symbol's body, without the pick's ring: what a neighbour must keep clear of.
-    private static float Body(ShownMarker m, float ui) => m.Reach - 1 * ui - (m.Kept ? 7.5f * ui : 0);
-
-    // The symbols that touch one: the stack an opened fan stands on its ring.
-    private static List<int> StackOf(IReadOnlyList<ShownMarker> list, int f, float ui) =>
-        Enumerable.Range(0, list.Count).Where(i => SKPoint.Distance(list[i].At, list[f].At) < list[f].Reach + Body(list[i], ui)).ToList();
-
-    /// <summary>
-    /// Whether resting the pointer on this marker opens its stack: another symbol lies well over it, centres closer
-    /// than 60 % of their bodies together, so one of them is mostly hidden. Symbols that only touch can each be
-    /// pointed at as they are, and their cards open as ever.
-    /// </summary>
-    public static bool Stacked(IReadOnlyList<ShownMarker> markers, string markerId, float ui)
+    // Where each symbol stands: quests, bosses and ways out set apart on leaders (Repel), the receded locks, switches
+    // and Scav zones' rings side by side among themselves, under the rest (their leaders were a web of ink between the
+    // quests). Panning moves every place alike, so while the same symbols are in view at the same zoom the last repel's
+    // offsets hold: it is most of a layout's work, and a pan lays the map out for every frame.
+    private static SKPoint[] SetApart(MapScene scene, List<ShownMarker> markers, double zoom, float ui, IEnumerable<int> indices)
     {
-        var list = markers.ToList();
-        var f = list.FindIndex(m => m.Marker.Id == markerId && m.Home is null);
-        return f >= 0 && list.Where((m, i) => i != f && m.Home is null)
-            .Any(m => SKPoint.Distance(m.At, list[f].At) < 0.6f * (Body(m, ui) + Body(list[f], ui)));
-    }
-
-    /// <summary>The opened stack's plate, where the pointer keeps it open: its middle and radius; null with none.</summary>
-    public static (SKPoint Hub, float Radius)? FanPlate(IReadOnlyList<ShownMarker> markers, float ui)
-    {
-        var moved = markers.Where(m => m.Home is not null).ToList();
-        if (moved.Count == 0)
-            return null;
-        var hub = moved[0].FanHub;
-        return (hub, moved.Max(m => SKPoint.Distance(m.At, hub) + m.Reach) + 3 * ui);
-    }
-
-    // The symbols that touch the one the pointer rests on, and it, stand on a ring around its place, each joined to its
-    // own place by a hairline (owner, 2026-10-05, from the overlap panel: "Go for F"). They go out along the ring as
-    // the stack opens (progress 0 to 1, eased out).
-    private static void FanOut(List<ShownMarker> list, string fanAt, float progress, float ui)
-    {
-        var f = list.FindIndex(m => m.Marker.Id == fanAt);
-        if (f < 0)
-            return;
-        var hub = list[f].At;
-        // Round the ring in the order the symbols' own places lie around the hub, from the first of them, so the
-        // hairlines don't cross; one at the hub itself goes last.
-        float? AngleOf(int i) => (list[i].At - hub).Length < 0.5f ? null : MathF.Atan2(list[i].At.Y - hub.Y, list[i].At.X - hub.X);
-        var stack = StackOf(list, f, ui).OrderBy(i => AngleOf(i) ?? float.MaxValue).ToList();
-        if (stack.Count < 2)
-            return;
-        var widest = stack.Max(i => list[i].Reach);
-        var gap = MarkerCollar * ui;
-        var radius = Math.Max(widest * 1.7f + gap, stack.Count * (2 * widest + gap) / (2 * MathF.PI));
-        var start = AngleOf(stack[0]) ?? -MathF.PI / 2;
-        var eased = 1 - MathF.Pow(1 - Math.Clamp(progress, 0, 1), 3);
-        for (var k = 0; k < stack.Count; k++)
+        var places = SideBySide(markers.Select(m => (m.At, RestHalf(m.Marker, ui), RestRank(m.Marker.Kind))).ToList(), MarkerCollar * ui);
+        var key = $"{scene.LayoutVersion}|{zoom:R}|{ui:R}|{string.Join(",", indices.Zip(markers, (i, m) => $"{i}:{m.Count}"))}";
+        if (scene.LastRepel is not { } last || last.Key != key)
         {
-            var angle = start + k * 2 * MathF.PI / stack.Count;
-            var i = stack[k];
-            var home = list[i].At;
-            var ring = new SKPoint(hub.X + radius * MathF.Cos(angle), hub.Y + radius * MathF.Sin(angle));
-            list[i] = list[i] with
-            {
-                At = new SKPoint(home.X + (ring.X - home.X) * eased, home.Y + (ring.Y - home.Y) * eased),
-                Home = home,
-                FanHub = hub,
-            };
+            var repelled = Repel(markers.Select(m => (m.At, RepelHalf(m, ui), RestRank(m.Marker.Kind), Repels(m.Marker.Kind))).ToList(),
+                MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui);
+            last = (key, repelled.Select((p, i) => p - markers[i].At).ToArray());
+            scene.LastRepel = last;
         }
+        for (var i = 0; i < places.Length; i++)
+        {
+            if (Repels(markers[i].Marker.Kind))
+                places[i] = markers[i].At + last.Offsets[i];
+        }
+        return places;
     }
 
     // Single linkage: items closer than the test (directly or through others) end up in one cluster.
@@ -1012,7 +1157,12 @@ public static partial class MapRenderer
                 bestDistance = distance;
             }
         }
-        return best;
+        if (best is not null)
+            return best;
+        // The dot at the end of a leader is its symbol's place: pointing at it points at the symbol.
+        return LayoutOf(camera, scene, ui).Markers
+            .Where(m => m.Leader is { } place && SKPoint.Distance(place, screen) <= 6 * ui)
+            .MinBy(m => SKPoint.Distance(m.Leader!.Value, screen))?.Marker;
     }
 
     private static void DrawArtwork(SKCanvas canvas, Camera camera, MapScene scene, MapArtwork artwork)
@@ -1353,7 +1503,7 @@ public static partial class MapRenderer
 
     /// <param name="symbols">The boxes of the symbols placed in this frame: the plate stands on none of them.</param>
     /// <param name="drawnAt">Where this frame's markers are drawn, by id: the line ends on the symbol, also when it
-    /// stands beside its place (<see cref="SideBySide"/>).</param>
+    /// stands off its place (<see cref="Repel"/>).</param>
     private static GuideLine? Guide(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols, IReadOnlyDictionary<string, SKPoint> drawnAt)
     {
         if (scene.Player is not { } player || scene.Kept.Count == 0)
@@ -1463,7 +1613,7 @@ public static partial class MapRenderer
     // The picked quests' places out of view, and the pointed-at quest's while the pointer is on it: one chevron per
     // direction (places whose edge points lie within 56 px merge), in the quest's colour. The same vocabulary as the
     // player's edge badge, smaller and without a plate: the player is level 1.
-    // A place counts as in view where its symbol is drawn: one set beside its place at the very edge (SideBySide) gets
+    // A place counts as in view where its symbol is drawn: one set off its place at the very edge (Repel) gets
     // no chevron while its symbol shows, and one while it doesn't.
     private static List<EdgeChevron> Chevrons(Camera camera, MapScene scene, float ui, IReadOnlyDictionary<string, SKPoint> drawnAt)
     {
@@ -1653,32 +1803,33 @@ public static partial class MapRenderer
     }
 
     // What lies under every symbol (owner, 2026-10-05, from the overlap panel: "Go for F"): a pick's ring and a
-    // pointed-at symbol's pulse, around symbols that keep their rest size, so neither covers a neighbour; and where a
-    // stack stands opened, its dark plate and the hairlines from each symbol to its own place.
+    // pointed-at symbol's pulse, around symbols that keep their rest size, so neither covers a neighbour; and the
+    // leaders of symbols set off their places (Repel), stepping back with their symbols while something else is
+    // pointed at.
     private static void DrawUnderlay(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui)
     {
+        var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
+        foreach (var m in markers.Where(m => m.Leader is not null))
+            DrawLeader(canvas, m.Leader!.Value, m.At, m.Color, ui, m.Focused || IsPick(scene, m) ? 1 : 1 - (1 - StepBackOf(scene, m).Alpha) * dim);
         foreach (var m in markers.Where(m => m.Kept))
             DrawPickRing(canvas, m, ui);
         foreach (var m in markers.Where(m => m.Pointed && scene.Pulsing))
             DrawPulse(canvas, scene, m.At, m.R, m.Color, ui);
-        if (FanPlate(markers, ui) is not { } plate)
-            return;
-        using (var ground = new SKPaint { Color = Background.WithAlpha((byte)(190 * Math.Clamp(scene.FanProgress, 0, 1))), IsAntialias = true })
-        using (var edge = new SKPaint { Color = Palette.Sk(Palette.LineStrong), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 * ui })
-        {
-            canvas.DrawCircle(plate.Hub, plate.Radius, ground);
-            canvas.DrawCircle(plate.Hub, plate.Radius, edge);
-        }
-        foreach (var m in markers.Where(m => m.Home is not null))
-        {
-            using var under = new SKPaint { Color = Background.WithAlpha(170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui, StrokeCap = SKStrokeCap.Round };
-            using var line = new SKPaint { Color = m.Color.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.3f * ui, StrokeCap = SKStrokeCap.Round };
-            using var dot = new SKPaint { Color = m.Color, IsAntialias = true };
-            canvas.DrawLine(m.Home!.Value, m.At, under);
-            canvas.DrawLine(m.Home!.Value, m.At, line);
-            canvas.DrawCircle(m.Home!.Value, 2.4f * ui, under);
-            canvas.DrawCircle(m.Home!.Value, 2.2f * ui, dot);
-        }
+    }
+
+    /// <summary>A leader from a symbol's true place to where it is drawn: a hairline in its colour on a dark band, and a
+    /// dot on a dark rim at the place (the opened stack's hairline of 2026-10-05, now always drawn).</summary>
+    /// <param name="strength">1 at full strength; less while it steps back with its symbol.</param>
+    internal static void DrawLeader(SKCanvas canvas, SKPoint place, SKPoint at, SKColor color, float ui, float strength = 1)
+    {
+        using var under = new SKPaint { Color = Background.WithAlpha((byte)(170 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui, StrokeCap = SKStrokeCap.Round };
+        using var line = new SKPaint { Color = color.WithAlpha((byte)(220 * strength)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.3f * ui, StrokeCap = SKStrokeCap.Round };
+        using var dot = new SKPaint { Color = color.WithAlpha((byte)(255 * strength)), IsAntialias = true };
+        using var rim = new SKPaint { Color = Background.WithAlpha((byte)(200 * strength)), IsAntialias = true };
+        canvas.DrawLine(place, at, under);
+        canvas.DrawLine(place, at, line);
+        canvas.DrawCircle(place, 3.4f * ui, rim);
+        canvas.DrawCircle(place, 2.2f * ui, dot);
     }
 
     // A picked quest's marker carries a steady ring, so it is found at a glance: a dark band, then the colour, so it

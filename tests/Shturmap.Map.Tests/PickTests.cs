@@ -74,7 +74,7 @@ public class PickTests
         using var bitmap = new SkiaSharp.SKBitmap(new SkiaSharp.SKImageInfo(1000, 1000, SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Premul));
         using var canvas = new SkiaSharp.SKCanvas(bitmap);
         MapRenderer.Render(canvas, camera, scene);
-        // The two stand side by side (two quests' places that would cover each other, SideBySide). The pick keeps its
+        // The two are set apart (two quests' places that would cover each other, Repel). The pick keeps its
         // rest size, and its ring, which reaches into the other quest's disc, lies under it: there the disc is the
         // other's gold, whole (owner, 2026-10-05, from the overlap panel: "Go for F"; until then the pick grew to 14 px
         // and its ring ran over the neighbour).
