@@ -26,9 +26,10 @@ tracked file, a test or fixture, a commit message, release notes, an issue or a 
   certificates, `.env` files, and the Sentry DSN (only in the untracked `eng\sentry.dsn`). A token the owner pastes
   into the chat is used for that task only, never written to a file, and the owner is reminded to revoke it.
 - **The owner's private data:** the only identity in the repository is the commit author, `shturmap
-  <339214139+shturmap@users.noreply.github.com>`. No email addresses, postal address, phone number, Windows user
-  name, machine name, IP addresses, or paths under the user folder (write `%USERPROFILE%`); no screenshots of the
-  owner's screen.
+  <339214139+shturmap@users.noreply.github.com>`, and every commit is signed with that account's SSH key; never
+  commit or push with another identity or GitHub login (owner, 2026-10-07). No email addresses, postal address,
+  phone number, Windows user name, machine name, IP addresses, or paths under the user folder (write
+  `%USERPROFILE%`); no screenshots of the owner's screen.
 - **Players' data:** game profile and account ids, nicknames, IPs, session tokens. **No game log goes into the
   repository, scrubbed or not** (owner, 2026-10-04): the sessions a few tests replay stay in `tests\fixtures\logs`,
   which git ignores (`tools\make-log-fixtures.ps1` makes them; those tests skip without them). A test that needs a
