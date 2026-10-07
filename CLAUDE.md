@@ -5,6 +5,18 @@ game terms-of-service boundary, copyright rules, UX principles (second monitor, 
 the visual language and taxonomy, and engineering rules. If a change conflicts with it, stop and ask the owner;
 if a decision changes, update `docs/DESIGN.md` in the same change.
 
+## Push back on the design (owner, 2026-10-07)
+
+Requests and ideas, the owner's included, are judged against the design, not agreed with. Push back before building:
+
+- **Against the design**: when one conflicts with `docs/DESIGN.md` (the one job, the not-goals, no clicks in a raid,
+  the terms-of-service and copyright rules, the visual language), name the section and the conflict, and stop for
+  the owner's decision.
+- **Better features**: when a planned or existing feature could be a simpler, more robust or better answer to the
+  two questions (DESIGN.md §1), say what and why, with the trade-offs, and ask before building it differently.
+
+Once the owner has decided, follow it and update `docs/DESIGN.md` if the decision changes it.
+
 ## Secrets and private data: the repository is public (owner, 2026-10-03)
 
 Everything committed is public for good: history can't be taken back once pushed. So never put any of these into a
