@@ -26,7 +26,15 @@ public enum CueKind
 
     /// <summary>The group's leader picked a raid; its map is shown before loading starts.</summary>
     GroupPick,
+
+    /// <summary>The game's log says a quest was completed (at its trader, between raids): the cue says so and what it
+    /// unlocks, and its places on the map ring out and go.</summary>
+    QuestComplete,
 }
+
+/// <summary>A quest the log just reported completed, for the QUEST COMPLETE cue.</summary>
+/// <param name="Unlocks">The quests that need it done, by name (the quest card's UNLOCKS).</param>
+public sealed record CompletedQuest(string QuestId, string Name, string? TraderId, string TraderName, IReadOnlyList<string> Unlocks);
 
 /// <summary>A change of view the app makes on its own, announced big in the middle of the map for a few seconds.</summary>
 /// <param name="RaidLength">How long the raid lasted (raid over).</param>
@@ -34,8 +42,9 @@ public enum CueKind
 /// name (<see cref="Planning.CueKit"/>); <paramref name="KitMore"/> says how many more ("+3").</param>
 /// <param name="Replay">At a raid's end, its replay (<see cref="RaidReplay"/>); the cue plays it when it
 /// <see cref="RaidReplay.Plays"/>.</param>
+/// <param name="Completed">For QUEST COMPLETE, the quest (<paramref name="MapName"/> is then its name).</param>
 public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0,
-    RaidReplay? Replay = null);
+    RaidReplay? Replay = null, CompletedQuest? Completed = null);
 
 /// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
 /// <param name="ForPick">Needed by a quest picked for this raid: the cue shows these first, framed in the pick's colour.</param>

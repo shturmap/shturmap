@@ -385,7 +385,18 @@ quoting it anywhere new.
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
     suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks.
     RAID OVER of a raid with a replay gives way after its entrance to the replay's band at the map's foot ("Map
-    drawing", *The raid replay*). Picks the player makes (a Plan card, the map
+    drawing", *The raid replay*).
+    **QUEST COMPLETE** (owner, 2026-10-07: "For completed quests, also make a nice animation"): when the log reports a
+    quest completed (handed in at its trader; in the study log of 1–6 October all 21 completions came in the menus,
+    most two to four within a minute and a half), the cue says "QUEST COMPLETE · PRAPOR", the quest's name decoding as
+    every title does, and what it unlocks ("Unlocks Setup and Shooter Born in Heaven", the quest card's UNLOCKS), under
+    a stamp: the done objective's check on the quests' gold, popping in as a gold ring leaves it (no text in it, so
+    scaling it blurs nothing). One that comes while the cue is up joins it, "QUESTS COMPLETE", "3 QUESTS", their names
+    and what they unlock together, its title decoding and the stamp popping again (`Rules.CompletionWords`). It stays 5 s
+    after the last quest joined, 12 s at most, then fades. It replaces the one-line notice "… completed" (a start or a
+    failure keeps its notice). One that comes while a replay plays waits for it to end; never for the log read back
+    at start. On the map the quest's places ring out ("Map drawing").
+    Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
@@ -1395,6 +1406,13 @@ spawns below).
     an outline before; below it a check (`E73E`, the done objective's) per objective ticked during the raid and a green
     triangle (the PMC extract's shape and colour) where the extract list was read; "33 MIN" at the end.
   - The legend has a row for it, listed while it plays on the map.
+- **A quest completed: its places ring out** (owner, 2026-10-07, with the QUEST COMPLETE cue, §4 principle 11). The
+  places of a quest the log just reported completed don't simply vanish: each turns into a gold disc with the done
+  objective's check that pops once, two gold rings leave it as a ping's do, and it fades, 1.6 s in all
+  (`MapScene.Leaving`, `MapRenderer.DrawLeaving`). It helps the eye see which places went. The places are those the
+  snapshot without the quest takes off the shown map, matched with the cue whichever comes first
+  (`MainWindow.Completion`). Nothing with animation effects off: the places go. The legend has a row for it wherever
+  a quest has a place.
 - **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap
   per symbol, made with the map's own drawing code at twice the DIP size), so they can't drift from the map; the
   hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
@@ -2364,7 +2382,8 @@ cards closed by a step into a raid (`cards.raid`), whether help was closed by th
 status bar's words going or coming back with the bar's width (`statusbar.words`). Added 2026-10-07: the raid replay
 (`replay.play` with how it was asked for, its positions and minutes; `replay.end` with why; `replay.skip` for a raid
 with too few positions) and What's New (`whatsnew.show`, `whatsnew.point` with the line, `whatsnew.close` with how:
-×, a raid, or the line from help). How a raid ended
+×, a raid, or the line from help); a quest completed joining the QUEST COMPLETE cue on screen (`cue.join`, with how
+many it says). How a raid ended
 (survived, killed) is in none of the allowed logs. The nearest thing is `raid.outcomeHint` `{ lostInsured: true }`:
 the insurer's "lost" note came during the raid or within 5 minutes after it, on the same location (in the owner's
 logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;
@@ -2527,4 +2546,5 @@ form. Problems and ideas both go through it.
   and cards.
 - What's New, a card in Plan's rail with each line previewed on the map, and the raid replay in the RAID OVER cue with
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
-  deferred (docs/NEXT.md): marks for what the player has.
+  deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
+  ringing out (2026-10-07; §4, principle 11; "Map drawing").

@@ -1219,9 +1219,14 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 RecomputeQuests();
                 if (!item.IsReplay)
                 {
-                    var name = _data?.Tasks.GetValueOrDefault(quest.QuestId)?.Name;
+                    var task = _data?.Tasks.GetValueOrDefault(quest.QuestId);
+                    var name = task?.Name;
                     Study.Game("quest", ("id", quest.QuestId), ("name", name), ("state", quest.Status));
-                    if (name is not null)
+                    // A completion gets the QUEST COMPLETE cue (owner, 2026-10-07: "For completed quests, also make a
+                    // nice animation"); a start or a failure the one-line notice.
+                    if (quest.Status == QuestLogStatus.Completed && task is not null && _data is { } data)
+                        Announce(new ViewCue(CueKind.QuestComplete, task.Name, Completed: Completion(data, task)));
+                    else if (name is not null)
                         Say($"{name}: {quest.Status switch { QuestLogStatus.Started => "started", QuestLogStatus.Completed => "completed", _ => "failed" }}");
                 }
             }
@@ -1349,6 +1354,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Announce(new ViewCue(kind, _lastRaidMap.Name, ended.LengthIn(Zone), Replay: kind == CueKind.RaidOver ? _lastReplay : null));
         }
     }
+
+    /// <summary>A completed quest for its cue: its trader and the quests that need it done (the quest card's UNLOCKS).</summary>
+    public static CompletedQuest Completion(GameData data, ApiTask task) => new(task.Id, task.Name, task.Trader, data.TraderName(task.Trader),
+        data.Tasks.Values.Where(t => t.TaskRequirements?.Any(r => r.Task == task.Id) == true)
+            .Select(t => t.Name).Order(StringComparer.CurrentCulture).ToList());
 
     private void ForgetReplay()
     {

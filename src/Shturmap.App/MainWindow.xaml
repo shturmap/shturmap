@@ -1060,6 +1060,24 @@
                 <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
               </Rectangle.RenderTransform>
             </Rectangle>
+            <!-- QUEST COMPLETE's stamp: the done objective's check on the quests' gold, popping in as a ring leaves it
+                 (owner, 2026-10-07: "For completed quests, also make a nice animation"). No text in it, so scaling it
+                 blurs nothing. -->
+            <Grid x:Name="CueStamp" Width="44" Height="44" HorizontalAlignment="Center" Visibility="Collapsed">
+              <Ellipse x:Name="CueStampRing" Width="44" Height="44" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" RenderTransformOrigin="0.5,0.5">
+                <Ellipse.RenderTransform>
+                  <ScaleTransform x:Name="CueStampRingScale" />
+                </Ellipse.RenderTransform>
+              </Ellipse>
+              <Grid x:Name="CueStampDisc" Width="30" Height="30" RenderTransformOrigin="0.5,0.5">
+                <Grid.RenderTransform>
+                  <ScaleTransform x:Name="CueStampScale" />
+                </Grid.RenderTransform>
+                <Ellipse Fill="{StaticResource AmberBrush}" />
+                <Path Data="M 8.5,15.5 L 13,20 L 21.5,10.5" Stroke="{StaticResource GroundBrush}" StrokeThickness="2.6"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+              </Grid>
+            </Grid>
             <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
                        CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
             <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="48" FontWeight="SemiBold"

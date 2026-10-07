@@ -143,6 +143,19 @@ public sealed class MapScene
     /// <summary>How strongly the replay is drawn, 0 to 1: it fades in as its band comes up and out at its end.</summary>
     public float ReplayOpacity { get; set; } = 1;
 
+    /// <summary>
+    /// The places of quests the log just reported completed, which ring out in gold with a check and go (owner,
+    /// 2026-10-07: "For completed quests, also make a nice animation"), each with when it began. Not with animation
+    /// effects off.
+    /// </summary>
+    public IReadOnlyList<(MapMarker Marker, DateTime Since)> Leaving { get; set; } = [];
+
+    /// <summary>How long a completed quest's places take to ring out and go.</summary>
+    public static readonly TimeSpan LeaveLength = TimeSpan.FromSeconds(1.6);
+
+    /// <summary>Whether a completed quest's places are ringing out now.</summary>
+    public bool LeavingNow => Pulse && Leaving.Any(l => DateTime.Now - l.Since < LeaveLength);
+
     public IReadOnlyList<MapMarker> Markers
     {
         get => _markers;

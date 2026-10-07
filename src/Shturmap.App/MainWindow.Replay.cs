@@ -161,6 +161,8 @@ public sealed partial class MainWindow
             scene.Replay = null;
             Map.Redraw();
         }
+        // Quests completed while it played show now (MainWindow.Completion).
+        ShowWaitingCompletions(why);
     }
 
     // REPLAY on the last raid's line: the raid's map comes back on screen, and the replay plays on it.

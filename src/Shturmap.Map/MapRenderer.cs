@@ -144,6 +144,7 @@ public static partial class MapRenderer
             DrawChevron(canvas, chevron, uiScale);
         }
         DrawScaleBar(canvas, layout.Scale, uiScale);
+        DrawLeaving(canvas, camera, scene, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
         DrawReplay(canvas, camera, scene, uiScale);
     }

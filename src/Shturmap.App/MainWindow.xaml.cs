@@ -925,7 +925,10 @@ public sealed partial class MainWindow : Window
         scene.InRaid = latest.Raid.Phase == RaidPhase.InRaid;
         scene.Trail = latest.Trail;
         scene.Floor = ShownFloor(latest);
+        // A quest just completed: its places that go now ring out first (MainWindow.Completion).
+        var before = scene.Markers;
         scene.Markers = latest.Content?.Markers ?? [];
+        NoteRemoved(before, scene.Markers);
         scene.Zones = latest.Content?.Zones ?? [];
         scene.Containers = latest.Content?.Containers ?? [];
         // Before the picks and the focus: a quest brings the locks of the keys it needs here along.
@@ -1630,6 +1633,7 @@ public sealed partial class MainWindow : Window
             CueKind.ScavRaid => (map, "SCAV RAID", "Quest objectives don't count here; items you find in raid do."),
             CueKind.LoadCancelled => (map, "LOADING CANCELLED", "Back to planning the next raid."),
             CueKind.GroupPick => ("GROUP PICKED", map, here),
+            CueKind.QuestComplete => CompletionText(),
             _ => (cue.RaidLength is { } length ? $"{map} · {(int)length.TotalMinutes} MIN" : map, "RAID OVER",
                 _snapshot?.Plan.FirstOrDefault() is { } next
                     ? $"Next raid: {next.MapName} · {Summary(next.Finish.Count, next.Progress.Count)}"
@@ -1644,6 +1648,14 @@ public sealed partial class MainWindow : Window
     /// <param name="how">For a replay: "end" (the raid's end) or "link" (REPLAY on the last raid's line).</param>
     private void ShowCue(ViewCue cue, string how = "end")
     {
+        // QUEST COMPLETE joins one on screen, or waits for a replay to end (MainWindow.Completion); any other cue ends it.
+        if (cue is { Kind: CueKind.QuestComplete, Completed: { } quest } && CompletionHandled(quest))
+            return;
+        if (cue.Kind != CueKind.QuestComplete && CompletedShowing)
+        {
+            _completed.Clear();
+            _completedHide?.Stop();
+        }
         // A new cue ends a replay still playing; RAID OVER with a raid to replay plays it (MainWindow.Replay).
         StopReplay("cue");
         if (cue is { Kind: CueKind.RaidOver, Replay: { Plays: false } skipped })
@@ -1661,6 +1673,7 @@ public sealed partial class MainWindow : Window
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         var kitCells = ShowCueKit(cue);
+        CueStamp.Visibility = Visibility.Collapsed;
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();
@@ -1675,6 +1688,12 @@ public sealed partial class MainWindow : Window
             CueRuleTopScale.ScaleX = CueRuleBottomScale.ScaleX = 1;
             CueTitleShift.Y = 0;
             CueFlash.Opacity = 0;
+            if (cue.Kind == CueKind.QuestComplete)
+            {
+                StampStill();
+                HideCompletedAfter();
+                return;
+            }
             if (SnapshotMode)
                 return;
             _cueTimer = DispatcherQueue.CreateTimer();
@@ -1704,8 +1723,9 @@ public sealed partial class MainWindow : Window
         }
         var end = CueLength(cue).TotalSeconds;
         const double k = CuePace;
-        // Developer snapshots keep the last cue up, so it can be looked at.
-        if (SnapshotMode)
+        // Developer snapshots keep the last cue up, so it can be looked at. QUEST COMPLETE stays as long as quests join
+        // it, and fades by itself (HideCompletedAfter).
+        if (SnapshotMode || cue.Kind == CueKind.QuestComplete)
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1));
         else
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1), (end - 0.6, 1), (end, 0));
@@ -1724,13 +1744,23 @@ public sealed partial class MainWindow : Window
         }
         story.Completed += (_, _) =>
         {
-            if (ReferenceEquals(story, _cueStory) && !SnapshotMode)
+            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing)
                 CuePanel.Visibility = Visibility.Collapsed;
         };
         _cueStory = story;
         story.Begin();
+        if (cue.Kind == CueKind.QuestComplete)
+        {
+            Stamp(0.3 * k);
+            HideCompletedAfter();
+        }
+        DecodeCueTitle(title);
+    }
 
-        // The title decodes: undecoded letters flicker through random ones in gold, settling left to right in ink.
+    // The title decodes: undecoded letters flicker through random ones in gold, settling left to right in ink.
+    private void DecodeCueTitle(string title)
+    {
+        _cueTimer?.Stop();
         const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         var settled = new Microsoft.UI.Xaml.Documents.Run();
         var flicker = new Microsoft.UI.Xaml.Documents.Run { Foreground = Resource("AmberBrush") };

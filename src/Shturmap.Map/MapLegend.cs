@@ -23,6 +23,7 @@ public enum LegendSymbol
     Leader,
     Optional,
     Done,
+    Completed,
     QuestZone,
     Extract,
     SharedExtract,
@@ -91,6 +92,8 @@ public static class MapLegend
         If(scene.Markers.Count(m => MapRenderer.Repels(m.Kind)) > 1, LegendSymbol.Leader);
         If(places.Any(m => m.Optional), LegendSymbol.Optional);
         If(kinds.Contains(MarkerKind.ObjectiveDone), LegendSymbol.Done);
+        // Any quest with a place here can be completed, and its places then ring out.
+        If(places.Count > 0, LegendSymbol.Completed);
         If(scene.Zones.Any(z => z.Kind is MarkerKind.Objective or MarkerKind.ObjectiveDone), LegendSymbol.QuestZone);
         If(kinds.Contains(MarkerKind.ExtractPmc) || kinds.Contains(MarkerKind.ExtractScav), LegendSymbol.Extract);
         If(kinds.Contains(MarkerKind.ExtractShared), LegendSymbol.SharedExtract);
@@ -134,6 +137,7 @@ public static class MapLegend
         new(LegendSymbol.Leader, "Moved off a crowded spot: a line in its colour to a dot where it is."),
         new(LegendSymbol.Optional, "Optional objective: OPT at the upper left."),
         new(LegendSymbol.Done, "Done objective: small grey disc with a check."),
+        new(LegendSymbol.Completed, "A quest just completed: its places turn into gold checks, ring out and go."),
         new(LegendSymbol.QuestZone, "An objective's area."),
         new(LegendSymbol.Extract, "Extract for your side: green (PMC) or teal (Scav) triangle."),
         new(LegendSymbol.SharedExtract, "Extract for both sides: khaki split triangle."),
@@ -266,6 +270,10 @@ public static partial class MapRenderer
             }
             case LegendSymbol.Optional:
                 Marker(Quest(MarkerKind.Objective) with { Optional = true });
+                break;
+            case LegendSymbol.Completed:
+                // A moment into its leaving: the check popping, the first ring on its way out.
+                DrawCompletedPlace(canvas, center, 0.12, ui * 0.6f);
                 break;
             case LegendSymbol.Done:
                 Marker(Quest(MarkerKind.ObjectiveDone));
