@@ -60,7 +60,8 @@ Essentials:
   `<Version>` in `Directory.Build.props` by yourself, every release (owner, 2026-10-04): the patch number (0.3.0 →
   0.3.1) when only small things changed since the last release (fixes, wording, small UI tweaks), the minor number
   (0.3.x → 0.4.0) when something big did (a new feature, a visible redesign); say which and why. Write
-  `docs\release-notes\<version>.md` (what Shturmap is, plus what's new since the last release), commit and push, then
+  `docs\release-notes\<version>.md` (what Shturmap is, plus what's new since the last release) and the version's
+  section in `docs\whats-new.md` (the What's New card in the app: up to five short lines), commit and push, then
   `.\eng\release.ps1` (builds `artifacts\release`: `Shturmap-Setup.exe`, `packages\`, `app\`; nothing uploaded) and,
   with the owner's go, `.\eng\publish-release.ps1` (a GitHub pre-release "Shturmap <version> (private testing)";
   `-Draft` to review it on GitHub first). Before publishing, scan `artifacts\release\packages` (unpack the `.nupkg`)

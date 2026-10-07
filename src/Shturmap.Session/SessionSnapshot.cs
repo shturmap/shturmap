@@ -32,7 +32,10 @@ public enum CueKind
 /// <param name="RaidLength">How long the raid lasted (raid over).</param>
 /// <param name="Kit">For a raid loading or a group's pick, the first items of the kit reminder, pictured under the map's
 /// name (<see cref="Planning.CueKit"/>); <paramref name="KitMore"/> says how many more ("+3").</param>
-public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0);
+/// <param name="Replay">At a raid's end, its replay (<see cref="RaidReplay"/>); the cue plays it when it
+/// <see cref="RaidReplay.Plays"/>.</param>
+public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0,
+    RaidReplay? Replay = null);
 
 /// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
 /// <param name="ForPick">Needed by a quest picked for this raid: the cue shows these first, framed in the pick's colour.</param>
@@ -276,6 +279,12 @@ public sealed record SessionSnapshot
     public RaidInfo? RaidInfo { get; init; }
 
     public LastRaidView? LastRaid { get; init; }
+
+    /// <summary>
+    /// The last raid's replay, from its end until the next raid loads; in memory only, so gone at a restart. Plan's
+    /// last-raid line offers REPLAY when it <see cref="RaidReplay.Plays"/>.
+    /// </summary>
+    public RaidReplay? Replay { get; init; }
 
     public int ActiveQuestCount => Quests.Values.Count(q => q.State == QuestState.Active);
 }

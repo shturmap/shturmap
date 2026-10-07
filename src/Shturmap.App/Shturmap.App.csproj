@@ -48,6 +48,11 @@
     <Content Include="..\..\PRIVACY.md" Link="privacy.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- What's New's lines, one section per version (docs/DESIGN.md §4, "Screen anatomy"; Rules.WhatsNew). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\docs\whats-new.md" LogicalName="whats-new.md" />
+  </ItemGroup>
+
   <!-- Where reports go: the Sentry DSN, given by eng\release.ps1 (and eng\publish.ps1) from the untracked
        eng\sentry.dsn or SHTURMAP_SENTRY_DSN. Never in the repository; without it the build can't send reports
        (docs/DESIGN.md §8, "Reports"). -->

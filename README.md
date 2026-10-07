@@ -39,6 +39,8 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
   raid's start and when you ask for it (O twice by default). Take a screenshot while it shows and Shturmap reads it:
   the extracts on your list light up on the map and come first, the others turn hollow. Until then it says that
   the nearest extract isn't checked against your list.
+- **After the raid:** with a few screenshots taken, the map replays where you took them, in order, faint at the
+  raid's start and bright at its end. REPLAY plays it again until your next raid. Nothing of it is saved.
 - **Quest cards:** objectives, keys and items for any quest, one hover away. Pop out a card and its distances stay
   live.
 - **Quest tracking:** started, finished, failed, read from the game's own log files. Nothing has to be ticked off.

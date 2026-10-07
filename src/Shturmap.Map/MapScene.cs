@@ -125,6 +125,24 @@ public sealed class MapScene
     /// <summary>Earlier fixes in this raid, oldest first.</summary>
     public IReadOnlyList<WorldPoint> Trail { get; set; } = [];
 
+    /// <summary>
+    /// The raid replay on this map while it plays (owner, 2026-10-07; <see cref="RaidReplay"/>): the map recedes, and the
+    /// pen is drawn up to <see cref="ReplayMinute"/>. Null otherwise.
+    /// </summary>
+    public RaidReplay? Replay { get; set; }
+
+    /// <summary>The raid's minute the replay's playhead is at: positions up to it are drawn, and the pen grows toward the next.</summary>
+    public double ReplayMinute { get; set; }
+
+    /// <summary>The replay has played to its end: every position, and the last one's LAST SEEN tag.</summary>
+    public bool ReplayDone { get; set; }
+
+    /// <summary>DIPs at the view's foot the replay's band covers: the minute tags stay above it.</summary>
+    public float ReplayFoot { get; set; }
+
+    /// <summary>How strongly the replay is drawn, 0 to 1: it fades in as its band comes up and out at its end.</summary>
+    public float ReplayOpacity { get; set; } = 1;
+
     public IReadOnlyList<MapMarker> Markers
     {
         get => _markers;

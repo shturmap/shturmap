@@ -6,6 +6,163 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## Designed and built 2026-10-07: What's New, a card in Plan's rail
+
+**Built the same day** (owner: "Implement the items we agreed on"); DESIGN.md §4, "Screen anatomy", is the binding
+description now. Changed in the building: the lines live in `docs\whats-new.md`, one section per version, not in the
+release notes (the notes go to GitHub as they are, and a 0.4.0 notes file doesn't exist before the release); the
+plate preview shows the raid card's real clock control. To try in the dev build: the card shows at its next start
+(no version was seen there yet); point at each line; × and then help's WHAT'S NEW IN 0.4.0; a raid's end hides it.
+`--dev-script` steps `whatsnew [<n>]` show it and its previews. The design as written before the building:
+
+The owner, before the public release: "how to inform the user about news and changes in the app … a 'What's new'
+window that showcases the new features and changes, ideally accompanied with screenshots". A window was ruled out (§4,
+principle 3: no modal dialogs), and so were bundled screenshots (§3: map artwork, renders, portraits and icons never go
+into a build) and pictures fetched from the website (a new host, §2). From the first panel the owner took "C" (a card in
+Plan's rail whose lines are previewed on the map), from the second, four forms of it drawn in the real rail, "Whats
+new: A". The panels (`artifacts\whatsnew-panel.png`) stay outside the repository.
+
+- **Where.** A card at the top of Plan's rail, under the MAP picker and above NEXT RAID, after the update line when
+  both show. Never in a raid: it steps aside while a raid loads or runs and is back after it (`WhileInRaid`, as help's
+  first opening).
+- **When.** At the first start of a version whose notes have items, outside a raid. A first install gets help (its
+  first-run rule) and no card. A player who skipped versions sees the items of every version since the one last seen,
+  newest first, each under its own NEW IN line. The version last seen is kept (`whatsNewSeen` in shturmap.db).
+- **Gone.** × closes it, and it goes by itself once the first raid since the update is over. Until the next version,
+  help keeps WHAT'S NEW IN 0.4.0, a link that brings the card back.
+- **The look (A).** The panel's colour with a `Line` hairline; NEW IN 0.4.0 in the eyebrow style, amber, and × at its
+  right (`E711`, 10 px, muted, as on a notice); one note line, "Point at one: the map shows it."; up to five lines per
+  version, each a 56×34 picture and the thing's name in body text over one note line of what it is. The picture is the
+  thing's map symbol drawn by `MapLegend`, as help's legend rows are (the lit extract, the joined marker), or for a thing
+  in the rail a small drawing of the app's own control (the clock's figure over its rule, a cell and the trader).
+- **Pointing at a line previews it** on the map, as resting on a map's row in Plan does (0.6 s; the line takes the
+  linked tint): the thing's map with the thing staged, and the preview label "PREVIEW · NEW IN 0.4.0 · YOUR EXTRACTS THIS
+  RAID" in amber with "AN EXAMPLE, NOT YOUR RAID" in muted. Leaving puts the map back exactly as it was. A thing that
+  isn't on the map shows the app's own control, with example values, on a plate in the middle of the dimmed map. A
+  preview changes nothing of the player's: no position, picks or ticks; what it stages (a list of extracts, a quest's
+  spot) is an example.
+- **Nothing bundled.** Every picture and preview is drawn when it shows, by the app's own code from the cache, so
+  nothing of §3 enters a build. Without cached artwork a preview shows the sheet, as any map would.
+- **Where the items come from.** `docs/release-notes/<version>.md` gets a list "In the app": up to five items, each a
+  name, one line, and the preview's recipe (the map and its view, what is staged, or the control). The build makes the
+  app's list from it; the notes' prose stays for GitHub. A test checks every version's list (at most five, short
+  enough for the card, recipes that name a known map or control). The words follow the design system's "Words": short,
+  fragments are fine. The items in the panel, the real changes since 0.3.0: "Your extracts this raid · Screenshot the
+  game's extract list: yours glow, the others go hollow."; "Raid time, large · Minutes left as the card's largest
+  figure; red for the last ten."; "One spot, one marker · Several objectives of a quest on one spot: one marker that says
+  ×2."; "Hand-overs · What goes to which trader after the raid: the item, an arrow, the portrait."
+- **Study log.** `whatsnew.show`, `whatsnew.point` (which item, how long), `whatsnew.close` (×, by a raid, from help).
+- **When to build.** Before the second public release: at the first one every player installs fresh and gets help.
+- **DESIGN.md when built:** §4 "Screen anatomy" (Rail · Plan, Help), §8 "Distribution" (the notes' list).
+
+## Designed and built 2026-10-07: the raid replay
+
+**Built the same day**; DESIGN.md "Map drawing", *The raid replay*, is the binding description now. Changed or decided
+in the building: the minutes say "8 MIN IN", not the panel's "8 MIN" (the owner's rule of 2026-10-04 against bare
+minutes on the map); the band stands 46 DIP above the map's foot, so the WIKI MAP link and the artwork's credit stay
+readable; after a transit only the map the raid ended on is replayed; positions on other floors are drawn as on the
+one shown; nothing ends it early but a new cue, a raid loading or a preview (no key: cues take no input). To try in
+the game: a raid with a few screenshots, its end (the cue, the band, the pen), REPLAY on the last-raid line, a raid
+with one screenshot (today's cue), a transit raid. `--dev-script` step `replay` plays a made-up raid on Customs. The
+design as written before the building:
+
+The owner: "a post-raid view, similar to the one in Arc Raiders … only the positions from the screenshots … a timeline
+of the rough player path … more on the eye-candy side of things like the loading animations … automatically played
+after the raid finishes". It answers neither of §1's two questions; the owner takes it as eye candy, an exception to §1
+like the cues' entrance. From the panels (`artifacts\replay-panel.png`, `replay-chosen.png`, outside the repository):
+"B and D" (a trace in the RAID OVER cue, and REPLAY on the last-raid line), then "Replay: C, but encode raid time to the
+color of the pen stroke. Use a fitting color map based on the apps design", "Replay timeline 1", "Replay link: ii".
+
+**What there is to replay** (the study log, 1–6 Oct, 19 raids): 80 positions, one per 4.4 raid minutes; 6 raids had one
+position, the median 4. Long raids had gaps of 11 to 21 minutes, and the last position came 1 to 21 minutes before the
+raid's end line. How the raid ended (survived, killed) is in no log Shturmap reads. So the replay shows where and when
+the player took screenshots, and says where they were last seen, never how the raid ended.
+
+- **When.** At a raid's end, in place of today's RAID OVER cue, when the raid has 3 positions or more over 5 minutes or
+  more (9 of the 19 raids); otherwise today's cue. Never for the log read back at start.
+- **The sequence.** 0–1.6 s: RAID OVER enters in the middle as every cue does. 1.6–2.6 s: the title goes, and the band
+  slides to the foot of the map and becomes the timeline. Then the trace plays, the raid's length in about 7.5 s, and
+  holds 2 s on the end before it fades: about 12 s in all (cues today: 5 s, 7.5 s with a kit, up to 11 s). It takes no
+  clicks. With Windows' animation effects off, the end frame shows for the cue's time without motion.
+- **The view.** Fitted to the positions with room around them (at least 300 m across), in the part above the band; the
+  map recedes under the trace (the ground at 45 % over it).
+- **The pen (C).** One line from position to position, drawn on as the time runs. Its colour is the raid's time: the
+  player's sand mixed into the ground, opaque, from 22 % sand at the raid's start to all sand at its end, and it widens
+  from 1.4 to 3.2 DIP, over a dark collar (the ground at 59 %, 6.2 DIP). Each position is a dot (2.6 DIP) in its time's
+  colour on a dark collar, with its minute beside it ("8 MIN", ink on a dark tag) where the tag covers nothing (right,
+  left, above, below; dropped when nothing is free, the timeline still has it). The newest position pings as a new
+  position does. The last one's tag is "LAST SEEN · 2 MIN BEFORE THE END", framed in sand, as an old position's tag is.
+  - *Why this colour map.* Sand is the player's alone, and a sequential map of one hue keeps "one meaning per colour":
+    any multi-hue map (viridis, magma, cividis) runs through the map's taken hues, green and teal (extracts), violet
+    (transits), amber (quests), red (bosses). Light means late, as the newest position is the brightest thing on the map.
+    One hue has little range on a dark map, so width is the second cue (§4, "One meaning per colour, shape as a second
+    cue"). Tried on the owner's raid and dropped: sand by alpha (the artwork shows through, and the overlapping pieces
+    dot the line), a range from 35 % sand (too little difference), plain sand (no time).
+  - *What it claims.* A straight line between positions minutes apart reads as a route Shturmap doesn't know (11
+    minutes between two positions in the example). The owner chose it knowing; the minutes and the timeline show the
+    gaps.
+- **The timeline (1).** In the band: RAID OVER (amber) and CUSTOMS · 33 MIN (ink), in the cue's eyebrow, and "6 OF 9
+  POSITIONS" at the right. The raid's length as a 4 px rule, its played part in the pen's colours (so the rule is the
+  colour key), the rest `LineStrong`, a tick every ten minutes and at the end, and the playhead (2 × 14 DIP, ink). Above
+  the rule a dot per position, in its colour once played and an outline before. Below it a check (`E73E`) per objective
+  ticked during the raid and a green triangle where the extract list was read. "33 MIN" at the end.
+- **REPLAY (D, link ii).** On Plan's last-raid line, at its right: the play symbol (`E768`) and REPLAY in the status
+  words' style, 11 px, ink, as CLEAR PICKS stands beside NEXT RAID. Shown when the last raid qualifies; it plays the
+  same cue on the raid's map. Gone when the next raid loads, and at a restart.
+- **Positions are kept in memory only**, with their times (today `GameSession._trail` keeps points without times and
+  is cleared at the raid's end), until the next raid loads. Never on disk and never in the app log (§2).
+- **Study log.** `replay.play` (by itself or by the link, positions, minutes), `replay.skip` (too few positions).
+- **DESIGN.md when built:** §1 (the exception), §4 principle 8 (the trail goes at the raid's end: now kept for this),
+  principle 11 and "Design system", Motion (the cue's length and its band at the foot), "Map drawing" (the pen, a level
+  1 symbol of the player's, and its legend row).
+- **Open:** a raid with a transit (replay only the map it ended on, or each map in turn); positions on another floor
+  (the floor badge, or drawn as on the ground as in the panel); whether Esc ends a replay early.
+
+## Designed 2026-10-07, deferred: what you have
+
+The owner: "One thing I constantly stumble upon is the fact that I don't know if I already have items that are
+required for quests", with screenshots of the key case in the menus as the idea, and two problems named: it would be
+unclear why only keys, and the information goes stale. From the first panel's options the owner asked for D (the log,
+screenshots and the player's word together) to be designed, and took look A from its panel
+(`artifacts\have-panel.png`, outside the repository): "only write down design and defer this one until we decide.
+Probably we don't do this." Nothing is built.
+
+**What the logs already say** (the owner's push-notification logs, 25 sessions, 15 Aug to 6 Oct): 28 quest-start
+messages (type 10) came with items, mostly what the quest needs: MS2000 Markers, WI-FI Cameras, Signal Jammers, flares,
+the Dorm room 203 key, the portable bunkhouse key, the Labs keycard, Gratitude's shemagh and sunglasses, The Courier's
+REAP-IR scope, the weapons of the Gunsmith and some kill quests. 63 completion messages (type 12) carried rewards, and
+insurance returns (type 8) the gear that came back. No flea-market sale message was in them (PvE). On Customs with every
+quest active, these cover about a quarter of BRING's rows, mostly quest items, and 2 of 13 keys and 2 of 9 weapons:
+screenshots would be for keys and weapons.
+
+**Three sources, one mark.** A mark says where Shturmap learned it and when, never "in your stash" or "missing".
+
+| from | says | taken away when | needs |
+| --- | --- | --- | --- |
+| the notification log: items handed at a quest's start, rewards, insurance returns (the item and the count, nothing else of the message) | "Given with the quest · 25 Sep" | its quest completes or fails; the objective that uses it is ticked; NOT ANY MORE | nothing new: the log is read already |
+| a screenshot the player takes in the menus (the key tool, a case, a stash page): the names on the item cells, read with Windows' text recognition, matched only to what active quests need; a name that fits two items marks neither | "Seen in your screenshot · 5 Oct" | NOT ANY MORE; never a later screenshot that doesn't show it (a reading can miss) | the owner widening §2 (menu screenshots, the inventory), a setting, the texts (README, PRIVACY.md, help, website), a sentence in §1's not-goals (it isn't item scanning by hotkey), and a test that the reading finds keys reliably (one key-tool screenshot and one stash page at the owner's resolution) |
+| the player's word: I HAVE IT on the item card, outside raids | "Marked by you · 6 Oct" | NOT ANY MORE; its quests complete or fail | a second thing the player may tell Shturmap (§4, principle 7 names ticks only) |
+
+A count says what part is known ("3 of 7"); a gift counts for its own quest only. Read from screenshots, anything the
+picture shows counts, so it isn't "only keys". In the owner's own data the rule for taking marks away already shows:
+Provide Viewership handed over three WI-FI Cameras on 1 Oct, and its three camera objectives were ticked during the
+Customs raid of 5 Oct.
+
+**How it shows (A).** On a BRING row the line that says where to get the item (amber) says what is known instead: the
+stash grid (Segoe Fluent `E80A`, used nowhere else), where it comes from and when, in ink ("Given with the quest · 25
+Sep"). A part of a count says its part, then where to get the rest in amber ("4 more: Mechanic LL1 barter · …"). The need
+cells beside a quest's name get a thin ink bar under the cell. The item card gets YOURS above GET IT: each source on a
+line with the stash grid, then NOT ANY MORE, or I HAVE IT when nothing is known. After a screenshot that showed
+something the quests need, one notice ("Seen in your screenshot: 3 keys your quests need."); until the first such
+mark, one note under BRING ("Screenshot your key tool in the game: the keys your quests need get a mark."). Not in the
+CHECK YOUR KIT cue (it asks whether something is packed, not owned); the planner's order doesn't change.
+
+**If it is ever built:** the log first (no new reading, real coverage today), then the player's word, then
+screenshots, after the test and the owner's decision on §2.
+
+**Why probably not:** §1's one job (it edges toward the inventory and hideout trackers the not-goals decline), a new
+kind of fact that goes stale, and for screenshots a wider reading of pictures than §2 allows.
+
 ## Designed 2026-10-05, to build later: the daily data check
 
 The owner asked for "something … through github automations that regularly checks if new content is out and if we

@@ -1,0 +1,237 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Shturmap.App.Rules;
+using Shturmap.Core;
+using Shturmap.Map;
+using Shturmap.Session;
+using SkiaSharp.Views.Windows;
+
+namespace Shturmap.App;
+
+// What's New (owner, 2026-10-07: "how to inform the user about news and changes in the app ... ideally accompanied with
+// screenshots"; from the panels "C", then "Whats new: A"; docs/DESIGN.md §4, "Screen anatomy"): a card at the top of
+// Plan's rail after an update, its lines from docs/whats-new.md. Pointing at a line previews it on the map, as pointing at
+// a map's row does: the map is the screenshot, drawn from the cache by the app's own code, so no map art or game art goes
+// into a build (§3). Every preview is an example, and says so. The card goes with ×, or once the first raid since the
+// update is over; help brings it back.
+public sealed partial class MainWindow
+{
+    private const string WhatsNewSetting = "whatsNew.seen";
+    private const string WhatsNewPreviewPrefix = "whatsnew:";
+    private IReadOnlyList<WhatsNew.Section>? _whatsNewSections;
+    private IReadOnlyList<WhatsNew.Section> _whatsNewShown = [];
+    private bool _whatsNewChecked;
+
+    private IReadOnlyList<WhatsNew.Section> WhatsNewSections => _whatsNewSections ??= LoadWhatsNew();
+
+    private static IReadOnlyList<WhatsNew.Section> LoadWhatsNew()
+    {
+        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("whats-new.md");
+        if (stream is null)
+            return [];
+        using var reader = new StreamReader(stream);
+        return WhatsNew.Parse(reader.ReadToEnd());
+    }
+
+    // Once, when the app has its data: what is new since the version last seen. Not at a first start (help opens then,
+    // and this version counts as seen), and never by itself in a snapshot or the website demo.
+    private void ShowWhatsNewOnce(SessionSnapshot s)
+    {
+        if (_whatsNewChecked || s.Data is null || DemoMode)
+            return;
+        _whatsNewChecked = true;
+        var newest = WhatsNewSections.FirstOrDefault();
+        ViewModel.WhatsNewHelp = newest is null ? "" : $"WHAT'S NEW IN {newest.Label}";
+        if (SnapshotMode)
+            return;
+        var seen = _session.GetSetting(WhatsNewSetting);
+        var firstStart = seen is null && _session.GetSetting("help.seen") is null;
+        if (firstStart && newest is not null)
+            _session.SetSetting(WhatsNewSetting, newest.Label);
+        ShowWhatsNew(WhatsNew.Due(WhatsNewSections, seen, firstStart), "start");
+    }
+
+    private void ShowWhatsNew(IReadOnlyList<WhatsNew.Section> sections, string how)
+    {
+        _whatsNewShown = sections;
+        ViewModel.WhatsNewBlocks = sections
+            .Select(section => new WhatsNewBlock(WhatsNew.Heading(section),
+                section.Items.Select((item, i) => new WhatsNewRow($"{section.Label}:{i}", item.Name, item.Text, Swatch(item.Preview), item.Preview == "clock")).ToList()))
+            .ToList();
+        ViewModel.WhatsNewShown = sections.Count > 0;
+        if (sections.Count > 0)
+            Study.Ui("whatsnew.show", ("how", how), ("versions", string.Join(",", sections.Select(x => x.Label))));
+    }
+
+    // A line's picture: the map's own symbol, drawn by its renderer as help's legend rows are; the clock's is drawn in XAML.
+    private static ImageSource? Swatch(string preview)
+    {
+        LegendSymbol? symbol = preview switch
+        {
+            "replay" => LegendSymbol.Replay,
+            "extracts" => LegendSymbol.ExtractListed,
+            "joined" => LegendSymbol.Joined,
+            "leaders" => LegendSymbol.Leader,
+            _ => null,
+        };
+        if (symbol is not { } s)
+            return null;
+        using var bitmap = MapLegend.Draw(s, 2);
+        return bitmap.ToWriteableBitmap();
+    }
+
+    /// <summary>The card goes (× or the first raid over): the newest version it showed counts as seen.</summary>
+    private void WhatsNewSeen(string how)
+    {
+        if (!ViewModel.WhatsNewShown)
+            return;
+        ViewModel.WhatsNewShown = false;
+        if (_previewing?.StartsWith(WhatsNewPreviewPrefix, StringComparison.Ordinal) == true)
+        {
+            _previewTimer?.Stop();
+            EndPreview(restore: true);
+        }
+        if (!SnapshotMode && _whatsNewShown.FirstOrDefault() is { } newest
+            && (WhatsNew.VersionOf(_session.GetSetting(WhatsNewSetting)) is not { } seen || newest.Version > seen))
+            _session.SetSetting(WhatsNewSetting, newest.Label);
+        Study.Ui("whatsnew.close", ("how", how));
+    }
+
+    private void OnWhatsNewClosed(object sender, RoutedEventArgs e) => WhatsNewSeen("close");
+
+    // Help's WHAT'S NEW IN 0.4.0: the card of the newest version again.
+    private void OnWhatsNewAgainClick(object sender, RoutedEventArgs e)
+    {
+        HelpFlyout.Hide();
+        if (WhatsNewSections.FirstOrDefault() is { } newest)
+            ShowWhatsNew([newest], "help");
+    }
+
+    private void OnWhatsNewPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Grid { Tag: string key } row)
+            return;
+        row.Background = Resource("LinkBrush");
+        Preview(WhatsNewPreviewPrefix + key, PreviewAfter);
+    }
+
+    private void OnWhatsNewPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is Grid row)
+            row.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        Preview(null, PreviewEndAfter);
+    }
+
+    // ---- the previews: each an example, staged on its map ----
+
+    private async Task StartWhatsNewPreviewAsync(string wanted)
+    {
+        var key = wanted[WhatsNewPreviewPrefix.Length..];
+        var colon = key.LastIndexOf(':');
+        if (colon < 0 || !int.TryParse(key[(colon + 1)..], out var index)
+            || WhatsNewSections.FirstOrDefault(s => s.Label == key[..colon]) is not { } section || index >= section.Items.Count
+            || _snapshot?.Data is not { } data)
+            return;
+        var item = section.Items[index];
+        if (_previewing is null)
+            _restoreView = Map.View;
+        _previewing = wanted;
+        ViewModel.PreviewText = $"PREVIEW · NEW IN {section.Label} · {Caps.Of(item.Name)}";
+        ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";
+        Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
+        switch (item.Preview)
+        {
+            case "clock":
+                // Not on the map: the raid card's own clock, with example times, on a plate over the dimmed map.
+                WhatsNewPlateBox.Child = new Controls.RaidClock { Reading = RaidTime.Of(true, false, DateTime.Now.AddMinutes(-27), 40, DateTime.Now) };
+                WhatsNewPlateNote.Text = "THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES";
+                WhatsNewPlate.Visibility = Visibility.Visible;
+                break;
+            case "extracts":
+                await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(scene, content), null, 0);
+                break;
+            case "joined":
+                // Gratitude's two stashes on one spot (docs/DESIGN.md "Map drawing", *Objectives of one quest on one spot*).
+                await PreviewSceneAsync(wanted, data, "woods", ["gratitude"], null,
+                    content => content.Objectives.Where(o => o.Quest.NormalizedName == "gratitude").SelectMany(o => o.Places).Take(1).ToList(), 220);
+                break;
+            case "leaders":
+                // Streets' Scav Checkpoint, where an extract and a transit crowd one spot.
+                await PreviewSceneAsync(wanted, data, "streets-of-tarkov", [], null,
+                    content => content.Markers.Where(m => m.Label.Contains("Scav Checkpoint", StringComparison.OrdinalIgnoreCase)).Select(m => m.Position).Take(1).ToList(), 700);
+                break;
+            case "replay":
+                await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) =>
+                {
+                    scene.Replay = ReplayExample(content);
+                    scene.ReplayDone = true;
+                }, content => ReplayExample(content)?.Fixes.Select(f => f.Position).ToList(), 300);
+                break;
+        }
+    }
+
+    // A preview's map: its artwork, the given quests' places (none of the player's), staged and framed.
+    private async Task PreviewSceneAsync(string wanted, Shturmap.Data.TarkovDev.GameData data, string mapName, IReadOnlyCollection<string> quests,
+        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres)
+    {
+        if (data.MapByNormalizedName(mapName) is not { } map || data.DefinitionFor(mapName) is not { } definition || _session.Artwork is null)
+            return;
+        var artwork = await ArtworkFor(definition, map.Name);
+        if (_previewing != wanted)
+            return;
+        var ids = data.Tasks.Values.Where(t => t.NormalizedName is { } n && quests.Contains(n)).Select(t => t.Id).ToList();
+        var content = MapContentBuilder.Build(data, map.Id, ids, new HashSet<string>());
+        var scene = new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
+        stage?.Invoke(scene, content);
+        var points = frame?.Invoke(content);
+        Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, 40, 0, minMetres) : null);
+        _scenes.Forget();
+    }
+
+    // An example extract list on Customs: some lit, one marked "??:??:??", the rest hollow.
+    private static void StageExtractList(MapScene scene, MapContent content)
+    {
+        var exits = content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();
+        string[] names = ["Crossroads", "Trailer Park", "Old Gas Station", "RUAF Roadblock", "Smugglers' Boat", "Dorms V-Ex"];
+        var listed = exits.Where(e => names.Any(n => e.Label.Contains(n, StringComparison.OrdinalIgnoreCase))).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        if (listed.Count < 3)
+            listed = exits.Where((_, i) => i % 2 == 0).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        var unsure = exits.Where(e => !listed.Contains(e.Id)).Take(1).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsListed = listed;
+        scene.ExitsUnsure = unsure;
+        scene.ExitsNotListed = exits.Select(e => e.Id).Where(id => !listed.Contains(id) && !unsure.Contains(id)).ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// A made-up raid on Customs for the previews and the developer view: seven positions between two of its extracts,
+    /// with gaps of minutes, 33 minutes in all. Nobody's real positions.
+    /// </summary>
+    internal static RaidReplay? ReplayExample(MapContent content)
+    {
+        var exits = content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();
+        var from = exits.FirstOrDefault(e => e.Label.Contains("Old Gas Station", StringComparison.OrdinalIgnoreCase)) ?? exits.FirstOrDefault();
+        var to = exits.FirstOrDefault(e => e.Label.Contains("Dorms V-Ex", StringComparison.OrdinalIgnoreCase)) ?? exits.LastOrDefault();
+        if (from is null || to is null || from == to)
+            return null;
+        double[] minutes = [0.5, 4, 9, 11, 17.5, 24, 29];
+        double[] along = [0.08, 0.22, 0.4, 0.47, 0.63, 0.8, 0.9];
+        double[] aside = [0, 18, -14, 12, -22, 10, -6];
+        var dx = to.Position.X - from.Position.X;
+        var dz = to.Position.Z - from.Position.Z;
+        var length = Math.Max(1, Math.Sqrt(dx * dx + dz * dz));
+        var fixes = minutes.Select((m, i) => new ReplayFix(m, new WorldPoint(
+            from.Position.X + dx * along[i] - dz / length * aside[i], from.Position.Y,
+            from.Position.Z + dz * along[i] + dx / length * aside[i]))).ToList();
+        return new RaidReplay("customs", "Customs", fixes, 33) { Ticks = [12, 12.2], ListRead = 0.6 };
+    }
+
+    private void EndWhatsNewPreview()
+    {
+        WhatsNewPlate.Visibility = Visibility.Collapsed;
+        WhatsNewPlateBox.Child = null;
+        ViewModel.PreviewHint = "CLICK ITS ROW TO PLAN IT";
+    }
+}

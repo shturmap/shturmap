@@ -391,6 +391,39 @@ public sealed partial class MapView : Grid
         return _camera.Framing(rect, (float)(padding * PixelScale));
     }
 
+    /// <summary>
+    /// The view of <paramref name="scene"/> that shows these world positions, with room around them and at least
+    /// <paramref name="minMetres"/> across, in the part of this view above <paramref name="foot"/> DIPs at its foot (the
+    /// raid replay's band).
+    /// </summary>
+    public (Shturmap.Core.Maps.MapPoint Center, double Zoom) FramingAbove(MapScene scene, IReadOnlyCollection<Shturmap.Core.WorldPoint> points,
+        double padding, double foot, double minMetres)
+    {
+        var x = points.Average(p => p.X);
+        var z = points.Average(p => p.Z);
+        var room = points.Append(new(x - minMetres / 2, 0, z - minMetres * 0.3)).Append(new(x + minMetres / 2, 0, z + minMetres * 0.3));
+        var map = room.Select(p => scene.Projection.ToMap(p)).ToList();
+        var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
+        var pad = padding * PixelScale;
+        var footPx = foot * PixelScale;
+        var size = _camera.Viewport;
+        var zoom = Math.Min((size.Width - 2 * pad) / Math.Max(rect.Width, 1e-6), (size.Height - footPx - 2 * pad) / Math.Max(rect.Height, 1e-6));
+        zoom = Math.Clamp(zoom, 1e-6, _camera.MaxZoom);
+        // The middle of what is framed lies in the middle of the part above the foot.
+        return (new Shturmap.Core.Maps.MapPoint((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2 + footPx / 2 / zoom), zoom);
+    }
+
+    /// <summary>Puts the view at a centre and zoom at once (the replay with animation effects off).</summary>
+    public void Jump((Shturmap.Core.Maps.MapPoint Center, double Zoom) view)
+    {
+        StopViewAnimation();
+        StopGlide();
+        _fitPending = false;
+        _centerAfterFit = false;
+        _camera.Restore(view.Center, view.Zoom);
+        Invalidate();
+    }
+
     /// <summary>Where a world position is drawn now, in this control's coordinates (DIPs).</summary>
     public Windows.Foundation.Point PointOf(Shturmap.Core.WorldPoint world)
     {

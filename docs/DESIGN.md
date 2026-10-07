@@ -11,7 +11,9 @@ Shturmap answers two questions for an Escape from Tarkov player, on a second mon
 2. **During a raid: where am I, and where is my next objective?**
 
 That is the whole product. A feature belongs in Shturmap only if it helps one of these two questions and works
-without the player having to click during a raid. When in doubt, leave it out.
+without the player having to click during a raid. When in doubt, leave it out. One exception, the owner's, for
+eye candy at a raid's end: the raid replay (owner, 2026-10-07: "more on the eye-candy side of things like the loading
+animations"; "Map drawing", *The raid replay*).
 
 **Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
 part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
@@ -265,7 +267,7 @@ quoting it anywhere new.
    screenshots move the player. Nothing in a raid requires input. Defaults must be right without configuration.
 2. **Glanceable from a second monitor.** High contrast on a dark ground, the important line first and largest (the
    glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
-   change. (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
+   change, and the raid replay at a raid's end (§1's exception). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
    kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
@@ -310,7 +312,8 @@ quoting it anywhere new.
    of the map points to it with an arrow and pings, says "YOUR NEW POSITION · PRESS F", and a one-line notice says
    so; the badge stays (quietly) while the position is out of view, and clicking it, F, or the map button shows
    the position at the current zoom. An old screenshot found at start doesn't ping. When the raid ends, the
-   player marker and trail go: out of a raid there is no "you". So while the game's logs are followed, a position
+   player marker and trail go: out of a raid there is no "you". The raid's positions, with their minutes, stay in
+   memory for its replay until the next raid loads ("Map drawing", *The raid replay*). So while the game's logs are followed, a position
    the log shows no raid for isn't plotted, and a notice says so ("Got a position, but the game's log shows no
    raid, so it isn't shown."; nothing is said for a screenshot taken just before the raid's end line reached the
    log). Only with no game logs at all, when nothing can say where the game is, does the shown map take a position
@@ -380,7 +383,9 @@ quoting it anywhere new.
     behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
-    suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks. Picks the player makes (a Plan card, the map
+    suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks.
+    RAID OVER of a raid with a replay gives way after its entrance to the replay's band at the map's foot ("Map
+    drawing", *The raid replay*). Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
@@ -471,7 +476,8 @@ a dark collar (see "Visual language"). Spacing in the app steps 2–3 px inside 
 between groups, 20 px above a section label; the rail is 384 px, the status bar 40 px. The website lays out on a 96 px
 grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps from 8 to 56 px.
 
-**Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit) with its entrance at 1.8 times the original
+**Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 12.7 s
+when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
 position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; the raid card's time
 moves only when its minute changes (its figure decodes over half a second as the cue's title does, and one dark notch
@@ -727,7 +733,30 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   last fix trim. At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
   one trims), three squares and the buttons; outside a raid the words fit.
 - **Rail** (left, 384 px), content by state:
-  - *Plan*: last raid in one line; **Next raid**: up to four maps ranked by what can be done there, as a short list
+  - *What's New* (owner, 2026-10-07: "how to inform the user about news and changes in the app ... ideally accompanied
+    with screenshots"; from two panels, "C", then "Whats new: A"). A window was ruled out (principle 3), and so were
+    screenshots bundled in a build (§3: map artwork, renders, portraits and icons) and pictures from the website (a new
+    host, §2). So: a card at the top of Plan's rail, under the MAP picker and after the update line, in the panel's
+    colour with a `Line` hairline. NEW IN 0.4.0 in the eyebrow style in amber, × in its corner (`E711`, as on a notice),
+    up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
+    map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, or a small
+    drawing of the raid card's clock. **Pointing at a line previews it** on the map, as resting on a map's row in Plan
+    does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
+    0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID", and leaving puts the map back as it was. The
+    previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
+    list on Customs, the raid card's own clock with example times on a plate over the dimmed map (`RaidClock`), Gratitude's
+    two objectives on one spot on Woods, Streets' Scav Checkpoint where an extract and a transit stand apart. Nothing of
+    the player's is shown or changed, and nothing is bundled: every picture and preview is drawn when it shows, from the
+    cache, by the app's own code (`MainWindow.WhatsNew`). **When:** at the first start of a version with lines, outside
+    raids; the versions newer than the one last seen (`whatsNew.seen` in shturmap.db), newest first, each under its
+    own NEW IN line. A first start (no `help.seen` either) shows none: help opens, and the newest version counts as
+    seen. After an update from a version before the card, the newest version only (`Rules.WhatsNew.Due`). Never by
+    itself in a snapshot or the demo. **Gone:** with ×, or once the first raid since the update is over; help's WHAT'S
+    NEW IN 0.4.0 brings the newest version's card back. The lines are docs/whats-new.md, built into the app: one section
+    per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words).
+  - *Plan*: last raid in one line, with **REPLAY** at its right while the raid can be replayed (the play symbol `E768`
+    and the word, in the status words' style, as CLEAR PICKS stands beside NEXT RAID; owner, 2026-10-07: "Replay link:
+    ii"; "Map drawing", *The raid replay*); **Next raid**: up to four maps ranked by what can be done there, as a short list
     that stays in view, then the open map's card: its line in words ("Complete 7 quests · progress 2 more") with
     COMPLETE, PROGRESS and BRING (keys, items to bring). A row of the list is the map's name and its counts
     ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map that is
@@ -983,7 +1012,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     point on the glide as it is drawn. Only while it glides, a frame timer asks for frames at the system timer's pace
     (about 64 a second): the map's 16 ms animation timer and the Rendering event each gave only about 30 a second
     (measured with the dev view, 2026-10-03).
-- **Help** (F1 or `?`): one panel with how it works, the shortcuts, the quest-type legend and the symbols on the map
+- **Help** (F1 or `?`): one panel with WHAT'S NEW IN 0.4.0 under its title (the What's New card again), how it works, the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
   "Diagnostics"). Opens once by itself on first run, outside a raid: at a first start during a raid it waits until
@@ -1018,7 +1047,7 @@ spawns below).
 
   | level | members | treatment |
   | --- | --- | --- |
-  | 1 | the player; the picked quests, the guide line and plate | own hues (sand, cyan), rings, drawn last, never faded |
+  | 1 | the player; the picked quests, the guide line and plate; the raid replay's pen while it plays | own hues (sand, cyan), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink; the extracts on your list this raid lit, their names in bold |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
   | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
@@ -1318,6 +1347,54 @@ spawns below).
   whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,
   gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
   without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
+- **The raid replay** (owner, 2026-10-07: "a post-raid view, similar to the one in Arc Raiders ... only the positions
+  from the screenshots ... more on the eye-candy side of things ... automatically played after the raid finishes"; from
+  the panels "B and D", then "C, but encode raid time to the color of the pen stroke. Use a fitting color map based on
+  the apps design", "Replay timeline 1", "Replay link: ii"; §1's exception). What there is to replay (the study log of
+  1–6 October, 19 raids): one position per 4.4 raid minutes, 6 raids with one, the median 4, gaps of 11 to 21 minutes
+  in long raids, the last position 1 to 21 minutes before the end line; how a raid ended is in no log Shturmap reads.
+  So the replay shows where and when the player took screenshots, and when they were last seen, never how the raid
+  ended.
+  - *What is kept* (`GameSession`): each position on the raid's own map with its minute since the raid's start
+    (`WallClock`), the objectives ticked during the raid with their minutes, and when a screenshot first showed the
+    extract list. A raid loading starts them anew, so after a transit only the map the raid ended on is replayed. At the
+    raid's end, when the log has its end (its length is known), they make a `RaidReplay`, which comes with the RAID
+    OVER cue and stays in the snapshot until the next raid loads. In memory only: never on disk, never in the app log
+    (§2), gone at a restart.
+  - *When it plays*: at RAID OVER, when the raid has 3 positions or more over 5 minutes or more (`RaidReplay.Plays`; 9
+    of the 19 raids); otherwise today's cue. Never for the log read back at start. REPLAY on Plan's last-raid line
+    plays it again (the raid's map comes back on screen first) until the next raid loads.
+  - *The sequence* (`ReplayTiming`, `MainWindow.Replay`): RAID OVER enters in the middle as every cue does (1.6 s), then
+    fades as the band slides up to the map's foot and the view glides to the raid's positions (1 s); the raid plays in
+    7.5 s whatever its length, holds 2 s on its end, and fades (0.6 s): about 12.7 s, no clicks. The band stands 46 DIP
+    above the map's foot, so the WIKI MAP link and the artwork's credit stay readable, and right of the map's buttons.
+    A new cue, a raid loading or a preview ends it. With Windows' animation effects off, and in snapshots, the end shows
+    at once for the time it would have played (a snapshot keeps it).
+  - *The view*: framed on the positions with 40 DIP around them and at least 300 m across, in the part above the band
+    (`MapView.FramingAbove`). It stays there afterwards. The map recedes under the replay (the ground at 45 % over it),
+    and everything of the replay fades in and out as one (`MapScene.ReplayOpacity`).
+  - *The pen* (C; `MapRenderer.DrawReplay`, `ReplayInk`): one line from position to position, drawn on as the time
+    runs, growing toward the next position. Its colour is the raid's time: the player's sand mixed into the ground,
+    opaque, from 22 % sand at the raid's start to all of it at its end, and it widens from 1.4 to 3.2 DIP, over a dark
+    collar (the ground at 59 %, 6.2 DIP). One hue because sand is the player's alone: any map of several hues
+    (viridis, magma, cividis) runs through the map's taken colours, green and teal for extracts, violet for transits,
+    amber for quests, red for bosses. Light means late, as the newest position is the brightest thing on the map, and
+    width is the second cue ("One meaning per colour, shape as a second cue"). Tried on the owner's raid of 5 October
+    and dropped: sand by alpha (the artwork showed through, and the overlapping pieces dotted the line), a range from
+    35 % sand (too little difference). Each position is a dot (2.6 DIP) in its time's colour on a dark collar, with its
+    minute beside it, "8 MIN IN" (never bare minutes, which read as a time to get somewhere, owner, 2026-10-04; the
+    panel's "8 MIN" changed for that), ink on a dark tag set where it covers no other tag or dot and stays above the
+    band, else left out. The newest position pings as a new position does. At the end the last one's tag says "LAST
+    SEEN · 2 MIN BEFORE THE END" ("JUST BEFORE THE END" within a minute), framed in sand as an old position's tag is.
+    Positions on another floor are drawn as on the floor shown. A straight line between positions minutes apart reads
+    as a route Shturmap doesn't know; the owner chose the pen knowing that, and the minutes and the timeline show the gaps.
+  - *The timeline* (1; `Controls.ReplayBand`): the band's words, RAID OVER in amber and CUSTOMS · 33 MIN in ink in the
+    cue's eyebrow, and "6 OF 9 POSITIONS" at the right; the raid's length as a 4 px rule with a tick every ten minutes
+    and at its end, its played part in the pen's colours along the whole rule (so the rule is the colour key) and the
+    rest `LineStrong`, the playhead (2 × 14 DIP, ink). Above the rule a dot per position, in its colour once played and
+    an outline before; below it a check (`E73E`, the done objective's) per objective ticked during the raid and a green
+    triangle (the PMC extract's shape and colour) where the extract list was read; "33 MIN" at the end.
+  - The legend has a row for it, listed while it plays on the map.
 - **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap
   per symbol, made with the map's own drawing code at twice the DIP size), so they can't drift from the map; the
   hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
@@ -1999,7 +2076,9 @@ self-unpacking exe, without updates; they need the Setup once.
   a dev and release artifact"; the dev build is `artifacts\dev`, below): the folder `app\` (precompiled, with the
   Sentry DSN), and after asking GitHub for the last release so `vpk pack` can build a delta, `packages\` (the Setup,
   full and delta packages, `releases.win.json` and `RELEASES`, the portable zip), plus `Shturmap-Setup.exe` and its
-  `.sha256`. The notes are `docs\release-notes\<version>.md`. `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
+  `.sha256`. The notes are `docs\release-notes\<version>.md`; what the What's New card says of the version is its
+  section in `docs\whats-new.md` (up to five lines, built into the app; §4, "Screen anatomy"), written with the notes.
+  `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
   `v<version>`, a published pre-release; `-Draft` leaves a draft) and adds `Shturmap-Setup.exe`; it refuses unless
   the tree is clean, the commit pushed and the build made from that commit (`artifacts\release\app`). `vpk` is a
   pinned local tool (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`,
@@ -2119,7 +2198,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   with the app's version and commit.
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
   `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
   `trigger key down | up | enter | p | esc` steps through the rail's rows by the code the key events call; no key
   is ever sent. A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
@@ -2282,7 +2361,10 @@ active-quest count changes outside quest events. Added 2026-10-02: group picks (
 group ready / not ready / start; each raid's loading steps with their seconds since the scene line (in
 `raid.start`); the raid clock in each fix; the insurer's notes (kind, location, item count). Added 2026-10-04:
 cards closed by a step into a raid (`cards.raid`), whether help was closed by the player or by a raid, and the
-status bar's words going or coming back with the bar's width (`statusbar.words`). How a raid ended
+status bar's words going or coming back with the bar's width (`statusbar.words`). Added 2026-10-07: the raid replay
+(`replay.play` with how it was asked for, its positions and minutes; `replay.end` with why; `replay.skip` for a raid
+with too few positions) and What's New (`whatsnew.show`, `whatsnew.point` with the line, `whatsnew.close` with how:
+×, a raid, or the line from help). How a raid ended
 (survived, killed) is in none of the allowed logs. The nearest thing is `raid.outcomeHint` `{ lostInsured: true }`:
 the insurer's "lost" note came during the raid or within 5 minutes after it, on the same location (in the owner's
 logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;
@@ -2439,4 +2521,10 @@ form. Problems and ideas both go through it.
 - "Delete position screenshots" (2026-10-04; §2): off unless ticked, the one thing Shturmap changes outside its own
   folders.
 - Open: the installed size (budget 80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand,
-  opening with the game or with Windows, a text size setting.
+  opening with the game or with Windows, a text size setting. Declined (owner, 2026-10-07): shortcuts for zooming and
+  panning that work while the game has the focus. They would need a global hotkey (§2), and in the study log of 1–6
+  October only 23 of the 121 times Shturmap took the focus during a raid were for the view alone; 65 were for quest rows
+  and cards.
+- What's New, a card in Plan's rail with each line previewed on the map, and the raid replay in the RAID OVER cue with
+  REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
+  deferred (docs/NEXT.md): marks for what the player has.

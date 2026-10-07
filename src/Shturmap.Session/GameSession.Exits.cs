@@ -158,6 +158,7 @@ public sealed partial class GameSession
             foreach (var (id, marked) in named)
                 _exits[id] = marked;
             _exitsReadAt = seen.CreatedAt;
+            _raidListRead ??= RaidMinute(seen.CreatedAt);
             AppLog.Info($"Extract list read from a screenshot: {_exits.Count} exits, {_exits.Count(e => e.Value)} marked ???");
             if (first)
                 Say($"Your extract list is read: {_exits.Count} {(_exits.Count == 1 ? "extract" : "extracts")} for this raid");

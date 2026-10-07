@@ -51,6 +51,8 @@ public static class DevScript
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
         ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload | key <down | up | enter | p | esc> (nogame: as if no game were on this PC; key: the rail's row keys, through the code the key events call, never a key sent)",
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
+        ["whatsnew"] = "[<n>]: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview)",
+        ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs",
         ["exit"] = "closes the app",

@@ -578,6 +578,14 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                     folder = Game?.Root ?? "";
                 Say(await session.ChooseGameFolderAsync(folder) ? "game folder chosen: " + folder : "not the game: " + folder);
                 break;
+            case "whatsnew":
+                if (window.DevWhatsNew((int)step.Number(0, 0)) is { } noWhatsNew)
+                    Say(noWhatsNew);
+                break;
+            case "replay":
+                if (await window.DevReplayAsync() is { } noReplay)
+                    Say(noReplay);
+                break;
             case "trail":
                 // The pointer's last places in the main window, as pairs of x and y, for the cards to tell where it
                 // is heading (CardAim). No pointer moves: the card stack is told what its window would tell it.

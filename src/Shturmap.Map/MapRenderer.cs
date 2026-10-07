@@ -145,6 +145,7 @@ public static partial class MapRenderer
         }
         DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawPlayer(canvas, camera, scene, uiScale);
+        DrawReplay(canvas, camera, scene, uiScale);
     }
 
     // ---- stepping back: what is outside the focus while something is highlighted ----

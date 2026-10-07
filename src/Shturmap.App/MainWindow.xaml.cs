@@ -149,7 +149,13 @@ public sealed partial class MainWindow : Window
             DispatcherQueue.TryEnqueue(() => Apply(s));
         };
         session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration, notice.OffersReport));
-        session.Cue += cue => DispatcherQueue.TryEnqueue(() => ShowCue(cue));
+        session.Cue += cue => DispatcherQueue.TryEnqueue(() =>
+        {
+            ShowCue(cue);
+            // What's New goes once the first raid since the update is over.
+            if (cue.Kind == CueKind.RaidOver)
+                WhatsNewSeen("raid");
+        });
     }
 
     /// <summary>
@@ -454,6 +460,9 @@ public sealed partial class MainWindow : Window
             _previewTimer?.Stop();
             EndPreview(restore: false);
         }
+        // And a replay: the next raid is what matters now (its positions are gone with it, in the session too).
+        if (vm.InRaid)
+            StopReplay("raid");
         // And at each step into a raid (it loads, it starts) the cards open then let go of the map (WhileInRaid). A
         // snapshot's and the demo's shown card is their picture: it stays.
         if (WhileInRaid.LetsGo(_phase, s.Raid.Phase) && !SnapshotMode && !DemoMode)
@@ -483,6 +492,7 @@ public sealed partial class MainWindow : Window
         RefreshPinned();
         RestorePinnedOnce(s);
         ShowHelpOnFirstRun(s);
+        ShowWhatsNewOnce(s);
         ShowQuestForSnapshot(s);
         DemoOnSnapshot(s);
     }
@@ -611,6 +621,8 @@ public sealed partial class MainWindow : Window
         var vm = ViewModel;
         // A raid the log never ended has no length to say: RaidStatus words it ("end not in the log").
         vm.LastRaidText = s.LastRaid is { } last ? RaidStatus.LastRaid(last) : "";
+        // REPLAY on that line while the raid just over can be replayed (until the next one loads).
+        vm.ReplayOffered = s.Replay is { Plays: true } && s.Raid.Phase == RaidPhase.Menu;
 
         // The card for the map on screen is open; if that map isn't suggested, the best one is.
         var openIndex = s.Plan.ToList().FindIndex(p => p.NormalizedName == s.Map?.NormalizedName);
@@ -929,6 +941,8 @@ public sealed partial class MainWindow : Window
         scene.ExitsUnsure = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Unsure).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
+        // A replay playing on this map: a scene made anew (the map came back after a preview) takes it up.
+        ApplyReplay();
         Map.Refresh();
         if (HelpFlyout.IsOpen)
             ShowLegend(opened: false);
@@ -1044,6 +1058,14 @@ public sealed partial class MainWindow : Window
 
     private async void StartPreview(string normalizedName)
     {
+        // A preview takes the map: a replay playing on it ends, and a What's New plate from the preview before goes.
+        StopReplay("preview");
+        EndWhatsNewPreview();
+        if (normalizedName.StartsWith(WhatsNewPreviewPrefix, StringComparison.Ordinal))
+        {
+            await StartWhatsNewPreviewAsync(normalizedName);
+            return;
+        }
         if (_snapshot is not { Data: { } data } s || data.MapByNormalizedName(normalizedName) is not { } map
             || data.DefinitionFor(normalizedName) is not { } definition || _session.Artwork is null)
             return;
@@ -1069,6 +1091,7 @@ public sealed partial class MainWindow : Window
         _previewing = null;
         _previewWanted = null;
         ViewModel.PreviewText = "";
+        EndWhatsNewPreview();
         _scenes.Forget();
         if (!restore)
             _restoreView = null;
@@ -1507,7 +1530,11 @@ public sealed partial class MainWindow : Window
     // 2026-10-04: "The animation can be a bit longer"), and a quarter of a second more for each picture past the
     // first row of eight, up to 11 s: a long kit takes longer to look over.
     private static TimeSpan CueLength(ViewCue cue) =>
-        TimeSpan.FromSeconds(cue.Kit is { Count: > 0 } kit ? Math.Min(11, 7.5 + 0.25 * Math.Max(0, kit.Count - CueKitRow)) : 5);
+        Replays(cue) ? ReplayCueLength
+        : TimeSpan.FromSeconds(cue.Kit is { Count: > 0 } kit ? Math.Min(11, 7.5 + 0.25 * Math.Max(0, kit.Count - CueKitRow)) : 5);
+
+    // RAID OVER with a raid to replay: the middle cue gives way to the replay's band (MainWindow.Replay).
+    private static bool Replays(ViewCue cue) => cue is { Kind: CueKind.RaidOver, Replay.Plays: true };
     private const double CuePace = 1.8;
     private Microsoft.UI.Xaml.Media.Animation.Storyboard? _cueStory;
     private DispatcherQueueTimer? _cueTimer;
@@ -1614,8 +1641,21 @@ public sealed partial class MainWindow : Window
     // title slides up while it decodes letter by letter, the undecoded letters in gold; then it all fades. Nothing
     // with text in it is ever scaled, so the text stays sharp (owner, 2026-10-01: it was sometimes blurry, could
     // last longer and use more pop). Off with Windows' animation effects: it just shows and goes.
-    private void ShowCue(ViewCue cue)
+    /// <param name="how">For a replay: "end" (the raid's end) or "link" (REPLAY on the last raid's line).</param>
+    private void ShowCue(ViewCue cue, string how = "end")
     {
+        // A new cue ends a replay still playing; RAID OVER with a raid to replay plays it (MainWindow.Replay).
+        StopReplay("cue");
+        if (cue is { Kind: CueKind.RaidOver, Replay: { Plays: false } skipped })
+            Study.Ui("replay.skip", ("positions", skipped.Fixes.Count), ("minutes", skipped.Minutes));
+        var animations = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+        if (Replays(cue) && (SnapshotMode || !animations))
+        {
+            _cueStory?.Stop();
+            _cueTimer?.Stop();
+            PlayReplay(cue.Replay!, how);
+            return;
+        }
         var (eyebrow, title, detail) = CueText(cue);
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
@@ -1624,8 +1664,10 @@ public sealed partial class MainWindow : Window
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();
+        if (Replays(cue))
+            PlayReplay(cue.Replay!, how);
 
-        if (!new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
+        if (!animations)
         {
             CueTitle.Text = title;
             CuePanel.Opacity = 1;

@@ -234,6 +234,18 @@ public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, 
 
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);
 
+/// <summary>A line of the What's New card: what is new, and its picture (a map symbol, or the clock's small drawing).</summary>
+/// <param name="Key">Which line it is, for the preview: "0.4.0:2".</param>
+public sealed record WhatsNewRow(string Key, string Name, string Text, Microsoft.UI.Xaml.Media.ImageSource? Swatch, bool Clock)
+{
+    public Visibility SwatchVisibility => Swatch is null ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility ClockVisibility => Clock ? Visibility.Visible : Visibility.Collapsed;
+}
+
+/// <summary>A version's lines on the What's New card, under "NEW IN 0.4.0".</summary>
+public sealed record WhatsNewBlock(string Heading, IReadOnlyList<WhatsNewRow> Rows);
+
 /// <summary>What the window shows, as display-ready text. Filled from each session snapshot.</summary>
 public sealed partial class MainViewModel : ObservableObject
 {
@@ -377,6 +389,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>"PREVIEW · CUSTOMS" while another map is shown from its row in Plan under the pointer; else empty.</summary>
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
+
+    /// <summary>Beside <see cref="PreviewText"/>: what to do about it, or that it is an example (What's New).</summary>
+    [ObservableProperty] public partial string PreviewHint { get; set; } = "CLICK ITS ROW TO PLAN IT";
+
+    /// <summary>The last raid can be replayed: REPLAY on its line, until the next raid loads.</summary>
+    [ObservableProperty] public partial bool ReplayOffered { get; set; }
+
+    /// <summary>What's New, at the top of Plan's rail after an update, until closed or the first raid is over.</summary>
+    [ObservableProperty] public partial bool WhatsNewShown { get; set; }
+
+    [ObservableProperty] public partial IReadOnlyList<WhatsNewBlock> WhatsNewBlocks { get; set; } = [];
+
+    /// <summary>Help's link that brings the card back ("WHAT'S NEW IN 0.4.0"), or empty.</summary>
+    [ObservableProperty] public partial string WhatsNewHelp { get; set; } = "";
 
     /// <summary>"LOOKING AT WOODS" while another map than the raid's is on screen in a raid (the MAP list); else empty.</summary>
     [ObservableProperty] public partial string LookText { get; set; } = "";

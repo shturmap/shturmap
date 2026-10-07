@@ -172,6 +172,40 @@ public sealed partial class MainWindow
 
     internal Task DevRenderAsync(UIElement element, string path) => RenderToPngAsync(element, path);
 
+    /// <summary>What's New of the newest version, as help's link shows it; with a line (counted from 1), the pointer on
+    /// it: its preview starts at once.</summary>
+    internal string? DevWhatsNew(int line)
+    {
+        if (WhatsNewSections.FirstOrDefault() is not { } newest)
+            return "no What's New in this build";
+        ShowWhatsNew([newest], "dev");
+        if (line < 1)
+        {
+            // The pointer off the card: a preview ends, as it does when the pointer leaves a line.
+            Preview(null, TimeSpan.FromMilliseconds(1));
+            return null;
+        }
+        if (line > newest.Items.Count)
+            return $"What's New {newest.Label} has {newest.Items.Count} lines";
+        Preview(WhatsNewPreviewPrefix + $"{newest.Label}:{line - 1}", TimeSpan.FromMilliseconds(1));
+        return null;
+    }
+
+    /// <summary>The made-up raid of the previews replayed on Customs, as at a raid's end (the map switches to Customs).</summary>
+    internal async Task<string?> DevReplayAsync()
+    {
+        if (_snapshot?.Data is not { } data || data.MapByNormalizedName("customs") is not { } customs)
+            return "no data for Customs";
+        var content = Shturmap.Map.MapContentBuilder.Build(data, customs.Id, [], new HashSet<string>());
+        if (ReplayExample(content) is not { } example)
+            return "no example raid on Customs";
+        if (_snapshot.Map?.NormalizedName != "customs")
+            await _session.SelectMapAsync("customs");
+        // The artwork of a map just picked takes a moment; the replay waits for its scene (ApplyReplay).
+        ShowCue(new ViewCue(CueKind.RaidOver, example.MapName, TimeSpan.FromMinutes(example.Minutes), Replay: example), "dev");
+        return null;
+    }
+
     internal void DevExit()
     {
         _devView?.Close();

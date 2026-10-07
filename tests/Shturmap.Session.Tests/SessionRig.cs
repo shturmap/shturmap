@@ -162,6 +162,20 @@ internal sealed class SessionRig : IAsyncDisposable
 
     private int _shots;
 
+    /// <summary>
+    /// A screenshot taken at <paramref name="taken"/>: the watcher goes by the file's creation time, so the file is made
+    /// beside the folder with that time and moved in (a move keeps it).
+    /// </summary>
+    public void Screenshot(double x, double y, double z, DateTime taken)
+    {
+        var name = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd}[{0:HH-mm}]_{1:0.00}, {2:0.00}, {3:0.00}_0.00000, 0.00000, 0.00000, 1.00000_14.13 ({4}).png",
+            taken, x, y, z, Interlocked.Increment(ref _shots));
+        var made = Path.Combine(_root, name);
+        File.WriteAllBytes(made, []);
+        File.SetCreationTime(made, taken);
+        File.Move(made, Path.Combine(_root, "Screenshots", name));
+    }
+
     /// <summary>The names of the files in the Screenshots folder now.</summary>
     public IReadOnlyList<string> Screenshots =>
         Directory.EnumerateFiles(Path.Combine(_root, "Screenshots")).Select(Path.GetFileName).OfType<string>().Order().ToList();

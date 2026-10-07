@@ -32,6 +32,15 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private readonly RaidOutcomeHints _hints = new();
     private readonly List<WorldPoint> _trail = [];
 
+    // The raid's replay (owner, 2026-10-07; docs/DESIGN.md "Map drawing", *The raid replay*): its positions on the map it
+    // runs on, each with its minute since the raid's start, the objectives ticked during it and when the extract list was
+    // first read. A raid loading (a transit too) starts them anew. Kept in memory only, never on disk or in the app log.
+    private readonly List<ReplayFix> _raidFixes = [];
+    private readonly Dictionary<string, double> _raidTicks = new(StringComparer.Ordinal);
+    private double? _raidListRead;
+    // The last raid's replay, from its end until the next raid loads (REPLAY on the last-raid line).
+    private RaidReplay? _lastReplay;
+
     private ProgressStore? _store;
     private GameDataLoader? _loader;
     private LogTailer? _tailer;
@@ -1264,6 +1273,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _lastClock = null;
                 _trail.Clear();
                 ForgetExits();
+                ForgetReplay();
+                _lastReplay = null;
                 _fix = null;
                 _fixMapId = null;
                 // A transit loads another map: the raid's map is worked out anew, never carried over.
@@ -1315,16 +1326,42 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_lastRaidMap is not null)
             RememberMap(_lastRaidMap);
         _lastRaidEnded = ended.At;
+        // The replay of the raid just over, while its positions are still here; only for a raid whose end the log
+        // says (its length is known), live.
+        _lastReplay = announce && ended.LengthIn(Zone) is { } length && _lastRaidMap is not null && _raidFixes.Count > 0
+            ? new RaidReplay(_lastRaidMap.NormalizedName, _lastRaidMap.Name, _raidFixes.OrderBy(f => f.Minute).ToList(), length.TotalMinutes)
+            {
+                Ticks = _raidTicks.Values.Order().ToList(),
+                ListRead = _raidListRead,
+            }
+            : null;
         // Out of the raid there is no "you" on the map (owner, 2026-10-01).
         _fix = null;
         _fixMapId = null;
         _trail.Clear();
         ForgetExits();
+        ForgetReplay();
         if (ended.Previous.RaidStartedAt is not null)
             _lastRaidState = (ended.Previous, ended.At, ended.EndInLog);
         if (announce && _lastRaidMap is not null)
-            Announce(new ViewCue(ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver, _lastRaidMap.Name, ended.LengthIn(Zone)));
+        {
+            var kind = ended.Previous.RaidStartedAt is null ? CueKind.LoadCancelled : CueKind.RaidOver;
+            Announce(new ViewCue(kind, _lastRaidMap.Name, ended.LengthIn(Zone), Replay: kind == CueKind.RaidOver ? _lastReplay : null));
+        }
     }
+
+    private void ForgetReplay()
+    {
+        _raidFixes.Clear();
+        _raidTicks.Clear();
+        _raidListRead = null;
+    }
+
+    // Minutes since the running raid's start, by the clock-change-safe span (WallClock); null without a raid start.
+    private double? RaidMinute(DateTime at) =>
+        _tracker.State.Phase == RaidPhase.InRaid && _tracker.State.RaidStartedAt is { } started
+            ? Math.Max(0, WallClock.Elapsed(started, at, Zone).TotalMinutes)
+            : null;
 
     // What the app log and the study log keep of a raid's steps (never during the replay at start).
     private void Record(RaidTransition? transition)
@@ -1591,6 +1628,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _fix = new PlayerFix(seen.Info.Position!.Value, seen.Info.YawDegrees, seen.CreatedAt);
             _lastClock = seen.Info.RaidClockHours;
             _fixMapId = map.Id;
+            // For the replay at the raid's end: a position on the raid's own map, with its minute.
+            if (map.Id == _raidMap?.Id && RaidMinute(seen.CreatedAt) is { } minute)
+                _raidFixes.Add(new ReplayFix(minute, _fix.Position));
             Publish();
             var p = _fix.Position;
             // The raid clock, with group.pick's time variant, settles which of the two raid times "CURR" and "PAST" are.
@@ -1731,6 +1771,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 return;
             var now = _ticks.Toggle(_mode, objectiveId, DateOnly.FromDateTime(Clock()), save);
             Study.Ui(now ? "tick" : "untick", ("objective", objectiveId), ("quest", quest), ("how", how));
+            // The replay's timeline marks what was ticked during the raid, at its minute.
+            if (!now)
+                _raidTicks.Remove(objectiveId);
+            else if (RaidMinute(Clock()) is { } minute)
+                _raidTicks[objectiveId] = minute;
             RecomputeQuests();
             Publish();
         }
@@ -1983,6 +2028,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             LastRaid = _lastRaidState is ({ } state, var endedAt, var endInLog) && _data?.CreateResolver().Resolve(state.ScenePath, state.LocationId) is { } lastMap
                 ? new LastRaidView(lastMap.Name, endInLog ? WallClock.Elapsed(state.RaidStartedAt!.Value, endedAt, Zone) : TimeSpan.Zero, state.Side, endedAt) { LengthKnown = endInLog }
                 : null,
+            Replay = _lastReplay,
             RaidInfo = railMap is not null && _data?.Maps.GetValueOrDefault(railMap.Id) is { } raidMap
                 ? new RaidInfo(raidMap.RaidDuration ?? 0, _data.BossesOn(raidMap.Id).Take(3).Select(Planning.BossText).ToList(),
                     _tracker.State.Phase == RaidPhase.InRaid ? _lastClock : null)

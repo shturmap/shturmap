@@ -37,6 +37,7 @@ public enum LegendSymbol
     Hazard,
     OtherFloor,
     Trail,
+    Replay,
     LooseItem,
     Containers,
     Sheet,
@@ -105,6 +106,8 @@ public static class MapLegend
         If(scene.Zones.Any(z => z.Kind == MarkerKind.Hazard), LegendSymbol.Hazard);
         If(scene.FloorStack.Count > 1, LegendSymbol.OtherFloor);
         If(scene.Trail.Count > 0, LegendSymbol.Trail);
+        // While the raid replay plays on this map.
+        If(scene.Replay is not null, LegendSymbol.Replay);
         If(scene.Spawns.Count > 0, LegendSymbol.LooseItem);
         If(scene.IsSheet && scene.Containers.Count > 0, LegendSymbol.Containers);
         If(scene.IsSheet, LegendSymbol.Sheet);
@@ -145,6 +148,7 @@ public static class MapLegend
         new(LegendSymbol.Hazard, "Deadly area (traps, minefields, sniper zones): hatched outline."),
         new(LegendSymbol.OtherFloor, "On another floor: up or down, with how many when more than one."),
         new(LegendSymbol.Trail, "Your earlier positions this raid: dashed sand line."),
+        new(LegendSymbol.Replay, "The raid replay, after a raid: your screenshots in order, faint and thin at its start, bright and wide at its end."),
         new(LegendSymbol.LooseItem, "Where an item lies loose, while you point at it: small open square."),
         new(LegendSymbol.Containers, "Loot containers, on a map without artwork: faint dots."),
         new(LegendSymbol.Sheet, "No artwork for this map: a sheet with a 10 m grid, from data only."),
@@ -323,6 +327,15 @@ public static partial class MapRenderer
                 scene.Player = new PlayerFix(At(22, -4), null, DateTime.Now);
                 DrawTrail(canvas, camera, scene, ui);
                 break;
+            case LegendSymbol.Replay:
+            {
+                // The pen from a raid's start to its end, faint and thin to bright and wide, through three positions.
+                SKPoint[] points = [new(5 * ui, size.Height - 9 * ui), new(size.Width * 0.45f, 10 * ui), new(size.Width - 5 * ui, size.Height * 0.55f)];
+                double[] times = [0, 0.45, 1];
+                DrawReplayPen(canvas, [(points[0], points[1], times[0], times[1]), (points[1], points[2], times[1], times[2])], ui);
+                DrawReplayDots(canvas, points, times, ui);
+                break;
+            }
             case LegendSymbol.LooseItem:
                 scene.Spawns = [At(0, 0)];
                 DrawSpawns(canvas, camera, scene, ui);

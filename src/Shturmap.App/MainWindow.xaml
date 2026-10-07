@@ -217,6 +217,11 @@
               </Flyout.FlyoutPresenterStyle>
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
+                <!-- The What's New card of this version again (docs/DESIGN.md §4, "Screen anatomy"). -->
+                <HyperlinkButton Padding="0" Click="OnWhatsNewAgainClick" Visibility="{x:Bind ShownIf(ViewModel.WhatsNewHelp), Mode=OneWay}"
+                                 ToolTipService.ToolTip="Shows what's new at the top of the list on the left again">
+                  <TextBlock Text="{x:Bind ViewModel.WhatsNewHelp, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                </HyperlinkButton>
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The screenshot's name holds your position: your marker, floor and distances update. The map stays put; F shows you, Shift+F follows you." />
                 </TextBlock>
@@ -227,6 +232,7 @@
                 <TextBlock TextWrapping="Wrap" Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Pop a card out to keep it as a small window. Symbols on top of each other spread out where the pointer rests." />
                 <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest. They stay until done, unpicked, or CLEAR PICKS." />
                 <TextBlock TextWrapping="Wrap" Text="Done an objective? The logs can't tell, so tick its box on the quest's card: the map, NEXT and the plan then skip it. Ticks clear when the quest ends. HAND OVER on a line: take what it gets to the trader after the raid." />
+                <TextBlock TextWrapping="Wrap" Text="After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs only: one started before your oldest log isn't shown." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
@@ -524,8 +530,75 @@
                   </HyperlinkButton>
                 </StackPanel>
               </StackPanel>
-              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(ViewModel.LastRaidText), Mode=OneWay}"
-                         Visibility="{x:Bind ShownIf(ViewModel.LastRaidText), Mode=OneWay}" Margin="0,18,0,0" />
+              <!-- What's New (owner, 2026-10-07; docs/DESIGN.md §4, "Screen anatomy"): after an update, until closed or the
+                   first raid is over. Pointing at a line previews it on the map, as pointing at a map's row does. -->
+              <Grid Margin="0,18,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.WhatsNewShown), Mode=OneWay}">
+              <Border Padding="14" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+                <StackPanel Spacing="10">
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.WhatsNewBlocks, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="local:WhatsNewBlock">
+                        <StackPanel Spacing="4" Margin="0,0,0,8">
+                          <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Foreground="{StaticResource AmberBrush}" Text="{x:Bind Heading}" />
+                          <ItemsControl ItemsSource="{x:Bind Rows}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="local:WhatsNewRow">
+                                <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" Background="Transparent" Tag="{x:Bind Key}"
+                                      PointerEntered="OnWhatsNewPointerEntered" PointerExited="OnWhatsNewPointerExited">
+                                  <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="*" />
+                                  </Grid.ColumnDefinitions>
+                                  <Image Source="{x:Bind Swatch}" Width="56" Height="34" VerticalAlignment="Top" Visibility="{x:Bind SwatchVisibility}" />
+                                  <!-- The raid card's clock, small: its figure over its rule. -->
+                                  <StackPanel Width="56" Height="34" VerticalAlignment="Top" Visibility="{x:Bind ClockVisibility}" Padding="2,2,2,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                      <TextBlock Text="13" FontSize="17" FontWeight="SemiBold" FontStretch="SemiCondensed" TextLineBounds="Tight" VerticalAlignment="Bottom" />
+                                      <TextBlock Text="MIN" Style="{StaticResource StatusText}" FontSize="8" TextLineBounds="Tight" VerticalAlignment="Bottom" />
+                                    </StackPanel>
+                                    <Grid Height="10" Margin="0,5,0,0">
+                                      <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="*" />
+                                      </Grid.ColumnDefinitions>
+                                      <Rectangle Height="2.5" VerticalAlignment="Top" Margin="0,3,0,0" Fill="{StaticResource LineStrongBrush}" />
+                                      <Rectangle Grid.Column="1" Height="2.5" VerticalAlignment="Top" Margin="0,3,0,0" Fill="{StaticResource InkBrush}" />
+                                      <Rectangle Grid.Column="1" Width="1.5" Height="8" HorizontalAlignment="Left" VerticalAlignment="Top" Fill="{StaticResource InkBrush}" />
+                                    </Grid>
+                                  </StackPanel>
+                                  <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{x:Bind Text}" Style="{StaticResource NoteText}" />
+                                  </StackPanel>
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock Text="Point at one: the map shows it." Style="{StaticResource NoteText}" Margin="0,-14,0,0" />
+                </StackPanel>
+              </Border>
+              <!-- The card's close, in its corner as on a notice. -->
+              <Button HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="24" Padding="0" Margin="0,8,8,0"
+                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close. Help brings it back.">
+                <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+              </Button>
+              </Grid>
+              <!-- The last raid, and its replay until the next raid loads (owner, 2026-10-07: "Replay link: ii"). -->
+              <Grid Margin="0,18,0,0" Visibility="{x:Bind ShownIf(ViewModel.LastRaidText), Mode=OneWay}">
+                <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Text="{x:Bind local:Caps.Of(ViewModel.LastRaidText), Mode=OneWay}" />
+                <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnReplayClick"
+                                 Visibility="{x:Bind ShownIfTrue(ViewModel.ReplayOffered), Mode=OneWay}"
+                                 ToolTipService.ToolTip="Plays the last raid again: where you took screenshots, in order">
+                  <StackPanel Orientation="Horizontal" Spacing="5">
+                    <FontIcon Glyph="&#xE768;" FontSize="9" Foreground="{StaticResource InkBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="REPLAY" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                  </StackPanel>
+                </HyperlinkButton>
+              </Grid>
               <!-- No game on this PC, or it hasn't run yet: said where the Plan card would be, for as long as it lasts
                    (owner, 2026-10-03: the no-game fallback; GameStateLine). -->
               <StackPanel Margin="0,18,0,0" Spacing="4" Visibility="{x:Bind ShownIf(ViewModel.GameLine), Mode=OneWay}">
@@ -1010,6 +1083,23 @@
           </StackPanel>
         </Grid>
 
+        <!-- The raid replay's band at the map's foot, the timeline in it (owner, 2026-10-07; Controls.ReplayBand). Clear of
+             the map's buttons at the right, and over the WIKI MAP link and the artwork's credit, which stay readable. -->
+        <controls:ReplayBand x:Name="ReplayBand" Visibility="Collapsed" Margin="0,0,68,46">
+          <controls:ReplayBand.RenderTransform>
+            <TranslateTransform x:Name="ReplayBandShift" />
+          </controls:ReplayBand.RenderTransform>
+        </controls:ReplayBand>
+
+        <!-- What's New's preview of something that isn't on the map (the raid card's clock): the app's own control, with
+             example values, on a plate over the dimmed map. -->
+        <Grid x:Name="WhatsNewPlate" Visibility="Collapsed" IsHitTestVisible="False" Background="#960B0C0B">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+            <Border x:Name="WhatsNewPlateBox" Width="360" Padding="20,18" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" />
+            <TextBlock x:Name="WhatsNewPlateNote" Style="{StaticResource EyebrowText}" Margin="0" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Grid>
+
         <!-- One-line notices, top centre; they go by themselves. -->
         <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" Spacing="8">
         <Border HorizontalAlignment="Center" MaxWidth="900" Padding="14,8,6,8"
@@ -1084,7 +1174,7 @@
                 Visibility="{x:Bind ShownIf(ViewModel.PreviewText), Mode=OneWay}" IsHitTestVisible="False">
           <StackPanel Orientation="Horizontal" Spacing="10">
             <TextBlock Text="{x:Bind ViewModel.PreviewText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
-            <TextBlock Text="CLICK ITS ROW TO PLAN IT" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
+            <TextBlock Text="{x:Bind ViewModel.PreviewHint, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
           </StackPanel>
         </Border>
         <!-- In a raid, another map picked in the MAP list is a look: the rail stays the raid's, and this says so. -->
