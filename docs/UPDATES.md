@@ -24,6 +24,24 @@ The commands refresh the cache (`%LOCALAPPDATA%\Shturmap\cache\tarkov-dev`) that
 German texts are for `ExtractRulesTests`. Compare the counts (tasks, maps, traders, definitions) with the last run
 below. Every map should say `svg` or `tiles`: one with `NONE` has no definition in maps.json and drops out of Plan.
 
+**Story chapters** (Tour, Falling Skies, Batya, …; owner, 2026-10-08: wait for tarkov.dev). Shturmap has none of
+them: tarkov.dev builds them into the tasks file as `data.story` but deletes that part in production ("not ready
+for prime time", `tarkov-data-manager`, `jobs/update-quests.mjs`), and the game's logs don't say which chapter or
+section is active. Check whether the part has arrived and whether its objectives have places yet:
+
+```powershell
+foreach ($mode in 'pve', 'regular') {
+  $d = (Get-Content "$env:LOCALAPPDATA\Shturmap\cache\tarkov-dev\${mode}_tasks.json" -Raw -Encoding UTF8 | ConvertFrom-Json).data
+  $main = @($d.story.tasks.objectives | Where-Object { $_ -and -not $_.optional })
+  "{0}: {1} chapters, {2} main objectives, {3} on a map, {4} with a place" -f $mode, @($d.story | Where-Object { $_ }).Count,
+    $main.Count, @($main | Where-Object { $_.maps }).Count, @($main | Where-Object { $_.zones -or $_.possibleLocations }).Count
+}
+```
+
+Today it says 0 chapters. When chapters show up, Shturmap still ignores them (`GameDataLoader` reads `data.tasks`
+only), so nothing breaks; tell the owner, with the counts. Support is worth designing once main objectives have
+places: what is active must then come from the player (DESIGN.md §4, principle 7), as no log line says it.
+
 ## 2. The audits, both modes (5 min)
 
 Run each with `pve` and with `regular`.
@@ -150,3 +168,4 @@ Labyrinth's 18 traps, 60 of 1,418 objectives optional): they say what was true o
 | 2026-10-03 | `effort pve` | 614 rows: Go there 214, Find or survive 134, Fight 266 |
 | 2026-10-03 | `bring` pve and regular | no unknown items, no unmatched exits |
 | 2026-10-05 | `handovers` pve and regular | 217 fold in each; 0 NEAR |
+| 2026-10-08 | story chapters | none in json.tarkov.dev (pve, regular). Its dev host, json-dev.tarkov.dev (6 Oct), has 10 chapters, 322 main objectives: 45 on a map, none with a place. No chapter or section id in the application or notification logs |
