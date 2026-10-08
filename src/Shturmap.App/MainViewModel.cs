@@ -97,11 +97,6 @@ public sealed record ExtractItem(string Id, string Name, string Kind, string Dis
     }];
 }
 
-public sealed record MapChoice(string NormalizedName, string Name)
-{
-    public override string ToString() => Name;
-}
-
 /// <param name="Needs">What it needs brought on the map (empty: nothing), or null where bringing doesn't apply.</param>
 /// <param name="Synopsis">What it asks on the map in a few words, under the name; empty for none.</param>
 /// <param name="StartsGroup">The first row of a later effort group in a Plan section (Session.Planning.Rows).</param>
@@ -225,6 +220,26 @@ public sealed record PlanCard(
 
     public Microsoft.UI.Xaml.Media.Brush CardBackground =>
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "RaisedBrush" : "RailBrush"];
+
+    /// <summary>
+    /// A card without a row in the list: the card of a map on screen that none of your quests is on (owner, 2026-10-08:
+    /// the rail follows the map on screen). Its summary says so, muted; there is nothing to compare in a row.
+    /// </summary>
+    public bool CardOnly { get; init; }
+
+    public Visibility RowVisibility => CardOnly ? Visibility.Collapsed : Visibility.Visible;
+
+    public Microsoft.UI.Xaml.Media.Brush SummaryBrush =>
+        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[CardOnly ? "MutedBrush" : "AmberBrush"];
+}
+
+/// <summary>The MAP list's item template: a map's name and count, or the OTHER MAPS heading (<see cref="Rules.MapChoice"/>
+/// stays free of the window's types, so its rules can be tested).</summary>
+public static class MapChoiceView
+{
+    public static Visibility ForMap(bool isHeader) => isHeader ? Visibility.Collapsed : Visibility.Visible;
+
+    public static Visibility ForHeader(bool isHeader) => isHeader ? Visibility.Visible : Visibility.Collapsed;
 }
 
 /// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
@@ -305,9 +320,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"Also delete my Shturmap data": unticked until the player ticks it, and each time the question opens.</summary>
     [ObservableProperty] public partial bool UninstallDeleteData { get; set; }
 
-    [ObservableProperty] public partial IReadOnlyList<MapChoice> MapChoices { get; set; } = [];
+    /// <summary>The MAP list: the maps with your quests and their counts, then the other maps (<see cref="Rules.MapList"/>).</summary>
+    [ObservableProperty] public partial IReadOnlyList<Rules.MapChoice> MapChoices { get; set; } = [];
 
-    [ObservableProperty] public partial MapChoice? SelectedMap { get; set; }
+    [ObservableProperty] public partial Rules.MapChoice? SelectedMap { get; set; }
 
     /// <summary>The raid card's title: the map, in capitals like Plan's cards.</summary>
     [ObservableProperty] public partial string RaidTitle { get; set; } = "";

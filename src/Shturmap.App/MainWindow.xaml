@@ -5,10 +5,29 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Shturmap.App"
     xmlns:controls="using:Shturmap.App.Controls"
+    xmlns:rules="using:Shturmap.App.Rules"
     Title="Shturmap">
 
   <Grid Background="{StaticResource GroundBrush}">
     <Grid.Resources>
+      <!-- The MAP list's items (Rules.MapList, owner 2026-10-08): a map's item stretches, so what it holds stands at its
+           right; the OTHER MAPS heading's item is no choice. -->
+      <controls:MapChoiceStyles x:Key="MapChoiceStyles">
+        <controls:MapChoiceStyles.Map>
+          <Style TargetType="ComboBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+          </Style>
+        </controls:MapChoiceStyles.Map>
+        <controls:MapChoiceStyles.Header>
+          <Style TargetType="ComboBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="IsEnabled" Value="False" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+          </Style>
+        </controls:MapChoiceStyles.Header>
+      </controls:MapChoiceStyles>
+
       <!-- Something to bring, in Plan's cards and the raid card. What the picks need comes first, tinted like the
            picks (linked highlighting), then a hairline and the rest. -->
       <DataTemplate x:Key="RequirementTemplate" x:DataType="local:RequirementLine">
@@ -494,22 +513,81 @@
       <Grid Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Margin="16,4,16,0">
           <TextBlock Style="{StaticResource EyebrowText}" Text="MAP" Margin="0,14,0,6" />
-          <ComboBox HorizontalAlignment="Stretch" FontStretch="SemiCondensed" FontWeight="SemiBold"
+          <!-- The maps with your quests first, in Plan's order with what each holds, then OTHER MAPS (owner, 2026-10-08:
+               "A"; Rules.MapList). The closed list shows the map on screen with its counts too. -->
+          <ComboBox x:Name="MapPicker" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" FontStretch="SemiCondensed" FontWeight="SemiBold"
                     ItemsSource="{x:Bind ViewModel.MapChoices, Mode=OneWay}"
                     SelectedItem="{x:Bind ViewModel.SelectedMap, Mode=TwoWay}"
-                    SelectionChanged="OnMapPicked" />
+                    ItemContainerStyleSelector="{StaticResource MapChoiceStyles}"
+                    SelectionChanged="OnMapPicked">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="rules:MapChoice">
+                <Grid ColumnSpacing="12">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{x:Bind Name}" FontFamily="{StaticResource UiFont}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="14"
+                             TextTrimming="CharacterEllipsis" Visibility="{x:Bind local:MapChoiceView.ForMap(IsHeader)}" />
+                  <TextBlock Grid.Column="1" Text="{x:Bind Count}" FontFamily="{StaticResource UiFont}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12.5"
+                             Foreground="{StaticResource AmberBrush}" VerticalAlignment="Center" Visibility="{x:Bind local:MapChoiceView.ForMap(IsHeader)}" />
+                  <!-- OTHER MAPS: a hairline, then the heading in the eyebrow style. -->
+                  <StackPanel Grid.ColumnSpan="2" Visibility="{x:Bind local:MapChoiceView.ForHeader(IsHeader)}">
+                    <Rectangle Height="1" Fill="{StaticResource LineBrush}" Margin="0,2,0,8" />
+                    <TextBlock Text="{x:Bind Name}" Style="{StaticResource EyebrowText}" Margin="0" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+        <!-- RAID, the card's head: the map's name, the side and the raid's time stay at the top of the rail, and the rest
+             of the card scrolls under them (owner, 2026-10-08: "the remaining time is crucial information and when
+             scrolling down in the quest window it gets pushed outside of view. It should always stay on top"). The
+             card is drawn in two parts that meet without a seam: this head, open at its foot, and the body below,
+             open at its top. -->
+        <StackPanel Grid.Row="1" Margin="16,0,16,0" Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
+          <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintInRaid(ViewModel.Hint, ViewModel.InRaid), Mode=OneWay}"
+                     Style="{StaticResource NoteText}" Margin="0,16,0,0" TextWrapping="Wrap" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="THIS RAID" Margin="0,18,0,6" />
+          <Border x:Name="RaidHead" Padding="14,12,14,6" Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1,1,1,0">
+            <StackPanel Spacing="3">
+              <Grid>
+                <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
+                <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
+                           Visibility="{x:Bind ShownIfNot(ViewModel.SideSwitchable), Mode=OneWay}"
+                           ToolTipService.ToolTip="The side you play this raid, from the game's log" />
+                <!-- A raid hosted on your own machine (PvE can be) looks the same in the log for a PMC and a
+                     Scav: then the tag is a switch. -->
+                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6,1" Click="OnSideClick"
+                        Visibility="{x:Bind ShownIfTrue(ViewModel.SideSwitchable), Mode=OneWay}"
+                        ToolTipService.ToolTip="Raid hosted on your PC: the log doesn't say your side. Click to switch PMC / Scav.">
+                  <StackPanel Orientation="Horizontal" Spacing="5">
+                    <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" />
+                    <FontIcon Glyph="&#xE8AB;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+              <!-- How long the raid still runs: what one looks for in a raid, so it is the card's largest figure,
+                   right under the map's name, over a rule of the raid's length (owner, 2026-10-04: "This is crucial
+                   information"; 2026-10-05: "should be more visible ... a prominent item in the UI"). It moves only
+                   when its minute changes (Controls.RaidClock, Rules.RaidTime). -->
+              <controls:RaidClock Reading="{x:Bind ViewModel.RaidClock, Mode=OneWay}" />
+            </StackPanel>
+          </Border>
         </StackPanel>
         <!-- The rail's typeface and ink are set here: the app's implicit TextBlock style doesn't reach text inside the
              list templates below, which fell back to Segoe UI and white (the raid card's quest names and objective
              lines, the extract rows, BRING in a raid), while Plan's card had the app's own through its button. -->
-        <ScrollViewer x:Name="RailScroll" Grid.Row="1" Padding="16,0,16,20" ViewChanged="OnRailScrolled"
+        <ScrollViewer x:Name="RailScroll" Grid.Row="2" Padding="16,0,16,20" ViewChanged="OnRailScrolled"
                       FontFamily="{StaticResource UiFont}" Foreground="{StaticResource InkBrush}">
           <StackPanel>
-            <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.Hint), Mode=OneWay}"
+            <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintOutsideRaid(ViewModel.Hint, ViewModel.InRaid), Mode=OneWay}"
                        Style="{StaticResource NoteText}" Margin="0,16,0,0" />
 
             <!-- PLAN -->
@@ -630,7 +708,9 @@
               <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfTrue(ViewModel.PlanListShown), Mode=OneWay}" Margin="0,0,0,7">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
+                    <!-- A map on screen that none of your quests is on has its card below and no row (PlanCard.CardOnly). -->
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,-1"
+                            Visibility="{x:Bind RowVisibility}"
                             Background="{x:Bind CardBackground}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
                             Tag="{x:Bind NormalizedName}" Click="OnPlanClick" AutomationProperties.Name="{x:Bind MapName}"
                             PointerEntered="OnPlanPointerEntered" PointerExited="OnPlanPointerExited">
@@ -724,7 +804,8 @@
                                       HorizontalContentAlignment="Stretch">
                         <StackPanel Spacing="3">
                           <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
-                          <TextBlock Text="{x:Bind Summary}" Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
+                          <!-- Amber counts, or, muted, that none of your quests is on the map on screen. -->
+                          <TextBlock Text="{x:Bind Summary}" Foreground="{x:Bind SummaryBrush}" FontSize="14" TextWrapping="Wrap"
                                      ToolTipService.ToolTip="Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here." />
                           <ItemsControl ItemsSource="{x:Bind DetailParts}" ItemTemplate="{StaticResource LinePartTemplate}"
                                         ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False" AutomationProperties.Name="{x:Bind Detail}" />
@@ -831,32 +912,12 @@
             </StackPanel>
 
             <!-- RAID: the map's Plan card, live. The same header and COMPLETE / PROGRESS / BRING; each quest carries its
-                 objectives here, nearest first, and the quests are ordered by their nearest objective. -->
+                 objectives here, nearest first, and the quests are ordered by their nearest objective. The card's head
+                 (name, side, the raid's time) stands above, outside what scrolls; this is the rest of it, open at its top
+                 (the gap under the clock is the head's, so its rule's ticks keep clear of the edge it gets when scrolled). -->
             <StackPanel Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
-              <TextBlock Style="{StaticResource EyebrowText}" Text="THIS RAID" Margin="0,18,0,6" />
-              <Border Padding="14,12" Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1">
+              <Border Padding="14,0,14,12" Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1,0,1,1">
                 <StackPanel Spacing="3">
-                  <Grid>
-                    <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
-                    <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
-                               Visibility="{x:Bind ShownIfNot(ViewModel.SideSwitchable), Mode=OneWay}"
-                               ToolTipService.ToolTip="The side you play this raid, from the game's log" />
-                    <!-- A raid hosted on your own machine (PvE can be) looks the same in the log for a PMC and a
-                         Scav: then the tag is a switch. -->
-                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6,1" Click="OnSideClick"
-                            Visibility="{x:Bind ShownIfTrue(ViewModel.SideSwitchable), Mode=OneWay}"
-                            ToolTipService.ToolTip="Raid hosted on your PC: the log doesn't say your side. Click to switch PMC / Scav.">
-                      <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" />
-                        <FontIcon Glyph="&#xE8AB;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
-                      </StackPanel>
-                    </Button>
-                  </Grid>
-                  <!-- How long the raid still runs: what one looks for in a raid, so it is the card's largest figure,
-                       right under the map's name, over a rule of the raid's length (owner, 2026-10-04: "This is crucial
-                       information"; 2026-10-05: "should be more visible ... a prominent item in the UI"). It moves only
-                       when its minute changes (Controls.RaidClock, Rules.RaidTime). -->
-                  <controls:RaidClock Reading="{x:Bind ViewModel.RaidClock, Mode=OneWay}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
                              ToolTipService.ToolTip="Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here." />

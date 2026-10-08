@@ -287,6 +287,12 @@ public sealed partial class MainWindow : Window
 
     public Visibility ShownIfSet(object? value) => value is null ? Visibility.Collapsed : Visibility.Visible;
 
+    /// <summary>The rail's hint stands above the raid card's head in a raid (the head stays at the top of the rail and
+    /// the rest of the card scrolls under it), and at the top of what scrolls otherwise.</summary>
+    public Visibility HintInRaid(string? hint, bool inRaid) => inRaid && !string.IsNullOrEmpty(hint) ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility HintOutsideRaid(string? hint, bool inRaid) => !inRaid && !string.IsNullOrEmpty(hint) ? Visibility.Visible : Visibility.Collapsed;
+
     private void OnWikiMapClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.map", ("url", ViewModel.WikiMap?.ToString()));
 
     /// <summary>Shturmap's licence and the third-party ones a published build carries (eng\notices.ps1).</summary>
@@ -593,22 +599,23 @@ public sealed partial class MainWindow : Window
     public Visibility ShownUnlessHeldBack(string? text, bool heldBack) =>
         string.IsNullOrEmpty(text) || heldBack ? Visibility.Collapsed : Visibility.Visible;
 
+    // The MAP list (owner, 2026-10-08, "A"; Rules.MapList): the maps with your quests first, in Plan's order with their
+    // counts, then OTHER MAPS; a map's variants are one entry, as Plan counts them. Made anew only when what it says
+    // changes, and never while it is open: new items would close it under the pointer.
     private void UpdatePicker(SessionSnapshot s)
     {
-        if (s.Data is null)
+        if (s.Data is not { } data)
             return;
         _updatingPicker = true;
         try
         {
-            if (ViewModel.MapChoices.Count == 0)
-            {
-                ViewModel.MapChoices = s.Data.Maps.Values
-                    .Where(m => s.Data.DefinitionFor(m.NormalizedName) is not null)
-                    .OrderBy(m => m.Name, StringComparer.CurrentCulture)
-                    .Select(m => new MapChoice(m.NormalizedName, m.Name))
-                    .ToList();
-            }
-            ViewModel.SelectedMap = ViewModel.MapChoices.FirstOrDefault(c => c.NormalizedName == s.Map?.NormalizedName);
+            string NameOf(string id) => data.Maps.TryGetValue(id, out var map) ? map.NormalizedName : id;
+            var list = MapList.Build(
+                Planning.Maps(data).Select(m => new MapList.Map(NameOf(m.Id), m.Name, m.MapIds.Select(NameOf).ToList())),
+                s.AllPlans.Select(p => (p.NormalizedName, ShortSummary(p.Finish.Count, p.Progress.Count))));
+            if (!MapList.Same(ViewModel.MapChoices, list) && !MapPicker.IsDropDownOpen)
+                ViewModel.MapChoices = list;
+            ViewModel.SelectedMap = MapList.For(ViewModel.MapChoices, s.Map?.NormalizedName);
         }
         finally
         {
@@ -624,14 +631,19 @@ public sealed partial class MainWindow : Window
         // REPLAY on that line while the raid just over can be replayed (until the next one loads).
         vm.ReplayOffered = s.Replay is { Plays: true } && s.Raid.Phase == RaidPhase.Menu;
 
-        // The card for the map on screen is open; if that map isn't suggested, the best one is.
-        var openIndex = s.Plan.ToList().FindIndex(p => p.NormalizedName == s.Map?.NormalizedName);
-        if (openIndex < 0)
-            openIndex = 0;
+        // The open card is the map on screen's own (owner, 2026-10-08: the rail follows the map on screen; PlanList.Open):
+        // its row's, or one more after the rows, with a row of its own when your quests have work there and none when
+        // they haven't. Maps go by the name Plan counts them under, so a variant on screen (Night Factory) opens its
+        // map's card. Until then a map that wasn't suggested left the best suggestion's card open.
+        var shownKey = s.Map is null ? null : Planning.PickKey(s.Data, s.Map.NormalizedName);
+        var shownPlan = s.MapPlan is { } mapPlan && mapPlan.NormalizedName == shownKey ? mapPlan : null;
+        var (openIndex, added) = PlanList.Open(s.Plan.Select(p => p.NormalizedName).ToList(), shownKey, shownPlan is not null);
+        IReadOnlyList<MapPlanView> plans = added ? [.. s.Plan, shownPlan!] : s.Plan;
+        bool CardOnly(MapPlanView p, int i) => added && i == plans.Count - 1 && p.Finish.Count + p.Progress.Count == 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
         QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
         // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections).
-        vm.Plans = s.Plan.Select((p, i) =>
+        vm.Plans = plans.Select((p, i) =>
         {
             // Each map has its own picks, in its own colours (owner, 2026-10-04).
             var sections = Planning.Sections(p, s.PicksOn(p.NormalizedName));
@@ -639,7 +651,7 @@ public sealed partial class MainWindow : Window
             return new PlanCard(
                 p.NormalizedName,
                 p.MapName,
-                Summary(p.Finish.Count, p.Progress.Count),
+                CardOnly(p, i) ? $"None of your quests is on {p.MapName}" : Summary(p.Finish.Count, p.Progress.Count),
                 Planning.FactsLine(p),
                 i == openIndex,
                 sections.Finish.Select(q => OnMap(q, p)).ToList(),
@@ -651,10 +663,11 @@ public sealed partial class MainWindow : Window
             {
                 ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
+                CardOnly = CardOnly(p, i),
             };
         }).ToList();
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
-        vm.PlanListShown = PlanList.Shown(s.Plan.Count, s.Plan.ElementAtOrDefault(openIndex)?.NormalizedName, s.Map?.NormalizedName);
+        vm.PlanListShown = PlanList.Shown(vm.Plans.Where(p => !p.CardOnly).Select(p => p.NormalizedName).ToList(), shownKey);
         vm.AnyMap = s.AnyMap.Select(Line).ToList();
     }
 
@@ -2148,7 +2161,19 @@ public sealed partial class MainWindow : Window
 
     private async void OnMapPicked(object sender, SelectionChangedEventArgs e)
     {
-        if (_updatingPicker || ViewModel.SelectedMap is not { } choice || choice.NormalizedName == _snapshot?.Map?.NormalizedName)
+        if (_updatingPicker)
+            return;
+        // OTHER MAPS is a heading, not a map: its item can't be chosen (MapChoiceStyles), and if it ever is, the list
+        // goes back to the map on screen.
+        if (ViewModel.SelectedMap is { IsHeader: true })
+        {
+            _updatingPicker = true;
+            ViewModel.SelectedMap = MapList.For(ViewModel.MapChoices, _snapshot?.Map?.NormalizedName);
+            _updatingPicker = false;
+            return;
+        }
+        // A variant on screen (Night Factory) is its map's entry: choosing that entry again changes nothing.
+        if (ViewModel.SelectedMap is not { } choice || choice.Stands(_snapshot?.Map?.NormalizedName))
             return;
         Study.Ui("map.pick", ("to", choice.NormalizedName), ("how", "picker"));
         await _session.SelectMapAsync(choice.NormalizedName);
@@ -2245,6 +2270,9 @@ public sealed partial class MainWindow : Window
 
     private void OnRailScrolled(object? sender, ScrollViewerViewChangedEventArgs e)
     {
+        // The raid card's head stays while the rest scrolls under it: once anything has gone under, the head closes at
+        // its foot; unscrolled it stays open, so head and body read as one card.
+        RaidHead.BorderThickness = RailScroll.VerticalOffset > 0.5 ? new Thickness(1) : new Thickness(1, 1, 1, 0);
         if (!e.IsIntermediate && sender is ScrollViewer scroll)
             Study.Ui("rail.scroll", ("y", scroll.VerticalOffset), ("of", scroll.ScrollableHeight));
     }

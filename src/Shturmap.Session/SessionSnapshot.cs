@@ -246,6 +246,10 @@ public sealed record SessionSnapshot
     /// <summary>Suggested maps for the next raid, best first (maps with picks first).</summary>
     public IReadOnlyList<MapPlanView> Plan { get; init; } = [];
 
+    /// <summary>Every map with work on it, in <see cref="Plan"/>'s order (its rows are the first of these): the MAP
+    /// list says what each holds (owner, 2026-10-08).</summary>
+    public IReadOnlyList<MapPlanView> AllPlans { get; init; } = [];
+
     /// <summary>The quests picked for the coming raid on the map the rail is about: the raid's map in a raid, the map
     /// shown otherwise (<see cref="QuestPicks"/>; picks are kept per map). The pen picks for this map.</summary>
     public IReadOnlySet<string> Picks { get; init; } = new HashSet<string>();

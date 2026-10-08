@@ -69,6 +69,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private MapIdentity? _lastRaidMap;
     private DateTime? _lastRaidEnded;
     private IReadOnlyList<MapPlanView> _plan = [];
+
+    // Every map with work on it, in the plan's order: the MAP list's counts (owner, 2026-10-08, "A").
+    private IReadOnlyList<MapPlanView> _allPlans = [];
     private IReadOnlyList<PlanQuestView> _anyMap = [];
     // Kept raw: a raid replayed at startup ends before the map data has loaded to name it. EndInLog is false for a
     // raid the log never ended: then its length isn't known.
@@ -1727,6 +1730,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _picks.Adopt(_mode, quest => mapsOf.Value.GetValueOrDefault(quest) ?? []);
         }
         _plan = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode));
+        _allPlans = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode), top: int.MaxValue);
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active, _done);
     }
 
@@ -1800,13 +1804,13 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private QuestPicks? _picks;
 
     // Picks are kept per map (owner, 2026-10-04). The map the pen picks for and CLEAR PICKS clears is the one the
-    // rail's quests are of: in a raid the raid's map; otherwise the map whose card is open in Plan, which is the map
-    // shown or, when that one isn't among the suggested maps, the best of them (as the window opens it).
+    // rail's quests are of: in a raid the raid's map; otherwise the map whose card is open in Plan, which is the map on
+    // screen (owner, 2026-10-08: the rail follows the map on screen; until then, when that map wasn't among the
+    // suggested ones, the best of them, whose card the window opened instead).
     private string? PickMap =>
         ShownRaid.Phase != RaidPhase.Menu ? (_raidMap is null ? null : PickKeyOf(_raidMap))
         : _map is null ? _plan.FirstOrDefault()?.NormalizedName
-        : _plan.Count == 0 || _plan.Any(p => p.NormalizedName == _map.NormalizedName) ? PickKeyOf(_map)
-        : _plan[0].NormalizedName;
+        : PickKeyOf(_map);
 
     private string PickKeyOf(MapIdentity map) => Planning.PickKey(_data, map.NormalizedName);
 
@@ -2024,6 +2028,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             DeleteScreenshots = _deleteScreenshots,
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
+            AllPlans = _allPlans,
             Picks = Picks,
             PickSlots = PickMap is { } pickMap && _picks is not null ? _picks.Slots(_mode, pickMap) : new Dictionary<string, int>(),
             PicksByMap = _picks?.ByMap(_mode) ?? new Dictionary<string, IReadOnlySet<string>>(),

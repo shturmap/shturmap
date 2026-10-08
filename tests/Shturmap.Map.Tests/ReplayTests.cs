@@ -37,14 +37,14 @@ public class ReplayTests
     }
 
     [Fact]
-    public void The_raid_plays_in_seven_and_a_half_seconds_whatever_its_length()
+    public void The_raid_plays_in_eleven_seconds_whatever_its_length()
     {
         Assert.Equal(0, ReplayTiming.MinuteAt(TimeSpan.FromSeconds(-1), 33));
-        Assert.Equal(16.5, ReplayTiming.MinuteAt(TimeSpan.FromSeconds(3.75), 33), 6);
+        Assert.Equal(16.5, ReplayTiming.MinuteAt(TimeSpan.FromSeconds(5.5), 33), 6);
         Assert.Equal(33, ReplayTiming.MinuteAt(TimeSpan.FromSeconds(20), 33));
-        Assert.Equal(7.5 / 40, ReplayTiming.SecondsPerMinute(40), 6);
-        // Entrance, the band going down, the raid, the hold, the fade: about 12 s in all.
-        Assert.InRange(ReplayTiming.Total.TotalSeconds, 12, 13);
+        Assert.Equal(11.0 / 40, ReplayTiming.SecondsPerMinute(40), 6);
+        // Entrance, the band going down, the raid, the hold, the fade: about 17 s in all (owner, 2026-10-08: longer).
+        Assert.InRange(ReplayTiming.Total.TotalSeconds, 17, 18);
     }
 
     [Fact]

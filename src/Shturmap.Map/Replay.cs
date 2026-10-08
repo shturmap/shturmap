@@ -46,7 +46,8 @@ public sealed record RaidReplay(string MapNormalizedName, string MapName, IReadO
 
 /// <summary>
 /// The replay's timing in the RAID OVER cue: the cue enters as every cue does, its band goes down to the map's foot and
-/// becomes the timeline, the raid plays in <see cref="Play"/>, holds on its end, and fades. About 12 s in all.
+/// becomes the timeline, the raid plays in <see cref="Play"/>, holds on its end, and fades. About 17 s in all (owner,
+/// 2026-10-08: "can easily be a bit longer"; until then 7.5 s of play and 2 s of hold, about 12.7 s).
 /// </summary>
 public static class ReplayTiming
 {
@@ -57,10 +58,10 @@ public static class ReplayTiming
     public static readonly TimeSpan Down = TimeSpan.FromSeconds(1.0);
 
     /// <summary>The whole raid, whatever its length.</summary>
-    public static readonly TimeSpan Play = TimeSpan.FromSeconds(7.5);
+    public static readonly TimeSpan Play = TimeSpan.FromSeconds(11);
 
     /// <summary>The end stays up.</summary>
-    public static readonly TimeSpan Hold = TimeSpan.FromSeconds(2.0);
+    public static readonly TimeSpan Hold = TimeSpan.FromSeconds(3.0);
 
     /// <summary>Then it fades.</summary>
     public static readonly TimeSpan Fade = TimeSpan.FromSeconds(0.6);

@@ -487,7 +487,7 @@ a dark collar (see "Visual language"). Spacing in the app steps 2–3 px inside 
 between groups, 20 px above a section label; the rail is 384 px, the status bar 40 px. The website lays out on a 96 px
 grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps from 8 to 56 px.
 
-**Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 12.7 s
+**Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 17 s
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
 position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; the raid card's time
@@ -744,6 +744,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   last fix trim. At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
   one trims), three squares and the buttons; outside a raid the words fit.
 - **Rail** (left, 384 px), content by state:
+  - *The MAP list* at the top, in every state (owner, 2026-10-08: "there is no way of selecting maps at the moment
+    where you do not have quests"; from the maps panel, "A"). The list held every map already, but in the usage log
+    (1 to 8 October) all 88 map picks went through Plan's rows and none through it, and after a pick of a map without
+    quests the rail stayed on the best suggestion, so nothing in it was about the map on screen. Now, open, it says what
+    each map holds: the maps with your quests first, in Plan's order, each with its row's counts at the right in amber
+    ("Complete 2 · progress 1"), then a hairline and OTHER MAPS (a heading, not a choice), the rest by name. A map's
+    variants drawn with the same artwork are one entry, as Plan counts them (Night Factory is Factory, Ground Zero 21+
+    is Ground Zero; until then 17 entries, now 13); a variant on screen shows its map's entry. Closed, it shows the map
+    on screen with its counts. It is made anew only when what it says changes, and not while it is open
+    (`Rules.MapList`, `SessionSnapshot.AllPlans`). Of the panel's other ways, the other maps by name under Plan's rows
+    (B), every map as a folded row (C) and every map by name in place of the list (D) were not taken.
   - *What's New* (owner, 2026-10-07: "how to inform the user about news and changes in the app ... ideally accompanied
     with screenshots"; from two panels, "C", then "Whats new: A"). A window was ruled out (principle 3), and so were
     screenshots bundled in a build (§3: map artwork, renders, portraits and icons) and pictures from the website (a new
@@ -772,7 +783,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     COMPLETE, PROGRESS and BRING (keys, items to bring). A row of the list is the map's name and its counts
     ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map that is
     on screen there is no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps'
-    folded cards sat under it, below the fold). Each quest row in the card is the quest's name, then a quiet line of what it asks on
+    folded cards sat under it, below the fold). **The open card is the map on screen's** (owner, 2026-10-08, with the
+    MAP list's "A"; `Rules.PlanList.Open`): its row's card when it is suggested; when it isn't, its card comes after
+    the rows, with a row of its own, marked, when your quests have work there but rank below the four, and with no row
+    when none is there: then the card is the map's name, "None of your quests is on Factory" in muted ink, and its raid
+    length and bosses (`PlanCard.CardOnly`). Only with no map on screen yet is it the best suggestion's. Until then a
+    map that wasn't suggested left the best suggestion's card open and its row marked. The pen and CLEAR PICKS act on
+    the open card's map, so on the map on screen. Each quest row in the card is the quest's name, then a quiet line of what it asks on
     that map in a few words, at most two lines and then "…" ("Ballet Lover" over "Find balletmeister's apartment ·
     Survive and extract"; see §5, "Quest synopsis"). The raid card keeps names only: its objective lines already
     say what to do. COMPLETE and PROGRESS are each in effort order, with a thin hairline where a later group starts
@@ -815,6 +832,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     length it says "47 min in · past the raid's 40 min", never a time left below one; a Scav, who joins a raid
     under way, gets "7 min in · time left not known"; a map without a raid length in the data gets the time in
     alone (`Rules.RaidTime`). While the raid loads, "40 min raid" stands with the bosses, as in Plan.)
+    **The card's head stays at the top of the rail** (owner, 2026-10-08: "the remaining time is crucial information
+    and when scrolling down in the quest window it gets pushed outside of view. It should always stay on top"): THIS
+    RAID, the map's name with the side, and the readout stand under the MAP list, outside what scrolls, and the rest of
+    the card scrolls under them. The card is drawn in two parts that meet without a seam, the head open at its foot and
+    the body open at its top, so unscrolled it looks as before; once anything has scrolled under it, the head closes at
+    its foot with the card's edge. The rail's hint stands above THIS RAID in a raid. A copy
+    of the readout pinned only once the card has scrolled away was considered and not built: it would cover the top of
+    what scrolls (the ways out ALL 15 ↓ brings up, the row the keys step to), and two clocks would decode each minute.
     **The readout** (owner, 2026-10-05: "The remaining time is a crucial piece of information and should be more
     visible. I would make it a prominent item in the UI and maybe even have a cool animation that is in-line with the
     style of the app. It should not be too crazy though to not steer away the attention through its movement";
@@ -1377,7 +1402,8 @@ spawns below).
     plays it again (the raid's map comes back on screen first) until the next raid loads.
   - *The sequence* (`ReplayTiming`, `MainWindow.Replay`): RAID OVER enters in the middle as every cue does (1.6 s), then
     fades as the band slides up to the map's foot and the view glides to the raid's positions (1 s); the raid plays in
-    7.5 s whatever its length, holds 2 s on its end, and fades (0.6 s): about 12.7 s, no clicks. The band stands 46 DIP
+    11 s whatever its length, holds 3 s on its end, and fades (0.6 s): about 17 s, no clicks (owner, 2026-10-08: "can
+    easily be a bit longer"; until then 7.5 s of play and a 2 s hold, about 12.7 s). The band stands 46 DIP
     above the map's foot, so the WIKI MAP link and the artwork's credit stay readable, and right of the map's buttons.
     A new cue, a raid loading or a preview ends it. With Windows' animation effects off, and in snapshots, the end shows
     at once for the time it would have played (a snapshot keeps it).

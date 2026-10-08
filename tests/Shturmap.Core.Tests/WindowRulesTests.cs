@@ -109,13 +109,83 @@ public class WindowRulesTests
     // ---- B13: Plan's rows show a map ----
 
     [Theory]
-    [InlineData(0, null, "customs", false)]
-    [InlineData(1, "customs", "customs", false)]   // one suggested map, on screen: its card says it all
-    [InlineData(1, "customs", "woods", true)]      // another map on screen: the row is the way to the suggested one
-    [InlineData(2, "customs", "customs", true)]
-    [InlineData(4, "streets", "woods", true)]
-    public void The_map_list_is_there_whenever_a_row_is_the_way_to_a_map(int maps, string? open, string? shown, bool listed) =>
-        Assert.Equal(listed, PlanList.Shown(maps, open, shown));
+    [InlineData("", "customs", false)]
+    [InlineData("customs", "customs", false)]      // one suggested map, on screen: its card says it all
+    [InlineData("customs", "woods", true)]         // another map on screen: the row is the way to the suggested one
+    [InlineData("customs", "factory", true)]       // a map without quests on screen: its card has no row, Customs' row is the way back
+    [InlineData("customs,woods", "customs", true)]
+    [InlineData("streets,customs,woods,interchange", "woods", true)]
+    [InlineData("customs", null, true)]
+    public void The_map_list_is_there_whenever_a_row_is_the_way_to_a_map(string rows, string? shown, bool listed) =>
+        Assert.Equal(listed, PlanList.Shown(rows.Split(',', StringSplitOptions.RemoveEmptyEntries), shown));
+
+    // ---- 2026-10-08: the rail follows the map on screen ----
+
+    [Theory]
+    [InlineData("streets,customs", "customs", true, 1, false)]   // suggested: its own row's card
+    [InlineData("streets,customs", "shoreline", true, 2, true)]  // planned but not suggested (quests below the rows, or none): its card after the rows
+    [InlineData("streets,customs", "factory", false, -1, false)] // no plan for it: no card, and never another map's
+    [InlineData("streets,customs", null, false, 0, false)]       // nothing on screen yet: the best suggestion's
+    [InlineData("", null, false, -1, false)]
+    [InlineData("", "factory", true, 0, true)]                    // no suggestions at all: still the map on screen's card
+    public void The_open_card_is_the_map_on_screen(string suggested, string? shown, bool planned, int open, bool added)
+    {
+        var result = PlanList.Open(suggested.Split(',', StringSplitOptions.RemoveEmptyEntries), shown, planned);
+        Assert.Equal((open, added), result);
+    }
+
+    // ---- 2026-10-08: the MAP list says what each map holds ----
+
+    private static readonly MapList.Map[] Maps =
+    [
+        new("customs", "Customs", ["customs"]),
+        new("factory", "Factory", ["factory", "night-factory"]),
+        new("interchange", "Interchange", ["interchange"]),
+        new("streets-of-tarkov", "Streets of Tarkov", ["streets-of-tarkov"]),
+        new("woods", "Woods", ["woods"]),
+    ];
+
+    [Fact]
+    public void The_maps_with_quests_come_first_in_plans_order_with_their_counts_then_the_others_by_name()
+    {
+        var list = MapList.Build(Maps, [("woods", "Complete 1 · progress 1"), ("customs", "Complete 2")]);
+        Assert.Equal(["woods", "customs", "", "factory", "interchange", "streets-of-tarkov"], list.Select(c => c.NormalizedName));
+        Assert.Equal(["Complete 1 · progress 1", "Complete 2", "", "", "", ""], list.Select(c => c.Count));
+        var heading = Assert.Single(list, c => c.IsHeader);
+        Assert.Equal("OTHER MAPS", heading.Name);
+        Assert.Equal(2, list.ToList().IndexOf(heading));
+    }
+
+    [Fact]
+    public void A_list_of_one_kind_has_no_heading()
+    {
+        Assert.DoesNotContain(MapList.Build(Maps, []), c => c.IsHeader);
+        Assert.DoesNotContain(MapList.Build(Maps, Maps.Select(m => (m.NormalizedName, "Progress 1"))), c => c.IsHeader);
+        // A map Plan counts that the list doesn't have (no artwork) adds nothing.
+        Assert.Equal(5, MapList.Build(Maps, [("labs", "Complete 1")]).Count);
+    }
+
+    [Fact]
+    public void A_variant_on_screen_is_its_maps_entry_and_the_heading_never_is()
+    {
+        var list = MapList.Build(Maps, [("customs", "Complete 2")]);
+        Assert.Equal("factory", MapList.For(list, "night-factory")?.NormalizedName);
+        Assert.Equal("factory", MapList.For(list, "factory")?.NormalizedName);
+        Assert.Null(MapList.For(list, ""));
+        Assert.Null(MapList.For(list, null));
+        Assert.Null(MapList.For(list, "labs"));
+        Assert.Equal("Factory", list.First(c => c.NormalizedName == "factory").ToString());
+    }
+
+    [Fact]
+    public void The_list_is_made_anew_only_when_what_it_says_changes()
+    {
+        var a = MapList.Build(Maps, [("customs", "Complete 2")]);
+        Assert.True(MapList.Same(a, MapList.Build(Maps, [("customs", "Complete 2")])));
+        Assert.False(MapList.Same(a, MapList.Build(Maps, [("customs", "Complete 3")])));
+        Assert.False(MapList.Same(a, MapList.Build(Maps, [("woods", "Complete 2")])));
+        Assert.False(MapList.Same([], a));
+    }
 
     // ---- C4: the status bar ----
 

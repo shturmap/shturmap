@@ -49,9 +49,11 @@ public static class Planning
     /// from the objectives that are left (<see cref="Open"/>).</param>
     /// <param name="picksByMap">The picks map by map, by <see cref="PickKey"/> (owner, 2026-10-04: picks are kept per
     /// map): where given, each map counts its own picks.</param>
+    /// <param name="top">How many maps without picks (<see cref="RaidPlanner.Rank"/>); every map with work on it, in
+    /// the same order, with <see cref="int.MaxValue"/> (the MAP list's counts).</param>
     public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null,
-        IReadOnlySet<string>? done = null, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap = null) =>
-        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), picks: picks,
+        IReadOnlySet<string>? done = null, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap = null, int top = 4) =>
+        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), top: top, picks: picks,
             picksOn: picksByMap is null ? null : map => picksByMap.GetValueOrDefault(NameOf(data, map))).Select(p => ToView(data, p)).ToList();
 
     private static string NameOf(GameData data, PlanMap map) => data.Maps.TryGetValue(map.Id, out var m) ? m.NormalizedName : map.Id;
