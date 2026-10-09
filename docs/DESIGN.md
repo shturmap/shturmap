@@ -1084,6 +1084,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
     chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
     middle of the map above it. Motion: "Design system", *Motion*.
+  - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
+    section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
+    nearest frame on screen and the frame glides to it; a frame left over glides into the new part nearest it, and a
+    new part left over grows out of the frame nearest it, so nothing shrinks into a point while there is a part to go
+    to. A glide starts from where the frames are drawn at that moment, also mid-glide. With no frame on screen the new
+    parts fade in, and a chapter without parts lets the frames fade out under the dim. The dim leaves out the union
+    of the frames, so two that cross while they glide stay clear where they overlap (until then the overlap was dimmed
+    again, the dim's holes being cut even-odd). Parts that touch are one frame (the three buttons).
   - **Examples, never the player's.** What a chapter stages is drawn from the cache by the app's own code, as What's
     New's previews are: no picture, render or video is bundled (§3), and the map's label says "PREVIEW · THE TOUR ·
     CUSTOMS · AN EXAMPLE, NOT YOUR RAID". The example is the same for everyone: Customs, which every player knows, with

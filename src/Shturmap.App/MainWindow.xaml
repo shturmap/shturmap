@@ -1346,6 +1346,8 @@
          and only outside raids; clicks outside its band do nothing (MainWindow.Tour). -->
     <Grid x:Name="TourLayer" Grid.RowSpan="2" Visibility="Collapsed" Background="Transparent" SizeChanged="OnTourLayerSizeChanged">
       <Path x:Name="TourShade" Fill="#DB0B0C0B" IsHitTestVisible="False" />
+      <!-- The same dim over cut-outs that fade in or out (a chapter without parts, or the first with them). -->
+      <Path x:Name="TourVeil" Fill="#DB0B0C0B" IsHitTestVisible="False" />
       <Path x:Name="TourMarks" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" IsHitTestVisible="False" />
       <Canvas x:Name="TourCanvas" IsHitTestVisible="False" />
       <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour). -->

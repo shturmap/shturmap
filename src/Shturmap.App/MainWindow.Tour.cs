@@ -39,6 +39,8 @@ public sealed partial class MainWindow
     private int _tourRun;
     private int _tourHolesRun;
     private List<Rect> _tourHoles = [];
+    // The cut-outs as drawn this moment, mid-glide too: the next move starts from here.
+    private List<Rect> _tourDrawn = [];
     private Func<List<Rect>>? _tourHolesNow;
     private bool _tourCue;
     private DispatcherQueueTimer? _tourTitleTimer;
@@ -116,6 +118,7 @@ public sealed partial class MainWindow
             _tourRestore = _previewing is not null ? _restoreView ?? Map.View : Map.View;
             TourLayer.Visibility = Visibility.Visible;
             _tourHoles = [];
+            _tourDrawn = [];
             TourLayer.Opacity = _tourMotion ? 0 : 1;
             if (_tourMotion)
                 _ = Animate(350, t => TourLayer.Opacity = Math.Max(TourLayer.Opacity, t));
@@ -136,6 +139,7 @@ public sealed partial class MainWindow
         EndTourStage();
         _tourAt = -1;
         _tourHoles = [];
+        _tourDrawn = [];
         _tourHolesNow = null;
         _tourTitleTimer?.Stop();
         Study.Ui("tour.close", ("how", how), ("chapter", at + 1));
@@ -696,79 +700,92 @@ public sealed partial class MainWindow
     private List<Rect> Anchors(Tour.Chapter chapter) =>
         chapter.Anchors.Select(names => names.Select(n => Anchor(n)).FirstOrDefault(r => r is not null)).Where(r => r is not null).Select(r => r!.Value).ToList();
 
-    // The cut-outs glide from where they were to the new parts, eased in and out, the corner marks closing in on them.
+    // The cut-outs move from what is drawn now to the new parts (owner, 2026-10-09: "sometimes they transition into
+    // nothingness, like from section 3 to section 4"): paired by TourFrames.Pairs, each glides to its part, eased in
+    // and out, with the corner marks closing in on it. With nothing drawn the new parts fade in; with no new part the
+    // drawn ones fade out under the dim. Nothing shrinks into a point.
     private void TourHoles(Func<List<Rect>> holes)
     {
-        _tourHolesNow = () => Merged(holes());
+        _tourHolesNow = () => TourFrames.Merged(holes().Select(AsBox)).Select(AsRect).ToList();
         var target = _tourHolesNow();
-        var from = _tourHoles;
+        var from = _tourDrawn.ToList();
         _tourHoles = target;
         var run = ++_tourHolesRun;
-        if (!_tourMotion)
+        TourVeil.Data = null;
+        TourMarks.Opacity = 1;
+        if (!_tourMotion || (from.Count == 0 && target.Count == 0))
         {
             DrawTourShade(target, 1);
             return;
         }
-        static Rect Mid(Rect r) => new(r.X + r.Width / 2, r.Y + r.Height / 2, 0, 0);
-        var n = Math.Max(from.Count, target.Count);
-        var a = Enumerable.Range(0, n).Select(i => i < from.Count ? from[i] : Mid(target[i])).ToList();
-        var b = Enumerable.Range(0, n).Select(i => i < target.Count ? target[i] : Mid(from[i])).ToList();
+        if (from.Count == 0 || target.Count == 0)
+        {
+            // A fade: the parts stay where they are while a veil of the dim over them goes (or comes), and their marks
+            // with it. Leaving, they count as gone at once, so a part that comes meanwhile fades in on its own.
+            var opening = from.Count == 0;
+            var parts = opening ? target : from;
+            DrawTourShade(parts, opening ? 0 : 1);
+            if (!opening)
+                _tourDrawn = [];
+            TourVeil.Data = ShadeGeometry(parts, outer: false);
+            TourVeil.Opacity = opening ? 1 : 0;
+            TourMarks.Opacity = opening ? 0 : 1;
+            _ = Animate(opening ? 450 : 350, t =>
+            {
+                if (run != _tourHolesRun || !TourOpen)
+                    return;
+                var e = 1 - Math.Pow(1 - t, 2);
+                TourVeil.Opacity = opening ? 1 - e : e;
+                TourMarks.Opacity = opening ? e : 1 - e;
+                if (opening)
+                    DrawTourShade(parts, t);
+                if (t < 1)
+                    return;
+                TourVeil.Data = null;
+                TourMarks.Opacity = 1;
+                DrawTourShade(target, 1);
+            });
+            return;
+        }
+        var pairs = TourFrames.Pairs(from.Select(AsBox).ToList(), target.Select(AsBox).ToList());
         _ = Animate(650, t =>
         {
             if (run != _tourHolesRun || !TourOpen)
                 return;
             var e = t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
-            DrawTourShade(a.Select((r, i) => Lerp(r, b[i], e)).ToList(), t);
+            DrawTourShade(t < 1 ? pairs.Select(p => AsRect(TourFrames.Box.Lerp(p.From, p.To, e))).ToList() : target, t);
         });
     }
 
-    // Parts that touch or overlap are one cut-out (the three buttons at the top right): the even-odd dim would fill
-    // their overlap again, and their corner marks would cross.
-    private static List<Rect> Merged(List<Rect> rects)
-    {
-        var merged = rects.ToList();
-        for (var again = true; again;)
-        {
-            again = false;
-            for (var i = 0; i < merged.Count && !again; i++)
-            {
-                for (var j = i + 1; j < merged.Count && !again; j++)
-                {
-                    Rect a = merged[i], b = merged[j];
-                    if (a.X <= b.X + b.Width && b.X <= a.X + a.Width && a.Y <= b.Y + b.Height && b.Y <= a.Y + a.Height)
-                    {
-                        var x = Math.Min(a.X, b.X);
-                        var y = Math.Min(a.Y, b.Y);
-                        merged[i] = new Rect(x, y, Math.Max(a.X + a.Width, b.X + b.Width) - x, Math.Max(a.Y + a.Height, b.Y + b.Height) - y);
-                        merged.RemoveAt(j);
-                        again = true;
-                    }
-                }
-            }
-        }
-        return merged;
-    }
+    private static TourFrames.Box AsBox(Rect r) => new(r.X, r.Y, r.Width, r.Height);
 
-    private static Rect Lerp(Rect a, Rect b, double t) => new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t,
-        Math.Max(0, a.Width + (b.Width - a.Width) * t), Math.Max(0, a.Height + (b.Height - a.Height) * t));
+    private static Rect AsRect(TourFrames.Box b) => new(b.X, b.Y, b.Width, b.Height);
 
-    // The dim with the cut-outs (even-odd: each hole a rectangle inside the whole), and the map sheet's corner marks
-    // around each, closing in on it with a small overshoot as <paramref name="t"/> goes to 1.
+    // The dim with the cut-outs taken out (their union, as pieces that don't overlap: TourFrames.Disjoint), and the map
+    // sheet's corner marks around each cut-out, closing in on it with a small overshoot as <paramref name="t"/> goes to 1.
     private void DrawTourShade(IReadOnlyList<Rect> holes, double t)
     {
         // Everything stays inside the window: a part at its edge (the rail, the map) has its marks clipped there.
         double w = TourLayer.ActualWidth, h = TourLayer.ActualHeight;
-        holes = holes.Select(r => Clip(r, w, h)).ToList();
-        var group = new GeometryGroup { FillRule = FillRule.EvenOdd };
-        group.Children.Add(new RectangleGeometry { Rect = new Rect(0, 0, TourLayer.ActualWidth, TourLayer.ActualHeight) });
-        foreach (var hole in holes.Where(r => r.Width > 0 && r.Height > 0))
-            group.Children.Add(new RectangleGeometry { Rect = hole });
-        TourShade.Data = group;
+        var clipped = holes.Select(r => Clip(r, w, h)).Where(r => r.Width > 0 && r.Height > 0).ToList();
+        _tourDrawn = clipped;
+        TourShade.Data = ShadeGeometry(clipped, outer: true);
         var o = 5 + 14 * Math.Pow(1 - t, 2) - (t > 0.8 ? Math.Sin((t - 0.8) / 0.2 * Math.PI) * 2.5 : 0);
         var marks = new PathGeometry();
-        foreach (var hole in holes.Where(r => r.Width > 12 && r.Height > 12))
+        foreach (var hole in clipped.Where(r => r.Width > 12 && r.Height > 12).Distinct())
             AddCorners(marks, hole, o, w, h);
         TourMarks.Data = marks;
+    }
+
+    // The window less the cut-outs (outer), or the cut-outs alone (the veil that fades them in or out).
+    private Geometry ShadeGeometry(IReadOnlyList<Rect> holes, bool outer)
+    {
+        var group = new GeometryGroup { FillRule = FillRule.EvenOdd };
+        if (outer)
+            group.Children.Add(new RectangleGeometry { Rect = new Rect(0, 0, TourLayer.ActualWidth, TourLayer.ActualHeight) });
+        foreach (var piece in TourFrames.Disjoint(holes.Select(AsBox)))
+            group.Children.Add(new RectangleGeometry { Rect = AsRect(piece) });
+        return group;
     }
 
     private static Rect Clip(Rect r, double w, double h)

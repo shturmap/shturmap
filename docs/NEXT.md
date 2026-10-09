@@ -71,10 +71,10 @@ delta download with the workflow's token, the attestations, and the draft being 
    --signTemplate`), so the signing request has to sit inside the workflow's build, before the Setup is made; to be
    worked out with SignPath's GitHub action. Whether and when SmartScreen stops asking depends on the certificate's
    reputation: check before any text says so. Until it is granted, the README and the website keep "isn't signed".
-5. **VirusTotal**, if wanted: with an API key as an Actions secret, the Release workflow could upload the Setup and
+5. **VirusTotal**: off for now (owner, 2026-10-09: "VirusTotal off for now"). If wanted later: with an API key as an Actions secret, the Release workflow could upload the Setup and
    link the report in the release notes. The free key is for non-commercial use and limited in requests. An unsigned
    installer may draw a few heuristic detections, which would then stand on a public page beside the release.
-6. **Issues on or off.** The release checklist below (item 4) has them off: reports go through the app. On, players
+6. **Issues: on** (owner, 2026-10-09: "Keep github issues on"). What was weighed: The release checklist below (item 4) has them off: reports go through the app. On, players
    could report and read others' reports in public, which some take as a sign of an open project; off keeps one
    route. Related, Scorecard's Security-Policy check: a SECURITY.md saying where to report a vulnerability (GitHub's
    private vulnerability reporting, or the app's Report).
@@ -1258,7 +1258,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 4. **Repository settings and who publishes** (on hold until the release, owner, 2026-10-03). Before the repository
    goes public: turn off GitHub Issues and Discussions (reports go through the app), decide whether releases are
    published by the owner's account or by GitHub Actions, and whether the maintainer's identity is shown on the
-   repository's pages. Decided 2026-10-09: by GitHub Actions, the Release workflow ("2026-10-09: trust", above).
+   repository's pages. Decided 2026-10-09: by GitHub Actions, the Release workflow ("2026-10-09: trust", above);
+   Issues stay on (owner, 2026-10-09: "Keep github issues on"), beside the app's own Report.
 5. **Wording and risk, from the web research of 2026-10-03** (owner: "put points 1–5 on the release checklist";
    DESIGN.md §2 has the findings and rules). Done in the README and DESIGN.md on 2026-10-03; still to do on the
    website (only on the owner's word) and in the release notes (`docs\release-notes\0.2.0.md`):
