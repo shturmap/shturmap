@@ -158,7 +158,7 @@ public sealed partial class MainWindow
             return;
         var item = section.Items[index];
         if (_previewing is null)
-            _restoreView = Map.View;
+            _restoreView = Map.HasView ? Map.View : null;
         _previewing = wanted;
         ViewModel.PreviewText = $"PREVIEW · NEW IN {section.Label} · {Caps.Of(item.Name)}";
         ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";

@@ -240,6 +240,13 @@ public sealed partial class MapView : Grid
     public (Shturmap.Core.Maps.MapPoint Center, double Zoom) View => (_camera.Center, _camera.Zoom);
 
     /// <summary>
+    /// Whether <see cref="View"/> is a view of a map: one is drawn, and fitted. Before that the camera holds its default
+    /// (centre 0, zoom 1), which is nobody's view: a preview that kept it would bring the map back there instead of
+    /// fitting it (review of 2026-10-09: the tour at a first start opened before the map was drawn).
+    /// </summary>
+    public bool HasView => _scene is not null && !_fitPending;
+
+    /// <summary>
     /// Redraws after the scene's markers, player or floor changed. A new position pings; following, the view glides to
     /// it, otherwise it stays where the player put it and says so when the position is out of view.
     /// </summary>

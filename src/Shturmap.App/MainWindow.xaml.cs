@@ -1089,8 +1089,9 @@ public sealed partial class MainWindow : Window
         if (_snapshot is not { Data: { } data } s || data.MapByNormalizedName(normalizedName) is not { } map
             || data.DefinitionFor(normalizedName) is not { } definition || _session.Artwork is null)
             return;
+        // No map drawn yet: nothing to come back to; the map is fitted when the preview ends.
         if (_previewing is null)
-            _restoreView = Map.View;
+            _restoreView = Map.HasView ? Map.View : null;
         _previewing = normalizedName;
         var artwork = await ArtworkFor(definition, map.Name);
         if (_previewing != normalizedName)

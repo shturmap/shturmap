@@ -825,7 +825,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     progresses ("2 OF 5 OBJECTIVES HERE"; §7, "Raid planner"). Muted keeps one meaning in quest rows: an objective
     done after the raid, at a trader. Resting on a map's row for 0.6 s **previews** its map with its quests on it, labelled
     "PREVIEW · CUSTOMS · CLICK ITS ROW TO PLAN IT"; moving to the next row switches at once, leaving puts the
-    shown map back exactly as it was (pan and zoom), and a click on the row keeps it. A raid loading ends a preview.
+    shown map back exactly as it was (pan and zoom; fitted where it wasn't drawn yet, not at the camera's default:
+    review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
@@ -1102,7 +1103,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     up to three of its early quests that have places on the map; a cue it shows says "An example, not your raid.".
     Nothing of the player's changes: no pick, no tick, no setting but the tour's own. NEXT RAID frames the player's own
     rows and lets one preview its map as resting on it does; without rows (no game) it frames the MAP list. When the
-    tour ends, the map on screen is back as it was, view and all.
+    tour ends, the map on screen is back as it was, view and all; at a first start, when the tour opens before any map
+    is drawn, it comes back fitted (review of 2026-10-09: it came back at the camera's default, zoom 1 on the map's
+    origin, from chapter 7 on).
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New

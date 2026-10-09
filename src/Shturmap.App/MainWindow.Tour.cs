@@ -115,7 +115,8 @@ public sealed partial class MainWindow
         if (!TourOpen)
         {
             Study.Ui("tour.open", ("how", how), ("chapter", at + 1));
-            _tourRestore = _previewing is not null ? _restoreView ?? Map.View : Map.View;
+            // Null where no map was drawn yet (a first start): the map then comes back fitted, not at the camera's default.
+            _tourRestore = _previewing is not null ? _restoreView : Map.HasView ? Map.View : null;
             TourLayer.Visibility = Visibility.Visible;
             _tourHoles = [];
             _tourDrawn = [];
@@ -283,7 +284,7 @@ public sealed partial class MainWindow
         if (_previewing is not null)
         {
             _previewTimer?.Stop();
-            _restoreView = _tourRestore ?? _restoreView;
+            _restoreView = _tourRestore;
             EndPreview(restore: true);
         }
     }
@@ -400,7 +401,8 @@ public sealed partial class MainWindow
         if (row.Tag is string name && name != current)
         {
             StartPreview(name);
-            _restoreView = _tourRestore ?? _restoreView;
+            if (_previewing is not null)
+                _restoreView = _tourRestore;
         }
     }
 
@@ -682,7 +684,7 @@ public sealed partial class MainWindow
         var wanted = TourPreviewPrefix + run;
         StopReplay("preview");
         EndWhatsNewPreview();
-        _restoreView = _tourRestore ?? Map.View;
+        _restoreView = _tourRestore;
         _previewing = wanted;
         ViewModel.PreviewText = $"PREVIEW · THE TOUR · {Caps.Of(example.MapName)}";
         ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";
