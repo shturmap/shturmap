@@ -1,0 +1,58 @@
+# OpenSSF Scorecard (owner, 2026-10-09; docs/DESIGN.md §8, "Continuous integration"): checks the repository's own
+# practices (pinned actions, token permissions, branch protection, signed releases, ...) every week and on every push
+# to main, publishes the result for the README's badge (scorecard.dev) and puts the findings in the Security tab.
+# It only publishes for a public repository, and code scanning takes the findings only there on this plan, so the
+# analysis is skipped while the repository is private; the visibility job asks GitHub, since a scheduled run's event
+# says nothing about the repository.
+# When publishing, Scorecard accepts the result only from a job like the one below: on Ubuntu, without env or defaults,
+# with steps from its list of actions (no run steps), the only job with id-token: write. Every action is pinned.
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 5 * * 1'
+  branch_protection_rule:
+
+permissions: read-all
+
+jobs:
+  visibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      public: ${{ steps.repository.outputs.public }}
+    steps:
+      - name: Is the repository public?
+        id: repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "public=$(gh api "repos/$REPOSITORY" --jq '.private == false')" >> "$GITHUB_OUTPUT"
+
+  analysis:
+    needs: visibility
+    if: needs.visibility.outputs.public == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write  # the findings into code scanning
+      id-token: write         # publishing the result, signed with GitHub's OIDC token
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: results.sarif
