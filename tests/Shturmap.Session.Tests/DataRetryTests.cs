@@ -13,6 +13,9 @@ public class DataRetryTests
 {
     private static HttpRequestException Busy() => new("tarkov.dev answered 503", null, HttpStatusCode.ServiceUnavailable);
 
+    // What the loader throws when a sign-in page or a filter's page came in place of the data.
+    private static NotDataException Page() => new(["regular_tasks.json"], new JsonException("'<' is an invalid start of a value."));
+
     private static readonly TimeSpan Short = TimeSpan.FromMilliseconds(30);
 
     // The waits a session asked for, by how many tries in a row had failed.
@@ -52,6 +55,25 @@ public class DataRetryTests
         var unreadable = LoadProblem.Explain(new JsonException("changed"));
         Assert.DoesNotContain("tries again", GameSession.DataNotice(unreadable, TimeSpan.FromMinutes(2)));
         Assert.DoesNotContain("tries again", GameSession.DataNotice(unreadable));
+        Assert.True(GameSession.DataNoticeOffersReport(busy));
+        Assert.True(GameSession.DataNoticeOffersReport(unreadable));
+    }
+
+    [Fact]
+    public void A_page_in_place_of_the_data_is_said_with_the_next_try_and_no_report()
+    {
+        // A report can't change what sends the page (owner, 2026-10-09): the notice says the next try, and only that.
+        var page = LoadProblem.Explain(Page());
+        Assert.Equal(
+            "No game data. tarkov.dev's answer wasn't its data: a sign-in page or a filter in between? Shturmap tries again in 2 minutes.",
+            GameSession.DataNotice(page, TimeSpan.FromMinutes(2)));
+        Assert.Equal(
+            "No game data. tarkov.dev's answer wasn't its data: a sign-in page or a filter in between? Shturmap tries again by itself, at first after 2 minutes, then less often.",
+            GameSession.DataNotice(page));
+        Assert.False(GameSession.DataNoticeOffersReport(page));
+        Assert.Equal(
+            "Showing English: the German texts couldn't be loaded. tarkov.dev's answer wasn't its data: a sign-in page or a filter in between? Shturmap tries again in 2 minutes.",
+            GameSession.LanguageNotice("German", page, TimeSpan.FromMinutes(2)));
     }
 
     [Fact]
@@ -90,6 +112,33 @@ public class DataRetryTests
         rig.Log("Session mode: Regular");
         await rig.Until(s => s.Mode == GameMode.Pvp && s.Data is not null, "the other mode's data");
         Assert.Equal([1, 2, 3, 1], waits.Asked);
+    }
+
+    [Fact]
+    public async Task A_page_in_place_of_the_data_is_tried_again_and_offers_no_report()
+    {
+        var failing = 2;
+        var waits = new Waits();
+        await using var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations)
+        {
+            GivenData = mode => Interlocked.Decrement(ref failing) >= 0 ? throw Page() : SessionRig.Data(mode),
+            RetryWait = waits.Next,
+        });
+        var said = new List<SessionNotice>();
+        rig.Session.Notice += notice =>
+        {
+            lock (said)
+                said.Add(notice);
+        };
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data after two pages in its place");
+        Assert.Equal([1, 2], waits.Asked);
+        lock (said)
+        {
+            var notice = Assert.Single(said, n => n.Text.StartsWith("No game data.", StringComparison.Ordinal));
+            Assert.Contains("a sign-in page or a filter in between?", notice.Text, StringComparison.Ordinal);
+            Assert.False(notice.OffersReport);
+        }
     }
 
     // ---- the game language's texts ----
@@ -151,15 +200,17 @@ public class DataRetryTests
         Stations = new Dictionary<string, string>(),
     };
 
-    [Fact]
-    public async Task Item_sources_that_did_not_load_are_asked_for_again_without_a_restart()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Item_sources_that_did_not_load_are_asked_for_again_without_a_restart(bool page)
     {
         var failing = 2;
         var waits = new Waits();
         await using var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations)
         {
             GivenData = SessionRig.Data,
-            GivenSources = _ => Interlocked.Decrement(ref failing) >= 0 ? throw Busy() : NoSources(),
+            GivenSources = _ => Interlocked.Decrement(ref failing) >= 0 ? throw (page ? Page() : (Exception)Busy()) : NoSources(),
             RetryWait = waits.Next,
         });
         await rig.StartAsync();

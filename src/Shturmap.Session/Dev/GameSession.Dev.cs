@@ -44,7 +44,7 @@ public sealed partial class GameSession
             _sources = null;
             _dataProblem = problem;
             AppLog.Warn($"Developer view: data load failure simulated ({problem.Kind})");
-            Say(DataNotice(problem), 30, offersReport: problem.Transient || problem.Advice == LoadProblem.Report);
+            Say(DataNotice(problem), 30, offersReport: DataNoticeOffersReport(problem));
             RecomputeQuests();
             Publish();
         }

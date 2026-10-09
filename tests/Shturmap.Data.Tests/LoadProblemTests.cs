@@ -94,10 +94,29 @@ public class LoadProblemTests : IDisposable
     [Fact]
     public async Task Data_in_a_new_shape_asks_for_a_report()
     {
+        // JSON, but a task that isn't one. (Until 2026-10-09 this body lacked its last brace: JSON cut off, which is a
+        // page's kind now, below.)
         var problem = await Fails(new FakeTarkovDev(p => p.EndsWith("/tasks", StringComparison.Ordinal)
-            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{ "data": { "tasks": [ "not", "a", "dictionary" ] }""") }
+            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{ "data": { "tasks": { "t1": 5 }, "questItems": {} } }""") }
             : Ok(p)));
-        Assert.Equal(LoadFailure.Unreadable, problem.Kind);
+        Assert.Equal((LoadFailure.Unreadable, false), (problem.Kind, problem.Transient));
         Assert.Equal("tarkov.dev's data has changed in a way Shturmap can't read. Please report it.", problem.Text);
+    }
+
+    // Something between the PC and tarkov.dev answered in its place with 200 (a sign-in page, a network filter's or a
+    // CDN's page), or the body came empty or cut off: that says nothing of tarkov.dev's format, so it is tried again
+    // by itself, like a network problem, and asks for no report, which couldn't change it (owner, 2026-10-09).
+    [Theory]
+    [InlineData("<!DOCTYPE html><html><head><title>Wi-Fi</title></head><body>Sign in to the network</body></html>")]
+    [InlineData("")]
+    [InlineData("""{ "data": { "tasks": {""")]
+    public async Task A_page_in_place_of_the_data_is_tried_again_and_asks_for_no_report(string body)
+    {
+        var problem = await Fails(new FakeTarkovDev(p => p.EndsWith("/tasks", StringComparison.Ordinal)
+            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) }
+            : Ok(p)));
+        Assert.Equal((LoadFailure.NotData, null, true), (problem.Kind, problem.Status, problem.Transient));
+        Assert.Equal("tarkov.dev's answer wasn't its data: a sign-in page or a filter in between? Shturmap tries again in a few minutes.", problem.Text);
+        Assert.DoesNotContain("report", problem.Text, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -29,7 +29,8 @@ public sealed class GameDataLoader(CachedHttp http)
         }
         catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
         {
-            ForgetWhatIsNoJson(fetched);
+            if (ForgetWhatIsNoJson(fetched) is { Count: > 0 } forgotten)
+                throw new NotDataException(forgotten, e);
             throw;
         }
     }
@@ -236,7 +237,8 @@ public sealed class GameDataLoader(CachedHttp http)
         }
         catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
         {
-            ForgetWhatIsNoJson(fetched);
+            if (ForgetWhatIsNoJson(fetched) is { Count: > 0 } forgotten)
+                throw new NotDataException(forgotten, e);
             throw;
         }
     }
@@ -338,17 +340,23 @@ public sealed class GameDataLoader(CachedHttp http)
     // A load that couldn't read what it got (review of 2026-10-09). Any answer 200 is saved, also a page a captive
     // portal or a CDN sent in place of the data, or a body cut short; it then failed as unreadable, which isn't tried
     // again, and was read from the cache again at the next start, for as long as it counted as fresh. A file of the
-    // load that isn't JSON at all is forgotten now, so the next try or start downloads it again. One that is JSON,
-    // only not in the shape Shturmap knows (tarkov.dev changed its format), stays: a download would bring the same
-    // again, at every start of every Shturmap, and the saved copy is still revalidated with its ETag. A download that
-    // failed is no file of the load: a good saved copy is never forgotten for a network error.
-    private void ForgetWhatIsNoJson(IEnumerable<Task<CachedResponse>> fetched)
+    // load that isn't JSON at all is forgotten now, so the next try or start downloads it again, and the load fails as
+    // NotData, which the session tries again by itself (owner, 2026-10-09). One that is JSON, only not in the shape
+    // Shturmap knows (tarkov.dev changed its format), stays, and the load stays unreadable: a download would bring the
+    // same again, at every start of every Shturmap, and the saved copy is still revalidated with its ETag. A download
+    // that failed is no file of the load: a good saved copy is never forgotten for a network error. Returns the names
+    // of the files forgotten.
+    private List<string> ForgetWhatIsNoJson(IEnumerable<Task<CachedResponse>> fetched)
     {
+        var forgotten = new List<string>();
         foreach (var response in fetched.Where(t => t.IsCompletedSuccessfully).Select(t => t.Result).DistinctBy(r => r.FilePath))
         {
-            if (!IsJson(response.FilePath))
-                http.Forget(response);
+            if (IsJson(response.FilePath))
+                continue;
+            http.Forget(response);
+            forgotten.Add(Path.GetFileName(response.FilePath));
         }
+        return forgotten;
     }
 
     private static bool IsJson(string path)
