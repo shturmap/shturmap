@@ -212,6 +212,15 @@ public sealed class ReportSender(ReportEndpoint endpoint, HttpClient http, strin
                     ["version"] = version,
                     ["settings"] = new System.Text.Json.Nodes.JsonObject { ["infer_ip"] = "never" },
                 };
+                // And an empty address: a null ip_address is what tells Sentry's Relay not to take one from the
+                // connection. infer_ip alone didn't keep the town out of a report's "User Geography" (owner, 2026-10-09);
+                // the project's scrubbing rule for $user.geo.** is the other half (docs/DESIGN.md §8, "Reports").
+                if (evt["user"] is not System.Text.Json.Nodes.JsonObject user)
+                {
+                    user = new System.Text.Json.Nodes.JsonObject();
+                    evt["user"] = user;
+                }
+                user["ip_address"] = null;
                 payload = Encoding.UTF8.GetBytes(evt.ToJsonString());
                 header["length"] = payload.Length;
             }

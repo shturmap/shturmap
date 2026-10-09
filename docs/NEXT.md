@@ -640,7 +640,10 @@ for the languages to come).
 - **B10. PRIVACY.md and README** still place reports in help, say Sentry keeps country and town (it is told not to),
   and don't say that tarkov.dev's image service sees which icons and map tiles are asked for. Status: done for
   PRIVACY.md (2026-10-04: the feedback button and settings, what Sentry is told, refused reports, a section on
-  downloads). The owner checked a received report in Sentry on 2026-10-09: no address, no location.
+  downloads). The owner checked a received report in Sentry on 2026-10-09: no address, but its "User Geography"
+  held the owner's town. Sentry derives it from the connection with IP storage off; fixed by an empty
+  `user.ip_address` in every report (`ReportSender.Sealed`) and a scrubbing rule for `$user.geo.**` in the project
+  (the owner's to add). Open: a new test report checked for no location, then PRIVACY.md says so.
 - **B14. On the three tile maps the tile requests follow the view**, and with Follow my position on, the view
   follows the player: the image service could tell roughly where on the map the player is, while DESIGN.md §2 says
   no position is sent anywhere. Fix: when such a map opens, fetch the whole map's tiles at the zoom levels used (they
@@ -1236,8 +1239,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    - the release is built with the DSN (`eng\sentry.dsn`, untracked; `eng\release.ps1` warns without it), and
      `Shturmap.exe --send-report "<text>" <folder>` from the release exe opens the Report dialog with the text;
      after a click on Send it says "Sent. Thank you."; the path checked end to end on 2026-10-09 with a developer
-     build carrying the DSN (it sends by itself): "Sent. Thank you.", and in Sentry (environment dev) the report shows
-     no address and no location (owner). Still to do with the first release the workflow builds;
+     build carrying the DSN (it sends by itself): "Sent. Thank you."; in Sentry (environment dev) the report showed no
+     address, but its "User Geography" held a town (see B10). Still to do with the first release the workflow builds;
    - in the Sentry project, IP addresses aren't stored (Settings → Security & Privacy → "Prevent Storing of IP
      Addresses") and the data scrubbers are on; done (owner, 2026-10-09: "Sentry web-ui changes are in");
    - the README and the website point to "Help (?) → Report a problem or idea" (the website only on the owner's

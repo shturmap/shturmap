@@ -300,6 +300,9 @@ public class ReportingTests : IDisposable
         var sdk = JsonDocument.Parse(Assert.Single(items, i => i.Header.GetProperty("type").GetString() == "feedback").Payload)
             .RootElement.GetProperty("sdk");
         Assert.Equal("never", sdk.GetProperty("settings").GetProperty("infer_ip").GetString());
+        // An empty address too: infer_ip alone left the town in a report's "User Geography" (owner, 2026-10-09).
+        var feedbackUser = JsonDocument.Parse(items.Single(i => i.Header.GetProperty("type").GetString() == "feedback").Payload).RootElement.GetProperty("user");
+        Assert.Equal(JsonValueKind.Null, feedbackUser.GetProperty("ip_address").ValueKind);
         Assert.Equal("shturmap", sdk.GetProperty("name").GetString());
         Assert.Equal("0.1.0+abc1234", sdk.GetProperty("version").GetString());
         Assert.Equal(2, items.Count);
@@ -308,6 +311,7 @@ public class ReportingTests : IDisposable
         var crash = Items(ReportSender.Sealed(await Bytes(ReportEnvelopes.Crash(Thrown())), "0.1.0+abc1234"));
         var evt = JsonDocument.Parse(crash[0].Payload).RootElement;
         Assert.Equal("never", evt.GetProperty("sdk").GetProperty("settings").GetProperty("infer_ip").GetString());
+        Assert.Equal(JsonValueKind.Null, evt.GetProperty("user").GetProperty("ip_address").ValueKind);
         Assert.Equal("fatal", evt.GetProperty("level").GetString());
         Assert.Equal("log.txt", crash[1].Header.GetProperty("filename").GetString());
     }

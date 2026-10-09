@@ -2633,6 +2633,13 @@ every issue goes through it, and the app's report is offered beside it.
   DLL carried its PDB path, with the user name in it: `PathMap` in `Directory.Build.props` maps the repository to
   `/_/`. A release build's files were scanned on 2026-10-03 and none holds the user name; scan again after adding a
   package (the release must carry nothing of the developer's machine).
+  **No address and no place.** Sentry sees the sender's internet address as any server does, and derives a town and
+  country from it even with the project's "Prevent Storing of IP Addresses" on (its scrubbing docs; a report's "User
+  Geography" showed the owner's town, 2026-10-09). So every report says `infer_ip: never` in its `sdk` and carries an
+  empty `user.ip_address` (null, which Relay takes as "don't infer"; `ReportSender.Sealed`), and the project gets an
+  Advanced Data Scrubbing rule, [Remove] [Anything] from [`$user.geo.**`], which Sentry documents as the way to drop
+  what it derived (the owner's to add; open in docs/NEXT.md, B10). IP storage is off and the default scrubbers are on
+  (owner, 2026-10-09).
 - **Where to.** The DSN is not in the repository: `eng\release.ps1` and `eng\publish.ps1` pass it from the untracked
   `eng\sentry.dsn` (gitignored) or `SHTURMAP_SENTRY_DSN` (which the Release workflow sets from the `SENTRY_DSN`
   Actions secret) as an assembly attribute. Only `https://…sentry.io` is

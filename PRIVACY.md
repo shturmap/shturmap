@@ -53,7 +53,8 @@ where it is a folder elsewhere and the name of a network PC in a folder path, an
 quest id is cut out. Nothing is sent from memory, no screenshots, no game files, no list of your
 quests, no machine name and no IP address is stored with a report. Sentry (below) sees your internet address
 when a report arrives, as any server does; each report tells it not to take anything from that address, and the
-project is set not to store it: a received report shows no address and no location.
+project is set to store neither the address nor the town and country Sentry would derive from it. [OWNER: add the
+Sentry scrubbing rule for $user.geo.** and confirm a new report shows no location.]
 
 Who receives it
 ---------------
