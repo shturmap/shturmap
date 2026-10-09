@@ -1813,8 +1813,11 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    /// <summary>The version and kind of this build, at the foot of settings.</summary>
-    public string VersionText { get; } = $"Shturmap {GameSession.Version} · {App.BuildKind}";
+    /// <summary>The version, its release's name and the kind of this build, at the foot of settings: "Shturmap
+    /// 0.4.0+d349909 "Praetorian" · installed" (owner, 2026-10-09: named major releases; Rules.WhatsNew.NameOf).</summary>
+    public string VersionText => WhatsNew.NameOf(WhatsNewSections, WhatsNew.VersionOf(GameSession.Version)) is { } name
+        ? $"Shturmap {GameSession.Version} \"{name}\" · {App.BuildKind}"
+        : $"Shturmap {GameSession.Version} · {App.BuildKind}";
 
     private void OnHelpClosed(object sender, object e)
     {

@@ -440,7 +440,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial IReadOnlyList<WhatsNewBlock> WhatsNewBlocks { get; set; } = [];
 
-    /// <summary>Help's link that brings the card back ("WHAT'S NEW IN 0.4.0"), or empty.</summary>
+    /// <summary>Help's link that brings the card back ("WHAT'S NEW IN 0.4.0 · PRAETORIAN"), or empty.</summary>
     [ObservableProperty] public partial string WhatsNewHelp { get; set; } = "";
 
     /// <summary>"LOOKING AT WOODS" while another map than the raid's is on screen in a raid (the MAP list); else empty.</summary>

@@ -33,6 +33,42 @@ public class WhatsNewTests
         Assert.Equal("NEW IN 0.5.0", WhatsNew.Heading(sections[0]));
     }
 
+    // Named major releases (owner, 2026-10-09): the name follows the version in its heading, and a patch release
+    // keeps its line's name. The label stays the version alone: it is what "seen" is saved as.
+    [Fact]
+    public void A_release_line_has_its_name_and_a_patch_keeps_it()
+    {
+        var sections = WhatsNew.Parse("""
+            ## 0.4.0 · Praetorian
+
+            - tour · The tour · Seven short chapters.
+
+            ## 0.4.1
+
+            - replay · Raid replay · After a raid.
+
+            ## 0.3.0
+
+            - clock · Raid time · Large.
+            """);
+        Assert.Equal(["0.4.1", "0.4.0", "0.3.0"], sections.Select(s => s.Label));
+        Assert.Equal(["Praetorian", "Praetorian", null], sections.Select(s => s.Name));
+        Assert.Equal("NEW IN 0.4.0 · PRAETORIAN", WhatsNew.Heading(sections[1]));
+        Assert.Equal("NEW IN 0.4.1 · PRAETORIAN", WhatsNew.Heading(sections[0]));
+        Assert.Equal("NEW IN 0.3.0", WhatsNew.Heading(sections[2]));
+        // The running build's version: a patch or a build with its commit belongs to the line; another line has none.
+        Assert.Equal("Praetorian", WhatsNew.NameOf(sections, WhatsNew.VersionOf("0.4.2+d349909")));
+        Assert.Null(WhatsNew.NameOf(sections, WhatsNew.VersionOf("0.3.0-dev.261009131623")));
+        Assert.Null(WhatsNew.NameOf(sections, WhatsNew.VersionOf("0.5.0")));
+    }
+
+    [Fact]
+    public void The_first_named_release_is_praetorian()
+    {
+        var sections = WhatsNew.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "whats-new.md")));
+        Assert.Equal("Praetorian", WhatsNew.NameOf(sections, new Version(0, 4, 0)));
+    }
+
     [Theory]
     [InlineData("0.4.0", "0.4.0")]
     [InlineData("0.3.0-dev.20261007123456", "0.3.0")]

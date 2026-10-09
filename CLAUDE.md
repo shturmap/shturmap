@@ -67,13 +67,16 @@ Essentials:
   0.3.1) when only small things changed since the last release (fixes, wording, small UI tweaks), the minor number
   (0.3.x → 0.4.0) when something big did (a new feature, a visible redesign); say which and why. Write
   `docs\release-notes\<version>.md` (what Shturmap is, plus what's new since the last release) and the version's
-  section in `docs\whats-new.md` (the What's New card in the app: up to five short lines), commit and push. The
+  section in `docs\whats-new.md` (the What's New card in the app: up to five short lines), commit and push. A release
+  that raises the minor or major number gets a name (owner, 2026-10-09; the first, 0.4.0, is "Praetorian"): ask the
+  owner for it, and write it after the version in the section's heading (`## 0.4.0 · Praetorian`) and in the notes'
+  first line; a patch release keeps its line's name (DESIGN.md §4, *What's New*, "Release names"). The
   owner's go is running the Release workflow (`.github/workflows/release.yml`; owner, 2026-10-09): `gh workflow run
   release.yml` (`-f draft=true` leaves a draft to review on GitHub first), or the Actions tab. On GitHub's runner it
   checks the app's packages, builds with `.\eng\release.ps1` (the DSN from the `SENTRY_DSN` Actions secret), attests
   build provenance for the Setup and packages, then publishes with `.\eng\publish-release.ps1` (a GitHub pre-release
-  "Shturmap <version> (private testing)", with `Shturmap-Setup.exe` and its `.sha256`). Don't publish from the PC:
-  such a release has no provenance, which the README promises from 0.4.0. `.\eng\release.ps1` still builds
+  "Shturmap <version> "<name>" (private testing)", with `Shturmap-Setup.exe` and its `.sha256`). Don't publish from
+  the PC: such a release has no provenance, which the README promises from 0.4.0. `.\eng\release.ps1` still builds
   `artifacts\release` (`Shturmap-Setup.exe`, `packages\`, `app\`; nothing uploaded) on the PC, for tries and update
   tests. Test updates locally with an installed build and `--update-feed <folder>`, never by publishing a test
   release. A download is checked with `gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap` (README,

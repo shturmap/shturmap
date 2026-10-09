@@ -784,7 +784,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     with screenshots"; from two panels, "C", then "Whats new: A"). A window was ruled out (principle 3), and so were
     screenshots bundled in a build (§3: map artwork, renders, portraits and icons) and pictures from the website (a new
     host, §2). So: a card at the top of Plan's rail, under the MAP picker and after the update line, in the panel's
-    colour with a `Line` hairline. NEW IN 0.4.0 in the eyebrow style in amber, × in its corner (`E711`, as on a notice),
+    colour with a `Line` hairline. NEW IN 0.4.0 · PRAETORIAN in the eyebrow style in amber (the version and its
+    release's name, below), × in its corner (`E711`, as on a notice),
     up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
     map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, or a small
     drawing of the raid card's clock. **Pointing at a line previews it** on the map, as resting on a map's row in Plan
@@ -799,10 +800,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     own NEW IN line. A first start (no `help.seen` either) shows none: help opens, and the newest version counts as
     seen. After an update from a version before the card, the newest version only (`Rules.WhatsNew.Due`). Never by
     itself in a snapshot or the demo. **Gone:** with ×, or once the first raid since the update is over; help's WHAT'S
-    NEW IN 0.4.0 brings the newest version's card back. The lines are docs/whats-new.md, built into the app: one section
+    NEW IN 0.4.0 · PRAETORIAN brings the newest version's card back. The lines are docs/whats-new.md, built into the
+    app: one section
     per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words). A line about the tour (`tour`, or `tour:5` for a
     chapter a release changed) previews nothing; a click on it opens the tour there (owner, 2026-10-09, T13; *The tour*).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
+    **Release names** (owner, 2026-10-09: "I would like to have names major releases. The first one would be
+    praetorian"). A release that raises the minor or major number gets a name, the owner's, written after its version
+    in docs/whats-new.md (`## 0.4.0 · Praetorian`); a patch release keeps its line's name (`Rules.WhatsNew.NameOf`).
+    It shows in the card's heading and help's link (in capitals, after the version), in the version line at the foot of
+    settings ("Shturmap 0.4.0+… "Praetorian" · installed"), in the release's title on GitHub (`Shturmap 0.4.0
+    "Praetorian" (private testing)`, `eng\publish-release.ps1`) and the release notes' first line. Not in tags, file
+    names, the installer or the updater: those stay the version alone. The preview label keeps the version only.
   - *Plan*: last raid in one line, with **REPLAY** at its right while the raid can be replayed (the play symbol `E768`
     and the word, in the status words' style, as CLEAR PICKS stands beside NEXT RAID; owner, 2026-10-07: "Replay link:
     ii"; "Map drawing", *The raid replay*); **Next raid**: up to four maps ranked by what can be done there, as a short list

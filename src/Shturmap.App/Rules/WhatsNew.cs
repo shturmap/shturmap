@@ -13,7 +13,9 @@ public static class WhatsNew
     public sealed record Item(string Preview, string Name, string Text);
 
     /// <summary>A version's lines.</summary>
-    public sealed record Section(Version Version, string Label, IReadOnlyList<Item> Items);
+    /// <param name="Label">The version as written ("0.4.0"); what "seen" is saved as.</param>
+    /// <param name="Name">The release's name ("Praetorian"), or null: see <see cref="Parse"/>.</param>
+    public sealed record Section(Version Version, string Label, IReadOnlyList<Item> Items, string? Name = null);
 
     /// <summary>A version says at most this many things: the card stays a glance.</summary>
     public const int MaxItems = 5;
@@ -31,17 +33,22 @@ public static class WhatsNew
     /// </summary>
     public static bool Known(string preview) => Previews.Contains(preview) || Tour.ChapterOf(preview) is not null;
 
-    /// <summary>The sections of docs/whats-new.md, newest first: "## 0.4.0" and its "- preview · Name · Text" lines.</summary>
+    /// <summary>
+    /// The sections of docs/whats-new.md, newest first: "## 0.4.0" and its "- preview · Name · Text" lines. A release
+    /// that raises the minor or major number has a name, the owner's (owner, 2026-10-09: "named major releases", the
+    /// first "Praetorian"), after the version: "## 0.4.0 · Praetorian". A patch release keeps its line's name, so 0.4.1
+    /// is Praetorian too without saying so.
+    /// </summary>
     public static IReadOnlyList<Section> Parse(string markdown)
     {
         var sections = new List<Section>();
-        string? label = null;
+        string? label = null, name = null;
         Version? version = null;
         var items = new List<Item>();
         void Close()
         {
             if (version is not null && items.Count > 0)
-                sections.Add(new Section(version, label!, items.ToList()));
+                sections.Add(new Section(version, label!, items.ToList(), name));
             items.Clear();
         }
         foreach (var raw in markdown.Replace("\r\n", "\n").Split('\n'))
@@ -50,7 +57,9 @@ public static class WhatsNew
             if (line.StartsWith("## ", StringComparison.Ordinal))
             {
                 Close();
-                label = line[3..].Trim();
+                var heading = line[3..].Split(" · ", 2, StringSplitOptions.TrimEntries);
+                label = heading[0];
+                name = heading is [_, { Length: > 0 } given] ? given : null;
                 version = VersionOf(label);
                 continue;
             }
@@ -61,8 +70,16 @@ public static class WhatsNew
                 items.Add(new Item(parts[0], parts[1], parts[2]));
         }
         Close();
-        return sections.OrderByDescending(s => s.Version).ToList();
+        return sections.Select(s => s with { Name = s.Name ?? NameOf(sections, s.Version) }).OrderByDescending(s => s.Version).ToList();
     }
+
+    /// <summary>The name of the release line a version belongs to (0.4.1: the name of 0.4.0), or null.</summary>
+    public static string? NameOf(IReadOnlyList<Section> sections, Version? version) =>
+        version is null ? null
+            : sections.FirstOrDefault(s => s.Name is not null && s.Version.Major == version.Major && s.Version.Minor == version.Minor)?.Name;
+
+    /// <summary>A section's version with its release's name, in capitals as the card and help say it: "0.4.0 · PRAETORIAN".</summary>
+    public static string Tag(Section section) => section.Name is { } name ? $"{section.Label} · {name.ToUpperInvariant()}" : section.Label;
 
     /// <summary>A version as written ("0.4.0", "0.3.0-dev.20261007…": the part before a "-"), or null.</summary>
     public static Version? VersionOf(string? text)
@@ -89,6 +106,6 @@ public static class WhatsNew
         return sections.Where(s => s.Version > last).ToList();
     }
 
-    /// <summary>The words the card heads a section with: "NEW IN 0.4.0".</summary>
-    public static string Heading(Section section) => $"NEW IN {section.Label}";
+    /// <summary>The words the card heads a section with: "NEW IN 0.4.0 · PRAETORIAN".</summary>
+    public static string Heading(Section section) => $"NEW IN {Tag(section)}";
 }

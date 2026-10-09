@@ -21,7 +21,14 @@ $releases = Join-Path $root 'artifacts\release\packages'
 $setup = Join-Path $root 'artifacts\release\Shturmap-Setup.exe'
 $hash = "$setup.sha256"
 $tag = "v$version"
-$name = "Shturmap $version (private testing)"
+# The release line's name, if the owner gave it one: docs\whats-new.md heads its first version with it ("## 0.4.0 -
+# Praetorian", with a middle dot); a patch release keeps it (owner, 2026-10-09: named major releases).
+$line = ([version]$version).ToString(2)
+$dot = [char]0x00B7  # the middle dot, spelled out: Windows PowerShell reads this file as ANSI
+$heading = Get-Content (Join-Path $root 'docs\whats-new.md') -Encoding utf8 |
+  Where-Object { $_ -match "^## $([regex]::Escape($line))\.\d+ $dot (.+)$" } | Select-Object -First 1
+$named = if ($heading -match " $dot (.+)$") { " `"$($Matches[1].Trim())`"" } else { '' }
+$name = "Shturmap $version$named (private testing)"
 
 # Clean and pushed: the tag must point at what is on GitHub, and the build must be that commit.
 $dirty = & $git -C $root status --porcelain

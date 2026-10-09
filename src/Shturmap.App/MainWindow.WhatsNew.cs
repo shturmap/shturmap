@@ -43,7 +43,7 @@ public sealed partial class MainWindow
             return;
         _whatsNewChecked = true;
         var newest = WhatsNewSections.FirstOrDefault();
-        ViewModel.WhatsNewHelp = newest is null ? "" : $"WHAT'S NEW IN {newest.Label}";
+        ViewModel.WhatsNewHelp = newest is null ? "" : $"WHAT'S NEW IN {WhatsNew.Tag(newest)}";
         if (SnapshotMode)
             return;
         var seen = _session.GetSetting(WhatsNewSetting);
