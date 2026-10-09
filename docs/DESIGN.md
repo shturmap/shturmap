@@ -2433,8 +2433,10 @@ within the repeated hour could be told the wrong way round; the map's age tag, t
 "recent" screenshots at a start still take one clock time from another (`FixAge.Of` is there for them).
 
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
-log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
-require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
+log session on disk and followed live; newest wins. A message in a log session that names no mode counts for the
+mode Shturmap is in, live and read back alike (review of 2026-10-09: the backfill left such a session's quests
+out). Prerequisites of active or completed quests that strictly require "complete" are shown as implied, never
+stored. A quest started before the oldest log on disk is not known.
 Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows, or quest states once set by hand;
 they are ignored (and could never reopen a quest the log saw completed). The logs say nothing of single objectives:
 the only word on those is the player's own tick (§4, "Quest cards", *Ticks*), kept apart from the quest states, in

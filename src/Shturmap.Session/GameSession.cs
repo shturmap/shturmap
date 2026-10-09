@@ -1130,8 +1130,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                         {
                             if (e is SessionModeEvent m)
                                 mode = m.Mode;
-                            else if (e is QuestEvent q && mode != GameMode.Unknown)
-                                read.Add(FromLog(mode, q));
+                            // A session whose log names no mode (yet) counts for the mode Shturmap is in, as a quest
+                            // message followed live does (Apply). Its quests used to be left out of the history
+                            // (review of 2026-10-09).
+                            else if (e is QuestEvent q)
+                                read.Add(FromLog(mode == GameMode.Unknown ? _mode : mode, q));
                         }
                         observations.AddRange(read);
                     }
