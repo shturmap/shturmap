@@ -40,7 +40,7 @@ $dsn = @(if ($WithReports) { & (Join-Path $PSScriptRoot 'sentry-dsn.ps1') })
 if ($WithReports -and -not $dsn) { Write-Warning 'No eng\sentry.dsn: this dev build sends no reports.' }
 if (Test-Path $app) { Remove-Item $app -Recurse -Force }
 New-Item -ItemType Directory -Force $feed | Out-Null
-& $dotnet publish $project -c Release -o $app -p:ShturmapDev=true "-p:Version=$version" @dsn
+& $dotnet publish $project -c Release -o $app '-p:ShturmapDev=true' "-p:Version=$version" @dsn
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # What changed: the commits since the last release tag (v*) that this build contains, else the last 50; newest first.

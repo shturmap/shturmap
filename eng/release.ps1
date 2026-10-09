@@ -50,8 +50,10 @@ $dsn = @(& (Join-Path $PSScriptRoot 'sentry-dsn.ps1'))
 if (-not $dsn) { Write-Warning 'No eng\sentry.dsn: this release has no Report button (docs/DESIGN.md §8, "Reports").' }
 
 # The folder, from empty, so nothing of an older build is packed; precompiled, like eng\publish.ps1.
+# Every -p: is quoted: PowerShell 7 (the Release workflow's shell) passes an unquoted -p:Name=value through
+# dotnet.ps1's @args as two arguments, and dotnet takes the second for a project (MSB1008). Windows PowerShell joins them.
 if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
-& $dotnet publish $project -c Release -o $folder -p:PublishReadyToRun=true @dsn
+& $dotnet publish $project -c Release -o $folder '-p:PublishReadyToRun=true' @dsn
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # vpk is a pinned local tool (.config\dotnet-tools.json).
