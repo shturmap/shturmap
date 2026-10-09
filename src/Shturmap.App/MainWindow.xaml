@@ -993,8 +993,10 @@
                       <!-- The game opens only some extracts each raid (owner, 2026-10-04): until a screenshot showed its
                            list, the nearest is named as only that, muted, with how to check; once the list was read,
                            this is the nearest one on it and says so in the way out's colour (owner, 2026-10-05;
-                           Rules.ExitsNote). -->
+                           Rules.ExitsNote). Two lines where the column is narrow (review of 2026-10-09: a wide direction,
+                           "BEHIND-LEFT", cut it off mid-word). -->
                       <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.NearestNote), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
+                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
                                  Foreground="{x:Bind ViewModel.RaidExit.NoteBrush, Mode=OneWay}" HorizontalAlignment="Left" Margin="0,2,0,0"
                                  Visibility="{x:Bind ShownIf(ViewModel.RaidExit.NearestNote), Mode=OneWay}"
                                  ToolTipService.ToolTip="{x:Bind ViewModel.RaidExit.NearestTip, Mode=OneWay}" />
@@ -1029,6 +1031,7 @@
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,6">
                       <TextBlock Text="{x:Bind ViewModel.RaidPlainExit.Name, Mode=OneWay}" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind PlainExitNote}" Style="{StaticResource StatusText}" FontSize="10.5"
+                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
                                  Foreground="{x:Bind ViewModel.RaidPlainExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Left" Margin="0,1,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Padding="10,5,0,6">

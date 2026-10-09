@@ -903,7 +903,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     a smaller row with the nearest extract the list names without "??:??:??" that takes nothing (no item, money,
     flare, climbing gear, switch or second player: an empty `ExtractRules.Needs`), "NOTHING NEEDED · ON YOUR LIST", in
     its kind's colour, with its distance and direction (`Rules.ExitsNote.Plain`). Only once the list was read (nothing
-    is sure to be open before), never a transit, and not where EXIT is that one already. The glance's rows hide with
+    is sure to be open before), never a transit, and not where EXIT is that one already. Both notes take a second line
+    where the direction beside them leaves too little room, with "…" only past that (review of 2026-10-09: a Scav's
+    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
