@@ -83,21 +83,6 @@ public sealed class ScreenshotWatcher : IDisposable
         _rescan = new Timer(_ => Rescan(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 
-    /// <summary>Screenshots already present that were taken within the window, newest first.</summary>
-    public IReadOnlyList<ScreenshotSeen> Recent(TimeSpan window)
-    {
-        if (!Directory.Exists(Folder))
-            return [];
-        // By the time that passed, not by the two clock times, which are an hour apart across a clock change.
-        var now = DateTime.Now;
-        return Directory.EnumerateFiles(Folder)
-            .Select(TryRead)
-            .OfType<ScreenshotSeen>()
-            .Where(s => Shturmap.Core.Logs.WallClock.Elapsed(s.CreatedAt, now) <= window)
-            .OrderByDescending(s => s.CreatedAt)
-            .ToList();
-    }
-
     public void Dispose()
     {
         lock (_gate)

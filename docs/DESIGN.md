@@ -2586,10 +2586,10 @@ mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; 
 the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
 a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
-German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
-that quests and raids won't follow the game, and why. A map's artwork that doesn't download: "No map artwork for
-Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map; a tile render
-that can't be had: "No map render for The Lab: …", the same way.
+German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: the line in place
+of the Plan card says so, for as long as it lasts, and no notice (§4, *No game*). A map's artwork that doesn't
+download: "No map artwork for Customs: couldn't download it; check the internet connection. A 10 m grid stands
+in…", once per map; a tile render that can't be had: "No map render for The Lab: …", the same way.
 
 **Diagnostics** (owner, 2026-10-03). Help ends with quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says

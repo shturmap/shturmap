@@ -428,7 +428,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     public static GameLocations FindAutomatically(ProgressStore store, Func<string?, GameLocations> locate)
     {
         store.RemoveSetting(InstallFolderSetting);
-        return locate(store.GetSetting(InstallFolderSetting));
+        // Nothing is chosen now. (The setting just removed used to be read back here, which could only give null.)
+        return locate(null);
     }
 
     // ---- background work that outlives one failure ----
@@ -587,7 +588,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             if (old is not null)
                 _tailer = null;
             _locations = found;
-            ReportGameFolders(found, notice: false);
+            ReportGameFolders(found);
             if (_env is not null)
                 _settings = new GameSettingsReader(_env).Read(found.SettingsFolder);
             if (say || announce)
@@ -984,10 +985,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
     }
 
-    // Said once at start when the game or its logs aren't found: without them quests and raids can't follow the game.
-    // Logs where the game was found. The rail says it as long as the game or its logs are missing (the no-game line),
-    // so no notice says it a second time; notice: true only for the developer view's old trigger.
-    private void ReportGameFolders(GameLocations found, bool notice = false)
+    // Logs where the game, its logs and its screenshots were found, or that they weren't. The rail says it as long as
+    // the game or its logs are missing (the no-game line), so no notice says it a second time.
+    private void ReportGameFolders(GameLocations found)
     {
         if (found.Install is { } install)
             AppLog.Info($"Game found: {install.Kind} at {install.Root} ({install.Found})");
@@ -1003,13 +1003,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             AppLog.Info(line);
         else
             AppLog.Warn(line);
-
-        if (!notice)
-            return;
-        if (found.Install is null)
-            Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it.", 30, offersReport: true);
-        else if (found.LogsFolder is null)
-            Say("Found the game, but not its Logs folder, so quests and raids won't follow the game until it has run once.", 30);
     }
 
     // Under _gate. Loads the item sources in the background; a load still on its way (or waiting to try again) for
@@ -1693,21 +1686,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     }
 
     // ---- quests ----
-
-    private async Task AddObservationsAsync(IReadOnlyList<QuestObservation> observations)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            _store?.Add(observations);
-            RecomputeQuests();
-            Publish();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
 
     private static QuestObservation FromLog(GameMode mode, QuestEvent q) =>
         new(mode, q.QuestId, QuestProgress.FromLog(q.Status), ObservationSource.Log, q.At, "log:" + q.EventId);
