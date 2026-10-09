@@ -15,7 +15,7 @@ public class TourTests
         - reads · Not a word · before any chapter
 
         ## safe
-        SAFE TO RUN
+        WHAT IT READS
         Reads the game's logs.
         Never touches the game.
         - reads · The game's logs
@@ -35,7 +35,7 @@ public class TourTests
     {
         var chapters = Tour.Parse(Sample);
         Assert.Equal(["safe", "next", "know"], chapters.Select(c => c.Stage));
-        Assert.Equal("SAFE TO RUN", chapters[0].Title);
+        Assert.Equal("WHAT IT READS", chapters[0].Title);
         Assert.Equal(["Reads the game's logs.", "Never touches the game."], chapters[0].Lines);
         Assert.Equal([new Tour.Word("reads", "The game's logs"), new Tour.Word("never", "Touches the game")], chapters[0].Words);
         // A part, and the one framed when it isn't shown.

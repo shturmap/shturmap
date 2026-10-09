@@ -1074,7 +1074,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   bit more flashy with nice animations"; "We need to keep in mind to update the onboarding with future updates"; from
   a panel of four forms and thirteen decisions, all taken as recommended: the briefing (A) told through an example raid
   (B), with first-time lines (E); `MainWindow.Tour`, `Rules.Tour`). Seven chapters over the real window, about a minute
-  and a half: SAFE TO RUN (what is read, what is never done, the risk in the README's words), IT FOLLOWS THE GAME (Plan
+  and a half: WHAT IT READS (what is read, what is never done, the risk in the README's words; review of 2026-10-09:
+  its first title used a word §2 keeps off Shturmap), IT FOLLOWS THE GAME (Plan
   and Raid), NEXT RAID (Plan's rows, one resting under a drawn pointer previews its map), PICK AND POINT (an example
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
