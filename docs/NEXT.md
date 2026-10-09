@@ -3,7 +3,7 @@
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
 read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
 Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) on 2026-10-03. Items 1, 3 and 4 are done
-(2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
+(2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
 ## Designed and built 2026-10-09: the tour, and the story chapters said
@@ -473,7 +473,9 @@ FOLDER, below). Running Shturmap's Setup again repairs it; your data stays."; th
   was rewritten and force-pushed by the owner the same day: no commit holds `tests/fixtures/logs` any more, and a
   check of every commit against the list of the real ids found none. Left for the day the repository goes public:
   GitHub can keep the old commits reachable by their hashes for a while, so ask GitHub's support to remove them, or
-  publish from a fresh repository. Every commit's hash changed with the rewrite.
+  publish from a fresh repository. Every commit's hash changed with the rewrite. Done since by the second way
+  (2026-10-07): the repositories under `shturmap` are new ones that got only the rewritten history, and the old
+  organization was deleted with its repositories, so none of the old commits is in a repository that goes public.
 - **P2. Velopack's updater lists the running processes.** Its `Update.exe` imports `EnumProcesses`, `OpenProcess`,
   `QueryFullProcessImageNameW` and `TerminateProcess` and logs "Checking for running processes" (it closes what runs
   from the install folder, at install, when an update is applied, on RESTART NOW and at uninstall). README and
