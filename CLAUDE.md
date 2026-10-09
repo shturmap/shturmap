@@ -38,7 +38,8 @@ tracked file, a test or fixture, a commit message, release notes, an issue or a 
   report into the repository either.
 - **Links to private workspaces:** no claude.ai links (sessions, artifacts), so commit messages end with the
   `Co-Authored-By` line only, without a `Claude-Session` link.
-- **Copyrighted data:** quest texts, tarkov.dev payloads or Battlestate art (see below).
+- **Copyrighted data:** a quest's full text or a dump of quest texts (the one-line objective samples in tests are the
+  limit, DESIGN.md §3), tarkov.dev payloads or Battlestate art (see below).
 
 Before each commit, read the staged diff (`git diff --cached`) for the list above. `RepositoryScanTests` checks every
 tracked file for token shapes, a Sentry DSN, private keys, claude.ai links, user-folder paths and email addresses,
@@ -92,7 +93,8 @@ Essentials:
   the data, run the audits in both modes (`synopses`, `effort`, `bring`, `handovers`, `spawns`) and the tests against
   the fresh cache, and after a game patch the played-raid steps. It lists what each rule assumes of the data and the
   game, and what has no check yet. Fix drift with a test on made-up ids, update DESIGN.md, and add a line to its log.
-  Never commit quest texts or a dump of them; tests read the local cache.
+  Never commit a quest's full text or a dump; the one-line objective samples in tests are the limit (DESIGN.md §3);
+  tests read the local cache.
 - The website's screenshots and hero clip are re-recorded only when the owner says so (owner, 2026-10-02); remind
   them when a release goes up on GitHub. Then use `tools\make-media.ps1` in `..\shturmap.github.io` (see its
   CLAUDE.md) and go through its hand-check list.

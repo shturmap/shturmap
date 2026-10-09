@@ -256,8 +256,9 @@ quoting it anywhere new.
   is public game data (a quest or trader id in a message's `templateId`, an item template, a trader as the sender);
   every other id is a placeholder (profiles, messages, events, item instances, the stash, raids, the push channel),
   and tokens, session ids, account ids and addresses are masked. `FixtureScrubTests` check the local copies. Quest
-  texts are not committed: the synopsis tests quote a few short objective lines, and the check over all quests
-  reads the user's local tarkov.dev cache.
+  texts are not committed beyond a sample: tests hold up to about seventy one-line objective texts from tarkov.dev,
+  the sample the synopsis rules are built against, never a dump and never a quest's full description (owner,
+  2026-10-09). The check over all quests reads the user's local tarkov.dev cache.
   `tests/fixtures/ocr` is ignored by git: it holds the owner's own screenshots (Tasks screens from the removed OCR
   feature, and since 2026-10-05 raid screenshots with and without the extract list, which `ExitListReaderTests` read
   where a PC has them and skip elsewhere; the same reader is tested everywhere on a list the tests draw themselves).
