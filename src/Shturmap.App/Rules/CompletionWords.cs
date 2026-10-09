@@ -2,8 +2,8 @@ namespace Shturmap.App.Rules;
 
 /// <summary>
 /// What the QUEST COMPLETE cue says (owner, 2026-10-07: "For completed quests, also make a nice animation"; docs/DESIGN.md
-/// §4, principle 11). Quests are handed in a few at a time (the study log of 1–6 October: 21 completions, all in the
-/// menus, most of them two to four within a minute and a half), so the ones that come while the cue is up join it.
+/// §4, principle 11). Quests are handed in a few at a time (a week of the study log: twenty-odd completions, all in
+/// the menus, most of them two to four within a minute and a half), so the ones that come while the cue is up join it.
 /// </summary>
 public static class CompletionWords
 {
