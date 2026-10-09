@@ -8,15 +8,12 @@ using Shturmap.Session;
 
 namespace Shturmap.App.Controls;
 
-/// <summary>The quest card (docs/DESIGN.md §4, "Quest cards"): the same card on hover, held, nested and popped out.</summary>
+/// <summary>The quest card (docs/DESIGN.md §4, "Quest cards"): the same card on hover, held and nested.</summary>
 public sealed partial class QuestCard : UserControl, ICard
 {
     public QuestCard(QuestCardView view)
     {
         InitializeComponent();
-        // Segoe Fluent Icons "OpenInNewWindow": pop out. Not the pushpin, which is the Place quest type (owner,
-        // 2026-10-03: one symbol, one meaning).
-        PinGlyph.Glyph = char.ConvertFromUtf32(0xE8A7);
         Key = new CardKey.Quest(view.QuestId);
         Show(view);
         SetMode(CardMode.Hover);
@@ -30,8 +27,6 @@ public sealed partial class QuestCard : UserControl, ICard
 
     public CardMode Mode { get; private set; } = CardMode.Hover;
 
-    public event Action<QuestCard>? PinClicked;
-
     public void Show(QuestCardView view)
     {
         View = view;
@@ -43,11 +38,7 @@ public sealed partial class QuestCard : UserControl, ICard
         Mode = mode;
         Opacity = mode == CardMode.Hover ? CardLook.HoverOpacity : 1;
         Frame.BorderBrush = (Brush)Application.Current.Resources[mode == CardMode.Held ? "AmberBrush" : "LineStrongBrush"];
-        Frame.BorderThickness = new Thickness(mode == CardMode.Pinned ? 0 : 1);
-        PinButton.Visibility = mode == CardMode.Pinned ? Visibility.Collapsed : Visibility.Visible;
     }
-
-    private void OnPinClick(object sender, RoutedEventArgs e) => PinClicked?.Invoke(this);
 
     private void OnWikiClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.open", ("quest", View.QuestId), ("name", View.Name));
 

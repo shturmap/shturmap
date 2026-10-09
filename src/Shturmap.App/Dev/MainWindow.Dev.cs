@@ -53,7 +53,7 @@ public sealed partial class MainWindow
 
     internal void DevShowReport() => OpenReport(ReportKind.Problem, null, "devview");
 
-    /// <summary>A quest's card held and popped out, as "--show-quest" does (for a script's snapshot).</summary>
+    /// <summary>A quest's card held, as "--show-quest" does (for a script's snapshot).</summary>
     internal void DevShowQuest(string name)
     {
         ShowQuest = name;

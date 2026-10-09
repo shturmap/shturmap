@@ -36,8 +36,6 @@ public sealed partial class MainWindow : Window
     private bool _helpShownOnce;
     private readonly CardStack _cards;
     private MapMarker? _hoveredMarker;
-    private readonly Dictionary<string, QuestWindow> _pinned = [];
-    private bool _pinnedRestored;
     private IReadOnlyList<MapLayer?> _floors = [];
     private string? _floorsFor;
     private int? _floorPick;
@@ -71,9 +69,8 @@ public sealed partial class MainWindow : Window
         Study.Log = session.Study;
         var root = (FrameworkElement)Content;
         StudyAttention(root);
-        _cards = new CardStack(root, CreateCard, () => new Windows.Foundation.Rect(0, 0, root.ActualWidth, root.ActualHeight), besideRoot: false);
-        HookPins(_cards, this);
-        // Rows in any window (this one or a pinned card) open their cards in that window's stack.
+        _cards = new CardStack(root, CreateCard, () => new Windows.Foundation.Rect(0, 0, root.ActualWidth, root.ActualHeight));
+        // Rows open their cards in their window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
         Linked.Left += CardStack.Leave;
@@ -105,12 +102,6 @@ public sealed partial class MainWindow : Window
         {
             StopForExit();
             SavePlace();
-            // The popped-out cards are saved once, as they stand, before they close with this window: their own
-            // closing must not rewrite the list (it would save it empty, or after the session has gone).
-            SavePinned();
-            _closing = true;
-            foreach (var window in _pinned.Values.ToList())
-                window.Close();
         };
 
         _clock = DispatcherQueue.CreateTimer();
@@ -188,7 +179,6 @@ public sealed partial class MainWindow : Window
             // "ahead-left" turns into "NE": in the rail and on the cards.
             UpdateRaidLists(s);
             _cards.Refresh(UpdateCard);
-            RefreshPinned();
         }
         Map.Redraw(); // the player's ring and age tag follow the fix's age
     }
@@ -212,10 +202,7 @@ public sealed partial class MainWindow : Window
         new("+ / −", "Zoom in / out (or mouse wheel)"),
         new("0", "Whole map"),
         new("PGUP / PGDN", "Floor up / down"),
-        new("↓ / ↑", "Step through the rows on the left"),
-        new("ENTER", "On a row: same as a click"),
-        new("P", "On a quest's row: pick / unpick"),
-        new("ESC", "Close cards, let the row go"),
+        new("ESC", "Close cards"),
         new("F1 / ?", "This help"),
         new("CTRL + ,", "Settings"),
         new("MOUSE", "Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it"),
@@ -238,8 +225,9 @@ public sealed partial class MainWindow : Window
     private bool _legendAll;
 
     /// <summary>
-    /// Help lists the symbols on the map shown now; the others wait behind a link (owner, 2026-10-04, from the
-    /// review's C9: every symbol of every map made help 2,350 px tall). With no map up, all of them are listed.
+    /// Help lists the symbols on the map shown now, the twelve most important of them; the rest, and the symbols the
+    /// map doesn't have, wait behind a link (owner, 2026-10-04, from the review's C9: every symbol of every map made
+    /// help 2,350 px tall; 2026-10-09: Streets alone listed 26; Rules.LegendFold). With no map up, all of them count.
     /// Called when help opens, and while it is open when the map changes (help opens by itself at the first start,
     /// before a map is up); the link's state then stays as the player left it.
     /// </summary>
@@ -250,11 +238,14 @@ public sealed partial class MainWindow : Window
             return;
         _legendOn = on;
         LegendHeading.Text = on is null ? "ON THE MAP" : "ON THIS MAP";
-        LegendHere.ItemsSource = _legendRows.Where(r => on?.Contains(r.Symbol) != false).Select(r => r.Row).ToList();
-        var rest = _legendRows.Where(r => on?.Contains(r.Symbol) == false).Select(r => r.Row).ToList();
-        _legendRest = rest.Count;
-        LegendRest.ItemsSource = rest;
-        LegendMore.Visibility = rest.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        var (listed, more, elsewhere) = LegendFold.Split(_legendRows, r => on?.Contains(r.Symbol) != false);
+        LegendHere.ItemsSource = listed.Select(r => r.Row).ToList();
+        LegendRestHere.ItemsSource = more.Select(r => r.Row).ToList();
+        LegendRestHere.Visibility = more.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        LegendElsewhere.ItemsSource = elsewhere.Select(r => r.Row).ToList();
+        LegendElsewhere.Visibility = LegendElsewhereHeading.Visibility = elsewhere.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _legendRest = more.Count + elsewhere.Count;
+        LegendMore.Visibility = _legendRest > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (opened)
             _legendAll = false;
         ShowLegendRest();
@@ -263,8 +254,9 @@ public sealed partial class MainWindow : Window
     private void ShowLegendRest()
     {
         LegendRest.Visibility = _legendAll && _legendRest > 0 ? Visibility.Visible : Visibility.Collapsed;
-        var symbols = _legendRest == 1 ? "1 SYMBOL" : $"{_legendRest} SYMBOLS";
-        LegendMoreText.Text = _legendAll ? $"HIDE THE {symbols} THIS MAP DOESN'T HAVE" : $"SHOW THE {symbols} THIS MAP DOESN'T HAVE";
+        LegendMoreText.Text = _legendAll
+            ? (_legendRest == 1 ? "HIDE 1 SYMBOL" : $"HIDE {_legendRest} SYMBOLS")
+            : (_legendRest == 1 ? "SHOW 1 MORE SYMBOL" : $"SHOW {_legendRest} MORE SYMBOLS");
     }
 
     private void OnLegendMoreClick(object sender, RoutedEventArgs e)
@@ -411,7 +403,7 @@ public sealed partial class MainWindow : Window
     // "Read the extract list from screenshots" in settings (owner, 2026-10-05): the one case where Shturmap opens a
     // screenshot's picture, so its note says what is looked at, and unticking it stops it.
     public string ReadExitsNote { get; } =
-        "Looks at the top right corner of each raid screenshot. If the game's extract list is there (raid start, or O twice), Windows' own text recognition reads which extracts are yours. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
+        "Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
 
     private async void OnReadExitsClick(object sender, RoutedEventArgs e)
     {
@@ -498,8 +490,6 @@ public sealed partial class MainWindow : Window
         LoadFollowOnce();
         UpdateMap(s);
         _cards.Refresh(UpdateCard);
-        RefreshPinned();
-        RestorePinnedOnce(s);
         ShowTourWhenDue(s);
         ShowHelpOnFirstRun(s);
         ShowWhatsNewOnce(s);
@@ -522,8 +512,6 @@ public sealed partial class MainWindow : Window
         // back on the owner's word, with its tooltip saying how it is made; a Scav gets none (Rules.RaidTime).
         var inRaid = s.Raid.Phase == RaidPhase.InRaid;
         var time = Rules.RaidTime.Of(inRaid, s.Raid.Side == RaidSide.Scav, s.Raid.RaidStartedAt, s.RaidInfo?.RaidMinutes ?? 0, DateTime.Now);
-        // A snapshot's or the demo clip's picture must not catch the readout's figure half decoded.
-        Controls.RaidClock.Still = SnapshotMode || DemoMode;
         ViewModel.RaidClock = time;
         var parts = new List<string>();
         // Before the raid runs (it loads) the map's raid length stands in the facts; once it runs, the line above says more.
@@ -1053,6 +1041,24 @@ public sealed partial class MainWindow : Window
 
     private void OnPlanPointerExited(object sender, PointerRoutedEventArgs e) => Preview(null, PreviewEndAfter);
 
+    // The rows of Plan's map list (the tour points at one): the buttons that show a suggested map.
+    private static IEnumerable<Button> MapRows(DependencyObject under)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(under); i++)
+        {
+            var child = VisualTreeHelper.GetChild(under, i);
+            if (child is UIElement { Visibility: Visibility.Collapsed })
+                continue;
+            if (child is Button { Tag: string, DataContext: PlanCard } map)
+            {
+                yield return map;
+                continue;
+            }
+            foreach (var deeper in MapRows(child))
+                yield return deeper;
+        }
+    }
+
     private void Preview(string? map, TimeSpan after)
     {
         _previewWanted = map;
@@ -1236,21 +1242,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // A quest card's pop-out button, in whichever window's stack it opened, turns the card into a window of its own
-    // ("pinned" in the code) where the card was: the card itself closes, so the quest isn't shown twice.
-    private void HookPins(CardStack stack, Window window) => stack.CardOpened += card =>
-    {
-        if (card is QuestCard quest)
-        {
-            quest.PinClicked += c =>
-            {
-                var at = QuestWindow.ScreenPoint(window, stack.PositionOf(c));
-                stack.Close(c);
-                Pin(c.View, at);
-            };
-        }
-    };
-
     /// <summary>"121 m · NE · 3 M UP" for an objective on the shown map, from the last fix; empty without one. The
     /// raid card's style: the figure as it is, the direction and height in capitals (2026-10-09: the card said
     /// "294 m · left · 8 m up" beside the raid card's "LEFT · 8 M UP").</summary>
@@ -1314,10 +1305,9 @@ public sealed partial class MainWindow : Window
     private DispatcherQueueTimer? _nobodyLooking;
 
     // While something is pointed at, the map draws its pulse about 60 times a second. A pointer left resting on a row
-    // when the player turns to the game would keep that up behind the game for the whole raid. So when none of
-    // Shturmap's windows is the active one any more, the pointer's focus goes; moving the pointer onto something
-    // lights it again, active window or not. The short wait lets the focus pass between Shturmap's own windows (the
-    // main one and the popped-out cards): the next one's activation cancels it.
+    // when the player turns to the game would keep that up behind the game for the whole raid. So when Shturmap's
+    // window isn't the active one any more, the pointer's focus goes; moving the pointer onto something lights it
+    // again, active window or not. The short wait lets an activation that follows at once cancel it.
     private void ObserveActivation(Window window) => window.Activated += (_, e) =>
     {
         if (_nobodyLooking is null)
@@ -1420,129 +1410,6 @@ public sealed partial class MainWindow : Window
     }
 
     private async void OnClearPicksClick(object sender, RoutedEventArgs e) => await _session.ClearPicksAsync();
-
-    // ---- pinned cards ----
-
-    // Saved cards that aren't shown now: their quest isn't active in the data shown (the other mode's, after the game
-    // switched between PvE and PvP). They keep their place in the saved list and are back at a start where it is.
-    private readonly Dictionary<string, PinnedCards.Entry> _pinnedWaiting = [];
-    // Windows the program closes itself (the quest done, the mode changed): it has settled the saved list already.
-    private readonly HashSet<QuestWindow> _closedByProgram = [];
-    private bool _closing;
-    private bool _restoringPinned;
-
-    private void Pin(QuestCardView view, PointInt32? at)
-    {
-        if (_pinned.TryGetValue(view.QuestId, out var open))
-        {
-            open.Activate();
-            return;
-        }
-        var window = new QuestWindow(view, this, at, CreateCard);
-        HookPins(window.Stack, window);
-        var pinnedAt = DateTime.Now;
-        Study.Ui("card.pin", ("quest", view.QuestId), ("name", view.Name));
-        window.Closed += (_, _) =>
-        {
-            Study.Ui("pinned.close", ("quest", view.QuestId), ("name", view.Name), ("openS", DateTime.Now - pinnedAt),
-                ("x", window.AppWindow.Position.X), ("y", window.AppWindow.Position.Y));
-            // Closed by the player: the card is gone for good. A close the program made (the quest over, the mode
-            // changed, the main window closing) must not rewrite the list.
-            if (_closedByProgram.Remove(window) || _closing)
-                return;
-            if (_pinned.Remove(window.QuestId))
-                SavePinned();
-        };
-        _pinned[view.QuestId] = window;
-        _pinnedWaiting.Remove(view.QuestId);
-        ObserveActivation(window);
-        window.Activate();
-        SavePinned();
-    }
-
-    private static PinnedCards.Entry EntryOf(QuestWindow window) =>
-        new(window.QuestId, (window.AppWindow.Position.X, window.AppWindow.Position.Y));
-
-    private void SavePinned()
-    {
-        if (SnapshotMode || _restoringPinned)
-            return;
-        _session.SetSetting(PinnedCards.Setting, PinnedCards.Format(_pinned.Values.Select(EntryOf).Concat(_pinnedWaiting.Values)));
-    }
-
-    // Pinned cards come back where they were, as long as their quest is still active. One whose quest isn't active in
-    // the data shown waits in the list; one whose quest is over is forgotten (PinnedCards.For).
-    private void RestorePinnedOnce(SessionSnapshot s)
-    {
-        if (_pinnedRestored || s.Data is null || SnapshotMode)
-            return;
-        _pinnedRestored = true;
-        var saved = PinnedCards.Parse(_session.GetSetting(PinnedCards.Setting));
-        // Saved once at the end: each card's own save would write a list that lacks the ones not yet looked at.
-        _restoringPinned = true;
-        try
-        {
-            foreach (var entry in saved)
-            {
-                var view = BuildCard(entry.QuestId);
-                switch (PinnedCards.For(view?.State))
-                {
-                    case PinnedCards.Fate.Show:
-                        Pin(view!, entry.At is { } p && DisplayArea.GetFromPoint(new PointInt32(p.X + 40, p.Y + 20), DisplayAreaFallback.None) is not null
-                            ? new PointInt32(p.X, p.Y)
-                            : null);
-                        break;
-                    case PinnedCards.Fate.Wait:
-                        _pinnedWaiting[entry.QuestId] = entry;
-                        break;
-                }
-            }
-        }
-        finally
-        {
-            _restoringPinned = false;
-        }
-        if (saved.Count > 0)
-            SavePinned();
-    }
-
-    // Pinned cards follow the session (status, distances in a raid). A finished quest has nothing left to show:
-    // its card closes and is forgotten. A quest that isn't active in the data shown (the other mode's) closes its
-    // card too, but keeps its place in the saved list.
-    private void RefreshPinned()
-    {
-        // No data for a moment (the mode changed, its data is loading): nothing can be said about any quest, so the
-        // cards stay as they are (2026-10-04: they all closed, and the list was saved empty).
-        if (_snapshot?.Data is null)
-            return;
-        var changed = false;
-        foreach (var window in _pinned.Values.ToList())
-        {
-            var view = BuildCard(window.QuestId);
-            var fate = PinnedCards.For(view?.State);
-            if (fate == PinnedCards.Fate.Show)
-            {
-                window.Update(view!);
-                window.Stack.Refresh(UpdateCard);
-                continue;
-            }
-            if (view is { State: QuestState.Completed })
-                ShowNotice($"{view.Name} is complete; its card is closed.");
-            if (fate == PinnedCards.Fate.Wait)
-                _pinnedWaiting[window.QuestId] = EntryOf(window);
-            _pinned.Remove(window.QuestId);
-            _closedByProgram.Add(window);
-            window.Close();
-            changed = true;
-        }
-        foreach (var quest in _pinnedWaiting.Keys.ToList())
-        {
-            if (PinnedCards.For(BuildCard(quest)?.State) == PinnedCards.Fate.Forget)
-                changed |= _pinnedWaiting.Remove(quest);
-        }
-        if (changed)
-            SavePinned();
-    }
 
 
     // ---- the big cue: Shturmap changed its view on its own ----
@@ -1830,7 +1697,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Snapshots render at this multiple of the screen's pixel density (2 for sharp website images).</summary>
     public int SnapshotScale { get; set; } = 1;
 
-    /// <summary>"--show-quest &lt;part of a name&gt;" (snapshots): highlights that quest, holds its card and pins it.</summary>
+    /// <summary>"--show-quest &lt;part of a name&gt;" (snapshots): picks and highlights that quest and holds its card.</summary>
     public string? ShowQuest { get; set; }
 
     private void ShowQuestForSnapshot(SessionSnapshot s)
@@ -1843,8 +1710,8 @@ public sealed partial class MainWindow : Window
             .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).QuestId;
         if (id is null || BuildCard(id) is not { } view)
             return;
-        // Let the rail lay out first, so the highlight lands on real rows. Then: the quest's card, the card of the
-        // first thing it needs (nested), and the quest pinned in a window.
+        // Let the rail lay out first, so the highlight lands on real rows. Then: the quest's card, and the card of the
+        // first thing it needs (nested).
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
             if (_snapshot?.Picks.Contains(id) != true)
@@ -1854,8 +1721,6 @@ public sealed partial class MainWindow : Window
             var item = view.Needs.FirstOrDefault()?.ItemId ?? view.Objectives.FirstOrDefault(o => o.ItemId is not null)?.ItemId;
             if (item is not null)
                 _cards.Open(new CardKey.Item(item), new Windows.Foundation.Rect(372, 330, 8, 8), 1);
-            var origin = QuestWindow.ScreenPoint(this, new Windows.Foundation.Point(((FrameworkElement)Content).ActualWidth - 420, 120));
-            Pin(view, origin);
         });
     }
 
@@ -2123,8 +1988,14 @@ public sealed partial class MainWindow : Window
         }
         void Add(Windows.System.VirtualKey key, Action action) => AddKey(key, false, action);
 
-        // The tour's own keys (MainWindow.Tour): → or Space next, ← back. Only while it is up; nothing else uses them.
-        foreach (var tourKey in new[] { Windows.System.VirtualKey.Right, Windows.System.VirtualKey.Left, Windows.System.VirtualKey.Space })
+        // The tour's own keys (MainWindow.Tour): →, Space or Enter next, ← back. Only while it is up; nothing else uses
+        // them, so with the tour closed they go on to whatever has the focus (a button's Enter). Up and Down do nothing
+        // while it is up: the MAP list, where the window's focus rests at the start, would switch the map under it.
+        foreach (var tourKey in new[]
+        {
+            Windows.System.VirtualKey.Right, Windows.System.VirtualKey.Left, Windows.System.VirtualKey.Space, Windows.System.VirtualKey.Enter,
+            Windows.System.VirtualKey.Up, Windows.System.VirtualKey.Down,
+        })
         {
             var accelerator = new KeyboardAccelerator { Key = tourKey };
             accelerator.Invoked += (_, e) => e.Handled = TourOpen && !ReportOpen && TourKey(tourKey);
@@ -2139,16 +2010,9 @@ public sealed partial class MainWindow : Window
             AddKey((Windows.System.VirtualKey)key, shift, () => ZoomBy(1 / 1.5, "key"));
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
-        // Esc closes the cards and lets the keyboard's row go. It leaves the picks alone: they are the plan for the
-        // coming raids, and a key press that throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR
-        // PICKS is the deliberate way).
-        Add(Windows.System.VirtualKey.Escape, () =>
-        {
-            LeaveKeyRow();
-            _cards.CloseAll();
-        });
-        // Down, Up, Enter and P reach the rail's rows without a pointer (MainWindow.Keyboard.cs).
-        AddRowKeys(root);
+        // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press that
+        // throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way).
+        Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, () => ShowHelp());
@@ -2347,8 +2211,6 @@ public sealed partial class MainWindow : Window
             var cards = _cards.Cards;
             for (var i = 0; i < cards.Count; i++)
                 await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));
-            if (_pinned.Values.FirstOrDefault() is { } pinned)
-                await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
             // A tile render (The Lab, Labyrinth, Icebreaker) loads its tiles for this view first.
             await Map.TilesLoadedAsync(TimeSpan.FromSeconds(20));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);

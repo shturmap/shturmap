@@ -21,9 +21,6 @@ public enum CardMode
 
     /// <summary>Clicked: stays until a click elsewhere, Esc, or another click on its subject.</summary>
     Held,
-
-    /// <summary>Its own window, open until closed.</summary>
-    Pinned,
 }
 
 /// <summary>A card a <see cref="CardStack"/> can show: the quest card or the item card.</summary>

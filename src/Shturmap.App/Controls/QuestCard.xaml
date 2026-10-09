@@ -13,8 +13,8 @@
        Keys, items and quests on it are cards of their own: point at them. -->
   <Border x:Name="Frame" Width="360" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource LineBrush}"
           BorderThickness="1" CornerRadius="0">
-    <!-- A long quest's card (Collector) is taller than the window: the card takes the room there is (CardStack and
-         QuestWindow give it its largest height) and scrolls inside, so UNLOCKS and the wiki link stay in reach. -->
+    <!-- A long quest's card (Collector) is taller than the window: the card takes the room there is (CardStack gives
+         it its largest height) and scrolls inside, so UNLOCKS and the wiki link stay in reach. -->
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
 
       <!-- The whole card is its quest for the pointer, without glowing itself: the header, the gaps between rows,
@@ -43,14 +43,8 @@
             <TextBlock Text="{x:Bind local:Caps.Of(View.Status)}" Style="{StaticResource StatusText}" FontSize="11"
                        Foreground="{x:Bind StatusBrush(View.State)}" TextWrapping="Wrap" Margin="0,2,0,0" />
           </StackPanel>
-          <!-- Two different things: pick the quest for the coming raid (the pen), keep this card as a window (pop out). -->
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top">
-            <controls:KeepToggle QuestId="{x:Bind View.QuestId}" Framed="True" />
-            <Button x:Name="PinButton" Padding="7,5" VerticalAlignment="Top" Click="OnPinClick"
-                    ToolTipService.ToolTip="Pop out as a small window">
-              <FontIcon x:Name="PinGlyph" FontSize="14" />
-            </Button>
-          </StackPanel>
+          <!-- The pen: picks the quest for the coming raid. -->
+          <controls:KeepToggle Grid.Column="2" QuestId="{x:Bind View.QuestId}" Framed="True" />
         </Grid>
 
         <ItemsControl ItemsSource="{x:Bind View.Objectives}">

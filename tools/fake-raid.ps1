@@ -8,7 +8,7 @@ param(
   [Parameter(Mandatory)] [string] $Exe,
   [Parameter(Mandatory)] [string] $Out,
   [int] $SnapshotAfter = 16,
-  # Part of a quest name: highlight it, hold its card and pin it before the snapshot.
+  # Part of a quest name: pick and highlight it, and hold its card, before the snapshot (card.png).
   [string] $ShowQuest,
   # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
   [int] $Tour,

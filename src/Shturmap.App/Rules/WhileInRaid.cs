@@ -14,7 +14,7 @@ public static class WhileInRaid
     /// cards: one held in Plan used to stay over the map through the loading and the whole raid, and one opened
     /// while the raid loaded would stay through the raid. And the help panel, which stays open while another window
     /// has the focus, so it lay over the raid card. A card the player opens during the raid stays as any held card
-    /// does, and popped-out cards are windows of their own.
+    /// does.
     /// </summary>
     public static bool LetsGo(RaidPhase before, RaidPhase now) => now != before && now != RaidPhase.Menu;
 
