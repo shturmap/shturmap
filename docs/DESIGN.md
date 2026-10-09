@@ -562,8 +562,9 @@ No stock Windows look (no Mica, no rounded Fluent controls, no pills).
   under the ring, their middle left open.
 
 Colours and their one meaning each: the token table in "Design system" above (gold for quests, green / teal /
-khaki for extracts by side, violet for transits, red for bosses, sand for the player, cyan for kept or picked
-quests, muted for what happens after the raid).
+khaki for extracts by side, violet for transits, red for bosses, sand for the player, `Pick1` to `Pick8` for the
+picked quests, one each ("Picks", *A colour per pick*), muted for what happens after the raid). Cyan (`Kept`) is
+the dev build's icon only: it was every pick's colour until 2026-10-04.
 
 **One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
 pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
@@ -1152,7 +1153,7 @@ spawns below).
 
   | level | members | treatment |
   | --- | --- | --- |
-  | 1 | the player; the picked quests, the guide line and plate; the raid replay's pen while it plays | own hues (sand, cyan), rings, drawn last, never faded |
+  | 1 | the player; the picked quests, the guide line and plate; the raid replay's pen while it plays | own hues (sand, the picks' colours), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink; the extracts on your list this raid lit, their names in bold |
   | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
   | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
@@ -1280,7 +1281,8 @@ spawns below).
     marker is not highlighted when the quest is highlighted as goal quest"): pointing at a quest, or picking it,
     lights the locks of the keys it needs on that map (its `neededKeys` there and its objectives' own keys, the
     sources BRING's "key for …" reads; `MapContent.QuestKeys`), at any zoom and with their names. A picked quest's
-    doors take the picks' cyan, without the picks' ring, so they read as part of the pick. They are a means, not a
+    doors take its pick's colour (the first pick's, where several need the key), without the picks' ring, so they
+    read as part of the pick. They are a means, not a
     goal: the guide line and NEXT still lead to the quest's own places, never to a door, however near.
   - **Switches**: a power symbol (`E7E8`) with the switch's name ("Med Elevator Power Button", "Alarm Switch",
     "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12. **An extract
@@ -1375,7 +1377,7 @@ spawns below).
   before, 11 px, at every zoom; 65–70 from 1.5 times the zoom that shows the whole map; 60 from 2.5 times. Larger
   names are placed first. Names out of view aren't placed.
 - **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
-  a cyan hairline at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
+  a hairline in that pick's colour at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
   card, `MapRenderer.DistanceText`). **The distance and nothing else** (owner, 2026-10-04: "The 'minutes' numbers
   when showing distances on the map are completely off. Either be precise or scrap them at all"): until then the
   plate added the position's age once it was a minute old ("69 m · 4 MIN"), and minutes beside a distance read as
@@ -1452,8 +1454,8 @@ spawns below).
   the pile with the things' names in the label.
 - **Places out of view.** While quests are picked, or one is pointed at, their places outside the view are shown
   as small chevrons 18 px in from the edge, toward them from the middle of the view, one per direction (places
-  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (cyan when picked,
-  gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
+  whose edge points lie within 56 px merge) with how many lie that way, in the quest's colour (its pick's colour
+  when picked, gold when pointed at). Done objectives don't count. Same vocabulary as the player's edge badge, smaller and
   without a plate: the player is level 1. Nothing is drawn when nothing is highlighted.
 - **The raid replay** (owner, 2026-10-07: "a post-raid view, similar to the one in Arc Raiders ... only the positions
   from the screenshots ... more on the eye-candy side of things ... automatically played after the raid finishes"; from
@@ -1516,15 +1518,15 @@ spawns below).
   hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
   four levels, every symbol on the map has one (the done objective, quest zones, the floor arrow, the guide line
   and its plate, the trail, the edge badge and chevrons, clusters and the sheet were missing; and until the review
-  of 2026-10-04 the gold chevrons of a pointed-at quest, the cyan padlock of a door a pick needs a key for, and the
-  ping of a new position), and each names
+  of 2026-10-04 the gold chevrons of a pointed-at quest, the padlock in a pick's colour of a door it needs a key
+  for, and the ping of a new position), and each names
   shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change, and a line in
   `MapLegend.On`. Help lists the symbols the map on screen has under ON THIS MAP, and the others behind one link,
   "SHOW THE n SYMBOLS THIS MAP DOESN'T HAVE" (owner, 2026-10-04; every symbol of every map made help 2,350 px tall).
   A symbol counts when the scene holds what it stands for (`MapLegend.On`): a padlock when the map has locks, the
   guide line when a pick has a place here and there is a position, the sheet when there is no artwork. What only
-  shows for a moment counts where its cause can occur: the ping wherever there is a position, the cyan chevrons and
-  the cyan padlock where a pick has a place or a door here, the gold chevrons wherever a quest has a place (any of
+  shows for a moment counts where its cause can occur: the ping wherever there is a position, a pick's chevrons and
+  padlock where a pick has a place or a door here, the gold chevrons wherever a quest has a place (any of
   them can be pointed at). The list
   follows the map while help is open; with no map up, all rows stand under ON THE MAP.
 
@@ -1779,13 +1781,15 @@ still only keeps its card open (two clicks, two meanings).
   takes several raids, and a plan that empties itself would have to be made again each time. Esc never touches
   picks (it closes the cards): a key that throws a plan away would be too easy to hit. Only an active quest can be
   picked; a quest whose state the log doesn't tell stays picked.
-- **The look.** Picks have their own colour, cyan (`KeptBrush`, `MapRenderer.Kept`): owner, 2026-10-01, gold among
-  gold didn't stand out; cyan is the one hue nothing else on the map uses, the artwork included, and stays apart
-  from gold with any colour vision. Their rows, and the BRING rows that serve them, keep a cyan tint; on the map
-  their markers turn cyan, at their rest size, inside a steady cyan ring on a dark band that lies under every symbol
+- **The look.** Picks have colours of their own, one per pick ("A colour per pick", below): owner, 2026-10-01, gold
+  among gold didn't stand out. Until 2026-10-04 that was one cyan for every pick (`Kept`, now the dev build's icon
+  only), chosen as the one hue nothing else on the map uses, the artwork included, and apart from gold with any
+  colour vision. Their rows, and the BRING rows that serve them, keep a tint of the pick's colour; on the map their
+  markers take it, at their rest size, inside a steady ring of it on a dark band that lies under every symbol
   (until 2026-10-05 they grew to 14 px, and what was pointed at to 12, over neighbours set apart for 10; "Map
-  drawing", *Symbols that cover each other*), their zones turn cyan, and a dashed cyan line runs from your last fix to the nearest
-  place of any pick, with the distance on its plate (the raid card's NEXT names the same objective). Their places
+  drawing", *Symbols that cover each other*), their zones take it, and a dashed line runs from your last fix to the
+  nearest place of any pick, in that pick's colour, with the distance on its plate (the raid card's NEXT names the
+  same objective). Their places
   out of view get chevrons. Picks hold still: a marker pulsing all raid would be motion at the edge of the
   player's eye; what the pointer is on pulses.
 - **A colour per pick** (owner, 2026-10-04: with several picks "it is then, however, difficult to distinguish on a
@@ -1819,7 +1823,7 @@ still only keeps its card open (two clicks, two meanings).
 - **Nothing else steps back for picks.** Every other quest marker stays at full strength (the owner's "Still it
   should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
   then picks don't step back either: they are the plan for this raid, as much as the ways out.
-- **The rail.** A map's card shows its picks first, as a group of their own headed PICKED (in cyan), then COMPLETE
+- **The rail.** A map's card shows its picks first, as a group of their own headed PICKED (in the headings' grey), then COMPLETE
   and PROGRESS without them, with the effort hairlines drawn anew (`Planning.Sections`). A pick that only
   progresses here keeps its note ("2 of 5 objectives here"). Compared on 2026-10-03 with picks sorted first inside
   COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
@@ -1828,7 +1832,7 @@ still only keeps its card open (two clicks, two meanings).
   before the planner's. That holds whatever the map's rank: every map is ranked before the list is cut, the maps
   with picks all come first (also more than four), and the planner's best fill up to four (`RaidPlanner.Rank`;
   until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
-  shows its picks' glyphs first, in cyan, then a hairline. The raid card starts with PICKED, nearest first, and
+  shows its picks' glyphs first, each in its pick's colour, then a hairline. The raid card starts with PICKED, nearest first, and
   NEXT is the nearest objective among the picks.
 - **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
 - The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
