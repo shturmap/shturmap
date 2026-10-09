@@ -8,3 +8,10 @@ The author of Shturmap has written a statement that names them and keeps it priv
 
 The statement is timestamped with OpenTimestamps. The hash reveals nothing about it; only the statement itself,
 shown when needed, matches it.
+
+On 9 October 2026 the history was rewritten once more, which gave every commit a new hash. A second statement by the
+same author, also private and timestamped, ties the commits the first one names to their new hashes. Its SHA-256:
+
+```
+4bd82fec23ef72151e5490991f21cae6aec3750ebef3d43661a7be614f39e943
+```
