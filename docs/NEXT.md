@@ -52,6 +52,8 @@ Open:
   take. The tour holds them while it is up.
 - A captive portal's page reads as "tarkov.dev's data has changed" and is tried again only at the next try or start;
   it might count as a network problem instead.
+- A map's labels at the window's right edge are still cut in two previews: a Plan row's whole-map preview (the tour's
+  NEXT RAID shows it) and the picked quest's label in PICK AND POINT, beyond the 90 DIP the tour's chapters frame with.
 - The review's proposals, for the owner: a glide to a position out of view after a while without input, Follow on by
   default, items given with a quest, the raid clock from the screenshot name.
 
