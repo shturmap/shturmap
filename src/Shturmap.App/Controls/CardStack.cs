@@ -14,13 +14,12 @@ namespace Shturmap.App.Controls;
 /// on the quest (or on the card) holds it: it turns solid and stays while the pointer is near it, until a click
 /// elsewhere, Esc, another click on the quest, a full rest on something else that opens a card in its place, or the
 /// pointer moving well away from it and from what it was opened from.
-/// One stack per window: the main window, and each pinned card window.
+/// One stack per window (Shturmap has one: popped-out cards were removed on 2026-10-09).
 /// </summary>
 public sealed class CardStack
 {
     // From the window's own lists and the map a card waits longer: the study log had 62 % of those cards closing
-    // within a second, opened by a pointer only passing over a list. Inside cards and pinned windows, pointing is
-    // deliberate.
+    // within a second, opened by a pointer only passing over a list. Inside cards, pointing is deliberate.
     private static readonly TimeSpan ShowFromList = TimeSpan.FromMilliseconds(650);
     private static readonly TimeSpan ShowAfter = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan SwapAfter = TimeSpan.FromMilliseconds(120);
@@ -43,14 +42,10 @@ public sealed class CardStack
         public bool Held => Face.Mode == CardMode.Held;
     }
 
-    /// <summary>"main" or "pinned": which kind of window this stack is in (for the study log).</summary>
-    public string Where => _besideRoot ? "pinned" : "main";
-
     private readonly List<Level> _levels = [];
     private readonly FrameworkElement _root;
     private readonly Func<CardKey, FrameworkElement?> _create;
     private readonly Func<Rect> _space;
-    private readonly bool _besideRoot;
     private readonly DispatcherQueueTimer _show;
     private readonly DispatcherQueueTimer _settle;
 
@@ -68,14 +63,12 @@ public sealed class CardStack
 
     /// <param name="root">The window content; positions are in its coordinates.</param>
     /// <param name="create">A new card (QuestCard or ItemCard) for a key, or null if there is nothing to show.</param>
-    /// <param name="space">Where cards may go, in root coordinates (the window, or the screen around a small window).</param>
-    /// <param name="besideRoot">First cards open beside the whole window (a pinned card) rather than beside the row.</param>
-    public CardStack(FrameworkElement root, Func<CardKey, FrameworkElement?> create, Func<Rect> space, bool besideRoot)
+    /// <param name="space">Where cards may go, in root coordinates (the window).</param>
+    public CardStack(FrameworkElement root, Func<CardKey, FrameworkElement?> create, Func<Rect> space)
     {
         _root = root;
         _create = create;
         _space = space;
-        _besideRoot = besideRoot;
         _show = root.DispatcherQueue.CreateTimer();
         _show.IsRepeating = false;
         _show.Tick += (_, _) => ShowUnlessPassing();
@@ -105,15 +98,11 @@ public sealed class CardStack
             stack.Exit(source);
     }
 
-    /// <summary>A card was created (to hook its pin button, for example).</summary>
+    /// <summary>A card was created (the website demo puts its drawn pointer back on top).</summary>
     public event Action<FrameworkElement>? CardOpened;
 
     /// <summary>The open cards, first to last.</summary>
     public IReadOnlyList<FrameworkElement> Cards => _levels.Select(l => l.Card).ToList();
-
-    /// <summary>The card a pinned window was opened from: where it was, in root coordinates.</summary>
-    public Point PositionOf(FrameworkElement card) =>
-        _levels.FirstOrDefault(l => l.Card == card) is { } level ? new Point(level.Popup.HorizontalOffset, level.Popup.VerticalOffset) : default;
 
     // ---- the pointer ----
 
@@ -146,7 +135,7 @@ public sealed class CardStack
         _pendingAnchor = anchor;
         // Skimming a list swaps an unheld card quickly; a held one gives way only to a full rest on something else.
         _show.Interval = target < _levels.Count && !_levels[target].Held ? SwapAfter
-            : level < 0 && !_besideRoot ? ShowFromList
+            : level < 0 ? ShowFromList
             : ShowAfter;
         // On its way to the card this would replace, the pointer is only passing over: it waits longer.
         _showLooked = null;
@@ -183,7 +172,7 @@ public sealed class CardStack
         {
             if (_levels[target].Held)
             {
-                Study.Ui("card.release", ("card", key.ToString()), ("name", _levels[target].Face.Title), ("level", target), ("window", Where));
+                Study.Ui("card.release", ("card", key.ToString()), ("name", _levels[target].Face.Title), ("level", target));
                 CloseFrom(target);
             }
             else
@@ -236,7 +225,7 @@ public sealed class CardStack
             if (CardReach.Away(p.X, p.Y, Box(Bounds(_levels[i])), Box(_levels[i].Anchor)))
             {
                 Study.Ui("card.release", ("card", _levels[i].Face.Key.ToString()), ("name", _levels[i].Face.Title), ("level", i),
-                    ("window", Where), ("how", "away"));
+                    ("how", "away"));
                 CloseFrom(i);
                 return;
             }
@@ -244,14 +233,6 @@ public sealed class CardStack
     }
 
     public void CloseAll() => CloseFrom(0);
-
-    /// <summary>Closes one card, with everything opened from it (e.g. a card that has just been pinned).</summary>
-    public void Close(FrameworkElement card)
-    {
-        var level = _levels.FindIndex(l => l.Card == card);
-        if (level >= 0)
-            CloseFrom(level);
-    }
 
     /// <summary>Brings open cards up to date; a card whose update says no closes, with everything opened from it.</summary>
     public void Refresh(Func<FrameworkElement, bool> update)
@@ -273,7 +254,7 @@ public sealed class CardStack
         if (face.Mode != CardMode.Hover)
             return;
         face.SetMode(CardMode.Held);
-        Study.Ui("card.hold", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
+        Study.Ui("card.hold", ("card", face.Key.ToString()), ("name", face.Title), ("level", level));
     }
 
     // Keeps held cards, the deepest card the pointer is on, and the card for the source it rests on; closes the rest.
@@ -337,7 +318,7 @@ public sealed class CardStack
             return;
         CloseFrom(_pendingLevel);
         var level = _levels.Count;
-        var popup = new Popup { Child = card, XamlRoot = _root.XamlRoot, ShouldConstrainToRootBounds = !_besideRoot };
+        var popup = new Popup { Child = card, XamlRoot = _root.XamlRoot, ShouldConstrainToRootBounds = true };
         card.PointerEntered += (_, _) =>
         {
             _over = level;
@@ -361,7 +342,7 @@ public sealed class CardStack
         _levels.Add(new Level(popup, card, DateTime.Now, _pendingAnchor));
         CardOpened?.Invoke(card);
         var face = (ICard)card;
-        Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level), ("window", Where));
+        Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level));
 
         // No taller than the room there is: a long quest's card scrolls inside instead of running off the window.
         card.MaxHeight = Math.Max(MinCardHeight, _space().Height - 16);
@@ -374,14 +355,12 @@ public sealed class CardStack
     // In a window too small for it a card still gets this much height.
     private const double MinCardHeight = 160;
 
-    // Beside whatever it opened from: the row (first card in the main window), the window (first card of a pinned
-    // window) or the card it came from. Right if there is room, else left; top-aligned with the row.
+    // Beside whatever it opened from: the row (the first card) or the card it came from. Right if there is room,
+    // else left; top-aligned with the row.
     private void Place(Popup popup, Size size, int level)
     {
         var space = _space();
-        var beside = level > 0 ? Bounds(_levels[level - 1])
-            : _besideRoot ? new Rect(0, 0, _root.ActualWidth, _root.ActualHeight)
-            : _pendingAnchor;
+        var beside = level > 0 ? Bounds(_levels[level - 1]) : _pendingAnchor;
         var x = beside.Right + 8;
         if (x + size.Width > space.Right - 8)
             x = beside.Left - 8 - size.Width;
@@ -399,7 +378,7 @@ public sealed class CardStack
         for (var i = _levels.Count - 1; i >= Math.Max(0, level); i--)
         {
             Study.Ui("card.close", ("card", _levels[i].Face.Key.ToString()), ("name", _levels[i].Face.Title), ("level", i),
-                ("window", Where), ("openS", DateTime.Now - _levels[i].Opened), ("held", _levels[i].Held));
+                ("openS", DateTime.Now - _levels[i].Opened), ("held", _levels[i].Held));
             _levels[i].Popup.IsOpen = false;
             _levels.RemoveAt(i);
         }

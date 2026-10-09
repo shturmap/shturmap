@@ -386,7 +386,7 @@ public static class Linked
             return false;
         if (element.XamlRoot == _keyWindow)
             return true;
-        // Another window's pointer (a popped-out card): it points, and the keyboard's row goes.
+        // Another window's pointer: it points, and the keyboard's row goes.
         DropKeyRow();
         Apply(null);
         return false;
@@ -563,7 +563,7 @@ public static class Linked
             if (_source is { } left && dwell >= TimeSpan.FromMilliseconds(400) && Current is { } focus)
             {
                 Study.Ui("hover", ("quests", focus.Quests.ToList()), ("item", focus.Item), ("marker", focus.Marker), ("objective", focus.Objective), ("s", dwell),
-                    ("where", CardStack.For(left.XamlRoot) is { } stack ? (stack.Contains(left) ? "card" : stack.Where == "pinned" ? "pinned" : "list") : "list"));
+                    ("where", CardStack.For(left.XamlRoot)?.Contains(left) == true ? "card" : "list"));
             }
             _source = top;
             _enteredAt = DateTime.Now;

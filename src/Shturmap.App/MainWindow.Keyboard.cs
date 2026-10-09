@@ -49,7 +49,7 @@ public sealed partial class MainWindow
         Add(Windows.System.VirtualKey.Enter, "Enter", ClickKeyRow);
         Add(Windows.System.VirtualKey.P, "P", PickKeyRow);
         root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(OnPointerMovedOverKeys), handledEventsToo: true);
-        // The pointer pointed at something elsewhere (a map marker, a popped-out card), or nobody is looking.
+        // The pointer pointed at something elsewhere (a map marker), or nobody is looking.
         Linked.KeyRowTaken += ForgetKeyRow;
         // The row's element shows something else now (a snapshot filled it anew): the row is looked for again.
         Linked.KeyRowChanged += FindKeyRowAgain;

@@ -9,7 +9,7 @@ namespace Shturmap.App.Controls;
 /// quest is done or the picks are cleared; several quests can be picked (owner, 2026-10-03). It is its own control so
 /// that keeping a quest lit and keeping its card open are two different clicks (owner, 2026-10-01: one click doing
 /// both was misleading). In rail rows it shows while the quest is pointed at anywhere, or while it is picked; on a
-/// card it is always there, framed like the pop-out button beside it.
+/// card it is always there, framed like a button.
 /// </summary>
 public sealed partial class KeepToggle : Grid
 {

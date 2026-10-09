@@ -36,8 +36,6 @@ public sealed partial class MainWindow : Window
     private bool _helpShownOnce;
     private readonly CardStack _cards;
     private MapMarker? _hoveredMarker;
-    private readonly Dictionary<string, QuestWindow> _pinned = [];
-    private bool _pinnedRestored;
     private IReadOnlyList<MapLayer?> _floors = [];
     private string? _floorsFor;
     private int? _floorPick;
@@ -71,9 +69,8 @@ public sealed partial class MainWindow : Window
         Study.Log = session.Study;
         var root = (FrameworkElement)Content;
         StudyAttention(root);
-        _cards = new CardStack(root, CreateCard, () => new Windows.Foundation.Rect(0, 0, root.ActualWidth, root.ActualHeight), besideRoot: false);
-        HookPins(_cards, this);
-        // Rows in any window (this one or a pinned card) open their cards in that window's stack.
+        _cards = new CardStack(root, CreateCard, () => new Windows.Foundation.Rect(0, 0, root.ActualWidth, root.ActualHeight));
+        // Rows open their cards in their window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
         Linked.Left += CardStack.Leave;
@@ -105,12 +102,6 @@ public sealed partial class MainWindow : Window
         {
             StopForExit();
             SavePlace();
-            // The popped-out cards are saved once, as they stand, before they close with this window: their own
-            // closing must not rewrite the list (it would save it empty, or after the session has gone).
-            SavePinned();
-            _closing = true;
-            foreach (var window in _pinned.Values.ToList())
-                window.Close();
         };
 
         _clock = DispatcherQueue.CreateTimer();
@@ -188,7 +179,6 @@ public sealed partial class MainWindow : Window
             // "ahead-left" turns into "NE": in the rail and on the cards.
             UpdateRaidLists(s);
             _cards.Refresh(UpdateCard);
-            RefreshPinned();
         }
         Map.Redraw(); // the player's ring and age tag follow the fix's age
     }
@@ -498,8 +488,6 @@ public sealed partial class MainWindow : Window
         LoadFollowOnce();
         UpdateMap(s);
         _cards.Refresh(UpdateCard);
-        RefreshPinned();
-        RestorePinnedOnce(s);
         ShowTourWhenDue(s);
         ShowHelpOnFirstRun(s);
         ShowWhatsNewOnce(s);
@@ -1236,21 +1224,6 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // A quest card's pop-out button, in whichever window's stack it opened, turns the card into a window of its own
-    // ("pinned" in the code) where the card was: the card itself closes, so the quest isn't shown twice.
-    private void HookPins(CardStack stack, Window window) => stack.CardOpened += card =>
-    {
-        if (card is QuestCard quest)
-        {
-            quest.PinClicked += c =>
-            {
-                var at = QuestWindow.ScreenPoint(window, stack.PositionOf(c));
-                stack.Close(c);
-                Pin(c.View, at);
-            };
-        }
-    };
-
     /// <summary>"121 m · NE · 3 m up" for an objective on the shown map, from the last fix; empty without one.</summary>
     private string? LiveText(string objectiveId)
     {
@@ -1312,10 +1285,9 @@ public sealed partial class MainWindow : Window
     private DispatcherQueueTimer? _nobodyLooking;
 
     // While something is pointed at, the map draws its pulse about 60 times a second. A pointer left resting on a row
-    // when the player turns to the game would keep that up behind the game for the whole raid. So when none of
-    // Shturmap's windows is the active one any more, the pointer's focus goes; moving the pointer onto something
-    // lights it again, active window or not. The short wait lets the focus pass between Shturmap's own windows (the
-    // main one and the popped-out cards): the next one's activation cancels it.
+    // when the player turns to the game would keep that up behind the game for the whole raid. So when Shturmap's
+    // window isn't the active one any more, the pointer's focus goes; moving the pointer onto something lights it
+    // again, active window or not. The short wait lets an activation that follows at once cancel it.
     private void ObserveActivation(Window window) => window.Activated += (_, e) =>
     {
         if (_nobodyLooking is null)
@@ -1418,129 +1390,6 @@ public sealed partial class MainWindow : Window
     }
 
     private async void OnClearPicksClick(object sender, RoutedEventArgs e) => await _session.ClearPicksAsync();
-
-    // ---- pinned cards ----
-
-    // Saved cards that aren't shown now: their quest isn't active in the data shown (the other mode's, after the game
-    // switched between PvE and PvP). They keep their place in the saved list and are back at a start where it is.
-    private readonly Dictionary<string, PinnedCards.Entry> _pinnedWaiting = [];
-    // Windows the program closes itself (the quest done, the mode changed): it has settled the saved list already.
-    private readonly HashSet<QuestWindow> _closedByProgram = [];
-    private bool _closing;
-    private bool _restoringPinned;
-
-    private void Pin(QuestCardView view, PointInt32? at)
-    {
-        if (_pinned.TryGetValue(view.QuestId, out var open))
-        {
-            open.Activate();
-            return;
-        }
-        var window = new QuestWindow(view, this, at, CreateCard);
-        HookPins(window.Stack, window);
-        var pinnedAt = DateTime.Now;
-        Study.Ui("card.pin", ("quest", view.QuestId), ("name", view.Name));
-        window.Closed += (_, _) =>
-        {
-            Study.Ui("pinned.close", ("quest", view.QuestId), ("name", view.Name), ("openS", DateTime.Now - pinnedAt),
-                ("x", window.AppWindow.Position.X), ("y", window.AppWindow.Position.Y));
-            // Closed by the player: the card is gone for good. A close the program made (the quest over, the mode
-            // changed, the main window closing) must not rewrite the list.
-            if (_closedByProgram.Remove(window) || _closing)
-                return;
-            if (_pinned.Remove(window.QuestId))
-                SavePinned();
-        };
-        _pinned[view.QuestId] = window;
-        _pinnedWaiting.Remove(view.QuestId);
-        ObserveActivation(window);
-        window.Activate();
-        SavePinned();
-    }
-
-    private static PinnedCards.Entry EntryOf(QuestWindow window) =>
-        new(window.QuestId, (window.AppWindow.Position.X, window.AppWindow.Position.Y));
-
-    private void SavePinned()
-    {
-        if (SnapshotMode || _restoringPinned)
-            return;
-        _session.SetSetting(PinnedCards.Setting, PinnedCards.Format(_pinned.Values.Select(EntryOf).Concat(_pinnedWaiting.Values)));
-    }
-
-    // Pinned cards come back where they were, as long as their quest is still active. One whose quest isn't active in
-    // the data shown waits in the list; one whose quest is over is forgotten (PinnedCards.For).
-    private void RestorePinnedOnce(SessionSnapshot s)
-    {
-        if (_pinnedRestored || s.Data is null || SnapshotMode)
-            return;
-        _pinnedRestored = true;
-        var saved = PinnedCards.Parse(_session.GetSetting(PinnedCards.Setting));
-        // Saved once at the end: each card's own save would write a list that lacks the ones not yet looked at.
-        _restoringPinned = true;
-        try
-        {
-            foreach (var entry in saved)
-            {
-                var view = BuildCard(entry.QuestId);
-                switch (PinnedCards.For(view?.State))
-                {
-                    case PinnedCards.Fate.Show:
-                        Pin(view!, entry.At is { } p && DisplayArea.GetFromPoint(new PointInt32(p.X + 40, p.Y + 20), DisplayAreaFallback.None) is not null
-                            ? new PointInt32(p.X, p.Y)
-                            : null);
-                        break;
-                    case PinnedCards.Fate.Wait:
-                        _pinnedWaiting[entry.QuestId] = entry;
-                        break;
-                }
-            }
-        }
-        finally
-        {
-            _restoringPinned = false;
-        }
-        if (saved.Count > 0)
-            SavePinned();
-    }
-
-    // Pinned cards follow the session (status, distances in a raid). A finished quest has nothing left to show:
-    // its card closes and is forgotten. A quest that isn't active in the data shown (the other mode's) closes its
-    // card too, but keeps its place in the saved list.
-    private void RefreshPinned()
-    {
-        // No data for a moment (the mode changed, its data is loading): nothing can be said about any quest, so the
-        // cards stay as they are (2026-10-04: they all closed, and the list was saved empty).
-        if (_snapshot?.Data is null)
-            return;
-        var changed = false;
-        foreach (var window in _pinned.Values.ToList())
-        {
-            var view = BuildCard(window.QuestId);
-            var fate = PinnedCards.For(view?.State);
-            if (fate == PinnedCards.Fate.Show)
-            {
-                window.Update(view!);
-                window.Stack.Refresh(UpdateCard);
-                continue;
-            }
-            if (view is { State: QuestState.Completed })
-                ShowNotice($"{view.Name} is complete; its card is closed.");
-            if (fate == PinnedCards.Fate.Wait)
-                _pinnedWaiting[window.QuestId] = EntryOf(window);
-            _pinned.Remove(window.QuestId);
-            _closedByProgram.Add(window);
-            window.Close();
-            changed = true;
-        }
-        foreach (var quest in _pinnedWaiting.Keys.ToList())
-        {
-            if (PinnedCards.For(BuildCard(quest)?.State) == PinnedCards.Fate.Forget)
-                changed |= _pinnedWaiting.Remove(quest);
-        }
-        if (changed)
-            SavePinned();
-    }
 
 
     // ---- the big cue: Shturmap changed its view on its own ----
@@ -1828,7 +1677,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Snapshots render at this multiple of the screen's pixel density (2 for sharp website images).</summary>
     public int SnapshotScale { get; set; } = 1;
 
-    /// <summary>"--show-quest &lt;part of a name&gt;" (snapshots): highlights that quest, holds its card and pins it.</summary>
+    /// <summary>"--show-quest &lt;part of a name&gt;" (snapshots): picks and highlights that quest and holds its card.</summary>
     public string? ShowQuest { get; set; }
 
     private void ShowQuestForSnapshot(SessionSnapshot s)
@@ -1841,8 +1690,8 @@ public sealed partial class MainWindow : Window
             .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).QuestId;
         if (id is null || BuildCard(id) is not { } view)
             return;
-        // Let the rail lay out first, so the highlight lands on real rows. Then: the quest's card, the card of the
-        // first thing it needs (nested), and the quest pinned in a window.
+        // Let the rail lay out first, so the highlight lands on real rows. Then: the quest's card, and the card of the
+        // first thing it needs (nested).
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
             if (_snapshot?.Picks.Contains(id) != true)
@@ -1852,8 +1701,6 @@ public sealed partial class MainWindow : Window
             var item = view.Needs.FirstOrDefault()?.ItemId ?? view.Objectives.FirstOrDefault(o => o.ItemId is not null)?.ItemId;
             if (item is not null)
                 _cards.Open(new CardKey.Item(item), new Windows.Foundation.Rect(372, 330, 8, 8), 1);
-            var origin = QuestWindow.ScreenPoint(this, new Windows.Foundation.Point(((FrameworkElement)Content).ActualWidth - 420, 120));
-            Pin(view, origin);
         });
     }
 
@@ -2345,8 +2192,6 @@ public sealed partial class MainWindow : Window
             var cards = _cards.Cards;
             for (var i = 0; i < cards.Count; i++)
                 await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));
-            if (_pinned.Values.FirstOrDefault() is { } pinned)
-                await RenderToPngAsync(pinned.Card, Path.Combine(folder, "pinned.png"));
             // A tile render (The Lab, Labyrinth, Icebreaker) loads its tiles for this view first.
             await Map.TilesLoadedAsync(TimeSpan.FromSeconds(20));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);

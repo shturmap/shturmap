@@ -273,8 +273,8 @@ quoting it anywhere new.
 outside raids only, and still in the cues' own motion). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
    kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
-   automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
-   popped out; they are owned by the main window and never topmost, so they can't cover the game. One thing does
+   automatic. No tabs, no modes to pick, no modal dialogs. Shturmap has one window, never topmost, so it can't cover
+   the game (popped-out quest cards, the only other windows, were removed on 2026-10-09). One thing does
    cover the window, and only because the player opened it: the Report dialog (review of 2026-10-04: the
    principle didn't name it). And the tour, which dims the window around the parts it is about (owner, 2026-10-09,
    the panel's T3: "I want to put an exception to the design for the tour"): at a first start and when the player
@@ -377,7 +377,7 @@ outside raids only, and still in the cues' own motion). (Until 2026-10-04 this a
    more than its absence; the Plan cards' rank numbers "1", "2" went the same day, the order says it). ANY MAP rows show no cells:
    bringing doesn't apply there.
 10. **Two clicks, two meanings.** A click on a quest keeps its card open. Its **pen** (on the row while the quest is
-    pointed at or picked, and always on its card beside the pop-out button) picks it for the coming raid: lit on the
+    pointed at or picked, and always on its card) picks it for the coming raid: lit on the
     map and first in the rail, several at once ("Picks"; owner, 2026-10-01: one click doing both was misleading; the
     study log had the player toggling quests on and off and losing held cards on the way to the map).
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
@@ -567,8 +567,9 @@ quests, muted for what happens after the raid).
 
 **One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
 pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
-everywhere: rows, cards, map markers, the legend, buttons. The card's button that keeps it as a window is therefore
-**pop out**, Segoe Fluent `E8A7` (a box with an arrow out), with the tooltip "Pop out as a small window"; the pushpin `E840` is only the Place type. Text links that open something outside
+everywhere: rows, cards, map markers, the legend, buttons. The pushpin `E840` is only the Place type (the card's
+button that kept it as a window became a box with an arrow out, `E8A7`, that day; it went with popped-out cards on
+2026-10-09). Text links that open something outside
 Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the
 same day, by rendering them side by side:
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
@@ -603,8 +604,8 @@ the minute of the player's age tag (`MapRenderer.LayoutOf`, `MapScene.LayoutVers
 frame placed every marker and label anew). The marker under the pointer is looked up in the same layout. Losing the focus waits
 0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
 of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
-any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
-Shturmap's windows is the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
+any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when Shturmap's
+window isn't the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
 game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not.
 **Inside one another** (the review of 2026-10-04): linked things may lie inside a linked row, and the innermost one
 around the pointer is the one pointed at; leaving it gives the pointer back to the row around it, which it never
@@ -1541,12 +1542,12 @@ that holds every map the line would show. A text that names none of its maps, or
 only, so in another game language both lines stay).
 **The map's "?" in words** (owner, 2026-10-06: "It should be displayed in the raid tooltip to explain"): an objective
 whose thing can be at several places has a line under its map names, the "?" as the map draws it (a small dark plate
-with a gold hairline) and "One of 4 places it can be", on every card, held, popped out or on hover in a raid
+with a gold hairline) and "One of 4 places it can be", on every card, held or on hover in a raid
 (`CardObjective.Possible`); its distance is to the nearest of them. A done one has no such line.
 
 **Ticks: an objective the player says is done** (owner, 2026-10-04; UX principle 7). The game's logs never say that
 a single objective is done, so a quest that takes several raids kept leading to places already dealt with.
-- **Where.** Each objective's row on an active quest's card (hover, held, popped out) ends in a small square box, the
+- **Where.** Each objective's row on an active quest's card (hover or held) ends in a small square box, the
   look of the ticks in settings (hairline; amber with a check when ticked). One click ticks, another unticks. Its
   tooltip says what it does and that the logs don't say it. Nothing is asked, and the rail has no tick: it stays
   calm, and the card is one point away. A tick can be set any time, also in a raid, but nothing ever needs it.
@@ -1588,7 +1589,7 @@ detectable from the quest text or layout itself").
   after the cell of what the objective gets: its count when more than one ("×4", as after a need cell; a find's text
   from the data doesn't say it), a small solid arrow in muted (Phosphor's "arrow-right") and the portrait of the
   trader it goes to, the quest's: "battery ×4 → Therapist". No symbol to learn, and the portrait says to whom. On a
-  quest card (hover, held, popped out) it follows the objective's 30 px cell, with a 22 px portrait; in the raid
+  quest card (hover or held) it follows the objective's 30 px cell, with a 22 px portrait; in the raid
   card the line gets the item's 20 px cell with the mark, a 20 px portrait, between its words and its distance (the
   cell is that item, as a need cell is). The tooltip says it in words: "Hand over ×3 to Therapist after the raid".
   NEXT has none (a glance is for where to go). A ticked line keeps its mark: what was got still goes to the trader.
@@ -1684,9 +1685,8 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
 Cards behave like the nested tooltips in Crusader Kings III:
 
 1. **Hover**: rest the pointer on a quest, key or item for 0.65 s on a rail row or map marker (the study log: 62 %
-   of cards opened from lists closed within a second, opened by a pointer passing over), 0.4 s on a row on a card
-   or in a popped-out window, and
-   its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
+   of cards opened from lists closed within a second, opened by a pointer passing over), 0.4 s on a row on a card,
+   and its card appears beside it, see-through (80 %) so it doesn't hide the map. It stays while the pointer is on its
    subject or on the card, and goes 0.35 s after it leaves both. Moving down a list swaps it after 0.12 s.
    **On its way to the card the pointer is only passing over** (`CardAim`; owner, 2026-10-04: "When you then move
    the mouse to the right to mouse-over the quest and you are too slow another quest opens"). A card opens beside
@@ -1705,31 +1705,20 @@ Cards behave like the nested tooltips in Crusader Kings III:
    from the rail or the map, 0.4 s on a card), or the pointer moving more than 240 px away from both the card and
    what it was opened from, its row or its marker (`CardReach`; 2026-10-04: measured from the card alone, a click on
    the left of a row held a card that closed with the next move of the mouse). Nothing holds by itself (owner,
-   2026-10-01: the timed hold was dropped). And every card in the main window closes at a step into a raid, when
+   2026-10-01: the timed hold was dropped). And every card closes at a step into a raid, when
    it begins to load and when it starts (`WhileInRaid`; review of 2026-10-04: a card held in Plan stayed over the
    map through the loading and the whole raid, with nobody at the mouse to click it away). A card opened during
-   the raid stays as any held card does; popped-out cards are windows of their own and stay.
+   the raid stays as any held card does.
 3. **Nested**: on a card, rest on a key, an item or a quest (UNLOCKS, NEEDED FOR) and that one's card opens beside
    it, and so on; a click holds it too. Moving back to an earlier card closes the unheld later ones.
-4. **Popped out**: the pop-out button (`E8A7`; "pinned" in the code, the settings and the study log) turns a quest
-   card into a small window with a normal title bar, to move anywhere and leave open; its own nested cards open
-   beside it. The card the button was on closes, with anything opened from it, so the quest isn't shown twice
-   (owner, 2026-10-01). In a raid it shows live distances, which is what popping out is for: a tracker for the
-   quests you chose, readable without the mouse. Popped-out cards come back after a restart and close by themselves
-   when their quest is completed; the window has no pop-out button of its own. A card is forgotten only when its
-   quest is over (completed or failed) or the player closes its window. One whose quest isn't active in the mode
-   shown (the game switched between PvE and PvP) closes but keeps its place in the saved list, and is back at a
-   start where its quest is active; while a mode's data is loading, the cards stay as they are; and closing the
-   main window saves the list once, before the cards close with it (`PinnedCards`; 2026-10-04: a mode change closed
-   every card and saved an empty list). Its title bar is kept inside a
-   screen's work area,
-   when it comes back and 0.6 s after it was moved, by the least move that does it (the study log: one closed
-   twice with its title bar above the screen, where it can't be grabbed).
 
-A card is never taller than the room there is: the window for a card opened in it, the screen's work area for a
-popped-out window (which moves up by what would hang below it). A longer card (Collector, a quest with many
+Popped-out cards were removed on 2026-10-09 (owner): picks put the chosen quests first in the raid card, with live
+distances, in the window already on the second monitor. The `pinned.cards` row an older database holds is no longer
+read.
+
+A card is never taller than the room there is in the window. A longer card (Collector, a quest with many
 objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay in reach (2026-10-04: it was cut at
-the window's edge, a popped-out one at 900 px).
+the window's edge).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow. The card's body keeps its subject in
@@ -1864,7 +1853,7 @@ Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 | ↓ / ↑ | step through the rail's rows; the row reached is in focus as if pointed at |
 | Enter | on the keyboard's row: what a click on it does (keep the quest's or item's card open; on a map of Plan's list, show that map) |
 | P | on a quest's row or one of its objective lines: pick the quest for the coming raid, or unpick it (its pen) |
-| Esc | close the cards and let the keyboard's row go (it never drops picks); in a popped-out window, the cards opened from it (never the window) |
+| Esc | close the cards and let the keyboard's row go (it never drops picks) |
 | F1 or ? | help |
 | Ctrl+, | settings |
 | → or Space, ←, Esc | while the tour is up (*The tour*): the next chapter (Enter too), the one before, end it. Every other key does nothing then |
@@ -1872,8 +1861,7 @@ Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window. "+" is a key of its own on some keyboards and Shift with "=" on
 others (US); both are one virtual key, and a shortcut without Shift never saw the second, so "+" didn't zoom on a
-US keyboard (`ZoomKeys`; review of 2026-10-04). A popped-out window has its own Esc for the cards opened from it;
-it had none.
+US keyboard (`ZoomKeys`; review of 2026-10-04).
 
 **The rail's rows by keyboard** (the review of 2026-10-04, E6: the linked highlight needed a pointer; `RowSteps`,
 `MainWindow.Keyboard.cs`). Nothing in the app needs it; it is there for whoever has a hand on the keyboard. Down
@@ -2338,7 +2326,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
   with the app's version and commit.
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
-  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held and popped out, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
+  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
   `trigger key down | up | enter | p | esc` steps through the rail's rows by the code the key events call; no key
@@ -2489,13 +2477,12 @@ suggestion), mode, raid loading (with the suggestion rank of the map actually pl
 start/end, quest started/completed/failed (live only), each fix, each notice. UI: window focus/blur and pointer
 in/out (with durations: the closest signals to attention), map pan (one per drag), zoom (one per wheel burst,
 button or key), fit, follow, floor picks, map picks (picker or plan card), selections, hovers resting ≥ 0.4 s
-(where: list, card, pinned, map), card open/hold/close (level, seconds open), pop-outs and popped-out-window closes
-(events named `pinned…`),
-help open/close, keys, rail scrolls, notice dismissals. Added after the first study (2026-10-01): the plan's
+(where: list, card, map), card open/hold/close (level, seconds open), help open/close, keys, rail scrolls, notice
+dismissals. Added after the first study (2026-10-01): the plan's
 COMPLETE and PROGRESS quest ids at raid load (to check which got completed), the evidence for each side decision,
 screenshots that gave no position, positions that weren't shown (no raid in the log, or the raid's map not known),
 whether a new position was in view and uses of the edge arrow and F, map
-previews, popped-out-window moves with their final position and whether they were clamped, notices expiring vs
+previews, notices expiring vs
 closed, the quests visible in the rail and the rail's scroll position when the window gets focus, stale-position
 banners seen (until the banner went, 2026-10-03), side switches, why a session started (the previous one ended cleanly or not, the build's time), and
 active-quest count changes outside quest events. Added 2026-10-02: group picks (location, map, time variant) and
@@ -2510,7 +2497,7 @@ many it says). How a raid ended
 (survived, killed) is in none of the allowed logs. The nearest thing is `raid.outcomeHint` `{ lostInsured: true }`:
 the insurer's "lost" note came during the raid or within 5 minutes after it, on the same location (in the owner's
 logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;
-no note proves nothing, since gear may not have been insured. Only Shturmap's own windows are observed; nothing is
+no note proves nothing, since gear may not have been insured. Only Shturmap's own window is observed; nothing is
 sent anywhere.
 
 The study log is **in developer builds only** (owner, 2026-10-03: "The study log should only be part of the dev
@@ -2665,7 +2652,7 @@ every issue goes through it, and the app's report is offered beside it.
   markers, objectives by distance, log backfill, live quest events, safety test,
   self-contained publish, taxonomy, raid planner, requirements, raid line, help panel, keyboard shortcuts,
   occasional-position UX (fix age beside the marker, compass directions), kit reminder on raid load (cue pictures, CHECK YOUR KIT), linked
-  highlighting, quest cards (hover, held, nested, popped out with live distances), item cards with sources and loose
+  highlighting, quest cards (hover, held, nested), item cards with sources and loose
   spots, trader portraits and item icons, floor picker, study log, Tarkov-style visual language.
 - Next: read a study log from a real session and correlate it with quest completions (`shturmap-cli` command).
 - Named **Shturmap** (owner, 2026-10-01; was Spotter): Shturman, the navigator, plus map, and a word of its own
@@ -2693,3 +2680,4 @@ every issue goes through it, and the app's report is offered beside it.
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
   ringing out (2026-10-07; §4, principle 11; "Map drawing").
+- Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards").
