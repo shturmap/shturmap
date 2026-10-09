@@ -40,20 +40,21 @@ through the app, the docs and the website; the owner decided each finding the sa
   cue and the card's note, without a notice as well.
 - **Checked, no change.** "22 MIN IN · 13 LEFT" on Customs was right: tarkov.dev gives Customs 35 minutes. The badges
   at a crowded spot don't overlap ("?" and the count 4.5 px apart, OPT and the floor badge 1.2 px). NEXT keeps
-  optional objectives (owner).
+  optional objectives (owner). Up and Down switch the map while the MAP list has the focus, a dropdown's own keys
+  that the rail's steps used to take; they stay (owner).
+- **Decided after the renders** (owner, 2026-10-09): help's twelve symbols list the extracts and transits before what
+  shows only at times; the first window is 1600×1000 at the monitor's scale, within its work area; the whole map and
+  every framing keep up to 150 DIP on the right for the map's labels; an answer that isn't JSON at all is "tarkov.dev's
+  answer wasn't its data", tried again by itself, with no report asked for.
 
 Open:
 - Measure the renderer's hot path before changing it.
 - DESIGN.md §4 doesn't name the extract list's cost in the game (two key presses for a list on demand).
-- The first start's window size (1600×1000) isn't scaled for a display at 150 % or 200 %.
-- The legend's twelve on Streets include "A quest just completed" and "Moved off a crowded spot"; the owner decides
-  the order.
-- Up and Down switch the map while the MAP list has the focus: a ComboBox's own keys, which the rail's steps used to
-  take. The tour holds them while it is up.
-- A captive portal's page reads as "tarkov.dev's data has changed" and is tried again only at the next try or start;
-  it might count as a network problem instead.
-- A map's labels at the window's right edge are still cut in two previews: a Plan row's whole-map preview (the tour's
-  NEXT RAID shows it) and the picked quest's label in PICK AND POINT, beyond the 90 DIP the tour's chapters frame with.
+- A page sent with 200 in place of tarkov.dev's data has replaced the good saved copy by the time it is found and
+  forgotten, so on such a network a copy older than its freshness shows "No game data" instead of the offline copy.
+  Checking that an answer is data before it replaces the saved copy would keep it.
+- Labels placed left of their symbols are cut at the window's left edge ("…ation Gate" on Customs); at 900×560 the
+  room on the right is capped at 100 DIP, so a long name there can still be cut.
 - The review's proposals, for the owner: a glide to a position out of view after a while without input, Follow on by
   default, items given with a quest, the raid clock from the screenshot name.
 
