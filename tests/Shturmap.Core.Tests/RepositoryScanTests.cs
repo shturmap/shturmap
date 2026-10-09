@@ -7,9 +7,10 @@ namespace Shturmap.Core.Tests;
 /// <summary>
 /// Everything committed is public for good (CLAUDE.md, "Secrets and private data"). This reads every file git tracks
 /// and fails on what must never be in one: an access token, a Sentry DSN, a private key, a claude.ai link, a path in
-/// someone's user folder, an email address. A failure names the file, the line and what kind of thing stands there,
-/// never the text itself: CI's logs are public too. Each pattern is put together from parts, so this file holds none
-/// of the shapes it looks for and is scanned like any other.
+/// someone's user folder, an email address, a screenshot name or a log session dated other than the examples' day. A
+/// failure names the file, the line and what kind of thing stands there, never the text itself: CI's logs are public
+/// too. Each pattern is put together from parts, so this file holds none of the shapes it looks for and is scanned
+/// like any other.
 /// </summary>
 public class RepositoryScanTests
 {
@@ -39,6 +40,12 @@ public class RepositoryScanTests
 
     private static readonly Regex Email = new(@"(?<![\w.%+-])(?<local>[A-Za-z0-9._%+-]+)" + "@" + @"(?<domain>[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})\b");
 
+    // A screenshot's name with a position (date, minute, then a number) and a log session's folder carry a time of
+    // play; with the position or the quests of that session they tell the player apart to the game's servers. So
+    // every example is dated 1 January 2026 (owner, 2026-10-09), and any other date looks real.
+    private static readonly Regex ScreenshotName = new(@"(?<!\d)(?<date>\d{4}-\d{2}-\d{2})\[" + @"\d{2}-\d{2}\]_-?\d");
+    private static readonly Regex LogSession = new(@"\blog" + @"_(?<date>\d{4}\.\d{2}\.\d{2})_\d{1,2}-\d{2}-\d{2}");
+
     [Fact]
     public void Tracked_files_hold_no_secret_or_private_data()
     {
@@ -64,6 +71,11 @@ public class RepositoryScanTests
     [InlineData(@"{""path"":""D:\" + @"\Users\\Someone\\AppData""}", "a path in a user folder (write %USERPROFILE%)")]
     [InlineData("file:///C:/" + "Users/Someone/x.svg", "a path in a user folder (write %USERPROFILE%)")]
     [InlineData("contact: jane.doe" + "@" + "provider.net", "an email address")]
+    [InlineData("2025-12-31" + "[23-59]_10.00, 1.00, -20.00_0.00000, 1.00000, 0.00000, 0.00000_12.00 (0).png", "a real-looking screenshot name")]
+    [InlineData("Shot = \"2026-01-02" + "[12-00]_-5.00, 0.50, 7.00 (1).png\"", "a real-looking screenshot name")]
+    [InlineData("2026-01-02" + "[12-00]_11.72 (0).png", "a real-looking screenshot name")]
+    [InlineData(@"Logs\log_" + "2025.12.31_23-59-59_1.0.0.0.1", "a real-looking log session")]
+    [InlineData("Session(\"log_" + "2026.02.01_7-05-00_1.0.0.0.1\")", "a real-looking log session")]
     public void Each_shape_is_found(string line, string what) => Assert.Equal([what], Scan(line));
 
     // What may stand in the repository: placeholders, examples, mentions without a value.
@@ -77,6 +89,11 @@ public class RepositoryScanTests
     [InlineData("Contact = \"me" + "@" + "example.org\"")]
     [InlineData("uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1")]
     [InlineData("#:package AngleSharp@1.8.3 and shturmap@0.1.0+abc1234")]
+    [InlineData("2026-01-01[13-35]_40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13 (0).png")]
+    [InlineData("2026-01-01[13-30]_11.72 (0).png and 2026-01-01[13-00] (0).png")]
+    [InlineData("`yyyy-MM-dd[HH-mm]_x, y, z_qx, qy, qz, qw_clock (n).png`")]
+    [InlineData(@"Logs\log_2026.01.01_15-00-00_1.1.5.1.47510 and log_2026.01.01_7-05-00_1.1.0.1.46699")]
+    [InlineData("-Sessions log_<date>_<time>_<build>, or `log_2026.01.01_…_1.1.5.1.47510`")]
     public void What_may_stand_passes(string line) => Assert.Empty(Scan(line));
 
     /// <summary>What kinds of things a line holds that must not be committed.</summary>
@@ -88,6 +105,10 @@ public class RepositoryScanTests
         // An address right after "://" is a URL's user part (a DSN's key), which the DSN shape looks at.
         if (Email.Matches(line).Any(m => !line[..m.Index].EndsWith("://", StringComparison.Ordinal) && !MayStand(m.Groups["local"].Value, m.Groups["domain"].Value)))
             found.Add("an email address");
+        if (ScreenshotName.Matches(line).Any(m => m.Groups["date"].Value != "2026-01-01"))
+            found.Add("a real-looking screenshot name");
+        if (LogSession.Matches(line).Any(m => m.Groups["date"].Value != "2026.01.01"))
+            found.Add("a real-looking log session");
         return found;
     }
 

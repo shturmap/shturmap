@@ -42,9 +42,11 @@ tracked file, a test or fixture, a commit message, release notes, an issue or a 
   limit, DESIGN.md §3), tarkov.dev payloads or Battlestate art (see below).
 
 Before each commit, read the staged diff (`git diff --cached`) for the list above. `RepositoryScanTests` checks every
-tracked file for token shapes, a Sentry DSN, private keys, claude.ai links, user-folder paths and email addresses,
-not for everything on the list. After adding a package, scan a local release build for the Windows user name
-(DESIGN.md §8, "Reports"). When unsure whether something is private, stop and ask the owner instead of committing it.
+tracked file for token shapes, a Sentry DSN, private keys, claude.ai links, user-folder paths, email addresses, and
+screenshot names and log sessions dated other than 2026-01-01 (every example uses that day: a real time of play, with
+a position or a session's quests, can be matched to the player), not for everything on the list. After adding a
+package, scan a local release build for the Windows user name (DESIGN.md §8, "Reports"). When unsure whether
+something is private, stop and ask the owner instead of committing it.
 
 Essentials:
 

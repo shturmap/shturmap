@@ -2303,9 +2303,11 @@ What else runs there (owner, 2026-10-09: every trust step that can be automated)
 package with a known vulnerability, direct or transitive (`eng\audit-packages.ps1`, nuget.org's advisories; also
 when it couldn't check). That stands in for Dependabot: its pull requests would put commits by another identity into
 the repository, whose only one is shturmap (CLAUDE.md), so a finding is fixed by hand. `RepositoryScanTests` reads
-every tracked file for token shapes, a Sentry DSN, private keys, claude.ai links, paths in a user folder and email
-addresses, and names file and line only. Every action in every workflow is pinned to a full commit with its version
-beside it. OpenSSF Scorecard (`.github/workflows/scorecard.yml`) rates the repository's practices weekly and on
+every tracked file for token shapes, a Sentry DSN, private keys, claude.ai links, paths in a user folder, email
+addresses, and screenshot names or log sessions dated other than 2026-01-01, the one day examples use (owner,
+2026-10-09: a real time of play with a position or a session's quests can be matched to one player), and names
+file and line only. Every action in every workflow is pinned to a full commit with its version beside it. OpenSSF
+Scorecard (`.github/workflows/scorecard.yml`) rates the repository's practices weekly and on
 every push to main, publishes the result for the README's badge and puts its findings in the Security tab; it runs
 only while the repository is public, which publishing and code scanning need on this plan. The Release workflow is
 under "Distribution".
