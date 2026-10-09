@@ -217,15 +217,26 @@ public sealed partial class MainWindow
     // An example extract list on Customs: some lit, one marked "??:??:??", the rest hollow.
     private static void StageExtractList(MapScene scene, MapContent content)
     {
+        var (listed, unsure, notListed) = ExampleExits(content);
+        scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsNotListed = notListed;
+    }
+
+    /// <summary>
+    /// The example extract list on Customs (What's New's preview, the tour): the extracts it names, one it marks
+    /// "??:??:??", and the ids of the rest, which it leaves out. Nobody's real list.
+    /// </summary>
+    internal static (List<MapMarker> Listed, List<MapMarker> Unsure, HashSet<string> NotListed) ExampleExits(MapContent content)
+    {
         var exits = content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();
         string[] names = ["Crossroads", "Trailer Park", "Old Gas Station", "RUAF Roadblock", "Smugglers' Boat", "Dorms V-Ex"];
-        var listed = exits.Where(e => names.Any(n => e.Label.Contains(n, StringComparison.OrdinalIgnoreCase))).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        var listed = exits.Where(e => names.Any(n => e.Label.Contains(n, StringComparison.OrdinalIgnoreCase))).ToList();
         if (listed.Count < 3)
-            listed = exits.Where((_, i) => i % 2 == 0).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
-        var unsure = exits.Where(e => !listed.Contains(e.Id)).Take(1).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
-        scene.ExitsListed = listed;
-        scene.ExitsUnsure = unsure;
-        scene.ExitsNotListed = exits.Select(e => e.Id).Where(id => !listed.Contains(id) && !unsure.Contains(id)).ToHashSet(StringComparer.Ordinal);
+            listed = exits.Where((_, i) => i % 2 == 0).ToList();
+        var unsure = exits.Where(e => !listed.Contains(e)).Take(1).ToList();
+        var notListed = exits.Where(e => !listed.Contains(e) && !unsure.Contains(e)).Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        return (listed, unsure, notListed);
     }
 
     /// <summary>

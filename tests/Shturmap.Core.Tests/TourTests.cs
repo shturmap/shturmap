@@ -100,6 +100,10 @@ public class TourTests
         Assert.All(safe.Words, w => Assert.Contains(w.Key, new[] { "reads", "never" }));
         Assert.Contains(safe.Words, w => w.Key == "never");
         Assert.All(chapters.Single(c => c.Stage == "know").Words, w => Assert.True(names.Contains(w.Key), $"know: no part named '{w.Key}'"));
+        // The extract list's plate: what to press, with the key filled in, and what was read.
+        var key = chapters.Single(c => c.Stage == "key").Words;
+        Assert.Contains(key, w => w.Key == "list" && w.Text.Contains("{key}", StringComparison.Ordinal));
+        Assert.Contains(key, w => w.Key == "read" && w.Text.Contains("{n}", StringComparison.Ordinal) && w.Text.Contains("{all}", StringComparison.Ordinal));
     }
 
     private static string RepositoryRoot()

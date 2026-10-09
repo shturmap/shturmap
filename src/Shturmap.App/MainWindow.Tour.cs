@@ -467,11 +467,134 @@ public sealed partial class MainWindow
         scene.Player = new PlayerFix(you, 35, DateTime.Now);
         Map.Refresh();
         TourHoles(() => [Square(ToLayer(you), 150)]);
-        if (!await TourWait(2600, run))
+        if (!await TourWait(2400, run))
             return;
-        StageExtractList(scene, content);
+        await StageExtractListRead(chapter, scene, content, you, run);
+    }
+
+    // The extract list as its own cause and effect (owner, 2026-10-09, after "The your screenshot key panel is weird
+    // after the focus on the player position"): an example of the game's list, in Shturmap's own look, decodes where
+    // the game shows it (the top right) under what to press; a press reads it; then the view takes in the extracts on
+    // it, which light up one after another, nearest first, each with a ring in its kind's colour, and the rest go
+    // hollow. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
+    private async Task StageExtractListRead(Tour.Chapter chapter, MapScene scene, MapContent content, WorldPoint you, int run)
+    {
+        var (listed, unsure, notListed) = ExampleExits(content);
+        if (listed.Count == 0)
+            return;
+        listed = listed.OrderBy(m => m.Position.HorizontalDistanceTo(you)).ToList();
+        var keyName = Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc");
+        var how = (chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "").Replace("{key}", keyName, StringComparison.Ordinal);
+        var all = listed.Count + unsure.Count + notListed.Count;
+        var readText = (chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "")
+            .Replace("{n}", (listed.Count + unsure.Count).ToString(UiLanguage.Culture), StringComparison.Ordinal)
+            .Replace("{all}", all.ToString(UiLanguage.Culture), StringComparison.Ordinal);
+        var names = listed.Select(m => (m.Label, false)).Concat(unsure.Select(m => (m.Label, true))).ToList();
+        var (plate, rows, read) = ExtractListPlate(how, names, readText);
+        TourCanvas.Children.Add(plate);
+        plate.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var map = MapRect();
+        var plateAt = new Rect(map.Right - 16 - plate.DesiredSize.Width, map.Y + 16, plate.DesiredSize.Width, plate.DesiredSize.Height);
+        Canvas.SetLeft(plate, plateAt.X);
+        Canvas.SetTop(plate, plateAt.Y);
+        var plateHole = new Rect(plateAt.X - 6, plateAt.Y - 6, plateAt.Width + 12, plateAt.Height + 12);
+        TourHoles(() => [Square(ToLayer(you), 150), plateHole]);
+        if (_tourMotion)
+        {
+            plate.Opacity = 0;
+            _ = Animate(250, t => plate.Opacity = t);
+        }
+        // The list's names, one after another, as the game's list fills in.
+        foreach (var (row, text) in rows)
+        {
+            if (!await TourWait(row == rows[0].Row ? 450 : 200, run))
+                return;
+            row.Opacity = 1;
+            if (_tourMotion)
+                Decode(row, text, TimeSpan.FromMilliseconds(380));
+        }
+        if (!await TourWait(600, run))
+            return;
+        // The press: the plate's frame flashes, and it says what was read.
+        plate.BorderBrush = Resource("AmberBrush");
+        read.Opacity = 1;
+        if (!await TourWait(350, run))
+            return;
+        plate.BorderBrush = Resource("LineStrongBrush");
+        if (!await TourWait(1100, run))
+            return;
+        // Read, the list has done its part: it goes, and the map shows what it said (it would cover the extracts in the
+        // map's top right).
+        if (_tourMotion)
+            await Animate(250, t => plate.Opacity = 1 - t);
+        if (run != _tourRun || !TourOpen)
+            return;
+        TourCanvas.Children.Remove(plate);
+        // The view takes in the listed extracts and you, above the band; the frame follows to what it shows of them.
+        var points = listed.Concat(unsure).Select(m => m.Position).Append(you).ToList();
+        var view = Map.FramingAbove(scene, points, 60, TourBand.ActualHeight + 46, 300);
+        if (_tourMotion)
+        {
+            Map.AnimateView(view, TimeSpan.FromMilliseconds(1200));
+            await Task.Delay(1250);
+        }
+        else
+            Map.Jump(view);
+        if (run != _tourRun || !TourOpen)
+            return;
+        // What the view shows of them, with room for the labels the map writes to the right of its symbols.
+        Rect Region()
+        {
+            var at = points.Select(ToLayer).ToList();
+            var r = new Rect(at.Min(p => p.X) - 40, at.Min(p => p.Y) - 40, 0, 0);
+            var mapNow = MapRect();
+            double x0 = Math.Max(mapNow.X, r.X), y0 = Math.Max(mapNow.Y, r.Y);
+            double x1 = Math.Min(mapNow.Right, at.Max(p => p.X) + 150), y1 = Math.Min(mapNow.Bottom, at.Max(p => p.Y) + 40);
+            return new Rect(x0, y0, Math.Max(0, x1 - x0), Math.Max(0, y1 - y0));
+        }
+        TourHoles(() => [Region()]);
+        // One after another, nearest first; then the ones the list leaves out go hollow, and the "??:??:??" one gets its "?".
+        var lit = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var exit in listed)
+        {
+            if (!await TourWait(lit.Count == 0 ? 450 : 260, run))
+                return;
+            lit.Add(exit.Id);
+            scene.ExitsListed = new HashSet<string>(lit, StringComparer.Ordinal);
+            Map.Redraw();
+            TourRing(ToLayer(exit.Position), Resource(exit.Kind == MarkerKind.ExtractShared ? "KhakiBrush" : "GreenBrush"));
+        }
+        if (!await TourWait(350, run))
+            return;
+        scene.ExitsUnsure = unsure.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsNotListed = notListed;
         Map.Redraw();
-        TourHoles(() => Anchors(chapter));
+    }
+
+    // The game's extract list as an example, in Shturmap's own look (no picture of the game's, §3): what to press over
+    // the names, and under them, once read, how many are yours. The rows start hidden; the read line keeps its room.
+    private static (Border Plate, List<(TextBlock Row, string Text)> Rows, TextBlock Read) ExtractListPlate(string how,
+        IReadOnlyList<(string Name, bool Unsure)> names, string readText)
+    {
+        var stack = new StackPanel { Spacing = 6, Width = 250 };
+        stack.Children.Add(new TextBlock { Text = how, Style = TextStyle("EyebrowText"), Margin = new Thickness(0), Foreground = Resource("AmberBrush"), TextWrapping = TextWrapping.Wrap });
+        stack.Children.Add(new Rectangle { Height = 1, Fill = Resource("LineBrush"), Margin = new Thickness(0, 2, 0, 2) });
+        var rows = new List<(TextBlock, string)>();
+        foreach (var (name, unsure) in names)
+        {
+            var text = unsure ? $"{name} · ???" : name;
+            var row = new TextBlock { Text = text, Style = TextStyle("TitleText"), FontSize = 15, TextWrapping = TextWrapping.NoWrap, Foreground = Resource(unsure ? "MutedBrush" : "InkBrush"), Opacity = 0 };
+            stack.Children.Add(row);
+            rows.Add((row, text));
+        }
+        var read = new TextBlock { Text = readText, Style = TextStyle("StatusText"), FontSize = 11.5, Foreground = Resource("GreenBrush"), TextWrapping = TextWrapping.Wrap, Opacity = 0, Margin = new Thickness(0, 6, 0, 0) };
+        stack.Children.Add(read);
+        var plate = new Border
+        {
+            Child = stack, Padding = new Thickness(18, 14, 18, 14), BorderThickness = new Thickness(1), BorderBrush = Resource("LineStrongBrush"),
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xF0, 0x0B, 0x0C, 0x0B)),
+        };
+        return (plate, rows, read);
     }
 
     // RAID LOADING with the example's kit, as the cue pictures it; then the raid card's head with example values: the
