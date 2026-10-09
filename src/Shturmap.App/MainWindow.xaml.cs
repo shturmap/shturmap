@@ -646,8 +646,9 @@ public sealed partial class MainWindow : Window
         bool CardOnly(MapPlanView p, int i) => added && i == plans.Count - 1 && p.Finish.Count + p.Progress.Count == 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
         QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
-        // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections).
-        vm.Plans = plans.Select((p, i) =>
+        // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections). The cards on
+        // screen stay while they say the same (RowLists): a rebuilt row loses the pointer resting on it.
+        vm.Plans = RowLists.Keep(vm.Plans, plans.Select((p, i) =>
         {
             // Each map has its own picks, in its own colours (owner, 2026-10-04).
             var sections = Planning.Sections(p, s.PicksOn(p.NormalizedName));
@@ -669,10 +670,10 @@ public sealed partial class MainWindow : Window
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
                 CardOnly = CardOnly(p, i),
             };
-        }).ToList();
+        }).ToList(), PlanCard.Same);
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
         vm.PlanListShown = PlanList.Shown(vm.Plans.Where(p => !p.CardOnly).Select(p => p.NormalizedName).ToList(), shownKey);
-        vm.AnyMap = s.AnyMap.Select(Line).ToList();
+        vm.AnyMap = RowLists.Keep(vm.AnyMap, s.AnyMap.Select(Line).ToList(), QuestLine.Same);
     }
 
     /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
@@ -787,22 +788,24 @@ public sealed partial class MainWindow : Window
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
             .Select(q => q.Quest)
             .ToList();
-        // The picks first, nearest first; then COMPLETE and PROGRESS without them.
-        vm.RaidPicks = quests.Where(q => s.Picks.Contains(q.QuestId)).ToList();
-        vm.RaidComplete = quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
-        vm.RaidProgress = quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
+        // The picks first, nearest first; then COMPLETE and PROGRESS without them. Each list on screen stays while it
+        // says the same (RowLists).
+        vm.RaidPicks = RowLists.Keep(vm.RaidPicks, quests.Where(q => s.Picks.Contains(q.QuestId)).ToList(), RaidQuest.Same);
+        vm.RaidComplete = RowLists.Keep(vm.RaidComplete, quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList(), RaidQuest.Same);
+        vm.RaidProgress = RowLists.Keep(vm.RaidProgress, quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList(), RaidQuest.Same);
         // While the raid loads, the kit comes first, as a last check while matching can still be cancelled; BRING
         // returns to its place below when the raid starts (owner, 2026-10-03).
         var kit = Planning.KitWhileLoading(s.Raid, s.MapPlan, s.Picks);
-        vm.RaidKit = kit.Main.Select(r => BringLine(s, r)).ToList();
-        vm.RaidKitMore = kit.More.Select(r => BringLine(s, r)).ToList();
-        vm.RaidBring = s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? [], s.Picks);
+        vm.RaidKit = RowLists.Keep(vm.RaidKit, kit.Main.Select(r => BringLine(s, r)).ToList(), RequirementLine.Same);
+        vm.RaidKitMore = RowLists.Keep(vm.RaidKitMore, kit.More.Select(r => BringLine(s, r)).ToList(), RequirementLine.Same);
+        vm.RaidBring = RowLists.Keep(vm.RaidBring, s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? [], s.Picks),
+            RequirementLine.Same);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
         if (vm.ScavRaid)
             ShowScavRaid(s);
-        vm.Extracts = s.Extracts.Select(e => new ExtractItem(
+        vm.Extracts = RowLists.Keep(vm.Extracts, s.Extracts.Select(e => new ExtractItem(
             e.Id,
             e.Name,
             e.Kind switch
@@ -820,7 +823,7 @@ public sealed partial class MainWindow : Window
         {
             State = e.State,
             ListReadable = s.ReadExits && !s.ExitReaderMissing,
-        }).ToList();
+        }).ToList());
         vm.ExitsNote = Rules.ExitsNote.Of(s.Raid.Phase == RaidPhase.InRaid, s.ReadExits, s.ExitReaderMissing, s.ExitsReadAt,
             s.Extracts.Count(e => e.State is ExitState.Listed or ExitState.Unsure), s.Extracts.Count(e => e.Kind != MarkerKind.Transit));
 

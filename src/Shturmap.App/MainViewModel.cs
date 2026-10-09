@@ -116,6 +116,10 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 
     /// <summary>A hairline above the row where a later effort group starts; no heading (owner, 2026-10-03).</summary>
     public Thickness GroupLine => StartsGroup ? new Thickness(0, 1, 0, 0) : new Thickness(0);
+
+    /// <summary>Whether two rows say the same, their need cells too: then the one on screen stays (Rules.RowLists).</summary>
+    public static bool Same(QuestLine a, QuestLine b) =>
+        a == b with { Needs = a.Needs } && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same);
 }
 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
@@ -132,6 +136,11 @@ public sealed record RequirementLine(string Glyph, string Text, string For, stri
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);
+
+    /// <inheritdoc cref="QuestLine.Same"/>
+    public static bool Same(RequirementLine a, RequirementLine b) =>
+        a == b with { QuestIds = a.QuestIds, Alternatives = a.Alternatives }
+        && Rules.RowLists.Same(a.QuestIds, b.QuestIds) && Rules.RowLists.Same(a.Alternatives, b.Alternatives);
 }
 
 /// <summary>One floor in the map's floor picker, top floor first.</summary>
@@ -231,6 +240,13 @@ public sealed record PlanCard(
 
     public Microsoft.UI.Xaml.Media.Brush SummaryBrush =>
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[CardOnly ? "MutedBrush" : "AmberBrush"];
+
+    /// <summary>Whether two cards say the same, row by row: then the one on screen stays (Rules.RowLists).</summary>
+    public static bool Same(PlanCard a, PlanCard b) =>
+        a == b with { Finish = a.Finish, Progress = a.Progress, Requirements = a.Requirements, Needs = a.Needs, Picks = a.Picks, DetailParts = a.DetailParts }
+        && Rules.RowLists.Same(a.Finish, b.Finish, QuestLine.Same) && Rules.RowLists.Same(a.Progress, b.Progress, QuestLine.Same)
+        && Rules.RowLists.Same(a.Picks, b.Picks, QuestLine.Same) && Rules.RowLists.Same(a.Requirements, b.Requirements, RequirementLine.Same)
+        && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same) && LinePart.Same(a.DetailParts, b.DetailParts);
 }
 
 /// <summary>The MAP list's item template: a map's name and count, or the OTHER MAPS heading (<see cref="Rules.MapChoice"/>
@@ -245,7 +261,14 @@ public static class MapChoiceView
 /// <summary>A quest in the raid card: its line as in Plan, with its objectives on this map under it.</summary>
 /// <param name="Complete">Whether this raid can complete it (Plan's COMPLETE), or only progress it.</param>
 public sealed record RaidQuest(string QuestId, ObjectiveKind Kind, string Name, string? TraderId, string TraderName,
-    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null);
+    IReadOnlyList<ObjectiveItem> Objectives, bool Complete, IReadOnlyList<Controls.NeedChip>? Needs = null)
+{
+    /// <summary>Whether two quests say the same, their lines and need cells too: then the one on screen stays
+    /// (Rules.RowLists).</summary>
+    public static bool Same(RaidQuest a, RaidQuest b) =>
+        a == b with { Objectives = a.Objectives, Needs = a.Needs }
+        && Rules.RowLists.Same(a.Objectives, b.Objectives) && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same);
+}
 
 public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explanation);
 

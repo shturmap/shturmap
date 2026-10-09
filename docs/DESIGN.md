@@ -603,7 +603,8 @@ the minute of the player's age tag (`MapRenderer.LayoutOf`, `MapScene.LayoutVers
 frame placed every marker and label anew). The marker under the pointer is looked up in the same layout. Losing the focus waits
 0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
 of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
-any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when none of
+any more: a row that is rebuilt under it (a pen click, a snapshot that changes what it says; review of 2026-10-09:
+until then every snapshot, `RowLists`) lets go as it leaves, and when none of
 Shturmap's windows is the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
 game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not.
 **Inside one another** (the review of 2026-10-04): linked things may lie inside a linked row, and the innermost one
