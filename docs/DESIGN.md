@@ -692,19 +692,21 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 ### Screen anatomy
 
-- **The window** (owner, 2026-10-04: remember the window's monitor and size). It opens where the player left it: on
-  the same monitor, at its bounds, maximised or not (`WindowPlace`; `window.place` in shturmap.db, saved 0.6 s after
-  a move or resize has settled and when the window closes; a minimised window keeps what was saved before). At a
-  first start, and whenever the saved monitor is no longer connected in the same place, the first start's rule
-  applies: maximised on the first monitor that isn't the primary one (the game's), or on the only monitor at
-  1600×1000. Until then that rule ran at every start, so a third monitor or the player's own size was lost each
-  time. A maximised window sent to another monitor comes back maximised there. The window is never smaller than
-  900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
-  the lights' words go first, then its last word, the last fix, trims (see "Status bar"). The minimum is for what
-  must stay readable, the status bar and the rail's glance (the raid card's head, NEXT, EXIT); at that size the map
-  is for a laptop beside the game, not for reading from a metre away on a second monitor (owner, 2026-10-09).
-  Snapshot and demo runs and a given size (`--window`) place the window
-  themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
+- **The window** (owner, 2026-10-04: remember the window's monitor and size). It opens where the player left it: on the
+  same monitor, at its bounds, maximised or not (`WindowPlace`; `window.place` in shturmap.db, saved 0.6 s after a move
+  or resize has settled and when the window closes; a minimised window keeps what was saved before). At a first start,
+  and whenever the saved monitor is no longer connected in the same place, the first start's rule applies: maximised on
+  the first monitor that isn't the primary one (the game's), or on the only monitor at 1600×1000. That size, also the
+  one a maximised window goes back to, is at the monitor's scale, 40 in from the corner of its work area and no larger
+  than it (`WindowPlace.First`; owner, 2026-10-09: on one monitor the size was taken as pixels, 800×500 at 200 % and
+  past the edge of a 1366×768 screen). Until 2026-10-04 that rule ran at every start, so a third monitor or the player's
+  own size was lost each time. A maximised window sent to another monitor comes back maximised there. The window is
+  never smaller than 900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a
+  narrow window the lights' words go first, then its last word, the last fix, trims (see "Status bar"). The minimum is
+  for what must stay readable, the status bar and the rail's glance (the raid card's head, NEXT, EXIT); at that size the
+  map is for a laptop beside the game, not for reading from a metre away on a second monitor (owner, 2026-10-09).
+  Snapshot and demo runs and a given size (`--window`) place the window themselves and remember nothing. The app log
+  says where it opened ("Window where it was last: 1300×800 at …").
   A saved place is checked at its monitor's scale, the smallest window and the inset from the corner too (review of
   2026-10-09: they were taken at 100 %, so at 150 % or 200 % a window under the smallest came back as it was).
 - **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when

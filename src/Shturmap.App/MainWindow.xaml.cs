@@ -1926,30 +1926,29 @@ public sealed partial class MainWindow : Window
 
     private WindowPlace.Rect BoundsNow() => new(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
 
-    // Maximised on the second monitor, or on the only one at 1600×1000; a given size (developer runs) is kept as is.
+    // Maximised on the second monitor, or on the only one at 1600×1000 at its scale and within its work area
+    // (WindowPlace.First, which is also where the maximised window goes back to); a given size (developer runs) is
+    // kept as is.
     private void PlaceOnSecondMonitor(SizeInt32? size)
     {
         var displays = DisplayArea.FindAll();
-        DisplayArea? target = null;
+        DisplayArea? second = null;
         for (var i = 0; i < displays.Count; i++)
         {
             if (displays[i].DisplayId.Value != DisplayArea.Primary.DisplayId.Value)
             {
-                target = displays[i];
+                second = displays[i];
                 break;
             }
         }
-        if (target is null)
-        {
-            AppWindow.Resize(size ?? new SizeInt32(WindowPlace.DefaultWidth, WindowPlace.DefaultHeight));
-            _unmaximised = BoundsNow();
-            return;
-        }
-        AppWindow.Move(new PointInt32(target.WorkArea.X + 40, target.WorkArea.Y + 40));
-        if (size is { } fixedSize)
-            AppWindow.Resize(fixedSize);
+        var target = second ?? DisplayArea.Primary;
+        var work = target.WorkArea;
+        var first = WindowPlace.First(new WindowPlace.Rect(work.X, work.Y, work.Width, work.Height), ScaleOf(target));
+        AppWindow.MoveAndResize(size is { } fixedSize
+            ? new RectInt32(first.X, first.Y, fixedSize.Width, fixedSize.Height)
+            : new RectInt32(first.X, first.Y, first.Width, first.Height));
         _unmaximised = BoundsNow();
-        if (size is null && AppWindow.Presenter is OverlappedPresenter presenter)
+        if (second is not null && size is null && AppWindow.Presenter is OverlappedPresenter presenter)
             presenter.Maximize();
     }
 

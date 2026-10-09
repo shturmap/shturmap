@@ -109,4 +109,15 @@ public class WindowPlaceTests
         Assert.Equal(new WindowPlace.Rect(2560 + 60, 60, 1920 - 120, 1080 - 120), back.Value.Bounds);
         Assert.False(back.Value.Maximised);
     }
+
+    // The first start on one monitor (review of 2026-10-09): 1600 × 1000 was taken as pixels, so a 4K screen at 200 %
+    // got a window of 800 × 500, under the smallest one, and a 1366 × 768 laptop one larger than its screen.
+    [Theory]
+    [InlineData(1920, 1040, 1.0, 40, 40, 1600, 960)]
+    [InlineData(3840, 2100, 2.0, 80, 80, 3200, 1940)]
+    [InlineData(2560, 1400, 1.5, 60, 60, 2400, 1280)]
+    [InlineData(1366, 728, 1.0, 40, 40, 1286, 648)]
+    public void A_first_window_is_the_default_size_at_the_monitor_s_scale_within_its_work_area(
+        int w, int h, double scale, int ex, int ey, int ew, int eh) =>
+        Assert.Equal(new WindowPlace.Rect(ex, ey, ew, eh), WindowPlace.First(new(0, 0, w, h), scale));
 }

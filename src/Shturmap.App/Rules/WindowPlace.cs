@@ -85,6 +85,13 @@ public static class WindowPlace
         return new Rect(monitor.X + inset, monitor.Y + inset, width, height);
     }
 
+    /// <summary>
+    /// A window's first place on a monitor: the default size at the monitor's scale, standing in from the corner of
+    /// its work area and no larger than it (review of 2026-10-09: on one monitor the default was taken as pixels,
+    /// 800×500 at 200 % and past the edge of a 1366×768 screen).
+    /// </summary>
+    public static Rect First(Rect workArea, double scale = 1) => OnMonitor(default, workArea, scale);
+
     private static string Text(Rect r) => string.Create(CultureInfo.InvariantCulture, $"{r.X},{r.Y},{r.Width},{r.Height}");
 
     private static Rect? ParseRect(string text)
