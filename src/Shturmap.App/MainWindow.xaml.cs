@@ -1251,14 +1251,16 @@ public sealed partial class MainWindow : Window
         }
     };
 
-    /// <summary>"121 m · NE · 3 m up" for an objective on the shown map, from the last fix; empty without one.</summary>
+    /// <summary>"121 m · NE · 3 M UP" for an objective on the shown map, from the last fix; empty without one. The
+    /// raid card's style: the figure as it is, the direction and height in capitals (2026-10-09: the card said
+    /// "294 m · left · 8 m up" beside the raid card's "LEFT · 8 M UP").</summary>
     private string? LiveText(string objectiveId)
     {
         if (_snapshot is not { RaidFix: { } fix } s || s.Objectives.FirstOrDefault(o => o.ObjectiveId == objectiveId && o.Distance is not null) is not { } o)
             return null;
         var fresh = FixAge.Of(fix.At, DateTime.Now) < FreshFix;
         var direction = fresh && o.Direction is { } r ? Bearing.Describe(r) : o.MapBearing is { } b ? Bearing.Compass(b) : "";
-        var parts = new[] { Distance(o.Distance), direction, o.HeightDifference is { } h ? $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}" : "" };
+        var parts = new[] { Distance(o.Distance), Caps.Of(direction), Caps.Of(o.HeightDifference is { } h ? $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}" : "") };
         return string.Join(" · ", parts.Where(p => p.Length > 0));
     }
 
