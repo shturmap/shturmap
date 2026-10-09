@@ -643,7 +643,7 @@ for the languages to come).
   downloads). The owner checked a received report in Sentry on 2026-10-09: no address, but its "User Geography"
   held the owner's town. Sentry derives it from the connection with IP storage off; fixed by an empty
   `user.ip_address` in every report (`ReportSender.Sealed`) and a scrubbing rule for `$user.geo.**` in the project
-  (the owner added it, 2026-10-09). Open: the second test report (7f53fb27) checked for no location.
+  (the owner added it, 2026-10-09). Checked the same day: the second test report's "User Geography" is empty (owner).
 - **B14. On the three tile maps the tile requests follow the view**, and with Follow my position on, the view
   follows the player: the image service could tell roughly where on the map the player is, while DESIGN.md §2 says
   no position is sent anywhere. Fix: when such a map opens, fetch the whole map's tiles at the zoom levels used (they
