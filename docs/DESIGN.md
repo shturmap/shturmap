@@ -1533,8 +1533,9 @@ spawns below).
 One card per quest, the same everywhere: trader portrait, type glyph and name; trader, level and Kappa /
 Lightkeeper; the state and where it came from ("Active · from the game log, 25 Sep"); every objective with its
 glyph, where it is, the item it is about and, in a raid on its map, how far and which way it is from the last fix
-("69 m · ahead-left"); BRING (keys and items, with icons and maps); UNLOCKS (the quests it opens); a link to the
-wiki page. Nothing else: no rewards, no guides.
+("69 m · AHEAD-LEFT · 8 M UP": the raid card's style, the figure as it is and the direction and height in capitals;
+until 2026-10-09 in small letters, beside the raid card's capitals); BRING (keys and items, with icons and maps);
+UNLOCKS (the quests it opens); a link to the wiki page. Nothing else: no rewards, no guides.
 The state line is in the accent while the quest is active ("on") and muted for every other state. It was green,
 which on the map and in the rail is a PMC extract (one colour, one meaning; the review of 2026-10-04, B2).
 An objective says where it is once (the review, C2): the line of map names under its text is left out when the
