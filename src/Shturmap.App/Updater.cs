@@ -197,14 +197,34 @@ public sealed class Updater
             Uninstall.DeleteData(data, locator.AppId, local, Uninstall.DeletePatience);
     }
 
-    /// <summary>Applies the downloaded version and starts it: Velopack ends this process at once. Only on the player's
-    /// click, outside raids.</summary>
-    public void RestartNow()
+    /// <summary>
+    /// RESTART NOW, only on the player's click, outside raids: starts Velopack's updater, which waits for this process to
+    /// end (up to a minute), applies the downloaded version and starts it. The caller then closes the session and ends
+    /// the app. Null when the updater is under way; otherwise why it isn't, and the caller's session goes on
+    /// (review of 2026-10-09: Velopack's own restart returned without a word when the download was gone, after the
+    /// session had been closed for it, and could throw).
+    /// </summary>
+    public string? StartRestart()
     {
-        if (_manager?.UpdatePendingRestart is not { } pending)
-            return;
-        AppLog.Info($"Updates: restarting into {pending.Version}");
-        _manager.ApplyUpdatesAndRestart(pending);
+        try
+        {
+            if (_manager?.UpdatePendingRestart is not { } pending)
+            {
+                AppLog.Warn($"Updates: RESTART NOW, but the downloaded version {Version} is gone; it counts as not downloaded");
+                // Not ready any more: the next steps download it again (or offer to), once found.
+                if (Stage == UpdateStage.Ready)
+                    Set(_found is null ? UpdateStage.None : UpdateStage.Found);
+                return "its download is gone";
+            }
+            AppLog.Info($"Updates: restarting into {pending.Version}");
+            _manager.WaitExitThenApplyUpdates(pending, silent: false, restart: true);
+            return null;
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Updates: Velopack's updater couldn't start for RESTART NOW", e);
+            return "the updater couldn't start (the log says why)";
+        }
     }
 
     private void Set(UpdateStage stage)

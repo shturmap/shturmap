@@ -2168,6 +2168,12 @@ self-unpacking exe, without updates; they need the Setup once.
   such requests an hour per address. A new version downloads in the background (a delta when there is one) and
   applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
   start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
+  RESTART NOW starts Velopack's updater first, which waits for the app to end (a minute at most), applies the version
+  and starts it; only then is the session closed and the app ended. Where the downloaded version is gone or the
+  updater can't start, the session goes on and a notice says why ("The update couldn't be applied: its download is
+  gone. Shturmap keeps running."), and a version whose download is gone counts as not downloaded (review of
+  2026-10-09: the session was closed first, and Velopack's own restart returned without a word, leaving a window
+  that drew nothing).
   "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
   request at all). A version already downloaded applies at the next start whatever the setting.
   **When applying fails** (owner, 2026-10-05: "it tells me always that the update is available even though i
