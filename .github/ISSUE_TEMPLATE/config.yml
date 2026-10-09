@@ -1,0 +1,7 @@
+# Every issue goes through the form, so everyone sees that issues are public; the app's own report is offered beside
+# it (docs/DESIGN.md §8, "Reports").
+blank_issues_enabled: false
+contact_links:
+  - name: Report privately from the app
+    url: https://github.com/shturmap/shturmap#what-it-reads-and-what-it-never-does
+    about: The feedback button at the top right of Shturmap. It isn't public, goes to the developer, and shows what it sends first.

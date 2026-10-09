@@ -2586,7 +2586,10 @@ form. Problems and ideas both go through it.
 website"). The repository's issues stay open as a second, public route for players with a GitHub account. The README,
 the website and the release notes name them after the app's own button, and say that issues are public, so the
 game's logs, screenshots and ids stay out of them (the app's report leaves those out). The app itself points to its
-button only, and there are still no issue forms.
+button only. One issue form (`.github/ISSUE_TEMPLATE`; owner, the same day: "add the issue template") says it is
+public before anything else, asks for a problem or an idea, what happened or would help, and the version, and can't be
+sent until "I left out the game's logs, my screenshots and ids from my game" is ticked. Blank issues are off, so
+every issue goes through it, and the app's report is offered beside it.
 
 - **The Report dialog.** The feedback button at the top right, the REPORT link on notices that ask for a report, and
   ADD A NOTE after a crash report was sent all open it. PROBLEM | IDEA (the placeholder follows: "What happened,

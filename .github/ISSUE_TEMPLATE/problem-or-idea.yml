@@ -1,0 +1,40 @@
+# The one issue form (owner, 2026-10-09: "add the issue template"; docs/DESIGN.md §8, "Reports"). Issues are public,
+# so it says that first and asks, before an issue can be opened, that the game's logs, screenshots and ids were left
+# out. The app's feedback button stays the first way to report: private, and with what it sends shown first.
+name: A problem or an idea
+description: Something wrong or missing in Shturmap, or something that would help. Public for everyone to read.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This is public.** Everyone can read an issue, and it stays. Leave out the game's logs, your screenshots, and
+        ids from your game (profile, account, session). Shturmap's own report, the **feedback** button at the top right
+        of the app, leaves those out and isn't public: it goes to the developer.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Problem or idea?
+      options:
+        - A problem
+        - An idea
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, or what would help?
+      description: For a problem, what you did, what you saw, and what you expected. For an idea, when you would use it.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Shturmap's version
+      description: At the foot of settings (the gear at the top right), e.g. "Shturmap 0.4.0".
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Public
+      options:
+        - label: I left out the game's logs, my screenshots and ids from my game.
+          required: true
