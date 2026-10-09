@@ -31,6 +31,10 @@ The Windows App SDK runtime files in a build are licensed by Microsoft under the
 accepting those terms for those files. They note that the runtime may send diagnostic data to Microsoft; Shturmap's
 own code sends nothing unless the player sends a report or allows crash reports ([PRIVACY.md](PRIVACY.md)).
 
+Microsoft.Windows.AI.MachineLearning 2.1.74 (ONNX Runtime and DirectML, which the Windows App SDK brings along) is
+referenced by the app only to keep it out: none of its files is in a build. Its licence texts are in the `licenses`
+folder all the same, since `eng\notices.ps1` gathers them from every package the app references.
+
 The native Skia, HarfBuzz and ANGLE libraries contain further open-source code (FreeType, libjpeg-turbo, libpng,
 libwebp, zlib, expat, ICU and others), listed with their licences in
 `licenses\SkiaSharp.NativeAssets.Win32\THIRD-PARTY-NOTICES.txt`. As their licences ask:
