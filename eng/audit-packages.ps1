@@ -1,7 +1,8 @@
 # Fails when a NuGet package the solution uses, directly or through another package, has a known vulnerability
-# (nuget.org's advisories; docs/DESIGN.md §8, "Continuous integration"). CI runs it on every push. It stands in for
-# Dependabot, whose pull requests would bring commits by another identity into a repository whose only one is shturmap
-# (CLAUDE.md): a finding is fixed by hand, with a version raised in Directory.Packages.props.
+# (nuget.org's advisories; docs/DESIGN.md §8, "Continuous integration"). CI runs it on every push, the Release workflow
+# on the app before it builds. It stands in for Dependabot, whose pull requests would bring commits by another identity
+# into a repository whose only one is shturmap (CLAUDE.md): a finding is fixed by hand, with a version raised in
+# Directory.Packages.props.
 # It fails on a finding, and when the packages couldn't be checked; "no vulnerable packages" passes.
 # Usage: .\eng\audit-packages.ps1 [<solution or project>]   (the solution by default)
 param(
