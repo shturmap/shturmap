@@ -981,8 +981,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     says why. The raid line says "joined 21:02" in place of the raid's length and start (a Scav joins under way; the logs don't
     say how long the raid has run or how long is left). The
     map draws no quest objectives, and in any raid only your side's extracts. ANY MAP is hidden (a Scav's kills
-    don't count). When the raid starts as a Scav, a notice says so; a server raid's setup tells it while loading
-    already, and then no PMC kit is shown (the kit reminder, UX principle 9). The side is set from the setup then,
+    don't count). When the raid starts as a Scav, the SCAV RAID cue says so (a notice said it a third time, beside
+    the cue and the note, until the review of 2026-10-09); a server raid's setup tells it while loading already, and
+    then no PMC kit is shown (the kit reminder, UX principle 9). The side is set from the setup then,
     and decided again at the raid start.
     How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
     joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining

@@ -190,7 +190,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>Raised after every change, on a background thread.</summary>
     public event Action<SessionSnapshot>? Changed;
 
-    /// <summary>Short messages for the user ("Raid started on Customs", "Scav raid on Customs · …").</summary>
+    /// <summary>Short messages for the user ("Ballet Lover: completed", "German texts loaded.").</summary>
     public event Action<SessionNotice>? Notice;
 
     public async Task StartAsync()
@@ -1300,12 +1300,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             case RaidStarted started:
                 _loadingCueOwed = null;
                 ResolveMap();
-                // The side is only certain now; the kit shown while loading was a PMC's, unless a setup said Scav.
+                // The side is only certain now; the kit shown while loading was a PMC's, unless a setup said Scav. The cue
+                // and the card's note say what counts for a Scav; a notice said it a third time until the review of
+                // 2026-10-09.
                 if (!item.IsReplay && started.State.Side == RaidSide.Scav && _raidMap is not null)
-                {
-                    Say($"Scav raid on {_raidMap.Name} · quest objectives don't count, items found in raid do", 8);
                     Announce(new ViewCue(CueKind.ScavRaid, _raidMap.Name));
-                }
                 break;
             case RaidEnded ended:
                 RaidOver(ended, announce: !item.IsReplay);
