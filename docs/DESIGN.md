@@ -696,6 +696,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
   the lights' words go first, then its last word, the last fix, trims (see "Status bar"). Snapshot and demo runs and a given size (`--window`) place the window
   themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
+  A saved place is checked at its monitor's scale, the smallest window and the inset from the corner too (review of
+  2026-10-09: they were taken at 100 %, so at 150 % or 200 % a window under the smallest came back as it was).
 - **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when
   a raid ends and b) remember the last open map when the app closes and re-open it"). The map last on screen is kept
   (`lastMap` in shturmap.db, `GameSession.LastMapSetting`): one picked in the MAP list or Plan's list, a raid's own map

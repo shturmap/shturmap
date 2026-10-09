@@ -170,6 +170,7 @@ public sealed partial class MainWindow : Window
         _clock.Stop();
         _noticeTimer.Stop();
         _focusClear.Stop();
+        _updateTimer?.Stop();
         Map.StopDrawing();
     }
 
@@ -1976,7 +1977,8 @@ public sealed partial class MainWindow : Window
     {
         _sizeGiven = size is not null;
         _rememberPlace = remember && size is null;
-        var last = _rememberPlace ? WindowPlace.Restorable(WindowPlace.Parse(saved), Monitors()) : null;
+        var parsed = WindowPlace.Parse(saved);
+        var last = _rememberPlace ? WindowPlace.Restorable(parsed, Monitors(), ScaleOn(parsed?.Monitor)) : null;
         if (last is { } place)
         {
             AppWindow.MoveAndResize(new RectInt32(place.Bounds.X, place.Bounds.Y, place.Bounds.Width, place.Bounds.Height));
@@ -2016,6 +2018,40 @@ public sealed partial class MainWindow : Window
         }
         return monitors;
     }
+
+    // The scale of the monitor with these bounds, for the smallest window and the inset on it (WindowPlace counts in
+    // pixels; review of 2026-10-09: at 150 % and 200 % they were taken unscaled); 1 where no monitor has them.
+    private static double ScaleOn(WindowPlace.Rect? monitor)
+    {
+        var displays = DisplayArea.FindAll();
+        for (var i = 0; i < displays.Count; i++)
+        {
+            var area = displays[i].OuterBounds;
+            if (monitor == new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height))
+                return ScaleOf(displays[i]);
+        }
+        return 1;
+    }
+
+    // The scale Windows gives a monitor (1 at 100 %), the one the window's content is drawn at there; 1 where it can't say.
+    private static double ScaleOf(DisplayArea display)
+    {
+        try
+        {
+            var monitor = Microsoft.UI.Win32Interop.GetMonitorFromDisplayId(display.DisplayId);
+            return GetDpiForMonitor(monitor, EffectiveDpi, out var dpi, out _) == 0 && dpi > 0 ? dpi / 96.0 : 1;
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Window: the monitor's scale couldn't be read; taken as 100 %", e);
+            return 1;
+        }
+    }
+
+    private const int EffectiveDpi = 0; // MDT_EFFECTIVE_DPI
+
+    [System.Runtime.InteropServices.DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr monitor, int dpiType, out uint dpiX, out uint dpiY);
 
     private WindowPlace.Rect BoundsNow() => new(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
 
@@ -2070,11 +2106,12 @@ public sealed partial class MainWindow : Window
         // Minimised, the window has no place of its own: what was saved before stands.
         if (!_rememberPlace || AppWindow.Presenter is not OverlappedPresenter presenter || presenter.State == OverlappedPresenterState.Minimized)
             return;
-        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).OuterBounds;
+        var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
+        var area = display.OuterBounds;
         var monitor = new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height);
         var maximised = presenter.State == OverlappedPresenterState.Maximized;
         // A maximised window sent to another monitor still has its unmaximised bounds on the one before: they follow it.
-        var bounds = maximised ? WindowPlace.OnMonitor(_unmaximised, monitor) : _unmaximised;
+        var bounds = maximised ? WindowPlace.OnMonitor(_unmaximised, monitor, ScaleOf(display)) : _unmaximised;
         _session.SetSetting(WindowPlace.Setting, WindowPlace.Format(new WindowPlace.Saved(bounds, maximised, monitor)));
     }
 
