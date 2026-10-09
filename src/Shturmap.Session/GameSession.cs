@@ -768,7 +768,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 // The raid length is known now: an open raid may be past it.
                 CloseRaidThatCannotRun(announce: !_replaying);
                 Publish();
-                var how = data.Offline ? "from the saved copy (tarkov.dev unreachable)" : "from tarkov.dev";
+                var how = data.Offline ? "from the saved copy (no usable answer from tarkov.dev)" : "from tarkov.dev";
                 var line = $"Data loaded {how}: {mode}, language {data.Language}, {data.Tasks.Count} quests, {data.Maps.Count} maps, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}";
                 if (data.Offline)
                     AppLog.Warn(line);

@@ -45,14 +45,12 @@ through the app, the docs and the website; the owner decided each finding the sa
 - **Decided after the renders** (owner, 2026-10-09): help's twelve symbols list the extracts and transits before what
   shows only at times; the first window is 1600×1000 at the monitor's scale, within its work area; the whole map and
   every framing keep up to 150 DIP on the right for the map's labels; an answer that isn't JSON at all is "tarkov.dev's
-  answer wasn't its data", tried again by itself, with no report asked for.
+  answer wasn't its data", tried again by itself, with no report asked for, and it never replaces a good saved copy,
+  which is used in its place.
 
 Open:
 - Measure the renderer's hot path before changing it.
 - DESIGN.md §4 doesn't name the extract list's cost in the game (two key presses for a list on demand).
-- A page sent with 200 in place of tarkov.dev's data has replaced the good saved copy by the time it is found and
-  forgotten, so on such a network a copy older than its freshness shows "No game data" instead of the offline copy.
-  Checking that an answer is data before it replaces the saved copy would keep it.
 - Labels placed left of their symbols are cut at the window's left edge ("…ation Gate" on Customs); at 900×560 the
   room on the right is capped at 100 DIP, so a long name there can still be cut.
 - The review's proposals, for the owner: a glide to a position out of view after a while without input, Follow on by

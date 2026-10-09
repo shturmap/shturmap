@@ -44,7 +44,7 @@ public sealed class GameDataLoader(CachedHttp http)
         var translations = new List<Task<CachedResponse>>();
         Task<CachedResponse> Fetch(string endpoint, TimeSpan? maxAge = null, bool translation = false)
         {
-            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", maxAge ?? MaxAge, ct);
+            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", maxAge ?? MaxAge, ct, json: true);
             (translation ? translations : fetches).Add(task);
             fetched.Add(task);
             return task;
@@ -62,7 +62,7 @@ public sealed class GameDataLoader(CachedHttp http)
         var tasksLang = language == "en" ? tasksEn : Fetch($"{slug}/tasks_{language}", translation: true);
         var tradersLang = language == "en" ? tradersEn : Fetch($"{slug}/traders_{language}", translation: true);
         var itemsLang = language == "en" ? itemsEn : Fetch($"{slug}/items_{language}", TimeSpan.FromHours(24), translation: true);
-        var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct);
+        var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct, json: true);
         fetches.Add(definitions);
         fetched.Add(definitions);
         try
@@ -250,7 +250,7 @@ public sealed class GameDataLoader(CachedHttp http)
         var day = TimeSpan.FromHours(24);
         Task<CachedResponse> Fetch(string endpoint)
         {
-            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct);
+            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct, json: true);
             fetched.Add(task);
             return task;
         }
@@ -337,11 +337,12 @@ public sealed class GameDataLoader(CachedHttp http)
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
-    // A load that couldn't read what it got (review of 2026-10-09). Any answer 200 is saved, also a page a captive
-    // portal or a CDN sent in place of the data, or a body cut short; it then failed as unreadable, which isn't tried
-    // again, and was read from the cache again at the next start, for as long as it counted as fresh. A file of the
-    // load that isn't JSON at all is forgotten now, so the next try or start downloads it again, and the load fails as
-    // NotData, which the session tries again by itself (owner, 2026-10-09). One that is JSON, only not in the shape
+    // A load that couldn't read what it got (review of 2026-10-09). An answer that isn't JSON at all is no longer saved
+    // (CachedHttp, json): a saved copy stays and is used, and without one the load fails as NotData. A page saved before
+    // that (a captive portal's or a CDN's, sent with 200, or a body cut short) failed as unreadable, which isn't tried
+    // again, and was read from the cache again at every start for as long as it counted as fresh. Such a file is
+    // forgotten, so the next try or start downloads it again, and the load fails as NotData, which the session tries
+    // again by itself (owner, 2026-10-09). One that is JSON, only not in the shape
     // Shturmap knows (tarkov.dev changed its format), stays, and the load stays unreadable: a download would bring the
     // same again, at every start of every Shturmap, and the saved copy is still revalidated with its ETag. A download
     // that failed is no file of the load: a good saved copy is never forgotten for a network error. Returns the names
@@ -351,31 +352,12 @@ public sealed class GameDataLoader(CachedHttp http)
         var forgotten = new List<string>();
         foreach (var response in fetched.Where(t => t.IsCompletedSuccessfully).Select(t => t.Result).DistinctBy(r => r.FilePath))
         {
-            if (IsJson(response.FilePath))
+            if (CachedHttp.IsJson(response.FilePath))
                 continue;
             http.Forget(response);
             forgotten.Add(Path.GetFileName(response.FilePath));
         }
         return forgotten;
-    }
-
-    private static bool IsJson(string path)
-    {
-        try
-        {
-            using var file = File.OpenRead(path);
-            using var json = JsonDocument.Parse(file);
-            return json.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            // Can't tell: left as it is.
-            return true;
-        }
     }
 
     /// <summary>The payload's "data" with every translatable string replaced by the chosen language's text.</summary>

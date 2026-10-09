@@ -2501,22 +2501,24 @@ asked for again in that session.
 When the game language's texts arrive late (below), the sources load again in that language: station names are
 part of the texts.
 
-**Asking again** (`RetrySchedule`; owner, 2026-10-04: no unnecessary load on tarkov.dev). After a failure that may
-pass, tarkov.dev is asked again after 2, 4, 8 and 16 minutes, then every 30 minutes for as long as it fails; a
-success, or the player changing the game mode, starts over at 2. It was every 2 minutes without end: with tarkov.dev
-down, every running Shturmap asked for up to 11 files every 2 minutes, about 700 rounds a day where there are now
-about 50. One schedule, counted separately, for the game data, the game language's texts and the item sources. A
-try asks only for what is missing or older than its keep time: the rest is answered from the saved copy.
-An answer 200 is saved whatever it holds, also a page a captive portal or a CDN sends in place of the data; it then
-failed as unreadable, which isn't asked for again, and was read from the saved copy at the next start too, for as long
-as that counted as fresh (review of 2026-10-09). So a load that fails as unreadable forgets each of its files that
-isn't JSON at all (`GameDataLoader.ForgetWhatIsNoJson`), and the next try or start downloads those again; its other
-files stay. Such a load fails as a page in place of the data, not as unreadable (`LoadFailure.NotData`; owner,
-2026-10-09): it says nothing of tarkov.dev's format, and the page goes when the player signs in to the network or
-leaves the filter, so it is asked for again after the same waits as a failure that may pass. JSON in a shape Shturmap
-doesn't know (tarkov.dev changed its format) stays saved and is revalidated as before, and stays unreadable, not asked
-for again: downloading it again would bring the same, at every start of every Shturmap. A failed download is never a
-reason to forget a good saved copy.
+**Asking again** (`RetrySchedule`; owner, 2026-10-04: no unnecessary load on tarkov.dev). After a failure that may pass,
+tarkov.dev is asked again after 2, 4, 8 and 16 minutes, then every 30 minutes for as long as it fails; a success, or the
+player changing the game mode, starts over at 2. It was every 2 minutes without end: with tarkov.dev down, every running
+Shturmap asked for up to 11 files every 2 minutes, about 700 rounds a day where there are now about 50. One schedule,
+counted separately, for the game data, the game language's texts and the item sources. A try asks only for what is
+missing or older than its keep time: the rest is answered from the saved copy. An answer 200 that isn't JSON at all (a
+page a sign-in portal, a network filter or a CDN sends in place of the data, or a body that is empty or cut off) is
+never saved (`CachedHttp`, json; owner, 2026-10-09). It counts as a failed download: a saved copy is used in its place
+("Data (offline copy)") and is asked for again at its next keep time; with none the load fails as a page in place of the
+data, not as unreadable (`LoadFailure.NotData`): it says nothing of tarkov.dev's format, and the page goes when the
+player signs in to the network or leaves the filter, so it is asked for again after the same waits as a failure that may
+pass. Until then such a page was saved like the data: it replaced a good saved copy (so once that was older than its
+keep time the player saw "No game data", not the offline copy), failed as unreadable, which isn't asked for again, and
+was read again at the next start for as long as it counted as fresh (review of 2026-10-09). A page saved by an earlier
+version is forgotten when a load can't read it (`GameDataLoader.ForgetWhatIsNoJson`), and that load fails as NotData.
+JSON in a shape Shturmap doesn't know (tarkov.dev changed its format) stays saved and is revalidated as before, and
+stays unreadable, not asked for again: downloading it again would bring the same, at every start of every Shturmap. A
+failed download is never a reason to forget a good saved copy.
 
 **The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
 with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
@@ -2608,31 +2610,30 @@ no profile or account ids, no game file contents. At most 1 MB a day: a last WAR
 and nothing more is written until the next day. Seven days kept; the old `spotter-*.log` files are removed.
 
 **Error messages** (owner, 2026-10-03). What the player sees says what failed in plain words, with the status where
-there is one, and what to do; the exception goes to the app log only. Data (`LoadProblem`): "Couldn't reach
-tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tarkov.dev didn't answer in time…";
-"tarkov.dev answered 503. It is busy or down for a moment…"; "tarkov.dev answered 404. Please report it.";
-"tarkov.dev's data has changed in a way Shturmap can't read. Please report it." (JSON in a shape Shturmap doesn't
-know); "tarkov.dev's answer wasn't its data: a sign-in page or a filter in between? Shturmap tries again in a few
-minutes." (a body that isn't JSON at all: a hotel Wi-Fi's sign-in page, a network filter's or a CDN's page sent with
-200, an empty or cut-off body; owner, 2026-10-09: it was said as unreadable, which blamed tarkov.dev, asked for a
-report that couldn't help, and wasn't tried again); "Couldn't save tarkov.dev's data on this PC…". It comes as a
-notice (30 s) after "No game data.", the DATA chip says "No game data" and its tooltip says why. A failure that may
-pass (no connection, a timeout, 5xx or 429, a page in place of the data) is tried again after growing waits ("Asking
-again", above: 2, 4, 8, 16 minutes, then every 30), said once; the notice names the wait that follows it ("Shturmap
-tries again in 2 minutes; if it keeps failing, please report it."), and the tooltip, which stays up while the tries
-go on, names none ("tries again by itself, at first after 2 minutes, then less often"). A page in place of the data
-asks for no report, in the notice or the tooltip, and its notice has no REPORT link: what sends the page is between
-the PC and tarkov.dev, where a report can't change it ("…a filter in between? Shturmap tries again in 2 minutes.").
-A download whose answer
-starts and then stops counts among them: after 30 s of silence it is a timeout, and a connection that breaks off
-mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; the client's own timeout ends with
-the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
-a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy
-the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
-German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: the line in place
-of the Plan card says so, for as long as it lasts, and no notice (§4, *No game*). A map's artwork that doesn't
-download: "No map artwork for Customs: couldn't download it; check the internet connection. A 10 m grid stands
-in…", once per map; a tile render that can't be had: "No map render for The Lab: …", the same way.
+there is one, and what to do; the exception goes to the app log only. Data (`LoadProblem`): "Couldn't reach tarkov.dev,
+and there's no saved copy yet. Check the internet connection."; "tarkov.dev didn't answer in time…"; "tarkov.dev
+answered 503. It is busy or down for a moment…"; "tarkov.dev answered 404. Please report it."; "tarkov.dev's data has
+changed in a way Shturmap can't read. Please report it." (JSON in a shape Shturmap doesn't know); "tarkov.dev's answer
+wasn't its data: a sign-in page or a filter in between? Shturmap tries again in a few minutes." (a body that isn't JSON
+at all, with no saved copy to use: a sign-in page, a network filter's or a CDN's page sent with 200, an empty or cut-off
+body; owner, 2026-10-09: it was said as unreadable, which blamed tarkov.dev, asked for a report that couldn't help, and
+wasn't tried again); "Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.",
+the DATA chip says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or
+429, a page in place of the data) is tried again after growing waits ("Asking again", above: 2, 4, 8, 16 minutes, then
+every 30), said once; the notice names the wait that follows it ("Shturmap tries again in 2 minutes; if it keeps
+failing, please report it."), and the tooltip, which stays up while the tries go on, names none ("tries again by itself,
+at first after 2 minutes, then less often"). A page in place of the data asks for no report, in the notice or the
+tooltip, and its notice has no REPORT link: what sends the page is between the PC and tarkov.dev, where a report can't
+change it ("…a filter in between? Shturmap tries again in 2 minutes."). A download whose answer starts and then stops
+counts among them: after 30 s of silence it is a timeout, and a connection that breaks off mid-answer is "couldn't
+reach", not a disk problem (`CachedHttp.BodyIdleLimit`; the client's own timeout ends with the headers, so until
+2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for a report carries
+a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy the data loads from
+it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No German texts on tarkov.dev;
+showing English." Game not found, or found without its Logs folder: the line in place of the Plan card says so, for as
+long as it lasts, and no notice (§4, *No game*). A map's artwork that doesn't download: "No map artwork for Customs:
+couldn't download it; check the internet connection. A 10 m grid stands in…", once per map; a tile render that can't be
+had: "No map render for The Lab: …", the same way.
 
 **Diagnostics** (owner, 2026-10-03). Help ends with quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says

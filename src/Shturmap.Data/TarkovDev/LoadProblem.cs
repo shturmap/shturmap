@@ -21,8 +21,9 @@ public enum LoadFailure
     /// <summary>The data arrived as JSON, but not in a shape Shturmap can read: tarkov.dev changed its format.</summary>
     Unreadable,
 
-    /// <summary>What arrived isn't JSON at all (<see cref="NotDataException"/>): a sign-in page, a network filter's or a
-    /// CDN's page sent with 200 in place of the data, or a body that is empty or cut off.</summary>
+    /// <summary>What arrived isn't JSON at all, and there's no saved copy to use (<see cref="Http.NotDataAnswerException"/>,
+    /// or <see cref="NotDataException"/> for such a file saved before 2026-10-09): a sign-in page, a network filter's or
+    /// a CDN's page sent with 200 in place of the data, or a body that is empty or cut off.</summary>
     NotData,
 
     /// <summary>The data couldn't be saved or read on this PC (disk full, no access).</summary>
@@ -47,10 +48,18 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, str
 
     public string Text => $"{What} {Advice}";
 
+    // No report: a report can't change what sends the page. The notices name the wait (GameSession.DataNotice).
+    private static readonly LoadProblem NotData = new(LoadFailure.NotData, null,
+        "tarkov.dev's answer wasn't its data: a sign-in page or a filter in between?", "Shturmap tries again in a few minutes.");
+
     public static LoadProblem Explain(Exception e)
     {
         switch (e)
         {
+            // An answer that isn't the data, with no saved copy to use (with one, CachedHttp used that). First: it is an
+            // HttpRequestException without a status, which would read as no connection.
+            case Http.NotDataAnswerException:
+                return NotData;
             case HttpRequestException { StatusCode: { } status }:
                 var code = (int)status;
                 return code >= 500 || status == HttpStatusCode.TooManyRequests
@@ -63,9 +72,7 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, str
             case SocketException:
                 return new(LoadFailure.Unreachable, null, "Couldn't reach tarkov.dev, and there's no saved copy yet.", "Check the internet connection.");
             case NotDataException:
-                // No report: a report can't change what sends the page. The notices name the wait (GameSession.DataNotice).
-                return new(LoadFailure.NotData, null, "tarkov.dev's answer wasn't its data: a sign-in page or a filter in between?",
-                    "Shturmap tries again in a few minutes.");
+                return NotData;
             case JsonException or FormatException or InvalidOperationException or KeyNotFoundException or NullReferenceException:
                 return new(LoadFailure.Unreadable, null, "tarkov.dev's data has changed in a way Shturmap can't read.", Report);
             case IOException or UnauthorizedAccessException:

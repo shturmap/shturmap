@@ -6,8 +6,16 @@ namespace Shturmap.Data.Http;
 
 /// <param name="FilePath">The cached body on disk.</param>
 /// <param name="FromNetwork">A new body was downloaded in this call.</param>
-/// <param name="Stale">The network could not be reached and an older copy is being used.</param>
+/// <param name="Stale">No usable answer came (the network failed, or a page came in place of the data) and an older
+/// copy is being used.</param>
 public sealed record CachedResponse(string FilePath, bool FromNetwork, bool Stale, DateTimeOffset FetchedAt);
+
+/// <summary>
+/// An answer 200 that isn't the data asked for (<see cref="CachedHttp.GetAsync"/> with json): a page a sign-in portal,
+/// a network filter or a CDN sent, or a body that is empty or cut off. It is kept nowhere. A network failure in effect,
+/// so a saved copy is used in its place; the message names the address, never what came.
+/// </summary>
+public sealed class NotDataAnswerException(Uri uri) : HttpRequestException($"{uri} answered with something that isn't its data");
 
 /// <summary>
 /// GETs with a disk cache. A copy younger than maxAge is used as is; an older one is revalidated with its ETag
@@ -83,7 +91,11 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         return commit >= 0 ? version[..commit] : version;
     }
 
-    public async Task<CachedResponse> GetAsync(Uri uri, string cacheKey, TimeSpan maxAge, CancellationToken ct = default)
+    /// <param name="json">The answer must be a JSON object or array to be kept. A body that isn't (a page a sign-in
+    /// portal, a network filter or a CDN sent with 200 in place of the data, or a body that is empty or cut off) never
+    /// replaces the saved copy: it fails as <see cref="NotDataAnswerException"/>, which, like a network failure, gives
+    /// the saved copy where there is one (owner, 2026-10-09: the page replaced a good copy and left "No game data").</param>
+    public async Task<CachedResponse> GetAsync(Uri uri, string cacheKey, TimeSpan maxAge, CancellationToken ct = default, bool json = false)
     {
         var body = Path.Combine(cacheFolder, cacheKey);
         // A key may hold folders (map tiles: "<map>/<layer>/<z>/<x>_<y>.png").
@@ -119,6 +131,8 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
             {
                 await using (var file = File.Create(temp))
                     await CopyBodyAsync(response, file, uri, ct);
+                if (json && !IsJson(temp))
+                    throw new NotDataAnswerException(uri);
                 await ReplaceAsync(temp, body);
             }
             finally
@@ -176,6 +190,26 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
         finally
         {
             System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    /// <summary>Whether the file holds a JSON object or array: tarkov.dev's data, not a page or a cut-off body. A file
+    /// that can't be read is taken as one (can't tell; reading it fails on its own).</summary>
+    public static bool IsJson(string path)
+    {
+        try
+        {
+            using var file = File.OpenRead(path);
+            using var json = JsonDocument.Parse(file);
+            return json.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return true;
         }
     }
 
