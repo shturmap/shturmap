@@ -814,15 +814,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     names, the installer or the updater: those stay the version alone. The preview label keeps the version only.
   - *Plan*: last raid in one line, with **REPLAY** at its right while the raid can be replayed (the play symbol `E768`
     and the word, in the status words' style, as CLEAR PICKS stands beside NEXT RAID; owner, 2026-10-07: "Replay link:
-    ii"; "Map drawing", *The raid replay*); **Next raid**: up to four maps ranked by what can be done there, as a short list
-    that stays in view, then the open map's card: its line in words ("Complete 7 quests · progress 2 more") with
+    ii"; "Map drawing", *The raid replay*); **Next raid**: every map your quests have work on, ranked by what can be
+    done there, as a list of rows (owner, 2026-10-09: all of them; until then the planner's best four, so the list
+    stayed short above the open card; the rail scrolls, and the card now starts lower with many maps), then the open
+    map's card: its line in words ("Complete 7 quests · progress 2 more") with
     COMPLETE, PROGRESS and BRING (keys, items to bring). A row of the list is the map's name and its counts
     ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map that is
     on screen there is no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps'
     folded cards sat under it, below the fold). **The open card is the map on screen's** (owner, 2026-10-08, with the
-    MAP list's "A"; `Rules.PlanList.Open`): its row's card when it is suggested; when it isn't, its card comes after
-    the rows, with a row of its own, marked, when your quests have work there but rank below the four, and with no row
-    when none is there: then the card is the map's name, "None of your quests is on Factory" in muted ink, and its raid
+    MAP list's "A"; `Rules.PlanList.Open`): its row's card; a map none of your quests is on has no row, and its card
+    comes after the rows: the map's name, "None of your quests is on Factory" in muted ink, and its raid
     length and bosses (`PlanCard.CardOnly`). Only with no map on screen yet is it the best suggestion's. Until then a
     map that wasn't suggested left the best suggestion's card open and its row marked. The pen and CLEAR PICKS act on
     the open card's map, so on the map on screen. Each quest row in the card is the quest's name, then a quiet line of what it asks on
@@ -1878,9 +1879,9 @@ still only keeps its card open (two clicks, two meanings).
   COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
   a group of their own says "this raid's work" at a glance. BRING lists what the picks need first, then a hairline
   and the rest (`Planning.BringOrder`). A map with picks is suggested first, most picks first: the player's plan
-  before the planner's. That holds whatever the map's rank: every map is ranked before the list is cut, the maps
-  with picks all come first (also more than four), and the planner's best fill up to four (`RaidPlanner.Rank`;
-  until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
+  before the planner's. That holds whatever the map's rank: the maps with picks all come first, then every other
+  map with work on it in the planner's order (`RaidPlanner.Rank`; until 2026-10-09 the planner's best filled up to
+  four, and until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
   shows its picks' glyphs first, each in its pick's colour, then a hairline. The raid card starts with PICKED, nearest first, and
   NEXT is the nearest objective among the picks.
 - **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
@@ -2048,11 +2049,11 @@ those the player ticked as done (`Planning.Open`; §4, "Quest cards", *Ticks*):
   raid (they depend on luck; a `findItem` whose item may be bought, `foundInRaid` false, doesn't count as one, the
   same cut as "Plan order" below) and no kill count is above 3; otherwise it is **progressed**.
 - Score = 3 per finishable quest + 1 per tied objective with a place + 0.6 per tied objective without one + 0.1 per
-  untied doable objective. Maps are ranked by score; the top four are shown, the best (or the one on screen)
-  expanded. Maps with picked quests come before them, whatever their score (§4, "Picks"), and all of them: four is
-  how many the planner suggests by itself, not the most the list can hold. One picked quest with work on five maps
-  lists five, and the planner's own suggestions fill only what is left of four (decided 2026-10-04, from the
-  review: a map a pick can be worked on is never left out, and Plan's short list of maps has the room).
+  untied doable objective. Maps are ranked by score, and every map with work on it is shown, the best (or the one
+  on screen) expanded. Maps with picked quests come before them, whatever their score (§4, "Picks"). Until
+  2026-10-09 only the top four were shown, plus every map with a pick (decided 2026-10-04, from the review); the
+  owner then had every map with quests listed, as the planner's cut left maps out without a word on screen. MAP's
+  list holds the same maps with the same counts.
 - Quests whose in-raid work fits any map are listed once under **Any map**.
 - No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
   walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's

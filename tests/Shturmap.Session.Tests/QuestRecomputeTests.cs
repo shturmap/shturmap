@@ -7,8 +7,8 @@ using Shturmap.Data.TarkovDev;
 
 namespace Shturmap.Session.Tests;
 
-// The quests, picks and plans are worked out once for a run of quest messages, not once per message, and the plan's
-// best four come from the one ranking of every map (review of 2026-10-09). Nothing that is shown may change with it.
+// The quests, picks and plans are worked out once for a run of quest messages, not once per message, and the plan is
+// one ranking of every map (review of 2026-10-09). Nothing that is shown may change with it.
 public class QuestRecomputeTests
 {
     private static readonly string[] Names = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"];
@@ -42,24 +42,24 @@ public class QuestRecomputeTests
 
     public static TheoryData<string> PickedMaps => new() { "", "echo,foxtrot", "alpha,bravo,charlie,delta,echo,foxtrot", "none" };
 
+    // NEXT RAID lists every map with work on it (owner, 2026-10-09; until then the planner's best four): the maps with
+    // picks first, then the rest in the planner's order.
     [Theory]
     [MemberData(nameof(PickedMaps))]
-    public void The_best_four_cut_from_every_map_are_the_four_suggested(string picked)
+    public void Every_map_with_work_is_suggested_those_with_picks_first(string picked)
     {
         var data = SixMaps();
         var active = data.Tasks.Keys.ToList();
         // A pick on each map named: its first quest. "none" is a session without picks at all.
+        var named = picked == "none" ? [] : picked.Split(',', StringSplitOptions.RemoveEmptyEntries);
         IReadOnlyDictionary<string, IReadOnlySet<string>>? picks = picked == "none" ? null
-            : picked.Split(',', StringSplitOptions.RemoveEmptyEntries).ToDictionary(n => n, n => (IReadOnlySet<string>)new HashSet<string> { n + "-0" });
+            : named.ToDictionary(n => n, n => (IReadOnlySet<string>)new HashSet<string> { n + "-0" });
 
         var suggested = Planning.Suggest(data, active, picksByMap: picks);
-        var cut = Planning.Top(Planning.Suggest(data, active, picksByMap: picks, top: int.MaxValue), picks);
 
-        Assert.Equal(suggested.Select(p => p.NormalizedName), cut.Select(p => p.NormalizedName));
-        Assert.Equal(suggested.Select(p => string.Join(',', p.Finish.Concat(p.Progress).Select(q => q.QuestId))),
-            cut.Select(p => string.Join(',', p.Finish.Concat(p.Progress).Select(q => q.QuestId))));
-        // Every map with a pick stays, also beyond four.
-        Assert.Equal(picked == "alpha,bravo,charlie,delta,echo,foxtrot" ? 6 : 4, cut.Count);
+        // One pick each: among the maps with picks, the planner's order holds.
+        Assert.Equal([.. Names.Where(named.Contains), .. Names.Where(n => !named.Contains(n))], suggested.Select(p => p.NormalizedName));
+        Assert.Equal(data.Tasks.Count, suggested.Sum(p => p.Finish.Count + p.Progress.Count));
     }
 
     // ---- a run of quest messages in one batch of lines ----

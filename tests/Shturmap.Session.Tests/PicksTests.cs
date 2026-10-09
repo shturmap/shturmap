@@ -259,15 +259,16 @@ public class PicksTests
 
         var picked = Planning.Suggest(data, active, new HashSet<string> { pick });
         Assert.Contains(pick, picked[0].Finish.Concat(picked[0].Progress).Select(q => q.QuestId));
-        // Every map the pick is on, then the planner's best up to four.
-        Assert.True(picked.Count >= plans.Count);
+        // The same maps, every one with work on it: the pick only changes their order.
+        Assert.Equal(plans.Select(p => p.NormalizedName).Order(), picked.Select(p => p.NormalizedName).Order());
         Assert.Equal(plans.Select(p => p.NormalizedName), Planning.Suggest(data, active, new HashSet<string>()).Select(p => p.NormalizedName));
     }
 
-    // A pick on a map the planner ranks below its best four still brings that map up (the review of 2026-10-04: the
-    // list was cut to four before the picks were looked at, so such a pick never showed). Same cache as above.
+    // NEXT RAID lists every map with work on it (owner, 2026-10-09), and a pick on the map the planner ranks last
+    // brings that map to the top (the review of 2026-10-04: when the list was cut to four before the picks were looked
+    // at, such a pick never showed). Same cache as above.
     [Fact]
-    public async Task A_pick_on_a_map_outside_the_best_four_brings_it_first()
+    public async Task A_pick_on_the_map_ranked_last_brings_it_first()
     {
         var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
         if (!File.Exists(Path.Combine(cache, "pve_tasks.json")))
@@ -275,10 +276,12 @@ public class PicksTests
         var data = await new GameDataLoader(new CachedHttp(new HttpClient(new Offline()), cache)).LoadAsync(GameMode.Pve, "en", TestContext.Current.CancellationToken);
         var active = data.Tasks.Keys.ToList();
         var all = RaidPlanner.Rank(active.Select(id => Planning.ToPlan(data.Tasks[id], data)), Planning.Maps(data), top: int.MaxValue);
-        Assert.True(all.Count > 4, "the data has more maps with quests than the four suggested");
+        Assert.True(all.Count > 4, "the data has more maps with quests than the four once suggested");
         var low = all[^1];
         var lowName = data.Maps[low.Map.Id].NormalizedName;
-        Assert.DoesNotContain(lowName, Planning.Suggest(data, active).Select(p => p.NormalizedName));
+        var plans = Planning.Suggest(data, active);
+        Assert.Equal(all.Count, plans.Count);
+        Assert.Equal(lowName, plans[^1].NormalizedName);
 
         // A quest of the lowest map, one that is on no other map if there is one (then that map alone leads).
         var elsewhere = all.Take(all.Count - 1).SelectMany(p => p.Finish.Concat(p.Progress)).Select(q => q.Quest.Id).ToHashSet();
@@ -286,12 +289,9 @@ public class PicksTests
         var pick = here.FirstOrDefault(id => !elsewhere.Contains(id)) ?? here[0];
 
         var picked = Planning.Suggest(data, active, new HashSet<string> { pick });
-        Assert.Contains(lowName, picked.Select(p => p.NormalizedName));
+        Assert.Equal(all.Count, picked.Count);
         Assert.Contains(pick, picked[0].Finish.Concat(picked[0].Progress).Select(q => q.QuestId));
         if (!elsewhere.Contains(pick))
-        {
             Assert.Equal(lowName, picked[0].NormalizedName);
-            Assert.Equal(4, picked.Count);
-        }
     }
 }

@@ -605,7 +605,7 @@ public sealed partial class MainWindow : Window
             string NameOf(string id) => data.Maps.TryGetValue(id, out var map) ? map.NormalizedName : id;
             var list = MapList.Build(
                 Planning.Maps(data).Select(m => new MapList.Map(NameOf(m.Id), m.Name, m.MapIds.Select(NameOf).ToList())),
-                s.AllPlans.Select(p => (p.NormalizedName, ShortSummary(p.Finish.Count, p.Progress.Count))));
+                s.Plan.Select(p => (p.NormalizedName, ShortSummary(p.Finish.Count, p.Progress.Count))));
             if (!MapList.Same(ViewModel.MapChoices, list) && !MapPicker.IsDropDownOpen)
                 ViewModel.MapChoices = list;
             ViewModel.SelectedMap = MapList.For(ViewModel.MapChoices, s.Map?.NormalizedName);

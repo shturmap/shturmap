@@ -42,32 +42,21 @@ public sealed record MapPlanView(
 /// <summary>Turns tarkov.dev quests and maps into the planner's terms and its results into display text.</summary>
 public static class Planning
 {
+    /// <summary>
+    /// Every map the active quests have work on, best first: NEXT RAID's rows and the MAP list's counts (owner,
+    /// 2026-10-09: NEXT RAID lists every map with quests; until then the planner's best four).
+    /// </summary>
     /// <param name="picks">The quests picked for the coming raid: maps with picks come first, most picks first, the
-    /// player's plan before the planner's (owner, 2026-10-03), also a map the planner ranks below its best four
-    /// (<see cref="RaidPlanner.Rank"/>); otherwise the planner's order.</param>
+    /// player's plan before the planner's (owner, 2026-10-03); otherwise the planner's order
+    /// (<see cref="RaidPlanner.Rank"/>).</param>
     /// <param name="done">The objectives the player ticked as done (<see cref="ObjectiveTicks"/>): the plan is made
     /// from the objectives that are left (<see cref="Open"/>).</param>
     /// <param name="picksByMap">The picks map by map, by <see cref="PickKey"/> (owner, 2026-10-04: picks are kept per
     /// map): where given, each map counts its own picks.</param>
-    /// <param name="top">How many maps without picks (<see cref="RaidPlanner.Rank"/>); every map with work on it, in
-    /// the same order, with <see cref="int.MaxValue"/> (the MAP list's counts).</param>
     public static IReadOnlyList<MapPlanView> Suggest(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? picks = null,
-        IReadOnlySet<string>? done = null, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap = null, int top = 4) =>
-        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), top: top, picks: picks,
+        IReadOnlySet<string>? done = null, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap = null) =>
+        RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), top: int.MaxValue, picks: picks,
             picksOn: picksByMap is null ? null : map => picksByMap.GetValueOrDefault(NameOf(data, map))).Select(p => ToView(data, p)).ToList();
-
-    /// <summary>
-    /// <see cref="Suggest"/>'s cut, taken from its list of every map (top: <see cref="int.MaxValue"/>, with the same
-    /// picks), so the session ranks once where it ranked twice (review of 2026-10-09). The ranking doesn't depend on
-    /// the cut: the maps with picks lead, and all of them stay, then the best of the others up to <paramref name="top"/>
-    /// (<see cref="RaidPlanner.Rank"/>).
-    /// </summary>
-    public static IReadOnlyList<MapPlanView> Top(IReadOnlyList<MapPlanView> all, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap, int top = 4)
-    {
-        var picked = picksByMap is null ? 0 : all.TakeWhile(plan => picksByMap.GetValueOrDefault(plan.NormalizedName) is { Count: > 0 } here
-            && plan.Finish.Concat(plan.Progress).Any(q => here.Contains(q.QuestId))).Count();
-        return all.Take(Math.Max(top, picked)).ToList();
-    }
 
     private static string NameOf(GameData data, PlanMap map) => data.Maps.TryGetValue(map.Id, out var m) ? m.NormalizedName : map.Id;
 

@@ -68,10 +68,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private string? _fixMapId;
     private MapIdentity? _lastRaidMap;
     private DateTime? _lastRaidEnded;
+    // Every map with work on it, best first: NEXT RAID's rows and the MAP list's counts (owner, 2026-10-09).
     private IReadOnlyList<MapPlanView> _plan = [];
-
-    // Every map with work on it, in the plan's order: the MAP list's counts (owner, 2026-10-08, "A").
-    private IReadOnlyList<MapPlanView> _allPlans = [];
     private IReadOnlyList<PlanQuestView> _anyMap = [];
     // Kept raw: a raid replayed at startup ends before the map data has loaded to name it. EndInLog is false for a
     // raid the log never ended: then its length isn't known.
@@ -1742,8 +1740,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _picks.Adopt(_mode, quest => mapsOf.Value.GetValueOrDefault(quest) ?? []);
         }
         var picksByMap = _picks?.ByMap(_mode);
-        _allPlans = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: picksByMap, top: int.MaxValue);
-        _plan = Planning.Top(_allPlans, picksByMap);
+        _plan = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: picksByMap);
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active, _done);
     }
 
@@ -2041,7 +2038,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             DeleteScreenshots = _deleteScreenshots,
             ScreenshotKeys = _settings.ScreenshotKeys,
             Plan = _plan,
-            AllPlans = _allPlans,
             Picks = Picks,
             PickSlots = PickMap is { } pickMap && _picks is not null ? _picks.Slots(_mode, pickMap) : new Dictionary<string, int>(),
             PicksByMap = _picks?.ByMap(_mode) ?? new Dictionary<string, IReadOnlySet<string>>(),
