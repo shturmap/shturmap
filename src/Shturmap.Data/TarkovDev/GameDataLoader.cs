@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
+using Shturmap.Core;
 using Shturmap.Core.Logs;
 using Shturmap.Core.Maps;
 using Shturmap.Data.Http;
@@ -291,22 +292,11 @@ public sealed class GameDataLoader(CachedHttp http)
     }
 
     /// <summary>
-    /// tarkov.dev's code for the game's language. The game names some languages its own way, and tarkov.dev answers
-    /// those with 404 (seen 2026-10-02: a German game asked for "maps_ge", and no data loaded at all).
+    /// tarkov.dev's code for the game's language (<see cref="GameLanguage"/>), English when the game names none. The
+    /// game names some languages its own way, and tarkov.dev answers those with 404 (seen 2026-10-02: a German game
+    /// asked for "maps_ge", and no data loaded at all).
     /// </summary>
-    public static string ApiLanguage(string? gameLanguage) => (gameLanguage ?? "").Trim().ToLowerInvariant() switch
-    {
-        "" => "en",
-        "ge" => "de",
-        "cz" => "cs",
-        "jp" => "ja",
-        "kr" => "ko",
-        "po" => "pt",
-        "tu" => "tr",
-        "ch" => "zh",
-        "es-mx" => "es",
-        var code => code,
-    };
+    public static string ApiLanguage(string? gameLanguage) => GameLanguage.Common(gameLanguage) ?? "en";
 
     // Whether every translation arrived; false when tarkov.dev has no texts in the language, which only "not found"
     // says (the load then goes on in English). A translation that fails any other way (no connection, a timeout, 5xx;

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices.WindowsRuntime;
+using Shturmap.Core;
 using Shturmap.Core.Screenshots;
 using Windows.Globalization;
 using Windows.Graphics.Imaging;
@@ -57,20 +58,9 @@ public sealed class ExitListReader
         }
     }
 
-    // The game's language codes that aren't Windows' ("ge" is German).
-    internal static string? WindowsLanguage(string? gameLanguage) => gameLanguage?.ToLowerInvariant() switch
-    {
-        null or "" => null,
-        "ge" => "de",
-        "ch" => "zh",
-        "jp" => "ja",
-        "kr" => "ko",
-        "po" => "pt",
-        "tu" => "tr",
-        "cz" => "cs",
-        "es-mx" => "es",
-        var other => other,
-    };
+    // The game's language codes that aren't Windows' ("ge" is German): the same table as tarkov.dev's. None named, none
+    // asked for: Create then reads in English.
+    internal static string? WindowsLanguage(string? gameLanguage) => GameLanguage.Common(gameLanguage);
 
     /// <summary>
     /// The list in the screenshot, or null when its top right corner shows none. The game creates the file and then

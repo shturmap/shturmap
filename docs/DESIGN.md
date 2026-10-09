@@ -2489,8 +2489,9 @@ texts are translated, the formats follow the language chosen).
 
 **Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
 `<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:
-`GameDataLoader.ApiLanguage` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
-`es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
+`GameLanguage.Common` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
+`es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all), one table for
+tarkov.dev and for the extract list's text recognition (review of 2026-10-09: each had a copy). A language
 tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
 Only "not found" (404) says the language is lacking. A translation that fails any other way (no connection, a
 timeout, 5xx) with no saved copy is never said as "No German texts on tarkov.dev" (until 2026-10-04 any failed
