@@ -62,7 +62,7 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task A_log_longer_than_one_read_is_read_to_its_end_before_the_next_session()
     {
-        Append(_app, App("20:59:37", Mode) + App("21:18:40", Scene) + App("21:20:49", Started) + App("21:40:00", Menu));
+        Append(_app, App("15:00:10", Mode) + App("15:18:00", Scene) + App("15:20:00", Started) + App("15:40:00", Menu));
         await using var tailer = Tailer(maxRead: 64);
 
         // One read of 64 bytes, and the game has started again before the rest is read.
@@ -88,13 +88,13 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task The_last_line_of_the_session_before_is_not_lost()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "first"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "first"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
 
         // The raid's end is the old session's last line: nothing follows it, and the game starts again at once.
-        Append(_app, App("21:40:00", Menu));
+        Append(_app, App("15:40:00", Menu));
         tailer.PollOnce();
         Assert.Empty(Drain(tailer));
         StartAgain();
@@ -108,7 +108,7 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task A_file_added_to_the_session_before_since_the_last_poll_is_read_too()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "last"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "last"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
@@ -126,11 +126,11 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task A_busy_file_of_the_session_before_puts_the_next_one_off_for_a_few_polls_only()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "first"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "first"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
-        Append(_app, App("21:40:00", Menu));
+        Append(_app, App("15:40:00", Menu));
         StartAgain();
 
         // Something else holds the old log: the new session waits, and is followed once the old one could be read.
@@ -149,7 +149,7 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task A_file_that_stays_busy_does_not_hold_the_next_session_up_for_good()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "first"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "first"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
@@ -171,7 +171,7 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task A_session_folder_that_is_gone_has_nothing_left_to_read()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "first"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "first"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
@@ -188,7 +188,7 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task Reading_what_the_log_held_at_start_is_no_sign_of_a_running_game()
     {
-        Append(_app, App("20:59:37", Mode) + App("21:18:40", Scene) + App("21:20:49", Started));
+        Append(_app, App("15:00:10", Mode) + App("15:18:00", Scene) + App("15:20:00", Started));
         await using var tailer = Tailer(maxRead: 64);
         for (var i = 0; i < 8; i++)
             tailer.PollOnce();
@@ -202,13 +202,13 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task A_line_the_game_writes_while_it_is_followed_is()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "last"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "last"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Assert.Null(tailer.LastActivityUtc);
 
         _now += TimeSpan.FromMinutes(3);
-        Append(_app, App("21:20:49", "anything at all"));
+        Append(_app, App("15:20:00", "anything at all"));
         tailer.PollOnce();
         Assert.Equal(_now, tailer.LastActivityUtc);
     }
@@ -216,7 +216,7 @@ public sealed class LogTailerSessionChangeTests : IDisposable
     [Fact]
     public async Task So_is_a_session_the_game_starts_later()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "last"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "last"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Assert.Null(tailer.LastActivityUtc);

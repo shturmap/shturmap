@@ -21,13 +21,13 @@ public class MapProjectionTests
         var projection = new MapProjection(Fixtures.Map("streets-of-tarkov"));
 
         var map = projection.ToMap(40.00, 120.00);
-        Assert.Equal(-34.804, map.X, 3);
-        Assert.Equal(170.947, map.Y, 3);
+        Assert.Equal(-15.200, map.X, 3);
+        Assert.Equal(45.600, map.Y, 3);
 
         // StreetsOfTarkov.svg viewBox="0 0 605.32395 831.57753"
         var svg = projection.PlaceSvg(0, 0, 605.32395, 831.57753).MapToSvg(map);
-        Assert.Equal(232.2, svg.X, 1);
-        Assert.Equal(749.0, svg.Y, 1);
+        Assert.Equal(284.1, svg.X, 1);
+        Assert.Equal(417.3, svg.Y, 1);
     }
 
     [Fact]
@@ -45,10 +45,10 @@ public class MapProjectionTests
     [Fact]
     public void Facing_south_on_a_180_degree_map_points_up()
     {
-        // yaw 177.93° is roughly world −Z; Streets is rotated 180°, so the arrow points (almost) straight up.
+        // yaw 177.75° is roughly world −Z; Streets is rotated 180°, so the arrow points (almost) straight up.
         var projection = new MapProjection(Fixtures.Map("streets-of-tarkov"));
-        var heading = projection.ScreenHeadingDegrees(new WorldPoint(40.00, 2.50, 120.00), 177.93);
-        Assert.Equal(357.93, heading, 2);
+        var heading = projection.ScreenHeadingDegrees(new WorldPoint(40.00, 2.50, 120.00), 177.75);
+        Assert.Equal(357.75, heading, 2);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class MapProjectionTests
     }
 
     [Theory]
-    [InlineData(4.09, null)]
+    [InlineData(2.50, null)]
     [InlineData(12.0, "2nd Floor")]
     [InlineData(17.5, "3rd Floor")]
     [InlineData(-8.0, "Underground")]

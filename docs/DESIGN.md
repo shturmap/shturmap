@@ -252,7 +252,8 @@ quoting it anywhere new.
   were masked only after "profileid", so ids on other lines stayed. They were taken out of the whole history the
   same day). The sessions that a few tests replay stay on the PC that made them, in `tests/fixtures/logs`, which git
   ignores; without them those tests are skipped, and the same logic is tested on log lines written by hand, with
-  made-up ids. `tools/make-log-fixtures.ps1` makes the local copies and still scrubs them: an id stays only where it
+  made-up ids. `tools/make-log-fixtures.ps1` makes the local copies under a made-up name, every time in them moved
+  to it (2026-01-01, the day all examples use; owner, 2026-10-09), and still scrubs them: an id stays only where it
   is public game data (a quest or trader id in a message's `templateId`, an item template, a trader as the sender);
   every other id is a placeholder (profiles, messages, events, item instances, the stash, raids, the push channel),
   and tokens, session ids, account ids and addresses are masked. `FixtureScrubTests` check the local copies. Quest
@@ -2360,8 +2361,8 @@ game", *It keeps looking*); all valid installs feed the quest backfill.
 time of day when a position is present. Facing: `yaw = atan2(2(qx·qz + qw·qy), 1 − 2(qx² + qy²))`.
 
 **Projection.** tarkov.dev's math: rotate (x, z) by `coordinateRotation`, `X = a·rx + b`, `Y = −c·ry + d`, SVG
-fitted into the projected `svgBounds ?? bounds`. Golden test: a Streets screenshot lands at
-(232.2, 749.0) in `StreetsOfTarkov.svg`.
+fitted into the projected `svgBounds ?? bounds`. Golden test: a made-up Streets position, x 40 and z 120, lands at
+(284.1, 417.3) in `StreetsOfTarkov.svg`.
 
 **Logs and raids.** Menu → Loading (`scene preset path:`) → InRaid (`GameStarted`) → Menu
 (`PrepareSelectedProfileLocally` or matching cancelled). Map: scene path ↔ `scenePath`, then `Location:` ↔

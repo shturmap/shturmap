@@ -112,7 +112,7 @@ public class LogReplayTests
     }
 
     [Fact]
-    public void August_pvp_and_seasonal_session()
+    public void A_seasonal_pvp_session()
     {
         var (raids, quests) = Replay("log_2026.01.01_12-00-00_1.1.0.1.46777");
 
@@ -138,7 +138,7 @@ public class LogReplayTests
     }
 
     [Fact]
-    public void September_pve_streets_session()
+    public void A_pve_streets_session()
     {
         var (raids, quests) = Replay("log_2026.01.01_15-00-00_1.1.5.1.47510");
 
@@ -176,7 +176,7 @@ public class LogReplayTests
     }
 
     [Theory]
-    // Real screenshots with their file times, and the map they must be attributed to.
+    // Screenshots with their file times, and the map they must be attributed to (the fixtures' made-up times).
     [InlineData("log_2026.01.01_13-00-00_1.1.5.1.47510", "2026-01-01 13:18:11", "customs")]
     [InlineData("log_2026.01.01_13-00-00_1.1.5.1.47510", "2026-01-01 13:18:40", "customs")]
     [InlineData("log_2026.01.01_13-00-00_1.1.5.1.47510", "2026-01-01 13:42:33", "woods")]
@@ -207,7 +207,7 @@ public class LogReplayTests
 }
 
 // Group picks, loading steps and the insurer's notes (docs/NEXT.md items 1, 3 and 4), from line shapes seen in the
-// owner's logs; ids are masked.
+// game's logs; ids and times are made up.
 public class GroupLoadingInsuranceTests
 {
     private const string Head = "|1.1.5.1.47510|Info|";
@@ -284,7 +284,7 @@ public class GroupLoadingInsuranceTests
             "    \"systemData\": {\r\n      \"location\": \"bigmap\"\r\n    },\r\n    \"items\": {\r\n      \"stash\": \"s\",\r\n      \"data\": [\r\n" +
             "        { \"_id\": \"a\", \"parentId\": \"s\" },\r\n        { \"_id\": \"b\", \"parentId\": \"a\" },\r\n" +
             "        { \"_id\": \"c\", \"parentId\": \"s\" }\r\n      ]\r\n    },\r\n    \"hasRewards\": true\r\n  }\r\n}";
-        var events = Parse(Push("14:00:00.000", "ChatMessageReceived", lost) + Push("23:00:00.000", "ChatMessageReceived", returned));
+        var events = Parse(Push("14:00:00.000", "ChatMessageReceived", lost) + Push("15:00:00.000", "ChatMessageReceived", returned));
 
         var notes = events.Cast<InsuranceNoticeEvent>().ToList();
         Assert.Equal((InsuranceNotice.Lost, "TarkovStreets", 0), (notes[0].Kind, notes[0].LocationId, notes[0].ItemCount));
@@ -360,7 +360,7 @@ public class GroupLoadingInsuranceTests
     [Fact]
     public void A_late_note_counts_for_five_minutes_on_the_same_map_only()
     {
-        var start = new DateTime(2026, 10, 1, 21, 0, 0);
+        var start = new DateTime(2026, 1, 1, 12, 0, 0);
         RaidEnded Raid(RaidTracker tracker, string location, DateTime at)
         {
             tracker.Apply(new MapLoadingEvent(at, "maps/customs_preset.bundle", null));

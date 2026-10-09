@@ -27,7 +27,7 @@ public class ModeReadingTests
     public void A_mode_from_an_earlier_day_says_the_day()
     {
         var reading = new ModeReading().Read(Said("Regular", new DateTime(2026, 1, 1, 14, 0, 30)));
-        Assert.Matches(@"^From the game's log, 25 \S+ 14:26$", reading.Tooltip(gameFound: true, Now));
+        Assert.Matches(@"^From the game's log, 1 \S+ 14:00$", reading.Tooltip(gameFound: true, Now));
     }
 
     [Fact]
