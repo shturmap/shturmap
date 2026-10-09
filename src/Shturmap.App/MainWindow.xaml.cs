@@ -1412,6 +1412,10 @@ public sealed partial class MainWindow : Window
         Linked.PickSlots = s.PickSlots;
         Linked.Picks = s.Picks;
         ViewModel.HasPicks = s.Picks.Count > 0;
+        // The scene in view is a preview's (another map, What's New, the tour's example): the player's picks on the map
+        // on screen aren't its own (review of 2026-10-09). The map's own scene takes them when the preview ends (UpdateMap).
+        if (_previewing is not null)
+            return;
         var (onMap, slotsOnMap) = (s.PicksOn(s.Map?.NormalizedName), s.PickSlotsOn(s.Map?.NormalizedName));
         if (Map.Scene is { } scene && (!scene.Kept.SetEquals(onMap) || scene.PickSlots.Count != slotsOnMap.Count
             || slotsOnMap.Any(p => !scene.PickSlots.TryGetValue(p.Key, out var slot) || slot != p.Value)))

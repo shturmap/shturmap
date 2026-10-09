@@ -830,6 +830,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     "PREVIEW · CUSTOMS · CLICK ITS ROW TO PLAN IT"; moving to the next row switches at once, leaving puts the
     shown map back exactly as it was (pan and zoom; fitted where it wasn't drawn yet, not at the camera's default:
     review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
+    The picks of the map on screen stay off a preview's map (the same review: each snapshot wrote them into it, and
+    into the tour's example).
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
