@@ -507,8 +507,6 @@ public sealed partial class MainWindow : Window
         // back on the owner's word, with its tooltip saying how it is made; a Scav gets none (Rules.RaidTime).
         var inRaid = s.Raid.Phase == RaidPhase.InRaid;
         var time = Rules.RaidTime.Of(inRaid, s.Raid.Side == RaidSide.Scav, s.Raid.RaidStartedAt, s.RaidInfo?.RaidMinutes ?? 0, DateTime.Now);
-        // A snapshot's or the demo clip's picture must not catch the readout's figure half decoded.
-        Controls.RaidClock.Still = SnapshotMode || DemoMode;
         ViewModel.RaidClock = time;
         var parts = new List<string>();
         // Before the raid runs (it loads) the map's raid length stands in the facts; once it runs, the line above says more.

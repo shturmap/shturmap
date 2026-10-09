@@ -497,8 +497,8 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
 position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; the raid card's time
-moves only when its minute changes (its figure decodes over half a second as the cue's title does, and one dark notch
-runs along what is left of its rule in 1.1 s), and holds still in between. With Windows' animation
+doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its figure decoded and a dark notch
+ran along its rule at each minute until then). With Windows' animation
 effects off the app shows and hides without motion, and following jumps to the position. The tour (§1's second
 exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide from part to part over
 0.65 s eased in and out while the map sheet's corner marks close in on them with a small overshoot, the band's gold
@@ -850,7 +850,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the body open at its top, so unscrolled it looks as before; once anything has scrolled under it, the head closes at
     its foot with the card's edge. The rail's hint stands above THIS RAID in a raid. A copy
     of the readout pinned only once the card has scrolled away was considered and not built: it would cover the top of
-    what scrolls (the ways out ALL 15 ↓ brings up), and two clocks would decode each minute.
+    what scrolls (the ways out ALL 15 ↓ brings up), and the card would show two clocks.
     **The readout** (owner, 2026-10-05: "The remaining time is a crucial piece of information and should be more
     visible. I would make it a prominent item in the UI and maybe even have a cool animation that is in-line with the
     style of the app. It should not be too crazy though to not steer away the attention through its movement";
@@ -862,12 +862,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     game's own timer does (the owner's screenshots: white at 0:33:47, red at 0:08:34). Where no time left is known
     the figure is the time in the raid, said as "MIN IN": a Scav's ("TIME LEFT NOT KNOWN" at the right, no rule), a
     map without a raid length (no rule), and past the raid's length ("PAST THE RAID'S 40 MIN" in red, the rule all
-    gone). The tooltip says how the figures are made, as before. **It moves only when it changes** (principle 2):
-    at a new minute the figure decodes as the big cue's title does, its digits flickering in gold for half a second
-    and settling left to right in ink, and one dark notch runs from the mark to the rule's end; a raid's first figure
-    just decodes. Nothing moves in between, so it never pulls at the eye from the second monitor (a mark that
-    breathes all raid was considered and left out for the reason picks hold still), and with Windows' animation
-    effects off, in snapshots and in the demo clip it doesn't move at all. The time left is still the map's raid
+    gone). The tooltip says how the figures are made, as before. **It doesn't move** (principle 2): at a new minute
+    the figure and the rule just change, so it never pulls at the eye from the second monitor (a mark that breathes
+    all raid was considered and left out for the reason picks hold still). Until 2026-10-09 the figure decoded at
+    each new minute as the big cue's title does and one dark notch ran along what was left of the rule; the owner had
+    both removed in the pre-release review. The time left is still the map's raid
     length minus the time since the start line: reading the game's own timer from a screenshot was looked at the
     same day and not built (§2).
     and, when the distances aren't from a fresh screenshot, where they are from. **No loading progress** (owner,
@@ -2660,4 +2659,4 @@ every issue goes through it, and the app's report is offered beside it.
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
   ringing out (2026-10-07; §4, principle 11; "Map drawing").
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
-  steps through the rail (§4, "Keyboard").
+  steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).

@@ -592,8 +592,8 @@
               </Grid>
               <!-- How long the raid still runs: what one looks for in a raid, so it is the card's largest figure,
                    right under the map's name, over a rule of the raid's length (owner, 2026-10-04: "This is crucial
-                   information"; 2026-10-05: "should be more visible ... a prominent item in the UI"). It moves only
-                   when its minute changes (Controls.RaidClock, Rules.RaidTime). -->
+                   information"; 2026-10-05: "should be more visible ... a prominent item in the UI"). It changes once
+                   a minute, without motion (Controls.RaidClock, Rules.RaidTime). -->
               <controls:RaidClock Reading="{x:Bind ViewModel.RaidClock, Mode=OneWay}" />
             </StackPanel>
           </Border>
