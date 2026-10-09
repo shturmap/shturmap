@@ -15,7 +15,8 @@ without the player having to click during a raid. When in doubt, leave it out. O
 eye candy at a raid's end: the raid replay (owner, 2026-10-07: "more on the eye-candy side of things like the loading
 animations"; "Map drawing", *The raid replay*). And one for learning the app: the tour at a first start (owner,
 2026-10-09: "a proper first-time-opening tour of the app ... Here we can be a bit more flashy with nice animations";
-§4, "Screen anatomy", *The tour*).
+§4, "Screen anatomy", *The tour*). And one for a quest handed in: the QUEST COMPLETE cue (owner, 2026-10-07: "For
+completed quests, also make a nice animation"; §4, principle 11).
 
 **Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
 part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
@@ -270,7 +271,7 @@ quoting it anywhere new.
 2. **Glanceable from a second monitor.** High contrast on a dark ground, the important line first and largest (the
    glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
    change, the raid replay at a raid's end (§1's exception), and the tour (§1's second exception, owner, 2026-10-09:
-outside raids only, and still in the cues' own motion). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
+outside raids only, and still in the cues' own motion), and the QUEST COMPLETE cue (§1's third). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
    kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. Shturmap has one window, never topmost, so it can't cover
