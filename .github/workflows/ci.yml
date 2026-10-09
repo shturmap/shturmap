@@ -44,3 +44,10 @@ jobs:
       - name: Test
         shell: pwsh
         run: .\eng\dotnet.ps1 test --solution Shturmap.slnx --no-build
+
+      # Known vulnerabilities in the NuGet packages, direct or transitive (in place of Dependabot: CLAUDE.md allows no
+      # other identity in the commits). Also when a test failed, so neither hides the other.
+      - name: Vulnerable packages
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: .\eng\audit-packages.ps1
