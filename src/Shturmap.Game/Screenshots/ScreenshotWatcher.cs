@@ -17,6 +17,8 @@ public sealed record ScreenshotSeen(string Path, ScreenshotInfo Info, DateTime C
 public sealed class ScreenshotWatcher : IDisposable
 {
     private readonly ConcurrentDictionary<string, byte> _known = new(StringComparer.OrdinalIgnoreCase);
+    // Reported screenshots the cleaner deleted, with when (Forget).
+    private readonly ConcurrentDictionary<string, DateTime> _gone = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private FileSystemWatcher? _watcher;
     private DateTime _watchedFolderCreatedUtc;
@@ -24,6 +26,8 @@ public sealed class ScreenshotWatcher : IDisposable
     private Timer? _rescan;
     private bool _existingAreOld;
     private bool _disposed;
+    private DateTime _startedUtc;
+    private static readonly TimeSpan FileTimeSlack = TimeSpan.FromSeconds(2);
 
     public ScreenshotWatcher(string folder) => Folder = folder;
 
@@ -66,6 +70,7 @@ public sealed class ScreenshotWatcher : IDisposable
         {
             lock (_gate)
             {
+                _startedUtc = DateTime.UtcNow;
                 // What is in the folder now was taken before Shturmap looked, also if the folder can only be read
                 // at a later rescan.
                 _existingAreOld = Directory.Exists(Folder);
@@ -108,7 +113,7 @@ public sealed class ScreenshotWatcher : IDisposable
 
     // Under _gate. Files in the folder are remembered as old the first time, if the folder was there at start; a
     // folder that appeared later was created by the game for the very screenshot in it, and after a new set-up
-    // whatever isn't known yet is new.
+    // whatever isn't known yet is new, unless it was written before (Consider).
     private void WatchFolder()
     {
         if (_existingAreOld)
@@ -226,9 +231,14 @@ public sealed class ScreenshotWatcher : IDisposable
 
     /// <summary>
     /// A reported screenshot was deleted (<see cref="ScreenshotCleaner"/>): a later file of the same name is a new
-    /// screenshot again. The name can repeat: the same minute, place, facing and raid clock.
+    /// screenshot again. The name can repeat: the same minute, place, facing and raid clock. The deleted file itself,
+    /// put back, is not (<see cref="CameBack"/>).
     /// </summary>
-    public void Forget(string path) => _known.TryRemove(path, out _);
+    public void Forget(string path)
+    {
+        _gone[path] = DateTime.UtcNow;
+        _known.TryRemove(path, out _);
+    }
 
     private void Consider(string path)
     {
@@ -241,6 +251,8 @@ public sealed class ScreenshotWatcher : IDisposable
             _known.TryRemove(path, out _);
             return;
         }
+        if (CameBack(path))
+            return;
         if (TryRead(path) is not { } seen)
             return;
         try
@@ -251,6 +263,25 @@ public sealed class ScreenshotWatcher : IDisposable
         {
             // One listener's failure is no reason to miss the screenshots after this one.
             Report("a listener to a new screenshot", e);
+        }
+    }
+
+    // A file last written before watching started, or before a screenshot of its name was deleted, is no screenshot
+    // the game took now: it came back, with a folder a sync tool or the Recycle Bin restored, or copied in, and copies
+    // keep the time a file was last written. Every file a restored folder held, or an old one brought back into it, was
+    // reported as new, and with "Delete position screenshots" on, deleted 5 s later (review of 2026-10-09). It stays
+    // known, as an old one. File times are coarser than the clock (a tick on NTFS, two seconds on FAT): a screenshot
+    // written a moment after the start can carry a time a little before it, so only one older by more counts.
+    private bool CameBack(string path)
+    {
+        try
+        {
+            var written = File.GetLastWriteTimeUtc(path) + FileTimeSlack;
+            return written < _startedUtc || (_gone.TryGetValue(path, out var gone) && written < gone);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 

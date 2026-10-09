@@ -91,7 +91,11 @@ off unless ticked: a screenshot whose name gave a position is deleted 5 seconds 
 file and any other tool the player runs time to read its name. What may go is narrow, and checked when the file is
 seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a file the watcher reported as new in this run,
 directly in the screenshots folder, named as the game names a screenshot with a position. What was in the folder
-before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. The
+before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. Nor is
+a screenshot that comes back new: a file last written before Shturmap started watching, or before a screenshot of
+its name was deleted, is old (`ScreenshotWatcher`; review of 2026-10-09: a Screenshots folder a sync tool or the
+Recycle Bin restored had each file it brought back reported as new and, with the setting on, deleted 5 s later). So
+restored or copied-in screenshots are neither placed on the map nor deleted. The
 cleaner never opens the image: the file is removed by name. One that is still open elsewhere (the game writing it)
 can't be removed and is tried again, six times 5 seconds apart, then left with a line in the app log; a file marked
 read-only is left. Unticking within the 5 seconds keeps what still waits, and so does closing Shturmap. The folder
