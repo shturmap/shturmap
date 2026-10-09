@@ -28,8 +28,8 @@ public sealed record RaidReplay(string MapNormalizedName, string MapName, IReadO
     public const double MinSpanMinutes = 5;
 
     /// <summary>
-    /// Whether the raid has enough to replay: 3 positions or more over 5 minutes or more, and a length (in the study
-    /// log of 1–6 October, 9 of 19 raids). Fewer would be a dot or two, not a raid.
+    /// Whether the raid has enough to replay: 3 positions or more over 5 minutes or more, and a length (in a week of
+    /// the study log, about half the raids). Fewer would be a dot or two, not a raid.
     /// </summary>
     public bool Plays => Fixes.Count >= MinFixes && Minutes > 0 && Fixes[^1].Minute - Fixes[0].Minute >= MinSpanMinutes;
 

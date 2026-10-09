@@ -8,7 +8,7 @@ namespace Shturmap.Session;
 /// The raid state in the status bar, saying only what the game's log shows (owner, 2026-10-03: "in the menus" while
 /// the game wasn't even running was misleading). The application log has no line that marks the game quitting: the
 /// sequence "Disposing BEClient … Dll released" that ends some sessions also comes at startup and between raids, and
-/// about half the sessions just stop after an ordinary line (all 22 sessions, 2026-08-15 to 2026-10-03). So the log
+/// about half the sessions just stop after an ordinary line (of a few dozen sessions over seven weeks). So the log
 /// can't tell the menus from a closed game, and outside a raid the state is the one thing that is always true.
 /// </summary>
 public static class RaidStatus

@@ -1,7 +1,7 @@
 # Next: more from the game's logs
 
 Plan for the next session (written 2026-10-01, evening). The owner asked for items 1–4 below; they come from a
-read of everything in their own application and push-notification logs (20 sessions, 2026-08-15 to 2026-10-01).
+read of everything in their own application and push-notification logs (a few dozen sessions over six weeks).
 Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) on 2026-10-03. Items 1, 3 and 4 are done
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
@@ -174,13 +174,14 @@ like the cues' entrance. From the panels (`artifacts\replay-panel.png`, `replay-
 "B and D" (a trace in the RAID OVER cue, and REPLAY on the last-raid line), then "Replay: C, but encode raid time to the
 color of the pen stroke. Use a fitting color map based on the apps design", "Replay timeline 1", "Replay link: ii".
 
-**What there is to replay** (the study log, 1–6 Oct, 19 raids): 80 positions, one per 4.4 raid minutes; 6 raids had one
-position, the median 4. Long raids had gaps of 11 to 21 minutes, and the last position came 1 to 21 minutes before the
-raid's end line. How the raid ended (survived, killed) is in no log Shturmap reads. So the replay shows where and when
-the player took screenshots, and says where they were last seen, never how the raid ended.
+**What there is to replay** (a week of the study log, about twenty raids): one position per four or five raid minutes;
+a third of the raids had one position, the median four. Long raids had gaps of 10 to 20 minutes, and the last position
+came up to 20 minutes before the raid's end line. How the raid ended (survived, killed) is in no log Shturmap reads. So
+the replay shows where and when the player took screenshots, and says where they were last seen, never how the raid
+ended.
 
 - **When.** At a raid's end, in place of today's RAID OVER cue, when the raid has 3 positions or more over 5 minutes or
-  more (9 of the 19 raids); otherwise today's cue. Never for the log read back at start.
+  more (about half of that week's raids); otherwise today's cue. Never for the log read back at start.
 - **The sequence.** 0–1.6 s: RAID OVER enters in the middle as every cue does. 1.6–2.6 s: the title goes, and the band
   slides to the foot of the map and becomes the timeline. Then the trace plays, the raid's length in about 7.5 s, and
   holds 2 s on the end before it fades: about 12 s in all (cues today: 5 s, 7.5 s with a kit, up to 11 s). It takes no
@@ -228,13 +229,12 @@ screenshots and the player's word together) to be designed, and took look A from
 (`artifacts\have-panel.png`, outside the repository): "only write down design and defer this one until we decide.
 Probably we don't do this." Nothing is built.
 
-**What the logs already say** (the owner's push-notification logs, 25 sessions, 15 Aug to 6 Oct): 28 quest-start
-messages (type 10) came with items, mostly what the quest needs: MS2000 Markers, WI-FI Cameras, Signal Jammers, flares,
-the Dorm room 203 key, the portable bunkhouse key, the Labs keycard, Gratitude's shemagh and sunglasses, The Courier's
-REAP-IR scope, the weapons of the Gunsmith and some kill quests. 63 completion messages (type 12) carried rewards, and
-insurance returns (type 8) the gear that came back. No flea-market sale message was in them (PvE). On Customs with every
-quest active, these cover about a quarter of BRING's rows, mostly quest items, and 2 of 13 keys and 2 of 9 weapons:
-screenshots would be for keys and weapons.
+**What the logs already say** (the study's push-notification logs, a few dozen sessions over seven weeks): a few dozen
+quest-start messages (type 10) came with items, mostly what the quest needs: items to plant or mark with, flares, keys
+and keycards, gear a quest asks to be worn, the weapons of some quests. Several dozen completion messages (type 12)
+carried rewards, and insurance returns (type 8) the gear that came back. No flea-market sale message was in them (PvE).
+On Customs with every quest active, these cover about a quarter of BRING's rows, mostly quest items, and few of the
+keys and weapons: screenshots would be for keys and weapons.
 
 **Three sources, one mark.** A mark says where Shturmap learned it and when, never "in your stash" or "missing".
 
@@ -245,9 +245,8 @@ screenshots would be for keys and weapons.
 | the player's word: I HAVE IT on the item card, outside raids | "Marked by you · 6 Oct" | NOT ANY MORE; its quests complete or fail | a second thing the player may tell Shturmap (§4, principle 7 names ticks only) |
 
 A count says what part is known ("3 of 7"); a gift counts for its own quest only. Read from screenshots, anything the
-picture shows counts, so it isn't "only keys". In the owner's own data the rule for taking marks away already shows:
-Provide Viewership handed over three WI-FI Cameras on 1 Oct, and its three camera objectives were ticked during the
-Customs raid of 5 Oct.
+picture shows counts, so it isn't "only keys". In the study's own data the rule for taking marks away already shows:
+a quest that handed over the cameras it asks to place had its camera objectives ticked during a raid days later.
 
 **How it shows (A).** On a BRING row the line that says where to get the item (amber) says what is known instead: the
 stash grid (Segoe Fluent `E80A`, used nowhere else), where it comes from and when, in ink ("Given with the quest · 25
@@ -349,8 +348,8 @@ example raid of `tools\fake-raid.ps1` is a real walk now, 27 minutes into the ra
 **Decided here, for the owner to confirm:** the reading is on unless unticked (settings), which changes what the
 README, PRIVACY.md, help and the website say Shturmap reads ("the images are never read" no longer holds).
 
-**To try in the game** (checked against three real screenshots at 2560×1440 and drawn lists at 1080p, 4K and
-ultrawide; never in a running raid):
+**To try in the game** (checked against three real screenshots and drawn lists at 1080p, 1440p, 4K and ultrawide;
+never in a running raid):
 - a screenshot at a raid's start while the list still shows, and one after O twice: the notice, the rail's rows, the
   hollow triangles;
 - a screenshot while standing in an extract (the "Stay in the extraction point" box must not be taken for the list);
@@ -610,8 +609,8 @@ Smaller, in privacy and distribution:
   (2026-10-04): where the exe runs from then says which install it is, so the release keeps the player's folder,
   and the app log says that this run doesn't update. Settings say in that case that the updater couldn't start, where the reason is and that the Setup repairs it.
 
-Wording: **A27.** Numbers and dates follow Windows' language inside English text ("5.000 ₽", "3 Okt" on a German
-Windows); snapshots hide it, since they run in en-US. Status: done (2026-10-04: the formats belong to the app's language, English today, in one place, `UiLanguage`,
+Wording: **A27.** Numbers and dates follow Windows' language inside English text ("5.000 ₽", "3 Okt" on a Windows set
+to German); snapshots hide it, since they run in en-US. Status: done (2026-10-04: the formats belong to the app's language, English today, in one place, `UiLanguage`,
 for the languages to come).
 
 ### B. The design's consistency
@@ -1039,26 +1038,22 @@ The items below are kept as written, for their reasons and quotes.
 
 ## 1. Group raids: show the leader's map before loading
 
-**Done (2026-10-02).** In the owner's logs the pick came 20–70 s before loading (5 picks, 2 sessions, each followed
-by that map loading). Day/night is left out: the Tarkov clock formula matches 12 of 13 screenshot raid clocks, but
-no screenshot exists from a raid whose time variant is known, so which time "CURR" and "PAST" mean is unchecked;
-the study log now records the variant (`group.pick`) and the raid clock (`fix`) to settle it. `fake-raid.ps1
--PlanOnly -GroupPick` shows it.
+**Done (2026-10-02).** In the study logs the pick came 20–70 s before loading (a handful of picks in two sessions,
+each followed by that map loading). Day/night is left out: the Tarkov clock formula matches all but one of a dozen
+screenshot raid clocks, but no screenshot exists from a raid whose time variant is known, so which time "CURR" and
+"PAST" mean is unchecked; the study log now records the variant (`group.pick`) and the raid clock (`fix`) to settle
+it. `fake-raid.ps1 -PlanOnly -GroupPick` shows it.
 
 **Why.** In a group, the leader picks the map in the menus; Shturmap only learns it when loading starts, too late
 to change gear. The push log says it earlier.
 
-**Evidence** (push-notifications log, several times in one session):
+**Evidence** (push-notifications log, several times in one session).
+- `<time> | ... | Got notification | GroupMatchRaidSettings`, then a JSON body whose `raidSettings` name the
+  `location` (a location id, e.g. `Sandbox_high`), the `timeVariant` (`CURR` or `PAST`) and the `raidMode`, beside
+  the group's other raid settings (spawn place, time and weather).
 
-```
-Got notification | GroupMatchRaidSettings { "type": "groupMatchRaidSettings", "eventId": "…",
-  "raidSettings": { "location": "Sandbox_high", "timeVariant": "PAST", "raidMode": "Online",
-  "metabolismDisabled": false, "playersSpawnPlace": "SamePlace",
-  "timeAndWeatherSettings": { "isRandomTime": false, "isRandomWeather": false, "cloudinessType": "Clear", … } } }
-```
-
-Related kinds seen: `GroupMatchInviteSend` (2), `GroupMatchRaidReady` (5), `GroupMatchRaidNotReady` (12),
-`GroupMatchStartGame` (5), `UserMatchCreated` (10). The application log has `Matching with group id: <n>` at
+Related kinds seen: `GroupMatchInviteSend`, `GroupMatchRaidReady`, `GroupMatchRaidNotReady`, `GroupMatchStartGame`,
+`UserMatchCreated`. The application log has `Matching with group id: <n>` at
 matching (the number is empty when solo).
 
 **Plan.**
@@ -1073,12 +1068,12 @@ matching (the number is empty when solo).
   the in-game clock (Tarkov time runs at 7× real time). Work out the formula, check it against the raid clock the
   screenshots give (`RaidClockHours`), and only then show "night raid". Until then, leave it out.
 - Study log: `group.pick` (map, time variant), group ready / not ready / start.
-- Tests: parser test with the sample above (ids masked).
+- Tests: parser test with the sample above (ids and times made up).
 
 ## 2. Say whether a raid runs on the player's machine
 
-**Why.** The PMC ⇄ SCAV switch is only needed for raids hosted on the player's machine. PvE uses both kinds:
-server-hosted on 25, 26 and 30 September, local for two raids on 26 September and all four on 1 October.
+**Why.** The PMC ⇄ SCAV switch is only needed for raids hosted on the player's machine. PvE uses both kinds, at times
+both on the same day.
 
 **Evidence** (application log).
 - Server-hosted: during loading `TRACE-NetworkGameCreate profileStatus: 'Profileid: <id>, Status: Busy,
@@ -1103,26 +1098,20 @@ server-hosted on 25, 26 and 30 September, local for two raids on 26 September an
 already shows a loading progress bar"); the tracker still keeps the steps for the study log.
 
 **Done (2026-10-02)**, as a line in the raid card naming the last step the log reported, over one segment per step
-that lights only when the log reports it; nothing estimated (owner). The cue stays 5 s, with a slower entrance. In
-49 loads: location loaded at 25 s, spawned 42 s, pooled 47 s, raid start 71 s (31–139 s). Each raid's step timings
-go to the study log in `raid.start`. `fake-raid.ps1 -HoldLoading` shows it.
+that lights only when the log reports it; nothing estimated (owner). The cue stays 5 s, with a slower entrance. Over
+a few dozen loads (medians): location loaded at 25 s, spawned 42 s, pooled 47 s, raid start 71 s (31–139 s). Each
+raid's step timings go to the study log in `raid.start`. `fake-raid.ps1 -HoldLoading` shows it.
 
 **Why.** Loading takes 60–130 s and Shturmap shows nothing between the 5 s cue and the raid start.
 
-**Evidence** (application log, a local Customs raid, about 72 s in all):
-
-```
-13:00:00.000  MatchingCompleted:0 real:0 diff:0
-13:00:01.500  scene preset path:maps/customs_preset.bundle …
-21:01:13–15   TRACE-NetworkGameMatching G / H / I
-13:00:30.000  LocationLoaded:23.5 real:29.87
-13:00:31.000  GamePrepared
-13:00:32.000  GameCreated
-13:00:32.300  [Transit] Flag:Common, RaidId:…, Count:0, Locations:bigmap ->
-13:00:38.000  PlayerSpawnEvent
-13:00:55.000  GamePooled
-13:01:13.000  GameRunned / GameSpawn / GameSpawned / GameStarting / GameStarted
-```
+**Evidence** (application log, a local Customs raid, about 72 s in all). The lines in order, each
+`<time> | ... | application | <message>`, with the seconds since matching completed:
+- `MatchingCompleted:0 real:0 diff:0` (0 s), then `scene preset path:maps/customs_preset.bundle …` (1.5 s) and
+  `TRACE-NetworkGameMatching G / H / I` (1–3 s).
+- `LocationLoaded:<s> real:<s> diff:<s>` (30 s), `GamePrepared…` (31 s), `GameCreated…` (32 s), then
+  `[Transit] Flag:Common, RaidId:<id>, Count:0, Locations:bigmap -> ` (32 s).
+- `PlayerSpawnEvent…` (38 s), `GamePooled…` (54 s), and `GameRunned`, `GameSpawn`, `GameSpawned`, `GameStarting`,
+  `GameStarted` together (72 s).
 
 **Plan.**
 - Core: a `LoadingStepEvent(At, Step)` for LocationLoaded, GamePrepared, GameCreated, PlayerSpawnEvent,
@@ -1134,9 +1123,9 @@ go to the study log in `raid.start`. `fake-raid.ps1 -HoldLoading` shows it.
 
 ## 4. A hint of how the raid ended (study log only)
 
-**Done (2026-10-02).** The logs held two insurer notes (type 2, Prapor, with the raid's location) and two returns
-(type 8). Both notes came 17–20 s *before* the raid's end line, not after it, so a note counts during the raid and
-up to 5 minutes after it (`RaidOutcomeHints`); the Streets fixture gives one hint. Never shown in the UI.
+**Done (2026-10-02).** The logs held a couple of insurer notes (type 2, Prapor, with the raid's location) and as many
+returns (type 8). The notes came 17–20 s *before* the raid's end line, not after it, so a note counts during the raid
+and up to 5 minutes after it (`RaidOutcomeHints`); the Streets fixture gives one hint. Never shown in the UI.
 
 **Why.** The study log can't tell a survived raid from a death, so plan accuracy can't be judged. Nothing in the
 allowed logs says it directly, but the insurer writes when insured gear was lost.
@@ -1288,10 +1277,11 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an
-  elevator ride, a speed check, a network hiccup). There were 14 in 20 sessions, which is too rare to rely on.
+  elevator ride, a speed check, a network hiccup). There were about a dozen in some twenty sessions, which is too rare
+  to rely on.
   They look like the game's movement-check diagnostics: ask the owner before using them.
-- History since August (maps played, raid lengths, quest starts and completions) could ground Plan in the
-  owner's own record.
+- History from the logs (maps played, raid lengths, quest starts and completions) could ground Plan in the player's
+  own record.
 - Low value: quest reward messages (Shturmap shows no rewards), server region and raid short id, graphics and
   sound settings.
 - Not in the allowed logs: survived or killed, kills, loot, XP, money, inventory, a continuous position.

@@ -64,7 +64,7 @@ That list is the one thing read from a picture, and the reading is kept this nar
 - **How much of it:** the top right corner (0.60 by 0.62 of the picture's height). If no green bar stands near its top
   (the list's header), nothing is read and the picture is let go. With the bar, the words in the corner are read with
   the text recognition built into Windows (`Windows.Media.Ocr`): on the PC, with no download, no model of Shturmap's
-  own and nothing sent. In the owner's 2560×1440 screenshots a look takes 110–180 ms, most of it decoding the PNG.
+  own and nothing sent. On a full-size screenshot a look takes 110–180 ms, most of it decoding the PNG.
 - **What is kept:** which of the raid map's extracts the rows name, and whether the game marked a row "??:??:??".
   No pixel and no other word is kept, logged or sent; the study log notes counts only (`exits.read`). It is forgotten
   when the raid ends.
@@ -338,7 +338,7 @@ outside raids only, and still in the cues' own motion). (Until 2026-10-04 this a
    …" notice came too late to read and as a list of words; "it could still be a good reminder what to bring … with
    icon previews"; "If the player sees they forgot something they can still cancel loading into the map"):
    - **When:** the scene line names the map 1–2 s after matching starts, before matching completes (2–25 s) and
-     before a server raid's match setup (15–71 s); in the owner's logs (30 loads, 2026-08-15 to 2026-10-02)
+     before a server raid's match setup (15–71 s); in the study logs (a few dozen loads over seven weeks)
      matching was cancelled 9–27 s after it started, so it is the earliest line naming the map and still in time.
      A group's pick comes earlier still (below). A cancelled load goes back to the menus, which ends it.
    - **What** (`Planning.Kit`): every active quest's BRING row for the map; what it takes to get in or out first
@@ -394,7 +394,7 @@ outside raids only, and still in the cues' own motion). (Until 2026-10-04 this a
     RAID OVER of a raid with a replay gives way after its entrance to the replay's band at the map's foot ("Map
     drawing", *The raid replay*).
     **QUEST COMPLETE** (owner, 2026-10-07: "For completed quests, also make a nice animation"): when the log reports a
-    quest completed (handed in at its trader; in the study log of 1–6 October all 21 completions came in the menus,
+    quest completed (handed in at its trader; in one week's study log all twenty-odd completions came in the menus,
     most two to four within a minute and a half), the cue says "QUEST COMPLETE · PRAPOR", the quest's name decoding as
     every title does, and what it unlocks ("Unlocks Setup and Shooter Born in Heaven", the quest card's UNLOCKS), under
     a stamp: the done objective's check on the quests' gold, popping in as a gold ring leaves it (no text in it, so
@@ -713,9 +713,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   questionmark on the top right. It should probably be a questionmark for the help and then a settings button next
   to it", and "there should be a separate feedback/bugreport button".
   The mode is a plain label from the game's log, with no chooser (owner, 2026-10-03, replacing a PvE/PvP/Seasonal
-  dropdown). Evidence: all 21 sessions in the owner's application logs (15 August to 2 October) have `Session
-  mode: Pve | Regular | PvpSeason` 8–11 s after the game starts, a switch within a session writes a new line (2
-  sessions), and the dropdown was never used (no `mode.pick` in the study log). Its tooltip says where the mode
+  dropdown). Evidence: every session in the study's application logs (a few dozen over seven weeks) has `Session
+  mode: Pve | Regular | PvpSeason` 8–11 s after the game starts, a switch within a session writes a new line (seen
+  twice), and the dropdown was never used (no `mode.pick` in the study log). Its tooltip says where the mode
   comes from, and only what was read: "From the game's log, 21:52" (the line's time, with the day when it isn't
   today); before any line, "The mode you last played; follows the game once it starts" (the saved `mode` setting);
   with no game on this PC, "No game on this PC: the mode you last played". A mode name Shturmap doesn't know (a
@@ -727,7 +727,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   running was misleading): "LOADING CUSTOMS", "IN RAID · CUSTOMS · PMC · 12 MIN", and otherwise "NOT IN A RAID",
   never "in the menus" (`RaidStatus`). The application log has no line that marks the game quitting: the sequence
   "Disposing BEClient … BEClient exit successfully … Dll released" that ends some sessions also comes right after
-  startup and between raids, and about half of the owner's 22 sessions (15 August to 3 October) simply stop after an
+  startup and between raids, and about half of the sessions in the study logs (a few dozen) simply stop after an
   ordinary line. So the log can't tell the menus from a closed game, and "GAME CLOSED" can't be said truthfully; the
   tooltip says so ("The game's log shows no raid (it can't tell the menus from a closed game)"). No process checks
   (§2).
@@ -759,7 +759,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **Rail** (left, 384 px), content by state:
   - *The MAP list* at the top, in every state (owner, 2026-10-08: "there is no way of selecting maps at the moment
     where you do not have quests"; from the maps panel, "A"). The list held every map already, but in the usage log
-    (1 to 8 October) all 88 map picks went through Plan's rows and none through it, and after a pick of a map without
+    (a week) all map picks (dozens) went through Plan's rows and none through it, and after a pick of a map without
     quests the rail stayed on the best suggestion, so nothing in it was about the map on screen. Now, open, it says what
     each map holds: the maps with your quests first, in Plan's order, each with its row's counts at the right in amber
     ("Complete 2 · progress 1"), then a hairline and OTHER MAPS (a heading, not a choice), the rest by name. A map's
@@ -972,8 +972,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     and decided again at the raid start.
     How the side is known: the menu loads the PMC profile; a server-hosted raid's match-setup line names the
     joining profile (same id: PMC, another: Scav); a raid that starts without "GameStarting" is a Scav joining
-    under way. PvE raids can be either: server-hosted ones log the match setup like PvP (seen on 25, 26 and 30
-    September), locally hosted ones (all four on 1 October, two on 26 September) log neither and start with a
+    under way. PvE raids can be either: server-hosted ones log the match setup like PvP (seen on several days),
+    locally hosted ones (seen on some days, on one of them beside server-hosted ones) log neither and start with a
     zero-length "GameStarting". Those stay unknown and get the PMC view; the side tag is then a switch (PMC ⇄
     SCAV) that holds for the raid. No local Scav raid has been seen in a log yet; if one shows a line that tells,
     it replaces the switch.
@@ -1457,20 +1457,20 @@ spawns below).
 - **The raid replay** (owner, 2026-10-07: "a post-raid view, similar to the one in Arc Raiders ... only the positions
   from the screenshots ... more on the eye-candy side of things ... automatically played after the raid finishes"; from
   the panels "B and D", then "C, but encode raid time to the color of the pen stroke. Use a fitting color map based on
-  the apps design", "Replay timeline 1", "Replay link: ii"; §1's exception). What there is to replay (the study log of
-  1–6 October, 19 raids): one position per 4.4 raid minutes, 6 raids with one, the median 4, gaps of 11 to 21 minutes
-  in long raids, the last position 1 to 21 minutes before the end line; how a raid ended is in no log Shturmap reads.
-  So the replay shows where and when the player took screenshots, and when they were last seen, never how the raid
-  ended.
+  the apps design", "Replay timeline 1", "Replay link: ii"; §1's exception). What there is to replay (a week of the
+  study log, about twenty raids): one position per four or five raid minutes, a third of the raids with one, the
+  median four, gaps of 10 to 20 minutes in long raids, the last position up to 20 minutes before the end line; how a
+  raid ended is in no log Shturmap reads. So the replay shows where and when the player took screenshots, and when
+  they were last seen, never how the raid ended.
   - *What is kept* (`GameSession`): each position on the raid's own map with its minute since the raid's start
     (`WallClock`), the objectives ticked during the raid with their minutes, and when a screenshot first showed the
     extract list. A raid loading starts them anew, so after a transit only the map the raid ended on is replayed. At the
     raid's end, when the log has its end (its length is known), they make a `RaidReplay`, which comes with the RAID
     OVER cue and stays in the snapshot until the next raid loads. In memory only: never on disk, never in the app log
     (§2), gone at a restart.
-  - *When it plays*: at RAID OVER, when the raid has 3 positions or more over 5 minutes or more (`RaidReplay.Plays`; 9
-    of the 19 raids); otherwise today's cue. Never for the log read back at start. REPLAY on Plan's last-raid line
-    plays it again (the raid's map comes back on screen first) until the next raid loads.
+  - *When it plays*: at RAID OVER, when the raid has 3 positions or more over 5 minutes or more (`RaidReplay.Plays`;
+    about half of that week's raids); otherwise today's cue. Never for the log read back at start. REPLAY on Plan's
+    last-raid line plays it again (the raid's map comes back on screen first) until the next raid loads.
   - *The sequence* (`ReplayTiming`, `MainWindow.Replay`): RAID OVER enters in the middle as every cue does (1.6 s), then
     fades as the band slides up to the map's foot and the view glides to the raid's positions (1 s); the raid plays in
     11 s whatever its length, holds 3 s on its end, and fades (0.6 s): about 17 s, no clicks (owner, 2026-10-08: "can
@@ -1487,7 +1487,7 @@ spawns below).
     collar (the ground at 59 %, 6.2 DIP). One hue because sand is the player's alone: any map of several hues
     (viridis, magma, cividis) runs through the map's taken colours, green and teal for extracts, violet for transits,
     amber for quests, red for bosses. Light means late, as the newest position is the brightest thing on the map, and
-    width is the second cue ("One meaning per colour, shape as a second cue"). Tried on the owner's raid of 5 October
+    width is the second cue ("One meaning per colour, shape as a second cue"). Tried on a raid from the study log
     and dropped: sand by alpha (the artwork showed through, and the overlapping pieces dotted the line), a range from
     35 % sand (too little difference). Each position is a dot (2.6 DIP) in its time's colour on a dark collar, with its
     minute beside it, "8 MIN IN" (never bare minutes, which read as a time to get somewhere, owner, 2026-10-04; the
@@ -2464,9 +2464,9 @@ try asks only for what is missing or older than its keep time: the rest is answe
 
 **The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
 with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
-no code asks Windows for its formats (owner, 2026-10-04, on a German Windows showing "5.000 ₽" inside English
-sentences: other languages are likely to come, so the formats belong to the app's language, in one place; when the
-texts are translated, the formats follow the language chosen).
+no code asks Windows for its formats (owner, 2026-10-04, on a Windows set to another language showing "5.000 ₽"
+inside English sentences: other languages are likely to come, so the formats belong to the app's language, in one
+place; when the texts are translated, the formats follow the language chosen).
 
 **Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
 `<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:
@@ -2688,9 +2688,9 @@ every issue goes through it, and the app's report is offered beside it.
   folders.
 - Open: the installed size (budget 80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand,
   opening with the game or with Windows, a text size setting. Declined (owner, 2026-10-07): shortcuts for zooming and
-  panning that work while the game has the focus. They would need a global hotkey (§2), and in the study log of 1–6
-  October only 23 of the 121 times Shturmap took the focus during a raid were for the view alone; 65 were for quest rows
-  and cards.
+  panning that work while the game has the focus. They would need a global hotkey (§2), and in a week of the study log
+  only about a fifth of the times Shturmap took the focus during a raid were for the view alone; over half were for
+  quest rows and cards.
 - The tour at a first start, with first-time lines for the first raid and position (2026-10-09; §4, "Screen anatomy",
   *The tour*).
 - What's New, a card in Plan's rail with each line previewed on the map, and the raid replay in the RAID OVER cue with
