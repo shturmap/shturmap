@@ -10,7 +10,7 @@
          instead of the build machine's folder, which holds the developer's Windows user name. -->
     <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
     <Product>Shturmap</Product>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Copyright>Copyright (c) 2026 the Shturmap contributors</Copyright>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Windows APIs (OCR, file system, registry) need a Windows TFM; keep one value for every Windows-specific project. -->

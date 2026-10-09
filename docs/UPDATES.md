@@ -176,3 +176,4 @@ Labyrinth's 18 traps, 60 of 1,418 objectives optional): they say what was true o
 | 2026-10-09 | `bring` pve and regular | no unknown items. NO EXIT: Information Source (" V-Ex_light", with a leading space) and, PvP only, Belka and Strelka (`customs_sniper_exit`): no extract in tarkov.dev's maps has either name, so there is nothing to match; tarkov.dev's data, not a rule |
 | 2026-10-09 | `synopses`, `handovers`, `spawns` | no FALLBACK or BREAK (153 LONG PvE, 156 PvP); hand-overs 221 fold, 0 NEAR; spawns at most 25 m from a spawn point |
 | 2026-10-09 | story chapters; tests | still none in json.tarkov.dev; 1321 tests passed against the fresh cache, 0 skipped |
+| 2026-10-09 | before 0.4.0: `data`, the five audits in both modes, story chapters, tests | the same counts as the morning's runs, the same NO EXIT rows, no chapters; 1407 tests passed against the fresh cache, 0 skipped |
