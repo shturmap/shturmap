@@ -1235,7 +1235,9 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    Before the release:
    - the release is built with the DSN (`eng\sentry.dsn`, untracked; `eng\release.ps1` warns without it), and
      `Shturmap.exe --send-report "<text>" <folder>` from the release exe opens the Report dialog with the text;
-     after a click on Send it says "Sent. Thank you.";
+     after a click on Send it says "Sent. Thank you."; the path checked end to end on 2026-10-09 with a developer
+     build carrying the DSN (it sends by itself): "Sent. Thank you.", and in Sentry (environment dev) the report shows
+     no address and no location (owner). Still to do with the first release the workflow builds;
    - in the Sentry project, IP addresses aren't stored (Settings → Security & Privacy → "Prevent Storing of IP
      Addresses") and the data scrubbers are on; done (owner, 2026-10-09: "Sentry web-ui changes are in");
    - the README and the website point to "Help (?) → Report a problem or idea" (the website only on the owner's
