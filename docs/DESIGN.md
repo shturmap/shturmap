@@ -2243,6 +2243,16 @@ can't start, where the exe runs from says which install it is (`%LOCALAPPDATA%\S
 updates, and the app log says so (review of 2026-10-04: it used to open the developer folder, and the player's
 history seemed gone).
 
+**A settings file that can't be read** (review of 2026-10-09). When SQLite finds `shturmap.db` damaged, or no
+database at all, the session moves it aside with the time in its name (`shturmap.db.unreadable-20261009-1530`; its
+`-wal` and `-shm` go with it), opens a fresh one, writes a WARN line and says for 30 s "Shturmap's settings file
+couldn't be read and was set aside: picks, ticks and settings start over." The quest history comes back from the
+game's logs, as at every start. Such a file used to stop the session from starting: the window stayed up without
+quests, positions or a word. A file that is only out of reach for now (another program holds it, a lock that doesn't
+pass, a folder that can't be written) is never moved; that session keeps its settings in memory and says "Shturmap's
+settings file couldn't be opened: picks, ticks and settings aren't kept this time." A second Shturmap opens the same
+file as the first (SQLite's WAL), and Windows moves no file another Shturmap holds open (`SettingsFile`).
+
 The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits and icons) stays shared in
 `%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
 to a temporary file of its own (`CachedHttp.TempFor`, the process id and a GUID) and replaces the cached file in one

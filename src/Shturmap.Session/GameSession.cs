@@ -199,7 +199,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         try
         {
             var env = new WindowsGameEnvironment();
-            _store = new ProgressStore(paths.Database);
+            // A file that can't be read is set aside, so the session starts on a fresh one (review of 2026-10-09).
+            (_store, var storeNotice) = SettingsFile.Open(paths.Database, DateTime.Now);
             _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
             _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
             Study.Context = StudyContext;
@@ -237,6 +238,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 #else
             AppLog.Info($"Mode {_mode}");
 #endif
+            if (storeNotice is not null)
+                Say(storeNotice, 30);
             RecomputeQuests();
             Publish();
         }
