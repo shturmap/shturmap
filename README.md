@@ -5,13 +5,17 @@
   </picture>
 </h1>
 
+[![CI](https://github.com/shturmap/shturmap/actions/workflows/ci.yml/badge.svg)](https://github.com/shturmap/shturmap/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/shturmap/shturmap/badge)](https://scorecard.dev/viewer/?uri=github.com/shturmap/shturmap)
+
 **A second-monitor map for Escape from Tarkov.** Your active quests' objectives, the extracts and your position on
 the map of the raid you're in: what you'd otherwise look up in the wiki, in one window.
 
 **[Download for Windows](https://github.com/shturmap/shturmap/releases)** ·
 [Website](https://shturmap.github.io) ·
 [What it reads, and what it never does](#what-it-reads-and-what-it-never-does) ·
-[Before you install](#before-you-install)
+[Before you install](#before-you-install) ·
+[Check it yourself](#check-it-yourself)
 
 - **What it does.** Before a raid it ranks the maps by how many of your active quests they finish or move on, and
   lists what to bring. In the raid it shows your objectives and the ways out on the map, each with its distance
@@ -102,7 +106,8 @@ that program and restart Shturmap.
 
 A test fails if Shturmap's own code ever calls the Windows APIs for opening or reading other processes, sending
 input, hooking or capturing the screen. The full rules are in
-[docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service).
+[docs/DESIGN.md](docs/DESIGN.md#2-ground-rules-game-terms-of-service); how to check the code and your download:
+[Check it yourself](#check-it-yourself).
 
 ## Before you install
 
@@ -127,6 +132,41 @@ objectives and the extracts. (A screenshot without a position in its name isn't 
 either.)
 
 More questions and answers: [shturmap.github.io/#faq](https://shturmap.github.io/#faq).
+
+## Check it yourself
+
+What Shturmap does doesn't rest on our word alone. You can check:
+
+- **What its code may not do.** The tests run on every push, and the
+  [runs](https://github.com/shturmap/shturmap/actions/workflows/ci.yml) are public.
+  [`SafetyTests`](tests/Shturmap.Core.Tests/SafetyTests.cs) fails if Shturmap's own code (`src/`) uses the Windows
+  APIs for opening or reading other processes, sending input, hooking, registering hotkeys or capturing the screen,
+  or names a web address other than tarkov.dev's and GitHub's.
+  [`AllowedHostsTests`](tests/Shturmap.Data.Tests/AllowedHostsTests.cs) checks that its download client asks only
+  `json.tarkov.dev`, `assets.tarkov.dev` and `raw.githubusercontent.com`, over https, and refuses any other address
+  before a request is sent. These check the source code; what ties your download to that source is the next point.
+- **Where your download comes from.** From 0.4.0, each release is built and published by the repository's
+  [Release workflow](.github/workflows/release.yml) on GitHub's servers, from the commit its tag names, not on
+  anyone's PC. Before the release is published, the workflow records a signed build provenance attestation for the
+  Setup and each package: the repository, the workflow and the commit that built it. With the
+  [GitHub CLI](https://cli.github.com), signed in to any GitHub account:
+
+  ```powershell
+  gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap
+  ```
+
+  It succeeds only for a file that a workflow of this repository built, and names the workflow. These releases also
+  carry `Shturmap-Setup.exe.sha256`; compare it with `Get-FileHash Shturmap-Setup.exe`. The hash shows that the
+  file arrived whole, the attestation where it came from.
+- **What it needs and talks to.** The Setup installs for your Windows user only, without admin rights, into
+  `%LOCALAPPDATA%\ShturmapApp`. The app downloads data and artwork from the three hosts above only and asks GitHub
+  (`api.github.com`, and GitHub's hosts for release files) for updates; a report you send, or a crash report you
+  allow, goes to Sentry (`sentry.io`). To try it away from your own Windows, install it in Windows Sandbox (Windows
+  10 and 11 Pro, Enterprise and Education), which starts empty and is discarded when you close it; without the game
+  there you can browse the maps.
+- **Who writes it.** Shturmap is written with an AI coding assistant (Claude, by Anthropic), credited as co-author in
+  the commits. What keeps it in check: the [design document](docs/DESIGN.md) the code has to follow, the tests, and
+  CI on every push.
 
 ## Get it
 
