@@ -3,6 +3,11 @@
 # is the owner's go: gh workflow run release.yml (-f draft=true leaves a draft to look at first), or the Actions tab.
 # Before it: raise <Version>, write the release notes and What's New, commit and push (CLAUDE.md).
 #
+# Before anything is attested or published, eng\install-test.ps1 installs the Setup on the runner as a player would,
+# starts the installed app once and uninstalls it (owner, 2026-10-09): a Setup that doesn't install or an app that
+# doesn't start from its install stops the run. -f test_only=true builds and runs that test alone, for a try without
+# a release (no delta then, so the version needn't be raised).
+#
 # The files players download get a build provenance attestation before the release is published, so a release can be
 # checked from its first minute: gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap. GitHub makes them only
 # in public repositories on this plan: while the repository is private the step is skipped with a warning, and the
@@ -17,6 +22,10 @@ on:
     inputs:
       draft:
         description: Leave the release as a draft, to publish on GitHub by hand
+        type: boolean
+        default: false
+      test_only:
+        description: Build and run the install test only; attest and publish nothing
         type: boolean
         default: false
 
@@ -65,17 +74,25 @@ jobs:
         env:
           SHTURMAP_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GITHUB_TOKEN: ${{ github.token }}
+          TEST_ONLY: ${{ inputs.test_only }}
         run: |
           if (-not "$env:SHTURMAP_SENTRY_DSN".Trim()) { throw 'The SENTRY_DSN secret is missing: a release without it has no Report button.' }
           if ("$env:SHTURMAP_SENTRY_DSN".Trim() -notmatch '^https://[A-Za-z0-9]+@[A-Za-z0-9.-]+\.sentry\.io/\d+$') {
             throw 'The SENTRY_DSN secret is not a Sentry DSN (https://<key>@<host>.sentry.io/<project>).'
           }
-          .\eng\release.ps1
+          # A try needs no delta, and the last release may have this very version.
+          if ($env:TEST_ONLY -eq 'true') { .\eng\release.ps1 -NoDelta } else { .\eng\release.ps1 }
+
+      # The Setup installed, the app started once from its install, and uninstalled again, on this runner.
+      - name: Install test
+        shell: pwsh
+        run: .\eng\install-test.ps1
 
       # The Setup under the name players download, and what vpk uploads for this version (its assets.win.json): the
       # Setup, the full and delta packages, the portable zip. Not an earlier release's package that eng\release.ps1
       # downloaded to build the delta: this run didn't build it.
       - name: List the files to attest
+        if: ${{ !inputs.test_only }}
         id: files
         shell: pwsh
         run: |
@@ -87,18 +104,19 @@ jobs:
           "paths<<EOF`n$($paths -join "`n")`nEOF" >> $env:GITHUB_OUTPUT
 
       - name: Attest build provenance
-        if: ${{ !github.event.repository.private }}
+        if: ${{ !github.event.repository.private && !inputs.test_only }}
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: ${{ steps.files.outputs.paths }}
 
       - name: No attestation while the repository is private
-        if: ${{ github.event.repository.private }}
+        if: ${{ github.event.repository.private && !inputs.test_only }}
         shell: pwsh
         run: |
           Write-Output '::warning::No build provenance for this release: GitHub attests only in public repositories on this plan, so gh attestation verify cannot check it.'
 
       - name: Publish
+        if: ${{ !inputs.test_only }}
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ github.token }}

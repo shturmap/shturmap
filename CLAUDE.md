@@ -73,7 +73,9 @@ Essentials:
   first line; a patch release keeps its line's name (DESIGN.md §4, *What's New*, "Release names"). The
   owner's go is running the Release workflow (`.github/workflows/release.yml`; owner, 2026-10-09): `gh workflow run
   release.yml` (`-f draft=true` leaves a draft to review on GitHub first), or the Actions tab. On GitHub's runner it
-  checks the app's packages, builds with `.\eng\release.ps1` (the DSN from the `SENTRY_DSN` Actions secret), attests
+  checks the app's packages, builds with `.\eng\release.ps1` (the DSN from the `SENTRY_DSN` Actions secret), installs
+  the Setup, starts the installed app once and uninstalls it (`.\eng\install-test.ps1`, which refuses on a PC with
+  Shturmap installed; `-f test_only=true` runs only the build and that test, for a try without a release), attests
   build provenance for the Setup and packages, then publishes with `.\eng\publish-release.ps1` (a GitHub pre-release
   "Shturmap <version> "<name>" (private testing)", with `Shturmap-Setup.exe` and its `.sha256`). Don't publish from
   the PC: such a release has no provenance, which the README promises from 0.4.0. `.\eng\release.ps1` still builds

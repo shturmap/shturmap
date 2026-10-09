@@ -2253,7 +2253,8 @@ self-unpacking exe, without updates; they need the Setup once.
   (`.github/workflows/release.yml`) makes every release players get. The owner's go is running it, on main only:
   `gh workflow run release.yml` (`-f draft=true` leaves a draft), or the Actions tab. On GitHub's Windows runner it
   checks the app's packages for known vulnerabilities (`eng\audit-packages.ps1`), runs `eng\release.ps1` with the
-  DSN from the `SENTRY_DSN` Actions secret (it fails without one and never prints it), attests build provenance
+  DSN from the `SENTRY_DSN` Actions secret (it fails without one and never prints it), installs the Setup as a player
+  would and takes it apart again (`eng\install-test.ps1`, next point), attests build provenance
   (`actions/attest-build-provenance`: SLSA provenance signed through Sigstore) for `Shturmap-Setup.exe` and what vpk
   uploads for the version (the Setup, full and delta packages, the portable zip), and only then runs
   `eng\publish-release.ps1`, so a release can be checked from its first minute. No package cache: it restores from
@@ -2262,6 +2263,19 @@ self-unpacking exe, without updates; they need the Setup once.
   release published from the PC would have no provenance, which the README promises from 0.4.0: it isn't done.
   **Checking a download:** `gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap` (the GitHub CLI, signed
   in), and `Get-FileHash` against `Shturmap-Setup.exe.sha256`; the README says how under "Check it yourself".
+- **The install test** (owner, 2026-10-09, after the first release: nothing had installed a Setup before players).
+  `eng\install-test.ps1` runs in the Release workflow after the build and before the attestation:
+  - **Install:** the Setup with `--silent` on the runner; the installed app's version must be the commit's, with
+    Windows' Apps entry and both shortcuts. If the Setup started the app, it is closed.
+  - **Start:** the installed app once with `--snapshot`, on the release's data folder, with no update check and no
+    report. It must save its window and exit, with no ERROR line in its log and no crash record.
+  - **Uninstall:** Velopack's, as settings starts it (`Update.exe --silent uninstall`). The app, its shortcuts and
+    its Apps entry must be gone, and the data folder must still be there.
+
+  Any failure stops the run before anything is attested or published. `-f test_only=true` runs the build and this
+  test alone (no delta; nothing attested or published), to try a change without a release. The script refuses on a
+  PC where Shturmap is installed or has data. It doesn't cover the update from the last release: that is tried on
+  the PC with `--update-feed` (above), as 0.3.0 → 0.4.0 was before 0.4.0 was published.
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
   `<exe name>.pri`, so the project names its PRI file `resources.pri`: named after the project, any other exe
   name made the window fail to load (2026-10-03, with the 0.1.0 single exe).
