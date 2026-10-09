@@ -606,8 +606,9 @@ the minute of the player's age tag (`MapRenderer.LayoutOf`, `MapScene.LayoutVers
 frame placed every marker and label anew). The marker under the pointer is looked up in the same layout. Losing the focus waits
 0.25 s before the map follows, so moving from one row to the next switches the highlight straight across instead
 of making every marker blink. The focus is the pointer's, and it lets go when the pointer can't be said to be there
-any more: a row that is rebuilt under it (a pen click, a new snapshot) lets go as it leaves, and when Shturmap's
-window isn't the active one any more the focus is dropped, so the map doesn't draw its pulse behind the
+any more: a row that is rebuilt under it (a pen click, a snapshot that changes what it says; review of 2026-10-09:
+until then every snapshot, `RowLists`) lets go as it leaves, and when Shturmap's window isn't the active one any
+more the focus is dropped, so the map doesn't draw its pulse behind the
 game for a whole raid (2026-10-04); pointing at something lights it again, in an active window or not.
 **Inside one another** (the review of 2026-10-04): linked things may lie inside a linked row, and the innermost one
 around the pointer is the one pointed at; leaving it gives the pointer back to the row around it, which it never
@@ -698,6 +699,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   is for a laptop beside the game, not for reading from a metre away on a second monitor (owner, 2026-10-09).
   Snapshot and demo runs and a given size (`--window`) place the window
   themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
+  A saved place is checked at its monitor's scale, the smallest window and the inset from the corner too (review of
+  2026-10-09: they were taken at 100 %, so at 150 % or 200 % a window under the smallest came back as it was).
 - **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when
   a raid ends and b) remember the last open map when the app closes and re-open it"). The map last on screen is kept
   (`lastMap` in shturmap.db, `GameSession.LastMapSetting`): one picked in the MAP list or Plan's list, a raid's own map
@@ -828,7 +831,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     progresses ("2 OF 5 OBJECTIVES HERE"; §7, "Raid planner"). Muted keeps one meaning in quest rows: an objective
     done after the raid, at a trader. Resting on a map's row for 0.6 s **previews** its map with its quests on it, labelled
     "PREVIEW · CUSTOMS · CLICK ITS ROW TO PLAN IT"; moving to the next row switches at once, leaving puts the
-    shown map back exactly as it was (pan and zoom), and a click on the row keeps it. A raid loading ends a preview.
+    shown map back exactly as it was (pan and zoom; fitted where it wasn't drawn yet, not at the camera's default:
+    review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
+    The picks of the map on screen stay off a preview's map (the same review: each snapshot wrote them into it, and
+    into the tour's example).
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
@@ -904,7 +910,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     a smaller row with the nearest extract the list names without "??:??:??" that takes nothing (no item, money,
     flare, climbing gear, switch or second player: an empty `ExtractRules.Needs`), "NOTHING NEEDED · ON YOUR LIST", in
     its kind's colour, with its distance and direction (`Rules.ExitsNote.Plain`). Only once the list was read (nothing
-    is sure to be open before), never a transit, and not where EXIT is that one already. The glance's rows hide with
+    is sure to be open before), never a transit, and not where EXIT is that one already. Both notes take a second line
+    where the direction beside them leaves too little room, with "…" only past that (review of 2026-10-09: a Scav's
+    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
@@ -1076,7 +1084,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   bit more flashy with nice animations"; "We need to keep in mind to update the onboarding with future updates"; from
   a panel of four forms and thirteen decisions, all taken as recommended: the briefing (A) told through an example raid
   (B), with first-time lines (E); `MainWindow.Tour`, `Rules.Tour`). Seven chapters over the real window, about a minute
-  and a half: SAFE TO RUN (what is read, what is never done, the risk in the README's words), IT FOLLOWS THE GAME (Plan
+  and a half: WHAT IT READS (what is read, what is never done, the risk in the README's words; review of 2026-10-09:
+  its first title used a word §2 keeps off Shturmap), IT FOLLOWS THE GAME (Plan
   and Raid), NEXT RAID (Plan's rows, one resting under a drawn pointer previews its map), PICK AND POINT (an example
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
@@ -1085,7 +1094,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   card's head with example values) and HELP AND FEEDBACK (the story chapters aren't shown yet, anything else missing goes through the feedback button,
   F1; the three buttons named; owner, 2026-10-09: "GOOD TO KNOW" wasn't "really expressive").
   - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
-    map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, holds TOUR · 3 OF 7,
+    map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, on the ground colour
+    with nothing showing through (review of 2026-10-09: at 94 % the map's labels read through its words, and through
+    the stage's plate, opaque too), holds TOUR · 3 OF 7,
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
     chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
     middle of the map above it. Motion: "Design system", *Motion*.
@@ -1103,13 +1114,24 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     up to three of its early quests that have places on the map; a cue it shows says "An example, not your raid.".
     Nothing of the player's changes: no pick, no tick, no setting but the tour's own. NEXT RAID frames the player's own
     rows and lets one preview its map as resting on it does; without rows (no game) it frames the MAP list. When the
-    tour ends, the map on screen is back as it was, view and all.
+    tour ends, the map on screen is back as it was, view and all; at a first start, when the tour opens before any map
+    is drawn, it comes back fitted (review of 2026-10-09: it came back at the camera's default, zoom 1 on the map's
+    origin, from chapter 7 on).
+    A glide a chapter starts stops when its map goes (the same review: Esc during YOUR SCREENSHOT KEY's glide went on
+    moving the map that came back).
+    A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes right of
+    its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band).
+    IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
+    `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
+    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN).
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
-    line about it (below). Ending it, at its last chapter or with Esc, counts it and help as seen, and a notice says
-    where it stays ("The tour stays in help: F1, then TAKE THE TOUR."). Never in the website demo; "--tour <n>" opens
-    a chapter for a snapshot (`tools\fake-raid.ps1 -PlanOnly -Tour <n>`).
+    line about it (below); never in a raid, these ways too (review of 2026-10-09: they opened it over the raid card):
+    TAKE THE TOUR is hidden while a raid loads or runs, and a SHOW ME or a What's New line then opens nothing and says
+    "The tour waits until the raid is over.". Ending it, at its last chapter or with Esc, counts it and help as seen,
+    and a notice says where it stays ("The tour stays in help: F1, then TAKE THE TOUR."). Never in the website demo;
+    "--tour <n>" opens a chapter for a snapshot (`tools\fake-raid.ps1 -PlanOnly -Tour <n>`).
   - **Keys and clicks.** → or Space (or Enter) the next chapter, ← the one before, Esc ends it; every other key does
     nothing while it is up, and a click outside its band does nothing (the window is covered, by the owner's exception
     to principle 3).
@@ -1483,7 +1505,9 @@ spawns below).
     A new cue, a raid loading or a preview ends it. With Windows' animation effects off, and in snapshots, the end shows
     at once for the time it would have played (a snapshot keeps it).
   - *The view*: framed on the positions with 40 DIP around them and at least 300 m across, in the part above the band
-    (`MapView.FramingAbove`). It stays there afterwards. The map recedes under the replay (the ground at 45 % over it),
+    (`MapView.FramingAbove`). It stays there afterwards. A replay that ends while the view still glides there (a raid
+    loading, a preview) stops the glide, and so does a new map in the view (review of 2026-10-09: the glide went on
+    moving the next map). The map recedes under the replay (the ground at 45 % over it),
     and everything of the replay fades in and out as one (`MapScene.ReplayOpacity`).
   - *The pen* (C; `MapRenderer.DrawReplay`, `ReplayInk`): one line from position to position, drawn on as the time
     runs, growing toward the next position. Its colour is the raid's time: the player's sand mixed into the ground,
@@ -2137,6 +2161,12 @@ self-unpacking exe, without updates; they need the Setup once.
   such requests an hour per address. A new version downloads in the background (a delta when there is one) and
   applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
   start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
+  RESTART NOW starts Velopack's updater first, which waits for the app to end (a minute at most), applies the version
+  and starts it; only then is the session closed and the app ended. Where the downloaded version is gone or the
+  updater can't start, the session goes on and a notice says why ("The update couldn't be applied: its download is
+  gone. Shturmap keeps running."), and a version whose download is gone counts as not downloaded (review of
+  2026-10-09: the session was closed first, and Velopack's own restart returned without a word, leaving a window
+  that drew nothing).
   "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
   request at all). A version already downloaded applies at the next start whatever the setting.
   **When applying fails** (owner, 2026-10-05: "it tells me always that the update is available even though i

@@ -161,6 +161,7 @@ public sealed partial class MainWindow : Window
         _clock.Stop();
         _noticeTimer.Stop();
         _focusClear.Stop();
+        _updateTimer?.Stop();
         Map.StopDrawing();
     }
 
@@ -634,8 +635,9 @@ public sealed partial class MainWindow : Window
         bool CardOnly(MapPlanView p, int i) => added && i == plans.Count - 1 && p.Finish.Count + p.Progress.Count == 0;
         QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
         QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
-        // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections).
-        vm.Plans = plans.Select((p, i) =>
+        // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections). The cards on
+        // screen stay while they say the same (RowLists): a rebuilt row loses the pointer resting on it.
+        vm.Plans = RowLists.Keep(vm.Plans, plans.Select((p, i) =>
         {
             // Each map has its own picks, in its own colours (owner, 2026-10-04).
             var sections = Planning.Sections(p, s.PicksOn(p.NormalizedName));
@@ -657,10 +659,10 @@ public sealed partial class MainWindow : Window
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
                 CardOnly = CardOnly(p, i),
             };
-        }).ToList();
+        }).ToList(), PlanCard.Same);
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
         vm.PlanListShown = PlanList.Shown(vm.Plans.Where(p => !p.CardOnly).Select(p => p.NormalizedName).ToList(), shownKey);
-        vm.AnyMap = s.AnyMap.Select(Line).ToList();
+        vm.AnyMap = RowLists.Keep(vm.AnyMap, s.AnyMap.Select(Line).ToList(), QuestLine.Same);
     }
 
     /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
@@ -775,22 +777,24 @@ public sealed partial class MainWindow : Window
             .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
             .Select(q => q.Quest)
             .ToList();
-        // The picks first, nearest first; then COMPLETE and PROGRESS without them.
-        vm.RaidPicks = quests.Where(q => s.Picks.Contains(q.QuestId)).ToList();
-        vm.RaidComplete = quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
-        vm.RaidProgress = quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList();
+        // The picks first, nearest first; then COMPLETE and PROGRESS without them. Each list on screen stays while it
+        // says the same (RowLists).
+        vm.RaidPicks = RowLists.Keep(vm.RaidPicks, quests.Where(q => s.Picks.Contains(q.QuestId)).ToList(), RaidQuest.Same);
+        vm.RaidComplete = RowLists.Keep(vm.RaidComplete, quests.Where(q => q.Complete && !s.Picks.Contains(q.QuestId)).ToList(), RaidQuest.Same);
+        vm.RaidProgress = RowLists.Keep(vm.RaidProgress, quests.Where(q => !q.Complete && !s.Picks.Contains(q.QuestId)).ToList(), RaidQuest.Same);
         // While the raid loads, the kit comes first, as a last check while matching can still be cancelled; BRING
         // returns to its place below when the raid starts (owner, 2026-10-03).
         var kit = Planning.KitWhileLoading(s.Raid, s.MapPlan, s.Picks);
-        vm.RaidKit = kit.Main.Select(r => BringLine(s, r)).ToList();
-        vm.RaidKitMore = kit.More.Select(r => BringLine(s, r)).ToList();
-        vm.RaidBring = s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? [], s.Picks);
+        vm.RaidKit = RowLists.Keep(vm.RaidKit, kit.Main.Select(r => BringLine(s, r)).ToList(), RequirementLine.Same);
+        vm.RaidKitMore = RowLists.Keep(vm.RaidKitMore, kit.More.Select(r => BringLine(s, r)).ToList(), RequirementLine.Same);
+        vm.RaidBring = RowLists.Keep(vm.RaidBring, s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? [], s.Picks),
+            RequirementLine.Same);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
         if (vm.ScavRaid)
             ShowScavRaid(s);
-        vm.Extracts = s.Extracts.Select(e => new ExtractItem(
+        vm.Extracts = RowLists.Keep(vm.Extracts, s.Extracts.Select(e => new ExtractItem(
             e.Id,
             e.Name,
             e.Kind switch
@@ -808,7 +812,7 @@ public sealed partial class MainWindow : Window
         {
             State = e.State,
             ListReadable = s.ReadExits && !s.ExitReaderMissing,
-        }).ToList();
+        }).ToList());
         vm.ExitsNote = Rules.ExitsNote.Of(s.Raid.Phase == RaidPhase.InRaid, s.ReadExits, s.ExitReaderMissing, s.ExitsReadAt,
             s.Extracts.Count(e => e.State is ExitState.Listed or ExitState.Unsure), s.Extracts.Count(e => e.Kind != MarkerKind.Transit));
 
@@ -1095,8 +1099,9 @@ public sealed partial class MainWindow : Window
         if (_snapshot is not { Data: { } data } s || data.MapByNormalizedName(normalizedName) is not { } map
             || data.DefinitionFor(normalizedName) is not { } definition || _session.Artwork is null)
             return;
+        // No map drawn yet: nothing to come back to; the map is fitted when the preview ends.
         if (_previewing is null)
-            _restoreView = Map.View;
+            _restoreView = Map.HasView ? Map.View : null;
         _previewing = normalizedName;
         var artwork = await ArtworkFor(definition, map.Name);
         if (_previewing != normalizedName)
@@ -1399,6 +1404,10 @@ public sealed partial class MainWindow : Window
         Linked.PickSlots = s.PickSlots;
         Linked.Picks = s.Picks;
         ViewModel.HasPicks = s.Picks.Count > 0;
+        // The scene in view is a preview's (another map, What's New, the tour's example): the player's picks on the map
+        // on screen aren't its own (review of 2026-10-09). The map's own scene takes them when the preview ends (UpdateMap).
+        if (_previewing is not null)
+            return;
         var (onMap, slotsOnMap) = (s.PicksOn(s.Map?.NormalizedName), s.PickSlotsOn(s.Map?.NormalizedName));
         if (Map.Scene is { } scene && (!scene.Kept.SetEquals(onMap) || scene.PickSlots.Count != slotsOnMap.Count
             || slotsOnMap.Any(p => !scene.PickSlots.TryGetValue(p.Key, out var slot) || slot != p.Value)))
@@ -1839,7 +1848,8 @@ public sealed partial class MainWindow : Window
     {
         _sizeGiven = size is not null;
         _rememberPlace = remember && size is null;
-        var last = _rememberPlace ? WindowPlace.Restorable(WindowPlace.Parse(saved), Monitors()) : null;
+        var parsed = WindowPlace.Parse(saved);
+        var last = _rememberPlace ? WindowPlace.Restorable(parsed, Monitors(), ScaleOn(parsed?.Monitor)) : null;
         if (last is { } place)
         {
             AppWindow.MoveAndResize(new RectInt32(place.Bounds.X, place.Bounds.Y, place.Bounds.Width, place.Bounds.Height));
@@ -1879,6 +1889,40 @@ public sealed partial class MainWindow : Window
         }
         return monitors;
     }
+
+    // The scale of the monitor with these bounds, for the smallest window and the inset on it (WindowPlace counts in
+    // pixels; review of 2026-10-09: at 150 % and 200 % they were taken unscaled); 1 where no monitor has them.
+    private static double ScaleOn(WindowPlace.Rect? monitor)
+    {
+        var displays = DisplayArea.FindAll();
+        for (var i = 0; i < displays.Count; i++)
+        {
+            var area = displays[i].OuterBounds;
+            if (monitor == new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height))
+                return ScaleOf(displays[i]);
+        }
+        return 1;
+    }
+
+    // The scale Windows gives a monitor (1 at 100 %), the one the window's content is drawn at there; 1 where it can't say.
+    private static double ScaleOf(DisplayArea display)
+    {
+        try
+        {
+            var monitor = Microsoft.UI.Win32Interop.GetMonitorFromDisplayId(display.DisplayId);
+            return GetDpiForMonitor(monitor, EffectiveDpi, out var dpi, out _) == 0 && dpi > 0 ? dpi / 96.0 : 1;
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Window: the monitor's scale couldn't be read; taken as 100 %", e);
+            return 1;
+        }
+    }
+
+    private const int EffectiveDpi = 0; // MDT_EFFECTIVE_DPI
+
+    [System.Runtime.InteropServices.DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr monitor, int dpiType, out uint dpiX, out uint dpiY);
 
     private WindowPlace.Rect BoundsNow() => new(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
 
@@ -1933,11 +1977,12 @@ public sealed partial class MainWindow : Window
         // Minimised, the window has no place of its own: what was saved before stands.
         if (!_rememberPlace || AppWindow.Presenter is not OverlappedPresenter presenter || presenter.State == OverlappedPresenterState.Minimized)
             return;
-        var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).OuterBounds;
+        var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
+        var area = display.OuterBounds;
         var monitor = new WindowPlace.Rect(area.X, area.Y, area.Width, area.Height);
         var maximised = presenter.State == OverlappedPresenterState.Maximized;
         // A maximised window sent to another monitor still has its unmaximised bounds on the one before: they follow it.
-        var bounds = maximised ? WindowPlace.OnMonitor(_unmaximised, monitor) : _unmaximised;
+        var bounds = maximised ? WindowPlace.OnMonitor(_unmaximised, monitor, ScaleOf(display)) : _unmaximised;
         _session.SetSetting(WindowPlace.Setting, WindowPlace.Format(new WindowPlace.Saved(bounds, maximised, monitor)));
     }
 

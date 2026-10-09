@@ -222,7 +222,8 @@
             <FontIcon Glyph="&#xE939;" FontSize="13" Foreground="{x:Bind FeedbackIconBrush}" />
           </Button>
         </Grid>
-        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
+        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)"
+                AutomationProperties.Name="Help">
           <TextBlock Text="?" Style="{StaticResource StatusBarText}" HorizontalAlignment="Center" />
           <Button.Flyout>
             <Flyout x:Name="HelpFlyout" Placement="BottomEdgeAlignedRight" Opened="OnHelpOpened" Closed="OnHelpClosed">
@@ -240,7 +241,8 @@
                      this version again (docs/DESIGN.md §4, "Screen anatomy"). SHOW ME beside a paragraph opens the tour at
                      the chapter that shows it. -->
                 <StackPanel Orientation="Horizontal" Spacing="18">
-                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="Seven short chapters over this window; Esc ends it">
+                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="Seven short chapters over this window; Esc ends it"
+                                   Visibility="{x:Bind ShownIfNot(ViewModel.RaidHoldsBack), Mode=OneWay}">
                     <TextBlock Text="TAKE THE TOUR" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <HyperlinkButton Padding="0" Click="OnWhatsNewAgainClick" Visibility="{x:Bind ShownIf(ViewModel.WhatsNewHelp), Mode=OneWay}"
@@ -683,7 +685,8 @@
               </Border>
               <!-- The card's close, in its corner as on a notice. -->
               <Button HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="24" Padding="0" Margin="0,8,8,0"
-                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close. Help brings it back.">
+                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close. Help brings it back."
+                      AutomationProperties.Name="Close what's new">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
               </Button>
               </Grid>
@@ -997,8 +1000,10 @@
                       <!-- The game opens only some extracts each raid (owner, 2026-10-04): until a screenshot showed its
                            list, the nearest is named as only that, muted, with how to check; once the list was read,
                            this is the nearest one on it and says so in the way out's colour (owner, 2026-10-05;
-                           Rules.ExitsNote). -->
+                           Rules.ExitsNote). Two lines where the column is narrow (review of 2026-10-09: a wide direction,
+                           "BEHIND-LEFT", cut it off mid-word). -->
                       <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.NearestNote), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
+                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
                                  Foreground="{x:Bind ViewModel.RaidExit.NoteBrush, Mode=OneWay}" HorizontalAlignment="Left" Margin="0,2,0,0"
                                  Visibility="{x:Bind ShownIf(ViewModel.RaidExit.NearestNote), Mode=OneWay}"
                                  ToolTipService.ToolTip="{x:Bind ViewModel.RaidExit.NearestTip, Mode=OneWay}" />
@@ -1033,6 +1038,7 @@
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,6">
                       <TextBlock Text="{x:Bind ViewModel.RaidPlainExit.Name, Mode=OneWay}" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind PlainExitNote}" Style="{StaticResource StatusText}" FontSize="10.5"
+                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
                                  Foreground="{x:Bind ViewModel.RaidPlainExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Left" Margin="0,1,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Padding="10,5,0,6">
@@ -1226,7 +1232,7 @@
                 <TextBlock Text="{x:Bind ReportOfferText}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
               <Button Width="24" Height="24" Padding="0" Click="OnNoticeClosed" Background="Transparent" BorderThickness="0"
-                      ToolTipService.ToolTip="Dismiss">
+                      ToolTipService.ToolTip="Dismiss" AutomationProperties.Name="Dismiss the notice">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
               </Button>
             </StackPanel>
@@ -1270,7 +1276,7 @@
               </ScrollViewer>
             </StackPanel>
             <Button Grid.Column="2" Width="24" Height="24" Padding="0" Click="OnCrashLaterClick" Background="Transparent" BorderThickness="0"
-                    VerticalAlignment="Top" ToolTipService.ToolTip="Ask again next time">
+                    VerticalAlignment="Top" ToolTipService.ToolTip="Ask again next time" AutomationProperties.Name="Ask again next time">
               <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
             </Button>
           </Grid>
@@ -1328,10 +1334,10 @@
             <FontIcon Glyph="&#xE759;" FontSize="15" />
           </ToggleButton>
           <!-- Off, the view only moves when you move it: a new position pings instead. This shows it. -->
-          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)" AutomationProperties.Name="Show my position"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)" AutomationProperties.Name="Show the whole map"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)" AutomationProperties.Name="Zoom in"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)" AutomationProperties.Name="Zoom out"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
         </StackPanel>
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
           <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
@@ -1355,12 +1361,14 @@
       <Path x:Name="TourVeil" Fill="#DB0B0C0B" IsHitTestVisible="False" />
       <Path x:Name="TourMarks" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" IsHitTestVisible="False" />
       <Canvas x:Name="TourCanvas" IsHitTestVisible="False" />
-      <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour). -->
+      <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour), opaque as the
+           band is (review of 2026-10-09: the map's labels read through the example raid card). -->
       <Grid x:Name="TourStage" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
         <Border x:Name="TourPlate" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
-                Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="30,24" />
+                Background="{StaticResource GroundBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="30,24" />
       </Grid>
-      <Border x:Name="TourBand" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#F00B0C0B" SizeChanged="OnTourLayerSizeChanged"
+      <!-- Opaque: the map's labels showed through its words (review of 2026-10-09). -->
+      <Border x:Name="TourBand" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="{StaticResource GroundBrush}" SizeChanged="OnTourLayerSizeChanged"
               BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" Padding="22,14,22,12">
         <Grid ColumnSpacing="28" RowSpacing="10">
           <Grid.ColumnDefinitions>

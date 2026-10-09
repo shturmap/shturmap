@@ -15,6 +15,10 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title)
 
     /// <summary>How many of it: from two up, "×3" beside the cell.</summary>
     public int Count { get; init; } = 1;
+
+    /// <summary>Whether two cells say the same, their alternatives too (Rules.RowLists).</summary>
+    public static bool Same(NeedChip a, NeedChip b) =>
+        a == b with { Alternatives = a.Alternatives } && Rules.RowLists.Same(a.Alternatives, b.Alternatives);
 }
 
 /// <summary>

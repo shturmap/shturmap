@@ -11,7 +11,7 @@ release that changed a chapter says so in docs/whats-new.md with a `tour:N` line
 stages, the anchors and the lengths.
 
 ## safe
-SAFE TO RUN
+WHAT IT READS
 Reads the game's logs and your screenshots, on this PC. Never touches the game.
 An unofficial fan project, not made or endorsed by Battlestate Games. Use at your own risk.
 - reads · The game's logs

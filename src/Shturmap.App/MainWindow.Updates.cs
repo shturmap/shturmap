@@ -103,15 +103,38 @@ public sealed partial class MainWindow
         RefreshUpdates();
     }
 
-    // Velopack ends this process at once: the session is closed first, and the running marker let go, so the next
-    // start doesn't take the restart for a crash.
+    // Velopack's updater is started first and waits for this process to end; only once it runs is the session closed
+    // and the running marker let go (so the next start doesn't take the restart for a crash), and the app ends as
+    // Velopack's own restart ended it. If the updater can't start, the session goes on and a notice says why (review of
+    // 2026-10-09: the session was closed first, and a download that was gone left a window that drew nothing).
     private async void OnUpdateRestartClick(object sender, RoutedEventArgs e)
     {
         if (_updater is null || ViewModel.InRaid || _updater.Stage != UpdateStage.Ready)
             return;
         Study.Ui("updates.restart");
-        await _session.DisposeAsync();
-        ((App)Application.Current).EndSession();
-        _updater.RestartNow();
+        if (_updater.StartRestart() is { } why)
+        {
+            ShowNotice($"The update couldn't be applied: {why}. Shturmap keeps running.", TimeSpan.FromSeconds(12));
+            RefreshUpdates();
+            return;
+        }
+        // From here the updater waits for this process: it ends whatever happens.
+        try
+        {
+            await _session.DisposeAsync();
+        }
+        catch (Exception problem)
+        {
+            AppLog.Warn("Updates: closing the session for RESTART NOW failed; restarting anyway", problem);
+        }
+        try
+        {
+            ((App)Application.Current).EndSession();
+        }
+        catch (Exception problem)
+        {
+            AppLog.Warn("Updates: ending the session for RESTART NOW failed; restarting anyway", problem);
+        }
+        Environment.Exit(0);
     }
 }

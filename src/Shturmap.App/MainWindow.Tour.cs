@@ -105,6 +105,14 @@ public sealed partial class MainWindow
     {
         if (TourChapters.Count == 0 || TourLayer.XamlRoot is null || ReportOpen)
             return;
+        // Never in a raid (review of 2026-10-09: help's links and What's New opened it there): it covers the window. TAKE
+        // THE TOUR is hidden then; a SHOW ME in help's text, or a What's New line, says why nothing opens.
+        if (ViewModel.RaidHoldsBack)
+        {
+            if (how is "showme" or "whatsnew" or "help")
+                ShowNotice("The tour waits until the raid is over.");
+            return;
+        }
         at = Math.Clamp(at, 0, TourChapters.Count - 1);
         if (HelpFlyout.IsOpen)
             HelpFlyout.Hide();
@@ -115,7 +123,8 @@ public sealed partial class MainWindow
         if (!TourOpen)
         {
             Study.Ui("tour.open", ("how", how), ("chapter", at + 1));
-            _tourRestore = _previewing is not null ? _restoreView ?? Map.View : Map.View;
+            // Null where no map was drawn yet (a first start): the map then comes back fitted, not at the camera's default.
+            _tourRestore = _previewing is not null ? _restoreView : Map.HasView ? Map.View : null;
             TourLayer.Visibility = Visibility.Visible;
             _tourHoles = [];
             _tourDrawn = [];
@@ -283,7 +292,7 @@ public sealed partial class MainWindow
         if (_previewing is not null)
         {
             _previewTimer?.Stop();
-            _restoreView = _tourRestore ?? _restoreView;
+            _restoreView = _tourRestore;
             EndPreview(restore: true);
         }
     }
@@ -400,7 +409,8 @@ public sealed partial class MainWindow
         if (row.Tag is string name && name != current)
         {
             StartPreview(name);
-            _restoreView = _tourRestore ?? _restoreView;
+            if (_previewing is not null)
+                _restoreView = _tourRestore;
         }
     }
 
@@ -532,7 +542,7 @@ public sealed partial class MainWindow
         TourCanvas.Children.Remove(plate);
         // The view takes in the listed extracts and you, above the band; the frame follows to what it shows of them.
         var points = listed.Concat(unsure).Select(m => m.Position).Append(you).ToList();
-        var view = Map.FramingAbove(scene, points, 60, TourBand.ActualHeight + 46, 300);
+        var view = Map.FramingAbove(scene, points, TourFraming, TourBand.ActualHeight + 46, 300);
         if (_tourMotion)
         {
             Map.AnimateView(view, TimeSpan.FromMilliseconds(1200));
@@ -605,7 +615,8 @@ public sealed partial class MainWindow
         if (_snapshot?.Data is not { } data || TourExample(data) is not { } example)
             return;
         MapContent? content = null;
-        await TourScene(data, example, example.QuestNames, run, (_, c) => content = c, null, 0);
+        // Framed on the whole example, above the band (fitted, the map ran under the band and its labels off the right edge).
+        await TourScene(data, example, example.QuestNames, run, (_, c) => content = c, c => c.Markers.Select(m => m.Position).ToList(), 0);
         if (content is null || !await TourWait(300, run))
             return;
         var plan = Planning.PlanFor(data, example.QuestIds, example.Map);
@@ -620,7 +631,7 @@ public sealed partial class MainWindow
         _cueStory?.Stop();
         _cueTimer?.Stop();
         CuePanel.Visibility = Visibility.Collapsed;
-        ShowPlate(ExampleRaidCard(plan, content, example));
+        ShowPlate(ExampleRaidCard(data, plan, content, example));
     }
 
     // The three buttons at the top right, framed and named.
@@ -675,6 +686,10 @@ public sealed partial class MainWindow
         return _tourExample = new TourExampleSet("customs", map.Name, chosen.Select(t => t.Id).ToList(), chosen.Select(t => t.NormalizedName!).ToList());
     }
 
+    // DIPs around what a chapter frames on the map: room for the labels the map writes right of its symbols, which 60
+    // cut at the map's right edge (review of 2026-10-09).
+    private const double TourFraming = 90;
+
     // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band.
     private async Task TourScene(GameData data, TourExampleSet example, IReadOnlyCollection<string> quests, int run,
         Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres)
@@ -682,17 +697,17 @@ public sealed partial class MainWindow
         var wanted = TourPreviewPrefix + run;
         StopReplay("preview");
         EndWhatsNewPreview();
-        _restoreView = _tourRestore ?? Map.View;
+        _restoreView = _tourRestore;
         _previewing = wanted;
         ViewModel.PreviewText = $"PREVIEW · THE TOUR · {Caps.Of(example.MapName)}";
         ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";
-        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourBand.ActualHeight + 46);
+        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourBand.ActualHeight + 46, TourFraming);
         // One layout pass, so the view's points are where they are drawn.
         await Task.Delay(_tourMotion ? 60 : 30);
     }
 
     // The raid card's head, with example values: the map and side, the clock, NEXT and EXIT.
-    private FrameworkElement ExampleRaidCard(MapPlanView? plan, MapContent content, TourExampleSet example)
+    private FrameworkElement ExampleRaidCard(GameData data, MapPlanView? plan, MapContent content, TourExampleSet example)
     {
         var card = new StackPanel { Width = 352, Spacing = 12 };
         var head = new Grid();
@@ -700,13 +715,22 @@ public sealed partial class MainWindow
         head.Children.Add(new TextBlock { Text = "PMC", Style = TextStyle("StatusText"), Foreground = Resource("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
         card.Children.Add(head);
         var minutes = plan is { RaidMinutes: > 0 } p ? p.RaidMinutes : 40;
-        // Thirteen minutes left, as the website's picture and What's New's clock say it.
+        // Thirteen minutes left, as the website's picture and What's New's clock say it, of the map's own raid length
+        // (tarkov.dev's: 35 min for Customs in October 2026, so 22 min in).
         card.Children.Add(new Controls.RaidClock { Reading = RaidTime.Of(true, false, DateTime.Now.AddMinutes(-(minutes - 13)), minutes, DateTime.Now) });
-        var next = content.Objectives.FirstOrDefault(o => o.Places.Count > 0 && example.QuestIds.Contains(o.Quest.Id));
+        // As the raid card lists them: a hand-over of what another objective gets is no line of its own (Handovers).
+        var next = content.Objectives.FirstOrDefault(o => o.Places.Count > 0 && example.QuestIds.Contains(o.Quest.Id) && !Handovers.Folds(o.Quest, o.Objective.Id));
         var exit = content.Markers.FirstOrDefault(m => m.Kind == MarkerKind.ExtractPmc);
         card.Children.Add(new Rectangle { Height = 1, Fill = Resource("LineBrush") });
         if (next is not null)
-            card.Children.Add(GlanceRow("NEXT", Shorten(next.Objective.Description ?? next.Quest.Name, 34), next.Quest.Name, "86 m", "AHEAD-LEFT", "AmberBrush"));
+        {
+            // In a few words, as the raid card says it ("Mark Stryker"; Planning.ObjectiveSynopses, the session's own call
+            // for the card's lines); tarkov.dev's sentence only where the data isn't English (review of 2026-10-09).
+            var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
+                data.MapIdsSharing(example.Map));
+            var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
+            card.Children.Add(GlanceRow("NEXT", text, next.Quest.Name, "86 m", "AHEAD-LEFT", "AmberBrush"));
+        }
         if (exit is not null)
             card.Children.Add(GlanceRow("EXIT", exit.Label, "ON YOUR LIST THIS RAID", "214 m", "BEHIND", "GreenBrush"));
         card.Children.Add(new TextBlock { Text = "THE RAID CARD, WITH EXAMPLE VALUES", Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });

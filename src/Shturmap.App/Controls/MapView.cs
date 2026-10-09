@@ -128,6 +128,9 @@ public sealed partial class MapView : Grid
                 artwork.FloorFailed += (id, e) => Shturmap.Session.AppLog.Warn($"Map artwork: the floor '{id}' couldn't be read and isn't drawn", e);
             _ = artwork.ReadFloorsAsync();
         }
+        // A move of the view still running belongs to the scene before (the replay's or the tour's glide): left running,
+        // it would carry on moving the new one (review of 2026-10-09).
+        StopViewAnimation();
         StopGlide();
         _scene = scene;
         if (scene is not null)
@@ -238,6 +241,13 @@ public sealed partial class MapView : Grid
 
     /// <summary>Where the view is: to come back to it after a preview of another map.</summary>
     public (Shturmap.Core.Maps.MapPoint Center, double Zoom) View => (_camera.Center, _camera.Zoom);
+
+    /// <summary>
+    /// Whether <see cref="View"/> is a view of a map: one is drawn, and fitted. Before that the camera holds its default
+    /// (centre 0, zoom 1), which is nobody's view: a preview that kept it would bring the map back there instead of
+    /// fitting it (review of 2026-10-09: the tour at a first start opened before the map was drawn).
+    /// </summary>
+    public bool HasView => _scene is not null && !_fitPending;
 
     /// <summary>
     /// Redraws after the scene's markers, player or floor changed. A new position pings; following, the view glides to
@@ -375,7 +385,8 @@ public sealed partial class MapView : Grid
         CompositionTarget.Rendering += _viewAnimation;
     }
 
-    private void StopViewAnimation()
+    /// <summary>Stops a move of the view under way (<see cref="AnimateView"/>) where it is.</summary>
+    public void StopViewAnimation()
     {
         if (_viewAnimation is null)
             return;

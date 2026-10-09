@@ -95,4 +95,18 @@ public class WindowPlaceTests
         Assert.Equal(bounds, WindowPlace.OnMonitor(bounds, Second));
         Assert.NotEqual(bounds, WindowPlace.OnMonitor(bounds, Second, scale: 1.5));
     }
+
+    [Fact]
+    public void A_saved_place_is_checked_at_its_monitor_s_scale()
+    {
+        // Saved at 1000 × 700 pixels on a monitor at 150 % (the review of 2026-10-09: the scale wasn't passed, so it was
+        // taken at 100 %): under the smallest window there, it comes back at the default size, scaled, from the
+        // scaled inset, cut to the monitor.
+        var place = new WindowPlace.Saved(new(2700, 60, 1000, 700), false, Second);
+        Assert.Equal(place, WindowPlace.Restorable(place, All));
+        var back = WindowPlace.Restorable(place, All, scale: 1.5);
+        Assert.NotNull(back);
+        Assert.Equal(new WindowPlace.Rect(2560 + 60, 60, 1920 - 120, 1080 - 120), back.Value.Bounds);
+        Assert.False(back.Value.Maximised);
+    }
 }
