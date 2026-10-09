@@ -566,7 +566,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
     {
         var camera = new Shturmap.Map.Camera();
         camera.Resize(new SkiaSharp.SKSize(1600, 1000));
-        camera.Fit(scene.Projection.WorldRect);
+        camera.Fit(scene.Projection.WorldRect, 24, Shturmap.Map.Camera.LabelRoom);
         if (zoomIn > 1 && scene.Player is { } p)
         {
             camera.CenterOn(scene.Projection.ToMap(p.Position));

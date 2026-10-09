@@ -394,16 +394,18 @@ public sealed partial class MapView : Grid
         _viewAnimation = null;
     }
 
-    /// <summary>The view that shows these world positions with <paramref name="padding"/> (DIPs) around them.</summary>
+    /// <summary>The view that shows these world positions with <paramref name="padding"/> (DIPs) around them, and the
+    /// label room on their right (<see cref="Camera.FramingAbove"/>).</summary>
     public (Shturmap.Core.Maps.MapPoint Center, double Zoom) FramingOf(IReadOnlyCollection<Shturmap.Core.WorldPoint> points, double padding)
     {
         var map = points.Select(p => _scene!.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        return _camera.Framing(rect, (float)(padding * PixelScale));
+        return _camera.Framing(rect, (float)(padding * PixelScale), Camera.LabelRoom * PixelScale);
     }
 
     /// <summary>
-    /// The view of <paramref name="scene"/> that shows these world positions, with room around them and at least
+    /// The view of <paramref name="scene"/> that shows these world positions, with <paramref name="padding"/> DIPs
+    /// around them and the label room on their right (<see cref="Camera.FramingAbove"/>), at least
     /// <paramref name="minMetres"/> across, in the part of this view above <paramref name="foot"/> DIPs at its foot (the
     /// raid replay's band).
     /// </summary>
@@ -415,13 +417,7 @@ public sealed partial class MapView : Grid
         var room = points.Append(new(x - minMetres / 2, 0, z - minMetres * 0.3)).Append(new(x + minMetres / 2, 0, z + minMetres * 0.3));
         var map = room.Select(p => scene.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        var pad = padding * PixelScale;
-        var footPx = foot * PixelScale;
-        var size = _camera.Viewport;
-        var zoom = Math.Min((size.Width - 2 * pad) / Math.Max(rect.Width, 1e-6), (size.Height - footPx - 2 * pad) / Math.Max(rect.Height, 1e-6));
-        zoom = Math.Clamp(zoom, 1e-6, _camera.MaxZoom);
-        // The middle of what is framed lies in the middle of the part above the foot.
-        return (new Shturmap.Core.Maps.MapPoint((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2 + footPx / 2 / zoom), zoom);
+        return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * PixelScale);
     }
 
     /// <summary>Puts the view at a centre and zoom at once (the replay with animation effects off).</summary>
@@ -495,7 +491,7 @@ public sealed partial class MapView : Grid
         if (_fitPending)
         {
             _fitPending = false;
-            _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale);
+            _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale, Camera.LabelRoom * PixelScale);
         }
         // Following: once the view has its size (and a new map is fitted), it starts on the player.
         if (_centerAfterFit && FollowState.Target(_scene, _camera, DateTime.Now) is { } player)

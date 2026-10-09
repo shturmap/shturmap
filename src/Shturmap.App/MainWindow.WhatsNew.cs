@@ -196,7 +196,8 @@ public sealed partial class MainWindow
 
     // A preview's map: its artwork, the given quests' places (none of the player's), staged and framed.
     /// <param name="foot">DIPs at the map's foot that what is framed stays above (the tour's band).</param>
-    /// <param name="padding">DIPs around what is framed (the tour's are wider: the map writes labels right of its symbols).</param>
+    /// <param name="padding">DIPs around what is framed (the tour's are wider); the right side keeps the label room
+    /// (<see cref="Controls.MapView.FramingAbove"/>).</param>
     private async Task PreviewSceneAsync(string wanted, Shturmap.Data.TarkovDev.GameData data, string mapName, IReadOnlyCollection<string> quests,
         Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, double foot = 0, double padding = 40)
     {

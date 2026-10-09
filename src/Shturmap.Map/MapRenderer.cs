@@ -52,7 +52,7 @@ public static partial class MapRenderer
     {
         canvas.Clear(Background);
         // The zoom limit is the map's that is drawn, not the one's fitted last (a preview leaves its own behind).
-        camera.LimitTo(scene.Projection.WorldRect, 24 * uiScale);
+        camera.LimitTo(scene.Projection.WorldRect, 24 * uiScale, Camera.LabelRoom * uiScale);
         // Read once: a tile arriving on its own thread may end the sheet in the middle of a frame.
         var sheet = scene.IsSheet;
         if (scene.Artwork is not null)
@@ -1062,14 +1062,10 @@ public static partial class MapRenderer
         _ => (false, 2.5),
     };
 
-    /// <summary>The zoom as a multiple of the zoom that shows the whole map in this view.</summary>
-    public static double ZoomOverOverview(Camera camera, MapScene scene, float ui)
-    {
-        var rect = scene.Projection.WorldRect;
-        var padding = 24 * ui;
-        var overview = Math.Min((camera.Viewport.Width - 2 * padding) / Math.Max(rect.Width, 1e-6), (camera.Viewport.Height - 2 * padding) / Math.Max(rect.Height, 1e-6));
-        return camera.Zoom / overview;
-    }
+    /// <summary>The zoom as a multiple of the zoom that shows the whole map in this view (as "show the whole map" does,
+    /// with the label room on the right).</summary>
+    public static double ZoomOverOverview(Camera camera, MapScene scene, float ui) =>
+        camera.Zoom / camera.Overview(scene.Projection.WorldRect, 24 * ui, Camera.LabelRoom * ui);
 
     private static float NameWidth(SKFont font, string text, float tracking) =>
         tracking == 0 ? font.MeasureText(text) : text.Sum(c => font.MeasureText(c.ToString())) + tracking * Math.Max(0, text.Length - 1);

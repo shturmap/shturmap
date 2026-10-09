@@ -552,14 +552,15 @@ public sealed partial class MainWindow
             Map.Jump(view);
         if (run != _tourRun || !TourOpen)
             return;
-        // What the view shows of them, with room for the labels the map writes to the right of its symbols.
+        // What the view shows of them, with room for the labels the map writes to the right of its symbols (the room
+        // the framing keeps there).
         Rect Region()
         {
             var at = points.Select(ToLayer).ToList();
             var r = new Rect(at.Min(p => p.X) - 40, at.Min(p => p.Y) - 40, 0, 0);
             var mapNow = MapRect();
             double x0 = Math.Max(mapNow.X, r.X), y0 = Math.Max(mapNow.Y, r.Y);
-            double x1 = Math.Min(mapNow.Right, at.Max(p => p.X) + 150), y1 = Math.Min(mapNow.Bottom, at.Max(p => p.Y) + 40);
+            double x1 = Math.Min(mapNow.Right, at.Max(p => p.X) + Camera.LabelRoom), y1 = Math.Min(mapNow.Bottom, at.Max(p => p.Y) + 40);
             return new Rect(x0, y0, Math.Max(0, x1 - x0), Math.Max(0, y1 - y0));
         }
         TourHoles(() => [Region()]);
@@ -686,8 +687,9 @@ public sealed partial class MainWindow
         return _tourExample = new TourExampleSet("customs", map.Name, chosen.Select(t => t.Id).ToList(), chosen.Select(t => t.NormalizedName!).ToList());
     }
 
-    // DIPs around what a chapter frames on the map: room for the labels the map writes right of its symbols, which 60
-    // cut at the map's right edge (review of 2026-10-09).
+    // DIPs around what a chapter frames on the map: room for the labels the map writes beside its symbols, which 60 cut
+    // at the map's edge (review of 2026-10-09). On the right the framing keeps its label room instead
+    // (Camera.LabelRoom, 150): 90 still cut the picked quest's name there (owner, 2026-10-09).
     private const double TourFraming = 90;
 
     // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band.
