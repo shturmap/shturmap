@@ -249,7 +249,7 @@
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The screenshot's name holds your position: your marker, floor and distances update. The map stays put; F shows you, Shift+F follows you. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="key" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=": the screenshot's name holds your position. The map stays put; F shows you, Shift+F follows you. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="key" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="Map, raid and quests follow the game's logs. No clicks needed while you play. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="follows" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
@@ -258,14 +258,14 @@
                   <Run Text="Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="next" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="EXIT is the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice) and Shturmap reads it: yours light up, the rest turn hollow. OR: the nearest of yours that needs nothing. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest turn hollow, and OR is your nearest that needs nothing. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="Quest order: go somewhere, then find or survive, then fight; simplest first." />
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Symbols on top of each other spread out where the pointer rests. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="pick" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="Point at a quest: its card opens and the quest lights up everywhere. Click to keep the card; a key, item or quest on it has a card of its own. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="pick" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
-                <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest. They stay until done, unpicked, or CLEAR PICKS." />
-                <TextBlock TextWrapping="Wrap" Text="Done an objective? The logs can't tell, so tick its box on the quest's card: the map, NEXT and the plan then skip it. Ticks clear when the quest ends. HAND OVER on a line: take what it gets to the trader after the raid." />
+                <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest, until done or unpicked." />
+                <TextBlock TextWrapping="Wrap" Text="Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. HAND OVER on a line: take what it gets to the trader after the raid." />
                 <TextBlock TextWrapping="Wrap" Text="After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs only: one started before your oldest log isn't shown." />
                 <!-- True as long as tarkov.dev leaves them out of its data (docs/UPDATES.md, "Story chapters"; owner, 2026-10-09). -->
@@ -308,16 +308,21 @@
                 </ItemsControl>
 
                 <TextBlock x:Name="LegendHeading" Style="{StaticResource EyebrowText}" Text="ON THE MAP" />
-                <!-- Drawn by the map's own renderer (MapLegend), most important first. The symbols on the map shown
-                     now come first; the others wait behind a link (owner, 2026-10-04: all of them made help 2,350 px
-                     tall). Filled when help opens (ShowLegend). -->
+                <!-- Drawn by the map's own renderer (MapLegend), most important first. Up to twelve of the symbols on
+                     the map shown now; the rest of them, and the symbols it doesn't have, wait behind a link (owner,
+                     2026-10-04: all of them made help 2,350 px tall; 2026-10-09: Streets listed 26). Filled when help
+                     opens (ShowLegend, Rules.LegendFold). -->
                 <ItemsControl x:Name="LegendHere" ItemTemplate="{StaticResource MapLegendRowTemplate}" />
                 <HyperlinkButton x:Name="LegendMore" Padding="0" Click="OnLegendMoreClick" Visibility="Collapsed">
                   <TextBlock x:Name="LegendMoreText" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                 </HyperlinkButton>
-                <ItemsControl x:Name="LegendRest" ItemTemplate="{StaticResource MapLegendRowTemplate}" Visibility="Collapsed" />
+                <StackPanel x:Name="LegendRest" Spacing="8" Visibility="Collapsed">
+                  <ItemsControl x:Name="LegendRestHere" ItemTemplate="{StaticResource MapLegendRowTemplate}" />
+                  <TextBlock x:Name="LegendElsewhereHeading" Style="{StaticResource EyebrowText}" Text="NOT ON THIS MAP" />
+                  <ItemsControl x:Name="LegendElsewhere" ItemTemplate="{StaticResource MapLegendRowTemplate}" />
+                </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
-                           Text="Reads screenshot names, the game's logs, public tarkov.dev data, and the extract list in a raid screenshot's top right corner (settings can turn that off). Reads nothing from the game, sends it nothing. Changes nothing outside its folders, unless you tick Delete position screenshots. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Its log stays on this PC." />
+                           Text="Reads screenshot names, the game's logs, tarkov.dev's public data and the extract list in a raid screenshot's top right corner (settings turn that off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots." />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="HELP AND FEEDBACK" Margin="0,8,0,0" />
                 <!-- Reports go through the feedback button at the top right (owner, 2026-10-03: "there should be a separate
                      feedback/bugreport button"); help keeps the diagnostics to paste elsewhere. -->

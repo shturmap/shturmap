@@ -1514,14 +1514,16 @@ spawns below).
   of 2026-10-04 the gold chevrons of a pointed-at quest, the cyan padlock of a door a pick needs a key for, and the
   ping of a new position), and each names
   shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change, and a line in
-  `MapLegend.On`. Help lists the symbols the map on screen has under ON THIS MAP, and the others behind one link,
-  "SHOW THE n SYMBOLS THIS MAP DOESN'T HAVE" (owner, 2026-10-04; every symbol of every map made help 2,350 px tall).
+  `MapLegend.On`. Help lists the symbols the map on screen has under ON THIS MAP, the twelve most important of
+  them, and keeps the rest of them and the symbols the map doesn't have (under NOT ON THIS MAP) behind one link,
+  "SHOW n MORE SYMBOLS" (owner, 2026-10-04: every symbol of every map made help 2,350 px tall; 2026-10-09, help
+  trimmed: Streets alone listed 26; `LegendFold`).
   A symbol counts when the scene holds what it stands for (`MapLegend.On`): a padlock when the map has locks, the
   guide line when a pick has a place here and there is a position, the sheet when there is no artwork. What only
   shows for a moment counts where its cause can occur: the ping wherever there is a position, the cyan chevrons and
   the cyan padlock where a pick has a place or a door here, the gold chevrons wherever a quest has a place (any of
   them can be pointed at). The list
-  follows the map while help is open; with no map up, all rows stand under ON THE MAP.
+  follows the map while help is open; with no map up, all rows count as ON THE MAP (twelve, then the link).
 
 ### Quest cards
 

@@ -225,8 +225,9 @@ public sealed partial class MainWindow : Window
     private bool _legendAll;
 
     /// <summary>
-    /// Help lists the symbols on the map shown now; the others wait behind a link (owner, 2026-10-04, from the
-    /// review's C9: every symbol of every map made help 2,350 px tall). With no map up, all of them are listed.
+    /// Help lists the symbols on the map shown now, the twelve most important of them; the rest, and the symbols the
+    /// map doesn't have, wait behind a link (owner, 2026-10-04, from the review's C9: every symbol of every map made
+    /// help 2,350 px tall; 2026-10-09: Streets alone listed 26; Rules.LegendFold). With no map up, all of them count.
     /// Called when help opens, and while it is open when the map changes (help opens by itself at the first start,
     /// before a map is up); the link's state then stays as the player left it.
     /// </summary>
@@ -237,11 +238,14 @@ public sealed partial class MainWindow : Window
             return;
         _legendOn = on;
         LegendHeading.Text = on is null ? "ON THE MAP" : "ON THIS MAP";
-        LegendHere.ItemsSource = _legendRows.Where(r => on?.Contains(r.Symbol) != false).Select(r => r.Row).ToList();
-        var rest = _legendRows.Where(r => on?.Contains(r.Symbol) == false).Select(r => r.Row).ToList();
-        _legendRest = rest.Count;
-        LegendRest.ItemsSource = rest;
-        LegendMore.Visibility = rest.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        var (listed, more, elsewhere) = LegendFold.Split(_legendRows, r => on?.Contains(r.Symbol) != false);
+        LegendHere.ItemsSource = listed.Select(r => r.Row).ToList();
+        LegendRestHere.ItemsSource = more.Select(r => r.Row).ToList();
+        LegendRestHere.Visibility = more.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        LegendElsewhere.ItemsSource = elsewhere.Select(r => r.Row).ToList();
+        LegendElsewhere.Visibility = LegendElsewhereHeading.Visibility = elsewhere.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _legendRest = more.Count + elsewhere.Count;
+        LegendMore.Visibility = _legendRest > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (opened)
             _legendAll = false;
         ShowLegendRest();
@@ -250,8 +254,9 @@ public sealed partial class MainWindow : Window
     private void ShowLegendRest()
     {
         LegendRest.Visibility = _legendAll && _legendRest > 0 ? Visibility.Visible : Visibility.Collapsed;
-        var symbols = _legendRest == 1 ? "1 SYMBOL" : $"{_legendRest} SYMBOLS";
-        LegendMoreText.Text = _legendAll ? $"HIDE THE {symbols} THIS MAP DOESN'T HAVE" : $"SHOW THE {symbols} THIS MAP DOESN'T HAVE";
+        LegendMoreText.Text = _legendAll
+            ? (_legendRest == 1 ? "HIDE 1 SYMBOL" : $"HIDE {_legendRest} SYMBOLS")
+            : (_legendRest == 1 ? "SHOW 1 MORE SYMBOL" : $"SHOW {_legendRest} MORE SYMBOLS");
     }
 
     private void OnLegendMoreClick(object sender, RoutedEventArgs e)
@@ -398,7 +403,7 @@ public sealed partial class MainWindow : Window
     // "Read the extract list from screenshots" in settings (owner, 2026-10-05): the one case where Shturmap opens a
     // screenshot's picture, so its note says what is looked at, and unticking it stops it.
     public string ReadExitsNote { get; } =
-        "Looks at the top right corner of each raid screenshot. If the game's extract list is there (raid start, or O twice), Windows' own text recognition reads which extracts are yours. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
+        "Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
 
     private async void OnReadExitsClick(object sender, RoutedEventArgs e)
     {
