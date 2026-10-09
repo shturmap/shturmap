@@ -52,6 +52,7 @@ public class EffortTests
     [InlineData("AnyPmc")]
     [InlineData("Bear")]
     [InlineData("ExUsec")]
+    [InlineData("exUsecFree")]
     [InlineData("PmcBot")]
     [InlineData("pmcBotBlackDiv")]
     [InlineData("bossKnight")]

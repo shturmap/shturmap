@@ -56,8 +56,8 @@ Run each with `pve` and with `regular`.
 | `handovers` | NEAR; new names under "Quest items handed over with no pickup" | the pairing rule in `Handovers` (DESIGN.md, "Quest cards", *Hand-overs*) |
 | `spawns` | markers far from any spawn point; boss names | the spawn grouping in `MapContent`; a new AI PMC id would draw as a boss |
 
-Last good totals, to compare against: `effort pve` 2026-10-03: 614 rows, Go there 214, Find or survive 134, Fight
-266. `handovers` 2026-10-05: PvE 217 fold, 174 own lines, 0 NEAR; PvP 217, 186, 0.
+Last good totals, to compare against: `effort pve` 2026-10-09: 604 rows, Go there 211, Find or survive 124, Fight
+269 (regular 620: 209, 136, 275). `handovers` 2026-10-09: PvE 221 fold, 155 own lines, 0 NEAR; PvP 221, 171, 0.
 
 ## 3. The tests against the fresh cache (1 min)
 
@@ -171,3 +171,8 @@ Labyrinth's 18 traps, 60 of 1,418 objectives optional): they say what was true o
 | 2026-10-03 | `bring` pve and regular | no unknown items, no unmatched exits |
 | 2026-10-05 | `handovers` pve and regular | 217 fold in each; 0 NEAR |
 | 2026-10-08 | story chapters | none in json.tarkov.dev (pve, regular). Its dev host, json-dev.tarkov.dev (6 Oct), has 10 chapters, 322 main objectives: 45 on a map, none with a place. No chapter or section id in the application or notification logs |
+| 2026-10-09 | `data` pve, regular, pve de | 500 tasks (PvE), 504 (PvP), 17 maps, 16 traders, 13 definitions |
+| 2026-10-09 | `effort` pve and regular | 604 rows (PvE: Go there 211, Find or survive 124, Fight 269); regular 620. No unknown objective types. UNKNOWN TARGET `exUsecFree` (tarkov.dev: "Rogue"): named a fight in `QuestEffort` |
+| 2026-10-09 | `bring` pve and regular | no unknown items. NO EXIT: Information Source (" V-Ex_light", with a leading space) and, PvP only, Belka and Strelka (`customs_sniper_exit`): no extract in tarkov.dev's maps has either name, so there is nothing to match; tarkov.dev's data, not a rule |
+| 2026-10-09 | `synopses`, `handovers`, `spawns` | no FALLBACK or BREAK (153 LONG PvE, 156 PvP); hand-overs 221 fold, 0 NEAR; spawns at most 25 m from a spawn point |
+| 2026-10-09 | story chapters; tests | still none in json.tarkov.dev; 1321 tests passed against the fresh cache, 0 skipped |

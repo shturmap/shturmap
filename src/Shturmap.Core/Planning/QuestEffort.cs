@@ -46,11 +46,11 @@ public static class QuestEffort
     private static readonly HashSet<string> ScavTargets = new(StringComparer.Ordinal) { "Savage", "Marksman", "assaultGroup", "Any" };
 
     // Every other target the data uses today; they are fights. By tarkov.dev's English names: "AnyPmc" any PMC
-    // operatives, "Bear" BEAR operatives, "ExUsec" Rogues, "PmcBot" Raiders, "blackDivision" and "pmcBotBlackDiv"
-    // Black Div., "tagillaHelperAgro" Labyrinth Guard. Unknown names count as fights too (the safe side), and the audit
-    // (shturmap-cli effort) lists them.
+    // operatives, "Bear" BEAR operatives, "ExUsec" and "exUsecFree" Rogues (the second in the data since October 2026),
+    // "PmcBot" Raiders, "blackDivision" and "pmcBotBlackDiv" Black Div., "tagillaHelperAgro" Labyrinth Guard. Unknown
+    // names count as fights too (the safe side), and the audit (shturmap-cli effort) lists them.
     private static readonly HashSet<string> FightTargets = new(StringComparer.Ordinal)
-        { "AnyPmc", "Bear", "ExUsec", "PmcBot", "blackDivision", "pmcBotBlackDiv", "tagillaHelperAgro" };
+        { "AnyPmc", "Bear", "ExUsec", "exUsecFree", "PmcBot", "blackDivision", "pmcBotBlackDiv", "tagillaHelperAgro" };
     private static readonly string[] FightPrefixes = ["boss", "follower", "sectant", "infected"];
 
     // Objective types tarkov.dev uses: in the raid (with a group) and outside it (no group). Anything else is new, and the
