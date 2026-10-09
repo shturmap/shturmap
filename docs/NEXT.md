@@ -6,6 +6,55 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-09: the pre-release review
+
+Before going public, six reviewers (privacy, public-repository content, UX, engine code, UI code, features) went
+through the app, the docs and the website; the owner decided each finding the same day, and all were built then.
+
+- **Privacy and content.** Every example screenshot name, log session and log time in tests, comments, tools and the
+  website is made up and dated 2026-01-01: they held times of real play with a position or a session's quests, which
+  the game's servers can match to the player. `RepositoryScanTests` fails on one dated any other day. The docs give
+  the study logs in rough numbers and log lines as shapes (owner: coarsen). DESIGN.md §3 says the one-line objective
+  samples in tests are the limit for quest texts (owner: they stay). THIRD-PARTY-NOTICES.md says why the ML package is
+  referenced. The tour's first chapter is WHAT IT READS: "SAFE TO RUN" used the word §2 keeps off Shturmap.
+- **Removed** (owner): popped-out quest-card windows (picks come first in the raid card, with live distances); the
+  keyboard's steps through the rail's rows (the doc itself said nothing needed them); the raid clock's decode at each
+  minute. QUEST COMPLETE is named as §1's third exception, beside the replay and the tour. Help and settings say less,
+  and the legend lists twelve of the map's symbols with the rest folded.
+- **Fixed in the UI.** The map comes back fitted after a tour or preview that began before it was drawn (the first
+  start's tour gave back the camera's default); a new map or a replay's end stops a glide under way; the tour never
+  opens in a raid, from help or What's New either; EXIT's and OR's notes take a second line instead of being cut;
+  RESTART NOW starts the updater before it closes the session; the rail's lists keep their rows while a snapshot says
+  the same (every snapshot rebuilt them, and a pointer on a row lost its hover); a saved window place is checked at
+  its monitor's scale; icon-only buttons have names for screen readers; the player's picks stay off a preview's map;
+  the tour's example card says NEXT as the raid card does.
+- **Fixed in the engine.** A row of the extract list that folds to nothing is passed over (it threw, and the whole
+  list was lost); a settings file that can't be read is set aside and the session starts on a fresh one (it started
+  none); a page sent in place of tarkov.dev's data is downloaded again, not read from the cache; a screenshot that
+  comes back (a sync tool, a restore) is neither placed nor deleted; quests are worked out once for a run of quest
+  messages; closing the session no longer disposes the token its loops read; the quest history counts a log session
+  without a mode line; dead code goes, one table holds the game's language codes, the CLI takes its folders from
+  `AppPaths`, and downloads wait for a reader without sleeping a pool thread.
+- **Consistency.** Boss chances in one format; a quest card's distance in the raid card's capitals; DESIGN.md says
+  picks wear Pick1 to Pick8 and what the 900×560 minimum is for (owner: it stays); a Scav raid's start is said by its
+  cue and the card's note, without a notice as well.
+- **Checked, no change.** "22 MIN IN · 13 LEFT" on Customs was right: tarkov.dev gives Customs 35 minutes. The badges
+  at a crowded spot don't overlap ("?" and the count 4.5 px apart, OPT and the floor badge 1.2 px). NEXT keeps
+  optional objectives (owner).
+
+Open:
+- Measure the renderer's hot path before changing it.
+- DESIGN.md §4 doesn't name the extract list's cost in the game (two key presses for a list on demand).
+- The first start's window size (1600×1000) isn't scaled for a display at 150 % or 200 %.
+- The legend's twelve on Streets include "A quest just completed" and "Moved off a crowded spot"; the owner decides
+  the order.
+- Up and Down switch the map while the MAP list has the focus: a ComboBox's own keys, which the rail's steps used to
+  take. The tour holds them while it is up.
+- A captive portal's page reads as "tarkov.dev's data has changed" and is tried again only at the next try or start;
+  it might count as a network problem instead.
+- The review's proposals, for the owner: a glide to a position out of view after a while without input, Follow on by
+  default, items given with a quest, the raid clock from the screenshot name.
+
 ## Designed and built 2026-10-09: the tour, and the story chapters said
 
 **The ask** (owner, 2026-10-09): "a proper first-time-opening tour of the app. This one should then later be
