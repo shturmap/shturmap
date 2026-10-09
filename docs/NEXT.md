@@ -932,8 +932,9 @@ The items below are kept as written, for their reasons and quotes.
       order), the synopsis lines and the folded cards; one symbol, one meaning (the pen keeps its meaning: "keep
       lit", now for several). DESIGN.md decision, help text, legend.
 17. **Done (2026-10-03): item 5 below, one design system** (owner: "Yes, do the design system after this round"): DESIGN.md §4 "Design system", `Shturmap.Map.Palette`, `DesignTokenTests`; the website's CSS follows it on the unpublished FAQ branch.
-18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
-   which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
+18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub").
+   Done (2026-10-09): the repo-scan test, `RepositoryScanTests`, over every file git tracks: token shapes, a Sentry
+   DSN, private keys, claude.ai links, paths in a user folder and email addresses; it reports file and line only.
 
 ## Before starting
 
