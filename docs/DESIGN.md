@@ -694,7 +694,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   1600×1000. Until then that rule ran at every start, so a third monitor or the player's own size was lost each
   time. A maximised window sent to another monitor comes back maximised there. The window is never smaller than
   900×560 (at the monitor's scale): the status bar's lights and three buttons stay in view, and in a narrow window
-  the lights' words go first, then its last word, the last fix, trims (see "Status bar"). Snapshot and demo runs and a given size (`--window`) place the window
+  the lights' words go first, then its last word, the last fix, trims (see "Status bar"). The minimum is for what
+  must stay readable, the status bar and the rail's glance (the raid card's head, NEXT, EXIT); at that size the map
+  is for a laptop beside the game, not for reading from a metre away on a second monitor (owner, 2026-10-09).
+  Snapshot and demo runs and a given size (`--window`) place the window
   themselves and remember nothing. The app log says where it opened ("Window where it was last: 1300×800 at …").
 - **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when
   a raid ends and b) remember the last open map when the app closes and re-open it"). The map last on screen is kept
