@@ -1230,12 +1230,14 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    been five far-apart colours with a second ring from the sixth pick.
 2. **Reporting is one route: in the app, to Sentry** (owner, 2026-10-03: "don't want to mix github issues and other
    reporting methods, it should be one coherent easy to use thing"; done, DESIGN.md §8, "Reports"). This replaces
-   the earlier plan of GitHub issue forms plus a separate web form. Before the release:
+   the earlier plan of GitHub issue forms plus a separate web form. Since 2026-10-09 GitHub Issues stay open beside it
+   (owner), named in the README, the website and the release notes after the app's button (DESIGN.md §8, "Reports").
+   Before the release:
    - the release is built with the DSN (`eng\sentry.dsn`, untracked; `eng\release.ps1` warns without it), and
      `Shturmap.exe --send-report "<text>" <folder>` from the release exe opens the Report dialog with the text;
      after a click on Send it says "Sent. Thank you.";
    - in the Sentry project, IP addresses aren't stored (Settings → Security & Privacy → "Prevent Storing of IP
-     Addresses") and the data scrubbers are on;
+     Addresses") and the data scrubbers are on; done (owner, 2026-10-09: "Sentry web-ui changes are in");
    - the README and the website point to "Help (?) → Report a problem or idea" (the website only on the owner's
      word), and the website's "sends nothing" wording becomes "Nothing is sent unless you send a report or allow
      crash reports";

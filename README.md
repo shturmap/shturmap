@@ -26,7 +26,8 @@ the map of the raid you're in: what you'd otherwise look up in the wiki, in one 
 - **What it leaves alone.** No macros, no input to the game, nothing read from its memory, nothing drawn over it.
 - **What you need.** 64-bit Windows 10 (2004) or later. Free, no account, MIT licence.
 - **Where it stands.** In private testing: its releases are marked pre-release, and there are rough edges. If
-  something is wrong or missing, tell us from the app with the **feedback** button at the top right.
+  something is wrong or missing, tell us from the app with the **feedback** button at the top right, or open an
+  [issue on GitHub](https://github.com/shturmap/shturmap/issues).
 - **The risk.** An unofficial fan project, not made or endorsed by Battlestate Games. There is no guarantee against
   sanctions, so you use it at your own risk; [Before you install](#before-you-install) says why.
 
@@ -92,6 +93,9 @@ To report a problem or suggest an idea, use the **feedback** button at the top r
 and press Send. No account needed. After a crash, Shturmap asks at its next start whether to send a crash report;
 "Crash reports" in settings (the gear beside ?) can make that Always or Never. What a report holds and who receives it:
 [PRIVACY.md](PRIVACY.md).
+
+With a GitHub account you can also open an [issue](https://github.com/shturmap/shturmap/issues). Issues are public:
+don't post the game's logs, screenshots or ids from your game there. The app's report leaves those out.
 
 **The installer and running programs.** Shturmap is installed, updated and removed by
 [Velopack](https://velopack.io), an open-source installer that comes with it. While it installs Shturmap, applies an

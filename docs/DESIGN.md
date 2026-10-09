@@ -2582,6 +2582,11 @@ text when the player keeps "Include diagnostics", shown first.
 bother", and crash reports as a mode the player chooses; Sentry, EU region; crash reports "Ask after a crash" by
 default). One way to report, from the app, with no account and no browser: no GitHub issue forms, no separate web
 form. Problems and ideas both go through it.
+**GitHub Issues beside it** (owner, 2026-10-09: "Keep github issues on"; "mention GitHub Issues in the README and
+website"). The repository's issues stay open as a second, public route for players with a GitHub account. The README,
+the website and the release notes name them after the app's own button, and say that issues are public, so the
+game's logs, screenshots and ids stay out of them (the app's report leaves those out). The app itself points to its
+button only, and there are still no issue forms.
 
 - **The Report dialog.** The feedback button at the top right, the REPORT link on notices that ask for a report, and
   ADD A NOTE after a crash report was sent all open it. PROBLEM | IDEA (the placeholder follows: "What happened,
