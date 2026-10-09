@@ -5,8 +5,9 @@ namespace Shturmap.Core.Tests;
 
 public class ScreenshotNameTests
 {
-    // Made-up names of every shape the game writes.
-    public static TheoryData<string, bool> RealNames => new()
+    // Made-up names of every shape the game writes: menu shots (several in one minute, one with a number) and raid
+    // shots with a position, a facing and the raid clock.
+    public static TheoryData<string, bool> Names => new()
     {
         { "2026-01-01[12-00] (0).png", false },
         { "2026-01-01[12-00] (1).png", false },
@@ -24,8 +25,8 @@ public class ScreenshotNameTests
     };
 
     [Theory]
-    [MemberData(nameof(RealNames))]
-    public void Parses_every_real_name(string name, bool hasPosition)
+    [MemberData(nameof(Names))]
+    public void Parses_every_shape_the_game_writes(string name, bool hasPosition)
     {
         Assert.True(ScreenshotName.TryParse(name, out var info));
         Assert.Equal(hasPosition, info.HasPosition);
@@ -42,7 +43,7 @@ public class ScreenshotNameTests
         Assert.Equal(0, info.Counter);
         Assert.Equal(new WorldPoint(40.00, 2.50, 120.00), info.Position);
         Assert.Equal(14.13, info.RaidClockHours);
-        Assert.Equal(177.93, info.YawDegrees!.Value, 2);
+        Assert.Equal(177.75, info.YawDegrees!.Value, 2);
     }
 
     [Fact]

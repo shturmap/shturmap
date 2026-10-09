@@ -51,8 +51,8 @@ public sealed class LogTailerRobustnessTests : IDisposable
     [Fact]
     public async Task A_record_the_parser_throws_on_is_left_out_and_the_rest_arrives()
     {
-        Append(_app, App("20:59:37", "Session mode: Pve") + App("21:00:00", "boom one") +
-                     App("21:20:49", "GameStarted:117.83(10.06) real:132.11(12) diff:14.27") + App("21:20:50", "boom two") + App("21:20:51", "last"));
+        Append(_app, App("15:00:10", "Session mode: Pve") + App("15:01:00", "boom one") +
+                     App("15:20:00", "GameStarted:117.83(10.06) real:132.11(12) diff:14.27") + App("15:20:01", "boom two") + App("15:20:02", "last"));
         var problems = new List<(string What, Exception Why)>();
         await using var tailer = new LogTailer(_root) { Parser = ThrowsOnBoom };
         tailer.ReadProblem += (what, why) => problems.Add((what, why));
@@ -67,7 +67,7 @@ public sealed class LogTailerRobustnessTests : IDisposable
         Assert.Equal(2, tailer.ReadProblems);
 
         // And the following goes on.
-        Append(_app, App("21:23:01", "PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0") + App("21:23:02", "last"));
+        Append(_app, App("15:23:00", "PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0") + App("15:23:01", "last"));
         tailer.PollOnce();
         Assert.Contains(Drain(tailer), e => e.Event is ProfileLoadedEvent);
     }
@@ -75,7 +75,7 @@ public sealed class LogTailerRobustnessTests : IDisposable
     [Fact]
     public async Task A_listener_that_throws_does_not_end_the_poll()
     {
-        Append(_app, App("20:59:37", "boom") + App("20:59:38", "Session mode: Pve") + App("20:59:39", "last"));
+        Append(_app, App("15:00:10", "boom") + App("15:00:11", "Session mode: Pve") + App("15:00:12", "last"));
         await using var tailer = new LogTailer(_root) { Parser = ThrowsOnBoom };
         tailer.ReadProblem += (_, _) => throw new InvalidOperationException("the listener's own");
 
@@ -86,8 +86,8 @@ public sealed class LogTailerRobustnessTests : IDisposable
     [Fact]
     public async Task What_one_file_gave_is_passed_on_when_the_next_cannot_be_opened()
     {
-        Append(_app, App("20:59:37", "Session mode: Pve") + App("20:59:38", "last"));
-        Append(_push, Push("21:00:00", "Got notification | GroupMatchRaidReady") + Push("21:00:01", "last"));
+        Append(_app, App("15:00:10", "Session mode: Pve") + App("15:00:11", "last"));
+        Append(_push, Push("15:01:00", "Got notification | GroupMatchRaidReady") + Push("15:01:01", "last"));
         await using var tailer = new LogTailer(_root);
 
         // Another program holds the second file for itself for a moment.
@@ -104,7 +104,7 @@ public sealed class LogTailerRobustnessTests : IDisposable
     [Fact]
     public async Task The_loop_goes_on_after_a_poll_that_failed()
     {
-        Append(_app, App("20:59:37", "Session mode: Pve") + App("20:59:38", "last"));
+        Append(_app, App("15:00:10", "Session mode: Pve") + App("15:00:11", "last"));
         var calls = 0;
         var problems = new List<string>();
         await using var tailer = new LogTailer(_root)
@@ -126,9 +126,9 @@ public sealed class LogTailerRobustnessTests : IDisposable
     [Fact]
     public void Reading_a_whole_session_leaves_out_what_it_cannot_read()
     {
-        Append(_app, App("20:59:37", "Session mode: Pve") + App("21:00:00", "boom one") + App("21:00:01", "boom two") +
-                     App("21:20:49", "GameStarted:117.83(10.06) real:132.11(12) diff:14.27"));
-        Append(_push, Push("21:00:00", "Got notification | GroupMatchRaidReady"));
+        Append(_app, App("15:00:10", "Session mode: Pve") + App("15:01:00", "boom one") + App("15:01:01", "boom two") +
+                     App("15:20:00", "GameStarted:117.83(10.06) real:132.11(12) diff:14.27"));
+        Append(_push, Push("15:01:00", "Got notification | GroupMatchRaidReady"));
         var problems = new List<string>();
 
         IReadOnlyList<GameEvent> events;

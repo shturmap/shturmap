@@ -9,7 +9,7 @@ namespace Shturmap.App;
 
 // A quest completed (owner, 2026-10-07: "For completed quests, also make a nice animation"; docs/DESIGN.md §4,
 // principle 11, and "Map drawing"). The log says it when the quest is handed in at its trader, between raids, often
-// two to four within a minute (the study log of 1–6 October). The QUEST COMPLETE cue says which, with what it unlocks,
+// two to four within a minute (a week of the study log). The QUEST COMPLETE cue says which, with what it unlocks,
 // under a gold check stamped in; one that comes while the cue is up joins it ("3 QUESTS COMPLETE") and keeps it up a
 // little longer. On the map the quest's places ring out in gold with a check and go, so the eye sees what left.
 public sealed partial class MainWindow

@@ -55,7 +55,7 @@ public sealed class LogTailerReplayTests : IDisposable
     [Fact]
     public async Task The_last_line_at_start_is_replay_though_it_is_only_complete_after_a_pause()
     {
-        Append(_app, App("20:59:37", Mode) + App("21:18:40", Scene));
+        Append(_app, App("15:00:10", Mode) + App("15:18:00", Scene));
         await using var tailer = Tailer();
 
         tailer.PollOnce();
@@ -70,12 +70,12 @@ public sealed class LogTailerReplayTests : IDisposable
     [Fact]
     public async Task A_line_written_after_the_start_is_live()
     {
-        Append(_app, App("20:59:37", Mode) + App("21:18:40", Scene));
+        Append(_app, App("15:00:10", Mode) + App("15:18:00", Scene));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
 
-        Append(_app, App("21:20:49", Started));
+        Append(_app, App("15:20:00", Started));
         tailer.PollOnce();
         // The new line completes the old last line, which stays replay.
         Assert.Equal(new[] { (nameof(MapLoadingEvent), true) }, Flags(Drain(tailer)));
@@ -87,13 +87,13 @@ public sealed class LogTailerReplayTests : IDisposable
     [Fact]
     public async Task A_log_longer_than_one_read_is_replay_up_to_the_length_it_had_at_start()
     {
-        var old = App("20:59:37", Mode) + App("21:18:40", Scene) + App("21:20:49", Started) + App("21:40:00", Menu) + App("21:50:00", Scene);
+        var old = App("15:00:10", Mode) + App("15:18:00", Scene) + App("15:20:00", Started) + App("15:40:00", Menu) + App("15:50:00", Scene);
         Append(_app, old);
         await using var tailer = Tailer(maxRead: 64);
 
         // The first read takes 64 bytes of the old text; the game writes on before the rest is read.
         tailer.PollOnce();
-        Append(_app, App("21:52:00", Started) + App("22:10:00", Menu));
+        Append(_app, App("15:52:00", Started) + App("16:10:00", Menu));
         for (var i = 0; i < 2 * (old.Length / 64 + 2) + 8; i++)
             tailer.PollOnce();
         _now += TimeSpan.FromSeconds(2);
@@ -112,8 +112,8 @@ public sealed class LogTailerReplayTests : IDisposable
     [Fact]
     public async Task A_file_that_was_busy_at_the_first_poll_is_replay_when_it_can_be_read()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "last"));
-        Append(_push, Push("21:00:00", "Got notification | GroupMatchRaidReady") + Push("21:00:01", "last"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "last"));
+        Append(_push, Push("15:01:00", "Got notification | GroupMatchRaidReady") + Push("15:01:01", "last"));
         await using var tailer = Tailer();
 
         using (new FileStream(_push, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
@@ -121,7 +121,7 @@ public sealed class LogTailerReplayTests : IDisposable
         tailer.PollOnce();
         Assert.Equal(new[] { (nameof(SessionModeEvent), true), (nameof(GroupStatusEvent), true) }, Flags(Drain(tailer)));
 
-        Append(_push, Push("21:05:00", "Got notification | GroupMatchStartGame") + Push("21:05:01", "last"));
+        Append(_push, Push("15:05:00", "Got notification | GroupMatchStartGame") + Push("15:05:01", "last"));
         tailer.PollOnce();
         Assert.Equal(new[] { (nameof(GroupStatusEvent), false) }, Flags(Drain(tailer)));
     }
@@ -129,12 +129,12 @@ public sealed class LogTailerReplayTests : IDisposable
     [Fact]
     public async Task A_file_the_game_adds_to_the_session_found_at_start_is_live()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "last"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "last"));
         await using var tailer = Tailer();
         tailer.PollOnce();
         Drain(tailer);
 
-        Append(_push, Push("21:00:00", "Got notification | GroupMatchRaidReady") + Push("21:00:01", "last"));
+        Append(_push, Push("15:01:00", "Got notification | GroupMatchRaidReady") + Push("15:01:01", "last"));
         tailer.PollOnce();
         Assert.Equal(new[] { (nameof(GroupStatusEvent), false) }, Flags(Drain(tailer)));
     }
@@ -142,7 +142,7 @@ public sealed class LogTailerReplayTests : IDisposable
     [Fact]
     public async Task A_session_the_game_starts_later_is_live_from_its_first_line()
     {
-        Append(_app, App("20:59:37", Mode) + App("20:59:38", "last"));
+        Append(_app, App("15:00:10", Mode) + App("15:00:11", "last"));
         await using var tailer = Tailer();
         tailer.PollOnce();
 
