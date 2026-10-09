@@ -107,7 +107,7 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
             var now = DateTimeOffset.UtcNow;
             if (response.StatusCode == HttpStatusCode.NotModified && cached)
             {
-                WriteMeta(metaPath, meta! with { FetchedAt = now });
+                await WriteMetaAsync(metaPath, meta! with { FetchedAt = now });
                 return new CachedResponse(body, false, false, now);
             }
             // Which address answered what, for the app log; the player sees LoadProblem's words.
@@ -119,13 +119,13 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
             {
                 await using (var file = File.Create(temp))
                     await CopyBodyAsync(response, file, uri, ct);
-                Replace(temp, body);
+                await ReplaceAsync(temp, body);
             }
             finally
             {
                 TryDelete(temp);
             }
-            WriteMeta(metaPath, new Meta(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, now));
+            await WriteMetaAsync(metaPath, new Meta(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, now));
             TryDelete(MissingNote(body));
             return new CachedResponse(body, true, false, now);
         }
@@ -251,23 +251,45 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
 
     /// <summary>
     /// Moves a finished temporary file over the cached one. A reader in another process can hold the cached file open
-    /// for a moment (Windows then refuses to replace it), so it tries a few times before giving up.
+    /// for a moment (Windows then refuses to replace it), so it tries a few times before giving up, waiting between
+    /// tries without holding a thread (review of 2026-10-09: the downloads' waits slept a pool thread each).
     /// </summary>
+    public static async Task ReplaceAsync(string temp, string path)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            if (TryMove(temp, path, attempt))
+                return;
+            await Task.Delay(ReplaceWait(attempt));
+        }
+    }
+
+    /// <summary>The same for code that can't wait asynchronously (a picture drawn on the spot): its thread waits.</summary>
     public static void Replace(string temp, string path)
     {
         for (var attempt = 1; ; attempt++)
         {
-            try
-            {
-                File.Move(temp, path, overwrite: true);
+            if (TryMove(temp, path, attempt))
                 return;
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException && attempt < 5)
-            {
-                Thread.Sleep(50 * attempt);
-            }
+            Thread.Sleep(ReplaceWait(attempt));
         }
     }
+
+    // Five tries, 50 to 200 ms apart; the last one's failure is thrown.
+    private static bool TryMove(string temp, string path, int attempt)
+    {
+        try
+        {
+            File.Move(temp, path, overwrite: true);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException && attempt < 5)
+        {
+            return false;
+        }
+    }
+
+    private static TimeSpan ReplaceWait(int attempt) => TimeSpan.FromMilliseconds(50 * attempt);
 
     public static void TryDelete(string path)
     {
@@ -293,13 +315,13 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
     }
 
     // Meta that couldn't be written only means the next request revalidates: harmless.
-    private static void WriteMeta(string path, Meta meta)
+    private static async Task WriteMetaAsync(string path, Meta meta)
     {
         var temp = TempFor(path);
         try
         {
             File.WriteAllText(temp, JsonSerializer.Serialize(meta));
-            Replace(temp, path);
+            await ReplaceAsync(temp, path);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

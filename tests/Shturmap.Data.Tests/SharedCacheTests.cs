@@ -71,8 +71,11 @@ public class SharedCacheTests : IDisposable
         Assert.StartsWith(path + ".", CachedHttp.TempFor(path));
     }
 
-    [Fact]
-    public async Task Replacing_waits_for_a_reader_that_holds_the_file_a_moment()
+    // The downloads wait without holding a thread; a picture drawn on the spot waits on its own.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Replacing_waits_for_a_reader_that_holds_the_file_a_moment(bool asynchronously)
     {
         var path = Path.Combine(_folder, "data.json");
         File.WriteAllText(path, "old");
@@ -85,7 +88,10 @@ public class SharedCacheTests : IDisposable
             await Task.Delay(120);
             await reader.DisposeAsync();
         });
-        CachedHttp.Replace(temp, path);
+        if (asynchronously)
+            await CachedHttp.ReplaceAsync(temp, path);
+        else
+            CachedHttp.Replace(temp, path);
         await release;
         Assert.Equal("new", File.ReadAllText(path));
         Assert.False(File.Exists(temp));
