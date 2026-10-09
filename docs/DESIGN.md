@@ -1080,7 +1080,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
   list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
   it, the list goes, and the view takes in its extracts as they light up one after another while the rest go hollow), IN THE RAID (RAID LOADING with an example kit, then the raid
-  card's head with example values) and GOOD TO KNOW (the story chapters aren't shown yet; F1; the three buttons named).
+  card's head with example values) and HELP AND FEEDBACK (the story chapters aren't shown yet, anything else missing goes through the feedback button,
+  F1; the three buttons named; owner, 2026-10-09: "GOOD TO KNOW" wasn't "really expressive").
   - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
     map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, holds TOUR · 3 OF 7,
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per

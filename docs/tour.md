@@ -51,9 +51,9 @@ Loading: what to bring, while you can still cancel.
 In the raid: the time left, the next objective, the nearest extract.
 
 ## know · FeedbackButton, HelpButton, SettingsButton
-GOOD TO KNOW
+HELP AND FEEDBACK
 Story chapters (Falling Skies, Batya, …) aren't shown yet: tarkov.dev doesn't publish them.
-F1 brings help, the legend and this tour back.
+Anything else missing? The speech bubble. F1: help, the legend and this tour again.
 - FeedbackButton · A PROBLEM OR AN IDEA
 - HelpButton · HELP · F1
 - SettingsButton · SETTINGS
