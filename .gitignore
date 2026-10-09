@@ -16,3 +16,6 @@ tests/fixtures/logs/
 
 # The Sentry DSN reports go to (eng\release.ps1 reads it); never commit it
 eng/sentry.dsn
+
+# Claude Code worktrees and session files
+.claude/
