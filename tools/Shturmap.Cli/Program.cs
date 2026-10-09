@@ -93,7 +93,7 @@ switch (command)
 // extract objective naming an exit no map has).
 static async Task Bring(string mode)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var loader = new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache));
     var data = await loader.LoadAsync(gameMode, "en");
@@ -138,7 +138,7 @@ static async Task Bring(string mode)
 // rules don't know, counted as a fight) and, over all quests, objective types the rules don't know.
 static async Task Effort(string mode)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
     var quests = data.Tasks.Values.Select(t => Shturmap.Session.Planning.ToPlan(t, data)).ToList();
@@ -182,7 +182,7 @@ static async Task Effort(string mode)
 // up (normal for a letter from an earlier quest; new ones are worth a look).
 static async Task HandoversAudit(string mode)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
     int folded = 0, ownLines = 0, near = 0;
@@ -246,7 +246,7 @@ static void Study(string? value)
 // the row shows) and BREAK (QuestSynopsis.Problems: a word not in the text, a condition left out, a cut mid-phrase).
 static async Task Synopses(string mode)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
     var quests = data.Tasks.Values.Select(Shturmap.Session.Planning.ToPlan).ToList();
@@ -315,7 +315,7 @@ static async Task Synopses(string mode)
 
 static async Task Quests(string mode)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
     using var store = new Shturmap.Data.Progress.ProgressStore(Shturmap.Session.AppPaths.Default.Database);
@@ -445,7 +445,7 @@ static async Task Watch(int seconds)
 // point of its kind, so a data change that leaves a marker where nothing spawns is seen.
 static async Task Spawns(string mode)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var data = await new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache)).LoadAsync(gameMode, "en");
     foreach (var map in data.Maps.Values.OrderBy(m => m.Name))
@@ -490,8 +490,8 @@ static async Task Render(string mapName, string output, List<string> screenshots
         pickName = screenshots[pi + 1];
         screenshots.RemoveRange(pi, 2);
     }
-    var cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache");
-    var http = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "tarkov-dev"));
+    var paths = Shturmap.Session.AppPaths.Default;
+    var http = new CachedHttp(CachedHttp.CreateClient(), paths.DataCache);
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
     var map = data.MapByNormalizedName(mapName) ?? throw new ArgumentException("Unknown map " + mapName);
     var definition = data.DefinitionFor(map.NormalizedName) ?? throw new InvalidOperationException("No map definition for " + mapName);
@@ -501,8 +501,8 @@ static async Task Render(string mapName, string output, List<string> screenshots
     Shturmap.Map.MapArtwork? artwork = null;
     if (definition.SvgPath is { } svgUrl)
     {
-        var svg = await new Shturmap.Data.Maps.ArtworkCache(new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "artwork"))).GetSvgAsync(svgUrl);
-        artwork = Shturmap.Map.MapArtwork.Load(svg, definition, Path.Combine(cacheRoot, "pictures"));
+        var svg = await new Shturmap.Data.Maps.ArtworkCache(new CachedHttp(CachedHttp.CreateClient(), paths.ArtworkCache)).GetSvgAsync(svgUrl);
+        artwork = Shturmap.Map.MapArtwork.Load(svg, definition, paths.PictureCache);
         Console.WriteLine($"Artwork parsed in {sw.ElapsedMilliseconds} ms (viewBox {artwork.ViewBox.Width:0}×{artwork.ViewBox.Height:0})");
     }
     using var artworkScope = artwork;
@@ -511,7 +511,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
     Shturmap.Map.MapTiles? tiles = null;
     if (artwork is null && definition.TilePath is not null && !screenshots.Remove("--sheet"))
     {
-        var tileHttp = new CachedHttp(CachedHttp.CreateClient(), Path.Combine(cacheRoot, "map-tiles"));
+        var tileHttp = new CachedHttp(CachedHttp.CreateClient(), paths.MapTileCache);
         tiles = new Shturmap.Map.MapTiles(definition, (tile, ct) => Shturmap.Session.ArtworkProvider.FetchTileAsync(tileHttp, definition.Key, tile, ct));
         Console.WriteLine($"No SVG for this map: drawing tarkov.dev's tile render (tile size {tiles.TileSize}, zoom {definition.MinZoom}–{definition.MaxZoom}, map: {definition.Author})");
     }
@@ -605,7 +605,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
 
 static async Task Data(string mode, string language)
 {
-    var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+    var cache = Shturmap.Session.AppPaths.Default.DataCache;
     var loader = new GameDataLoader(new CachedHttp(CachedHttp.CreateClient(), cache));
     var gameMode = GameLogParser.ModeFrom(mode == "seasonal" ? "PvpSeason" : mode);
     var sw = Stopwatch.StartNew();

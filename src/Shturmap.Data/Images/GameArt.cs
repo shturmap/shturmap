@@ -61,7 +61,7 @@ public sealed class GameArt(HttpClient http, string folder)
             try
             {
                 await File.WriteAllBytesAsync(temp, png.ToArray());
-                Http.CachedHttp.Replace(temp, path);
+                await Http.CachedHttp.ReplaceAsync(temp, path);
             }
             finally
             {

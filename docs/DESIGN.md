@@ -92,7 +92,11 @@ off unless ticked: a screenshot whose name gave a position is deleted 5 seconds 
 file and any other tool the player runs time to read its name. What may go is narrow, and checked when the file is
 seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a file the watcher reported as new in this run,
 directly in the screenshots folder, named as the game names a screenshot with a position. What was in the folder
-before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. The
+before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. Nor is
+a screenshot that comes back new: a file last written before Shturmap started watching, or before a screenshot of
+its name was deleted, is old (`ScreenshotWatcher`; review of 2026-10-09: a Screenshots folder a sync tool or the
+Recycle Bin restored had each file it brought back reported as new and, with the setting on, deleted 5 s later). So
+restored or copied-in screenshots are neither placed on the map nor deleted. The
 cleaner never opens the image: the file is removed by name. One that is still open elsewhere (the game writing it)
 can't be removed and is tried again, six times 5 seconds apart, then left with a line in the app log; a file marked
 read-only is left. Unticking within the 5 seconds keeps what still waits, and so does closing Shturmap. The folder
@@ -2256,6 +2260,16 @@ can't start, where the exe runs from says which install it is (`%LOCALAPPDATA%\S
 updates, and the app log says so (review of 2026-10-04: it used to open the developer folder, and the player's
 history seemed gone).
 
+**A settings file that can't be read** (review of 2026-10-09). When SQLite finds `shturmap.db` damaged, or no
+database at all, the session moves it aside with the time in its name (`shturmap.db.unreadable-20261009-1530`; its
+`-wal` and `-shm` go with it), opens a fresh one, writes a WARN line and says for 30 s "Shturmap's settings file
+couldn't be read and was set aside: picks, ticks and settings start over." The quest history comes back from the
+game's logs, as at every start. Such a file used to stop the session from starting: the window stayed up without
+quests, positions or a word. A file that is only out of reach for now (another program holds it, a lock that doesn't
+pass, a folder that can't be written) is never moved; that session keeps its settings in memory and says "Shturmap's
+settings file couldn't be opened: picks, ticks and settings aren't kept this time." A second Shturmap opens the same
+file as the first (SQLite's WAL), and Windows moves no file another Shturmap holds open (`SettingsFile`).
+
 The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits and icons) stays shared in
 `%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
 to a temporary file of its own (`CachedHttp.TempFor`, the process id and a GUID) and replaces the cached file in one
@@ -2433,8 +2447,10 @@ within the repeated hour could be told the wrong way round; the map's age tag, t
 "recent" screenshots at a start still take one clock time from another (`FixAge.Of` is there for them).
 
 **Quest progress.** Only the game's log counts: quest started/failed/completed notifications, backfilled from every
-log session on disk and followed live; newest wins. Prerequisites of active or completed quests that strictly
-require "complete" are shown as implied, never stored. A quest started before the oldest log on disk is not known.
+log session on disk and followed live; newest wins. A message in a log session that names no mode counts for the
+mode Shturmap is in, live and read back alike (review of 2026-10-09: the backfill left such a session's quests
+out). Prerequisites of active or completed quests that strictly require "complete" are shown as implied, never
+stored. A quest started before the oldest log on disk is not known.
 Databases from earlier versions may hold Tasks-scan and TarkovEyes-import rows, or quest states once set by hand;
 they are ignored (and could never reopen a quest the log saw completed). The logs say nothing of single objectives:
 the only word on those is the player's own tick (§4, "Quest cards", *Ticks*), kept apart from the quest states, in
@@ -2471,6 +2487,13 @@ success, or the player changing the game mode, starts over at 2. It was every 2 
 down, every running Shturmap asked for up to 11 files every 2 minutes, about 700 rounds a day where there are now
 about 50. One schedule, counted separately, for the game data, the game language's texts and the item sources. A
 try asks only for what is missing or older than its keep time: the rest is answered from the saved copy.
+An answer 200 is saved whatever it holds, also a page a captive portal or a CDN sends in place of the data; it then
+failed as unreadable, which isn't asked for again, and was read from the saved copy at the next start too, for as long
+as that counted as fresh (review of 2026-10-09). So a load that fails as unreadable forgets each of its files that
+isn't JSON at all (`GameDataLoader.ForgetWhatIsNoJson`), and the next try or start downloads those again; its other
+files stay. JSON in a shape Shturmap doesn't know (tarkov.dev changed its format) stays saved and is revalidated as
+before: downloading it again would bring the same, at every start of every Shturmap. A failed download is never a
+reason to forget a good saved copy.
 
 **The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
 with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
@@ -2480,8 +2503,9 @@ place; when the texts are translated, the formats follow the language chosen).
 
 **Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
 `<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:
-`GameDataLoader.ApiLanguage` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
-`es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all). A language
+`GameLanguage.Common` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
+`es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all), one table for
+tarkov.dev and for the extract list's text recognition (review of 2026-10-09: each had a copy). A language
 tarkov.dev still lacks falls back to English for everything, so the data stays one language and always loads.
 Only "not found" (404) says the language is lacking. A translation that fails any other way (no connection, a
 timeout, 5xx) with no saved copy is never said as "No German texts on tarkov.dev" (until 2026-10-04 any failed
@@ -2576,10 +2600,10 @@ mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; 
 the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
 a report carries a REPORT link to the Report dialog (COPY DIAGNOSTICS in a build that can't send). With a saved copy
 the data loads from it (DATA chip "Data (offline copy)"). No texts in the game's language: a quiet notice, "No
-German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: a notice says
-that quests and raids won't follow the game, and why. A map's artwork that doesn't download: "No map artwork for
-Customs: couldn't download it; check the internet connection. A 10 m grid stands in…", once per map; a tile render
-that can't be had: "No map render for The Lab: …", the same way.
+German texts on tarkov.dev; showing English." Game not found, or found without its Logs folder: the line in place
+of the Plan card says so, for as long as it lasts, and no notice (§4, *No game*). A map's artwork that doesn't
+download: "No map artwork for Customs: couldn't download it; check the internet connection. A 10 m grid stands
+in…", once per map; a tile render that can't be had: "No map render for The Lab: …", the same way.
 
 **Diagnostics** (owner, 2026-10-03). Help ends with quiet links: COPY DIAGNOSTICS, LOG FOLDER ↗ (opens
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says

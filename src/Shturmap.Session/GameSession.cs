@@ -199,7 +199,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         try
         {
             var env = new WindowsGameEnvironment();
-            _store = new ProgressStore(paths.Database);
+            // A file that can't be read is set aside, so the session starts on a fresh one (review of 2026-10-09).
+            (_store, var storeNotice) = SettingsFile.Open(paths.Database, DateTime.Now);
             _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
             _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
             Study.Context = StudyContext;
@@ -237,6 +238,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 #else
             AppLog.Info($"Mode {_mode}");
 #endif
+            if (storeNotice is not null)
+                Say(storeNotice, 30);
             RecomputeQuests();
             Publish();
         }
@@ -425,7 +428,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     public static GameLocations FindAutomatically(ProgressStore store, Func<string?, GameLocations> locate)
     {
         store.RemoveSetting(InstallFolderSetting);
-        return locate(store.GetSetting(InstallFolderSetting));
+        // Nothing is chosen now. (The setting just removed used to be read back here, which could only give null.)
+        return locate(null);
     }
 
     // ---- background work that outlives one failure ----
@@ -584,7 +588,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             if (old is not null)
                 _tailer = null;
             _locations = found;
-            ReportGameFolders(found, notice: false);
+            ReportGameFolders(found);
             if (_env is not null)
                 _settings = new GameSettingsReader(_env).Read(found.SettingsFolder);
             if (say || announce)
@@ -981,10 +985,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
     }
 
-    // Said once at start when the game or its logs aren't found: without them quests and raids can't follow the game.
-    // Logs where the game was found. The rail says it as long as the game or its logs are missing (the no-game line),
-    // so no notice says it a second time; notice: true only for the developer view's old trigger.
-    private void ReportGameFolders(GameLocations found, bool notice = false)
+    // Logs where the game, its logs and its screenshots were found, or that they weren't. The rail says it as long as
+    // the game or its logs are missing (the no-game line), so no notice says it a second time.
+    private void ReportGameFolders(GameLocations found)
     {
         if (found.Install is { } install)
             AppLog.Info($"Game found: {install.Kind} at {install.Root} ({install.Found})");
@@ -1000,13 +1003,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             AppLog.Info(line);
         else
             AppLog.Warn(line);
-
-        if (!notice)
-            return;
-        if (found.Install is null)
-            Say("Couldn't find Escape from Tarkov on this PC, so quests and raids won't follow the game. If it is installed, please report it.", 30, offersReport: true);
-        else if (found.LogsFolder is null)
-            Say("Found the game, but not its Logs folder, so quests and raids won't follow the game until it has run once.", 30);
     }
 
     // Under _gate. Loads the item sources in the background; a load still on its way (or waiting to try again) for
@@ -1127,8 +1123,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                         {
                             if (e is SessionModeEvent m)
                                 mode = m.Mode;
-                            else if (e is QuestEvent q && mode != GameMode.Unknown)
-                                read.Add(FromLog(mode, q));
+                            // A session whose log names no mode (yet) counts for the mode Shturmap is in, as a quest
+                            // message followed live does (Apply). Its quests used to be left out of the history
+                            // (review of 2026-10-09).
+                            else if (e is QuestEvent q)
+                                read.Add(FromLog(mode == GameMode.Unknown ? _mode : mode, q));
                         }
                         observations.AddRange(read);
                     }
@@ -1182,6 +1181,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     }
                     try
                     {
+                        RecomputeQuestsIfDue();
                         // What the log left open, read back at start or gone silent since, may not still be running.
                         CloseRaidThatCannotRun(announce: !_replaying);
                         Publish();
@@ -1219,7 +1219,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var mode = _tracker.State.Mode == GameMode.Unknown ? _mode : _tracker.State.Mode;
             if (_store?.Add([FromLog(mode, quest)]) > 0)
             {
-                RecomputeQuests();
+                // Worked out once for a run of quest messages (RecomputeQuestsIfDue): what follows here reads none of it.
+                _questsDue = true;
                 if (!item.IsReplay)
                 {
                     var task = _data?.Tasks.GetValueOrDefault(quest.QuestId);
@@ -1236,6 +1237,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             return;
         }
 
+        // Any other line may read the quests (the loading cue's kit, the plan for the study log, the map to open on).
+        RecomputeQuestsIfDue();
         // A quest message's time is the server's; every other line's is the log's own.
         _lastLogAt = item.Event.At;
         switch (item.Event)
@@ -1684,23 +1687,22 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     // ---- quests ----
 
-    private async Task AddObservationsAsync(IReadOnlyList<QuestObservation> observations)
-    {
-        await _gate.WaitAsync();
-        try
-        {
-            _store?.Add(observations);
-            RecomputeQuests();
-            Publish();
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
     private static QuestObservation FromLog(GameMode mode, QuestEvent q) =>
         new(mode, q.QuestId, QuestProgress.FromLog(q.Status), ObservationSource.Log, q.At, "log:" + q.EventId);
+
+    // Under _gate. A quest message of the game's log was stored, and the quests, picks, ticks and plans are still to be
+    // worked out from it. Each one used to do that at once, a database read and the planner several times over, also
+    // for a run of messages in one batch of lines (review of 2026-10-09): now once, before the next line that isn't a
+    // quest message and at the batch's end.
+    private bool _questsDue;
+
+    private void RecomputeQuestsIfDue()
+    {
+        if (!_questsDue)
+            return;
+        _questsDue = false;
+        RecomputeQuests();
+    }
 
     private void RecomputeQuests()
     {
@@ -1729,8 +1731,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var mapsOf = new Lazy<IReadOnlyDictionary<string, IReadOnlyList<string>>>(() => Planning.QuestMaps(_data, active));
             _picks.Adopt(_mode, quest => mapsOf.Value.GetValueOrDefault(quest) ?? []);
         }
-        _plan = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode));
-        _allPlans = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode), top: int.MaxValue);
+        var picksByMap = _picks?.ByMap(_mode);
+        _allPlans = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: picksByMap, top: int.MaxValue);
+        _plan = Planning.Top(_allPlans, picksByMap);
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active, _done);
     }
 
@@ -2154,6 +2157,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (Study.Enabled)
             ClearRunning();
         Study.Dispose();
-        _stop.Dispose();
+        // _stop is cancelled, not disposed: the background loops (the log's lines, the data's downloads, the look for
+        // the game, the open raid) may still be on their way to their next step, which reads its token, and a disposed
+        // source throws there instead of cancelling, an exception nobody waits for, which the next start took for a
+        // crash ("Shturmap ran into an error"; review of 2026-10-09). With no timer on it, it holds nothing to let go.
     }
 }

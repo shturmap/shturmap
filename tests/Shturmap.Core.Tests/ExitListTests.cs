@@ -79,6 +79,22 @@ public class ExitListTests
     }
 
     [Fact]
+    public void A_row_that_folds_to_nothing_is_passed_over_and_the_good_rows_still_count()
+    {
+        // Review of 2026-10-09: "??:??:??" on a line of its own, a dash or noise threw, and the whole list was lost.
+        var found = ExitList.Match(Reading(
+            ("EXFILØI Courtyard", true),
+            ("??:??:??", true),
+            ("—", false),
+            ("", false),
+            ("EXFILØ3 Crash Site", false)), Streets);
+        Assert.Equal(["courtyard", "crash"], found.Keys.Order());
+        // An exit whose names fold to nothing is never named, and doesn't stop the others.
+        var odd = Streets.Append(new ExitName("odd", ["—", "??"])).ToList();
+        Assert.Equal(["courtyard", "crash"], ExitList.Match(Reading(("EXFILØI Courtyard", false), ("??", false), ("EXFILØ3 Crash Site", false)), odd).Keys.Order());
+    }
+
+    [Fact]
     public void One_named_exit_is_the_list_only_under_the_lists_own_header()
     {
         // Standing in an exit, the game shows a green bar and that one exit: no list.

@@ -15,27 +15,42 @@ public sealed class ProgressStore : IDisposable
     private readonly Lock _gate = new();
     private bool _closed;
 
+    /// <param name="databasePath">The file, or <see cref="InMemoryPath"/> for a store kept only while it is open.</param>
     public ProgressStore(string databasePath)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+        if (Path.GetDirectoryName(databasePath) is { Length: > 0 } folder)
+            Directory.CreateDirectory(folder);
         _db = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = databasePath, Pooling = false }.ToString());
-        _db.Open();
-        Execute("PRAGMA journal_mode=WAL;");
-        Execute("""
-            CREATE TABLE IF NOT EXISTS observations (
-                id INTEGER PRIMARY KEY,
-                mode TEXT NOT NULL,
-                quest_id TEXT NOT NULL,
-                state TEXT NOT NULL,
-                source TEXT NOT NULL,
-                observed_at TEXT NOT NULL,
-                evidence TEXT NOT NULL,
-                UNIQUE (source, evidence, quest_id, state)
-            );
-            CREATE INDEX IF NOT EXISTS observations_mode ON observations (mode);
-            CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-            """);
+        try
+        {
+            _db.Open();
+            Execute("PRAGMA journal_mode=WAL;");
+            Execute("""
+                CREATE TABLE IF NOT EXISTS observations (
+                    id INTEGER PRIMARY KEY,
+                    mode TEXT NOT NULL,
+                    quest_id TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    observed_at TEXT NOT NULL,
+                    evidence TEXT NOT NULL,
+                    UNIQUE (source, evidence, quest_id, state)
+                );
+                CREATE INDEX IF NOT EXISTS observations_mode ON observations (mode);
+                CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                """);
+        }
+        catch
+        {
+            // A file that can't be read (not a database, damaged) is let go at once, so it can be set aside: the
+            // connection held it open until the process ended (review of 2026-10-09).
+            _db.Dispose();
+            throw;
+        }
     }
+
+    /// <summary>SQLite's name for a database in memory: nothing is written to disk, and it is gone when closed.</summary>
+    public const string InMemoryPath = ":memory:";
 
     /// <summary>Stores observations not seen before; returns how many were new.</summary>
     public int Add(IEnumerable<QuestObservation> observations)
