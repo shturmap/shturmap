@@ -2636,9 +2636,9 @@ every issue goes through it, and the app's report is offered beside it.
   **No address and no place.** Sentry sees the sender's internet address as any server does, and derives a town and
   country from it even with the project's "Prevent Storing of IP Addresses" on (its scrubbing docs; a report's "User
   Geography" showed the owner's town, 2026-10-09). So every report says `infer_ip: never` in its `sdk` and carries an
-  empty `user.ip_address` (null, which Relay takes as "don't infer"; `ReportSender.Sealed`), and the project gets an
+  empty `user.ip_address` (null, which Relay takes as "don't infer"; `ReportSender.Sealed`), and the project has an
   Advanced Data Scrubbing rule, [Remove] [Anything] from [`$user.geo.**`], which Sentry documents as the way to drop
-  what it derived (the owner's to add; open in docs/NEXT.md, B10). IP storage is off and the default scrubbers are on
+  what it derived (added by the owner, 2026-10-09). IP storage is off and the default scrubbers are on
   (owner, 2026-10-09).
 - **Where to.** The DSN is not in the repository: `eng\release.ps1` and `eng\publish.ps1` pass it from the untracked
   `eng\sentry.dsn` (gitignored) or `SHTURMAP_SENTRY_DSN` (which the Release workflow sets from the `SENTRY_DSN`
@@ -2649,8 +2649,9 @@ every issue goes through it, and the app's report is offered beside it.
 - **Said honestly.** Help, the README and THIRD-PARTY-NOTICES say "Nothing is sent unless you send a report or
   allow crash reports". `PRIVACY.md` (bundled as `privacy.txt`, opened by PRIVACY ↗ and the dialog's Privacy link)
   says what a report and a crash report hold, who receives them, why (consent: Send, or Always send), how long and
-  how to ask for deletion (quote the report id). Its controller and contact are placeholders the owner fills in
-  before the public release (docs/NEXT.md).
+  how to ask for deletion: a report from the app that quotes the report id. Short and plain on purpose (owner,
+  2026-10-09: "Short and plain"): reports go to "Shturmap's maintainer", kept at Sentry for at most 90 days, with no
+  legal name, no published address and no legal-template wording.
 - **Checking a release.** `Shturmap.exe --send-report "<text>" <folder>` opens the Report dialog with the text; press
   Send: the dialog must say "Sent. Thank you.". A release never sends on a command line alone (review of
   2026-10-04: any shortcut or program could have made an installed Shturmap send a report); only a developer build

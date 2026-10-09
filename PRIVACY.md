@@ -1,8 +1,5 @@
-Shturmap: privacy notice for reports and crash reports
-======================================================
-
-DRAFT, 2026-10-03. [OWNER: fill in everything in square brackets before the first public release, and have the
-whole notice checked.]
+Shturmap: privacy
+=================
 
 Shturmap runs on your PC. It reads the game's log files, your screenshots' file names and public data from
 tarkov.dev, and it keeps its own log on your PC. Of a screenshot you take in a raid it also looks at the top right
@@ -51,40 +48,26 @@ What is never sent
 Your Windows user folder is masked in everything that is sent (written as %USERPROFILE%), as are your user name
 where it is a folder elsewhere and the name of a network PC in a folder path, and every game account, profile or
 quest id is cut out. Nothing is sent from memory, no screenshots, no game files, no list of your
-quests, no machine name and no IP address is stored with a report. Sentry (below) sees your internet address
-when a report arrives, as any server does; each report tells it not to take anything from that address, and the
-project is set to store neither the address nor the town and country Sentry would derive from it. [OWNER: add the
-Sentry scrubbing rule for $user.geo.** and confirm a new report shows no location.]
+quests and no machine name. Sentry (below) sees your internet address when a report arrives, as any server does:
+each report tells it not to use that address, and the project is set to store neither the address nor the town and
+country it could be traced to.
 
-Who receives it
----------------
-[OWNER: name] ("the controller"), who develops Shturmap. Contact: [OWNER: contact address].
+Who receives it, and for how long
+---------------------------------
+Reports go to Shturmap's maintainer, to find and fix problems and to decide what to build next. They are kept with
+Sentry (Functional Software, Inc., USA) in its EU data region (Frankfurt, Germany), and deleted there after at most
+90 days. Nothing is sent without your say: pressing Send, or choosing "Always send" for crash reports. "Never" stops
+crash reports from then on.
 
-Reports are kept with Sentry (Functional Software, Inc., USA) in its EU data region (Frankfurt, Germany), which
-processes them on the developer's behalf. The Sentry project is set not to store IP addresses.
-[OWNER: confirm Sentry's data processing agreement applies to your account, and name its safeguards for transfers
-outside the EU.]
+To get a copy of a report you sent, or to have it deleted, send a report from the app saying so and quote the report
+id Shturmap showed after sending (8 letters and digits). Leave a contact if you want an answer.
 
-Why
----
-To find and fix problems in Shturmap and to decide what to build next. The legal basis is your consent (Art. 6(1)(a)
-GDPR): you give it by pressing Send, or by choosing "Always send" for crash reports. You can withdraw it at any time
-by choosing "Never"; what was sent before stays lawful.
-
-How long
---------
-[OWNER: the retention of your Sentry plan, e.g. 30 or 90 days], then reports are deleted automatically. On your
-PC, crash records are kept for 30 days (%LOCALAPPDATA%\Shturmap\crashes), and a report that couldn't be sent waits
-in %LOCALAPPDATA%\Shturmap\outbox until it has gone. A report the service refused stays there as a ".refused.txt"
-file, with its text and contact, and isn't sent again: delete it yourself, or with the rest of the data (below).
-
-Your rights
------------
-You can ask for a copy of a report you sent, or for it to be corrected or deleted: write to the contact above and
-quote the report id Shturmap showed after sending (8 letters and digits). You can also complain to a data
-protection authority.
-
+What stays on your PC
+---------------------
 Everything Shturmap keeps on your PC (settings, quest history, logs, reports waiting to be sent, crash records and
-the download cache) is in %LOCALAPPDATA%\Shturmap. It keeps no study log of how you use it: only developer builds
-of Shturmap have one. To delete all of it, use settings (the gear) →
-"Uninstall Shturmap…" and tick "Also delete my Shturmap data"; or delete that folder yourself after uninstalling.
+the download cache) is in %LOCALAPPDATA%\Shturmap. Crash records are kept for 30 days (in its crashes folder), and a
+report that couldn't be sent waits in its outbox folder until it has gone. A report the service refused stays there
+as a ".refused.txt" file, with its text and contact, and isn't sent again: delete it yourself, or with the rest of
+the data. Shturmap keeps no study log of how you use it: only developer builds of Shturmap have one. To delete all of
+it, use settings (the gear) → "Uninstall Shturmap…" and tick "Also delete my Shturmap data"; or delete that folder
+yourself after uninstalling.

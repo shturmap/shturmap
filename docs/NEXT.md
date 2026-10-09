@@ -643,7 +643,7 @@ for the languages to come).
   downloads). The owner checked a received report in Sentry on 2026-10-09: no address, but its "User Geography"
   held the owner's town. Sentry derives it from the connection with IP storage off; fixed by an empty
   `user.ip_address` in every report (`ReportSender.Sealed`) and a scrubbing rule for `$user.geo.**` in the project
-  (the owner's to add). Open: a new test report checked for no location, then PRIVACY.md says so.
+  (the owner added it, 2026-10-09). Open: the second test report (7f53fb27) checked for no location.
 - **B14. On the three tile maps the tile requests follow the view**, and with Follow my position on, the view
   follows the player: the image service could tell roughly where on the map the player is, while DESIGN.md §2 says
   no position is sent anywhere. Fix: when such a map opens, fetch the whole map's tiles at the zoom levels used (they
@@ -1246,8 +1246,10 @@ Raise these with the owner when the app gets its first public GitHub Release (no
    - the README and the website point to "Help (?) → Report a problem or idea" (the website only on the owner's
      word), and the website's "sends nothing" wording becomes "Nothing is sent unless you send a report or allow
      crash reports";
-   - `PRIVACY.md`: the owner fills in the controller and contact (and the retention of the Sentry plan), and has it
-     checked.
+   - `PRIVACY.md`: short and plain, done (owner, 2026-10-09: "Do we need the GDPR stuff at all? I would honestly just
+     omit this", then "Short and plain"): the maintainer as who receives reports, deletion through the app's Report
+     with the report id, at most 90 days at Sentry, no legal-template wording, no lawyer's review. Accepting Sentry's
+     data processing agreement stays an optional click for the owner.
 3. **Delivery: GitHub Releases with Velopack** (owner, 2026-10-03: releases in the code repository, an auto-update
    mode, and "we can move for the first public release, but we should state that the app is still in private
    testing"). Done: the Setup, updates (Automatic / Tell me only / Off, never during a raid), `eng\release.ps1` and
