@@ -66,17 +66,22 @@ public static class ExitList
     /// then the exit's name; the name is compared without the label, letter by letter with what a reader confuses
     /// folded together (the game's slashed zero is read as "Ø", "1" as "I"), and may be a little off. A row that
     /// names no exit (a transit, the note under one, something from the scene) names none; a row that could be two
-    /// exits equally well names neither.
+    /// exits equally well names neither. A row with nothing to compare ("??:??:??" read on a line of its own, a dash,
+    /// noise) names none, and an exit whose names fold to nothing is never named.
     /// </summary>
     public static IReadOnlyDictionary<string, bool> Match(ExitListReading reading, IReadOnlyList<ExitName> exits)
     {
-        var known = exits.Select(e => (e.Id, Forms: e.Names.SelectMany(Forms).Distinct(StringComparer.Ordinal).ToList())).ToList();
+        var known = exits.Select(e => (e.Id, Forms: e.Names.SelectMany(Forms).Distinct(StringComparer.Ordinal).ToList()))
+            .Where(k => k.Forms.Count > 0).ToList();
         var found = new Dictionary<string, bool>(StringComparer.Ordinal);
         foreach (var row in reading.Rows)
         {
             var words = row.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // With the label, without it, and without a label the reader split in two ("TRANSIT 02").
             var said = Enumerable.Range(0, Math.Min(3, words.Length)).SelectMany(skip => Forms(string.Join(' ', words.Skip(skip)))).Distinct(StringComparer.Ordinal).ToList();
+            // Review of 2026-10-09: such a row threw here, and the whole screenshot's list was lost.
+            if (said.Count == 0)
+                continue;
             var scores = known.Select(k => (k.Id, k.Forms, Score: k.Forms.Max(f => said.Max(s => Similarity(f, s))))).Where(k => k.Score >= Enough).ToList();
             if (scores.Count == 0)
                 continue;
