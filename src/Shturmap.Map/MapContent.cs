@@ -303,9 +303,9 @@ public static class MapContentBuilder
     /// (side "scav", category "bot" or "all", not "sniper"), sniper zones (side "scav", categories "bot" and
     /// "sniper") and, per boss, each of its spawn locations. The data gives zones by name; a zone whose points lie
     /// apart is split into its groups (<see cref="Groups"/>), one marker each, so no marker stands where nothing
-    /// spawns. A boss marker says the boss's chance on the map and, when the boss has several zones, this zone's
-    /// share ("Kollontay 75% · 50% here"), on the zone's largest group only. Bosses whose groups have the same
-    /// centroid (Customs' Stronghold lists the same points for Reshala and Knight) share one marker.
+    /// spawns. A boss marker says the boss's chance on the map, as Plan does, and what applies to this zone when it
+    /// is less ("Kollontay 75% · 50% here"; <see cref="SpawnLabel"/>), on the zone's largest group only. Bosses whose
+    /// groups have the same centroid (Customs' Stronghold lists the same points for Reshala and Knight) share one marker.
     /// </summary>
     public static IReadOnlyList<MapMarker> SpawnZones(GameData data, ApiMap map)
     {
@@ -324,11 +324,15 @@ public static class MapContentBuilder
         // Raiders, cultists, Black Division and AF are as deadly and have spawn zones and chances in the data. Only the
         // AI PMCs (pmcUSEC, pmcBEAR) are left out: they come everywhere and are no squad with a place.
         var zones = new List<(string Mob, string Zone, List<SpawnPart> Parts, List<WorldPoint> Points)>();
+        // A boss's or squad's chance on the map is its likeliest entry's, as Plan says it (GameData.BossMobsOn): The
+        // Lab lists Raider groups from 60 % down to 35 %.
+        var onMap = (map.Bosses ?? []).GroupBy(b => b.Mob).ToDictionary(g => g.Key, g => Percent(g.Max(b => b.SpawnChance)));
         foreach (var boss in map.Bosses ?? [])
         {
             if (boss.Mob is "pmcUSEC" or "pmcBEAR")
                 continue;
             var name = data.Mobs.TryGetValue(boss.Mob, out var mob) ? mob.Name : boss.Mob;
+            var chance = onMap[boss.Mob];
             foreach (var location in boss.SpawnLocations ?? [])
             {
                 if (location.Positions is not { Count: > 0 } positions)
@@ -340,7 +344,12 @@ public static class MapContentBuilder
                     zones.Add((boss.Mob, key, [], []));
                     index = zones.Count - 1;
                 }
-                var part = new SpawnPart(name, Percent(boss.SpawnChance), location.Chance < 0.995 ? Percent(location.Chance) : null);
+                // What the data gives this zone, when it is less than the chance on the map: the zone's share of a spawn
+                // with several zones, or a group's own chance where likelier groups spawn elsewhere.
+                int? here = location.Chance < 0.995 ? Percent(location.Chance)
+                    : Percent(boss.SpawnChance) < chance ? Percent(boss.SpawnChance)
+                    : null;
+                var part = new SpawnPart(name, chance, here);
                 if (!zones[index].Parts.Contains(part))
                     zones[index].Parts.Add(part);
                 zones[index].Points.AddRange(positions.Select(p => p.ToWorld()));
@@ -370,18 +379,20 @@ public static class MapContentBuilder
         return markers;
     }
 
-    /// <summary>One entry of a boss or AI squad at a place: its name, its chance on the map, and its zone's share.</summary>
+    /// <summary>One entry of a boss or AI squad at a place: its name, its chance on the map, and what the data gives
+    /// this place when it is less (a zone's share, or a less likely group's own chance), else null.</summary>
     public sealed record SpawnPart(string Name, int Chance, int? Here);
 
     /// <summary>
-    /// A boss marker's label: "Kollontay 75% · 50% here", "Reshala 75% · 33% here / Knight 25%". Several entries of one
-    /// name at one place say their chances in one line, highest first: Lighthouse's Chalet lists Rogues at 100, 90 and
-    /// 50 % ("Rogue 100%, 90%, 50%"), each a group that may spawn.
+    /// A boss marker's label, in one format with Plan's line ("Kollontay 75%"): the name, its chance on the map, and
+    /// "· N% here" when less applies to this place: "Kollontay 75% · 50% here", "Reshala 75% · 33% here / Knight
+    /// 25%". Several entries of one name at one place say one figure for the place, the highest: The Lab's 2nd floor
+    /// has Raider groups at 60, 45 and 35 % ("Raider 60%"), its basement at 45 and 40 % ("Raider 60% · 45% here").
+    /// Until 2026-10-09 such a place listed every chance ("Raider 60%, 45%, 35%"), a third format beside these two.
     /// </summary>
     public static string SpawnLabel(IEnumerable<SpawnPart> parts) =>
-        string.Join(" / ", parts.GroupBy(p => (p.Name, p.Here)).Select(g =>
-            $"{g.Key.Name} {string.Join(", ", g.Select(p => p.Chance).Distinct().OrderDescending().Select(c => c + "%"))}" +
-            (g.Key.Here is { } here ? $" · {here}% here" : "")));
+        string.Join(" / ", parts.GroupBy(p => (p.Name, p.Chance)).Select(g =>
+            $"{g.Key.Name} {g.Key.Chance}%" + (g.All(p => p.Here is not null) ? $" · {g.Max(p => p.Here)}% here" : "")));
 
     // A marker must stand among its points: within 25 m across and 3 m (about a floor) in height of one of them.
     // tarkov.dev's zones can span 450 m (Customs, Interchange) or reach into a bunker (Reserve), and one marker at

@@ -1347,14 +1347,17 @@ spawns below).
   with the violet transit diamond; the octagon is a shape nothing else uses, and all red). Every mob in the data's bosses list counts except the AI PMCs
   (`pmcUSEC`, `pmcBEAR`, which come everywhere): bosses, and since the map audit (owner, 2026-10-03) Rogues
   (Lighthouse, Icebreaker), Raiders (Reserve, The Lab), cultists (Customs, Woods, Shoreline, Night Factory, Ground Zero
-  21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled with the two
-  numbers the data gives, the chance on the map and, for one with several zones, that zone's share: "Kollontay 75% ·
-  50% here", "Kaban 75%"; never their product, since the data doesn't say the share is conditional. The label is ink
+  21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled in one format
+  with Plan's line and the raid card's ("Kaban 75%"): the chance on the map, then "· N% here" when less applies to
+  the place: for one with several zones, that zone's share ("Kollontay 75% · 50% here"); never their product, since
+  the data doesn't say the share is conditional. A squad the data lists as several groups (Raiders, Rogues) has the
+  likeliest group's chance on the map, as Plan counts a boss's, and a place says its own likeliest group's when that
+  is less: The Lab's 2nd floor "Raider 60%" (groups at 60, 45 and 35 %), its basement "Raider 60% · 45% here"
+  (2026-10-09, from the pre-release review: such a place listed every chance, "Raider 60%, 45%, 35%", a third
+  format beside Plan's). The label is ink
   like every other label (the review of 2026-10-04: it was red, which read worse on the dark ground than any other
   label; the octagon is the danger sign), and red only while the marker is pointed at, as any label takes its
-  marker's colour then. Several entries
-  of one name at one place say their chances in one line, highest first ("Rogue 100%, 90%, 50%" at Lighthouse's
-  Chalet: groups that may each spawn). A zone split in groups says this once, on its largest group; the others are
+  marker's colour then. A zone split in groups says this once, on its largest group; the others are
   bare octagons that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
   Knight 25%" on Customs' Stronghold), and pointing at one lights all its zones. The Lab gets 8, Terminal 16; Ground
   Zero 21+ gets 9, mostly a 2 % cultist that may spawn at any Scav spawn.

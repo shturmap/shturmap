@@ -143,15 +143,35 @@ public class SpawnZoneTests
         var data = With(map, new ApiMob("exUsecFree", "Rogue"), new ApiMob("pmcUSEC", "USEC"), new ApiMob("pmcBEAR", "BEAR"));
         var marker = Assert.Single(MapContentBuilder.SpawnZones(data, map));
         Assert.Equal(MarkerKind.BossSpawn, marker.Kind);
-        Assert.Equal("Rogue 100%, 90%, 50%", marker.Label);
+        Assert.Equal("Rogue 100%", marker.Label);
         Assert.Equal("boss:exUsecFree", marker.Group);
+    }
+
+    // One format for a boss's chances, on the map as in Plan's line ("Kollontay 75%"): the chance on the map, then what
+    // applies to the place when it is less (2026-10-09; The Lab's 2nd floor said "Raider 60%, 45%, 35%" until then).
+    [Fact]
+    public void Several_groups_of_a_squad_say_its_chance_on_the_map_and_the_best_one_here()
+    {
+        var floor = new List<ApiPosition> { At(0, 0), At(10, 0) };
+        var basement = new List<ApiPosition> { At(200, 0, -10), At(210, 0, -10) };
+        var map = TestMap("laboratory", bosses:
+        [
+            new("pmcBot", 0.6, [new("Floor2", 1, floor)]),
+            new("pmcBot", 0.45, [new("Floor2", 1, floor)]),
+            new("pmcBot", 0.35, [new("Floor2", 1, floor)]),
+            new("pmcBot", 0.45, [new("Basement", 1, basement)]),
+            new("pmcBot", 0.4, [new("Basement", 1, basement)]),
+        ]);
+        var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("pmcBot", "Raider")), map);
+        Assert.Equal(["Raider 60%", "Raider 60% · 45% here"], markers.Select(m => m.Label));
     }
 
     [Fact]
     public void Several_names_and_shares_stay_apart_in_a_label() =>
-        Assert.Equal("Reshala 75% · 33% here / Knight 25% / Raider 40%, 30%",
+        Assert.Equal("Reshala 75% · 33% here / Knight 25% / Raider 40% · 30% here / Rogue 100%",
             MapContentBuilder.SpawnLabel(
             [
-                new("Reshala", 75, 33), new("Knight", 25, null), new("Raider", 30, null), new("Raider", 40, null), new("Knight", 25, null),
+                new("Reshala", 75, 33), new("Knight", 25, null), new("Raider", 40, 30), new("Raider", 40, 20), new("Knight", 25, null),
+                new("Rogue", 100, null), new("Rogue", 100, 90),
             ]));
 }
