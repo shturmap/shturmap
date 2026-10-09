@@ -1092,7 +1092,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   card's head with example values) and HELP AND FEEDBACK (the story chapters aren't shown yet, anything else missing goes through the feedback button,
   F1; the three buttons named; owner, 2026-10-09: "GOOD TO KNOW" wasn't "really expressive").
   - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
-    map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, holds TOUR · 3 OF 7,
+    map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, on the ground colour
+    with nothing showing through (review of 2026-10-09: at 94 % the map's labels read through its words, and through
+    the stage's plate, opaque too), holds TOUR · 3 OF 7,
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
     chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
     middle of the map above it. Motion: "Design system", *Motion*.
@@ -1115,6 +1117,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     origin, from chapter 7 on).
     A glide a chapter starts stops when its map goes (the same review: Esc during YOUR SCREENSHOT KEY's glide went on
     moving the map that came back).
+    A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes right of
+    its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band).
+    IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
+    `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
+    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN).
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New

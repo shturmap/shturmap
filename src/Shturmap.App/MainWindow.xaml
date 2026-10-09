@@ -1356,12 +1356,14 @@
       <Path x:Name="TourVeil" Fill="#DB0B0C0B" IsHitTestVisible="False" />
       <Path x:Name="TourMarks" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" IsHitTestVisible="False" />
       <Canvas x:Name="TourCanvas" IsHitTestVisible="False" />
-      <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour). -->
+      <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour), opaque as the
+           band is (review of 2026-10-09: the map's labels read through the example raid card). -->
       <Grid x:Name="TourStage" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
         <Border x:Name="TourPlate" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
-                Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="30,24" />
+                Background="{StaticResource GroundBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="30,24" />
       </Grid>
-      <Border x:Name="TourBand" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#F00B0C0B" SizeChanged="OnTourLayerSizeChanged"
+      <!-- Opaque: the map's labels showed through its words (review of 2026-10-09). -->
+      <Border x:Name="TourBand" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="{StaticResource GroundBrush}" SizeChanged="OnTourLayerSizeChanged"
               BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" Padding="22,14,22,12">
         <Grid ColumnSpacing="28" RowSpacing="10">
           <Grid.ColumnDefinitions>
