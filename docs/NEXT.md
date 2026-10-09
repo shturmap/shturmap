@@ -640,7 +640,7 @@ for the languages to come).
 - **B10. PRIVACY.md and README** still place reports in help, say Sentry keeps country and town (it is told not to),
   and don't say that tarkov.dev's image service sees which icons and map tiles are asked for. Status: done for
   PRIVACY.md (2026-10-04: the feedback button and settings, what Sentry is told, refused reports, a section on
-  downloads; the owner still checks a received report in Sentry for an address or a location).
+  downloads). The owner checked a received report in Sentry on 2026-10-09: no address, no location.
 - **B14. On the three tile maps the tile requests follow the view**, and with Follow my position on, the view
   follows the player: the image service could tell roughly where on the map the player is, while DESIGN.md §2 says
   no position is sent anywhere. Fix: when such a map opens, fetch the whole map's tiles at the zoom levels used (they
