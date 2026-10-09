@@ -21,6 +21,20 @@ public sealed class GameDataLoader(CachedHttp http)
     /// <param name="language">The game's language code, as its settings say it ("ge" for German).</param>
     public async Task<GameData> LoadAsync(GameMode mode, string language, CancellationToken ct = default)
     {
+        var fetched = new List<Task<CachedResponse>>();
+        try
+        {
+            return await LoadAsync(mode, language, fetched, ct);
+        }
+        catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
+        {
+            ForgetWhatIsNoJson(fetched);
+            throw;
+        }
+    }
+
+    private async Task<GameData> LoadAsync(GameMode mode, string language, List<Task<CachedResponse>> fetched, CancellationToken ct)
+    {
         var slug = GameData.Slug(mode);
         language = ApiLanguage(language);
 
@@ -30,6 +44,7 @@ public sealed class GameDataLoader(CachedHttp http)
         {
             var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", maxAge ?? MaxAge, ct);
             (translation ? translations : fetches).Add(task);
+            fetched.Add(task);
             return task;
         }
 
@@ -47,6 +62,7 @@ public sealed class GameDataLoader(CachedHttp http)
         var itemsLang = language == "en" ? itemsEn : Fetch($"{slug}/items_{language}", TimeSpan.FromHours(24), translation: true);
         var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct);
         fetches.Add(definitions);
+        fetched.Add(definitions);
         try
         {
             await Task.WhenAll(fetches);
@@ -212,11 +228,29 @@ public sealed class GameDataLoader(CachedHttp http)
     /// </summary>
     public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, CancellationToken ct = default)
     {
+        var fetched = new List<Task<CachedResponse>>();
+        try
+        {
+            return await LoadSourcesAsync(mode, language, fetched, ct);
+        }
+        catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
+        {
+            ForgetWhatIsNoJson(fetched);
+            throw;
+        }
+    }
+
+    private async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, List<Task<CachedResponse>> fetched, CancellationToken ct)
+    {
         var slug = GameData.Slug(mode);
         language = ApiLanguage(language);
         var day = TimeSpan.FromHours(24);
-        Task<CachedResponse> Fetch(string endpoint) =>
-            http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct);
+        Task<CachedResponse> Fetch(string endpoint)
+        {
+            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct);
+            fetched.Add(task);
+            return task;
+        }
 
         var items = Fetch($"{slug}/items");
         var barters = Fetch($"{slug}/barters");
@@ -309,6 +343,41 @@ public sealed class GameDataLoader(CachedHttp http)
         foreach (var task in tasks)
             _ = task.ContinueWith(static t => _ = t.Exception, CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+    }
+
+    // A load that couldn't read what it got (review of 2026-10-09). Any answer 200 is saved, also a page a captive
+    // portal or a CDN sent in place of the data, or a body cut short; it then failed as unreadable, which isn't tried
+    // again, and was read from the cache again at the next start, for as long as it counted as fresh. A file of the
+    // load that isn't JSON at all is forgotten now, so the next try or start downloads it again. One that is JSON,
+    // only not in the shape Shturmap knows (tarkov.dev changed its format), stays: a download would bring the same
+    // again, at every start of every Shturmap, and the saved copy is still revalidated with its ETag. A download that
+    // failed is no file of the load: a good saved copy is never forgotten for a network error.
+    private void ForgetWhatIsNoJson(IEnumerable<Task<CachedResponse>> fetched)
+    {
+        foreach (var response in fetched.Where(t => t.IsCompletedSuccessfully).Select(t => t.Result).DistinctBy(r => r.FilePath))
+        {
+            if (!IsJson(response.FilePath))
+                http.Forget(response);
+        }
+    }
+
+    private static bool IsJson(string path)
+    {
+        try
+        {
+            using var file = File.OpenRead(path);
+            using var json = JsonDocument.Parse(file);
+            return json.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Can't tell: left as it is.
+            return true;
+        }
     }
 
     /// <summary>The payload's "data" with every translatable string replaced by the chosen language's text.</summary>

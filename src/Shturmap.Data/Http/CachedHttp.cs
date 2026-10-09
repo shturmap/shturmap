@@ -184,9 +184,13 @@ public sealed class CachedHttp(HttpClient http, string cacheFolder, TimeSpan? bo
     /// to be no use (a map tile that isn't an image). The note beside it goes first; without it the copy no longer
     /// counts as saved, whatever happens to the file.
     /// </summary>
-    public void Forget(string cacheKey)
+    public void Forget(string cacheKey) => ForgetFile(Path.Combine(cacheFolder, cacheKey));
+
+    /// <summary>The same for a copy <see cref="GetAsync"/> gave.</summary>
+    public void Forget(CachedResponse response) => ForgetFile(response.FilePath);
+
+    private static void ForgetFile(string body)
     {
-        var body = Path.Combine(cacheFolder, cacheKey);
         TryDelete(body + ".meta.json");
         TryDelete(body);
         TryDelete(MissingNote(body));

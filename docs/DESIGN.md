@@ -2467,6 +2467,13 @@ success, or the player changing the game mode, starts over at 2. It was every 2 
 down, every running Shturmap asked for up to 11 files every 2 minutes, about 700 rounds a day where there are now
 about 50. One schedule, counted separately, for the game data, the game language's texts and the item sources. A
 try asks only for what is missing or older than its keep time: the rest is answered from the saved copy.
+An answer 200 is saved whatever it holds, also a page a captive portal or a CDN sends in place of the data; it then
+failed as unreadable, which isn't asked for again, and was read from the saved copy at the next start too, for as long
+as that counted as fresh (review of 2026-10-09). So a load that fails as unreadable forgets each of its files that
+isn't JSON at all (`GameDataLoader.ForgetWhatIsNoJson`), and the next try or start downloads those again; its other
+files stay. JSON in a shape Shturmap doesn't know (tarkov.dev changed its format) stays saved and is revalidated as
+before: downloading it again would bring the same, at every start of every Shturmap. A failed download is never a
+reason to forget a good saved copy.
 
 **The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
 with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
