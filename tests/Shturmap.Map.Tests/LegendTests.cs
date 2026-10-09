@@ -28,6 +28,22 @@ public class LegendTests
 
     public static TheoryData<LegendSymbol> Symbols() => new(Enum.GetValues<LegendSymbol>());
 
+    // Help lists the first twelve rows the map has (owner, 2026-10-09): what levels 1 and 2 always draw comes before
+    // what marks it or shows only at times, so the ways out aren't behind help's link while the ping is listed.
+    [Fact]
+    public void The_symbols_always_drawn_come_before_those_shown_at_times()
+    {
+        var order = MapLegend.Rows.Select(r => r.Symbol).ToList();
+        LegendSymbol[] drawn = [LegendSymbol.Player, LegendSymbol.KeptQuest, LegendSymbol.Objective, LegendSymbol.Extract,
+            LegendSymbol.SharedExtract, LegendSymbol.ExtractListed, LegendSymbol.ExtractNotListed, LegendSymbol.Transit];
+        LegendSymbol[] atTimes = [LegendSymbol.Ping, LegendSymbol.Leader, LegendSymbol.PointedOutOfView, LegendSymbol.Completed,
+            LegendSymbol.PlayerOutOfView];
+        Assert.True(drawn.Max(order.IndexOf) < atTimes.Min(order.IndexOf));
+        Assert.True(drawn.Max(order.IndexOf) < order.IndexOf(LegendSymbol.Boss));
+        // Within help's twelve (Rules.LegendFold.Listed) on a map that has every one of them.
+        Assert.True(drawn.Max(order.IndexOf) < 12);
+    }
+
     // Help lists the symbols of the map on screen first (owner, 2026-10-04): a symbol counts when the scene holds
     // what it stands for.
     [Fact]

@@ -1545,18 +1545,20 @@ spawns below).
   snapshot without the quest takes off the shown map, matched with the cue whichever comes first
   (`MainWindow.Completion`). Nothing with animation effects off: the places go. The legend has a row for it wherever
   a quest has a place.
-- **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap
-  per symbol, made with the map's own drawing code at twice the DIP size), so they can't drift from the map; the
-  hand-drawn XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the
-  four levels, every symbol on the map has one (the done objective, quest zones, the floor arrow, the guide line
-  and its plate, the trail, the edge badge and chevrons, clusters and the sheet were missing; and until the review
-  of 2026-10-04 the gold chevrons of a pointed-at quest, the padlock in a pick's colour of a door it needs a key
-  for, and the ping of a new position), and each names
-  shape and colour, not colour alone. A new symbol gets a `LegendSymbol` and a row in the same change, and a line in
-  `MapLegend.On`. Help lists the symbols the map on screen has under ON THIS MAP, the twelve most important of
-  them, and keeps the rest of them and the symbols the map doesn't have (under NOT ON THIS MAP) behind one link,
-  "SHOW n MORE SYMBOLS" (owner, 2026-10-04: every symbol of every map made help 2,350 px tall; 2026-10-09, help
-  trimmed: Streets alone listed 26; `LegendFold`).
+- **Legend.** The help panel's ON THE MAP rows are drawn by `MapRenderer` itself (`MapLegend`: one small bitmap per
+  symbol, made with the map's own drawing code at twice the DIP size), so they can't drift from the map; the hand-drawn
+  XAML shapes showed a plain disc for the quest marker, which has a collar and a glyph. Rows go by the four levels:
+  first what levels 1 and 2 always draw (you, the picks, objectives, extracts and transits), then what marks those or
+  shows only at times, then levels 3 and 4 (owner, 2026-10-09: the extracts came after the ping and "Moved off a crowded
+  spot", so help's twelve on Streets left them behind the link). Every symbol on the map has one (the done objective,
+  quest zones, the floor arrow, the guide line and its plate, the trail, the edge badge and chevrons, clusters and the
+  sheet were missing; and until the review of 2026-10-04 the gold chevrons of a pointed-at quest, the padlock in a
+  pick's colour of a door it needs a key for, and the ping of a new position), and each names shape and colour, not
+  colour alone. A new symbol gets a `LegendSymbol` and a row in the same change, and a line in `MapLegend.On`. Help
+  lists the symbols the map on screen has under ON THIS MAP, the twelve most important of them, and keeps the rest of
+  them and the symbols the map doesn't have (under NOT ON THIS MAP) behind one link, "SHOW n MORE SYMBOLS" (owner,
+  2026-10-04: every symbol of every map made help 2,350 px tall; 2026-10-09, help trimmed: Streets alone listed 26;
+  `LegendFold`).
   A symbol counts when the scene holds what it stands for (`MapLegend.On`): a padlock when the map has locks, the
   guide line when a pick has a place here and there is a position, the sheet when there is no artwork. What only
   shows for a moment counts where its cause can occur: the ping wherever there is a position, a pick's chevrons and
