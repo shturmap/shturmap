@@ -366,7 +366,7 @@ ultrawide; never in a running raid):
   small digit reader of our own would give a Scav a time left and survive a reconnect. Owner to decide (it reads one
   more thing from the picture).
 - Whether "???" should also change which extract EXIT names (today: the nearest on the list, marked or not).
-- The website's hero clip still shows the old raid card (re-record when the owner says so).
+- The website's hero clip still shows the old raid card (re-record when the owner says so). Re-recorded 2026-10-09.
 
 **Words for the owner to check:** "13 MIN LEFT" / "27 MIN IN" / "PAST THE RAID'S 40 MIN" / "TIME LEFT NOT KNOWN";
 "NEAREST · NOT CHECKED AGAINST YOUR LIST", "ON YOUR LIST THIS RAID", "ON YOUR LIST · ??? IN GAME"; the line under
@@ -1204,6 +1204,9 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 
 1. **Website media.** Re-record the screenshots and the hero clip (`tools\make-media.ps1` in the site repository),
    only when the owner says so.
+   **Done 2026-10-09** (owner: "update the Website with the latest media captures so it reflects the current state
+   of the app"): every picture and the clip re-recorded from the app of that day, the hand checks gone through (the
+   callouts, every quoted number, the crops, the sizes, the loop). What follows is the history of what they lacked.
    Owner, 2026-10-04: "Only update the assets for the website when I say so, but flag if it needs doing when we
    want to do a release and the assets are showing outdated information." So: never by itself, and at a release
    say what the pictures no longer show. Last recorded on 2026-10-04 (the quest types' new icons). Outdated since,
