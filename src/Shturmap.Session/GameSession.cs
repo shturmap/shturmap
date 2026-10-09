@@ -2176,6 +2176,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (Study.Enabled)
             ClearRunning();
         Study.Dispose();
-        _stop.Dispose();
+        // _stop is cancelled, not disposed: the background loops (the log's lines, the data's downloads, the look for
+        // the game, the open raid) may still be on their way to their next step, which reads its token, and a disposed
+        // source throws there instead of cancelling, an exception nobody waits for, which the next start took for a
+        // crash ("Shturmap ran into an error"; review of 2026-10-09). With no timer on it, it holds nothing to let go.
     }
 }
