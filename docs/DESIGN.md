@@ -1126,8 +1126,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     origin, from chapter 7 on).
     A glide a chapter starts stops when its map goes (the same review: Esc during YOUR SCREENSHOT KEY's glide went on
     moving the map that came back).
-    A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes right of
-    its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band).
+    A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes beside
+    its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band),
+    and 150 on the right, the map's label room (owner, 2026-10-09: 90 still cut PICK AND POINT's picked quest there;
+    "Map drawing", *Room for labels on the right*).
     IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
     `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
     own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN).
@@ -1429,6 +1431,17 @@ spawns below).
   outside the limits moves toward them or stays, never jumps. A map fitted while the view has no room (the window
   minimised, or not laid out yet) is fitted when it has; before, its zoom fell to almost nothing and the map stayed out
   of sight until "show the whole map".
+- **Room for labels on the right** (owner, 2026-10-09). The map writes a symbol's label to its right, so the whole map
+  (a new map, a Plan row's preview, 0 and the button) and every framing (What's New's and the tour's previews, the raid
+  replay) keep 150 DIP between what they show and the view's right edge (`Camera.LabelRoom`); the other sides keep
+  their padding (24 DIP for the whole map, 40 for a preview or replay, 90 for the tour). Until then the right side had
+  only the padding, and on a wide map the rightmost names ran off the window (Customs: "Transit to I…", "Crossr…"; the
+  tour's picked quest past its 90 DIP). The room is at most a fifth of the view's width (`Camera.LabelRoomShare`): at
+  the smallest window, the map about 500 DIP wide, 150 would shrink a wide map by more than a quarter; 100 shrink it by
+  a sixth, and a long name there may still lose its last letters. What fits with room to spare stays in the middle (a
+  tall map such as Streets in a wide view); otherwise it moves left only as far as the room needs
+  (`Camera.FramingAbove`, the one place a view is worked out). "The zoom that shows the whole map" (the zoom limit, when
+  the map's smaller names show) is this view's.
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
@@ -1511,10 +1524,11 @@ spawns below).
     above the map's foot, so the WIKI MAP link and the artwork's credit stay readable, and right of the map's buttons.
     A new cue, a raid loading or a preview ends it. With Windows' animation effects off, and in snapshots, the end shows
     at once for the time it would have played (a snapshot keeps it).
-  - *The view*: framed on the positions with 40 DIP around them and at least 300 m across, in the part above the band
-    (`MapView.FramingAbove`). It stays there afterwards. A replay that ends while the view still glides there (a raid
-    loading, a preview) stops the glide, and so does a new map in the view (review of 2026-10-09: the glide went on
-    moving the next map). The map recedes under the replay (the ground at 45 % over it),
+  - *The view*: framed on the positions with 40 DIP around them (on the right the label room; "Map drawing", *Room for
+    labels on the right*) and at least 300 m across, in the part above the band (`MapView.FramingAbove`). It stays
+    there afterwards. A replay that ends while the view still glides there (a raid loading, a preview) stops the glide,
+    and so does a new map in the view (review of 2026-10-09: the glide went on moving the next map). The map recedes
+    under the replay (the ground at 45 % over it),
     and everything of the replay fades in and out as one (`MapScene.ReplayOpacity`).
   - *The pen* (C; `MapRenderer.DrawReplay`, `ReplayInk`): one line from position to position, drawn on as the time
     runs, growing toward the next position. Its colour is the raid's time: the player's sand mixed into the ground,
