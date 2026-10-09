@@ -1185,6 +1185,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     }
                     try
                     {
+                        RecomputeQuestsIfDue();
                         // What the log left open, read back at start or gone silent since, may not still be running.
                         CloseRaidThatCannotRun(announce: !_replaying);
                         Publish();
@@ -1222,7 +1223,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var mode = _tracker.State.Mode == GameMode.Unknown ? _mode : _tracker.State.Mode;
             if (_store?.Add([FromLog(mode, quest)]) > 0)
             {
-                RecomputeQuests();
+                // Worked out once for a run of quest messages (RecomputeQuestsIfDue): what follows here reads none of it.
+                _questsDue = true;
                 if (!item.IsReplay)
                 {
                     var task = _data?.Tasks.GetValueOrDefault(quest.QuestId);
@@ -1239,6 +1241,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             return;
         }
 
+        // Any other line may read the quests (the loading cue's kit, the plan for the study log, the map to open on).
+        RecomputeQuestsIfDue();
         // A quest message's time is the server's; every other line's is the log's own.
         _lastLogAt = item.Event.At;
         switch (item.Event)
@@ -1705,6 +1709,20 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private static QuestObservation FromLog(GameMode mode, QuestEvent q) =>
         new(mode, q.QuestId, QuestProgress.FromLog(q.Status), ObservationSource.Log, q.At, "log:" + q.EventId);
 
+    // Under _gate. A quest message of the game's log was stored, and the quests, picks, ticks and plans are still to be
+    // worked out from it. Each one used to do that at once, a database read and the planner several times over, also
+    // for a run of messages in one batch of lines (review of 2026-10-09): now once, before the next line that isn't a
+    // quest message and at the batch's end.
+    private bool _questsDue;
+
+    private void RecomputeQuestsIfDue()
+    {
+        if (!_questsDue)
+            return;
+        _questsDue = false;
+        RecomputeQuests();
+    }
+
     private void RecomputeQuests()
     {
         if (_store is null)
@@ -1732,8 +1750,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             var mapsOf = new Lazy<IReadOnlyDictionary<string, IReadOnlyList<string>>>(() => Planning.QuestMaps(_data, active));
             _picks.Adopt(_mode, quest => mapsOf.Value.GetValueOrDefault(quest) ?? []);
         }
-        _plan = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode));
-        _allPlans = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: _picks?.ByMap(_mode), top: int.MaxValue);
+        var picksByMap = _picks?.ByMap(_mode);
+        _allPlans = _data is null ? [] : Planning.Suggest(_data, active, done: _done, picksByMap: picksByMap, top: int.MaxValue);
+        _plan = Planning.Top(_allPlans, picksByMap);
         _anyMap = _data is null ? [] : Planning.AnyMap(_data, active, _done);
     }
 

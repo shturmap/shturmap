@@ -56,6 +56,19 @@ public static class Planning
         RaidPlanner.Rank(Quests(data, activeQuestIds, done), Maps(data), top: top, picks: picks,
             picksOn: picksByMap is null ? null : map => picksByMap.GetValueOrDefault(NameOf(data, map))).Select(p => ToView(data, p)).ToList();
 
+    /// <summary>
+    /// <see cref="Suggest"/>'s cut, taken from its list of every map (top: <see cref="int.MaxValue"/>, with the same
+    /// picks), so the session ranks once where it ranked twice (review of 2026-10-09). The ranking doesn't depend on
+    /// the cut: the maps with picks lead, and all of them stay, then the best of the others up to <paramref name="top"/>
+    /// (<see cref="RaidPlanner.Rank"/>).
+    /// </summary>
+    public static IReadOnlyList<MapPlanView> Top(IReadOnlyList<MapPlanView> all, IReadOnlyDictionary<string, IReadOnlySet<string>>? picksByMap, int top = 4)
+    {
+        var picked = picksByMap is null ? 0 : all.TakeWhile(plan => picksByMap.GetValueOrDefault(plan.NormalizedName) is { Count: > 0 } here
+            && plan.Finish.Concat(plan.Progress).Any(q => here.Contains(q.QuestId))).Count();
+        return all.Take(Math.Max(top, picked)).ToList();
+    }
+
     private static string NameOf(GameData data, PlanMap map) => data.Maps.TryGetValue(map.Id, out var m) ? m.NormalizedName : map.Id;
 
     /// <summary>
