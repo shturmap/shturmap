@@ -222,7 +222,8 @@
             <FontIcon Glyph="&#xE939;" FontSize="13" Foreground="{x:Bind FeedbackIconBrush}" />
           </Button>
         </Grid>
-        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)">
+        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)"
+                AutomationProperties.Name="Help">
           <TextBlock Text="?" Style="{StaticResource StatusBarText}" HorizontalAlignment="Center" />
           <Button.Flyout>
             <Flyout x:Name="HelpFlyout" Placement="BottomEdgeAlignedRight" Opened="OnHelpOpened" Closed="OnHelpClosed">
@@ -679,7 +680,8 @@
               </Border>
               <!-- The card's close, in its corner as on a notice. -->
               <Button HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="24" Padding="0" Margin="0,8,8,0"
-                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close. Help brings it back.">
+                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close. Help brings it back."
+                      AutomationProperties.Name="Close what's new">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
               </Button>
               </Grid>
@@ -1225,7 +1227,7 @@
                 <TextBlock Text="{x:Bind ReportOfferText}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
               <Button Width="24" Height="24" Padding="0" Click="OnNoticeClosed" Background="Transparent" BorderThickness="0"
-                      ToolTipService.ToolTip="Dismiss">
+                      ToolTipService.ToolTip="Dismiss" AutomationProperties.Name="Dismiss the notice">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
               </Button>
             </StackPanel>
@@ -1269,7 +1271,7 @@
               </ScrollViewer>
             </StackPanel>
             <Button Grid.Column="2" Width="24" Height="24" Padding="0" Click="OnCrashLaterClick" Background="Transparent" BorderThickness="0"
-                    VerticalAlignment="Top" ToolTipService.ToolTip="Ask again next time">
+                    VerticalAlignment="Top" ToolTipService.ToolTip="Ask again next time" AutomationProperties.Name="Ask again next time">
               <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
             </Button>
           </Grid>
@@ -1327,10 +1329,10 @@
             <FontIcon Glyph="&#xE759;" FontSize="15" />
           </ToggleButton>
           <!-- Off, the view only moves when you move it: a new position pings instead. This shows it. -->
-          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)" AutomationProperties.Name="Show my position"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)" AutomationProperties.Name="Show the whole map"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)" AutomationProperties.Name="Zoom in"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)" AutomationProperties.Name="Zoom out"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
         </StackPanel>
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
           <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
