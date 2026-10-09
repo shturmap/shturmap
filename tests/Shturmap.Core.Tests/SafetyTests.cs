@@ -99,7 +99,7 @@ public class SafetyTests
             .SelectMany(f => File.ReadLines(f).Select((line, i) => (File: f, Line: i + 1, Text: line)))
             .Where(l => !l.Text.TrimStart().StartsWith("//", StringComparison.Ordinal));
 
-    private static string RepositoryRoot()
+    internal static string RepositoryRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {

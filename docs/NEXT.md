@@ -32,6 +32,81 @@ and the line was longer than the band); 0.4.0's What's New names the tour in pla
 at most); parts that touch are one cut-out (the three buttons). Open: the owner's look at it in the dev build, its
 words above all; the story chapters' line in the README's and the website's FAQ (with the trust section there).
 
+## 2026-10-09: trust
+
+The owner decided to adopt every trust step that can be automated, so that players can check the project although
+they can't know its author. Built the same day (DESIGN.md §8, "Distribution" and "Continuous integration"; README,
+"Check it yourself"):
+
+- **The Release workflow** (`.github/workflows/release.yml`), run by hand, on main only: the app's package audit,
+  `eng\release.ps1` with the DSN from the `SENTRY_DSN` secret, build provenance for `Shturmap-Setup.exe` and vpk's
+  files for the version, then `eng\publish-release.ps1`, which now also uploads `Shturmap-Setup.exe.sha256` and
+  publishes the draft only once every file is on it.
+- **Pinned actions:** every `uses:` names a full commit with its version (checkout 7.0.1, setup-dotnet 6.0.0, cache
+  6.1.0, attest-build-provenance 4.2.2, scorecard-action 2.4.4, codeql-action/upload-sarif 4.38.2). Nothing updates
+  them: look for newer versions at a release, and pin a version at least two weeks old by its commit.
+- **The package audit** (`eng\audit-packages.ps1`) in CI after the tests and before a release build, in place of
+  Dependabot, whose pull requests would be commits by another identity.
+- **OpenSSF Scorecard** (`.github/workflows/scorecard.yml`), weekly and on pushes to main; skipped while private.
+- **`RepositoryScanTests`**, over every tracked file. Its first run found nothing but the tests' made-up profile
+  names, which it allows by name.
+- **The README's "Check it yourself"** with CI's and Scorecard's badges, and the same facts, shorter, on the website.
+
+None of the workflows has run yet: the first release from the workflow is the test. Watch vpk on the runner, the
+delta download with the workflow's token, the attestations, and the draft being published.
+
+**Left for the owner:**
+
+1. **The `SENTRY_DSN` Actions secret** (the lead sets it). The Release workflow fails without it.
+2. **Going public** turns on what needs it on this plan: attestations (the first release that can be checked is the
+   first built after that), Scorecard's published result and badge, code scanning. A push to main runs Scorecard.
+3. **The first release from the workflow** (0.4.0): `gh workflow run release.yml -f draft=true`, download the
+   Setup from the draft, `gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap`, then publish the draft on
+   GitHub.
+4. **SignPath Foundation**, once the repository is public: free code signing for open-source projects under an
+   OSI-approved licence (MIT is one). The certificate is the foundation's, so Windows names "SignPath Foundation" as
+   the publisher, not Shturmap. Their conditions, to read again when applying (signpath.org): builds on a CI system
+   from the public source (the Release workflow), a code-signing policy on the project's homepage (draft below), the
+   team named with roles, and nothing malicious or unwanted in the software. Velopack signs while it packs (`vpk pack
+   --signTemplate`), so the signing request has to sit inside the workflow's build, before the Setup is made; to be
+   worked out with SignPath's GitHub action. Whether and when SmartScreen stops asking depends on the certificate's
+   reputation: check before any text says so. Until it is granted, the README and the website keep "isn't signed".
+5. **VirusTotal**, if wanted: with an API key as an Actions secret, the Release workflow could upload the Setup and
+   link the report in the release notes. The free key is for non-commercial use and limited in requests. An unsigned
+   installer may draw a few heuristic detections, which would then stand on a public page beside the release.
+6. **Issues on or off.** The release checklist below (item 4) has them off: reports go through the app. On, players
+   could report and read others' reports in public, which some take as a sign of an open project; off keeps one
+   route. Related, Scorecard's Security-Policy check: a SECURITY.md saying where to report a vulnerability (GitHub's
+   private vulnerability reporting, or the app's Report).
+7. **Scorecard's checks that will stay low**, each raised only on the owner's word: Code-Review (one maintainer, no
+   pull requests), Dependency-Update-Tool (no Dependabot, on purpose), SAST (CodeQL for C# is free for public
+   repositories), Security-Policy (above), Branch-Protection (a ruleset on main), Fuzzing, CII-Best-Practices.
+   Signed-Releases probably too: it looks for signature or provenance files among a release's assets, and the
+   attestations live in GitHub's attestation store; the workflow could upload the attestation bundle beside the
+   Setup (check which file names Scorecard counts first).
+
+**The code-signing policy: a draft for the homepage**, to publish only once SignPath has approved the project (until
+then it isn't true). The bracketed parts are the owner's.
+
+> **Code signing policy**
+>
+> Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+>
+> - **What is signed:** only the files the Release workflow builds from this repository's main branch on GitHub's
+>   runners (the app, Velopack's updater and the Setup). Nothing built on a PC is signed.
+> - **Committers:** shturmap. The code is written with an AI coding assistant (Claude, by Anthropic) and committed
+>   under shturmap's account, which every commit names and signs; the assistant is credited as co-author in the
+>   commits.
+> - **Reviewers:** [who reviews a change before it goes into a release, and how].
+> - **Approvers:** shturmap, who approves each signing request by hand.
+> - **Privacy:** Shturmap sends nothing about you or your game unless you send a report or allow crash reports
+>   ([PRIVACY.md](https://github.com/shturmap/shturmap/blob/main/PRIVACY.md)). Its other traffic downloads public data
+>   and map artwork from tarkov.dev and GitHub, and asks GitHub for a newer version, which settings can turn off.
+
+SignPath's own template says the program transfers nothing "unless specifically requested by the user"; Shturmap's
+downloads and update check don't fit that sentence, so the privacy line above says what happens instead. Whether
+SignPath accepts it is theirs to say.
+
 ## Designed and built 2026-10-07: What's New, a card in Plan's rail
 
 **Built the same day** (owner: "Implement the items we agreed on"); DESIGN.md §4, "Screen anatomy", is the binding
@@ -932,8 +1007,9 @@ The items below are kept as written, for their reasons and quotes.
       order), the synopsis lines and the folded cards; one symbol, one meaning (the pen keeps its meaning: "keep
       lit", now for several). DESIGN.md decision, help text, legend.
 17. **Done (2026-10-03): item 5 below, one design system** (owner: "Yes, do the design system after this round"): DESIGN.md §4 "Design system", `Shturmap.Map.Palette`, `DesignTokenTests`; the website's CSS follows it on the unpublished FAQ branch.
-18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub"),
-   which includes the optional repo-scan test (token shapes, DSN, claude.ai links, user-folder paths).
+18. Still open from before: items 2, 5 and 6 below, and the release checklist ("At the production release on GitHub").
+   Done (2026-10-09): the repo-scan test, `RepositoryScanTests`, over every file git tracks: token shapes, a Sentry
+   DSN, private keys, claude.ai links, paths in a user folder and email addresses; it reports file and line only.
 
 ## Before starting
 
@@ -1177,7 +1253,7 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 4. **Repository settings and who publishes** (on hold until the release, owner, 2026-10-03). Before the repository
    goes public: turn off GitHub Issues and Discussions (reports go through the app), decide whether releases are
    published by the owner's account or by GitHub Actions, and whether the maintainer's identity is shown on the
-   repository's pages.
+   repository's pages. Decided 2026-10-09: by GitHub Actions, the Release workflow ("2026-10-09: trust", above).
 5. **Wording and risk, from the web research of 2026-10-03** (owner: "put points 1–5 on the release checklist";
    DESIGN.md §2 has the findings and rules). Done in the README and DESIGN.md on 2026-10-03; still to do on the
    website (only on the owner's word) and in the release notes (`docs\release-notes\0.2.0.md`):

@@ -2,7 +2,9 @@
 # precompiled, with the Sentry DSN), packed by Velopack's vpk into packages\: the Setup, the full package (and a delta
 # from the last GitHub release), the update feed (releases.win.json, RELEASES) and a portable zip. Beside them,
 # Shturmap-Setup.exe: the Setup under the name players download, with its .sha256. Nothing is uploaded;
-# eng\publish-release.ps1 does that. The dev build is eng\dev.ps1's, in artifacts\dev.
+# eng\publish-release.ps1 does that. The Release workflow (.github/workflows/release.yml) runs both on GitHub's runner,
+# for every release players get; on the PC this builds for tries and update tests. The dev build is eng\dev.ps1's, in
+# artifacts\dev.
 # The version comes from Directory.Build.props, the release notes from docs\release-notes\<version>.md.
 # A release is built from a clean working tree: the build's version names the commit only, so a build from a changed
 # tree would pass for that commit's (the review of 2026-10-04, A39). -AllowDirty builds anyway, for a local try, and

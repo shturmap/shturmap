@@ -1,7 +1,9 @@
 # Publishes the release eng\release.ps1 built (docs/DESIGN.md §8, "Distribution"): a GitHub pre-release
 # "Shturmap <version> (private testing)", tag v<version> on the current commit, carrying Velopack's Setup, packages and
-# update feed (vpk upload github), plus Shturmap-Setup.exe, the Setup under the name players look for. The release
-# notes are docs\release-notes\<version>.md (packed into the release by eng\release.ps1).
+# update feed (vpk upload github), plus Shturmap-Setup.exe, the Setup under the name players look for, and its
+# .sha256. The release notes are docs\release-notes\<version>.md (packed into the release by eng\release.ps1).
+# The Release workflow (.github/workflows/release.yml) runs it after attesting the files; a release published from a PC
+# has no provenance, which the README promises from 0.4.0 on.
 # Refuses unless the working tree is clean, the commit is pushed, and artifacts\release was built from this commit.
 # The token: GITHUB_TOKEN, else the GitHub CLI's (gh auth token), else Git's stored GitHub login (git credential).
 # Usage: .\eng\publish-release.ps1 [-Draft]
@@ -17,6 +19,7 @@ $repo = 'https://github.com/shturmap/shturmap'
 $api = 'https://api.github.com/repos/shturmap/shturmap'
 $releases = Join-Path $root 'artifacts\release\packages'
 $setup = Join-Path $root 'artifacts\release\Shturmap-Setup.exe'
+$hash = "$setup.sha256"
 $tag = "v$version"
 $name = "Shturmap $version (private testing)"
 
@@ -32,7 +35,7 @@ if ($built -ne "$version+$head") { throw "artifacts\release is from $built, not 
 $note = Join-Path $root 'artifacts\release\built-from.txt'
 $from = if (Test-Path $note) { (Get-Content $note -Raw).Trim() } else { 'unknown' }
 if ($from -ne "$head clean") { throw "artifacts\release was built from '$from', not from a clean tree at ${head}: run eng\release.ps1 again." }
-if (-not (Test-Path (Join-Path $releases "ShturmapApp-$version-full.nupkg")) -or -not (Test-Path $setup)) {
+if (-not (Test-Path (Join-Path $releases "ShturmapApp-$version-full.nupkg")) -or -not (Test-Path $setup) -or -not (Test-Path $hash)) {
   throw 'No release in artifacts\release: run eng\release.ps1 first.'
 }
 
@@ -48,8 +51,8 @@ $dotnet = Join-Path $PSScriptRoot 'dotnet.ps1'
 Push-Location $root
 try {
   & $dotnet tool restore | Out-Null
-  $publish = @(if (-not $Draft) { '--publish' })
-  & $dotnet vpk upload github --repoUrl $repo --token $token --outputDir $releases --pre @publish `
+  # A draft first, whatever -Draft says: it is published below, once every file is on it.
+  & $dotnet vpk upload github --repoUrl $repo --token $token --outputDir $releases --pre `
     --releaseName $name --tag $tag --targetCommitish $head
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
@@ -57,10 +60,18 @@ finally {
   Pop-Location
 }
 
-# Shturmap-Setup.exe beside vpk's ShturmapApp-win-Setup.exe: the name the README and the notes give.
+# Shturmap-Setup.exe beside vpk's ShturmapApp-win-Setup.exe (the name the README and the notes give), and its SHA-256.
 $headers = @{ Authorization = "Bearer $token"; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' }
 $release = (Invoke-RestMethod -Headers $headers "$api/releases?per_page=20") | Where-Object tag_name -eq $tag | Select-Object -First 1
 if (-not $release) { throw "Release $tag not found on GitHub after the upload." }
-$upload = $release.upload_url -replace '\{\?name,label\}$', '?name=Shturmap-Setup.exe'
-Invoke-RestMethod -Method Post -Headers $headers -ContentType 'application/octet-stream' -InFile $setup $upload | Out-Null
+foreach ($file in $setup, $hash) {
+  $leaf = Split-Path $file -Leaf
+  $type = if ($leaf -like '*.sha256') { 'text/plain' } else { 'application/octet-stream' }
+  $upload = $release.upload_url -replace '\{\?name,label\}$', "?name=$leaf"
+  Invoke-RestMethod -Method Post -Headers $headers -ContentType $type -InFile $file $upload | Out-Null
+}
+# Publishing creates the tag on the commit given above.
+if (-not $Draft) {
+  $release = Invoke-RestMethod -Method Patch -Headers $headers -ContentType 'application/json' -Body '{"draft":false}' "$api/releases/$($release.id)"
+}
 Write-Output "$name $(if ($Draft) { 'is a draft' } else { 'is published' }): $($release.html_url)"

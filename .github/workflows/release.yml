@@ -1,0 +1,107 @@
+# Builds and publishes a release (owner, 2026-10-09; docs/DESIGN.md §8, "Distribution"): on GitHub's runner, from the
+# commit at the tip of main, with the same scripts as on the PC (eng\release.ps1, eng\publish-release.ps1). Running it
+# is the owner's go: gh workflow run release.yml (-f draft=true leaves a draft to look at first), or the Actions tab.
+# Before it: raise <Version>, write the release notes and What's New, commit and push (CLAUDE.md).
+#
+# The files players download get a build provenance attestation before the release is published, so a release can be
+# checked from its first minute: gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap. GitHub makes them only
+# in public repositories on this plan: while the repository is private the step is skipped with a warning, and the
+# first release that can be checked is the first one built after the repository went public.
+#
+# The logs are public. The Sentry DSN comes from the SENTRY_DSN secret through the environment: it is never on a
+# command line here, no step prints it, and GitHub masks it in the logs as well. Every action is pinned to a commit.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: Leave the release as a draft, to publish on GitHub by hand
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write      # the release and its tag
+      id-token: write      # the attestations' signing certificate (Sigstore, through GitHub's OIDC token)
+      attestations: write  # keeping the attestations with the repository
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - name: Only from main
+        if: github.ref != 'refs/heads/main'
+        shell: pwsh
+        run: |
+          throw "A release is built from main only, not from $env:GITHUB_REF."
+
+      # Full history: eng\publish-release.ps1 checks that the commit is on GitHub's main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # No package cache: a release restores from nuget.org, not from what another run left.
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Vulnerable packages
+        shell: pwsh
+        run: .\eng\audit-packages.ps1 src\Shturmap.App\Shturmap.App.csproj
+
+      # The DSN is checked for its shape (as ReportEndpoint takes it), and an error never says it.
+      - name: Build
+        shell: pwsh
+        env:
+          SHTURMAP_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if (-not "$env:SHTURMAP_SENTRY_DSN".Trim()) { throw 'The SENTRY_DSN secret is missing: a release without it has no Report button.' }
+          if ("$env:SHTURMAP_SENTRY_DSN".Trim() -notmatch '^https://[A-Za-z0-9]+@[A-Za-z0-9.-]+\.sentry\.io/\d+$') {
+            throw 'The SENTRY_DSN secret is not a Sentry DSN (https://<key>@<host>.sentry.io/<project>).'
+          }
+          .\eng\release.ps1
+
+      # The Setup under the name players download, and what vpk uploads for this version (its assets.win.json): the
+      # Setup, the full and delta packages, the portable zip. Not an earlier release's package that eng\release.ps1
+      # downloaded to build the delta: this run didn't build it.
+      - name: List the files to attest
+        id: files
+        shell: pwsh
+        run: |
+          $packages = 'artifacts/release/packages'
+          $assets = Get-Content "$packages/assets.win.json" -Raw | ConvertFrom-Json
+          $paths = @('artifacts/release/Shturmap-Setup.exe') + @($assets | ForEach-Object { "$packages/$($_.RelativeFileName)" })
+          foreach ($path in $paths) { if (-not (Test-Path $path)) { throw "$path is missing." } }
+          $paths
+          "paths<<EOF`n$($paths -join "`n")`nEOF" >> $env:GITHUB_OUTPUT
+
+      - name: Attest build provenance
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.files.outputs.paths }}
+
+      - name: No attestation while the repository is private
+        if: ${{ github.event.repository.private }}
+        shell: pwsh
+        run: |
+          Write-Output '::warning::No build provenance for this release: GitHub attests only in public repositories on this plan, so gh attestation verify cannot check it.'
+
+      - name: Publish
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DRAFT: ${{ inputs.draft }}
+        run: |
+          if ($env:DRAFT -eq 'true') { .\eng\publish-release.ps1 -Draft } else { .\eng\publish-release.ps1 }

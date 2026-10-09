@@ -2182,14 +2182,30 @@ self-unpacking exe, without updates; they need the Setup once.
   `.sha256`. The notes are `docs\release-notes\<version>.md`; what the What's New card says of the version is its
   section in `docs\whats-new.md` (up to five lines, built into the app; §4, "Screen anatomy"), written with the notes.
   `eng\publish-release.ps1` uploads it (`vpk upload github`, tag
-  `v<version>`, a published pre-release; `-Draft` leaves a draft) and adds `Shturmap-Setup.exe`; it refuses unless
-  the tree is clean, the commit pushed and the build made from that commit (`artifacts\release\app`). `vpk` is a
+  `v<version>`, a pre-release) and adds `Shturmap-Setup.exe` and its `.sha256`, all to a draft that it publishes once
+  every file is on it (`-Draft` leaves the draft); it refuses unless the tree is clean, the commit pushed and the build
+  made from that commit (`artifacts\release\app`). Both run in the Release workflow (next point) for every release
+  players get; on the PC, `eng\release.ps1` builds for tries and update tests. `vpk` is a
   pinned local tool (`.config\dotnet-tools.json`). `eng\publish.ps1` builds only the folder (`artifacts\Shturmap`,
   what `tools\fake-raid.ps1` runs; it keeps the developer data folder). To test the whole update path without GitHub, `--update-feed <folder>` points
   an installed build at a local feed and lets it update even in a snapshot or a fake game. The folder must be on a
   fixed local drive (`LocalFeed`): no network share in either slash form, no device path, no mapped or removable
   drive, since an update is code that runs as the player (2026-10-04: `//server/share` passed as local).
   Velopack's Setup 1.2.161 crashes when given arguments for the app (`-- …`); install silently with `--silent` only.
+- **Built and published on GitHub, with provenance** (owner, 2026-10-09: adopt every trust step that can be
+  automated, so that players can check the project although they can't know its author). The Release workflow
+  (`.github/workflows/release.yml`) makes every release players get. The owner's go is running it, on main only:
+  `gh workflow run release.yml` (`-f draft=true` leaves a draft), or the Actions tab. On GitHub's Windows runner it
+  checks the app's packages for known vulnerabilities (`eng\audit-packages.ps1`), runs `eng\release.ps1` with the
+  DSN from the `SENTRY_DSN` Actions secret (it fails without one and never prints it), attests build provenance
+  (`actions/attest-build-provenance`: SLSA provenance signed through Sigstore) for `Shturmap-Setup.exe` and what vpk
+  uploads for the version (the Setup, full and delta packages, the portable zip), and only then runs
+  `eng\publish-release.ps1`, so a release can be checked from its first minute. No package cache: it restores from
+  nuget.org. GitHub attests only in public repositories on this plan: while the repository is private the step is
+  skipped with a warning, so the first release that can be checked is the first built after it went public. A
+  release published from the PC would have no provenance, which the README promises from 0.4.0: it isn't done.
+  **Checking a download:** `gh attestation verify Shturmap-Setup.exe -R shturmap/shturmap` (the GitHub CLI, signed
+  in), and `Get-FileHash` against `Shturmap-Setup.exe.sha256`; the README says how under "Check it yourself".
 - **Its name doesn't matter.** WinUI looks for the app's resources (its compiled XAML) in `resources.pri` or
   `<exe name>.pri`, so the project names its PRI file `resources.pri`: named after the project, any other exe
   name made the window fail to load (2026-10-03, with the 0.1.0 single exe).
@@ -2198,7 +2214,8 @@ self-unpacking exe, without updates; they need the Setup once.
   holding `Shturmap.dll`, each moved aside before it is deleted, which Windows refuses while an old exe still runs
   from it; a later start tries again only if one was in use.
 - **Unsigned.** Windows SmartScreen asks once about the Setup ("More info → Run anyway"); the README and the
-  release notes say so. Updates don't ask.
+  release notes say so. Updates don't ask. Free signing from the SignPath Foundation is to be asked for once the
+  repository is public (docs/NEXT.md, "2026-10-09: trust"); until it is granted, no text says it.
 
 ### Data folders
 
@@ -2269,6 +2286,16 @@ compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/c
 cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
 public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
 mail. The daily data check is designed in docs/NEXT.md, not built yet.
+What else runs there (owner, 2026-10-09: every trust step that can be automated). After the tests, CI fails on a NuGet
+package with a known vulnerability, direct or transitive (`eng\audit-packages.ps1`, nuget.org's advisories; also
+when it couldn't check). That stands in for Dependabot: its pull requests would put commits by another identity into
+the repository, whose only one is shturmap (CLAUDE.md), so a finding is fixed by hand. `RepositoryScanTests` reads
+every tracked file for token shapes, a Sentry DSN, private keys, claude.ai links, paths in a user folder and email
+addresses, and names file and line only. Every action in every workflow is pinned to a full commit with its version
+beside it. OpenSSF Scorecard (`.github/workflows/scorecard.yml`) rates the repository's practices weekly and on
+every push to main, publishes the result for the README's badge and puts its findings in the Security tab; it runs
+only while the repository is public, which publishing and code scanning need on this plan. The Release workflow is
+under "Distribution".
 
 **The developer view** (owner, 2026-10-03: "a Dev view that allows to switch between modes and can fake-play a raid
 that reacts to what I do in the app and 'fake-updates' the position on demand … not exposed in the production
@@ -2589,7 +2616,8 @@ form. Problems and ideas both go through it.
   `/_/`. A release build's files were scanned on 2026-10-03 and none holds the user name; scan again after adding a
   package (the release must carry nothing of the developer's machine).
 - **Where to.** The DSN is not in the repository: `eng\release.ps1` and `eng\publish.ps1` pass it from the untracked
-  `eng\sentry.dsn` (gitignored) or `SHTURMAP_SENTRY_DSN` as an assembly attribute. Only `https://…sentry.io` is
+  `eng\sentry.dsn` (gitignored) or `SHTURMAP_SENTRY_DSN` (which the Release workflow sets from the `SENTRY_DSN`
+  Actions secret) as an assembly attribute. Only `https://…sentry.io` is
   accepted (or this PC over http, for tests). A build without one (developer builds, forks) shows the Report link
   greyed with "Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you
   Shturmap."; notices then link COPY DIAGNOSTICS. Snapshot, fake-game and demo runs never send anything.
@@ -2620,6 +2648,9 @@ form. Problems and ideas both go through it.
 - 0.1.0 went to friends as one self-unpacking exe (2026-10-03). From 0.2.0, the first public release, a Setup from
   GitHub Releases that keeps itself up to date (Velopack; §8, "Distribution"): 106 MB to download, 244 MB installed.
 - Reports and crash reports from the app, through Sentry (2026-10-03; §8, "Reports").
+- Releases built, attested and published by the Release workflow on GitHub, the package audit and the repository
+  scan in CI, pinned actions, OpenSSF Scorecard, and the README's "Check it yourself" (2026-10-09; §8,
+  "Distribution" and "Continuous integration").
 - Objective progress: by ticks the player sets on the quest card (2026-10-04; §4, "Quest cards", *Ticks*), since
   the logs don't report it.
 - "Delete position screenshots" (2026-10-04; §2): off unless ticked, the one thing Shturmap changes outside its own
