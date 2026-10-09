@@ -131,6 +131,9 @@ rest keeps working: maps ranked by what you can get done, what to bring, quest c
 objectives and the extracts. (A screenshot without a position in its name isn't looked at for the extract list
 either.)
 
+**Does it show the story chapters?** Not yet. Its quests come from tarkov.dev, which doesn't publish the story
+chapters (Falling Skies, Batya, …), so Shturmap shows the traders' quests only.
+
 More questions and answers: [shturmap.github.io/#faq](https://shturmap.github.io/#faq).
 
 ## Check it yourself
@@ -161,9 +164,9 @@ What Shturmap does doesn't rest on our word alone. You can check:
 - **What it needs and talks to.** The Setup installs for your Windows user only, without admin rights, into
   `%LOCALAPPDATA%\ShturmapApp`. The app downloads data and artwork from the three hosts above only and asks GitHub
   (`api.github.com`, and GitHub's hosts for release files) for updates; a report you send, or a crash report you
-  allow, goes to Sentry (`sentry.io`). To try it away from your own Windows, install it in Windows Sandbox (Windows
-  10 and 11 Pro, Enterprise and Education), which starts empty and is discarded when you close it; without the game
-  there you can browse the maps.
+  allow, goes to Sentry (`sentry.io`). One way to try a program away from your own Windows is Windows Sandbox
+  (Windows 10 and 11 Pro, Enterprise and Education), which starts empty and is discarded when you close it; we
+  haven't tried Shturmap in it yet.
 - **Who writes it.** Shturmap is written with an AI coding assistant (Claude, by Anthropic), credited as co-author in
   the commits. What keeps it in check: the [design document](docs/DESIGN.md) the code has to follow, the tests, and
   CI on every push.
