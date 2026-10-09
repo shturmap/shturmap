@@ -202,10 +202,7 @@ public sealed partial class MainWindow : Window
         new("+ / −", "Zoom in / out (or mouse wheel)"),
         new("0", "Whole map"),
         new("PGUP / PGDN", "Floor up / down"),
-        new("↓ / ↑", "Step through the rows on the left"),
-        new("ENTER", "On a row: same as a click"),
-        new("P", "On a quest's row: pick / unpick"),
-        new("ESC", "Close cards, let the row go"),
+        new("ESC", "Close cards"),
         new("F1 / ?", "This help"),
         new("CTRL + ,", "Settings"),
         new("MOUSE", "Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it"),
@@ -1040,6 +1037,24 @@ public sealed partial class MainWindow : Window
     }
 
     private void OnPlanPointerExited(object sender, PointerRoutedEventArgs e) => Preview(null, PreviewEndAfter);
+
+    // The rows of Plan's map list (the tour points at one): the buttons that show a suggested map.
+    private static IEnumerable<Button> MapRows(DependencyObject under)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(under); i++)
+        {
+            var child = VisualTreeHelper.GetChild(under, i);
+            if (child is UIElement { Visibility: Visibility.Collapsed })
+                continue;
+            if (child is Button { Tag: string, DataContext: PlanCard } map)
+            {
+                yield return map;
+                continue;
+            }
+            foreach (var deeper in MapRows(child))
+                yield return deeper;
+        }
+    }
 
     private void Preview(string? map, TimeSpan after)
     {
@@ -1968,8 +1983,14 @@ public sealed partial class MainWindow : Window
         }
         void Add(Windows.System.VirtualKey key, Action action) => AddKey(key, false, action);
 
-        // The tour's own keys (MainWindow.Tour): → or Space next, ← back. Only while it is up; nothing else uses them.
-        foreach (var tourKey in new[] { Windows.System.VirtualKey.Right, Windows.System.VirtualKey.Left, Windows.System.VirtualKey.Space })
+        // The tour's own keys (MainWindow.Tour): →, Space or Enter next, ← back. Only while it is up; nothing else uses
+        // them, so with the tour closed they go on to whatever has the focus (a button's Enter). Up and Down do nothing
+        // while it is up: the MAP list, where the window's focus rests at the start, would switch the map under it.
+        foreach (var tourKey in new[]
+        {
+            Windows.System.VirtualKey.Right, Windows.System.VirtualKey.Left, Windows.System.VirtualKey.Space, Windows.System.VirtualKey.Enter,
+            Windows.System.VirtualKey.Up, Windows.System.VirtualKey.Down,
+        })
         {
             var accelerator = new KeyboardAccelerator { Key = tourKey };
             accelerator.Invoked += (_, e) => e.Handled = TourOpen && !ReportOpen && TourKey(tourKey);
@@ -1984,16 +2005,9 @@ public sealed partial class MainWindow : Window
             AddKey((Windows.System.VirtualKey)key, shift, () => ZoomBy(1 / 1.5, "key"));
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
-        // Esc closes the cards and lets the keyboard's row go. It leaves the picks alone: they are the plan for the
-        // coming raids, and a key press that throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR
-        // PICKS is the deliberate way).
-        Add(Windows.System.VirtualKey.Escape, () =>
-        {
-            LeaveKeyRow();
-            _cards.CloseAll();
-        });
-        // Down, Up, Enter and P reach the rail's rows without a pointer (MainWindow.Keyboard.cs).
-        AddRowKeys(root);
+        // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press that
+        // throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way).
+        Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, () => ShowHelp());

@@ -643,9 +643,6 @@ raid line and under a map's name in Plan, each fact is a part of its own (`LineP
 line still reads and wraps as one), and a boss's part stands for the groups of its markers on the map shown
 (`GameData.BossMobsOn` gives the id those groups are made of). Pointing at "Kaban 75%" lights Kaban's zones, and
 pointing at one of them tints the name with the weaker tint. While another map is shown the names are plain text.
-**Without a pointer** (E6): the highlight needed one. Down and Up reach the rail's rows from the keyboard, and the
-row reached is in focus exactly as under the pointer ("Keyboard (window focused only)", *The rail's rows by
-keyboard*); the pointer takes over again when it moves.
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
@@ -853,7 +850,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the body open at its top, so unscrolled it looks as before; once anything has scrolled under it, the head closes at
     its foot with the card's edge. The rail's hint stands above THIS RAID in a raid. A copy
     of the readout pinned only once the card has scrolled away was considered and not built: it would cover the top of
-    what scrolls (the ways out ALL 15 ↓ brings up, the row the keys step to), and two clocks would decode each minute.
+    what scrolls (the ways out ALL 15 ↓ brings up), and two clocks would decode each minute.
     **The readout** (owner, 2026-10-05: "The remaining time is a crucial piece of information and should be more
     visible. I would make it a prominent item in the UI and maybe even have a cool animation that is in-line with the
     style of the app. It should not be too crazy though to not steer away the attention through its movement";
@@ -1850,38 +1847,21 @@ Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 | + / − | zoom in / out (following, about the player); "+" with or without Shift, and the number pad's keys |
 | 0 | show the whole map (following stays on: the next position centres on you at that zoom) |
 | PgUp / PgDn | show the floor above / below |
-| ↓ / ↑ | step through the rail's rows; the row reached is in focus as if pointed at |
-| Enter | on the keyboard's row: what a click on it does (keep the quest's or item's card open; on a map of Plan's list, show that map) |
-| P | on a quest's row or one of its objective lines: pick the quest for the coming raid, or unpick it (its pen) |
-| Esc | close the cards and let the keyboard's row go (it never drops picks) |
+| Esc | close the cards (it never drops picks) |
 | F1 or ? | help |
 | Ctrl+, | settings |
-| → or Space, ←, Esc | while the tour is up (*The tour*): the next chapter (Enter too), the one before, end it. Every other key does nothing then |
+| → or Space, ←, Esc | while the tour is up (*The tour*): the next chapter (Enter too), the one before, end it. Every other key does nothing then; with the tour closed, Enter is the focused button's |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window. "+" is a key of its own on some keyboards and Shift with "=" on
 others (US); both are one virtual key, and a shortcut without Shift never saw the second, so "+" didn't zoom on a
 US keyboard (`ZoomKeys`; review of 2026-10-04).
 
-**The rail's rows by keyboard** (the review of 2026-10-04, E6: the linked highlight needed a pointer; `RowSteps`,
-`MainWindow.Keyboard.cs`). Nothing in the app needs it; it is there for whoever has a hand on the keyboard. Down
-and Up step through the rows in the order they stand on screen: in Plan the maps of the list, then the open card's
-quests and its BRING rows; in a raid NEXT, EXIT, each quest with its objective lines, BRING, the ways out. The row
-reached gets the same focus the pointer would give it (the same tint, the same things lit on the map, the pen
-showing), and the rail scrolls so it is in view; a map of Plan's list wears the tint and previews its map. No card
-opens by itself: Enter is the click, P the pen. There is no wrapping: Down on the last row stays there. With no
-row yet, Down starts at the first row in view and Up at the last, so a scrolled rail is entered where it is being
-looked at.
-The keyboard's row is the thing shown, not the element: a snapshot makes the rows anew (new elements, or the same
-ones filled with something else), and the row is found again by what it shows, so a quest picked with P is
-followed up into PICKED; when nothing shows it any more (the quest was completed, the raid ended) it is let go.
-The pointer takes over the moment it moves (4 px or more): the keyboard's row goes, and the pointer is on whatever
-lies under it. Until then a row that scrolls under a resting pointer doesn't take the highlight. Nobody looking
-(none of Shturmap's windows active) lets the row go, as it does the pointer's.
-The keys are the rows' only while nothing else wants them: not in the Report dialog, not while help, settings or
-an open list (the MAP list) is up, not in a text box; Enter and P do nothing without a row, so a focused button
-keeps its Enter. The MAP list, closed, gives its arrows to the rows: the window's focus rests on it at the start,
-and its arrows would switch the map with every press (open it to choose a map by keyboard).
+**The rail's rows by keyboard** (Down and Up through the rows, Enter as a click on one, P as its pen; the review of
+2026-10-04, E6: the linked highlight needed a pointer) were removed on 2026-10-09 (owner): this section itself said
+nothing in the app needed them. The tour keeps Enter as its next chapter, and Up and Down do nothing while it is up;
+otherwise those keys go to whatever has the focus (a focused MAP list switches the map with its arrows, as a list
+does).
 
 Mouse: drag to pan (following stays on: the next position brings the view back), wheel to zoom at the cursor
 (following with the view on the player, about the player), double-click to
@@ -2329,8 +2309,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `wait <s>`,
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
-  `trigger key down | up | enter | p | esc` steps through the rail's rows by the code the key events call; no key
-  is ever sent. A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
+  A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
   `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
   second.
 
@@ -2680,4 +2659,5 @@ every issue goes through it, and the app's report is offered beside it.
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
   ringing out (2026-10-07; §4, principle 11; "Map drawing").
-- Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards").
+- Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
+  steps through the rail (§4, "Keyboard").

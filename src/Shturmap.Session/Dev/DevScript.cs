@@ -49,7 +49,7 @@ public static class DevScript
         ["repeat"] = "a screenshot at the last position again",
         ["age"] = "<minutes>: the last position becomes older",
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
-        ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload | key <down | up | enter | p | esc> (nogame: as if no game were on this PC; key: the rail's row keys, through the code the key events call, never a key sent)",
+        ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload (nogame: as if no game were on this PC)",
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
         ["whatsnew"] = "[<n>]: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview)",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
