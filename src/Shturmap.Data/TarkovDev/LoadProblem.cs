@@ -18,8 +18,12 @@ public enum LoadFailure
     /// <summary>tarkov.dev answered another error (404, 403, …): Shturmap asks for something it doesn't have.</summary>
     Refused,
 
-    /// <summary>The data arrived but isn't what Shturmap can read: tarkov.dev changed its format.</summary>
+    /// <summary>The data arrived as JSON, but not in a shape Shturmap can read: tarkov.dev changed its format.</summary>
     Unreadable,
+
+    /// <summary>What arrived isn't JSON at all (<see cref="NotDataException"/>): a sign-in page, a network filter's or a
+    /// CDN's page sent with 200 in place of the data, or a body that is empty or cut off.</summary>
+    NotData,
 
     /// <summary>The data couldn't be saved or read on this PC (disk full, no access).</summary>
     Disk,
@@ -37,8 +41,9 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, str
     /// <summary>Asks for a report, for problems only a report can fix; the notice offers the Report dialog.</summary>
     public const string Report = "Please report it.";
 
-    /// <summary>Worth trying again by itself: the connection or tarkov.dev may be back in a while.</summary>
-    public bool Transient => Kind is LoadFailure.Unreachable or LoadFailure.TimedOut or LoadFailure.ServerBusy;
+    /// <summary>Worth trying again by itself: the connection or tarkov.dev may be back in a while, or what sent a page
+    /// in place of the data may be gone (the player signed in to the network).</summary>
+    public bool Transient => Kind is LoadFailure.Unreachable or LoadFailure.TimedOut or LoadFailure.ServerBusy or LoadFailure.NotData;
 
     public string Text => $"{What} {Advice}";
 
@@ -57,6 +62,10 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, str
                 return new(LoadFailure.TimedOut, null, "tarkov.dev didn't answer in time, and there's no saved copy yet.", "Check the internet connection.");
             case SocketException:
                 return new(LoadFailure.Unreachable, null, "Couldn't reach tarkov.dev, and there's no saved copy yet.", "Check the internet connection.");
+            case NotDataException:
+                // No report: a report can't change what sends the page. The notices name the wait (GameSession.DataNotice).
+                return new(LoadFailure.NotData, null, "tarkov.dev's answer wasn't its data: a sign-in page or a filter in between?",
+                    "Shturmap tries again in a few minutes.");
             case JsonException or FormatException or InvalidOperationException or KeyNotFoundException or NullReferenceException:
                 return new(LoadFailure.Unreadable, null, "tarkov.dev's data has changed in a way Shturmap can't read.", Report);
             case IOException or UnauthorizedAccessException:
@@ -67,3 +76,13 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, str
         }
     }
 }
+
+/// <summary>
+/// A load of tarkov.dev's data got files that aren't JSON at all (review of 2026-10-09): a page a sign-in portal, a
+/// network filter or a CDN sent with 200 in place of the data, or a body that is empty or cut off. That says nothing
+/// about tarkov.dev's format, so it isn't <see cref="LoadFailure.Unreadable"/>: <see cref="GameDataLoader"/> throws this
+/// in place of the parse error, once it has forgotten those files (<see cref="LoadFailure.NotData"/>). The message
+/// names the files (their cache keys, no folder), never what they hold.
+/// </summary>
+public sealed class NotDataException(IReadOnlyList<string> files, Exception parseError)
+    : Exception($"Not JSON: {string.Join(", ", files)}", parseError);

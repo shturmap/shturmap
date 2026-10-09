@@ -8,7 +8,8 @@ namespace Shturmap.Data.Tests;
 
 // A page sent with 200 in place of the data (a captive portal's, a CDN's) was saved like the data, failed as unreadable,
 // and was read from the cache again at the next start for as long as it counted as fresh (review of 2026-10-09). Such
-// a file is forgotten now; a file that is JSON in a shape Shturmap doesn't know, and a good copy offline, stay.
+// a file is forgotten now, and the load fails as NotData, which is tried again (owner, the same day); a file that is
+// JSON in a shape Shturmap doesn't know, and a good copy offline, stay.
 public class UnreadableAnswerTests : IDisposable
 {
     private readonly string _folder = Directory.CreateTempSubdirectory("shturmap-unreadable-").FullName;
@@ -55,7 +56,7 @@ public class UnreadableAnswerTests : IDisposable
     {
         _tarkovDev.Bodies["tasks"] = Page;
         var problem = LoadProblem.Explain(await Assert.ThrowsAnyAsync<Exception>(() => Loader().LoadAsync(GameMode.Pve, "en", Ct)));
-        Assert.Equal(LoadFailure.Unreadable, problem.Kind);
+        Assert.Equal((LoadFailure.NotData, true), (problem.Kind, problem.Transient));
 
         // The next start, within the hour the copies count as fresh: the page isn't read again, the data is asked for.
         _tarkovDev.Bodies.Remove("tasks");
@@ -70,7 +71,8 @@ public class UnreadableAnswerTests : IDisposable
     public async Task The_item_sources_too()
     {
         _tarkovDev.Bodies["items"] = "";
-        await Assert.ThrowsAnyAsync<Exception>(() => Loader().LoadSourcesAsync(GameMode.Pve, "en", Ct));
+        var e = await Assert.ThrowsAnyAsync<Exception>(() => Loader().LoadSourcesAsync(GameMode.Pve, "en", Ct));
+        Assert.Equal(LoadFailure.NotData, LoadProblem.Explain(e).Kind);
         _tarkovDev.Bodies.Remove("items");
         await Loader().LoadSourcesAsync(GameMode.Pve, "en", Ct);
         Assert.Equal(2, _tarkovDev.Asked["items"]);

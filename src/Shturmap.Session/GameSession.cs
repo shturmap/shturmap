@@ -808,7 +808,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 else
                 {
                     AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}{next}", e);
-                    Say(DataNotice(problem, wait), 30, offersReport: problem.Transient || problem.Advice == LoadProblem.Report);
+                    Say(DataNotice(problem, wait), 30, offersReport: DataNoticeOffersReport(problem));
                 }
                 Publish();
             }
@@ -833,17 +833,28 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>
     /// What the player is told when the data didn't load: what failed, what to do, and where to report it. A failure
     /// that may pass names the wait before the next try, which grows (<see cref="RetrySchedule"/>): the notice is
-    /// said when the failure is new, so the wait it names is the one that follows it.
+    /// said when the failure is new, so the wait it names is the one that follows it. A page in place of the data
+    /// (<see cref="LoadFailure.NotData"/>) says the next try only, and asks for no report.
     /// </summary>
-    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => problem.Transient
-        ? $"No game data. {problem.Text} Shturmap tries again in {RetrySchedule.InWords(nextTry)}; if it keeps failing, please report it."
-        : $"No game data. {problem.Text}";
+    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => NoGameData(problem, $"in {RetrySchedule.InWords(nextTry)}");
 
     /// <summary>The same for a place that stays up while the tries go on (the DATA chip's tooltip): it names no wait,
     /// since the waits grow from 2 to 30 minutes.</summary>
-    public static string DataNotice(LoadProblem problem) => problem.Transient
-        ? $"No game data. {problem.Text} Shturmap tries again by itself, at first after 2 minutes, then less often; if it keeps failing, please report it."
-        : $"No game data. {problem.Text}";
+    public static string DataNotice(LoadProblem problem) => NoGameData(problem, "by itself, at first after 2 minutes, then less often");
+
+    private static string NoGameData(LoadProblem problem, string when) => problem switch
+    {
+        // Its advice is the next try, said here with its wait in place of "in a few minutes".
+        { Kind: LoadFailure.NotData } => $"No game data. {problem.What} Shturmap tries again {when}.",
+        { Transient: true } => $"No game data. {problem.Text} Shturmap tries again {when}; if it keeps failing, please report it.",
+        _ => $"No game data. {problem.Text}",
+    };
+
+    /// <summary>Whether the data notice offers the Report dialog: for a failure only a report can fix, and for one that
+    /// may pass, should it keep failing. Never for a page in place of the data: it comes from between the PC and
+    /// tarkov.dev, which a report can't change (owner, 2026-10-09).</summary>
+    public static bool DataNoticeOffersReport(LoadProblem problem) =>
+        problem.Kind != LoadFailure.NotData && (problem.Transient || problem.Advice == LoadProblem.Report);
 
     // ---- the game language's texts ----
 

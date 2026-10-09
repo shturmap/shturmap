@@ -2476,9 +2476,10 @@ layer's, which dims as under an SVG floor (the sheet stands in with the same flo
 **Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
 from the maps payload's `lootLoose`. A download that fails for a reason that may pass (no connection, a timeout, a
-server error) is asked for again by itself, after the waits of "Asking again" below, until it loads or the mode
-changes; until 2026-10-04 one failed download left the item cards without sources until a restart. A failure that
-won't pass by itself (data Shturmap can't read) is noted in the app log and not asked for again in that session.
+server error, a page in place of the data) is asked for again by itself, after the waits of "Asking again" below,
+until it loads or the mode changes; until 2026-10-04 one failed download left the item cards without sources until a
+restart. A failure that won't pass by itself (data in a shape Shturmap can't read) is noted in the app log and not
+asked for again in that session.
 When the game language's texts arrive late (below), the sources load again in that language: station names are
 part of the texts.
 
@@ -2492,8 +2493,11 @@ An answer 200 is saved whatever it holds, also a page a captive portal or a CDN 
 failed as unreadable, which isn't asked for again, and was read from the saved copy at the next start too, for as long
 as that counted as fresh (review of 2026-10-09). So a load that fails as unreadable forgets each of its files that
 isn't JSON at all (`GameDataLoader.ForgetWhatIsNoJson`), and the next try or start downloads those again; its other
-files stay. JSON in a shape Shturmap doesn't know (tarkov.dev changed its format) stays saved and is revalidated as
-before: downloading it again would bring the same, at every start of every Shturmap. A failed download is never a
+files stay. Such a load fails as a page in place of the data, not as unreadable (`LoadFailure.NotData`; owner,
+2026-10-09): it says nothing of tarkov.dev's format, and the page goes when the player signs in to the network or
+leaves the filter, so it is asked for again after the same waits as a failure that may pass. JSON in a shape Shturmap
+doesn't know (tarkov.dev changed its format) stays saved and is revalidated as before, and stays unreadable, not asked
+for again: downloading it again would bring the same, at every start of every Shturmap. A failed download is never a
 reason to forget a good saved copy.
 
 **The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
@@ -2589,13 +2593,19 @@ and nothing more is written until the next day. Seven days kept; the old `spotte
 there is one, and what to do; the exception goes to the app log only. Data (`LoadProblem`): "Couldn't reach
 tarkov.dev, and there's no saved copy yet. Check the internet connection."; "tarkov.dev didn't answer in time…";
 "tarkov.dev answered 503. It is busy or down for a moment…"; "tarkov.dev answered 404. Please report it.";
-"tarkov.dev's data has changed in a way Shturmap can't read. Please report it.";
-"Couldn't save tarkov.dev's data on this PC…". It comes as a notice (30 s) after "No game data.", the DATA chip
-says "No game data" and its tooltip says why. A failure that may pass (no connection, a timeout, 5xx or 429) is
-tried again after growing waits ("Asking again", above: 2, 4, 8, 16 minutes, then every 30), said once; the notice
-names the wait that follows it ("Shturmap tries again in 2 minutes; if it keeps failing, please report it."), and
-the tooltip, which stays up while the tries go on, names none ("tries again by itself, at first after 2 minutes,
-then less often"). A download whose answer
+"tarkov.dev's data has changed in a way Shturmap can't read. Please report it." (JSON in a shape Shturmap doesn't
+know); "tarkov.dev's answer wasn't its data: a sign-in page or a filter in between? Shturmap tries again in a few
+minutes." (a body that isn't JSON at all: a hotel Wi-Fi's sign-in page, a network filter's or a CDN's page sent with
+200, an empty or cut-off body; owner, 2026-10-09: it was said as unreadable, which blamed tarkov.dev, asked for a
+report that couldn't help, and wasn't tried again); "Couldn't save tarkov.dev's data on this PC…". It comes as a
+notice (30 s) after "No game data.", the DATA chip says "No game data" and its tooltip says why. A failure that may
+pass (no connection, a timeout, 5xx or 429, a page in place of the data) is tried again after growing waits ("Asking
+again", above: 2, 4, 8, 16 minutes, then every 30), said once; the notice names the wait that follows it ("Shturmap
+tries again in 2 minutes; if it keeps failing, please report it."), and the tooltip, which stays up while the tries
+go on, names none ("tries again by itself, at first after 2 minutes, then less often"). A page in place of the data
+asks for no report, in the notice or the tooltip, and its notice has no REPORT link: what sends the page is between
+the PC and tarkov.dev, where a report can't change it ("…a filter in between? Shturmap tries again in 2 minutes.").
+A download whose answer
 starts and then stops counts among them: after 30 s of silence it is a timeout, and a connection that breaks off
 mid-answer is "couldn't reach", not a disk problem (`CachedHttp.BodyIdleLimit`; the client's own timeout ends with
 the headers, so until 2026-10-04 such a download never ended and "Loading game data…" stood for good). A notice that asks for
