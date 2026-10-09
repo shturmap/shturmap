@@ -40,7 +40,9 @@ foreach ($mode in 'pve', 'regular') {
 
 Today it says 0 chapters. When chapters show up, Shturmap still ignores them (`GameDataLoader` reads `data.tasks`
 only), so nothing breaks; tell the owner, with the counts. Support is worth designing once main objectives have
-places: what is active must then come from the player (DESIGN.md §4, principle 7), as no log line says it.
+places: what is active must then come from the player (DESIGN.md §4, principle 7), as no log line says it. Players
+are told the chapters aren't shown (owner, 2026-10-09): the tour's last chapter (`docs/tour.md`), a note in help
+(`MainWindow.xaml`), the README's and the website's FAQ, and the release notes. Once Shturmap reads them, those lines go.
 
 ## 2. The audits, both modes (5 min)
 

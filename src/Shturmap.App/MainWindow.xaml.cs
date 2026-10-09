@@ -134,6 +134,7 @@ public sealed partial class MainWindow : Window
             Study.Ui("fix.ping", ("inView", !offScreen));
             if (offScreen)
                 ShowNotice("Your new position is outside the part of the map shown: press F, or click the arrow at the edge.", TimeSpan.FromSeconds(5));
+            FirstFixNotice(offScreen);
         };
         Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
         AddShortcuts((UIElement)Content);
@@ -485,6 +486,8 @@ public sealed partial class MainWindow : Window
                 _helpClosedForRaid = true;
                 HelpFlyout.Hide();
             }
+            // And the tour: it covers the window. It comes back at its chapter when the raid is over (MainWindow.Tour).
+            CloseTour("raid");
         }
         _phase = s.Raid.Phase;
         ShowPicks(s);
@@ -497,6 +500,7 @@ public sealed partial class MainWindow : Window
         _cards.Refresh(UpdateCard);
         RefreshPinned();
         RestorePinnedOnce(s);
+        ShowTourWhenDue(s);
         ShowHelpOnFirstRun(s);
         ShowWhatsNewOnce(s);
         ShowQuestForSnapshot(s);
@@ -1659,7 +1663,8 @@ public sealed partial class MainWindow : Window
     // with text in it is ever scaled, so the text stays sharp (owner, 2026-10-01: it was sometimes blurry, could
     // last longer and use more pop). Off with Windows' animation effects: it just shows and goes.
     /// <param name="how">For a replay: "end" (the raid's end) or "link" (REPLAY on the last raid's line).</param>
-    private void ShowCue(ViewCue cue, string how = "end")
+    /// <param name="example">The tour's example (MainWindow.Tour): its line says so, in place of the player's own plan.</param>
+    private void ShowCue(ViewCue cue, string how = "end", bool example = false)
     {
         // QUEST COMPLETE joins one on screen, or waits for a replay to end (MainWindow.Completion); any other cue ends it.
         if (cue is { Kind: CueKind.QuestComplete, Completed: { } quest } && CompletionHandled(quest))
@@ -1682,6 +1687,9 @@ public sealed partial class MainWindow : Window
             return;
         }
         var (eyebrow, title, detail) = CueText(cue);
+        if (example)
+            detail = "An example, not your raid.";
+        FirstRaidLine(cue, example);
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -1770,30 +1778,36 @@ public sealed partial class MainWindow : Window
         DecodeCueTitle(title);
     }
 
-    // The title decodes: undecoded letters flicker through random ones in gold, settling left to right in ink.
     private void DecodeCueTitle(string title)
     {
         _cueTimer?.Stop();
+        _cueTimer = Decode(CueTitle, title, TimeSpan.FromMilliseconds(900 * CuePace));
+    }
+
+    // Text decodes like a terminal (the cue's title, the tour's, the screenshot key's file name): undecoded letters
+    // flicker through random ones in gold, settling left to right in ink.
+    private DispatcherQueueTimer Decode(TextBlock block, string text, TimeSpan length)
+    {
         const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         var settled = new Microsoft.UI.Xaml.Documents.Run();
         var flicker = new Microsoft.UI.Xaml.Documents.Run { Foreground = Resource("AmberBrush") };
-        CueTitle.Inlines.Clear();
-        CueTitle.Inlines.Add(settled);
-        CueTitle.Inlines.Add(flicker);
+        block.Inlines.Clear();
+        block.Inlines.Add(settled);
+        block.Inlines.Add(flicker);
         var started = DateTime.Now;
-        var decode = TimeSpan.FromMilliseconds(900 * CuePace);
-        _cueTimer = DispatcherQueue.CreateTimer();
-        _cueTimer.Interval = TimeSpan.FromMilliseconds(35);
-        _cueTimer.Tick += (timer, _) =>
+        var timer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromMilliseconds(35);
+        timer.Tick += (t, _) =>
         {
-            var p = Math.Min(1, (DateTime.Now - started) / decode);
-            var resolved = (int)Math.Round(p * title.Length);
-            settled.Text = title[..resolved];
-            flicker.Text = string.Concat(title[resolved..].Select(c => char.IsLetterOrDigit(c) ? glyphs[Random.Shared.Next(glyphs.Length)] : c));
+            var p = Math.Min(1, (DateTime.Now - started) / length);
+            var resolved = (int)Math.Round(p * text.Length);
+            settled.Text = text[..resolved];
+            flicker.Text = string.Concat(text[resolved..].Select(c => char.IsLetterOrDigit(c) ? glyphs[Random.Shared.Next(glyphs.Length)] : c));
             if (p >= 1)
-                timer.Stop();
+                t.Stop();
         };
-        _cueTimer.Start();
+        timer.Start();
+        return timer;
     }
 
     private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false)
@@ -2093,6 +2107,12 @@ public sealed partial class MainWindow : Window
                     }
                     return;
                 }
+                // While the tour is up, its keys step through it, Esc ends it, and the rest do nothing.
+                if (TourOpen)
+                {
+                    e.Handled = TourKey(key);
+                    return;
+                }
                 Study.Ui("key", ("key", shift ? "Shift+" + key : key.ToString()));
                 action();
                 e.Handled = true;
@@ -2100,6 +2120,14 @@ public sealed partial class MainWindow : Window
             root.KeyboardAccelerators.Add(accelerator);
         }
         void Add(Windows.System.VirtualKey key, Action action) => AddKey(key, false, action);
+
+        // The tour's own keys (MainWindow.Tour): → or Space next, ← back. Only while it is up; nothing else uses them.
+        foreach (var tourKey in new[] { Windows.System.VirtualKey.Right, Windows.System.VirtualKey.Left, Windows.System.VirtualKey.Space })
+        {
+            var accelerator = new KeyboardAccelerator { Key = tourKey };
+            accelerator.Invoked += (_, e) => e.Handled = TourOpen && !ReportOpen && TourKey(tourKey);
+            root.KeyboardAccelerators.Add(accelerator);
+        }
 
         Add(Windows.System.VirtualKey.F, ShowMe);
         // "+" is Shift and the "=" key on a US keyboard, a key of its own on others (ZoomKeys).
@@ -2126,7 +2154,7 @@ public sealed partial class MainWindow : Window
         var settingsKey = new KeyboardAccelerator { Key = (Windows.System.VirtualKey)188, Modifiers = Windows.System.VirtualKeyModifiers.Control };
         settingsKey.Invoked += (_, e) =>
         {
-            if (ReportOpen)
+            if (ReportOpen || TourOpen)
                 return;
             Study.Ui("key", ("key", "Ctrl+Comma"));
             ShowSettings();
@@ -2137,7 +2165,7 @@ public sealed partial class MainWindow : Window
         var followKey = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F, Modifiers = Windows.System.VirtualKeyModifiers.Shift };
         followKey.Invoked += (_, e) =>
         {
-            if (ReportOpen)
+            if (ReportOpen || TourOpen)
                 return;
             Study.Ui("key", ("key", "Shift+F"));
             SetFollow(!Map.Follow, "key");
@@ -2149,7 +2177,7 @@ public sealed partial class MainWindow : Window
 #endif
         root.CharacterReceived += (_, e) =>
         {
-            if (e.Character == '?' && !ReportOpen)
+            if (e.Character == '?' && !ReportOpen && !TourOpen)
             {
                 ShowHelp();
                 e.Handled = true;
@@ -2293,7 +2321,19 @@ public sealed partial class MainWindow : Window
         Directory.CreateDirectory(folder);
         try
         {
-            await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
+            // The tour over the window goes apart, with its transparency (tour.png): the window's own picture shows the map's
+            // panel empty, to be filled with map.png, and a dim over it would read as empty too.
+            if (TourOpen)
+            {
+                TourLayer.Visibility = Visibility.Collapsed;
+                await Task.Delay(100);
+                await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
+                TourLayer.Visibility = Visibility.Visible;
+                await Task.Delay(100);
+                await RenderToPngAsync(TourLayer, Path.Combine(folder, "tour.png"));
+            }
+            else
+                await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
                 await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
             // Settings never opens by itself, so a snapshot opens it just for its picture (help closes with that).

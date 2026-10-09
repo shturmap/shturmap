@@ -58,6 +58,9 @@ public sealed partial class MainWindow
     // One of the rows' keys: taken when it is the rows' to take and did something.
     private bool RowKey(string name, Func<bool> act)
     {
+        // The tour has the keys while it is up: Enter steps it on, the rows' others do nothing (MainWindow.Tour).
+        if (TourOpen)
+            return name == "Enter" ? TourKey(Windows.System.VirtualKey.Enter) : true;
         if (KeysElsewhere() is not null || !act())
             return false;
         Study.Ui("key", ("key", name));

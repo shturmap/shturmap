@@ -10,6 +10,8 @@ param(
   [int] $SnapshotAfter = 16,
   # Part of a quest name: highlight it, hold its card and pin it before the snapshot.
   [string] $ShowQuest,
+  # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
+  [int] $Tour,
   # Play the raid as a Scav: the match setup names another profile than the menu's.
   [switch] $Scav,
   # A PvE-style raid hosted locally: no match-setup line, so the logs can't tell the side.
@@ -244,6 +246,7 @@ if ($Demo) {
 }
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter, '--culture', $Culture)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
+if ($Tour -gt 0) { $appArgs += @('--tour', $Tour) }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru

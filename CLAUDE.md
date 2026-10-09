@@ -87,3 +87,8 @@ Essentials:
 - The website's screenshots and hero clip are re-recorded only when the owner says so (owner, 2026-10-02); remind
   them when a release goes up on GitHub. Then use `tools\make-media.ps1` in `..\shturmap.github.io` (see its
   CLAUDE.md) and go through its hand-check list.
+- **Keep the tour current** (owner, 2026-10-09; DESIGN.md §4, *The tour*): a change to something a chapter shows
+  changes that chapter in `docs/tour.md` in the same commit, and a release that changed a chapter adds a `tour:N` line
+  to its What's New section. Before a release, look at each chapter: `tools\fake-raid.ps1 -Exe
+  artifacts\Shturmap\Shturmap.exe -Out <folder> -PlanOnly -Tour <n>` for n = 1 to 7. `TourTests` catch a part that's
+  gone from the window; whether the words are still true is yours to check.

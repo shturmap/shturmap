@@ -114,7 +114,29 @@ public sealed partial class MainWindow
         if (sender is not Grid { Tag: string key } row)
             return;
         row.Background = Resource("LinkBrush");
+        // A line about the tour previews nothing: a click on it opens the tour (OnWhatsNewTapped).
+        if (WhatsNewItem(key) is { } item && Tour.ChapterOf(item.Preview) is not null)
+            return;
         Preview(WhatsNewPreviewPrefix + key, PreviewAfter);
+    }
+
+    // A click on a line about the tour opens it, at the chapter the line names (owner, 2026-10-09: a release that
+    // changes a chapter says so here; docs/tour.md).
+    private void OnWhatsNewTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (sender is not Grid { Tag: string key } || WhatsNewItem(key) is not { } item || Tour.ChapterOf(item.Preview) is not { } chapter)
+            return;
+        Study.Ui("whatsnew.tour", ("chapter", chapter + 1));
+        OpenTour(chapter, "whatsnew");
+    }
+
+    // The line a row's key ("0.4.0:2") stands for.
+    private WhatsNew.Item? WhatsNewItem(string key)
+    {
+        var colon = key.LastIndexOf(':');
+        return colon > 0 && int.TryParse(key[(colon + 1)..], out var index)
+            && WhatsNewSections.FirstOrDefault(s => s.Label == key[..colon]) is { } section && index < section.Items.Count
+            ? section.Items[index] : null;
     }
 
     private void OnWhatsNewPointerExited(object sender, PointerRoutedEventArgs e)
@@ -173,8 +195,9 @@ public sealed partial class MainWindow
     }
 
     // A preview's map: its artwork, the given quests' places (none of the player's), staged and framed.
+    /// <param name="foot">DIPs at the map's foot that what is framed stays above (the tour's band).</param>
     private async Task PreviewSceneAsync(string wanted, Shturmap.Data.TarkovDev.GameData data, string mapName, IReadOnlyCollection<string> quests,
-        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres)
+        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, double foot = 0)
     {
         if (data.MapByNormalizedName(mapName) is not { } map || data.DefinitionFor(mapName) is not { } definition || _session.Artwork is null)
             return;
@@ -187,7 +210,7 @@ public sealed partial class MainWindow
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
         stage?.Invoke(scene, content);
         var points = frame?.Invoke(content);
-        Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, 40, 0, minMetres) : null);
+        Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, 40, foot, minMetres) : null);
         _scenes.Forget();
     }
 

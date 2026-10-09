@@ -74,7 +74,7 @@ public class WhatsNewTests
             Assert.InRange(section.Items.Count, 1, WhatsNew.MaxItems);
             Assert.All(section.Items, item =>
             {
-                Assert.Contains(item.Preview, WhatsNew.Previews);
+                Assert.True(WhatsNew.Known(item.Preview), $"{section.Label}: '{item.Preview}' isn't a preview the app knows");
                 Assert.True(item.Name.Length <= 28, $"{section.Label}: '{item.Name}' is longer than a line of the card");
                 Assert.True(item.Text.Length <= 100, $"{section.Label}: '{item.Text}' is longer than two lines of the card");
             });

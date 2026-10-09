@@ -13,7 +13,9 @@ Shturmap answers two questions for an Escape from Tarkov player, on a second mon
 That is the whole product. A feature belongs in Shturmap only if it helps one of these two questions and works
 without the player having to click during a raid. When in doubt, leave it out. One exception, the owner's, for
 eye candy at a raid's end: the raid replay (owner, 2026-10-07: "more on the eye-candy side of things like the loading
-animations"; "Map drawing", *The raid replay*).
+animations"; "Map drawing", *The raid replay*). And one for learning the app: the tour at a first start (owner,
+2026-10-09: "a proper first-time-opening tour of the app ... Here we can be a bit more flashy with nice animations";
+§4, "Screen anatomy", *The tour*).
 
 **Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
 part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
@@ -267,13 +269,16 @@ quoting it anywhere new.
    screenshots move the player. Nothing in a raid requires input. Defaults must be right without configuration.
 2. **Glanceable from a second monitor.** High contrast on a dark ground, the important line first and largest (the
    glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
-   change, and the raid replay at a raid's end (§1's exception). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
+   change, the raid replay at a raid's end (§1's exception), and the tour (§1's second exception, owner, 2026-10-09:
+outside raids only, and still in the cues' own motion). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
    kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. The only other windows are quest cards the player
    popped out; they are owned by the main window and never topmost, so they can't cover the game. One thing does
    cover the window, and only because the player opened it: the Report dialog (review of 2026-10-04: the
-   principle didn't name it).
+   principle didn't name it). And the tour, which dims the window around the parts it is about (owner, 2026-10-09,
+   the panel's T3: "I want to put an exception to the design for the tour"): at a first start and when the player
+   opens it from help or What's New, never in a raid, and Esc ends it from its first frame (*The tour*).
 4. **Minimal surface.** Every control earns its place. Prefer an automatic behaviour over a button, a sensible
    default over a setting. Messages are one line and dismiss themselves.
 5. **Clear requirements.** What a raid needs (keys, items to bring) is shown before the raid, unprompted, and next
@@ -477,6 +482,7 @@ website class:
 | note, secondary | `NoteText` 12.5, muted | `.note` 14, captions 13, muted |
 | figure (distances) | `FigureText` 15, semi-condensed semibold, amber; 22 in the glance | IBM Plex Mono: section numbers, legends, code |
 | the big cue | 13 / 48 / 15 | — |
+| the tour's band | 13 / 30 / 15: eyebrow, title, the chapter's lines | — |
 
 New text uses a role, not a new size; the few in-between sizes in XAML (10, 10.5, 11.5) are badges and hints that
 fit a fixed box.
@@ -493,7 +499,12 @@ pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lo
 position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; the raid card's time
 moves only when its minute changes (its figure decodes over half a second as the cue's title does, and one dark notch
 runs along what is left of its rule in 1.1 s), and holds still in between. With Windows' animation
-effects off the app shows and hides without motion, and following jumps to the position. The website follows the
+effects off the app shows and hides without motion, and following jumps to the position. The tour (§1's second
+exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide from part to part over
+0.65 s eased in and out while the map sheet's corner marks close in on them with a small overshoot, the band's gold
+rule shoots out and its title decodes over 0.7 s at each chapter, a stage's lines rise in one after another, and its
+staged moments are the app's own (a drawn pointer as the website clip's, the screenshot key pressed, the ping, the
+pulse, the cue); with the effects off each chapter shows its end at once. The website follows the
 reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
 easing; owner, 2026-10-02), the rest stops.
 
@@ -775,7 +786,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     seen. After an update from a version before the card, the newest version only (`Rules.WhatsNew.Due`). Never by
     itself in a snapshot or the demo. **Gone:** with ×, or once the first raid since the update is over; help's WHAT'S
     NEW IN 0.4.0 brings the newest version's card back. The lines are docs/whats-new.md, built into the app: one section
-    per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words).
+    per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words). A line about the tour (`tour`, or `tour:5` for a
+    chapter a release changed) previews nothing; a click on it opens the tour there (owner, 2026-10-09, T13; *The tour*).
+    0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
   - *Plan*: last raid in one line, with **REPLAY** at its right while the raid can be replayed (the play symbol `E768`
     and the word, in the status words' style, as CLEAR PICKS stands beside NEXT RAID; owner, 2026-10-07: "Replay link:
     ii"; "Map drawing", *The raid replay*); **Next raid**: up to four maps ranked by what can be done there, as a short list
@@ -1048,13 +1061,58 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     point on the glide as it is drawn. Only while it glides, a frame timer asks for frames at the system timer's pace
     (about 64 a second): the map's 16 ms animation timer and the Rendering event each gave only about 30 a second
     (measured with the dev view, 2026-10-03).
-- **Help** (F1 or `?`): one panel with WHAT'S NEW IN 0.4.0 under its title (the What's New card again), how it works, the shortcuts, the quest-type legend and the symbols on the map
+- **Help** (F1 or `?`): one panel with TAKE THE TOUR and WHAT'S NEW IN 0.4.0 under its title (the tour from its start; the What's New card again), how it works with SHOW ME after the paragraphs a chapter of the tour shows (it opens the tour there; owner, 2026-10-09, T11), the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
-  "Diagnostics"). Opens once by itself on first run, outside a raid: at a first start during a raid it waits until
-  the raid is over. A step into a raid (it loads, it starts) closes the panel, since it stays open while the game
+  "Diagnostics"). Until 2026-10-09 it opened once by itself on first run, outside a raid; since then the tour does,
+  in its place, and help opens only when asked for (a snapshot run still opens it for its picture). A step into a raid (it loads, it starts) closes the panel, since it stays open while the game
   has the focus and lay over the raid card; if it had opened by itself, it isn't counted as seen and comes back
   after the raid (`WhileInRaid`; review of 2026-10-04, H9).
+- **The tour** (owner, 2026-10-09: "a proper first-time-opening tour of the app. This one should then later be
+  accessible through the help menu itself. The tour should give the player a proper onboarding experience with the
+  most important features, how everything works and what the most important aspects of the UI are. Here we can be a
+  bit more flashy with nice animations"; "We need to keep in mind to update the onboarding with future updates"; from
+  a panel of four forms and thirteen decisions, all taken as recommended: the briefing (A) told through an example raid
+  (B), with first-time lines (E); `MainWindow.Tour`, `Rules.Tour`). Seven chapters over the real window, about a minute
+  and a half: SAFE TO RUN (what is read, what is never done, the risk in the README's words), IT FOLLOWS THE GAME (Plan
+  and Raid), NEXT RAID (Plan's rows, one resting under a drawn pointer previews its map), PICK AND POINT (an example
+  quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
+  name decoding, the position pinging; the extract list), IN THE RAID (RAID LOADING with an example kit, then the raid
+  card's head with example values) and GOOD TO KNOW (the story chapters aren't shown yet; F1; the three buttons named).
+  - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
+    map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, holds TOUR · 3 OF 7,
+    the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
+    chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
+    middle of the map above it. Motion: "Design system", *Motion*.
+  - **Examples, never the player's.** What a chapter stages is drawn from the cache by the app's own code, as What's
+    New's previews are: no picture, render or video is bundled (§3), and the map's label says "PREVIEW · THE TOUR ·
+    CUSTOMS · AN EXAMPLE, NOT YOUR RAID". The example is the same for everyone: Customs, which every player knows, with
+    up to three of its early quests that have places on the map; a cue it shows says "An example, not your raid.".
+    Nothing of the player's changes: no pick, no tick, no setting but the tour's own. NEXT RAID frames the player's own
+    rows and lets one preview its map as resting on it does; without rows (no game) it frames the MAP list. When the
+    tour ends, the map on screen is back as it was, view and all.
+  - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
+    outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
+    (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
+    line about it (below). Ending it, at its last chapter or with Esc, counts it and help as seen, and a notice says
+    where it stays ("The tour stays in help: F1, then TAKE THE TOUR."). Never in the website demo; "--tour <n>" opens
+    a chapter for a snapshot (`tools\fake-raid.ps1 -PlanOnly -Tour <n>`).
+  - **Keys and clicks.** → or Space (or Enter) the next chapter, ← the one before, Esc ends it; every other key does
+    nothing while it is up, and a click outside its band does nothing (the window is covered, by the owner's exception
+    to principle 3).
+  - **Words** live in docs/tour.md, built into the app: per chapter its stage, the parts it frames (their `x:Name`s in
+    MainWindow.xaml), its title, at most two lines and its stage's own words. `TourTests` fail when a part it names is
+    gone from the window, a stage isn't one the app draws, or a title or line is longer than the band.
+  - **Keeping it current** (owner, 2026-10-09). A change to something a chapter shows changes the chapter in the same
+    commit. Its drawing is the app's own, so a new symbol, card or cue shows in the tour by itself; what can go stale is
+    its words and what it frames, and the test catches the second. A release that changed a chapter says so in What's
+    New with a line `tour:N` ("- tour:5 · …"), which opens the tour at that chapter when clicked; pointing at such a line
+    previews nothing. Before a release, the chapters are looked at (`fake-raid.ps1 -PlanOnly -Tour 1` … `7`).
+  - **First-time lines** (the panel's E). The habit is needed in the raid, long after the tour, so after a first start
+    the first raid's RAID LOADING cue carries one line under its kit, "FIRST RAID WITH SHTURMAP · PRESS PRTSC ONCE YOU'RE
+    IN" (the key as the game's settings name it), and the first position plotted gets a notice, "That's you, from your
+    screenshot's name. Each new one moves you." Each once; a player who used Shturmap before the tour never sees them
+    (they are armed only by a first start: `firstRaid`, `firstFix` in shturmap.db), so their words stay true.
 - **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
   position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
@@ -1798,6 +1856,7 @@ Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 | Esc | close the cards and let the keyboard's row go (it never drops picks); in a popped-out window, the cards opened from it (never the window) |
 | F1 or ? | help |
 | Ctrl+, | settings |
+| → or Space, ←, Esc | while the tour is up (*The tour*): the next chapter (Enter too), the one before, end it. Every other key does nothing then |
 
 Keyboard accelerators sit on the window root with their placement hidden; WinUI would otherwise show the first
 one's key as a tooltip over the whole window. "+" is a key of its own on some keyboards and Shift with "=" on
@@ -2570,6 +2629,8 @@ form. Problems and ideas both go through it.
   panning that work while the game has the focus. They would need a global hotkey (§2), and in the study log of 1–6
   October only 23 of the 121 times Shturmap took the focus during a raid were for the view alone; 65 were for quest rows
   and cards.
+- The tour at a first start, with first-time lines for the first raid and position (2026-10-09; §4, "Screen anatomy",
+  *The tour*).
 - What's New, a card in Plan's rail with each line previewed on the map, and the raid replay in the RAID OVER cue with
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places

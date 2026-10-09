@@ -236,23 +236,40 @@
               </Flyout.FlyoutPresenterStyle>
               <StackPanel Width="480" Spacing="8">
                 <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
-                <!-- The What's New card of this version again (docs/DESIGN.md §4, "Screen anatomy"). -->
-                <HyperlinkButton Padding="0" Click="OnWhatsNewAgainClick" Visibility="{x:Bind ShownIf(ViewModel.WhatsNewHelp), Mode=OneWay}"
-                                 ToolTipService.ToolTip="Shows what's new at the top of the list on the left again">
-                  <TextBlock Text="{x:Bind ViewModel.WhatsNewHelp, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
-                </HyperlinkButton>
+                <!-- The tour again, from its start (owner, 2026-10-09; docs/DESIGN.md §4, *The tour*), and the What's New card of
+                     this version again (docs/DESIGN.md §4, "Screen anatomy"). SHOW ME beside a paragraph opens the tour at
+                     the chapter that shows it. -->
+                <StackPanel Orientation="Horizontal" Spacing="18">
+                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="Seven short chapters over this window; Esc ends it">
+                    <TextBlock Text="TAKE THE TOUR" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  </HyperlinkButton>
+                  <HyperlinkButton Padding="0" Click="OnWhatsNewAgainClick" Visibility="{x:Bind ShownIf(ViewModel.WhatsNewHelp), Mode=OneWay}"
+                                   ToolTipService.ToolTip="Shows what's new at the top of the list on the left again">
+                    <TextBlock Text="{x:Bind ViewModel.WhatsNewHelp, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  </HyperlinkButton>
+                </StackPanel>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The screenshot's name holds your position: your marker, floor and distances update. The map stays put; F shows you, Shift+F follows you." />
+                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=". The screenshot's name holds your position: your marker, floor and distances update. The map stays put; F shows you, Shift+F follows you. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="key" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
-                <TextBlock TextWrapping="Wrap" Text="Map, raid and quests follow the game's logs. No clicks needed while you play." />
-                <TextBlock TextWrapping="Wrap" Text="Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction." />
-                <TextBlock TextWrapping="Wrap" Text="EXIT is the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice) and Shturmap reads it: yours light up, the rest turn hollow. OR: the nearest of yours that needs nothing." />
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="Map, raid and quests follow the game's logs. No clicks needed while you play. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="follows" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="next" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="EXIT is the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice) and Shturmap reads it: yours light up, the rest turn hollow. OR: the nearest of yours that needs nothing. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="Quest order: go somewhere, then find or survive, then fight; simplest first." />
-                <TextBlock TextWrapping="Wrap" Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Pop a card out to keep it as a small window. Symbols on top of each other spread out where the pointer rests." />
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="Point at a quest to see its card and light it up everywhere; click to keep the card open. Point at a key, item or quest inside a card for its own card. Pop a card out to keep it as a small window. Symbols on top of each other spread out where the pointer rests. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="pick" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest. They stay until done, unpicked, or CLEAR PICKS." />
                 <TextBlock TextWrapping="Wrap" Text="Done an objective? The logs can't tell, so tick its box on the quest's card: the map, NEXT and the plan then skip it. Ticks clear when the quest ends. HAND OVER on a line: take what it gets to the trader after the raid." />
                 <TextBlock TextWrapping="Wrap" Text="After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid." />
                 <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs only: one started before your oldest log isn't shown." />
+                <!-- True as long as tarkov.dev leaves them out of its data (docs/UPDATES.md, "Story chapters"; owner, 2026-10-09). -->
+                <TextBlock Style="{StaticResource NoteText}" Text="Story chapters (Falling Skies, Batya, …) aren't shown yet: tarkov.dev doesn't publish them." />
 
                 <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
                 <ItemsControl ItemsSource="{x:Bind Keys}">
@@ -510,7 +527,7 @@
       </Grid.ColumnDefinitions>
 
       <!-- Left rail: Plan between raids, Raid during one. The state follows the game. -->
-      <Grid Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
+      <Grid x:Name="Rail" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
@@ -622,7 +639,7 @@
                             <ItemsControl.ItemTemplate>
                               <DataTemplate x:DataType="local:WhatsNewRow">
                                 <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" Background="Transparent" Tag="{x:Bind Key}"
-                                      PointerEntered="OnWhatsNewPointerEntered" PointerExited="OnWhatsNewPointerExited">
+                                      PointerEntered="OnWhatsNewPointerEntered" PointerExited="OnWhatsNewPointerExited" Tapped="OnWhatsNewTapped">
                                   <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="56" />
                                     <ColumnDefinition Width="*" />
@@ -705,7 +722,7 @@
                    being a button, shows its map, and what was clicked must still be there afterwards (owner,
                    2026-10-04: "all the icons disappear ... This is a cognitive dissonance"). So no row changes
                    height when the map changes, and nothing moves under the pointer. -->
-              <ItemsControl ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfTrue(ViewModel.PlanListShown), Mode=OneWay}" Margin="0,0,0,7">
+              <ItemsControl x:Name="PlanRows" ItemsSource="{x:Bind ViewModel.Plans, Mode=OneWay}" Visibility="{x:Bind ShownIfTrue(ViewModel.PlanListShown), Mode=OneWay}" Margin="0,0,0,7">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:PlanCard">
                     <!-- A map on screen that none of your quests is on has its card below and no row (PlanCard.CardOnly). -->
@@ -1154,6 +1171,11 @@
                  Rows of eight, up to three, built in ShowCueKit; never scaled, like the text. -->
             <TextBlock x:Name="CueKitLabel" Text="CHECK YOUR KIT" HorizontalAlignment="Center" Style="{StaticResource EyebrowText}" Margin="0,8,0,0" Visibility="Collapsed" />
             <StackPanel x:Name="CueKit" HorizontalAlignment="Center" Spacing="8" Visibility="Collapsed" />
+            <!-- The first raid's one extra line (owner, 2026-10-09, the tour's first-time lines): the habit Shturmap needs,
+                 said when it matters. Once, then never again (MainWindow.Tour, FirstRaidLine). -->
+            <TextBlock x:Name="CueFirst" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" Margin="0,10,0,0"
+                       FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="200"
+                       Foreground="{StaticResource AmberBrush}" Visibility="Collapsed" />
             <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
               <Rectangle.RenderTransform>
                 <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
@@ -1316,6 +1338,59 @@
           <TextBlock Text="{x:Bind ViewModel.Attribution, Mode=OneWay}" Style="{StaticResource NoteText}" FontSize="11" />
         </StackPanel>
       </Grid>
+    </Grid>
+
+    <!-- The tour (owner, 2026-10-09; docs/DESIGN.md §4, "Screen anatomy", *The tour*): the window dimmed around the parts a
+         chapter is about, each framed with the map sheet's corner marks; the chapter in a band at the map's foot; an
+         example staged on the map. It covers the window as the Report dialog does, by the owner's exception to principle 3,
+         and only outside raids; clicks outside its band do nothing (MainWindow.Tour). -->
+    <Grid x:Name="TourLayer" Grid.RowSpan="2" Visibility="Collapsed" Background="Transparent" SizeChanged="OnTourLayerSizeChanged">
+      <Path x:Name="TourShade" Fill="#DB0B0C0B" IsHitTestVisible="False" />
+      <Path x:Name="TourMarks" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" IsHitTestVisible="False" />
+      <Canvas x:Name="TourCanvas" IsHitTestVisible="False" />
+      <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour). -->
+      <Grid x:Name="TourStage" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
+        <Border x:Name="TourPlate" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
+                Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="30,24" />
+      </Grid>
+      <Border x:Name="TourBand" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#F00B0C0B" SizeChanged="OnTourLayerSizeChanged"
+              BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" Padding="22,14,22,12">
+        <Grid ColumnSpacing="28" RowSpacing="10">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <!-- A gold rule shoots out along the band's top at each chapter, as the cue's rules do. -->
+          <Rectangle Grid.ColumnSpan="2" Height="2" VerticalAlignment="Top" Margin="-22,-15,-22,0" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5">
+            <Rectangle.RenderTransform>
+              <ScaleTransform x:Name="TourRuleScale" ScaleX="0" />
+            </Rectangle.RenderTransform>
+          </Rectangle>
+          <StackPanel Spacing="6">
+            <TextBlock x:Name="TourEyebrow" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="300" Foreground="{StaticResource AmberBrush}" />
+            <TextBlock x:Name="TourTitle" FontSize="30" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="120" Foreground="{StaticResource InkBrush}" />
+            <TextBlock x:Name="TourText" FontSize="15" LineHeight="21" TextWrapping="Wrap" MaxWidth="780" HorizontalAlignment="Left" Foreground="{StaticResource InkBrush}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <StackPanel Orientation="Horizontal" Spacing="18" HorizontalAlignment="Right">
+              <HyperlinkButton x:Name="TourBack" Padding="0" Click="OnTourBackClick" ToolTipService.ToolTip="Back (←)">
+                <TextBlock Text="← BACK" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
+              </HyperlinkButton>
+              <HyperlinkButton Padding="0" Click="OnTourNextClick" ToolTipService.ToolTip="Next (→ or Space)">
+                <TextBlock x:Name="TourNextText" Text="NEXT →" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
+              </HyperlinkButton>
+            </StackPanel>
+            <HyperlinkButton Padding="0" HorizontalAlignment="Right" Click="OnTourEndClick" ToolTipService.ToolTip="Ends the tour; help brings it back (F1)">
+              <TextBlock Text="ESC ENDS THE TOUR" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+            </HyperlinkButton>
+          </StackPanel>
+          <Grid x:Name="TourTicks" Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="5" Height="4" />
+        </Grid>
+      </Border>
     </Grid>
 
     <!-- Report a problem or idea: the one way to report, no account, no browser (owner, 2026-10-03; docs/DESIGN.md §8,

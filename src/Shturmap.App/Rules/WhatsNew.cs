@@ -25,6 +25,12 @@ public static class WhatsNew
     public static readonly IReadOnlySet<string> Previews = new HashSet<string>(StringComparer.Ordinal)
         { "replay", "extracts", "clock", "joined", "leaders" };
 
+    /// <summary>
+    /// Whether the app knows what a line's preview is: one of <see cref="Previews"/>, or a line about the tour ("tour",
+    /// "tour:5"), which previews nothing and opens the tour at that chapter when clicked (<see cref="Tour.ChapterOf"/>).
+    /// </summary>
+    public static bool Known(string preview) => Previews.Contains(preview) || Tour.ChapterOf(preview) is not null;
+
     /// <summary>The sections of docs/whats-new.md, newest first: "## 0.4.0" and its "- preview · Name · Text" lines.</summary>
     public static IReadOnlyList<Section> Parse(string markdown)
     {

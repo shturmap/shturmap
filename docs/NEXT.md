@@ -6,6 +6,32 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03; 2 and 6 are open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## Designed and built 2026-10-09: the tour, and the story chapters said
+
+**The ask** (owner, 2026-10-09): "a proper first-time-opening tour of the app. This one should then later be
+accessible through the help menu itself ... with the most important features, how everything works and what the most
+important aspects of the UI are. Here we can be a bit more flashy with nice animations ... We need to keep in mind to
+update the onboarding with future updates"; and "we also need to tell the player that the primary quests are not
+available right now" (the story chapters, docs/UPDATES.md). From a panel of four forms (A briefing, B dry run, C field
+marks, D a manual in help), an add-on (E first-time lines) and thirteen decisions, the owner took every recommendation:
+"Tour: I go with your recommendation and I want to put an exception to the design for the tour." The panel stays
+outside the repository.
+
+**The decisions.** T1 the briefing told through an example raid; T2 first-time lines, yes; T3 the window dimmed with
+cut-outs (an exception to principle 3); T4 the cues' motion plus the tour's own moves (an exception to principle 2 and
+"Motion"); T5 by itself at the first start, in help's place; T6 the player steps; T7 seven chapters, about 90 s; T8 a
+band at the map's foot; T9 the example on Customs; T10 a raid closes it, and it resumes at its chapter after; T11 TAKE
+THE TOUR atop help and SHOW ME beside its paragraphs; T12 the story chapters said in the tour, help, the README and
+website FAQ, and the release notes; T13 a What's New line opens a chapter a release changed.
+
+**Built the same day**; DESIGN.md §4, "Screen anatomy", *The tour*, is the binding description. `docs/tour.md` holds the
+words, `Rules.Tour` and `MainWindow.Tour` the rest, `TourTests` the checks; `fake-raid.ps1 -PlanOnly -Tour <n>` renders
+a chapter (the window's picture leaves the tour out, `tour.png` holds it with its transparency, to lay over the
+composite). Changed in the building: the first chapter's line lost "no overlay, no input" (the plate under it says it,
+and the line was longer than the band); 0.4.0's What's New names the tour in place of "Symbols stand apart" (five lines
+at most); parts that touch are one cut-out (the three buttons). Open: the owner's look at it in the dev build, its
+words above all; the story chapters' line in the README's and the website's FAQ (with the trust section there).
+
 ## Designed and built 2026-10-07: What's New, a card in Plan's rail
 
 **Built the same day** (owner: "Implement the items we agreed on"); DESIGN.md §4, "Screen anatomy", is the binding
