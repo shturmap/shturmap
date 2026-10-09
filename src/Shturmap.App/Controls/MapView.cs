@@ -128,6 +128,9 @@ public sealed partial class MapView : Grid
                 artwork.FloorFailed += (id, e) => Shturmap.Session.AppLog.Warn($"Map artwork: the floor '{id}' couldn't be read and isn't drawn", e);
             _ = artwork.ReadFloorsAsync();
         }
+        // A move of the view still running belongs to the scene before (the replay's or the tour's glide): left running,
+        // it would carry on moving the new one (review of 2026-10-09).
+        StopViewAnimation();
         StopGlide();
         _scene = scene;
         if (scene is not null)
@@ -382,7 +385,8 @@ public sealed partial class MapView : Grid
         CompositionTarget.Rendering += _viewAnimation;
     }
 
-    private void StopViewAnimation()
+    /// <summary>Stops a move of the view under way (<see cref="AnimateView"/>) where it is.</summary>
+    public void StopViewAnimation()
     {
         if (_viewAnimation is null)
             return;

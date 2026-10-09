@@ -1106,6 +1106,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     tour ends, the map on screen is back as it was, view and all; at a first start, when the tour opens before any map
     is drawn, it comes back fitted (review of 2026-10-09: it came back at the camera's default, zoom 1 on the map's
     origin, from chapter 7 on).
+    A glide a chapter starts stops when its map goes (the same review: Esc during YOUR SCREENSHOT KEY's glide went on
+    moving the map that came back).
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
@@ -1481,7 +1483,9 @@ spawns below).
     A new cue, a raid loading or a preview ends it. With Windows' animation effects off, and in snapshots, the end shows
     at once for the time it would have played (a snapshot keeps it).
   - *The view*: framed on the positions with 40 DIP around them and at least 300 m across, in the part above the band
-    (`MapView.FramingAbove`). It stays there afterwards. The map recedes under the replay (the ground at 45 % over it),
+    (`MapView.FramingAbove`). It stays there afterwards. A replay that ends while the view still glides there (a raid
+    loading, a preview) stops the glide, and so does a new map in the view (review of 2026-10-09: the glide went on
+    moving the next map). The map recedes under the replay (the ground at 45 % over it),
     and everything of the replay fades in and out as one (`MapScene.ReplayOpacity`).
   - *The pen* (C; `MapRenderer.DrawReplay`, `ReplayInk`): one line from position to position, drawn on as the time
     runs, growing toward the next position. Its colour is the raid's time: the player's sand mixed into the ground,

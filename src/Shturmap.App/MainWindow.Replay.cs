@@ -155,6 +155,8 @@ public sealed partial class MainWindow
         Study.Ui("replay.end", ("why", why), ("how", _replayHow), ("s", DateTime.Now - _replayStarted));
         _replay = null;
         _replayFrames?.Stop();
+        // Its glide onto the raid's positions, if it is still under way (a raid loading on the same map keeps the scene).
+        Map.StopViewAnimation();
         ReplayBand.Visibility = Visibility.Collapsed;
         if (Map.Scene is { Replay: not null } scene)
         {
