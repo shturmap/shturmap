@@ -8,6 +8,9 @@
 [![CI](https://github.com/shturmap/shturmap/actions/workflows/ci.yml/badge.svg)](https://github.com/shturmap/shturmap/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/shturmap/shturmap/badge)](https://scorecard.dev/viewer/?uri=github.com/shturmap/shturmap)
 
+> [!NOTE]
+> **Shturmap is in private testing.** Its releases are marked pre-release, and there are rough edges.
+
 **A second-monitor map for Escape from Tarkov.** Your active quests' objectives, the extracts and your position on
 the map of the raid you're in: what you'd otherwise look up in the wiki, in one window.
 
