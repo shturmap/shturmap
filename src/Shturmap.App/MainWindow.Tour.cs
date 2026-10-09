@@ -105,6 +105,14 @@ public sealed partial class MainWindow
     {
         if (TourChapters.Count == 0 || TourLayer.XamlRoot is null || ReportOpen)
             return;
+        // Never in a raid (review of 2026-10-09: help's links and What's New opened it there): it covers the window. TAKE
+        // THE TOUR is hidden then; a SHOW ME in help's text, or a What's New line, says why nothing opens.
+        if (ViewModel.RaidHoldsBack)
+        {
+            if (how is "showme" or "whatsnew" or "help")
+                ShowNotice("The tour waits until the raid is over.");
+            return;
+        }
         at = Math.Clamp(at, 0, TourChapters.Count - 1);
         if (HelpFlyout.IsOpen)
             HelpFlyout.Hide();

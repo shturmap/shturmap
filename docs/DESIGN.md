@@ -1111,9 +1111,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
-    line about it (below). Ending it, at its last chapter or with Esc, counts it and help as seen, and a notice says
-    where it stays ("The tour stays in help: F1, then TAKE THE TOUR."). Never in the website demo; "--tour <n>" opens
-    a chapter for a snapshot (`tools\fake-raid.ps1 -PlanOnly -Tour <n>`).
+    line about it (below); never in a raid, these ways too (review of 2026-10-09: they opened it over the raid card):
+    TAKE THE TOUR is hidden while a raid loads or runs, and a SHOW ME or a What's New line then opens nothing and says
+    "The tour waits until the raid is over.". Ending it, at its last chapter or with Esc, counts it and help as seen,
+    and a notice says where it stays ("The tour stays in help: F1, then TAKE THE TOUR."). Never in the website demo;
+    "--tour <n>" opens a chapter for a snapshot (`tools\fake-raid.ps1 -PlanOnly -Tour <n>`).
   - **Keys and clicks.** → or Space (or Enter) the next chapter, ← the one before, Esc ends it; every other key does
     nothing while it is up, and a click outside its band does nothing (the window is covered, by the owner's exception
     to principle 3).

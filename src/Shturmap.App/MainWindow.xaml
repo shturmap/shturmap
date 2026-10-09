@@ -240,7 +240,8 @@
                      this version again (docs/DESIGN.md §4, "Screen anatomy"). SHOW ME beside a paragraph opens the tour at
                      the chapter that shows it. -->
                 <StackPanel Orientation="Horizontal" Spacing="18">
-                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="Seven short chapters over this window; Esc ends it">
+                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="Seven short chapters over this window; Esc ends it"
+                                   Visibility="{x:Bind ShownIfNot(ViewModel.RaidHoldsBack), Mode=OneWay}">
                     <TextBlock Text="TAKE THE TOUR" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <HyperlinkButton Padding="0" Click="OnWhatsNewAgainClick" Visibility="{x:Bind ShownIf(ViewModel.WhatsNewHelp), Mode=OneWay}"
