@@ -96,6 +96,29 @@ public sealed record ObjectiveView(
 
     /// <summary>The item it is about (<see cref="QuestCards.ItemOf"/>), pictured beside a hand-over's mark; or null.</summary>
     public string? ItemId { get; init; }
+
+    /// <summary>tarkov.dev's sentence alone, without the "(optional)" <see cref="Text"/> adds; null where only
+    /// <see cref="Text"/> is known.</summary>
+    public string? Description { get; init; }
+
+    /// <summary>Whether it reads as optional, which <see cref="Text"/> says (SessionTexts.ObjectiveOptional).</summary>
+    public bool Optional { get; init; }
+
+    /// <summary>
+    /// <see cref="Text"/> as the raid card on <paramref name="mapName"/> says it: "… on Streets of Tarkov" says nothing
+    /// while on Streets of Tarkov, so it goes (tarkov.dev's English; a sentence in another language stays whole), and an
+    /// optional objective keeps its "(optional)" in the language in use. Made from the parts, not by cutting the words
+    /// off <see cref="Text"/>: another language puts "(optional)" where its grammar wants it.
+    /// </summary>
+    public string TextOn(string? mapName)
+    {
+        if (Description is not { } text)
+            return Text;
+        var suffix = " on " + mapName;
+        if (mapName is not null && text.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            text = text[..^suffix.Length];
+        return Optional ? SessionTexts.ObjectiveOptional(objective: text) : text;
+    }
 }
 
 /// <summary>The raid at a glance: length, bosses, the in-raid time of day from the last screenshot.</summary>

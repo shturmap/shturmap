@@ -1971,6 +1971,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     Handover = QuestCards.HandoverText(_data, o.Quest, o.Objective.Id),
                     HandoverCount = QuestCards.HandoverCount(o.Quest, o.Objective.Id),
                     ItemId = QuestCards.ItemOf(o.Objective),
+                    Description = ObjectiveText(o.Objective, optional: false), Optional = optional,
                 });
             }
             var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);

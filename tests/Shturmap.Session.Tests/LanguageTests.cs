@@ -1,4 +1,5 @@
 using Shturmap.Core;
+using Shturmap.Core.Quests;
 using Shturmap.Core.Text;
 using Shturmap.Data.TarkovDev;
 
@@ -50,5 +51,23 @@ public class LanguageTests
         Assert.EndsWith(" 1 Jan 14:05", new ModeReading(at).Tooltip(true, at.AddDays(2)));
         Assert.EndsWith(" 1. Jan., 14:05", In(UiLanguage.German, () => new ModeReading(at).Tooltip(true, at.AddDays(2))));
         Assert.EndsWith(" 14:05", In(UiLanguage.German, () => new ModeReading(at).Tooltip(true, at.AddHours(1))));
+    }
+
+    // The raid card drops "… on Customs" while on Customs and keeps "(optional)", made from the objective's parts in the
+    // language in use (ObjectiveView.TextOn). Until 2026-10-10 the app cut the English " (optional)" off the Session's
+    // words, which another language writes otherwise.
+    [Fact]
+    public void The_raid_cards_line_is_made_from_the_objectives_parts()
+    {
+        var view = new ObjectiveView("q", "Quest", "Prapor", "o", "Find the stash on Customs (optional)", false, true, null, null, null,
+            ObjectiveKind.Exploration, null) { Description = "Find the stash on Customs", Optional = true };
+        Assert.Equal("Find the stash (optional)", view.TextOn("Customs"));
+        Assert.Equal("Find the stash on Customs (optional)", view.TextOn("Woods"));
+        Assert.Equal("Find the stash on Customs", (view with { Optional = false }).TextOn(null));
+        Assert.Equal("Find it (optional)", (view with { Description = null, Text = "Find it (optional)" }).TextOn("Customs"));
+        var pseudo = In(UiLanguage.Pseudo, () => view.TextOn("Customs"));
+        Assert.True(PseudoText.IsPseudo(pseudo), pseudo);
+        Assert.Contains("Find the stash", pseudo);
+        Assert.DoesNotContain("Customs", pseudo);
     }
 }

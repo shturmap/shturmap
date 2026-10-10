@@ -889,13 +889,8 @@ public sealed partial class MainWindow : Window
                 Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover,
                 o.HandoverCount, o.ItemId);
         }
-        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
-        // "(optional)" at the end.
-        const string optional = " (optional)";
-        var tail = o.Text.EndsWith(optional, StringComparison.Ordinal) ? optional : "";
-        var core = o.Text[..^tail.Length];
-        var suffix = " on " + mapName;
-        var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
+        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its "(optional)".
+        var text = o.TextOn(mapName);
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover,
             o.HandoverCount, o.ItemId);
