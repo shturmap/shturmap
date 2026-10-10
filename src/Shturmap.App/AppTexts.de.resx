@@ -193,7 +193,7 @@
     <comment>en: LOOKING AT {map}</comment>
   </data>
   <data name="RaidLookNote" xml:space="preserve">
-    <value>DER RAID LÄUFT AUF {map} · DEINE NÄCHSTE POSITION ZEIGT SIE WIEDER</value>
+    <value>DER RAID LÄUFT AUF {map} · DEINE NÄCHSTE POSITION HOLT DICH DORTHIN ZURÜCK</value>
     <comment>en: THE RAID IS ON {map} · YOUR NEXT POSITION SHOWS IT AGAIN</comment>
   </data>
   <data name="RaidSidePmc" xml:space="preserve">
@@ -257,7 +257,7 @@
     <comment>en: for {quests}</comment>
   </data>
   <data name="ScavLooseHere" xml:space="preserve">
-    <value>Liegt hier lose · {count, plural, one {# Spot} other {# Spots}}</value>
+    <value>Loot hier · {count, plural, one {# Spot} other {# Spots}}</value>
     <comment>en: Loose here · {count, plural, one {# spot} other {# spots}}</comment>
   </data>
   <data name="ScavLootMore" xml:space="preserve">
@@ -453,7 +453,7 @@
     <comment>en: THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES</comment>
   </data>
   <data name="PreviewClickToPlan" xml:space="preserve">
-    <value>ZUM PLANEN IHRE ZEILE ANKLICKEN</value>
+    <value>KLICK ZUM PLANEN AUF DIE ZEILE</value>
     <comment>en: CLICK ITS ROW TO PLAN IT</comment>
   </data>
   <data name="NoticeUpdateDownloadGone" xml:space="preserve">
@@ -533,7 +533,7 @@
     <comment>en: Settings, quest history, logs, study log, unsent reports and crash records in %LOCALAPPDATA%\Shturmap-dev. The download cache stays (the release shares it).</comment>
   </data>
   <data name="NoticeNoUninstaller" xml:space="preserve">
-    <value>Deinstallationsprogramm von Shturmap nicht gefunden: Deinstallier Shturmap stattdessen unter Einstellungen → Apps → Installierte Apps.</value>
+    <value>Deinstallationsprogramm von Shturmap nicht gefunden: Deinstallier Shturmap stattdessen über Windows-Einstellungen → Apps → Installierte Apps.</value>
     <comment>en: Couldn't find Shturmap's uninstaller: remove it in Windows' Settings → Apps instead.</comment>
   </data>
   <data name="NoticeCompleted" xml:space="preserve">
@@ -625,7 +625,7 @@
     <comment>en: {shown} OF {count, plural, one {# POSITION} other {# POSITIONS}}</comment>
   </data>
   <data name="ReportExample" xml:space="preserve">
-    <value>Beispiel: Die Map blieb auf Woods, nachdem ich auf Customs reingeladen bin.</value>
+    <value>Beispiel: Die Map blieb auf Woods, nachdem ich auf Customs reingeladen war.</value>
     <comment>en: Example: the map stayed on Woods after I loaded into Customs.</comment>
   </data>
   <data name="QuestKindTip" xml:space="preserve">
