@@ -220,6 +220,9 @@ public sealed record SessionSnapshot
     /// <summary>The game's language code, as its settings say it ("ge"), or null when unknown.</summary>
     public string? GameLanguage { get; init; }
 
+    /// <summary>The language Shturmap shows and loads the game data in, and the "Language" setting behind it.</summary>
+    public LanguageView Language { get; init; } = LanguageView.Default;
+
     /// <summary>Whether the study log is being kept this session.</summary>
     public bool StudyLogOn { get; init; }
 

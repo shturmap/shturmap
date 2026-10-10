@@ -363,6 +363,36 @@
                      of the dev version and not be in the release version"). Filled in code under DEVTOOLS
                      (AddStudySwitch), so a release has none of it; empty and collapsed there. -->
                 <StackPanel x:Name="StudySwitch" Spacing="8" Visibility="Collapsed" />
+                <!-- One language for everything, chosen here or automatically (owner, 2026-10-10; docs/DESIGN.md §8, "The
+                     app's own language"): AUTOMATIC, then each language offered in its own name (MainWindow.Language,
+                     ShowLanguage); a choice applies at once. Under it, what Automatic comes to and why. -->
+                <Grid ColumnSpacing="14" Margin="0,6,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsLanguage}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <ItemsControl Grid.Column="1" ItemsSource="{x:Bind ViewModel.LanguageOptions, Mode=OneWay}" VerticalAlignment="Center"
+                                IsTabStop="False">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <controls:WrapRow HorizontalSpacing="14" VerticalSpacing="4" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="local:LanguageOption">
+                        <HyperlinkButton Padding="0" Tag="{x:Bind Setting}" Click="OnLanguageClick" ToolTipService.ToolTip="{x:Bind Tip}">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                       Visibility="{x:Bind ChosenVisibility}" />
+                            <TextBlock Text="{x:Bind Label}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{x:Bind LabelBrush}" />
+                          </StackPanel>
+                        </HyperlinkButton>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </Grid>
+                <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Text="{x:Bind ViewModel.LanguageNote, Mode=OneWay}" />
                 <!-- Position screenshots deleted a few seconds after reading (owner, 2026-10-04: "a mode that auto-deletes
                      screenshots after a couple of seconds grace period"). Off unless ticked: it is the one thing Shturmap
                      changes outside its own folders (docs/DESIGN.md §2). -->

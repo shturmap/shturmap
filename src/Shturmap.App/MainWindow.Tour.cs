@@ -85,13 +85,6 @@ public sealed partial class MainWindow
         return language == UiLanguage.Pseudo ? Tour.Map(chapters, PseudoText.Of) : chapters;
     }
 
-    // The language switched while the tour is up: its chapter shows again, in the new language.
-    private void OnTourLanguageChanged() => DispatcherQueue.TryEnqueue(() =>
-    {
-        if (TourOpen && TourChapters.Count > 0)
-            ShowChapter(Math.Min(_tourAt, TourChapters.Count - 1));
-    });
-
     // Once the app has its data: at a first start the tour, in help's place, outside a raid; one a raid closed comes back
     // after it, at its chapter; "--tour <n>" opens it for a snapshot. Never in the website demo.
     private void ShowTourWhenDue(SessionSnapshot s)
@@ -150,7 +143,6 @@ public sealed partial class MainWindow
             // Null where no map was drawn yet (a first start): the map then comes back fitted, not at the camera's default.
             _tourRestore = _previewing is not null ? _restoreView : Map.HasView ? Map.View : null;
             TourLayer.Visibility = Visibility.Visible;
-            UiLanguage.Changed += OnTourLanguageChanged;
             _tourHoles = [];
             _tourDrawn = [];
             TourLayer.Opacity = _tourMotion ? 0 : 1;
@@ -176,7 +168,6 @@ public sealed partial class MainWindow
         _tourDrawn = [];
         _tourHolesNow = null;
         _tourTitleTimer?.Stop();
-        UiLanguage.Changed -= OnTourLanguageChanged;
         Study.Ui("tour.close", ("how", how), ("chapter", at + 1));
         if (how == "raid")
         {

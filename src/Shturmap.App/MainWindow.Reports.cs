@@ -118,7 +118,7 @@ public sealed partial class MainWindow
             ReportText.Text = prefill;
         ReportStatusText.Visibility = Visibility.Collapsed;
         ReportSentView.Visibility = showSent ? Visibility.Visible : Visibility.Collapsed;
-        ReportShowSentText.Text = showSent ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
+        SayShowSent();
         RefreshReport();
         ReportOverlay.Visibility = Visibility.Visible;
         ReportText.Focus(FocusState.Programmatic);
@@ -140,7 +140,7 @@ public sealed partial class MainWindow
         ReportText.IsEnabled = ReportContact.IsEnabled = true;
         ReportIncludeDiagnostics.IsChecked = true;
         ReportSend.Visibility = Visibility.Visible;
-        ReportCancel.Content = AppTexts.ReportCancel;
+        SayCancel();
     }
 
     private void SetReportKind(ReportKind kind)
@@ -168,11 +168,18 @@ public sealed partial class MainWindow
     {
         var show = ReportSentView.Visibility != Visibility.Visible;
         ReportSentView.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        ReportShowSentText.Text = show ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
+        SayShowSent();
         RefreshReport();
         if (show)
             Study.Ui("report.preview");
     }
+
+    // The preview's link says what a click does now, and is said again in a new language (MainWindow.Language).
+    private void SayShowSent() =>
+        ReportShowSentText.Text = ReportSentView.Visibility == Visibility.Visible ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
+
+    // CANCEL while the report can be sent, CLOSE once it went; said again in a new language too.
+    private void SayCancel() => ReportCancel.Content = ReportSend.Visibility == Visibility.Visible ? AppTexts.ReportCancel : AppTexts.ReportClose;
 
     // The box, the Send button and the preview follow what the player typed and chose.
     private void RefreshReport()
@@ -217,7 +224,7 @@ public sealed partial class MainWindow
             ShowReportStatus(result.Message, result.Status == ReportStatus.Sent ? "AmberBrush" : "InkBrush");
             ReportText.IsEnabled = ReportContact.IsEnabled = false;
             ReportSend.Visibility = Visibility.Collapsed;
-            ReportCancel.Content = AppTexts.ReportClose;
+            SayCancel();
         }
         else
         {

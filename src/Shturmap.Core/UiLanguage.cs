@@ -26,17 +26,30 @@ public static class UiLanguage
     public const string Pseudo = "qps-ploc";
 
     /// <summary>
-    /// The languages Shturmap's texts are complete in, in the order settings list them: only these are offered and
-    /// chosen by themselves. A language joins when its last text is translated and reviewed (docs/LANGUAGES.md); the
-    /// translation tests then hold every text of it.
+    /// The languages Shturmap's texts are complete in, in the order settings list them: only these are offered (in a
+    /// release) and chosen by themselves. A language joins when its last text is translated and reviewed
+    /// (docs/LANGUAGES.md); the translation tests then hold every text of it.
     /// </summary>
     public static IReadOnlyList<string> Supported { get; } = [English];
 
     /// <summary>
-    /// Languages being translated: not offered, but a developer run can show them ("--culture de-DE") and the
-    /// translation tests check what is written of them. A text not written yet shows in English.
+    /// Languages being translated: offered only in a developer build's settings (<see cref="Offered"/>) and to a run's
+    /// "--culture de-DE", never chosen by themselves; the translation tests check what is written of them. A text not
+    /// written yet shows in English.
     /// </summary>
     public static IReadOnlyList<string> InTranslation { get; } = [German];
+
+    /// <summary>
+    /// The languages settings offer, after "Automatic": <see cref="Supported"/>, and in a developer build those
+    /// <see cref="InTranslation"/> too, so they can be tried (owner, 2026-10-10). Only a choice in settings takes one in
+    /// translation; Automatic never does.
+    /// </summary>
+    public static IReadOnlyList<string> Offered { get; } =
+#if DEVTOOLS
+        [.. Supported, .. InTranslation.Where(l => !Supported.Contains(l))];
+#else
+        Supported;
+#endif
 
     private static volatile CultureInfo _culture = CultureFor(English);
     private static volatile bool _pseudo;
@@ -86,6 +99,47 @@ public static class UiLanguage
     }
 
     /// <summary>
+    /// Makes <see cref="Culture"/> the current culture of the calling code and of what it awaits and starts, and of
+    /// nothing else. The current culture travels with async work: a loop started before a switch still has the old
+    /// one, and its sorting and any format that takes the current culture would be the old language's. Code that
+    /// composes what is shown (the session's snapshot) calls this first.
+    /// </summary>
+    public static void ApplyHere()
+    {
+        var culture = _culture;
+        if (!culture.Equals(CultureInfo.CurrentCulture))
+            CultureInfo.CurrentCulture = culture;
+        if (!culture.Equals(CultureInfo.CurrentUICulture))
+            CultureInfo.CurrentUICulture = culture;
+    }
+
+    /// <summary>
+    /// The language code of a culture's name, as <see cref="Set"/> and the "Language" setting take it: "de-DE" → "de",
+    /// "qps-ploc" → <see cref="Pseudo"/>; null for no name or one .NET doesn't know.
+    /// </summary>
+    public static string? CodeOf(string? culture) =>
+        string.Equals(culture?.Trim(), Pseudo, StringComparison.OrdinalIgnoreCase) ? Pseudo : WindowsCode(culture);
+
+    /// <summary>
+    /// A language's name in that language, as settings list it ("Deutsch", "English"), with a capital where the
+    /// language writes its names in lower case ("русский" → "Русский"). Not a text to translate: it is the same in
+    /// every language Shturmap shows.
+    /// </summary>
+    public static string NativeName(string code)
+    {
+        try
+        {
+            var culture = CultureInfo.GetCultureInfo(code);
+            var name = culture.NativeName;
+            return name.Length == 0 ? code : culture.TextInfo.ToUpper(name[0]) + name[1..];
+        }
+        catch (CultureNotFoundException)
+        {
+            return code;
+        }
+    }
+
+    /// <summary>
     /// A text of Shturmap's own in the language in use, as the generated texts classes ask for it (docs/DESIGN.md §8,
     /// "Texts"). A text the language lacks is the English one; a key no file has comes back as itself, so it shows
     /// instead of failing (the translation tests catch both).
@@ -104,16 +158,21 @@ public static class UiLanguage
     /// decides the texts when it doesn't, and the game data keeps the game's language, so names stay as the game shows
     /// them until that language's texts are written (owner, 2026-10-10).
     /// </summary>
-    /// <param name="setting">The "Language" setting: a code from <see cref="Supported"/>, or automatic.</param>
+    /// <param name="setting">The "Language" setting: a code from <see cref="Offered"/>, or automatic.</param>
     /// <param name="gameLanguage">The game's language as its settings name it ("ge"), or null when unknown.</param>
     /// <param name="windowsLanguage">Windows' display language at start ("de-DE"), or null.</param>
     /// <param name="supported">The languages to choose from; <see cref="Supported"/> unless a test says otherwise.</param>
-    public static LanguageChoice Choose(string? setting, string? gameLanguage, string? windowsLanguage, IReadOnlyList<string>? supported = null)
+    /// <param name="offered">What a setting may name besides those: <see cref="Offered"/> (or the test's
+    /// <paramref name="supported"/>) unless the caller says otherwise (a run's "--culture" may name any language with
+    /// texts).</param>
+    public static LanguageChoice Choose(string? setting, string? gameLanguage, string? windowsLanguage, IReadOnlyList<string>? supported = null,
+        IReadOnlyList<string>? offered = null)
     {
+        offered ??= supported ?? Offered;
         supported ??= Supported;
         if (setting == Pseudo)
             return new(Pseudo, English, LanguageSource.Setting);
-        if (setting is not null && supported.Contains(setting))
+        if (setting is not null && (supported.Contains(setting) || offered.Contains(setting)))
             return new(setting, setting, LanguageSource.Setting);
         var game = GameLanguage.Common(gameLanguage);
         if (game is not null && supported.Contains(game))

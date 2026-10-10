@@ -530,7 +530,14 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The wiki's interactive map for the shown map, or null.</summary>
     [ObservableProperty] public partial Uri? WikiMap { get; set; }
 
-    public IReadOnlyList<LegendItem> Legend { get; } = Enum.GetValues<ObjectiveKind>()
+    /// <summary>Settings' "Language": Automatic, then each language offered, in its own name.</summary>
+    [ObservableProperty] public partial IReadOnlyList<LanguageOption> LanguageOptions { get; set; } = [];
+
+    /// <summary>Under it: what Automatic comes to, and why ("Automatic: English, from the game.").</summary>
+    [ObservableProperty] public partial string LanguageNote { get; set; } = "";
+
+    // Made anew when read: after a switch of language, Bindings.Update reads it in the new one.
+    public IReadOnlyList<LegendItem> Legend => Enum.GetValues<ObjectiveKind>()
         .Select(k => new LegendItem(k, QuestTaxonomy.Label(k), QuestTaxonomy.Explanation(k)))
         .ToList();
 }

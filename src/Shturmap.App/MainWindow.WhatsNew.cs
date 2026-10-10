@@ -65,14 +65,6 @@ public sealed partial class MainWindow
     // Help's link to the card: "WHAT'S NEW IN 0.4.0 · PRAETORIAN".
     private string WhatsNewHelpText() => WhatsNewSections.FirstOrDefault() is { } newest ? AppTexts.HelpWhatsNew(version: WhatsNew.Tag(newest)) : "";
 
-    // The language switched: help's link and the card on screen say it in the new one.
-    private void OnWhatsNewLanguageChanged() => DispatcherQueue.TryEnqueue(() =>
-    {
-        ViewModel.WhatsNewHelp = WhatsNewHelpText();
-        if (ViewModel.WhatsNewShown)
-            RenderWhatsNew(_whatsNewShown.Select(shown => WhatsNewSections.FirstOrDefault(s => s.Label == shown.Label) ?? shown).ToList());
-    });
-
     // Once, when the app has its data: what is new since the version last seen. Not at a first start (help opens then,
     // and this version counts as seen), and never by itself in a snapshot or the website demo.
     private void ShowWhatsNewOnce(SessionSnapshot s)
@@ -80,9 +72,7 @@ public sealed partial class MainWindow
         if (_whatsNewChecked || s.Data is null || DemoMode)
             return;
         _whatsNewChecked = true;
-        UiLanguage.Changed += OnWhatsNewLanguageChanged;
-        var newest = WhatsNewSections.FirstOrDefault();
-        ViewModel.WhatsNewHelp = WhatsNewHelpText();
+        var newest = SayWhatsNewHelp();
         if (SnapshotMode)
             return;
         var seen = _session.GetSetting(WhatsNewSetting);
@@ -90,6 +80,14 @@ public sealed partial class MainWindow
         if (firstStart && newest is not null)
             _session.SetSetting(WhatsNewSetting, newest.Label);
         ShowWhatsNew(WhatsNew.Due(WhatsNewSections, seen, firstStart), "start");
+    }
+
+    // Help's link to the newest version's card; said again in a new language (MainWindow.Language).
+    private WhatsNew.Section? SayWhatsNewHelp()
+    {
+        var newest = WhatsNewSections.FirstOrDefault();
+        ViewModel.WhatsNewHelp = WhatsNewHelpText();
+        return newest;
     }
 
     private void ShowWhatsNew(IReadOnlyList<WhatsNew.Section> sections, string how)

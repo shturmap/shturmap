@@ -624,4 +624,8 @@
     <value>WIKI PAGE ↗</value>
     <comment>A quest's card: link to the quest's page on the game's wiki. Upper case, small; the arrow says it leaves Shturmap.</comment>
   </data>
+  <data name="SettingsLanguage" xml:space="preserve">
+    <value>Language</value>
+    <comment>Settings: the name of the row with AUTOMATIC and the languages, each in its own name. Short: it stands beside them on one line.</comment>
+  </data>
 </root>

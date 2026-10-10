@@ -1173,7 +1173,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     IN" (the key as the game's settings name it), and the first position plotted gets a notice, "That's you, from your
     screenshot's name. Each new one moves you." Each once; a player who used Shturmap before the tour never sees them
     (they are armed only by a first start: `firstRaid`, `firstFix` in shturmap.db), so their words stay true.
-- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
+- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Language"
+  (AUTOMATIC, then each language Shturmap is translated into, in its own name: ENGLISH, DEUTSCH; developer builds also
+  list the ones still in translation, "DEUTSCH · IN TRANSLATION", to try them; a choice applies at once, and under it
+  one line says what Automatic comes to and why: "Automatic: English, from the game.", "…, from Windows.", or that
+  neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Delete
   position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
   §2), "Crash reports" (ASK AFTER A
@@ -2137,7 +2141,7 @@ Rules:
   dialog with the text, and Send is pressed by hand (nothing is sent without a click, and a command line isn't one). For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
   (`--culture <culture>`: that run's language for everything, as if chosen in settings, without saving it; `de-DE` also
-  for a language still being translated, `qps-ploc` the pseudo-language) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
+  for a language still being translated, `qps-ploc` the pseudo-language; `--switch-language <culture>` switches it while running, §8 "Developer aids") and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
@@ -2422,6 +2426,13 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
   second.
 
+**Switching the language in a run** (developer builds only; 2026-10-10). `--switch-language <culture>` (`en-US`, `de-DE`,
+`qps-ploc`) switches the language once the window shows the game data, exactly as a choice in settings does but for
+that run only, and before any snapshot is taken (`--snapshot`); with `--culture` the run starts in one language and
+ends in the other. The layout check compares such a run with a fresh one in the second language: every text must be the
+same (docs/LANGUAGES.md, "Layout check"). The folder build (`eng\publish.ps1`, a release configuration) hasn't got it;
+a Debug build and the dev build have.
+
 ### How the parts work
 
 **Finding the game.** Candidates come from the `EscapeFromTarkov` uninstall key (HKLM 32/64, HKCU), the
@@ -2574,6 +2585,22 @@ and the CLI stay English: they are read by whoever fixes Shturmap. The rules tha
 §5, extract requirements, `QuestCards.SaysWhere`) still read only English; in another data language their rows show
 tarkov.dev's sentence, as before.
 
+How it is made (2026-10-10). The setting is `language` in shturmap.db: `auto` (or none) or a language's code; a value
+that isn't offered (a language only a developer build offers, read by another build) counts as automatic. Windows'
+display language is read once, as the app starts, before anything sets the app's culture. The session opens before the
+window (`GameSession.Open`: the app's settings, the game and its settings), chooses and keeps the choice
+(`GameSession.Language`), and the app sets Shturmap's texts to it (`UiLanguage.Set`) before the window builds them, so
+a start shows no English first. A choice while running: the session chooses again and, when the game data's language
+changes, loads the data and the item sources in a new round, as a change of mode does (what the old language still
+waited for is dropped, the waits of "Asking again" start over, a load in the old language that ends later is dropped),
+the old data staying on screen until the new is here and the maps on screen named anew. The window switches Shturmap's
+texts on its own thread, reads every x:Bind again (`Bindings.Update`, the cards' too), sets again what code sets over
+XAML from its state (the tour's chapter, the report dialog's links, help's legend, What's New, the question after a
+crash), makes the rows drawn from templates anew, and the session composes its snapshot again
+(`GameSession.RepublishAsync`: the plans and the screenshot keys' names with it). The snapshot takes the language in
+use each time it is made (`UiLanguage.ApplyHere`): the current culture travels with async work, so a loop started
+before a switch would sort and format in the old one.
+
 **Texts.** Every word Shturmap shows is in a project's texts file, never in code or XAML: `CoreTexts`, `MapTexts`,
 `DataTexts`, `GameTexts`, `SessionTexts`, `AppTexts` (the app's code), `ViewTexts` (its XAML) and `RuleTexts` (the
 app's rules, which the Core tests compile too). Each is a `.resx` with the English texts and one `<Name>.<code>.resx`
@@ -2605,7 +2632,8 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
 **Language.** The game data comes in the language chosen above (`LanguageChoice.Data`), translated by tarkov.dev's
 `<payload>_<language>` files. The extract list's reader still reads the game's language, which is what the screenshot
 shows: when the data is in another language, the maps' texts in the game's language are loaded beside it (`maps_<code>`,
-about 25 KB), so an exit is matched by its name in the game's language, in English and in the language shown. The game names some languages its own way, and tarkov.dev answers those with 404:
+about 25 KB, kept for an hour as the other texts), so an exit is matched by its name in the game's language, in English and in the language shown (`GameData.GameNames`); when they can't be had, by the other two, without a word,
+until the data loads again. The game names some languages its own way, and tarkov.dev answers those with 404:
 `GameLanguage.Common` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all), one table for
 tarkov.dev and for the extract list's text recognition (review of 2026-10-09: each had a copy). A language
@@ -2717,7 +2745,10 @@ had: "No map render for The Lab: …", the same way.
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
 "Diagnostics copied: paste them into your message.": Shturmap's version with commit and whether it is the single
 exe; Windows' version and build; the install type (Steam, BSG launcher, manual) and whether the game, logs and
-screenshots folders were found; mode; the game's language and tarkov.dev's; the data's state (loaded, offline copy
+screenshots folders were found; mode; the game's language, Windows' display language, the language in use with where
+it came from (the setting, the game, Windows, the default; "this run only" for "--culture") and the game data's, and
+tarkov.dev's as loaded (with "extract names also in de" when the game's own names were loaded beside it); the data's
+state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; whether "Delete
 position screenshots" is on (§2); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is

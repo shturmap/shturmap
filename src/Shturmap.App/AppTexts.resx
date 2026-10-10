@@ -664,4 +664,32 @@
     <value>{label}: {explanation}</value>
     <comment>Tooltip of a quest-type symbol beside a quest. {label}: the quest type ("Kill"); {explanation}: what that type asks.</comment>
   </data>
+  <data name="SettingsLanguageAutomatic" xml:space="preserve">
+    <value>AUTOMATIC</value>
+    <comment>Settings, the Language row: its first choice, beside each language in its own name (ENGLISH, DEUTSCH). Upper case, as every choice in settings.</comment>
+  </data>
+  <data name="SettingsLanguageAutomaticTip" xml:space="preserve">
+    <value>The game's language, else Windows', else English</value>
+    <comment>Settings, the Language row: tooltip of AUTOMATIC. Only a language Shturmap is fully translated into counts.</comment>
+  </data>
+  <data name="SettingsLanguageInTranslation" xml:space="preserve">
+    <value>{language} · IN TRANSLATION</value>
+    <comment>Settings, the Language row, developer builds only: a language whose translation isn't finished. {language}: its own name in upper case, DEUTSCH.</comment>
+  </data>
+  <data name="SettingsLanguageInTranslationTip" xml:space="preserve">
+    <value>Developer builds only: not every text is translated yet; the rest shows in English.</value>
+    <comment>Settings, the Language row, developer builds only: tooltip of a language whose translation isn't finished.</comment>
+  </data>
+  <data name="SettingsLanguageFromGame" xml:space="preserve">
+    <value>Automatic: {language}, from the game.</value>
+    <comment>Settings, the note under the Language row: what AUTOMATIC comes to, the game's language. {language}: that language's own name, Deutsch.</comment>
+  </data>
+  <data name="SettingsLanguageFromWindows" xml:space="preserve">
+    <value>Automatic: {language}, from Windows.</value>
+    <comment>Settings, the note under the Language row: what AUTOMATIC comes to, Windows' display language (the game's is unknown or not translated). {language}: that language's own name, Deutsch.</comment>
+  </data>
+  <data name="SettingsLanguageNeither" xml:space="preserve">
+    <value>Automatic: {language}. Neither the game's nor Windows' language is translated yet.</value>
+    <comment>Settings, the note under the Language row: what AUTOMATIC comes to when Shturmap has no translation for the game's or Windows' language. {language}: English's own name, English.</comment>
+  </data>
 </root>

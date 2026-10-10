@@ -65,6 +65,7 @@ public sealed partial class MainWindow : Window
 #if DEVTOOLS
         AddStudySwitch();
 #endif
+        WatchLanguage();
 
         Picture.Art = () => _session.Art;
         Study.Log = session.Study;
@@ -214,7 +215,10 @@ public sealed partial class MainWindow : Window
     /// The map symbols in the help panel, drawn by the map's own renderer so they can't drift from the map (at twice
     /// the DIP size, which stays sharp up to 200 % and in snapshots).
     /// </summary>
-    private readonly IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = MapLegend.Rows
+    private IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = LegendRows();
+
+    // Made again when the language changes (MainWindow.Language): the rows' words are looked up as they are read.
+    private static List<(LegendSymbol Symbol, MapLegendRow Row)> LegendRows() => MapLegend.Rows
         .Select(row =>
         {
             using var bitmap = MapLegend.Draw(row.Symbol, 2);
@@ -452,6 +456,7 @@ public sealed partial class MainWindow : Window
             _ => AppTexts.StatusDataLoading,
         };
         vm.StudyLogOn = s.StudyLogOn;
+        ShowLanguage(s);
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys) : AppTexts.ScreenshotKeyUnknown;
