@@ -2661,7 +2661,10 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
   the words where its grammar wants them. Plurals are part of the text, in the syntax of ICU's MessageFormat that
   translators know: `{count, plural, one {# extract} other {# extracts}}`, with Unicode's plural forms of every
   language tarkov.dev has (`PluralRules`: Polish and Russian need three or four, so code never picks "extract" or
-  "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing.
+  "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing. A quest
+  type symbol's tooltip is one text per type, help's table keeping its own two (owner, 2026-10-11: it was "{label}:
+  {explanation}", the table's name and explanation glued, so German, which writes lower case after a colon unless a
+  whole sentence follows, read "Erkunden: Zu einem Spot gehen").
 - **Game names stand where they don't change form**: "Bring: {item}", not "Bring the {item}"; Russian and Polish
   change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are. A category's
   name inside a sentence ("Any sniper rifle") is in lower case only where its language writes a noun so: German

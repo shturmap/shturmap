@@ -72,4 +72,17 @@ public static class QuestTaxonomy
         ObjectiveKind.Survive => CoreTexts.QuestKindSurviveMeans,
         _ => CoreTexts.QuestKindTraderMeans,
     };
+
+    // The type symbol's tooltip: the name and what it asks, one whole text per type, so that each language writes what
+    // follows the colon as it should (owner, 2026-10-11: German writes lower case there, help's table a capital).
+    public static string Tip(ObjectiveKind kind) => kind switch
+    {
+        ObjectiveKind.Elimination => CoreTexts.QuestKindEliminationTip,
+        ObjectiveKind.Exploration => CoreTexts.QuestKindExplorationTip,
+        ObjectiveKind.Pickup => CoreTexts.QuestKindPickupTip,
+        ObjectiveKind.Place => CoreTexts.QuestKindPlaceTip,
+        ObjectiveKind.FindInRaid => CoreTexts.QuestKindFindInRaidTip,
+        ObjectiveKind.Survive => CoreTexts.QuestKindSurviveTip,
+        _ => CoreTexts.QuestKindTraderTip,
+    };
 }
