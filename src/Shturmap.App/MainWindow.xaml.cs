@@ -2297,5 +2297,9 @@ public sealed partial class MainWindow : Window
         encoder.SetPixelData(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
             (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, dpi, dpi, System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.ToArray(pixels));
         await encoder.FlushAsync();
+#if DEVTOOLS
+        // The layout check: the picture's texts and what a longer language breaks in it, beside it (Dev/LayoutCheck.cs).
+        await CheckLayoutAsync(element, path, rtb);
+#endif
     }
 }

@@ -91,6 +91,81 @@ any text without brackets on screen is one that wasn't moved into the texts file
 **Switching while running**: the check also switches the language of a running app and compares every text on screen
 with a fresh start in that language; a difference is a text that was kept from before the switch.
 
+**Running it.**
+
+```powershell
+.\tools\layout-check.ps1 -Out <folder>                    # every view in en-US, de-DE and qps-ploc, 900x560 and 1600x900
+.\tools\layout-check.ps1 -Out <folder> -Languages qps-ploc -States plan,raid -Sizes 900x560
+.\tools\layout-check.ps1 -Out <folder> -Languages de-DE -SwitchCheck  # also the switch from English
+```
+
+It builds a developer build into `artifacts\layout-check\app` (the check is compiled into developer builds only: Debug,
+or `ShturmapDev=true`; `-Exe` takes one already built) and plays each view with `tools\fake-raid.ps1` against the local
+tarkov.dev cache, in each culture of `-Languages` (passed as `--culture`) and at each size of `-Sizes`. Sizes are in
+DIP and count the whole window, as Windows does: 900x560 is the smallest Shturmap allows (DESIGN.md §4, "The window");
+they are scaled to the monitor the app opens on. The views, `-States` to pick some: `plan`, `raid` (the fake raid on
+Streets), `report` (the Report dialog with what's sent shown, `--show-report`), `crash` (the question after a crash,
+`--show-crash`), `whatsnew` (the newest What's New card, `--whats-new`), `quest` (a quest's card and an item's,
+`--show-quest`) and `tour1` to `tour7` (`--tour <n>`); settings is in each, as every snapshot opens it, and help in all
+but the tour's, where it opens by itself. A view takes about 20 seconds: all of them in three languages at two sizes
+take about 25 minutes.
+
+**What it writes.** A folder per language, size and view (`<folder>\de-DE\900x560\plan`) with the snapshot, and beside
+each picture of the window or a popup (`window.png`, `tour.png`, `help.png`, `settings.png`, `card.png`):
+
+- `<picture>.texts.txt`: every text shown, one per line, in the order of the window's elements: a text block's words
+  (its runs together; a button's or link's words are text blocks too), `tooltip: …`, `name: …` (what a screen reader
+  says) and `input: …` (a text box's own text). Shown means not collapsed, not transparent and not of no size; the
+  texts outside every viewport around them (scrolled out of a list, below a popup's fold) follow under
+  `--- not in view ---`: a scroll shows them, so they are checked too. The senior translator reads these with the
+  pictures.
+- `<picture>.layout.json`: the language and culture, the window's size and scale, and the problems, numbered, each with
+  its kind, its element (its `x:Name`, else its type and the elements around it), its text, its bounds in window pixels
+  and what is wrong.
+- `<picture>.problems.png`: the picture with each problem boxed and numbered in its kind's colour (overflow red, trimmed
+  orange, overlap magenta, untranslated cyan); one outside the picture has its number at the edge it lies beyond.
+
+`<folder>\summary.md` counts the problems per language and size and lists each once, with the views it shows in and
+links to the boxed pictures; the pseudo-language's untranslated texts come as one list, each text once. The exit code
+is 1 when a language other than the pseudo-language has a problem or a switch differs, 2 when a view couldn't be
+checked; the pseudo-language's problems are warnings. `-SummaryOnly` sums up an earlier run's folder again. The folder
+holds pictures of the app and the fake raid's paths: it stays on the PC and goes into no commit.
+
+**The problems** (`src\Shturmap.App\Dev\LayoutCheck.cs`):
+
+- *overflow*: a text or a control that sticks out of the nearest element that clips it (an element given less room
+  than it takes is cut at its slot; content in a scrolling list must fit the list's whole extent, not its viewport) or
+  out of the window; a text that needs more width or height than it was given and is cut without "…"; a word too wide
+  for its line, which breaks inside the word (long German compounds).
+- *trimmed*: a text that ends in "…" where the design doesn't let it give way. `controls:Fit.MayTrim="True"`
+  (`src\Shturmap.App\Controls\Fit.cs`) marks where it does, and only there: the status bar's last fix, Plan's
+  synopses after two lines, the notes of EXIT and OR after two lines (DESIGN.md §4). A new place needs the design to say
+  so first.
+- *overlap*: two texts over each other, where both can be seen. The deliberate layers (the tour, the Report dialog, a
+  cue's band, What's New's plate; `LayoutCheck.Layers`) are compared within themselves, not with what they cover.
+- *untranslated*, in the pseudo-language only: a text, or part of one, outside the pseudo-language's brackets that isn't
+  a game name (the loaded game data's names and tarkov.dev's sentences), a release's name, a number with its unit, a
+  key, a month or day of the culture, a path, or one of the few words that stay the same everywhere
+  (`LayoutWords.Neutral`: Shturmap, PMC, Scav, PvE, PvP, Escape from Tarkov, tarkov.dev, GitHub, Sentry, Windows). A
+  game name of one word counts only beside names and figures ("Kaban 75%"): among English words it is one of them, since
+  many are items too ("Map", "Raid", "Report"); items' short names, which only the map draws, don't count at all. So a
+  word that is also an item's name hides only where it stands alone. The rules that read English data (quest synopses,
+  extract requirements) make English phrases in the pseudo-language, whose data is English: they show here as
+  untranslated, and in another language their rows show tarkov.dev's sentence instead (DESIGN.md §8, "The app's own
+  language").
+
+Not checked: what the map draws (its labels are a picture), and a tooltip's own layout (only its words are listed).
+
+**`-SwitchCheck`** also starts each view in English and switches to each other language of `-Languages` once the data
+is there (`--switch-language <culture>`), then compares each picture's texts with the fresh start in that language,
+figures aside (a time or a fix's age differs from run to run): a line only after the switch was kept from before it, a
+line only in the fresh start is missing after it. A view whose language or culture after the switch isn't the fresh
+start's counts as not checked.
+
+**Not in CI.** The views need tarkov.dev's game data, which a fresh runner would download at every push (DESIGN.md §3,
+"No unnecessary load on tarkov.dev"), and all of them take about 25 minutes: the check runs on the developer's PC,
+before a release and after a change to the layout or to many texts (docs/UPDATES.md).
+
 ## Adding a language
 
 Run this checklist from top to bottom; tick each line in the commit that adds the language.

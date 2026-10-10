@@ -87,6 +87,14 @@ local cache and skip without it.
 When a check finds drift: fix the rule, add a test with made-up ids (never a real log line or quest text), update
 DESIGN.md in the same change, and add a line to the log at the end.
 
+## 5. Before a release: the layout check (25 min)
+
+New quests, items and maps bring longer names, in German most. With the fresh cache of step 1,
+`.\tools\layout-check.ps1 -Out <folder>` plays every view in English, German and the pseudo-language at the smallest
+window and at 1600x900 (docs/LANGUAGES.md, "Layout check"). It must say PASSED for every language but the
+pseudo-language; read the pseudo-language's warnings in `summary.md` for what a longer language will break next. Its
+pictures stay on the PC.
+
 ## What the rules assume
 
 ⚠ marks a failure that says nothing: something just goes missing or reads wrong.
