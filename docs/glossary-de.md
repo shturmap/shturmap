@@ -45,11 +45,11 @@ gender.
 | found in raid | FiR; found in raid | „FiR-Items“; caps FIR. The game: im Raid gefunden (tasks, 88 texts) |
 | PMC, PMCs; as a PMC | PMC, PMCs; als PMC | tasks, 78 texts |
 | Scav, Scavs; player Scav; Sniper Scav | Scav, Scavs; Player-Scav; Sniper-Scav | maps `scavs`. The game: Scav-Scharfschütze; Spieler-Scav isn't in the data |
-| boss, bosses; guard; Cultist; Rogue, Raider, Goons | Boss, Bosse; Guard, Guards; Cultist, Cultists; Rogue, Raider, Goons | The game: Wache or Wächter (maps `Follower`), Kultist (`sectantPriest`); names come from the data |
+| boss, bosses; guard; Cultist; Rogue, Raider, Goons; AI squad | Boss, Bosse; Guard, Guards; Cultist, Cultists; Rogue, Raider, Goons; KI-Squad | The game: Wache or Wächter (maps `Follower`), Kultist (`sectantPriest`); names come from the data |
 | extract, exfil (noun) | Extract (der), Extracts | decided (owner, 2026-10-10). The game: Ausgang (tasks, 9 texts), Exfil and Extract in a few names (maps `switch_00403_floor_button (1)` „Extract-Knopf“) |
 | extract (verb); survive and extract | extracten (ich extracte, extractet); überleben und extracten | players' verb; „rausgehen“ in speech. The game: entkommen („Überlebe und entkomme“, 49 texts) |
 | transit | Transit (der), Transits | the game too: maps `tr_customs_reserve_DESC` „Transit zu Reserve“ |
-| PMC extract; Scav extract; co-op extract | PMC-Extract; Scav-Extract; Co-Op-Extract | maps `tunnel_shared`: German names keep „(Co-Op)“ |
+| PMC extract; Scav extract; co-op extract; shared extract, extract for both sides | PMC-Extract; Scav-Extract; Co-Op-Extract; Extract für beide Seiten | maps `tunnel_shared`: German names keep „(Co-Op)“ |
 | flare (signal flare); flare extract | Flare (die), Flares; Flare-Extract | „rote Flare“. The game: Signalpatrone (items `62178c4d4ecf221597654e3d`); German extract names drop „(Flare)“ |
 | power switch; switch; elevator; trap | Power-Switch; Schalter; Aufzug; Falle | The game: Stromschalter (maps `switch_Use_reserve_electric_switcher`), Aufzug (`lab_Elevator_Main`) |
 | gear; kit; climbing gear | Gear (das); Kit (das); Kletter-Gear (Eispickel, Paracord) | The game: Ausrüstung, Kletterausrüstung; the items' names come from the data (items `5c0126f40db834002a125382`) |
@@ -70,7 +70,7 @@ gender.
 | mark; MS2000 Marker | markieren; MS2000 Marker | the game too (Markiere, 55 texts) |
 | stash; plant | verstecken; platzieren | The game: verstauen (56 texts), platzieren (54) |
 | complete a quest; fail | abschließen; failen (gefailt) | The game: abschließen („Schließe die Aufgabe … ab“), fehlschlagen |
-| spawn; spot; floor; basement | Spawn (der); Spot (der), Spots; Stock (der); Keller | maps `BotZone` „Beliebiger Scav-Spawn“, `BotZoneFloor1` „Erstes Stockwerk“, `BotZoneBasement` |
+| spawn; spot; floor, floors; basement | Spawn (der); Spot (der), Spots; Stock (der), Stockwerke (never Stöcke), in compounds Stockwerk- (STOCKWERKDATEN); Keller | maps `BotZone` „Beliebiger Scav-Spawn“, `BotZoneFloor1` „Erstes Stockwerk“, `BotZoneBasement` |
 | PvE, PvP, Seasonal; group | PvE, PvP, Season; Gruppe | tasks „Seasoncharakter“, „Season 1“ |
 | the extract list's header ("Find an extraction point") | **check** | not in the data; `ExitList` knows only the English header |
 | quest types: Elimination, Exploration, Pickup, Place, Find in raid, Survive, Trader | Kills, Erkunden, Pickup, Platzieren, FiR, Überleben, Trader | players' words; **check** the German game's Tasks screen (not in the data) and note its names |
@@ -96,11 +96,14 @@ gender.
 | ??? IN GAME; NOTHING NEEDED; ALL 15 ↓ | ??? IM SPIEL; NICHTS NÖTIG; ALLE 15 ↓ | |
 | EXTRACTS AND TRANSITS; ways out | EXTRACTS UND TRANSITS; Extracts und Transits | |
 | the game's extract list; to check (against it); your side; for your side | Extract-Liste; abgleichen; deine Seite; für deine Seite | side: PMC ⇄ SCAV; „Mach zum Abgleichen einen Screenshot der Extract-Liste“ |
-| anywhere; after the raid | überall; nach dem Raid | the raid card's place for kills and finds; hand-overs |
+| anywhere; after the raid; raid start | überall; nach dem Raid; Raid-Start (der) | the raid card's place for kills and finds; hand-overs; „beim Raid-Start oder zweimal O“ |
 | done; DONE; tick, untick | erledigt; ERLEDIGT; abhaken, Haken entfernen | „Erledigt · von dir abgehakt, 4. Okt.“ |
-| place; loose (lying on the map) | Spot; Loot-Spot | „Einer von 4 möglichen Spots“; „Loot-Spots auf Customs · 3“ |
+| place; loose (lying on the map) | Spot; Loot, Loot-Spot | „Einer von 4 möglichen Spots“; „Loot auf Customs · 3 Spots“, „Loot hier · 3 Spots“; the legend: „Loot-Spot eines Items“ |
 | marker (on the map) | Marker (der) | the MS2000 Marker too; the context tells |
 | guide line; facing | Linie; Blickrichtung | on screen: gestrichelte Linie |
+| the legend's shapes: disc, ring, cone, triangle, diamond, octagon, hexagon, square, dot, chevron, badge, padlock, trunk, check, glyph, power symbol | Scheibe, Ring, Kegel, Dreieck, Raute, Achteck, Sechseck, Quadrat, Punkt, Pfeil, Badge, Schloss, Kofferraum, Haken, Symbol, Ein/Aus-Symbol | MapTexts' legend |
+| hollow, open, outline; hatched | Umriss (der); schraffiert | „nur Umriss“, „Sechseck-Umriss“, „Quadrat-Umriss“, „werden zum Umriss“, „erscheinen nur als Umriss“; not „hohl“ |
+| the legend's colours: sand, gold, green, teal, khaki, violet, red, grey; faint; lit, bright | sandfarben, golden, grün, türkisfarben, khakifarben, violett, rot, grau; blass; hell | „sandfarbene Scheibe“, „geteiltes khakifarbenes Dreieck“ |
 | preview; PREVIEW ·; AN EXAMPLE, NOT YOUR RAID | Vorschau; VORSCHAU ·; EIN BEISPIEL, NICHT DEIN RAID | |
 | point at; point (alone, a heading); rest on; click; hold, keep (a card); row; the list on the left | zeigen auf; draufzeigen; kurz bleiben auf; klicken; festhalten; Zeile; die Liste links | „Zeig auf eine Quest“; PICKEN UND DRAUFZEIGEN (ZEIGEN alone is SHOW ME); „hält ihre Karte fest“ |
 | position, fix; last fix; 7 MIN OLD | Position; letzte Position; 7 MIN ALT | |
@@ -122,8 +125,9 @@ gender.
 | GET IT; after {quest}; from level 10; needed for Kappa | BESORGEN; nach {quest}; ab Level 10; nötig für Kappa | item and quest cards |
 | A or B; 13 of 16 kinds; or 5 others | A oder B; 13 von 16 Arten; oder 5 weitere | |
 | try again (to the player); again; Shturmap tries again | versuch es noch mal; noch mal; Shturmap versucht es … erneut | the du-voice says „noch mal“, not „erneut“ or „noch einmal“ |
-| dev build, developer builds; developer run; folder build; installed | Dev-Build (der), Dev-Builds; Entwickler-Testlauf (der); Ordner-Build; installiert | the build is what was built („Nur in Dev-Builds“, the version line); a run is a developer's session: snapshots, fake games, the demo (DESIGN.md §8): „Entwickler-Testläufe senden nichts“ |
+| dev build, developer builds; developer run; folder build; installed; study log | Dev-Build (der), Dev-Builds; Entwickler-Testlauf (der); Ordner-Build; installiert; Studien-Log (das) | the build is what was built („Nur in Dev-Builds“, the version line); a run is a developer's session: snapshots, fake games, the demo (DESIGN.md §8): „Entwickler-Testläufe senden nichts“ |
 | deadly area; SNIPER ZONE | tödlicher Bereich; SNIPER-ZONE | |
+| map artwork; map render; sheet; 10 m grid | Map-Grafik (in the legend: Grafik); Map-Render; Blatt; 10-m-Raster | „Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster …“; credit line „Raster 10 m“; caps RASTER 10 M |
 | settings rows | Positions-Screenshots löschen; Extract-Liste aus Screenshots lesen; Absturzberichte; Updates | options: NACH ABSTURZ FRAGEN · IMMER SENDEN · NIE; AUTOMATISCH · NUR BENACHRICHTIGEN · AUS |
 | GAME FOLDER; CHOOSE GAME FOLDER…; FIND AUTOMATICALLY | SPIELORDNER; SPIELORDNER WÄHLEN…; AUTOMATISCH SUCHEN | „(von dir gewählt)“, „(automatisch gefunden)“, NICHT GEFUNDEN |
 
@@ -140,7 +144,7 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | Copy; Download; Install; installed; Uninstall; Restart now | Kopieren; Herunterladen; Installieren; installiert; Deinstallieren; Jetzt neu starten | |
 | update, updates; Automatic; On; Off; Never; Always | Update, Updates; Automatisch; Ein; Aus; Nie; Immer | Update is Windows Update's word |
 | App and data; Privacy; Licences | App und Daten; Datenschutz; Lizenzen | |
-| crash; crash report | Absturz; Absturzbericht | |
+| crash; crash report; error report | Absturz; Absturzbericht; Fehlerbericht | |
 | report (noun); to report; Report a problem or idea; Reporting isn't set up in this build | Bericht; melden; Problem oder Idee melden; Melden ist in diesem Build nicht eingerichtet | PROBLEM · IDEE; not „Berichte sind … nicht eingerichtet“; whoever gave you Shturmap: die Person, von der du Shturmap hast |
 | diagnostics; Include diagnostics | Diagnosedaten; Diagnosedaten anhängen | COPY DIAGNOSTICS: DIAGNOSEDATEN KOPIEREN |
 | folder; log folder; choose a folder | Ordner; Log-Ordner; Ordner wählen | Windows' picker is titled „Ordner auswählen“ |
