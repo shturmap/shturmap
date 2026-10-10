@@ -101,12 +101,15 @@ public static partial class LayoutWords
                 if (!segment.Any(char.IsLetter) || Known(segment))
                     continue;
                 var words = segment.Split([' ', '\t', ' ', ' '], StringSplitOptions.RemoveEmptyEntries);
-                var english = new List<string>();
+                // Each word: part of a name of several words ("Streets of Tarkov"), a figure or key, a name of one
+                // word ("Kaban"), or English. A name of one word counts only among names and figures ("Kaban 75%"):
+                // among English words it is one of them, since many are ("Map", "Raid" and "Report" are items).
+                var english = new bool[words.Length];
+                var single = new bool[words.Length];
                 for (var i = 0; i < words.Length;)
                 {
-                    // The longest run of words that is a name ("Streets of Tarkov", "Kaban").
                     var matched = 0;
-                    for (var n = Math.Min(6, words.Length - i); n >= 1 && matched == 0; n--)
+                    for (var n = Math.Min(6, words.Length - i); n >= 2 && matched == 0; n--)
                     {
                         if (Known(string.Join(' ', words, i, n)))
                             matched = n;
@@ -117,11 +120,16 @@ public static partial class LayoutWords
                         continue;
                     }
                     if (!IsNeutralWord(words[i], i > 0 ? words[i - 1] : null))
-                        english.Add(words[i]);
+                    {
+                        if (Known(words[i]))
+                            single[i] = true;
+                        else
+                            english[i] = true;
+                    }
                     i++;
                 }
-                if (english.Count > 0)
-                    found.Add(string.Join(' ', english));
+                if (english.Any(e => e))
+                    found.Add(string.Join(' ', words.Where((_, i) => english[i] || single[i])));
             }
         }
         return found;
@@ -143,13 +151,16 @@ public static partial class LayoutWords
     }
 
     // The properties of the data whose texts the app shows as they are: names and tarkov.dev's sentences. Not the
-    // internal words beside them (an objective's type "visit", a kill target "Any"), which could hide an English word.
-    private static readonly HashSet<string> ShownProperties = new(StringComparer.Ordinal) { "Name", "ShortName", "Description" };
+    // internal words beside them (an objective's type "visit", a kill target "Any"), which could hide an English word,
+    // nor the items' short names, which only the map draws and many of which are English words ("Log", "Data", "OR").
+    private static readonly HashSet<string> ShownProperties = new(StringComparer.Ordinal) { "Name", "Description" };
+
+    private static readonly HashSet<string> SkippedProperties = new(StringComparer.Ordinal) { "ItemShortNames", "ExtractKeys", "ObjectiveFacts" };
 
     /// <summary>
     /// The names in a graph of Shturmap's data objects (the game data: maps, extracts, transits, quests and their
     /// objectives, traders, bosses, items), as <see cref="Key"/> makes them: what the app shows of the game data stays
-    /// as tarkov.dev gives it. Texts are taken from properties named Name, ShortName or Description and from
+    /// as tarkov.dev gives it. Texts are taken from properties named Name or Description and from
     /// dictionaries of texts (item names by id); ids (24 hex digits) and texts without letters are left out.
     /// </summary>
     public static HashSet<string> NamesIn(object root)
@@ -200,7 +211,8 @@ public static partial class LayoutWords
                 continue;
             foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.GetIndexParameters().Length > 0 || property.PropertyType.IsPrimitive || property.PropertyType.IsEnum)
+                if (property.GetIndexParameters().Length > 0 || property.PropertyType.IsPrimitive || property.PropertyType.IsEnum
+                    || SkippedProperties.Contains(property.Name))
                     continue;
                 object? v;
                 try

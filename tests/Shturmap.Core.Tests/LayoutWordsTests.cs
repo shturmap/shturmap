@@ -12,7 +12,7 @@ public class LayoutWordsTests
     private static readonly CultureInfo Us = CultureInfo.GetCultureInfo("en-US");
 
     private static readonly HashSet<string> Names =
-        new(new[] { "Customs", "Streets of Tarkov", "Klimov Street (Flare)", "Kaban", "MS2000 Marker", "Praetorian" }.Select(LayoutWords.Key));
+        new(new[] { "Customs", "Streets of Tarkov", "Klimov Street (Flare)", "Kaban", "MS2000 Marker", "Praetorian", "Map" }.Select(LayoutWords.Key));
 
     private static IReadOnlyList<string> English(string text) => LayoutWords.EnglishParts(text, Names, Us);
 
@@ -64,16 +64,20 @@ public class LayoutWordsTests
     [Fact]
     public void A_game_name_among_english_words_leaves_the_english_reported()
     {
-        Assert.Equal(["Raid on"], English("Raid on Customs"));
+        Assert.Equal(["Raid on Customs"], English("Raid on Customs"));
         Assert.Equal(["MIN"], English("MIN"));
+        // An item called "Map" doesn't hide the word: a name of one word counts only among names and figures.
+        Assert.Equal(["WIKI MAP"], English("WIKI MAP"));
+        Assert.Empty(English("Kaban 75% · Streets of Tarkov"));
     }
 
     private sealed record Thing(string Id, string Name, string? ShortName, string Type, string? Description = null);
 
-    private sealed record World(Dictionary<string, Thing> Things, IReadOnlyDictionary<string, string> NamesById, List<string> Ids, Thing? Missing);
+    private sealed record World(Dictionary<string, Thing> Things, IReadOnlyDictionary<string, string> NamesById, List<string> Ids, Thing? Missing,
+        IReadOnlyDictionary<string, string> ItemShortNames);
 
     [Fact]
-    public void Names_are_taken_from_names_descriptions_and_dictionaries_of_texts_not_from_internal_words_or_ids()
+    public void Names_are_taken_from_names_descriptions_and_dictionaries_of_texts_not_from_short_names_internal_words_or_ids()
     {
         var world = new World(
             new Dictionary<string, Thing>
@@ -82,10 +86,12 @@ public class LayoutWordsTests
             },
             new Dictionary<string, string> { ["b"] = "Bomber beanie", ["c"] = "5c0e534186f7747fa1419868" },
             ["shoot"],
-            null);
+            null,
+            new Dictionary<string, string> { ["d"] = "Log" });
         var names = LayoutWords.NamesIn(world);
         Assert.Contains("MS2000 MARKER", names);
-        Assert.Contains("MS2000", names);
+        Assert.DoesNotContain("MS2000", names);
+        Assert.DoesNotContain("LOG", names);
         Assert.Contains("MARK THE FIRST LAV III", names);
         Assert.Contains("BOMBER BEANIE", names);
         Assert.DoesNotContain("VISIT", names);

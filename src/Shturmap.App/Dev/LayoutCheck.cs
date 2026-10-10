@@ -512,7 +512,9 @@ internal sealed class LayoutCheck
     // TextBlock, scaled to what the TextBlock itself measures for the whole text on one line.
     private static string? LongestWord(TextBlock tb, string text, double roomWidth)
     {
-        var words = text.Split([' ', '\n', '\u00A0'], StringSplitOptions.RemoveEmptyEntries).Distinct().Where(w => w.Length >= 6)
+        // A path or an address breaks anywhere by nature (diagnostics show them).
+        var words = text.Split([' ', '\n', '\u00A0'], StringSplitOptions.RemoveEmptyEntries).Distinct()
+            .Where(w => w.Length >= 6 && !w.Contains('\\') && !w.Contains('/'))
             .OrderByDescending(w => w.Length).Take(3).ToList();
         if (words.Count == 0)
             return null;
