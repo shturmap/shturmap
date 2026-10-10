@@ -13,7 +13,7 @@ public static class StatusBarFit
     /// PRTSC IN RAID" used to stand there all the time).
     /// </summary>
     /// <param name="keys">The game's screenshot keys, as help names them ("PrtSc or Home").</param>
-    public static string NoPosition(RaidPhase phase, string keys) => phase == RaidPhase.InRaid ? $"No position yet · press {keys}" : "";
+    public static string NoPosition(RaidPhase phase, string keys) => phase == RaidPhase.InRaid ? RuleTexts.StatusNoPosition(keys: keys) : "";
 
     /// <summary>How much wider than needed the bar must be before the lights' words come back, so that a word
     /// more or less in the last fix ("9 S" to "10 S") doesn't switch them on and off.</summary>

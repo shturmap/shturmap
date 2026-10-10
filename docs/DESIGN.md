@@ -801,7 +801,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     seen. After an update from a version before the card, the newest version only (`Rules.WhatsNew.Due`). Never by
     itself in a snapshot or the demo. **Gone:** with ×, or once the first raid since the update is over; help's WHAT'S
     NEW IN 0.4.0 · PRAETORIAN brings the newest version's card back. The lines are docs/whats-new.md, built into the
-    app: one section
+    app, with each language's translation beside it (`docs/whats-new.<code>.md`; a version it lacks shows in English,
+    `Rules.WhatsNew.InLanguage`): one section
     per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words). A line about the tour (`tour`, or `tour:5` for a
     chapter a release changed) previews nothing; a click on it opens the tour there (owner, 2026-10-09, T13; *The tour*).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
@@ -1158,7 +1159,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     to principle 3).
   - **Words** live in docs/tour.md, built into the app: per chapter its stage, the parts it frames (their `x:Name`s in
     MainWindow.xaml), its title, at most two lines and its stage's own words. `TourTests` fail when a part it names is
-    gone from the window, a stage isn't one the app draws, or a title or line is longer than the band.
+    gone from the window, a stage isn't one the app draws, or a title or line is longer than the band. Its translations
+    stand beside it, `docs/tour.<code>.md`, picked by the language in use each time a chapter shows (a switch while
+    the tour is up shows its chapter again); one whose chapters, stages, anchors or keyed words aren't the English
+    tour's isn't shown, the English one is (`Rules.Tour.InLanguage`, `Rules.BuiltDocs`; §8, "Texts").
   - **Keeping it current** (owner, 2026-10-09). A change to something a chapter shows changes the chapter in the same
     commit. Its drawing is the app's own, so a new symbol, card or cue shows in the tour by itself; what can go stale is
     its words and what it frames, and the test catches the second. A release that changed a chapter says so in What's

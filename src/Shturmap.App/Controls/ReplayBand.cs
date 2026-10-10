@@ -62,7 +62,6 @@ public sealed partial class ReplayBand : Grid
             CharacterSpacing = 300, Foreground = Brush(brush), VerticalAlignment = VerticalAlignment.Center,
         };
         _title = Eyebrow("AmberBrush");
-        _title.Text = "RAID OVER";
         _map = Eyebrow("InkBrush");
         var words = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14 };
         words.Children.Add(_title);
@@ -95,8 +94,10 @@ public sealed partial class ReplayBand : Grid
     public void Show(RaidReplay replay, string mapWords)
     {
         _replay = replay;
+        // Set at each showing, in the language in use then.
+        _title.Text = AppTexts.CueRaidOver;
         _map.Text = mapWords;
-        _end.Text = $"{(int)replay.Minutes} MIN";
+        _end.Text = AppTexts.ReplayMinutes(minutes: (int)replay.Minutes);
         _line.Children.Clear();
         _dots.Clear();
         _marks.Clear();
@@ -148,7 +149,7 @@ public sealed partial class ReplayBand : Grid
         if (_replay is not { } replay)
             return;
         var shown = replay.Fixes.Count(f => f.Minute <= minute + 1e-9);
-        _count.Text = $"{shown} OF {replay.Fixes.Count} {(replay.Fixes.Count == 1 ? "POSITION" : "POSITIONS")}";
+        _count.Text = AppTexts.ReplayPositions(count: replay.Fixes.Count, shown: shown);
         Lay();
     }
 

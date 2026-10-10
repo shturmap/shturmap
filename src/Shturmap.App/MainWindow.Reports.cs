@@ -30,13 +30,13 @@ public sealed partial class MainWindow
     /// <summary>The feedback button's icon: ink like "?" and the gear, muted where this build can't report.</summary>
     public Brush FeedbackIconBrush => Resource(Reporter.Configured ? "InkBrush" : "MutedBrush");
 
-    public string FeedbackTooltip => Reporter.Configured ? "Report a problem or idea" : "Reporting isn't set up in this build";
+    public string FeedbackTooltip => Reporter.Configured ? AppTexts.FeedbackTip : AppTexts.FeedbackTipNotSetUp;
 
     /// <summary>Help's pointer to the feedback button, which replaced the report link there (owner, 2026-10-03).</summary>
-    public string FeedbackPointer => "Problem or idea? Use the feedback button beside the ?.";
+    public string FeedbackPointer => AppTexts.HelpFeedbackPointer;
 
     /// <summary>A notice that asks for a report links to the dialog, or to the diagnostics where there is none.</summary>
-    public string ReportOfferText => Reporter.Configured ? "REPORT" : "COPY DIAGNOSTICS";
+    public string ReportOfferText => Reporter.Configured ? AppTexts.NoticeReport : AppTexts.NoticeCopyDiagnostics;
 
     public Visibility ShownIfMode(string mode, string value) => mode == value ? Visibility.Visible : Visibility.Collapsed;
 
@@ -83,7 +83,7 @@ public sealed partial class MainWindow
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
         {
             AppLog.Warn("Opening the privacy notice failed", ex);
-            ShowNotice(@"Couldn't open the privacy notice; it is privacy.txt beside Shturmap.exe.");
+            ShowNotice(AppTexts.NoticePrivacyNotOpened);
         }
     }
 
@@ -108,7 +108,7 @@ public sealed partial class MainWindow
     {
         if (!Reporter.Configured && !SnapshotMode)
         {
-            ShowNotice("Reporting isn't set up in this build: copy the diagnostics in help (?) and send them to whoever gave you Shturmap.");
+            ShowNotice(AppTexts.NoticeReportingNotSetUp);
             return;
         }
         if (ReportSend.Visibility == Visibility.Collapsed)
@@ -118,7 +118,7 @@ public sealed partial class MainWindow
             ReportText.Text = prefill;
         ReportStatusText.Visibility = Visibility.Collapsed;
         ReportSentView.Visibility = showSent ? Visibility.Visible : Visibility.Collapsed;
-        ReportShowSentText.Text = showSent ? "HIDE WHAT'S SENT" : "SHOW WHAT'S SENT";
+        ReportShowSentText.Text = showSent ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
         RefreshReport();
         ReportOverlay.Visibility = Visibility.Visible;
         ReportText.Focus(FocusState.Programmatic);
@@ -140,7 +140,7 @@ public sealed partial class MainWindow
         ReportText.IsEnabled = ReportContact.IsEnabled = true;
         ReportIncludeDiagnostics.IsChecked = true;
         ReportSend.Visibility = Visibility.Visible;
-        ReportCancel.Content = "CANCEL";
+        ReportCancel.Content = AppTexts.ReportCancel;
     }
 
     private void SetReportKind(ReportKind kind)
@@ -149,8 +149,8 @@ public sealed partial class MainWindow
         ReportProblem.IsChecked = kind == ReportKind.Problem;
         ReportIdea.IsChecked = kind == ReportKind.Idea;
         ReportText.PlaceholderText = kind == ReportKind.Problem
-            ? "What happened, and what did you expect? (Required)"
-            : "What would help, and when would you use it? (Required)";
+            ? AppTexts.ReportProblemPlaceholder
+            : AppTexts.ReportIdeaPlaceholder;
         RefreshReport();
     }
 
@@ -168,7 +168,7 @@ public sealed partial class MainWindow
     {
         var show = ReportSentView.Visibility != Visibility.Visible;
         ReportSentView.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        ReportShowSentText.Text = show ? "HIDE WHAT'S SENT" : "SHOW WHAT'S SENT";
+        ReportShowSentText.Text = show ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
         RefreshReport();
         if (show)
             Study.Ui("report.preview");
@@ -208,7 +208,7 @@ public sealed partial class MainWindow
         var report = new UserReport(UserReport.NewId(), DateTime.Now, _reportKind, ReportText.Text.Trim(), ReportContact.Text.Trim(),
             ReportIncludeDiagnostics.IsChecked == true ? DiagnosticsText() : null);
         ReportSend.IsEnabled = false;
-        ShowReportStatus("Sending…", "MutedBrush");
+        ShowReportStatus(AppTexts.ReportSending, "MutedBrush");
         var result = await Task.Run(() => Reporter.SendAsync(report));
         Study.Ui("report.send", ("kind", report.Kind), ("status", result.Status), ("diagnostics", report.Diagnostics is not null));
         if (result.Status is ReportStatus.Sent or ReportStatus.Kept or ReportStatus.Refused)
@@ -217,7 +217,7 @@ public sealed partial class MainWindow
             ShowReportStatus(result.Message, result.Status == ReportStatus.Sent ? "AmberBrush" : "InkBrush");
             ReportText.IsEnabled = ReportContact.IsEnabled = false;
             ReportSend.Visibility = Visibility.Collapsed;
-            ReportCancel.Content = "CLOSE";
+            ReportCancel.Content = AppTexts.ReportClose;
         }
         else
         {
@@ -243,7 +243,7 @@ public sealed partial class MainWindow
         ReportIncludeDiagnostics.IsChecked = true;
         RefreshReport();
         OnReportSendClick(this, new RoutedEventArgs());
-        for (var i = 0; i < 60 && ReportStatusText.Text is "Sending…" or ""; i++)
+        for (var i = 0; i < 60 && (ReportStatusText.Text == AppTexts.ReportSending || ReportStatusText.Text.Length == 0); i++)
             await Task.Delay(500);
         return ReportStatusText.Text;
     }
@@ -256,10 +256,8 @@ public sealed partial class MainWindow
         _crashes = records;
         var fatal = records.Count(r => r.Fatal);
         ViewModel.CrashQuestion = fatal == 0
-            ? (records.Count == 1 ? "Shturmap ran into an error last time." : $"Shturmap ran into {records.Count} errors since you last answered.") +
-              " Send an error report? It helps to fix it."
-            : (fatal == 1 ? "Shturmap closed unexpectedly last time." : $"Shturmap closed unexpectedly {fatal} times since you last answered.") +
-              " Send a crash report? It helps to fix it.";
+            ? AppTexts.CrashQuestionErrors(count: records.Count)
+            : AppTexts.CrashQuestionCrashes(count: fatal);
         ViewModel.CrashAsking = true;
         ViewModel.CrashSent = false;
         ViewModel.CrashDetails = "";
@@ -312,7 +310,7 @@ public sealed partial class MainWindow
     {
         ViewModel.CrashAsking = false;
         ViewModel.CrashDetails = "";
-        ViewModel.CrashQuestion = "Sending…";
+        ViewModel.CrashQuestion = AppTexts.ReportSending;
         var records = _crashes;
         var result = await Task.Run(() => Reporter.SendCrashesAsync(records));
         Study.Ui("crash.send", ("how", how), ("count", records.Count), ("status", result.Status));

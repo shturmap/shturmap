@@ -213,7 +213,7 @@ public partial class App : Application
             await RemoveSingleExeLeftoversAsync();
         // Developer aids for snapshots of the report dialog and the question after a crash.
         if (cli.Contains("--show-report"))
-            _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, "Example: the map stayed on Woods after I loaded into Customs.", "snapshot", showSent: true);
+            _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, AppTexts.ReportExample, "snapshot", showSent: true);
         if (cli.Contains("--show-crash"))
             _window.AskAboutCrashes(Reporter.Crashes.Waiting() is { Count: > 0 } waiting ? waiting : [ExampleCrash()]);
 #if DEVTOOLS

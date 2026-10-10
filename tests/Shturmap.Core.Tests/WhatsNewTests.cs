@@ -117,6 +117,64 @@ public class WhatsNewTests
         });
     }
 
+    // What's New in another language (docs/DESIGN.md §8, "Texts"): docs/whats-new.<code>.md beside docs/whats-new.md, each
+    // version's lines in the translation where it has them, else in English.
+    [Fact]
+    public void A_translation_stands_in_for_the_versions_it_has_and_english_for_the_rest()
+    {
+        var english = WhatsNew.Parse(Two);
+        var translated = WhatsNew.Parse("""
+            ## 0.4.0
+
+            - replay · Raid-Wiederholung · Nach einem Raid: wo du Screenshots gemacht hast.
+            - clock · Raidzeit, groß · Minuten übrig, groß.
+
+            ## 0.6.0
+
+            - leaders · Nicht in der englischen Datei · Bleibt weg.
+            """);
+        var shown = WhatsNew.InLanguage(english, translated);
+        Assert.Equal(["0.5.0", "0.4.0"], shown.Select(s => s.Label));
+        Assert.Equal("On a line to their place.", shown[0].Items[0].Text);
+        Assert.Equal("Raid-Wiederholung", shown[1].Items[0].Name);
+        Assert.Same(english, WhatsNew.InLanguage(english, null));
+        // A translated section whose lines aren't the English section's: out of date, shown in English.
+        var behind = WhatsNew.Parse("""
+            ## 0.4.0
+
+            - replay · Raid-Wiederholung · Nach einem Raid.
+            """);
+        Assert.Equal("Raid replay", WhatsNew.InLanguage(english, behind)[1].Items[0].Name);
+        Assert.Equal("whats-new.de.md", BuiltDocs.TranslationOf(BuiltDocs.WhatsNew, "de"));
+    }
+
+    // Each translated What's New in docs: a language Shturmap knows, only versions the English file has, each with the
+    // English section's lines (their previews, in order) and the card's limits. None is there yet: this holds the first.
+    [Fact]
+    public void Each_translated_list_has_only_versions_and_lines_the_english_has()
+    {
+        var root = RepositoryRoot();
+        var english = WhatsNew.Parse(File.ReadAllText(Path.Combine(root, "docs", "whats-new.md")));
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(root, "docs"), "whats-new.*.md"))
+        {
+            var name = Path.GetFileName(file);
+            var language = name["whats-new.".Length..^".md".Length];
+            Assert.True(UiLanguage.IsWritten(language), $"{name}: '{language}' is neither offered nor being translated (UiLanguage)");
+            foreach (var section in WhatsNew.Parse(File.ReadAllText(file)))
+            {
+                var source = english.FirstOrDefault(s => s.Version == section.Version);
+                Assert.True(source is not null, $"{name}: {section.Label} isn't a version of docs/whats-new.md");
+                Assert.True(source.Items.Select(i => i.Preview).SequenceEqual(section.Items.Select(i => i.Preview)),
+                    $"{name}, {section.Label}: the lines' previews aren't the English section's ({string.Join(", ", source.Items.Select(i => i.Preview))})");
+                Assert.All(section.Items, item =>
+                {
+                    Assert.True(item.Name.Length <= 28, $"{name}, {section.Label}: '{item.Name}' is longer than a line of the card");
+                    Assert.True(item.Text.Length <= 100, $"{name}, {section.Label}: '{item.Text}' is longer than two lines of the card");
+                });
+            }
+        }
+    }
+
     private static string RepositoryRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

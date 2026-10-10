@@ -83,6 +83,45 @@ public static class Tour
     }
 
     /// <summary>
+    /// The stages whose words are keyed by what the app finds them by, not by words shown: "safe" ("reads", "never"),
+    /// "key" ("list", "read") and "know" (the buttons' x:Names). A translation keeps these keys as they are and
+    /// translates the text after them; the keys of "follows" are the status bar's words and are translated.
+    /// </summary>
+    public static readonly IReadOnlySet<string> KeyedStages = new HashSet<string>(StringComparer.Ordinal) { "safe", "key", "know" };
+
+    /// <summary>
+    /// The tour in the language in use: the translation (docs/tour.&lt;code&gt;.md; <see cref="BuiltDocs"/>) where it has
+    /// the English tour's chapters (<see cref="SameFrame"/>), else the English tour. A translation that has fallen behind
+    /// the English one is not shown: its chapters would frame other parts than the words say.
+    /// </summary>
+    /// <param name="translated">The translation's chapters, or null where the language has none.</param>
+    public static IReadOnlyList<Chapter> InLanguage(IReadOnlyList<Chapter> english, IReadOnlyList<Chapter>? translated) =>
+        translated is not null && SameFrame(english, translated) ? translated : english;
+
+    /// <summary>
+    /// Whether a translated tour has the English tour's chapters: the same stages in the same order, each framing the
+    /// same parts (anchors), and the keyed stages' words (<see cref="KeyedStages"/>) under the same keys.
+    /// </summary>
+    public static bool SameFrame(IReadOnlyList<Chapter> english, IReadOnlyList<Chapter> translated) =>
+        english.Count == translated.Count && english.Zip(translated).All(p =>
+            p.First.Stage == p.Second.Stage
+            && p.First.Anchors.Count == p.Second.Anchors.Count
+            && p.First.Anchors.Zip(p.Second.Anchors).All(a => a.First.SequenceEqual(a.Second))
+            && (!KeyedStages.Contains(p.First.Stage) || p.First.Words.Select(w => w.Key).SequenceEqual(p.Second.Words.Select(w => w.Key))));
+
+    /// <summary>
+    /// The tour with every word it shows changed by <paramref name="change"/>, the keys the app finds words by kept: the
+    /// pseudo-language's tour (<see cref="Shturmap.Core.Text.PseudoText"/>), so its words show as moved into a language.
+    /// </summary>
+    public static IReadOnlyList<Chapter> Map(IReadOnlyList<Chapter> chapters, Func<string, string> change) =>
+        chapters.Select(c => c with
+        {
+            Title = change(c.Title),
+            Lines = c.Lines.Select(change).ToList(),
+            Words = c.Words.Select(w => new Word(KeyedStages.Contains(c.Stage) ? w.Key : change(w.Key), change(w.Text))).ToList(),
+        }).ToList();
+
+    /// <summary>
     /// Whether the tour starts by itself: at a first start (neither it nor help seen on this PC), in help's place.
     /// Never during a raid (<see cref="WhileInRaid.Waits"/>): it waits until the raid is over.
     /// </summary>
@@ -96,7 +135,7 @@ public static class Tour
         forward ? (at + 1 < count ? at + 1 : null) : Math.Max(0, at - 1);
 
     /// <summary>"TOUR · 3 OF 7": the band's eyebrow.</summary>
-    public static string Eyebrow(int at, int count) => $"TOUR · {at + 1} OF {count}";
+    public static string Eyebrow(int at, int count) => RuleTexts.TourEyebrow(chapter: at + 1, count: count);
 
     /// <summary>
     /// A What's New line that opens the tour: "tour", or "tour:5" for its fifth chapter (a chapter a release changed).

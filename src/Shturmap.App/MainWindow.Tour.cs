@@ -6,6 +6,8 @@ using Microsoft.UI.Xaml.Shapes;
 using Shturmap.App.Controls;
 using Shturmap.App.Rules;
 using Shturmap.Core;
+using Shturmap.Core.Navigation;
+using Shturmap.Core.Text;
 using Shturmap.Data.TarkovDev;
 using Shturmap.Map;
 using Shturmap.Session;
@@ -29,7 +31,8 @@ public sealed partial class MainWindow
     private const string TourPreviewPrefix = "tour:";
     private const string FirstRaidSetting = "firstRaid";
     private const string FirstFixSetting = "firstFix";
-    private IReadOnlyList<Tour.Chapter>? _tourChapters;
+    // The tour in the language it was last read in (TourChapters).
+    private (string Language, IReadOnlyList<Tour.Chapter> Chapters)? _tourChapters;
     private int _tourAt = -1;
     // A raid closed the tour at this chapter: it comes back there once the raid is over.
     private int? _tourResume;
@@ -57,16 +60,37 @@ public sealed partial class MainWindow
 
     private bool TourOpen => _tourAt >= 0;
 
-    private IReadOnlyList<Tour.Chapter> TourChapters => _tourChapters ??= LoadTour();
-
-    private static IReadOnlyList<Tour.Chapter> LoadTour()
+    // The tour in the language in use, read again when that has changed (Rules.BuiltDocs): a switch shows at the next
+    // chapter, and at once while the tour is up (OnTourLanguageChanged).
+    private IReadOnlyList<Tour.Chapter> TourChapters
     {
-        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("tour.md");
-        if (stream is null)
-            return [];
-        using var reader = new StreamReader(stream);
-        return Tour.Parse(reader.ReadToEnd()).Where(c => Tour.Stages.Contains(c.Stage)).ToList();
+        get
+        {
+            var language = UiLanguage.Code;
+            if (_tourChapters is { } known && known.Language == language)
+                return known.Chapters;
+            var chapters = LoadTour(language);
+            _tourChapters = (language, chapters);
+            return chapters;
+        }
     }
+
+    // Its translation where the language has one with the English tour's chapters, else the English tour; the
+    // pseudo-language's accented (docs/LANGUAGES.md, "Layout check").
+    private static IReadOnlyList<Tour.Chapter> LoadTour(string language)
+    {
+        static IReadOnlyList<Tour.Chapter>? Read(string? name) =>
+            BuiltDoc(name) is { } text ? Tour.Parse(text).Where(c => Tour.Stages.Contains(c.Stage)).ToList() : null;
+        var chapters = Tour.InLanguage(Read(BuiltDocs.Tour) ?? [], Read(BuiltDocs.TranslationOf(BuiltDocs.Tour, language)));
+        return language == UiLanguage.Pseudo ? Tour.Map(chapters, PseudoText.Of) : chapters;
+    }
+
+    // The language switched while the tour is up: its chapter shows again, in the new language.
+    private void OnTourLanguageChanged() => DispatcherQueue.TryEnqueue(() =>
+    {
+        if (TourOpen && TourChapters.Count > 0)
+            ShowChapter(Math.Min(_tourAt, TourChapters.Count - 1));
+    });
 
     // Once the app has its data: at a first start the tour, in help's place, outside a raid; one a raid closed comes back
     // after it, at its chapter; "--tour <n>" opens it for a snapshot. Never in the website demo.
@@ -110,7 +134,7 @@ public sealed partial class MainWindow
         if (ViewModel.RaidHoldsBack)
         {
             if (how is "showme" or "whatsnew" or "help")
-                ShowNotice("The tour waits until the raid is over.");
+                ShowNotice(AppTexts.NoticeTourWaits);
             return;
         }
         at = Math.Clamp(at, 0, TourChapters.Count - 1);
@@ -126,6 +150,7 @@ public sealed partial class MainWindow
             // Null where no map was drawn yet (a first start): the map then comes back fitted, not at the camera's default.
             _tourRestore = _previewing is not null ? _restoreView : Map.HasView ? Map.View : null;
             TourLayer.Visibility = Visibility.Visible;
+            UiLanguage.Changed += OnTourLanguageChanged;
             _tourHoles = [];
             _tourDrawn = [];
             TourLayer.Opacity = _tourMotion ? 0 : 1;
@@ -151,6 +176,7 @@ public sealed partial class MainWindow
         _tourDrawn = [];
         _tourHolesNow = null;
         _tourTitleTimer?.Stop();
+        UiLanguage.Changed -= OnTourLanguageChanged;
         Study.Ui("tour.close", ("how", how), ("chapter", at + 1));
         if (how == "raid")
         {
@@ -168,7 +194,7 @@ public sealed partial class MainWindow
             _ = FadeTourOut();
         else
             TourLayer.Visibility = Visibility.Collapsed;
-        ShowNotice("The tour stays in help: F1, then TAKE THE TOUR.", TimeSpan.FromSeconds(6));
+        ShowNotice(AppTexts.NoticeTourStaysInHelp, TimeSpan.FromSeconds(6));
     }
 
     private async Task FadeTourOut()
@@ -236,7 +262,7 @@ public sealed partial class MainWindow
         var count = TourChapters.Count;
         TourEyebrow.Text = Tour.Eyebrow(at, count);
         TourText.Text = string.Join("\n", chapter.Lines);
-        TourNextText.Text = at + 1 < count ? "NEXT →" : "DONE";
+        TourNextText.Text = at + 1 < count ? AppTexts.TourNext : AppTexts.TourDone;
         TourBack.Visibility = at > 0 ? Visibility.Visible : Visibility.Collapsed;
         TourTicks.ColumnDefinitions.Clear();
         TourTicks.Children.Clear();
@@ -354,7 +380,7 @@ public sealed partial class MainWindow
         foreach (var (key, column) in new[] { ("reads", 0), ("never", 1) })
         {
             var stack = new StackPanel { Spacing = 10 };
-            stack.Children.Add(TourEyebrowText(key.ToUpperInvariant(), key == "reads" ? "AmberBrush" : "MutedBrush"));
+            stack.Children.Add(TourEyebrowText(key == "reads" ? AppTexts.TourSafeReads : AppTexts.TourSafeNever, key == "reads" ? "AmberBrush" : "MutedBrush"));
             foreach (var word in chapter.Words.Where(w => w.Key == key))
             {
                 var line = new TextBlock { Text = word.Text, Style = TextStyle("TitleText"), TextWrapping = TextWrapping.NoWrap };
@@ -368,19 +394,20 @@ public sealed partial class MainWindow
         await Reveal(lines, 160, run);
     }
 
-    // Plan and Raid: the status bar's raid word and the rail framed; the two states, one after the other.
+    // Plan and Raid: the status bar's raid word and the rail framed; the two states, one after the other. Their words are
+    // the status bar's, the menus' first and then the raid's, in amber as the bar shows it (docs/tour.md).
     private async Task StageFollows(Tour.Chapter chapter, int run)
     {
         TourHoles(() => Anchors(chapter));
         var rows = new StackPanel { Spacing = 18 };
         var lines = new List<UIElement>();
-        foreach (var word in chapter.Words)
+        foreach (var (word, i) in chapter.Words.Select((w, i) => (w, i)))
         {
             var row = new StackPanel { Spacing = 5 };
             row.Children.Add(new TextBlock
             {
                 Text = word.Key, Style = TextStyle("StatusText"), FontSize = 14,
-                Foreground = Resource(word.Key.StartsWith("IN RAID", StringComparison.Ordinal) ? "AmberBrush" : "InkBrush"),
+                Foreground = Resource(i > 0 ? "AmberBrush" : "InkBrush"),
             });
             row.Children.Add(new TextBlock { Text = word.Text, Style = TextStyle("TitleText") });
             rows.Children.Add(row);
@@ -461,7 +488,7 @@ public sealed partial class MainWindow
         if (content is null || walk is null || Map.Scene is not { } scene)
             return;
         var you = walk.Fixes[^1].Position;
-        var key = TourKeyCap(Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc"), out var cap, out var name);
+        var key = TourKeyCap(Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.KeyPrintScreen), out var cap, out var name);
         ShowPlate(key);
         if (!await TourWait(950, run))
             return;
@@ -493,12 +520,13 @@ public sealed partial class MainWindow
         if (listed.Count == 0)
             return;
         listed = listed.OrderBy(m => m.Position.HorizontalDistanceTo(you)).ToList();
-        var keyName = Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc");
-        var how = (chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "").Replace("{key}", keyName, StringComparison.Ordinal);
+        var keyName = Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.KeyPrintScreen);
+        // The tour's words are texts like the app's own (TextFormat): {key} the screenshot key, {n} the extracts on the
+        // example list, {all} the map's, so a translation may put them where its grammar wants and give {all} plural forms.
+        var how = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "", ("key", keyName));
         var all = listed.Count + unsure.Count + notListed.Count;
-        var readText = (chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "")
-            .Replace("{n}", (listed.Count + unsure.Count).ToString(UiLanguage.Culture), StringComparison.Ordinal)
-            .Replace("{all}", all.ToString(UiLanguage.Culture), StringComparison.Ordinal);
+        var readText = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "",
+            ("n", listed.Count + unsure.Count), ("all", all));
         var names = listed.Select(m => (m.Label, false)).Concat(unsure.Select(m => (m.Label, true))).ToList();
         var (plate, rows, read) = ExtractListPlate(how, names, readText);
         TourCanvas.Children.Add(plate);
@@ -701,8 +729,8 @@ public sealed partial class MainWindow
         EndWhatsNewPreview();
         _restoreView = _tourRestore;
         _previewing = wanted;
-        ViewModel.PreviewText = $"PREVIEW · THE TOUR · {Caps.Of(example.MapName)}";
-        ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";
+        ViewModel.PreviewText = AppTexts.PreviewTour(map: Caps.Of(example.MapName));
+        ViewModel.PreviewHint = AppTexts.PreviewExample;
         await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourBand.ActualHeight + 46, TourFraming);
         // One layout pass, so the view's points are where they are drawn.
         await Task.Delay(_tourMotion ? 60 : 30);
@@ -714,7 +742,7 @@ public sealed partial class MainWindow
         var card = new StackPanel { Width = 352, Spacing = 12 };
         var head = new Grid();
         head.Children.Add(new TextBlock { Text = Caps.Of(example.MapName), Style = TextStyle("TitleText"), CharacterSpacing = 80 });
-        head.Children.Add(new TextBlock { Text = "PMC", Style = TextStyle("StatusText"), Foreground = Resource("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
+        head.Children.Add(new TextBlock { Text = AppTexts.RaidSidePmc, Style = TextStyle("StatusText"), Foreground = Resource("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
         card.Children.Add(head);
         var minutes = plan is { RaidMinutes: > 0 } p ? p.RaidMinutes : 40;
         // Thirteen minutes left, as the website's picture and What's New's clock say it, of the map's own raid length
@@ -731,11 +759,12 @@ public sealed partial class MainWindow
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
             var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
-            card.Children.Add(GlanceRow("NEXT", text, next.Quest.Name, "86 m", "AHEAD-LEFT", "AmberBrush"));
+            card.Children.Add(GlanceRow(AppTexts.TourCardNext, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }
         if (exit is not null)
-            card.Children.Add(GlanceRow("EXIT", exit.Label, "ON YOUR LIST THIS RAID", "214 m", "BEHIND", "GreenBrush"));
-        card.Children.Add(new TextBlock { Text = "THE RAID CARD, WITH EXAMPLE VALUES", Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });
+            card.Children.Add(GlanceRow(AppTexts.TourCardExit, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
+                Caps.Of(Bearing.Describe(RelativeDirection.Behind)), "GreenBrush"));
+        card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });
         return card;
     }
 
@@ -776,8 +805,8 @@ public sealed partial class MainWindow
         name = new TextBlock { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 17, Foreground = Resource("AmberBrush"), HorizontalAlignment = HorizontalAlignment.Center, Text = " " };
         var stack = new StackPanel { Spacing = 12, HorizontalAlignment = HorizontalAlignment.Center };
         stack.Children.Add(edge);
-        stack.Children.Add(new TextBlock { Text = "SCREENSHOT", FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontStretch = Windows.UI.Text.FontStretch.SemiCondensed, CharacterSpacing = 400, HorizontalAlignment = HorizontalAlignment.Center });
-        stack.Children.Add(new TextBlock { Text = "POSITION FROM THE FILE NAME", Style = TextStyle("EyebrowText"), Margin = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Center });
+        stack.Children.Add(new TextBlock { Text = AppTexts.TourKeyScreenshot, FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontStretch = Windows.UI.Text.FontStretch.SemiCondensed, CharacterSpacing = 400, HorizontalAlignment = HorizontalAlignment.Center });
+        stack.Children.Add(new TextBlock { Text = AppTexts.TourKeyPosition, Style = TextStyle("EyebrowText"), Margin = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Center });
         stack.Children.Add(name);
         return stack;
     }
@@ -1079,8 +1108,8 @@ public sealed partial class MainWindow
         CueFirst.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show)
             return;
-        var key = _snapshot?.ScreenshotKeys.FirstOrDefault() ?? "your screenshot key";
-        CueFirst.Text = $"FIRST RAID WITH SHTURMAP · PRESS {Caps.Of(key)} ONCE YOU'RE IN";
+        var key = _snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.ScreenshotKeyUnknown;
+        CueFirst.Text = AppTexts.CueFirstRaid(key: Caps.Of(key));
         _session.SetSetting(FirstRaidSetting, "done");
         Study.Ui("first.raid");
     }
@@ -1092,6 +1121,6 @@ public sealed partial class MainWindow
             return;
         _session.SetSetting(FirstFixSetting, "done");
         Study.Ui("first.fix");
-        ShowNotice("That's you, from your screenshot's name. Each new one moves you.");
+        ShowNotice(AppTexts.NoticeFirstFix);
     }
 }

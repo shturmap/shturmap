@@ -105,13 +105,13 @@ public sealed partial class RaidClock : Grid
 
         // The time left where it is known; else the time in the raid, said as that.
         var strong = Brush(time.Low ? "RedBrush" : "InkBrush");
-        _figure.Text = (time.Left ?? time.In).ToString(CultureInfo.CurrentCulture);
+        _figure.Text = (time.Left ?? time.In).ToString(Shturmap.Core.UiLanguage.Culture);
         _figure.Foreground = strong;
-        _unit.Text = time.Left is null ? "MIN IN" : "MIN LEFT";
+        _unit.Text = time.Left is null ? AppTexts.ClockMinIn : AppTexts.ClockMinLeft;
         _unit.Foreground = strong;
-        _other.Text = time.Left is not null ? $"{time.In} MIN IN"
-            : time.Over ? $"PAST THE RAID'S {time.RaidMinutes} MIN"
-            : time.Scav ? "TIME LEFT NOT KNOWN" : "";
+        _other.Text = time.Left is not null ? AppTexts.ClockMinutesIn(minutes: time.In)
+            : time.Over ? AppTexts.ClockPastLength(minutes: time.RaidMinutes)
+            : time.Scav ? AppTexts.ClockTimeLeftUnknown : "";
         _other.Foreground = Brush(time.Over ? "RedBrush" : "MutedBrush");
         _rule.Visibility = time.RaidMinutes > 0 ? Visibility.Visible : Visibility.Collapsed;
         _left.Fill = strong;

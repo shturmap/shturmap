@@ -1,3 +1,5 @@
+using Shturmap.Core;
+
 namespace Shturmap.App.Rules;
 
 /// <summary>One entry of the MAP list: a map, or the OTHER MAPS heading (not a choice).</summary>
@@ -25,7 +27,7 @@ public static class MapList
     /// <param name="Covers">Its own name and its variants'.</param>
     public sealed record Map(string NormalizedName, string Name, IReadOnlyList<string> Covers);
 
-    public const string OtherMaps = "OTHER MAPS";
+    public static string OtherMaps => RuleTexts.MapListOtherMaps;
 
     /// <param name="maps">Every map that can be shown.</param>
     /// <param name="withWork">The maps with your quests, best first, with what each holds.</param>
@@ -37,7 +39,7 @@ public static class MapList
         foreach (var (name, count) in withWork)
             if (byName.Remove(name, out var map))
                 list.Add(new MapChoice(map.NormalizedName, map.Name, count, map.Covers));
-        var others = all.Where(m => byName.ContainsKey(m.NormalizedName)).OrderBy(m => m.Name, StringComparer.CurrentCulture).ToList();
+        var others = all.Where(m => byName.ContainsKey(m.NormalizedName)).OrderBy(m => m.Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList();
         // The heading only between two groups: with no quests anywhere, or quests everywhere, a plain list.
         if (list.Count > 0 && others.Count > 0)
             list.Add(new MapChoice("", OtherMaps, "", [], IsHeader: true));
