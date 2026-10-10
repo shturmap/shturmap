@@ -108,6 +108,8 @@ public class DistanceTests
         Assert.Null(MapRenderer.Layout(camera, scene, 1).Guide!.Plate);
     }
 
+    // In the language in use, English in tests, whatever the PC's own number format (until 2026-10-10 the thread's
+    // culture wrote them: "1,2 km" inside English texts on a German Windows).
     [Fact]
-    public void Distances_read_like_the_cards() => Assert.Equal(["69 m", "999 m", $"{1.2:0.0} km"], new[] { 69.4, 999.4, 1234 }.Select(MapRenderer.DistanceText));
+    public void Distances_read_like_the_cards() => Assert.Equal(["69 m", "999 m", "1.2 km"], new[] { 69.4, 999.4, 1234 }.Select(MapRenderer.DistanceText));
 }
