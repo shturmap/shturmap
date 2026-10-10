@@ -2134,7 +2134,12 @@ Rules:
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
   (`--culture <culture>`: that run's language for everything, as if chosen in settings, without saving it; `de-DE` also
   for a language still being translated, `qps-ploc` the pseudo-language) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
-  plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
+  plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading;
+  `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
+  popup also gets its texts, its layout problems and a copy with them boxed beside it (`<picture>.texts.txt`,
+  `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), and `--whats-new` shows the newest What's
+  New card for one; `tools\layout-check.ps1` plays every view in each language and window size and sums it up
+  (docs/LANGUAGES.md, "Layout check").
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
   drawn press of the screenshot key. The key comes in a pause: the window dims, the key stands large in the middle
@@ -2367,7 +2372,9 @@ compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/c
 `eng\dotnet.ps1` as on the PC and the SDK global.json names. Tests that need the owner's PC skip there: the tarkov.dev
 cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
 public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
-mail. The daily data check is designed in docs/NEXT.md, not built yet.
+mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout check (docs/LANGUAGES.md) doesn't
+run there: its views need tarkov.dev's data, which a fresh runner would download at every push (§3, "No unnecessary
+load on tarkov.dev"), so it runs on the developer's PC before a release.
 What else runs there (owner, 2026-10-09: every trust step that can be automated). After the tests, CI fails on a NuGet
 package with a known vulnerability, direct or transitive (`eng\audit-packages.ps1`, nuget.org's advisories; also
 when it couldn't check). That stands in for Dependabot: its pull requests would put commits by another identity into
