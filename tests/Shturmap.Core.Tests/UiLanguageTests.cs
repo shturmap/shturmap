@@ -1,4 +1,5 @@
 using System.Globalization;
+using Shturmap.App.Rules;
 
 namespace Shturmap.Core.Tests;
 
@@ -60,5 +61,29 @@ public class DayMonthTests
             UiLanguage.Set(UiLanguage.English);
         }
         Assert.Equal("4 Oct", UiLanguage.DayMonth(new DateOnly(2026, 10, 4)));
+    }
+}
+
+// Capitals keep ß in .NET ("STRAßE"), and the font has no capital ẞ: German writes SS (docs/LANGUAGES.md, "Review").
+// One rule for every label in capitals (UiLanguage.Upper), whatever the language in use, since a German name can stand
+// in another language's text.
+[Collection("UiLanguage")]
+public class UpperTests
+{
+    [Fact]
+    public void Capitals_write_sharp_s_as_double_s_in_every_language()
+    {
+        Assert.Equal("STRASSE · PRAPOR", UiLanguage.Upper("Straße · Prapor"));
+        Assert.Equal("", UiLanguage.Upper(null));
+        Assert.Equal("QUEST COMPLETE · GROSSHÄNDLER", CompletionWords.Of([new CompletionWords.Done("Test", "Großhändler", [])]).Eyebrow);
+        try
+        {
+            UiLanguage.Set(UiLanguage.German);
+            Assert.Equal("ABSCHLIESSEN ÄÖÜ", UiLanguage.Upper("abschließen äöü"));
+        }
+        finally
+        {
+            UiLanguage.Set(UiLanguage.English);
+        }
     }
 }

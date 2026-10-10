@@ -199,7 +199,7 @@ public sealed partial class MainWindow
                 CharacterSpacing = (int)spacing, Foreground = Res(brush), HorizontalAlignment = HorizontalAlignment.Center,
             };
             // The key as the app names it from the game's settings (the status bar says the same).
-            _keyLabel = Caps((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc").ToUpperInvariant(), 66, 120, "InkBrush");
+            _keyLabel = Caps(Shturmap.Core.UiLanguage.Upper(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc"), 66, 120, "InkBrush");
             _keyDip = new TranslateTransform();
             _keyCap = new Border
             {

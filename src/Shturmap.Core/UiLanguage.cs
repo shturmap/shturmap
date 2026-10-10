@@ -98,6 +98,18 @@ public static class UiLanguage
     }
 
     /// <summary>
+    /// A text in capitals, as headings and labels in the game's style show it, by the rules of the language in use. ß
+    /// becomes SS in every language: .NET keeps it ("STRAßE"), the font has no capital ẞ, and German writes SS in
+    /// capitals; a German name can stand in another language's text. Every upper-casing on screen goes through here
+    /// (Caps.Of in the app), so the rule is in one place (docs/LANGUAGES.md, "Review").
+    /// </summary>
+    public static string Upper(string? text)
+    {
+        var upper = (text ?? "").ToUpper(_culture);
+        return upper.Contains('ß') ? upper.Replace("ß", "SS", StringComparison.Ordinal) : upper;
+    }
+
+    /// <summary>
     /// A day and month as the language in use writes it inside a sentence: "4 Oct" in English, "4. Okt." in German (the
     /// month as .NET abbreviates it in that language: "25. Sept."). A pattern of one language ("d MMM") read in another
     /// writes it wrong: German "4 Okt.".

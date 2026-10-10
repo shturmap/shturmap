@@ -188,5 +188,5 @@ its settings. In a sentence put "Taste" before a key that is also a word ("TASTE
 | dash; range | „ – “; 21:00–05:00 | en dash: with spaces between words, none in a range |
 | CHOOSE… | WÄHLEN… | the ellipsis close to the word, as in Windows' menus |
 | ·, ↗, ↓, → | unchanged | |
-| upper case | ß → SS; Ä, Ö, Ü stay | `Caps.Of` and `ToUpper` keep ß („STRAßE“): a data name with ß needs SS in capitals |
+| upper case | ß → SS; Ä, Ö, Ü stay | `UiLanguage.Upper` (`Caps.Of`) writes ß as SS, also in a data name; .NET's `ToUpper` keeps it („STRAßE“) |
 | plural | one, other | `{n, plural, one {# Ausgang} other {# Ausgänge}}` |
