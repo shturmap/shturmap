@@ -2623,7 +2623,11 @@ and the CLI stay English: they are read by whoever fixes Shturmap. The rules tha
 English. In another data language a Plan row shows the quest's name alone and the raid card an objective's own
 sentence, tarkov.dev's (quest synopses, §5), and a quest card keeps both lines where the English pattern drops one
 (`QuestCards.SaysWhere`). The extract requirements read the extracts' English names, kept beside the data in another
-language (`GameData.EnglishName`), so they come out the same in every language.
+language (`GameData.EnglishName`), so they come out the same in every language. The floor buttons keep tarkov.dev's
+names in English in every language ("2nd Floor", "Underground", Icebreaker's decks: the layer names of its maps.json,
+which it has in English only), beside Shturmap's own word for the ground floor, where the map names none
+(`AppTexts.MapFloorGround`, German "Erdgeschoss"; owner, 2026-10-11): the game never names its floors, so there is no
+game word to show instead, and these are tarkov.dev's labels for its maps, data like the rest, not Shturmap's words.
 
 How it is made (2026-10-10). The setting is `language` in shturmap.db: `auto` (or none) or a language's code; a value
 that isn't offered (a language only a developer build offers, read by another build) counts as automatic. Windows'
