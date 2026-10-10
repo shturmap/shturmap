@@ -853,7 +853,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     shown map back exactly as it was (pan and zoom; fitted where it wasn't drawn yet, not at the camera's default:
     review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
     The picks of the map on screen stay off a preview's map (the same review: each snapshot wrote them into it, and
-    into the tour's example).
+    into the tour's example), and so does its floor picker, which steps aside until the preview ends (review of
+    2026-10-10: a tour chapter staged on Customs showed Streets' floors).
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
@@ -931,12 +932,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     its kind's colour, with its distance and direction (`Rules.ExitsNote.Plain`). Only once the list was read (nothing
     is sure to be open before), never a transit, and not where EXIT is that one already. Both notes take a second line
     where the direction beside them leaves too little room, with "…" only past that (review of 2026-10-09: a Scav's
-    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The glance's rows hide with
+    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The labels NEXT, EXIT and OR share one column,
+    as wide as the longest of them in the language in use and the 10 px after it, never under 48 px, so the names
+    beside them line up (review of 2026-10-10: German "EXTRACT" filled the fixed 48 px and ran into the extract's name;
+    `Controls.Columns.Glance`, which the tour's example card takes too). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
-    needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
+    needs (gold), and on the right the distance, direction and floor hint (the words keep at least half of the line:
+    where a hand-over's mark and a long direction would take more, the direction wraps under the distance between its
+    parts, the height under the direction; review of 2026-10-10: German "HINTEN LINKS · 5 M TIEFER" beside a hand-over
+    left tarkov.dev's sentence a word or two a line; `Controls.ObjectiveLine`); "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for a hand-over of its own (one that gives what another line gets is a
     handshake after that line's words, "Quest cards", *Hand-overs*). The text is the objective in a few words, in these lines
     and in NEXT: its phrase from the quest's synopsis ("Mark Stryker" for "Locate and mark the Stryker with an
@@ -1119,7 +1126,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the stage's plate, opaque too), holds TOUR · 3 OF 7,
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
     chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
-    middle of the map above it. Motion: "Design system", *Motion*.
+    middle of the map above it. The buttons stand beside the eyebrow and the title, the lines run under both across the
+    band, and a title that doesn't fit beside the buttons goes under them, across the band, wrapping only past that; a
+    plate larger than the room above the band is drawn smaller to fit, never cut, and the READS / NEVER lines wrap in
+    their columns in a narrow map (review of 2026-10-10, at the smallest window, 900×560: "IT FOLLOWS THE GAME" was cut
+    off, the lines took five rows beside the buttons, and the example raid card ran under the band). Motion: "Design
+    system", *Motion*.
   - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
     section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
     nearest frame on screen and the frame glides to it; a frame left over glides into the new part nearest it, and a
@@ -1145,7 +1157,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     "Map drawing", *Room for labels on the right*).
     IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
     `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
-    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN).
+    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is spaced as the rail's
+    card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label column.
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
@@ -1189,7 +1202,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.
 - **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
-  CANCEL and SEND.
+  CANCEL and SEND. It fits the window: in a short one what's sent and the text box give way, each down to a few lines
+  of its own scrolling, and past that the dialog scrolls, so CANCEL and SEND stay in reach (review of 2026-10-10: at
+  900×560, with what's sent shown, they were below the window's edge).
 - **After a crash**: one question under the notices, until answered: SEND · DON'T SEND · ALWAYS SEND · WHAT'S SENT;
   closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog. It lies over the map and
   waits for a click, so it is shown outside raids only: while a raid loads or runs it steps aside, unanswered, and
@@ -2602,11 +2617,14 @@ changes, loads the data and the item sources in a new round, as a change of mode
 waited for is dropped, the waits of "Asking again" start over, a load in the old language that ends later is dropped),
 the old data staying on screen until the new is here and the maps on screen named anew. The window switches Shturmap's
 texts on its own thread, reads every x:Bind again (`Bindings.Update`, the cards' too), sets again what code sets over
-XAML from its state (the tour's chapter, the report dialog's links, help's legend, What's New, the question after a
-crash), makes the rows drawn from templates anew, and the session composes its snapshot again
-(`GameSession.RepublishAsync`: the plans and the screenshot keys' names with it). The snapshot takes the language in
-use each time it is made (`UiLanguage.ApplyHere`): the current culture travels with async work, so a loop started
-before a switch would sort and format in the old one.
+XAML from its state (the tour's chapter, the report dialog's links and its example while it stands as put there, help's
+legend, What's New, the question after a crash), has the controls that word their own tooltips say them again (the
+pen, the tick, a quest type's glyph; `Controls.SaidAgain`), makes the rows drawn from templates anew, and the session
+composes its snapshot again (`GameSession.RepublishAsync`: the plans and the screenshot keys' names with it); the
+tour's example is staged again once the data has come in the new language (review of 2026-10-10: the layout check's
+switch found these kept from before). The snapshot takes the language in use each time it is made
+(`UiLanguage.ApplyHere`), and so does a developer snapshot's picture: the current culture travels with async work, so
+a loop started before a switch would sort and format in the old one.
 
 **Texts.** Every word Shturmap shows is in a project's texts file, never in code or XAML: `CoreTexts`, `MapTexts`,
 `DataTexts`, `GameTexts`, `SessionTexts`, `AppTexts` (the app's code), `ViewTexts` (its XAML) and `RuleTexts` (the

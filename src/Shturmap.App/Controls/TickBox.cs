@@ -59,6 +59,8 @@ public sealed partial class TickBox : Grid
         };
         DoubleTapped += (_, e) => e.Handled = true;
         Update();
+        // Its tooltip and name in the language in use.
+        SaidAgain.OnLanguage(this, Update);
     }
 
     public string? ObjectiveId

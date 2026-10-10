@@ -59,6 +59,8 @@ public sealed partial class KeepToggle : Grid
                 Linked.RequestKeep(quest);
         };
         DoubleTapped += (_, e) => e.Handled = true;
+        // Its tooltip in the language in use.
+        SaidAgain.OnLanguage(this, Update);
     }
 
     public string? QuestId

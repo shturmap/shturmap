@@ -406,11 +406,11 @@
   </data>
   <data name="RaidNextLabel" xml:space="preserve">
     <value>NEXT</value>
-    <comment>Raid card: label of the nearest objective's row; also the tour's example raid card. Upper case, small; a column of 48 px.</comment>
+    <comment>Raid card: label of the nearest objective's row; also the tour's example raid card. Upper case, small; the three labels share a column as wide as the longest of them (at least 48 px), so a long one narrows the names beside them.</comment>
   </data>
   <data name="RaidExitLabel" xml:space="preserve">
     <value>EXIT</value>
-    <comment>Raid card: label of the nearest way out's row; also the tour's example raid card. Upper case, small; a column of 48 px.</comment>
+    <comment>Raid card: label of the nearest way out's row; also the tour's example raid card. Upper case, small; the three labels share a column as wide as the longest of them (at least 48 px), so a long one narrows the names beside them.</comment>
   </data>
   <data name="RaidAllExitsTip" xml:space="preserve">
     <value>Every extract and transit for your side, nearest first</value>
@@ -418,7 +418,7 @@
   </data>
   <data name="RaidOrLabel" xml:space="preserve">
     <value>OR</value>
-    <comment>Raid card: label of the row under EXIT: the nearest extract that needs nothing. Upper case, small; a column of 48 px.</comment>
+    <comment>Raid card: label of the row under EXIT: the nearest extract that needs nothing. Upper case, small; the three labels share a column as wide as the longest of them (at least 48 px), so a long one narrows the names beside them.</comment>
   </data>
   <data name="RaidFindInRaid" xml:space="preserve">
     <value>FIND IN RAID</value>

@@ -258,6 +258,7 @@ public sealed partial class MainWindow
         var points = frame?.Invoke(content);
         Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, padding, foot, minMetres) : null);
         _scenes.Forget();
+        PreviewHidesFloors();
     }
 
     // An example extract list on Customs: some lit, one marked "??:??:??", the rest hollow.

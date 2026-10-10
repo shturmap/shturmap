@@ -150,10 +150,11 @@ public static partial class LayoutWords
                && keys.All(k => k.Length == 1 || KeyNames.Contains(k) || FunctionKey().IsMatch(k));
     }
 
-    // The properties of the data whose texts the app shows as they are: names and tarkov.dev's sentences. Not the
-    // internal words beside them (an objective's type "visit", a kill target "Any"), which could hide an English word,
-    // nor the items' short names, which only the map draws and many of which are English words ("Log", "Data", "OR").
-    private static readonly HashSet<string> ShownProperties = new(StringComparer.Ordinal) { "Name", "Description" };
+    // The properties of the data whose texts the app shows as they are: names and tarkov.dev's sentences (a transit's
+    // conditions too: "TerraGroup Labs access keycard required (1)" under its row). Not the internal words beside them
+    // (an objective's type "visit", a kill target "Any"), which could hide an English word, nor the items' short names,
+    // which only the map draws and many of which are English words ("Log", "Data", "OR").
+    private static readonly HashSet<string> ShownProperties = new(StringComparer.Ordinal) { "Name", "Description", "Conditions" };
 
     private static readonly HashSet<string> SkippedProperties = new(StringComparer.Ordinal) { "ItemShortNames", "ExtractKeys", "ObjectiveFacts" };
 

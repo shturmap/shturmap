@@ -22,6 +22,8 @@ public sealed partial class KindGlyph : Grid
         Height = 16;
         VerticalAlignment = VerticalAlignment.Top;
         Update();
+        // Its tooltip names the type in the language in use.
+        SaidAgain.OnLanguage(this, Update);
     }
 
     public ObjectiveKind Kind
