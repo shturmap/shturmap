@@ -46,9 +46,9 @@ public static class RaidTime
     /// <summary>From this many minutes left the time is shown in red: the game's own timer turns red for its last ten.</summary>
     public const int LowMinutes = 10;
 
-    public const string Tip = "Time left: the map's raid length minus the time since the raid's start in the log. Can be off after a reconnect.";
-    public const string ScavTip = "Time since you joined, by the log. A Scav joins mid-raid, so the time left isn't known.";
-    public const string NoLengthTip = "Time since the raid's start, by the log. No raid length for this map, so no time left.";
+    public static string Tip => RuleTexts.RaidTimeTip;
+    public static string ScavTip => RuleTexts.RaidTimeScavTip;
+    public static string NoLengthTip => RuleTexts.RaidTimeNoLengthTip;
 
     /// <summary>The reading for a raid that is running, or null outside one and where the log has no start for it.</summary>
     /// <param name="raidMinutes">The map's raid length; 0 when the data gives none.</param>
@@ -58,12 +58,12 @@ public static class RaidTime
             return null;
         var gone = Math.Max(0, (int)WallClock.Elapsed(started, now).TotalMinutes);
         if (scav)
-            return new Reading($"{gone} min in · time left not known", ScavTip) { In = gone, Scav = true };
+            return new Reading(RuleTexts.RaidTimeScav(gone: gone), ScavTip) { In = gone, Scav = true };
         if (raidMinutes <= 0)
-            return new Reading($"{gone} min in", NoLengthTip) { In = gone };
+            return new Reading(RuleTexts.RaidTimeNoLength(gone: gone), NoLengthTip) { In = gone };
         var left = raidMinutes - gone;
         return left > 0
-            ? new Reading($"{gone} min in · {left} min left", Tip) { In = gone, Left = left, RaidMinutes = raidMinutes }
-            : new Reading($"{gone} min in · past the raid's {raidMinutes} min", Tip) { In = gone, RaidMinutes = raidMinutes };
+            ? new Reading(RuleTexts.RaidTimeLeft(gone: gone, left: left), Tip) { In = gone, Left = left, RaidMinutes = raidMinutes }
+            : new Reading(RuleTexts.RaidTimeOver(gone: gone, length: raidMinutes), Tip) { In = gone, RaidMinutes = raidMinutes };
     }
 }

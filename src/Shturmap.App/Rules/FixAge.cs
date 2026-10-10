@@ -23,9 +23,9 @@ public static class FixAge
 
     /// <summary>"12 s", "4 min", "2 h": whole units, never rounded up.</summary>
     public static string Text(TimeSpan age) =>
-        age.TotalSeconds < 60 ? $"{Math.Max(0, (int)age.TotalSeconds)} s"
-        : age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} min"
-        : $"{(int)age.TotalHours} h";
+        age.TotalSeconds < 60 ? RuleTexts.AgeSeconds(seconds: Math.Max(0, (int)age.TotalSeconds))
+        : age.TotalMinutes < 60 ? RuleTexts.AgeMinutes(minutes: (int)age.TotalMinutes)
+        : RuleTexts.AgeHours(hours: (int)age.TotalHours);
 
     /// <summary>
     /// The raid card's line under the raid line: nothing while the position is fresh (the distances are as good as
@@ -34,8 +34,8 @@ public static class FixAge
     /// <param name="keys">The game's screenshot keys, as help names them ("PrtSc or Home").</param>
     public static string Note(TimeSpan? age, string keys) => age switch
     {
-        null => $"No position yet: press {keys} for distances",
+        null => RuleTexts.FixNoneYet(keys: keys),
         { } a when a < Fresh => "",
-        { } a => $"Distances from your screenshot {Text(a)} ago",
+        { } a => RuleTexts.FixDistancesFrom(age: Text(a)),
     };
 }

@@ -24,4 +24,152 @@
     <value>Your list this raid: {listed} of {extracts, plural, one {# extract} other {# extracts}} (screenshot at {time}).</value>
     <comment>Rail, under EXTRACTS AND TRANSITS, once the list was read. {listed}: extracts the list names; {extracts}: the side's extracts on this map; {time}: the screenshot's time, 16:40.</comment>
   </data>
+  <data name="ExitsRowListed" xml:space="preserve">
+    <value>on your list</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: an extract's row, after its kind ("PMC extract · on your list"), once the game's extract list was read and names it. Lower case, a fragment.</comment>
+  </data>
+  <data name="ExitsRowUnsure" xml:space="preserve">
+    <value>on your list · ??? in game</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: an extract's row, after its kind, when the game's list names it with ??:??:?? (maybe closed, or it needs something first). "???" as the game shows it.</comment>
+  </data>
+  <data name="ExitsRowNotListed" xml:space="preserve">
+    <value>not on your list</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: an extract's row, after its kind, when the game's extract list leaves it out.</comment>
+  </data>
+  <data name="ExitsGlanceListed" xml:space="preserve">
+    <value>On your list this raid</value>
+    <comment>Raid card, under EXIT (the nearest extract): the game's extract list names it.</comment>
+  </data>
+  <data name="ExitsGlanceUnsure" xml:space="preserve">
+    <value>On your list · ??? in game</value>
+    <comment>Raid card, under EXIT: the game's list names it with ??:??:?? (maybe closed, or it needs something first).</comment>
+  </data>
+  <data name="ExitsGlanceUnchecked" xml:space="preserve">
+    <value>Nearest · not checked against your list</value>
+    <comment>Raid card, under EXIT, before a screenshot showed the game's extract list.</comment>
+  </data>
+  <data name="ExitsGlanceNoReading" xml:space="preserve">
+    <value>Nearest · check your list in game</value>
+    <comment>Raid card, under EXIT, when the list can't be read from screenshots (unticked in settings, or Windows can't recognise text).</comment>
+  </data>
+  <data name="ExitsGlanceListedTip" xml:space="preserve">
+    <value>On the game's extract list for this raid, read from your screenshot.</value>
+    <comment>Tooltip of EXIT in the raid card, for an extract on the game's list.</comment>
+  </data>
+  <data name="ExitsGlanceUnsureTip" xml:space="preserve">
+    <value>On your list, but the game shows ??:??:??: maybe closed, or needs something first.</value>
+    <comment>Tooltip of EXIT in the raid card, for an extract the game's list shows with ??:??:??.</comment>
+  </data>
+  <data name="ExitsGlanceUncheckedTip" xml:space="preserve">
+    <value>Nearest extract for your side, maybe not open this raid. Screenshot the game's extract list (raid start, or O twice) to check.</value>
+    <comment>Tooltip of EXIT in the raid card before the extract list was read. 'O twice' is the game's key for the extract list.</comment>
+  </data>
+  <data name="ExitsGlanceNoReadingTip" xml:space="preserve">
+    <value>Nearest extract for your side, maybe not open this raid. Check your list in the game.</value>
+    <comment>Tooltip of EXIT in the raid card when the list can't be read from screenshots.</comment>
+  </data>
+  <data name="ExitsPlainNote" xml:space="preserve">
+    <value>Nothing needed · on your list</value>
+    <comment>Raid card, the OR row under EXIT (shown in capitals): the nearest extract on the list that takes nothing to leave by.</comment>
+  </data>
+  <data name="ExitsPlainTip" xml:space="preserve">
+    <value>The nearest extract on your list this raid that takes nothing: no item, money, flare, switch or second player.</value>
+    <comment>Tooltip of the OR row under EXIT in the raid card.</comment>
+  </data>
+  <data name="CompleteOne" xml:space="preserve">
+    <value>QUEST COMPLETE</value>
+    <comment>The QUEST COMPLETE cue's eyebrow, one quest handed in to a trader Shturmap can't name. Capitals.</comment>
+  </data>
+  <data name="CompleteOneFrom" xml:space="preserve">
+    <value>QUEST COMPLETE · {trader}</value>
+    <comment>The QUEST COMPLETE cue's eyebrow, one quest handed in. {trader}: the trader's name in capitals, PRAPOR. Capitals.</comment>
+  </data>
+  <data name="CompleteSeveral" xml:space="preserve">
+    <value>QUESTS COMPLETE</value>
+    <comment>The cue's eyebrow when several quests were handed in together. Capitals.</comment>
+  </data>
+  <data name="CompleteSeveralCount" xml:space="preserve">
+    <value>{count, plural, one {# quest} other {# quests}}</value>
+    <comment>The cue's title when several quests were handed in together. {count}: how many, 2 or more.</comment>
+  </data>
+  <data name="CompleteUnlocks" xml:space="preserve">
+    <value>Unlocks {quests}</value>
+    <comment>The cue's detail line: the quests the completed ones unlock. {quests}: their names as a list ("Setup and Shooter Born in Heaven"; ListLast, ListMore).</comment>
+  </data>
+  <data name="ListSeparator" xml:space="preserve">
+    <value>, </value>
+    <comment>Between the names of a list of names, before its last one ("A, B and C"): the comma and the space after it.</comment>
+  </data>
+  <data name="ListLast" xml:space="preserve">
+    <value>{list} and {last}</value>
+    <comment>A list of names, as the QUEST COMPLETE cue says them: "A, B and C". {list}: the names before the last, with ListSeparator between them; {last}: the last name.</comment>
+  </data>
+  <data name="ListMore" xml:space="preserve">
+    <value>{list} and {count} more</value>
+    <comment>A list of names cut short: "A, B, C and 2 more". {list}: the names shown, with ListSeparator between them; {count}: how many more there are.</comment>
+  </data>
+  <data name="AgeSeconds" xml:space="preserve">
+    <value>{seconds} s</value>
+    <comment>How old the last position is, under a minute: status bar ("Fix 12 s ago") and raid card. {seconds}: whole seconds.</comment>
+  </data>
+  <data name="AgeMinutes" xml:space="preserve">
+    <value>{minutes} min</value>
+    <comment>How old the last position is, under an hour: "Fix 4 min ago". {minutes}: whole minutes.</comment>
+  </data>
+  <data name="AgeHours" xml:space="preserve">
+    <value>{hours} h</value>
+    <comment>How old the last position is, an hour or more: "Fix 2 h ago". {hours}: whole hours.</comment>
+  </data>
+  <data name="FixNoneYet" xml:space="preserve">
+    <value>No position yet: press {keys} for distances</value>
+    <comment>Raid card, the line under the raid line, in a raid without a position. {keys}: the game's screenshot keys as help names them, "PrtSc or Home".</comment>
+  </data>
+  <data name="FixDistancesFrom" xml:space="preserve">
+    <value>Distances from your screenshot {age} ago</value>
+    <comment>Raid card, the line under the raid line, once the last position is no longer fresh. {age}: how old it is ("45 s", "9 min"; AgeSeconds, AgeMinutes, AgeHours).</comment>
+  </data>
+  <data name="RaidTimeTip" xml:space="preserve">
+    <value>Time left: the map's raid length minus the time since the raid's start in the log. Can be off after a reconnect.</value>
+    <comment>Tooltip of the raid card's clock (time in the raid and time left).</comment>
+  </data>
+  <data name="RaidTimeScavTip" xml:space="preserve">
+    <value>Time since you joined, by the log. A Scav joins mid-raid, so the time left isn't known.</value>
+    <comment>Tooltip of the raid card's clock in a Scav raid.</comment>
+  </data>
+  <data name="RaidTimeNoLengthTip" xml:space="preserve">
+    <value>Time since the raid's start, by the log. No raid length for this map, so no time left.</value>
+    <comment>Tooltip of the raid card's clock on a map whose raid length tarkov.dev doesn't give.</comment>
+  </data>
+  <data name="RaidTimeScav" xml:space="preserve">
+    <value>{gone} min in · time left not known</value>
+    <comment>The raid's time in words, a Scav raid. {gone}: whole minutes since the raid started.</comment>
+  </data>
+  <data name="RaidTimeNoLength" xml:space="preserve">
+    <value>{gone} min in</value>
+    <comment>The raid's time in words, on a map without a raid length. {gone}: whole minutes since the raid started.</comment>
+  </data>
+  <data name="RaidTimeLeft" xml:space="preserve">
+    <value>{gone} min in · {left} min left</value>
+    <comment>The raid's time in words. {gone}: whole minutes since the raid started; {left}: whole minutes left.</comment>
+  </data>
+  <data name="RaidTimeOver" xml:space="preserve">
+    <value>{gone} min in · past the raid's {length} min</value>
+    <comment>The raid's time in words, past the map's raid length. {gone}: whole minutes since the raid started; {length}: the map's raid length in minutes.</comment>
+  </data>
+  <data name="StatusNoPosition" xml:space="preserve">
+    <value>No position yet · press {keys}</value>
+    <comment>Status bar (shown in capitals), in a raid without a position. {keys}: the game's screenshot keys as help names them, "PrtSc or Home".</comment>
+  </data>
+  <data name="MapListOtherMaps" xml:space="preserve">
+    <value>OTHER MAPS</value>
+    <comment>The MAP list at the top of the rail: the heading over the maps none of your quests is on. Capitals.</comment>
+  </data>
+  <data name="TourEyebrow" xml:space="preserve">
+    <value>TOUR · {chapter} OF {count}</value>
+    <comment>The tour's band, above the chapter's title. {chapter}: the chapter shown, from 1; {count}: how many chapters. Capitals.</comment>
+  </data>
+  <data name="WhatsNewHeading" xml:space="preserve">
+    <value>NEW IN {version}</value>
+    <comment>The What's New card's heading over a version's lines. {version}: the version with its release's name, "0.4.0 · PRAETORIAN". Capitals.</comment>
+  </data>
 </root>
