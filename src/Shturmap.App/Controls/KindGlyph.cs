@@ -51,7 +51,7 @@ public sealed partial class KindGlyph : Grid
             Height = 15,
             Fill = Brush ?? (Brush)Application.Current.Resources["InkBrush"],
         };
-        ToolTipService.SetToolTip(this, AppTexts.QuestKindTip(explanation: QuestTaxonomy.Explanation(Kind), label: QuestTaxonomy.Label(Kind)));
+        ToolTipService.SetToolTip(this, QuestTaxonomy.Tip(Kind));
         Children.Add(icon);
     }
 }

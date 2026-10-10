@@ -1132,7 +1132,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     their columns in a narrow map (review of 2026-10-10, at the smallest window, 900×560: "IT FOLLOWS THE GAME" was cut
     off, the lines took five rows beside the buttons, and the example raid card ran under the band). The owner approved
     both on 2026-10-10, knowing that a plate drawn smaller goes below the type roles' sizes ("Design system", *Type*):
-    the German example raid card at 900×560 is drawn at about 80 %, rather than losing its caption. Motion: "Design
+    the German example raid card at 900×560 is drawn at about 60 %, rather than losing its caption (about 70 % while its
+    NEXT was cut; the owner approved it a little smaller for the whole sentence on 2026-10-11). Motion: "Design
     system", *Motion*.
   - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
     section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
@@ -1159,11 +1160,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes beside
     its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band),
     and 150 on the right, the map's label room (owner, 2026-10-09: 90 still cut PICK AND POINT's picked quest there;
-    "Map drawing", *Room for labels on the right*).
-    IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
-    `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
-    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is spaced as the rail's
-    card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label column.
+    "Map drawing", *Room for labels on the right*). Above the band as it stands in that chapter, its title and lines in
+    the language in use, and PICK AND POINT's pointer comes up from just above it (owner, 2026-10-11: the pointer stays
+    above the band in any language and window size; at 900×560 the German title takes two lines, and the band covered
+    the pointer and the quest it points at: the framing read the band's height before the band was laid out for the
+    chapter, the empty band's when the tour opened, and the pointer set off 240 DIP above the map's foot, under that
+    band). Where the band leaves little room above it, the 90 gives way, so what is framed keeps at least 90 itself
+    (PICK AND POINT's German band at 900×560 leaves 181, and 90 on each side would have left it 1).
+    IN THE RAID's example card says NEXT as the raid card does: in a few words where the data is English ("Get valuable
+    folder"; `Planning.ObjectiveSynopses`), else tarkov.dev's whole sentence, wrapping (owner, 2026-10-11: until then
+    it was cut at 34 characters, mid-word, German "Besorge die geschützte Dokumenten…"), and its clock reads 13 MIN
+    LEFT of the map's own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is
+    spaced as the rail's card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label
+    column.
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
@@ -2628,7 +2637,11 @@ to or from. In another data language both lines stay. In tarkov.dev's German PvE
 sentences that name none or not all of the line's maps (most of them), say where to or from (17 extracts "aus …", 17
 transits "von … nach …"), or say "on …" in English, still untranslated in the German data (151). The extract
 requirements read the extracts' English names, kept beside the data in another language (`GameData.EnglishName`), so
-they come out the same in every language.
+they come out the same in every language. The floor buttons keep tarkov.dev's names in English in every language ("2nd
+Floor", "Underground", Icebreaker's decks: the layer names of its maps.json, which it has in English only), beside
+Shturmap's own word for the ground floor, where the map names none (`AppTexts.MapFloorGround`, German "Erdgeschoss";
+owner, 2026-10-11): the game never names its floors, so there is no game word to show instead, and these are
+tarkov.dev's labels for its maps, data like the rest, not Shturmap's words.
 
 How it is made (2026-10-10). The setting is `language` in shturmap.db: `auto` (or none) or a language's code; a value
 that isn't offered (a language only a developer build offers, read by another build) counts as automatic. Windows'
@@ -2666,7 +2679,10 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
   the words where its grammar wants them. Plurals are part of the text, in the syntax of ICU's MessageFormat that
   translators know: `{count, plural, one {# extract} other {# extracts}}`, with Unicode's plural forms of every
   language tarkov.dev has (`PluralRules`: Polish and Russian need three or four, so code never picks "extract" or
-  "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing.
+  "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing. A quest
+  type symbol's tooltip is one text per type, help's table keeping its own two (owner, 2026-10-11: it was "{label}:
+  {explanation}", the table's name and explanation glued, so German, which writes lower case after a colon unless a
+  whole sentence follows, read "Erkunden: Zu einem Spot gehen").
 - **Game names stand where they don't change form**: "Bring: {item}", not "Bring the {item}"; Russian and Polish
   change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are. A category's
   name inside a sentence ("Any sniper rifle") is in lower case only where its language writes a noun so: German

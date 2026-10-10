@@ -628,10 +628,6 @@
     <value>Example: the map stayed on Woods after I loaded into Customs.</value>
     <comment>The Report dialog in a developer snapshot of it ("--show-report"): an example of a problem typed in, for the layout check.</comment>
   </data>
-  <data name="QuestKindTip" xml:space="preserve">
-    <value>{label}: {explanation}</value>
-    <comment>Tooltip of a quest-type symbol beside a quest. {label}: the quest type ("Kill"); {explanation}: what that type asks.</comment>
-  </data>
   <data name="SettingsLanguageAutomatic" xml:space="preserve">
     <value>AUTOMATIC</value>
     <comment>Settings, the Language row: its first choice, beside each language in its own name (ENGLISH, DEUTSCH). Upper case, as every choice in settings.</comment>

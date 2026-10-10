@@ -68,6 +68,34 @@
     <value>Nach dem Raid beim Trader abgeben</value>
     <comment>en: Hand over at a trader, after the raid</comment>
   </data>
+  <data name="QuestKindEliminationTip" xml:space="preserve">
+    <value>Kills: Gegner killen, evtl. mit Bedingungen</value>
+    <comment>en: Elimination: Kill targets, maybe with conditions</comment>
+  </data>
+  <data name="QuestKindExplorationTip" xml:space="preserve">
+    <value>Erkunden: zu einem Spot gehen</value>
+    <comment>en: Exploration: Go to a place</comment>
+  </data>
+  <data name="QuestKindPickupTip" xml:space="preserve">
+    <value>Pickup: ein Quest-Item looten</value>
+    <comment>en: Pickup: Pick up a quest item</comment>
+  </data>
+  <data name="QuestKindPlaceTip" xml:space="preserve">
+    <value>Platzieren: ein mitgenommenes Item platzieren, markieren oder benutzen</value>
+    <comment>en: Place: Plant, mark or use an item you bring</comment>
+  </data>
+  <data name="QuestKindFindInRaidTip" xml:space="preserve">
+    <value>FiR: Items im Raid finden, auf jeder Map</value>
+    <comment>en: Find in raid: Find items in raid (FIR), any map</comment>
+  </data>
+  <data name="QuestKindSurviveTip" xml:space="preserve">
+    <value>Überleben: überleben und extracten oder eine Bedingung erfüllen</value>
+    <comment>en: Survive: Survive and extract, or meet a condition</comment>
+  </data>
+  <data name="QuestKindTraderTip" xml:space="preserve">
+    <value>Trader: nach dem Raid beim Trader abgeben</value>
+    <comment>en: Trader: Hand over at a trader, after the raid</comment>
+  </data>
   <data name="CompassNorth" xml:space="preserve">
     <value>N</value>
     <comment>en: N</comment>

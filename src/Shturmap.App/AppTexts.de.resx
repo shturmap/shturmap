@@ -628,10 +628,6 @@
     <value>Beispiel: Die Map blieb auf Woods, nachdem ich auf Customs reingeladen war.</value>
     <comment>en: Example: the map stayed on Woods after I loaded into Customs.</comment>
   </data>
-  <data name="QuestKindTip" xml:space="preserve">
-    <value>{label}: {explanation}</value>
-    <comment>en: {label}: {explanation}</comment>
-  </data>
   <data name="SettingsLanguageAutomatic" xml:space="preserve">
     <value>AUTOMATISCH</value>
     <comment>en: AUTOMATIC</comment>
