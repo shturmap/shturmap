@@ -12,4 +12,124 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="QuestKindElimination" xml:space="preserve">
+    <value>Elimination</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words.</comment>
+  </data>
+  <data name="QuestKindExploration" xml:space="preserve">
+    <value>Exploration</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words.</comment>
+  </data>
+  <data name="QuestKindPickup" xml:space="preserve">
+    <value>Pickup</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words. Picking up a quest item.</comment>
+  </data>
+  <data name="QuestKindPlace" xml:space="preserve">
+    <value>Place</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words. Planting, marking or using an item the player brings (a verb's noun: placing, not a location).</comment>
+  </data>
+  <data name="QuestKindFindInRaid" xml:space="preserve">
+    <value>Find in raid</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words. As the game says "found in raid" (FIR).</comment>
+  </data>
+  <data name="QuestKindSurvive" xml:space="preserve">
+    <value>Survive</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words.</comment>
+  </data>
+  <data name="QuestKindTrader" xml:space="preserve">
+    <value>Trader</value>
+    <comment>A quest type's name: help's legend of quest types, the type glyph's tooltip ("Elimination: Kill targets, maybe with conditions"), and an objective's line when the data has no text for it. One or two words. Things done at a trader, after the raid (handing over items).</comment>
+  </data>
+  <data name="QuestKindEliminationMeans" xml:space="preserve">
+    <value>Kill targets, maybe with conditions</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop.</comment>
+  </data>
+  <data name="QuestKindExplorationMeans" xml:space="preserve">
+    <value>Go to a place</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop.</comment>
+  </data>
+  <data name="QuestKindPickupMeans" xml:space="preserve">
+    <value>Pick up a quest item</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop.</comment>
+  </data>
+  <data name="QuestKindPlaceMeans" xml:space="preserve">
+    <value>Plant, mark or use an item you bring</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop.</comment>
+  </data>
+  <data name="QuestKindFindInRaidMeans" xml:space="preserve">
+    <value>Find items in raid (FIR), any map</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop. FIR: the game's short form of "found in raid".</comment>
+  </data>
+  <data name="QuestKindSurviveMeans" xml:space="preserve">
+    <value>Survive and extract, or meet a condition</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop.</comment>
+  </data>
+  <data name="QuestKindTraderMeans" xml:space="preserve">
+    <value>Hand over at a trader, after the raid</value>
+    <comment>What a quest type means: help's legend of quest types and the type glyph's tooltip, after its name ("Elimination: Kill targets, maybe with conditions"). A short phrase, no full stop.</comment>
+  </data>
+  <data name="CompassNorth" xml:space="preserve">
+    <value>N</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassNorthEast" xml:space="preserve">
+    <value>NE</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassEast" xml:space="preserve">
+    <value>E</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassSouthEast" xml:space="preserve">
+    <value>SE</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassSouth" xml:space="preserve">
+    <value>S</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassSouthWest" xml:space="preserve">
+    <value>SW</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassWest" xml:space="preserve">
+    <value>W</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="CompassNorthWest" xml:space="preserve">
+    <value>NW</value>
+    <comment>A compass point: where an objective lies from the player's last position, on the map (map-up is north), beside its distance in the raid card and the quest cards: "294 m · NE · 8 M UP" (shown in capitals). As short as the language writes it (German: N, NO, O, SO, S, SW, W, NW).</comment>
+  </data>
+  <data name="DirectionAhead" xml:space="preserve">
+    <value>ahead</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionAheadRight" xml:space="preserve">
+    <value>ahead-right</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>right</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionBehindRight" xml:space="preserve">
+    <value>behind-right</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionBehind" xml:space="preserve">
+    <value>behind</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionBehindLeft" xml:space="preserve">
+    <value>behind-left</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>left</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
+  <data name="DirectionAheadLeft" xml:space="preserve">
+    <value>ahead-left</value>
+    <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
+  </data>
 </root>
