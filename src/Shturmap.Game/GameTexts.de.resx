@@ -52,4 +52,88 @@
     <value>Num {key}</value>
     <comment>en: Num {key}</comment>
   </data>
+  <data name="ScreenshotKeyHome" xml:space="preserve">
+    <value>Pos1</value>
+    <comment>en: Home</comment>
+  </data>
+  <data name="ScreenshotKeyEnd" xml:space="preserve">
+    <value>Ende</value>
+    <comment>en: End</comment>
+  </data>
+  <data name="ScreenshotKeyInsert" xml:space="preserve">
+    <value>Einfg</value>
+    <comment>en: Insert</comment>
+  </data>
+  <data name="ScreenshotKeyDelete" xml:space="preserve">
+    <value>Entf</value>
+    <comment>en: Delete</comment>
+  </data>
+  <data name="ScreenshotKeyPageUp" xml:space="preserve">
+    <value>Bild↑</value>
+    <comment>en: PageUp</comment>
+  </data>
+  <data name="ScreenshotKeyPageDown" xml:space="preserve">
+    <value>Bild↓</value>
+    <comment>en: PageDown</comment>
+  </data>
+  <data name="ScreenshotKeyBackspace" xml:space="preserve">
+    <value>Rücktaste</value>
+    <comment>en: Backspace</comment>
+  </data>
+  <data name="ScreenshotKeyEnter" xml:space="preserve">
+    <value>Eingabe</value>
+    <comment>en: Return</comment>
+  </data>
+  <data name="ScreenshotKeyNumpadEnter" xml:space="preserve">
+    <value>Num Eingabe</value>
+    <comment>en: Num Enter</comment>
+  </data>
+  <data name="ScreenshotKeyEscape" xml:space="preserve">
+    <value>Esc</value>
+    <comment>en: Escape</comment>
+  </data>
+  <data name="ScreenshotKeyTab" xml:space="preserve">
+    <value>Tab</value>
+    <comment>en: Tab</comment>
+  </data>
+  <data name="ScreenshotKeySpace" xml:space="preserve">
+    <value>Leertaste</value>
+    <comment>en: Space</comment>
+  </data>
+  <data name="ScreenshotKeyPause" xml:space="preserve">
+    <value>Pause</value>
+    <comment>en: Pause</comment>
+  </data>
+  <data name="ScreenshotKeyCapsLock" xml:space="preserve">
+    <value>Feststelltaste</value>
+    <comment>en: CapsLock</comment>
+  </data>
+  <data name="ScreenshotKeyNumLock" xml:space="preserve">
+    <value>Num</value>
+    <comment>en: Numlock</comment>
+  </data>
+  <data name="ScreenshotKeyScrollLock" xml:space="preserve">
+    <value>Rollen</value>
+    <comment>en: ScrollLock</comment>
+  </data>
+  <data name="ScreenshotKeyUp" xml:space="preserve">
+    <value>↑</value>
+    <comment>en: UpArrow</comment>
+  </data>
+  <data name="ScreenshotKeyDown" xml:space="preserve">
+    <value>↓</value>
+    <comment>en: DownArrow</comment>
+  </data>
+  <data name="ScreenshotKeyLeft" xml:space="preserve">
+    <value>←</value>
+    <comment>en: LeftArrow</comment>
+  </data>
+  <data name="ScreenshotKeyRight" xml:space="preserve">
+    <value>→</value>
+    <comment>en: RightArrow</comment>
+  </data>
+  <data name="ScreenshotKeyMouse" xml:space="preserve">
+    <value>Maus{button}</value>
+    <comment>en: Mouse{button}</comment>
+  </data>
 </root>
