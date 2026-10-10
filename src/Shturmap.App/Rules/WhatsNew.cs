@@ -103,7 +103,7 @@ public static class WhatsNew
             : sections.FirstOrDefault(s => s.Name is not null && s.Version.Major == version.Major && s.Version.Minor == version.Minor)?.Name;
 
     /// <summary>A section's version with its release's name, in capitals as the card and help say it: "0.4.0 · PRAETORIAN".</summary>
-    public static string Tag(Section section) => section.Name is { } name ? $"{section.Label} · {name.ToUpper(UiLanguage.Culture)}" : section.Label;
+    public static string Tag(Section section) => section.Name is { } name ? $"{section.Label} · {UiLanguage.Upper(name)}" : section.Label;
 
     /// <summary>A version as written ("0.4.0", "0.3.0-dev.20261007…": the part before a "-"), or null.</summary>
     public static Version? VersionOf(string? text)

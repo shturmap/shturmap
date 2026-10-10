@@ -2562,7 +2562,7 @@ failed download is never a reason to forget a good saved copy.
 
 **The app's own language** (owner, 2026-10-10: multi-language support, English and German first, every language
 tarkov.dev has to follow). **One language for everything**: Shturmap's own texts, its number and date formats ("Pay
-5,000 ₽" and "25 Sep" in English, "5.000 ₽" and "25. Sep." in German, never Windows' formats inside another language's
+5,000 ₽" and "25 Sep" in English, "5.000 ₽" and "25. Sept." in German, never Windows' formats inside another language's
 sentences; review of 2026-10-04) and the game data's names all follow one choice (owner, 2026-10-10: "the app should
 switch languages entirely, otherwise that makes it weird mixing the two"). `UiLanguage.Choose` makes it:
 1. the player's choice in settings, "Language: Automatic · English · Deutsch", each language in its own name;
@@ -2616,9 +2616,13 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
   language tarkov.dev has (`PluralRules`: Polish and Russian need three or four, so code never picks "extract" or
   "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing.
 - **Game names stand where they don't change form**: "Bring: {item}", not "Bring the {item}"; Russian and Polish
-  change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are.
+  change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are. A category's
+  name inside a sentence ("Any sniper rifle") is in lower case only where its language writes a noun so: German
+  writes every noun with a capital (`UiLanguage.InSentence`, one rule per language).
 - **Numbers** in a placeholder are written in the language's format; a number that needs grouping (prices, "5,000 ₽")
-  is formatted by the caller with `UiLanguage.Culture`. Dates and times likewise.
+  is formatted by the caller with `UiLanguage.Culture`. Dates and times likewise; a day and month inside a
+  sentence with `UiLanguage.DayMonth` ("4 Oct", German "4. Okt.") or `DayMonthTime`, one table of each language's
+  patterns.
 - **A comment on each English text** says where it shows and what its placeholders are, for the translator.
 - **Each translated text says which English text it was made from** (its comment: `en: <the English text>`). The
   translation tests (`TranslationTests`) check every file: the English texts parse, a translation has the English
@@ -2627,7 +2631,8 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
   as below (docs/LANGUAGES.md, "Translating"); changing a translation alone needs only the review.
 - **Not translated**: internal values (settings' stored values, ids, file names, log lines), and the words of the
   game itself that Shturmap reads (the extract list's header in a screenshot): those are matched in the game's
-  language, not shown.
+  language, not shown. A log line or diagnostics that says what a text says takes its English
+  (`UiLanguage.InEnglish`; `LoadProblem.InEnglish`, `RetrySchedule.InEnglish`), never the language in use.
 
 **Language.** The game data comes in the language chosen above (`LanguageChoice.Data`), translated by tarkov.dev's
 `<payload>_<language>` files. The extract list's reader still reads the game's language, which is what the screenshot

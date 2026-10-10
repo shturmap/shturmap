@@ -150,6 +150,17 @@ public static class MapContentBuilder
     }
 
     /// <summary>
+    /// A marker's English name, whatever the data's language: an extract's or a switch's as tarkov.dev names it in
+    /// English (<see cref="GameData.EnglishName"/>), any other marker's label. For code that picks a marker by its name
+    /// (the previews' examples): the label is in the data's language, so an English name matches nothing in German.
+    /// </summary>
+    public static string EnglishName(GameData data, MapMarker marker)
+    {
+        var colon = marker.Id.IndexOf(':');
+        return colon > 0 && marker.Id[..colon] is "extract" or "switch" ? data.EnglishName(marker.Id[(colon + 1)..], marker.Label) : marker.Label;
+    }
+
+    /// <summary>
     /// An extract and the switches it needs light together (owner, 2026-10-03, from the map audit: you have to find
     /// the switch to leave). An extract lists its switches; a switch that unlocks one of those (a power switch freeing
     /// a lever) counts too, up to a few steps. Only switches the data places have markers; the chain runs through the

@@ -56,7 +56,7 @@ public static class RaidStatus
     {
         RaidPhase.Loading => SessionTexts.StatusTipLoading,
         RaidPhase.InRaid when raid.RaidStartedAt is { } started =>
-            SessionTexts.StatusTipInRaidSince(time: started.ToString(started.Date == now.Date ? "HH:mm" : "d MMM HH:mm", UiLanguage.Culture)),
+            SessionTexts.StatusTipInRaidSince(time: started.Date == now.Date ? started.ToString("HH:mm", UiLanguage.Culture) : UiLanguage.DayMonthTime(started)),
         RaidPhase.InRaid => SessionTexts.StatusTipInRaid,
         _ => SessionTexts.StatusTipMenu,
     };

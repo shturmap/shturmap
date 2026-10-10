@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
+using Shturmap.Core;
 
 namespace Shturmap.Data.TarkovDev;
 
@@ -59,6 +60,21 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status)
         LoadFailure.Disk => DataTexts.LoadFailedDisk,
         _ => DataTexts.LoadFailedUnknown,
     };
+
+    /// <summary>
+    /// <see cref="What"/> in English whatever the language in use, for the app log and diagnostics: they stay English
+    /// for whoever fixes Shturmap (docs/DESIGN.md §8, "The app's own language").
+    /// </summary>
+    public string InEnglish => UiLanguage.InEnglish(DataTexts.Resources, Kind switch
+    {
+        LoadFailure.ServerBusy or LoadFailure.Refused => nameof(DataTexts.LoadFailedStatus),
+        LoadFailure.Unreachable => nameof(DataTexts.LoadFailedUnreachable),
+        LoadFailure.TimedOut => nameof(DataTexts.LoadFailedTimedOut),
+        LoadFailure.Unreadable => nameof(DataTexts.LoadFailedUnreadable),
+        LoadFailure.NotData => nameof(DataTexts.LoadFailedNotData),
+        LoadFailure.Disk => nameof(DataTexts.LoadFailedDisk),
+        _ => nameof(DataTexts.LoadFailedUnknown),
+    }, ("status", Status));
 
     /// <summary>What to do, a sentence. A page in place of the data asks for no report: a report can't change what sends
     /// the page. The notices name the wait (GameSession.DataNotice).</summary>

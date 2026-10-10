@@ -21,7 +21,7 @@ public static class CompletionWords
         if (done.Count == 1)
         {
             var one = done[0];
-            return (one.Trader.Length > 0 ? RuleTexts.CompleteOneFrom(trader: one.Trader.ToUpper(UiLanguage.Culture)) : RuleTexts.CompleteOne,
+            return (one.Trader.Length > 0 ? RuleTexts.CompleteOneFrom(trader: UiLanguage.Upper(one.Trader)) : RuleTexts.CompleteOne,
                 one.Name, Unlocks(one.Unlocks));
         }
         var names = Listed(done.Select(d => d.Name).ToList(), 3);

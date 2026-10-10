@@ -440,6 +440,8 @@ public static partial class MapRenderer
                 var tier = NameTier(label.Size);
                 if (zoom < tier.FromZoom)
                     continue;
+                // tarkov.dev's map labels (maps.json) are English in every language, so English rules: the language in
+                // use's would write an English "i" as Turkish "İ".
                 var text = label.Text.ToUpperInvariant();
                 var at = camera.ToScreen(scene.Projection.ToMap(label.X, label.Z));
                 var font = tier.Landmark ? landmark : street;

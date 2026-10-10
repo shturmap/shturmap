@@ -153,8 +153,8 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 
 ## Keys
 
-As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameSettingsReader`, in
-English: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the data: **check** in
+As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameKey.Name`, each
+word a text in GameTexts: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the data: **check** in
 its settings. In a sentence put "Taste" before a key that is also a word ("TASTE DRUCK", not "DRUCK DRÜCKEN").
 
 | English | German | Note |
@@ -178,7 +178,7 @@ its settings. In a sentence put "Taste" before a key that is also a word ("TASTE
 | 5,000; 41,283; 2.5 | 5.000; 41.283; 2,5 | `N0` with `UiLanguage.Culture` |
 | 5,000 ₽ | 5.000 ₽; 1.000 $; 1.000 € | the number, a no-break space, the sign |
 | ×3; 2× Bolts | ×3; 2× | as the game and the English |
-| 25 Sep | 25. Sept. | .NET's de-DE with `d. MMM` (Jan., März, Mai, Juni, Juli, Sept., Okt.); `d MMM` gives „25 Sept.“, wrong in German |
+| 25 Sep; 25 Sep 16:40 | 25. Sept.; 25. Sept., 16:40 | `UiLanguage.DayMonth`, `DayMonthTime`: .NET's de-DE with `d. MMM` (Jan., März, Mai, Juni, Juli, Sept., Okt.); `d MMM` gives „25 Sept.“, wrong in German |
 | 25/09; 16:40 | 25.09.; 16:40 | 24 h; no „Uhr“ in labels |
 | 12 min; 45 s; 6 h | 12 min; 45 s; 6 h | unit symbols; caps 12 MIN |
 | 69 m; 2.5 km; 38 % | 69 m; 2,5 km; 38 % | a space before the unit and % |
@@ -188,5 +188,5 @@ its settings. In a sentence put "Taste" before a key that is also a word ("TASTE
 | dash; range | „ – “; 21:00–05:00 | en dash: with spaces between words, none in a range |
 | CHOOSE… | WÄHLEN… | the ellipsis close to the word, as in Windows' menus |
 | ·, ↗, ↓, → | unchanged | |
-| upper case | ß → SS; Ä, Ö, Ü stay | `Caps.Of` and `ToUpper` keep ß („STRAßE“): a data name with ß needs SS in capitals |
+| upper case | ß → SS; Ä, Ö, Ü stay | `UiLanguage.Upper` (`Caps.Of`) writes ß as SS, also in a data name; .NET's `ToUpper` keeps it („STRAßE“) |
 | plural | one, other | `{n, plural, one {# Extract} other {# Extracts}}` |

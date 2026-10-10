@@ -29,7 +29,7 @@ public sealed record ModeReading(DateTime? LoggedAt = null, string? Unknown = nu
         if (Unknown is { } raw)
             return SessionTexts.ModeTipUnknown(mode: raw);
         if (LoggedAt is { } at)
-            return SessionTexts.ModeTipFromLog(time: at.ToString(at.Date == now.Date ? "HH:mm" : "d MMM HH:mm", UiLanguage.Culture));
+            return SessionTexts.ModeTipFromLog(time: at.Date == now.Date ? at.ToString("HH:mm", UiLanguage.Culture) : UiLanguage.DayMonthTime(at));
         return gameFound ? SessionTexts.ModeTipLastPlayed : SessionTexts.ModeTipNoGame;
     }
 }

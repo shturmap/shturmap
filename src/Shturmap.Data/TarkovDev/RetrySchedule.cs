@@ -1,3 +1,5 @@
+using Shturmap.Core;
+
 namespace Shturmap.Data.TarkovDev;
 
 /// <summary>
@@ -26,4 +28,10 @@ public static class RetrySchedule
             return DataTexts.RetryWaitSeconds(seconds: (int)Math.Round(wait.TotalSeconds, MidpointRounding.AwayFromZero));
         return DataTexts.RetryWaitMinutes(minutes: (int)Math.Round(wait.TotalMinutes));
     }
+
+    /// <summary><see cref="InWords"/> in English whatever the language in use, for the app log ("2 minutes"): it stays
+    /// English for whoever fixes Shturmap (docs/DESIGN.md §8, "The app's own language").</summary>
+    public static string InEnglish(TimeSpan wait) => wait < TimeSpan.FromMinutes(1)
+        ? UiLanguage.InEnglish(DataTexts.Resources, nameof(DataTexts.RetryWaitSeconds), ("seconds", (int)Math.Round(wait.TotalSeconds, MidpointRounding.AwayFromZero)))
+        : UiLanguage.InEnglish(DataTexts.Resources, nameof(DataTexts.RetryWaitMinutes), ("minutes", (int)Math.Round(wait.TotalMinutes)));
 }

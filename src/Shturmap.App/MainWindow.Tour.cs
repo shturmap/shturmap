@@ -9,6 +9,7 @@ using Shturmap.Core;
 using Shturmap.Core.Navigation;
 using Shturmap.Core.Text;
 using Shturmap.Data.TarkovDev;
+using Shturmap.Game.Settings;
 using Shturmap.Map;
 using Shturmap.Session;
 using Path = Microsoft.UI.Xaml.Shapes.Path;
@@ -253,7 +254,7 @@ public sealed partial class MainWindow
         var count = TourChapters.Count;
         TourEyebrow.Text = Tour.Eyebrow(at, count);
         TourText.Text = string.Join("\n", chapter.Lines);
-        TourNextText.Text = at + 1 < count ? AppTexts.TourNext : AppTexts.TourDone;
+        TourNextText.Text = at + 1 < count ? ViewTexts.TourNext : AppTexts.TourDone;
         TourBack.Visibility = at > 0 ? Visibility.Visible : Visibility.Collapsed;
         TourTicks.ColumnDefinitions.Clear();
         TourTicks.Children.Clear();
@@ -474,12 +475,12 @@ public sealed partial class MainWindow
         MapContent? content = null;
         RaidReplay? walk = null;
         // Framed on where "you" will be, with room around: the chapter is about that spot.
-        await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(c); },
-            c => ReplayExample(c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
+        await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(data, c); },
+            c => ReplayExample(data, c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
         if (content is null || walk is null || Map.Scene is not { } scene)
             return;
         var you = walk.Fixes[^1].Position;
-        var key = TourKeyCap(Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.KeyPrintScreen), out var cap, out var name);
+        var key = TourKeyCap(Caps.Of((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? GameKey.PrintScreen).Name), out var cap, out var name);
         ShowPlate(key);
         if (!await TourWait(950, run))
             return;
@@ -497,7 +498,7 @@ public sealed partial class MainWindow
         TourHoles(() => [Square(ToLayer(you), 150)]);
         if (!await TourWait(2400, run))
             return;
-        await StageExtractListRead(chapter, scene, content, you, run);
+        await StageExtractListRead(chapter, data, scene, content, you, run);
     }
 
     // The extract list as its own cause and effect (owner, 2026-10-09, after "The your screenshot key panel is weird
@@ -505,13 +506,13 @@ public sealed partial class MainWindow
     // the game shows it (the top right) under what to press; a press reads it; then the view takes in the extracts on
     // it, which light up one after another, nearest first, each with a ring in its kind's colour, and the rest go
     // hollow. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
-    private async Task StageExtractListRead(Tour.Chapter chapter, MapScene scene, MapContent content, WorldPoint you, int run)
+    private async Task StageExtractListRead(Tour.Chapter chapter, GameData data, MapScene scene, MapContent content, WorldPoint you, int run)
     {
-        var (listed, unsure, notListed) = ExampleExits(content);
+        var (listed, unsure, notListed) = ExampleExits(data, content);
         if (listed.Count == 0)
             return;
         listed = listed.OrderBy(m => m.Position.HorizontalDistanceTo(you)).ToList();
-        var keyName = Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.KeyPrintScreen);
+        var keyName = Caps.Of((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? GameKey.PrintScreen).Name);
         // The tour's words are texts like the app's own (TextFormat): {key} the screenshot key, {n} the extracts on the
         // example list, {all} the map's, so a translation may put them where its grammar wants and give {all} plural forms.
         var how = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "", ("key", keyName));
@@ -750,10 +751,10 @@ public sealed partial class MainWindow
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
             var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
-            card.Children.Add(GlanceRow(AppTexts.TourCardNext, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
+            card.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }
         if (exit is not null)
-            card.Children.Add(GlanceRow(AppTexts.TourCardExit, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
+            card.Children.Add(GlanceRow(ViewTexts.RaidExitLabel, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
                 Caps.Of(Bearing.Describe(RelativeDirection.Behind)), "GreenBrush"));
         card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });
         return card;
@@ -1099,7 +1100,7 @@ public sealed partial class MainWindow
         CueFirst.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show)
             return;
-        var key = _snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.ScreenshotKeyUnknown;
+        var key = _snapshot?.ScreenshotKeys.FirstOrDefault()?.Name ?? AppTexts.ScreenshotKeyUnknown;
         CueFirst.Text = AppTexts.CueFirstRaid(key: Caps.Of(key));
         _session.SetSetting(FirstRaidSetting, "done");
         Study.Ui("first.raid");

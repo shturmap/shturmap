@@ -6,7 +6,7 @@ namespace Shturmap.Core;
 
 /// <summary>
 /// The language of Shturmap's own texts, and with it the way its numbers and dates are written and its lists sorted.
-/// They go together: "Pay 5,000 ₽" and "25 Sep" in English texts, "5.000 ₽" and "25. Sep." in German ones, whatever
+/// They go together: "Pay 5,000 ₽" and "25 Sep" in English texts, "5.000 ₽" and "25. Sept." in German ones, whatever
 /// Windows' own formats are (review of 2026-10-04: a German Windows showed "5.000 ₽" and "3 Okt" inside English
 /// sentences). One language for everything (owner, 2026-10-10): the player's choice in settings, else the game's
 /// language, else Windows' display language, else English (<see cref="Choose"/>). It can change while Shturmap runs.
@@ -149,6 +149,89 @@ public static class UiLanguage
         if (_pseudo)
             return PseudoText.Of(texts.GetString(key, CultureInfo.InvariantCulture) ?? key);
         return texts.GetString(key, _culture) ?? key;
+    }
+
+    /// <summary>
+    /// A text in capitals, as headings and labels in the game's style show it, by the rules of the language in use. ß
+    /// becomes SS in every language: .NET keeps it ("STRAßE"), the font has no capital ẞ, and German writes SS in
+    /// capitals; a German name can stand in another language's text. Every upper-casing on screen goes through here
+    /// (Caps.Of in the app), so the rule is in one place (docs/LANGUAGES.md, "Review").
+    /// </summary>
+    public static string Upper(string? text)
+    {
+        var upper = (text ?? "").ToUpper(_culture);
+        return upper.Contains('ß') ? upper.Replace("ß", "SS", StringComparison.Ordinal) : upper;
+    }
+
+    /// <summary>
+    /// A name from the game data (an item category, "Sniper rifle") as it stands inside a sentence of
+    /// <paramref name="language"/>, the language the name is written in (the data's, "de"): a common noun in lower case
+    /// ("any sniper rifle"), as English and the other languages of tarkov.dev's write it there, except a language that
+    /// writes every noun with a capital (German: "Scharfschützengewehr"), where the name stays as it is. A name in
+    /// capitals ("SMG") stays as it is in every language.
+    /// </summary>
+    public static string InSentence(string name, string language)
+    {
+        if (NounsWithCapitals.Contains(language) || name.Length < 2 || !char.IsLower(name[1]))
+            return name;
+        CultureInfo culture;
+        try
+        {
+            culture = CultureInfo.GetCultureInfo(language);
+        }
+        catch (CultureNotFoundException)
+        {
+            culture = CultureInfo.InvariantCulture;
+        }
+        return char.ToLower(name[0], culture) + name[1..];
+    }
+
+    // The languages that write every noun with a capital inside a sentence; of tarkov.dev's, German alone.
+    private static readonly string[] NounsWithCapitals = [German];
+
+    /// <summary>
+    /// A day and month as the language in use writes it inside a sentence: "4 Oct" in English, "4. Okt." in German (the
+    /// month as .NET abbreviates it in that language: "25. Sept."). A pattern of one language ("d MMM") read in another
+    /// writes it wrong: German "4 Okt.".
+    /// </summary>
+    public static string DayMonth(DateTime day)
+    {
+        var culture = _culture;
+        return day.ToString(DatePatterns(culture).DayMonth, culture);
+    }
+
+    /// <inheritdoc cref="DayMonth(DateTime)"/>
+    public static string DayMonth(DateOnly day)
+    {
+        var culture = _culture;
+        return day.ToString(DatePatterns(culture).DayMonth, culture);
+    }
+
+    /// <summary>A day and month with the time, as the language in use writes it: "4 Oct 14:30", German "4. Okt., 14:30".</summary>
+    public static string DayMonthTime(DateTime at)
+    {
+        var culture = _culture;
+        return at.ToString(DatePatterns(culture).DayMonthTime, culture);
+    }
+
+    // How each language writes a date inside its sentences: one row per language, a language without one writes
+    // English's until it has its own. German's are CLDR's ("d. MMM", and a comma before the time).
+    private static (string DayMonth, string DayMonthTime) DatePatterns(CultureInfo culture) => culture.TwoLetterISOLanguageName switch
+    {
+        German => ("d. MMM", "d. MMM, HH:mm"),
+        _ => ("d MMM", "d MMM HH:mm"),
+    };
+
+    /// <summary>
+    /// A text of Shturmap's own in English whatever the language in use, its placeholders filled in English formats: for
+    /// the app log, diagnostics and reports, which stay English for whoever fixes Shturmap (docs/DESIGN.md §8, "The
+    /// app's own language"). The text is named with nameof, so a misspelt name is a build error:
+    /// <c>UiLanguage.InEnglish(DataTexts.Resources, nameof(DataTexts.LoadFailedStatus), ("status", 503))</c>.
+    /// </summary>
+    public static string InEnglish(ResourceManager texts, string key, params ReadOnlySpan<(string Name, object? Value)> args)
+    {
+        var pattern = texts.GetString(key, CultureInfo.InvariantCulture) ?? key;
+        return args.IsEmpty ? pattern : TextFormat.Format(CultureFor(English), pattern, args);
     }
 
     /// <summary>

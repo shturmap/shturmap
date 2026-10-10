@@ -88,10 +88,6 @@
     <value>Ziehen zum Verschieben, Doppelklick zum Vergrößern. Klick auf eine Quest hält ihre Karte offen; Klick auf ihren Stift pickt sie</value>
     <comment>en: Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it</comment>
   </data>
-  <data name="HelpLegendOnTheMap" xml:space="preserve">
-    <value>AUF DER MAP</value>
-    <comment>en: ON THE MAP</comment>
-  </data>
   <data name="HelpLegendOnThisMap" xml:space="preserve">
     <value>AUF DIESER MAP</value>
     <comment>en: ON THIS MAP</comment>
@@ -404,10 +400,6 @@
     <value>Die Tour bleibt in der Hilfe: F1, dann TOUR STARTEN.</value>
     <comment>en: The tour stays in help: F1, then TAKE THE TOUR.</comment>
   </data>
-  <data name="TourNext" xml:space="preserve">
-    <value>WEITER →</value>
-    <comment>en: NEXT →</comment>
-  </data>
   <data name="TourDone" xml:space="preserve">
     <value>FERTIG</value>
     <comment>en: DONE</comment>
@@ -420,10 +412,6 @@
     <value>NIE</value>
     <comment>en: NEVER</comment>
   </data>
-  <data name="KeyPrintScreen" xml:space="preserve">
-    <value>Druck</value>
-    <comment>en: PrtSc</comment>
-  </data>
   <data name="PreviewTour" xml:space="preserve">
     <value>VORSCHAU · DIE TOUR · {map}</value>
     <comment>en: PREVIEW · THE TOUR · {map}</comment>
@@ -431,14 +419,6 @@
   <data name="PreviewExample" xml:space="preserve">
     <value>EIN BEISPIEL, NICHT DEIN RAID</value>
     <comment>en: AN EXAMPLE, NOT YOUR RAID</comment>
-  </data>
-  <data name="TourCardNext" xml:space="preserve">
-    <value>ZIEL</value>
-    <comment>en: NEXT</comment>
-  </data>
-  <data name="TourCardExit" xml:space="preserve">
-    <value>EXTRACT</value>
-    <comment>en: EXIT</comment>
   </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>DIE RAID-KARTE, MIT BEISPIELWERTEN</value>
@@ -512,25 +492,13 @@
     <value>Melden ist in diesem Build nicht eingerichtet: Kopier die Diagnosedaten in der Hilfe (?) und schick sie an die Person, von der du Shturmap hast.</value>
     <comment>en: Reporting isn't set up in this build: copy the diagnostics in help (?) and send them to whoever gave you Shturmap.</comment>
   </data>
-  <data name="ReportShowSent" xml:space="preserve">
-    <value>ZEIGEN, WAS GESENDET WIRD</value>
-    <comment>en: SHOW WHAT'S SENT</comment>
-  </data>
   <data name="ReportHideSent" xml:space="preserve">
     <value>AUSBLENDEN, WAS GESENDET WIRD</value>
     <comment>en: HIDE WHAT'S SENT</comment>
   </data>
-  <data name="ReportCancel" xml:space="preserve">
-    <value>ABBRECHEN</value>
-    <comment>en: CANCEL</comment>
-  </data>
   <data name="ReportClose" xml:space="preserve">
     <value>SCHLIESSEN</value>
     <comment>en: CLOSE</comment>
-  </data>
-  <data name="ReportProblemPlaceholder" xml:space="preserve">
-    <value>Was ist passiert, und was hast du erwartet? (Pflichtfeld)</value>
-    <comment>en: What happened, and what did you expect? (Required)</comment>
   </data>
   <data name="ReportIdeaPlaceholder" xml:space="preserve">
     <value>Was würde helfen, und wann würdest du es nutzen? (Pflichtfeld)</value>

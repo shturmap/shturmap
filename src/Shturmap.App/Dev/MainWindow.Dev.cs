@@ -197,7 +197,7 @@ public sealed partial class MainWindow
         if (_snapshot?.Data is not { } data || data.MapByNormalizedName("customs") is not { } customs)
             return "no data for Customs";
         var content = Shturmap.Map.MapContentBuilder.Build(data, customs.Id, [], new HashSet<string>());
-        if (ReplayExample(content) is not { } example)
+        if (ReplayExample(data, content) is not { } example)
             return "no example raid on Customs";
         if (_snapshot.Map?.NormalizedName != "customs")
             await _session.SelectMapAsync("customs");

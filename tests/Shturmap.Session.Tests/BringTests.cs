@@ -47,14 +47,15 @@ public class BringTests
         new ApiItem("mosin-preset", ["preset"], null, null, [], [Sniper, Weapon]));
 
     private static GameData Data(Dictionary<string, ApiMap>? maps = null, Dictionary<string, ApiTask>? tasks = null,
-        Dictionary<string, string>? extractKeys = null, Dictionary<string, ObjectiveFacts>? facts = null) => new()
+        Dictionary<string, string>? extractKeys = null, Dictionary<string, ObjectiveFacts>? facts = null, string language = "en",
+        Dictionary<string, string>? names = null) => new()
     {
         Mode = GameMode.Pve,
-        Language = "en",
+        Language = language,
         Maps = maps ?? new Dictionary<string, ApiMap>(),
         Tasks = tasks ?? new Dictionary<string, ApiTask>(),
         Traders = new Dictionary<string, ApiTrader>(),
-        ItemNames = Names,
+        ItemNames = names ?? Names,
         ExtractKeys = extractKeys ?? new Dictionary<string, string>(),
         ObjectiveFacts = facts ?? new Dictionary<string, ObjectiveFacts>(),
         MapDefinitions = [],
@@ -86,6 +87,18 @@ public class BringTests
     [Fact]
     public void Without_the_item_categories_the_weapons_are_listed() =>
         Assert.Equal("Mosin rifle or 2 others", Planning.WeaponText(Data(), null, ["mosin", "sv98", "m700"]));
+
+    // A category's name stands inside a sentence in lower case, but German writes every noun with a capital, so a German
+    // name keeps it (UiLanguage.InSentence; until 2026-10-10 every name was lower-cased). The words around it are the
+    // English texts' until German is written.
+    [Fact]
+    public void A_category_named_in_german_keeps_its_capital()
+    {
+        var german = new Dictionary<string, string>(Names) { [Sniper] = "Scharfschützengewehr", [Armor] = "Schutzweste", [Headwear] = "Kopfbedeckung" };
+        Assert.Equal("Any Scharfschützengewehr", Planning.WeaponText(Data(language: "de", names: german), Catalogue, ["mosin", "sv98", "m700"]));
+        Assert.Equal("Schutzweste, Kopfbedeckung", Planning.WithoutText(Data(language: "de", names: german), Catalogue, ["paca", "ssh"]));
+        Assert.Equal("armor, headwear", Planning.WithoutText(Data(), Catalogue, ["paca", "ssh"]));
+    }
 
     // ---- rows: one per thing, with every quest it serves and what for ----
 

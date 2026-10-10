@@ -853,12 +853,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 round = _loadRound;
                 var again = _dataProblem?.Kind == problem.Kind;
                 _dataProblem = problem;
-                var next = problem.Transient ? $"; next try in {RetrySchedule.InWords(wait)}" : "";
+                var next = problem.Transient ? $"; next try in {RetrySchedule.InEnglish(wait)}" : "";
                 if (again)
                     AppLog.Warn($"Data load failed again ({problem.Kind}{(problem.Status is { } s ? " " + s : "")}): {e.GetType().Name}: {e.Message}{next}");
                 else
                 {
-                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}{next}", e);
+                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.InEnglish}{next}", e);
                     Say(DataNotice(problem, wait), 30, offersReport: DataNoticeOffersReport(problem));
                 }
                 Publish();
@@ -952,7 +952,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         var why = failure.Why;
         var wait = RetryWait(++_languageFailures);
         AppLog.Warn($"'{failure.Language}' texts not loaded ({why.Kind}{(why.Status is { } s ? " " + s : "")}); using English" +
-                    (why.Transient ? $", asking again in {RetrySchedule.InWords(wait)}" : ""));
+                    (why.Transient ? $", asking again in {RetrySchedule.InEnglish(wait)}" : ""));
         if (_languageSaid.Add(failure.Language + ":" + why.Kind))
             Say(LanguageNotice(failure.Language, why, wait), 20, offersReport: !why.Transient && why.Advice == LoadProblem.Report);
         // One loop asks again, however often the data itself is loaded meanwhile.
@@ -1028,7 +1028,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     return;
                 }
                 wait = RetryWait(++_languageFailures);
-                AppLog.Warn($"'{language}' texts still not loaded; asking again in {RetrySchedule.InWords(wait)}");
+                AppLog.Warn($"'{language}' texts still not loaded; asking again in {RetrySchedule.InEnglish(wait)}");
             }
             finally
             {
@@ -1122,7 +1122,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 }
                 // Only the item cards' "where to get it" is missing; everything else works.
                 AppLog.Warn($"Item sources not loaded ({problem.Kind}): {e.GetType().Name}: {e.Message}" +
-                            (problem.Transient ? $"; asking again in {RetrySchedule.InWords(wait)}" : ""));
+                            (problem.Transient ? $"; asking again in {RetrySchedule.InEnglish(wait)}" : ""));
                 if (!problem.Transient)
                     return;
             }
@@ -2026,6 +2026,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     Handover = QuestCards.HandoverText(_data, o.Quest, o.Objective.Id),
                     HandoverCount = QuestCards.HandoverCount(o.Quest, o.Objective.Id),
                     ItemId = QuestCards.ItemOf(o.Objective),
+                    Description = ObjectiveText(o.Objective, optional: false), Optional = optional,
                 });
             }
             var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);

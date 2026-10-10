@@ -149,7 +149,7 @@ public sealed partial class MainWindow
         ReportProblem.IsChecked = kind == ReportKind.Problem;
         ReportIdea.IsChecked = kind == ReportKind.Idea;
         ReportText.PlaceholderText = kind == ReportKind.Problem
-            ? AppTexts.ReportProblemPlaceholder
+            ? ViewTexts.ReportTextPlaceholder
             : AppTexts.ReportIdeaPlaceholder;
         RefreshReport();
     }
@@ -176,10 +176,10 @@ public sealed partial class MainWindow
 
     // The preview's link says what a click does now, and is said again in a new language (MainWindow.Language).
     private void SayShowSent() =>
-        ReportShowSentText.Text = ReportSentView.Visibility == Visibility.Visible ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
+        ReportShowSentText.Text = ReportSentView.Visibility == Visibility.Visible ? AppTexts.ReportHideSent : ViewTexts.ReportShowSent;
 
     // CANCEL while the report can be sent, CLOSE once it went; said again in a new language too.
-    private void SayCancel() => ReportCancel.Content = ReportSend.Visibility == Visibility.Visible ? AppTexts.ReportCancel : AppTexts.ReportClose;
+    private void SayCancel() => ReportCancel.Content = ReportSend.Visibility == Visibility.Visible ? ViewTexts.ReportCancel : AppTexts.ReportClose;
 
     // The box, the Send button and the preview follow what the player typed and chose.
     private void RefreshReport()

@@ -243,7 +243,7 @@ public sealed partial class MainWindow : Window
         if (!opened && (on is null ? _legendOn is null : _legendOn?.SetEquals(on) == true))
             return;
         _legendOn = on;
-        LegendHeading.Text = on is null ? AppTexts.HelpLegendOnTheMap : AppTexts.HelpLegendOnThisMap;
+        LegendHeading.Text = on is null ? ViewTexts.HelpLegendHeading : AppTexts.HelpLegendOnThisMap;
         var (listed, more, elsewhere) = LegendFold.Split(_legendRows, r => on?.Contains(r.Symbol) != false);
         LegendHere.ItemsSource = listed.Select(r => r.Row).ToList();
         LegendRestHere.ItemsSource = more.Select(r => r.Row).ToList();
@@ -450,8 +450,8 @@ public sealed partial class MainWindow : Window
         vm.DataOk = s.DataHealth.Ok;
         vm.DataDetail = s switch
         {
-            { Data: { Offline: true } data } => AppTexts.StatusDataOffline(time: data.CheckedAt.ToLocalTime().ToString("g", UiLanguage.Culture)),
-            { Data: { } data } => AppTexts.StatusDataChecked(time: data.CheckedAt.ToLocalTime().ToString("t", UiLanguage.Culture)),
+            { Data: { Offline: true } data } => AppTexts.StatusDataOffline(time: UiLanguage.DayMonthTime(data.CheckedAt.ToLocalTime().DateTime)),
+            { Data: { } data } => AppTexts.StatusDataChecked(time: data.CheckedAt.ToLocalTime().ToString("HH:mm", UiLanguage.Culture)),
             { DataProblem: { } problem } => GameSession.DataNotice(problem),
             _ => AppTexts.StatusDataLoading,
         };
@@ -459,7 +459,7 @@ public sealed partial class MainWindow : Window
         ShowLanguage(s);
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
-        vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys) : AppTexts.ScreenshotKeyUnknown;
+        vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys.Select(k => k.Name)) : AppTexts.ScreenshotKeyUnknown;
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
         {
@@ -894,13 +894,8 @@ public sealed partial class MainWindow : Window
                 Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover,
                 o.HandoverCount, o.ItemId);
         }
-        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
-        // "(optional)" at the end.
-        const string optional = " (optional)";
-        var tail = o.Text.EndsWith(optional, StringComparison.Ordinal) ? optional : "";
-        var core = o.Text[..^tail.Length];
-        var suffix = " on " + mapName;
-        var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
+        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its "(optional)".
+        var text = o.TextOn(mapName);
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover,
             o.HandoverCount, o.ItemId);

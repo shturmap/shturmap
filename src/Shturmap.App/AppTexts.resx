@@ -88,13 +88,9 @@
     <value>Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it</value>
     <comment>Help, KEYS: what the mouse does on the map and in the lists. The pen is the pick button beside a quest.</comment>
   </data>
-  <data name="HelpLegendOnTheMap" xml:space="preserve">
-    <value>ON THE MAP</value>
-    <comment>Help, the heading over the map symbols, when no map is on screen. Capitals.</comment>
-  </data>
   <data name="HelpLegendOnThisMap" xml:space="preserve">
     <value>ON THIS MAP</value>
-    <comment>Help, the heading over the symbols of the map on screen. Capitals.</comment>
+    <comment>Help, the heading over the symbols of the map on screen; without a map it is ViewTexts.HelpLegendHeading. Capitals.</comment>
   </data>
   <data name="HelpLegendHide" xml:space="preserve">
     <value>{count, plural, one {HIDE # SYMBOL} other {HIDE # SYMBOLS}}</value>
@@ -404,13 +400,9 @@
     <value>The tour stays in help: F1, then TAKE THE TOUR.</value>
     <comment>Notice when the tour ends. TAKE THE TOUR is help's button (as help says it).</comment>
   </data>
-  <data name="TourNext" xml:space="preserve">
-    <value>NEXT →</value>
-    <comment>The tour's band: the button to the next chapter. Capitals.</comment>
-  </data>
   <data name="TourDone" xml:space="preserve">
     <value>DONE</value>
-    <comment>The tour's band, last chapter: the button that ends it. Capitals.</comment>
+    <comment>The tour's band, last chapter: the button that ends it, where the other chapters say ViewTexts.TourNext. Capitals.</comment>
   </data>
   <data name="TourSafeReads" xml:space="preserve">
     <value>READS</value>
@@ -420,10 +412,6 @@
     <value>NEVER</value>
     <comment>The tour's first chapter: the heading over what Shturmap never does. Capitals.</comment>
   </data>
-  <data name="KeyPrintScreen" xml:space="preserve">
-    <value>PrtSc</value>
-    <comment>The Print Screen key, as the language's keyboards label it: the game's screenshot key where its settings don't name one.</comment>
-  </data>
   <data name="PreviewTour" xml:space="preserve">
     <value>PREVIEW · THE TOUR · {map}</value>
     <comment>The label over the map while the tour shows an example on it. {map}: the map's name in capitals. Capitals.</comment>
@@ -431,14 +419,6 @@
   <data name="PreviewExample" xml:space="preserve">
     <value>AN EXAMPLE, NOT YOUR RAID</value>
     <comment>Beside the preview label, while the tour or What's New shows an example on the map. Capitals.</comment>
-  </data>
-  <data name="TourCardNext" xml:space="preserve">
-    <value>NEXT</value>
-    <comment>The tour's example raid card: the row of the next objective, as the raid card labels it. Capitals.</comment>
-  </data>
-  <data name="TourCardExit" xml:space="preserve">
-    <value>EXIT</value>
-    <comment>The tour's example raid card: the row of the nearest extract, as the raid card labels it. Capitals.</comment>
   </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>THE RAID CARD, WITH EXAMPLE VALUES</value>
@@ -512,29 +492,17 @@
     <value>Reporting isn't set up in this build: copy the diagnostics in help (?) and send them to whoever gave you Shturmap.</value>
     <comment>Notice when the Report dialog is asked for in a build that can't send reports.</comment>
   </data>
-  <data name="ReportShowSent" xml:space="preserve">
-    <value>SHOW WHAT'S SENT</value>
-    <comment>The Report dialog: the link that shows exactly what the report sends. Capitals.</comment>
-  </data>
   <data name="ReportHideSent" xml:space="preserve">
     <value>HIDE WHAT'S SENT</value>
-    <comment>The Report dialog: the same link once what is sent shows. Capitals.</comment>
-  </data>
-  <data name="ReportCancel" xml:space="preserve">
-    <value>CANCEL</value>
-    <comment>The Report dialog's button that closes it without sending. Capitals.</comment>
+    <comment>The Report dialog: the link ViewTexts.ReportShowSent once what is sent shows. Capitals.</comment>
   </data>
   <data name="ReportClose" xml:space="preserve">
     <value>CLOSE</value>
-    <comment>The Report dialog's button once the report went. Capitals.</comment>
-  </data>
-  <data name="ReportProblemPlaceholder" xml:space="preserve">
-    <value>What happened, and what did you expect? (Required)</value>
-    <comment>The Report dialog: the empty text box's hint, for a problem.</comment>
+    <comment>The Report dialog's button once the report went, where it said ViewTexts.ReportCancel. Capitals.</comment>
   </data>
   <data name="ReportIdeaPlaceholder" xml:space="preserve">
     <value>What would help, and when would you use it? (Required)</value>
-    <comment>The Report dialog: the empty text box's hint, for an idea.</comment>
+    <comment>The Report dialog: the empty text box's hint, for an idea (for a problem: ViewTexts.ReportTextPlaceholder).</comment>
   </data>
   <data name="ReportSending" xml:space="preserve">
     <value>Sending…</value>

@@ -214,7 +214,7 @@ public sealed partial class MainWindow
                 WhatsNewPlate.Visibility = Visibility.Visible;
                 break;
             case "extracts":
-                await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(scene, content), null, 0);
+                await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(data, scene, content), null, 0);
                 break;
             case "joined":
                 // Gratitude's two stashes on one spot (docs/DESIGN.md "Map drawing", *Objectives of one quest on one spot*).
@@ -222,16 +222,18 @@ public sealed partial class MainWindow
                     content => content.Objectives.Where(o => o.Quest.NormalizedName == "gratitude").SelectMany(o => o.Places).Take(1).ToList(), 220);
                 break;
             case "leaders":
-                // Streets' Scav Checkpoint, where an extract and a transit crowd one spot.
+                // Streets' Scav Checkpoint, where an extract and a transit crowd one spot; found by its English name, the
+                // label being in the data's language.
                 await PreviewSceneAsync(wanted, data, "streets-of-tarkov", [], null,
-                    content => content.Markers.Where(m => m.Label.Contains("Scav Checkpoint", StringComparison.OrdinalIgnoreCase)).Select(m => m.Position).Take(1).ToList(), 700);
+                    content => content.Markers.Where(m => MapContentBuilder.EnglishName(data, m).Contains("Scav Checkpoint", StringComparison.OrdinalIgnoreCase))
+                        .Select(m => m.Position).Take(1).ToList(), 700);
                 break;
             case "replay":
                 await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) =>
                 {
-                    scene.Replay = ReplayExample(content);
+                    scene.Replay = ReplayExample(data, content);
                     scene.ReplayDone = true;
-                }, content => ReplayExample(content)?.Fixes.Select(f => f.Position).ToList(), 300);
+                }, content => ReplayExample(data, content)?.Fixes.Select(f => f.Position).ToList(), 300);
                 break;
         }
     }
@@ -259,9 +261,9 @@ public sealed partial class MainWindow
     }
 
     // An example extract list on Customs: some lit, one marked "??:??:??", the rest hollow.
-    private static void StageExtractList(MapScene scene, MapContent content)
+    private static void StageExtractList(Shturmap.Data.TarkovDev.GameData data, MapScene scene, MapContent content)
     {
-        var (listed, unsure, notListed) = ExampleExits(content);
+        var (listed, unsure, notListed) = ExampleExits(data, content);
         scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsNotListed = notListed;
@@ -269,13 +271,14 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// The example extract list on Customs (What's New's preview, the tour): the extracts it names, one it marks
-    /// "??:??:??", and the ids of the rest, which it leaves out. Nobody's real list.
+    /// "??:??:??", and the ids of the rest, which it leaves out. Nobody's real list. The extracts are picked by their
+    /// English names (<see cref="MapContentBuilder.EnglishName"/>): the labels are in the data's language.
     /// </summary>
-    internal static (List<MapMarker> Listed, List<MapMarker> Unsure, HashSet<string> NotListed) ExampleExits(MapContent content)
+    internal static (List<MapMarker> Listed, List<MapMarker> Unsure, HashSet<string> NotListed) ExampleExits(Shturmap.Data.TarkovDev.GameData data, MapContent content)
     {
         var exits = content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();
         string[] names = ["Crossroads", "Trailer Park", "Old Gas Station", "RUAF Roadblock", "Smugglers' Boat", "Dorms V-Ex"];
-        var listed = exits.Where(e => names.Any(n => e.Label.Contains(n, StringComparison.OrdinalIgnoreCase))).ToList();
+        var listed = exits.Where(e => names.Any(n => MapContentBuilder.EnglishName(data, e).Contains(n, StringComparison.OrdinalIgnoreCase))).ToList();
         if (listed.Count < 3)
             listed = exits.Where((_, i) => i % 2 == 0).ToList();
         var unsure = exits.Where(e => !listed.Contains(e)).Take(1).ToList();
@@ -285,14 +288,15 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// A made-up raid on Customs for the previews and the developer view: seven positions between two of its extracts,
-    /// with gaps of minutes, 33 minutes in all. Nobody's real positions.
+    /// with gaps of minutes, 33 minutes in all. Nobody's real positions. The extracts are picked by their English names,
+    /// the map named as the data names it.
     /// </summary>
-    internal static RaidReplay? ReplayExample(MapContent content)
+    internal static RaidReplay? ReplayExample(Shturmap.Data.TarkovDev.GameData data, MapContent content)
     {
         var exits = content.Markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();
-        var from = exits.FirstOrDefault(e => e.Label.Contains("Old Gas Station", StringComparison.OrdinalIgnoreCase)) ?? exits.FirstOrDefault();
-        var to = exits.FirstOrDefault(e => e.Label.Contains("Dorms V-Ex", StringComparison.OrdinalIgnoreCase)) ?? exits.LastOrDefault();
-        if (from is null || to is null || from == to)
+        var from = exits.FirstOrDefault(e => MapContentBuilder.EnglishName(data, e).Contains("Old Gas Station", StringComparison.OrdinalIgnoreCase)) ?? exits.FirstOrDefault();
+        var to = exits.FirstOrDefault(e => MapContentBuilder.EnglishName(data, e).Contains("Dorms V-Ex", StringComparison.OrdinalIgnoreCase)) ?? exits.LastOrDefault();
+        if (from is null || to is null || from == to || data.MapByNormalizedName("customs") is not { } customs)
             return null;
         double[] minutes = [0.5, 4, 9, 11, 17.5, 24, 29];
         double[] along = [0.08, 0.22, 0.4, 0.47, 0.63, 0.8, 0.9];
@@ -303,7 +307,7 @@ public sealed partial class MainWindow
         var fixes = minutes.Select((m, i) => new ReplayFix(m, new WorldPoint(
             from.Position.X + dx * along[i] - dz / length * aside[i], from.Position.Y,
             from.Position.Z + dz * along[i] + dx / length * aside[i]))).ToList();
-        return new RaidReplay("customs", "Customs", fixes, 33) { Ticks = [12, 12.2], ListRead = 0.6 };
+        return new RaidReplay(customs.NormalizedName, customs.Name, fixes, 33) { Ticks = [12, 12.2], ListRead = 0.6 };
     }
 
     private void EndWhatsNewPreview()
