@@ -226,14 +226,15 @@ public sealed class DevToolsTests : IDisposable
     [Fact]
     public void A_script_is_read_into_steps_with_quoted_words_and_comments()
     {
-        var (steps, errors) = DevScript.Parse("""
-            # a raid on Customs
-            mode pve
-            map customs   # shown in the app
-            quest start "Shaking Up the Teller"
-            place 0.5 0.4 0.55 0.4
-            jump around
-            """);
+        // Lines joined, not a raw string: a Release build leaves this file out, and the compiler still reads each line
+        // of it that starts with "#" as a directive.
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "# a raid on Customs",
+            "mode pve",
+            "map customs   # shown in the app",
+            "quest start \"Shaking Up the Teller\"",
+            "place 0.5 0.4 0.55 0.4",
+            "jump around"));
         Assert.Equal(["mode pve", "map customs", "quest start Shaking Up the Teller", "place 0.5 0.4 0.55 0.4"], steps.Select(s => s.ToString()));
         Assert.Equal(["start", "Shaking Up the Teller"], steps[2].Args);
         Assert.Equal(0.55, steps[3].Number(2));

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Shturmap.Core;
 using Shturmap.Core.Quests;
 using Shturmap.Core.Text;
@@ -111,5 +112,41 @@ public class LanguageTests
         var objectives = Shturmap.Map.MapContentBuilder.Build(english, "map-customs", active, new HashSet<string>()).Objectives;
         Assert.NotEmpty(Planning.ObjectiveSynopses(english, objectives, new HashSet<string> { "map-customs" }));
         Assert.Empty(Planning.ObjectiveSynopses(german, objectives, new HashSet<string> { "map-customs" }));
+    }
+
+    // The session makes its plans and a completion's UNLOCKS in loops that keep the culture they started with, before
+    // the snapshot takes the language in use (UiLanguage.ApplyHere): a loop started before a switch made its next plan
+    // in the old language's order (review of 2026-10-10). Names are sorted in the language in use, whatever the
+    // thread's culture. English and German sort alike, so the thread here is Swedish, which sorts Ä after Z.
+    [Fact]
+    public void Names_are_sorted_in_the_language_in_use_whatever_the_threads_culture()
+    {
+        ApiTask Task(string id, string name, params string[] after) =>
+            new(id, name, null, null, null, null, false, false, null, null, null, false, after.Select(a => new ApiTaskRequirement(a, ["complete"])).ToList(),
+                [new ApiObjective(id + "-visit", "visit", null, false, ["map-customs"], null, null, null, null, null, null, null, null, false)], null);
+        var rig = SessionRig.Data(Shturmap.Core.Logs.GameMode.Pve);
+        var data = new GameData
+        {
+            Mode = rig.Mode,
+            Language = "de",
+            Maps = rig.Maps,
+            Tasks = new[] { Task("first", "Vorher"), Task("z", "Zeugen", "first"), Task("ae", "Ärger", "first") }.ToDictionary(t => t.Id),
+            Traders = rig.Traders,
+            MapDefinitions = rig.MapDefinitions,
+            CheckedAt = rig.CheckedAt,
+        };
+        var before = CultureInfo.CurrentCulture;
+        try
+        {
+            UiLanguage.Set(UiLanguage.German);
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE");
+            Assert.Equal(["Ärger", "Zeugen"], Planning.Suggest(data, ["z", "ae"]).Single().Finish.Select(q => q.Name));
+            Assert.Equal(["Ärger", "Zeugen"], GameSession.Completion(data, data.Tasks["first"]).Unlocks);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = before;
+            UiLanguage.Set(UiLanguage.English);
+        }
     }
 }

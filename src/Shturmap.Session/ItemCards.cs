@@ -202,7 +202,7 @@ public static class ItemCards
         }
         return new ItemCardView(itemId, data.ItemName(itemId), isKey,
             Sources(data, sources, itemId, quests),
-            uses.OrderBy(u => u.QuestName, StringComparer.CurrentCulture).ToList());
+            uses.OrderBy(u => u.QuestName, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList());
     }
 
     /// <summary>

@@ -78,6 +78,33 @@ public class TourTests
         Assert.Equal(chapter is not null || WhatsNew.Previews.Contains(preview), WhatsNew.Known(preview));
     }
 
+    // The example is the same for every player and in every language (review of 2026-10-10): the preferred quests the
+    // data has, then the map's quests by level and tarkov.dev's normalized name, which the data of every language
+    // shares. The names shown, which German data sorts otherwise, take no part.
+    [Fact]
+    public void The_example_takes_the_same_quests_in_every_language()
+    {
+        static Tour.ExampleQuest Quest(string id, string name, int? level, bool onMap = true) => new(id, name, level, onMap);
+        Tour.ExampleQuest[] quests =
+        [
+            Quest("q1", "zebra-hunt", 1),
+            Quest("q2", "bp-depot", 5),
+            Quest("q3", "after-dark", 1),
+            Quest("q4", "far-away", 1, onMap: false),
+            Quest("q5", "checking", 2, onMap: false),
+            Quest("q6", "no-level", null),
+        ];
+        var candidates = Tour.ExampleCandidates(quests);
+        Assert.Equal(["q5", "q2", "q3", "q1", "q6"], candidates);
+        // In whatever order the data lists them.
+        Assert.Equal(candidates, Tour.ExampleCandidates(quests.Reverse().ToList()));
+        // The first three with a place on the map.
+        Assert.Equal(["q2", "q3", "q1"], Tour.Example(candidates, new HashSet<string> { "q1", "q2", "q3", "q6" }));
+        Assert.Equal(["q6"], Tour.Example(candidates, new HashSet<string> { "q6", "q4" }));
+        // At most 40 of the map's quests are looked at.
+        Assert.Equal(40, Tour.ExampleCandidates(Enumerable.Range(0, 45).Select(i => Quest($"m{i}", $"map-quest-{i:00}", 1)).ToList()).Count);
+    }
+
     // The app's own tour: short, every stage one the app draws, and every part it frames there in the window.
     [Fact]
     public void The_apps_tour_keeps_to_its_rules_and_points_at_real_parts()

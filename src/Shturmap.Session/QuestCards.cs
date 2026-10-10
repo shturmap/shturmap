@@ -94,7 +94,7 @@ public static class QuestCards
 
         var unlocks = data.Tasks.Values
             .Where(t => t.TaskRequirements?.Any(r => r.Task == questId) == true)
-            .OrderBy(t => t.Name, StringComparer.CurrentCulture)
+            .OrderBy(t => t.Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
             .Select(t => Reference(data, t))
             .ToList();
 
@@ -226,7 +226,7 @@ public static class QuestCards
             .GroupBy(m => data.DefinitionFor(m.NormalizedName)?.Key ?? m.NormalizedName)
             .Select(g => g.MinBy(m => m.Name.Length)!.Name)
             .Distinct()
-            .Order(StringComparer.CurrentCulture));
+            .Order(StringComparer.Create(UiLanguage.Culture, ignoreCase: false)));
 
     // One thing the quest takes, gathered over its objectives.
     private sealed class Need(RequirementKind kind, IReadOnlyList<string> alternatives)
