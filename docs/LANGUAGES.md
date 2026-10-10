@@ -36,8 +36,11 @@ Every new or changed English text is translated into every language in `UiLangua
 1. Write the text in `<Name>Texts.<code>.resx`, with the comment `en: <the English text, exactly>`. That comment is
    how the translation tests know the translation is current: change the English text and the test fails until the
    translation is made again from the new one.
-2. Use the language's glossary (`docs/glossary-<code>.md`): the game's own words (taken from tarkov.dev's data in that
-   language, which is BSG's translation), Shturmap's terms, how the player is addressed.
+2. Use the language's glossary (`docs/glossary-<code>.md`): the words its Tarkov players use, Shturmap's terms, how
+   the player is addressed. Players' words win over the game's translation (owner, 2026-10-10: "Assume the
+   perspective of a Tarkov pro gamer that speaks German — much of gamer lingo in German has English terms, so stick
+   with that"): German says Quest, Extract, Map, Raid, Loot, Kills, not Aufgabe, Ausgang, Karte. The game's own
+   translation (tarkov.dev's data in that language, BSG's) is the source where players have no word of their own.
 3. Have it reviewed (below) until the review finds nothing.
 4. `.\eng\dotnet.ps1 test --solution Shturmap.slnx`: `TranslationTests` checks every file.
 
@@ -53,9 +56,10 @@ The fixes go in, and it reviews again, until every text is OK. It checks:
 - **Meaning**: everything the English says, nothing it doesn't; the same facts, conditions and numbers.
 - **Voice**: Shturmap's: short, plain, concrete words, read in a glance from a second monitor (DESIGN.md §4,
   principle 2; §8, "Error messages": what failed in plain words). Not word for word, not more formal than the English.
-- **The game's words**: as the game says them in that language (the glossary, and tarkov.dev's data in it); a term
-  the game leaves in English stays English. The player is addressed as the game addresses them (German: "du", as in
-  "Finde …").
+- **The players' words**: as a Tarkov pro who speaks the language says them (the glossary): English gamer terms where
+  players use them (German: Quest, Extract, Map, Loot, Kills, Raid), with the language's grammar around them; the
+  game's translation only where players have no word of their own (owner, 2026-10-10). The player is addressed as
+  the game addresses them (German: "du").
 - **Consistency**: the same English term the same way everywhere, as the glossary has it; a new term goes into the
   glossary in the same commit.
 - **Placeholders and plurals**: every placeholder kept, in the place the grammar wants; every plural form the
@@ -99,8 +103,9 @@ Run this checklist from top to bottom; tick each line in the commit that adds th
 - [ ] `PluralRules` knows its plural forms (all of tarkov.dev's languages are in it), with a test.
 
 **2. Translate**
-- [ ] `docs/glossary-<code>.md`: the game's own words (raid, extract, transit, quest, Scav, PMC, …) from tarkov.dev's
-      data in that language; how the game addresses the player; Shturmap's terms.
+- [ ] `docs/glossary-<code>.md`: the words that language's Tarkov players use (raid, extract, transit, quest, Scav,
+      PMC, loot, kills …; often the English ones), the game's translation from tarkov.dev's data where players have
+      none; how the game addresses the player; Shturmap's terms.
 - [ ] A `<Name>Texts.<code>.resx` beside every `<Name>Texts.resx`, every text with its `en:` comment, every plural form.
 - [ ] The tour (`docs/tour.<code>.md`), help, the What's New card from the current release on, notices, dialogs,
       tooltips and screen-reader names (all in the texts files, the tour and What's New beside their English files).
