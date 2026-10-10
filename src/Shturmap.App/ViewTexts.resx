@@ -406,11 +406,11 @@
   </data>
   <data name="RaidNextLabel" xml:space="preserve">
     <value>NEXT</value>
-    <comment>Raid card: label of the nearest objective's row. Upper case, small; a column of 48 px.</comment>
+    <comment>Raid card: label of the nearest objective's row; also the tour's example raid card. Upper case, small; a column of 48 px.</comment>
   </data>
   <data name="RaidExitLabel" xml:space="preserve">
     <value>EXIT</value>
-    <comment>Raid card: label of the nearest way out's row. Upper case, small; a column of 48 px.</comment>
+    <comment>Raid card: label of the nearest way out's row; also the tour's example raid card. Upper case, small; a column of 48 px.</comment>
   </data>
   <data name="RaidAllExitsTip" xml:space="preserve">
     <value>Every extract and transit for your side, nearest first</value>

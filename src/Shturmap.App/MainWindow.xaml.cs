@@ -239,7 +239,7 @@ public sealed partial class MainWindow : Window
         if (!opened && (on is null ? _legendOn is null : _legendOn?.SetEquals(on) == true))
             return;
         _legendOn = on;
-        LegendHeading.Text = on is null ? AppTexts.HelpLegendOnTheMap : AppTexts.HelpLegendOnThisMap;
+        LegendHeading.Text = on is null ? ViewTexts.HelpLegendHeading : AppTexts.HelpLegendOnThisMap;
         var (listed, more, elsewhere) = LegendFold.Split(_legendRows, r => on?.Contains(r.Symbol) != false);
         LegendHere.ItemsSource = listed.Select(r => r.Row).ToList();
         LegendRestHere.ItemsSource = more.Select(r => r.Row).ToList();

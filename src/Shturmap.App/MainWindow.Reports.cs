@@ -118,7 +118,7 @@ public sealed partial class MainWindow
             ReportText.Text = prefill;
         ReportStatusText.Visibility = Visibility.Collapsed;
         ReportSentView.Visibility = showSent ? Visibility.Visible : Visibility.Collapsed;
-        ReportShowSentText.Text = showSent ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
+        ReportShowSentText.Text = showSent ? AppTexts.ReportHideSent : ViewTexts.ReportShowSent;
         RefreshReport();
         ReportOverlay.Visibility = Visibility.Visible;
         ReportText.Focus(FocusState.Programmatic);
@@ -140,7 +140,7 @@ public sealed partial class MainWindow
         ReportText.IsEnabled = ReportContact.IsEnabled = true;
         ReportIncludeDiagnostics.IsChecked = true;
         ReportSend.Visibility = Visibility.Visible;
-        ReportCancel.Content = AppTexts.ReportCancel;
+        ReportCancel.Content = ViewTexts.ReportCancel;
     }
 
     private void SetReportKind(ReportKind kind)
@@ -149,7 +149,7 @@ public sealed partial class MainWindow
         ReportProblem.IsChecked = kind == ReportKind.Problem;
         ReportIdea.IsChecked = kind == ReportKind.Idea;
         ReportText.PlaceholderText = kind == ReportKind.Problem
-            ? AppTexts.ReportProblemPlaceholder
+            ? ViewTexts.ReportTextPlaceholder
             : AppTexts.ReportIdeaPlaceholder;
         RefreshReport();
     }
@@ -168,7 +168,7 @@ public sealed partial class MainWindow
     {
         var show = ReportSentView.Visibility != Visibility.Visible;
         ReportSentView.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        ReportShowSentText.Text = show ? AppTexts.ReportHideSent : AppTexts.ReportShowSent;
+        ReportShowSentText.Text = show ? AppTexts.ReportHideSent : ViewTexts.ReportShowSent;
         RefreshReport();
         if (show)
             Study.Ui("report.preview");

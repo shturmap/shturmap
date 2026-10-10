@@ -263,7 +263,7 @@ public sealed partial class MainWindow
         var count = TourChapters.Count;
         TourEyebrow.Text = Tour.Eyebrow(at, count);
         TourText.Text = string.Join("\n", chapter.Lines);
-        TourNextText.Text = at + 1 < count ? AppTexts.TourNext : AppTexts.TourDone;
+        TourNextText.Text = at + 1 < count ? ViewTexts.TourNext : AppTexts.TourDone;
         TourBack.Visibility = at > 0 ? Visibility.Visible : Visibility.Collapsed;
         TourTicks.ColumnDefinitions.Clear();
         TourTicks.Children.Clear();
@@ -760,10 +760,10 @@ public sealed partial class MainWindow
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
             var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
-            card.Children.Add(GlanceRow(AppTexts.TourCardNext, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
+            card.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }
         if (exit is not null)
-            card.Children.Add(GlanceRow(AppTexts.TourCardExit, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
+            card.Children.Add(GlanceRow(ViewTexts.RaidExitLabel, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
                 Caps.Of(Bearing.Describe(RelativeDirection.Behind)), "GreenBrush"));
         card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });
         return card;
