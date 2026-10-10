@@ -215,7 +215,10 @@ Run this checklist from top to bottom; tick each line in the commit that adds th
 - [ ] The extract list: a list drawn by the tests in that game language is read and matched (`ExitListReader` tests).
 - [ ] The rule checks of `docs/UPDATES.md` run against the cached data in that language (`shturmap-cli data pve
       <code>`), and the English-only rules hold in it: no synopses (Plan shows the quest's name, the raid card
-      tarkov.dev's sentence), and the extract requirements the same as in English (`ExtractRulesTests`).
+      tarkov.dev's sentence), and the extract requirements the same as in English (`ExtractRulesTests`). The audits
+      (`bring`, `synopses`, `effort`, `handovers`, `spawns`) stay English and take no language (owner, 2026-10-11):
+      they check rules that read English data, and `data pve <code>` and the tests that read the cache in that
+      language cover it (German: `ExtractRulesTests`, `ItemCardTests`).
 - [ ] Diagnostics show the language and where it came from.
 
 **5. Ship**

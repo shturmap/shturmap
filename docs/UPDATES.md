@@ -21,8 +21,9 @@ shturmap-cli data pve de
 ```
 
 The commands refresh the cache (`%LOCALAPPDATA%\Shturmap\cache\tarkov-dev`) that the audits and tests read; the
-German texts are for `ExtractRulesTests`. Compare the counts (tasks, maps, traders, definitions) with the last run
-below. Every map should say `svg` or `tiles`: one with `NONE` has no definition in maps.json and drops out of Plan.
+German texts are for `ExtractRulesTests` and `ItemCardTests`. Compare the counts (tasks, maps, traders, definitions)
+with the last run below. Every map should say `svg` or `tiles`: one with `NONE` has no definition in maps.json and
+drops out of Plan.
 
 **Story chapters** (Tour, Falling Skies, Batya, …; owner, 2026-10-08: wait for tarkov.dev). Shturmap has none of
 them: tarkov.dev builds them into the tasks file as `data.story` but deletes that part in production ("not ready
@@ -46,7 +47,9 @@ are told the chapters aren't shown (owner, 2026-10-09): the tour's last chapter 
 
 ## 2. The audits, both modes (5 min)
 
-Run each with `pve` and with `regular`.
+Run each with `pve` and with `regular`. They stay English, with no language to choose (owner, 2026-10-11): they check
+rules that read English data. The German data is covered by `shturmap-cli data pve de` (step 1) and the tests that
+read its cache, `ExtractRulesTests` and `ItemCardTests` (step 3).
 
 | command | look at | if it shows up |
 | --- | --- | --- |
