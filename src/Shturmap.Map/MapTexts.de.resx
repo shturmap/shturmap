@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="LegendPlayer" xml:space="preserve">
-    <value>Du, beim letzten Screenshot: sandfarbene Scheibe im Ring. Ab 1 min gestrichelt mit Alter, ab 2 gerahmt. Kegel: deine Blickrichtung (45 s).</value>
+    <value>Du, beim letzten Screenshot: sandfarbene Scheibe im Ring. Ab 1 min gestrichelt mit Altersangabe, ab 2 gerahmt. Kegel: deine Blickrichtung (45 s).</value>
     <comment>en: You, at your last screenshot: sand disc in a ring. Dashed with its age from 1 min, framed from 2. Cone: your facing (45 s).</comment>
   </data>
   <data name="LegendKeptQuest" xml:space="preserve">
@@ -41,7 +41,7 @@
     <comment>en: Close places of one objective: one marker with a count. Zoom in to split.</comment>
   </data>
   <data name="LegendExtract" xml:space="preserve">
-    <value>Extract für deine Seite: grünes (PMC) oder türkises (Scav) Dreieck.</value>
+    <value>Extract für deine Seite: grünes (PMC) oder türkisfarbenes (Scav) Dreieck.</value>
     <comment>en: Extract for your side: green (PMC) or teal (Scav) triangle.</comment>
   </data>
   <data name="LegendSharedExtract" xml:space="preserve">
@@ -137,7 +137,7 @@
     <comment>en: The raid replay, after a raid: your screenshots in order, faint and thin at its start, bright and wide at its end.</comment>
   </data>
   <data name="LegendLooseItem" xml:space="preserve">
-    <value>Loot-Spot eines Items, solange du darauf zeigst: kleiner Quadrat-Umriss.</value>
+    <value>Loot-Spot eines Items, solange du auf das Item zeigst: kleiner Quadrat-Umriss.</value>
     <comment>en: Where an item lies loose, while you point at it: small open square.</comment>
   </data>
   <data name="LegendContainers" xml:space="preserve">
