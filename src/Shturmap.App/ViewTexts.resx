@@ -16,4 +16,8 @@
     <value>HELP AND FEEDBACK</value>
     <comment>Help: eyebrow heading above the feedback and diagnostics links. Upper case, as every eyebrow.</comment>
   </data>
+  <data name="SettingsLanguage" xml:space="preserve">
+    <value>Language</value>
+    <comment>Settings: the name of the row with AUTOMATIC and the languages, each in its own name. Short: it stands beside them on one line.</comment>
+  </data>
 </root>

@@ -42,8 +42,7 @@ public sealed partial class MainWindow
         if (_whatsNewChecked || s.Data is null || DemoMode)
             return;
         _whatsNewChecked = true;
-        var newest = WhatsNewSections.FirstOrDefault();
-        ViewModel.WhatsNewHelp = newest is null ? "" : $"WHAT'S NEW IN {WhatsNew.Tag(newest)}";
+        var newest = SayWhatsNewHelp();
         if (SnapshotMode)
             return;
         var seen = _session.GetSetting(WhatsNewSetting);
@@ -51,6 +50,14 @@ public sealed partial class MainWindow
         if (firstStart && newest is not null)
             _session.SetSetting(WhatsNewSetting, newest.Label);
         ShowWhatsNew(WhatsNew.Due(WhatsNewSections, seen, firstStart), "start");
+    }
+
+    // Help's link to the newest version's card; said again in a new language (MainWindow.Language).
+    private WhatsNew.Section? SayWhatsNewHelp()
+    {
+        var newest = WhatsNewSections.FirstOrDefault();
+        ViewModel.WhatsNewHelp = newest is null ? "" : $"WHAT'S NEW IN {WhatsNew.Tag(newest)}";
+        return newest;
     }
 
     private void ShowWhatsNew(IReadOnlyList<WhatsNew.Section> sections, string how)

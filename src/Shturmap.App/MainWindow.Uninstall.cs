@@ -11,7 +11,7 @@ public sealed partial class MainWindow
     public Visibility UninstallVisibility { get; } = App.Updater.UninstallOffered ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>What "Also delete my Shturmap data" takes, for the build it runs in.</summary>
-    public string UninstallDataText { get; } = App.Updater.AppId == Distribution.DeveloperPackId
+    public string UninstallDataText => App.Updater.AppId == Distribution.DeveloperPackId
         ? $@"Settings, quest history, logs, {(StudyLog.Available ? "study log, " : "")}unsent reports and crash records in %LOCALAPPDATA%\Shturmap-dev. The download cache stays (the release shares it)."
         : @"The whole %LOCALAPPDATA%\Shturmap folder: settings, quest history, logs, unsent reports, crash records, download cache. Unticked, it stays for a later install.";
 

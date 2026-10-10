@@ -65,6 +65,7 @@ public sealed partial class MainWindow : Window
 #if DEVTOOLS
         AddStudySwitch();
 #endif
+        WatchLanguage();
 
         Picture.Art = () => _session.Art;
         Study.Log = session.Study;
@@ -192,12 +193,12 @@ public sealed partial class MainWindow : Window
     public Brush RaidBrush(bool inRaid) => Resource(inRaid ? "AmberBrush" : "InkBrush");
 
     // The OR row under EXIT (Rules.ExitsNote.Plain).
-    public string PlainExitNote { get; } = Caps.Of(Rules.ExitsNote.PlainNote);
+    public string PlainExitNote => Caps.Of(Rules.ExitsNote.PlainNote);
 
     public string PlainExitTip => Rules.ExitsNote.PlainTip;
 
     /// <summary>The keys in the help panel.</summary>
-    public IReadOnlyList<KeyHelp> Keys { get; } =
+    public IReadOnlyList<KeyHelp> Keys =>
     [
         new("F", "Show my position"),
         new("SHIFT + F", "Follow my position"),
@@ -214,7 +215,10 @@ public sealed partial class MainWindow : Window
     /// The map symbols in the help panel, drawn by the map's own renderer so they can't drift from the map (at twice
     /// the DIP size, which stays sharp up to 200 % and in snapshots).
     /// </summary>
-    private readonly IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = MapLegend.Rows
+    private IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = LegendRows();
+
+    // Made again when the language changes (MainWindow.Language): the rows' words are looked up as they are read.
+    private static List<(LegendSymbol Symbol, MapLegendRow Row)> LegendRows() => MapLegend.Rows
         .Select(row =>
         {
             using var bitmap = MapLegend.Draw(row.Symbol, 2);
@@ -399,12 +403,12 @@ public sealed partial class MainWindow : Window
 
     // "Delete position screenshots" in settings (owner, 2026-10-04): the one thing Shturmap changes outside its own
     // folders, so it is off unless ticked and its note says what goes and what stays.
-    public string DeleteScreenshotsNote { get; } =
+    public string DeleteScreenshotsNote =>
         $"Deletes each position screenshot {Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds:0} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.";
 
     // "Read the extract list from screenshots" in settings (owner, 2026-10-05): the one case where Shturmap opens a
     // screenshot's picture, so its note says what is looked at, and unticking it stops it.
-    public string ReadExitsNote { get; } =
+    public string ReadExitsNote =>
         "Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
 
     private async void OnReadExitsClick(object sender, RoutedEventArgs e)
@@ -452,6 +456,7 @@ public sealed partial class MainWindow : Window
             _ => "Loading game data from tarkov.dev…",
         };
         vm.StudyLogOn = s.StudyLogOn;
+        ShowLanguage(s);
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
