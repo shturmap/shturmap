@@ -2396,13 +2396,16 @@ committing app changes (CLAUDE.md).
   war symbols the logo rules avoid (§4, "Logo").
 
 **Continuous integration** (owner, 2026-10-05). Every push builds the solution in Debug (so the developer tools
-compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/ci.yml`), with the same
-`eng\dotnet.ps1` as on the PC and the SDK global.json names. Tests that need the owner's PC skip there: the tarkov.dev
-cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
-public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
-mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout check (docs/LANGUAGES.md) doesn't
-run there: its views need tarkov.dev's data, which a fresh runner would download at every push (§3, "No unnecessary
-load on tarkov.dev"), so it runs on the developer's PC before a release.
+compile too) and runs the tests, then builds it in Release and runs them again, on GitHub's Windows runner
+(`.github/workflows/ci.yml`), with the same `eng\dotnet.ps1` as on the PC and the SDK global.json names. Release since
+2026-10-11 (owner): a release compiles the other side of `#if DEVTOOLS`, and its tests check what only a release does;
+they had never run, and one had failed unseen. The Release build takes the Debug build's restore (the packages are the
+same) and its tests run on what it built. Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
+logs, real screenshots, a published build in `artifacts` (`DevToolsGuardTests` read it), the website beside the
+repository. The repository is public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A
+failed run comes as GitHub's own mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout
+check (docs/LANGUAGES.md) doesn't run there: its views need tarkov.dev's data, which a fresh runner would download at
+every push (§3, "No unnecessary load on tarkov.dev"), so it runs on the developer's PC before a release.
 What else runs there (owner, 2026-10-09: every trust step that can be automated). After the tests, CI fails on a NuGet
 package with a known vulnerability, direct or transitive (`eng\audit-packages.ps1`, nuget.org's advisories; also
 when it couldn't check). That stands in for Dependabot: its pull requests would put commits by another identity into

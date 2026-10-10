@@ -59,7 +59,8 @@ Essentials:
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
-  (the wrapper finds the per-user .NET 10 SDK). Every push runs both on GitHub (`.github/workflows/ci.yml`), and
+  (the wrapper finds the per-user .NET 10 SDK). Every push runs both on GitHub (`.github/workflows/ci.yml`), in
+  Debug and then in Release (`-c Release`; owner, 2026-10-11: the Release tests had never run), and
   `eng\audit-packages.ps1` for packages with known vulnerabilities (no Dependabot: its commits would be another
   identity); logs are public, so a test never prints anything private. Publish the folder build (`artifacts\Shturmap`,
   what `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. A release (Velopack; DESIGN.md §8, "Distribution"): raise
