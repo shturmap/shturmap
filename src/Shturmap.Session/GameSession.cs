@@ -834,20 +834,32 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// said when the failure is new, so the wait it names is the one that follows it. A page in place of the data
     /// (<see cref="LoadFailure.NotData"/>) says the next try only, and asks for no report.
     /// </summary>
-    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => NoGameData(problem, RetrySchedule.InWords(nextTry));
+    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => NoGameData(problem, nextTry);
 
     /// <summary>The same for a place that stays up while the tries go on (the DATA chip's tooltip): it names no wait,
     /// since the waits grow from 2 to 30 minutes.</summary>
     public static string DataNotice(LoadProblem problem) => NoGameData(problem, null);
 
-    // wait: the wait before the next try, in words; null where the tries go on by themselves with growing waits.
-    private static string NoGameData(LoadProblem problem, string? wait) => problem switch
+    // nextTry: the wait before the next try; null where the tries go on by themselves with growing waits.
+    private static string NoGameData(LoadProblem problem, TimeSpan? nextTry)
     {
-        // Its advice is the next try, said here with its wait in place of "in a few minutes".
-        { Kind: LoadFailure.NotData } => wait is null ? SessionTexts.DataNoticeNotDataLater(problem: problem.What) : SessionTexts.DataNoticeNotData(problem: problem.What, wait: wait),
-        { Transient: true } => wait is null ? SessionTexts.DataNoticeTransientLater(problem: problem.Text) : SessionTexts.DataNoticeTransient(problem: problem.Text, wait: wait),
-        _ => SessionTexts.DataNoticeFailed(problem: problem.Text),
-    };
+        var (unit, wait) = nextTry is { } next ? Wait(next) : (null, 0);
+        return problem switch
+        {
+            // Its advice is the next try, said here with its wait in place of "in a few minutes".
+            { Kind: LoadFailure.NotData } => unit is null ? SessionTexts.DataNoticeNotDataLater(problem: problem.What)
+                : SessionTexts.DataNoticeNotData(problem: problem.What, unit: unit, wait: wait),
+            { Transient: true } => unit is null ? SessionTexts.DataNoticeTransientLater(problem: problem.Text)
+                : SessionTexts.DataNoticeTransient(problem: problem.Text, unit: unit, wait: wait),
+            _ => SessionTexts.DataNoticeFailed(problem: problem.Text),
+        };
+    }
+
+    // A wait as the notices say it, each with its own plural (Russian and Polish change the noun after "in"): whole
+    // minutes, or seconds for a wait under a minute (the tests' short waits), as RetrySchedule.InWords counts them.
+    private static (string? Unit, int Count) Wait(TimeSpan wait) => wait < TimeSpan.FromMinutes(1)
+        ? ("seconds", (int)Math.Round(wait.TotalSeconds, MidpointRounding.AwayFromZero))
+        : ("minutes", (int)Math.Round(wait.TotalMinutes));
 
     /// <summary>Whether the data notice offers the Report dialog: for a failure only a report can fix, and for one that
     /// may pass, should it keep failing. Never for a page in place of the data: it comes from between the PC and
@@ -873,8 +885,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// </summary>
     /// <param name="language">tarkov.dev's code for the language ("de"); the text names it.</param>
     public static string LanguageNotice(string language, LoadProblem why, TimeSpan nextTry) =>
-        why.Transient
-            ? SessionTexts.LanguageNotLoadedRetry(language: language, problem: why.What, wait: RetrySchedule.InWords(nextTry))
+        why.Transient && Wait(nextTry) is var (unit, wait)
+            ? SessionTexts.LanguageNotLoadedRetry(language: language, problem: why.What, unit: unit, wait: wait)
             : SessionTexts.LanguageNotLoaded(advice: why.Advice, language: language, problem: why.What);
 
     // Under _gate. The game language's texts didn't come, for a reason that says nothing about whether tarkov.dev has

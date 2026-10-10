@@ -233,16 +233,16 @@
     <comment>Notice when Shturmap follows another install's newer logs by itself. {folder}: that install's folder, a path.</comment>
   </data>
   <data name="DataNoticeNotData" xml:space="preserve">
-    <value>No game data. {problem} Shturmap tries again in {wait}.</value>
-    <comment>Notice when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence; {wait}: the wait before the next try, '2 minutes'.</comment>
+    <value>No game data. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}.</value>
+    <comment>Notice when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence. {wait}: the wait before the next try, how many minutes (2), or seconds when {unit} is 'seconds' (only the tests' short waits); {unit}: 'minutes' or 'seconds'.</comment>
   </data>
   <data name="DataNoticeNotDataLater" xml:space="preserve">
     <value>No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often.</value>
     <comment>The DATA chip's tooltip when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence.</comment>
   </data>
   <data name="DataNoticeTransient" xml:space="preserve">
-    <value>No game data. {problem} Shturmap tries again in {wait}; if it keeps failing, please report it.</value>
-    <comment>Notice when the data couldn't be loaded for a reason that may pass (no connection, tarkov.dev busy). {problem}: what went wrong and what to do, sentences; {wait}: the wait before the next try, '2 minutes'.</comment>
+    <value>No game data. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}; if it keeps failing, please report it.</value>
+    <comment>Notice when the data couldn't be loaded for a reason that may pass (no connection, tarkov.dev busy). {problem}: what went wrong and what to do, sentences. {wait}: the wait before the next try, how many minutes (2), or seconds when {unit} is 'seconds' (only the tests' short waits); {unit}: 'minutes' or 'seconds'.</comment>
   </data>
   <data name="DataNoticeTransientLater" xml:space="preserve">
     <value>No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often; if it keeps failing, please report it.</value>
@@ -257,8 +257,8 @@
     <comment>Notice: tarkov.dev has no game data in the game's language, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is.</comment>
   </data>
   <data name="LanguageNotLoadedRetry" xml:space="preserve">
-    <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} Shturmap tries again in {wait}.</value>
-    <comment>Notice: tarkov.dev's game data in the game's language didn't load this time, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is. {problem}: what went wrong, a sentence; {wait}: the wait before the next try, '2 minutes'.</comment>
+    <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}.</value>
+    <comment>Notice: tarkov.dev's game data in the game's language didn't load this time, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is. {problem}: what went wrong, a sentence. {wait}: the wait before the next try, how many minutes (2), or seconds when {unit} is 'seconds' (only the tests' short waits); {unit}: 'minutes' or 'seconds'.</comment>
   </data>
   <data name="LanguageNotLoaded" xml:space="preserve">
     <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} {advice}</value>

@@ -106,6 +106,23 @@ public class DataRetryTests
         Assert.Equal("No xx texts on tarkov.dev; showing English.", SessionTexts.LanguageMissing(language: "xx"));
     }
 
+    // The wait is a number in the notice's own text, with its plural there (a language may change the noun after
+    // "in"), not a phrase glued in: one and several, minutes and the tests' seconds.
+    [Fact]
+    public void A_notice_says_its_wait_in_one_or_several_minutes_or_seconds()
+    {
+        var page = LoadProblem.Explain(Page());
+        Assert.EndsWith("Shturmap tries again in 1 minute.", GameSession.DataNotice(page, TimeSpan.FromMinutes(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 16 minutes.", GameSession.DataNotice(page, TimeSpan.FromMinutes(16)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 1 second.", GameSession.DataNotice(page, TimeSpan.FromSeconds(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 30 seconds.", GameSession.DataNotice(page, TimeSpan.FromSeconds(30)), StringComparison.Ordinal);
+        var busy = LoadProblem.Explain(Busy());
+        Assert.EndsWith("Shturmap tries again in 1 minute; if it keeps failing, please report it.",
+            GameSession.DataNotice(busy, TimeSpan.FromMinutes(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 1 minute.", GameSession.LanguageNotice("de", busy, TimeSpan.FromMinutes(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 4 minutes.", GameSession.LanguageNotice("de", busy, TimeSpan.FromMinutes(4)), StringComparison.Ordinal);
+    }
+
     // ---- the game data ----
 
     [Fact]
