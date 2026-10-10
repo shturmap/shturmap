@@ -10,7 +10,7 @@ The game data's names (quests, items, maps, extracts, traders) are tarkov.dev's,
 fr, hu, it, ja, ko, pl, pt, ro, ru, sk, tr, zh (json.tarkov.dev answered for each, 2026-10-10). Shturmap's own words
 (about 800 texts) are written here. A language is offered only once all of them are translated and reviewed
 (`UiLanguage.Supported`); until then it is "in translation" (`UiLanguage.InTranslation`) and shows only in a
-developer run, `--culture <culture>`.
+developer build's settings and a developer run, `--culture <culture>`. Offered: English, and German from 2026-10-10.
 
 ## Writing a text
 

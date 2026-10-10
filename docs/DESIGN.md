@@ -1188,7 +1188,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     (they are armed only by a first start: `firstRaid`, `firstFix` in shturmap.db), so their words stay true.
 - **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Language"
   (AUTOMATIC, then each language Shturmap is translated into, in its own name: ENGLISH, DEUTSCH; developer builds also
-  list the ones still in translation, "DEUTSCH · IN TRANSLATION", to try them; a choice applies at once, and under it
+  list the ones still in translation, "FRANÇAIS · IN TRANSLATION", to try them; a choice applies at once, and under it
   one line says what Automatic comes to and why: "Automatic: English, from the game.", "…, from Windows.", or that
   neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Delete
   position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
@@ -2597,8 +2597,10 @@ A game language Shturmap's texts aren't written in yet (Russian, say) keeps the 
 game shows them, and only Shturmap's own words take Windows' language or English, as before 2026-10-10, until that
 language's texts are written (owner, 2026-10-10). The pseudo-language (`UiLanguage.Pseudo`, developer runs only;
 docs/LANGUAGES.md) shows English game names. A language is offered, and chosen by itself, only once every text of it is
-translated and reviewed (`UiLanguage.Supported`); one being translated (`UiLanguage.InTranslation`) shows only in a
-developer run (`--culture de-DE`), English where a text isn't written yet. The language **switches while Shturmap
+translated and reviewed (`UiLanguage.Supported`: English, and German from 2026-10-10, once its texts, tour and What's
+New were reviewed and the layout check passed in it); one being translated (`UiLanguage.InTranslation`, none at the
+moment) shows only in a developer build's settings and a developer run (`--culture fr-FR`), English where a text isn't
+written yet. The language **switches while Shturmap
 runs** (owner, 2026-10-10), from settings at once: every text on screen, the formats and the map's labels change, the
 game data is loaded in the new language as when the game language's texts arrive late (below), and what was on screen
 is the same as after a fresh start in that language (the layout check compares the two; docs/LANGUAGES.md). A new

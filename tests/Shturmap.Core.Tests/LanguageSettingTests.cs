@@ -8,29 +8,37 @@ public class LanguageSettingTests
 {
 #if DEVTOOLS
     [Fact]
-    public void A_developer_build_offers_the_languages_in_translation_after_the_finished_ones()
-    {
+    public void A_developer_build_offers_the_languages_in_translation_after_the_finished_ones() =>
         Assert.Equal(UiLanguage.Supported.Concat(UiLanguage.InTranslation), UiLanguage.Offered);
-        Assert.Equal(new LanguageChoice("de", "de", LanguageSource.Setting), UiLanguage.Choose("de", "ru", "en-US"));
-    }
 #else
     [Fact]
     public void A_release_offers_only_the_finished_languages() =>
         Assert.Equal(UiLanguage.Supported, UiLanguage.Offered);
 #endif
 
+    // German is finished (2026-10-10): offered in every build, and Automatic takes it from the game or from Windows.
     [Fact]
-    public void Automatic_never_takes_a_language_in_translation()
+    public void German_is_offered_and_taken_by_itself()
     {
-        // A German game on a German Windows: German game names, English texts until German is finished.
-        foreach (var code in UiLanguage.InTranslation)
-            Assert.Equal(new LanguageChoice(UiLanguage.English, code, LanguageSource.Default), UiLanguage.Choose(null, code, code));
+        Assert.Equal([UiLanguage.English, UiLanguage.German], UiLanguage.Offered.Take(2));
+        Assert.Equal(new LanguageChoice("de", "de", LanguageSource.Setting), UiLanguage.Choose("de", "ru", "en-US"));
+        Assert.Equal(new LanguageChoice("de", "de", LanguageSource.Game), UiLanguage.Choose(null, "ge", "en-US"));
+        Assert.Equal(new LanguageChoice("de", "ru", LanguageSource.Windows), UiLanguage.Choose(null, "ru", "de-DE"));
     }
+
+    // A language in translation, French say, while only English is finished: a German game on a German Windows reads
+    // the same way today.
+    private static readonly string[] Finished = [UiLanguage.English];
+    private static readonly string[] Written = [UiLanguage.English, "fr"];
+
+    [Fact]
+    public void Automatic_never_takes_a_language_in_translation() =>
+        // A French game on a French Windows: French game names, English texts until French is finished.
+        Assert.Equal(new LanguageChoice(UiLanguage.English, "fr", LanguageSource.Default), UiLanguage.Choose(null, "fr", "fr-FR", Finished, Written));
 
     [Fact]
     public void A_runs_own_language_may_be_one_in_translation() =>
-        Assert.Equal(new LanguageChoice("de", "de", LanguageSource.Setting),
-            UiLanguage.Choose("de", "en", "en-US", offered: [.. UiLanguage.Supported, .. UiLanguage.InTranslation]));
+        Assert.Equal(new LanguageChoice("fr", "fr", LanguageSource.Setting), UiLanguage.Choose("fr", "en", "en-US", Finished, Written));
 
     [Theory]
     [InlineData("de-DE", "de")]

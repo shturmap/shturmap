@@ -30,14 +30,14 @@ public static class UiLanguage
     /// release) and chosen by themselves. A language joins when its last text is translated and reviewed
     /// (docs/LANGUAGES.md); the translation tests then hold every text of it.
     /// </summary>
-    public static IReadOnlyList<string> Supported { get; } = [English];
+    public static IReadOnlyList<string> Supported { get; } = [English, German];
 
     /// <summary>
     /// Languages being translated: offered only in a developer build's settings (<see cref="Offered"/>) and to a run's
-    /// "--culture de-DE", never chosen by themselves; the translation tests check what is written of them. A text not
-    /// written yet shows in English.
+    /// "--culture fr-FR", never chosen by themselves; the translation tests check what is written of them. A text not
+    /// written yet shows in English. None at the moment: German joined <see cref="Supported"/> on 2026-10-10.
     /// </summary>
-    public static IReadOnlyList<string> InTranslation { get; } = [German];
+    public static IReadOnlyList<string> InTranslation { get; } = [];
 
     /// <summary>
     /// The languages settings offer, after "Automatic": <see cref="Supported"/>, and in a developer build those
