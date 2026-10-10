@@ -75,11 +75,8 @@ public class LanguageSessionTests
     [InlineData("xx", GameSession.AutomaticLanguage)]
     [InlineData("qps-ploc", GameSession.AutomaticLanguage)]
     [InlineData("en", "en")]
-#if DEVTOOLS
+    // German is offered in every build since 2026-10-10; until then a release read a saved "de" as automatic.
     [InlineData("de", "de")]
-#else
-    [InlineData("de", GameSession.AutomaticLanguage)]
-#endif
     public void A_saved_value_is_a_language_offered_or_automatic(string? saved, string setting) =>
         Assert.Equal(setting, GameSession.LanguageSettingOf(saved));
 
