@@ -19,13 +19,9 @@ public sealed record GameStateLine(string Title, string Note, bool OffersChoice)
         if (locations is null)
             return null;
         if (locations.Install is null)
-            return new("No game found on this PC",
-                "Or browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking.",
-                canChoose);
+            return new(SessionTexts.NoGameTitle, SessionTexts.NoGameNote, canChoose);
         if (locations.LogsFolder is null)
-            return new("The game hasn't run on this PC yet",
-                $"Found in {locations.Install.Root}. Quests and raids follow once it has run here; until then, browse the maps above.",
-                canChoose);
+            return new(SessionTexts.NoLogsTitle, SessionTexts.NoLogsNote(folder: locations.Install.Root), canChoose);
         return null;
     }
 }

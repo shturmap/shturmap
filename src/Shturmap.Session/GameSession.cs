@@ -2027,11 +2027,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,
             Logs = LogsHealth(),
-            Screenshots = _locations is null ? new(false, "Looking for screenshots…")
-                : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, "Screenshots") : new(false, "No screenshots yet"),
+            Screenshots = _locations is null ? new(false, SessionTexts.ChipLookingForScreenshots)
+                : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, SessionTexts.ChipScreenshots) : new(false, SessionTexts.ChipNoScreenshots),
             DataHealth = _data is not null
-                ? new(!_data.Offline, _data.Offline ? "Data (offline copy)" : "Data")
-                : new(false, _dataProblem is null ? "Loading game data…" : "No game data"),
+                ? new(!_data.Offline, _data.Offline ? SessionTexts.ChipDataOffline : SessionTexts.ChipData)
+                : new(false, _dataProblem is null ? SessionTexts.ChipLoadingData : SessionTexts.ChipNoData),
             DataProblem = _dataProblem,
             GameLanguage = _settings.Language,
             StudyLogOn = Study.Enabled,
@@ -2075,10 +2075,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private SourceHealth LogsHealth()
     {
         if (_locations?.LogsFolder is null)
-            return new(false, "Game logs not found");
+            return new(false, SessionTexts.ChipNoLogs);
         if (_tailer?.LastActivityUtc is { } at && DateTime.UtcNow - at < LogsLiveFor)
-            return new(true, "Logs live");
-        return new(true, "Logs");
+            return new(true, SessionTexts.ChipLogsLive);
+        return new(true, SessionTexts.ChipLogs);
     }
 
     /// <summary>How long after the game's last line the LOGS light says "live".</summary>

@@ -17,10 +17,10 @@ namespace Shturmap.Session;
 public static class SettingsFile
 {
     /// <summary>What the session says when the file was set aside.</summary>
-    public const string SetAsideNotice = "Shturmap's settings file couldn't be read and was set aside: picks, ticks and settings start over.";
+    public static string SetAsideNotice => SessionTexts.SettingsFileSetAside;
 
     /// <summary>What it says when the file was left as it is, and nothing is kept this time.</summary>
-    public const string NotKeptNotice = "Shturmap's settings file couldn't be opened: picks, ticks and settings aren't kept this time.";
+    public static string NotKeptNotice => SessionTexts.SettingsFileNotKept;
 
     // SQLite's result codes that say the file's content is bad: SQLITE_CORRUPT and SQLITE_NOTADB. Only these set a
     // file aside; a busy, locked, read-only or full one is a good file in a bad moment.

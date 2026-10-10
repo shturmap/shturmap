@@ -16,4 +16,204 @@
     <value>Your extract list is read: {count, plural, one {# extract} other {# extracts}} for this raid</value>
     <comment>Notice, once per raid, after the extract list was read from a screenshot. {count}: how many extracts it names.</comment>
   </data>
+  <data name="NoGameTitle" xml:space="preserve">
+    <value>No game found on this PC</value>
+    <comment>Rail, where the Plan card would be while no game is found on this PC; shown in capitals.</comment>
+  </data>
+  <data name="NoGameNote" xml:space="preserve">
+    <value>Or browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking.</value>
+    <comment>Rail, under 'No game found on this PC': what still works.</comment>
+  </data>
+  <data name="NoLogsTitle" xml:space="preserve">
+    <value>The game hasn't run on this PC yet</value>
+    <comment>Rail, where the Plan card would be while the game is found but has no logs yet; shown in capitals.</comment>
+  </data>
+  <data name="NoLogsNote" xml:space="preserve">
+    <value>Found in {folder}. Quests and raids follow once it has run here; until then, browse the maps above.</value>
+    <comment>Rail, under 'The game hasn't run on this PC yet'. {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="StatusLoadingMap" xml:space="preserve">
+    <value>Loading {map}</value>
+    <comment>Status bar, while a raid loads. {map}: the raid's map, Customs.</comment>
+  </data>
+  <data name="StatusLoading" xml:space="preserve">
+    <value>Loading</value>
+    <comment>Status bar, while a raid loads on a map Shturmap can't name.</comment>
+  </data>
+  <data name="StatusInRaid" xml:space="preserve">
+    <value>In raid</value>
+    <comment>Status bar in a raid, the first of its parts: 'In raid · Customs · PMC · 12 min'.</comment>
+  </data>
+  <data name="SidePmc" xml:space="preserve">
+    <value>PMC</value>
+    <comment>Status bar and Plan's last-raid line: the side the raid is played as. The game's word.</comment>
+  </data>
+  <data name="SideScav" xml:space="preserve">
+    <value>Scav</value>
+    <comment>Status bar and Plan's last-raid line: the side the raid is played as. The game's word.</comment>
+  </data>
+  <data name="RaidMinutes" xml:space="preserve">
+    <value>{minutes} min</value>
+    <comment>Status bar and Plan's last-raid line: a raid's length so far or in all. {minutes}: whole minutes, 12.</comment>
+  </data>
+  <data name="StatusNotInRaid" xml:space="preserve">
+    <value>Not in a raid</value>
+    <comment>Status bar, outside a raid.</comment>
+  </data>
+  <data name="LastRaid" xml:space="preserve">
+    <value>Last raid</value>
+    <comment>Plan, the last raid's line, its first part: 'Last raid · Customs · 12 min · PMC'.</comment>
+  </data>
+  <data name="LastRaidEndUnknown" xml:space="preserve">
+    <value>end not in the log</value>
+    <comment>Plan, the last raid's line, in place of its length: the game's log never said when the raid ended.</comment>
+  </data>
+  <data name="StatusTipLoading" xml:space="preserve">
+    <value>The game's log shows a raid loading</value>
+    <comment>Status bar's tooltip while a raid loads: where the words come from.</comment>
+  </data>
+  <data name="StatusTipInRaidSince" xml:space="preserve">
+    <value>The game's log shows a raid, started {time}</value>
+    <comment>Status bar's tooltip in a raid. {time}: when it started, 16:40, or 4 Oct 16:40 on another day.</comment>
+  </data>
+  <data name="StatusTipInRaid" xml:space="preserve">
+    <value>The game's log shows a raid</value>
+    <comment>Status bar's tooltip in a raid whose start isn't known.</comment>
+  </data>
+  <data name="StatusTipMenu" xml:space="preserve">
+    <value>The game's log shows no raid (it can't tell the menus from a closed game)</value>
+    <comment>Status bar's tooltip outside a raid.</comment>
+  </data>
+  <data name="ModePvp" xml:space="preserve">
+    <value>PvP</value>
+    <comment>Status bar: the game mode, as the game calls it.</comment>
+  </data>
+  <data name="ModePve" xml:space="preserve">
+    <value>PvE</value>
+    <comment>Status bar: the game mode, as the game calls it.</comment>
+  </data>
+  <data name="ModeSeasonal" xml:space="preserve">
+    <value>Seasonal</value>
+    <comment>Status bar: the game mode, as the game calls it (the seasonal PvP mode).</comment>
+  </data>
+  <data name="ModeTipUnknown" xml:space="preserve">
+    <value>The game says '{mode}', which Shturmap doesn't know yet; showing the mode you last played</value>
+    <comment>Status bar, the mode's tooltip. {mode}: the mode as the game's log names it, as it is (not translated).</comment>
+  </data>
+  <data name="ModeTipFromLog" xml:space="preserve">
+    <value>From the game's log, {time}</value>
+    <comment>Status bar, the mode's tooltip. {time}: when the log named the mode, 16:40, or 4 Oct 16:40 on another day.</comment>
+  </data>
+  <data name="ModeTipLastPlayed" xml:space="preserve">
+    <value>The mode you last played; follows the game once it starts</value>
+    <comment>Status bar, the mode's tooltip before the game's log has named one.</comment>
+  </data>
+  <data name="ModeTipNoGame" xml:space="preserve">
+    <value>No game on this PC: the mode you last played</value>
+    <comment>Status bar, the mode's tooltip while no game is found.</comment>
+  </data>
+  <data name="GameFolderNotFound" xml:space="preserve">
+    <value>GAME FOLDER: NOT FOUND</value>
+    <comment>Settings, the game folder line, in capitals as the headings are.</comment>
+  </data>
+  <data name="GameFolderChosen" xml:space="preserve">
+    <value>GAME FOLDER: {folder} (chosen by you)</value>
+    <comment>Settings, the game folder line, in capitals as the headings are (the folder as it is). {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="GameFolderFound" xml:space="preserve">
+    <value>GAME FOLDER: {folder} (found automatically)</value>
+    <comment>Settings, the game folder line, in capitals as the headings are (the folder as it is). {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="LogsTipNotFound" xml:space="preserve">
+    <value>The game's logs aren't found: quests and raids can't follow the game.</value>
+    <comment>Status bar, the LOGS light's tooltip, and settings.</comment>
+  </data>
+  <data name="LogsTipFolder" xml:space="preserve">
+    <value>Game logs: {folder}</value>
+    <comment>Status bar, the LOGS light's tooltip, and settings: the logs followed. {folder}: a path.</comment>
+  </data>
+  <data name="LogsTipNewer" xml:space="preserve">
+    <value>Newer game logs in {folder}. Settings → FIND AUTOMATICALLY follows those instead.</value>
+    <comment>Status bar, the LOGS light's tooltip, and settings, the line under 'Game logs: …' when another install has newer logs than the chosen folder. {folder}: that install's folder, a path. FIND AUTOMATICALLY: the settings button's label, as it reads there.</comment>
+  </data>
+  <data name="UpdatesBroken" xml:space="preserve">
+    <value>Updates: the updater couldn't start, so no update checks. The log says why (LOG FOLDER). Running the Setup again repairs it; your data stays.</value>
+    <comment>Settings, under Updates, in an installed Shturmap whose updater failed. LOG FOLDER: the settings button's label, as it reads there; the Setup: Shturmap's installer.</comment>
+  </data>
+  <data name="UpdatesNotInBuild" xml:space="preserve">
+    <value>Updates: not available in this build. Installed with the Setup, Shturmap updates itself.</value>
+    <comment>Settings, under Updates, in a build that wasn't installed. The Setup: Shturmap's installer.</comment>
+  </data>
+  <data name="UpdateNotApplied" xml:space="preserve">
+    <value>Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.</value>
+    <comment>Notice at start, when a downloaded update failed to apply. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Shturmap {version} is available</value>
+    <comment>Rail, the update line above Plan between raids ('Tell me only'), shown in capitals. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Downloading Shturmap {version}…</value>
+    <comment>Rail, the update line above Plan between raids, shown in capitals. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateDidNotApply" xml:space="preserve">
+    <value>Update {version} didn't apply: close what Shturmap opened, then restart</value>
+    <comment>Rail, the update line above Plan between raids, shown in capitals, over RESTART NOW. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateReady" xml:space="preserve">
+    <value>Update {version} ready: applies at next start</value>
+    <comment>Rail, the update line above Plan between raids, shown in capitals, over RESTART NOW. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="SettingsFileSetAside" xml:space="preserve">
+    <value>Shturmap's settings file couldn't be read and was set aside: picks, ticks and settings start over.</value>
+    <comment>Notice at start. Picks: the quests picked for a raid; ticks: objectives ticked as done.</comment>
+  </data>
+  <data name="SettingsFileNotKept" xml:space="preserve">
+    <value>Shturmap's settings file couldn't be opened: picks, ticks and settings aren't kept this time.</value>
+    <comment>Notice at start. Picks: the quests picked for a raid; ticks: objectives ticked as done.</comment>
+  </data>
+  <data name="ChipLookingForGame" xml:space="preserve">
+    <value>Looking for the game…</value>
+    <comment>Status bar, the LOGS chip, at start.</comment>
+  </data>
+  <data name="ChipLookingForScreenshots" xml:space="preserve">
+    <value>Looking for screenshots…</value>
+    <comment>Status bar, the SCREENSHOTS chip, at start.</comment>
+  </data>
+  <data name="ChipLoadingData" xml:space="preserve">
+    <value>Loading game data…</value>
+    <comment>Status bar, the DATA chip, while tarkov.dev's data loads.</comment>
+  </data>
+  <data name="ChipScreenshots" xml:space="preserve">
+    <value>Screenshots</value>
+    <comment>Status bar, the SCREENSHOTS chip: the game's screenshots folder is there.</comment>
+  </data>
+  <data name="ChipNoScreenshots" xml:space="preserve">
+    <value>No screenshots yet</value>
+    <comment>Status bar, the SCREENSHOTS chip: the game hasn't made its screenshots folder yet.</comment>
+  </data>
+  <data name="ChipData" xml:space="preserve">
+    <value>Data</value>
+    <comment>Status bar, the DATA chip: tarkov.dev's data is loaded.</comment>
+  </data>
+  <data name="ChipDataOffline" xml:space="preserve">
+    <value>Data (offline copy)</value>
+    <comment>Status bar, the DATA chip: the saved copy of tarkov.dev's data is shown.</comment>
+  </data>
+  <data name="ChipNoData" xml:space="preserve">
+    <value>No game data</value>
+    <comment>Status bar, the DATA chip: tarkov.dev's data couldn't be loaded.</comment>
+  </data>
+  <data name="ChipNoLogs" xml:space="preserve">
+    <value>Game logs not found</value>
+    <comment>Status bar, the LOGS chip: the game's logs aren't found.</comment>
+  </data>
+  <data name="ChipLogsLive" xml:space="preserve">
+    <value>Logs live</value>
+    <comment>Status bar, the LOGS chip: the game wrote to its log in the last ten minutes.</comment>
+  </data>
+  <data name="ChipLogs" xml:space="preserve">
+    <value>Logs</value>
+    <comment>Status bar, the LOGS chip: the game's logs are followed.</comment>
+  </data>
 </root>
