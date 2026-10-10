@@ -39,21 +39,44 @@ public sealed partial class MainWindow
         }
     }
 
-    // The names that stay as they are in every language: the loaded game data's, and the releases' names.
+    // The synopsis phrases the tour's example raid card shows (MainWindow.Tour, ExampleRaidCard): not in the snapshot.
+    private readonly HashSet<string> _layoutTourPhrases = new(StringComparer.Ordinal);
+
+    // The names that stay as they are in every language: the loaded game data's, the releases' names and the languages'
+    // own names (settings lists each in its own: ENGLISH, DEUTSCH); and what the rules that read English data made of
+    // it (quest synopses: Plan's lines, the raid card's objectives, the tour's example), which the pseudo-language,
+    // whose data is English, shows in English and every other language replaces with tarkov.dev's sentence
+    // (docs/LANGUAGES.md, "Layout check").
     private async Task<IReadOnlySet<string>> LayoutNamesAsync()
     {
         var data = _snapshot?.Data;
+        HashSet<string> names;
         if (_layoutNames is { } cached && ReferenceEquals(cached.Data, data))
-            return cached.Names;
-        var names = data is null ? new HashSet<string>(StringComparer.Ordinal) : await Task.Run(() => LayoutWords.NamesIn(data));
-        foreach (var section in WhatsNewSections)
+            names = cached.Names;
+        else
         {
-            if (section.Name is { } name)
-                names.Add(LayoutWords.Key(name));
+            names = data is null ? new HashSet<string>(StringComparer.Ordinal) : await Task.Run(() => LayoutWords.NamesIn(data));
+            foreach (var section in WhatsNewSections)
+            {
+                if (section.Name is { } name)
+                    names.Add(LayoutWords.Key(name));
+            }
+            foreach (var code in UiLanguage.Offered.Append("en"))
+                names.Add(LayoutWords.Key(UiLanguage.NativeName(code)));
+            if (data is not null)
+                _layoutNames = (data, names);
         }
-        if (data is not null)
-            _layoutNames = (data, names);
-        return names;
+        var phrases = new HashSet<string>(names, StringComparer.Ordinal);
+        if (_snapshot is { } s)
+        {
+            var rows = s.Plan.Append(s.MapPlan).OfType<Shturmap.Session.MapPlanView>().SelectMany(p => p.Finish.Concat(p.Progress)).Concat(s.AnyMap);
+            foreach (var phrase in rows.SelectMany(r => r.Synopsis.Split(" · ")).Concat(s.Objectives.Select(o => o.Short)).Concat(_layoutTourPhrases))
+            {
+                if (!string.IsNullOrWhiteSpace(phrase))
+                    phrases.Add(LayoutWords.Key(phrase));
+            }
+        }
+        return phrases;
     }
 }
 #endif

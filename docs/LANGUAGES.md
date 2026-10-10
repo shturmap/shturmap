@@ -115,7 +115,8 @@ each picture of the window or a popup (`window.png`, `tour.png`, `help.png`, `se
 
 - `<picture>.texts.txt`: every text shown, one per line, in the order of the window's elements: a text block's words
   (its runs together; a button's or link's words are text blocks too), `tooltip: …`, `name: …` (what a screen reader
-  says) and `input: …` (a text box's own text). Shown means not collapsed, not transparent and not of no size; the
+  says), `input: …` (a text box's own text) and `english: …` (what a report sends, English by design and holding the
+  run's own log, which the switch check leaves out). Shown means not collapsed, not transparent and not of no size; the
   texts outside every viewport around them (scrolled out of a list, below a popup's fold) follow under
   `--- not in view ---`: a scroll shows them, so they are checked too. The senior translator reads these with the
   pictures.
@@ -136,7 +137,8 @@ holds pictures of the app and the fake raid's paths: it stays on the PC and goes
 - *overflow*: a text or a control that sticks out of the nearest element that clips it (an element given less room
   than it takes is cut at its slot; content in a scrolling list must fit the list's whole extent, not its viewport) or
   out of the window; a text that needs more width or height than it was given and is cut without "…"; a word too wide
-  for its line, which breaks inside the word (long German compounds).
+  for its line, which breaks inside the word (long German compounds; a break after a hyphen is a line's own, as in
+  "SCREENSHOT-TASTE", and what a report sends, with its paths and log lines, may break anywhere).
 - *trimmed*: a text that ends in "…" where the design doesn't let it give way. `controls:Fit.MayTrim="True"`
   (`src\Shturmap.App\Controls\Fit.cs`) marks where it does, and only there: the status bar's last fix, Plan's
   synopses after two lines, the notes of EXIT and OR after two lines (DESIGN.md §4). A new place needs the design to say
@@ -144,23 +146,26 @@ holds pictures of the app and the fake raid's paths: it stays on the PC and goes
 - *overlap*: two texts over each other, where both can be seen. The deliberate layers (the tour, the Report dialog, a
   cue's band, What's New's plate; `LayoutCheck.Layers`) are compared within themselves, not with what they cover.
 - *untranslated*, in the pseudo-language only: a text, or part of one, outside the pseudo-language's brackets that isn't
-  a game name (the loaded game data's names and tarkov.dev's sentences), a release's name, a number with its unit, a
-  key, a month or day of the culture, a path, or one of the few words that stay the same everywhere
-  (`LayoutWords.Neutral`: Shturmap, PMC, Scav, PvE, PvP, Escape from Tarkov, tarkov.dev, GitHub, Sentry, Windows). A
+  a game name (the loaded game data's names, tarkov.dev's sentences and a transit's conditions), a release's name, a
+  language's own name (settings: ENGLISH, DEUTSCH), a number with its unit, a key, a month or day of the culture, a
+  path, or one of the few words that stay the same everywhere (`LayoutWords.Neutral`: Shturmap, PMC, Scav, PvE, PvP,
+  Escape from Tarkov, tarkov.dev, GitHub, Sentry, Windows). What a report or a crash report sends, shown before it
+  goes, is English by design and isn't looked at (`Controls.Words.English`; DESIGN.md §8, "The app's own language"). A
   game name of one word counts only beside names and figures ("Kaban 75%"): among English words it is one of them, since
   many are items too ("Map", "Raid", "Report"); items' short names, which only the map draws, don't count at all. So a
-  word that is also an item's name hides only where it stands alone. The rules that read English data (quest synopses,
-  extract requirements) make English phrases in the pseudo-language, whose data is English: they show here as
-  untranslated, and in another language their rows show tarkov.dev's sentence instead (DESIGN.md §8, "The app's own
-  language").
+  word that is also an item's name hides only where it stands alone. The quest synopses, made by rules that read
+  English data, are English phrases in the pseudo-language, whose data is English, and in another language their rows
+  show tarkov.dev's sentence instead (DESIGN.md §8, "The app's own language"): the phrases the snapshot holds (Plan's
+  lines, the raid card's objectives) and the tour's example count as game names. The extract requirements read English
+  data too, but are worded with Shturmap's own texts.
 
 Not checked: what the map draws (its labels are a picture), and a tooltip's own layout (only its words are listed).
 
 **`-SwitchCheck`** also starts each view in English and switches to each other language of `-Languages` once the data
 is there (`--switch-language <culture>`), then compares each picture's texts with the fresh start in that language,
-figures aside (a time or a fix's age differs from run to run): a line only after the switch was kept from before it, a
-line only in the fresh start is missing after it. A view whose language or culture after the switch isn't the fresh
-start's counts as not checked.
+figures aside (a time or a fix's age differs from run to run) and the fake game's folder (new in each run): a line only
+after the switch was kept from before it, a line only in the fresh start is missing after it. A view whose language or
+culture after the switch isn't the fresh start's counts as not checked.
 
 **Not in CI.** The views need tarkov.dev's game data, which a fresh runner would download at every push (DESIGN.md §3,
 "No unnecessary load on tarkov.dev"), and all of them take about 25 minutes: the check runs on the developer's PC,

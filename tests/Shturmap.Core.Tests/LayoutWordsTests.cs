@@ -71,18 +71,20 @@ public class LayoutWordsTests
         Assert.Empty(English("Kaban 75% · Streets of Tarkov"));
     }
 
-    private sealed record Thing(string Id, string Name, string? ShortName, string Type, string? Description = null);
+    private sealed record Thing(string Id, string Name, string? ShortName, string Type, string? Description = null, string? Conditions = null);
 
     private sealed record World(Dictionary<string, Thing> Things, IReadOnlyDictionary<string, string> NamesById, List<string> Ids, Thing? Missing,
         IReadOnlyDictionary<string, string> ItemShortNames);
 
     [Fact]
-    public void Names_are_taken_from_names_descriptions_and_dictionaries_of_texts_not_from_short_names_internal_words_or_ids()
+    public void Names_are_taken_from_names_descriptions_conditions_and_dictionaries_of_texts_not_from_short_names_internal_words_or_ids()
     {
         var world = new World(
             new Dictionary<string, Thing>
             {
                 ["a"] = new("5c0e534186f7747fa1419867", "MS2000 Marker", "MS2000", "visit", "Mark the first LAV III"),
+                // A transit's conditions, as tarkov.dev words them.
+                ["t"] = new("5c0e534186f7747fa1419869", "Transit to The Lab", null, "transit", Conditions: "TerraGroup Labs access keycard required (1)"),
             },
             new Dictionary<string, string> { ["b"] = "Bomber beanie", ["c"] = "5c0e534186f7747fa1419868" },
             ["shoot"],
@@ -93,6 +95,7 @@ public class LayoutWordsTests
         Assert.DoesNotContain("MS2000", names);
         Assert.DoesNotContain("LOG", names);
         Assert.Contains("MARK THE FIRST LAV III", names);
+        Assert.Contains("TERRAGROUP LABS ACCESS KEYCARD REQUIRED (1)", names);
         Assert.Contains("BOMBER BEANIE", names);
         Assert.DoesNotContain("VISIT", names);
         Assert.DoesNotContain("SHOOT", names);

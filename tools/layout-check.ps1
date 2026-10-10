@@ -276,9 +276,11 @@ foreach ($culture in $switchTo) {
       $switchChecked++
       foreach ($texts in Get-ChildItem $fresh -Filter '*.texts.txt') {
         $other = Join-Path $switched $texts.Name
-        # Figures change from one run to the next (times, minutes, a fix's age): compared without them.
-        $before = @(if (Test-Path $other) { Get-Content $other -Encoding UTF8 | ForEach-Object { $_ -replace '\d+', '#' } })
-        $after = @(Get-Content $texts.FullName -Encoding UTF8 | ForEach-Object { $_ -replace '\d+', '#' })
+        # Figures change from one run to the next (times, minutes, a fix's age), and so does the fake game's folder
+        # (tools\fake-raid.ps1 makes a new one each run, shown in settings and the lights' tooltips): compared without them.
+        # What a report sends ("english: ", the Report dialog's preview) is English and holds the run's own log: left out.
+        $before = @(if (Test-Path $other) { Get-Content $other -Encoding UTF8 | Where-Object { -not $_.StartsWith('english: ') } | ForEach-Object { $_ -replace 'shturmap-fake-[0-9a-f]+', 'shturmap-fake-#' -replace '\d+', '#' } })
+        $after = @(Get-Content $texts.FullName -Encoding UTF8 | Where-Object { -not $_.StartsWith('english: ') } | ForEach-Object { $_ -replace 'shturmap-fake-[0-9a-f]+', 'shturmap-fake-#' -replace '\d+', '#' })
         # Lines as a multiset, case and order kept apart: what one side has more often than the other.
         $tally = New-Object 'System.Collections.Generic.Dictionary[string,int]'
         foreach ($l in $after) { $n = 0; [void]$tally.TryGetValue($l, [ref]$n); $tally[$l] = $n + 1 }

@@ -761,6 +761,10 @@ public sealed partial class MainWindow
             // for the card's lines); tarkov.dev's sentence only where the data isn't English (review of 2026-10-09).
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
+#if DEVTOOLS
+            // The layout check: a synopsis is made of the (English) data, not one of Shturmap's texts.
+            _layoutTourPhrases.UnionWith(shorts.Values);
+#endif
             var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
             glance.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }

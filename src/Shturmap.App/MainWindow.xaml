@@ -1302,7 +1302,7 @@
               </HyperlinkButton>
               <ScrollViewer MaxHeight="220" Visibility="{x:Bind ShownIf(ViewModel.CrashDetails), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.CrashDetails, Mode=OneWay}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"
-                           Foreground="{StaticResource MutedBrush}" IsTextSelectionEnabled="True" />
+                           Foreground="{StaticResource MutedBrush}" IsTextSelectionEnabled="True" controls:Words.English="True" />
               </ScrollViewer>
             </StackPanel>
             <Button Grid.Column="2" Width="24" Height="24" Padding="0" Click="OnCrashLaterClick" Background="Transparent" BorderThickness="0"

@@ -25,9 +25,10 @@ namespace Shturmap.App.Dev;
 /// <list type="bullet">
 /// <item>"&lt;name&gt;.texts.txt": every text shown, one per line, in the visual tree's order: a TextBlock's or
 /// RichTextBlock's text (its runs together; a button's or link's words are TextBlocks too), then "tooltip: …",
-/// "name: …" (the screen reader's) and "input: …" (a text box's own text). Shown means not collapsed, not transparent and
-/// not of no size. Texts outside every viewport around them (scrolled out of a list, below a popup's fold) follow
-/// under "--- not in view ---", since a later scroll shows them: they are checked like the rest.</item>
+/// "name: …" (the screen reader's), "input: …" (a text box's own text) and "english: …" (what a report sends,
+/// <see cref="Words.English"/>). Shown means not collapsed, not transparent and not of no size. Texts outside every
+/// viewport around them (scrolled out of a list, below a popup's fold) follow under "--- not in view ---", since a later
+/// scroll shows them: they are checked like the rest.</item>
 /// <item>"&lt;name&gt;.layout.json": the problems, numbered, each with its kind, element, text and bounds in window
 /// pixels. <b>trimmed</b>: a text that ends in "…" where the design doesn't let it (<see cref="Fit.MayTrim"/> marks where
 /// it does). <b>overflow</b>: a text or control that sticks out of the nearest element that clips it (a scrolling list
@@ -286,7 +287,8 @@ internal sealed class LayoutCheck
                 $"the text needs {natural.Height:0} DIP of height and has {roomHeight:0}: lines cut off without \"…\"");
             return ink;
         }
-        if (wraps && LongestWord(tb, text, roomWidth) is { } word)
+        // What a report sends (paths, the log's lines) breaks anywhere by nature (Words.English).
+        if (wraps && !Words.GetEnglish(tb) && LongestWord(tb, text, roomWidth) is { } word)
         {
             Report("overflow", tb, chain, text, box, inView, $"the word \"{word}\" is wider than its line ({roomWidth:0} DIP), so it breaks inside the word");
             return ink;
@@ -363,7 +365,8 @@ internal sealed class LayoutCheck
     // isn't in the texts files yet, unless it is a game name, a number, a key or on the short list.
     private void FindUntranslated()
     {
-        foreach (var shown in _shown.Where(s => s.Kind != "input"))
+        // What a report sends stays English by design (Words.English).
+        foreach (var shown in _shown.Where(s => s.Kind != "input" && !Words.GetEnglish(s.Element)))
         {
             var english = LayoutWords.EnglishParts(shown.Text, _context.Names, CultureInfo.CurrentCulture);
             if (english.Count == 0)
@@ -478,6 +481,9 @@ internal sealed class LayoutCheck
     private static string Line(Shown shown)
     {
         var text = Masked(shown.Text).Replace("\r\n", "\n").Replace("\n", "\\n").Replace('\t', ' ');
+        // What a report sends is English by design and holds the app's log, different in every run (Words.English).
+        if (shown.Kind == "text" && Words.GetEnglish(shown.Element))
+            return "english: " + text;
         return shown.Kind == "text" ? text : shown.Kind + ": " + text;
     }
 
@@ -509,11 +515,13 @@ internal sealed class LayoutCheck
     }
 
     // A word of a wrapping text that is wider than its line, so it breaks inside the word: measured on a copy of the
-    // TextBlock, scaled to what the TextBlock itself measures for the whole text on one line.
+    // TextBlock, scaled to what the TextBlock itself measures for the whole text on one line. A line may break after a
+    // hyphen (German "SCREENSHOT-TASTE"), so each part up to one counts as a word.
     private static string? LongestWord(TextBlock tb, string text, double roomWidth)
     {
         // A path or an address breaks anywhere by nature (diagnostics show them).
-        var words = text.Split([' ', '\n', '\u00A0'], StringSplitOptions.RemoveEmptyEntries).Distinct()
+        var words = text.Split([' ', '\n', '\u00A0'], StringSplitOptions.RemoveEmptyEntries)
+            .SelectMany(w => System.Text.RegularExpressions.Regex.Split(w, "(?<=-)(?=.)")).Distinct()
             .Where(w => w.Length >= 6 && !w.Contains('\\') && !w.Contains('/'))
             .OrderByDescending(w => w.Length).Take(3).ToList();
         if (words.Count == 0)
