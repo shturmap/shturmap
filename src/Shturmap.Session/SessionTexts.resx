@@ -656,4 +656,60 @@
     <value>{switchName} first</value>
     <comment>Raid card, under an extract: a switch to turn on before leaving there. {switchName}: the switch's name, 'ZB-013 Power Switch'.</comment>
   </data>
+  <data name="ReportNotConfigured" xml:space="preserve">
+    <value>Reporting isn't set up in this build.</value>
+    <comment>Report dialog and the crash question, after Send, in a build without a place to send reports to.</comment>
+  </data>
+  <data name="ReportMuted" xml:space="preserve">
+    <value>Not sent: developer runs send nothing.</value>
+    <comment>Report dialog and the crash question, after Send, in a developer run.</comment>
+  </data>
+  <data name="ReportSent" xml:space="preserve">
+    <value>Sent. Thank you. Report {id}.</value>
+    <comment>Report dialog, after Send. {id}: the report's id the player can quote, 8 letters and digits, a1b2c3d4.</comment>
+  </data>
+  <data name="ReportKept" xml:space="preserve">
+    <value>Couldn't send it now ({why}). It's kept on this PC and goes out by itself the next time Shturmap starts.</value>
+    <comment>Report dialog, after Send, when the report couldn't go out now. {why}: why, a few words ('no connection').</comment>
+  </data>
+  <data name="ReportRefused" xml:space="preserve">
+    <value>Couldn't send it: {why}. It's kept on this PC, in %LOCALAPPDATA%\Shturmap\outbox.</value>
+    <comment>Report dialog, after Send, when the report service refused it. {why}: why, a few words ('the report service answered 400'). The folder stays as it is.</comment>
+  </data>
+  <data name="CrashReportKept" xml:space="preserve">
+    <value>Couldn't send the crash report now ({why}). It goes out by itself the next time Shturmap starts.</value>
+    <comment>The crash question, after Send, when the crash report couldn't go out now. {why}: why, a few words ('no connection').</comment>
+  </data>
+  <data name="CrashReportRefused" xml:space="preserve">
+    <value>Couldn't send the crash report: {why}.</value>
+    <comment>The crash question, after Send, when the report service refused it. {why}: why, a few words.</comment>
+  </data>
+  <data name="CrashReportsSent" xml:space="preserve">
+    <value>{count, plural, =1 {Crash report sent. Thank you. Report {id}.} other {# crash reports sent. Thank you.}}</value>
+    <comment>The crash question, after Send. {count}: how many crash reports went out (one to five); {id}: the one report's id, a1b2c3d4.</comment>
+  </data>
+  <data name="ReportWhyAnswered" xml:space="preserve">
+    <value>the report service answered {status}</value>
+    <comment>Inside 'Couldn't send it …': the report service's answer. {status}: its HTTP status code, 503.</comment>
+  </data>
+  <data name="ReportWhyNoConnection" xml:space="preserve">
+    <value>no connection</value>
+    <comment>Inside 'Couldn't send it …': there was no connection.</comment>
+  </data>
+  <data name="ReportWhyNoAnswer" xml:space="preserve">
+    <value>no answer in time</value>
+    <comment>Inside 'Couldn't send it …': the report service didn't answer in time.</comment>
+  </data>
+  <data name="ReportWriteSomething" xml:space="preserve">
+    <value>Write what happened, or what would help.</value>
+    <comment>Report dialog, under the text box, while it is empty.</comment>
+  </data>
+  <data name="ReportTooLong" xml:space="preserve">
+    <value>At most {count, plural, one {{max} character} other {{max} characters}}, please.</value>
+    <comment>Report dialog, under the text box, when the text is too long. {count}: the most characters, 4000; {max}: the same number written with grouping, 4,000.</comment>
+  </data>
+  <data name="ReportContactTooLong" xml:space="preserve">
+    <value>The contact can be at most {count, plural, one {# character} other {# characters}}.</value>
+    <comment>Report dialog, when the contact is too long. {count}: the most characters, 120.</comment>
+  </data>
 </root>
