@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="QuestKindElimination" xml:space="preserve">
+    <value>Kills</value>
+    <comment>en: Elimination</comment>
+  </data>
+  <data name="QuestKindExploration" xml:space="preserve">
+    <value>Erkunden</value>
+    <comment>en: Exploration</comment>
+  </data>
+  <data name="QuestKindPickup" xml:space="preserve">
+    <value>Pickup</value>
+    <comment>en: Pickup</comment>
+  </data>
+  <data name="QuestKindPlace" xml:space="preserve">
+    <value>Platzieren</value>
+    <comment>en: Place</comment>
+  </data>
+  <data name="QuestKindFindInRaid" xml:space="preserve">
+    <value>FiR</value>
+    <comment>en: Find in raid</comment>
+  </data>
+  <data name="QuestKindSurvive" xml:space="preserve">
+    <value>Überleben</value>
+    <comment>en: Survive</comment>
+  </data>
+  <data name="QuestKindTrader" xml:space="preserve">
+    <value>Trader</value>
+    <comment>en: Trader</comment>
+  </data>
+  <data name="QuestKindEliminationMeans" xml:space="preserve">
+    <value>Gegner killen, evtl. mit Bedingungen</value>
+    <comment>en: Kill targets, maybe with conditions</comment>
+  </data>
+  <data name="QuestKindExplorationMeans" xml:space="preserve">
+    <value>Zu einem Spot gehen</value>
+    <comment>en: Go to a place</comment>
+  </data>
+  <data name="QuestKindPickupMeans" xml:space="preserve">
+    <value>Ein Quest-Item looten</value>
+    <comment>en: Pick up a quest item</comment>
+  </data>
+  <data name="QuestKindPlaceMeans" xml:space="preserve">
+    <value>Mitgenommenes Item platzieren, markieren oder benutzen</value>
+    <comment>en: Plant, mark or use an item you bring</comment>
+  </data>
+  <data name="QuestKindFindInRaidMeans" xml:space="preserve">
+    <value>Items im Raid finden (FiR), auf jeder Map</value>
+    <comment>en: Find items in raid (FIR), any map</comment>
+  </data>
+  <data name="QuestKindSurviveMeans" xml:space="preserve">
+    <value>Überleben und extracten oder eine Bedingung erfüllen</value>
+    <comment>en: Survive and extract, or meet a condition</comment>
+  </data>
+  <data name="QuestKindTraderMeans" xml:space="preserve">
+    <value>Nach dem Raid beim Trader abgeben</value>
+    <comment>en: Hand over at a trader, after the raid</comment>
+  </data>
+  <data name="CompassNorth" xml:space="preserve">
+    <value>N</value>
+    <comment>en: N</comment>
+  </data>
+  <data name="CompassNorthEast" xml:space="preserve">
+    <value>NO</value>
+    <comment>en: NE</comment>
+  </data>
+  <data name="CompassEast" xml:space="preserve">
+    <value>O</value>
+    <comment>en: E</comment>
+  </data>
+  <data name="CompassSouthEast" xml:space="preserve">
+    <value>SO</value>
+    <comment>en: SE</comment>
+  </data>
+  <data name="CompassSouth" xml:space="preserve">
+    <value>S</value>
+    <comment>en: S</comment>
+  </data>
+  <data name="CompassSouthWest" xml:space="preserve">
+    <value>SW</value>
+    <comment>en: SW</comment>
+  </data>
+  <data name="CompassWest" xml:space="preserve">
+    <value>W</value>
+    <comment>en: W</comment>
+  </data>
+  <data name="CompassNorthWest" xml:space="preserve">
+    <value>NW</value>
+    <comment>en: NW</comment>
+  </data>
+  <data name="DirectionAhead" xml:space="preserve">
+    <value>vorne</value>
+    <comment>en: ahead</comment>
+  </data>
+  <data name="DirectionAheadRight" xml:space="preserve">
+    <value>vorne rechts</value>
+    <comment>en: ahead-right</comment>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>rechts</value>
+    <comment>en: right</comment>
+  </data>
+  <data name="DirectionBehindRight" xml:space="preserve">
+    <value>hinten rechts</value>
+    <comment>en: behind-right</comment>
+  </data>
+  <data name="DirectionBehind" xml:space="preserve">
+    <value>hinten</value>
+    <comment>en: behind</comment>
+  </data>
+  <data name="DirectionBehindLeft" xml:space="preserve">
+    <value>hinten links</value>
+    <comment>en: behind-left</comment>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>links</value>
+    <comment>en: left</comment>
+  </data>
+  <data name="DirectionAheadLeft" xml:space="preserve">
+    <value>vorne links</value>
+    <comment>en: ahead-left</comment>
+  </data>
+</root>
