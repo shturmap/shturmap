@@ -103,11 +103,16 @@ public sealed partial class GameSession
         return _exitReader;
     }
 
-    /// <summary>The exits of a map a list's rows can name for a side: marker id, and the names in the game's language and in English.</summary>
+    /// <summary>
+    /// The exits of a map a list's rows can name for a side: marker id, and the names in the data's language, in the
+    /// game's own when the data is in another (<see cref="Shturmap.Data.TarkovDev.GameData.GameNames"/>: the list in the
+    /// screenshot is in the game's language), and in English.
+    /// </summary>
     public static IReadOnlyList<ExitName> ExitNames(Shturmap.Data.TarkovDev.GameData data, string mapId, RaidSide side) =>
         (data.Maps.GetValueOrDefault(mapId)?.Extracts ?? [])
             .Where(e => side == RaidSide.Scav ? !string.Equals(e.Faction, "pmc", StringComparison.OrdinalIgnoreCase) : !string.Equals(e.Faction, "scav", StringComparison.OrdinalIgnoreCase))
-            .Select(e => new ExitName("extract:" + e.Id, new[] { e.Name, data.EnglishName(e.Id, e.Name) }.OfType<string>().Where(n => n.Length > 0).Distinct().ToList()))
+            .Select(e => new ExitName("extract:" + e.Id, new[] { e.Name, data.GameNames.GetValueOrDefault(e.Id), data.EnglishName(e.Id, e.Name) }
+                .OfType<string>().Where(n => n.Length > 0).Distinct().ToList()))
             .Where(e => e.Names.Count > 0)
             .ToList();
 

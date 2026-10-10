@@ -58,6 +58,16 @@ public sealed class GameData
     /// <summary>An extract's or switch's English name: as recorded at load, else the name it carries (English data).</summary>
     public string EnglishName(string id, string? name) => EnglishNames.TryGetValue(id, out var english) ? english : name ?? "";
 
+    /// <summary>
+    /// Extracts' names by id in the game's own language, when the data is in another (the player chose another language
+    /// for Shturmap, or the pseudo-language): the game's extract list in a screenshot names them so. Empty when the data
+    /// is in the game's language, the game's is English, or its texts couldn't be had.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> GameNames { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>tarkov.dev's code for the language of <see cref="GameNames"/> ("de"), or null when there are none.</summary>
+    public string? GameNamesLanguage { get; init; }
+
     /// <summary>Objectives' kill targets, exit statuses and set kill conditions by objective id, from before translation.</summary>
     public IReadOnlyDictionary<string, ObjectiveFacts> ObjectiveFacts { get; init; } = new Dictionary<string, ObjectiveFacts>();
 

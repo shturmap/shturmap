@@ -191,33 +191,75 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>Short messages for the user ("Ballet Lover: completed", "German texts loaded.").</summary>
     public event Action<SessionNotice>? Notice;
 
+    /// <summary>
+    /// Opens the app's settings, finds the game, reads its settings and chooses the language (<see cref="Language"/>), so
+    /// the window can build its texts in it (docs/DESIGN.md §8, "The app's own language"). <see cref="StartAsync"/> does
+    /// it when it wasn't done before. Called once, before anything else of the session.
+    /// </summary>
+    public LanguageChoice Open()
+    {
+        _gate.Wait();
+        try
+        {
+            OpenOnce();
+            return Language;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private bool _opened;
+    // A settings file that couldn't be read is said once the session starts, when someone listens.
+    private string? _storeNotice;
+
+    // Under _gate.
+    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(_store), nameof(_locations))]
+    private void OpenOnce()
+    {
+        if (_opened)
+        {
+            // Opened before its window by the app. An opening that failed fails again here, rather than open the
+            // settings file a second time beside the first.
+            if (_store is null || _locations is null)
+                throw new InvalidOperationException("The session couldn't be opened; the app log says why");
+            return;
+        }
+        _opened = true;
+        var env = new WindowsGameEnvironment();
+        // A file that can't be read is set aside, so the session starts on a fresh one (review of 2026-10-09).
+        (_store, _storeNotice) = SettingsFile.Open(paths.Database, DateTime.Now);
+        _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
+        _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
+        Study.Context = StudyContext;
+#if DEVTOOLS
+        // Developer builds only (owner, 2026-10-03); a release leaves the study log off and any old days alone.
+        Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
+        Study.Prune(DateTime.Now);
+#endif
+        Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
+            ("build", BuildTime()), ("prevClean", MarkRunning()));
+        _env = env;
+        // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
+        // looked for again (the player chose a folder, or the game was installed later).
+        _locate = locations is not null ? null : Discovery ?? (folder => new InstallLocator(env).Locate(folder, discover: !NoGame));
+        _chosenFolder = _store.GetSetting(InstallFolderSetting);
+        _locations = locations ?? _locate!(_chosenFolder);
+        ReportGameFolders(_locations);
+        _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
+        AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
+        ChooseLanguageAtStart();
+    }
+
     public async Task StartAsync()
     {
         await _gate.WaitAsync();
         try
         {
-            var env = new WindowsGameEnvironment();
-            // A file that can't be read is set aside, so the session starts on a fresh one (review of 2026-10-09).
-            (_store, var storeNotice) = SettingsFile.Open(paths.Database, DateTime.Now);
-            _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
-            _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
-            Study.Context = StudyContext;
-#if DEVTOOLS
-            // Developer builds only (owner, 2026-10-03); a release leaves the study log off and any old days alone.
-            Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
-            Study.Prune(DateTime.Now);
-#endif
-            Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
-                ("build", BuildTime()), ("prevClean", MarkRunning()));
-            _env = env;
-            // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
-            // looked for again (the player chose a folder, or the game was installed later).
-            _locate = locations is not null ? null : Discovery ?? (folder => new InstallLocator(env).Locate(folder, discover: !NoGame));
-            _chosenFolder = _store.GetSetting(InstallFolderSetting);
-            _locations = locations ?? _locate!(_chosenFolder);
-            ReportGameFolders(_locations);
-            _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
-            AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
+            OpenOnce();
+            var storeNotice = _storeNotice;
+            _storeNotice = null;
             var http = CachedHttp.CreateClient();
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
             Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache,
@@ -730,8 +772,16 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// download fails. Without it, a session with given data loads no item sources.</summary>
     public Func<GameMode, ItemSources>? GivenSources { get; init; }
 
-    private async Task<GameData> FetchDataAsync(GameMode mode) =>
-        GivenData is { } given ? given(mode) : await _loader!.LoadAsync(mode, _settings.Language ?? "en", _stop.Token);
+    /// <summary>The same per mode and data language (tarkov.dev's code, "de"), for tests of the language: it takes the
+    /// place of <see cref="GivenData"/>.</summary>
+    public Func<GameMode, string, GameData>? GivenDataIn { get; init; }
+
+    // In the language chosen (LanguageChoice.Data), with the extracts' names in the game's own language beside it when
+    // that is another (the extract list in a screenshot is in the game's language).
+    private async Task<GameData> FetchDataAsync(GameMode mode, string language) =>
+        GivenDataIn is { } givenIn ? givenIn(mode, language)
+        : GivenData is { } given ? given(mode)
+        : await _loader!.LoadAsync(mode, language, _stop.Token, gameLanguage: _settings.Language);
 
     // Waits before a retry; false when the session closed meanwhile (its token may be gone by then).
     private async Task<bool> WaitedAsync(TimeSpan wait)
@@ -749,15 +799,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private async Task LoadDataAsync(GameMode mode)
     {
+        var language = Language.Data;
         try
         {
-            var data = await FetchDataAsync(mode);
+            var data = await FetchDataAsync(mode, language);
             await _gate.WaitAsync();
             try
             {
-                if (mode != _mode)
-                    return; // the mode changed while loading; a newer load is under way
+                if (mode != _mode || language != Language.Data)
+                    return; // the mode or the language changed while loading; a newer load is under way
                 _data = data;
+                // A load in another language names the maps on screen and in the raid lines anew.
+                RenameMaps();
                 _dataProblem = null;
                 _dataFailures = 0;
                 RecomputeQuests();
@@ -794,7 +847,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             await _gate.WaitAsync();
             try
             {
-                if (mode != _mode)
+                if (mode != _mode || language != Language.Data)
                     return;
                 wait = RetryWait(++_dataFailures);
                 round = _loadRound;
@@ -921,7 +974,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             GameData? data = null;
             try
             {
-                data = await FetchDataAsync(mode);
+                data = await FetchDataAsync(mode, language);
             }
             catch (Exception e) when (!_stop.IsCancellationRequested)
             {
@@ -1018,7 +1071,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     // an earlier language or mode is dropped.
     private void StartSources(GameMode mode, string language)
     {
-        if (GivenData is not null && GivenSources is null)
+        if ((GivenData is not null || GivenDataIn is not null) && GivenSources is null)
             return;
         var round = ++_sourcesRound;
         _sourcesFailures = 0;
@@ -1900,6 +1953,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private void Publish()
     {
+        // Sorted and written in the language in use now, also from a loop started before it switched.
+        UiLanguage.ApplyHere();
         var raid = ShownRaid;
         var inRaid = raid.Phase != RaidPhase.Menu;
         // The rail follows the raid: its objectives, ways out, plan and raid facts are the raid's own map's, also while
@@ -2034,6 +2089,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 : new(false, _dataProblem is null ? "Loading game data…" : "No game data"),
             DataProblem = _dataProblem,
             GameLanguage = _settings.Language,
+            Language = ShownLanguage(),
             StudyLogOn = Study.Enabled,
             DeleteScreenshots = _deleteScreenshots,
             ScreenshotKeys = _settings.ScreenshotKeys,
