@@ -37,4 +37,18 @@ public class LanguageTests
         Assert.DoesNotContain('[', text);
         Assert.True(In(UiLanguage.Pseudo, () => PseudoText.IsPseudo(snapshot.DataProblem!.What)));
     }
+
+    // Dates in the Session's words are written as the language in use writes them (UiLanguage.DayMonth): German
+    // "4. Okt.", where "d MMM" gave "4 Okt." (review of 2026-10-10). The German texts aren't written yet, so the
+    // sentences around them are English here.
+    [Fact]
+    public void Dates_are_written_as_the_language_in_use_writes_them()
+    {
+        var at = new DateTime(2026, 1, 1, 14, 5, 0);
+        Assert.Equal("Done · ticked by you, 1 Jan", QuestCards.TickedText(DateOnly.FromDateTime(at)));
+        Assert.EndsWith(", 1. Jan.", In(UiLanguage.German, () => QuestCards.TickedText(DateOnly.FromDateTime(at))));
+        Assert.EndsWith(" 1 Jan 14:05", new ModeReading(at).Tooltip(true, at.AddDays(2)));
+        Assert.EndsWith(" 1. Jan., 14:05", In(UiLanguage.German, () => new ModeReading(at).Tooltip(true, at.AddDays(2))));
+        Assert.EndsWith(" 14:05", In(UiLanguage.German, () => new ModeReading(at).Tooltip(true, at.AddHours(1))));
+    }
 }

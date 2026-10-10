@@ -178,7 +178,7 @@ its settings. In a sentence put "Taste" before a key that is also a word ("TASTE
 | 5,000; 41,283; 2.5 | 5.000; 41.283; 2,5 | `N0` with `UiLanguage.Culture` |
 | 5,000 ₽ | 5.000 ₽; 1.000 $; 1.000 € | the number, a no-break space, the sign |
 | ×3; 2× Bolts | ×3; 2× | as the game and the English |
-| 25 Sep | 25. Sept. | .NET's de-DE with `d. MMM` (Jan., März, Mai, Juni, Juli, Sept., Okt.); `d MMM` gives „25 Sept.“, wrong in German |
+| 25 Sep; 25 Sep 16:40 | 25. Sept.; 25. Sept., 16:40 | `UiLanguage.DayMonth`, `DayMonthTime`: .NET's de-DE with `d. MMM` (Jan., März, Mai, Juni, Juli, Sept., Okt.); `d MMM` gives „25 Sept.“, wrong in German |
 | 25/09; 16:40 | 25.09.; 16:40 | 24 h; no „Uhr“ in labels |
 | 12 min; 45 s; 6 h | 12 min; 45 s; 6 h | unit symbols; caps 12 MIN |
 | 69 m; 2.5 km; 38 % | 69 m; 2,5 km; 38 % | a space before the unit and % |

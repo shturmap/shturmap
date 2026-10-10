@@ -6,7 +6,7 @@ namespace Shturmap.Core;
 
 /// <summary>
 /// The language of Shturmap's own texts, and with it the way its numbers and dates are written and its lists sorted.
-/// They go together: "Pay 5,000 ₽" and "25 Sep" in English texts, "5.000 ₽" and "25. Sep." in German ones, whatever
+/// They go together: "Pay 5,000 ₽" and "25 Sep" in English texts, "5.000 ₽" and "25. Sept." in German ones, whatever
 /// Windows' own formats are (review of 2026-10-04: a German Windows showed "5.000 ₽" and "3 Okt" inside English
 /// sentences). One language for everything (owner, 2026-10-10): the player's choice in settings, else the game's
 /// language, else Windows' display language, else English (<see cref="Choose"/>). It can change while Shturmap runs.
@@ -96,6 +96,39 @@ public static class UiLanguage
             return PseudoText.Of(texts.GetString(key, CultureInfo.InvariantCulture) ?? key);
         return texts.GetString(key, _culture) ?? key;
     }
+
+    /// <summary>
+    /// A day and month as the language in use writes it inside a sentence: "4 Oct" in English, "4. Okt." in German (the
+    /// month as .NET abbreviates it in that language: "25. Sept."). A pattern of one language ("d MMM") read in another
+    /// writes it wrong: German "4 Okt.".
+    /// </summary>
+    public static string DayMonth(DateTime day)
+    {
+        var culture = _culture;
+        return day.ToString(DatePatterns(culture).DayMonth, culture);
+    }
+
+    /// <inheritdoc cref="DayMonth(DateTime)"/>
+    public static string DayMonth(DateOnly day)
+    {
+        var culture = _culture;
+        return day.ToString(DatePatterns(culture).DayMonth, culture);
+    }
+
+    /// <summary>A day and month with the time, as the language in use writes it: "4 Oct 14:30", German "4. Okt., 14:30".</summary>
+    public static string DayMonthTime(DateTime at)
+    {
+        var culture = _culture;
+        return at.ToString(DatePatterns(culture).DayMonthTime, culture);
+    }
+
+    // How each language writes a date inside its sentences: one row per language, a language without one writes
+    // English's until it has its own. German's are CLDR's ("d. MMM", and a comma before the time).
+    private static (string DayMonth, string DayMonthTime) DatePatterns(CultureInfo culture) => culture.TwoLetterISOLanguageName switch
+    {
+        German => ("d. MMM", "d. MMM, HH:mm"),
+        _ => ("d MMM", "d MMM HH:mm"),
+    };
 
     /// <summary>
     /// A text of Shturmap's own in English whatever the language in use, its placeholders filled in English formats: for

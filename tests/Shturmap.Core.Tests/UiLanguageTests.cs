@@ -11,8 +11,9 @@ public class UiLanguageTests
     public void Numbers_and_dates_read_as_the_english_texts_around_them()
     {
         Assert.Equal("5,000", 5000.ToString("N0", UiLanguage.Culture));
-        Assert.Equal("25 Sep", new DateTime(2026, 9, 25).ToString("d MMM", UiLanguage.Culture));
-        Assert.Equal("4 Oct", new DateTime(2026, 10, 4).ToString("d MMM", UiLanguage.Culture));
+        Assert.Equal("25 Sep", UiLanguage.DayMonth(new DateTime(2026, 9, 25)));
+        Assert.Equal("4 Oct", UiLanguage.DayMonth(new DateOnly(2026, 10, 4)));
+        Assert.Equal("4 Oct 14:30", UiLanguage.DayMonthTime(new DateTime(2026, 10, 4, 14, 30, 0)));
     }
 
     [Fact]
@@ -33,5 +34,31 @@ public class UiLanguageTests
             CultureInfo.DefaultThreadCurrentCulture = before.Item3;
             CultureInfo.DefaultThreadCurrentUICulture = before.Item4;
         }
+    }
+}
+
+// Each language writes a day and month its own way (UiLanguage.DayMonth): German puts a dot after the day, so "d MMM"
+// read in German gives "4 Okt.", which is wrong (review of 2026-10-10).
+[Collection("UiLanguage")]
+public class DayMonthTests
+{
+    [Fact]
+    public void A_day_and_month_read_as_the_language_in_use_writes_them()
+    {
+        try
+        {
+            UiLanguage.Set(UiLanguage.German);
+            Assert.Equal("25. Sept.", UiLanguage.DayMonth(new DateTime(2026, 9, 25)));
+            Assert.Equal("4. Okt.", UiLanguage.DayMonth(new DateOnly(2026, 10, 4)));
+            Assert.Equal("1. März", UiLanguage.DayMonth(new DateOnly(2026, 3, 1)));
+            Assert.Equal("4. Okt., 14:30", UiLanguage.DayMonthTime(new DateTime(2026, 10, 4, 14, 30, 0)));
+            UiLanguage.Set(UiLanguage.Pseudo);
+            Assert.Equal("4 Oct 14:30", UiLanguage.DayMonthTime(new DateTime(2026, 10, 4, 14, 30, 0)));
+        }
+        finally
+        {
+            UiLanguage.Set(UiLanguage.English);
+        }
+        Assert.Equal("4 Oct", UiLanguage.DayMonth(new DateOnly(2026, 10, 4)));
     }
 }

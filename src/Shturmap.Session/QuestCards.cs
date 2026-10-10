@@ -131,7 +131,7 @@ public static class QuestCards
             QuestState.Failed => SessionTexts.QuestLost,
             _ => SessionTexts.QuestNotStarted,
         };
-        var day = status.At?.ToString("d MMM", UiLanguage.Culture);
+        var day = status.At is { } at ? UiLanguage.DayMonth(at) : null;
         var source = status.Source switch
         {
             ObservationSource.Log => SessionTexts.QuestStateFromLog(day: day),
@@ -143,7 +143,7 @@ public static class QuestCards
 
     /// <summary>"Done · ticked by you, 4 Oct": where an objective's "done" comes from (docs/DESIGN.md §4, "Says why").</summary>
     public static string TickedText(DateOnly day) =>
-        day == default ? SessionTexts.TickedByYou : SessionTexts.TickedByYouOn(day: day.ToString("d MMM", UiLanguage.Culture));
+        day == default ? SessionTexts.TickedByYou : SessionTexts.TickedByYouOn(day: UiLanguage.DayMonth(day));
 
     private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live, bool active, IReadOnlyDictionary<string, DateOnly>? ticks)
     {
