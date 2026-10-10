@@ -1,3 +1,4 @@
+using Shturmap.Core;
 using Shturmap.Core.Quests;
 using Shturmap.Data.TarkovDev;
 
@@ -48,7 +49,7 @@ public static class ScavRaid
                 var count = n.Quests.Values.Sum();
                 if (count > 1)
                     text = SessionTexts.ItemTimes(count: count, item: text);
-                var questIds = n.Quests.Keys.OrderBy(id => data.Tasks[id].Name, StringComparer.CurrentCulture).ToList();
+                var questIds = n.Quests.Keys.OrderBy(id => data.Tasks[id].Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList();
                 return new LootView(
                     spots.MaxBy(s => s.Spots).Item,
                     text,
@@ -58,7 +59,7 @@ public static class ScavRaid
             })
             .OrderByDescending(l => l.SpotsHere)
             .ThenByDescending(l => l.QuestIds.Count)
-            .ThenBy(l => l.Text, StringComparer.CurrentCulture)
+            .ThenBy(l => l.Text, StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
             .ToList();
     }
 }

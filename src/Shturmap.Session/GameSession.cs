@@ -1427,7 +1427,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>A completed quest for its cue: its trader and the quests that need it done (the quest card's UNLOCKS).</summary>
     public static CompletedQuest Completion(GameData data, ApiTask task) => new(task.Id, task.Name, task.Trader, data.TraderName(task.Trader),
         data.Tasks.Values.Where(t => t.TaskRequirements?.Any(r => r.Task == task.Id) == true)
-            .Select(t => t.Name).Order(StringComparer.CurrentCulture).ToList());
+            .Select(t => t.Name).Order(StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList());
 
     private void ForgetReplay()
     {
@@ -2070,13 +2070,13 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Objectives = objectives
                 .OrderBy(o => o.HasPlace ? 0 : 1)
                 .ThenBy(o => o.Distance ?? double.MaxValue)
-                .ThenBy(o => o.QuestName, StringComparer.CurrentCulture)
+                .ThenBy(o => o.QuestName, StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
                 .ToList(),
             // Nearest first; once the game's list was read, the exits it doesn't name come last (they are no way out this raid).
             // Extracts first, nearest first; then transits, which lead to another map, not out (owner, 2026-10-05: "It
             // counts transits as exfils. I would show primarily exfils"); last the extracts the game's list left out.
             Extracts = extracts.OrderBy(e => e.State == ExitState.NotListed ? 2 : e.Kind == MarkerKind.Transit ? 1 : 0)
-                .ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
+                .ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList(),
             ExitsReadAt = inRaid ? _exitsReadAt : null,
             ReadExits = _readExits,
             ExitReaderLanguage = _exitReaderLanguage,
