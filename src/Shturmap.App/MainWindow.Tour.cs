@@ -280,6 +280,13 @@ public sealed partial class MainWindow
             TourTicks.Children.Add(tick);
         }
         _tourTitleTimer?.Stop();
+        // The band laid out with the chapter's title as it ends and its lines before the stage frames the map above it
+        // (TourFoot): read before, its height was the last chapter's, or the empty band's when the tour opened (owner,
+        // 2026-10-11: at 900×560 German "PICKEN UND DRAUFZEIGEN" takes two lines, and the band covered PICK AND
+        // POINT's pointer). The title then decodes in the room it ends in.
+        TourTitle.Text = chapter.Title;
+        PlaceTourTitle();
+        TourLayer.UpdateLayout();
         if (_tourMotion)
         {
             _tourTitleTimer = Decode(TourTitle, chapter.Title, TimeSpan.FromMilliseconds(700));
@@ -291,11 +298,7 @@ public sealed partial class MainWindow
             });
         }
         else
-        {
-            TourTitle.Text = chapter.Title;
             TourRuleScale.ScaleX = 1;
-        }
-        PlaceTourTitle();
         Study.Ui("tour.chapter", ("n", at + 1), ("stage", chapter.Stage));
         _ = StageAsync(chapter, run);
     }
@@ -483,9 +486,10 @@ public sealed partial class MainWindow
             TourRing(ToLayer(picked.Position), Linked.PickBrush(0));
         if (!await TourWait(1900, run) || MarkerOf(content, second) is not { } pointed || second == first)
             return;
-        // Pointing: another quest lights up everywhere it is, and pulses.
+        // Pointing: another quest lights up everywhere it is, and pulses. The pointer comes up from just above the band,
+        // whatever its height (until 2026-10-11 from 240 DIP above the map's foot: under the German band at 900×560).
         var map = MapRect();
-        TourPointer(new Point(map.X + map.Width * 0.62, map.Bottom - 240));
+        TourPointer(new Point(map.X + map.Width * 0.62, map.Bottom - TourFoot - 50));
         await TourPointerTo(ToLayer(pointed.Position), 900, run);
         if (!await TourWait(100, run))
             return;
@@ -590,7 +594,7 @@ public sealed partial class MainWindow
         TourCanvas.Children.Remove(plate);
         // The view takes in the listed extracts and you, above the band; the frame follows to what it shows of them.
         var points = listed.Concat(unsure).Select(m => m.Position).Append(you).ToList();
-        var view = Map.FramingAbove(scene, points, TourFraming, TourBand.ActualHeight + 46, 300);
+        var view = Map.FramingAbove(scene, points, TourPadding, TourFoot, 300);
         if (_tourMotion)
         {
             Map.AnimateView(view, TimeSpan.FromMilliseconds(1200));
@@ -744,6 +748,15 @@ public sealed partial class MainWindow
     // (Camera.LabelRoom, 150): 90 still cut the picked quest's name there (owner, 2026-10-09).
     private const double TourFraming = 90;
 
+    // DIPs at the map's foot that a chapter frames its map above: the band, as laid out for the chapter (ShowChapter),
+    // and the 46 under it.
+    private double TourFoot => TourBand.ActualHeight + 46;
+
+    // The room around what a chapter frames: TourFraming, less where the band leaves too little above it, so that what
+    // is framed keeps at least TourFraming itself (2026-10-11: at 900×560 PICK AND POINT's German band, 254 DIP, leaves
+    // 181 above it; 90 on each side would leave what is framed 1 DIP, and the map would shrink to a speck).
+    private double TourPadding => Math.Clamp((Map.ActualHeight - TourFoot - TourFraming) / 2, 0, TourFraming);
+
     // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band.
     private async Task TourScene(GameData data, TourExampleSet example, IReadOnlyCollection<string> quests, int run,
         Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres)
@@ -755,7 +768,7 @@ public sealed partial class MainWindow
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewTour(map: Caps.Of(example.MapName));
         ViewModel.PreviewHint = AppTexts.PreviewExample;
-        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourBand.ActualHeight + 46, TourFraming);
+        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourFoot, TourPadding);
         // One layout pass, so the view's points are where they are drawn.
         await Task.Delay(_tourMotion ? 60 : 30);
     }

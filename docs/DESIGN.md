@@ -1159,7 +1159,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes beside
     its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band),
     and 150 on the right, the map's label room (owner, 2026-10-09: 90 still cut PICK AND POINT's picked quest there;
-    "Map drawing", *Room for labels on the right*).
+    "Map drawing", *Room for labels on the right*). Above the band as it stands in that chapter, its title and lines in
+    the language in use, and PICK AND POINT's pointer comes up from just above it (owner, 2026-10-11: the pointer stays
+    above the band in any language and window size; at 900×560 the German title takes two lines, and the band covered
+    the pointer and the quest it points at: the framing read the band's height before the band was laid out for the
+    chapter, the empty band's when the tour opened, and the pointer set off 240 DIP above the map's foot, under that
+    band). Where the band leaves little room above it, the 90 gives way, so what is framed keeps at least 90 itself
+    (PICK AND POINT's German band at 900×560 leaves 181, and 90 on each side would have left it 1).
     IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
     `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
     own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is spaced as the rail's
