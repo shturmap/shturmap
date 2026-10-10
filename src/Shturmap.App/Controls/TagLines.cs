@@ -29,27 +29,39 @@ public sealed class TagLines : Panel
     private readonly List<TextBlock> _parts = [];
     private bool _stacked;
 
+    // Its words in place: the text blocks stay and take the new words (a template's binding sets the parts again with
+    // the same words often), so what is on screen keeps its place until the next layout.
     private void Build()
     {
-        Children.Clear();
-        _parts.Clear();
         var parts = Parts ?? [];
-        _line = Text(string.Join(" · ", parts));
-        Children.Add(_line);
-        foreach (var part in parts.Count > 1 ? parts : [])
+        if (_line is null)
         {
-            var block = Text(part);
+            _line = Text();
+            Children.Add(_line);
+        }
+        _line.Text = string.Join(" · ", parts);
+        var stacked = parts.Count > 1 ? parts : [];
+        while (_parts.Count > stacked.Count)
+        {
+            Children.Remove(_parts[^1]);
+            _parts.RemoveAt(_parts.Count - 1);
+        }
+        while (_parts.Count < stacked.Count)
+        {
+            var block = Text();
             // The whole tag says it once to a screen reader.
             AutomationProperties.SetAccessibilityView(block, AccessibilityView.Raw);
             _parts.Add(block);
             Children.Add(block);
         }
+        for (var i = 0; i < stacked.Count; i++)
+            _parts[i].Text = stacked[i];
         InvalidateMeasure();
     }
 
-    private static TextBlock Text(string text) => new()
+    private static TextBlock Text() => new()
     {
-        Text = text, Style = (Style)Application.Current.Resources["StatusText"], FontSize = 11, TextAlignment = TextAlignment.Right,
+        Style = (Style)Application.Current.Resources["StatusText"], FontSize = 11, TextAlignment = TextAlignment.Right,
         Foreground = (Brush)Application.Current.Resources["MutedBrush"],
     };
 
