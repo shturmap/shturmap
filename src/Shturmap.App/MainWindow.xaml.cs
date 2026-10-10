@@ -1735,17 +1735,28 @@ public sealed partial class MainWindow : Window
 
     // The help panel opens by itself once, the first time the app has something to show. Not in a raid, where it
     // would lie over the raid card until someone clicks it away: then it opens at the next chance, when the raid is
-    // over (WhileInRaid). A snapshot run opens it for its picture, whatever the state.
+    // over (WhileInRaid). A snapshot run opens it for its picture, whatever the state. Before the window is up it can't
+    // open: then it opens with the next snapshot of the session.
     private void ShowHelpOnFirstRun(SessionSnapshot s)
     {
         if (_helpShownOnce || s.Data is null || DemoMode)
             return;
         if (!SnapshotMode && WhileInRaid.Waits(s.Raid.Phase))
             return;
-        _helpShownOnce = true;
         if (SnapshotMode || _session.GetSetting("help.seen") is null)
-            _helpByItself = ShowHelp();
+        {
+            if (!ShowHelp())
+                return;
+            _helpByItself = true;
+            _helpInSnapshot = SnapshotMode;
+        }
+        _helpShownOnce = true;
     }
+
+    // A snapshot's help, opened for its picture: it is in the picture even if it closed on the way (review of
+    // 2026-10-10: help.png was missing from some of the layout check's runs, in every language, where the panel had
+    // opened; six runs in a row kept it, and what closed it wasn't found).
+    private bool _helpInSnapshot;
 
     // The help panel is open because it opened by itself (the first start), not because the player asked for it.
     private bool _helpByItself;
@@ -1792,16 +1803,19 @@ public sealed partial class MainWindow : Window
         ViewModel.UninstallAsking = false;
     }
 
-    private async Task<bool> OpenSettingsForSnapshotAsync()
+    private Task<bool> OpenSettingsForSnapshotAsync() => OpenForSnapshotAsync(SettingsFlyout, SettingsButton);
+
+    // A flyout opened for a snapshot's picture, once it has opened and laid out its contents.
+    private static async Task<bool> OpenForSnapshotAsync(Flyout flyout, FrameworkElement button)
     {
-        if (SettingsButton.XamlRoot is null)
+        if (button.XamlRoot is null)
             return false;
         var opened = new TaskCompletionSource();
         void Done(object? sender, object e) => opened.TrySetResult();
-        SettingsFlyout.Opened += Done;
+        flyout.Opened += Done;
         try
         {
-            ShowSettings();
+            flyout.ShowAt(button);
             if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
                 return false;
             await Task.Delay(300); // one layout pass for its contents
@@ -1809,7 +1823,7 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
-            SettingsFlyout.Opened -= Done;
+            flyout.Opened -= Done;
         }
     }
 
@@ -2247,6 +2261,8 @@ public sealed partial class MainWindow : Window
             }
             else
                 await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
+            if (_helpInSnapshot && !TourOpen && !HelpFlyout.IsOpen)
+                await OpenForSnapshotAsync(HelpFlyout, HelpButton);
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
                 await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
             // Settings never opens by itself, so a snapshot opens it just for its picture (help closes with that).
