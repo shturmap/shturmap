@@ -32,6 +32,15 @@ public class LineRoomTests
     }
 
     [Fact]
+    public void Where_it_is_is_never_narrower_than_its_widest_part()
+    {
+        // A longer language's direction (the pseudo-language's "[BÉHÎÑÐ-ĻÉƑŢ ····]", 87 DIP) beside a wide hand-over.
+        Assert.Equal(87, LineRoom.Where(Line, 95, 150, Spacing, least: 87));
+        // And never wider than it is on one line.
+        Assert.Equal(120, LineRoom.Where(Line, 95, 120, Spacing, least: 130));
+    }
+
+    [Fact]
     public void An_unbounded_line_leaves_it_as_it_is()
     {
         Assert.Null(LineRoom.Where(double.PositiveInfinity, 70, 135, Spacing));

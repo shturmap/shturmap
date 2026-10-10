@@ -30,6 +30,11 @@ public sealed class ObjectiveLine : Panel
     // What a part takes across: nothing for one that is collapsed or shows nothing.
     private static double Across(UIElement? e) => e is { Visibility: Visibility.Visible } ? e.DesiredSize.Width : 0;
 
+    // The narrowest where it is can be: its distance, and its tag's widest part (TagLines.Narrowest), which can't break.
+    private static double Narrowest(UIElement where) => where is Panel panel
+        ? panel.Children.Where(c => c.Visibility == Visibility.Visible).Select(c => c is TagLines tag ? tag.Narrowest : c.DesiredSize.Width).DefaultIfEmpty(0).Max()
+        : 0;
+
     // The width a part takes with the spacing before it.
     private double Side(UIElement? e) => Across(e) > 0 ? Across(e) + Spacing : 0;
 
@@ -40,7 +45,7 @@ public sealed class ObjectiveLine : Panel
         var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
         handover?.Measure(unbounded);
         where?.Measure(unbounded);
-        if (where is not null && Across(where) > 0 && LineRoom.Where(line, Across(handover), Across(where), Spacing) is { } room)
+        if (where is not null && Across(where) > 0 && LineRoom.Where(line, Across(handover), Across(where), Spacing, Narrowest(where)) is { } room)
             where.Measure(new Size(room, double.PositiveInfinity));
         var rest = double.IsInfinity(line) ? double.PositiveInfinity : Math.Max(0, line - Side(handover) - Side(where));
         words?.Measure(new Size(rest, double.PositiveInfinity));

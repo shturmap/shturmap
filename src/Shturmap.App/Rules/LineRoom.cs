@@ -16,13 +16,14 @@ public static class LineRoom
     /// <summary>
     /// The width where it is may take on a line of <paramref name="line"/> DIP, beside a hand-over of
     /// <paramref name="handover"/> (0 without one) and with <paramref name="spacing"/> before each of the two: null where
-    /// it takes what it needs (<paramref name="where"/>, on one line), else less.
+    /// it takes what it needs (<paramref name="where"/>, on one line), else less, but never less than
+    /// <paramref name="least"/>, its widest part, which can't break.
     /// </summary>
-    public static double? Where(double line, double handover, double where, double spacing)
+    public static double? Where(double line, double handover, double where, double spacing, double least = 0)
     {
         var beside = (handover > 0 ? handover + spacing : 0) + spacing;
         if (double.IsInfinity(line) || line - beside - where >= line * WordsShare)
             return null;
-        return Math.Max(0, line * (1 - WordsShare) - beside);
+        return Math.Min(where, Math.Max(least, line * (1 - WordsShare) - beside));
     }
 }

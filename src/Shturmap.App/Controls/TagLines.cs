@@ -29,6 +29,9 @@ public sealed class TagLines : Panel
     private readonly List<TextBlock> _parts = [];
     private bool _stacked;
 
+    /// <summary>The narrowest it can be, its widest part, once measured.</summary>
+    public double Narrowest { get; private set; }
+
     // Its words in place: the text blocks stay and take the new words (a template's binding sets the parts again with
     // the same words often), so what is on screen keeps its place until the next layout.
     private void Build()
@@ -72,6 +75,7 @@ public sealed class TagLines : Panel
             child.Measure(unbounded);
         if (_line is null)
             return new Size(0, 0);
+        Narrowest = _parts.Count > 1 ? _parts.Max(p => p.DesiredSize.Width) : _line.DesiredSize.Width;
         _stacked = _parts.Count > 1 && _line.DesiredSize.Width > availableSize.Width;
         return _stacked
             ? new Size(_parts.Max(p => p.DesiredSize.Width), _parts.Sum(p => p.DesiredSize.Height))
