@@ -51,6 +51,8 @@ public sealed partial class MainWindow
     private Path? _tourPointer;
     private Point _tourPointerAt;
     private TourExampleSet? _tourExample;
+    // The game data the chapter on screen was staged from.
+    private GameData? _tourStagedWith;
     // The view of the player's own map when the tour opened: every map the tour stages gives it back as it was. Kept
     // apart from the previews' own, which a stage beginning while the last one's map is still coming back would take
     // from the staged view.
@@ -90,8 +92,19 @@ public sealed partial class MainWindow
     // after it, at its chapter; "--tour <n>" opens it for a snapshot. Never in the website demo.
     private void ShowTourWhenDue(SessionSnapshot s)
     {
-        if (s.Data is null || DemoMode || TourOpen)
+        if (s.Data is null || DemoMode)
             return;
+        if (TourOpen)
+        {
+            // The game data came anew (in another language after a switch): the chapter's example is staged again from
+            // it, so its names are the new data's (review of 2026-10-10: the example raid card kept the English names).
+            if (!ReferenceEquals(s.Data, _tourStagedWith))
+            {
+                _tourExample = null;
+                ShowChapter(_tourAt);
+            }
+            return;
+        }
         if (TourOnStart is { } n)
         {
             TourOnStart = null;
@@ -250,6 +263,7 @@ public sealed partial class MainWindow
         var run = ++_tourRun;
         EndTourStage();
         _tourAt = at;
+        _tourStagedWith = _snapshot?.Data;
         var chapter = TourChapters[at];
         var count = TourChapters.Count;
         TourEyebrow.Text = Tour.Eyebrow(at, count);

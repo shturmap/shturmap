@@ -1111,9 +1111,14 @@ public sealed partial class MainWindow : Window
         Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _scenes.Forget();
+        PreviewHidesFloors();
         ViewModel.PreviewText = AppTexts.PreviewMap(map: Caps.Of(map.Name));
         Study.Ui("map.preview", ("map", normalizedName));
     }
+
+    // The floor picker is the shown map's: while another map is previewed it steps aside, and the shown map's scene
+    // puts it back when the preview ends (review of 2026-10-10: a tour chapter staged on Customs showed Streets' floors).
+    private void PreviewHidesFloors() => ViewModel.Floors = [];
 
     private void EndPreview(bool restore)
     {
@@ -1714,9 +1719,14 @@ public sealed partial class MainWindow : Window
         if (ShowQuest is not { } text || s.Data is null || s.Plan.Count == 0 && s.Objectives.Count == 0)
             return;
         ShowQuest = null;
+        // By its name in the data's language, or by tarkov.dev's normalized name, the same in every language ("Dandies",
+        // "dandies"): a German run found no "Dandies" and showed no card (review of 2026-10-10).
+        var normalized = text.Trim().ToLowerInvariant().Replace(' ', '-');
+        var data = s.Data;
         var id = s.Plan.SelectMany(p => p.Finish.Concat(p.Progress)).Select(q => (q.QuestId, q.Name))
             .Concat(s.Objectives.Select(o => (o.QuestId, Name: o.QuestName)))
-            .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).QuestId;
+            .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)
+                                 || data.Tasks.GetValueOrDefault(q.QuestId)?.NormalizedName?.Contains(normalized, StringComparison.Ordinal) == true).QuestId;
         if (id is null || BuildCard(id) is not { } view)
             return;
         // Let the rail lay out first, so the highlight lands on real rows. Then: the quest's card, and the card of the
@@ -2245,6 +2255,10 @@ public sealed partial class MainWindow : Window
     /// the text Copy diagnostics would copy.</summary>
     public async Task SaveSnapshotAsync(string folder)
     {
+        // In the language in use: the current culture travels with async work, and a snapshot's began with the app,
+        // before a switch ("--switch-language"; the layout check took the German switch for none, its culture still
+        // English, review of 2026-10-10). What the window shows was right: it formats with UiLanguage.Culture.
+        UiLanguage.ApplyHere();
         Directory.CreateDirectory(folder);
         try
         {

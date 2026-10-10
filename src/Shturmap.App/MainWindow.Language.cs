@@ -116,9 +116,10 @@ public sealed partial class MainWindow
             var labels = _whatsNewShown.Select(w => w.Label).ToHashSet(StringComparer.Ordinal);
             ShowWhatsNew(WhatsNewSections.Where(w => labels.Contains(w.Label)).ToList(), "language");
         }
-        // The report dialog's words that follow its state.
+        // The report dialog's words that follow its state, and its example while the box still holds it as put there.
         SayShowSent();
         SayCancel();
+        SayReportExample();
         if (ReportOverlay.Visibility == Visibility.Visible)
         {
             SetReportKind(_reportKind);

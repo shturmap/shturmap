@@ -115,7 +115,10 @@ public sealed partial class MainWindow
             ResetReport();
         SetReportKind(kind);
         if (prefill is not null && ReportText.Text.Trim().Length == 0)
-            ReportText.Text = prefill;
+        {
+            ReportText.Text = _reportPrefill = prefill;
+            _reportPrefillIsExample = prefill == AppTexts.ReportExample;
+        }
         ReportStatusText.Visibility = Visibility.Collapsed;
         ReportSentView.Visibility = showSent ? Visibility.Visible : Visibility.Collapsed;
         SayShowSent();
@@ -206,6 +209,18 @@ public sealed partial class MainWindow
         }
         if (over > 0)
             ReportText.Height = Math.Max(ReportTextLeast, ReportTextTallest - over);
+    }
+
+    // What the dialog put in the box itself, as long as the player hasn't changed it: the example (snapshots) is said
+    // again in a new language, as a fresh start in it would show it (the layout check's switch, docs/LANGUAGES.md);
+    // what the player wrote is never touched.
+    private string? _reportPrefill;
+    private bool _reportPrefillIsExample;
+
+    private void SayReportExample()
+    {
+        if (_reportPrefillIsExample && _reportPrefill is not null && ReportText.Text == _reportPrefill)
+            ReportText.Text = _reportPrefill = AppTexts.ReportExample;
     }
 
     // The preview's link says what a click does now, and is said again in a new language (MainWindow.Language).
