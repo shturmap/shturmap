@@ -154,10 +154,10 @@ holds pictures of the app and the fake raid's paths: it stays on the PC and goes
   game name of one word counts only beside names and figures ("Kaban 75%"): among English words it is one of them, since
   many are items too ("Map", "Raid", "Report"); items' short names, which only the map draws, don't count at all. So a
   word that is also an item's name hides only where it stands alone. The quest synopses, made by rules that read
-  English data, are English phrases in the pseudo-language, whose data is English, and in another language their rows
-  show tarkov.dev's sentence instead (DESIGN.md §8, "The app's own language"): the phrases the snapshot holds (Plan's
-  lines, the raid card's objectives) and the tour's example count as game names. The extract requirements read English
-  data too, but are worded with Shturmap's own texts.
+  English data, are English phrases in the pseudo-language, whose data is English, and are left out in another language
+  (Plan shows the quest's name alone, the raid card tarkov.dev's sentence; DESIGN.md §5 and §8, "The app's own
+  language"): the phrases the snapshot holds (Plan's lines, the raid card's objectives) and the tour's example count as
+  game names. The extract requirements read English data too, but are worded with Shturmap's own texts.
 
 Not checked: what the map draws (its labels are a picture), and a tooltip's own layout (only its words are listed).
 
@@ -211,7 +211,8 @@ Run this checklist from top to bottom; tick each line in the commit that adds th
 - [ ] Switching to it while running shows the same as a fresh start in it.
 - [ ] The extract list: a list drawn by the tests in that game language is read and matched (`ExitListReader` tests).
 - [ ] The rule checks of `docs/UPDATES.md` run against the cached data in that language (`shturmap-cli data pve
-      <code>`), and the English-only rules (synopses, extract requirements) fall back to tarkov.dev's sentence.
+      <code>`), and the English-only rules hold in it: no synopses (Plan shows the quest's name, the raid card
+      tarkov.dev's sentence), and the extract requirements the same as in English (`ExtractRulesTests`).
 - [ ] Diagnostics show the language and where it came from.
 
 **5. Ship**

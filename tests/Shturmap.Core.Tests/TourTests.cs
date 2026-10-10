@@ -140,7 +140,7 @@ public class TourTests
 
     // Each translated tour in docs: a language Shturmap knows, exactly the English tour's chapters and the parts they
     // frame (the x:Names), the same keys for the words the app finds by key, the placeholders those words fill in, and
-    // the band's limits. None is there yet: this holds the first one to it.
+    // the band's limits (docs/tour.de.md, and each one after it).
     [Fact]
     public void Each_translated_tour_has_the_english_tours_chapters_and_anchors()
     {

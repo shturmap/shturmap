@@ -854,7 +854,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
     The picks of the map on screen stay off a preview's map (the same review: each snapshot wrote them into it, and
     into the tour's example), and so does its floor picker, which steps aside until the preview ends (review of
-    2026-10-10: a tour chapter staged on Customs showed Streets' floors).
+    2026-10-10: a tour chapter staged on Customs showed Streets' floors; approved by the owner the same day).
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
@@ -1130,7 +1130,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     band, and a title that doesn't fit beside the buttons goes under them, across the band, wrapping only past that; a
     plate larger than the room above the band is drawn smaller to fit, never cut, and the READS / NEVER lines wrap in
     their columns in a narrow map (review of 2026-10-10, at the smallest window, 900×560: "IT FOLLOWS THE GAME" was cut
-    off, the lines took five rows beside the buttons, and the example raid card ran under the band). Motion: "Design
+    off, the lines took five rows beside the buttons, and the example raid card ran under the band). The owner approved
+    both on 2026-10-10, knowing that a plate drawn smaller goes below the type roles' sizes ("Design system", *Type*):
+    the German example raid card at 900×560 is drawn at about 80 %, rather than losing its caption. Motion: "Design
     system", *Motion*.
   - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
     section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
@@ -2605,9 +2607,11 @@ runs** (owner, 2026-10-10), from settings at once: every text on screen, the for
 game data is loaded in the new language as when the game language's texts arrive late (below), and what was on screen
 is the same as after a fresh start in that language (the layout check compares the two; docs/LANGUAGES.md). A new
 notice is said in the new language; one already shown stays as it was said. Logs, the study log, diagnostics, reports
-and the CLI stay English: they are read by whoever fixes Shturmap. The rules that read English data (quest synopses
-§5, extract requirements, `QuestCards.SaysWhere`) still read only English; in another data language their rows show
-tarkov.dev's sentence, as before.
+and the CLI stay English: they are read by whoever fixes Shturmap. The rules that read English data still read only
+English. In another data language a Plan row shows the quest's name alone and the raid card an objective's own
+sentence, tarkov.dev's (quest synopses, §5), and a quest card keeps both lines where the English pattern drops one
+(`QuestCards.SaysWhere`). The extract requirements read the extracts' English names, kept beside the data in another
+language (`GameData.EnglishName`), so they come out the same in every language.
 
 How it is made (2026-10-10). The setting is `language` in shturmap.db: `auto` (or none) or a language's code; a value
 that isn't offered (a language only a developer build offers, read by another build) counts as automatic. Windows'

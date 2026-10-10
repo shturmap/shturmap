@@ -149,7 +149,7 @@ public class WhatsNewTests
     }
 
     // Each translated What's New in docs: a language Shturmap knows, only versions the English file has, each with the
-    // English section's lines (their previews, in order) and the card's limits. None is there yet: this holds the first.
+    // English section's lines (their previews, in order) and the card's limits (docs/whats-new.de.md, and each one after it).
     [Fact]
     public void Each_translated_list_has_only_versions_and_lines_the_english_has()
     {

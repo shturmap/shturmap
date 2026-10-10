@@ -56,8 +56,8 @@ public class LanguageTests
     }
 
     // Dates in the Session's words are written as the language in use writes them (UiLanguage.DayMonth): German
-    // "4. Okt.", where "d MMM" gave "4 Okt." (review of 2026-10-10). The German texts aren't written yet, so the
-    // sentences around them are English here.
+    // "4. Okt.", where "d MMM" gave "4 Okt." (review of 2026-10-10). Only the date's end is compared, so the sentences
+    // around it can change without this test.
     [Fact]
     public void Dates_are_written_as_the_language_in_use_writes_them()
     {
