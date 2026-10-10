@@ -61,7 +61,7 @@
     <comment>en: Shows what's new at the top of the list on the left again</comment>
   </data>
   <data name="HelpKeyBefore" xml:space="preserve">
-    <value>Drück im Raid </value>
+    <value>Drück im Raid die Taste </value>
     <comment>en: In a raid, press </comment>
   </data>
   <data name="HelpKeyAfter" xml:space="preserve">
