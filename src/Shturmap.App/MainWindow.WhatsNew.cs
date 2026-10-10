@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Shturmap.App.Rules;
 using Shturmap.Core;
+using Shturmap.Core.Text;
 using Shturmap.Map;
 using Shturmap.Session;
 using SkiaSharp.Views.Windows;
@@ -20,20 +21,57 @@ public sealed partial class MainWindow
 {
     private const string WhatsNewSetting = "whatsNew.seen";
     private const string WhatsNewPreviewPrefix = "whatsnew:";
-    private IReadOnlyList<WhatsNew.Section>? _whatsNewSections;
+    // What's New in the language it was last read in (WhatsNewSections).
+    private (string Language, IReadOnlyList<WhatsNew.Section> Sections)? _whatsNewSections;
     private IReadOnlyList<WhatsNew.Section> _whatsNewShown = [];
     private bool _whatsNewChecked;
 
-    private IReadOnlyList<WhatsNew.Section> WhatsNewSections => _whatsNewSections ??= LoadWhatsNew();
-
-    private static IReadOnlyList<WhatsNew.Section> LoadWhatsNew()
+    // The lines in the language in use, read again when that has changed (Rules.BuiltDocs).
+    private IReadOnlyList<WhatsNew.Section> WhatsNewSections
     {
-        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("whats-new.md");
-        if (stream is null)
-            return [];
-        using var reader = new StreamReader(stream);
-        return WhatsNew.Parse(reader.ReadToEnd());
+        get
+        {
+            var language = UiLanguage.Code;
+            if (_whatsNewSections is { } known && known.Language == language)
+                return known.Sections;
+            var sections = LoadWhatsNew(language);
+            _whatsNewSections = (language, sections);
+            return sections;
+        }
     }
+
+    // Each version's lines in the language's translation where it has them, else in English; the pseudo-language's
+    // accented (docs/LANGUAGES.md, "Layout check").
+    private static IReadOnlyList<WhatsNew.Section> LoadWhatsNew(string language)
+    {
+        static IReadOnlyList<WhatsNew.Section>? Read(string? name) => BuiltDoc(name) is { } text ? WhatsNew.Parse(text) : null;
+        var sections = WhatsNew.InLanguage(Read(BuiltDocs.WhatsNew) ?? [], Read(BuiltDocs.TranslationOf(BuiltDocs.WhatsNew, language)));
+        return language == UiLanguage.Pseudo ? WhatsNew.Map(sections, PseudoText.Of) : sections;
+    }
+
+    /// <summary>A Markdown file built into the app (docs/tour.md, docs/whats-new.md and their translations;
+    /// Rules.BuiltDocs), or null where there is none by that name.</summary>
+    private static string? BuiltDoc(string? name)
+    {
+        if (name is null)
+            return null;
+        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream(name);
+        if (stream is null)
+            return null;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    // Help's link to the card: "WHAT'S NEW IN 0.4.0 · PRAETORIAN".
+    private string WhatsNewHelpText() => WhatsNewSections.FirstOrDefault() is { } newest ? AppTexts.HelpWhatsNew(version: WhatsNew.Tag(newest)) : "";
+
+    // The language switched: help's link and the card on screen say it in the new one.
+    private void OnWhatsNewLanguageChanged() => DispatcherQueue.TryEnqueue(() =>
+    {
+        ViewModel.WhatsNewHelp = WhatsNewHelpText();
+        if (ViewModel.WhatsNewShown)
+            RenderWhatsNew(_whatsNewShown.Select(shown => WhatsNewSections.FirstOrDefault(s => s.Label == shown.Label) ?? shown).ToList());
+    });
 
     // Once, when the app has its data: what is new since the version last seen. Not at a first start (help opens then,
     // and this version counts as seen), and never by itself in a snapshot or the website demo.
@@ -42,8 +80,9 @@ public sealed partial class MainWindow
         if (_whatsNewChecked || s.Data is null || DemoMode)
             return;
         _whatsNewChecked = true;
+        UiLanguage.Changed += OnWhatsNewLanguageChanged;
         var newest = WhatsNewSections.FirstOrDefault();
-        ViewModel.WhatsNewHelp = newest is null ? "" : $"WHAT'S NEW IN {WhatsNew.Tag(newest)}";
+        ViewModel.WhatsNewHelp = WhatsNewHelpText();
         if (SnapshotMode)
             return;
         var seen = _session.GetSetting(WhatsNewSetting);
@@ -55,14 +94,19 @@ public sealed partial class MainWindow
 
     private void ShowWhatsNew(IReadOnlyList<WhatsNew.Section> sections, string how)
     {
+        RenderWhatsNew(sections);
+        if (sections.Count > 0)
+            Study.Ui("whatsnew.show", ("how", how), ("versions", string.Join(",", sections.Select(x => x.Label))));
+    }
+
+    private void RenderWhatsNew(IReadOnlyList<WhatsNew.Section> sections)
+    {
         _whatsNewShown = sections;
         ViewModel.WhatsNewBlocks = sections
             .Select(section => new WhatsNewBlock(WhatsNew.Heading(section),
                 section.Items.Select((item, i) => new WhatsNewRow($"{section.Label}:{i}", item.Name, item.Text, Swatch(item.Preview), item.Preview == "clock")).ToList()))
             .ToList();
         ViewModel.WhatsNewShown = sections.Count > 0;
-        if (sections.Count > 0)
-            Study.Ui("whatsnew.show", ("how", how), ("versions", string.Join(",", sections.Select(x => x.Label))));
     }
 
     // A line's picture: the map's own symbol, drawn by its renderer as help's legend rows are; the clock's is drawn in XAML.
@@ -160,15 +204,15 @@ public sealed partial class MainWindow
         if (_previewing is null)
             _restoreView = Map.HasView ? Map.View : null;
         _previewing = wanted;
-        ViewModel.PreviewText = $"PREVIEW · NEW IN {section.Label} · {Caps.Of(item.Name)}";
-        ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";
+        ViewModel.PreviewText = AppTexts.PreviewWhatsNew(name: Caps.Of(item.Name), version: section.Label);
+        ViewModel.PreviewHint = AppTexts.PreviewExample;
         Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
         switch (item.Preview)
         {
             case "clock":
                 // Not on the map: the raid card's own clock, with example times, on a plate over the dimmed map.
                 WhatsNewPlateBox.Child = new Controls.RaidClock { Reading = RaidTime.Of(true, false, DateTime.Now.AddMinutes(-27), 40, DateTime.Now) };
-                WhatsNewPlateNote.Text = "THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES";
+                WhatsNewPlateNote.Text = AppTexts.WhatsNewClockExample;
                 WhatsNewPlate.Visibility = Visibility.Visible;
                 break;
             case "extracts":
@@ -268,6 +312,6 @@ public sealed partial class MainWindow
     {
         WhatsNewPlate.Visibility = Visibility.Collapsed;
         WhatsNewPlateBox.Child = null;
-        ViewModel.PreviewHint = "CLICK ITS ROW TO PLAN IT";
+        ViewModel.PreviewHint = AppTexts.PreviewClickToPlan;
     }
 }
