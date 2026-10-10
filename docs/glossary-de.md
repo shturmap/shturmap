@@ -153,8 +153,8 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 
 ## Keys
 
-As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameSettingsReader`, in
-English: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the data: **check** in
+As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameKey.Name`, each
+word a text in GameTexts: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the data: **check** in
 its settings. In a sentence put "Taste" before a key that is also a word ("TASTE DRUCK", not "DRUCK DRÜCKEN").
 
 | English | German | Note |

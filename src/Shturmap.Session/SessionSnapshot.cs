@@ -264,7 +264,8 @@ public sealed record SessionSnapshot
     /// <summary>Windows has no text recognition language, so no list can be read (known once a raid's screenshot asked).</summary>
     public bool ExitReaderMissing { get; init; }
 
-    public IReadOnlyList<string> ScreenshotKeys { get; init; } = [];
+    /// <summary>The game's screenshot keys, named when shown (<see cref="Shturmap.Game.Settings.GameKey.Name"/>).</summary>
+    public IReadOnlyList<Shturmap.Game.Settings.GameKey> ScreenshotKeys { get; init; } = [];
 
     /// <summary>Every map with work on it for the next raid, best first: the maps with picks, most picks first, then
     /// the planner's order. NEXT RAID lists them all (owner, 2026-10-09; until then its best four), and the MAP list

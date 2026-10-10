@@ -9,6 +9,7 @@ using Shturmap.Core;
 using Shturmap.Core.Navigation;
 using Shturmap.Core.Text;
 using Shturmap.Data.TarkovDev;
+using Shturmap.Game.Settings;
 using Shturmap.Map;
 using Shturmap.Session;
 using Path = Microsoft.UI.Xaml.Shapes.Path;
@@ -488,7 +489,7 @@ public sealed partial class MainWindow
         if (content is null || walk is null || Map.Scene is not { } scene)
             return;
         var you = walk.Fixes[^1].Position;
-        var key = TourKeyCap(Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.KeyPrintScreen), out var cap, out var name);
+        var key = TourKeyCap(Caps.Of((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? GameKey.PrintScreen).Name), out var cap, out var name);
         ShowPlate(key);
         if (!await TourWait(950, run))
             return;
@@ -520,7 +521,7 @@ public sealed partial class MainWindow
         if (listed.Count == 0)
             return;
         listed = listed.OrderBy(m => m.Position.HorizontalDistanceTo(you)).ToList();
-        var keyName = Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.KeyPrintScreen);
+        var keyName = Caps.Of((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? GameKey.PrintScreen).Name);
         // The tour's words are texts like the app's own (TextFormat): {key} the screenshot key, {n} the extracts on the
         // example list, {all} the map's, so a translation may put them where its grammar wants and give {all} plural forms.
         var how = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "", ("key", keyName));
@@ -1108,7 +1109,7 @@ public sealed partial class MainWindow
         CueFirst.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show)
             return;
-        var key = _snapshot?.ScreenshotKeys.FirstOrDefault() ?? AppTexts.ScreenshotKeyUnknown;
+        var key = _snapshot?.ScreenshotKeys.FirstOrDefault()?.Name ?? AppTexts.ScreenshotKeyUnknown;
         CueFirst.Text = AppTexts.CueFirstRaid(key: Caps.Of(key));
         _session.SetSetting(FirstRaidSetting, "done");
         Study.Ui("first.raid");

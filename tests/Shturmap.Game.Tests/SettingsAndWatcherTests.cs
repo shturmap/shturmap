@@ -17,7 +17,7 @@ public class GameSettingsTests
               { "keyName": "MakeScreenshot", "variants": [ { "keyCode": ["SysReq"] }, { "keyCode": ["Home"] } ], "pressType": "Press" }
             ] }
             """;
-        Assert.Equal(new[] { "PrtSc", "Home" }, GameSettingsReader.ScreenshotKeys(control));
+        Assert.Equal(new[] { "PrtSc", "Home" }, GameSettingsReader.ScreenshotKeys(control).Select(k => k.Name));
         Assert.Equal("en", GameSettingsReader.Language("""{ "Version": 1, "Language": "en" }"""));
     }
 

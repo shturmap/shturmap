@@ -454,7 +454,7 @@ public sealed partial class MainWindow : Window
         vm.StudyLogOn = s.StudyLogOn;
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
-        vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys) : AppTexts.ScreenshotKeyUnknown;
+        vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys.Select(k => k.Name)) : AppTexts.ScreenshotKeyUnknown;
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
         {

@@ -420,10 +420,6 @@
     <value>NEVER</value>
     <comment>The tour's first chapter: the heading over what Shturmap never does. Capitals.</comment>
   </data>
-  <data name="KeyPrintScreen" xml:space="preserve">
-    <value>PrtSc</value>
-    <comment>The Print Screen key, as the language's keyboards label it: the game's screenshot key where its settings don't name one.</comment>
-  </data>
   <data name="PreviewTour" xml:space="preserve">
     <value>PREVIEW · THE TOUR · {map}</value>
     <comment>The label over the map while the tour shows an example on it. {map}: the map's name in capitals. Capitals.</comment>
