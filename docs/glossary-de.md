@@ -66,7 +66,8 @@ gender.
 | head, thorax, stomach, arm, leg; headshot | Kopf, Thorax, Bauch, linker/rechter Arm, linkes/rechtes Bein; Headshot | maps `QuestCondition/Elimination/Kill/BodyPart/*`. The game: Kopfschuss |
 | kill (verb); kill, kills (noun) | killen (gekillt); Kill (der), Kills | decided („höchstens 3 Kills“). The game: eliminieren (Eliminiere in 122 texts) |
 | find; locate; obtain | finden; finden; holen | tasks, Finde 280; the game also Lokalisiere, Besorge |
-| hand over; hand-over; HAND OVER | abgeben („×3 bei Therapist abgeben“); Abgabe; ABGABE | players' word. The game: übergeben („Übergebe … an Therapist“) |
+| hand over; hand-over | abgeben („×3 bei Therapist abgeben“); Abgabe | players' word. The game: übergeben („Übergebe … an Therapist“). No text names a HAND OVER label any more: the hand-over mark is an item followed by → and the trader's portrait |
+| the hand-over mark: an item followed by → and a trader's portrait; portrait | „Item mit → und Trader-Porträt“; das Trader-Porträt | help's HelpTicks (owner, 2026-10-10) |
 | mark; MS2000 Marker | markieren; MS2000 Marker | the game too (Markiere, 55 texts) |
 | stash; plant | verstecken; platzieren | The game: verstauen (56 texts), platzieren (54) |
 | complete a quest; fail | abschließen; failen (gefailt) | The game: abschließen („Schließe die Aufgabe … ab“), fehlschlagen |
