@@ -88,6 +88,24 @@ public class DataRetryTests
             GameSession.LanguageNotice("German", refused, TimeSpan.FromMinutes(2)));
     }
 
+    // The notices name the language by tarkov.dev's code, in a text, so each language can name it its own way (docs/DESIGN.md
+    // §8, "Texts"); in English as .NET's English name did before, for each of tarkov.dev's languages. A code the texts
+    // don't know shows as it is.
+    [Fact]
+    public void The_language_notices_name_each_of_tarkov_devs_languages()
+    {
+        var refused = LoadProblem.Explain(new HttpRequestException("403", null, HttpStatusCode.Forbidden));
+        foreach (var code in new[] { "cs", "de", "en", "es", "fr", "hu", "it", "ja", "ko", "pl", "pt", "ro", "ru", "sk", "tr", "zh" })
+        {
+            var name = System.Globalization.CultureInfo.GetCultureInfo(code).EnglishName;
+            Assert.Equal($"Showing English: the {name} texts couldn't be loaded. tarkov.dev answered 403. Please report it.",
+                GameSession.LanguageNotice(code, refused, TimeSpan.FromMinutes(2)));
+            Assert.Equal($"No {name} texts on tarkov.dev; showing English.", SessionTexts.LanguageMissing(language: code));
+            Assert.Equal($"{name} texts loaded.", SessionTexts.LanguageLoaded(language: code));
+        }
+        Assert.Equal("No xx texts on tarkov.dev; showing English.", SessionTexts.LanguageMissing(language: "xx"));
+    }
+
     // ---- the game data ----
 
     [Fact]

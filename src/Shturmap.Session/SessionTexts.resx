@@ -216,4 +216,88 @@
     <value>Logs</value>
     <comment>Status bar, the LOGS chip: the game's logs are followed.</comment>
   </data>
+  <data name="FoundNoGame" xml:space="preserve">
+    <value>No game found on this PC: browse the maps, or choose the game folder in settings.</value>
+    <comment>Notice after FIND AUTOMATICALLY in settings found no game.</comment>
+  </data>
+  <data name="FoundNotRun" xml:space="preserve">
+    <value>Found Escape from Tarkov in {folder}; it hasn't run on this PC yet.</value>
+    <comment>Notice when the game is found but has no logs yet. {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="FoundGame" xml:space="preserve">
+    <value>Found Escape from Tarkov in {folder}: quests and raids follow the game now.</value>
+    <comment>Notice when the game is found (by itself, by FIND AUTOMATICALLY or a chosen folder). {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="FoundNewerLogs" xml:space="preserve">
+    <value>Newer game logs in {folder}: quests and raids follow that game now.</value>
+    <comment>Notice when Shturmap follows another install's newer logs by itself. {folder}: that install's folder, a path.</comment>
+  </data>
+  <data name="DataNoticeNotData" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again in {wait}.</value>
+    <comment>Notice when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence; {wait}: the wait before the next try, '2 minutes'.</comment>
+  </data>
+  <data name="DataNoticeNotDataLater" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often.</value>
+    <comment>The DATA chip's tooltip when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence.</comment>
+  </data>
+  <data name="DataNoticeTransient" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again in {wait}; if it keeps failing, please report it.</value>
+    <comment>Notice when the data couldn't be loaded for a reason that may pass (no connection, tarkov.dev busy). {problem}: what went wrong and what to do, sentences; {wait}: the wait before the next try, '2 minutes'.</comment>
+  </data>
+  <data name="DataNoticeTransientLater" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often; if it keeps failing, please report it.</value>
+    <comment>The DATA chip's tooltip when the data couldn't be loaded for a reason that may pass. {problem}: what went wrong and what to do, sentences.</comment>
+  </data>
+  <data name="DataNoticeFailed" xml:space="preserve">
+    <value>No game data. {problem}</value>
+    <comment>Notice and the DATA chip's tooltip when the data couldn't be loaded for a reason that won't pass by itself. {problem}: what went wrong and what to do, sentences.</comment>
+  </data>
+  <data name="LanguageMissing" xml:space="preserve">
+    <value>No {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts on tarkov.dev; showing English.</value>
+    <comment>Notice: tarkov.dev has no game data in the game's language, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is.</comment>
+  </data>
+  <data name="LanguageNotLoadedRetry" xml:space="preserve">
+    <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} Shturmap tries again in {wait}.</value>
+    <comment>Notice: tarkov.dev's game data in the game's language didn't load this time, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is. {problem}: what went wrong, a sentence; {wait}: the wait before the next try, '2 minutes'.</comment>
+  </data>
+  <data name="LanguageNotLoaded" xml:space="preserve">
+    <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} {advice}</value>
+    <comment>Notice: tarkov.dev's game data in the game's language couldn't be loaded, and won't be asked for again this session. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is. {problem}: what went wrong, a sentence; {advice}: what to do, a sentence ('Please report it.').</comment>
+  </data>
+  <data name="LanguageLoaded" xml:space="preserve">
+    <value>{language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts loaded.</value>
+    <comment>Notice: tarkov.dev's game data in the game's language arrived after all; the game's names change to it. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is.</comment>
+  </data>
+  <data name="QuestStarted" xml:space="preserve">
+    <value>{quest}: started</value>
+    <comment>Notice when the game's log says a quest was started. {quest}: the quest's name.</comment>
+  </data>
+  <data name="QuestCompleted" xml:space="preserve">
+    <value>{quest}: completed</value>
+    <comment>Notice when the game's log says a quest was completed (without the QUEST COMPLETE cue). {quest}: the quest's name.</comment>
+  </data>
+  <data name="QuestFailed" xml:space="preserve">
+    <value>{quest}: failed</value>
+    <comment>Notice when the game's log says a quest was failed. {quest}: the quest's name.</comment>
+  </data>
+  <data name="FixNoRaidMap" xml:space="preserve">
+    <value>Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown.</value>
+    <comment>Notice: a screenshot's position in a raid on a map Shturmap doesn't know.</comment>
+  </data>
+  <data name="FixNoRaid" xml:space="preserve">
+    <value>Got a position, but the game's log shows no raid, so it isn't shown.</value>
+    <comment>Notice: a screenshot's position outside a raid.</comment>
+  </data>
+  <data name="FixNoMap" xml:space="preserve">
+    <value>Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.</value>
+    <comment>Notice: a screenshot's position without the game's logs, off the map shown.</comment>
+  </data>
+  <data name="ObjectiveOptional" xml:space="preserve">
+    <value>{objective} (optional)</value>
+    <comment>Raid card and quest card: an objective tarkov.dev marks optional. {objective}: the objective's text from the game data, or a few words of it.</comment>
+  </data>
+  <data name="ObjectiveNoDescription" xml:space="preserve">
+    <value>(no description)</value>
+    <comment>Raid card: an objective the game data gives no text for.</comment>
+  </data>
 </root>
