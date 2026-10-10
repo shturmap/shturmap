@@ -81,7 +81,7 @@
     <comment>en: Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction. </comment>
   </data>
   <data name="HelpExit" xml:space="preserve">
-    <value>EXTRACT: der nächste Extract für deine Seite, aber pro Raid sind nur einige offen. Mach einen Screenshot der Extract-Liste (beim Raid-Start oder zweimal O): Deine leuchten auf, die übrigen werden hohl, und ODER ist dein nächster, der nichts braucht. </value>
+    <value>EXTRACT: der nächste Extract für deine Seite, aber pro Raid sind nur einige offen. Mach einen Screenshot der Extract-Liste (beim Raid-Start oder zweimal O): Deine leuchten auf, die übrigen erscheinen nur als Umriss, und ODER ist dein nächster, der nichts braucht. </value>
     <comment>en: EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest turn hollow, and OR is your nearest that needs nothing. </comment>
   </data>
   <data name="HelpQuestOrder" xml:space="preserve">
@@ -89,7 +89,7 @@
     <comment>en: Quest order: go somewhere, then find or survive, then fight; simplest first.</comment>
   </data>
   <data name="HelpPointAtQuest" xml:space="preserve">
-    <value>Zeig auf eine Quest: Ihre Karte öffnet sich, und die Quest leuchtet überall auf. Klick, um die Karte festzuhalten; Keys, Items und Quests darauf haben eigene Karten. </value>
+    <value>Zeig auf eine Quest: Die Quest-Karte öffnet sich, und die Quest leuchtet überall auf. Klick, um die Karte festzuhalten; Keys, Items und Quests darauf haben eigene Karten. </value>
     <comment>en: Point at a quest: its card opens and the quest lights up everywhere. Click to keep the card; a key, item or quest on it has a card of its own. </comment>
   </data>
   <data name="HelpPicks" xml:space="preserve">
@@ -465,7 +465,7 @@
     <comment>en: WHAT'S SENT</comment>
   </data>
   <data name="CrashAddNoteTip" xml:space="preserve">
-    <value>Schreib dazu, was du gerade gemacht hast</value>
+    <value>Schreib dazu, was du beim Absturz gemacht hast</value>
     <comment>en: Add what you were doing when it happened</comment>
   </data>
   <data name="CrashAddNote" xml:space="preserve">
