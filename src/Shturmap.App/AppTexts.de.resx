@@ -141,7 +141,7 @@
     <comment>en:  or </comment>
   </data>
   <data name="ScreenshotKeyUnknown" xml:space="preserve">
-    <value>für Screenshots</value>
+    <value>deiner Screenshot-Taste</value>
     <comment>en: your screenshot key</comment>
   </data>
   <data name="RaidLength" xml:space="preserve">
@@ -433,7 +433,7 @@
     <comment>en: POSITION FROM THE FILE NAME</comment>
   </data>
   <data name="CueFirstRaid" xml:space="preserve">
-    <value>ERSTER RAID MIT SHTURMAP · DRÜCK IM RAID DIE TASTE {key}</value>
+    <value>ERSTER RAID MIT SHTURMAP · IM RAID SCREENSHOT MIT {key}</value>
     <comment>en: FIRST RAID WITH SHTURMAP · PRESS {key} ONCE YOU'RE IN</comment>
   </data>
   <data name="NoticeFirstFix" xml:space="preserve">

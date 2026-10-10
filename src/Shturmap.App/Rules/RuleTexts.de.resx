@@ -121,7 +121,7 @@
     <comment>en: {hours} h</comment>
   </data>
   <data name="FixNoneYet" xml:space="preserve">
-    <value>Noch keine Position: Für Entfernungen Taste {keys} drücken</value>
+    <value>Noch keine Position: Screenshot mit {keys} für Entfernungen</value>
     <comment>en: No position yet: press {keys} for distances</comment>
   </data>
   <data name="FixDistancesFrom" xml:space="preserve">
@@ -157,7 +157,7 @@
     <comment>en: {gone} min in · past the raid's {length} min</comment>
   </data>
   <data name="StatusNoPosition" xml:space="preserve">
-    <value>Noch keine Position · Taste {keys} drücken</value>
+    <value>Noch keine Position · Screenshot mit {keys}</value>
     <comment>en: No position yet · press {keys}</comment>
   </data>
   <data name="MapListOtherMaps" xml:space="preserve">

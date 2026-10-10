@@ -145,7 +145,7 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | diagnostics; Include diagnostics | Diagnosedaten; Diagnosedaten anhängen | COPY DIAGNOSTICS: DIAGNOSEDATEN KOPIEREN |
 | folder; log folder; choose a folder | Ordner; Log-Ordner; Ordner wählen | Windows' picker is titled „Ordner auswählen“ |
 | this PC; Documents; user folder | dieser PC; Dokumente; Benutzerordner | Explorer's names; the path stays `Documents` |
-| screenshot; screenshot key; internet address | Screenshot (der); Screenshot-Taste; IP-Adresse | einen Screenshot machen |
+| screenshot; screenshot key; internet address | Screenshot (der); Screenshot-Taste; IP-Adresse | einen Screenshot machen; with a key: „Screenshot mit {keys}“ (Keys) |
 | Zoom in; Zoom out; Show the whole map; status bar | Vergrößern; Verkleinern; Ganze Map zeigen; Statusleiste | also in running text: „Vergrößern trennt sie“, „beim Vergrößern“; not „reinzoomen“ |
 | email; (optional); (Required) | E-Mail; (optional); (Pflichtfeld) | |
 | Language: Automatic · English · Deutsch | Sprache: Automatisch · English · Deutsch | each language in its own name |
@@ -157,8 +157,12 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 ## Keys
 
 As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameKey.Name`, each
-word a text in GameTexts: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the data: **check** in
-its settings. In a sentence put "Taste" before a key that is also a word ("TASTE DRUCK", not "DRUCK DRÜCKEN").
+word a text in GameTexts: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the
+data: **check** in its settings. A sentence that names the screenshot key says „Screenshot mit {keys}“, not „Taste
+{keys} drücken“: that takes every name, two keys („mit Druck oder Pos1“) and a combination („mit Strg+Druck“) as
+they are, and never says „Druck drücken“ or „Taste Leertaste“ („Noch keine Position · Screenshot mit Druck“, „Mach im
+Raid einen Screenshot mit Druck: …“, „DANN SCREENSHOT MIT DRUCK“). Where the game names no key, the stand-in is
+„deiner Screenshot-Taste“. A fixed letter keeps „Taste“: DEINE NEUE POSITION · TASTE F.
 
 | English | German | Note |
 | --- | --- | --- |
@@ -168,7 +172,7 @@ its settings. In a sentence put "Taste" before a key that is also a word ("TASTE
 | Ctrl; Right Ctrl | Strg; Strg rechts | Ctrl + , is Strg + , |
 | Shift; Right Shift | Umschalt; Umschalt rechts | keycap often only ⇧; Shift + F is Umschalt + F |
 | Alt; Alt Gr; Esc; Tab; F1; Num 5 (keypad) | Alt; Alt Gr; Esc; Tab; F1; Num 5 | unchanged |
-| Enter; Backspace; Space | Eingabe; Rücktaste; Leertaste | keycaps ↵ and ⟵ |
+| Enter (Return); Num Enter; Backspace; Space | Enter; Num Enter; Rücktaste; Leertaste | Enter is the players' word and often the keycap (↵ on the main keys), not Windows' „Eingabe“; Backspace's keycap ⟵ |
 | Caps Lock; Scroll Lock; Num Lock; Pause | Feststelltaste; Rollen; Num; Pause | |
 | arrow keys ← → ↑ ↓ | Pfeiltasten ← → ↑ ↓ | |
 | mouse; wheel; double-click | Maus; Mausrad; Doppelklick | |

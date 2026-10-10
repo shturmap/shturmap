@@ -81,11 +81,11 @@
     <comment>en: Backspace</comment>
   </data>
   <data name="ScreenshotKeyEnter" xml:space="preserve">
-    <value>Eingabe</value>
+    <value>Enter</value>
     <comment>en: Return</comment>
   </data>
   <data name="ScreenshotKeyNumpadEnter" xml:space="preserve">
-    <value>Num Eingabe</value>
+    <value>Num Enter</value>
     <comment>en: Num Enter</comment>
   </data>
   <data name="ScreenshotKeyEscape" xml:space="preserve">
