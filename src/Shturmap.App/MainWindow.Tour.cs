@@ -433,7 +433,17 @@ public sealed partial class MainWindow
     {
         TourHoles(() => Anchors(chapter));
         var current = _snapshot?.Map?.NormalizedName;
-        var rows = PlanRows.Visibility == Visibility.Visible ? MapRows(PlanRows).Where(r => r.ActualHeight > 0).ToList() : [];
+        List<Button> Rows() => PlanRows.Visibility == Visibility.Visible ? MapRows(PlanRows).Where(r => r.ActualHeight > 0).ToList() : [];
+        var rows = Rows();
+        // Rows made anew (the language switched, the data came in it) are laid out a moment later: wait for them, up to
+        // two seconds (review of 2026-10-10: after a switch the chapter previewed no map).
+        for (var i = 0; rows.Count == 0 && PlanRows.Visibility == Visibility.Visible && i < 20; i++)
+        {
+            await Task.Delay(100);
+            if (run != _tourRun || !TourOpen)
+                return;
+            rows = Rows();
+        }
         var row = rows.FirstOrDefault(r => r.Tag is string m && m != current) ?? rows.FirstOrDefault();
         if (row is null || !await TourWait(350, run))
             return;
