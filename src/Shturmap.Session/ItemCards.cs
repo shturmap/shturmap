@@ -1,4 +1,4 @@
-using System.Globalization;
+using Shturmap.Core;
 using Shturmap.Core.Quests;
 using Shturmap.Data.TarkovDev;
 
@@ -31,19 +31,66 @@ public sealed record ItemCardView(string ItemId, string Name, bool IsKey, IReadO
 
 public static class ItemCards
 {
-    // One way a quest needs the item: "Bring", how many in all (" ×3"), and what for (", to mark"), on these maps.
-    private sealed class Way(string verb, string what)
+    // How a quest needs the item: one line of the item card each (How words it).
+    private enum Use
     {
-        public string Verb => verb;
+        Key,
+        Wear,
+        Weapon,
+        Mods,
+        Bring,
+        Leave,
+        Stash,
+        PickUp,
+        PickUpThenHandOver,
+        HandOver,
+        HandOverFoundInRaid,
+        FindInRaid,
+        FindInRaidThenHandOver,
+        Find,
+        FindThenHandOver,
+        Sell,
+    }
 
-        public string What => what;
+    // One way a quest needs the item: how ("Bring"), how many in all ("×3"), and what for ("to mark"), on these maps.
+    private sealed class Way(Use use, string exit)
+    {
+        public Use Use => use;
+
+        /// <summary>The exit it is brought to leave through (<see cref="Use.Leave"/>); empty otherwise.</summary>
+        public string Exit => exit;
 
         public int Count { get; set; }
 
         public List<string> Maps { get; } = [];
 
-        /// <summary>What it is brought to be used up for ("to plant", "to mark"), in place of <see cref="What"/>.</summary>
+        /// <summary>What it is brought to be used up for ("to plant", "to mark").</summary>
         public List<string> Purposes { get; } = [];
+    }
+
+    // A way's line, its count from two up: "Bring ×3, to plant and to mark", "Find in raid, then hand over".
+    private static string How(Way way)
+    {
+        var count = Math.Max(1, way.Count);
+        return way.Use switch
+        {
+            Use.Key => SessionTexts.ItemUseKey,
+            Use.Wear => SessionTexts.ItemUseWear,
+            Use.Weapon => SessionTexts.ItemUseWeapon,
+            Use.Mods => SessionTexts.ItemUseMods,
+            Use.Bring => SessionTexts.ItemUseBring(count: count, purposes: Planning.And(way.Purposes)),
+            Use.Leave => SessionTexts.ItemUseLeave(count: count, exit: way.Exit),
+            Use.Stash => SessionTexts.ItemUseStash,
+            Use.PickUp => SessionTexts.ItemUsePickUp,
+            Use.PickUpThenHandOver => SessionTexts.ItemUsePickUpThenHandOver,
+            Use.HandOver => SessionTexts.ItemUseHandOver(count: count),
+            Use.HandOverFoundInRaid => SessionTexts.ItemUseHandOverFoundInRaid(count: count),
+            Use.FindInRaid => SessionTexts.ItemUseFindInRaid(count: count),
+            Use.FindInRaidThenHandOver => SessionTexts.ItemUseFindInRaidThenHandOver(count: count),
+            Use.Find => SessionTexts.ItemUseFind(count: count),
+            Use.FindThenHandOver => SessionTexts.ItemUseFindThenHandOver(count: count),
+            _ => SessionTexts.ItemUseSell(count: count),
+        };
     }
 
     /// <param name="done">The objectives the player ticked as done (<see cref="ObjectiveTicks"/>): what they needed is
@@ -52,6 +99,7 @@ public static class ItemCards
         IReadOnlySet<string>? done = null)
     {
         var uses = new List<ItemUse>();
+        var isKey = false;
         foreach (var status in quests.Values.Where(q => q.State == QuestState.Active))
         {
             if (!data.Tasks.TryGetValue(status.QuestId, out var task))
@@ -62,11 +110,11 @@ public static class ItemCards
             // One line per way the quest needs it, gathered over its objectives: how many in all and on which maps
             // (the review of 2026-10-04: three "mark" objectives read "Bring, to mark" where BRING said "×3").
             var ways = new List<Way>();
-            Way Add(string verb, IEnumerable<string> mapIds, int count = 0, string what = "", bool usedUp = true)
+            Way Add(Use use, IEnumerable<string> mapIds, int count = 0, string exit = "", bool usedUp = true)
             {
-                var way = ways.FirstOrDefault(w => w.Verb == verb && w.What == what);
+                var way = ways.FirstOrDefault(w => w.Use == use && w.Exit == exit);
                 if (way is null)
-                    ways.Add(way = new Way(verb, what));
+                    ways.Add(way = new Way(use, exit));
                 // What is used up each time adds up; an exit asks the same whichever objective names it.
                 way.Count = usedUp ? way.Count + count : Math.Max(way.Count, count);
                 way.Maps.AddRange(mapIds.Where(m => !way.Maps.Contains(m)).Distinct().ToList());
@@ -76,11 +124,11 @@ public static class ItemCards
             // is one row in BRING.
             void Bring(IEnumerable<string> mapIds, int count, string purpose)
             {
-                var way = Add("Bring", mapIds, count);
+                var way = Add(Use.Bring, mapIds, count);
                 if (!way.Purposes.Contains(purpose))
                     way.Purposes.Add(purpose);
             }
-            string Then(ApiObjective get) => Handovers.HandoverOf(task, get.Id) is not null ? ", then hand over" : "";
+            bool HandedOver(ApiObjective get) => Handovers.HandoverOf(task, get.Id) is not null;
             bool FoldsOpen(ApiObjective handover) => Handovers.GetOf(task, handover.Id) is { } get && !Done(get);
 
             foreach (var (o, plan) in (task.Objectives ?? []).Zip(Planning.ToPlan(task, data).Objectives))
@@ -90,48 +138,49 @@ public static class ItemCards
                 var maps = QuestCards.MapIds(o).ToList();
                 var count = Math.Max(1, o.Count ?? 1);
                 if ((o.RequiredKeys ?? []).Any(set => set.Contains(itemId)))
-                    Add("Key", maps);
+                    Add(Use.Key, maps);
                 if ((o.Wearing ?? []).Any(set => set.Any(i => i.Id == itemId)))
-                    Add("Wear, for kills", maps);
+                    Add(Use.Wear, maps);
                 if (o.UsingWeapon?.Contains(itemId) == true)
-                    Add("Use, for kills", maps);
+                    Add(Use.Weapon, maps);
                 if ((o.UsingWeaponMods ?? []).Any(set => set.Contains(itemId)))
-                    Add("Fit, for kills", maps);
+                    Add(Use.Mods, maps);
                 if ((plan.ExitItems ?? []).FirstOrDefault(i => i.ItemId == itemId) is { ItemId: not null } exitItem)
-                    Add("Bring", maps, exitItem.Count, $", to leave through {plan.Exit}", usedUp: false);
+                    Add(Use.Leave, maps, exitItem.Count, plan.Exit ?? "", usedUp: false);
                 var listed = o.Items?.Contains(itemId) == true;
                 switch (o.Type)
                 {
                     case "plantItem" when listed:
-                        Bring(maps, count, "to plant");
+                        Bring(maps, count, SessionTexts.PurposePlant);
                         break;
                     case "mark" when o.MarkerItem == itemId:
-                        Bring(maps, 1, "to mark");
+                        Bring(maps, 1, SessionTexts.PurposeMark);
                         break;
                     case "useItem" when o.UseAny?.Contains(itemId) == true:
-                        Bring(maps, count, "to use");
+                        Bring(maps, count, SessionTexts.PurposeUse);
                         break;
                     // A quest item goes into the raid by itself, from the quest items: stashed there, not brought.
                     case "plantQuestItem" when o.QuestItem == itemId:
-                        Add("Stash", maps);
+                        Add(Use.Stash, maps);
                         break;
                     // A hand-over of what another objective gets is said with that objective ("Pick up, then hand
                     // over"), while it is open; once it is ticked, the hand-over is what is left and says so itself.
                     case "findQuestItem" when o.QuestItem == itemId:
-                        Add("Pick up", maps, what: Then(o));
+                        Add(HandedOver(o) ? Use.PickUpThenHandOver : Use.PickUp, maps);
                         break;
                     case "giveQuestItem" when o.QuestItem == itemId && !FoldsOpen(o):
-                        Add("Hand over", []);
+                        Add(Use.HandOver, []);
                         break;
                     // "In raid" only where the data says the item must be found in raid; one that may be bought is just found.
                     case "findItem" when listed:
-                        Add(o.FoundInRaid ? "Find in raid" : "Find", [], count, Then(o));
+                        Add(o.FoundInRaid ? (HandedOver(o) ? Use.FindInRaidThenHandOver : Use.FindInRaid)
+                            : (HandedOver(o) ? Use.FindThenHandOver : Use.Find), [], count);
                         break;
                     case "giveItem" when listed && !FoldsOpen(o):
-                        Add("Hand over", [], count, o.FoundInRaid ? ", found in raid" : "");
+                        Add(o.FoundInRaid ? Use.HandOverFoundInRaid : Use.HandOver, [], count);
                         break;
                     case "sellItem" when listed:
-                        Add("Sell", [], count);
+                        Add(Use.Sell, [], count);
                         break;
                 }
             }
@@ -141,17 +190,17 @@ public static class ItemCards
                 if (anyDone && needed.Map is not null && !openMaps.Contains(needed.Map))
                     continue;
                 if (needed.Keys?.Contains(itemId) == true)
-                    Add("Key", needed.Map is null ? [] : [needed.Map]);
+                    Add(Use.Key, needed.Map is null ? [] : [needed.Map]);
             }
             foreach (var way in ways)
             {
-                var what = way.Purposes.Count > 0 ? ", " + string.Join(" and ", way.Purposes) : way.What;
-                var how = $"{way.Verb}{(way.Count > 1 ? $" ×{way.Count}" : "")}{what}";
+                isKey |= way.Use == Use.Key;
+                var how = How(way);
                 var where = QuestCards.MapNames(data, way.Maps);
                 uses.Add(new ItemUse(task.Id, task.Name, QuestCards.KindOf(task), task.Trader, where.Length > 0 ? $"{how} · {where}" : how));
             }
         }
-        return new ItemCardView(itemId, data.ItemName(itemId), uses.Any(u => u.How.StartsWith("Key", StringComparison.Ordinal)),
+        return new ItemCardView(itemId, data.ItemName(itemId), isKey,
             Sources(data, sources, itemId, quests),
             uses.OrderBy(u => u.QuestName, StringComparer.CurrentCulture).ToList());
     }
@@ -173,10 +222,10 @@ public static class ItemCards
             if (Best(data, sources, id, quests) is not { } way)
                 continue;
             if (!way.Locked)
-                return $"e.g. {data.ItemName(id)} · {way.Text}";
+                return SessionTexts.ItemSourceExample(item: data.ItemName(id), source: way.Text);
             behindQuest ??= (id, way);
         }
-        return behindQuest is { } only ? $"e.g. {data.ItemName(only.Id)} · {only.Way.Text}" : "";
+        return behindQuest is { } only ? SessionTexts.ItemSourceExample(item: data.ItemName(only.Id), source: only.Way.Text) : "";
     }
 
     /// <summary>The easiest way to get an item, for one line under it in BRING; null if unknown.</summary>
@@ -195,7 +244,8 @@ public static class ItemCards
         var found = new List<ItemSource>();
         var locked = new List<ItemSource>();
         bool Open(string? quest) => quest is null || quests?.GetValueOrDefault(quest)?.State == QuestState.Completed;
-        string After(string? quest) => Open(quest) ? "" : $" · after {data.Tasks.GetValueOrDefault(quest!)?.Name ?? "a quest"}";
+        string After(string? quest) => Open(quest) ? ""
+            : " · " + (data.Tasks.GetValueOrDefault(quest!)?.Name is { } name ? SessionTexts.ItemSourceAfter(quest: name) : SessionTexts.ItemSourceAfterAQuest);
         if (sources is not null)
         {
             var item = sources.Items.GetValueOrDefault(itemId);
@@ -203,26 +253,28 @@ public static class ItemCards
             {
                 var open = Open(offer.TaskUnlock);
                 (open ? found : locked).Add(new ItemSource(SourceKind.Trader, offer.Trader,
-                    $"{data.TraderName(offer.Trader)} LL{offer.MinTraderLevel} · {Price(offer.Price, offer.Currency)}{After(offer.TaskUnlock)}", !open));
+                    SessionTexts.ItemSourceTrader(level: offer.MinTraderLevel, trader: data.TraderName(offer.Trader)) + " · " + Price(offer.Price, offer.Currency) + After(offer.TaskUnlock),
+                    !open));
             }
             foreach (var barter in sources.Barters[itemId].OrderBy(b => Open(b.TaskUnlock) ? 0 : 1).ThenBy(b => b.MinTraderLevel).Take(2))
             {
-                var parts = (barter.RequiredItems ?? []).Select(r => $"{r.Count:0}× {data.ItemName(r.Item)}").ToList();
-                var cost = parts.Count <= 2 ? string.Join(", ", parts) : $"{parts[0]}, {parts[1]} and {parts.Count - 2} more";
+                var parts = (barter.RequiredItems ?? []).Select(r => SessionTexts.ItemSourceBarterItem(count: r.Count.ToString("0", UiLanguage.Culture), item: data.ItemName(r.Item))).ToList();
+                var cost = parts.Count <= 2 ? string.Join(", ", parts) : SessionTexts.ItemSourceBarterMore(first: parts[0], more: parts.Count - 2, second: parts[1]);
                 var open = Open(barter.TaskUnlock);
                 (open ? found : locked).Add(new ItemSource(SourceKind.Barter, barter.Trader,
-                    $"{data.TraderName(barter.Trader)} LL{barter.MinTraderLevel} barter · {cost}{After(barter.TaskUnlock)}", !open));
+                    SessionTexts.ItemSourceBarter(level: barter.MinTraderLevel, trader: data.TraderName(barter.Trader)) + " · " + cost + After(barter.TaskUnlock),
+                    !open));
             }
             foreach (var craft in sources.Crafts[itemId].OrderBy(c => c.Level).Take(2))
             {
-                var station = sources.Stations.GetValueOrDefault(craft.Station) ?? "Hideout";
-                found.Add(new ItemSource(SourceKind.Craft, null, $"Craft · {station} level {craft.Level}"));
+                var station = sources.Stations.GetValueOrDefault(craft.Station) ?? SessionTexts.ItemSourceHideout;
+                found.Add(new ItemSource(SourceKind.Craft, null, SessionTexts.ItemSourceCraft(level: craft.Level, station: station)));
             }
             if (item is not null && item.Types?.Contains("noFlea") != true)
             {
-                var price = item.LastLowPrice is { } low and > 0 ? $" · ~{Price(low, "RUB")}" : "";
-                var level = item.MinLevelForFlea is > 1 and var min ? $" from level {min}" : "";
-                found.Add(new ItemSource(SourceKind.Flea, null, $"Flea market{level}{price}"));
+                var price = item.LastLowPrice is { } low and > 0 ? " · " + SessionTexts.ItemSourceFleaPrice(price: Price(low, "RUB")) : "";
+                var flea = item.MinLevelForFlea is > 1 and var min ? SessionTexts.ItemSourceFleaFromLevel(level: min) : SessionTexts.ItemSourceFlea;
+                found.Add(new ItemSource(SourceKind.Flea, null, flea + price));
             }
         }
         var loose = data.SpawnsOf(itemId)
@@ -231,15 +283,15 @@ public static class ItemCards
             .OrderByDescending(g => g.Count())
             .Take(3);
         foreach (var map in loose)
-            found.Add(new ItemSource(SourceKind.Loose, null, $"Loose on {map.Key} · {map.Count()} {(map.Count() == 1 ? "spot" : "spots")}"));
+            found.Add(new ItemSource(SourceKind.Loose, null, SessionTexts.ItemSourceLoose(count: map.Count(), map: map.Key)));
         found.AddRange(locked);
         return found;
     }
 
     private static string Price(double amount, string? currency) => currency switch
     {
-        "USD" => "$" + amount.ToString("N0", CultureInfo.CurrentCulture),
-        "EUR" => "€" + amount.ToString("N0", CultureInfo.CurrentCulture),
-        _ => amount.ToString("N0", CultureInfo.CurrentCulture) + " ₽",
+        "USD" => SessionTexts.PriceDollars(amount: amount.ToString("N0", UiLanguage.Culture)),
+        "EUR" => SessionTexts.PriceEuros(amount: amount.ToString("N0", UiLanguage.Culture)),
+        _ => SessionTexts.PriceRoubles(amount: amount.ToString("N0", UiLanguage.Culture)),
     };
 }

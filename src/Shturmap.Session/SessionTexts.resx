@@ -300,4 +300,360 @@
     <value>(no description)</value>
     <comment>Raid card: an objective the game data gives no text for.</comment>
   </data>
+  <data name="ListOr" xml:space="preserve">
+    <value>{first} or {second}</value>
+    <comment>Joins two of several things of which one will do (items, keys, weapons, maps); used again for three or more ('A or B or C'). {first}, {second}: names, or a list made with this text.</comment>
+  </data>
+  <data name="ListAnd" xml:space="preserve">
+    <value>{first} and {second}</value>
+    <comment>Joins two of several purposes ('to plant and to mark'); used again for three. {first}, {second}: purposes, or a list made with this text.</comment>
+  </data>
+  <data name="ListOrOthers" xml:space="preserve">
+    <value>{first} or {others, plural, one {# other} other {# others}}</value>
+    <comment>BRING's rows, the quest card and the Scav raid's loot: one of several items that will each do, the first named. {first}: an item's name; {others}: how many more would do.</comment>
+  </data>
+  <data name="GearOthers" xml:space="preserve">
+    <value>{first} / {others, plural, one {# other} other {# others}}</value>
+    <comment>BRING's rows and the raid card's objective lines: gear for a kill condition, the first named. {first}: an item's name; {others}: how many more there are.</comment>
+  </data>
+  <data name="ItemTimes" xml:space="preserve">
+    <value>{item} ×{count}</value>
+    <comment>BRING's rows, the raid card's lines, the quest card and the Scav raid's loot: an item and how many of it, from two up. {item}: the item's name, or several ('A or B'); {count}: how many, 3.</comment>
+  </data>
+  <data name="PurposePlant" xml:space="preserve">
+    <value>to plant</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd.</comment>
+  </data>
+  <data name="PurposeMark" xml:space="preserve">
+    <value>to mark</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd.</comment>
+  </data>
+  <data name="PurposeUse" xml:space="preserve">
+    <value>to use</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. Also a weapon to use for kills.</comment>
+  </data>
+  <data name="PurposeBring" xml:space="preserve">
+    <value>to bring</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. For anything else brought into the raid.</comment>
+  </data>
+  <data name="PurposeWear" xml:space="preserve">
+    <value>to wear</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. Gear to wear for kills.</comment>
+  </data>
+  <data name="PurposeFit" xml:space="preserve">
+    <value>to fit</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. Weapon parts to fit for kills.</comment>
+  </data>
+  <data name="PurposeKey" xml:space="preserve">
+    <value>key</value>
+    <comment>The quest card's BRING, what a key is for: 'key · on Customs'.</comment>
+  </data>
+  <data name="PurposeLeave" xml:space="preserve">
+    <value>to leave through {exit}</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. {exit}: the extract's name, 'Klimov Street (Flare)'.</comment>
+  </data>
+  <data name="PurposeEnter" xml:space="preserve">
+    <value>to enter {map}</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. The item that lets you into a map. {map}: the map's name, 'The Lab'.</comment>
+  </data>
+  <data name="PlanRaidLength" xml:space="preserve">
+    <value>{minutes} min raid</value>
+    <comment>Plan, under a map's name: how long its raid lasts. {minutes}: 40.</comment>
+  </data>
+  <data name="BossChance" xml:space="preserve">
+    <value>{boss} {chance}%</value>
+    <comment>Plan, under a map's name, and the raid card: a boss and its chance to spawn. {boss}: the boss's name, Kaban; {chance}: whole percent, 75.</comment>
+  </data>
+  <data name="WeaponAny" xml:space="preserve">
+    <value>any {category}</value>
+    <comment>BRING's rows and the raid card: a whole weapon class will do for kills, 'Any sniper rifle' (the first letter is made a capital). {category}: tarkov.dev's name of the class, in lower case.</comment>
+  </data>
+  <data name="WeaponSome" xml:space="preserve">
+    <value>{category} ({count} of {kinds, plural, one {# kind} other {# kinds}})</value>
+    <comment>BRING's rows and the raid card: some weapons of a class will do for kills, 'Shotgun (13 of 16 kinds)'. {category}: tarkov.dev's name of the class, in lower case; {count}: how many will do; {kinds}: how many the class has.</comment>
+  </data>
+  <data name="ProgressObjectivesHere" xml:space="preserve">
+    <value>{here} of {total, plural, one {# objective} other {# objectives}} here</value>
+    <comment>Plan, under a PROGRESS quest: why it can't be finished on this map. {here}: its objectives on this map; {total}: all its objectives in raids.</comment>
+  </data>
+  <data name="ProgressFoundInRaid" xml:space="preserve">
+    <value>needs items found in raid</value>
+    <comment>Plan, under a PROGRESS quest: why it can't be finished on this map.</comment>
+  </data>
+  <data name="ProgressKills" xml:space="preserve">
+    <value>{kills, plural, one {# kill} other {# kills}} in all</value>
+    <comment>Plan, under a PROGRESS quest: why it can't be finished on this map. {kills}: how many kills it asks for, more than one raid's.</comment>
+  </data>
+  <data name="RequirementKeyFor" xml:space="preserve">
+    <value>key for {quests}</value>
+    <comment>BRING's rows: which quests need the key. {quests}: quest names, comma-separated.</comment>
+  </data>
+  <data name="RequirementFor" xml:space="preserve">
+    <value>{purpose}, for {quests}</value>
+    <comment>BRING's rows: what the item is for and which quests need it, 'to mark, for Revision'. {purpose}: what it is for ('to plant'); {quests}: quest names, comma-separated.</comment>
+  </data>
+  <data name="NeedKey" xml:space="preserve">
+    <value>Key: {keys}</value>
+    <comment>Raid card, under an objective: the keys it needs (in gold). {keys}: key names ('A or B'), comma-separated.</comment>
+  </data>
+  <data name="NeedBring" xml:space="preserve">
+    <value>Bring: {items}</value>
+    <comment>Raid card, under an objective: what to bring. {items}: item names, each with ×count from two up, comma-separated.</comment>
+  </data>
+  <data name="NeedWith" xml:space="preserve">
+    <value>With: {item}</value>
+    <comment>Raid card, under an objective: the quest item it stashes, and where it is got. {item}: 'Lab journal, found on Factory'.</comment>
+  </data>
+  <data name="NeedWear" xml:space="preserve">
+    <value>Wear: {gear}</value>
+    <comment>Raid card, under a kill objective: the gear to wear. {gear}: item names ('A / B').</comment>
+  </data>
+  <data name="NeedUse" xml:space="preserve">
+    <value>Use: {weapons}</value>
+    <comment>Raid card, under a kill objective: the weapons that count. {weapons}: weapon names or classes ('Any sniper rifle').</comment>
+  </data>
+  <data name="NeedFit" xml:space="preserve">
+    <value>Fit: {gear}</value>
+    <comment>Raid card, under a kill objective: the weapon parts to fit. {gear}: item names ('A / B').</comment>
+  </data>
+  <data name="NeedWithout" xml:space="preserve">
+    <value>Without: {gear}</value>
+    <comment>Raid card, under a kill objective: gear the kills forbid. {gear}: item classes ('armor, headwear') or names.</comment>
+  </data>
+  <data name="QuestItemFoundOn" xml:space="preserve">
+    <value>{item}, found on {maps}</value>
+    <comment>Raid card, after 'With:': a quest item another objective of the quest gets. {item}: its name; {maps}: where it is found ('Factory or Customs').</comment>
+  </data>
+  <data name="QuestItemFoundFirst" xml:space="preserve">
+    <value>{item}, found first</value>
+    <comment>Raid card, after 'With:': a quest item another objective of the quest gets, on no known map. {item}: its name.</comment>
+  </data>
+  <data name="QuestItemFrom" xml:space="preserve">
+    <value>{item}, from {quest}</value>
+    <comment>Raid card, after 'With:': a quest item an earlier quest gives. {item}: its name; {quest}: that quest's name.</comment>
+  </data>
+  <data name="QuestFromLevel" xml:space="preserve">
+    <value>from level {level}</value>
+    <comment>Quest card, its facts line: 'Prapor · from level 10 · needed for Kappa'. {level}: the player level.</comment>
+  </data>
+  <data name="QuestForKappa" xml:space="preserve">
+    <value>needed for Kappa</value>
+    <comment>Quest card, its facts line. Kappa: the Kappa container, the game's name.</comment>
+  </data>
+  <data name="QuestForLightkeeper" xml:space="preserve">
+    <value>needed for Lightkeeper</value>
+    <comment>Quest card, its facts line. Lightkeeper: the trader, the game's name.</comment>
+  </data>
+  <data name="QuestUnlocksMore" xml:space="preserve">
+    <value>and {count, plural, one {# more} other {# more}}</value>
+    <comment>Quest card, after the quests it unlocks when not all are listed. {count}: how many more.</comment>
+  </data>
+  <data name="QuestNotStarted" xml:space="preserve">
+    <value>Not started</value>
+    <comment>Quest card, the quest's state.</comment>
+  </data>
+  <data name="QuestActive" xml:space="preserve">
+    <value>Active</value>
+    <comment>Quest card, the quest's state: 'Active · from the game log, 26 Sep'.</comment>
+  </data>
+  <data name="QuestDone" xml:space="preserve">
+    <value>Completed</value>
+    <comment>Quest card, the quest's state.</comment>
+  </data>
+  <data name="QuestLost" xml:space="preserve">
+    <value>Failed</value>
+    <comment>Quest card, the quest's state.</comment>
+  </data>
+  <data name="QuestStateFromLog" xml:space="preserve">
+    <value>from the game log, {day}</value>
+    <comment>Quest card, after the quest's state: where it comes from. {day}: the day, 26 Sep.</comment>
+  </data>
+  <data name="QuestStateImplied" xml:space="preserve">
+    <value>because {quest} needs it</value>
+    <comment>Quest card, after the quest's state: it counts as completed because a later quest that needs it is known. {quest}: that quest's name.</comment>
+  </data>
+  <data name="TickedByYou" xml:space="preserve">
+    <value>Done · ticked by you</value>
+    <comment>Quest card and raid card, in an objective's line: the player ticked it as done.</comment>
+  </data>
+  <data name="TickedByYouOn" xml:space="preserve">
+    <value>Done · ticked by you, {day}</value>
+    <comment>Quest card and raid card, in an objective's line: the player ticked it as done. {day}: the day, 4 Oct.</comment>
+  </data>
+  <data name="QuestAnyMap" xml:space="preserve">
+    <value>any map</value>
+    <comment>Quest card, under an objective that can be done on any map: where it is.</comment>
+  </data>
+  <data name="QuestPossiblePlaces" xml:space="preserve">
+    <value>One of {count, plural, one {# place} other {# places}} it can be</value>
+    <comment>Quest card, under an objective whose thing can be at several places: what each '?' on the map means. {count}: how many places.</comment>
+  </data>
+  <data name="HandoverTo" xml:space="preserve">
+    <value>{count, plural, =1 {Hand over to {trader}} other {Hand over ×# to {trader}}}</value>
+    <comment>Quest card and raid card, the hand-over mark's tooltip: what the objective gets goes to the trader after the raid. {count}: how many; {trader}: the trader's name.</comment>
+  </data>
+  <data name="QuestNeedOn" xml:space="preserve">
+    <value>on {maps}</value>
+    <comment>Quest card, BRING, after what an item is for: 'to plant · on Customs'. {maps}: map names, comma-separated.</comment>
+  </data>
+  <data name="ItemUseKey" xml:space="preserve">
+    <value>Key</value>
+    <comment>Item card, a quest's line: how the quest needs the item (a key), then the maps ('Key · Customs').</comment>
+  </data>
+  <data name="ItemUseWear" xml:space="preserve">
+    <value>Wear, for kills</value>
+    <comment>Item card, a quest's line: how the quest needs the item.</comment>
+  </data>
+  <data name="ItemUseWeapon" xml:space="preserve">
+    <value>Use, for kills</value>
+    <comment>Item card, a quest's line: how the quest needs the item (a weapon).</comment>
+  </data>
+  <data name="ItemUseMods" xml:space="preserve">
+    <value>Fit, for kills</value>
+    <comment>Item card, a quest's line: how the quest needs the item (a weapon part).</comment>
+  </data>
+  <data name="ItemUseBring" xml:space="preserve">
+    <value>{count, plural, =1 {Bring} other {Bring ×#}}, {purposes}</value>
+    <comment>Item card, a quest's line: how the quest needs the item. {count}: how many in all; {purposes}: what for ('to plant and to mark').</comment>
+  </data>
+  <data name="ItemUseLeave" xml:space="preserve">
+    <value>{count, plural, =1 {Bring} other {Bring ×#}}, to leave through {exit}</value>
+    <comment>Item card, a quest's line: the item is needed to leave through an extract. {count}: how many; {exit}: the extract's name.</comment>
+  </data>
+  <data name="ItemUseStash" xml:space="preserve">
+    <value>Stash</value>
+    <comment>Item card, a quest's line: the quest item is stashed somewhere.</comment>
+  </data>
+  <data name="ItemUsePickUp" xml:space="preserve">
+    <value>Pick up</value>
+    <comment>Item card, a quest's line: the quest item is picked up in a raid.</comment>
+  </data>
+  <data name="ItemUsePickUpThenHandOver" xml:space="preserve">
+    <value>Pick up, then hand over</value>
+    <comment>Item card, a quest's line: the quest item is picked up in a raid and handed over to the trader.</comment>
+  </data>
+  <data name="ItemUseHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Hand over} other {Hand over ×#}}</value>
+    <comment>Item card, a quest's line: the item is handed over to the trader. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseHandOverFoundInRaid" xml:space="preserve">
+    <value>{count, plural, =1 {Hand over} other {Hand over ×#}}, found in raid</value>
+    <comment>Item card, a quest's line: the item is handed over, found in raid. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFindInRaid" xml:space="preserve">
+    <value>{count, plural, =1 {Find in raid} other {Find in raid ×#}}</value>
+    <comment>Item card, a quest's line: the item must be found in raid. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFindInRaidThenHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Find in raid} other {Find in raid ×#}}, then hand over</value>
+    <comment>Item card, a quest's line: the item must be found in raid and handed over. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFind" xml:space="preserve">
+    <value>{count, plural, =1 {Find} other {Find ×#}}</value>
+    <comment>Item card, a quest's line: the item is found (or bought). {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFindThenHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Find} other {Find ×#}}, then hand over</value>
+    <comment>Item card, a quest's line: the item is found (or bought) and handed over. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseSell" xml:space="preserve">
+    <value>{count, plural, =1 {Sell} other {Sell ×#}}</value>
+    <comment>Item card, a quest's line: the item is sold to the trader. {count}: how many.</comment>
+  </data>
+  <data name="ItemSourceTrader" xml:space="preserve">
+    <value>{trader} LL{level}</value>
+    <comment>Item card and BRING: a trader sells the item, 'Prapor LL1 · 18,936 ₽'. {trader}: the trader's name; {level}: the loyalty level (LL, the game's abbreviation).</comment>
+  </data>
+  <data name="ItemSourceBarter" xml:space="preserve">
+    <value>{trader} LL{level} barter</value>
+    <comment>Item card and BRING: a trader barters the item, 'Mechanic LL2 barter · 2× Bolts'. {trader}: the trader's name; {level}: the loyalty level.</comment>
+  </data>
+  <data name="ItemSourceBarterItem" xml:space="preserve">
+    <value>{count}× {item}</value>
+    <comment>Item card and BRING, a barter's cost: one item it takes. {count}: how many, 2; {item}: its name.</comment>
+  </data>
+  <data name="ItemSourceBarterMore" xml:space="preserve">
+    <value>{first}, {second} and {more, plural, one {# more} other {# more}}</value>
+    <comment>Item card and BRING, a barter's cost when it takes more than two items. {first}, {second}: the first two ('2× Bolts'); {more}: how many more.</comment>
+  </data>
+  <data name="ItemSourceAfter" xml:space="preserve">
+    <value>after {quest}</value>
+    <comment>Item card and BRING, after a trader's offer: it opens once this quest is completed. {quest}: the quest's name.</comment>
+  </data>
+  <data name="ItemSourceAfterAQuest" xml:space="preserve">
+    <value>after a quest</value>
+    <comment>Item card and BRING, after a trader's offer: it opens once a quest Shturmap can't name is completed.</comment>
+  </data>
+  <data name="ItemSourceCraft" xml:space="preserve">
+    <value>Craft · {station} level {level}</value>
+    <comment>Item card and BRING: the item is crafted in the hideout. {station}: the hideout station's name; {level}: its level.</comment>
+  </data>
+  <data name="ItemSourceHideout" xml:space="preserve">
+    <value>Hideout</value>
+    <comment>Item card and BRING, in 'Craft · Hideout level 2' when the station's name isn't known.</comment>
+  </data>
+  <data name="ItemSourceFlea" xml:space="preserve">
+    <value>Flea market</value>
+    <comment>Item card and BRING: the item is sold on the flea market.</comment>
+  </data>
+  <data name="ItemSourceFleaFromLevel" xml:space="preserve">
+    <value>Flea market from level {level}</value>
+    <comment>Item card and BRING: the item is sold on the flea market from this player level. {level}: 15.</comment>
+  </data>
+  <data name="ItemSourceFleaPrice" xml:space="preserve">
+    <value>~{price}</value>
+    <comment>Item card and BRING, after 'Flea market': its last low price, about. {price}: '25,000 ₽'.</comment>
+  </data>
+  <data name="ItemSourceLoose" xml:space="preserve">
+    <value>Loose on {map} · {count, plural, one {# spot} other {# spots}}</value>
+    <comment>Item card and BRING: the item lies loose on a map. {map}: the map's name; {count}: at how many spots.</comment>
+  </data>
+  <data name="ItemSourceExample" xml:space="preserve">
+    <value>e.g. {item} · {source}</value>
+    <comment>BRING and the quest card, under a row any of several items will do: one of them and where to get it. {item}: its name; {source}: 'Prapor LL1 · 12,000 ₽'.</comment>
+  </data>
+  <data name="PriceRoubles" xml:space="preserve">
+    <value>{amount} ₽</value>
+    <comment>Item card and BRING: a price in roubles. {amount}: '18,936', grouped as the language writes numbers.</comment>
+  </data>
+  <data name="PriceDollars" xml:space="preserve">
+    <value>${amount}</value>
+    <comment>Item card and BRING: a price in dollars. {amount}: '1,250'.</comment>
+  </data>
+  <data name="PriceEuros" xml:space="preserve">
+    <value>€{amount}</value>
+    <comment>Item card and BRING: a price in euros. {amount}: '1,250'.</comment>
+  </data>
+  <data name="ExtractClimb" xml:space="preserve">
+    <value>Red Rebel ice pick and paracord, no armored rig</value>
+    <comment>Raid card, under an extract: what a climbing exit takes. Item names as the game has them.</comment>
+  </data>
+  <data name="ExtractFlare" xml:space="preserve">
+    <value>Fire a red signal flare there</value>
+    <comment>Raid card, under an extract: what a flare exit takes.</comment>
+  </data>
+  <data name="ExtractCoOp" xml:space="preserve">
+    <value>Co-op: a PMC and a player Scav leave together</value>
+    <comment>Raid card, under an extract: what a co-op exit takes.</comment>
+  </data>
+  <data name="ExtractPayRoubles" xml:space="preserve">
+    <value>Pay {amount} ₽</value>
+    <comment>Raid card, under an extract: what leaving there costs. {amount}: '5,000', grouped as the language writes numbers.</comment>
+  </data>
+  <data name="ExtractPayDollars" xml:space="preserve">
+    <value>Pay ${amount}</value>
+    <comment>Raid card, under an extract: what leaving there costs. {amount}: '1,000'.</comment>
+  </data>
+  <data name="ExtractPayEuros" xml:space="preserve">
+    <value>Pay €{amount}</value>
+    <comment>Raid card, under an extract: what leaving there costs. {amount}: '1,000'.</comment>
+  </data>
+  <data name="ExtractHandOver" xml:space="preserve">
+    <value>Hand over {item}</value>
+    <comment>Raid card, under an extract: the item leaving there takes. {item}: its name, with ×count from two up.</comment>
+  </data>
+  <data name="ExtractSwitchFirst" xml:space="preserve">
+    <value>{switchName} first</value>
+    <comment>Raid card, under an extract: a switch to turn on before leaving there. {switchName}: the switch's name, 'ZB-013 Power Switch'.</comment>
+  </data>
 </root>

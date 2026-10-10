@@ -53,6 +53,30 @@ public class ItemCardTests
         Assert.Equal(["Shortage: Find in raid ×3", "Supply: Find ×2"], Uses(data, Salewa, "Shortage", "Supply"));
     }
 
+    // The lines are whole texts with their count in them (docs/DESIGN.md §8, "Texts"): no count for one, "×n" from two.
+    [Fact]
+    public void A_line_says_its_count_from_two_up()
+    {
+        var data = Data(
+            Task("Shortage", Objective("s1", "findItem", 1, [Salewa], foundInRaid: true)),
+            Task("Supply", Objective("p1", "giveItem", 1, [Salewa])),
+            Task("Trade", Objective("t1", "sellItem", 2, [Salewa])));
+        Assert.Equal(["Shortage: Find in raid", "Supply: Hand over", "Trade: Sell ×2"], Uses(data, Salewa, "Shortage", "Supply", "Trade"));
+        Assert.Equal("Loose on Customs · 1 spot", SessionTexts.ItemSourceLoose(count: 1, map: "Customs"));
+        Assert.Equal("Loose on Customs · 3 spots", SessionTexts.ItemSourceLoose(count: 3, map: "Customs"));
+        Assert.Equal("2× Bolts, 1× Nuts and 1 more", SessionTexts.ItemSourceBarterMore(first: "2× Bolts", more: 1, second: "1× Nuts"));
+    }
+
+    // Whether the card is a key's: from how the quests need it, not from the words of its lines, which are in the
+    // language in use.
+    [Fact]
+    public void An_item_card_knows_a_key_by_how_it_is_needed()
+    {
+        var data = Data(Task("Ballet", Objective("b1", "visit", map: "customs", key: Key)), Revision);
+        Assert.True(ItemCards.Build(data, null, States(QuestState.Active, "Ballet"), Key).IsKey);
+        Assert.False(ItemCards.Build(data, null, States(QuestState.Active, "Revision"), Marker).IsKey);
+    }
+
     // ---- what a quest takes, added up over its objectives as Plan's BRING adds it up ----
 
     private static readonly ApiTask Revision = Task("Revision",
