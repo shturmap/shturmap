@@ -147,4 +147,33 @@ public static class Tour
             return 0;
         return preview.StartsWith("tour:", StringComparison.Ordinal) && int.TryParse(preview[5..], out var n) && n >= 1 ? n - 1 : null;
     }
+
+    /// <summary>A quest the example may take (<see cref="ExampleCandidates"/>), by what is the same in every language.</summary>
+    /// <param name="NormalizedName">tarkov.dev's normalized name ("bp-depot"): made from the English name, and the same
+    /// in the data of every language.</param>
+    /// <param name="OnMap">It has work on the example's map.</param>
+    public sealed record ExampleQuest(string Id, string NormalizedName, int? MinPlayerLevel, bool OnMap);
+
+    /// <summary>Early quests of Customs that every player knows, by normalized name: the example's first choices.</summary>
+    public static readonly IReadOnlyList<string> PreferredExamples =
+        ["delivery-from-the-past", "checking", "bp-depot", "the-extortionist", "golden-swag", "chemical-part-1"];
+
+    /// <summary>The example shows up to three quests.</summary>
+    public const int MaxExampleQuests = 3;
+
+    /// <summary>
+    /// The quests the example is chosen from, in the order it takes them: the preferred ones the data has, then at most
+    /// 40 of the map's quests, by the level they open at and their normalized name. The same example in every
+    /// language (review of 2026-10-10: the map's quests went by their names in the data's language, so where fewer than
+    /// three preferred ones had places, German data could choose others than English).
+    /// </summary>
+    public static IReadOnlyList<string> ExampleCandidates(IReadOnlyCollection<ExampleQuest> quests) =>
+        PreferredExamples.Select(name => quests.FirstOrDefault(q => q.NormalizedName == name)).OfType<ExampleQuest>()
+            .Concat(quests.Where(q => q.OnMap).OrderBy(q => q.MinPlayerLevel ?? 99).ThenBy(q => q.NormalizedName, StringComparer.Ordinal)
+                .ThenBy(q => q.Id, StringComparer.Ordinal).Take(40))
+            .Select(q => q.Id).Distinct(StringComparer.Ordinal).ToList();
+
+    /// <summary>The example's quests: the first candidates with a place on the map, up to <see cref="MaxExampleQuests"/>.</summary>
+    public static IReadOnlyList<string> Example(IReadOnlyList<string> candidates, IReadOnlySet<string> placed) =>
+        candidates.Where(placed.Contains).Take(MaxExampleQuests).ToList();
 }

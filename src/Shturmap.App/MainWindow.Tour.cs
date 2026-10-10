@@ -720,21 +720,20 @@ public sealed partial class MainWindow
     private sealed record TourExampleSet(string Map, string MapName, IReadOnlyList<string> QuestIds, IReadOnlyList<string> QuestNames);
 
     // Customs, which every player knows (and What's New's previews use): up to three of its early quests with places on
-    // the map. Nobody's own quests: the same example for every player.
+    // the map (Tour.ExampleCandidates). Nobody's own quests: the same example for every player, in every language.
     private TourExampleSet? TourExample(GameData data)
     {
         if (_tourExample is { } known)
             return known;
         if (data.MapByNormalizedName("customs") is not { } map)
             return null;
-        string[] preferred = ["delivery-from-the-past", "checking", "bp-depot", "the-extortionist", "golden-swag", "chemical-part-1"];
-        var candidates = preferred.Select(n => data.Tasks.Values.FirstOrDefault(t => t.NormalizedName == n)).OfType<ApiTask>()
-            .Concat(data.Tasks.Values.Where(t => t.Map == map.Id || (t.Objectives ?? []).Any(o => o.Maps?.Contains(map.Id) == true))
-                .OrderBy(t => t.MinPlayerLevel ?? 99).ThenBy(t => t.Name, StringComparer.Ordinal).Take(40))
-            .DistinctBy(t => t.Id).ToList();
-        var content = MapContentBuilder.Build(data, map.Id, candidates.Select(t => t.Id), new HashSet<string>());
+        var candidates = Tour.ExampleCandidates(data.Tasks.Values.Where(t => t.NormalizedName is not null)
+            .Select(t => new Tour.ExampleQuest(t.Id, t.NormalizedName!, t.MinPlayerLevel,
+                t.Map == map.Id || (t.Objectives ?? []).Any(o => o.Maps?.Contains(map.Id) == true)))
+            .ToList());
+        var content = MapContentBuilder.Build(data, map.Id, candidates, new HashSet<string>());
         var placed = content.Markers.Where(m => m.Group is not null && m.Objective is not null).Select(m => m.Group!).ToHashSet(StringComparer.Ordinal);
-        var chosen = candidates.Where(t => placed.Contains(t.Id) && t.NormalizedName is not null).Take(3).ToList();
+        var chosen = Tour.Example(candidates, placed).Select(id => data.Tasks[id]).ToList();
         if (chosen.Count == 0)
             return null;
         return _tourExample = new TourExampleSet("customs", map.Name, chosen.Select(t => t.Id).ToList(), chosen.Select(t => t.NormalizedName!).ToList());

@@ -1146,6 +1146,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     New's previews are: no picture, render or video is bundled (§3), and the map's label says "PREVIEW · THE TOUR ·
     CUSTOMS · AN EXAMPLE, NOT YOUR RAID". The example is the same for everyone: Customs, which every player knows, with
     up to three of its early quests that have places on the map; a cue it shows says "An example, not your raid.".
+    The same in every language too: the quests are chosen by tarkov.dev's normalized names, which the data of every
+    language shares, never by the names shown (`Tour.ExampleCandidates`; review of 2026-10-10: the map's quests went
+    by their names in the data's language, so where fewer than three preferred ones had places German could differ).
     Nothing of the player's changes: no pick, no tick, no setting but the tour's own. NEXT RAID frames the player's own
     rows and lets one preview its map as resting on it does; without rows (no game) it frames the MAP list. When the
     tour ends, the map on screen is back as it was, view and all; at a first start, when the tour opens before any map
