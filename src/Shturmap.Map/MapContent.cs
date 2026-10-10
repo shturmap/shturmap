@@ -51,15 +51,17 @@ public static class MapContentBuilder
                 "scav" => MarkerKind.ExtractScav,
                 _ => MarkerKind.ExtractShared,
             };
-            markers.Add(new MapMarker("extract:" + extract.Id, kind, extract.Position.ToWorld(), extract.Name ?? "Extract"));
+            markers.Add(new MapMarker("extract:" + extract.Id, kind, extract.Position.ToWorld(), extract.Name ?? MapTexts.MarkerExtract));
         }
 
         foreach (var transit in map.Transits ?? [])
         {
             if (transit.Position is null)
                 continue;
-            var target = transit.Map is not null && data.Maps.TryGetValue(transit.Map, out var t) ? t.Name : "another map";
-            markers.Add(new MapMarker("transit:" + transit.Id, MarkerKind.Transit, transit.Position.ToWorld(), "Transit to " + target));
+            var label = transit.Map is not null && data.Maps.TryGetValue(transit.Map, out var t)
+                ? MapTexts.MarkerTransitTo(map: t.Name)
+                : MapTexts.MarkerTransitElsewhere;
+            markers.Add(new MapMarker("transit:" + transit.Id, MarkerKind.Transit, transit.Position.ToWorld(), label));
         }
 
         // Spawns, one marker per spawn zone at the centroid of the zone's points, or per group where the zone lies
@@ -229,9 +231,13 @@ public static class MapContentBuilder
         {
             if (l.Position is null || l.LockType is not ("door" or "trunk"))
                 continue;
-            var label = l.Key is { } key ? data.ItemShortName(key) : "Locked";
-            if (l.NeedsPower)
-                label += " · needs power";
+            var label = (l.Key, l.NeedsPower) switch
+            {
+                ({ } key, false) => data.ItemShortName(key),
+                ({ } key, true) => MapTexts.MarkerLockNeedsPower(key: data.ItemShortName(key)),
+                (null, false) => MapTexts.MarkerLocked,
+                (null, true) => MapTexts.MarkerLockedNeedsPower,
+            };
             markers.Add(new MapMarker("lock:" + (l.Id ?? markers.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)), MarkerKind.Lock,
                 l.Position.ToWorld(), label, l.Key is { } k ? KeyGroup(k) : null));
         }
@@ -239,7 +245,7 @@ public static class MapContentBuilder
         {
             if (s.Position is null)
                 continue;
-            var name = s.Name is { Length: > 0 } n && !n.StartsWith("switch_", StringComparison.Ordinal) ? n : "Switch";
+            var name = s.Name is { Length: > 0 } n && !n.StartsWith("switch_", StringComparison.Ordinal) ? n : MapTexts.MarkerSwitch;
             markers.Add(new MapMarker("switch:" + s.Id, MarkerKind.Switch, s.Position.ToWorld(), name));
         }
         return markers;
@@ -317,7 +323,7 @@ public static class MapContentBuilder
                 markers.Add(new MapMarker(GroupId("scav:" + zone.Key, i), MarkerKind.ScavSpawn, Centroid(group), ""));
         foreach (var zone in spawns.Where(s => s.Categories?.Contains("bot") == true && s.Categories?.Contains("sniper") == true).GroupBy(s => s.ZoneName ?? ""))
             foreach (var (group, i) in Groups(Distinct(zone.Select(s => s.Position!.ToWorld()))).Select((g, i) => (g, i)))
-                markers.Add(new MapMarker(GroupId("sniper:" + zone.Key, i), MarkerKind.SniperSpawn, Centroid(group), "Sniper"));
+                markers.Add(new MapMarker(GroupId("sniper:" + zone.Key, i), MarkerKind.SniperSpawn, Centroid(group), MapTexts.MarkerSniper));
 
         // Per boss or AI squad and zone: the label parts and the zone's points (the payload can list one boss several
         // times). Bosses and the AI squads the bosses list carries (owner, 2026-10-03, from the map audit): Rogues,
@@ -391,8 +397,9 @@ public static class MapContentBuilder
     /// Until 2026-10-09 such a place listed every chance ("Raider 60%, 45%, 35%"), a third format beside these two.
     /// </summary>
     public static string SpawnLabel(IEnumerable<SpawnPart> parts) =>
-        string.Join(" / ", parts.GroupBy(p => (p.Name, p.Chance)).Select(g =>
-            $"{g.Key.Name} {g.Key.Chance}%" + (g.All(p => p.Here is not null) ? $" · {g.Max(p => p.Here)}% here" : "")));
+        string.Join(" / ", parts.GroupBy(p => (p.Name, p.Chance)).Select(g => g.All(p => p.Here is not null)
+            ? MapTexts.MarkerBossChanceHere(boss: g.Key.Name, chance: g.Key.Chance, here: g.Max(p => p.Here))
+            : MapTexts.MarkerBossChance(boss: g.Key.Name, chance: g.Key.Chance)));
 
     // A marker must stand among its points: within 25 m across and 3 m (about a floor) in height of one of them.
     // tarkov.dev's zones can span 450 m (Customs, Interchange) or reach into a bunker (Reserve), and one marker at

@@ -12,4 +12,44 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="GameFolderMissing" xml:space="preserve">
+    <value>That folder doesn't exist (any more).</value>
+    <comment>Notice, after the player chose a game folder in settings ("Choose game folder…") that doesn't exist, or no longer does.</comment>
+  </data>
+  <data name="GameFolderNotTheGame" xml:space="preserve">
+    <value>That folder doesn't hold Escape from Tarkov: there's no EscapeFromTarkov.exe and no Logs folder with game sessions in it or in its "build" folder. Choose the folder the game is installed in.</value>
+    <comment>Notice, after the player chose a game folder in settings that isn't the game's. EscapeFromTarkov.exe, Logs and "build" are the names of the game's file and folders: keep them as they are.</comment>
+  </data>
+  <data name="ScreenshotKeyPrintScreen" xml:space="preserve">
+    <value>PrtSc</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Print Screen key.</comment>
+  </data>
+  <data name="ScreenshotKeyCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left Control key, alone or in a combination ("Ctrl+PrtSc").</comment>
+  </data>
+  <data name="ScreenshotKeyRightCtrl" xml:space="preserve">
+    <value>Right Ctrl</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right Control key.</comment>
+  </data>
+  <data name="ScreenshotKeyShift" xml:space="preserve">
+    <value>Shift</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left Shift key, alone or in a combination.</comment>
+  </data>
+  <data name="ScreenshotKeyRightShift" xml:space="preserve">
+    <value>Right Shift</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right Shift key.</comment>
+  </data>
+  <data name="ScreenshotKeyAlt" xml:space="preserve">
+    <value>Alt</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left Alt key, alone or in a combination.</comment>
+  </data>
+  <data name="ScreenshotKeyAltGr" xml:space="preserve">
+    <value>Alt Gr</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right Alt key.</comment>
+  </data>
+  <data name="ScreenshotKeyNumpad" xml:space="preserve">
+    <value>Num {key}</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). A key of the number pad. {key}: the key's name after the game's "Keypad", as the game writes it: 5, Plus, Enter.</comment>
+  </data>
 </root>

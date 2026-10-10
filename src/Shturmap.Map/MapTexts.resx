@@ -12,4 +12,236 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="LegendPlayer" xml:space="preserve">
+    <value>You, at your last screenshot: sand disc in a ring. Dashed with its age from 1 min, framed from 2. Cone: your facing (45 s).</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. The player's position. 'Cone: your facing (45 s)': the cone shows the way the player faced, for 45 seconds.</comment>
+  </data>
+  <data name="LegendKeptQuest" xml:space="preserve">
+    <value>A picked quest: ringed, in its pick's colour.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. A pick is a quest the player picked in the list (its pen).</comment>
+  </data>
+  <data name="LegendGuide" xml:space="preserve">
+    <value>To your picks' nearest place: dashed line in the pick's colour, with the distance.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendOutOfView" xml:space="preserve">
+    <value>Picked places out of view: chevron in the pick's colour, with a count.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendObjective" xml:space="preserve">
+    <value>Quest objective: gold disc, its glyph the quest type.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendPossibleLocation" xml:space="preserve">
+    <value>One of several places it can be: ? at the corner.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendCluster" xml:space="preserve">
+    <value>Close places of one objective: one marker with a count. Zoom in to split.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendExtract" xml:space="preserve">
+    <value>Extract for your side: green (PMC) or teal (Scav) triangle.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. PMC and Scav as the game says them.</comment>
+  </data>
+  <data name="LegendSharedExtract" xml:space="preserve">
+    <value>Extract for both sides: khaki split triangle.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendExtractListed" xml:space="preserve">
+    <value>On your extract list this raid: lit, a glow in its colour, name in bold.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. The extract list is the game's own, read from a screenshot.</comment>
+  </data>
+  <data name="LegendExtractNotListed" xml:space="preserve">
+    <value>Not on your extract list this raid: hollow, name faint. With a ?: the game shows ??:??:?? (closed, or needs something).</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. ??:??:?? is what the game's extract list shows in place of an extract's time: keep it as it is.</comment>
+  </data>
+  <data name="LegendTransit" xml:space="preserve">
+    <value>Transit to another map: violet diamond.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendPlayerOutOfView" xml:space="preserve">
+    <value>You, out of view: sand badge at the edge. Click it or press F.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. F is Shturmap's key for following the player.</comment>
+  </data>
+  <data name="LegendKeptLock" xml:space="preserve">
+    <value>A door a pick needs a key for: padlock in the pick's colour, with the key's name.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendJoined" xml:space="preserve">
+    <value>Several objectives of one quest on one spot: one marker, with how many are open.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendOptional" xml:space="preserve">
+    <value>Optional objective: OPT at the upper left.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. OPT: the badge's text on the map (MarkerOptionalBadge); write it the same.</comment>
+  </data>
+  <data name="LegendDone" xml:space="preserve">
+    <value>Done objective: small grey disc with a check.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendQuestZone" xml:space="preserve">
+    <value>An objective's area.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendLeader" xml:space="preserve">
+    <value>Moved off a crowded spot: a line in its colour to a dot where it is.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendPointedOutOfView" xml:space="preserve">
+    <value>Places of the quest you point at, out of view: pulsing gold chevron, with a count.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendPing" xml:space="preserve">
+    <value>A new position: sand rings.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendCompleted" xml:space="preserve">
+    <value>A quest just completed: its places turn into gold checks, ring out and go.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendBoss" xml:space="preserve">
+    <value>Boss or AI squad spawn: red octagon, with the chance (and this zone's share).</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendSniper" xml:space="preserve">
+    <value>Sniper Scav spawns: hollow hexagon.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendScav" xml:space="preserve">
+    <value>Scav spawns: small ring.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendLock" xml:space="preserve">
+    <value>Locked door or trunk: padlock, with the key's name when zoomed in. Point at a key to light its locks.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendSwitch" xml:space="preserve">
+    <value>Switch (power, alarm, elevator, trap): power symbol.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendHazard" xml:space="preserve">
+    <value>Deadly area (traps, minefields, sniper zones): hatched outline.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendOtherFloor" xml:space="preserve">
+    <value>On another floor: up or down, with how many when more than one.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendTrail" xml:space="preserve">
+    <value>Your earlier positions this raid: dashed sand line.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendReplay" xml:space="preserve">
+    <value>The raid replay, after a raid: your screenshots in order, faint and thin at its start, bright and wide at its end.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendLooseItem" xml:space="preserve">
+    <value>Where an item lies loose, while you point at it: small open square.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendContainers" xml:space="preserve">
+    <value>Loot containers, on a map without artwork: faint dots.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="LegendSheet" xml:space="preserve">
+    <value>No artwork for this map: a sheet with a 10 m grid, from data only.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
+  </data>
+  <data name="MarkerExtract" xml:space="preserve">
+    <value>Extract</value>
+    <comment>Map: the name beside a marker. An extract the data gives no name.</comment>
+  </data>
+  <data name="MarkerTransitTo" xml:space="preserve">
+    <value>Transit to {map}</value>
+    <comment>Map: the name beside a marker. A transit to another map. {map}: that map's name, as the game writes it: Customs.</comment>
+  </data>
+  <data name="MarkerTransitElsewhere" xml:space="preserve">
+    <value>Transit to another map</value>
+    <comment>Map: the name beside a marker. A transit whose map the data doesn't name.</comment>
+  </data>
+  <data name="MarkerLocked" xml:space="preserve">
+    <value>Locked</value>
+    <comment>Map: the name beside a marker. A locked door or trunk whose key the data doesn't name.</comment>
+  </data>
+  <data name="MarkerLockNeedsPower" xml:space="preserve">
+    <value>{key} · needs power</value>
+    <comment>Map: the name beside a marker. A locked door that opens only with the power on. {key}: the key's short name, as the game writes it.</comment>
+  </data>
+  <data name="MarkerLockedNeedsPower" xml:space="preserve">
+    <value>Locked · needs power</value>
+    <comment>Map: the name beside a marker. As MarkerLocked, for a door that opens only with the power on.</comment>
+  </data>
+  <data name="MarkerSwitch" xml:space="preserve">
+    <value>Switch</value>
+    <comment>Map: the name beside a marker. A switch the data gives no name of its own.</comment>
+  </data>
+  <data name="MarkerSniper" xml:space="preserve">
+    <value>Sniper</value>
+    <comment>Map: the name beside a marker. Where sniper Scavs spawn.</comment>
+  </data>
+  <data name="MarkerBossChance" xml:space="preserve">
+    <value>{boss} {chance}%</value>
+    <comment>Map: the name beside a marker. Where a boss or AI squad spawns, with its chance on the map; several are joined with " / ". The same format as the plan's line. {boss}: its name, as the game writes it: Kollontay; {chance}: percent, 75.</comment>
+  </data>
+  <data name="MarkerBossChanceHere" xml:space="preserve">
+    <value>{boss} {chance}% · {here}% here</value>
+    <comment>Map: the name beside a marker. As MarkerBossChance, when less applies to this place (a zone's share). {boss}: its name; {chance}: percent on the map, 75; {here}: percent at this place, 50.</comment>
+  </data>
+  <data name="MarkerOptionalBadge" xml:space="preserve">
+    <value>OPT</value>
+    <comment>Map: the badge at the upper left of an optional objective's marker; three or four letters at most. Named in the legend (LegendOptional).</comment>
+  </data>
+  <data name="MapSheetCaption" xml:space="preserve">
+    <value>NO ARTWORK FOR THIS MAP · GRID {spacing} M</value>
+    <comment>Map, top left, on a map without artwork, drawn as a sheet from the data. {spacing}: the grid's spacing in metres, 10.</comment>
+  </data>
+  <data name="MapSheetCaptionNoFloors" xml:space="preserve">
+    <value>NO ARTWORK FOR THIS MAP · GRID {spacing} M · NO FLOOR DATA</value>
+    <comment>As MapSheetCaption, on a map whose data has no floors either (every marker is drawn on one plane). {spacing}: the grid's spacing in metres, 10.</comment>
+  </data>
+  <data name="MapSniperZone" xml:space="preserve">
+    <value>SNIPER ZONE</value>
+    <comment>Map: the name of a border-sniper area, written across it in spaced capitals.</comment>
+  </data>
+  <data name="MapNewPosition" xml:space="preserve">
+    <value>YOUR NEW POSITION · PRESS F</value>
+    <comment>Map: beside the badge at the view's edge when a new position arrives out of view. F is Shturmap's key for following the player.</comment>
+  </data>
+  <data name="DistanceMetres" xml:space="preserve">
+    <value>{metres} m</value>
+    <comment>A distance under 1 km: the map's guide plate and scale bar, and the cards ("69 m"). {metres}: whole metres, 69.</comment>
+  </data>
+  <data name="DistanceKilometres" xml:space="preserve">
+    <value>{kilometres} km</value>
+    <comment>A distance of 1 km or more, as DistanceMetres. {kilometres}: kilometres with one decimal, 1.2, written in this language's format.</comment>
+  </data>
+  <data name="PlayerAgeMinutes" xml:space="preserve">
+    <value>{minutes} MIN</value>
+    <comment>How old the player's position is, in whole minutes under an hour: 4 MIN. Not on screen by itself at present: the map says it with OLD (PlayerAgeMinutesOld). {minutes}: whole minutes.</comment>
+  </data>
+  <data name="PlayerAgeHours" xml:space="preserve">
+    <value>{hours} H</value>
+    <comment>As PlayerAgeMinutes, in whole hours from an hour on: 2 H. {hours}: whole hours.</comment>
+  </data>
+  <data name="PlayerAgeMinutesOld" xml:space="preserve">
+    <value>{minutes} MIN OLD</value>
+    <comment>Map: a small tag in capitals beside a marker; short. Beside the player's position once it is a minute old: how old it is (never bare minutes, which read as a time to get somewhere). {minutes}: whole minutes.</comment>
+  </data>
+  <data name="PlayerAgeHoursOld" xml:space="preserve">
+    <value>{hours} H OLD</value>
+    <comment>Map: a small tag in capitals beside a marker; short. As PlayerAgeMinutesOld, from an hour on. {hours}: whole hours.</comment>
+  </data>
+  <data name="ReplayMinute" xml:space="preserve">
+    <value>{minute} MIN IN</value>
+    <comment>Map: a small tag in capitals beside a marker; short. The raid replay: a position's minute into the raid. {minute}: whole minutes since the raid's start.</comment>
+  </data>
+  <data name="ReplayLastSeen" xml:space="preserve">
+    <value>LAST SEEN · {minutes} MIN BEFORE THE END</value>
+    <comment>Map: a small tag in capitals beside a marker; short. The raid replay, at its end: on the last position, how long before the raid's end it was taken. {minutes}: whole minutes, 1 or more.</comment>
+  </data>
+  <data name="ReplayLastSeenJustBefore" xml:space="preserve">
+    <value>LAST SEEN · JUST BEFORE THE END</value>
+    <comment>Map: a small tag in capitals beside a marker; short. As ReplayLastSeen, when the last position was taken in the raid's last minute.</comment>
+  </data>
 </root>

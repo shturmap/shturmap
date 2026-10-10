@@ -120,45 +120,49 @@ public static class MapLegend
     /// <summary>A swatch's size in device-independent pixels.</summary>
     public const float SwatchWidth = 56, SwatchHeight = 34;
 
-    public static IReadOnlyList<Row> Rows { get; } =
+    /// <summary>
+    /// Every symbol with its line, in the language in use: looked up at each read, so a read after the language
+    /// changed has the new one (docs/DESIGN.md §8, "Texts").
+    /// </summary>
+    public static IReadOnlyList<Row> Rows =>
     [
         // By the four levels (docs/DESIGN.md "Map drawing"): first what levels 1 and 2 always draw, then what marks
         // those or shows only at times, then levels 3 and 4. Help lists the first twelve the map has (owner, 2026-10-09:
         // the extracts came after the ping and "Moved off a crowded spot", behind help's link).
-        new(LegendSymbol.Player, "You, at your last screenshot: sand disc in a ring. Dashed with its age from 1 min, framed from 2. Cone: your facing (45 s)."),
-        new(LegendSymbol.KeptQuest, "A picked quest: ringed, in its pick's colour."),
-        new(LegendSymbol.Guide, "To your picks' nearest place: dashed line in the pick's colour, with the distance."),
-        new(LegendSymbol.OutOfView, "Picked places out of view: chevron in the pick's colour, with a count."),
-        new(LegendSymbol.Objective, "Quest objective: gold disc, its glyph the quest type."),
-        new(LegendSymbol.PossibleLocation, "One of several places it can be: ? at the corner."),
-        new(LegendSymbol.Cluster, "Close places of one objective: one marker with a count. Zoom in to split."),
-        new(LegendSymbol.Extract, "Extract for your side: green (PMC) or teal (Scav) triangle."),
-        new(LegendSymbol.SharedExtract, "Extract for both sides: khaki split triangle."),
-        new(LegendSymbol.ExtractListed, "On your extract list this raid: lit, a glow in its colour, name in bold."),
-        new(LegendSymbol.ExtractNotListed, "Not on your extract list this raid: hollow, name faint. With a ?: the game shows ??:??:?? (closed, or needs something)."),
-        new(LegendSymbol.Transit, "Transit to another map: violet diamond."),
-        new(LegendSymbol.PlayerOutOfView, "You, out of view: sand badge at the edge. Click it or press F."),
-        new(LegendSymbol.KeptLock, "A door a pick needs a key for: padlock in the pick's colour, with the key's name."),
-        new(LegendSymbol.Joined, "Several objectives of one quest on one spot: one marker, with how many are open."),
-        new(LegendSymbol.Optional, "Optional objective: OPT at the upper left."),
-        new(LegendSymbol.Done, "Done objective: small grey disc with a check."),
-        new(LegendSymbol.QuestZone, "An objective's area."),
-        new(LegendSymbol.Leader, "Moved off a crowded spot: a line in its colour to a dot where it is."),
-        new(LegendSymbol.PointedOutOfView, "Places of the quest you point at, out of view: pulsing gold chevron, with a count."),
-        new(LegendSymbol.Ping, "A new position: sand rings."),
-        new(LegendSymbol.Completed, "A quest just completed: its places turn into gold checks, ring out and go."),
-        new(LegendSymbol.Boss, "Boss or AI squad spawn: red octagon, with the chance (and this zone's share)."),
-        new(LegendSymbol.Sniper, "Sniper Scav spawns: hollow hexagon."),
-        new(LegendSymbol.Scav, "Scav spawns: small ring."),
-        new(LegendSymbol.Lock, "Locked door or trunk: padlock, with the key's name when zoomed in. Point at a key to light its locks."),
-        new(LegendSymbol.Switch, "Switch (power, alarm, elevator, trap): power symbol."),
-        new(LegendSymbol.Hazard, "Deadly area (traps, minefields, sniper zones): hatched outline."),
-        new(LegendSymbol.OtherFloor, "On another floor: up or down, with how many when more than one."),
-        new(LegendSymbol.Trail, "Your earlier positions this raid: dashed sand line."),
-        new(LegendSymbol.Replay, "The raid replay, after a raid: your screenshots in order, faint and thin at its start, bright and wide at its end."),
-        new(LegendSymbol.LooseItem, "Where an item lies loose, while you point at it: small open square."),
-        new(LegendSymbol.Containers, "Loot containers, on a map without artwork: faint dots."),
-        new(LegendSymbol.Sheet, "No artwork for this map: a sheet with a 10 m grid, from data only."),
+        new(LegendSymbol.Player, MapTexts.LegendPlayer),
+        new(LegendSymbol.KeptQuest, MapTexts.LegendKeptQuest),
+        new(LegendSymbol.Guide, MapTexts.LegendGuide),
+        new(LegendSymbol.OutOfView, MapTexts.LegendOutOfView),
+        new(LegendSymbol.Objective, MapTexts.LegendObjective),
+        new(LegendSymbol.PossibleLocation, MapTexts.LegendPossibleLocation),
+        new(LegendSymbol.Cluster, MapTexts.LegendCluster),
+        new(LegendSymbol.Extract, MapTexts.LegendExtract),
+        new(LegendSymbol.SharedExtract, MapTexts.LegendSharedExtract),
+        new(LegendSymbol.ExtractListed, MapTexts.LegendExtractListed),
+        new(LegendSymbol.ExtractNotListed, MapTexts.LegendExtractNotListed),
+        new(LegendSymbol.Transit, MapTexts.LegendTransit),
+        new(LegendSymbol.PlayerOutOfView, MapTexts.LegendPlayerOutOfView),
+        new(LegendSymbol.KeptLock, MapTexts.LegendKeptLock),
+        new(LegendSymbol.Joined, MapTexts.LegendJoined),
+        new(LegendSymbol.Optional, MapTexts.LegendOptional),
+        new(LegendSymbol.Done, MapTexts.LegendDone),
+        new(LegendSymbol.QuestZone, MapTexts.LegendQuestZone),
+        new(LegendSymbol.Leader, MapTexts.LegendLeader),
+        new(LegendSymbol.PointedOutOfView, MapTexts.LegendPointedOutOfView),
+        new(LegendSymbol.Ping, MapTexts.LegendPing),
+        new(LegendSymbol.Completed, MapTexts.LegendCompleted),
+        new(LegendSymbol.Boss, MapTexts.LegendBoss),
+        new(LegendSymbol.Sniper, MapTexts.LegendSniper),
+        new(LegendSymbol.Scav, MapTexts.LegendScav),
+        new(LegendSymbol.Lock, MapTexts.LegendLock),
+        new(LegendSymbol.Switch, MapTexts.LegendSwitch),
+        new(LegendSymbol.Hazard, MapTexts.LegendHazard),
+        new(LegendSymbol.OtherFloor, MapTexts.LegendOtherFloor),
+        new(LegendSymbol.Trail, MapTexts.LegendTrail),
+        new(LegendSymbol.Replay, MapTexts.LegendReplay),
+        new(LegendSymbol.LooseItem, MapTexts.LegendLooseItem),
+        new(LegendSymbol.Containers, MapTexts.LegendContainers),
+        new(LegendSymbol.Sheet, MapTexts.LegendSheet),
     ];
 
     /// <summary>Draws one swatch into a new bitmap, <paramref name="scale"/> device pixels per DIP, on a transparent ground.</summary>
@@ -236,7 +240,7 @@ public static partial class MapRenderer
             {
                 var u = ui * 0.8f;
                 using var font = new SKFont(TypefaceBold, 12 * u);
-                const string text = "69 m";
+                var text = DistanceText(69);
                 var width = font.MeasureText(text) + 12 * u;
                 var plate = SKRect.Create(center.X - width / 2, center.Y - 9 * u, width, 18 * u);
                 var guide = new GuideLine(new SKPoint(2 * ui, center.Y), new SKPoint(size.Width - 2 * ui, center.Y), 69, text, plate, Kept);

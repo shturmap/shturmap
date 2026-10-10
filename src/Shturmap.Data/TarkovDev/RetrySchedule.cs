@@ -18,12 +18,12 @@ public static class RetrySchedule
     public static TimeSpan Wait(int failures) =>
         failures <= Minutes.Length ? TimeSpan.FromMinutes(Minutes[Math.Max(1, failures) - 1]) : Longest;
 
-    /// <summary>A wait in words for a notice: "2 minutes", "30 minutes", "1 minute"; a shorter one (tests) in seconds.</summary>
+    /// <summary>A wait in words for a notice: "2 minutes", "30 minutes", "1 minute"; a shorter one (tests) in seconds.
+    /// The plural is the text's, in the language in use (docs/DESIGN.md §8, "Texts").</summary>
     public static string InWords(TimeSpan wait)
     {
         if (wait < TimeSpan.FromMinutes(1))
-            return wait.TotalSeconds is > 0.5 and < 1.5 ? "1 second" : $"{wait.TotalSeconds:0} seconds";
-        var minutes = (int)Math.Round(wait.TotalMinutes);
-        return minutes == 1 ? "1 minute" : $"{minutes} minutes";
+            return DataTexts.RetryWaitSeconds(seconds: (int)Math.Round(wait.TotalSeconds, MidpointRounding.AwayFromZero));
+        return DataTexts.RetryWaitMinutes(minutes: (int)Math.Round(wait.TotalMinutes));
     }
 }

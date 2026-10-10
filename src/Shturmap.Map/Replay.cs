@@ -37,11 +37,11 @@ public sealed record RaidReplay(string MapNormalizedName, string MapName, IReadO
     public double LastSeenBefore => Fixes.Count == 0 ? 0 : Math.Max(0, Minutes - Fixes[^1].Minute);
 
     /// <summary>The tag on the last position at the end: "LAST SEEN · 2 MIN BEFORE THE END".</summary>
-    public string LastSeenText => LastSeenBefore < 1 ? "LAST SEEN · JUST BEFORE THE END" : $"LAST SEEN · {(int)LastSeenBefore} MIN BEFORE THE END";
+    public string LastSeenText => LastSeenBefore < 1 ? MapTexts.ReplayLastSeenJustBefore : MapTexts.ReplayLastSeen(minutes: (int)LastSeenBefore);
 
     /// <summary>A position's tag: its minute, "8 MIN IN" (as the raid clock says it: bare minutes on a map read as a
     /// time to get somewhere, owner, 2026-10-04).</summary>
-    public static string MinuteText(double minute) => $"{(int)Math.Max(0, minute)} MIN IN";
+    public static string MinuteText(double minute) => MapTexts.ReplayMinute(minute: (int)Math.Max(0, minute));
 }
 
 /// <summary>

@@ -66,6 +66,34 @@ public class LandmarkTests
         Assert.DoesNotContain(markers, m => m.Id == "switch:s-3");
     }
 
+    // Whole texts with the name in a placeholder (docs/DESIGN.md §8, "Texts"); until 2026-10-10 these labels were glued
+    // from pieces in code ("Transit to " + map, label + " · needs power").
+    [Fact]
+    public void Transits_and_locks_without_a_named_key_are_labelled_in_whole_texts()
+    {
+        var map = MapWith(locks: [new("door-3", "door", null, false, At(1, 1)), new("door-4", "door", null, true, At(2, 2))]) with
+        {
+            Transits = [new("t-1", null, "map-2", At(3, 3), null), new("t-2", null, null, At(4, 4), null)],
+        };
+        var customs = MapWith() with { Id = "map-2", Name = "Customs", NormalizedName = "customs" };
+        var data = new GameData
+        {
+            Mode = GameMode.Pve,
+            Language = "en",
+            Maps = new Dictionary<string, ApiMap> { [map.Id] = map, [customs.Id] = customs },
+            Tasks = new Dictionary<string, ApiTask>(),
+            Traders = new Dictionary<string, ApiTrader>(),
+            MapDefinitions = [],
+            CheckedAt = DateTimeOffset.UnixEpoch,
+        };
+        var markers = MapContentBuilder.Build(data, map.Id, [], new HashSet<string>()).Markers;
+
+        Assert.Equal("Locked", Assert.Single(markers, m => m.Id == "lock:door-3").Label);
+        Assert.Equal("Locked · needs power", Assert.Single(markers, m => m.Id == "lock:door-4").Label);
+        Assert.Equal("Transit to Customs", Assert.Single(markers, m => m.Id == "transit:t-1").Label);
+        Assert.Equal("Transit to another map", Assert.Single(markers, m => m.Id == "transit:t-2").Label);
+    }
+
     [Fact]
     public void A_locks_group_names_its_key()
     {

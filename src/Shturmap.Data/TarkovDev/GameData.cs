@@ -37,7 +37,7 @@ public sealed class GameData
     /// <summary>Item and quest-item names by id, in the game's language.</summary>
     public IReadOnlyDictionary<string, string> ItemNames { get; init; } = new Dictionary<string, string>();
 
-    public string ItemName(string id) => ItemNames.TryGetValue(id, out var name) ? name : "Unknown item";
+    public string ItemName(string id) => ItemNames.TryGetValue(id, out var name) ? name : DataTexts.ItemUnknown;
 
     /// <summary>Items' short names by id, as the game prints them on an item ("TGL MO", "314 marked").</summary>
     public IReadOnlyDictionary<string, string> ItemShortNames { get; init; } = new Dictionary<string, string>();

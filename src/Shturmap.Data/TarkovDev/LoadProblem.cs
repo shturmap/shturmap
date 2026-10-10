@@ -35,22 +35,43 @@ public enum LoadFailure
 /// <summary>
 /// Why loading tarkov.dev's data failed, in plain words for the player: what failed, with the status where there is
 /// one, and what to do. The exception itself only goes to the app log (owner, 2026-10-03: raw exception text never
-/// reaches the UI; docs/DESIGN.md §8, "Error messages").
+/// reaches the UI; docs/DESIGN.md §8, "Error messages"). The words follow from the kind and the status, and are looked
+/// up in the language in use each time they are read, so a problem kept while the language changes reads in the new
+/// one (docs/DESIGN.md §8, "Texts").
 /// </summary>
-public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, string Advice)
+public sealed record LoadProblem(LoadFailure Kind, int? Status)
 {
     /// <summary>Asks for a report, for problems only a report can fix; the notice offers the Report dialog.</summary>
-    public const string Report = "Please report it.";
+    public static string Report => DataTexts.LoadAdviceReport;
 
     /// <summary>Worth trying again by itself: the connection or tarkov.dev may be back in a while, or what sent a page
     /// in place of the data may be gone (the player signed in to the network).</summary>
     public bool Transient => Kind is LoadFailure.Unreachable or LoadFailure.TimedOut or LoadFailure.ServerBusy or LoadFailure.NotData;
 
-    public string Text => $"{What} {Advice}";
+    /// <summary>What failed, a sentence: "tarkov.dev answered 503."</summary>
+    public string What => Kind switch
+    {
+        LoadFailure.ServerBusy or LoadFailure.Refused => DataTexts.LoadFailedStatus(status: Status),
+        LoadFailure.Unreachable => DataTexts.LoadFailedUnreachable,
+        LoadFailure.TimedOut => DataTexts.LoadFailedTimedOut,
+        LoadFailure.Unreadable => DataTexts.LoadFailedUnreadable,
+        LoadFailure.NotData => DataTexts.LoadFailedNotData,
+        LoadFailure.Disk => DataTexts.LoadFailedDisk,
+        _ => DataTexts.LoadFailedUnknown,
+    };
 
-    // No report: a report can't change what sends the page. The notices name the wait (GameSession.DataNotice).
-    private static readonly LoadProblem NotData = new(LoadFailure.NotData, null,
-        "tarkov.dev's answer wasn't its data: a sign-in page or a filter in between?", "Shturmap tries again in a few minutes.");
+    /// <summary>What to do, a sentence. A page in place of the data asks for no report: a report can't change what sends
+    /// the page. The notices name the wait (GameSession.DataNotice).</summary>
+    public string Advice => Kind switch
+    {
+        LoadFailure.ServerBusy => DataTexts.LoadAdviceServerBusy,
+        LoadFailure.Unreachable or LoadFailure.TimedOut => DataTexts.LoadAdviceConnection,
+        LoadFailure.NotData => DataTexts.LoadAdviceNotData,
+        LoadFailure.Disk => DataTexts.LoadAdviceDisk,
+        _ => Report,
+    };
+
+    public string Text => $"{What} {Advice}";
 
     public static LoadProblem Explain(Exception e)
     {
@@ -59,27 +80,24 @@ public sealed record LoadProblem(LoadFailure Kind, int? Status, string What, str
             // An answer that isn't the data, with no saved copy to use (with one, CachedHttp used that). First: it is an
             // HttpRequestException without a status, which would read as no connection.
             case Http.NotDataAnswerException:
-                return NotData;
+                return new(LoadFailure.NotData, null);
             case HttpRequestException { StatusCode: { } status }:
                 var code = (int)status;
-                return code >= 500 || status == HttpStatusCode.TooManyRequests
-                    ? new(LoadFailure.ServerBusy, code, $"tarkov.dev answered {code}.", "It is busy or down for a moment; try again in a few minutes.")
-                    : new(LoadFailure.Refused, code, $"tarkov.dev answered {code}.", Report);
+                return new(code >= 500 || status == HttpStatusCode.TooManyRequests ? LoadFailure.ServerBusy : LoadFailure.Refused, code);
             case HttpRequestException:
-                return new(LoadFailure.Unreachable, null, "Couldn't reach tarkov.dev, and there's no saved copy yet.", "Check the internet connection.");
+                return new(LoadFailure.Unreachable, null);
             case TaskCanceledException or TimeoutException:
-                return new(LoadFailure.TimedOut, null, "tarkov.dev didn't answer in time, and there's no saved copy yet.", "Check the internet connection.");
+                return new(LoadFailure.TimedOut, null);
             case SocketException:
-                return new(LoadFailure.Unreachable, null, "Couldn't reach tarkov.dev, and there's no saved copy yet.", "Check the internet connection.");
+                return new(LoadFailure.Unreachable, null);
             case NotDataException:
-                return NotData;
+                return new(LoadFailure.NotData, null);
             case JsonException or FormatException or InvalidOperationException or KeyNotFoundException or NullReferenceException:
-                return new(LoadFailure.Unreadable, null, "tarkov.dev's data has changed in a way Shturmap can't read.", Report);
+                return new(LoadFailure.Unreadable, null);
             case IOException or UnauthorizedAccessException:
-                return new(LoadFailure.Disk, null, "Couldn't save tarkov.dev's data on this PC.",
-                    @"Check the free disk space and that %LOCALAPPDATA%\Shturmap can be written to.");
+                return new(LoadFailure.Disk, null);
             default:
-                return new(LoadFailure.Unknown, null, "Loading tarkov.dev's data failed.", Report);
+                return new(LoadFailure.Unknown, null);
         }
     }
 }
