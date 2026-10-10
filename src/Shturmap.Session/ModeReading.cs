@@ -1,4 +1,4 @@
-using System.Globalization;
+using Shturmap.Core;
 using Shturmap.Core.Logs;
 
 namespace Shturmap.Session;
@@ -18,18 +18,18 @@ public sealed record ModeReading(DateTime? LoggedAt = null, string? Unknown = nu
 
     public static string Text(GameMode mode) => mode switch
     {
-        GameMode.Pvp => "PvP",
-        GameMode.Seasonal => "Seasonal",
-        _ => "PvE",
+        GameMode.Pvp => SessionTexts.ModePvp,
+        GameMode.Seasonal => SessionTexts.ModeSeasonal,
+        _ => SessionTexts.ModePve,
     };
 
     /// <summary>Where the shown mode comes from, saying only what was read.</summary>
     public string Tooltip(bool gameFound, DateTime now)
     {
         if (Unknown is { } raw)
-            return $"The game says '{raw}', which Shturmap doesn't know yet; showing the mode you last played";
+            return SessionTexts.ModeTipUnknown(mode: raw);
         if (LoggedAt is { } at)
-            return "From the game's log, " + at.ToString(at.Date == now.Date ? "HH:mm" : "d MMM HH:mm", CultureInfo.CurrentCulture);
-        return gameFound ? "The mode you last played; follows the game once it starts" : "No game on this PC: the mode you last played";
+            return SessionTexts.ModeTipFromLog(time: at.ToString(at.Date == now.Date ? "HH:mm" : "d MMM HH:mm", UiLanguage.Culture));
+        return gameFound ? SessionTexts.ModeTipLastPlayed : SessionTexts.ModeTipNoGame;
     }
 }

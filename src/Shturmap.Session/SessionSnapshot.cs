@@ -208,11 +208,11 @@ public sealed record SessionSnapshot
     /// settings offer FIND AUTOMATICALLY.</summary>
     public string? ChosenGameFolder { get; init; }
 
-    public SourceHealth Logs { get; init; } = new(false, "Looking for the game…");
+    public SourceHealth Logs { get; init; } = new(false, SessionTexts.ChipLookingForGame);
 
-    public SourceHealth Screenshots { get; init; } = new(false, "Looking for screenshots…");
+    public SourceHealth Screenshots { get; init; } = new(false, SessionTexts.ChipLookingForScreenshots);
 
-    public SourceHealth DataHealth { get; init; } = new(false, "Loading game data…");
+    public SourceHealth DataHealth { get; init; } = new(false, SessionTexts.ChipLoadingData);
 
     /// <summary>Why there is no game data, in plain words, or null.</summary>
     public LoadProblem? DataProblem { get; init; }

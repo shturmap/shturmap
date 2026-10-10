@@ -16,4 +16,700 @@
     <value>Your extract list is read: {count, plural, one {# extract} other {# extracts}} for this raid</value>
     <comment>Notice, once per raid, after the extract list was read from a screenshot. {count}: how many extracts it names.</comment>
   </data>
+  <data name="NoGameTitle" xml:space="preserve">
+    <value>No game found on this PC</value>
+    <comment>Rail, where the Plan card would be while no game is found on this PC; shown in capitals.</comment>
+  </data>
+  <data name="NoGameNote" xml:space="preserve">
+    <value>Or browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking.</value>
+    <comment>Rail, under 'No game found on this PC': what still works.</comment>
+  </data>
+  <data name="NoLogsTitle" xml:space="preserve">
+    <value>The game hasn't run on this PC yet</value>
+    <comment>Rail, where the Plan card would be while the game is found but has no logs yet; shown in capitals.</comment>
+  </data>
+  <data name="NoLogsNote" xml:space="preserve">
+    <value>Found in {folder}. Quests and raids follow once it has run here; until then, browse the maps above.</value>
+    <comment>Rail, under 'The game hasn't run on this PC yet'. {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="StatusLoadingMap" xml:space="preserve">
+    <value>Loading {map}</value>
+    <comment>Status bar, while a raid loads. {map}: the raid's map, Customs.</comment>
+  </data>
+  <data name="StatusLoading" xml:space="preserve">
+    <value>Loading</value>
+    <comment>Status bar, while a raid loads on a map Shturmap can't name.</comment>
+  </data>
+  <data name="StatusInRaid" xml:space="preserve">
+    <value>In raid</value>
+    <comment>Status bar in a raid, the first of its parts: 'In raid · Customs · PMC · 12 min'.</comment>
+  </data>
+  <data name="SidePmc" xml:space="preserve">
+    <value>PMC</value>
+    <comment>Status bar and Plan's last-raid line: the side the raid is played as. The game's word.</comment>
+  </data>
+  <data name="SideScav" xml:space="preserve">
+    <value>Scav</value>
+    <comment>Status bar and Plan's last-raid line: the side the raid is played as. The game's word.</comment>
+  </data>
+  <data name="RaidMinutes" xml:space="preserve">
+    <value>{minutes} min</value>
+    <comment>Status bar and Plan's last-raid line: a raid's length so far or in all. {minutes}: whole minutes, 12.</comment>
+  </data>
+  <data name="StatusNotInRaid" xml:space="preserve">
+    <value>Not in a raid</value>
+    <comment>Status bar, outside a raid.</comment>
+  </data>
+  <data name="LastRaid" xml:space="preserve">
+    <value>Last raid</value>
+    <comment>Plan, the last raid's line, its first part: 'Last raid · Customs · 12 min · PMC'.</comment>
+  </data>
+  <data name="LastRaidEndUnknown" xml:space="preserve">
+    <value>end not in the log</value>
+    <comment>Plan, the last raid's line, in place of its length: the game's log never said when the raid ended.</comment>
+  </data>
+  <data name="StatusTipLoading" xml:space="preserve">
+    <value>The game's log shows a raid loading</value>
+    <comment>Status bar's tooltip while a raid loads: where the words come from.</comment>
+  </data>
+  <data name="StatusTipInRaidSince" xml:space="preserve">
+    <value>The game's log shows a raid, started {time}</value>
+    <comment>Status bar's tooltip in a raid. {time}: when it started, 16:40, or 4 Oct 16:40 on another day.</comment>
+  </data>
+  <data name="StatusTipInRaid" xml:space="preserve">
+    <value>The game's log shows a raid</value>
+    <comment>Status bar's tooltip in a raid whose start isn't known.</comment>
+  </data>
+  <data name="StatusTipMenu" xml:space="preserve">
+    <value>The game's log shows no raid (it can't tell the menus from a closed game)</value>
+    <comment>Status bar's tooltip outside a raid.</comment>
+  </data>
+  <data name="ModePvp" xml:space="preserve">
+    <value>PvP</value>
+    <comment>Status bar: the game mode, as the game calls it.</comment>
+  </data>
+  <data name="ModePve" xml:space="preserve">
+    <value>PvE</value>
+    <comment>Status bar: the game mode, as the game calls it.</comment>
+  </data>
+  <data name="ModeSeasonal" xml:space="preserve">
+    <value>Seasonal</value>
+    <comment>Status bar: the game mode, as the game calls it (the seasonal PvP mode).</comment>
+  </data>
+  <data name="ModeTipUnknown" xml:space="preserve">
+    <value>The game says '{mode}', which Shturmap doesn't know yet; showing the mode you last played</value>
+    <comment>Status bar, the mode's tooltip. {mode}: the mode as the game's log names it, as it is (not translated).</comment>
+  </data>
+  <data name="ModeTipFromLog" xml:space="preserve">
+    <value>From the game's log, {time}</value>
+    <comment>Status bar, the mode's tooltip. {time}: when the log named the mode, 16:40, or 4 Oct 16:40 on another day.</comment>
+  </data>
+  <data name="ModeTipLastPlayed" xml:space="preserve">
+    <value>The mode you last played; follows the game once it starts</value>
+    <comment>Status bar, the mode's tooltip before the game's log has named one.</comment>
+  </data>
+  <data name="ModeTipNoGame" xml:space="preserve">
+    <value>No game on this PC: the mode you last played</value>
+    <comment>Status bar, the mode's tooltip while no game is found.</comment>
+  </data>
+  <data name="GameFolderNotFound" xml:space="preserve">
+    <value>GAME FOLDER: NOT FOUND</value>
+    <comment>Settings, the game folder line, in capitals as the headings are.</comment>
+  </data>
+  <data name="GameFolderChosen" xml:space="preserve">
+    <value>GAME FOLDER: {folder} (chosen by you)</value>
+    <comment>Settings, the game folder line, in capitals as the headings are (the folder as it is). {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="GameFolderFound" xml:space="preserve">
+    <value>GAME FOLDER: {folder} (found automatically)</value>
+    <comment>Settings, the game folder line, in capitals as the headings are (the folder as it is). {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="LogsTipNotFound" xml:space="preserve">
+    <value>The game's logs aren't found: quests and raids can't follow the game.</value>
+    <comment>Status bar, the LOGS light's tooltip, and settings.</comment>
+  </data>
+  <data name="LogsTipFolder" xml:space="preserve">
+    <value>Game logs: {folder}</value>
+    <comment>Status bar, the LOGS light's tooltip, and settings: the logs followed. {folder}: a path.</comment>
+  </data>
+  <data name="LogsTipNewer" xml:space="preserve">
+    <value>Newer game logs in {folder}. Settings → FIND AUTOMATICALLY follows those instead.</value>
+    <comment>Status bar, the LOGS light's tooltip, and settings, the line under 'Game logs: …' when another install has newer logs than the chosen folder. {folder}: that install's folder, a path. FIND AUTOMATICALLY: the settings button's label, as it reads there.</comment>
+  </data>
+  <data name="UpdatesBroken" xml:space="preserve">
+    <value>Updates: the updater couldn't start, so no update checks. The log says why (LOG FOLDER). Running the Setup again repairs it; your data stays.</value>
+    <comment>Settings, under Updates, in an installed Shturmap whose updater failed. LOG FOLDER: the settings button's label, as it reads there; the Setup: Shturmap's installer.</comment>
+  </data>
+  <data name="UpdatesNotInBuild" xml:space="preserve">
+    <value>Updates: not available in this build. Installed with the Setup, Shturmap updates itself.</value>
+    <comment>Settings, under Updates, in a build that wasn't installed. The Setup: Shturmap's installer.</comment>
+  </data>
+  <data name="UpdateNotApplied" xml:space="preserve">
+    <value>Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.</value>
+    <comment>Notice at start, when a downloaded update failed to apply. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Shturmap {version} is available</value>
+    <comment>Rail, the update line above Plan between raids ('Tell me only'), shown in capitals. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Downloading Shturmap {version}…</value>
+    <comment>Rail, the update line above Plan between raids, shown in capitals. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateDidNotApply" xml:space="preserve">
+    <value>Update {version} didn't apply: close what Shturmap opened, then restart</value>
+    <comment>Rail, the update line above Plan between raids, shown in capitals, over RESTART NOW. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="UpdateReady" xml:space="preserve">
+    <value>Update {version} ready: applies at next start</value>
+    <comment>Rail, the update line above Plan between raids, shown in capitals, over RESTART NOW. {version}: the version, 0.4.1.</comment>
+  </data>
+  <data name="SettingsFileSetAside" xml:space="preserve">
+    <value>Shturmap's settings file couldn't be read and was set aside: picks, ticks and settings start over.</value>
+    <comment>Notice at start. Picks: the quests picked for a raid; ticks: objectives ticked as done.</comment>
+  </data>
+  <data name="SettingsFileNotKept" xml:space="preserve">
+    <value>Shturmap's settings file couldn't be opened: picks, ticks and settings aren't kept this time.</value>
+    <comment>Notice at start. Picks: the quests picked for a raid; ticks: objectives ticked as done.</comment>
+  </data>
+  <data name="ChipLookingForGame" xml:space="preserve">
+    <value>Looking for the game…</value>
+    <comment>Status bar, the LOGS chip, at start.</comment>
+  </data>
+  <data name="ChipLookingForScreenshots" xml:space="preserve">
+    <value>Looking for screenshots…</value>
+    <comment>Status bar, the SCREENSHOTS chip, at start.</comment>
+  </data>
+  <data name="ChipLoadingData" xml:space="preserve">
+    <value>Loading game data…</value>
+    <comment>Status bar, the DATA chip, while tarkov.dev's data loads.</comment>
+  </data>
+  <data name="ChipScreenshots" xml:space="preserve">
+    <value>Screenshots</value>
+    <comment>Status bar, the SCREENSHOTS chip: the game's screenshots folder is there.</comment>
+  </data>
+  <data name="ChipNoScreenshots" xml:space="preserve">
+    <value>No screenshots yet</value>
+    <comment>Status bar, the SCREENSHOTS chip: the game hasn't made its screenshots folder yet.</comment>
+  </data>
+  <data name="ChipData" xml:space="preserve">
+    <value>Data</value>
+    <comment>Status bar, the DATA chip: tarkov.dev's data is loaded.</comment>
+  </data>
+  <data name="ChipDataOffline" xml:space="preserve">
+    <value>Data (offline copy)</value>
+    <comment>Status bar, the DATA chip: the saved copy of tarkov.dev's data is shown.</comment>
+  </data>
+  <data name="ChipNoData" xml:space="preserve">
+    <value>No game data</value>
+    <comment>Status bar, the DATA chip: tarkov.dev's data couldn't be loaded.</comment>
+  </data>
+  <data name="ChipNoLogs" xml:space="preserve">
+    <value>Game logs not found</value>
+    <comment>Status bar, the LOGS chip: the game's logs aren't found.</comment>
+  </data>
+  <data name="ChipLogsLive" xml:space="preserve">
+    <value>Logs live</value>
+    <comment>Status bar, the LOGS chip: the game wrote to its log in the last ten minutes.</comment>
+  </data>
+  <data name="ChipLogs" xml:space="preserve">
+    <value>Logs</value>
+    <comment>Status bar, the LOGS chip: the game's logs are followed.</comment>
+  </data>
+  <data name="FoundNoGame" xml:space="preserve">
+    <value>No game found on this PC: browse the maps, or choose the game folder in settings.</value>
+    <comment>Notice after FIND AUTOMATICALLY in settings found no game.</comment>
+  </data>
+  <data name="FoundNotRun" xml:space="preserve">
+    <value>Found Escape from Tarkov in {folder}; it hasn't run on this PC yet.</value>
+    <comment>Notice when the game is found but has no logs yet. {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="FoundGame" xml:space="preserve">
+    <value>Found Escape from Tarkov in {folder}: quests and raids follow the game now.</value>
+    <comment>Notice when the game is found (by itself, by FIND AUTOMATICALLY or a chosen folder). {folder}: the game's folder, a path.</comment>
+  </data>
+  <data name="FoundNewerLogs" xml:space="preserve">
+    <value>Newer game logs in {folder}: quests and raids follow that game now.</value>
+    <comment>Notice when Shturmap follows another install's newer logs by itself. {folder}: that install's folder, a path.</comment>
+  </data>
+  <data name="DataNoticeNotData" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}.</value>
+    <comment>Notice when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence. {wait}: the wait before the next try, how many minutes (2), or seconds when {unit} is 'seconds' (only the tests' short waits); {unit}: 'minutes' or 'seconds'.</comment>
+  </data>
+  <data name="DataNoticeNotDataLater" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often.</value>
+    <comment>The DATA chip's tooltip when tarkov.dev's answer wasn't its data. {problem}: what went wrong, a sentence.</comment>
+  </data>
+  <data name="DataNoticeTransient" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}; if it keeps failing, please report it.</value>
+    <comment>Notice when the data couldn't be loaded for a reason that may pass (no connection, tarkov.dev busy). {problem}: what went wrong and what to do, sentences. {wait}: the wait before the next try, how many minutes (2), or seconds when {unit} is 'seconds' (only the tests' short waits); {unit}: 'minutes' or 'seconds'.</comment>
+  </data>
+  <data name="DataNoticeTransientLater" xml:space="preserve">
+    <value>No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often; if it keeps failing, please report it.</value>
+    <comment>The DATA chip's tooltip when the data couldn't be loaded for a reason that may pass. {problem}: what went wrong and what to do, sentences.</comment>
+  </data>
+  <data name="DataNoticeFailed" xml:space="preserve">
+    <value>No game data. {problem}</value>
+    <comment>Notice and the DATA chip's tooltip when the data couldn't be loaded for a reason that won't pass by itself. {problem}: what went wrong and what to do, sentences.</comment>
+  </data>
+  <data name="LanguageMissing" xml:space="preserve">
+    <value>No {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts on tarkov.dev; showing English.</value>
+    <comment>Notice: tarkov.dev has no game data in the game's language, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is.</comment>
+  </data>
+  <data name="LanguageNotLoadedRetry" xml:space="preserve">
+    <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}.</value>
+    <comment>Notice: tarkov.dev's game data in the game's language didn't load this time, so the game's names show in English. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is. {problem}: what went wrong, a sentence. {wait}: the wait before the next try, how many minutes (2), or seconds when {unit} is 'seconds' (only the tests' short waits); {unit}: 'minutes' or 'seconds'.</comment>
+  </data>
+  <data name="LanguageNotLoaded" xml:space="preserve">
+    <value>Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} {advice}</value>
+    <comment>Notice: tarkov.dev's game data in the game's language couldn't be loaded, and won't be asked for again this session. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is. {problem}: what went wrong, a sentence; {advice}: what to do, a sentence ('Please report it.').</comment>
+  </data>
+  <data name="LanguageLoaded" xml:space="preserve">
+    <value>{language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts loaded.</value>
+    <comment>Notice: tarkov.dev's game data in the game's language arrived after all; the game's names change to it. {language}: tarkov.dev's code for the language, one of the 16 it has, each named as this sentence needs it; another code (other) shows as it is.</comment>
+  </data>
+  <data name="QuestStarted" xml:space="preserve">
+    <value>{quest}: started</value>
+    <comment>Notice when the game's log says a quest was started. {quest}: the quest's name.</comment>
+  </data>
+  <data name="QuestCompleted" xml:space="preserve">
+    <value>{quest}: completed</value>
+    <comment>Notice when the game's log says a quest was completed (without the QUEST COMPLETE cue). {quest}: the quest's name.</comment>
+  </data>
+  <data name="QuestFailed" xml:space="preserve">
+    <value>{quest}: failed</value>
+    <comment>Notice when the game's log says a quest was failed. {quest}: the quest's name.</comment>
+  </data>
+  <data name="FixNoRaidMap" xml:space="preserve">
+    <value>Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown.</value>
+    <comment>Notice: a screenshot's position in a raid on a map Shturmap doesn't know.</comment>
+  </data>
+  <data name="FixNoRaid" xml:space="preserve">
+    <value>Got a position, but the game's log shows no raid, so it isn't shown.</value>
+    <comment>Notice: a screenshot's position outside a raid.</comment>
+  </data>
+  <data name="FixNoMap" xml:space="preserve">
+    <value>Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.</value>
+    <comment>Notice: a screenshot's position without the game's logs, off the map shown.</comment>
+  </data>
+  <data name="ObjectiveOptional" xml:space="preserve">
+    <value>{objective} (optional)</value>
+    <comment>Raid card and quest card: an objective tarkov.dev marks optional. {objective}: the objective's text from the game data, or a few words of it.</comment>
+  </data>
+  <data name="ObjectiveNoDescription" xml:space="preserve">
+    <value>(no description)</value>
+    <comment>Raid card: an objective the game data gives no text for.</comment>
+  </data>
+  <data name="ListOr" xml:space="preserve">
+    <value>{first} or {second}</value>
+    <comment>Joins two of several things of which one will do (items, keys, weapons, maps); used again for three or more ('A or B or C'). {first}, {second}: names, or a list made with this text.</comment>
+  </data>
+  <data name="ListAnd" xml:space="preserve">
+    <value>{first} and {second}</value>
+    <comment>Joins two of several purposes ('to plant and to mark'); used again for three. {first}, {second}: purposes, or a list made with this text.</comment>
+  </data>
+  <data name="ListOrOthers" xml:space="preserve">
+    <value>{first} or {others, plural, one {# other} other {# others}}</value>
+    <comment>BRING's rows, the quest card and the Scav raid's loot: one of several items that will each do, the first named. {first}: an item's name; {others}: how many more would do.</comment>
+  </data>
+  <data name="GearOthers" xml:space="preserve">
+    <value>{first} / {others, plural, one {# other} other {# others}}</value>
+    <comment>BRING's rows and the raid card's objective lines: gear for a kill condition, the first named. {first}: an item's name; {others}: how many more there are.</comment>
+  </data>
+  <data name="ItemTimes" xml:space="preserve">
+    <value>{item} ×{count}</value>
+    <comment>BRING's rows, the raid card's lines, the quest card and the Scav raid's loot: an item and how many of it, from two up. {item}: the item's name, or several ('A or B'); {count}: how many, 3.</comment>
+  </data>
+  <data name="PurposePlant" xml:space="preserve">
+    <value>to plant</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd.</comment>
+  </data>
+  <data name="PurposeMark" xml:space="preserve">
+    <value>to mark</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd.</comment>
+  </data>
+  <data name="PurposeUse" xml:space="preserve">
+    <value>to use</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. Also a weapon to use for kills.</comment>
+  </data>
+  <data name="PurposeBring" xml:space="preserve">
+    <value>to bring</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. For anything else brought into the raid.</comment>
+  </data>
+  <data name="PurposeWear" xml:space="preserve">
+    <value>to wear</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. Gear to wear for kills.</comment>
+  </data>
+  <data name="PurposeFit" xml:space="preserve">
+    <value>to fit</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. Weapon parts to fit for kills.</comment>
+  </data>
+  <data name="PurposeKey" xml:space="preserve">
+    <value>key</value>
+    <comment>The quest card's BRING, what a key is for: 'key · on Customs'.</comment>
+  </data>
+  <data name="PurposeLeave" xml:space="preserve">
+    <value>to leave through {exit}</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. {exit}: the extract's name, 'Klimov Street (Flare)'.</comment>
+  </data>
+  <data name="PurposeEnter" xml:space="preserve">
+    <value>to enter {map}</value>
+    <comment>What an item is brought for: on BRING's rows in Plan and the raid card ('to plant, for Revision'), the quest card's BRING ('to plant · on Customs') and the item card ('Bring ×3, to plant'); several are joined with ListAnd. The item that lets you into a map. {map}: the map's name, 'The Lab'.</comment>
+  </data>
+  <data name="PlanRaidLength" xml:space="preserve">
+    <value>{minutes} min raid</value>
+    <comment>Plan, under a map's name: how long its raid lasts. {minutes}: 40.</comment>
+  </data>
+  <data name="BossChance" xml:space="preserve">
+    <value>{boss} {chance}%</value>
+    <comment>Plan, under a map's name, and the raid card: a boss and its chance to spawn. {boss}: the boss's name, Kaban; {chance}: whole percent, 75.</comment>
+  </data>
+  <data name="WeaponAny" xml:space="preserve">
+    <value>any {category}</value>
+    <comment>BRING's rows and the raid card: a whole weapon class will do for kills, 'Any sniper rifle' (the first letter is made a capital). {category}: tarkov.dev's name of the class, in lower case.</comment>
+  </data>
+  <data name="WeaponSome" xml:space="preserve">
+    <value>{category} ({count} of {kinds, plural, one {# kind} other {# kinds}})</value>
+    <comment>BRING's rows and the raid card: some weapons of a class will do for kills, 'Shotgun (13 of 16 kinds)'. {category}: tarkov.dev's name of the class, in lower case; {count}: how many will do; {kinds}: how many the class has.</comment>
+  </data>
+  <data name="ProgressObjectivesHere" xml:space="preserve">
+    <value>{here} of {total, plural, one {# objective} other {# objectives}} here</value>
+    <comment>Plan, under a PROGRESS quest: why it can't be finished on this map. {here}: its objectives on this map; {total}: all its objectives in raids.</comment>
+  </data>
+  <data name="ProgressFoundInRaid" xml:space="preserve">
+    <value>needs items found in raid</value>
+    <comment>Plan, under a PROGRESS quest: why it can't be finished on this map.</comment>
+  </data>
+  <data name="ProgressKills" xml:space="preserve">
+    <value>{kills, plural, one {# kill} other {# kills}} in all</value>
+    <comment>Plan, under a PROGRESS quest: why it can't be finished on this map. {kills}: how many kills it asks for, more than one raid's.</comment>
+  </data>
+  <data name="RequirementKeyFor" xml:space="preserve">
+    <value>key for {quests}</value>
+    <comment>BRING's rows: which quests need the key. {quests}: quest names, comma-separated.</comment>
+  </data>
+  <data name="RequirementFor" xml:space="preserve">
+    <value>{purpose}, for {quests}</value>
+    <comment>BRING's rows: what the item is for and which quests need it, 'to mark, for Revision'. {purpose}: what it is for ('to plant'); {quests}: quest names, comma-separated.</comment>
+  </data>
+  <data name="NeedKey" xml:space="preserve">
+    <value>Key: {keys}</value>
+    <comment>Raid card, under an objective: the keys it needs (in gold). {keys}: key names ('A or B'), comma-separated.</comment>
+  </data>
+  <data name="NeedBring" xml:space="preserve">
+    <value>Bring: {items}</value>
+    <comment>Raid card, under an objective: what to bring. {items}: item names, each with ×count from two up, comma-separated.</comment>
+  </data>
+  <data name="NeedWith" xml:space="preserve">
+    <value>With: {item}</value>
+    <comment>Raid card, under an objective: the quest item it stashes, and where it is got. {item}: 'Lab journal, found on Factory'.</comment>
+  </data>
+  <data name="NeedWear" xml:space="preserve">
+    <value>Wear: {gear}</value>
+    <comment>Raid card, under a kill objective: the gear to wear. {gear}: item names ('A / B').</comment>
+  </data>
+  <data name="NeedUse" xml:space="preserve">
+    <value>Use: {weapons}</value>
+    <comment>Raid card, under a kill objective: the weapons that count. {weapons}: weapon names or classes ('Any sniper rifle').</comment>
+  </data>
+  <data name="NeedFit" xml:space="preserve">
+    <value>Fit: {gear}</value>
+    <comment>Raid card, under a kill objective: the weapon parts to fit. {gear}: item names ('A / B').</comment>
+  </data>
+  <data name="NeedWithout" xml:space="preserve">
+    <value>Without: {gear}</value>
+    <comment>Raid card, under a kill objective: gear the kills forbid. {gear}: item classes ('armor, headwear') or names.</comment>
+  </data>
+  <data name="QuestItemFoundOn" xml:space="preserve">
+    <value>{item}, found on {maps}</value>
+    <comment>Raid card, after 'With:': a quest item another objective of the quest gets. {item}: its name; {maps}: where it is found ('Factory or Customs').</comment>
+  </data>
+  <data name="QuestItemFoundFirst" xml:space="preserve">
+    <value>{item}, found first</value>
+    <comment>Raid card, after 'With:': a quest item another objective of the quest gets, on no known map. {item}: its name.</comment>
+  </data>
+  <data name="QuestItemFrom" xml:space="preserve">
+    <value>{item}, from {quest}</value>
+    <comment>Raid card, after 'With:': a quest item an earlier quest gives. {item}: its name; {quest}: that quest's name.</comment>
+  </data>
+  <data name="QuestFromLevel" xml:space="preserve">
+    <value>from level {level}</value>
+    <comment>Quest card, its facts line: 'Prapor · from level 10 · needed for Kappa'. {level}: the player level.</comment>
+  </data>
+  <data name="QuestForKappa" xml:space="preserve">
+    <value>needed for Kappa</value>
+    <comment>Quest card, its facts line. Kappa: the Kappa container, the game's name.</comment>
+  </data>
+  <data name="QuestForLightkeeper" xml:space="preserve">
+    <value>needed for Lightkeeper</value>
+    <comment>Quest card, its facts line. Lightkeeper: the trader, the game's name.</comment>
+  </data>
+  <data name="QuestUnlocksMore" xml:space="preserve">
+    <value>and {count, plural, one {# more} other {# more}}</value>
+    <comment>Quest card, after the quests it unlocks when not all are listed. {count}: how many more.</comment>
+  </data>
+  <data name="QuestNotStarted" xml:space="preserve">
+    <value>Not started</value>
+    <comment>Quest card, the quest's state.</comment>
+  </data>
+  <data name="QuestActive" xml:space="preserve">
+    <value>Active</value>
+    <comment>Quest card, the quest's state: 'Active · from the game log, 26 Sep'.</comment>
+  </data>
+  <data name="QuestDone" xml:space="preserve">
+    <value>Completed</value>
+    <comment>Quest card, the quest's state.</comment>
+  </data>
+  <data name="QuestLost" xml:space="preserve">
+    <value>Failed</value>
+    <comment>Quest card, the quest's state.</comment>
+  </data>
+  <data name="QuestStateFromLog" xml:space="preserve">
+    <value>from the game log, {day}</value>
+    <comment>Quest card, after the quest's state: where it comes from. {day}: the day, 26 Sep.</comment>
+  </data>
+  <data name="QuestStateImplied" xml:space="preserve">
+    <value>because {quest} needs it</value>
+    <comment>Quest card, after the quest's state: it counts as completed because a later quest that needs it is known. {quest}: that quest's name.</comment>
+  </data>
+  <data name="TickedByYou" xml:space="preserve">
+    <value>Done · ticked by you</value>
+    <comment>Quest card and raid card, in an objective's line: the player ticked it as done.</comment>
+  </data>
+  <data name="TickedByYouOn" xml:space="preserve">
+    <value>Done · ticked by you, {day}</value>
+    <comment>Quest card and raid card, in an objective's line: the player ticked it as done. {day}: the day, 4 Oct.</comment>
+  </data>
+  <data name="QuestAnyMap" xml:space="preserve">
+    <value>any map</value>
+    <comment>Quest card, under an objective that can be done on any map: where it is.</comment>
+  </data>
+  <data name="QuestPossiblePlaces" xml:space="preserve">
+    <value>One of {count, plural, one {# place} other {# places}} it can be</value>
+    <comment>Quest card, under an objective whose thing can be at several places: what each '?' on the map means. {count}: how many places.</comment>
+  </data>
+  <data name="HandoverTo" xml:space="preserve">
+    <value>{count, plural, =1 {Hand over to {trader}} other {Hand over ×# to {trader}}}</value>
+    <comment>Quest card and raid card, the hand-over mark's tooltip: what the objective gets goes to the trader after the raid. {count}: how many; {trader}: the trader's name.</comment>
+  </data>
+  <data name="QuestNeedOn" xml:space="preserve">
+    <value>on {maps}</value>
+    <comment>Quest card, BRING, after what an item is for: 'to plant · on Customs'. {maps}: map names, comma-separated.</comment>
+  </data>
+  <data name="ItemUseKey" xml:space="preserve">
+    <value>Key</value>
+    <comment>Item card, a quest's line: how the quest needs the item (a key), then the maps ('Key · Customs').</comment>
+  </data>
+  <data name="ItemUseWear" xml:space="preserve">
+    <value>Wear, for kills</value>
+    <comment>Item card, a quest's line: how the quest needs the item.</comment>
+  </data>
+  <data name="ItemUseWeapon" xml:space="preserve">
+    <value>Use, for kills</value>
+    <comment>Item card, a quest's line: how the quest needs the item (a weapon).</comment>
+  </data>
+  <data name="ItemUseMods" xml:space="preserve">
+    <value>Fit, for kills</value>
+    <comment>Item card, a quest's line: how the quest needs the item (a weapon part).</comment>
+  </data>
+  <data name="ItemUseBring" xml:space="preserve">
+    <value>{count, plural, =1 {Bring} other {Bring ×#}}, {purposes}</value>
+    <comment>Item card, a quest's line: how the quest needs the item. {count}: how many in all; {purposes}: what for ('to plant and to mark').</comment>
+  </data>
+  <data name="ItemUseLeave" xml:space="preserve">
+    <value>{count, plural, =1 {Bring} other {Bring ×#}}, to leave through {exit}</value>
+    <comment>Item card, a quest's line: the item is needed to leave through an extract. {count}: how many; {exit}: the extract's name.</comment>
+  </data>
+  <data name="ItemUseStash" xml:space="preserve">
+    <value>Stash</value>
+    <comment>Item card, a quest's line: the quest item is stashed somewhere.</comment>
+  </data>
+  <data name="ItemUsePickUp" xml:space="preserve">
+    <value>Pick up</value>
+    <comment>Item card, a quest's line: the quest item is picked up in a raid.</comment>
+  </data>
+  <data name="ItemUsePickUpThenHandOver" xml:space="preserve">
+    <value>Pick up, then hand over</value>
+    <comment>Item card, a quest's line: the quest item is picked up in a raid and handed over to the trader.</comment>
+  </data>
+  <data name="ItemUseHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Hand over} other {Hand over ×#}}</value>
+    <comment>Item card, a quest's line: the item is handed over to the trader. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseHandOverFoundInRaid" xml:space="preserve">
+    <value>{count, plural, =1 {Hand over} other {Hand over ×#}}, found in raid</value>
+    <comment>Item card, a quest's line: the item is handed over, found in raid. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFindInRaid" xml:space="preserve">
+    <value>{count, plural, =1 {Find in raid} other {Find in raid ×#}}</value>
+    <comment>Item card, a quest's line: the item must be found in raid. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFindInRaidThenHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Find in raid} other {Find in raid ×#}}, then hand over</value>
+    <comment>Item card, a quest's line: the item must be found in raid and handed over. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFind" xml:space="preserve">
+    <value>{count, plural, =1 {Find} other {Find ×#}}</value>
+    <comment>Item card, a quest's line: the item is found (or bought). {count}: how many.</comment>
+  </data>
+  <data name="ItemUseFindThenHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Find} other {Find ×#}}, then hand over</value>
+    <comment>Item card, a quest's line: the item is found (or bought) and handed over. {count}: how many.</comment>
+  </data>
+  <data name="ItemUseSell" xml:space="preserve">
+    <value>{count, plural, =1 {Sell} other {Sell ×#}}</value>
+    <comment>Item card, a quest's line: the item is sold to the trader. {count}: how many.</comment>
+  </data>
+  <data name="ItemSourceTrader" xml:space="preserve">
+    <value>{trader} LL{level}</value>
+    <comment>Item card and BRING: a trader sells the item, 'Prapor LL1 · 18,936 ₽'. {trader}: the trader's name; {level}: the loyalty level (LL, the game's abbreviation).</comment>
+  </data>
+  <data name="ItemSourceBarter" xml:space="preserve">
+    <value>{trader} LL{level} barter</value>
+    <comment>Item card and BRING: a trader barters the item, 'Mechanic LL2 barter · 2× Bolts'. {trader}: the trader's name; {level}: the loyalty level.</comment>
+  </data>
+  <data name="ItemSourceBarterItem" xml:space="preserve">
+    <value>{count}× {item}</value>
+    <comment>Item card and BRING, a barter's cost: one item it takes. {count}: how many, 2; {item}: its name.</comment>
+  </data>
+  <data name="ItemSourceBarterMore" xml:space="preserve">
+    <value>{first}, {second} and {more, plural, one {# more} other {# more}}</value>
+    <comment>Item card and BRING, a barter's cost when it takes more than two items. {first}, {second}: the first two ('2× Bolts'); {more}: how many more.</comment>
+  </data>
+  <data name="ItemSourceAfter" xml:space="preserve">
+    <value>after {quest}</value>
+    <comment>Item card and BRING, after a trader's offer: it opens once this quest is completed. {quest}: the quest's name.</comment>
+  </data>
+  <data name="ItemSourceAfterAQuest" xml:space="preserve">
+    <value>after a quest</value>
+    <comment>Item card and BRING, after a trader's offer: it opens once a quest Shturmap can't name is completed.</comment>
+  </data>
+  <data name="ItemSourceCraft" xml:space="preserve">
+    <value>Craft · {station} level {level}</value>
+    <comment>Item card and BRING: the item is crafted in the hideout. {station}: the hideout station's name; {level}: its level.</comment>
+  </data>
+  <data name="ItemSourceHideout" xml:space="preserve">
+    <value>Hideout</value>
+    <comment>Item card and BRING, in 'Craft · Hideout level 2' when the station's name isn't known.</comment>
+  </data>
+  <data name="ItemSourceFlea" xml:space="preserve">
+    <value>Flea market</value>
+    <comment>Item card and BRING: the item is sold on the flea market.</comment>
+  </data>
+  <data name="ItemSourceFleaFromLevel" xml:space="preserve">
+    <value>Flea market from level {level}</value>
+    <comment>Item card and BRING: the item is sold on the flea market from this player level. {level}: 15.</comment>
+  </data>
+  <data name="ItemSourceFleaPrice" xml:space="preserve">
+    <value>~{price}</value>
+    <comment>Item card and BRING, after 'Flea market': its last low price, about. {price}: '25,000 ₽'.</comment>
+  </data>
+  <data name="ItemSourceLoose" xml:space="preserve">
+    <value>Loose on {map} · {count, plural, one {# spot} other {# spots}}</value>
+    <comment>Item card and BRING: the item lies loose on a map. {map}: the map's name; {count}: at how many spots.</comment>
+  </data>
+  <data name="ItemSourceExample" xml:space="preserve">
+    <value>e.g. {item} · {source}</value>
+    <comment>BRING and the quest card, under a row any of several items will do: one of them and where to get it. {item}: its name; {source}: 'Prapor LL1 · 12,000 ₽'.</comment>
+  </data>
+  <data name="PriceRoubles" xml:space="preserve">
+    <value>{amount} ₽</value>
+    <comment>Item card and BRING: a price in roubles. {amount}: '18,936', grouped as the language writes numbers.</comment>
+  </data>
+  <data name="PriceDollars" xml:space="preserve">
+    <value>${amount}</value>
+    <comment>Item card and BRING: a price in dollars. {amount}: '1,250'.</comment>
+  </data>
+  <data name="PriceEuros" xml:space="preserve">
+    <value>€{amount}</value>
+    <comment>Item card and BRING: a price in euros. {amount}: '1,250'.</comment>
+  </data>
+  <data name="ExtractClimb" xml:space="preserve">
+    <value>Red Rebel ice pick and paracord, no armored rig</value>
+    <comment>Raid card, under an extract: what a climbing exit takes. Item names as the game has them.</comment>
+  </data>
+  <data name="ExtractFlare" xml:space="preserve">
+    <value>Fire a red signal flare there</value>
+    <comment>Raid card, under an extract: what a flare exit takes.</comment>
+  </data>
+  <data name="ExtractCoOp" xml:space="preserve">
+    <value>Co-op: a PMC and a player Scav leave together</value>
+    <comment>Raid card, under an extract: what a co-op exit takes.</comment>
+  </data>
+  <data name="ExtractPayRoubles" xml:space="preserve">
+    <value>Pay {amount} ₽</value>
+    <comment>Raid card, under an extract: what leaving there costs. {amount}: '5,000', grouped as the language writes numbers.</comment>
+  </data>
+  <data name="ExtractPayDollars" xml:space="preserve">
+    <value>Pay ${amount}</value>
+    <comment>Raid card, under an extract: what leaving there costs. {amount}: '1,000'.</comment>
+  </data>
+  <data name="ExtractPayEuros" xml:space="preserve">
+    <value>Pay €{amount}</value>
+    <comment>Raid card, under an extract: what leaving there costs. {amount}: '1,000'.</comment>
+  </data>
+  <data name="ExtractHandOver" xml:space="preserve">
+    <value>Hand over {item}</value>
+    <comment>Raid card, under an extract: the item leaving there takes. {item}: its name, with ×count from two up.</comment>
+  </data>
+  <data name="ExtractSwitchFirst" xml:space="preserve">
+    <value>{switchName} first</value>
+    <comment>Raid card, under an extract: a switch to turn on before leaving there. {switchName}: the switch's name, 'ZB-013 Power Switch'.</comment>
+  </data>
+  <data name="ReportNotConfigured" xml:space="preserve">
+    <value>Reporting isn't set up in this build.</value>
+    <comment>Report dialog and the crash question, after Send, in a build without a place to send reports to.</comment>
+  </data>
+  <data name="ReportMuted" xml:space="preserve">
+    <value>Not sent: developer runs send nothing.</value>
+    <comment>Report dialog and the crash question, after Send, in a developer run.</comment>
+  </data>
+  <data name="ReportSent" xml:space="preserve">
+    <value>Sent. Thank you. Report {id}.</value>
+    <comment>Report dialog, after Send. {id}: the report's id the player can quote, 8 letters and digits, a1b2c3d4.</comment>
+  </data>
+  <data name="ReportKept" xml:space="preserve">
+    <value>Couldn't send it now ({why}). It's kept on this PC and goes out by itself the next time Shturmap starts.</value>
+    <comment>Report dialog, after Send, when the report couldn't go out now. {why}: why, a few words ('no connection').</comment>
+  </data>
+  <data name="ReportRefused" xml:space="preserve">
+    <value>Couldn't send it: {why}. It's kept on this PC, in %LOCALAPPDATA%\Shturmap\outbox.</value>
+    <comment>Report dialog, after Send, when the report service refused it. {why}: why, a few words ('the report service answered 400'). The folder stays as it is.</comment>
+  </data>
+  <data name="CrashReportKept" xml:space="preserve">
+    <value>Couldn't send the crash report now ({why}). It goes out by itself the next time Shturmap starts.</value>
+    <comment>The crash question, after Send, when the crash report couldn't go out now. {why}: why, a few words ('no connection').</comment>
+  </data>
+  <data name="CrashReportRefused" xml:space="preserve">
+    <value>Couldn't send the crash report: {why}.</value>
+    <comment>The crash question, after Send, when the report service refused it. {why}: why, a few words.</comment>
+  </data>
+  <data name="CrashReportsSent" xml:space="preserve">
+    <value>{count, plural, =1 {Crash report sent. Thank you. Report {id}.} other {# crash reports sent. Thank you.}}</value>
+    <comment>The crash question, after Send. {count}: how many crash reports went out (one to five); {id}: the one report's id, a1b2c3d4.</comment>
+  </data>
+  <data name="ReportWhyAnswered" xml:space="preserve">
+    <value>the report service answered {status}</value>
+    <comment>Inside 'Couldn't send it …': the report service's answer. {status}: its HTTP status code, 503.</comment>
+  </data>
+  <data name="ReportWhyNoConnection" xml:space="preserve">
+    <value>no connection</value>
+    <comment>Inside 'Couldn't send it …': there was no connection.</comment>
+  </data>
+  <data name="ReportWhyNoAnswer" xml:space="preserve">
+    <value>no answer in time</value>
+    <comment>Inside 'Couldn't send it …': the report service didn't answer in time.</comment>
+  </data>
+  <data name="ReportWriteSomething" xml:space="preserve">
+    <value>Write what happened, or what would help.</value>
+    <comment>Report dialog, under the text box, while it is empty.</comment>
+  </data>
+  <data name="ReportTooLong" xml:space="preserve">
+    <value>At most {count, plural, one {{max} character} other {{max} characters}}, please.</value>
+    <comment>Report dialog, under the text box, when the text is too long. {count}: the most characters, 4000; {max}: the same number written with grouping, 4,000.</comment>
+  </data>
+  <data name="ReportContactTooLong" xml:space="preserve">
+    <value>The contact can be at most {count, plural, one {# character} other {# characters}}.</value>
+    <comment>Report dialog, when the contact is too long. {count}: the most characters, 120.</comment>
+  </data>
 </root>

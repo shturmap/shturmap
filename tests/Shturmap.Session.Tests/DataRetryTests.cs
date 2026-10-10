@@ -88,6 +88,41 @@ public class DataRetryTests
             GameSession.LanguageNotice("German", refused, TimeSpan.FromMinutes(2)));
     }
 
+    // The notices name the language by tarkov.dev's code, in a text, so each language can name it its own way (docs/DESIGN.md
+    // §8, "Texts"); in English as .NET's English name did before, for each of tarkov.dev's languages. A code the texts
+    // don't know shows as it is.
+    [Fact]
+    public void The_language_notices_name_each_of_tarkov_devs_languages()
+    {
+        var refused = LoadProblem.Explain(new HttpRequestException("403", null, HttpStatusCode.Forbidden));
+        foreach (var code in new[] { "cs", "de", "en", "es", "fr", "hu", "it", "ja", "ko", "pl", "pt", "ro", "ru", "sk", "tr", "zh" })
+        {
+            var name = System.Globalization.CultureInfo.GetCultureInfo(code).EnglishName;
+            Assert.Equal($"Showing English: the {name} texts couldn't be loaded. tarkov.dev answered 403. Please report it.",
+                GameSession.LanguageNotice(code, refused, TimeSpan.FromMinutes(2)));
+            Assert.Equal($"No {name} texts on tarkov.dev; showing English.", SessionTexts.LanguageMissing(language: code));
+            Assert.Equal($"{name} texts loaded.", SessionTexts.LanguageLoaded(language: code));
+        }
+        Assert.Equal("No xx texts on tarkov.dev; showing English.", SessionTexts.LanguageMissing(language: "xx"));
+    }
+
+    // The wait is a number in the notice's own text, with its plural there (a language may change the noun after
+    // "in"), not a phrase glued in: one and several, minutes and the tests' seconds.
+    [Fact]
+    public void A_notice_says_its_wait_in_one_or_several_minutes_or_seconds()
+    {
+        var page = LoadProblem.Explain(Page());
+        Assert.EndsWith("Shturmap tries again in 1 minute.", GameSession.DataNotice(page, TimeSpan.FromMinutes(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 16 minutes.", GameSession.DataNotice(page, TimeSpan.FromMinutes(16)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 1 second.", GameSession.DataNotice(page, TimeSpan.FromSeconds(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 30 seconds.", GameSession.DataNotice(page, TimeSpan.FromSeconds(30)), StringComparison.Ordinal);
+        var busy = LoadProblem.Explain(Busy());
+        Assert.EndsWith("Shturmap tries again in 1 minute; if it keeps failing, please report it.",
+            GameSession.DataNotice(busy, TimeSpan.FromMinutes(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 1 minute.", GameSession.LanguageNotice("de", busy, TimeSpan.FromMinutes(1)), StringComparison.Ordinal);
+        Assert.EndsWith("Shturmap tries again in 4 minutes.", GameSession.LanguageNotice("de", busy, TimeSpan.FromMinutes(4)), StringComparison.Ordinal);
+    }
+
     // ---- the game data ----
 
     [Fact]

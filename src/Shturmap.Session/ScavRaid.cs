@@ -44,10 +44,10 @@ public static class ScavRaid
             {
                 var spots = n.Items.Select(i => (Item: i, Spots: SpotsHere(i))).ToList();
                 var names = n.Items.Select(data.ItemName).Distinct().ToList();
-                var text = names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+                var text = Planning.OneOf(names);
                 var count = n.Quests.Values.Sum();
                 if (count > 1)
-                    text += $" ×{count}";
+                    text = SessionTexts.ItemTimes(count: count, item: text);
                 var questIds = n.Quests.Keys.OrderBy(id => data.Tasks[id].Name, StringComparer.CurrentCulture).ToList();
                 return new LootView(
                     spots.MaxBy(s => s.Spots).Item,

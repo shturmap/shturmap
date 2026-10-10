@@ -54,26 +54,24 @@ public sealed class Reporter
     public async Task<ReportResult> SendAsync(UserReport report, CancellationToken ct = default)
     {
         if (_endpoint is null)
-            return new ReportResult(ReportStatus.NotConfigured, "Reporting isn't set up in this build.");
+            return new ReportResult(ReportStatus.NotConfigured, SessionTexts.ReportNotConfigured);
         if (Muted)
-            return new ReportResult(ReportStatus.Muted, "Not sent: developer runs send nothing.");
+            return new ReportResult(ReportStatus.Muted, SessionTexts.ReportMuted);
         var path = Store(report);
-        var (outcome, why) = await new ReportSender(_endpoint, _http, Info.Version).SendAsync(ReportEnvelopes.Feedback(report, Info), ct);
+        var (outcome, why, said) = await new ReportSender(_endpoint, _http, Info.Version).SendAsync(ReportEnvelopes.Feedback(report, Info), ct);
         switch (outcome)
         {
             case ReportSender.Outcome.Sent:
                 TryDelete(path);
                 AppLog.Info($"Report {report.Id} sent ({report.Kind.ToString().ToLowerInvariant()})");
-                return new ReportResult(ReportStatus.Sent, $"Sent. Thank you. Report {report.Id}.", report.Id);
+                return new ReportResult(ReportStatus.Sent, SessionTexts.ReportSent(id: report.Id), report.Id);
             case ReportSender.Outcome.Later:
                 AppLog.Warn($"Report {report.Id} not sent yet: {why}");
-                return new ReportResult(ReportStatus.Kept,
-                    $"Couldn't send it now ({why}). It's kept on this PC and goes out by itself the next time Shturmap starts.", report.Id);
+                return new ReportResult(ReportStatus.Kept, SessionTexts.ReportKept(why: said), report.Id);
             default:
                 MarkRefused(path);
                 AppLog.Warn($"Report {report.Id} refused: {why}");
-                return new ReportResult(ReportStatus.Refused,
-                    $"Couldn't send it: {why}. It's kept on this PC, in %LOCALAPPDATA%\\Shturmap\\outbox.", report.Id);
+                return new ReportResult(ReportStatus.Refused, SessionTexts.ReportRefused(why: said), report.Id);
         }
     }
 
@@ -96,7 +94,7 @@ public sealed class Reporter
             }
             if (report is null)
                 continue;
-            var (outcome, why) = await new ReportSender(_endpoint, _http, Info.Version).SendAsync(ReportEnvelopes.Feedback(report, Info), ct);
+            var (outcome, why, _) = await new ReportSender(_endpoint, _http, Info.Version).SendAsync(ReportEnvelopes.Feedback(report, Info), ct);
             if (outcome == ReportSender.Outcome.Sent)
             {
                 TryDelete(path);
@@ -163,13 +161,13 @@ public sealed class Reporter
     public async Task<ReportResult> SendCrashesAsync(IReadOnlyList<CrashRecord> records, CancellationToken ct = default)
     {
         if (_endpoint is null)
-            return new ReportResult(ReportStatus.NotConfigured, "Reporting isn't set up in this build.");
+            return new ReportResult(ReportStatus.NotConfigured, SessionTexts.ReportNotConfigured);
         if (Muted)
-            return new ReportResult(ReportStatus.Muted, "Not sent: developer runs send nothing.");
+            return new ReportResult(ReportStatus.Muted, SessionTexts.ReportMuted);
         var sent = new List<string>();
         foreach (var record in records.Take(5))
         {
-            var (outcome, why) = await new ReportSender(_endpoint, _http, Info.Version).SendAsync(ReportEnvelopes.Crash(record), ct);
+            var (outcome, why, said) = await new ReportSender(_endpoint, _http, Info.Version).SendAsync(ReportEnvelopes.Crash(record), ct);
             switch (outcome)
             {
                 case ReportSender.Outcome.Sent:
@@ -181,19 +179,17 @@ public sealed class Reporter
                     foreach (var rest in records.Where(r => !sent.Contains(r.Id)))
                         Crashes.SetState(rest, CrashState.Approved);
                     AppLog.Warn($"Crash report {record.Id} not sent yet: {why}");
-                    return new ReportResult(ReportStatus.Kept,
-                        $"Couldn't send the crash report now ({why}). It goes out by itself the next time Shturmap starts.", record.Id);
+                    return new ReportResult(ReportStatus.Kept, SessionTexts.CrashReportKept(why: said), record.Id);
                 default:
                     Crashes.SetState(record, CrashState.Kept);
                     AppLog.Warn($"Crash report {record.Id} refused: {why}");
-                    return new ReportResult(ReportStatus.Refused, $"Couldn't send the crash report: {why}.", record.Id);
+                    return new ReportResult(ReportStatus.Refused, SessionTexts.CrashReportRefused(why: said), record.Id);
             }
         }
         // More than five at once: the rest wait for the next start, already approved.
         foreach (var rest in records.Skip(5))
             Crashes.SetState(rest, CrashState.Approved);
-        return new ReportResult(ReportStatus.Sent, sent.Count == 1 ? $"Crash report sent. Thank you. Report {sent[0]}." : $"{sent.Count} crash reports sent. Thank you.",
-            sent.LastOrDefault());
+        return new ReportResult(ReportStatus.Sent, SessionTexts.CrashReportsSent(count: sent.Count, id: sent.LastOrDefault()), sent.LastOrDefault());
     }
 
     /// <summary>"Don't send", or the setting is Never: the records stay on this PC only.</summary>

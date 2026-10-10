@@ -1,4 +1,4 @@
-using System.Globalization;
+using Shturmap.Core;
 using Shturmap.Core.Planning;
 using Shturmap.Core.Quests;
 using Shturmap.Data.TarkovDev;
@@ -86,11 +86,11 @@ public static class QuestCards
 
         var facts = new List<string> { data.TraderName(task.Trader) };
         if (task.MinPlayerLevel is > 1 and var level)
-            facts.Add($"from level {level}");
+            facts.Add(SessionTexts.QuestFromLevel(level: level));
         if (task.KappaRequired)
-            facts.Add("needed for Kappa");
+            facts.Add(SessionTexts.QuestForKappa);
         if (task.LightkeeperRequired)
-            facts.Add("needed for Lightkeeper");
+            facts.Add(SessionTexts.QuestForLightkeeper);
 
         var unlocks = data.Tasks.Values
             .Where(t => t.TaskRequirements?.Any(r => r.Task == questId) == true)
@@ -111,7 +111,7 @@ public static class QuestCards
                 .Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "", status?.State == QuestState.Active, ticks)).ToList(),
             Needs(data, task, sources, quests, ticks),
             unlocks.Take(ShownUnlocks).ToList(),
-            unlocks.Count > ShownUnlocks ? $"and {unlocks.Count - ShownUnlocks} more" : "",
+            unlocks.Count > ShownUnlocks ? SessionTexts.QuestUnlocksMore(count: unlocks.Count - ShownUnlocks) : "",
             task.WikiLink);
     }
 
@@ -123,19 +123,19 @@ public static class QuestCards
     private static string StatusText(QuestStatus? status)
     {
         if (status is null)
-            return "Not started";
+            return SessionTexts.QuestNotStarted;
         var state = status.State switch
         {
-            QuestState.Active => "Active",
-            QuestState.Completed => "Completed",
-            QuestState.Failed => "Failed",
-            _ => "Not started",
+            QuestState.Active => SessionTexts.QuestActive,
+            QuestState.Completed => SessionTexts.QuestDone,
+            QuestState.Failed => SessionTexts.QuestLost,
+            _ => SessionTexts.QuestNotStarted,
         };
-        var day = status.At?.ToString("d MMM", CultureInfo.CurrentCulture);
+        var day = status.At?.ToString("d MMM", UiLanguage.Culture);
         var source = status.Source switch
         {
-            ObservationSource.Log => $"from the game log, {day}",
-            _ when status.ImpliedBy is { } later => $"because {later} needs it",
+            ObservationSource.Log => SessionTexts.QuestStateFromLog(day: day),
+            _ when status.ImpliedBy is { } later => SessionTexts.QuestStateImplied(quest: later),
             _ => null,
         };
         return source is null ? state : $"{state} · {source}";
@@ -143,19 +143,19 @@ public static class QuestCards
 
     /// <summary>"Done · ticked by you, 4 Oct": where an objective's "done" comes from (docs/DESIGN.md §4, "Says why").</summary>
     public static string TickedText(DateOnly day) =>
-        day == default ? "Done · ticked by you" : $"Done · ticked by you, {day.ToString("d MMM", CultureInfo.CurrentCulture)}";
+        day == default ? SessionTexts.TickedByYou : SessionTexts.TickedByYouOn(day: day.ToString("d MMM", UiLanguage.Culture));
 
     private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live, bool active, IReadOnlyDictionary<string, DateOnly>? ticks)
     {
         var kind = QuestTaxonomy.Classify(o.Type);
         var where = MapNames(data, MapIds(o));
         if (where.Length == 0 && QuestTaxonomy.WorksAnywhere(kind))
-            where = "any map";
+            where = SessionTexts.QuestAnyMap;
         var text = string.IsNullOrWhiteSpace(o.Description) ? QuestTaxonomy.Label(kind) : o.Description!;
         if (SaysWhere(data, text, where))
             where = "";
         if (Handovers.Optional(task, o))
-            text += " (optional)";
+            text = SessionTexts.ObjectiveOptional(objective: text);
         var item = ItemOf(o);
         var handover = HandoverText(data, task, o.Id);
         var count = HandoverCount(task, o.Id);
@@ -170,7 +170,7 @@ public static class QuestCards
         {
             HandoverCount = count,
             HandoverTraderId = count > 0 ? task.Trader : null,
-            Possible = places > 1 && !row.Done ? $"One of {places} places it can be" : "",
+            Possible = places > 1 && !row.Done ? SessionTexts.QuestPossiblePlaces(count: places) : "",
         };
     }
 
@@ -193,7 +193,7 @@ public static class QuestCards
     public static string HandoverText(GameData data, ApiTask task, string objectiveId)
     {
         var count = HandoverCount(task, objectiveId);
-        return count == 0 ? "" : $"Hand over{(count > 1 ? $" ×{count}" : "")} to {data.TraderName(task.Trader)}";
+        return count == 0 ? "" : SessionTexts.HandoverTo(count: count, trader: data.TraderName(task.Trader));
     }
 
     /// <summary>
@@ -282,23 +282,23 @@ public static class QuestCards
                 continue;
             var maps = (o.Maps ?? []).Concat((o.Zones ?? []).Select(z => z.Map)).OfType<string>().ToList();
             foreach (var keys in plan.Keys)
-                Add(RequirementKind.Key, keys, 1, maps, "key");
+                Add(RequirementKind.Key, keys, 1, maps, SessionTexts.PurposeKey);
             foreach (var (item, count) in plan.Bring)
                 Add(RequirementKind.Bring, [item], count, maps, o.Type switch
                 {
-                    "plantItem" => "to plant",
-                    "mark" => "to mark",
-                    "useItem" => "to use",
-                    _ => "to bring",
+                    "plantItem" => SessionTexts.PurposePlant,
+                    "mark" => SessionTexts.PurposeMark,
+                    "useItem" => SessionTexts.PurposeUse,
+                    _ => SessionTexts.PurposeBring,
                 });
             if (plan.Wear is { Count: > 0 } wear)
-                Add(RequirementKind.Wear, wear.SelectMany(s => s).Distinct().ToList(), 1, maps, "to wear");
+                Add(RequirementKind.Wear, wear.SelectMany(s => s).Distinct().ToList(), 1, maps, SessionTexts.PurposeWear);
             if (plan.Weapons is { Count: > 0 } weapons)
-                Add(RequirementKind.Weapon, weapons, 1, maps, "to use");
+                Add(RequirementKind.Weapon, weapons, 1, maps, SessionTexts.PurposeUse);
             if (plan.Mods is { Count: > 0 } mods)
-                Add(RequirementKind.WeaponMods, mods.SelectMany(s => s).Distinct().ToList(), 1, maps, "to fit");
+                Add(RequirementKind.WeaponMods, mods.SelectMany(s => s).Distinct().ToList(), 1, maps, SessionTexts.PurposeFit);
             foreach (var (item, count) in plan.ExitItems ?? [])
-                Add(RequirementKind.Exit, [item], count, maps, "to leave through " + plan.Exit);
+                Add(RequirementKind.Exit, [item], count, maps, SessionTexts.PurposeLeave(exit: plan.Exit));
         }
         // A key an objective names is that objective's row above, with its alternatives ("306 or 308"); the quest's own
         // list repeats those keys one by one, so only a key no objective names is added from it (Planning.QuestOnlyKeys;
@@ -309,7 +309,7 @@ public static class QuestCards
             if (anyDone && needed.Map is not null && !openMaps.Contains(needed.Map))
                 continue;
             foreach (var key in (needed.Keys ?? []).Where(k => !named.Contains(k)))
-                Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map], "key");
+                Add(RequirementKind.Key, [key], 1, needed.Map is null ? [] : [needed.Map], SessionTexts.PurposeKey);
         }
 
         var needs = new List<CardNeed>();
@@ -320,12 +320,12 @@ public static class QuestCards
             {
                 RequirementKind.Wear or RequirementKind.WeaponMods => Planning.GearText(data, need.Alternatives),
                 RequirementKind.Weapon => Planning.WeaponText(data, sources, need.Alternatives),
-                _ => names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others",
+                _ => Planning.OneOf(names),
             };
             if (need.Count > 1)
-                text += " ×" + need.Count.ToString("N0", CultureInfo.CurrentCulture);
+                text = SessionTexts.ItemTimes(count: need.Count.ToString("N0", UiLanguage.Culture), item: text);
             var where = MapNames(data, need.Maps);
-            var why = string.Join(" · ", new[] { string.Join(" and ", need.Purposes), where.Length > 0 ? "on " + where : "" }.Where(p => p.Length > 0));
+            var why = string.Join(" · ", new[] { Planning.And(need.Purposes), where.Length > 0 ? SessionTexts.QuestNeedOn(maps: where) : "" }.Where(p => p.Length > 0));
             // Two lists that read the same (a weapon class given twice with one preset more) stay one row.
             if (!needs.Any(n => n.Kind == need.Kind && n.Text == text && n.Where == why))
             {
