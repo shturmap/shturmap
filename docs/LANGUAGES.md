@@ -203,6 +203,9 @@ Run this checklist from top to bottom; tick each line in the commit that adds th
 - [ ] Sorting and search follow the language (accents; Turkish i and İ).
 - [ ] Notices that name a language ("No French texts on tarkov.dev") name it in the language in use.
 - [ ] Help names the Windows text recognition language the extract list needs for a game in that language.
+- [ ] The quest card's line of map names: how tarkov.dev's sentences in that language say where ("auf Woods" in
+      German), as a pattern in `QuestSynopsis.MapList` with made-up one-line tests (`ItemCardTests`); without one,
+      both lines stay (DESIGN.md §4, "Quest cards").
 
 **4. Check**
 - [ ] `TranslationTests` pass with the language offered (every text, placeholders, plural forms, made from the current

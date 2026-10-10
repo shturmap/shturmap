@@ -67,6 +67,8 @@ local cache and skip without it.
 - `SynopsisDataTests`: every quest on every map keeps the synopsis rules (fails on BREAK only).
 - `PlanOrderTests`: over 100 Plan rows and objective facts read.
 - `ExtractRulesTests`: every exit takes the same in German as in English, with at least 5 flare and 5 co-op exits.
+- `ItemCardTests`: German quest cards leave out the line of map names under at least half as many objectives as the
+  English ones (2026-10-11: 363 of 936, English 577).
 - `PicksTests`: picks on the real data.
 
 ## 4. After a game patch (one played raid)
@@ -115,6 +117,7 @@ pictures stay on the PC.
 | Hand-overs pair with their pickup or find by quest item, or by item set, count and found-in-raid | `Handovers` | a hand-over line comes back, or a mark goes missing | `handovers` NEAR |
 | `possibleLocations` with one position is where the thing is; several are each "maybe here" | `MapContentBuilder.PlacesItCanBe`, `QuestCards` | a "?" where the place is certain, or none where it isn't | `PossiblePlaceTests`; the card by eye |
 | Synopsis tables (English): verbs, terms, conditions, place patterns, map names | `QuestSynopsis` | FALLBACK and LONG rows; BREAK | `synopses`; `SynopsisDataTests` |
+| An objective's sentence says where with "on", "in", "from", "at" (English) or "auf", "in" (German) before the map's name as the data writes it, alone or in a list | `QuestSynopsis.MapList`, `QuestCards.SaysWhere` | a quest card says the map twice (longer, never wrong) | `ItemCardTests` against the German cache, counts only |
 | Exit rules: `Alpinist*`/`RedRebel*` climb, `sniper` or "(Flare)" flare, "(Co-op)" co-op; item ids of roubles, dollars, euros, the red flare, ice pick and paracord | `ExtractRules` | wrong or missing "to leave through" items | `ExtractRulesTests`; `bring` NO EXIT |
 | Bosses are mobs whose id starts `boss`; every mob but `pmcUSEC`/`pmcBEAR` is drawn | `GameData.BossMobsOn`, `MapContent` | a boss missing from Plan; ⚠ new AI PMCs drawn as bosses | `spawns` |
 | Spawn sides and categories: `scav`; `bot`, `all`, `sniper` | `MapContent` | ⚠ spawn rings go missing | `spawns` |
@@ -185,3 +188,4 @@ Labyrinth's 18 traps, 60 of 1,418 objectives optional): they say what was true o
 | 2026-10-09 | `synopses`, `handovers`, `spawns` | no FALLBACK or BREAK (153 LONG PvE, 156 PvP); hand-overs 221 fold, 0 NEAR; spawns at most 25 m from a spawn point |
 | 2026-10-09 | story chapters; tests | still none in json.tarkov.dev; 1321 tests passed against the fresh cache, 0 skipped |
 | 2026-10-09 | before 0.4.0: `data`, the five audits in both modes, story chapters, tests | the same counts as the morning's runs, the same NO EXIT rows, no chapters; 1407 tests passed against the fresh cache, 0 skipped |
+| 2026-10-11 | German quest cards' line of map names, over `pve de` (`ItemCardTests`) | 363 of 936 lines left out (English 577), each under a sentence that says where; none taken wrongly. Kept: sentences that name none or not all of the line's maps, 17 extracts "aus …", 17 transits "von … nach …", 151 sentences still English in the German data |

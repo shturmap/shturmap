@@ -307,8 +307,12 @@ public static partial class QuestSynopsis
         return problems;
     }
 
-    /// <summary>A pattern for the map's own name and lists that hold it ("on Woods, Ground Zero, or Customs").</summary>
-    public static Regex? MapList(IReadOnlyCollection<string> mapNamesHere, IReadOnlyCollection<string> allMapNames)
+    /// <summary>
+    /// A pattern for the map's own name and lists that hold it, where a text in <paramref name="language"/> (the data's)
+    /// names them as the place: "on Woods, Ground Zero, or Customs"; German "auf Woods, Ground Zero oder Customs" (owner,
+    /// 2026-10-11). Null for a language it has no pattern for.
+    /// </summary>
+    public static Regex? MapList(IReadOnlyCollection<string> mapNamesHere, IReadOnlyCollection<string> allMapNames, string language = UiLanguage.English)
     {
         if (mapNamesHere.Count == 0)
             return null;
@@ -316,10 +320,33 @@ public static partial class QuestSynopsis
             string.Join("|", names.Where(n => n.Length > 0).Distinct().OrderByDescending(n => n.Length).Select(Regex.Escape));
         var here = Alternatives(mapNamesHere);
         var any = Alternatives(allMapNames.Concat(mapNamesHere));
-        var separator = @"(?:,\s+(?:or\s+|and\s+)?|\s+(?:or|and)\s+)";
-        // Only where the name ends the place: "at Factory gate" is a gate, not the map.
-        var after = @"(?=$|[,.;)]|\s*\(|\s+(?:through|with|while|using|wearing|without|during|to|and|in|on|at|from|for|by|before|after)\b)";
-        return new Regex($@"\s+(?:on|in|from|at)\s+(?:(?:{any}){separator})*(?:{here})(?:{separator}(?:{any}))*{after}",
+        string place, separator, after;
+        switch (language)
+        {
+            case UiLanguage.English:
+                place = "on|in|from|at";
+                separator = @"(?:,\s+(?:or\s+|and\s+)?|\s+(?:or|and)\s+)";
+                // Only where the name ends the place: "at Factory gate" is a gate, not the map.
+                after = @"(?=$|[,.;)]|\s*\(|\s+(?:through|with|while|using|wearing|without|during|to|and|in|on|at|from|for|by|before|after)\b)";
+                break;
+            case UiLanguage.German:
+                // "auf" and "in" say where; "nach", "aus" and "von" say where to or from (owner, 2026-10-11).
+                place = "auf|in";
+                separator = @"(?:,\s+(?:oder\s+|und\s+)?|\s+(?:oder|und)\s+)";
+                // German writes every noun with a capital, so a word in lower case after the name ends the place,
+                // whether it leads on ("mit", "während") or ends the clause ("… auf Woods ab", "… in Customs versteckt
+                // ist"); a noun would make the name part of another place, as "at Factory gate" does. Nor is a name the
+                // place where it only begins a longer map's: "auf Factory bei Nacht" isn't on Factory.
+                var names = allMapNames.Concat(mapNamesHere).Where(n => n.Length > 0).Distinct().ToList();
+                var longer = Alternatives(names.SelectMany(n => names
+                    .Where(m => m.Length > n.Length && m.StartsWith(n, StringComparison.OrdinalIgnoreCase) && !char.IsLetterOrDigit(m[n.Length]))
+                    .Select(m => m[n.Length..])));
+                after = @"(?=$|[,.;)]|\s*\(|\s+(?-i:\p{Ll}))" + (longer.Length > 0 ? $"(?!{longer})" : "");
+                break;
+            default:
+                return null;
+        }
+        return new Regex($@"\s+(?:{place})\s+(?:(?:{any}){separator})*(?:{here})(?:{separator}(?:{any}))*{after}",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
