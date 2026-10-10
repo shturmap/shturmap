@@ -91,7 +91,7 @@ public sealed partial class KeepToggle : Grid
             _icon.FontSize = 14;
         }
         ToolTipService.SetToolTip(this, kept
-            ? "Picked for the coming raid. Click to unpick"
-            : "Pick for the coming raid: lit on the map in its own colour, first in its card");
+            ? AppTexts.PickPickedTip
+            : AppTexts.PickTip);
     }
 }

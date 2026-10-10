@@ -58,7 +58,7 @@ public sealed partial class MainWindow
     }
 
     // "CUSTOMS · 33 MIN": the raid as the cue's eyebrow says it.
-    private static string ReplayWords(RaidReplay replay) => $"{Caps.Of(replay.MapName)} · {(int)replay.Minutes} MIN";
+    private static string ReplayWords(RaidReplay replay) => AppTexts.CueMapAndLength(map: Caps.Of(replay.MapName), minutes: (int)replay.Minutes);
 
     private void StartReplayFrames()
     {
