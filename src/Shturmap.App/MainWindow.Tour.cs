@@ -281,6 +281,7 @@ public sealed partial class MainWindow
             TourTitle.Text = chapter.Title;
             TourRuleScale.ScaleX = 1;
         }
+        PlaceTourTitle();
         Study.Ui("tour.chapter", ("n", at + 1), ("stage", chapter.Stage));
         _ = StageAsync(chapter, run);
     }
@@ -368,14 +369,17 @@ public sealed partial class MainWindow
         var columns = new Grid { ColumnSpacing = 64 };
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        // Side by side in the map's width; in a narrow one a long line wraps in its column (review of 2026-10-10:
+        // German "Sendet Tastendrücke oder Klicks" ran 95 DIP past the plate at the smallest window).
+        var widest = Math.Max(160, (Map.ActualWidth - TourPlate.Padding.Left - TourPlate.Padding.Right - 2 - columns.ColumnSpacing) / 2);
         var lines = new List<UIElement>();
         foreach (var (key, column) in new[] { ("reads", 0), ("never", 1) })
         {
-            var stack = new StackPanel { Spacing = 10 };
+            var stack = new StackPanel { Spacing = 10, MaxWidth = widest };
             stack.Children.Add(TourEyebrowText(key == "reads" ? AppTexts.TourSafeReads : AppTexts.TourSafeNever, key == "reads" ? "AmberBrush" : "MutedBrush"));
             foreach (var word in chapter.Words.Where(w => w.Key == key))
             {
-                var line = new TextBlock { Text = word.Text, Style = TextStyle("TitleText"), TextWrapping = TextWrapping.NoWrap };
+                var line = new TextBlock { Text = word.Text, Style = TextStyle("TitleText") };
                 stack.Children.Add(line);
                 lines.Add(line);
             }
@@ -843,6 +847,7 @@ public sealed partial class MainWindow
         TourStage.Margin = new Thickness(map.X, map.Y, 0, 0);
         TourStage.Width = map.Width;
         TourStage.Height = Math.Max(160, map.Height - band - 46);
+        PlaceTourTitle();
         if (TourOpen && _tourHolesNow is { } now)
             DrawTourShade(_tourHoles = now(), 1);
         else
@@ -850,6 +855,26 @@ public sealed partial class MainWindow
     }
 
     private void OnTourLayerSizeChanged(object sender, SizeChangedEventArgs e) => PlaceTour();
+
+    // The chapter's title beside the buttons, or, where it would wrap there, under them across the band, where it wraps
+    // only past that (review of 2026-10-10: at the smallest window German "WAS SHTURMAP LIEST" took three lines beside
+    // them). Measured with the title as it ends, not as it decodes.
+    private void PlaceTourTitle()
+    {
+        if (!TourOpen || double.IsNaN(TourBand.Width))
+            return;
+        var probe = new TextBlock
+        {
+            Text = TourChapters[_tourAt].Title, FontFamily = TourTitle.FontFamily, FontSize = TourTitle.FontSize, FontWeight = TourTitle.FontWeight,
+            FontStretch = TourTitle.FontStretch, CharacterSpacing = TourTitle.CharacterSpacing,
+        };
+        probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        TourButtons.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var beside = TourBand.Width - TourBand.Padding.Left - TourBand.Padding.Right - ((Grid)TourTitle.Parent).ColumnSpacing - TourButtons.DesiredSize.Width;
+        var under = probe.DesiredSize.Width > beside;
+        Grid.SetRow(TourTitle, under ? 2 : 1);
+        Grid.SetColumnSpan(TourTitle, under ? 2 : 1);
+    }
 
     // A part of the window by its x:Name, in the tour's coordinates, with room around it; null when it isn't shown.
     private Rect? Anchor(string name, double pad = 6)
@@ -987,9 +1012,11 @@ public sealed partial class MainWindow
         Corner(new(x0 + l, y1), new(x0, y1), new(x0, y1 - l));
     }
 
+    // The stage's plate, in the middle of the map above the band. Never cut: one taller or wider than the room there
+    // (the example raid card at the smallest window, 900×560, in German; review of 2026-10-10) is drawn smaller to fit.
     private void ShowPlate(UIElement content)
     {
-        TourPlate.Child = content;
+        TourPlate.Child = new Viewbox { Child = content, StretchDirection = StretchDirection.DownOnly };
         TourPlate.Visibility = Visibility.Visible;
         if (!_tourMotion)
             return;

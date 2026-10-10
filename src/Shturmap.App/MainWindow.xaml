@@ -1396,18 +1396,26 @@
       <!-- The map's part above the band: a stage's plate stands in its middle (MainWindow.Tour, PlaceTour), opaque as the
            band is (review of 2026-10-09: the map's labels read through the example raid card). -->
       <Grid x:Name="TourStage" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
-        <Border x:Name="TourPlate" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
+        <Border x:Name="TourPlate" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,10"
                 Background="{StaticResource GroundBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="30,24" />
       </Grid>
-      <!-- Opaque: the map's labels showed through its words (review of 2026-10-09). -->
+      <!-- Opaque: the map's labels showed through its words (review of 2026-10-09). The buttons stand beside the eyebrow
+           and the title; the chapter's lines run under both, the band's whole width, and a title that doesn't fit beside
+           them goes under them, across the band, wrapping only past that (review of 2026-10-10: at the smallest window,
+           900×560, "IT FOLLOWS THE GAME" was cut off, and the lines took five rows beside the buttons, so the stage above
+           had no room for the example raid card). -->
       <Border x:Name="TourBand" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="{StaticResource GroundBrush}" SizeChanged="OnTourLayerSizeChanged"
               BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" Padding="22,14,22,12">
-        <Grid ColumnSpacing="28" RowSpacing="10">
+        <!-- Rows: the eyebrow; the title beside the buttons, or under them (PlaceTourTitle); the lines; the ticks. -->
+        <Grid ColumnSpacing="28">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
@@ -1417,12 +1425,12 @@
               <ScaleTransform x:Name="TourRuleScale" ScaleX="0" />
             </Rectangle.RenderTransform>
           </Rectangle>
-          <StackPanel Spacing="6">
-            <TextBlock x:Name="TourEyebrow" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="300" Foreground="{StaticResource AmberBrush}" />
-            <TextBlock x:Name="TourTitle" FontSize="30" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="120" Foreground="{StaticResource InkBrush}" />
-            <TextBlock x:Name="TourText" FontSize="15" LineHeight="21" TextWrapping="Wrap" MaxWidth="780" HorizontalAlignment="Left" Foreground="{StaticResource InkBrush}" />
-          </StackPanel>
-          <StackPanel Grid.Column="1" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Top">
+          <TextBlock x:Name="TourEyebrow" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="300" Foreground="{StaticResource AmberBrush}" />
+          <TextBlock x:Name="TourTitle" Grid.Row="1" Margin="0,6,0,0" FontSize="30" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="120" TextWrapping="Wrap"
+                     Foreground="{StaticResource InkBrush}" />
+          <TextBlock x:Name="TourText" Grid.Row="3" Grid.ColumnSpan="2" Margin="0,6,0,0" FontSize="15" LineHeight="21" TextWrapping="Wrap" MaxWidth="780" HorizontalAlignment="Left"
+                     Foreground="{StaticResource InkBrush}" />
+          <StackPanel x:Name="TourButtons" Grid.Column="1" Grid.RowSpan="2" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Top">
             <StackPanel Orientation="Horizontal" Spacing="18" HorizontalAlignment="Right">
               <HyperlinkButton x:Name="TourBack" Padding="0" Click="OnTourBackClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.TourBackTip}">
                 <TextBlock Text="{x:Bind local:ViewTexts.TourBack}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
@@ -1435,7 +1443,7 @@
               <TextBlock Text="{x:Bind local:ViewTexts.TourEnd}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
             </HyperlinkButton>
           </StackPanel>
-          <Grid x:Name="TourTicks" Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="5" Height="4" />
+          <Grid x:Name="TourTicks" Grid.Row="4" Grid.ColumnSpan="2" ColumnSpacing="5" Height="4" Margin="0,10,0,0" />
         </Grid>
       </Border>
     </Grid>

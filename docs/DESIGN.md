@@ -1122,7 +1122,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the stage's plate, opaque too), holds TOUR · 3 OF 7,
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
     chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
-    middle of the map above it. Motion: "Design system", *Motion*.
+    middle of the map above it. The buttons stand beside the eyebrow and the title, the lines run under both across the
+    band, and a title that doesn't fit beside the buttons goes under them, across the band, wrapping only past that; a
+    plate larger than the room above the band is drawn smaller to fit, never cut, and the READS / NEVER lines wrap in
+    their columns in a narrow map (review of 2026-10-10, at the smallest window, 900×560: "IT FOLLOWS THE GAME" was cut
+    off, the lines took five rows beside the buttons, and the example raid card ran under the band). Motion: "Design
+    system", *Motion*.
   - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
     section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
     nearest frame on screen and the frame glides to it; a frame left over glides into the new part nearest it, and a
