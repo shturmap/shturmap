@@ -31,7 +31,10 @@ Every word Shturmap shows lives in a project's texts file (`src/**/<Name>Texts.r
 ## Translating
 
 Every new or changed English text is translated into every language in `UiLanguage.Supported` and
-`UiLanguage.InTranslation` **in the same commit**, and reviewed before that commit:
+`UiLanguage.InTranslation` **in the same commit**, and reviewed before that commit. **Whoever translates or reviews,
+into any language, takes the role of an expert Escape from Tarkov player and a distinguished, academically trained
+expert of that language** (owner, 2026-10-10): someone who knows how that language's players talk about the game and
+writes the language faultlessly.
 
 1. Write the text in `<Name>Texts.<code>.resx`, with the comment `en: <the English text, exactly>`. That comment is
    how the translation tests know the translation is current: change the English text and the test fails until the
@@ -46,8 +49,9 @@ Every new or changed English text is translated into every language in `UiLangua
 
 ## Review
 
-A translation is reviewed by someone who didn't write it: the **senior translator**, an agent in the role of a
-senior software and game localiser for that language (owner, 2026-10-10). Locally it is
+A translation is reviewed by someone who didn't write it: the **senior translator**, an agent in the role of an
+expert Escape from Tarkov player and a distinguished, academically trained expert of that language, with long
+experience localising software and games (owner, 2026-10-10). Locally it is
 `.claude/agents/senior-translator.md` (the `.claude` folder isn't in the repository); its rules are these, so any
 reviewer applies the same. It gets the English text, its comment, the translation, the glossary, and the screenshots
 of the layout check in that language, and answers for each text either "OK" or "FIX": the corrected text and why.

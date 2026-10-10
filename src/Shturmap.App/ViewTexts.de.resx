@@ -97,8 +97,8 @@
     <comment>en: Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest, until done or unpicked.</comment>
   </data>
   <data name="HelpTicks" xml:space="preserve">
-    <value>Ziel erledigt? Hak es auf der Quest-Karte ab (in den Logs steht es nicht): Map, ZIEL und Planung überspringen es. ABGABE in einer Zeile: Gib nach dem Raid beim Trader ab, was sie holt.</value>
-    <comment>en: Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. HAND OVER on a line: take what it gets to the trader after the raid.</comment>
+    <value>Ziel erledigt? Hak es auf der Quest-Karte ab (in den Logs steht es nicht): Map, ZIEL und Planung überspringen es. Item mit → und Trader-Porträt: Gib es nach dem Raid bei diesem Trader ab.</value>
+    <comment>en: Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. An item followed by → and a trader's portrait: hand it to that trader after the raid.</comment>
   </data>
   <data name="HelpReplay" xml:space="preserve">
     <value>Nach einem Raid mit ein paar Screenshots spielt die Map nach, wo du sie gemacht hast, am Anfang blass, am Ende hell. REPLAY in der Zeile des letzten Raids spielt ihn noch mal ab, bis zum nächsten Raid.</value>

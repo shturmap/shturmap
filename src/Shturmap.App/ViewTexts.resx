@@ -97,8 +97,8 @@
     <comment>Help: paragraph about picking quests with the pen beside each.</comment>
   </data>
   <data name="HelpTicks" xml:space="preserve">
-    <value>Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. HAND OVER on a line: take what it gets to the trader after the raid.</value>
-    <comment>Help: paragraph about ticking objectives done. NEXT is the raid card's label (RaidNextLabel); HAND OVER is the label of a line whose items go to a trader after the raid.</comment>
+    <value>Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. An item followed by → and a trader's portrait: hand it to that trader after the raid.</value>
+    <comment>Help: paragraph about ticking objectives done, and the hand-over mark. NEXT is the raid card's label (RaidNextLabel). The hand-over mark (HandoverMark) is drawn right after an item's cell: its count when more than one, an arrow → and the portrait of the trader it goes to.</comment>
   </data>
   <data name="HelpReplay" xml:space="preserve">
     <value>After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid.</value>
