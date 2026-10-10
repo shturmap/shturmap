@@ -728,10 +728,12 @@ public sealed partial class MainWindow
         await Task.Delay(_tourMotion ? 60 : 30);
     }
 
-    // The raid card's head, with example values: the map and side, the clock, NEXT and EXIT.
+    // The raid card's head, with example values: the map and side, the clock, NEXT and EXIT. Spaced as the rail's card
+    // is (its clock right under the name, the glance's rows between hairlines), not looser: at the smallest window the
+    // room above the band is some 240 DIP (review of 2026-10-10: the card, 12 DIP between all its parts, was taller).
     private FrameworkElement ExampleRaidCard(GameData data, MapPlanView? plan, MapContent content, TourExampleSet example)
     {
-        var card = new StackPanel { Width = 352, Spacing = 12 };
+        var card = new StackPanel { Width = 352 };
         var head = new Grid();
         head.Children.Add(new TextBlock { Text = Caps.Of(example.MapName), Style = TextStyle("TitleText"), CharacterSpacing = 80 });
         head.Children.Add(new TextBlock { Text = AppTexts.RaidSidePmc, Style = TextStyle("StatusText"), Foreground = Resource("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
@@ -743,7 +745,7 @@ public sealed partial class MainWindow
         // As the raid card lists them: a hand-over of what another objective gets is no line of its own (Handovers).
         var next = content.Objectives.FirstOrDefault(o => o.Places.Count > 0 && example.QuestIds.Contains(o.Quest.Id) && !Handovers.Folds(o.Quest, o.Objective.Id));
         var exit = content.Markers.FirstOrDefault(m => m.Kind == MarkerKind.ExtractPmc);
-        card.Children.Add(new Rectangle { Height = 1, Fill = Resource("LineBrush") });
+        var glance = new StackPanel { Margin = new Thickness(0, 8, 0, 0), BorderBrush = Resource("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) };
         if (next is not null)
         {
             // In a few words, as the raid card says it ("Mark Stryker"; Planning.ObjectiveSynopses, the session's own call
@@ -751,30 +753,34 @@ public sealed partial class MainWindow
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
             var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
-            card.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
+            glance.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }
         if (exit is not null)
-            card.Children.Add(GlanceRow(ViewTexts.RaidExitLabel, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
+            glance.Children.Add(GlanceRow(ViewTexts.RaidExitLabel, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
                 Caps.Of(Bearing.Describe(RelativeDirection.Behind)), "GreenBrush"));
-        card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });
+        card.Children.Add(glance);
+        card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 10, 0, 0) });
         return card;
     }
 
     private static string Shorten(string text, int length) => text.Length <= length ? text : text[..(length - 1)].TrimEnd() + "…";
 
+    // A glance row as the raid card's, on a hairline: the label in the card's own label column (Columns.Glance: the
+    // longest label of the language, so German "EXTRACT" isn't cut to "EXTRA"), the name (wrapping, as there) and its
+    // note, then the distance over its direction.
     private static Grid GlanceRow(string label, string name, string note, string distance, string direction, string brush)
     {
-        var row = new Grid { ColumnSpacing = 12 };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        var row = new Grid { Padding = new Thickness(0, 7, 0, 7), BorderBrush = Resource("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0) };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = Columns.Glance });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.Children.Add(new TextBlock { Text = label, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 4, 0, 0) });
         var what = new StackPanel { Spacing = 2 };
-        what.Children.Add(new TextBlock { Text = name, Style = TextStyle("TitleText"), FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap });
+        what.Children.Add(new TextBlock { Text = name, Style = TextStyle("TitleText"), FontSize = 15 });
         what.Children.Add(new TextBlock { Text = note, Style = TextStyle("StatusText"), FontSize = 10.5, Foreground = Resource(brush == "GreenBrush" ? "GreenBrush" : "MutedBrush") });
         Grid.SetColumn(what, 1);
         row.Children.Add(what);
-        var where = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Right };
+        var where = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12, 0, 0, 0) };
         where.Children.Add(new TextBlock { Text = distance, Style = TextStyle("FigureText"), FontSize = 22, Foreground = Resource(brush) });
         where.Children.Add(new TextBlock { Text = direction, Style = TextStyle("StatusText"), FontSize = 10.5, HorizontalAlignment = HorizontalAlignment.Right });
         Grid.SetColumn(where, 2);

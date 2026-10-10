@@ -931,7 +931,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     its kind's colour, with its distance and direction (`Rules.ExitsNote.Plain`). Only once the list was read (nothing
     is sure to be open before), never a transit, and not where EXIT is that one already. Both notes take a second line
     where the direction beside them leaves too little room, with "…" only past that (review of 2026-10-09: a Scav's
-    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The glance's rows hide with
+    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The labels NEXT, EXIT and OR share one column,
+    as wide as the longest of them in the language in use and the 10 px after it, never under 48 px, so the names
+    beside them line up (review of 2026-10-10: German "EXTRACT" filled the fixed 48 px and ran into the extract's name;
+    `Controls.Columns.Glance`, which the tour's example card takes too). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
@@ -1145,7 +1148,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     "Map drawing", *Room for labels on the right*).
     IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
     `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
-    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN).
+    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is spaced as the rail's
+    card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label column.
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New

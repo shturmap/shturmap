@@ -279,7 +279,7 @@
                     <DataTemplate x:DataType="local:KeyHelp">
                       <Grid ColumnSpacing="12" Margin="0,2">
                         <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="96" />
+                          <ColumnDefinition Width="{x:Bind controls:Columns.HelpKeys}" />
                           <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Border BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="6,1" HorizontalAlignment="Left" VerticalAlignment="Top">
@@ -993,12 +993,14 @@
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidAlsoUseful}" Margin="0,12,0,4"
                              Visibility="{x:Bind ShownIfAny(ViewModel.RaidKitMore), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKitMore, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
-                  <!-- The glance: the nearest objective and the nearest way out, big, before anything else. -->
+                  <!-- The glance: the nearest objective and the nearest way out, big, before anything else. Its labels share
+                       one column, as wide as the longest of them in the language in use (Controls.Columns.Glance), so the
+                       names line up. -->
                   <Grid Margin="-6,12,-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
                         Visibility="{x:Bind ShownIfSet(ViewModel.RaidNext), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Quest="{x:Bind ViewModel.RaidNext.QuestId, Mode=OneWay}"
                         controls:Linked.Objective="{x:Bind ViewModel.RaidNext.ObjectiveId, Mode=OneWay}">
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="48" />
+                      <ColumnDefinition Width="{x:Bind controls:Columns.Glance}" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -1016,7 +1018,7 @@
                   <Grid Margin="-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,1"
                         Visibility="{x:Bind ShownIfSet(ViewModel.RaidExit), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Marker="{x:Bind ViewModel.RaidExit.Id, Mode=OneWay}">
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="48" />
+                      <ColumnDefinition Width="{x:Bind controls:Columns.Glance}" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -1060,7 +1062,7 @@
                         Visibility="{x:Bind ShownIfSet(ViewModel.RaidPlainExit), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Marker="{x:Bind ViewModel.RaidPlainExit.Id, Mode=OneWay}"
                         ToolTipService.ToolTip="{x:Bind PlainExitTip}">
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="48" />
+                      <ColumnDefinition Width="{x:Bind controls:Columns.Glance}" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
