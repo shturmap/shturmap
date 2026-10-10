@@ -53,7 +53,7 @@
     <comment>en: Scav</comment>
   </data>
   <data name="RaidMinutes" xml:space="preserve">
-    <value>{minutes} min</value>
+    <value>{minutes} min</value>
     <comment>en: {minutes} min</comment>
   </data>
   <data name="StatusNotInRaid" xml:space="preserve">
@@ -357,7 +357,7 @@
     <comment>en: to enter {map}</comment>
   </data>
   <data name="PlanRaidLength" xml:space="preserve">
-    <value>Raid-Dauer {minutes} min</value>
+    <value>Raid-Dauer {minutes} min</value>
     <comment>en: {minutes} min raid</comment>
   </data>
   <data name="BossChance" xml:space="preserve">
@@ -489,7 +489,7 @@
     <comment>en: One of {count, plural, one {# place} other {# places}} it can be</comment>
   </data>
   <data name="HandoverTo" xml:space="preserve">
-    <value>{count, plural, =1 {Bei {trader} abgeben} one {×# bei {trader} abgeben} other {×# bei {trader} abgeben}}</value>
+    <value>{count, plural, =1 {bei {trader} abgeben} one {×# bei {trader} abgeben} other {×# bei {trader} abgeben}}</value>
     <comment>en: {count, plural, =1 {Hand over to {trader}} other {Hand over ×# to {trader}}}</comment>
   </data>
   <data name="QuestNeedOn" xml:space="preserve">

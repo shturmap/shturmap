@@ -109,15 +109,15 @@
     <comment>en: {list} and {count} more</comment>
   </data>
   <data name="AgeSeconds" xml:space="preserve">
-    <value>{seconds} s</value>
+    <value>{seconds} s</value>
     <comment>en: {seconds} s</comment>
   </data>
   <data name="AgeMinutes" xml:space="preserve">
-    <value>{minutes} min</value>
+    <value>{minutes} min</value>
     <comment>en: {minutes} min</comment>
   </data>
   <data name="AgeHours" xml:space="preserve">
-    <value>{hours} h</value>
+    <value>{hours} h</value>
     <comment>en: {hours} h</comment>
   </data>
   <data name="FixNoneYet" xml:space="preserve">
@@ -141,19 +141,19 @@
     <comment>en: Time since the raid's start, by the log. No raid length for this map, so no time left.</comment>
   </data>
   <data name="RaidTimeScav" xml:space="preserve">
-    <value>{gone} min im Raid · Restzeit unbekannt</value>
+    <value>{gone} min im Raid · Restzeit unbekannt</value>
     <comment>en: {gone} min in · time left not known</comment>
   </data>
   <data name="RaidTimeNoLength" xml:space="preserve">
-    <value>{gone} min im Raid</value>
+    <value>{gone} min im Raid</value>
     <comment>en: {gone} min in</comment>
   </data>
   <data name="RaidTimeLeft" xml:space="preserve">
-    <value>{gone} min im Raid · {left} min übrig</value>
+    <value>{gone} min im Raid · {left} min übrig</value>
     <comment>en: {gone} min in · {left} min left</comment>
   </data>
   <data name="RaidTimeOver" xml:space="preserve">
-    <value>{gone} min im Raid · über {length} min Raid-Dauer</value>
+    <value>{gone} min im Raid · über {length} min Raid-Dauer</value>
     <comment>en: {gone} min in · past the raid's {length} min</comment>
   </data>
   <data name="StatusNoPosition" xml:space="preserve">

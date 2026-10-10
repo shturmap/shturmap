@@ -33,7 +33,7 @@ Der Stift neben einer Quest pickt sie für den Raid: ihre eigene Farbe auf der M
 Zeig auf irgendwas: Überall, wo es vorkommt, leuchtet es auf.
 
 ## key · Map
-DEINE SCREENSHOT-TASTE
+SCREENSHOT-TASTE
 Drück sie im Raid ab und zu: Der Dateiname sagt, wo du bist.
 Öffne vorher die Extract-Liste (zweimal O): Shturmap liest, welche Extracts deine sind.
 - list · IM SPIEL: ZWEIMAL O, DANN SCREENSHOT MIT {key}

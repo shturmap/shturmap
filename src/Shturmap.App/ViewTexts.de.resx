@@ -205,7 +205,7 @@
     <comment>en: Updates</comment>
   </data>
   <data name="SettingsUpdatesAutomaticTip" xml:space="preserve">
-    <value>Prüft GitHub beim Start und alle 6 h; installiert beim nächsten Start</value>
+    <value>Prüft GitHub beim Start und alle 6 h; installiert beim nächsten Start</value>
     <comment>en: Checks GitHub at start and every 6 h; installs at the next start</comment>
   </data>
   <data name="SettingsUpdatesAutomatic" xml:space="preserve">

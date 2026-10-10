@@ -117,7 +117,7 @@
     <comment>en: Developer builds only. Records raids, quest changes, positions and app use, to improve Shturmap. Stays on this PC (%LOCALAPPDATA%\Shturmap-dev\study) for 30 days; never sent, not even with a report.</comment>
   </data>
   <data name="SettingsDeleteScreenshotsNote" xml:space="preserve">
-    <value>Löscht jeden Positions-Screenshot {seconds} s nach dem Lesen seines Namens, endgültig (nicht in den Papierkorb). Nur neue aus dem Raid, solange angehakt; ältere und Menü-Screenshots bleiben.</value>
+    <value>Löscht jeden Positions-Screenshot {seconds} s nach dem Lesen seines Namens, endgültig (nicht in den Papierkorb). Nur neue aus dem Raid, solange angehakt; ältere und Menü-Screenshots bleiben.</value>
     <comment>en: Deletes each position screenshot {seconds} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.</comment>
   </data>
   <data name="SettingsReadExitsNote" xml:space="preserve">
@@ -145,11 +145,11 @@
     <comment>en: your screenshot key</comment>
   </data>
   <data name="RaidLength" xml:space="preserve">
-    <value>Raid-Dauer {minutes} min</value>
+    <value>Raid-Dauer {minutes} min</value>
     <comment>en: {minutes} min raid</comment>
   </data>
   <data name="StatusFix" xml:space="preserve">
-    <value>Position vor {age} · {floor} · Höhe {height} m</value>
+    <value>Position vor {age} · {floor} · Höhe {height} m</value>
     <comment>en: Fix {age} ago · {floor} · height {height} m</comment>
   </data>
   <data name="StatusFloorGround" xml:space="preserve">
@@ -273,11 +273,11 @@
     <comment>en: anywhere</comment>
   </data>
   <data name="HeightUp" xml:space="preserve">
-    <value>{metres} m höher</value>
+    <value>{metres} m höher</value>
     <comment>en: {metres} m up</comment>
   </data>
   <data name="HeightDown" xml:space="preserve">
-    <value>{metres} m tiefer</value>
+    <value>{metres} m tiefer</value>
     <comment>en: {metres} m down</comment>
   </data>
   <data name="NoticeNoArtwork" xml:space="preserve">
@@ -293,7 +293,7 @@
     <comment>en: Map: {author} · data tarkov.dev</comment>
   </data>
   <data name="MapCreditSheet" xml:space="preserve">
-    <value>Keine Map-Grafik · Raster 10 m · Daten tarkov.dev</value>
+    <value>Keine Map-Grafik · Raster 10 m · Daten tarkov.dev</value>
     <comment>en: No map artwork · grid 10 m · data tarkov.dev</comment>
   </data>
   <data name="MapCreditData" xml:space="preserve">
@@ -357,7 +357,7 @@
     <comment>en: GROUP PICKED</comment>
   </data>
   <data name="CueMapAndLength" xml:space="preserve">
-    <value>{map} · {minutes} MIN</value>
+    <value>{map} · {minutes} MIN</value>
     <comment>en: {map} · {minutes} MIN</comment>
   </data>
   <data name="CueRaidOver" xml:space="preserve">
@@ -605,11 +605,11 @@
     <comment>en: MIN LEFT</comment>
   </data>
   <data name="ClockMinutesIn" xml:space="preserve">
-    <value>{minutes} MIN IM RAID</value>
+    <value>{minutes} MIN IM RAID</value>
     <comment>en: {minutes} MIN IN</comment>
   </data>
   <data name="ClockPastLength" xml:space="preserve">
-    <value>ÜBER {minutes} MIN RAID-DAUER</value>
+    <value>ÜBER {minutes} MIN RAID-DAUER</value>
     <comment>en: PAST THE RAID'S {minutes} MIN</comment>
   </data>
   <data name="ClockTimeLeftUnknown" xml:space="preserve">
@@ -617,7 +617,7 @@
     <comment>en: TIME LEFT NOT KNOWN</comment>
   </data>
   <data name="ReplayMinutes" xml:space="preserve">
-    <value>{minutes} MIN</value>
+    <value>{minutes} MIN</value>
     <comment>en: {minutes} MIN</comment>
   </data>
   <data name="ReplayPositions" xml:space="preserve">

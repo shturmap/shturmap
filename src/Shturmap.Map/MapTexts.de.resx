@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="LegendPlayer" xml:space="preserve">
-    <value>Du, beim letzten Screenshot: sandfarbene Scheibe im Ring. Ab 1 min gestrichelt mit Altersangabe, ab 2 gerahmt. Kegel: deine Blickrichtung (45 s).</value>
+    <value>Du, beim letzten Screenshot: sandfarbene Scheibe im Ring. Ab 1 min gestrichelt mit Altersangabe, ab 2 gerahmt. Kegel: deine Blickrichtung (45 s).</value>
     <comment>en: You, at your last screenshot: sand disc in a ring. Dashed with its age from 1 min, framed from 2. Cone: your facing (45 s).</comment>
   </data>
   <data name="LegendKeptQuest" xml:space="preserve">
@@ -193,11 +193,11 @@
     <comment>en: OPT</comment>
   </data>
   <data name="MapSheetCaption" xml:space="preserve">
-    <value>KEINE GRAFIK FÜR DIESE MAP · RASTER {spacing} M</value>
+    <value>KEINE GRAFIK FÜR DIESE MAP · RASTER {spacing} M</value>
     <comment>en: NO ARTWORK FOR THIS MAP · GRID {spacing} M</comment>
   </data>
   <data name="MapSheetCaptionNoFloors" xml:space="preserve">
-    <value>KEINE GRAFIK FÜR DIESE MAP · RASTER {spacing} M · KEINE STOCKWERKDATEN</value>
+    <value>KEINE GRAFIK FÜR DIESE MAP · RASTER {spacing} M · KEINE STOCKWERKDATEN</value>
     <comment>en: NO ARTWORK FOR THIS MAP · GRID {spacing} M · NO FLOOR DATA</comment>
   </data>
   <data name="MapSniperZone" xml:space="preserve">
@@ -209,35 +209,35 @@
     <comment>en: YOUR NEW POSITION · PRESS F</comment>
   </data>
   <data name="DistanceMetres" xml:space="preserve">
-    <value>{metres} m</value>
+    <value>{metres} m</value>
     <comment>en: {metres} m</comment>
   </data>
   <data name="DistanceKilometres" xml:space="preserve">
-    <value>{kilometres} km</value>
+    <value>{kilometres} km</value>
     <comment>en: {kilometres} km</comment>
   </data>
   <data name="PlayerAgeMinutes" xml:space="preserve">
-    <value>{minutes} MIN</value>
+    <value>{minutes} MIN</value>
     <comment>en: {minutes} MIN</comment>
   </data>
   <data name="PlayerAgeHours" xml:space="preserve">
-    <value>{hours} H</value>
+    <value>{hours} H</value>
     <comment>en: {hours} H</comment>
   </data>
   <data name="PlayerAgeMinutesOld" xml:space="preserve">
-    <value>{minutes} MIN ALT</value>
+    <value>{minutes} MIN ALT</value>
     <comment>en: {minutes} MIN OLD</comment>
   </data>
   <data name="PlayerAgeHoursOld" xml:space="preserve">
-    <value>{hours} H ALT</value>
+    <value>{hours} H ALT</value>
     <comment>en: {hours} H OLD</comment>
   </data>
   <data name="ReplayMinute" xml:space="preserve">
-    <value>{minute} MIN IM RAID</value>
+    <value>{minute} MIN IM RAID</value>
     <comment>en: {minute} MIN IN</comment>
   </data>
   <data name="ReplayLastSeen" xml:space="preserve">
-    <value>ZULETZT GESEHEN · {minutes} MIN VOR DEM ENDE</value>
+    <value>ZULETZT GESEHEN · {minutes} MIN VOR DEM ENDE</value>
     <comment>en: LAST SEEN · {minutes} MIN BEFORE THE END</comment>
   </data>
   <data name="ReplayLastSeenJustBefore" xml:space="preserve">

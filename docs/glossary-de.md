@@ -192,8 +192,8 @@ Raid einen Screenshot mit Druck: …“, „DANN SCREENSHOT MIT DRUCK“). Where
 | ×3; 2× Bolts | ×3; 2× | as the game and the English |
 | 25 Sep; 25 Sep 16:40 | 25. Sept.; 25. Sept., 16:40 | `UiLanguage.DayMonth`, `DayMonthTime`: .NET's de-DE with `d. MMM` (Jan., März, Mai, Juni, Juli, Sept., Okt.); `d MMM` gives „25 Sept.“, wrong in German |
 | 25/09; 16:40 | 25.09.; 16:40 | 24 h; no „Uhr“ in labels |
-| 12 min; 45 s; 6 h | 12 min; 45 s; 6 h | unit symbols; caps 12 MIN |
-| 69 m; 2.5 km; 38 % | 69 m; 2,5 km; 38 % | a space before the unit, a no-break space before % (a map label never breaks between 75 and %) |
+| 12 min; 45 s; 6 h | 12 min; 45 s; 6 h | unit symbols, after a no-break space (a line never breaks between 1 and min; review of 2026-10-10); caps 12 MIN |
+| 69 m; 2.5 km; 38 % | 69 m; 2,5 km; 38 % | a no-break space before the unit and before % (a line never breaks between 75 and %) |
 | after a colon | lower case; a capital only where a whole sentence follows | „Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster …“; „…: Der Server antwortete mit {status}.“ |
 | N, NE, E, SE, S, SW, W, NW | N, NO, O, SO, S, SW, W, NW | map-up is north |
 | "…" and '…' | „…“ and ‚…‘ | |
