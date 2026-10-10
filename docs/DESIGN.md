@@ -1201,7 +1201,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.
 - **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
-  CANCEL and SEND.
+  CANCEL and SEND. It fits the window: in a short one what's sent and the text box give way, each down to a few lines
+  of its own scrolling, and past that the dialog scrolls, so CANCEL and SEND stay in reach (review of 2026-10-10: at
+  900×560, with what's sent shown, they were below the window's edge).
 - **After a crash**: one question under the notices, until answered: SEND · DON'T SEND · ALWAYS SEND · WHAT'S SENT;
   closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog. It lies over the map and
   waits for a click, so it is shown outside raids only: while a raid loads or runs it steps aside, unanswered, and

@@ -120,7 +120,10 @@ public sealed partial class MainWindow
         SayShowSent();
         SayCancel();
         if (ReportOverlay.Visibility == Visibility.Visible)
+        {
             SetReportKind(_reportKind);
+            FitReport();
+        }
         // Settings: updates' line and note.
         if (_updater is { } updater)
         {

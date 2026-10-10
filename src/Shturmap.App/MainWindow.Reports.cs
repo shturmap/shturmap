@@ -121,6 +121,7 @@ public sealed partial class MainWindow
         SayShowSent();
         RefreshReport();
         ReportOverlay.Visibility = Visibility.Visible;
+        FitReport();
         ReportText.Focus(FocusState.Programmatic);
         ReportText.SelectionStart = ReportText.Text.Length;
         Study.Ui("report.open", ("how", how));
@@ -170,8 +171,41 @@ public sealed partial class MainWindow
         ReportSentView.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         SayShowSent();
         RefreshReport();
+        FitReport();
         if (show)
             Study.Ui("report.preview");
+    }
+
+    // The dialog in the window (review of 2026-10-10: at 900×560, with what's sent shown, CANCEL, SEND and the privacy
+    // line were below the window's edge): when it is taller than the window, what's sent gives way first, then the text
+    // box, each down to a few lines (both scroll); past that the dialog itself scrolls (ReportScroll).
+    private const double ReportSentTallest = 200;
+    private const double ReportSentLeast = 64;
+    private const double ReportTextTallest = 150;
+    private const double ReportTextLeast = 72;
+
+    private void OnReportScrollSizeChanged(object sender, SizeChangedEventArgs e) => FitReport();
+
+    private void FitReport()
+    {
+        if (!ReportOpen || ReportScroll.ActualHeight <= 0)
+            return;
+        ReportSentView.MaxHeight = ReportSentTallest;
+        ReportText.Height = ReportTextTallest;
+        var room = ReportScroll.ActualHeight;
+        ReportDialog.Measure(new Windows.Foundation.Size(ReportScroll.ActualWidth, double.PositiveInfinity));
+        var over = ReportDialog.DesiredSize.Height - room;
+        if (over <= 0)
+            return;
+        if (ReportSentView.Visibility == Visibility.Visible)
+        {
+            var sent = ReportSentView.DesiredSize.Height;
+            var give = Math.Clamp(over, 0, Math.Max(0, sent - ReportSentLeast));
+            ReportSentView.MaxHeight = sent - give;
+            over -= give;
+        }
+        if (over > 0)
+            ReportText.Height = Math.Max(ReportTextLeast, ReportTextTallest - over);
     }
 
     // The preview's link says what a click does now, and is said again in a new language (MainWindow.Language).
@@ -238,6 +272,7 @@ public sealed partial class MainWindow
         ReportStatusText.Text = text;
         ReportStatusText.Foreground = Resource(brush);
         ReportStatusText.Visibility = Visibility.Visible;
+        FitReport();
     }
 
     private void OnReportCancelClick(object sender, RoutedEventArgs e) => CloseReport(ReportSend.Visibility == Visibility.Visible ? "cancel" : "close");
