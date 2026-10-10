@@ -483,8 +483,8 @@ public sealed partial class MainWindow
         MapContent? content = null;
         RaidReplay? walk = null;
         // Framed on where "you" will be, with room around: the chapter is about that spot.
-        await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(c); },
-            c => ReplayExample(c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
+        await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(data, c); },
+            c => ReplayExample(data, c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
         if (content is null || walk is null || Map.Scene is not { } scene)
             return;
         var you = walk.Fixes[^1].Position;
@@ -506,7 +506,7 @@ public sealed partial class MainWindow
         TourHoles(() => [Square(ToLayer(you), 150)]);
         if (!await TourWait(2400, run))
             return;
-        await StageExtractListRead(chapter, scene, content, you, run);
+        await StageExtractListRead(chapter, data, scene, content, you, run);
     }
 
     // The extract list as its own cause and effect (owner, 2026-10-09, after "The your screenshot key panel is weird
@@ -514,9 +514,9 @@ public sealed partial class MainWindow
     // the game shows it (the top right) under what to press; a press reads it; then the view takes in the extracts on
     // it, which light up one after another, nearest first, each with a ring in its kind's colour, and the rest go
     // hollow. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
-    private async Task StageExtractListRead(Tour.Chapter chapter, MapScene scene, MapContent content, WorldPoint you, int run)
+    private async Task StageExtractListRead(Tour.Chapter chapter, GameData data, MapScene scene, MapContent content, WorldPoint you, int run)
     {
-        var (listed, unsure, notListed) = ExampleExits(content);
+        var (listed, unsure, notListed) = ExampleExits(data, content);
         if (listed.Count == 0)
             return;
         listed = listed.OrderBy(m => m.Position.HorizontalDistanceTo(you)).ToList();

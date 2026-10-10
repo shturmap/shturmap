@@ -399,4 +399,28 @@ public class LandmarkTests
         artwork.Containers = [new WorldPoint(0, 0, 0)];
         Assert.Equal(bare, Centre(artwork, camera));
     }
+
+    // Code that picks a marker by its name (What's New's previews, the tour) reads its English name: the label is in the
+    // data's language ("Scav-Kontrollpunkt"), and an English name found nothing in German (review of 2026-10-10).
+    [Fact]
+    public void A_markers_english_name_is_its_extracts_or_switchs_whatever_the_language()
+    {
+        var data = new GameData
+        {
+            Mode = GameMode.Pve,
+            Language = "de",
+            Maps = new Dictionary<string, ApiMap>(),
+            Tasks = new Dictionary<string, ApiTask>(),
+            Traders = new Dictionary<string, ApiTrader>(),
+            ItemNames = new Dictionary<string, string>(),
+            EnglishNames = new Dictionary<string, string> { ["e-1"] = "Scav Checkpoint", ["s-1"] = "Gate Lever" },
+            MapDefinitions = [],
+            CheckedAt = DateTimeOffset.UnixEpoch,
+        };
+        var at = new WorldPoint(0, 0, 0);
+        Assert.Equal("Scav Checkpoint", MapContentBuilder.EnglishName(data, new MapMarker("extract:e-1", MarkerKind.ExtractShared, at, "Scav-Kontrollpunkt")));
+        Assert.Equal("Gate Lever", MapContentBuilder.EnglishName(data, new MapMarker("switch:s-1", MarkerKind.Switch, at, "Torhebel")));
+        Assert.Equal("Tor", MapContentBuilder.EnglishName(data, new MapMarker("extract:e-2", MarkerKind.ExtractPmc, at, "Tor")));
+        Assert.Equal("Transit", MapContentBuilder.EnglishName(data, new MapMarker("transit:e-1", MarkerKind.Transit, at, "Transit")));
+    }
 }
