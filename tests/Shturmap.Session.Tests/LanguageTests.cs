@@ -39,6 +39,22 @@ public class LanguageTests
         Assert.True(In(UiLanguage.Pseudo, () => PseudoText.IsPseudo(snapshot.DataProblem!.What)));
     }
 
+    // A notice that names a language names it in the language in use, as its sentence needs it (docs/LANGUAGES.md,
+    // "Adding a language"): in German "Keine französischen Texte", never the English name or tarkov.dev's code; a code
+    // the texts don't know shows as it is.
+    [Fact]
+    public void The_language_notices_name_the_language_in_the_language_in_use()
+    {
+        Assert.Equal("Keine französischen Texte auf tarkov.dev; Anzeige auf Englisch.", In(UiLanguage.German, () => SessionTexts.LanguageMissing(language: "fr")));
+        Assert.Equal("Deutsche Texte geladen.", In(UiLanguage.German, () => SessionTexts.LanguageLoaded(language: "de")));
+        var refused = LoadProblem.Explain(new HttpRequestException("403", null, System.Net.HttpStatusCode.Forbidden));
+        Assert.StartsWith("Anzeige auf Englisch: Die russischen Texte konnten nicht geladen werden. ",
+            In(UiLanguage.German, () => GameSession.LanguageNotice("ru", refused, TimeSpan.FromMinutes(2))));
+        foreach (var code in new[] { "cs", "de", "en", "es", "fr", "hu", "it", "ja", "ko", "pl", "pt", "ro", "ru", "sk", "tr", "zh" })
+            Assert.Matches(@"^Keine [a-zäöü]+schen Texte auf tarkov\.dev; Anzeige auf Englisch\.$", In(UiLanguage.German, () => SessionTexts.LanguageMissing(language: code)));
+        Assert.Equal("Keine Texte in xx auf tarkov.dev; Anzeige auf Englisch.", In(UiLanguage.German, () => SessionTexts.LanguageMissing(language: "xx")));
+    }
+
     // Dates in the Session's words are written as the language in use writes them (UiLanguage.DayMonth): German
     // "4. Okt.", where "d MMM" gave "4 Okt." (review of 2026-10-10). The German texts aren't written yet, so the
     // sentences around them are English here.
@@ -69,5 +85,31 @@ public class LanguageTests
         Assert.True(PseudoText.IsPseudo(pseudo), pseudo);
         Assert.Contains("Find the stash", pseudo);
         Assert.DoesNotContain("Customs", pseudo);
+    }
+
+    // The synopsis rules read English texts (docs/DESIGN.md §5, "Quest synopsis"): in German game data a Plan row shows
+    // the quest's name alone, and the raid card an objective's own sentence, tarkov.dev's, with no short phrase for it.
+    [Fact]
+    public void In_german_data_the_english_only_synopses_are_left_out()
+    {
+        var english = TickTests.Data(Shturmap.Core.Logs.GameMode.Pve);
+        var german = new GameData
+        {
+            Mode = english.Mode,
+            Language = "de",
+            Maps = english.Maps,
+            Tasks = english.Tasks,
+            Traders = english.Traders,
+            ItemNames = english.ItemNames,
+            MapDefinitions = english.MapDefinitions,
+            CheckedAt = english.CheckedAt,
+        };
+        string[] active = [.. english.Tasks.Keys];
+        string Synopses(GameData data) => string.Join(" | ", Planning.Suggest(data, active).SelectMany(p => p.Finish.Concat(p.Progress)).Select(q => q.Synopsis));
+        Assert.Contains("Mark", Synopses(english));
+        Assert.Equal("", Synopses(german).Replace(" | ", "", StringComparison.Ordinal));
+        var objectives = Shturmap.Map.MapContentBuilder.Build(english, "map-customs", active, new HashSet<string>()).Objectives;
+        Assert.NotEmpty(Planning.ObjectiveSynopses(english, objectives, new HashSet<string> { "map-customs" }));
+        Assert.Empty(Planning.ObjectiveSynopses(german, objectives, new HashSet<string> { "map-customs" }));
     }
 }
