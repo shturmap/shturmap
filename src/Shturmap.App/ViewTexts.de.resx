@@ -49,7 +49,7 @@
     <comment>en: HOW SHTURMAP WORKS</comment>
   </data>
   <data name="HelpTakeTourTip" xml:space="preserve">
-    <value>Sieben kurze Kapitel über diesem Fenster; Esc beendet sie</value>
+    <value>Sieben kurze Kapitel über diesem Fenster; Esc beendet die Tour</value>
     <comment>en: Seven short chapters over this window; Esc ends it</comment>
   </data>
   <data name="HelpTakeTour" xml:space="preserve">
@@ -109,7 +109,7 @@
     <comment>en: Quests come from the game's logs only: one started before your oldest log isn't shown.</comment>
   </data>
   <data name="HelpStoryChapters" xml:space="preserve">
-    <value>Story-Kapitel (Falling Skies, Batya, …) werden noch nicht gezeigt: tarkov.dev veröffentlicht sie nicht.</value>
+    <value>Story-Kapitel (Falling Skies, Batya, …) fehlen noch: tarkov.dev veröffentlicht sie nicht.</value>
     <comment>en: Story chapters (Falling Skies, Batya, …) aren't shown yet: tarkov.dev doesn't publish them.</comment>
   </data>
   <data name="HelpKeysHeading" xml:space="preserve">
@@ -141,7 +141,7 @@
     <comment>en: COPY DIAGNOSTICS</comment>
   </data>
   <data name="HelpReportingNotSetUp" xml:space="preserve">
-    <value>Berichte sind in diesem Build nicht eingerichtet: Kopier die Diagnosedaten und schick sie dem, von dem du Shturmap hast.</value>
+    <value>Melden ist in diesem Build nicht eingerichtet: Kopier die Diagnosedaten und schick sie an die Person, von der du Shturmap hast.</value>
     <comment>en: Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you Shturmap.</comment>
   </data>
   <data name="SettingsButtonTip" xml:space="preserve">
@@ -277,7 +277,7 @@
     <comment>en: LICENCES ↗</comment>
   </data>
   <data name="SettingsUninstallTip" xml:space="preserve">
-    <value>Entfernt Shturmap wie in Windows unter Einstellungen → Apps → Installierte Apps</value>
+    <value>Entfernt Shturmap wie über Windows-Einstellungen → Apps → Installierte Apps</value>
     <comment>en: Removes Shturmap, as Windows' Settings → Apps does</comment>
   </data>
   <data name="SettingsUninstall" xml:space="preserve">
@@ -341,7 +341,7 @@
     <comment>en: Point at one: the map shows it.</comment>
   </data>
   <data name="WhatsNewCloseTip" xml:space="preserve">
-    <value>Schließen. Die Hilfe zeigt sie wieder.</value>
+    <value>Schließen. Die Hilfe holt sie zurück.</value>
     <comment>en: Close. Help brings it back.</comment>
   </data>
   <data name="WhatsNewCloseName" xml:space="preserve">
@@ -413,7 +413,7 @@
     <comment>en: EXIT</comment>
   </data>
   <data name="RaidAllExitsTip" xml:space="preserve">
-    <value>Alle Extracts und Transits deiner Seite, die nächsten zuerst</value>
+    <value>Alle Extracts und Transits für deine Seite, die nächsten zuerst</value>
     <comment>en: Every extract and transit for your side, nearest first</comment>
   </data>
   <data name="RaidOrLabel" xml:space="preserve">

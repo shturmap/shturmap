@@ -85,7 +85,7 @@
     <comment>en: MOUSE</comment>
   </data>
   <data name="HelpKeyMouseAction" xml:space="preserve">
-    <value>Ziehen zum Verschieben, Doppelklick zum Vergrößern. Klick auf eine Quest hält ihre Karte offen; Klick auf ihren Stift pickt sie</value>
+    <value>Ziehen zum Verschieben, Doppelklick zum Vergrößern. Klick auf eine Quest hält ihre Karte fest; Klick auf ihren Stift pickt sie</value>
     <comment>en: Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it</comment>
   </data>
   <data name="HelpLegendOnThisMap" xml:space="preserve">
@@ -281,7 +281,7 @@
     <comment>en: {metres} m down</comment>
   </data>
   <data name="NoticeNoArtwork" xml:space="preserve">
-    <value>Keine Map-Grafik für {map}: Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <value>Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
     <comment>en: No map artwork for {map}: a 10 m grid stands in, with your position, objectives and extracts.</comment>
   </data>
   <data name="MapCreditArtwork" xml:space="preserve">
@@ -517,7 +517,7 @@
     <comment>en: {count, plural, one {Shturmap closed unexpectedly last time.} other {Shturmap closed unexpectedly # times since you last answered.}} Send a crash report? It helps to fix it.</comment>
   </data>
   <data name="SettingsNewerGameLogs" xml:space="preserve">
-    <value>Neuere Logs des Spiels in {folder}</value>
+    <value>Neuere Spiel-Logs in {folder}</value>
     <comment>en: Newer game logs in {folder}</comment>
   </data>
   <data name="UninstallDataRelease" xml:space="preserve">

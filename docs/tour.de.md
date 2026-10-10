@@ -28,7 +28,7 @@ Maps, sortiert danach, was du dort für deine Quests schaffen kannst.
 Bleib kurz auf einer Zeile: Vorschau ihrer Map. Klick sie an, um diesen Raid zu planen.
 
 ## pick · Map
-PICKEN UND ZEIGEN
+PICKEN UND DRAUFZEIGEN
 Der Stift neben einer Quest pickt sie für den Raid: ihre eigene Farbe auf der Map.
 Zeig auf irgendwas: Überall, wo es vorkommt, leuchtet es auf.
 

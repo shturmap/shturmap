@@ -61,7 +61,7 @@
     <comment>en: On your list, but the game shows ??:??:??: maybe closed, or needs something first.</comment>
   </data>
   <data name="ExitsGlanceUncheckedTip" xml:space="preserve">
-    <value>Nächster Extract für deine Seite, in diesem Raid vielleicht nicht offen. Mach zum Prüfen einen Screenshot der Extract-Liste im Spiel (beim Raid-Start oder zweimal O).</value>
+    <value>Nächster Extract für deine Seite, in diesem Raid vielleicht nicht offen. Mach zum Abgleichen einen Screenshot der Extract-Liste im Spiel (beim Raid-Start oder zweimal O).</value>
     <comment>en: Nearest extract for your side, maybe not open this raid. Screenshot the game's extract list (raid start, or O twice) to check.</comment>
   </data>
   <data name="ExitsGlanceNoReadingTip" xml:space="preserve">

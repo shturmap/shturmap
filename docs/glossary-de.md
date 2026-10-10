@@ -21,8 +21,9 @@ for word, never more formal than the English. German runs about a third longer: 
 
 **The player is "du"**, as the game and the players say it: the game's objectives are du-imperatives (Finde in 280
 texts, Eliminiere 122), 60 texts address the player as du, none as Sie. So "du", "dein", lower case. Instructions in
-the imperative ("Mach einen Screenshot …", "Zeig auf eine Quest"); buttons and labels in the infinitive, as Windows'
-are ("SENDEN", "TOUR STARTEN"). Windows' words, not Windows' "Sie".
+the short imperative ("Mach einen Screenshot …", "Zeig auf eine Quest", "Wähl", "Prüf", "Kopier", not "Wähle"; the e
+stays where German needs it: "Öffne", "starte", "melde"); buttons and labels in the infinitive, as Windows' are
+("SENDEN", "TOUR STARTEN"). Windows' words, not Windows' "Sie".
 
 **Headings** are in capitals where the English ones are. ß becomes SS (ABSCHLIESSEN; Bahnschrift has no capital ẞ);
 Ä, Ö, Ü stay. Running text follows German spelling: nouns capitalised, English ones too (die Map, das Gear). A compound
@@ -94,14 +95,14 @@ gender.
 | ON YOUR LIST (THIS RAID); NOT ON YOUR LIST | AUF DEINER LISTE (IN DIESEM RAID); NICHT AUF DEINER LISTE | |
 | ??? IN GAME; NOTHING NEEDED; ALL 15 ↓ | ??? IM SPIEL; NICHTS NÖTIG; ALLE 15 ↓ | |
 | EXTRACTS AND TRANSITS; ways out | EXTRACTS UND TRANSITS; Extracts und Transits | |
-| the game's extract list; your side | Extract-Liste; deine Seite | side: PMC ⇄ SCAV |
+| the game's extract list; to check (against it); your side; for your side | Extract-Liste; abgleichen; deine Seite; für deine Seite | side: PMC ⇄ SCAV; „Mach zum Abgleichen einen Screenshot der Extract-Liste“ |
 | anywhere; after the raid | überall; nach dem Raid | the raid card's place for kills and finds; hand-overs |
 | done; DONE; tick, untick | erledigt; ERLEDIGT; abhaken, Haken entfernen | „Erledigt · von dir abgehakt, 4. Okt.“ |
 | place; loose (lying on the map) | Spot; Loot-Spot | „Einer von 4 möglichen Spots“; „Loot-Spots auf Customs · 3“ |
 | marker (on the map) | Marker (der) | the MS2000 Marker too; the context tells |
 | guide line; facing | Linie; Blickrichtung | on screen: gestrichelte Linie |
 | preview; PREVIEW ·; AN EXAMPLE, NOT YOUR RAID | Vorschau; VORSCHAU ·; EIN BEISPIEL, NICHT DEIN RAID | |
-| point at; rest on; click; hold (a card); row; the list on the left | zeigen auf; kurz bleiben auf; klicken; festhalten; Zeile; die Liste links | |
+| point at; point (alone, a heading); rest on; click; hold, keep (a card); row; the list on the left | zeigen auf; draufzeigen; kurz bleiben auf; klicken; festhalten; Zeile; die Liste links | „Zeig auf eine Quest“; PICKEN UND DRAUFZEIGEN (ZEIGEN alone is SHOW ME); „hält ihre Karte fest“ |
 | position, fix; last fix; 7 MIN OLD | Position; letzte Position; 7 MIN ALT | |
 | Follow my position; Show my position; YOUR NEW POSITION · PRESS F | Meiner Position folgen; Meine Position zeigen; DEINE NEUE POSITION · TASTE F | |
 | ahead, ahead-left, left, behind-left, behind, behind-right, right, ahead-right; 8 M UP, DOWN | vorne, vorne links, links, hinten links, hinten, hinten rechts, rechts, vorne rechts; 8 M HÖHER, TIEFER | facing-relative for 45 s; caps VORNE LINKS |
@@ -109,17 +110,19 @@ gender.
 | RAID LOADING; RAID OVER; LOADING CANCELLED; SCAV RAID; GROUP PICKED | RAID LÄDT; RAID VORBEI; LADEN ABGEBROCHEN; SCAV-RAID; GRUPPE HAT GEPICKT | the cues |
 | QUEST COMPLETE; QUESTS COMPLETE; UNLOCKS | QUEST ABGESCHLOSSEN; QUESTS ABGESCHLOSSEN; SCHALTET FREI | |
 | NOT IN A RAID; IN RAID; LOADING; LAST RAID · END NOT IN THE LOG | NICHT IM RAID; IM RAID; LÄDT; LETZTER RAID · ENDE NICHT IM LOG | status bar, Plan's last-raid line |
-| REPLAY; raid replay | REPLAY; Raid-Replay (das) | decided |
+| REPLAY; raid replay; in order | REPLAY; Raid-Replay (das); der Reihe nach | decided |
 | Active, Completed, Failed, Not started, Locked | Aktiv, Abgeschlossen, Gefailt, Nicht gestartet, Gesperrt | notice: „{quest}: gestartet / abgeschlossen / gefailt“ |
 | from the game log, 25 Sep | aus dem Log des Spiels, 25. Sept. | |
-| the game's logs; LOGS, SCREENSHOTS, DATA | die Logs des Spiels; LOGS, SCREENSHOTS, DATEN | Log, not Protokoll |
+| the game's logs; game logs; LOGS, SCREENSHOTS, DATA | die Logs des Spiels; Spiel-Logs; LOGS, SCREENSHOTS, DATEN | Log, not Protokoll; „Neuere Spiel-Logs in {folder}“ |
 | notice | Hinweis | |
-| the tour; TAKE THE TOUR; SHOW ME; TOUR · 3 OF 7; ESC ENDS THE TOUR | die Tour; TOUR STARTEN; ZEIGEN; TOUR · 3 VON 7; ESC BEENDET DIE TOUR | ← ZURÜCK, WEITER → |
+| the tour; TAKE THE TOUR; SHOW ME; TOUR · 3 OF 7; ESC ENDS THE TOUR | die Tour; TOUR STARTEN; ZEIGEN; TOUR · 3 VON 7; ESC BEENDET DIE TOUR | ← ZURÜCK, WEITER →; „Esc beendet die Tour“; help brings it back: „die Hilfe holt sie zurück“ |
 | What's New; NEW IN 0.4.0 · PRAETORIAN | Neuigkeiten; NEU IN 0.4.0 · PRAETORIAN | release names stay |
 | HOW SHTURMAP WORKS; QUEST TYPES; ON THE MAP; legend; WIKI MAP ↗ | SO FUNKTIONIERT SHTURMAP; QUEST-TYPEN; AUF DER MAP; Legende; WIKI-MAP ↗ | help |
-| KEYS · WHEN THIS WINDOW HAS FOCUS; story chapters | TASTEN · WENN DIESES FENSTER DEN FOKUS HAT; Story-Kapitel | help |
+| KEYS · WHEN THIS WINDOW HAS FOCUS; story chapters; aren't shown yet | TASTEN · WENN DIESES FENSTER DEN FOKUS HAT; Story-Kapitel; fehlen noch | help and the tour: „Story-Kapitel (…) fehlen noch“ |
 | GET IT; after {quest}; from level 10; needed for Kappa | BESORGEN; nach {quest}; ab Level 10; nötig für Kappa | item and quest cards |
 | A or B; 13 of 16 kinds; or 5 others | A oder B; 13 von 16 Arten; oder 5 weitere | |
+| try again (to the player); again; Shturmap tries again | versuch es noch mal; noch mal; Shturmap versucht es … erneut | the du-voice says „noch mal“, not „erneut“ or „noch einmal“ |
+| dev build, developer builds; developer run; folder build; installed | Dev-Build (der), Dev-Builds; Entwickler-Testlauf (der); Ordner-Build; installiert | the build is what was built („Nur in Dev-Builds“, the version line); a run is a developer's session: snapshots, fake games, the demo (DESIGN.md §8): „Entwickler-Testläufe senden nichts“ |
 | deadly area; SNIPER ZONE | tödlicher Bereich; SNIPER-ZONE | |
 | settings rows | Positions-Screenshots löschen; Extract-Liste aus Screenshots lesen; Absturzberichte; Updates | options: NACH ABSTURZ FRAGEN · IMMER SENDEN · NIE; AUTOMATISCH · NUR BENACHRICHTIGEN · AUS |
 | GAME FOLDER; CHOOSE GAME FOLDER…; FIND AUTOMATICALLY | SPIELORDNER; SPIELORDNER WÄHLEN…; AUTOMATISCH SUCHEN | „(von dir gewählt)“, „(automatisch gefunden)“, NICHT GEFUNDEN |
@@ -138,16 +141,16 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | update, updates; Automatic; On; Off; Never; Always | Update, Updates; Automatisch; Ein; Aus; Nie; Immer | Update is Windows Update's word |
 | App and data; Privacy; Licences | App und Daten; Datenschutz; Lizenzen | |
 | crash; crash report | Absturz; Absturzbericht | |
-| report (noun); to report; Report a problem or idea | Bericht; melden; Problem oder Idee melden | PROBLEM · IDEE |
+| report (noun); to report; Report a problem or idea; Reporting isn't set up in this build | Bericht; melden; Problem oder Idee melden; Melden ist in diesem Build nicht eingerichtet | PROBLEM · IDEE; not „Berichte sind … nicht eingerichtet“; whoever gave you Shturmap: die Person, von der du Shturmap hast |
 | diagnostics; Include diagnostics | Diagnosedaten; Diagnosedaten anhängen | COPY DIAGNOSTICS: DIAGNOSEDATEN KOPIEREN |
 | folder; log folder; choose a folder | Ordner; Log-Ordner; Ordner wählen | Windows' picker is titled „Ordner auswählen“ |
 | this PC; Documents; user folder | dieser PC; Dokumente; Benutzerordner | Explorer's names; the path stays `Documents` |
 | screenshot; screenshot key; internet address | Screenshot (der); Screenshot-Taste; IP-Adresse | einen Screenshot machen |
-| Zoom in; Zoom out; Show the whole map; status bar | Vergrößern; Verkleinern; Ganze Map zeigen; Statusleiste | |
+| Zoom in; Zoom out; Show the whole map; status bar | Vergrößern; Verkleinern; Ganze Map zeigen; Statusleiste | also in running text: „Vergrößern trennt sie“, „beim Vergrößern“; not „reinzoomen“ |
 | email; (optional); (Required) | E-Mail; (optional); (Pflichtfeld) | |
 | Language: Automatic · English · Deutsch | Sprache: Automatisch · English · Deutsch | each language in its own name |
-| Windows Settings → Apps | Einstellungen → Apps → Installierte Apps | **check** on a German Windows 11 |
-| Windows Settings → Time & language → Language | Einstellungen → Zeit und Sprache → Sprache und Region | **check**; Windows 10: Sprache |
+| Windows Settings → Apps | Windows-Einstellungen → Apps → Installierte Apps | **check** on a German Windows 11; „Windows-“ because a bare „Einstellungen“ is Shturmap's own |
+| Windows Settings → Time & language → Language | Windows-Einstellungen → Zeit und Sprache → Sprache und Region | **check**; Windows 10: Sprache |
 | text recognition (language feature) | Texterkennung; „Optische Zeichenerkennung“ | **check** the feature's name in the language's options |
 | animation effects | Animationseffekte | **check**: Einstellungen → Barrierefreiheit → Visuelle Effekte |
 
@@ -181,7 +184,8 @@ its settings. In a sentence put "Taste" before a key that is also a word ("TASTE
 | 25 Sep; 25 Sep 16:40 | 25. Sept.; 25. Sept., 16:40 | `UiLanguage.DayMonth`, `DayMonthTime`: .NET's de-DE with `d. MMM` (Jan., März, Mai, Juni, Juli, Sept., Okt.); `d MMM` gives „25 Sept.“, wrong in German |
 | 25/09; 16:40 | 25.09.; 16:40 | 24 h; no „Uhr“ in labels |
 | 12 min; 45 s; 6 h | 12 min; 45 s; 6 h | unit symbols; caps 12 MIN |
-| 69 m; 2.5 km; 38 % | 69 m; 2,5 km; 38 % | a space before the unit and % |
+| 69 m; 2.5 km; 38 % | 69 m; 2,5 km; 38 % | a space before the unit, a no-break space before % (a map label never breaks between 75 and %) |
+| after a colon | lower case; a capital only where a whole sentence follows | „Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster …“; „…: Der Server antwortete mit {status}.“ |
 | N, NE, E, SE, S, SW, W, NW | N, NO, O, SO, S, SW, W, NW | map-up is north |
 | "…" and '…' | „…“ and ‚…‘ | |
 | apostrophe; e.g. | ’; z. B. | genitive without an apostrophe: Prapors; z. B. with a no-break space |

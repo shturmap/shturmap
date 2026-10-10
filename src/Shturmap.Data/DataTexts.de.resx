@@ -45,7 +45,7 @@
     <comment>en: Please report it.</comment>
   </data>
   <data name="LoadAdviceServerBusy" xml:space="preserve">
-    <value>Der Server ist gerade überlastet oder kurz down; versuch es in ein paar Minuten erneut.</value>
+    <value>Der Server ist gerade überlastet oder kurz down; versuch es in ein paar Minuten noch mal.</value>
     <comment>en: It is busy or down for a moment; try again in a few minutes.</comment>
   </data>
   <data name="LoadAdviceConnection" xml:space="preserve">

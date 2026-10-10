@@ -37,7 +37,7 @@
     <comment>en: One of several places it can be: ? at the corner.</comment>
   </data>
   <data name="LegendCluster" xml:space="preserve">
-    <value>Nahe Spots eines Ziels: ein Marker mit Anzahl. Reinzoomen trennt sie.</value>
+    <value>Nahe Spots eines Ziels: ein Marker mit Anzahl. Vergrößern trennt sie.</value>
     <comment>en: Close places of one objective: one marker with a count. Zoom in to split.</comment>
   </data>
   <data name="LegendExtract" xml:space="preserve">
@@ -113,7 +113,7 @@
     <comment>en: Scav spawns: small ring.</comment>
   </data>
   <data name="LegendLock" xml:space="preserve">
-    <value>Verschlossene Tür oder Kofferraum: Schloss, beim Reinzoomen mit Namen des Keys. Zeig auf einen Key: Seine Schlösser leuchten auf.</value>
+    <value>Verschlossene Tür oder Kofferraum: Schloss, beim Vergrößern mit Namen des Keys. Zeig auf einen Key: Seine Schlösser leuchten auf.</value>
     <comment>en: Locked door or trunk: padlock, with the key's name when zoomed in. Point at a key to light its locks.</comment>
   </data>
   <data name="LegendSwitch" xml:space="preserve">
@@ -157,7 +157,7 @@
     <comment>en: Transit to {map}</comment>
   </data>
   <data name="MarkerTransitElsewhere" xml:space="preserve">
-    <value>Transit zu anderer Map</value>
+    <value>Transit zu einer anderen Map</value>
     <comment>en: Transit to another map</comment>
   </data>
   <data name="MarkerLocked" xml:space="preserve">
@@ -181,11 +181,11 @@
     <comment>en: Sniper</comment>
   </data>
   <data name="MarkerBossChance" xml:space="preserve">
-    <value>{boss} {chance} %</value>
+    <value>{boss} {chance} %</value>
     <comment>en: {boss} {chance}%</comment>
   </data>
   <data name="MarkerBossChanceHere" xml:space="preserve">
-    <value>{boss} {chance} % · {here} % hier</value>
+    <value>{boss} {chance} % · {here} % hier</value>
     <comment>en: {boss} {chance}% · {here}% here</comment>
   </data>
   <data name="MarkerOptionalBadge" xml:space="preserve">
