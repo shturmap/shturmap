@@ -202,14 +202,15 @@ public static class QuestCards
     /// It does when the sentence names one of the maps as a place, alone or in a list ("on Woods, Ground Zero, or
     /// Customs": <see cref="QuestSynopsis.MapList"/>, which doesn't take "at Factory gate" for the map), and every
     /// name the line would show stands in the text. A text that names only some of its maps keeps the whole line.
-    /// The pattern knows English prepositions: in another game language both lines stay.
+    /// The pattern is the data's language's, English or German ("auf Woods, Ground Zero oder Customs"; owner,
+    /// 2026-10-11: German cards kept both lines and were several lines longer). In another language both lines stay.
     /// </summary>
     internal static bool SaysWhere(GameData data, string text, string where)
     {
         var shown = where.Split(", ", StringSplitOptions.RemoveEmptyEntries);
         if (shown.Length == 0 || !shown.All(name => text.Contains(name, StringComparison.OrdinalIgnoreCase)))
             return false;
-        return QuestSynopsis.MapList(shown, data.Maps.Values.Select(m => m.Name).ToList())?.IsMatch(text) == true;
+        return QuestSynopsis.MapList(shown, data.Maps.Values.Select(m => m.Name).ToList(), data.Language)?.IsMatch(text) == true;
     }
 
     internal static IEnumerable<string> MapIds(ApiObjective o) =>

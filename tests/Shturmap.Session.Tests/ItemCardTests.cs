@@ -1,6 +1,7 @@
 using Shturmap.Core.Logs;
 using Shturmap.Core.Planning;
 using Shturmap.Core.Quests;
+using Shturmap.Data.Http;
 using Shturmap.Data.TarkovDev;
 
 namespace Shturmap.Session.Tests;
@@ -19,11 +20,18 @@ public class ItemCardTests
 
     private static ApiMap Map(string id, string name) => new(id, name, id, id, null, null, 40, null, null, null, null, null);
 
-    private static GameData Data(params ApiTask[] tasks) => new()
+    private static GameData Data(params ApiTask[] tasks) => Data("en", tasks);
+
+    // tarkov.dev's German data names the maps as its English does, but for Night Factory: "Factory bei Nacht".
+    private static GameData Data(string language, params ApiTask[] tasks) => new()
     {
         Mode = GameMode.Pve,
-        Language = "en",
-        Maps = new Dictionary<string, ApiMap> { ["streets"] = Map("streets", "Streets of Tarkov"), ["customs"] = Map("customs", "Customs") },
+        Language = language,
+        Maps = new Dictionary<string, ApiMap>
+        {
+            ["streets"] = Map("streets", "Streets of Tarkov"), ["customs"] = Map("customs", "Customs"), ["woods"] = Map("woods", "Woods"),
+            ["factory"] = Map("factory", "Factory"), ["night"] = Map("night", language == "de" ? "Factory bei Nacht" : "Night Factory"),
+        },
         Tasks = tasks.ToDictionary(t => t.Id),
         Traders = new Dictionary<string, ApiTrader> { [Ragman] = new(Ragman, "Ragman", null, null) },
         ItemNames = Names,
@@ -164,10 +172,10 @@ public class ItemCardTests
 
     // ---- the quest card's objective rows: the map is said once (the review of 2026-10-04, C2) ----
 
-    private static CardObjective Row(string text, string[] maps, string type = "visit", bool optional = false)
+    private static CardObjective Row(string text, string[] maps, string type = "visit", bool optional = false, string language = "en")
     {
         var objective = Objective("o1", type) with { Description = text, Maps = [.. maps], Optional = optional };
-        return QuestCards.Build(Data(Task("Quest", objective)), States(QuestState.Active, "Quest"), "Quest")!.Objectives.Single();
+        return QuestCards.Build(Data(language, Task("Quest", objective)), States(QuestState.Active, "Quest"), "Quest")!.Objectives.Single();
     }
 
     [Fact]
@@ -191,6 +199,98 @@ public class ItemCardTests
         Assert.Equal("Customs, Streets of Tarkov", Row("Eliminate Scavs on Customs", ["customs", "streets"], "shoot").Where);
         // No map at all: "any map" stays.
         Assert.Equal("any map", Row("Eliminate Scavs", [], "shoot").Where);
+    }
+
+    // German texts say where with "auf" or "in" (owner, 2026-10-11: German cards kept both lines, lines longer).
+    [Fact]
+    public void A_german_objective_whose_text_names_its_map_does_not_say_the_map_again()
+    {
+        Assert.Equal("", Row("Finde den Konvoi auf Streets of Tarkov", ["streets"], language: "de").Where);
+        Assert.Equal("", Row("Erkunde den Bunker in Customs", ["customs"], language: "de").Where);
+        Assert.Equal("", Row("Eliminiere Scavs auf Factory bei Nacht", ["night"], "shoot", language: "de").Where);
+        // In a list, with no comma before "oder".
+        Assert.Equal("", Row("Eliminiere Scavs auf Woods, Customs oder Streets of Tarkov", ["woods", "customs", "streets"], "shoot", language: "de").Where);
+        // Whatever follows in lower case: a condition, or the clause's verb at its end.
+        Assert.Equal("", Row("Eliminiere Scavs auf Customs, während du eine Maske trägst", ["customs"], "shoot", language: "de").Where);
+        Assert.Equal("", Row("Eliminiere Scavs auf Customs mit einer Schrotflinte", ["customs"], "shoot", language: "de").Where);
+        Assert.Equal("", Row("Erkunde die Halle auf Woods (in einem Raid)", ["woods"], language: "de").Where);
+        Assert.Equal("", Row("Lege die Kiste beim Tor auf Customs ab", ["customs"], language: "de").Where);
+        Assert.Equal("", Row("Finde das Paket, das in Customs versteckt ist", ["customs"], language: "de").Where);
+    }
+
+    [Fact]
+    public void A_german_map_line_stays_under_a_text_that_does_not_say_where()
+    {
+        Assert.Equal("Customs", Row("Finde den Konvoi", ["customs"], language: "de").Where);
+        // Where to or from isn't where it is.
+        Assert.Equal("Customs", Row("Benutze den Transit nach Customs", ["customs"], language: "de").Where);
+        Assert.Equal("Customs", Row("Überlebe und entkomme aus Customs", ["customs"], language: "de").Where);
+        Assert.Equal("Customs", Row("Benutze den Transit von Customs", ["customs"], language: "de").Where);
+        // The map's name in a place of its own: a noun follows it, or a longer map's name starts with it.
+        Assert.Equal("Factory", Row("Verstecke das Paket in Factory Tor 3", ["factory"], language: "de").Where);
+        Assert.Equal("Factory", Row("Eliminiere Scavs auf Factory bei Nacht", ["factory"], "shoot", language: "de").Where);
+        // One of its two maps named: the line keeps both.
+        Assert.Equal("Customs, Streets of Tarkov", Row("Eliminiere Scavs auf Customs", ["customs", "streets"], "shoot", language: "de").Where);
+        // Each language's pattern is its own: an English sentence in German data, a German one in English data.
+        Assert.Equal("Customs", Row("Locate the convoy on Customs", ["customs"], language: "de").Where);
+        Assert.Equal("Customs", Row("Finde den Konvoi auf Customs", ["customs"]).Where);
+        // A language with no pattern keeps both lines.
+        Assert.Equal("Customs", Row("Trouve le convoi sur Customs", ["customs"], language: "fr").Where);
+    }
+
+    private sealed class Offline : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            throw new HttpRequestException("offline: the test reads the cache only");
+    }
+
+    // tarkov.dev's own data in both languages, from the app's download cache (its quest texts aren't in the repository);
+    // skipped where there is no German cache. On 2026-10-11 the German cards left out 363 of 936 lines of map names, the
+    // English ones 577: the German sentences that keep theirs say where to or from ("nach", "aus", "von"), don't name
+    // every map of the line, or are still English in the German data (docs/DESIGN.md §8, "The app's own language").
+    // Far fewer would mean that the German sentences say where in a way the pattern doesn't know.
+    [Fact]
+    public async Task German_cards_of_the_real_data_say_the_map_once_where_the_sentence_names_it()
+    {
+        var cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Shturmap", "cache", "tarkov-dev");
+        if (!File.Exists(Path.Combine(cache, "pve_tasks.json")) || !File.Exists(Path.Combine(cache, "pve_tasks_de.json")))
+            Assert.Skip($"No tarkov.dev cache with German texts at {cache}: run Shturmap with the game in German once to download it.");
+        GameData english, german;
+        try
+        {
+            var loader = new GameDataLoader(new CachedHttp(new HttpClient(new Offline()), cache));
+            english = await loader.LoadAsync(GameMode.Pve, "en", TestContext.Current.CancellationToken);
+            german = await loader.LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken);
+        }
+        catch (HttpRequestException e)
+        {
+            Assert.Skip("The tarkov.dev cache is incomplete: " + e.Message);
+            throw;
+        }
+        if (german.Language != "de")
+            Assert.Skip("The tarkov.dev cache has no complete German texts.");
+
+        int lines = 0, dropped = 0, droppedEnglish = 0;
+        foreach (var task in german.Tasks.Values)
+        {
+            var active = States(QuestState.Active, task.Id);
+            var englishRows = QuestCards.Build(english, active, task.Id)!.Objectives.ToDictionary(o => o.ObjectiveId);
+            foreach (var row in QuestCards.Build(german, active, task.Id)!.Objectives)
+            {
+                // The rows that have a line to leave out: a map of the data's, or "any map".
+                var o = task.Objectives!.Single(x => x.Id == row.ObjectiveId);
+                var maps = (o.Maps ?? []).Concat((o.Zones ?? []).Select(z => z.Map)).Concat((o.PossibleLocations ?? []).Select(l => l.Map));
+                if (!maps.Any(m => m is not null && german.Maps.ContainsKey(m)) && !QuestTaxonomy.WorksAnywhere(row.Kind))
+                    continue;
+                lines++;
+                dropped += row.Where.Length == 0 ? 1 : 0;
+                droppedEnglish += englishRows.GetValueOrDefault(row.ObjectiveId)?.Where.Length == 0 ? 1 : 0;
+            }
+        }
+        var counts = $"German cards left out {dropped} of {lines} lines of map names, English ones {droppedEnglish}";
+        TestContext.Current.SendDiagnosticMessage(counts);
+        Assert.True(lines > 500, $"only {lines} lines: is the cache complete?");
+        Assert.True(dropped * 2 > droppedEnglish, counts);
     }
 
     // ---- where to get it: an offer behind a quest isn't a way until the log has seen that quest completed ----

@@ -1633,8 +1633,11 @@ which on the map and in the rail is a PMC extract (one colour, one meaning; the 
 An objective says where it is once (the review, C2): the line of map names under its text is left out when the
 text itself names the map as its place ("… on Streets of Tarkov" stood over "Streets of Tarkov"), alone or in a list
 that holds every map the line would show. A text that names none of its maps, or only some, keeps the whole line;
-"at Factory gate" is a gate, not the map (`QuestCards.SaysWhere`, with the synopsis' map pattern; English texts
-only, so in another game language both lines stay).
+"at Factory gate" is a gate, not the map (`QuestCards.SaysWhere`, with the synopsis' map pattern,
+`QuestSynopsis.MapList`). The pattern is the data's language's: English, and German from 2026-10-11 (owner: German
+cards kept both lines and were several lines longer), whose "auf" and "in" say where ("… auf Woods, Customs oder
+Shoreline") and "nach", "aus" and "von" where to or from; in another game language both lines stay (§8, "The app's
+own language").
 **The map's "?" in words** (owner, 2026-10-06: "It should be displayed in the raid tooltip to explain"): an objective
 whose thing can be at several places has a line under its map names, the "?" as the map draws it (a small dark plate
 with a gold hairline) and "One of 4 places it can be", on every card, held or on hover in a raid
@@ -2396,13 +2399,16 @@ committing app changes (CLAUDE.md).
   war symbols the logo rules avoid (§4, "Logo").
 
 **Continuous integration** (owner, 2026-10-05). Every push builds the solution in Debug (so the developer tools
-compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/ci.yml`), with the same
-`eng\dotnet.ps1` as on the PC and the SDK global.json names. Tests that need the owner's PC skip there: the tarkov.dev
-cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
-public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
-mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout check (docs/LANGUAGES.md) doesn't
-run there: its views need tarkov.dev's data, which a fresh runner would download at every push (§3, "No unnecessary
-load on tarkov.dev"), so it runs on the developer's PC before a release.
+compile too) and runs the tests, then builds it in Release and runs them again, on GitHub's Windows runner
+(`.github/workflows/ci.yml`), with the same `eng\dotnet.ps1` as on the PC and the SDK global.json names. Release since
+2026-10-11 (owner): a release compiles the other side of `#if DEVTOOLS`, and its tests check what only a release does;
+they had never run, and one had failed unseen. The Release build takes the Debug build's restore (the packages are the
+same) and its tests run on what it built. Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
+logs, real screenshots, a published build in `artifacts` (`DevToolsGuardTests` read it), the website beside the
+repository. The repository is public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A
+failed run comes as GitHub's own mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout
+check (docs/LANGUAGES.md) doesn't run there: its views need tarkov.dev's data, which a fresh runner would download at
+every push (§3, "No unnecessary load on tarkov.dev"), so it runs on the developer's PC before a release.
 What else runs there (owner, 2026-10-09: every trust step that can be automated). After the tests, CI fails on a NuGet
 package with a known vulnerability, direct or transitive (`eng\audit-packages.ps1`, nuget.org's advisories; also
 when it couldn't check). That stands in for Dependabot: its pull requests would put commits by another identity into
@@ -2610,11 +2616,19 @@ runs** (owner, 2026-10-10), from settings at once: every text on screen, the for
 game data is loaded in the new language as when the game language's texts arrive late (below), and what was on screen
 is the same as after a fresh start in that language (the layout check compares the two; docs/LANGUAGES.md). A new
 notice is said in the new language; one already shown stays as it was said. Logs, the study log, diagnostics, reports
-and the CLI stay English: they are read by whoever fixes Shturmap. The rules that read English data still read only
-English. In another data language a Plan row shows the quest's name alone and the raid card an objective's own
-sentence, tarkov.dev's (quest synopses, §5), and a quest card keeps both lines where the English pattern drops one
-(`QuestCards.SaysWhere`). The extract requirements read the extracts' English names, kept beside the data in another
-language (`GameData.EnglishName`), so they come out the same in every language.
+and the CLI stay English: they are read by whoever fixes Shturmap. The rules that read English data, all but one,
+still read only English: in another data language a Plan row shows the quest's name alone and the raid card an
+objective's own sentence, tarkov.dev's (quest synopses, §5). The one reads German too (owner, 2026-10-11: German cards
+kept both lines and were several lines longer): a quest card leaves out an objective's line of map names where its
+sentence already says where, "… auf Streets of Tarkov" as "… on Streets of Tarkov" (`QuestCards.SaysWhere`; §4, "Quest
+cards"). German says where with "auf" or "in" before the map's name or a list of them, as tarkov.dev's German data
+writes them (the English names but for "Factory bei Nacht"; no comma before "oder"); "nach", "aus" and "von" say where
+to or from. In another data language both lines stay. In tarkov.dev's German PvE data of 2026-10-11 the cards left out
+363 of 936 lines (the English cards 577), none under a sentence that doesn't say where; the 573 that stay are under
+sentences that name none or not all of the line's maps (most of them), say where to or from (17 extracts "aus …", 17
+transits "von … nach …"), or say "on …" in English, still untranslated in the German data (151). The extract
+requirements read the extracts' English names, kept beside the data in another language (`GameData.EnglishName`), so
+they come out the same in every language.
 
 How it is made (2026-10-10). The setting is `language` in shturmap.db: `auto` (or none) or a language's code; a value
 that isn't offered (a language only a developer build offers, read by another build) counts as automatic. Windows'

@@ -203,6 +203,9 @@ Run this checklist from top to bottom; tick each line in the commit that adds th
 - [ ] Sorting and search follow the language (accents; Turkish i and İ).
 - [ ] Notices that name a language ("No French texts on tarkov.dev") name it in the language in use.
 - [ ] Help names the Windows text recognition language the extract list needs for a game in that language.
+- [ ] The quest card's line of map names: how tarkov.dev's sentences in that language say where ("auf Woods" in
+      German), as a pattern in `QuestSynopsis.MapList` with made-up one-line tests (`ItemCardTests`); without one,
+      both lines stay (DESIGN.md §4, "Quest cards").
 
 **4. Check**
 - [ ] `TranslationTests` pass with the language offered (every text, placeholders, plural forms, made from the current
@@ -212,7 +215,10 @@ Run this checklist from top to bottom; tick each line in the commit that adds th
 - [ ] The extract list: a list drawn by the tests in that game language is read and matched (`ExitListReader` tests).
 - [ ] The rule checks of `docs/UPDATES.md` run against the cached data in that language (`shturmap-cli data pve
       <code>`), and the English-only rules hold in it: no synopses (Plan shows the quest's name, the raid card
-      tarkov.dev's sentence), and the extract requirements the same as in English (`ExtractRulesTests`).
+      tarkov.dev's sentence), and the extract requirements the same as in English (`ExtractRulesTests`). The audits
+      (`bring`, `synopses`, `effort`, `handovers`, `spawns`) stay English and take no language (owner, 2026-10-11):
+      they check rules that read English data, and `data pve <code>` and the tests that read the cache in that
+      language cover it (German: `ExtractRulesTests`, `ItemCardTests`).
 - [ ] Diagnostics show the language and where it came from.
 
 **5. Ship**
