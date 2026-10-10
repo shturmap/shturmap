@@ -100,32 +100,30 @@
           <ItemsControl ItemsSource="{x:Bind Objectives}" Margin="26,2,0,0">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:ObjectiveItem">
-                <Grid ColumnSpacing="10" Padding="6,3" Margin="-6,0" controls:Linked.Objective="{x:Bind ObjectiveId}" controls:Linked.Also="{x:Bind QuestId}">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                  </Grid.ColumnDefinitions>
-                  <StackPanel Spacing="1">
-                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
-                    <Border Visibility="{x:Bind NeedsVisibility}" HorizontalAlignment="Left" Padding="4,0" Margin="-4,0"
-                            controls:Linked.Item="{x:Bind KeyId}" controls:Linked.Inline="True">
-                      <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
-                    </Border>
-                  </StackPanel>
-                  <!-- What this line gets goes to the trader after the raid: the thing's cell, its count, an arrow and the
-                       trader's portrait, before the distance, in the place of the hand-over's own line (owner,
-                       2026-10-06, "Hand-over: E"; Handovers). The cell is that item, as a need cell is. -->
-                  <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Visibility="{x:Bind HandoverVisibility}">
-                    <controls:Picture ItemId="{x:Bind ItemId}" Size="20" Visibility="{x:Bind ItemVisibility}"
-                                      controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Inline="True" />
-                    <controls:HandoverMark TraderId="{x:Bind TraderId}" Count="{x:Bind HandoverCount}" PortraitSize="20" Tip="{x:Bind HandoverTip}" />
-                  </StackPanel>
-                  <StackPanel Grid.Column="2">
-                    <TextBlock Text="{x:Bind Distance}" Visibility="{x:Bind DistanceVisibility}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
-                    <TextBlock Text="{x:Bind local:Caps.Of(Direction)}" Visibility="{x:Bind DirectionVisibility}" Style="{StaticResource StatusText}" FontSize="11"
-                               Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
-                  </StackPanel>
+                <!-- Its words keep at least half of the line: beside a hand-over a long direction tag wraps under the
+                     distance, the height under the direction (Controls.ObjectiveLine; review of 2026-10-10). -->
+                <Grid Padding="6,3" Margin="-6,0" controls:Linked.Objective="{x:Bind ObjectiveId}" controls:Linked.Also="{x:Bind QuestId}">
+                  <controls:ObjectiveLine Spacing="10">
+                    <StackPanel Spacing="1">
+                      <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" FontSize="13" Foreground="{x:Bind TextBrush}" />
+                      <Border Visibility="{x:Bind NeedsVisibility}" HorizontalAlignment="Left" Padding="4,0" Margin="-4,0"
+                              controls:Linked.Item="{x:Bind KeyId}" controls:Linked.Inline="True">
+                        <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
+                      </Border>
+                    </StackPanel>
+                    <!-- What this line gets goes to the trader after the raid: the thing's cell, its count, an arrow and the
+                         trader's portrait, before the distance, in the place of the hand-over's own line (owner,
+                         2026-10-06, "Hand-over: E"; Handovers). The cell is that item, as a need cell is. -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Visibility="{x:Bind HandoverVisibility}">
+                      <controls:Picture ItemId="{x:Bind ItemId}" Size="20" Visibility="{x:Bind ItemVisibility}"
+                                        controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Inline="True" />
+                      <controls:HandoverMark TraderId="{x:Bind TraderId}" Count="{x:Bind HandoverCount}" PortraitSize="20" Tip="{x:Bind HandoverTip}" />
+                    </StackPanel>
+                    <StackPanel>
+                      <TextBlock Text="{x:Bind Distance}" Visibility="{x:Bind DistanceVisibility}" Style="{StaticResource FigureText}" HorizontalAlignment="Right" />
+                      <controls:TagLines Parts="{x:Bind TagParts}" Visibility="{x:Bind DirectionVisibility}" HorizontalAlignment="Right" />
+                    </StackPanel>
+                  </controls:ObjectiveLine>
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

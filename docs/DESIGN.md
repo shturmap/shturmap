@@ -939,7 +939,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
-    needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
+    needs (gold), and on the right the distance, direction and floor hint (the words keep at least half of the line:
+    where a hand-over's mark and a long direction would take more, the direction wraps under the distance between its
+    parts, the height under the direction; review of 2026-10-10: German "HINTEN LINKS · 5 M TIEFER" beside a hand-over
+    left tarkov.dev's sentence a word or two a line; `Controls.ObjectiveLine`); "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for a hand-over of its own (one that gives what another line gets is a
     handshake after that line's words, "Quest cards", *Hand-overs*). The text is the objective in a few words, in these lines
     and in NEXT: its phrase from the quest's synopsis ("Mark Stryker" for "Locate and mark the Stryker with an

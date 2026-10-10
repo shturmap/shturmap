@@ -30,6 +30,10 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 
     public Visibility DirectionVisibility => Direction.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>The tag under the distance, in capitals, by its parts (the direction, the height): given less room they
+    /// stand one under the other (Controls.TagLines, Rules.LineRoom).</summary>
+    public IReadOnlyList<string> TagParts => Caps.Of(Direction).Split(" · ");
+
     /// <summary>Muted for what is done at a trader after the raid, and for what the player ticked as done: nothing to
     /// do about either here.</summary>
     public Microsoft.UI.Xaml.Media.Brush TextBrush =>
