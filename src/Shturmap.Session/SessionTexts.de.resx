@@ -1,0 +1,715 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ExitListRead" xml:space="preserve">
+    <value>Deine Extract-Liste wurde gelesen: {count, plural, one {# Extract} other {# Extracts}} für diesen Raid</value>
+    <comment>en: Your extract list is read: {count, plural, one {# extract} other {# extracts}} for this raid</comment>
+  </data>
+  <data name="NoGameTitle" xml:space="preserve">
+    <value>Kein Spiel auf diesem PC gefunden</value>
+    <comment>en: No game found on this PC</comment>
+  </data>
+  <data name="NoGameNote" xml:space="preserve">
+    <value>Oder schau dir oben die Maps an. Quests und Raids folgen dem Spiel, sobald es gefunden ist; Shturmap sucht weiter.</value>
+    <comment>en: Or browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking.</comment>
+  </data>
+  <data name="NoLogsTitle" xml:space="preserve">
+    <value>Das Spiel lief auf diesem PC noch nicht</value>
+    <comment>en: The game hasn't run on this PC yet</comment>
+  </data>
+  <data name="NoLogsNote" xml:space="preserve">
+    <value>Gefunden in {folder}. Quests und Raids folgen, sobald es hier gelaufen ist; bis dahin schau dir oben die Maps an.</value>
+    <comment>en: Found in {folder}. Quests and raids follow once it has run here; until then, browse the maps above.</comment>
+  </data>
+  <data name="StatusLoadingMap" xml:space="preserve">
+    <value>{map} lädt</value>
+    <comment>en: Loading {map}</comment>
+  </data>
+  <data name="StatusLoading" xml:space="preserve">
+    <value>Lädt</value>
+    <comment>en: Loading</comment>
+  </data>
+  <data name="StatusInRaid" xml:space="preserve">
+    <value>Im Raid</value>
+    <comment>en: In raid</comment>
+  </data>
+  <data name="SidePmc" xml:space="preserve">
+    <value>PMC</value>
+    <comment>en: PMC</comment>
+  </data>
+  <data name="SideScav" xml:space="preserve">
+    <value>Scav</value>
+    <comment>en: Scav</comment>
+  </data>
+  <data name="RaidMinutes" xml:space="preserve">
+    <value>{minutes} min</value>
+    <comment>en: {minutes} min</comment>
+  </data>
+  <data name="StatusNotInRaid" xml:space="preserve">
+    <value>Nicht im Raid</value>
+    <comment>en: Not in a raid</comment>
+  </data>
+  <data name="LastRaid" xml:space="preserve">
+    <value>Letzter Raid</value>
+    <comment>en: Last raid</comment>
+  </data>
+  <data name="LastRaidEndUnknown" xml:space="preserve">
+    <value>Ende nicht im Log</value>
+    <comment>en: end not in the log</comment>
+  </data>
+  <data name="StatusTipLoading" xml:space="preserve">
+    <value>Laut Log des Spiels lädt gerade ein Raid</value>
+    <comment>en: The game's log shows a raid loading</comment>
+  </data>
+  <data name="StatusTipInRaidSince" xml:space="preserve">
+    <value>Laut Log des Spiels läuft seit {time} ein Raid</value>
+    <comment>en: The game's log shows a raid, started {time}</comment>
+  </data>
+  <data name="StatusTipInRaid" xml:space="preserve">
+    <value>Laut Log des Spiels läuft ein Raid</value>
+    <comment>en: The game's log shows a raid</comment>
+  </data>
+  <data name="StatusTipMenu" xml:space="preserve">
+    <value>Laut Log des Spiels läuft kein Raid (es unterscheidet die Menüs nicht von einem geschlossenen Spiel)</value>
+    <comment>en: The game's log shows no raid (it can't tell the menus from a closed game)</comment>
+  </data>
+  <data name="ModePvp" xml:space="preserve">
+    <value>PvP</value>
+    <comment>en: PvP</comment>
+  </data>
+  <data name="ModePve" xml:space="preserve">
+    <value>PvE</value>
+    <comment>en: PvE</comment>
+  </data>
+  <data name="ModeSeasonal" xml:space="preserve">
+    <value>Season</value>
+    <comment>en: Seasonal</comment>
+  </data>
+  <data name="ModeTipUnknown" xml:space="preserve">
+    <value>Das Spiel sagt „{mode}“, das kennt Shturmap noch nicht; angezeigt wird der Modus, den du zuletzt gespielt hast</value>
+    <comment>en: The game says '{mode}', which Shturmap doesn't know yet; showing the mode you last played</comment>
+  </data>
+  <data name="ModeTipFromLog" xml:space="preserve">
+    <value>Aus dem Log des Spiels, {time}</value>
+    <comment>en: From the game's log, {time}</comment>
+  </data>
+  <data name="ModeTipLastPlayed" xml:space="preserve">
+    <value>Der Modus, den du zuletzt gespielt hast; folgt dem Spiel, sobald es startet</value>
+    <comment>en: The mode you last played; follows the game once it starts</comment>
+  </data>
+  <data name="ModeTipNoGame" xml:space="preserve">
+    <value>Kein Spiel auf diesem PC: der Modus, den du zuletzt gespielt hast</value>
+    <comment>en: No game on this PC: the mode you last played</comment>
+  </data>
+  <data name="GameFolderNotFound" xml:space="preserve">
+    <value>SPIELORDNER: NICHT GEFUNDEN</value>
+    <comment>en: GAME FOLDER: NOT FOUND</comment>
+  </data>
+  <data name="GameFolderChosen" xml:space="preserve">
+    <value>SPIELORDNER: {folder} (von dir gewählt)</value>
+    <comment>en: GAME FOLDER: {folder} (chosen by you)</comment>
+  </data>
+  <data name="GameFolderFound" xml:space="preserve">
+    <value>SPIELORDNER: {folder} (automatisch gefunden)</value>
+    <comment>en: GAME FOLDER: {folder} (found automatically)</comment>
+  </data>
+  <data name="LogsTipNotFound" xml:space="preserve">
+    <value>Die Logs des Spiels wurden nicht gefunden: Quests und Raids können dem Spiel nicht folgen.</value>
+    <comment>en: The game's logs aren't found: quests and raids can't follow the game.</comment>
+  </data>
+  <data name="LogsTipFolder" xml:space="preserve">
+    <value>Spiel-Logs: {folder}</value>
+    <comment>en: Game logs: {folder}</comment>
+  </data>
+  <data name="LogsTipNewer" xml:space="preserve">
+    <value>Neuere Spiel-Logs in {folder}. Einstellungen → AUTOMATISCH SUCHEN folgt stattdessen diesen.</value>
+    <comment>en: Newer game logs in {folder}. Settings → FIND AUTOMATICALLY follows those instead.</comment>
+  </data>
+  <data name="UpdatesBroken" xml:space="preserve">
+    <value>Updates: Der Updater konnte nicht starten, daher keine Suche nach Updates. Warum, steht im Log (LOG-ORDNER). Führ das Setup noch einmal aus, das repariert es; deine Daten bleiben.</value>
+    <comment>en: Updates: the updater couldn't start, so no update checks. The log says why (LOG FOLDER). Running the Setup again repairs it; your data stays.</comment>
+  </data>
+  <data name="UpdatesNotInBuild" xml:space="preserve">
+    <value>Updates: in diesem Build nicht verfügbar. Mit dem Setup installiert, aktualisiert sich Shturmap selbst.</value>
+    <comment>en: Updates: not available in this build. Installed with the Setup, Shturmap updates itself.</comment>
+  </data>
+  <data name="UpdateNotApplied" xml:space="preserve">
+    <value>Update {version} konnte nicht installiert werden: Ein anderes Programm hat Shturmaps Ordner belegt, oft ein Browser, den Shturmap geöffnet hat. Schließ es, dann starte Shturmap neu.</value>
+    <comment>en: Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.</comment>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Shturmap {version} ist verfügbar</value>
+    <comment>en: Shturmap {version} is available</comment>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Lade Shturmap {version} herunter…</value>
+    <comment>en: Downloading Shturmap {version}…</comment>
+  </data>
+  <data name="UpdateDidNotApply" xml:space="preserve">
+    <value>Update {version} nicht installiert: Beende, was Shturmap geöffnet hat, und starte neu</value>
+    <comment>en: Update {version} didn't apply: close what Shturmap opened, then restart</comment>
+  </data>
+  <data name="UpdateReady" xml:space="preserve">
+    <value>Update {version} bereit: wird beim nächsten Start installiert</value>
+    <comment>en: Update {version} ready: applies at next start</comment>
+  </data>
+  <data name="SettingsFileSetAside" xml:space="preserve">
+    <value>Shturmaps Einstellungsdatei war nicht lesbar und wurde beiseitegelegt: Picks, Haken und Einstellungen beginnen von vorn.</value>
+    <comment>en: Shturmap's settings file couldn't be read and was set aside: picks, ticks and settings start over.</comment>
+  </data>
+  <data name="SettingsFileNotKept" xml:space="preserve">
+    <value>Shturmaps Einstellungsdatei ließ sich nicht öffnen: Picks, Haken und Einstellungen werden diesmal nicht gespeichert.</value>
+    <comment>en: Shturmap's settings file couldn't be opened: picks, ticks and settings aren't kept this time.</comment>
+  </data>
+  <data name="ChipLookingForGame" xml:space="preserve">
+    <value>Suche das Spiel…</value>
+    <comment>en: Looking for the game…</comment>
+  </data>
+  <data name="ChipLookingForScreenshots" xml:space="preserve">
+    <value>Suche Screenshots…</value>
+    <comment>en: Looking for screenshots…</comment>
+  </data>
+  <data name="ChipLoadingData" xml:space="preserve">
+    <value>Lade Spieldaten…</value>
+    <comment>en: Loading game data…</comment>
+  </data>
+  <data name="ChipScreenshots" xml:space="preserve">
+    <value>Screenshots</value>
+    <comment>en: Screenshots</comment>
+  </data>
+  <data name="ChipNoScreenshots" xml:space="preserve">
+    <value>Noch keine Screenshots</value>
+    <comment>en: No screenshots yet</comment>
+  </data>
+  <data name="ChipData" xml:space="preserve">
+    <value>Daten</value>
+    <comment>en: Data</comment>
+  </data>
+  <data name="ChipDataOffline" xml:space="preserve">
+    <value>Daten (Offline-Kopie)</value>
+    <comment>en: Data (offline copy)</comment>
+  </data>
+  <data name="ChipNoData" xml:space="preserve">
+    <value>Keine Spieldaten</value>
+    <comment>en: No game data</comment>
+  </data>
+  <data name="ChipNoLogs" xml:space="preserve">
+    <value>Spiel-Logs nicht gefunden</value>
+    <comment>en: Game logs not found</comment>
+  </data>
+  <data name="ChipLogsLive" xml:space="preserve">
+    <value>Logs live</value>
+    <comment>en: Logs live</comment>
+  </data>
+  <data name="ChipLogs" xml:space="preserve">
+    <value>Logs</value>
+    <comment>en: Logs</comment>
+  </data>
+  <data name="FoundNoGame" xml:space="preserve">
+    <value>Kein Spiel auf diesem PC gefunden: Schau dir die Maps an oder wähle den Spielordner in den Einstellungen.</value>
+    <comment>en: No game found on this PC: browse the maps, or choose the game folder in settings.</comment>
+  </data>
+  <data name="FoundNotRun" xml:space="preserve">
+    <value>Escape from Tarkov in {folder} gefunden; es lief auf diesem PC noch nicht.</value>
+    <comment>en: Found Escape from Tarkov in {folder}; it hasn't run on this PC yet.</comment>
+  </data>
+  <data name="FoundGame" xml:space="preserve">
+    <value>Escape from Tarkov in {folder} gefunden: Quests und Raids folgen jetzt dem Spiel.</value>
+    <comment>en: Found Escape from Tarkov in {folder}: quests and raids follow the game now.</comment>
+  </data>
+  <data name="FoundNewerLogs" xml:space="preserve">
+    <value>Neuere Spiel-Logs in {folder}: Quests und Raids folgen jetzt diesem Spiel.</value>
+    <comment>en: Newer game logs in {folder}: quests and raids follow that game now.</comment>
+  </data>
+  <data name="DataNoticeNotData" xml:space="preserve">
+    <value>Keine Spieldaten. {problem} Shturmap versucht es in {unit, select, seconds {{wait, plural, one {# Sekunde} other {# Sekunden}}} other {{wait, plural, one {# Minute} other {# Minuten}}}} erneut.</value>
+    <comment>en: No game data. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}.</comment>
+  </data>
+  <data name="DataNoticeNotDataLater" xml:space="preserve">
+    <value>Keine Spieldaten. {problem} Shturmap versucht es von selbst erneut, zuerst nach 2 Minuten, dann seltener.</value>
+    <comment>en: No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often.</comment>
+  </data>
+  <data name="DataNoticeTransient" xml:space="preserve">
+    <value>Keine Spieldaten. {problem} Shturmap versucht es in {unit, select, seconds {{wait, plural, one {# Sekunde} other {# Sekunden}}} other {{wait, plural, one {# Minute} other {# Minuten}}}} erneut; wenn es weiter fehlschlägt, melde es bitte.</value>
+    <comment>en: No game data. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}; if it keeps failing, please report it.</comment>
+  </data>
+  <data name="DataNoticeTransientLater" xml:space="preserve">
+    <value>Keine Spieldaten. {problem} Shturmap versucht es von selbst erneut, zuerst nach 2 Minuten, dann seltener; wenn es weiter fehlschlägt, melde es bitte.</value>
+    <comment>en: No game data. {problem} Shturmap tries again by itself, at first after 2 minutes, then less often; if it keeps failing, please report it.</comment>
+  </data>
+  <data name="DataNoticeFailed" xml:space="preserve">
+    <value>Keine Spieldaten. {problem}</value>
+    <comment>en: No game data. {problem}</comment>
+  </data>
+  <data name="LanguageMissing" xml:space="preserve">
+    <value>Keine {language, select, cs {tschechischen Texte} de {deutschen Texte} en {englischen Texte} es {spanischen Texte} fr {französischen Texte} hu {ungarischen Texte} it {italienischen Texte} ja {japanischen Texte} ko {koreanischen Texte} pl {polnischen Texte} pt {portugiesischen Texte} ro {rumänischen Texte} ru {russischen Texte} sk {slowakischen Texte} tr {türkischen Texte} zh {chinesischen Texte} other {Texte in {language}}} auf tarkov.dev; Anzeige auf Englisch.</value>
+    <comment>en: No {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts on tarkov.dev; showing English.</comment>
+  </data>
+  <data name="LanguageNotLoadedRetry" xml:space="preserve">
+    <value>Anzeige auf Englisch: Die {language, select, cs {tschechischen Texte} de {deutschen Texte} en {englischen Texte} es {spanischen Texte} fr {französischen Texte} hu {ungarischen Texte} it {italienischen Texte} ja {japanischen Texte} ko {koreanischen Texte} pl {polnischen Texte} pt {portugiesischen Texte} ro {rumänischen Texte} ru {russischen Texte} sk {slowakischen Texte} tr {türkischen Texte} zh {chinesischen Texte} other {Texte in {language}}} konnten nicht geladen werden. {problem} Shturmap versucht es in {unit, select, seconds {{wait, plural, one {# Sekunde} other {# Sekunden}}} other {{wait, plural, one {# Minute} other {# Minuten}}}} erneut.</value>
+    <comment>en: Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} Shturmap tries again in {unit, select, seconds {{wait, plural, one {# second} other {# seconds}}} other {{wait, plural, one {# minute} other {# minutes}}}}.</comment>
+  </data>
+  <data name="LanguageNotLoaded" xml:space="preserve">
+    <value>Anzeige auf Englisch: Die {language, select, cs {tschechischen Texte} de {deutschen Texte} en {englischen Texte} es {spanischen Texte} fr {französischen Texte} hu {ungarischen Texte} it {italienischen Texte} ja {japanischen Texte} ko {koreanischen Texte} pl {polnischen Texte} pt {portugiesischen Texte} ro {rumänischen Texte} ru {russischen Texte} sk {slowakischen Texte} tr {türkischen Texte} zh {chinesischen Texte} other {Texte in {language}}} konnten nicht geladen werden. {problem} {advice}</value>
+    <comment>en: Showing English: the {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts couldn't be loaded. {problem} {advice}</comment>
+  </data>
+  <data name="LanguageLoaded" xml:space="preserve">
+    <value>{language, select, cs {Tschechische Texte} de {Deutsche Texte} en {Englische Texte} es {Spanische Texte} fr {Französische Texte} hu {Ungarische Texte} it {Italienische Texte} ja {Japanische Texte} ko {Koreanische Texte} pl {Polnische Texte} pt {Portugiesische Texte} ro {Rumänische Texte} ru {Russische Texte} sk {Slowakische Texte} tr {Türkische Texte} zh {Chinesische Texte} other {Texte in {language}}} geladen.</value>
+    <comment>en: {language, select, cs {Czech} de {German} en {English} es {Spanish} fr {French} hu {Hungarian} it {Italian} ja {Japanese} ko {Korean} pl {Polish} pt {Portuguese} ro {Romanian} ru {Russian} sk {Slovak} tr {Turkish} zh {Chinese} other {{language}}} texts loaded.</comment>
+  </data>
+  <data name="QuestStarted" xml:space="preserve">
+    <value>{quest}: gestartet</value>
+    <comment>en: {quest}: started</comment>
+  </data>
+  <data name="QuestCompleted" xml:space="preserve">
+    <value>{quest}: abgeschlossen</value>
+    <comment>en: {quest}: completed</comment>
+  </data>
+  <data name="QuestFailed" xml:space="preserve">
+    <value>{quest}: gefailt</value>
+    <comment>en: {quest}: failed</comment>
+  </data>
+  <data name="FixNoRaidMap" xml:space="preserve">
+    <value>Position erhalten, aber Shturmap weiß nicht, auf welcher Map dieser Raid läuft, daher wird sie nicht gezeigt.</value>
+    <comment>en: Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown.</comment>
+  </data>
+  <data name="FixNoRaid" xml:space="preserve">
+    <value>Position erhalten, aber laut Log des Spiels läuft kein Raid, daher wird sie nicht gezeigt.</value>
+    <comment>en: Got a position, but the game's log shows no raid, so it isn't shown.</comment>
+  </data>
+  <data name="FixNoMap" xml:space="preserve">
+    <value>Position erhalten, aber unklar, auf welcher Map sie liegt. Wähle die Map und mach noch einen Screenshot.</value>
+    <comment>en: Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.</comment>
+  </data>
+  <data name="ObjectiveOptional" xml:space="preserve">
+    <value>{objective} (optional)</value>
+    <comment>en: {objective} (optional)</comment>
+  </data>
+  <data name="ObjectiveNoDescription" xml:space="preserve">
+    <value>(keine Beschreibung)</value>
+    <comment>en: (no description)</comment>
+  </data>
+  <data name="ListOr" xml:space="preserve">
+    <value>{first} oder {second}</value>
+    <comment>en: {first} or {second}</comment>
+  </data>
+  <data name="ListAnd" xml:space="preserve">
+    <value>{first} und {second}</value>
+    <comment>en: {first} and {second}</comment>
+  </data>
+  <data name="ListOrOthers" xml:space="preserve">
+    <value>{first} oder {others, plural, one {# weiteres} other {# weitere}}</value>
+    <comment>en: {first} or {others, plural, one {# other} other {# others}}</comment>
+  </data>
+  <data name="GearOthers" xml:space="preserve">
+    <value>{first} / {others, plural, one {# weiteres} other {# weitere}}</value>
+    <comment>en: {first} / {others, plural, one {# other} other {# others}}</comment>
+  </data>
+  <data name="ItemTimes" xml:space="preserve">
+    <value>{item} ×{count}</value>
+    <comment>en: {item} ×{count}</comment>
+  </data>
+  <data name="PurposePlant" xml:space="preserve">
+    <value>zum Platzieren</value>
+    <comment>en: to plant</comment>
+  </data>
+  <data name="PurposeMark" xml:space="preserve">
+    <value>zum Markieren</value>
+    <comment>en: to mark</comment>
+  </data>
+  <data name="PurposeUse" xml:space="preserve">
+    <value>zum Benutzen</value>
+    <comment>en: to use</comment>
+  </data>
+  <data name="PurposeBring" xml:space="preserve">
+    <value>zum Mitnehmen</value>
+    <comment>en: to bring</comment>
+  </data>
+  <data name="PurposeWear" xml:space="preserve">
+    <value>zum Tragen</value>
+    <comment>en: to wear</comment>
+  </data>
+  <data name="PurposeFit" xml:space="preserve">
+    <value>zum Anbauen</value>
+    <comment>en: to fit</comment>
+  </data>
+  <data name="PurposeKey" xml:space="preserve">
+    <value>Key</value>
+    <comment>en: key</comment>
+  </data>
+  <data name="PurposeLeave" xml:space="preserve">
+    <value>um über {exit} zu extracten</value>
+    <comment>en: to leave through {exit}</comment>
+  </data>
+  <data name="PurposeEnter" xml:space="preserve">
+    <value>um {map} zu betreten</value>
+    <comment>en: to enter {map}</comment>
+  </data>
+  <data name="PlanRaidLength" xml:space="preserve">
+    <value>{minutes} min Raid</value>
+    <comment>en: {minutes} min raid</comment>
+  </data>
+  <data name="BossChance" xml:space="preserve">
+    <value>{boss} {chance} %</value>
+    <comment>en: {boss} {chance}%</comment>
+  </data>
+  <data name="WeaponAny" xml:space="preserve">
+    <value>{category} (jede Art)</value>
+    <comment>en: any {category}</comment>
+  </data>
+  <data name="WeaponSome" xml:space="preserve">
+    <value>{category} ({count} von {kinds, plural, one {# Art} other {# Arten}})</value>
+    <comment>en: {category} ({count} of {kinds, plural, one {# kind} other {# kinds}})</comment>
+  </data>
+  <data name="ProgressObjectivesHere" xml:space="preserve">
+    <value>{here} von {total, plural, one {# Ziel} other {# Zielen}} hier</value>
+    <comment>en: {here} of {total, plural, one {# objective} other {# objectives}} here</comment>
+  </data>
+  <data name="ProgressFoundInRaid" xml:space="preserve">
+    <value>braucht FiR-Items</value>
+    <comment>en: needs items found in raid</comment>
+  </data>
+  <data name="ProgressKills" xml:space="preserve">
+    <value>{kills, plural, one {# Kill} other {# Kills}} insgesamt</value>
+    <comment>en: {kills, plural, one {# kill} other {# kills}} in all</comment>
+  </data>
+  <data name="RequirementKeyFor" xml:space="preserve">
+    <value>Key für {quests}</value>
+    <comment>en: key for {quests}</comment>
+  </data>
+  <data name="RequirementFor" xml:space="preserve">
+    <value>{purpose}, für {quests}</value>
+    <comment>en: {purpose}, for {quests}</comment>
+  </data>
+  <data name="NeedKey" xml:space="preserve">
+    <value>Key: {keys}</value>
+    <comment>en: Key: {keys}</comment>
+  </data>
+  <data name="NeedBring" xml:space="preserve">
+    <value>Mitnehmen: {items}</value>
+    <comment>en: Bring: {items}</comment>
+  </data>
+  <data name="NeedWith" xml:space="preserve">
+    <value>Mit: {item}</value>
+    <comment>en: With: {item}</comment>
+  </data>
+  <data name="NeedWear" xml:space="preserve">
+    <value>Tragen: {gear}</value>
+    <comment>en: Wear: {gear}</comment>
+  </data>
+  <data name="NeedUse" xml:space="preserve">
+    <value>Benutzen: {weapons}</value>
+    <comment>en: Use: {weapons}</comment>
+  </data>
+  <data name="NeedFit" xml:space="preserve">
+    <value>Anbauen: {gear}</value>
+    <comment>en: Fit: {gear}</comment>
+  </data>
+  <data name="NeedWithout" xml:space="preserve">
+    <value>Ohne: {gear}</value>
+    <comment>en: Without: {gear}</comment>
+  </data>
+  <data name="QuestItemFoundOn" xml:space="preserve">
+    <value>{item}, zu finden auf {maps}</value>
+    <comment>en: {item}, found on {maps}</comment>
+  </data>
+  <data name="QuestItemFoundFirst" xml:space="preserve">
+    <value>{item}, vorher zu finden</value>
+    <comment>en: {item}, found first</comment>
+  </data>
+  <data name="QuestItemFrom" xml:space="preserve">
+    <value>{item}, aus {quest}</value>
+    <comment>en: {item}, from {quest}</comment>
+  </data>
+  <data name="QuestFromLevel" xml:space="preserve">
+    <value>ab Level {level}</value>
+    <comment>en: from level {level}</comment>
+  </data>
+  <data name="QuestForKappa" xml:space="preserve">
+    <value>nötig für Kappa</value>
+    <comment>en: needed for Kappa</comment>
+  </data>
+  <data name="QuestForLightkeeper" xml:space="preserve">
+    <value>nötig für Lightkeeper</value>
+    <comment>en: needed for Lightkeeper</comment>
+  </data>
+  <data name="QuestUnlocksMore" xml:space="preserve">
+    <value>und {count, plural, one {# weitere} other {# weitere}}</value>
+    <comment>en: and {count, plural, one {# more} other {# more}}</comment>
+  </data>
+  <data name="QuestNotStarted" xml:space="preserve">
+    <value>Nicht gestartet</value>
+    <comment>en: Not started</comment>
+  </data>
+  <data name="QuestActive" xml:space="preserve">
+    <value>Aktiv</value>
+    <comment>en: Active</comment>
+  </data>
+  <data name="QuestDone" xml:space="preserve">
+    <value>Abgeschlossen</value>
+    <comment>en: Completed</comment>
+  </data>
+  <data name="QuestLost" xml:space="preserve">
+    <value>Gefailt</value>
+    <comment>en: Failed</comment>
+  </data>
+  <data name="QuestStateFromLog" xml:space="preserve">
+    <value>aus dem Log des Spiels, {day}</value>
+    <comment>en: from the game log, {day}</comment>
+  </data>
+  <data name="QuestStateImplied" xml:space="preserve">
+    <value>weil {quest} sie voraussetzt</value>
+    <comment>en: because {quest} needs it</comment>
+  </data>
+  <data name="TickedByYou" xml:space="preserve">
+    <value>Erledigt · von dir abgehakt</value>
+    <comment>en: Done · ticked by you</comment>
+  </data>
+  <data name="TickedByYouOn" xml:space="preserve">
+    <value>Erledigt · von dir abgehakt, {day}</value>
+    <comment>en: Done · ticked by you, {day}</comment>
+  </data>
+  <data name="QuestAnyMap" xml:space="preserve">
+    <value>jede Map</value>
+    <comment>en: any map</comment>
+  </data>
+  <data name="QuestPossiblePlaces" xml:space="preserve">
+    <value>Einer von {count, plural, one {# möglichen Spot} other {# möglichen Spots}}</value>
+    <comment>en: One of {count, plural, one {# place} other {# places}} it can be</comment>
+  </data>
+  <data name="HandoverTo" xml:space="preserve">
+    <value>{count, plural, =1 {Bei {trader} abgeben} one {×# bei {trader} abgeben} other {×# bei {trader} abgeben}}</value>
+    <comment>en: {count, plural, =1 {Hand over to {trader}} other {Hand over ×# to {trader}}}</comment>
+  </data>
+  <data name="QuestNeedOn" xml:space="preserve">
+    <value>auf {maps}</value>
+    <comment>en: on {maps}</comment>
+  </data>
+  <data name="ItemUseKey" xml:space="preserve">
+    <value>Key</value>
+    <comment>en: Key</comment>
+  </data>
+  <data name="ItemUseWear" xml:space="preserve">
+    <value>Tragen, für Kills</value>
+    <comment>en: Wear, for kills</comment>
+  </data>
+  <data name="ItemUseWeapon" xml:space="preserve">
+    <value>Benutzen, für Kills</value>
+    <comment>en: Use, for kills</comment>
+  </data>
+  <data name="ItemUseMods" xml:space="preserve">
+    <value>Anbauen, für Kills</value>
+    <comment>en: Fit, for kills</comment>
+  </data>
+  <data name="ItemUseBring" xml:space="preserve">
+    <value>{count, plural, =1 {Mitnehmen} one {Mitnehmen ×#} other {Mitnehmen ×#}}, {purposes}</value>
+    <comment>en: {count, plural, =1 {Bring} other {Bring ×#}}, {purposes}</comment>
+  </data>
+  <data name="ItemUseLeave" xml:space="preserve">
+    <value>{count, plural, =1 {Mitnehmen} one {Mitnehmen ×#} other {Mitnehmen ×#}}, um über {exit} zu extracten</value>
+    <comment>en: {count, plural, =1 {Bring} other {Bring ×#}}, to leave through {exit}</comment>
+  </data>
+  <data name="ItemUseStash" xml:space="preserve">
+    <value>Verstecken</value>
+    <comment>en: Stash</comment>
+  </data>
+  <data name="ItemUsePickUp" xml:space="preserve">
+    <value>Looten</value>
+    <comment>en: Pick up</comment>
+  </data>
+  <data name="ItemUsePickUpThenHandOver" xml:space="preserve">
+    <value>Looten, dann abgeben</value>
+    <comment>en: Pick up, then hand over</comment>
+  </data>
+  <data name="ItemUseHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Abgeben} one {Abgeben ×#} other {Abgeben ×#}}</value>
+    <comment>en: {count, plural, =1 {Hand over} other {Hand over ×#}}</comment>
+  </data>
+  <data name="ItemUseHandOverFoundInRaid" xml:space="preserve">
+    <value>{count, plural, =1 {Abgeben} one {Abgeben ×#} other {Abgeben ×#}}, FiR</value>
+    <comment>en: {count, plural, =1 {Hand over} other {Hand over ×#}}, found in raid</comment>
+  </data>
+  <data name="ItemUseFindInRaid" xml:space="preserve">
+    <value>{count, plural, =1 {FiR finden} one {FiR finden ×#} other {FiR finden ×#}}</value>
+    <comment>en: {count, plural, =1 {Find in raid} other {Find in raid ×#}}</comment>
+  </data>
+  <data name="ItemUseFindInRaidThenHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {FiR finden} one {FiR finden ×#} other {FiR finden ×#}}, dann abgeben</value>
+    <comment>en: {count, plural, =1 {Find in raid} other {Find in raid ×#}}, then hand over</comment>
+  </data>
+  <data name="ItemUseFind" xml:space="preserve">
+    <value>{count, plural, =1 {Finden} one {Finden ×#} other {Finden ×#}}</value>
+    <comment>en: {count, plural, =1 {Find} other {Find ×#}}</comment>
+  </data>
+  <data name="ItemUseFindThenHandOver" xml:space="preserve">
+    <value>{count, plural, =1 {Finden} one {Finden ×#} other {Finden ×#}}, dann abgeben</value>
+    <comment>en: {count, plural, =1 {Find} other {Find ×#}}, then hand over</comment>
+  </data>
+  <data name="ItemUseSell" xml:space="preserve">
+    <value>{count, plural, =1 {Verkaufen} one {Verkaufen ×#} other {Verkaufen ×#}}</value>
+    <comment>en: {count, plural, =1 {Sell} other {Sell ×#}}</comment>
+  </data>
+  <data name="ItemSourceTrader" xml:space="preserve">
+    <value>{trader} LL{level}</value>
+    <comment>en: {trader} LL{level}</comment>
+  </data>
+  <data name="ItemSourceBarter" xml:space="preserve">
+    <value>{trader} LL{level} Barter</value>
+    <comment>en: {trader} LL{level} barter</comment>
+  </data>
+  <data name="ItemSourceBarterItem" xml:space="preserve">
+    <value>{count}× {item}</value>
+    <comment>en: {count}× {item}</comment>
+  </data>
+  <data name="ItemSourceBarterMore" xml:space="preserve">
+    <value>{first}, {second} und {more, plural, one {# weiteres} other {# weitere}}</value>
+    <comment>en: {first}, {second} and {more, plural, one {# more} other {# more}}</comment>
+  </data>
+  <data name="ItemSourceAfter" xml:space="preserve">
+    <value>nach {quest}</value>
+    <comment>en: after {quest}</comment>
+  </data>
+  <data name="ItemSourceAfterAQuest" xml:space="preserve">
+    <value>nach einer Quest</value>
+    <comment>en: after a quest</comment>
+  </data>
+  <data name="ItemSourceCraft" xml:space="preserve">
+    <value>Craft · {station} Level {level}</value>
+    <comment>en: Craft · {station} level {level}</comment>
+  </data>
+  <data name="ItemSourceHideout" xml:space="preserve">
+    <value>Hideout</value>
+    <comment>en: Hideout</comment>
+  </data>
+  <data name="ItemSourceFlea" xml:space="preserve">
+    <value>Flea</value>
+    <comment>en: Flea market</comment>
+  </data>
+  <data name="ItemSourceFleaFromLevel" xml:space="preserve">
+    <value>Flea ab Level {level}</value>
+    <comment>en: Flea market from level {level}</comment>
+  </data>
+  <data name="ItemSourceFleaPrice" xml:space="preserve">
+    <value>~{price}</value>
+    <comment>en: ~{price}</comment>
+  </data>
+  <data name="ItemSourceLoose" xml:space="preserve">
+    <value>Loot auf {map} · {count, plural, one {# Spot} other {# Spots}}</value>
+    <comment>en: Loose on {map} · {count, plural, one {# spot} other {# spots}}</comment>
+  </data>
+  <data name="ItemSourceExample" xml:space="preserve">
+    <value>z. B. {item} · {source}</value>
+    <comment>en: e.g. {item} · {source}</comment>
+  </data>
+  <data name="PriceRoubles" xml:space="preserve">
+    <value>{amount} ₽</value>
+    <comment>en: {amount} ₽</comment>
+  </data>
+  <data name="PriceDollars" xml:space="preserve">
+    <value>{amount} $</value>
+    <comment>en: ${amount}</comment>
+  </data>
+  <data name="PriceEuros" xml:space="preserve">
+    <value>{amount} €</value>
+    <comment>en: €{amount}</comment>
+  </data>
+  <data name="ExtractClimb" xml:space="preserve">
+    <value>Red Rebel Eispickel und Paracord, kein Armored Rig</value>
+    <comment>en: Red Rebel ice pick and paracord, no armored rig</comment>
+  </data>
+  <data name="ExtractFlare" xml:space="preserve">
+    <value>Dort eine rote Flare abfeuern</value>
+    <comment>en: Fire a red signal flare there</comment>
+  </data>
+  <data name="ExtractCoOp" xml:space="preserve">
+    <value>Co-Op: ein PMC und ein Player-Scav extracten zusammen</value>
+    <comment>en: Co-op: a PMC and a player Scav leave together</comment>
+  </data>
+  <data name="ExtractPayRoubles" xml:space="preserve">
+    <value>{amount} ₽ zahlen</value>
+    <comment>en: Pay {amount} ₽</comment>
+  </data>
+  <data name="ExtractPayDollars" xml:space="preserve">
+    <value>{amount} $ zahlen</value>
+    <comment>en: Pay ${amount}</comment>
+  </data>
+  <data name="ExtractPayEuros" xml:space="preserve">
+    <value>{amount} € zahlen</value>
+    <comment>en: Pay €{amount}</comment>
+  </data>
+  <data name="ExtractHandOver" xml:space="preserve">
+    <value>{item} abgeben</value>
+    <comment>en: Hand over {item}</comment>
+  </data>
+  <data name="ExtractSwitchFirst" xml:space="preserve">
+    <value>Zuerst {switchName}</value>
+    <comment>en: {switchName} first</comment>
+  </data>
+  <data name="ReportNotConfigured" xml:space="preserve">
+    <value>Berichte sind in diesem Build nicht eingerichtet.</value>
+    <comment>en: Reporting isn't set up in this build.</comment>
+  </data>
+  <data name="ReportMuted" xml:space="preserve">
+    <value>Nicht gesendet: Entwickler-Builds senden nichts.</value>
+    <comment>en: Not sent: developer runs send nothing.</comment>
+  </data>
+  <data name="ReportSent" xml:space="preserve">
+    <value>Gesendet. Danke. Bericht {id}.</value>
+    <comment>en: Sent. Thank you. Report {id}.</comment>
+  </data>
+  <data name="ReportKept" xml:space="preserve">
+    <value>Senden gerade nicht möglich ({why}). Der Bericht bleibt auf diesem PC und geht beim nächsten Start von Shturmap von selbst raus.</value>
+    <comment>en: Couldn't send it now ({why}). It's kept on this PC and goes out by itself the next time Shturmap starts.</comment>
+  </data>
+  <data name="ReportRefused" xml:space="preserve">
+    <value>Senden nicht möglich: {why}. Der Bericht bleibt auf diesem PC, in %LOCALAPPDATA%\Shturmap\outbox.</value>
+    <comment>en: Couldn't send it: {why}. It's kept on this PC, in %LOCALAPPDATA%\Shturmap\outbox.</comment>
+  </data>
+  <data name="CrashReportKept" xml:space="preserve">
+    <value>Absturzbericht gerade nicht gesendet ({why}). Er geht beim nächsten Start von Shturmap von selbst raus.</value>
+    <comment>en: Couldn't send the crash report now ({why}). It goes out by itself the next time Shturmap starts.</comment>
+  </data>
+  <data name="CrashReportRefused" xml:space="preserve">
+    <value>Absturzbericht nicht gesendet: {why}.</value>
+    <comment>en: Couldn't send the crash report: {why}.</comment>
+  </data>
+  <data name="CrashReportsSent" xml:space="preserve">
+    <value>{count, plural, =1 {Absturzbericht gesendet. Danke. Bericht {id}.} one {# Absturzbericht gesendet. Danke.} other {# Absturzberichte gesendet. Danke.}}</value>
+    <comment>en: {count, plural, =1 {Crash report sent. Thank you. Report {id}.} other {# crash reports sent. Thank you.}}</comment>
+  </data>
+  <data name="ReportWhyAnswered" xml:space="preserve">
+    <value>der Berichtsdienst antwortete mit {status}</value>
+    <comment>en: the report service answered {status}</comment>
+  </data>
+  <data name="ReportWhyNoConnection" xml:space="preserve">
+    <value>keine Verbindung</value>
+    <comment>en: no connection</comment>
+  </data>
+  <data name="ReportWhyNoAnswer" xml:space="preserve">
+    <value>keine rechtzeitige Antwort</value>
+    <comment>en: no answer in time</comment>
+  </data>
+  <data name="ReportWriteSomething" xml:space="preserve">
+    <value>Schreib, was passiert ist oder was helfen würde.</value>
+    <comment>en: Write what happened, or what would help.</comment>
+  </data>
+  <data name="ReportTooLong" xml:space="preserve">
+    <value>Bitte höchstens {count, plural, one {{max} Zeichen} other {{max} Zeichen}}.</value>
+    <comment>en: At most {count, plural, one {{max} character} other {{max} characters}}, please.</comment>
+  </data>
+  <data name="ReportContactTooLong" xml:space="preserve">
+    <value>Der Kontakt darf höchstens {count, plural, one {# Zeichen} other {# Zeichen}} lang sein.</value>
+    <comment>en: The contact can be at most {count, plural, one {# character} other {# characters}}.</comment>
+  </data>
+</root>
