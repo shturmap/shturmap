@@ -28,7 +28,7 @@ Maps, sortiert danach, was du dort für deine Quests schaffen kannst.
 Bleib kurz auf einer Zeile: Vorschau ihrer Map. Klick sie an, um diesen Raid zu planen.
 
 ## pick · Map
-PICKEN UND ZEIGEN
+PICKEN UND DRAUFZEIGEN
 Der Stift neben einer Quest pickt sie für den Raid: ihre eigene Farbe auf der Map.
 Zeig auf irgendwas: Überall, wo es vorkommt, leuchtet es auf.
 
@@ -36,7 +36,7 @@ Zeig auf irgendwas: Überall, wo es vorkommt, leuchtet es auf.
 DEINE SCREENSHOT-TASTE
 Drück sie im Raid ab und zu: Der Dateiname sagt, wo du bist.
 Öffne vorher die Extract-Liste (zweimal O): Shturmap liest, welche Extracts deine sind.
-- list · IM SPIEL: ZWEIMAL O, DANN TASTE {key}
+- list · IM SPIEL: ZWEIMAL O, DANN SCREENSHOT MIT {key}
 - read · DEINE LISTE IN DIESEM RAID: {n} VON {all, plural, one {# EXTRACT} other {# EXTRACTS}}
 
 ## raid · Map

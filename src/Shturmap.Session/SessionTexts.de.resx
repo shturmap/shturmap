@@ -137,7 +137,7 @@
     <comment>en: Newer game logs in {folder}. Settings → FIND AUTOMATICALLY follows those instead.</comment>
   </data>
   <data name="UpdatesBroken" xml:space="preserve">
-    <value>Updates: Der Updater konnte nicht starten, daher keine Suche nach Updates. Warum, steht im Log (LOG-ORDNER). Führ das Setup noch einmal aus, das repariert es; deine Daten bleiben.</value>
+    <value>Updates: Der Updater konnte nicht starten, daher keine Suche nach Updates. Warum, steht im Log (LOG-ORDNER). Führ das Setup noch mal aus, das repariert es; deine Daten bleiben.</value>
     <comment>en: Updates: the updater couldn't start, so no update checks. The log says why (LOG FOLDER). Running the Setup again repairs it; your data stays.</comment>
   </data>
   <data name="UpdatesNotInBuild" xml:space="preserve">
@@ -217,7 +217,7 @@
     <comment>en: Logs</comment>
   </data>
   <data name="FoundNoGame" xml:space="preserve">
-    <value>Kein Spiel auf diesem PC gefunden: Schau dir die Maps an oder wähle den Spielordner in den Einstellungen.</value>
+    <value>Kein Spiel auf diesem PC gefunden: Schau dir die Maps an oder wähl den Spielordner in den Einstellungen.</value>
     <comment>en: No game found on this PC: browse the maps, or choose the game folder in settings.</comment>
   </data>
   <data name="FoundNotRun" xml:space="preserve">
@@ -289,7 +289,7 @@
     <comment>en: Got a position, but the game's log shows no raid, so it isn't shown.</comment>
   </data>
   <data name="FixNoMap" xml:space="preserve">
-    <value>Position erhalten, aber unklar, auf welcher Map sie liegt. Wähle die Map und mach noch einen Screenshot.</value>
+    <value>Position erhalten, aber unklar, auf welcher Map sie liegt. Wähl die Map und mach noch einen Screenshot.</value>
     <comment>en: Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.</comment>
   </data>
   <data name="ObjectiveOptional" xml:space="preserve">
@@ -657,7 +657,7 @@
     <comment>en: {switchName} first</comment>
   </data>
   <data name="ReportNotConfigured" xml:space="preserve">
-    <value>Berichte sind in diesem Build nicht eingerichtet.</value>
+    <value>Melden ist in diesem Build nicht eingerichtet.</value>
     <comment>en: Reporting isn't set up in this build.</comment>
   </data>
   <data name="ReportMuted" xml:space="preserve">

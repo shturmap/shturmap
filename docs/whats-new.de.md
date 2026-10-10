@@ -7,7 +7,7 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 ## 0.4.0 · Praetorian
 
 - tour · Die Tour · Sieben kurze Kapitel dazu, wie Shturmap funktioniert. Klick zum Starten; später auch über die Hilfe.
-- replay · Raid-Replay · Nach einem Raid mit ein paar Screenshots: wo du sie gemacht hast, nacheinander, mit der Zeit heller.
+- replay · Raid-Replay · Nach einem Raid mit ein paar Screenshots: wo du sie gemacht hast, der Reihe nach, zunehmend heller.
 - extracts · Deine Extracts für den Raid · Mach einen Screenshot der Extract-Liste: Deine leuchten, die anderen werden zum Umriss.
 - clock · Raid-Zeit, groß · Die übrigen Minuten als größte Zahl der Raid-Karte; rot in den letzten zehn.
 - joined · Ein Spot, ein Marker · Mehrere Ziele einer Quest an einem Spot: ein Marker, der sagt, wie viele.
