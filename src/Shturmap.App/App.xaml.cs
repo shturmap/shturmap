@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.UI.Xaml;
+using Shturmap.Core;
 using Shturmap.Session;
 using Shturmap.Session.Reporting;
 using Windows.Graphics;

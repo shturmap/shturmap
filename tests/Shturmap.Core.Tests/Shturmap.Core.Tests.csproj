@@ -22,5 +22,6 @@
        a test, so these files, which use nothing of WinUI, are compiled in here as they are. -->
   <ItemGroup>
     <Compile Include="..\..\src\Shturmap.App\Rules\*.cs" LinkBase="App" />
+    <EmbeddedResource Include="..\..\src\Shturmap.App\Rules\*.resx" LinkBase="App" TextNamespace="Shturmap.App.Rules" />
   </ItemGroup>
 </Project>

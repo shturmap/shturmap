@@ -325,7 +325,7 @@
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
                            Text="Reads screenshot names, the game's logs, tarkov.dev's public data and the extract list in a raid screenshot's top right corner (settings turn that off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots." />
-                <TextBlock Style="{StaticResource EyebrowText}" Text="HELP AND FEEDBACK" Margin="0,8,0,0" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.HelpAndFeedback}" Margin="0,8,0,0" />
                 <!-- Reports go through the feedback button at the top right (owner, 2026-10-03: "there should be a separate
                      feedback/bugreport button"); help keeps the diagnostics to paste elsewhere. -->
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind FeedbackPointer}" />

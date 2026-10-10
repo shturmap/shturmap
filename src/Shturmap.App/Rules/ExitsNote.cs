@@ -10,15 +10,15 @@ namespace Shturmap.App.Rules;
 /// </summary>
 public static class ExitsNote
 {
-    public const string HowToCheck = "Not checked against your list yet. Screenshot the game's extract list (raid start, or O twice) to check.";
-    public const string NoReader = "Can't read your extract list: Windows has no text recognition language. Add one in Windows Settings → Time & language → Language.";
+    public static string HowToCheck => RuleTexts.ExitsHowToCheck;
+    public static string NoReader => RuleTexts.ExitsNoReader;
 
     /// <summary>The line under EXTRACTS AND TRANSITS; empty outside a raid and with the reading unticked.</summary>
     /// <param name="listed">How many of the side's extracts the list names.</param>
     /// <param name="extracts">How many extracts the side has on this map.</param>
     public static string Of(bool inRaid, bool readOn, bool noReader, DateTime? readAt, int listed, int extracts) =>
         !inRaid || !readOn ? ""
-        : readAt is { } at ? $"Your list this raid: {listed} of {extracts} extracts (screenshot at {at.ToString("HH:mm", CultureInfo.InvariantCulture)})."
+        : readAt is { } at ? RuleTexts.ExitsListRead(extracts: extracts, listed: listed, time: at.ToString("HH:mm", CultureInfo.InvariantCulture))
         : noReader ? NoReader
         : HowToCheck;
 

@@ -8,7 +8,7 @@ using Shturmap.Game.Logs;
 using Shturmap.Game.Settings;
 
 // Numbers and dates in the language of Shturmap's own texts, as in the app (UiLanguage).
-Shturmap.Session.UiLanguage.Apply();
+Shturmap.Core.UiLanguage.Apply();
 
 // "--data <folder>" anywhere: that data folder instead of the developer one (%LOCALAPPDATA%\Shturmap-dev); the
 // installed release's is "--data %LOCALAPPDATA%\Shturmap" (docs/DESIGN.md §8, "Data folders").

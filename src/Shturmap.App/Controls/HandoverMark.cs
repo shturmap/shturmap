@@ -77,7 +77,7 @@ public sealed partial class HandoverMark : StackPanel
         {
             Children.Add(new TextBlock
             {
-                Text = "×" + Count.ToString("N0", Shturmap.Session.UiLanguage.Culture),
+                Text = "×" + Count.ToString("N0", Shturmap.Core.UiLanguage.Culture),
                 FontSize = small ? 11 : 12,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Shturmap.Session.Tests;
+namespace Shturmap.Core.Tests;
 
 // Numbers and dates are written in the language of Shturmap's own texts, not in Windows' (review of 2026-10-04: a
 // German Windows showed "5.000 ₽" and "3 Okt" inside English sentences). English today; other languages later, from

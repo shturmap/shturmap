@@ -2132,7 +2132,8 @@ Rules:
   developer build sends one real report through the dialog's Send and saves the window, a release only opens the
   dialog with the text, and Send is pressed by hand (nothing is sent without a click, and a command line isn't one). For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
-  (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
+  (`--culture <culture>`: that run's language for everything, as if chosen in settings, without saving it; `de-DE` also
+  for a language still being translated, `qps-ploc` the pseudo-language) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
@@ -2544,14 +2545,63 @@ JSON in a shape Shturmap doesn't know (tarkov.dev changed its format) stays save
 stays unreadable, not asked for again: downloading it again would bring the same, at every start of every Shturmap. A
 failed download is never a reason to forget a good saved copy.
 
-**The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
-with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
-no code asks Windows for its formats (owner, 2026-10-04, on a Windows set to another language showing "5.000 ₽"
-inside English sentences: other languages are likely to come, so the formats belong to the app's language, in one
-place; when the texts are translated, the formats follow the language chosen).
+**The app's own language** (owner, 2026-10-10: multi-language support, English and German first, every language
+tarkov.dev has to follow). **One language for everything**: Shturmap's own texts, its number and date formats ("Pay
+5,000 ₽" and "25 Sep" in English, "5.000 ₽" and "25. Sep." in German, never Windows' formats inside another language's
+sentences; review of 2026-10-04) and the game data's names all follow one choice (owner, 2026-10-10: "the app should
+switch languages entirely, otherwise that makes it weird mixing the two"). `UiLanguage.Choose` makes it:
+1. the player's choice in settings, "Language: Automatic · English · Deutsch", each language in its own name;
+2. else the game's language (its settings' `Language`, `GameLanguage.Common`), when Shturmap's texts are complete in it;
+3. else Windows' display language (the one Windows' own menus are in, read once at start before anything sets the
+   app's), when they are complete in it; Windows' regional formats don't count;
+4. else English.
 
-**Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
-`<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:
+A game language Shturmap's texts aren't written in yet (Russian, say) keeps the game data in it: the names stay as the
+game shows them, and only Shturmap's own words take Windows' language or English, as before 2026-10-10, until that
+language's texts are written (owner, 2026-10-10). The pseudo-language (`UiLanguage.Pseudo`, developer runs only;
+docs/LANGUAGES.md) shows English game names. A language is offered, and chosen by itself, only once every text of it is
+translated and reviewed (`UiLanguage.Supported`); one being translated (`UiLanguage.InTranslation`) shows only in a
+developer run (`--culture de-DE`), English where a text isn't written yet. The language **switches while Shturmap
+runs** (owner, 2026-10-10), from settings at once: every text on screen, the formats and the map's labels change, the
+game data is loaded in the new language as when the game language's texts arrive late (below), and what was on screen
+is the same as after a fresh start in that language (the layout check compares the two; docs/LANGUAGES.md). A new
+notice is said in the new language; one already shown stays as it was said. Logs, the study log, diagnostics, reports
+and the CLI stay English: they are read by whoever fixes Shturmap. The rules that read English data (quest synopses
+§5, extract requirements, `QuestCards.SaysWhere`) still read only English; in another data language their rows show
+tarkov.dev's sentence, as before.
+
+**Texts.** Every word Shturmap shows is in a project's texts file, never in code or XAML: `CoreTexts`, `MapTexts`,
+`DataTexts`, `GameTexts`, `SessionTexts`, `AppTexts` (the app's code), `ViewTexts` (its XAML) and `RuleTexts` (the
+app's rules, which the Core tests compile too). Each is a `.resx` with the English texts and one `<Name>.<code>.resx`
+per language. A build makes a class of each English file (`Directory.Build.targets`, `ShturmapTexts`): a property per
+text, a method per text with placeholders, its parameters the placeholders' names in alphabetical order, called with
+named arguments (`SessionTexts.ExitListRead(count: n)`), so a misspelt or missing text, or a placeholder left out, is
+a build error. A text is looked up in the language in use when it is shown (`UiLanguage.Text`), never kept from
+before, which is what lets the language switch while Shturmap runs; XAML binds to the classes (`{x:Bind
+local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the language changes.
+- **Whole sentences with named placeholders**, never pieces glued together or a word chosen by code: each language puts
+  the words where its grammar wants them. Plurals are part of the text, in the syntax of ICU's MessageFormat that
+  translators know: `{count, plural, one {# extract} other {# extracts}}`, with Unicode's plural forms of every
+  language tarkov.dev has (`PluralRules`: Polish and Russian need three or four, so code never picks "extract" or
+  "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing.
+- **Game names stand where they don't change form**: "Bring: {item}", not "Bring the {item}"; Russian and Polish
+  change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are.
+- **Numbers** in a placeholder are written in the language's format; a number that needs grouping (prices, "5,000 ₽")
+  is formatted by the caller with `UiLanguage.Culture`. Dates and times likewise.
+- **A comment on each English text** says where it shows and what its placeholders are, for the translator.
+- **Each translated text says which English text it was made from** (its comment: `en: <the English text>`). The
+  translation tests (`TranslationTests`) check every file: the English texts parse, a translation has the English
+  text's placeholders and its language's plural forms, and was made from the English text as it is now; a language
+  that is offered has every text. So changing an English text means translating it again in the same commit, reviewed
+  as below (docs/LANGUAGES.md, "Translating"); changing a translation alone needs only the review.
+- **Not translated**: internal values (settings' stored values, ids, file names, log lines), and the words of the
+  game itself that Shturmap reads (the extract list's header in a screenshot): those are matched in the game's
+  language, not shown.
+
+**Language.** The game data comes in the language chosen above (`LanguageChoice.Data`), translated by tarkov.dev's
+`<payload>_<language>` files. The extract list's reader still reads the game's language, which is what the screenshot
+shows: when the data is in another language, the maps' texts in the game's language are loaded beside it (`maps_<code>`,
+about 25 KB), so an exit is matched by its name in the game's language, in English and in the language shown. The game names some languages its own way, and tarkov.dev answers those with 404:
 `GameLanguage.Common` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all), one table for
 tarkov.dev and for the extract list's text recognition (review of 2026-10-09: each had a copy). A language
