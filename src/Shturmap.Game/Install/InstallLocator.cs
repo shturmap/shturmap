@@ -206,9 +206,8 @@ public sealed partial class InstallLocator(IGameEnvironment env)
     public static string Explain(InstallCandidate? candidate) => candidate?.Rejected switch
     {
         null when candidate is not null => "",
-        "folder does not exist" => "That folder doesn't exist (any more).",
-        _ => "That folder doesn't hold Escape from Tarkov: there's no EscapeFromTarkov.exe and no Logs folder with game " +
-             "sessions in it or in its \"build\" folder. Choose the folder the game is installed in.",
+        "folder does not exist" => GameTexts.GameFolderMissing,
+        _ => GameTexts.GameFolderNotTheGame,
     };
 
     private DateTime? NewestSession(string logsFolder)

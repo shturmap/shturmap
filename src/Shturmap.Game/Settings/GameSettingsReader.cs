@@ -74,19 +74,19 @@ public sealed class GameSettingsReader(IGameEnvironment env)
         return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out value);
     }
 
-    // Unity KeyCode names → what is printed on the key.
+    // Unity KeyCode names → what is printed on the key, in the language in use (a German keyboard says Druck, Strg).
     private static string DisplayName(string keyCode) => keyCode switch
     {
-        "SysReq" or "Print" => "PrtSc",
+        "SysReq" or "Print" => GameTexts.ScreenshotKeyPrintScreen,
         "BackQuote" => "`",
-        "LeftControl" => "Ctrl",
-        "RightControl" => "Right Ctrl",
-        "LeftShift" => "Shift",
-        "RightShift" => "Right Shift",
-        "LeftAlt" => "Alt",
-        "RightAlt" => "Alt Gr",
+        "LeftControl" => GameTexts.ScreenshotKeyCtrl,
+        "RightControl" => GameTexts.ScreenshotKeyRightCtrl,
+        "LeftShift" => GameTexts.ScreenshotKeyShift,
+        "RightShift" => GameTexts.ScreenshotKeyRightShift,
+        "LeftAlt" => GameTexts.ScreenshotKeyAlt,
+        "RightAlt" => GameTexts.ScreenshotKeyAltGr,
         _ when keyCode.StartsWith("Alpha", StringComparison.Ordinal) => keyCode["Alpha".Length..],
-        _ when keyCode.StartsWith("Keypad", StringComparison.Ordinal) => "Num " + keyCode["Keypad".Length..],
+        _ when keyCode.StartsWith("Keypad", StringComparison.Ordinal) => GameTexts.ScreenshotKeyNumpad(key: keyCode["Keypad".Length..]),
         _ => keyCode,
     };
 }
