@@ -82,7 +82,7 @@
   </data>
   <data name="ScreenshotKeyEnter" xml:space="preserve">
     <value>Return</value>
-    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Enter key of the main keys (German: Eingabe).</comment>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Enter key of the main keys (German: Enter, as players say it).</comment>
   </data>
   <data name="ScreenshotKeyNumpadEnter" xml:space="preserve">
     <value>Num Enter</value>
