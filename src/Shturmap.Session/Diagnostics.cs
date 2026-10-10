@@ -49,9 +49,9 @@ public static class Diagnostics
             : "not loaded");
         Line("Data", s.Data switch
         {
-            { Offline: true } data => $"offline copy, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}",
-            { } data => $"loaded, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}",
-            null when s.DataProblem is { } problem => $"failed: {problem.Kind}{(problem.Status is { } code ? " " + code : "")}: {problem.What}",
+            { Offline: true } data => "offline copy, checked " + data.CheckedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            { } data => "loaded, checked " + data.CheckedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            null when s.DataProblem is { } problem => $"failed: {problem.Kind}{(problem.Status is { } code ? " " + code : "")}: {problem.InEnglish}",
             null => "loading",
         });
         Line("Active quests", s.ActiveQuestCount.ToString(CultureInfo.InvariantCulture));

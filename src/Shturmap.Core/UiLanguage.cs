@@ -98,6 +98,18 @@ public static class UiLanguage
     }
 
     /// <summary>
+    /// A text of Shturmap's own in English whatever the language in use, its placeholders filled in English formats: for
+    /// the app log, diagnostics and reports, which stay English for whoever fixes Shturmap (docs/DESIGN.md §8, "The
+    /// app's own language"). The text is named with nameof, so a misspelt name is a build error:
+    /// <c>UiLanguage.InEnglish(DataTexts.Resources, nameof(DataTexts.LoadFailedStatus), ("status", 503))</c>.
+    /// </summary>
+    public static string InEnglish(ResourceManager texts, string key, params ReadOnlySpan<(string Name, object? Value)> args)
+    {
+        var pattern = texts.GetString(key, CultureInfo.InvariantCulture) ?? key;
+        return args.IsEmpty ? pattern : TextFormat.Format(CultureFor(English), pattern, args);
+    }
+
+    /// <summary>
     /// The language Shturmap's texts are shown in and the language the game data is asked for in. The player's
     /// choice in settings (<paramref name="setting"/>, a language code; anything else means automatic) decides both.
     /// Otherwise the game's language decides both when Shturmap has its texts; Windows' display language, then English,

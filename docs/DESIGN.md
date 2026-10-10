@@ -2600,7 +2600,8 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
   as below (docs/LANGUAGES.md, "Translating"); changing a translation alone needs only the review.
 - **Not translated**: internal values (settings' stored values, ids, file names, log lines), and the words of the
   game itself that Shturmap reads (the extract list's header in a screenshot): those are matched in the game's
-  language, not shown.
+  language, not shown. A log line or diagnostics that says what a text says takes its English
+  (`UiLanguage.InEnglish`; `LoadProblem.InEnglish`, `RetrySchedule.InEnglish`), never the language in use.
 
 **Language.** The game data comes in the language chosen above (`LanguageChoice.Data`), translated by tarkov.dev's
 `<payload>_<language>` files. The extract list's reader still reads the game's language, which is what the screenshot
