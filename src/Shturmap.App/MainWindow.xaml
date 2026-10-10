@@ -187,7 +187,7 @@
         <TextBlock x:Name="RaidWord" Grid.Column="3" Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
                    Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}" />
         <TextBlock Grid.Column="4" Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
-                   HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+                   HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True" />
       </Grid>
       <StackPanel x:Name="StatusRight" Grid.Column="1" Orientation="Horizontal" Spacing="16">
         <!-- The three lights. Their words are the first thing a narrow window drops (ViewModel.LightWords); a light
@@ -854,7 +854,7 @@
                                     <StackPanel Grid.Column="1" Spacing="1">
                                       <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
                                       <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
-                                                 MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                                 MaxLines="2" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True" />
                                       <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
                                                  FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
                                                  TextTrimming="CharacterEllipsis" />
@@ -884,7 +884,7 @@
                                     <StackPanel Grid.Column="1" Spacing="1">
                                       <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
                                       <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
-                                                 MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                                 MaxLines="2" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True" />
                                     </StackPanel>
                                     <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Needs}" />
                                     <controls:KeepToggle Grid.Column="3" QuestId="{x:Bind QuestId}" Margin="0,-2,0,0" />
@@ -912,7 +912,7 @@
                                     <StackPanel Grid.Column="1" Spacing="1">
                                       <TextBlock Text="{x:Bind Name}" TextWrapping="Wrap" />
                                       <TextBlock Text="{x:Bind Synopsis}" Visibility="{x:Bind SynopsisVisibility}" Style="{StaticResource NoteText}"
-                                                 MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                                 MaxLines="2" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True" />
                                       <TextBlock Text="{x:Bind local:Caps.Of(Note)}" Visibility="{x:Bind NoteVisibility}" Style="{StaticResource StatusText}"
                                                  FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left" Margin="0,2,0,0"
                                                  TextTrimming="CharacterEllipsis" />
@@ -1003,7 +1003,7 @@
                            Rules.ExitsNote). Two lines where the column is narrow (review of 2026-10-09: a wide direction,
                            "BEHIND-LEFT", cut it off mid-word). -->
                       <TextBlock Text="{x:Bind local:Caps.Of(ViewModel.RaidExit.NearestNote), Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
-                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
+                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True"
                                  Foreground="{x:Bind ViewModel.RaidExit.NoteBrush, Mode=OneWay}" HorizontalAlignment="Left" Margin="0,2,0,0"
                                  Visibility="{x:Bind ShownIf(ViewModel.RaidExit.NearestNote), Mode=OneWay}"
                                  ToolTipService.ToolTip="{x:Bind ViewModel.RaidExit.NearestTip, Mode=OneWay}" />
@@ -1038,7 +1038,7 @@
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,6">
                       <TextBlock Text="{x:Bind ViewModel.RaidPlainExit.Name, Mode=OneWay}" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind PlainExitNote}" Style="{StaticResource StatusText}" FontSize="10.5"
-                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
+                                 TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True"
                                  Foreground="{x:Bind ViewModel.RaidPlainExit.KindBrush, Mode=OneWay}" HorizontalAlignment="Left" Margin="0,1,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Padding="10,5,0,6">
