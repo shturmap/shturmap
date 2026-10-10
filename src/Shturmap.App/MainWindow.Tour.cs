@@ -794,14 +794,16 @@ public sealed partial class MainWindow
         if (next is not null)
         {
             // In a few words, as the raid card says it ("Mark Stryker"; Planning.ObjectiveSynopses, the session's own call
-            // for the card's lines); tarkov.dev's sentence only where the data isn't English (review of 2026-10-09).
+            // for the card's lines); tarkov.dev's sentence only where the data isn't English (review of 2026-10-09), whole
+            // and wrapping, as the raid card shows it (owner, 2026-10-11: cut at 34 characters, German showed "Besorge die
+            // geschützte Dokumenten…").
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
 #if DEVTOOLS
             // The layout check: a synopsis is made of the (English) data, not one of Shturmap's texts.
             _layoutTourPhrases.UnionWith(shorts.Values);
 #endif
-            var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
+            var text = shorts.GetValueOrDefault(next.Objective.Id) ?? next.Objective.Description ?? next.Quest.Name;
             glance.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }
         if (exit is not null)
@@ -811,8 +813,6 @@ public sealed partial class MainWindow
         card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 10, 0, 0) });
         return card;
     }
-
-    private static string Shorten(string text, int length) => text.Length <= length ? text : text[..(length - 1)].TrimEnd() + "…";
 
     // A glance row as the raid card's, on a hairline: the label in the card's own label column (Columns.Glance: the
     // longest label of the language, so German "EXTRACT" isn't cut to "EXTRA"), the name (wrapping, as there) and its

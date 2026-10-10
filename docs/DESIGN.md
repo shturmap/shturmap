@@ -1132,7 +1132,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     their columns in a narrow map (review of 2026-10-10, at the smallest window, 900×560: "IT FOLLOWS THE GAME" was cut
     off, the lines took five rows beside the buttons, and the example raid card ran under the band). The owner approved
     both on 2026-10-10, knowing that a plate drawn smaller goes below the type roles' sizes ("Design system", *Type*):
-    the German example raid card at 900×560 is drawn at about 80 %, rather than losing its caption. Motion: "Design
+    the German example raid card at 900×560 is drawn at about 60 %, rather than losing its caption (about 70 % while its
+    NEXT was cut; the owner approved it a little smaller for the whole sentence on 2026-10-11). Motion: "Design
     system", *Motion*.
   - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
     section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
@@ -1166,10 +1167,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     chapter, the empty band's when the tour opened, and the pointer set off 240 DIP above the map's foot, under that
     band). Where the band leaves little room above it, the 90 gives way, so what is framed keeps at least 90 itself
     (PICK AND POINT's German band at 900×560 leaves 181, and 90 on each side would have left it 1).
-    IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
-    `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
-    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is spaced as the rail's
-    card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label column.
+    IN THE RAID's example card says NEXT as the raid card does: in a few words where the data is English ("Get valuable
+    folder"; `Planning.ObjectiveSynopses`), else tarkov.dev's whole sentence, wrapping (owner, 2026-10-11: until then
+    it was cut at 34 characters, mid-word, German "Besorge die geschützte Dokumenten…"), and its clock reads 13 MIN
+    LEFT of the map's own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is
+    spaced as the rail's card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label
+    column.
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
