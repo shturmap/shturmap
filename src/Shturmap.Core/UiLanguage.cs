@@ -110,6 +110,32 @@ public static class UiLanguage
     }
 
     /// <summary>
+    /// A name from the game data (an item category, "Sniper rifle") as it stands inside a sentence of
+    /// <paramref name="language"/>, the language the name is written in (the data's, "de"): a common noun in lower case
+    /// ("any sniper rifle"), as English and the other languages of tarkov.dev's write it there, except a language that
+    /// writes every noun with a capital (German: "Scharfschützengewehr"), where the name stays as it is. A name in
+    /// capitals ("SMG") stays as it is in every language.
+    /// </summary>
+    public static string InSentence(string name, string language)
+    {
+        if (NounsWithCapitals.Contains(language) || name.Length < 2 || !char.IsLower(name[1]))
+            return name;
+        CultureInfo culture;
+        try
+        {
+            culture = CultureInfo.GetCultureInfo(language);
+        }
+        catch (CultureNotFoundException)
+        {
+            culture = CultureInfo.InvariantCulture;
+        }
+        return char.ToLower(name[0], culture) + name[1..];
+    }
+
+    // The languages that write every noun with a capital inside a sentence; of tarkov.dev's, German alone.
+    private static readonly string[] NounsWithCapitals = [German];
+
+    /// <summary>
     /// A day and month as the language in use writes it inside a sentence: "4 Oct" in English, "4. Okt." in German (the
     /// month as .NET abbreviates it in that language: "25. Sept."). A pattern of one language ("d MMM") read in another
     /// writes it wrong: German "4 Okt.".

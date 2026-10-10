@@ -345,7 +345,7 @@ public static class Planning
             {
                 if (category is not null && list.Count >= 2 && byCategory(list.Count, members))
                 {
-                    var name = Lower(data.ItemName(category));
+                    var name = UiLanguage.InSentence(data.ItemName(category), data.Language);
                     if (list.Count >= members)
                         whole.Add(SessionTexts.WeaponAny(category: name));
                     else
@@ -374,17 +374,15 @@ public static class Planning
         if (sources is not null)
         {
             var kinds = items.Select(id => sources.Items.GetValueOrDefault(id)?.Categories?.FirstOrDefault())
-                .OfType<string>().Distinct().Select(c => Lower(data.ItemName(c))).ToList();
+                .OfType<string>().Distinct().Select(c => UiLanguage.InSentence(data.ItemName(c), data.Language)).ToList();
             if (kinds.Count is > 0 and <= 3)
                 return string.Join(", ", kinds);
         }
         return GearText(data, items);
     }
 
-    // "Sniper rifle" → "sniper rifle"; a name that is all capitals ("SMG") stays as it is.
-    private static string Lower(string name) => name.Length > 1 && char.IsLower(name[1]) ? char.ToLowerInvariant(name[0]) + name[1..] : name;
-
-    private static string Capital(string name) => name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
+    // The sentence's first letter in capitals, as the language in use writes it.
+    private static string Capital(string name) => name.Length > 0 ? char.ToUpper(name[0], UiLanguage.Culture) + name[1..] : name;
 
     /// <summary>One of several items that will each do: "A", "A or B", "A or 3 others".</summary>
     internal static string OneOf(IReadOnlyList<string> names) =>

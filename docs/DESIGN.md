@@ -2589,7 +2589,9 @@ local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the 
   language tarkov.dev has (`PluralRules`: Polish and Russian need three or four, so code never picks "extract" or
   "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing.
 - **Game names stand where they don't change form**: "Bring: {item}", not "Bring the {item}"; Russian and Polish
-  change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are.
+  change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are. A category's
+  name inside a sentence ("Any sniper rifle") is in lower case only where its language writes a noun so: German
+  writes every noun with a capital (`UiLanguage.InSentence`, one rule per language).
 - **Numbers** in a placeholder are written in the language's format; a number that needs grouping (prices, "5,000 ₽")
   is formatted by the caller with `UiLanguage.Culture`. Dates and times likewise; a day and month inside a
   sentence with `UiLanguage.DayMonth` ("4 Oct", German "4. Okt.") or `DayMonthTime`, one table of each language's

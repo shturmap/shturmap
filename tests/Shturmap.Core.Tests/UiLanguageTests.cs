@@ -17,6 +17,19 @@ public class UiLanguageTests
         Assert.Equal("4 Oct 14:30", UiLanguage.DayMonthTime(new DateTime(2026, 10, 4, 14, 30, 0)));
     }
 
+    // A data name inside a sentence (UiLanguage.InSentence): lower case where the name's language writes a common noun
+    // so, kept where it writes every noun with a capital (German), and kept when it is an abbreviation.
+    [Fact]
+    public void A_name_inside_a_sentence_is_written_as_its_language_writes_a_noun_there()
+    {
+        Assert.Equal("sniper rifle", UiLanguage.InSentence("Sniper rifle", "en"));
+        Assert.Equal("SMG", UiLanguage.InSentence("SMG", "en"));
+        Assert.Equal("Scharfschützengewehr", UiLanguage.InSentence("Scharfschützengewehr", "de"));
+        Assert.Equal("снайперская винтовка", UiLanguage.InSentence("Снайперская винтовка", "ru"));
+        Assert.Equal("ıslak", UiLanguage.InSentence("Islak", "tr"));
+        Assert.Equal("x", UiLanguage.InSentence("x", "en"));
+    }
+
     [Fact]
     public void Applying_it_makes_it_the_current_culture_whatever_windows_says()
     {
