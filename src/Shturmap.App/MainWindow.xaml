@@ -174,12 +174,12 @@
                    Visibility="{x:Bind ShownIfNot(ViewModel.ModeChoosable), Mode=OneWay}" />
         <DropDownButton Grid.Column="2" Content="{x:Bind local:Caps.Of(ViewModel.ModeText), Mode=OneWay}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12"
                         Padding="6,2" VerticalAlignment="Center" Visibility="{x:Bind ShownIfTrue(ViewModel.ModeChoosable), Mode=OneWay}"
-                        ToolTipService.ToolTip="No game on this PC: choose the mode whose maps and data to browse">
+                        ToolTipService.ToolTip="{x:Bind local:ViewTexts.StatusModeChooseTip}">
           <DropDownButton.Flyout>
             <MenuFlyout Placement="Bottom">
-              <MenuFlyoutItem Text="PvE" Tag="Pve" Click="OnModeChosen" />
-              <MenuFlyoutItem Text="PvP" Tag="Pvp" Click="OnModeChosen" />
-              <MenuFlyoutItem Text="Seasonal" Tag="Seasonal" Click="OnModeChosen" />
+              <MenuFlyoutItem Text="{x:Bind local:ViewTexts.StatusModePve}" Tag="Pve" Click="OnModeChosen" />
+              <MenuFlyoutItem Text="{x:Bind local:ViewTexts.StatusModePvp}" Tag="Pvp" Click="OnModeChosen" />
+              <MenuFlyoutItem Text="{x:Bind local:ViewTexts.StatusModeSeasonal}" Tag="Seasonal" Click="OnModeChosen" />
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>
@@ -218,12 +218,12 @@
              frame around it, since a disabled button shows none. -->
         <Grid Background="Transparent" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind FeedbackTooltip}">
           <Button x:Name="FeedbackButton" Width="28" Height="28" Padding="0" CornerRadius="0" Click="OnFeedbackClick"
-                  IsEnabled="{x:Bind ReportingAvailable}" AutomationProperties.Name="Report a problem or idea">
+                  IsEnabled="{x:Bind ReportingAvailable}" AutomationProperties.Name="{x:Bind local:ViewTexts.FeedbackButtonName}">
             <FontIcon Glyph="&#xE939;" FontSize="13" Foreground="{x:Bind FeedbackIconBrush}" />
           </Button>
         </Grid>
-        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="How Shturmap works (F1)"
-                AutomationProperties.Name="Help">
+        <Button x:Name="HelpButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center" ToolTipService.ToolTip="{x:Bind local:ViewTexts.HelpButtonTip}"
+                AutomationProperties.Name="{x:Bind local:ViewTexts.HelpButtonName}">
           <TextBlock Text="?" Style="{StaticResource StatusBarText}" HorizontalAlignment="Center" />
           <Button.Flyout>
             <Flyout x:Name="HelpFlyout" Placement="BottomEdgeAlignedRight" Opened="OnHelpOpened" Closed="OnHelpClosed">
@@ -236,44 +236,44 @@
                 </Style>
               </Flyout.FlyoutPresenterStyle>
               <StackPanel Width="480" Spacing="8">
-                <TextBlock Text="HOW SHTURMAP WORKS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
+                <TextBlock Text="{x:Bind local:ViewTexts.HelpTitle}" Style="{StaticResource TitleText}" CharacterSpacing="80" />
                 <!-- The tour again, from its start (owner, 2026-10-09; docs/DESIGN.md §4, *The tour*), and the What's New card of
                      this version again (docs/DESIGN.md §4, "Screen anatomy"). SHOW ME beside a paragraph opens the tour at
                      the chapter that shows it. -->
                 <StackPanel Orientation="Horizontal" Spacing="18">
-                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="Seven short chapters over this window; Esc ends it"
+                  <HyperlinkButton Padding="0" Click="OnTakeTourClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.HelpTakeTourTip}"
                                    Visibility="{x:Bind ShownIfNot(ViewModel.RaidHoldsBack), Mode=OneWay}">
-                    <TextBlock Text="TAKE THE TOUR" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.HelpTakeTour}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <HyperlinkButton Padding="0" Click="OnWhatsNewAgainClick" Visibility="{x:Bind ShownIf(ViewModel.WhatsNewHelp), Mode=OneWay}"
-                                   ToolTipService.ToolTip="Shows what's new at the top of the list on the left again">
+                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.HelpWhatsNewTip}">
                     <TextBlock Text="{x:Bind ViewModel.WhatsNewHelp, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="In a raid, press " /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text=": the screenshot's name holds your position. The map stays put; F shows you, Shift+F follows you. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="key" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="{x:Bind local:ViewTexts.HelpKeyBefore}" /><Run Text="{x:Bind ViewModel.HelpKeys, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AmberBrush}" /><Run Text="{x:Bind local:ViewTexts.HelpKeyAfter}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="key" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="Map, raid and quests follow the game's logs. No clicks needed while you play. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="follows" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="{x:Bind local:ViewTexts.HelpFollows}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="follows" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="next" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="{x:Bind local:ViewTexts.HelpNextRaid}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="next" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest turn hollow, and OR is your nearest that needs nothing. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="{x:Bind local:ViewTexts.HelpExit}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
-                <TextBlock TextWrapping="Wrap" Text="Quest order: go somewhere, then find or survive, then fight; simplest first." />
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpQuestOrder}" />
                 <TextBlock TextWrapping="Wrap">
-                  <Run Text="Point at a quest: its card opens and the quest lights up everywhere. Click to keep the card; a key, item or quest on it has a card of its own. " /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="pick" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="SHOW ME" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
+                  <Run Text="{x:Bind local:ViewTexts.HelpPointAtQuest}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="pick" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
-                <TextBlock TextWrapping="Wrap" Text="Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest, until done or unpicked." />
-                <TextBlock TextWrapping="Wrap" Text="Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. HAND OVER on a line: take what it gets to the trader after the raid." />
-                <TextBlock TextWrapping="Wrap" Text="After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid." />
-                <TextBlock Style="{StaticResource NoteText}" Text="Quests come from the game's logs only: one started before your oldest log isn't shown." />
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpPicks}" />
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpTicks}" />
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpReplay}" />
+                <TextBlock Style="{StaticResource NoteText}" Text="{x:Bind local:ViewTexts.HelpQuestsFromLogs}" />
                 <!-- True as long as tarkov.dev leaves them out of its data (docs/UPDATES.md, "Story chapters"; owner, 2026-10-09). -->
-                <TextBlock Style="{StaticResource NoteText}" Text="Story chapters (Falling Skies, Batya, …) aren't shown yet: tarkov.dev doesn't publish them." />
+                <TextBlock Style="{StaticResource NoteText}" Text="{x:Bind local:ViewTexts.HelpStoryChapters}" />
 
-                <TextBlock Style="{StaticResource EyebrowText}" Text="KEYS · WHEN THIS WINDOW HAS FOCUS" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.HelpKeysHeading}" />
                 <ItemsControl ItemsSource="{x:Bind Keys}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:KeyHelp">
@@ -291,7 +291,7 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <TextBlock Style="{StaticResource EyebrowText}" Text="QUEST TYPES" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.HelpQuestTypesHeading}" />
                 <ItemsControl ItemsSource="{x:Bind ViewModel.Legend}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:LegendItem">
@@ -309,7 +309,7 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <TextBlock x:Name="LegendHeading" Style="{StaticResource EyebrowText}" Text="ON THE MAP" />
+                <TextBlock x:Name="LegendHeading" Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.HelpLegendHeading}" />
                 <!-- Drawn by the map's own renderer (MapLegend), most important first. Up to twelve of the symbols on
                      the map shown now; the rest of them, and the symbols it doesn't have, wait behind a link (owner,
                      2026-10-04: all of them made help 2,350 px tall; 2026-10-09: Streets listed 26). Filled when help
@@ -320,23 +320,23 @@
                 </HyperlinkButton>
                 <StackPanel x:Name="LegendRest" Spacing="8" Visibility="Collapsed">
                   <ItemsControl x:Name="LegendRestHere" ItemTemplate="{StaticResource MapLegendRowTemplate}" />
-                  <TextBlock x:Name="LegendElsewhereHeading" Style="{StaticResource EyebrowText}" Text="NOT ON THIS MAP" />
+                  <TextBlock x:Name="LegendElsewhereHeading" Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.HelpLegendElsewhereHeading}" />
                   <ItemsControl x:Name="LegendElsewhere" ItemTemplate="{StaticResource MapLegendRowTemplate}" />
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" Margin="0,10,0,0"
-                           Text="Reads screenshot names, the game's logs, tarkov.dev's public data and the extract list in a raid screenshot's top right corner (settings turn that off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots." />
+                           Text="{x:Bind local:ViewTexts.HelpPrivacy}" />
                 <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.HelpAndFeedback}" Margin="0,8,0,0" />
                 <!-- Reports go through the feedback button at the top right (owner, 2026-10-03: "there should be a separate
                      feedback/bugreport button"); help keeps the diagnostics to paste elsewhere. -->
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind FeedbackPointer}" />
                 <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,4,0,0">
                   <HyperlinkButton Padding="0" Click="OnCopyDiagnosticsClick"
-                                   ToolTipService.ToolTip="Copies version, what was found, data state and today's log (no names or ids), to paste anywhere">
-                    <TextBlock Text="COPY DIAGNOSTICS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.HelpCopyDiagnosticsTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.HelpCopyDiagnostics}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" Visibility="{x:Bind NotConfiguredVisibility}"
-                           Text="Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you Shturmap." />
+                           Text="{x:Bind local:ViewTexts.HelpReportingNotSetUp}" />
               </StackPanel>
             </Flyout>
           </Button.Flyout>
@@ -344,7 +344,7 @@
         <!-- Settings and the app's data, apart from help (owner, 2026-10-03: "It's not clear that the settings are with the
              questionmark on the top right … a settings button next to it"). Same frame as "?", 6 px from it. -->
         <Button x:Name="SettingsButton" Width="28" Height="28" Padding="0" CornerRadius="0" Margin="-10,0,0,0" VerticalAlignment="Center"
-                ToolTipService.ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings">
+                ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsButtonTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsButtonName}">
           <FontIcon Glyph="&#xE713;" FontSize="13" Foreground="{StaticResource InkBrush}" />
           <Button.Flyout>
             <Flyout x:Name="SettingsFlyout" Placement="BottomEdgeAlignedRight" Opened="OnSettingsOpened" Closed="OnSettingsClosed">
@@ -357,8 +357,8 @@
                 </Style>
               </Flyout.FlyoutPresenterStyle>
               <StackPanel Width="480" Spacing="8">
-                <TextBlock Text="SETTINGS" Style="{StaticResource TitleText}" CharacterSpacing="80" />
-                <TextBlock Style="{StaticResource EyebrowText}" Text="PREFERENCES" />
+                <TextBlock Text="{x:Bind local:ViewTexts.SettingsTitle}" Style="{StaticResource TitleText}" CharacterSpacing="80" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.SettingsPreferences}" />
                 <!-- The study log's switch: developer builds only (owner, 2026-10-03: "The study log should only be part
                      of the dev version and not be in the release version"). Filled in code under DEVTOOLS
                      (AddStudySwitch), so a release has none of it; empty and collapsed there. -->
@@ -367,14 +367,14 @@
                      screenshots after a couple of seconds grace period"). Off unless ticked: it is the one thing Shturmap
                      changes outside its own folders (docs/DESIGN.md §2). -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.DeleteScreenshots, Mode=OneWay}" Click="OnDeleteScreenshotsClick" Margin="0,6,0,0"
-                              Style="{StaticResource TickToggle}" AutomationProperties.Name="Delete position screenshots">
+                              Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsDeleteScreenshots}">
                   <StackPanel Orientation="Horizontal" Spacing="9">
                     <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                             Background="{x:Bind StudyBoxBrush(ViewModel.DeleteScreenshots), Mode=OneWay}">
                       <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                 Visibility="{x:Bind ShownIfTrue(ViewModel.DeleteScreenshots), Mode=OneWay}" />
                     </Border>
-                    <TextBlock Text="Delete position screenshots" FontWeight="SemiBold" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsDeleteScreenshots}" FontWeight="SemiBold" />
                   </StackPanel>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind DeleteScreenshotsNote}" />
@@ -382,140 +382,140 @@
                      a screenshot's picture is opened, so it can be unticked, and its note says what is looked at
                      (docs/DESIGN.md §2). -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.ReadExits, Mode=OneWay}" Click="OnReadExitsClick" Margin="0,8,0,0"
-                              Style="{StaticResource TickToggle}" AutomationProperties.Name="Read the extract list from screenshots">
+                              Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsReadExits}">
                   <StackPanel Orientation="Horizontal" Spacing="9">
                     <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                             Background="{x:Bind StudyBoxBrush(ViewModel.ReadExits), Mode=OneWay}">
                       <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                 Visibility="{x:Bind ShownIfTrue(ViewModel.ReadExits), Mode=OneWay}" />
                     </Border>
-                    <TextBlock Text="Read the extract list from screenshots" FontWeight="SemiBold" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsReadExits}" FontWeight="SemiBold" />
                   </StackPanel>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind ReadExitsNote}" />
                 <!-- Crash reports go only as the player says here (owner, 2026-10-03: default "Ask after a crash";
                      docs/DESIGN.md §8, "Reports"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0">
-                  <TextBlock Text="Crash reports" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <HyperlinkButton Padding="0" Tag="Ask" Click="OnCrashModeClick" ToolTipService.ToolTip="The next start asks before sending">
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashReports}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <HyperlinkButton Padding="0" Tag="Ask" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashAskTip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
-                      <TextBlock Text="ASK AFTER A CRASH" Style="{StaticResource StatusText}" FontSize="11"
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashAsk}" Style="{StaticResource StatusText}" FontSize="11"
                                  Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Always" Click="OnCrashModeClick" ToolTipService.ToolTip="The next start sends it without asking">
+                  <HyperlinkButton Padding="0" Tag="Always" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashAlwaysTip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
-                      <TextBlock Text="ALWAYS SEND" Style="{StaticResource StatusText}" FontSize="11"
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashAlways}" Style="{StaticResource StatusText}" FontSize="11"
                                  Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Never" Click="OnCrashModeClick" ToolTipService.ToolTip="Crashes stay on this PC">
+                  <HyperlinkButton Padding="0" Tag="Never" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashNeverTip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
-                      <TextBlock Text="NEVER" Style="{StaticResource StatusText}" FontSize="11"
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashNever}" Style="{StaticResource StatusText}" FontSize="11"
                                  Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap"
-                           Text="Holds the error, where it happened, versions and the last 50 log lines, user folder masked. No memory, screenshots, game files or ids." />
+                           Text="{x:Bind local:ViewTexts.SettingsCrashNote}" />
                 <!-- New versions from GitHub Releases, as the player says here (owner, 2026-10-03: default Automatic;
                      docs/DESIGN.md §8, "Distribution"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}">
-                  <TextBlock Text="Updates" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <HyperlinkButton Padding="0" Tag="Automatic" Click="OnUpdateModeClick" ToolTipService.ToolTip="Checks GitHub at start and every 6 h; installs at the next start">
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdates}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <HyperlinkButton Padding="0" Tag="Automatic" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesAutomaticTip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
-                      <TextBlock Text="AUTOMATIC" Style="{StaticResource StatusText}" FontSize="11"
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesAutomatic}" Style="{StaticResource StatusText}" FontSize="11"
                                  Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="TellOnly" Click="OnUpdateModeClick" ToolTipService.ToolTip="Checks GitHub and tells you; downloads only on your click">
+                  <HyperlinkButton Padding="0" Tag="TellOnly" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesTellOnlyTip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
-                      <TextBlock Text="TELL ME ONLY" Style="{StaticResource StatusText}" FontSize="11"
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesTellOnly}" Style="{StaticResource StatusText}" FontSize="11"
                                  Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Off" Click="OnUpdateModeClick" ToolTipService.ToolTip="Never checks GitHub">
+                  <HyperlinkButton Padding="0" Tag="Off" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesOffTip}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
                                  Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
-                      <TextBlock Text="OFF" Style="{StaticResource StatusText}" FontSize="11"
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesOff}" Style="{StaticResource StatusText}" FontSize="11"
                                  Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
                     </StackPanel>
                   </HyperlinkButton>
                 </StackPanel>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}"
-                           Text="Downloads in the background, applies at the next start, never in a raid. GitHub sees your internet address, nothing more." />
+                           Text="{x:Bind local:ViewTexts.SettingsUpdatesNote}" />
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{x:Bind ShownIfNot(ViewModel.UpdatesAvailable), Mode=OneWay}"
                            Text="{x:Bind ViewModel.UpdatesNote, Mode=OneWay}" />
-                <TextBlock Style="{StaticResource EyebrowText}" Text="APP AND DATA" Margin="0,8,0,0" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.SettingsAppAndData}" Margin="0,8,0,0" />
                 <!-- Where the game is and where that comes from, and the same choice the no-game line offers, with the way
                      back from it (docs/DESIGN.md, "No game on this PC"; owner, 2026-10-04). The line wraps: the source
                      comes after the path and must not be cut off. -->
                 <TextBlock Text="{x:Bind ViewModel.GameFolderText, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="11" Margin="0,2,0,0"
                            Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="18" Visibility="{x:Bind ShownIfTrue(ViewModel.GameFolderChangeable), Mode=OneWay}">
-                  <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" ToolTipService.ToolTip="Pick the game's install folder">
-                    <TextBlock Text="CHOOSE…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsChooseGameFolderTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsChooseGameFolder}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <HyperlinkButton Padding="0" Click="OnFindGameAutomaticallyClick" Visibility="{x:Bind ShownIfTrue(ViewModel.FindGameAutomatically), Mode=OneWay}"
-                                   ToolTipService.ToolTip="Forget the chosen folder, find the game again">
-                    <TextBlock Text="FIND AUTOMATICALLY" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsFindGameTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsFindGame}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
                 <!-- A chosen folder while another install has newer game logs: said quietly, never switched by itself. -->
                 <TextBlock Style="{StaticResource NoteText}" Visibility="{x:Bind ShownIf(ViewModel.NewerGameLogs), Mode=OneWay}">
-                  <Run Text="{x:Bind ViewModel.NewerGameLogs, Mode=OneWay}" /><Run Text=" · " /><Hyperlink Click="OnFindGameAutomaticallyLinkClick" Foreground="{StaticResource AmberBrush}" UnderlineStyle="None">FIND AUTOMATICALLY</Hyperlink>
+                  <Run Text="{x:Bind ViewModel.NewerGameLogs, Mode=OneWay}" /><Run Text=" · " /><Hyperlink Click="OnFindGameAutomaticallyLinkClick" Foreground="{StaticResource AmberBrush}" UnderlineStyle="None"><Run Text="{x:Bind local:ViewTexts.SettingsFindGame}" /></Hyperlink>
                 </TextBlock>
                 <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,2,0,0">
-                  <HyperlinkButton Padding="0" Click="OnLogFolderClick" ToolTipService.ToolTip="Opens Shturmap's log folder (%LOCALAPPDATA%\Shturmap\logs)">
-                    <TextBlock Text="LOG FOLDER ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  <HyperlinkButton Padding="0" Click="OnLogFolderClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsLogFolderTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsLogFolder}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Click="OnPrivacyClick" ToolTipService.ToolTip="What reports hold, who gets them, how long they're kept">
-                    <TextBlock Text="PRIVACY ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  <HyperlinkButton Padding="0" Click="OnPrivacyClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsPrivacyTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsPrivacy}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                   <!-- The licences of the code a build carries (eng\notices.ps1), installed with the app. -->
                   <HyperlinkButton Padding="0" Click="OnLicencesClick" Visibility="{x:Bind LicencesVisibility}"
-                                   ToolTipService.ToolTip="Shturmap's licence and those of the code it uses">
-                    <TextBlock Text="LICENCES ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsLicencesTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsLicences}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
                 <!-- Removing Shturmap from here as well as from Windows' Settings, with the data only on a tick
                      (owner, 2026-10-03; docs/DESIGN.md §8, "Distribution"). Installed builds only. -->
                 <HyperlinkButton Padding="0" Margin="0,2,0,0" Click="OnUninstallClick" Visibility="{x:Bind UninstallVisibility}"
-                                 ToolTipService.ToolTip="Removes Shturmap, as Windows' Settings → Apps does">
-                  <TextBlock Text="UNINSTALL SHTURMAP…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                                 ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUninstallTip}">
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstall}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
                 <StackPanel Spacing="6" Margin="0,4,0,0" Padding="12,10" BorderThickness="1" BorderBrush="{StaticResource LineStrongBrush}"
                             Visibility="{x:Bind ShownIfTrue(ViewModel.UninstallAsking), Mode=OneWay}">
-                  <TextBlock Text="Remove Shturmap from this PC?" FontWeight="SemiBold" />
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstallQuestion}" FontWeight="SemiBold" />
                   <ToggleButton IsChecked="{x:Bind ViewModel.UninstallDeleteData, Mode=OneWay}" Click="OnUninstallDataClick"
-                                Style="{StaticResource TickToggle}" AutomationProperties.Name="Also delete my Shturmap data">
+                                Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsUninstallDeleteData}">
                     <StackPanel Orientation="Horizontal" Spacing="9">
                       <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                               Background="{x:Bind StudyBoxBrush(ViewModel.UninstallDeleteData), Mode=OneWay}">
                         <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                   Visibility="{x:Bind ShownIfTrue(ViewModel.UninstallDeleteData), Mode=OneWay}" />
                       </Border>
-                      <TextBlock Text="Also delete my Shturmap data" />
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstallDeleteData}" />
                     </StackPanel>
                   </ToggleButton>
                   <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind UninstallDataText}" />
                   <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,4,0,0">
                     <HyperlinkButton Padding="0" Click="OnUninstallConfirmClick">
-                      <TextBlock Text="UNINSTALL" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstallConfirm}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                     </HyperlinkButton>
                     <HyperlinkButton Padding="0" Click="OnUninstallCancelClick">
-                      <TextBlock Text="CANCEL" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstallCancel}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
                     </HyperlinkButton>
                   </StackPanel>
                 </StackPanel>
@@ -541,7 +541,7 @@
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Margin="16,4,16,0">
-          <TextBlock Style="{StaticResource EyebrowText}" Text="MAP" Margin="0,14,0,6" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RailMapHeading}" Margin="0,14,0,6" />
           <!-- The maps with your quests first, in Plan's order with what each holds, then OTHER MAPS (owner, 2026-10-08:
                "A"; Rules.MapList). The closed list shows the map on screen with its counts too. -->
           <ComboBox x:Name="MapPicker" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" FontStretch="SemiCondensed" FontWeight="SemiBold"
@@ -578,19 +578,19 @@
         <StackPanel Grid.Row="1" Margin="16,0,16,0" Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
           <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintInRaid(ViewModel.Hint, ViewModel.InRaid), Mode=OneWay}"
                      Style="{StaticResource NoteText}" Margin="0,16,0,0" TextWrapping="Wrap" />
-          <TextBlock Style="{StaticResource EyebrowText}" Text="THIS RAID" Margin="0,18,0,6" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidHeading}" Margin="0,18,0,6" />
           <Border x:Name="RaidHead" Padding="14,12,14,6" Background="{StaticResource RaisedBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1,1,1,0">
             <StackPanel Spacing="3">
               <Grid>
                 <TextBlock Text="{x:Bind ViewModel.RaidTitle, Mode=OneWay}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
                 <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right"
                            Visibility="{x:Bind ShownIfNot(ViewModel.SideSwitchable), Mode=OneWay}"
-                           ToolTipService.ToolTip="The side you play this raid, from the game's log" />
+                           ToolTipService.ToolTip="{x:Bind local:ViewTexts.RaidSideTip}" />
                 <!-- A raid hosted on your own machine (PvE can be) looks the same in the log for a PMC and a
                      Scav: then the tag is a switch. -->
                 <Button HorizontalAlignment="Right" VerticalAlignment="Center" Padding="6,1" Click="OnSideClick"
                         Visibility="{x:Bind ShownIfTrue(ViewModel.SideSwitchable), Mode=OneWay}"
-                        ToolTipService.ToolTip="Raid hosted on your PC: the log doesn't say your side. Click to switch PMC / Scav.">
+                        ToolTipService.ToolTip="{x:Bind local:ViewTexts.RaidSideSwitchTip}">
                   <StackPanel Orientation="Horizontal" Spacing="5">
                     <TextBlock Text="{x:Bind ViewModel.RaidSide, Mode=OneWay}" Style="{StaticResource StatusText}" />
                     <FontIcon Glyph="&#xE8AB;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
@@ -623,12 +623,12 @@
                            Text="{x:Bind local:Caps.Of(ViewModel.UpdateLine), Mode=OneWay}" />
                 <StackPanel Orientation="Horizontal" Spacing="16">
                   <HyperlinkButton Padding="0" Click="OnUpdateDownloadClick" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdateOffersDownload), Mode=OneWay}"
-                                   ToolTipService.ToolTip="Downloads it in the background; it applies at the next start">
-                    <TextBlock Text="DOWNLOAD" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.UpdateDownloadTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.UpdateDownload}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
                   </HyperlinkButton>
                   <HyperlinkButton Padding="0" Click="OnUpdateRestartClick" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdateOffersRestart), Mode=OneWay}"
-                                   ToolTipService.ToolTip="Closes Shturmap, applies the new version and starts it again">
-                    <TextBlock Text="RESTART NOW" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.UpdateRestartTip}">
+                    <TextBlock Text="{x:Bind local:ViewTexts.UpdateRestart}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
                   </HyperlinkButton>
                 </StackPanel>
               </StackPanel>
@@ -656,7 +656,7 @@
                                   <StackPanel Width="56" Height="34" VerticalAlignment="Top" Visibility="{x:Bind ClockVisibility}" Padding="2,2,2,0">
                                     <StackPanel Orientation="Horizontal" Spacing="3">
                                       <TextBlock Text="13" FontSize="17" FontWeight="SemiBold" FontStretch="SemiCondensed" TextLineBounds="Tight" VerticalAlignment="Bottom" />
-                                      <TextBlock Text="MIN" Style="{StaticResource StatusText}" FontSize="8" TextLineBounds="Tight" VerticalAlignment="Bottom" />
+                                      <TextBlock Text="{x:Bind local:ViewTexts.WhatsNewClockMinutes}" Style="{StaticResource StatusText}" FontSize="8" TextLineBounds="Tight" VerticalAlignment="Bottom" />
                                     </StackPanel>
                                     <Grid Height="10" Margin="0,5,0,0">
                                       <Grid.ColumnDefinitions>
@@ -680,13 +680,13 @@
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
-                  <TextBlock Text="Point at one: the map shows it." Style="{StaticResource NoteText}" Margin="0,-14,0,0" />
+                  <TextBlock Text="{x:Bind local:ViewTexts.WhatsNewPointAt}" Style="{StaticResource NoteText}" Margin="0,-14,0,0" />
                 </StackPanel>
               </Border>
               <!-- The card's close, in its corner as on a notice. -->
               <Button HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="24" Padding="0" Margin="0,8,8,0"
-                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Close. Help brings it back."
-                      AutomationProperties.Name="Close what's new">
+                      Click="OnWhatsNewClosed" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="{x:Bind local:ViewTexts.WhatsNewCloseTip}"
+                      AutomationProperties.Name="{x:Bind local:ViewTexts.WhatsNewCloseName}">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
               </Button>
               </Grid>
@@ -695,10 +695,10 @@
                 <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Text="{x:Bind local:Caps.Of(ViewModel.LastRaidText), Mode=OneWay}" />
                 <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnReplayClick"
                                  Visibility="{x:Bind ShownIfTrue(ViewModel.ReplayOffered), Mode=OneWay}"
-                                 ToolTipService.ToolTip="Plays the last raid again: where you took screenshots, in order">
+                                 ToolTipService.ToolTip="{x:Bind local:ViewTexts.PlanReplayTip}">
                   <StackPanel Orientation="Horizontal" Spacing="5">
                     <FontIcon Glyph="&#xE768;" FontSize="9" Foreground="{StaticResource InkBrush}" VerticalAlignment="Center" />
-                    <TextBlock Text="REPLAY" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.PlanReplay}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
                   </StackPanel>
                 </HyperlinkButton>
               </Grid>
@@ -708,18 +708,18 @@
                 <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
                            Text="{x:Bind local:Caps.Of(ViewModel.GameLine), Mode=OneWay}" />
                 <HyperlinkButton Padding="0" Click="OnChooseGameFolderClick" Visibility="{x:Bind ShownIfTrue(ViewModel.GameFolderChoosable), Mode=OneWay}"
-                                 ToolTipService.ToolTip="Pick the folder Escape from Tarkov is installed in">
-                  <TextBlock Text="CHOOSE GAME FOLDER…" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
+                                 ToolTipService.ToolTip="{x:Bind local:ViewTexts.PlanChooseGameFolderTip}">
+                  <TextBlock Text="{x:Bind local:ViewTexts.PlanChooseGameFolder}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
                 </HyperlinkButton>
                 <TextBlock Text="{x:Bind ViewModel.GameNote, Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" />
               </StackPanel>
               <!-- NEXT RAID, and while quests are picked, the one deliberate way to drop them all (Esc never does). -->
               <Grid Visibility="{x:Bind ShownIfNot(ViewModel.NoGameLogs), Mode=OneWay}">
-                <TextBlock Style="{StaticResource EyebrowText}" Text="NEXT RAID" />
+                <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.PlanNextRaid}" />
                 <HyperlinkButton Padding="0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="OnClearPicksClick"
                                  Visibility="{x:Bind ShownIfTrue(ViewModel.HasPicks), Mode=OneWay}"
-                                 ToolTipService.ToolTip="Unpicks this map's quests; other maps keep theirs">
-                  <TextBlock Text="CLEAR PICKS" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                                 ToolTipService.ToolTip="{x:Bind local:ViewTexts.PlanClearPicksTip}">
+                  <TextBlock Text="{x:Bind local:ViewTexts.PlanClearPicks}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
               </Grid>
               <!-- The suggested maps as a short list, best first, always in view (review of 2026-10-04, H4: the open card
@@ -831,13 +831,13 @@
                           <TextBlock Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" CharacterSpacing="60" />
                           <!-- Amber counts, or, muted, that none of your quests is on the map on screen. -->
                           <TextBlock Text="{x:Bind Summary}" Foreground="{x:Bind SummaryBrush}" FontSize="14" TextWrapping="Wrap"
-                                     ToolTipService.ToolTip="Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here." />
+                                     ToolTipService.ToolTip="{x:Bind local:ViewTexts.CardSummaryTip}" />
                           <ItemsControl ItemsSource="{x:Bind DetailParts}" ItemTemplate="{StaticResource LinePartTemplate}"
                                         ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False" AutomationProperties.Name="{x:Bind Detail}" />
                           <StackPanel Visibility="{x:Bind ExpandedVisibility}">
                             <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
                                  only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
-                            <TextBlock Style="{StaticResource EyebrowText}" Text="PICKED" Margin="0,14,0,4"
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
                                        Visibility="{x:Bind PicksVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind PicksVisibility}">
                               <ItemsControl.ItemTemplate>
@@ -866,7 +866,7 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardComplete}" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Finish}">
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
@@ -893,7 +893,7 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ProgressVisibility}" />
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardProgress}" Margin="0,14,0,4" Visibility="{x:Bind ProgressVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Progress}" Visibility="{x:Bind ProgressVisibility}">
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
@@ -924,7 +924,7 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
                                           ItemTemplate="{StaticResource RequirementTemplate}" />
                           </StackPanel>
@@ -945,7 +945,7 @@
                 <StackPanel Spacing="3">
                   <TextBlock Text="{x:Bind ViewModel.RaidSummary, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidSummary), Mode=OneWay}"
                              Foreground="{StaticResource AmberBrush}" FontSize="14" TextWrapping="Wrap"
-                             ToolTipService.ToolTip="Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here." />
+                             ToolTipService.ToolTip="{x:Bind local:ViewTexts.CardSummaryTip}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLineParts, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLine), Mode=OneWay}"
                                 ItemTemplate="{StaticResource LinePartTemplate}" ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False"
                                 AutomationProperties.Name="{x:Bind ViewModel.RaidLine, Mode=OneWay}" />
@@ -957,10 +957,10 @@
                   <!-- While the raid loads: the kit to check, while matching can still be cancelled (owner, 2026-10-03). What
                        gets you in or out first, then the picks' items; with picks here the rest under ALSO USEFUL. A list
                        to check: Shturmap knows no inventory. Gone when the raid starts; BRING is back below then. -->
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="CHECK YOUR KIT" Foreground="{StaticResource AmberBrush}" Margin="0,14,0,6"
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidCheckYourKit}" Foreground="{StaticResource AmberBrush}" Margin="0,14,0,6"
                              Visibility="{x:Bind ShownIfAny(ViewModel.RaidKit), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKit, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="ALSO USEFUL" Margin="0,12,0,4"
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidAlsoUseful}" Margin="0,12,0,4"
                              Visibility="{x:Bind ShownIfAny(ViewModel.RaidKitMore), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKitMore, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- The glance: the nearest objective and the nearest way out, big, before anything else. -->
@@ -972,7 +972,7 @@
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="NEXT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AmberBrush}" Margin="0,12,0,0" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.RaidNextLabel}" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AmberBrush}" Margin="0,12,0,0" />
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,9">
                       <TextBlock Text="{x:Bind ViewModel.RaidNext.Text, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind ViewModel.RaidNext.Quest, Mode=OneWay}" Style="{StaticResource NoteText}" />
@@ -992,7 +992,7 @@
                     </Grid.ColumnDefinitions>
                     <!-- In the colour of its kind, as its symbol on the map: a PMC extract green, a Scav's teal, one for
                          both sides khaki, a transit violet (2026-10-04: every way out was green here). -->
-                    <TextBlock Text="EXIT" Style="{StaticResource EyebrowText}" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" Margin="0,12,0,0" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.RaidExitLabel}" Style="{StaticResource EyebrowText}" Foreground="{x:Bind ViewModel.RaidExit.KindBrush, Mode=OneWay}" Margin="0,12,0,0" />
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,9">
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Name, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind ViewModel.RaidExit.Needs, Mode=OneWay}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
@@ -1017,7 +1017,7 @@
                            brings the whole list up. -->
                       <HyperlinkButton Padding="0" HorizontalAlignment="Right" Margin="0,4,0,0" Click="OnAllExitsClick"
                                        Visibility="{x:Bind ShownIf(ViewModel.AllExitsText), Mode=OneWay}"
-                                       ToolTipService.ToolTip="Every extract and transit for your side, nearest first">
+                                       ToolTipService.ToolTip="{x:Bind local:ViewTexts.RaidAllExitsTip}">
                         <TextBlock Text="{x:Bind ViewModel.AllExitsText, Mode=OneWay}" Style="{StaticResource StatusText}" FontSize="10.5"
                                    Foreground="{StaticResource AmberBrush}" />
                       </HyperlinkButton>
@@ -1034,7 +1034,7 @@
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="OR" Style="{StaticResource EyebrowText}" Foreground="{x:Bind ViewModel.RaidPlainExit.KindBrush, Mode=OneWay}" Margin="0,9,0,0" />
+                    <TextBlock Text="{x:Bind local:ViewTexts.RaidOrLabel}" Style="{StaticResource EyebrowText}" Foreground="{x:Bind ViewModel.RaidPlainExit.KindBrush, Mode=OneWay}" Margin="0,9,0,0" />
                     <StackPanel Grid.Column="1" Spacing="1" Padding="0,6">
                       <TextBlock Text="{x:Bind ViewModel.RaidPlainExit.Name, Mode=OneWay}" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" />
                       <TextBlock Text="{x:Bind PlainExitNote}" Style="{StaticResource StatusText}" FontSize="10.5"
@@ -1049,24 +1049,24 @@
                     </StackPanel>
                   </Grid>
                   <!-- The picks first, nearest first, as in Plan. -->
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="PICKED" Margin="0,14,0,4"
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
                              Visibility="{x:Bind ShownIfAny(ViewModel.RaidPicks), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidPicks, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="COMPLETE" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardComplete}" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="PROGRESS" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardProgress}" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidProgress, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidBring), Mode=OneWay}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidBring), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidBring, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- A Scav raid: the loot your quests need found in raid takes the place of their objectives. -->
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="FIND IN RAID" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidLoot), Mode=OneWay}" />
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidFindInRaid}" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidLoot), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidLoot, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidLootMore, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.RaidLootMore), Mode=OneWay}"
                              Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,4,0,0" />
                 </StackPanel>
               </Border>
 
-              <TextBlock x:Name="ExtractsHeading" Style="{StaticResource EyebrowText}" Text="EXTRACTS AND TRANSITS" />
+              <TextBlock x:Name="ExtractsHeading" Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidExtractsHeading}" />
               <!-- Whether the game's own extract list was read this raid, or how to have it read (owner, 2026-10-05: "it
                    should also be visible if the exfils [are] not verified yet"; Rules.ExitsNote). -->
               <TextBlock Text="{x:Bind ViewModel.ExitsNote, Mode=OneWay}" Visibility="{x:Bind ShownIf(ViewModel.ExitsNote), Mode=OneWay}"
@@ -1104,7 +1104,7 @@
             <!-- Quests that move on in any raid, in Plan and in a PMC raid alike (a Scav's kills don't count; its loot
                  is in FIND IN RAID). -->
             <StackPanel Visibility="{x:Bind ShownIfNot(ViewModel.ScavRaid), Mode=OneWay}">
-              <TextBlock Style="{StaticResource EyebrowText}" Text="ANY MAP" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
+              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.AnyMapHeading}" Visibility="{x:Bind ShownIfAny(ViewModel.AnyMap), Mode=OneWay}" />
               <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:QuestLine">
@@ -1180,7 +1180,7 @@
             <!-- A raid loading's or a group pick's kit, pictured (owner, 2026-10-03: "with icon previews"): a reminder
                  to take in at a glance, "did I pack everything?", so pictures and nothing to read (owner, 2026-10-04).
                  Rows of eight, up to three, built in ShowCueKit; never scaled, like the text. -->
-            <TextBlock x:Name="CueKitLabel" Text="CHECK YOUR KIT" HorizontalAlignment="Center" Style="{StaticResource EyebrowText}" Margin="0,8,0,0" Visibility="Collapsed" />
+            <TextBlock x:Name="CueKitLabel" Text="{x:Bind local:ViewTexts.RaidCheckYourKit}" HorizontalAlignment="Center" Style="{StaticResource EyebrowText}" Margin="0,8,0,0" Visibility="Collapsed" />
             <StackPanel x:Name="CueKit" HorizontalAlignment="Center" Spacing="8" Visibility="Collapsed" />
             <!-- The first raid's one extra line (owner, 2026-10-09, the tour's first-time lines): the habit Shturmap needs,
                  said when it matters. Once, then never again (MainWindow.Tour, FirstRaidLine). -->
@@ -1232,7 +1232,7 @@
                 <TextBlock Text="{x:Bind ReportOfferText}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
               <Button Width="24" Height="24" Padding="0" Click="OnNoticeClosed" Background="Transparent" BorderThickness="0"
-                      ToolTipService.ToolTip="Dismiss" AutomationProperties.Name="Dismiss the notice">
+                      ToolTipService.ToolTip="{x:Bind local:ViewTexts.NoticeDismissTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.NoticeDismissName}">
                 <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
               </Button>
             </StackPanel>
@@ -1254,21 +1254,21 @@
               <TextBlock Text="{x:Bind ViewModel.CrashQuestion, Mode=OneWay}" TextWrapping="Wrap" />
               <StackPanel Orientation="Horizontal" Spacing="18" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashAsking), Mode=OneWay}">
                 <HyperlinkButton Padding="0" Click="OnCrashSendClick">
-                  <TextBlock Text="SEND" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  <TextBlock Text="{x:Bind local:ViewTexts.CrashSend}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                 </HyperlinkButton>
                 <HyperlinkButton Padding="0" Click="OnCrashKeepClick">
-                  <TextBlock Text="DON'T SEND" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                  <TextBlock Text="{x:Bind local:ViewTexts.CrashDontSend}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
                 </HyperlinkButton>
-                <HyperlinkButton Padding="0" Click="OnCrashAlwaysClick" ToolTipService.ToolTip="Send this one, and future ones without asking (change it in settings)">
-                  <TextBlock Text="ALWAYS SEND" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                <HyperlinkButton Padding="0" Click="OnCrashAlwaysClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashAlwaysSendTip}">
+                  <TextBlock Text="{x:Bind local:ViewTexts.CrashAlwaysSend}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
-                <HyperlinkButton Padding="0" Click="OnCrashDetailsClick" ToolTipService.ToolTip="Shows exactly what would be sent">
-                  <TextBlock Text="WHAT'S SENT" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                <HyperlinkButton Padding="0" Click="OnCrashDetailsClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashWhatsSentTip}">
+                  <TextBlock Text="{x:Bind local:ViewTexts.CrashWhatsSent}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                 </HyperlinkButton>
               </StackPanel>
               <HyperlinkButton Padding="0" Click="OnCrashNoteClick" Visibility="{x:Bind ShownIfTrue(ViewModel.CrashSent), Mode=OneWay}"
-                               ToolTipService.ToolTip="Add what you were doing when it happened">
-                <TextBlock Text="ADD A NOTE" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                               ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashAddNoteTip}">
+                <TextBlock Text="{x:Bind local:ViewTexts.CrashAddNote}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
               <ScrollViewer MaxHeight="220" Visibility="{x:Bind ShownIf(ViewModel.CrashDetails), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.CrashDetails, Mode=OneWay}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"
@@ -1276,7 +1276,7 @@
               </ScrollViewer>
             </StackPanel>
             <Button Grid.Column="2" Width="24" Height="24" Padding="0" Click="OnCrashLaterClick" Background="Transparent" BorderThickness="0"
-                    VerticalAlignment="Top" ToolTipService.ToolTip="Ask again next time" AutomationProperties.Name="Ask again next time">
+                    VerticalAlignment="Top" ToolTipService.ToolTip="{x:Bind local:ViewTexts.CrashLater}" AutomationProperties.Name="{x:Bind local:ViewTexts.CrashLater}">
               <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
             </Button>
           </Grid>
@@ -1302,7 +1302,7 @@
         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="16" Spacing="4">
           <!-- Floors, top first. Shturmap shows yours (dot) from each screenshot; a pick here holds until the next one. -->
           <ItemsControl ItemsSource="{x:Bind ViewModel.Floors, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,0,12"
-                        ToolTipService.ToolTip="Floors. The dot is yours, from your last screenshot; pick another or use PgUp / PgDn to look around.">
+                        ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapFloorsTip}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:FloorChoice">
                 <Button Tag="{x:Bind Index}" Click="OnFloorClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
@@ -1319,7 +1319,7 @@
                whole map turns it off. Its own symbol (four arrows about a centre); on, in amber, the app's colour for
                "on" (cyan is the picks' alone; 2026-10-04). -->
           <ToggleButton x:Name="FollowButton" Style="{StaticResource MapToggleButton}" Click="OnFollowClick"
-                        ToolTipService.ToolTip="Follow my position (Shift+F)" AutomationProperties.Name="Follow my position">
+                        ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapFollowTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapFollowName}">
             <ToggleButton.Resources>
               <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="ToggleButtonBackground" />
               <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="ToggleButtonBackgroundPointerOver" />
@@ -1334,17 +1334,17 @@
             <FontIcon Glyph="&#xE759;" FontSize="15" />
           </ToggleButton>
           <!-- Off, the view only moves when you move it: a new position pings instead. This shows it. -->
-          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="Show my position (F)" AutomationProperties.Name="Show my position"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="Show the whole map (0)" AutomationProperties.Name="Show the whole map"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="Zoom in (+)" AutomationProperties.Name="Zoom in"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
-          <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="Zoom out (−)" AutomationProperties.Name="Zoom out"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnShowMeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapShowMeTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapShowMeName}"><FontIcon Glyph="&#xE81D;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnFitClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapFitTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapFitName}"><FontIcon Glyph="&#xE9A6;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapZoomInTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapZoomInName}"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
+          <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapZoomOutTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapZoomOutName}"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
         </StackPanel>
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
           <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
           <HyperlinkButton Padding="0" NavigateUri="{x:Bind ViewModel.WikiMap, Mode=OneWay}" Click="OnWikiMapClick"
                            Visibility="{x:Bind ShownIfLink(ViewModel.WikiMap), Mode=OneWay}"
-                           ToolTipService.ToolTip="This map's interactive map on the Escape from Tarkov wiki">
-            <TextBlock Text="WIKI MAP ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                           ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapWikiMapTip}">
+            <TextBlock Text="{x:Bind local:ViewTexts.MapWikiMap}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
           </HyperlinkButton>
           <TextBlock Text="{x:Bind ViewModel.Attribution, Mode=OneWay}" Style="{StaticResource NoteText}" FontSize="11" />
         </StackPanel>
@@ -1392,15 +1392,15 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Top">
             <StackPanel Orientation="Horizontal" Spacing="18" HorizontalAlignment="Right">
-              <HyperlinkButton x:Name="TourBack" Padding="0" Click="OnTourBackClick" ToolTipService.ToolTip="Back (←)">
-                <TextBlock Text="← BACK" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
+              <HyperlinkButton x:Name="TourBack" Padding="0" Click="OnTourBackClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.TourBackTip}">
+                <TextBlock Text="{x:Bind local:ViewTexts.TourBack}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
               </HyperlinkButton>
-              <HyperlinkButton Padding="0" Click="OnTourNextClick" ToolTipService.ToolTip="Next (→ or Space)">
-                <TextBlock x:Name="TourNextText" Text="NEXT →" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
+              <HyperlinkButton Padding="0" Click="OnTourNextClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.TourNextTip}">
+                <TextBlock x:Name="TourNextText" Text="{x:Bind local:ViewTexts.TourNext}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
               </HyperlinkButton>
             </StackPanel>
-            <HyperlinkButton Padding="0" HorizontalAlignment="Right" Click="OnTourEndClick" ToolTipService.ToolTip="Ends the tour; help brings it back (F1)">
-              <TextBlock Text="ESC ENDS THE TOUR" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+            <HyperlinkButton Padding="0" HorizontalAlignment="Right" Click="OnTourEndClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.TourEndTip}">
+              <TextBlock Text="{x:Bind local:ViewTexts.TourEnd}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
             </HyperlinkButton>
           </StackPanel>
           <Grid x:Name="TourTicks" Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="5" Height="4" />
@@ -1414,21 +1414,21 @@
       <Border Width="560" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="22,18,22,16"
               Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1">
         <StackPanel Spacing="10">
-          <TextBlock Text="REPORT A PROBLEM OR IDEA" Style="{StaticResource TitleText}" CharacterSpacing="80" />
+          <TextBlock Text="{x:Bind local:ViewTexts.ReportTitle}" Style="{StaticResource TitleText}" CharacterSpacing="80" />
           <StackPanel Orientation="Horizontal" Spacing="-1">
-            <ToggleButton x:Name="ReportProblem" Content="PROBLEM" Click="OnReportKindClick" Tag="Problem" Padding="14,4" FontSize="11.5"
+            <ToggleButton x:Name="ReportProblem" Content="{x:Bind local:ViewTexts.ReportProblem}" Click="OnReportKindClick" Tag="Problem" Padding="14,4" FontSize="11.5"
                           FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="80" IsChecked="True" />
-            <ToggleButton x:Name="ReportIdea" Content="IDEA" Click="OnReportKindClick" Tag="Idea" Padding="14,4" FontSize="11.5"
+            <ToggleButton x:Name="ReportIdea" Content="{x:Bind local:ViewTexts.ReportIdea}" Click="OnReportKindClick" Tag="Idea" Padding="14,4" FontSize="11.5"
                           FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="80" />
           </StackPanel>
           <TextBox x:Name="ReportText" AcceptsReturn="True" TextWrapping="Wrap" Height="150" MaxLength="4000"
                    ScrollViewer.VerticalScrollBarVisibility="Auto" TextChanged="OnReportInputChanged"
-                   PlaceholderText="What happened, and what did you expect? (Required)" />
+                   PlaceholderText="{x:Bind local:ViewTexts.ReportTextPlaceholder}" />
           <TextBox x:Name="ReportContact" MaxLength="120" TextChanged="OnReportInputChanged"
-                   PlaceholderText="For a reply, e.g. Discord name or email (optional)" />
+                   PlaceholderText="{x:Bind local:ViewTexts.ReportContactPlaceholder}" />
           <StackPanel Orientation="Horizontal" Spacing="18">
             <ToggleButton x:Name="ReportIncludeDiagnostics" IsChecked="True" Click="OnReportDiagnosticsClick"
-                          AutomationProperties.Name="Include diagnostics">
+                          AutomationProperties.Name="{x:Bind local:ViewTexts.ReportIncludeDiagnostics}">
               <ToggleButton.Template>
                 <ControlTemplate TargetType="ToggleButton">
                   <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" />
@@ -1439,11 +1439,11 @@
                         Background="{StaticResource AmberBrush}" VerticalAlignment="Center">
                   <FontIcon x:Name="ReportDiagnosticsCheck" Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}" />
                 </Border>
-                <TextBlock Text="Include diagnostics" FontWeight="SemiBold" />
+                <TextBlock Text="{x:Bind local:ViewTexts.ReportIncludeDiagnostics}" FontWeight="SemiBold" />
               </StackPanel>
             </ToggleButton>
             <HyperlinkButton Padding="0" Click="OnReportShowSentClick" VerticalAlignment="Center">
-              <TextBlock x:Name="ReportShowSentText" Text="SHOW WHAT'S SENT" Style="{StaticResource StatusText}" FontSize="11"
+              <TextBlock x:Name="ReportShowSentText" Text="{x:Bind local:ViewTexts.ReportShowSent}" Style="{StaticResource StatusText}" FontSize="11"
                          Foreground="{StaticResource AmberBrush}" />
             </HyperlinkButton>
           </StackPanel>
@@ -1453,13 +1453,13 @@
                        Foreground="{StaticResource MutedBrush}" />
           </ScrollViewer>
           <TextBlock Style="{StaticResource NoteText}">
-            <Run Text="It goes to Shturmap's developer through Sentry, in the EU, with your Windows user folder masked and no ids. Nothing else is sent. " /><Hyperlink Click="OnPrivacyLinkClick" Foreground="{StaticResource AmberBrush}" UnderlineStyle="None">Privacy</Hyperlink>
+            <Run Text="{x:Bind local:ViewTexts.ReportPrivacyNote}" /><Hyperlink Click="OnPrivacyLinkClick" Foreground="{StaticResource AmberBrush}" UnderlineStyle="None"><Run Text="{x:Bind local:ViewTexts.ReportPrivacyLink}" /></Hyperlink>
           </TextBlock>
           <TextBlock x:Name="ReportStatusText" TextWrapping="Wrap" Visibility="Collapsed" />
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,4,0,0">
-            <Button x:Name="ReportCancel" Content="CANCEL" Click="OnReportCancelClick" Padding="16,5" FontSize="11.5" FontWeight="SemiBold"
+            <Button x:Name="ReportCancel" Content="{x:Bind local:ViewTexts.ReportCancel}" Click="OnReportCancelClick" Padding="16,5" FontSize="11.5" FontWeight="SemiBold"
                     FontStretch="SemiCondensed" CharacterSpacing="80" />
-            <Button x:Name="ReportSend" Content="SEND" Click="OnReportSendClick" Padding="20,5" FontSize="11.5" FontWeight="SemiBold"
+            <Button x:Name="ReportSend" Content="{x:Bind local:ViewTexts.ReportSend}" Click="OnReportSendClick" Padding="20,5" FontSize="11.5" FontWeight="SemiBold"
                     FontStretch="SemiCondensed" CharacterSpacing="80" BorderBrush="{StaticResource AmberBrush}"
                     Foreground="{StaticResource AmberBrush}" IsEnabled="False" />
           </StackPanel>

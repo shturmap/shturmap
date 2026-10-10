@@ -16,4 +16,612 @@
     <value>HELP AND FEEDBACK</value>
     <comment>Help: eyebrow heading above the feedback and diagnostics links. Upper case, as every eyebrow.</comment>
   </data>
+  <data name="StatusModeChooseTip" xml:space="preserve">
+    <value>No game on this PC: choose the mode whose maps and data to browse</value>
+    <comment>Status bar: tooltip of the mode button, which is a menu only when there is no game on this PC to say the mode.</comment>
+  </data>
+  <data name="StatusModePve" xml:space="preserve">
+    <value>PvE</value>
+    <comment>Status bar: the mode menu's item for the game's PvE mode (no game on this PC). The game's own name for it.</comment>
+  </data>
+  <data name="StatusModePvp" xml:space="preserve">
+    <value>PvP</value>
+    <comment>Status bar: the mode menu's item for the game's PvP mode (no game on this PC). The game's own name for it.</comment>
+  </data>
+  <data name="StatusModeSeasonal" xml:space="preserve">
+    <value>Seasonal</value>
+    <comment>Status bar: the mode menu's item for the game's seasonal mode (no game on this PC). The game's own name for it.</comment>
+  </data>
+  <data name="FeedbackButtonName" xml:space="preserve">
+    <value>Report a problem or idea</value>
+    <comment>Status bar: the screen reader's name of the feedback button (a speech bubble), which opens the Report dialog.</comment>
+  </data>
+  <data name="HelpButtonTip" xml:space="preserve">
+    <value>How Shturmap works (F1)</value>
+    <comment>Status bar: tooltip of the help button ("?"). F1 is the key that opens help.</comment>
+  </data>
+  <data name="HelpButtonName" xml:space="preserve">
+    <value>Help</value>
+    <comment>Status bar: the screen reader's name of the help button ("?").</comment>
+  </data>
+  <data name="HelpTitle" xml:space="preserve">
+    <value>HOW SHTURMAP WORKS</value>
+    <comment>Help: the panel's title. Upper case.</comment>
+  </data>
+  <data name="HelpTakeTourTip" xml:space="preserve">
+    <value>Seven short chapters over this window; Esc ends it</value>
+    <comment>Help: tooltip of the TAKE THE TOUR link. The tour has seven chapters; Esc is the key.</comment>
+  </data>
+  <data name="HelpTakeTour" xml:space="preserve">
+    <value>TAKE THE TOUR</value>
+    <comment>Help: link at the top that starts the tour. Upper case, small.</comment>
+  </data>
+  <data name="HelpWhatsNewTip" xml:space="preserve">
+    <value>Shows what's new at the top of the list on the left again</value>
+    <comment>Help: tooltip of the link beside TAKE THE TOUR that shows the What's New card again, at the top of the left column.</comment>
+  </data>
+  <data name="HelpKeyBefore" xml:space="preserve">
+    <value>In a raid, press </value>
+    <comment>Help, first paragraph: the start of a sentence split for formatting: these words, then the screenshot key in bold ("PrtSc", filled in by the app), then HelpKeyAfter. Together: "In a raid, press PrtSc: the screenshot's name holds your position. …". Keep the space at the end.</comment>
+  </data>
+  <data name="HelpKeyAfter" xml:space="preserve">
+    <value>: the screenshot's name holds your position. The map stays put; F shows you, Shift+F follows you. </value>
+    <comment>Help, first paragraph: the rest of the sentence after the screenshot key in bold (HelpKeyBefore is its start: "In a raid, press PrtSc"). F and Shift+F are keys. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
+  </data>
+  <data name="HelpShowMe" xml:space="preserve">
+    <value>SHOW ME</value>
+    <comment>Help: link at the end of several paragraphs that opens the tour at the chapter showing it. Upper case, small.</comment>
+  </data>
+  <data name="HelpFollows" xml:space="preserve">
+    <value>Map, raid and quests follow the game's logs. No clicks needed while you play. </value>
+    <comment>Help: paragraph. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
+  </data>
+  <data name="HelpNextRaid" xml:space="preserve">
+    <value>Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction. </value>
+    <comment>Help: paragraph about the left column, between raids and in a raid. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
+  </data>
+  <data name="HelpExit" xml:space="preserve">
+    <value>EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest turn hollow, and OR is your nearest that needs nothing. </value>
+    <comment>Help: paragraph about the raid card's way out. EXIT and OR are the raid card's labels (RaidExitLabel, RaidOrLabel); "O twice" is the game's key. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
+  </data>
+  <data name="HelpQuestOrder" xml:space="preserve">
+    <value>Quest order: go somewhere, then find or survive, then fight; simplest first.</value>
+    <comment>Help: paragraph: the order the quests are listed in.</comment>
+  </data>
+  <data name="HelpPointAtQuest" xml:space="preserve">
+    <value>Point at a quest: its card opens and the quest lights up everywhere. Click to keep the card; a key, item or quest on it has a card of its own. </value>
+    <comment>Help: paragraph about quest cards. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
+  </data>
+  <data name="HelpPicks" xml:space="preserve">
+    <value>Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest, until done or unpicked.</value>
+    <comment>Help: paragraph about picking quests with the pen beside each.</comment>
+  </data>
+  <data name="HelpTicks" xml:space="preserve">
+    <value>Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. HAND OVER on a line: take what it gets to the trader after the raid.</value>
+    <comment>Help: paragraph about ticking objectives done. NEXT is the raid card's label (RaidNextLabel); HAND OVER is the label of a line whose items go to a trader after the raid.</comment>
+  </data>
+  <data name="HelpReplay" xml:space="preserve">
+    <value>After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid.</value>
+    <comment>Help: paragraph about the replay of the last raid. REPLAY is the link on the last raid's line (PlanReplay).</comment>
+  </data>
+  <data name="HelpQuestsFromLogs" xml:space="preserve">
+    <value>Quests come from the game's logs only: one started before your oldest log isn't shown.</value>
+    <comment>Help: note under the paragraphs: which quests Shturmap knows of.</comment>
+  </data>
+  <data name="HelpStoryChapters" xml:space="preserve">
+    <value>Story chapters (Falling Skies, Batya, …) aren't shown yet: tarkov.dev doesn't publish them.</value>
+    <comment>Help: note under the paragraphs. Falling Skies and Batya are names of the game's story chapters, as the game writes them.</comment>
+  </data>
+  <data name="HelpKeysHeading" xml:space="preserve">
+    <value>KEYS · WHEN THIS WINDOW HAS FOCUS</value>
+    <comment>Help: heading over the list of keys. Upper case.</comment>
+  </data>
+  <data name="HelpQuestTypesHeading" xml:space="preserve">
+    <value>QUEST TYPES</value>
+    <comment>Help: heading over the quest types' symbols and what each means. Upper case.</comment>
+  </data>
+  <data name="HelpLegendHeading" xml:space="preserve">
+    <value>ON THE MAP</value>
+    <comment>Help: heading over the map symbols' legend. Upper case. The app changes it to "ON THIS MAP" when help opens over a map.</comment>
+  </data>
+  <data name="HelpLegendElsewhereHeading" xml:space="preserve">
+    <value>NOT ON THIS MAP</value>
+    <comment>Help: heading over the map symbols that aren't on the map on screen. Upper case.</comment>
+  </data>
+  <data name="HelpPrivacy" xml:space="preserve">
+    <value>Reads screenshot names, the game's logs, tarkov.dev's public data and the extract list in a raid screenshot's top right corner (settings turn that off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots.</value>
+    <comment>Help: note on what Shturmap reads, sends and changes. "Delete position screenshots" is the setting's name (SettingsDeleteScreenshots).</comment>
+  </data>
+  <data name="HelpCopyDiagnosticsTip" xml:space="preserve">
+    <value>Copies version, what was found, data state and today's log (no names or ids), to paste anywhere</value>
+    <comment>Help: tooltip of the COPY DIAGNOSTICS link.</comment>
+  </data>
+  <data name="HelpCopyDiagnostics" xml:space="preserve">
+    <value>COPY DIAGNOSTICS</value>
+    <comment>Help: link that copies the diagnostics to the clipboard. Upper case, small.</comment>
+  </data>
+  <data name="HelpReportingNotSetUp" xml:space="preserve">
+    <value>Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you Shturmap.</value>
+    <comment>Help: note in a build that cannot send reports.</comment>
+  </data>
+  <data name="SettingsButtonTip" xml:space="preserve">
+    <value>Settings (Ctrl+,)</value>
+    <comment>Status bar: tooltip of the settings button (a gear). Ctrl+, is the key that opens settings.</comment>
+  </data>
+  <data name="SettingsButtonName" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Status bar: the screen reader's name of the settings button (a gear).</comment>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>SETTINGS</value>
+    <comment>Settings: the panel's title. Upper case.</comment>
+  </data>
+  <data name="SettingsPreferences" xml:space="preserve">
+    <value>PREFERENCES</value>
+    <comment>Settings: heading over the preferences. Upper case.</comment>
+  </data>
+  <data name="SettingsDeleteScreenshots" xml:space="preserve">
+    <value>Delete position screenshots</value>
+    <comment>Settings: a tick box's words, and its name for screen readers: delete each position screenshot a few seconds after it was read. Help's note (HelpPrivacy) names it.</comment>
+  </data>
+  <data name="SettingsReadExits" xml:space="preserve">
+    <value>Read the extract list from screenshots</value>
+    <comment>Settings: a tick box's words, and its name for screen readers: read the game's extract list from a screenshot that shows it.</comment>
+  </data>
+  <data name="SettingsCrashReports" xml:space="preserve">
+    <value>Crash reports</value>
+    <comment>Settings: label of the crash reports choice, followed on the same line by its three choices.</comment>
+  </data>
+  <data name="SettingsCrashAskTip" xml:space="preserve">
+    <value>The next start asks before sending</value>
+    <comment>Settings: tooltip of ASK AFTER A CRASH.</comment>
+  </data>
+  <data name="SettingsCrashAsk" xml:space="preserve">
+    <value>ASK AFTER A CRASH</value>
+    <comment>Settings, crash reports: a choice. Upper case, small; one line of 480 px holds the label and the three choices.</comment>
+  </data>
+  <data name="SettingsCrashAlwaysTip" xml:space="preserve">
+    <value>The next start sends it without asking</value>
+    <comment>Settings: tooltip of ALWAYS SEND (crash reports).</comment>
+  </data>
+  <data name="SettingsCrashAlways" xml:space="preserve">
+    <value>ALWAYS SEND</value>
+    <comment>Settings, crash reports: a choice. Upper case, small; one line of 480 px holds the label and the three choices.</comment>
+  </data>
+  <data name="SettingsCrashNeverTip" xml:space="preserve">
+    <value>Crashes stay on this PC</value>
+    <comment>Settings: tooltip of NEVER (crash reports).</comment>
+  </data>
+  <data name="SettingsCrashNever" xml:space="preserve">
+    <value>NEVER</value>
+    <comment>Settings, crash reports: a choice. Upper case, small; one line of 480 px holds the label and the three choices.</comment>
+  </data>
+  <data name="SettingsCrashNote" xml:space="preserve">
+    <value>Holds the error, where it happened, versions and the last 50 log lines, user folder masked. No memory, screenshots, game files or ids.</value>
+    <comment>Settings: note under the crash reports choice: what a crash report holds.</comment>
+  </data>
+  <data name="SettingsUpdates" xml:space="preserve">
+    <value>Updates</value>
+    <comment>Settings: label of the updates choice, followed on the same line by its three choices.</comment>
+  </data>
+  <data name="SettingsUpdatesAutomaticTip" xml:space="preserve">
+    <value>Checks GitHub at start and every 6 h; installs at the next start</value>
+    <comment>Settings: tooltip of AUTOMATIC (updates). "6 h": six hours.</comment>
+  </data>
+  <data name="SettingsUpdatesAutomatic" xml:space="preserve">
+    <value>AUTOMATIC</value>
+    <comment>Settings, updates: a choice. Upper case, small; one line of 480 px holds the label and the three choices.</comment>
+  </data>
+  <data name="SettingsUpdatesTellOnlyTip" xml:space="preserve">
+    <value>Checks GitHub and tells you; downloads only on your click</value>
+    <comment>Settings: tooltip of TELL ME ONLY (updates).</comment>
+  </data>
+  <data name="SettingsUpdatesTellOnly" xml:space="preserve">
+    <value>TELL ME ONLY</value>
+    <comment>Settings, updates: a choice. Upper case, small; one line of 480 px holds the label and the three choices.</comment>
+  </data>
+  <data name="SettingsUpdatesOffTip" xml:space="preserve">
+    <value>Never checks GitHub</value>
+    <comment>Settings: tooltip of OFF (updates).</comment>
+  </data>
+  <data name="SettingsUpdatesOff" xml:space="preserve">
+    <value>OFF</value>
+    <comment>Settings, updates: a choice. Upper case, small; one line of 480 px holds the label and the three choices.</comment>
+  </data>
+  <data name="SettingsUpdatesNote" xml:space="preserve">
+    <value>Downloads in the background, applies at the next start, never in a raid. GitHub sees your internet address, nothing more.</value>
+    <comment>Settings: note under the updates choice.</comment>
+  </data>
+  <data name="SettingsAppAndData" xml:space="preserve">
+    <value>APP AND DATA</value>
+    <comment>Settings: heading over the game folder, Shturmap's folders and links. Upper case.</comment>
+  </data>
+  <data name="SettingsChooseGameFolderTip" xml:space="preserve">
+    <value>Pick the game's install folder</value>
+    <comment>Settings: tooltip of CHOOSE… (the game folder).</comment>
+  </data>
+  <data name="SettingsChooseGameFolder" xml:space="preserve">
+    <value>CHOOSE…</value>
+    <comment>Settings: link under the game folder's path that opens a folder picker. Upper case, small.</comment>
+  </data>
+  <data name="SettingsFindGameTip" xml:space="preserve">
+    <value>Forget the chosen folder, find the game again</value>
+    <comment>Settings: tooltip of FIND AUTOMATICALLY.</comment>
+  </data>
+  <data name="SettingsFindGame" xml:space="preserve">
+    <value>FIND AUTOMATICALLY</value>
+    <comment>Settings: link that forgets the chosen game folder and finds the game again; also the link after the note that another install has newer game logs. Upper case, small.</comment>
+  </data>
+  <data name="SettingsLogFolderTip" xml:space="preserve">
+    <value>Opens Shturmap's log folder (%LOCALAPPDATA%\Shturmap\logs)</value>
+    <comment>Settings: tooltip of LOG FOLDER ↗. %LOCALAPPDATA%\Shturmap\logs is a folder's path: keep it as it is.</comment>
+  </data>
+  <data name="SettingsLogFolder" xml:space="preserve">
+    <value>LOG FOLDER ↗</value>
+    <comment>Settings: link that opens Shturmap's log folder in Windows' Explorer. Upper case, small; the arrow says it leaves Shturmap.</comment>
+  </data>
+  <data name="SettingsPrivacyTip" xml:space="preserve">
+    <value>What reports hold, who gets them, how long they're kept</value>
+    <comment>Settings: tooltip of PRIVACY ↗.</comment>
+  </data>
+  <data name="SettingsPrivacy" xml:space="preserve">
+    <value>PRIVACY ↗</value>
+    <comment>Settings: link to Shturmap's privacy page on the web. Upper case, small; the arrow says it leaves Shturmap.</comment>
+  </data>
+  <data name="SettingsLicencesTip" xml:space="preserve">
+    <value>Shturmap's licence and those of the code it uses</value>
+    <comment>Settings: tooltip of LICENCES ↗.</comment>
+  </data>
+  <data name="SettingsLicences" xml:space="preserve">
+    <value>LICENCES ↗</value>
+    <comment>Settings: link that opens the licences of Shturmap and of the code it uses. Upper case, small; the arrow says it leaves Shturmap.</comment>
+  </data>
+  <data name="SettingsUninstallTip" xml:space="preserve">
+    <value>Removes Shturmap, as Windows' Settings → Apps does</value>
+    <comment>Settings: tooltip of UNINSTALL SHTURMAP…. "Settings → Apps" is the place in Windows' Settings app, as Windows names it.</comment>
+  </data>
+  <data name="SettingsUninstall" xml:space="preserve">
+    <value>UNINSTALL SHTURMAP…</value>
+    <comment>Settings: link that asks whether to remove Shturmap (installed builds only). Upper case, small.</comment>
+  </data>
+  <data name="SettingsUninstallQuestion" xml:space="preserve">
+    <value>Remove Shturmap from this PC?</value>
+    <comment>Settings: the question after UNINSTALL SHTURMAP…, over a tick box and two links.</comment>
+  </data>
+  <data name="SettingsUninstallDeleteData" xml:space="preserve">
+    <value>Also delete my Shturmap data</value>
+    <comment>Settings: a tick box's words under the uninstall question, and its name for screen readers.</comment>
+  </data>
+  <data name="SettingsUninstallConfirm" xml:space="preserve">
+    <value>UNINSTALL</value>
+    <comment>Settings: link under the uninstall question that removes Shturmap. Upper case, small.</comment>
+  </data>
+  <data name="SettingsUninstallCancel" xml:space="preserve">
+    <value>CANCEL</value>
+    <comment>Settings: link under the uninstall question that doesn't remove Shturmap. Upper case, small.</comment>
+  </data>
+  <data name="RailMapHeading" xml:space="preserve">
+    <value>MAP</value>
+    <comment>Left column, top: heading over the list of maps. Upper case.</comment>
+  </data>
+  <data name="RaidHeading" xml:space="preserve">
+    <value>THIS RAID</value>
+    <comment>Left column, in a raid: heading over the raid card. Upper case.</comment>
+  </data>
+  <data name="RaidSideTip" xml:space="preserve">
+    <value>The side you play this raid, from the game's log</value>
+    <comment>Raid card: tooltip of the side (PMC or SCAV) at the right of the map's name.</comment>
+  </data>
+  <data name="RaidSideSwitchTip" xml:space="preserve">
+    <value>Raid hosted on your PC: the log doesn't say your side. Click to switch PMC / Scav.</value>
+    <comment>Raid card: tooltip of the side when it is a button (a raid hosted on the player's PC). PMC and Scav are the game's sides.</comment>
+  </data>
+  <data name="UpdateDownloadTip" xml:space="preserve">
+    <value>Downloads it in the background; it applies at the next start</value>
+    <comment>Left column, between raids: tooltip of DOWNLOAD under the line that says a new version is out.</comment>
+  </data>
+  <data name="UpdateDownload" xml:space="preserve">
+    <value>DOWNLOAD</value>
+    <comment>Left column, between raids: link under the line that says a new version is out. Upper case, small.</comment>
+  </data>
+  <data name="UpdateRestartTip" xml:space="preserve">
+    <value>Closes Shturmap, applies the new version and starts it again</value>
+    <comment>Left column, between raids: tooltip of RESTART NOW under the line that says a new version is ready.</comment>
+  </data>
+  <data name="UpdateRestart" xml:space="preserve">
+    <value>RESTART NOW</value>
+    <comment>Left column, between raids: link under the line that says a new version is ready. Upper case, small.</comment>
+  </data>
+  <data name="WhatsNewClockMinutes" xml:space="preserve">
+    <value>MIN</value>
+    <comment>What's New card: the unit beside the example raid clock's figure ("13 MIN"): minutes. Upper case, very small; figure and unit share 56 px.</comment>
+  </data>
+  <data name="WhatsNewPointAt" xml:space="preserve">
+    <value>Point at one: the map shows it.</value>
+    <comment>What's New card: note at its foot. Pointing at one of its lines previews it on the map.</comment>
+  </data>
+  <data name="WhatsNewCloseTip" xml:space="preserve">
+    <value>Close. Help brings it back.</value>
+    <comment>What's New card: tooltip of its close button (×).</comment>
+  </data>
+  <data name="WhatsNewCloseName" xml:space="preserve">
+    <value>Close what's new</value>
+    <comment>What's New card: the screen reader's name of its close button (×).</comment>
+  </data>
+  <data name="PlanReplayTip" xml:space="preserve">
+    <value>Plays the last raid again: where you took screenshots, in order</value>
+    <comment>Left column, between raids: tooltip of REPLAY on the last raid's line.</comment>
+  </data>
+  <data name="PlanReplay" xml:space="preserve">
+    <value>REPLAY</value>
+    <comment>Left column, between raids: link at the right of the last raid's line that replays it on the map. Upper case, small.</comment>
+  </data>
+  <data name="PlanChooseGameFolderTip" xml:space="preserve">
+    <value>Pick the folder Escape from Tarkov is installed in</value>
+    <comment>Left column, when no game was found: tooltip of CHOOSE GAME FOLDER….</comment>
+  </data>
+  <data name="PlanChooseGameFolder" xml:space="preserve">
+    <value>CHOOSE GAME FOLDER…</value>
+    <comment>Left column, when no game was found: link that opens a folder picker. Upper case, small.</comment>
+  </data>
+  <data name="PlanNextRaid" xml:space="preserve">
+    <value>NEXT RAID</value>
+    <comment>Left column, between raids: heading over the maps ranked for the coming raid. Upper case.</comment>
+  </data>
+  <data name="PlanClearPicksTip" xml:space="preserve">
+    <value>Unpicks this map's quests; other maps keep theirs</value>
+    <comment>Left column: tooltip of CLEAR PICKS.</comment>
+  </data>
+  <data name="PlanClearPicks" xml:space="preserve">
+    <value>CLEAR PICKS</value>
+    <comment>Left column: link at the right of the NEXT RAID heading that unpicks the picked quests. Upper case, small.</comment>
+  </data>
+  <data name="CardSummaryTip" xml:space="preserve">
+    <value>Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here.</value>
+    <comment>Plan's map card and the raid card: tooltip of the line that counts the quests to complete and to progress there. "Complete" and "progress" as the headings CardComplete and CardProgress say them.</comment>
+  </data>
+  <data name="CardPicked" xml:space="preserve">
+    <value>PICKED</value>
+    <comment>Plan's map card and the raid card: heading over the quests picked for the raid. Upper case.</comment>
+  </data>
+  <data name="CardComplete" xml:space="preserve">
+    <value>COMPLETE</value>
+    <comment>Plan's map card and the raid card: heading over the quests that can be completed on this map in one raid. Upper case.</comment>
+  </data>
+  <data name="CardProgress" xml:space="preserve">
+    <value>PROGRESS</value>
+    <comment>Plan's map card and the raid card: heading over the quests that only move on here. Upper case.</comment>
+  </data>
+  <data name="CardBring" xml:space="preserve">
+    <value>BRING</value>
+    <comment>Plan's map card and the raid card: heading over the things to take into the raid. Upper case.</comment>
+  </data>
+  <data name="RaidCheckYourKit" xml:space="preserve">
+    <value>CHECK YOUR KIT</value>
+    <comment>Raid card while the raid loads, and the big notice over the map at a raid's start: heading over the things to have with you. Upper case.</comment>
+  </data>
+  <data name="RaidAlsoUseful" xml:space="preserve">
+    <value>ALSO USEFUL</value>
+    <comment>Raid card while the raid loads: heading over more things worth having, under CHECK YOUR KIT. Upper case.</comment>
+  </data>
+  <data name="RaidNextLabel" xml:space="preserve">
+    <value>NEXT</value>
+    <comment>Raid card: label of the nearest objective's row. Upper case, small; a column of 48 px.</comment>
+  </data>
+  <data name="RaidExitLabel" xml:space="preserve">
+    <value>EXIT</value>
+    <comment>Raid card: label of the nearest way out's row. Upper case, small; a column of 48 px.</comment>
+  </data>
+  <data name="RaidAllExitsTip" xml:space="preserve">
+    <value>Every extract and transit for your side, nearest first</value>
+    <comment>Raid card: tooltip of the link under the nearest way out's distance that brings the list of all ways out up.</comment>
+  </data>
+  <data name="RaidOrLabel" xml:space="preserve">
+    <value>OR</value>
+    <comment>Raid card: label of the row under EXIT: the nearest extract that needs nothing. Upper case, small; a column of 48 px.</comment>
+  </data>
+  <data name="RaidFindInRaid" xml:space="preserve">
+    <value>FIND IN RAID</value>
+    <comment>Raid card, a Scav raid: heading over the items your quests need found in raid. Upper case.</comment>
+  </data>
+  <data name="RaidExtractsHeading" xml:space="preserve">
+    <value>EXTRACTS AND TRANSITS</value>
+    <comment>Left column, in a raid: heading over the list of every extract and transit. Upper case.</comment>
+  </data>
+  <data name="AnyMapHeading" xml:space="preserve">
+    <value>ANY MAP</value>
+    <comment>Left column: heading over quests that move on in a raid on any map. Upper case.</comment>
+  </data>
+  <data name="NoticeDismissTip" xml:space="preserve">
+    <value>Dismiss</value>
+    <comment>A notice at the top of the map: tooltip of its close button (×).</comment>
+  </data>
+  <data name="NoticeDismissName" xml:space="preserve">
+    <value>Dismiss the notice</value>
+    <comment>A notice at the top of the map: the screen reader's name of its close button (×).</comment>
+  </data>
+  <data name="CrashSend" xml:space="preserve">
+    <value>SEND</value>
+    <comment>The question after a crash, at the top of the map: link that sends the crash report. Upper case, small.</comment>
+  </data>
+  <data name="CrashDontSend" xml:space="preserve">
+    <value>DON'T SEND</value>
+    <comment>The question after a crash: link that doesn't send the crash report. Upper case, small.</comment>
+  </data>
+  <data name="CrashAlwaysSendTip" xml:space="preserve">
+    <value>Send this one, and future ones without asking (change it in settings)</value>
+    <comment>The question after a crash: tooltip of ALWAYS SEND.</comment>
+  </data>
+  <data name="CrashAlwaysSend" xml:space="preserve">
+    <value>ALWAYS SEND</value>
+    <comment>The question after a crash: link that sends this report and every later one without asking. Upper case, small.</comment>
+  </data>
+  <data name="CrashWhatsSentTip" xml:space="preserve">
+    <value>Shows exactly what would be sent</value>
+    <comment>The question after a crash: tooltip of WHAT'S SENT.</comment>
+  </data>
+  <data name="CrashWhatsSent" xml:space="preserve">
+    <value>WHAT'S SENT</value>
+    <comment>The question after a crash: link that shows the report that would be sent. Upper case, small.</comment>
+  </data>
+  <data name="CrashAddNoteTip" xml:space="preserve">
+    <value>Add what you were doing when it happened</value>
+    <comment>After a crash report was sent: tooltip of ADD A NOTE.</comment>
+  </data>
+  <data name="CrashAddNote" xml:space="preserve">
+    <value>ADD A NOTE</value>
+    <comment>After a crash report was sent: link that opens the Report dialog to add a note to it. Upper case, small.</comment>
+  </data>
+  <data name="CrashLater" xml:space="preserve">
+    <value>Ask again next time</value>
+    <comment>The question after a crash: tooltip and screen reader's name of its close button (×), which asks again at the next start.</comment>
+  </data>
+  <data name="MapFloorsTip" xml:space="preserve">
+    <value>Floors. The dot is yours, from your last screenshot; pick another or use PgUp / PgDn to look around.</value>
+    <comment>Map, bottom right: tooltip of the floor buttons. PgUp and PgDn are keys.</comment>
+  </data>
+  <data name="MapFollowTip" xml:space="preserve">
+    <value>Follow my position (Shift+F)</value>
+    <comment>Map, bottom right: tooltip of the follow button. Shift+F is the key.</comment>
+  </data>
+  <data name="MapFollowName" xml:space="preserve">
+    <value>Follow my position</value>
+    <comment>Map, bottom right: the screen reader's name of the follow button.</comment>
+  </data>
+  <data name="MapShowMeTip" xml:space="preserve">
+    <value>Show my position (F)</value>
+    <comment>Map, bottom right: tooltip of the button that centres the map on the player. F is the key.</comment>
+  </data>
+  <data name="MapShowMeName" xml:space="preserve">
+    <value>Show my position</value>
+    <comment>Map, bottom right: the screen reader's name of the button that centres the map on the player.</comment>
+  </data>
+  <data name="MapFitTip" xml:space="preserve">
+    <value>Show the whole map (0)</value>
+    <comment>Map, bottom right: tooltip of the button that shows the whole map. 0 (zero) is the key.</comment>
+  </data>
+  <data name="MapFitName" xml:space="preserve">
+    <value>Show the whole map</value>
+    <comment>Map, bottom right: the screen reader's name of the button that shows the whole map.</comment>
+  </data>
+  <data name="MapZoomInTip" xml:space="preserve">
+    <value>Zoom in (+)</value>
+    <comment>Map, bottom right: tooltip of the zoom in button. + is the key.</comment>
+  </data>
+  <data name="MapZoomInName" xml:space="preserve">
+    <value>Zoom in</value>
+    <comment>Map, bottom right: the screen reader's name of the zoom in button.</comment>
+  </data>
+  <data name="MapZoomOutTip" xml:space="preserve">
+    <value>Zoom out (−)</value>
+    <comment>Map, bottom right: tooltip of the zoom out button. − is the key.</comment>
+  </data>
+  <data name="MapZoomOutName" xml:space="preserve">
+    <value>Zoom out</value>
+    <comment>Map, bottom right: the screen reader's name of the zoom out button.</comment>
+  </data>
+  <data name="MapWikiMapTip" xml:space="preserve">
+    <value>This map's interactive map on the Escape from Tarkov wiki</value>
+    <comment>Map, bottom left: tooltip of WIKI MAP ↗.</comment>
+  </data>
+  <data name="MapWikiMap" xml:space="preserve">
+    <value>WIKI MAP ↗</value>
+    <comment>Map, bottom left: link to the map's interactive map on the game's wiki. Upper case, small; the arrow says it leaves Shturmap.</comment>
+  </data>
+  <data name="TourBackTip" xml:space="preserve">
+    <value>Back (←)</value>
+    <comment>The tour's band: tooltip of ← BACK. ← is the key.</comment>
+  </data>
+  <data name="TourBack" xml:space="preserve">
+    <value>← BACK</value>
+    <comment>The tour's band: link to the chapter before. Upper case, small.</comment>
+  </data>
+  <data name="TourNextTip" xml:space="preserve">
+    <value>Next (→ or Space)</value>
+    <comment>The tour's band: tooltip of NEXT →. → and Space are the keys.</comment>
+  </data>
+  <data name="TourNext" xml:space="preserve">
+    <value>NEXT →</value>
+    <comment>The tour's band: link to the next chapter (the last chapter says DONE instead). Upper case, small.</comment>
+  </data>
+  <data name="TourEndTip" xml:space="preserve">
+    <value>Ends the tour; help brings it back (F1)</value>
+    <comment>The tour's band: tooltip of ESC ENDS THE TOUR. F1 is the key that opens help.</comment>
+  </data>
+  <data name="TourEnd" xml:space="preserve">
+    <value>ESC ENDS THE TOUR</value>
+    <comment>The tour's band: link that ends the tour. Esc is the key. Upper case, small.</comment>
+  </data>
+  <data name="ReportTitle" xml:space="preserve">
+    <value>REPORT A PROBLEM OR IDEA</value>
+    <comment>Report dialog: its title. Upper case.</comment>
+  </data>
+  <data name="ReportProblem" xml:space="preserve">
+    <value>PROBLEM</value>
+    <comment>Report dialog: one of two toggles for what is reported. Upper case, small.</comment>
+  </data>
+  <data name="ReportIdea" xml:space="preserve">
+    <value>IDEA</value>
+    <comment>Report dialog: one of two toggles for what is reported. Upper case, small.</comment>
+  </data>
+  <data name="ReportTextPlaceholder" xml:space="preserve">
+    <value>What happened, and what did you expect? (Required)</value>
+    <comment>Report dialog: grey text in the empty box for a problem, until the player types.</comment>
+  </data>
+  <data name="ReportContactPlaceholder" xml:space="preserve">
+    <value>For a reply, e.g. Discord name or email (optional)</value>
+    <comment>Report dialog: grey text in the empty contact box, until the player types. Discord is the chat app.</comment>
+  </data>
+  <data name="ReportIncludeDiagnostics" xml:space="preserve">
+    <value>Include diagnostics</value>
+    <comment>Report dialog: a tick box's words, and its name for screen readers.</comment>
+  </data>
+  <data name="ReportShowSent" xml:space="preserve">
+    <value>SHOW WHAT'S SENT</value>
+    <comment>Report dialog: link that shows what the report sends. Upper case, small.</comment>
+  </data>
+  <data name="ReportPrivacyNote" xml:space="preserve">
+    <value>It goes to Shturmap's developer through Sentry, in the EU, with your Windows user folder masked and no ids. Nothing else is sent. </value>
+    <comment>Report dialog: note over the buttons, followed on the same line by the Privacy link (ReportPrivacyLink). Sentry is the service the reports go to. Keep the space at the end.</comment>
+  </data>
+  <data name="ReportPrivacyLink" xml:space="preserve">
+    <value>Privacy</value>
+    <comment>Report dialog: link at the end of the note (ReportPrivacyNote) to Shturmap's privacy page on the web.</comment>
+  </data>
+  <data name="ReportCancel" xml:space="preserve">
+    <value>CANCEL</value>
+    <comment>Report dialog: button that closes it without sending. Upper case.</comment>
+  </data>
+  <data name="ReportSend" xml:space="preserve">
+    <value>SEND</value>
+    <comment>Report dialog: button that sends the report. Upper case.</comment>
+  </data>
+  <data name="ItemCardGetIt" xml:space="preserve">
+    <value>GET IT</value>
+    <comment>An item's or key's card: heading over where to get it. Upper case.</comment>
+  </data>
+  <data name="ItemCardNeededFor" xml:space="preserve">
+    <value>NEEDED FOR</value>
+    <comment>An item's or key's card: heading over the quests that need it. Upper case.</comment>
+  </data>
+  <data name="ItemCardNoQuest" xml:space="preserve">
+    <value>None of your active quests needs it.</value>
+    <comment>An item's or key's card: note when none of the player's quests needs it.</comment>
+  </data>
+  <data name="QuestCardBring" xml:space="preserve">
+    <value>BRING</value>
+    <comment>A quest's card: heading over the things to take into the raid. Upper case.</comment>
+  </data>
+  <data name="QuestCardUnlocks" xml:space="preserve">
+    <value>UNLOCKS</value>
+    <comment>A quest's card: heading over the quests it unlocks. Upper case.</comment>
+  </data>
+  <data name="QuestCardWikiTip" xml:space="preserve">
+    <value>This quest on the Escape from Tarkov wiki</value>
+    <comment>A quest's card: tooltip of WIKI PAGE ↗.</comment>
+  </data>
+  <data name="QuestCardWikiPage" xml:space="preserve">
+    <value>WIKI PAGE ↗</value>
+    <comment>A quest's card: link to the quest's page on the game's wiki. Upper case, small; the arrow says it leaves Shturmap.</comment>
+  </data>
 </root>
