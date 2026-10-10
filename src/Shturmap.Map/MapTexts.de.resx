@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LegendPlayer" xml:space="preserve">
+    <value>Du, beim letzten Screenshot: sandfarbene Scheibe im Ring. Ab 1 min gestrichelt mit Altersangabe, ab 2 gerahmt. Kegel: deine Blickrichtung (45 s).</value>
+    <comment>en: You, at your last screenshot: sand disc in a ring. Dashed with its age from 1 min, framed from 2. Cone: your facing (45 s).</comment>
+  </data>
+  <data name="LegendKeptQuest" xml:space="preserve">
+    <value>Gepickte Quest: mit Ring in der Farbe ihres Picks.</value>
+    <comment>en: A picked quest: ringed, in its pick's colour.</comment>
+  </data>
+  <data name="LegendGuide" xml:space="preserve">
+    <value>Zum nächsten Spot deiner Picks: gestrichelte Linie in der Farbe des Picks, mit Entfernung.</value>
+    <comment>en: To your picks' nearest place: dashed line in the pick's colour, with the distance.</comment>
+  </data>
+  <data name="LegendOutOfView" xml:space="preserve">
+    <value>Gepickte Spots außerhalb der Ansicht: Pfeil in der Farbe des Picks, mit Anzahl.</value>
+    <comment>en: Picked places out of view: chevron in the pick's colour, with a count.</comment>
+  </data>
+  <data name="LegendObjective" xml:space="preserve">
+    <value>Quest-Ziel: goldene Scheibe, ihr Symbol zeigt den Quest-Typ.</value>
+    <comment>en: Quest objective: gold disc, its glyph the quest type.</comment>
+  </data>
+  <data name="LegendPossibleLocation" xml:space="preserve">
+    <value>Einer von mehreren möglichen Spots: ? an der Ecke.</value>
+    <comment>en: One of several places it can be: ? at the corner.</comment>
+  </data>
+  <data name="LegendCluster" xml:space="preserve">
+    <value>Nahe Spots eines Ziels: ein Marker mit Anzahl. Vergrößern trennt sie.</value>
+    <comment>en: Close places of one objective: one marker with a count. Zoom in to split.</comment>
+  </data>
+  <data name="LegendExtract" xml:space="preserve">
+    <value>Extract für deine Seite: grünes (PMC) oder türkisfarbenes (Scav) Dreieck.</value>
+    <comment>en: Extract for your side: green (PMC) or teal (Scav) triangle.</comment>
+  </data>
+  <data name="LegendSharedExtract" xml:space="preserve">
+    <value>Extract für beide Seiten: geteiltes khakifarbenes Dreieck.</value>
+    <comment>en: Extract for both sides: khaki split triangle.</comment>
+  </data>
+  <data name="LegendExtractListed" xml:space="preserve">
+    <value>Auf deiner Extract-Liste in diesem Raid: hell, leuchtet in seiner Farbe, Name fett.</value>
+    <comment>en: On your extract list this raid: lit, a glow in its colour, name in bold.</comment>
+  </data>
+  <data name="LegendExtractNotListed" xml:space="preserve">
+    <value>Nicht auf deiner Extract-Liste in diesem Raid: nur Umriss, Name blass. Mit ?: Das Spiel zeigt ??:??:?? (geschlossen oder braucht etwas).</value>
+    <comment>en: Not on your extract list this raid: hollow, name faint. With a ?: the game shows ??:??:?? (closed, or needs something).</comment>
+  </data>
+  <data name="LegendTransit" xml:space="preserve">
+    <value>Transit zu einer anderen Map: violette Raute.</value>
+    <comment>en: Transit to another map: violet diamond.</comment>
+  </data>
+  <data name="LegendPlayerOutOfView" xml:space="preserve">
+    <value>Du, außerhalb der Ansicht: sandfarbenes Badge am Rand. Klick darauf oder drück F.</value>
+    <comment>en: You, out of view: sand badge at the edge. Click it or press F.</comment>
+  </data>
+  <data name="LegendKeptLock" xml:space="preserve">
+    <value>Tür, für die ein Pick einen Key braucht: Schloss in der Farbe des Picks, mit Namen des Keys.</value>
+    <comment>en: A door a pick needs a key for: padlock in the pick's colour, with the key's name.</comment>
+  </data>
+  <data name="LegendJoined" xml:space="preserve">
+    <value>Mehrere Ziele einer Quest an einem Spot: ein Marker, mit Anzahl der offenen.</value>
+    <comment>en: Several objectives of one quest on one spot: one marker, with how many are open.</comment>
+  </data>
+  <data name="LegendOptional" xml:space="preserve">
+    <value>Optionales Ziel: OPT oben links.</value>
+    <comment>en: Optional objective: OPT at the upper left.</comment>
+  </data>
+  <data name="LegendDone" xml:space="preserve">
+    <value>Erledigtes Ziel: kleine graue Scheibe mit Haken.</value>
+    <comment>en: Done objective: small grey disc with a check.</comment>
+  </data>
+  <data name="LegendQuestZone" xml:space="preserve">
+    <value>Bereich eines Ziels.</value>
+    <comment>en: An objective's area.</comment>
+  </data>
+  <data name="LegendLeader" xml:space="preserve">
+    <value>Von einem überfüllten Spot versetzt: eine Linie in seiner Farbe zu einem Punkt, wo es liegt.</value>
+    <comment>en: Moved off a crowded spot: a line in its colour to a dot where it is.</comment>
+  </data>
+  <data name="LegendPointedOutOfView" xml:space="preserve">
+    <value>Spots der Quest, auf die du zeigst, außerhalb der Ansicht: pulsierender goldener Pfeil, mit Anzahl.</value>
+    <comment>en: Places of the quest you point at, out of view: pulsing gold chevron, with a count.</comment>
+  </data>
+  <data name="LegendPing" xml:space="preserve">
+    <value>Neue Position: sandfarbene Ringe.</value>
+    <comment>en: A new position: sand rings.</comment>
+  </data>
+  <data name="LegendCompleted" xml:space="preserve">
+    <value>Gerade abgeschlossene Quest: Die Spots werden zu goldenen Haken, senden Ringe aus und verschwinden.</value>
+    <comment>en: A quest just completed: its places turn into gold checks, ring out and go.</comment>
+  </data>
+  <data name="LegendBoss" xml:space="preserve">
+    <value>Spawn von Boss oder KI-Squad: rotes Achteck, mit Chance (und Anteil dieser Zone).</value>
+    <comment>en: Boss or AI squad spawn: red octagon, with the chance (and this zone's share).</comment>
+  </data>
+  <data name="LegendSniper" xml:space="preserve">
+    <value>Sniper-Scav-Spawns: Sechseck-Umriss.</value>
+    <comment>en: Sniper Scav spawns: hollow hexagon.</comment>
+  </data>
+  <data name="LegendScav" xml:space="preserve">
+    <value>Scav-Spawns: kleiner Ring.</value>
+    <comment>en: Scav spawns: small ring.</comment>
+  </data>
+  <data name="LegendLock" xml:space="preserve">
+    <value>Verschlossene Tür oder Kofferraum: Schloss, beim Vergrößern mit Namen des Keys. Zeig auf einen Key: Seine Schlösser leuchten auf.</value>
+    <comment>en: Locked door or trunk: padlock, with the key's name when zoomed in. Point at a key to light its locks.</comment>
+  </data>
+  <data name="LegendSwitch" xml:space="preserve">
+    <value>Schalter (Strom, Alarm, Aufzug, Falle): Ein/Aus-Symbol.</value>
+    <comment>en: Switch (power, alarm, elevator, trap): power symbol.</comment>
+  </data>
+  <data name="LegendHazard" xml:space="preserve">
+    <value>Tödlicher Bereich (Fallen, Minenfelder, Sniper-Zonen): schraffierter Umriss.</value>
+    <comment>en: Deadly area (traps, minefields, sniper zones): hatched outline.</comment>
+  </data>
+  <data name="LegendOtherFloor" xml:space="preserve">
+    <value>In einem anderen Stock: hoch oder runter, ab zwei mit Anzahl.</value>
+    <comment>en: On another floor: up or down, with how many when more than one.</comment>
+  </data>
+  <data name="LegendTrail" xml:space="preserve">
+    <value>Deine früheren Positionen in diesem Raid: gestrichelte sandfarbene Linie.</value>
+    <comment>en: Your earlier positions this raid: dashed sand line.</comment>
+  </data>
+  <data name="LegendReplay" xml:space="preserve">
+    <value>Das Raid-Replay, nach einem Raid: deine Screenshots der Reihe nach, am Anfang blass und dünn, am Ende hell und breit.</value>
+    <comment>en: The raid replay, after a raid: your screenshots in order, faint and thin at its start, bright and wide at its end.</comment>
+  </data>
+  <data name="LegendLooseItem" xml:space="preserve">
+    <value>Loot-Spot eines Items, solange du auf das Item zeigst: kleiner Quadrat-Umriss.</value>
+    <comment>en: Where an item lies loose, while you point at it: small open square.</comment>
+  </data>
+  <data name="LegendContainers" xml:space="preserve">
+    <value>Loot-Container auf einer Map ohne Grafik: blasse Punkte.</value>
+    <comment>en: Loot containers, on a map without artwork: faint dots.</comment>
+  </data>
+  <data name="LegendSheet" xml:space="preserve">
+    <value>Keine Grafik für diese Map: ein Blatt mit 10-m-Raster, nur aus Daten.</value>
+    <comment>en: No artwork for this map: a sheet with a 10 m grid, from data only.</comment>
+  </data>
+  <data name="MarkerExtract" xml:space="preserve">
+    <value>Extract</value>
+    <comment>en: Extract</comment>
+  </data>
+  <data name="MarkerTransitTo" xml:space="preserve">
+    <value>Transit zu {map}</value>
+    <comment>en: Transit to {map}</comment>
+  </data>
+  <data name="MarkerTransitElsewhere" xml:space="preserve">
+    <value>Transit zu einer anderen Map</value>
+    <comment>en: Transit to another map</comment>
+  </data>
+  <data name="MarkerLocked" xml:space="preserve">
+    <value>Verschlossen</value>
+    <comment>en: Locked</comment>
+  </data>
+  <data name="MarkerLockNeedsPower" xml:space="preserve">
+    <value>{key} · braucht Strom</value>
+    <comment>en: {key} · needs power</comment>
+  </data>
+  <data name="MarkerLockedNeedsPower" xml:space="preserve">
+    <value>Verschlossen · braucht Strom</value>
+    <comment>en: Locked · needs power</comment>
+  </data>
+  <data name="MarkerSwitch" xml:space="preserve">
+    <value>Schalter</value>
+    <comment>en: Switch</comment>
+  </data>
+  <data name="MarkerSniper" xml:space="preserve">
+    <value>Sniper</value>
+    <comment>en: Sniper</comment>
+  </data>
+  <data name="MarkerBossChance" xml:space="preserve">
+    <value>{boss} {chance} %</value>
+    <comment>en: {boss} {chance}%</comment>
+  </data>
+  <data name="MarkerBossChanceHere" xml:space="preserve">
+    <value>{boss} {chance} % · {here} % hier</value>
+    <comment>en: {boss} {chance}% · {here}% here</comment>
+  </data>
+  <data name="MarkerOptionalBadge" xml:space="preserve">
+    <value>OPT</value>
+    <comment>en: OPT</comment>
+  </data>
+  <data name="MapSheetCaption" xml:space="preserve">
+    <value>KEINE GRAFIK FÜR DIESE MAP · RASTER {spacing} M</value>
+    <comment>en: NO ARTWORK FOR THIS MAP · GRID {spacing} M</comment>
+  </data>
+  <data name="MapSheetCaptionNoFloors" xml:space="preserve">
+    <value>KEINE GRAFIK FÜR DIESE MAP · RASTER {spacing} M · KEINE STOCKWERKDATEN</value>
+    <comment>en: NO ARTWORK FOR THIS MAP · GRID {spacing} M · NO FLOOR DATA</comment>
+  </data>
+  <data name="MapSniperZone" xml:space="preserve">
+    <value>SNIPER-ZONE</value>
+    <comment>en: SNIPER ZONE</comment>
+  </data>
+  <data name="MapNewPosition" xml:space="preserve">
+    <value>DEINE NEUE POSITION · TASTE F</value>
+    <comment>en: YOUR NEW POSITION · PRESS F</comment>
+  </data>
+  <data name="DistanceMetres" xml:space="preserve">
+    <value>{metres} m</value>
+    <comment>en: {metres} m</comment>
+  </data>
+  <data name="DistanceKilometres" xml:space="preserve">
+    <value>{kilometres} km</value>
+    <comment>en: {kilometres} km</comment>
+  </data>
+  <data name="PlayerAgeMinutes" xml:space="preserve">
+    <value>{minutes} MIN</value>
+    <comment>en: {minutes} MIN</comment>
+  </data>
+  <data name="PlayerAgeHours" xml:space="preserve">
+    <value>{hours} H</value>
+    <comment>en: {hours} H</comment>
+  </data>
+  <data name="PlayerAgeMinutesOld" xml:space="preserve">
+    <value>{minutes} MIN ALT</value>
+    <comment>en: {minutes} MIN OLD</comment>
+  </data>
+  <data name="PlayerAgeHoursOld" xml:space="preserve">
+    <value>{hours} H ALT</value>
+    <comment>en: {hours} H OLD</comment>
+  </data>
+  <data name="ReplayMinute" xml:space="preserve">
+    <value>{minute} MIN IM RAID</value>
+    <comment>en: {minute} MIN IN</comment>
+  </data>
+  <data name="ReplayLastSeen" xml:space="preserve">
+    <value>ZULETZT GESEHEN · {minutes} MIN VOR DEM ENDE</value>
+    <comment>en: LAST SEEN · {minutes} MIN BEFORE THE END</comment>
+  </data>
+  <data name="ReplayLastSeenJustBefore" xml:space="preserve">
+    <value>ZULETZT GESEHEN · KURZ VOR DEM ENDE</value>
+    <comment>en: LAST SEEN · JUST BEFORE THE END</comment>
+  </data>
+</root>

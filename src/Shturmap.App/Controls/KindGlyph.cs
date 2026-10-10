@@ -22,6 +22,8 @@ public sealed partial class KindGlyph : Grid
         Height = 16;
         VerticalAlignment = VerticalAlignment.Top;
         Update();
+        // Its tooltip names the type in the language in use.
+        SaidAgain.OnLanguage(this, Update);
     }
 
     public ObjectiveKind Kind
@@ -49,7 +51,7 @@ public sealed partial class KindGlyph : Grid
             Height = 15,
             Fill = Brush ?? (Brush)Application.Current.Resources["InkBrush"],
         };
-        ToolTipService.SetToolTip(this, $"{QuestTaxonomy.Label(Kind)}: {QuestTaxonomy.Explanation(Kind)}");
+        ToolTipService.SetToolTip(this, QuestTaxonomy.Tip(Kind));
         Children.Add(icon);
     }
 }

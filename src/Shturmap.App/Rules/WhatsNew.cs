@@ -1,3 +1,5 @@
+using Shturmap.Core;
+
 namespace Shturmap.App.Rules;
 
 /// <summary>
@@ -73,13 +75,35 @@ public static class WhatsNew
         return sections.Select(s => s with { Name = s.Name ?? NameOf(sections, s.Version) }).OrderByDescending(s => s.Version).ToList();
     }
 
+    /// <summary>
+    /// What's New in the language in use: each English section's translation where the translated file
+    /// (docs/whats-new.&lt;code&gt;.md; <see cref="BuiltDocs"/>) has its version, else the English section, since a language
+    /// is translated from its release on (docs/LANGUAGES.md). The versions are the English file's: a translated section
+    /// for a version it lacks is left out, and one whose lines don't have the English section's previews, in order, is
+    /// taken for out of date and shown in English. The label stays the English one: it is what "seen" is saved as.
+    /// </summary>
+    /// <param name="translated">The translation's sections, or null where the language has none.</param>
+    public static IReadOnlyList<Section> InLanguage(IReadOnlyList<Section> english, IReadOnlyList<Section>? translated) =>
+        translated is null ? english
+            : english.Select(e => translated.FirstOrDefault(t => t.Version == e.Version) is { } t
+                && t.Items.Select(i => i.Preview).SequenceEqual(e.Items.Select(i => i.Preview))
+                    ? t with { Label = e.Label, Name = t.Name ?? e.Name }
+                    : e).ToList();
+
+    /// <summary>
+    /// The sections with every word they show changed by <paramref name="change"/>, the previews and versions kept: the
+    /// pseudo-language's card (<see cref="Shturmap.Core.Text.PseudoText"/>).
+    /// </summary>
+    public static IReadOnlyList<Section> Map(IReadOnlyList<Section> sections, Func<string, string> change) =>
+        sections.Select(s => s with { Items = s.Items.Select(i => i with { Name = change(i.Name), Text = change(i.Text) }).ToList() }).ToList();
+
     /// <summary>The name of the release line a version belongs to (0.4.1: the name of 0.4.0), or null.</summary>
     public static string? NameOf(IReadOnlyList<Section> sections, Version? version) =>
         version is null ? null
             : sections.FirstOrDefault(s => s.Name is not null && s.Version.Major == version.Major && s.Version.Minor == version.Minor)?.Name;
 
     /// <summary>A section's version with its release's name, in capitals as the card and help say it: "0.4.0 · PRAETORIAN".</summary>
-    public static string Tag(Section section) => section.Name is { } name ? $"{section.Label} · {name.ToUpperInvariant()}" : section.Label;
+    public static string Tag(Section section) => section.Name is { } name ? $"{section.Label} · {UiLanguage.Upper(name)}" : section.Label;
 
     /// <summary>A version as written ("0.4.0", "0.3.0-dev.20261007…": the part before a "-"), or null.</summary>
     public static Version? VersionOf(string? text)
@@ -107,5 +131,5 @@ public static class WhatsNew
     }
 
     /// <summary>The words the card heads a section with: "NEW IN 0.4.0 · PRAETORIAN".</summary>
-    public static string Heading(Section section) => $"NEW IN {Tag(section)}";
+    public static string Heading(Section section) => RuleTexts.WhatsNewHeading(version: Tag(section));
 }

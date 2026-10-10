@@ -1,6 +1,7 @@
-# Build and test every push (owner, 2026-10-05; docs/DESIGN.md §8, "Continuous integration"). Windows, since the app,
-# the game reader, the session and the CLI build for Windows only. Tests that need what only the owner's PC has (the
-# tarkov.dev cache, the game's logs, real screenshots, a Release build, the website beside the repository) skip here.
+# Build and test every push, in Debug and in Release (owner, 2026-10-05 and 2026-10-11; docs/DESIGN.md §8, "Continuous
+# integration"). Windows, since the app, the game reader, the session and the CLI build for Windows only. Tests that
+# need what only the owner's PC has (the tarkov.dev cache, the game's logs, real screenshots, a published build in
+# artifacts, the website beside the repository) skip here.
 # The repository is public, and so are this workflow's logs: nothing here prints quest texts, logs or secrets.
 # Every action is pinned to a full commit, with its version beside it: a tag can be moved, a commit can't.
 name: CI
@@ -44,6 +45,17 @@ jobs:
       - name: Test
         shell: pwsh
         run: .\eng\dotnet.ps1 test --solution Shturmap.slnx --no-build
+
+      # Release as well: a release compiles what Debug leaves out (the other side of "#if DEVTOOLS") and its tests check
+      # what only a release does; until 2026-10-11 they never ran, and one had failed unseen. Debug and Release take the
+      # same packages, so the restore above serves both.
+      - name: Build (Release)
+        shell: pwsh
+        run: .\eng\dotnet.ps1 build Shturmap.slnx -c Release --no-restore
+
+      - name: Test (Release)
+        shell: pwsh
+        run: .\eng\dotnet.ps1 test --solution Shturmap.slnx -c Release --no-build
 
       # Known vulnerabilities in the NuGet packages, direct or transitive (in place of Dependabot: CLAUDE.md allows no
       # other identity in the commits). Also when a test failed, so neither hides the other.

@@ -24,7 +24,7 @@ public sealed partial class MainWindow
         vm.GameFolderText = GameFolder.Label(s.Locations);
         vm.GameFolderChangeable = s.CanChooseGameFolder;
         vm.FindGameAutomatically = s.CanChooseGameFolder && s.ChosenGameFolder is not null;
-        vm.NewerGameLogs = GameFolder.NewerElsewhere(s.Locations) is { } newer ? $"Newer game logs in {newer.Root}" : "";
+        vm.NewerGameLogs = GameFolder.NewerElsewhere(s.Locations) is { } newer ? AppTexts.SettingsNewerGameLogs(folder: newer.Root) : "";
         vm.LogsDetail = GameFolder.LogsTip(s.Locations);
     }
 

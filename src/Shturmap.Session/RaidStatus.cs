@@ -1,4 +1,4 @@
-using System.Globalization;
+using Shturmap.Core;
 using Shturmap.Core.Logs;
 using Shturmap.Core.Raid;
 
@@ -25,17 +25,17 @@ public static class RaidStatus
     /// (<see cref="WallClock"/>); the PC's own unless a test gives another.</param>
     public static string Text(RaidState raid, string? map, DateTime now, TimeZoneInfo? zone = null)
     {
-        var side = raid.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "Scav", _ => null };
+        var side = raid.Side switch { RaidSide.Pmc => SessionTexts.SidePmc, RaidSide.Scav => SessionTexts.SideScav, _ => null };
         return raid.Phase switch
         {
-            RaidPhase.Loading => $"Loading {map}".TrimEnd(),
+            RaidPhase.Loading => string.IsNullOrEmpty(map) ? SessionTexts.StatusLoading : SessionTexts.StatusLoadingMap(map: map),
             RaidPhase.InRaid => string.Join(" · ", new[]
                 {
-                    "In raid", map, side,
-                    raid.RaidStartedAt is { } started ? $"{(int)WallClock.Elapsed(started, now, zone).TotalMinutes} min" : null,
+                    SessionTexts.StatusInRaid, map, side,
+                    raid.RaidStartedAt is { } started ? SessionTexts.RaidMinutes(minutes: (int)WallClock.Elapsed(started, now, zone).TotalMinutes) : null,
                 }
                 .Where(part => !string.IsNullOrEmpty(part))),
-            _ => "Not in a raid",
+            _ => SessionTexts.StatusNotInRaid,
         };
     }
 
@@ -45,19 +45,19 @@ public static class RaidStatus
     /// </summary>
     public static string LastRaid(LastRaidView last) => string.Join(" · ", new[]
     {
-        "Last raid",
+        SessionTexts.LastRaid,
         last.MapName,
-        last.LengthKnown ? $"{(int)last.Duration.TotalMinutes} min" : "end not in the log",
-        last.Side switch { RaidSide.Pmc => "PMC", RaidSide.Scav => "Scav", _ => null },
+        last.LengthKnown ? SessionTexts.RaidMinutes(minutes: (int)last.Duration.TotalMinutes) : SessionTexts.LastRaidEndUnknown,
+        last.Side switch { RaidSide.Pmc => SessionTexts.SidePmc, RaidSide.Scav => SessionTexts.SideScav, _ => null },
     }.Where(part => !string.IsNullOrEmpty(part)));
 
     /// <summary>Where the words come from, for the tooltip.</summary>
     public static string Tooltip(RaidState raid, DateTime now) => raid.Phase switch
     {
-        RaidPhase.Loading => "The game's log shows a raid loading",
+        RaidPhase.Loading => SessionTexts.StatusTipLoading,
         RaidPhase.InRaid when raid.RaidStartedAt is { } started =>
-            "The game's log shows a raid, started " + started.ToString(started.Date == now.Date ? "HH:mm" : "d MMM HH:mm", CultureInfo.CurrentCulture),
-        RaidPhase.InRaid => "The game's log shows a raid",
-        _ => "The game's log shows no raid (it can't tell the menus from a closed game)",
+            SessionTexts.StatusTipInRaidSince(time: started.Date == now.Date ? started.ToString("HH:mm", UiLanguage.Culture) : UiLanguage.DayMonthTime(started)),
+        RaidPhase.InRaid => SessionTexts.StatusTipInRaid,
+        _ => SessionTexts.StatusTipMenu,
     };
 }

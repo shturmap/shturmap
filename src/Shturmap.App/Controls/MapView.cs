@@ -603,7 +603,7 @@ public sealed partial class MapView : Grid
             {
                 _overEdge = overEdge;
                 ProtectedCursor = overEdge || _hovered is not null ? InputSystemCursor.Create(InputSystemCursorShape.Hand) : null;
-                ToolTipService.SetToolTip(this, overEdge ? "Show my position (F)" : null);
+                ToolTipService.SetToolTip(this, overEdge ? AppTexts.MapEdgeTip : null);
             }
             var hit = _scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), PixelScale);
             Hover(hit, at);

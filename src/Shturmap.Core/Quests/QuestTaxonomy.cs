@@ -53,23 +53,36 @@ public static class QuestTaxonomy
 
     public static string Label(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Elimination => "Elimination",
-        ObjectiveKind.Exploration => "Exploration",
-        ObjectiveKind.Pickup => "Pickup",
-        ObjectiveKind.Place => "Place",
-        ObjectiveKind.FindInRaid => "Find in raid",
-        ObjectiveKind.Survive => "Survive",
-        _ => "Trader",
+        ObjectiveKind.Elimination => CoreTexts.QuestKindElimination,
+        ObjectiveKind.Exploration => CoreTexts.QuestKindExploration,
+        ObjectiveKind.Pickup => CoreTexts.QuestKindPickup,
+        ObjectiveKind.Place => CoreTexts.QuestKindPlace,
+        ObjectiveKind.FindInRaid => CoreTexts.QuestKindFindInRaid,
+        ObjectiveKind.Survive => CoreTexts.QuestKindSurvive,
+        _ => CoreTexts.QuestKindTrader,
     };
 
     public static string Explanation(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Elimination => "Kill targets, maybe with conditions",
-        ObjectiveKind.Exploration => "Go to a place",
-        ObjectiveKind.Pickup => "Pick up a quest item",
-        ObjectiveKind.Place => "Plant, mark or use an item you bring",
-        ObjectiveKind.FindInRaid => "Find items in raid (FIR), any map",
-        ObjectiveKind.Survive => "Survive and extract, or meet a condition",
-        _ => "Hand over at a trader, after the raid",
+        ObjectiveKind.Elimination => CoreTexts.QuestKindEliminationMeans,
+        ObjectiveKind.Exploration => CoreTexts.QuestKindExplorationMeans,
+        ObjectiveKind.Pickup => CoreTexts.QuestKindPickupMeans,
+        ObjectiveKind.Place => CoreTexts.QuestKindPlaceMeans,
+        ObjectiveKind.FindInRaid => CoreTexts.QuestKindFindInRaidMeans,
+        ObjectiveKind.Survive => CoreTexts.QuestKindSurviveMeans,
+        _ => CoreTexts.QuestKindTraderMeans,
+    };
+
+    // The type symbol's tooltip: the name and what it asks, one whole text per type, so that each language writes what
+    // follows the colon as it should (owner, 2026-10-11: German writes lower case there, help's table a capital).
+    public static string Tip(ObjectiveKind kind) => kind switch
+    {
+        ObjectiveKind.Elimination => CoreTexts.QuestKindEliminationTip,
+        ObjectiveKind.Exploration => CoreTexts.QuestKindExplorationTip,
+        ObjectiveKind.Pickup => CoreTexts.QuestKindPickupTip,
+        ObjectiveKind.Place => CoreTexts.QuestKindPlaceTip,
+        ObjectiveKind.FindInRaid => CoreTexts.QuestKindFindInRaidTip,
+        ObjectiveKind.Survive => CoreTexts.QuestKindSurviveTip,
+        _ => CoreTexts.QuestKindTraderTip,
     };
 }

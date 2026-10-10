@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.UI.Xaml;
+using Shturmap.Core;
 using Shturmap.Session;
 using Shturmap.Session.Reporting;
 using Windows.Graphics;
@@ -45,6 +46,10 @@ public partial class App : Application
         }
         return _cli;
     }
+
+    // Windows' display language (the one its own menus are in), as it was before anything set the app's culture: one of
+    // what decides Shturmap's language (docs/DESIGN.md §8, "The app's own language"). Its regional formats don't count.
+    private readonly string _windowsLanguage = CultureInfo.CurrentUICulture.Name;
 
     public App()
     {
@@ -155,15 +160,11 @@ public partial class App : Application
         if (DevUninstallTest(cli))
             return;
 #endif
-        // Numbers and dates follow the language of Shturmap's own texts (English), not Windows' (UiLanguage).
+        // Numbers and dates follow the language of Shturmap's own texts, not Windows' (UiLanguage): English until the
+        // language is chosen, below.
         UiLanguage.Apply();
-        // Developer aids for website media: "--culture en-US" formats dates and numbers in that culture, and
-        // "--window 1600x900" renders at that size instead of maximised, so the UI reads larger in a screenshot.
-        if (Arg(cli, "--culture") is { } culture)
-        {
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo(culture);
-            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
-        }
+        // Developer aid for website media: "--window 1600x900" renders at that size instead of maximised, so the UI
+        // reads larger in a screenshot.
         SizeInt32? windowSize = Arg(cli, "--window")?.Split('x') is [var w, var h] && int.TryParse(w, out var width)
             && int.TryParse(h, out var height) ? new SizeInt32(width, height) : null;
         _session = CreateSession(cli, out var paths);
@@ -175,6 +176,7 @@ public partial class App : Application
         // A newer game build says the checks after a patch are due (docs/UPDATES.md); a made-up log has no news.
         _session.NoticeGameBuilds = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
 #endif
+        ChooseLanguage(cli);
         // The window comes back where the player left it (owner, 2026-10-04). Snapshots, the demo and a given size
         // place it themselves and remember nothing.
         var rememberPlace = windowSize is null && !cli.Contains("--snapshot") && !cli.Contains("--demo");
@@ -212,7 +214,7 @@ public partial class App : Application
             await RemoveSingleExeLeftoversAsync();
         // Developer aids for snapshots of the report dialog and the question after a crash.
         if (cli.Contains("--show-report"))
-            _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, "Example: the map stayed on Woods after I loaded into Customs.", "snapshot", showSent: true);
+            _window.OpenReport(Shturmap.Session.Reporting.ReportKind.Problem, AppTexts.ReportExample, "snapshot", showSent: true);
         if (cli.Contains("--show-crash"))
             _window.AskAboutCrashes(Reporter.Crashes.Waiting() is { Count: > 0 } waiting ? waiting : [ExampleCrash()]);
 #if DEVTOOLS
@@ -250,6 +252,36 @@ public partial class App : Application
             await _window.SaveSnapshotAsync(cli[at + 1]);
             EndSession();
             Exit();
+        }
+    }
+
+    /// <summary>
+    /// One language for everything, chosen before the window builds its texts (docs/DESIGN.md §8, "The app's own
+    /// language"): the "Language" setting, else the game's language, else Windows' display language as it was at start,
+    /// else English. The session opens for it (the setting, the game's settings) and keeps the choice; Shturmap's texts
+    /// take it here. "--culture &lt;culture&gt;" (en-US, de-DE, qps-ploc) is that run's language for everything, as if chosen
+    /// in settings, without saving it; a language still being translated too.
+    /// </summary>
+    private void ChooseLanguage(string[] cli)
+    {
+        if (_session is null)
+            return;
+        _session.WindowsLanguage = _windowsLanguage;
+        if (Arg(cli, "--culture") is { } culture)
+        {
+            if (UiLanguage.CodeOf(culture) is { } code)
+                _session.LanguageForRun = code;
+            else
+                AppLog.Warn($"--culture {culture}: not a culture this Windows knows; the setting decides");
+        }
+        try
+        {
+            UiLanguage.Set(_session.Open().Ui);
+        }
+        catch (Exception e)
+        {
+            // Said again as the session fails to start; the texts stay English.
+            AppLog.Error("Opening the session failed", e);
         }
     }
 

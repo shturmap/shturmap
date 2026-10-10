@@ -10,4 +10,168 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug' and !$(DefineConstants.Contains('DEVTOOLS'))">
     <DefineConstants>$(DefineConstants);DEVTOOLS</DefineConstants>
   </PropertyGroup>
+
+  <!-- Shturmap's own texts (docs/DESIGN.md §8, "Texts"). A project's texts are a "<Name>Texts.resx" (English) and one
+       "<Name>Texts.<code>.resx" per language. Each gets a fixed resource name, "<RootNamespace>.<file name>", and the
+       English file a class of the same name made at build time: a property per text, a method per text with
+       placeholders (its parameters the placeholders' names, in alphabetical order, so a sentence written in another
+       order keeps its callers), each looked up in the language in use (UiLanguage.Text). A text is called by name, so
+       a missing or misspelt one is a build error. "TextNamespace" on the item names the class's namespace when it
+       isn't the project's (App\Rules, which the Core tests compile too). -->
+  <Target Name="ShturmapTextNames" BeforeTargets="PrepareResourceNames;AssignCulture;SplitResourcesByCulture">
+    <ItemGroup>
+      <EmbeddedResource Condition="'%(EmbeddedResource.Extension)' == '.resx' and '%(EmbeddedResource.LogicalName)' == '' and ($([System.String]::Copy('%(EmbeddedResource.Filename)').EndsWith('Texts')) or $([System.String]::Copy('%(EmbeddedResource.Filename)').Contains('Texts.')))">
+        <LogicalName>$(RootNamespace).%(EmbeddedResource.Filename).resources</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ShturmapTexts" DependsOnTargets="ShturmapTextNames" BeforeTargets="CoreCompile;XamlPreCompile;MarkupCompilePass1">
+    <ItemGroup>
+      <_ShturmapTextSource Include="@(EmbeddedResource)" Condition="'%(Extension)' == '.resx' and !$([System.String]::Copy('%(Filename)').Contains('.')) and $([System.String]::Copy('%(Filename)').EndsWith('Texts'))" />
+    </ItemGroup>
+    <ShturmapGenerateTexts Condition="'@(_ShturmapTextSource)' != ''" Sources="@(_ShturmapTextSource)" RootNamespace="$(RootNamespace)" OutputFolder="$(IntermediateOutputPath)Texts">
+      <Output TaskParameter="Generated" ItemName="_ShturmapTextCode" />
+    </ShturmapGenerateTexts>
+    <ItemGroup>
+      <Compile Include="@(_ShturmapTextCode)" />
+      <FileWrites Include="@(_ShturmapTextCode)" />
+    </ItemGroup>
+  </Target>
+
+  <UsingTask TaskName="ShturmapGenerateTexts" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Sources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <RootNamespace ParameterType="System.String" Required="true" />
+      <OutputFolder ParameterType="System.String" Required="true" />
+      <Generated ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.Collections.Generic" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Using Namespace="System.Text" />
+      <Using Namespace="System.Xml.Linq" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var keywords = new HashSet<string> { "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator", "out", "override", "params", "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while" };
+        Func<string, string> xml = s => s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\r", "").Replace("\n", " ");
+        Func<string, bool> identifier = s => s.Length > 0 && (char.IsLetter(s[0]) || s[0] == '_') && s.All(c => char.IsLetterOrDigit(c) || c == '_');
+        // The placeholders' names of a text (TextFormat's syntax): "{name}", "{name, plural|select, key {body} ...}".
+        Func<string, List<string>> names = null;
+        names = pattern =>
+        {
+            var found = new List<string>();
+            var at = 0;
+            Action<bool> message = null;
+            Func<string> word = () => { var start = at; while (at < pattern.Length && (char.IsLetterOrDigit(pattern[at]) || pattern[at] == '_')) at++; return pattern.Substring(start, at - start); };
+            Action spaces = () => { while (at < pattern.Length && char.IsWhiteSpace(pattern[at])) at++; };
+            message = nested =>
+            {
+                while (at < pattern.Length)
+                {
+                    if (pattern[at] == '}') { if (nested) return; throw new FormatException("a '}' that closes nothing"); }
+                    if (pattern[at] != '{') { at++; continue; }
+                    at++;
+                    spaces();
+                    var name = word();
+                    if (name.Length == 0) throw new FormatException("a placeholder without a name");
+                    if (!found.Contains(name)) found.Add(name);
+                    spaces();
+                    if (at < pattern.Length && pattern[at] == '}') { at++; continue; }
+                    if (at >= pattern.Length || pattern[at] != ',') throw new FormatException("'" + name + "' isn't followed by '}' or ','");
+                    at++; spaces(); word(); spaces();
+                    if (at >= pattern.Length || pattern[at] != ',') throw new FormatException("'" + name + "' has no ',' after its kind");
+                    at++;
+                    while (true)
+                    {
+                        spaces();
+                        if (at < pattern.Length && pattern[at] == '}') { at++; break; }
+                        if (at < pattern.Length && pattern[at] == '=') at++;
+                        if (word().Length == 0) throw new FormatException("a branch of '" + name + "' without a key");
+                        spaces();
+                        if (at >= pattern.Length || pattern[at] != '{') throw new FormatException("a branch of '" + name + "' doesn't start with '{'");
+                        at++;
+                        message(true);
+                        if (at >= pattern.Length) throw new FormatException("a '{' that is never closed");
+                        at++;
+                    }
+                }
+                if (nested) throw new FormatException("a '{' that is never closed");
+            };
+            message(false);
+            return found;
+        };
+
+        Directory.CreateDirectory(OutputFolder);
+        var generated = new List<ITaskItem>();
+        foreach (var source in Sources)
+        {
+            var path = source.GetMetadata("FullPath");
+            var className = Path.GetFileNameWithoutExtension(path);
+            var ns = string.IsNullOrEmpty(source.GetMetadata("TextNamespace")) ? RootNamespace : source.GetMetadata("TextNamespace");
+            var logical = source.GetMetadata("LogicalName");
+            var baseName = logical.EndsWith(".resources") ? logical.Substring(0, logical.Length - ".resources".Length) : RootNamespace + "." + className;
+            var code = new StringBuilder();
+            code.AppendLine("// <auto-generated>Made at build time from " + Path.GetFileName(path) + " (Directory.Build.targets, ShturmapTexts): edit the .resx, not this.</auto-generated>");
+            code.AppendLine("#nullable enable");
+            code.AppendLine("namespace " + ns + ";");
+            code.AppendLine();
+            code.AppendLine("/// <summary>Shturmap's own texts from " + Path.GetFileName(path) + ", in the language in use (<see cref=\"global::Shturmap.Core.UiLanguage\"/>).</summary>");
+            code.AppendLine("[global::System.CodeDom.Compiler.GeneratedCode(\"ShturmapTexts\", \"1\")]");
+            code.AppendLine("public static partial class " + className);
+            code.AppendLine("{");
+            code.AppendLine("    /// <summary>The texts: English in " + Path.GetFileName(path) + ", each other language in " + className + ".&lt;code&gt;.resx.</summary>");
+            code.AppendLine("    public static global::System.Resources.ResourceManager Resources { get; } = new(\"" + baseName + "\", typeof(" + className + ").Assembly);");
+            var seen = new HashSet<string>();
+            foreach (var data in XDocument.Load(path).Root.Elements("data"))
+            {
+                if (data.Attribute("type") != null || data.Attribute("mimetype") != null)
+                    continue;
+                var key = (string)data.Attribute("name");
+                var value = (string)data.Element("value") ?? "";
+                if (!identifier(key) || keywords.Contains(key))
+                {
+                    Log.LogError(null, null, null, path, 0, 0, 0, 0, "Text '" + key + "' needs a name that is a C# identifier.");
+                    continue;
+                }
+                if (!seen.Add(key))
+                {
+                    Log.LogError(null, null, null, path, 0, 0, 0, 0, "Text '" + key + "' is there twice.");
+                    continue;
+                }
+                List<string> args;
+                try
+                {
+                    args = names(value);
+                }
+                catch (FormatException e)
+                {
+                    Log.LogError(null, null, null, path, 0, 0, 0, 0, "Text '" + key + "' doesn't parse: " + e.Message);
+                    continue;
+                }
+                code.AppendLine();
+                code.AppendLine("    /// <summary>\"" + xml(value) + "\"</summary>");
+                var lookup = "global::Shturmap.Core.UiLanguage.Text(Resources, \"" + key + "\")";
+                if (args.Count == 0)
+                {
+                    code.AppendLine("    public static string " + key + " => " + lookup + ";");
+                    continue;
+                }
+                var sorted = args.OrderBy(a => a, StringComparer.Ordinal).ToList();
+                var parameters = string.Join(", ", sorted.Select(a => "object? " + (keywords.Contains(a) ? "@" + a : a)));
+                var pairs = string.Join(", ", sorted.Select(a => "(\"" + a + "\", " + (keywords.Contains(a) ? "@" + a : a) + ")"));
+                code.AppendLine("    public static string " + key + "(" + parameters + ") => global::Shturmap.Core.Text.TextFormat.Format(" + lookup + ", " + pairs + ");");
+            }
+            code.AppendLine("}");
+            var file = Path.Combine(OutputFolder, className + ".g.cs");
+            var text = code.ToString();
+            if (!File.Exists(file) || File.ReadAllText(file) != text)
+                File.WriteAllText(file, text, new UTF8Encoding(false));
+            generated.Add(new Microsoft.Build.Utilities.TaskItem(file));
+        }
+        Generated = generated.ToArray();
+      ]]></Code>
+    </Task>
+  </UsingTask>
 </Project>

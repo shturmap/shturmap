@@ -161,7 +161,7 @@ public class OddSettingsTests
         const string control = """
             { "keyBindings": [ 7, { "keyName": "MakeScreenshot", "variants": [ 3, "x", { "keyCode": "Home" }, { "keyCode": [ 7, null, "Home" ] } ] } ] }
             """;
-        Assert.Equal(new[] { "Home" }, GameSettingsReader.ScreenshotKeys(control));
+        Assert.Equal(new[] { "Home" }, GameSettingsReader.ScreenshotKeys(control).Select(k => k.Name));
         Assert.Null(GameSettingsReader.Language("""{ "Language": 7 }"""));
     }
 

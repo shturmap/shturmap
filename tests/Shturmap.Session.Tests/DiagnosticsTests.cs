@@ -42,9 +42,15 @@ public class DiagnosticsTests
         {
             "Shturmap: 0.1.0+d349909 (single exe)", "Windows: Windows 11 (10.0.26200)", "Install: Steam", "Game folder: found",
             "Logs folder: found", "Mode: Pve", "Game language: ge", "tarkov.dev language: not loaded",
-            "Data: failed: Refused 404: tarkov.dev answered 404.", "Active quests: 2", "Study log: on",
+            "Data: failed: Refused 404: tarkov.dev answered 404.", "Active quests: 2",
         })
             Assert.Contains(expected, text);
+#if DEVTOOLS
+        Assert.Contains("Study log: on", text);
+#else
+        // A release has no study log, so diagnostics say nothing of one (owner, 2026-10-03).
+        Assert.DoesNotContain("Study log", text);
+#endif
     }
 
     [Fact]

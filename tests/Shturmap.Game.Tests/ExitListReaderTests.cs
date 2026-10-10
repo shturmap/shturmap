@@ -14,9 +14,11 @@ public sealed class ExitListReaderTests : IDisposable
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
-    private static ExitListReader Reader()
+    /// <param name="gameLanguage">The game's language as its settings name it: its text recognition where Windows has
+    /// it, else English's.</param>
+    private static ExitListReader Reader(string gameLanguage = "en")
     {
-        var reader = ExitListReader.Create("en");
+        var reader = ExitListReader.Create(gameLanguage);
         if (reader is null)
             Assert.Skip("This Windows has no text recognition language installed.");
         return reader;
@@ -34,7 +36,8 @@ public sealed class ExitListReaderTests : IDisposable
     ];
 
     /// <summary>A picture with a list in its top right corner, in the game's layout scaled to the picture's height.</summary>
-    private string Picture(string name, int width, int height, string header, params (string Label, string Name, string Right)[] rows)
+    /// <param name="header">The green bar's words; "" for the bar without words, null for no bar.</param>
+    private string Picture(string name, int width, int height, string? header, params (string Label, string Name, string Right)[] rows)
     {
         var k = height / 1440f;
         using var bitmap = new SKBitmap(width, height);
@@ -44,7 +47,7 @@ public sealed class ExitListReaderTests : IDisposable
             float left = width - 768 * k, top = 5 * k;
             using var panel = new SKPaint { Color = new SKColor(14, 16, 14) };
             canvas.DrawRect(left, top, 768 * k, (74 + 70 * rows.Length) * k, panel);
-            if (header.Length > 0)
+            if (header is not null)
             {
                 using var green = new SKPaint { Color = new SKColor(124, 167, 14) };
                 canvas.DrawRect(left, top, 573 * k, 74 * k, green);
@@ -54,7 +57,7 @@ public sealed class ExitListReaderTests : IDisposable
             using var small = new SKFont(face, 24 * k);
             using var dark = new SKPaint { Color = new SKColor(10, 12, 10), IsAntialias = true };
             using var light = new SKPaint { Color = new SKColor(205, 210, 205), IsAntialias = true };
-            canvas.DrawText(header, left + 70 * k, top + 48 * k, SKTextAlign.Left, big, dark);
+            canvas.DrawText(header ?? "", left + 70 * k, top + 48 * k, SKTextAlign.Left, big, dark);
             canvas.DrawText("0:39:51", left + 610 * k, top + 48 * k, SKTextAlign.Left, big, light);
             for (var i = 0; i < rows.Length; i++)
             {
@@ -94,7 +97,7 @@ public sealed class ExitListReaderTests : IDisposable
     [Fact]
     public async Task A_picture_without_the_green_bar_has_no_list()
     {
-        var path = Picture("none.png", 2560, 1440, "", ("EXFIL01", "Courtyard", ""), ("EXFIL02", "Crash Site", ""));
+        var path = Picture("none.png", 2560, 1440, null, ("EXFIL01", "Courtyard", ""), ("EXFIL02", "Crash Site", ""));
         Assert.Null(await Reader().ReadAsync(path, tries: 1, ct: TestContext.Current.CancellationToken));
     }
 
@@ -142,6 +145,54 @@ public sealed class ExitListReaderTests : IDisposable
     [InlineData(null, null)]
     public void The_games_language_codes_become_windows_ones(string? game, string? windows) =>
         Assert.Equal(windows, ExitListReader.WindowsLanguage(game));
+
+    // ---- a German game (docs/DESIGN.md §8, "Language") ----
+
+    // Streets' exits by their names in tarkov.dev's German texts and in English, the names the session matches a German
+    // game's rows by (GameSession.ExitNames). German writes "Klimov-Straße" without the English name's "(Flare)".
+    private static readonly ExitName[] StreetsInGerman =
+    [
+        new("courtyard", ["Hinterhof", "Courtyard"]),
+        new("taxi", ["Taxi in der Primorsky-Straße", "Primorsky Ave Taxi V-Ex"]),
+        new("crash", ["Absturzstelle", "Crash Site"]),
+        new("house", ["Beschädigtes Haus", "Damaged House"]),
+        new("klimov", ["Klimov-Straße", "Klimov Street (Flare)"]),
+        new("sewer", ["Abwasserkanal", "Sewer River"]),
+    ];
+
+    // A German game's list, read with Windows' German text recognition ("ge", where Windows has it) and with English's
+    // (a Windows without German's): English's reads the German names too, an umlaut or ß read wrong being one letter off
+    // (of tarkov.dev's 132 German extract names on 2026-10-10, 30 have one, the shortest 11 letters long). What the
+    // green bar says in a German game, and whether its rows are labelled as in English, isn't known: no German
+    // screenshot of the list has been seen yet. So the bar is drawn without words and the rows with the English game's
+    // labels (a row is matched with and without up to two words of label), and the list is taken by its names alone:
+    // two or more. A list of one exit isn't taken (ExitList.IsList): without the header's words it can't be told from
+    // the box the game shows inside an exit.
+    [Theory]
+    [InlineData("ge")]
+    [InlineData("en")]
+    public async Task A_german_games_list_is_read_by_its_names(string recognition)
+    {
+        var reader = Reader(recognition);
+        if (recognition == "ge" && Windows.Media.Ocr.OcrEngine.AvailableRecognizerLanguages.Any(l => l.LanguageTag.StartsWith("de", StringComparison.OrdinalIgnoreCase)))
+            Assert.StartsWith("de", reader.LanguageTag, StringComparison.OrdinalIgnoreCase);
+        var path = Picture("list-de.png", 2560, 1440, "",
+            ("EXFIL01", "Hinterhof", "??:??:??"), ("EXFIL02", "Taxi in der Primorsky-Straße", ""), ("EXFIL03", "Beschädigtes Haus", ""),
+            ("EXFIL04", "Klimov-Straße", "??:??:??"));
+        var reading = await reader.ReadAsync(path, tries: 1, ct: TestContext.Current.CancellationToken);
+        Assert.NotNull(reading);
+        var found = ExitList.Match(reading, StreetsInGerman);
+        Assert.Equal(["courtyard", "house", "klimov", "taxi"], found.Keys.Order());
+        Assert.Equal(["courtyard", "klimov"], found.Where(f => f.Value).Select(f => f.Key).Order());
+        Assert.True(ExitList.IsList(reading, found.Count));
+
+        var one = await reader.ReadAsync(Picture("one-de.png", 2560, 1440, "", ("EXFIL01", "Absturzstelle", "")), tries: 1,
+            ct: TestContext.Current.CancellationToken);
+        Assert.NotNull(one);
+        var named = ExitList.Match(one, StreetsInGerman);
+        Assert.Equal(["crash"], named.Keys);
+        Assert.False(ExitList.IsList(one, named.Count));
+    }
 
     // ---- real screenshots, where a PC has them ----
 

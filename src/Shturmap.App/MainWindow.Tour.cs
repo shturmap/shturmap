@@ -6,7 +6,10 @@ using Microsoft.UI.Xaml.Shapes;
 using Shturmap.App.Controls;
 using Shturmap.App.Rules;
 using Shturmap.Core;
+using Shturmap.Core.Navigation;
+using Shturmap.Core.Text;
 using Shturmap.Data.TarkovDev;
+using Shturmap.Game.Settings;
 using Shturmap.Map;
 using Shturmap.Session;
 using Path = Microsoft.UI.Xaml.Shapes.Path;
@@ -29,7 +32,8 @@ public sealed partial class MainWindow
     private const string TourPreviewPrefix = "tour:";
     private const string FirstRaidSetting = "firstRaid";
     private const string FirstFixSetting = "firstFix";
-    private IReadOnlyList<Tour.Chapter>? _tourChapters;
+    // The tour in the language it was last read in (TourChapters).
+    private (string Language, IReadOnlyList<Tour.Chapter> Chapters)? _tourChapters;
     private int _tourAt = -1;
     // A raid closed the tour at this chapter: it comes back there once the raid is over.
     private int? _tourResume;
@@ -47,6 +51,8 @@ public sealed partial class MainWindow
     private Path? _tourPointer;
     private Point _tourPointerAt;
     private TourExampleSet? _tourExample;
+    // The game data the chapter on screen was staged from.
+    private GameData? _tourStagedWith;
     // The view of the player's own map when the tour opened: every map the tour stages gives it back as it was. Kept
     // apart from the previews' own, which a stage beginning while the last one's map is still coming back would take
     // from the staged view.
@@ -57,23 +63,48 @@ public sealed partial class MainWindow
 
     private bool TourOpen => _tourAt >= 0;
 
-    private IReadOnlyList<Tour.Chapter> TourChapters => _tourChapters ??= LoadTour();
-
-    private static IReadOnlyList<Tour.Chapter> LoadTour()
+    // The tour in the language in use, read again when that has changed (Rules.BuiltDocs): a switch shows at the next
+    // chapter, and at once while the tour is up (OnTourLanguageChanged).
+    private IReadOnlyList<Tour.Chapter> TourChapters
     {
-        using var stream = typeof(MainWindow).Assembly.GetManifestResourceStream("tour.md");
-        if (stream is null)
-            return [];
-        using var reader = new StreamReader(stream);
-        return Tour.Parse(reader.ReadToEnd()).Where(c => Tour.Stages.Contains(c.Stage)).ToList();
+        get
+        {
+            var language = UiLanguage.Code;
+            if (_tourChapters is { } known && known.Language == language)
+                return known.Chapters;
+            var chapters = LoadTour(language);
+            _tourChapters = (language, chapters);
+            return chapters;
+        }
+    }
+
+    // Its translation where the language has one with the English tour's chapters, else the English tour; the
+    // pseudo-language's accented (docs/LANGUAGES.md, "Layout check").
+    private static IReadOnlyList<Tour.Chapter> LoadTour(string language)
+    {
+        static IReadOnlyList<Tour.Chapter>? Read(string? name) =>
+            BuiltDoc(name) is { } text ? Tour.Parse(text).Where(c => Tour.Stages.Contains(c.Stage)).ToList() : null;
+        var chapters = Tour.InLanguage(Read(BuiltDocs.Tour) ?? [], Read(BuiltDocs.TranslationOf(BuiltDocs.Tour, language)));
+        return language == UiLanguage.Pseudo ? Tour.Map(chapters, PseudoText.Of) : chapters;
     }
 
     // Once the app has its data: at a first start the tour, in help's place, outside a raid; one a raid closed comes back
     // after it, at its chapter; "--tour <n>" opens it for a snapshot. Never in the website demo.
     private void ShowTourWhenDue(SessionSnapshot s)
     {
-        if (s.Data is null || DemoMode || TourOpen)
+        if (s.Data is null || DemoMode)
             return;
+        if (TourOpen)
+        {
+            // The game data came anew (in another language after a switch): the chapter's example is staged again from
+            // it, so its names are the new data's (review of 2026-10-10: the example raid card kept the English names).
+            if (!ReferenceEquals(s.Data, _tourStagedWith))
+            {
+                _tourExample = null;
+                ShowChapter(_tourAt);
+            }
+            return;
+        }
         if (TourOnStart is { } n)
         {
             TourOnStart = null;
@@ -110,7 +141,7 @@ public sealed partial class MainWindow
         if (ViewModel.RaidHoldsBack)
         {
             if (how is "showme" or "whatsnew" or "help")
-                ShowNotice("The tour waits until the raid is over.");
+                ShowNotice(AppTexts.NoticeTourWaits);
             return;
         }
         at = Math.Clamp(at, 0, TourChapters.Count - 1);
@@ -168,7 +199,7 @@ public sealed partial class MainWindow
             _ = FadeTourOut();
         else
             TourLayer.Visibility = Visibility.Collapsed;
-        ShowNotice("The tour stays in help: F1, then TAKE THE TOUR.", TimeSpan.FromSeconds(6));
+        ShowNotice(AppTexts.NoticeTourStaysInHelp, TimeSpan.FromSeconds(6));
     }
 
     private async Task FadeTourOut()
@@ -232,11 +263,12 @@ public sealed partial class MainWindow
         var run = ++_tourRun;
         EndTourStage();
         _tourAt = at;
+        _tourStagedWith = _snapshot?.Data;
         var chapter = TourChapters[at];
         var count = TourChapters.Count;
         TourEyebrow.Text = Tour.Eyebrow(at, count);
         TourText.Text = string.Join("\n", chapter.Lines);
-        TourNextText.Text = at + 1 < count ? "NEXT →" : "DONE";
+        TourNextText.Text = at + 1 < count ? ViewTexts.TourNext : AppTexts.TourDone;
         TourBack.Visibility = at > 0 ? Visibility.Visible : Visibility.Collapsed;
         TourTicks.ColumnDefinitions.Clear();
         TourTicks.Children.Clear();
@@ -248,6 +280,13 @@ public sealed partial class MainWindow
             TourTicks.Children.Add(tick);
         }
         _tourTitleTimer?.Stop();
+        // The band laid out with the chapter's title as it ends and its lines before the stage frames the map above it
+        // (TourFoot): read before, its height was the last chapter's, or the empty band's when the tour opened (owner,
+        // 2026-10-11: at 900×560 German "PICKEN UND DRAUFZEIGEN" takes two lines, and the band covered PICK AND
+        // POINT's pointer). The title then decodes in the room it ends in.
+        TourTitle.Text = chapter.Title;
+        PlaceTourTitle();
+        TourLayer.UpdateLayout();
         if (_tourMotion)
         {
             _tourTitleTimer = Decode(TourTitle, chapter.Title, TimeSpan.FromMilliseconds(700));
@@ -259,10 +298,7 @@ public sealed partial class MainWindow
             });
         }
         else
-        {
-            TourTitle.Text = chapter.Title;
             TourRuleScale.ScaleX = 1;
-        }
         Study.Ui("tour.chapter", ("n", at + 1), ("stage", chapter.Stage));
         _ = StageAsync(chapter, run);
     }
@@ -350,14 +386,17 @@ public sealed partial class MainWindow
         var columns = new Grid { ColumnSpacing = 64 };
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        // Side by side in the map's width; in a narrow one a long line wraps in its column (review of 2026-10-10:
+        // German "Sendet Tastendrücke oder Klicks" ran 95 DIP past the plate at the smallest window).
+        var widest = Math.Max(160, (Map.ActualWidth - TourPlate.Padding.Left - TourPlate.Padding.Right - 2 - columns.ColumnSpacing) / 2);
         var lines = new List<UIElement>();
         foreach (var (key, column) in new[] { ("reads", 0), ("never", 1) })
         {
-            var stack = new StackPanel { Spacing = 10 };
-            stack.Children.Add(TourEyebrowText(key.ToUpperInvariant(), key == "reads" ? "AmberBrush" : "MutedBrush"));
+            var stack = new StackPanel { Spacing = 10, MaxWidth = widest };
+            stack.Children.Add(TourEyebrowText(key == "reads" ? AppTexts.TourSafeReads : AppTexts.TourSafeNever, key == "reads" ? "AmberBrush" : "MutedBrush"));
             foreach (var word in chapter.Words.Where(w => w.Key == key))
             {
-                var line = new TextBlock { Text = word.Text, Style = TextStyle("TitleText"), TextWrapping = TextWrapping.NoWrap };
+                var line = new TextBlock { Text = word.Text, Style = TextStyle("TitleText") };
                 stack.Children.Add(line);
                 lines.Add(line);
             }
@@ -368,19 +407,20 @@ public sealed partial class MainWindow
         await Reveal(lines, 160, run);
     }
 
-    // Plan and Raid: the status bar's raid word and the rail framed; the two states, one after the other.
+    // Plan and Raid: the status bar's raid word and the rail framed; the two states, one after the other. Their words are
+    // the status bar's, the menus' first and then the raid's, in amber as the bar shows it (docs/tour.md).
     private async Task StageFollows(Tour.Chapter chapter, int run)
     {
         TourHoles(() => Anchors(chapter));
         var rows = new StackPanel { Spacing = 18 };
         var lines = new List<UIElement>();
-        foreach (var word in chapter.Words)
+        foreach (var (word, i) in chapter.Words.Select((w, i) => (w, i)))
         {
             var row = new StackPanel { Spacing = 5 };
             row.Children.Add(new TextBlock
             {
                 Text = word.Key, Style = TextStyle("StatusText"), FontSize = 14,
-                Foreground = Resource(word.Key.StartsWith("IN RAID", StringComparison.Ordinal) ? "AmberBrush" : "InkBrush"),
+                Foreground = Resource(i > 0 ? "AmberBrush" : "InkBrush"),
             });
             row.Children.Add(new TextBlock { Text = word.Text, Style = TextStyle("TitleText") });
             rows.Children.Add(row);
@@ -396,7 +436,17 @@ public sealed partial class MainWindow
     {
         TourHoles(() => Anchors(chapter));
         var current = _snapshot?.Map?.NormalizedName;
-        var rows = PlanRows.Visibility == Visibility.Visible ? MapRows(PlanRows).Where(r => r.ActualHeight > 0).ToList() : [];
+        List<Button> Rows() => PlanRows.Visibility == Visibility.Visible ? MapRows(PlanRows).Where(r => r.ActualHeight > 0).ToList() : [];
+        var rows = Rows();
+        // Rows made anew (the language switched, the data came in it) are laid out a moment later: wait for them, up to
+        // two seconds (review of 2026-10-10: after a switch the chapter previewed no map).
+        for (var i = 0; rows.Count == 0 && PlanRows.Visibility == Visibility.Visible && i < 20; i++)
+        {
+            await Task.Delay(100);
+            if (run != _tourRun || !TourOpen)
+                return;
+            rows = Rows();
+        }
         var row = rows.FirstOrDefault(r => r.Tag is string m && m != current) ?? rows.FirstOrDefault();
         if (row is null || !await TourWait(350, run))
             return;
@@ -436,9 +486,10 @@ public sealed partial class MainWindow
             TourRing(ToLayer(picked.Position), Linked.PickBrush(0));
         if (!await TourWait(1900, run) || MarkerOf(content, second) is not { } pointed || second == first)
             return;
-        // Pointing: another quest lights up everywhere it is, and pulses.
+        // Pointing: another quest lights up everywhere it is, and pulses. The pointer comes up from just above the band,
+        // whatever its height (until 2026-10-11 from 240 DIP above the map's foot: under the German band at 900×560).
         var map = MapRect();
-        TourPointer(new Point(map.X + map.Width * 0.62, map.Bottom - 240));
+        TourPointer(new Point(map.X + map.Width * 0.62, map.Bottom - TourFoot - 50));
         await TourPointerTo(ToLayer(pointed.Position), 900, run);
         if (!await TourWait(100, run))
             return;
@@ -456,12 +507,12 @@ public sealed partial class MainWindow
         MapContent? content = null;
         RaidReplay? walk = null;
         // Framed on where "you" will be, with room around: the chapter is about that spot.
-        await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(c); },
-            c => ReplayExample(c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
+        await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(data, c); },
+            c => ReplayExample(data, c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
         if (content is null || walk is null || Map.Scene is not { } scene)
             return;
         var you = walk.Fixes[^1].Position;
-        var key = TourKeyCap(Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc"), out var cap, out var name);
+        var key = TourKeyCap(Caps.Of((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? GameKey.PrintScreen).Name), out var cap, out var name);
         ShowPlate(key);
         if (!await TourWait(950, run))
             return;
@@ -479,7 +530,7 @@ public sealed partial class MainWindow
         TourHoles(() => [Square(ToLayer(you), 150)]);
         if (!await TourWait(2400, run))
             return;
-        await StageExtractListRead(chapter, scene, content, you, run);
+        await StageExtractListRead(chapter, data, scene, content, you, run);
     }
 
     // The extract list as its own cause and effect (owner, 2026-10-09, after "The your screenshot key panel is weird
@@ -487,18 +538,19 @@ public sealed partial class MainWindow
     // the game shows it (the top right) under what to press; a press reads it; then the view takes in the extracts on
     // it, which light up one after another, nearest first, each with a ring in its kind's colour, and the rest go
     // hollow. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
-    private async Task StageExtractListRead(Tour.Chapter chapter, MapScene scene, MapContent content, WorldPoint you, int run)
+    private async Task StageExtractListRead(Tour.Chapter chapter, GameData data, MapScene scene, MapContent content, WorldPoint you, int run)
     {
-        var (listed, unsure, notListed) = ExampleExits(content);
+        var (listed, unsure, notListed) = ExampleExits(data, content);
         if (listed.Count == 0)
             return;
         listed = listed.OrderBy(m => m.Position.HorizontalDistanceTo(you)).ToList();
-        var keyName = Caps.Of(_snapshot?.ScreenshotKeys.FirstOrDefault() ?? "PrtSc");
-        var how = (chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "").Replace("{key}", keyName, StringComparison.Ordinal);
+        var keyName = Caps.Of((_snapshot?.ScreenshotKeys.FirstOrDefault() ?? GameKey.PrintScreen).Name);
+        // The tour's words are texts like the app's own (TextFormat): {key} the screenshot key, {n} the extracts on the
+        // example list, {all} the map's, so a translation may put them where its grammar wants and give {all} plural forms.
+        var how = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "", ("key", keyName));
         var all = listed.Count + unsure.Count + notListed.Count;
-        var readText = (chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "")
-            .Replace("{n}", (listed.Count + unsure.Count).ToString(UiLanguage.Culture), StringComparison.Ordinal)
-            .Replace("{all}", all.ToString(UiLanguage.Culture), StringComparison.Ordinal);
+        var readText = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "",
+            ("n", listed.Count + unsure.Count), ("all", all));
         var names = listed.Select(m => (m.Label, false)).Concat(unsure.Select(m => (m.Label, true))).ToList();
         var (plate, rows, read) = ExtractListPlate(how, names, readText);
         TourCanvas.Children.Add(plate);
@@ -542,7 +594,7 @@ public sealed partial class MainWindow
         TourCanvas.Children.Remove(plate);
         // The view takes in the listed extracts and you, above the band; the frame follows to what it shows of them.
         var points = listed.Concat(unsure).Select(m => m.Position).Append(you).ToList();
-        var view = Map.FramingAbove(scene, points, TourFraming, TourBand.ActualHeight + 46, 300);
+        var view = Map.FramingAbove(scene, points, TourPadding, TourFoot, 300);
         if (_tourMotion)
         {
             Map.AnimateView(view, TimeSpan.FromMilliseconds(1200));
@@ -646,14 +698,19 @@ public sealed partial class MainWindow
                 return;
             if (Anchor(word.Key, 0) is not { } button)
                 continue;
-            // Each label a step lower than the one before, right-aligned under its button, on a hairline up to it.
-            var top = button.Bottom + 14 + below * 24;
+            // Each label a step lower than the one before, right-aligned under its button, on a hairline up to it that
+            // stops short of its letters (review of 2026-10-10: the lines ran into the last letters, "EINSTELLUNGEN",
+            // "IDEE", "F1"): the label's box is its capitals (Tight), the line ends a few pixels above them.
+            var top = button.Bottom + 16 + below * 24;
             var x = button.X + button.Width / 2;
-            var label = new TextBlock { Text = word.Text, Style = TextStyle("StatusText"), FontSize = 11.5, Foreground = Resource("AmberBrush") };
+            var label = new TextBlock
+            {
+                Text = word.Text, Style = TextStyle("StatusText"), FontSize = 11.5, Foreground = Resource("AmberBrush"), TextLineBounds = TextLineBounds.Tight,
+            };
             label.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(label, x - label.DesiredSize.Width + 6);
             Canvas.SetTop(label, top);
-            var line = new Rectangle { Width = 1, Height = top - button.Bottom + 2, Fill = Resource("AmberBrush") };
+            var line = new Rectangle { Width = 1, Height = top - button.Bottom - 4, Fill = Resource("AmberBrush") };
             Canvas.SetLeft(line, x);
             Canvas.SetTop(line, button.Bottom);
             TourCanvas.Children.Add(line);
@@ -667,21 +724,20 @@ public sealed partial class MainWindow
     private sealed record TourExampleSet(string Map, string MapName, IReadOnlyList<string> QuestIds, IReadOnlyList<string> QuestNames);
 
     // Customs, which every player knows (and What's New's previews use): up to three of its early quests with places on
-    // the map. Nobody's own quests: the same example for every player.
+    // the map (Tour.ExampleCandidates). Nobody's own quests: the same example for every player, in every language.
     private TourExampleSet? TourExample(GameData data)
     {
         if (_tourExample is { } known)
             return known;
         if (data.MapByNormalizedName("customs") is not { } map)
             return null;
-        string[] preferred = ["delivery-from-the-past", "checking", "bp-depot", "the-extortionist", "golden-swag", "chemical-part-1"];
-        var candidates = preferred.Select(n => data.Tasks.Values.FirstOrDefault(t => t.NormalizedName == n)).OfType<ApiTask>()
-            .Concat(data.Tasks.Values.Where(t => t.Map == map.Id || (t.Objectives ?? []).Any(o => o.Maps?.Contains(map.Id) == true))
-                .OrderBy(t => t.MinPlayerLevel ?? 99).ThenBy(t => t.Name, StringComparer.Ordinal).Take(40))
-            .DistinctBy(t => t.Id).ToList();
-        var content = MapContentBuilder.Build(data, map.Id, candidates.Select(t => t.Id), new HashSet<string>());
+        var candidates = Tour.ExampleCandidates(data.Tasks.Values.Where(t => t.NormalizedName is not null)
+            .Select(t => new Tour.ExampleQuest(t.Id, t.NormalizedName!, t.MinPlayerLevel,
+                t.Map == map.Id || (t.Objectives ?? []).Any(o => o.Maps?.Contains(map.Id) == true)))
+            .ToList());
+        var content = MapContentBuilder.Build(data, map.Id, candidates, new HashSet<string>());
         var placed = content.Markers.Where(m => m.Group is not null && m.Objective is not null).Select(m => m.Group!).ToHashSet(StringComparer.Ordinal);
-        var chosen = candidates.Where(t => placed.Contains(t.Id) && t.NormalizedName is not null).Take(3).ToList();
+        var chosen = Tour.Example(candidates, placed).Select(id => data.Tasks[id]).ToList();
         if (chosen.Count == 0)
             return null;
         return _tourExample = new TourExampleSet("customs", map.Name, chosen.Select(t => t.Id).ToList(), chosen.Select(t => t.NormalizedName!).ToList());
@@ -692,6 +748,15 @@ public sealed partial class MainWindow
     // (Camera.LabelRoom, 150): 90 still cut the picked quest's name there (owner, 2026-10-09).
     private const double TourFraming = 90;
 
+    // DIPs at the map's foot that a chapter frames its map above: the band, as laid out for the chapter (ShowChapter),
+    // and the 46 under it.
+    private double TourFoot => TourBand.ActualHeight + 46;
+
+    // The room around what a chapter frames: TourFraming, less where the band leaves too little above it, so that what
+    // is framed keeps at least TourFraming itself (2026-10-11: at 900×560 PICK AND POINT's German band, 254 DIP, leaves
+    // 181 above it; 90 on each side would leave what is framed 1 DIP, and the map would shrink to a speck).
+    private double TourPadding => Math.Clamp((Map.ActualHeight - TourFoot - TourFraming) / 2, 0, TourFraming);
+
     // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band.
     private async Task TourScene(GameData data, TourExampleSet example, IReadOnlyCollection<string> quests, int run,
         Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres)
@@ -701,20 +766,22 @@ public sealed partial class MainWindow
         EndWhatsNewPreview();
         _restoreView = _tourRestore;
         _previewing = wanted;
-        ViewModel.PreviewText = $"PREVIEW · THE TOUR · {Caps.Of(example.MapName)}";
-        ViewModel.PreviewHint = "AN EXAMPLE, NOT YOUR RAID";
-        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourBand.ActualHeight + 46, TourFraming);
+        ViewModel.PreviewText = AppTexts.PreviewTour(map: Caps.Of(example.MapName));
+        ViewModel.PreviewHint = AppTexts.PreviewExample;
+        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourFoot, TourPadding);
         // One layout pass, so the view's points are where they are drawn.
         await Task.Delay(_tourMotion ? 60 : 30);
     }
 
-    // The raid card's head, with example values: the map and side, the clock, NEXT and EXIT.
+    // The raid card's head, with example values: the map and side, the clock, NEXT and EXIT. Spaced as the rail's card
+    // is (its clock right under the name, the glance's rows between hairlines), not looser: at the smallest window the
+    // room above the band is some 240 DIP (review of 2026-10-10: the card, 12 DIP between all its parts, was taller).
     private FrameworkElement ExampleRaidCard(GameData data, MapPlanView? plan, MapContent content, TourExampleSet example)
     {
-        var card = new StackPanel { Width = 352, Spacing = 12 };
+        var card = new StackPanel { Width = 352 };
         var head = new Grid();
         head.Children.Add(new TextBlock { Text = Caps.Of(example.MapName), Style = TextStyle("TitleText"), CharacterSpacing = 80 });
-        head.Children.Add(new TextBlock { Text = "PMC", Style = TextStyle("StatusText"), Foreground = Resource("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
+        head.Children.Add(new TextBlock { Text = AppTexts.RaidSidePmc, Style = TextStyle("StatusText"), Foreground = Resource("MutedBrush"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center });
         card.Children.Add(head);
         var minutes = plan is { RaidMinutes: > 0 } p ? p.RaidMinutes : 40;
         // Thirteen minutes left, as the website's picture and What's New's clock say it, of the map's own raid length
@@ -723,37 +790,46 @@ public sealed partial class MainWindow
         // As the raid card lists them: a hand-over of what another objective gets is no line of its own (Handovers).
         var next = content.Objectives.FirstOrDefault(o => o.Places.Count > 0 && example.QuestIds.Contains(o.Quest.Id) && !Handovers.Folds(o.Quest, o.Objective.Id));
         var exit = content.Markers.FirstOrDefault(m => m.Kind == MarkerKind.ExtractPmc);
-        card.Children.Add(new Rectangle { Height = 1, Fill = Resource("LineBrush") });
+        var glance = new StackPanel { Margin = new Thickness(0, 8, 0, 0), BorderBrush = Resource("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) };
         if (next is not null)
         {
             // In a few words, as the raid card says it ("Mark Stryker"; Planning.ObjectiveSynopses, the session's own call
-            // for the card's lines); tarkov.dev's sentence only where the data isn't English (review of 2026-10-09).
+            // for the card's lines); tarkov.dev's sentence only where the data isn't English (review of 2026-10-09), whole
+            // and wrapping, as the raid card shows it (owner, 2026-10-11: cut at 34 characters, German showed "Besorge die
+            // geschützte Dokumenten…").
             var shorts = Planning.ObjectiveSynopses(data, content.Objectives.Where(o => o.Quest.Id == next.Quest.Id && !Handovers.Folds(o.Quest, o.Objective.Id)),
                 data.MapIdsSharing(example.Map));
-            var text = shorts.GetValueOrDefault(next.Objective.Id) ?? Shorten(next.Objective.Description ?? next.Quest.Name, 34);
-            card.Children.Add(GlanceRow("NEXT", text, next.Quest.Name, "86 m", "AHEAD-LEFT", "AmberBrush"));
+#if DEVTOOLS
+            // The layout check: a synopsis is made of the (English) data, not one of Shturmap's texts.
+            _layoutTourPhrases.UnionWith(shorts.Values);
+#endif
+            var text = shorts.GetValueOrDefault(next.Objective.Id) ?? next.Objective.Description ?? next.Quest.Name;
+            glance.Children.Add(GlanceRow(ViewTexts.RaidNextLabel, text, next.Quest.Name, Distance(86), Caps.Of(Bearing.Describe(RelativeDirection.AheadLeft)), "AmberBrush"));
         }
         if (exit is not null)
-            card.Children.Add(GlanceRow("EXIT", exit.Label, "ON YOUR LIST THIS RAID", "214 m", "BEHIND", "GreenBrush"));
-        card.Children.Add(new TextBlock { Text = "THE RAID CARD, WITH EXAMPLE VALUES", Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 6, 0, 0) });
+            glance.Children.Add(GlanceRow(ViewTexts.RaidExitLabel, exit.Label, Caps.Of(ExitsNote.Glance(listed: true, unsure: false, readable: true)), Distance(214),
+                Caps.Of(Bearing.Describe(RelativeDirection.Behind)), "GreenBrush"));
+        card.Children.Add(glance);
+        card.Children.Add(new TextBlock { Text = AppTexts.TourCardExample, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 10, 0, 0) });
         return card;
     }
 
-    private static string Shorten(string text, int length) => text.Length <= length ? text : text[..(length - 1)].TrimEnd() + "…";
-
+    // A glance row as the raid card's, on a hairline: the label in the card's own label column (Columns.Glance: the
+    // longest label of the language, so German "EXTRACT" isn't cut to "EXTRA"), the name (wrapping, as there) and its
+    // note, then the distance over its direction.
     private static Grid GlanceRow(string label, string name, string note, string distance, string direction, string brush)
     {
-        var row = new Grid { ColumnSpacing = 12 };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        var row = new Grid { Padding = new Thickness(0, 7, 0, 7), BorderBrush = Resource("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0) };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = Columns.Glance });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.Children.Add(new TextBlock { Text = label, Style = TextStyle("EyebrowText"), Margin = new Thickness(0, 4, 0, 0) });
         var what = new StackPanel { Spacing = 2 };
-        what.Children.Add(new TextBlock { Text = name, Style = TextStyle("TitleText"), FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap });
+        what.Children.Add(new TextBlock { Text = name, Style = TextStyle("TitleText"), FontSize = 15 });
         what.Children.Add(new TextBlock { Text = note, Style = TextStyle("StatusText"), FontSize = 10.5, Foreground = Resource(brush == "GreenBrush" ? "GreenBrush" : "MutedBrush") });
         Grid.SetColumn(what, 1);
         row.Children.Add(what);
-        var where = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Right };
+        var where = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12, 0, 0, 0) };
         where.Children.Add(new TextBlock { Text = distance, Style = TextStyle("FigureText"), FontSize = 22, Foreground = Resource(brush) });
         where.Children.Add(new TextBlock { Text = direction, Style = TextStyle("StatusText"), FontSize = 10.5, HorizontalAlignment = HorizontalAlignment.Right });
         Grid.SetColumn(where, 2);
@@ -776,8 +852,8 @@ public sealed partial class MainWindow
         name = new TextBlock { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 17, Foreground = Resource("AmberBrush"), HorizontalAlignment = HorizontalAlignment.Center, Text = " " };
         var stack = new StackPanel { Spacing = 12, HorizontalAlignment = HorizontalAlignment.Center };
         stack.Children.Add(edge);
-        stack.Children.Add(new TextBlock { Text = "SCREENSHOT", FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontStretch = Windows.UI.Text.FontStretch.SemiCondensed, CharacterSpacing = 400, HorizontalAlignment = HorizontalAlignment.Center });
-        stack.Children.Add(new TextBlock { Text = "POSITION FROM THE FILE NAME", Style = TextStyle("EyebrowText"), Margin = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Center });
+        stack.Children.Add(new TextBlock { Text = AppTexts.TourKeyScreenshot, FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontStretch = Windows.UI.Text.FontStretch.SemiCondensed, CharacterSpacing = 400, HorizontalAlignment = HorizontalAlignment.Center });
+        stack.Children.Add(new TextBlock { Text = AppTexts.TourKeyPosition, Style = TextStyle("EyebrowText"), Margin = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Center });
         stack.Children.Add(name);
         return stack;
     }
@@ -816,6 +892,7 @@ public sealed partial class MainWindow
         TourStage.Margin = new Thickness(map.X, map.Y, 0, 0);
         TourStage.Width = map.Width;
         TourStage.Height = Math.Max(160, map.Height - band - 46);
+        PlaceTourTitle();
         if (TourOpen && _tourHolesNow is { } now)
             DrawTourShade(_tourHoles = now(), 1);
         else
@@ -823,6 +900,26 @@ public sealed partial class MainWindow
     }
 
     private void OnTourLayerSizeChanged(object sender, SizeChangedEventArgs e) => PlaceTour();
+
+    // The chapter's title beside the buttons, or, where it would wrap there, under them across the band, where it wraps
+    // only past that (review of 2026-10-10: at the smallest window German "WAS SHTURMAP LIEST" took three lines beside
+    // them). Measured with the title as it ends, not as it decodes.
+    private void PlaceTourTitle()
+    {
+        if (!TourOpen || double.IsNaN(TourBand.Width))
+            return;
+        var probe = new TextBlock
+        {
+            Text = TourChapters[_tourAt].Title, FontFamily = TourTitle.FontFamily, FontSize = TourTitle.FontSize, FontWeight = TourTitle.FontWeight,
+            FontStretch = TourTitle.FontStretch, CharacterSpacing = TourTitle.CharacterSpacing,
+        };
+        probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        TourButtons.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var beside = TourBand.Width - TourBand.Padding.Left - TourBand.Padding.Right - ((Grid)TourTitle.Parent).ColumnSpacing - TourButtons.DesiredSize.Width;
+        var under = probe.DesiredSize.Width > beside;
+        Grid.SetRow(TourTitle, under ? 2 : 1);
+        Grid.SetColumnSpan(TourTitle, under ? 2 : 1);
+    }
 
     // A part of the window by its x:Name, in the tour's coordinates, with room around it; null when it isn't shown.
     private Rect? Anchor(string name, double pad = 6)
@@ -960,9 +1057,11 @@ public sealed partial class MainWindow
         Corner(new(x0 + l, y1), new(x0, y1), new(x0, y1 - l));
     }
 
+    // The stage's plate, in the middle of the map above the band. Never cut: one taller or wider than the room there
+    // (the example raid card at the smallest window, 900×560, in German; review of 2026-10-10) is drawn smaller to fit.
     private void ShowPlate(UIElement content)
     {
-        TourPlate.Child = content;
+        TourPlate.Child = new Viewbox { Child = content, StretchDirection = StretchDirection.DownOnly };
         TourPlate.Visibility = Visibility.Visible;
         if (!_tourMotion)
             return;
@@ -1079,8 +1178,8 @@ public sealed partial class MainWindow
         CueFirst.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show)
             return;
-        var key = _snapshot?.ScreenshotKeys.FirstOrDefault() ?? "your screenshot key";
-        CueFirst.Text = $"FIRST RAID WITH SHTURMAP · PRESS {Caps.Of(key)} ONCE YOU'RE IN";
+        var key = _snapshot?.ScreenshotKeys.FirstOrDefault()?.Name ?? AppTexts.ScreenshotKeyUnknown;
+        CueFirst.Text = AppTexts.CueFirstRaid(key: Caps.Of(key));
         _session.SetSetting(FirstRaidSetting, "done");
         Study.Ui("first.raid");
     }
@@ -1092,6 +1191,6 @@ public sealed partial class MainWindow
             return;
         _session.SetSetting(FirstFixSetting, "done");
         Study.Ui("first.fix");
-        ShowNotice("That's you, from your screenshot's name. Each new one moves you.");
+        ShowNotice(AppTexts.NoticeFirstFix);
     }
 }

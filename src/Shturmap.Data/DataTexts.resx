@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LoadFailedStatus" xml:space="preserve">
+    <value>tarkov.dev answered {status}.</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it. {status}: the HTTP status code tarkov.dev answered, 503.</comment>
+  </data>
+  <data name="LoadFailedUnreachable" xml:space="preserve">
+    <value>Couldn't reach tarkov.dev, and there's no saved copy yet.</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it. No connection to tarkov.dev, and no copy of the data saved on this PC.</comment>
+  </data>
+  <data name="LoadFailedTimedOut" xml:space="preserve">
+    <value>tarkov.dev didn't answer in time, and there's no saved copy yet.</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it.</comment>
+  </data>
+  <data name="LoadFailedUnreadable" xml:space="preserve">
+    <value>tarkov.dev's data has changed in a way Shturmap can't read.</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it. The data arrived, but in a format Shturmap doesn't know.</comment>
+  </data>
+  <data name="LoadFailedNotData" xml:space="preserve">
+    <value>tarkov.dev's answer wasn't its data: a sign-in page or a filter in between?</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it. Something between the PC and tarkov.dev (a network's sign-in page, a filter) answered in its place.</comment>
+  </data>
+  <data name="LoadFailedDisk" xml:space="preserve">
+    <value>Couldn't save tarkov.dev's data on this PC.</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it.</comment>
+  </data>
+  <data name="LoadFailedUnknown" xml:space="preserve">
+    <value>Loading tarkov.dev's data failed.</value>
+    <comment>Why tarkov.dev's data didn't load: the first sentence of the "No game data" notice and status line ("No game data. … "), and of the notice that a language's texts couldn't be loaded; an advice sentence (LoadAdvice…) follows it. For a failure of no known kind.</comment>
+  </data>
+  <data name="LoadAdviceReport" xml:space="preserve">
+    <value>Please report it.</value>
+    <comment>What to do about a load that failed: the sentence after the LoadFailed… one in the "No game data" notice and status line. For a failure only a report can get fixed; the notice offers the Report dialog.</comment>
+  </data>
+  <data name="LoadAdviceServerBusy" xml:space="preserve">
+    <value>It is busy or down for a moment; try again in a few minutes.</value>
+    <comment>What to do about a load that failed: the sentence after the LoadFailed… one in the "No game data" notice and status line. After tarkov.dev answered 5xx or 429 (LoadFailedStatus).</comment>
+  </data>
+  <data name="LoadAdviceConnection" xml:space="preserve">
+    <value>Check the internet connection.</value>
+    <comment>What to do about a load that failed: the sentence after the LoadFailed… one in the "No game data" notice and status line.</comment>
+  </data>
+  <data name="LoadAdviceDisk" xml:space="preserve">
+    <value>Check the free disk space and that %LOCALAPPDATA%\Shturmap can be written to.</value>
+    <comment>What to do about a load that failed: the sentence after the LoadFailed… one in the "No game data" notice and status line. %LOCALAPPDATA%\Shturmap is Shturmap's data folder: keep it as it is.</comment>
+  </data>
+  <data name="LoadAdviceNotData" xml:space="preserve">
+    <value>Shturmap tries again in a few minutes.</value>
+    <comment>What to do about a load that failed: the sentence after the LoadFailed… one in the "No game data" notice and status line. After LoadFailedNotData: Shturmap asks again by itself.</comment>
+  </data>
+  <data name="RetryWaitMinutes" xml:space="preserve">
+    <value>{minutes, plural, one {# minute} other {# minutes}}</value>
+    <comment>How long until Shturmap asks tarkov.dev again, in notices: "Shturmap tries again in 2 minutes." {minutes}: whole minutes, 2 to 30.</comment>
+  </data>
+  <data name="RetryWaitSeconds" xml:space="preserve">
+    <value>{seconds, plural, one {# second} other {# seconds}}</value>
+    <comment>As RetryWaitMinutes, for a wait shorter than a minute (only in tests and developer runs). {seconds}: whole seconds.</comment>
+  </data>
+  <data name="ItemUnknown" xml:space="preserve">
+    <value>Unknown item</value>
+    <comment>In place of an item's name wherever one shows (item cards, what to bring) when tarkov.dev's data doesn't know the item.</comment>
+  </data>
+</root>

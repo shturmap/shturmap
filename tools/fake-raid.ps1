@@ -38,7 +38,10 @@ param(
   [string] $Ffmpeg,
   # The raid's map, for snapshots (the demo always plays Streets). The Lab, Labyrinth and Icebreaker are drawn as
   # sheets (no artwork, docs/DESIGN.md §3).
-  [ValidateSet('streets', 'lab', 'labyrinth', 'icebreaker')] [string] $Map = 'streets'
+  [ValidateSet('streets', 'lab', 'labyrinth', 'icebreaker')] [string] $Map = 'streets',
+  # More arguments for the app, passed on as they are: --show-report, --show-crash, --whats-new (developer builds),
+  # --switch-language <culture> (tools\layout-check.ps1 uses them).
+  [string[]] $MoreArgs = @()
 )
 if ($Demo -and $Map -ne 'streets') { throw 'The demo plays Streets only.' }
 $ErrorActionPreference = 'Stop'
@@ -249,6 +252,7 @@ if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 if ($Tour -gt 0) { $appArgs += @('--tour', $Tour) }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }
+$appArgs += $MoreArgs
 $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
 if ($GroupPick) {
   # Live, after the startup replay and the game data, as in the menus between raids.

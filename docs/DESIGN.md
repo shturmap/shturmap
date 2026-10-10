@@ -801,7 +801,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     seen. After an update from a version before the card, the newest version only (`Rules.WhatsNew.Due`). Never by
     itself in a snapshot or the demo. **Gone:** with ×, or once the first raid since the update is over; help's WHAT'S
     NEW IN 0.4.0 · PRAETORIAN brings the newest version's card back. The lines are docs/whats-new.md, built into the
-    app: one section
+    app, with each language's translation beside it (`docs/whats-new.<code>.md`; a version it lacks shows in English,
+    `Rules.WhatsNew.InLanguage`): one section
     per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words). A line about the tour (`tour`, or `tour:5` for a
     chapter a release changed) previews nothing; a click on it opens the tour there (owner, 2026-10-09, T13; *The tour*).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
@@ -852,7 +853,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     shown map back exactly as it was (pan and zoom; fitted where it wasn't drawn yet, not at the camera's default:
     review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
     The picks of the map on screen stay off a preview's map (the same review: each snapshot wrote them into it, and
-    into the tour's example).
+    into the tour's example), and so does its floor picker, which steps aside until the preview ends (review of
+    2026-10-10: a tour chapter staged on Customs showed Streets' floors; approved by the owner the same day).
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
@@ -930,12 +932,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     its kind's colour, with its distance and direction (`Rules.ExitsNote.Plain`). Only once the list was read (nothing
     is sure to be open before), never a transit, and not where EXIT is that one already. Both notes take a second line
     where the direction beside them leaves too little room, with "…" only past that (review of 2026-10-09: a Scav's
-    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The glance's rows hide with
+    "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The labels NEXT, EXIT and OR share one column,
+    as wide as the longest of them in the language in use and the 10 px after it, never under 48 px, so the names
+    beside them line up (review of 2026-10-10: German "EXTRACT" filled the fixed 48 px and ran into the extract's name;
+    `Controls.Columns.Glance`, which the tour's example card takes too). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
-    needs (gold), and on the right the distance, direction and floor hint; "anywhere" for kills and finds with no
+    needs (gold), and on the right the distance, direction and floor hint (the words keep at least half of the line:
+    where a hand-over's mark and a long direction would take more, the direction wraps under the distance between its
+    parts, the height under the direction; review of 2026-10-10: German "HINTEN LINKS · 5 M TIEFER" beside a hand-over
+    left tarkov.dev's sentence a word or two a line; `Controls.ObjectiveLine`); "anywhere" for kills and finds with no
     fixed place, "after the raid" (muted) for a hand-over of its own (one that gives what another line gets is a
     handshake after that line's words, "Quest cards", *Hand-overs*). The text is the objective in a few words, in these lines
     and in NEXT: its phrase from the quest's synopsis ("Mark Stryker" for "Locate and mark the Stryker with an
@@ -1118,7 +1126,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the stage's plate, opaque too), holds TOUR · 3 OF 7,
     the chapter's title, decoding as the cue's does, its lines, ← BACK, NEXT →, ESC ENDS THE TOUR and a tick per
     chapter; a stage's plate (the READS / NEVER lists, the two states, the key, the example raid card) stands in the
-    middle of the map above it. Motion: "Design system", *Motion*.
+    middle of the map above it. The buttons stand beside the eyebrow and the title, the lines run under both across the
+    band, and a title that doesn't fit beside the buttons goes under them, across the band, wrapping only past that; a
+    plate larger than the room above the band is drawn smaller to fit, never cut, and the READS / NEVER lines wrap in
+    their columns in a narrow map (review of 2026-10-10, at the smallest window, 900×560: "IT FOLLOWS THE GAME" was cut
+    off, the lines took five rows beside the buttons, and the example raid card ran under the band). The owner approved
+    both on 2026-10-10, knowing that a plate drawn smaller goes below the type roles' sizes ("Design system", *Type*):
+    the German example raid card at 900×560 is drawn at about 60 %, rather than losing its caption (about 70 % while its
+    NEXT was cut; the owner approved it a little smaller for the whole sentence on 2026-10-11). Motion: "Design
+    system", *Motion*.
   - **How the frames move** (owner, 2026-10-09: "sometimes they transition into nothingness, like from section 3 to
     section 4"; `Rules.TourFrames`). From one set of parts to the next, each new part (the largest first) takes the
     nearest frame on screen and the frame glides to it; a frame left over glides into the new part nearest it, and a
@@ -1131,6 +1147,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     New's previews are: no picture, render or video is bundled (§3), and the map's label says "PREVIEW · THE TOUR ·
     CUSTOMS · AN EXAMPLE, NOT YOUR RAID". The example is the same for everyone: Customs, which every player knows, with
     up to three of its early quests that have places on the map; a cue it shows says "An example, not your raid.".
+    The same in every language too: the quests are chosen by tarkov.dev's normalized names, which the data of every
+    language shares, never by the names shown (`Tour.ExampleCandidates`; review of 2026-10-10: the map's quests went
+    by their names in the data's language, so where fewer than three preferred ones had places German could differ).
     Nothing of the player's changes: no pick, no tick, no setting but the tour's own. NEXT RAID frames the player's own
     rows and lets one preview its map as resting on it does; without rows (no game) it frames the MAP list. When the
     tour ends, the map on screen is back as it was, view and all; at a first start, when the tour opens before any map
@@ -1141,10 +1160,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes beside
     its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band),
     and 150 on the right, the map's label room (owner, 2026-10-09: 90 still cut PICK AND POINT's picked quest there;
-    "Map drawing", *Room for labels on the right*).
-    IN THE RAID's example card says NEXT in a few words, as the raid card does ("Get valuable folder";
-    `Planning.ObjectiveSynopses`; until then tarkov.dev's sentence, cut), and its clock reads 13 MIN LEFT of the map's
-    own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN).
+    "Map drawing", *Room for labels on the right*). Above the band as it stands in that chapter, its title and lines in
+    the language in use, and PICK AND POINT's pointer comes up from just above it (owner, 2026-10-11: the pointer stays
+    above the band in any language and window size; at 900×560 the German title takes two lines, and the band covered
+    the pointer and the quest it points at: the framing read the band's height before the band was laid out for the
+    chapter, the empty band's when the tour opened, and the pointer set off 240 DIP above the map's foot, under that
+    band). Where the band leaves little room above it, the 90 gives way, so what is framed keeps at least 90 itself
+    (PICK AND POINT's German band at 900×560 leaves 181, and 90 on each side would have left it 1).
+    IN THE RAID's example card says NEXT as the raid card does: in a few words where the data is English ("Get valuable
+    folder"; `Planning.ObjectiveSynopses`), else tarkov.dev's whole sentence, wrapping (owner, 2026-10-11: until then
+    it was cut at 34 characters, mid-word, German "Besorge die geschützte Dokumenten…"), and its clock reads 13 MIN
+    LEFT of the map's own raid length (Customs: 35 min in tarkov.dev's data of October 2026, so 22 MIN IN). It is
+    spaced as the rail's card is, its clock under the name and NEXT and EXIT between hairlines, in the card's own label
+    column.
   - **When.** By itself once, at a first start (neither it nor help seen on this PC), when the data is there and
     outside a raid, in help's place; a raid starting closes it, and it comes back at its chapter once the raid is over
     (as help did, `WhileInRaid`). From help's TAKE THE TOUR (its start) and SHOW ME (a chapter), and from a What's New
@@ -1158,7 +1186,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     to principle 3).
   - **Words** live in docs/tour.md, built into the app: per chapter its stage, the parts it frames (their `x:Name`s in
     MainWindow.xaml), its title, at most two lines and its stage's own words. `TourTests` fail when a part it names is
-    gone from the window, a stage isn't one the app draws, or a title or line is longer than the band.
+    gone from the window, a stage isn't one the app draws, or a title or line is longer than the band. Its translations
+    stand beside it, `docs/tour.<code>.md`, picked by the language in use each time a chapter shows (a switch while
+    the tour is up shows its chapter again); one whose chapters, stages, anchors or keyed words aren't the English
+    tour's isn't shown, the English one is (`Rules.Tour.InLanguage`, `Rules.BuiltDocs`; §8, "Texts").
   - **Keeping it current** (owner, 2026-10-09). A change to something a chapter shows changes the chapter in the same
     commit. Its drawing is the app's own, so a new symbol, card or cue shows in the tour by itself; what can go stale is
     its words and what it frames, and the test catches the second. A release that changed a chapter says so in What's
@@ -1169,7 +1200,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     IN" (the key as the game's settings name it), and the first position plotted gets a notice, "That's you, from your
     screenshot's name. Each new one moves you." Each once; a player who used Shturmap before the tour never sees them
     (they are armed only by a first start: `firstRaid`, `firstFix` in shturmap.db), so their words stay true.
-- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Delete
+- **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Language"
+  (AUTOMATIC, then each language Shturmap is translated into, in its own name: ENGLISH, DEUTSCH; developer builds also
+  list the ones still in translation, "FRANÇAIS · IN TRANSLATION", to try them; a choice applies at once, and under it
+  one line says what Automatic comes to and why: "Automatic: English, from the game.", "…, from Windows.", or that
+  neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Delete
   position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
   §2), "Crash reports" (ASK AFTER A
@@ -1181,7 +1216,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.
 - **Report dialog** (§8, "Reports"): over the whole window, square, in the card's colours: PROBLEM | IDEA, the text,
   an optional contact, "Include diagnostics" with SHOW WHAT'S SENT, one line on where it goes with a Privacy link,
-  CANCEL and SEND.
+  CANCEL and SEND. It fits the window: in a short one what's sent and the text box give way, each down to a few lines
+  of its own scrolling, and past that the dialog scrolls, so CANCEL and SEND stay in reach (review of 2026-10-10: at
+  900×560, with what's sent shown, they were below the window's edge).
 - **After a crash**: one question under the notices, until answered: SEND · DON'T SEND · ALWAYS SEND · WHAT'S SENT;
   closing it asks again at the next start; once sent, ADD A NOTE opens the Report dialog. It lies over the map and
   waits for a click, so it is shown outside raids only: while a raid loads or runs it steps aside, unanswered, and
@@ -1605,8 +1642,11 @@ which on the map and in the rail is a PMC extract (one colour, one meaning; the 
 An objective says where it is once (the review, C2): the line of map names under its text is left out when the
 text itself names the map as its place ("… on Streets of Tarkov" stood over "Streets of Tarkov"), alone or in a list
 that holds every map the line would show. A text that names none of its maps, or only some, keeps the whole line;
-"at Factory gate" is a gate, not the map (`QuestCards.SaysWhere`, with the synopsis' map pattern; English texts
-only, so in another game language both lines stay).
+"at Factory gate" is a gate, not the map (`QuestCards.SaysWhere`, with the synopsis' map pattern,
+`QuestSynopsis.MapList`). The pattern is the data's language's: English, and German from 2026-10-11 (owner: German
+cards kept both lines and were several lines longer), whose "auf" and "in" say where ("… auf Woods, Customs oder
+Shoreline") and "nach", "aus" and "von" where to or from; in another game language both lines stay (§8, "The app's
+own language").
 **The map's "?" in words** (owner, 2026-10-06: "It should be displayed in the raid tooltip to explain"): an objective
 whose thing can be at several places has a line under its map names, the "?" as the map draws it (a small dark plate
 with a gold hairline) and "One of 4 places it can be", on every card, held or on hover in a raid
@@ -2132,8 +2172,14 @@ Rules:
   developer build sends one real report through the dialog's Send and saves the window, a release only opens the
   dialog with the text, and Send is pressed by hand (nothing is sent without a click, and a command line isn't one). For website media, `tools\fake-raid.ps1 -Window
   1600x900 -Scale 2` renders at a fixed size (the app's `--window`; the UI reads larger), in English
-  (`--culture`) and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
-  plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading.
+  (`--culture <culture>`: that run's language for everything, as if chosen in settings, without saving it; `de-DE` also
+  for a language still being translated, `qps-ploc` the pseudo-language; `--switch-language <culture>` switches it while running, §8 "Developer aids") and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
+  plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading;
+  `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
+  popup also gets its texts, its layout problems and a copy with them boxed beside it (`<picture>.texts.txt`,
+  `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), and `--whats-new` shows the newest What's
+  New card for one; `tools\layout-check.ps1` plays every view in each language and window size and sums it up
+  (docs/LANGUAGES.md, "Layout check").
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
   drawn press of the screenshot key. The key comes in a pause: the window dims, the key stands large in the middle
@@ -2362,11 +2408,16 @@ committing app changes (CLAUDE.md).
   war symbols the logo rules avoid (§4, "Logo").
 
 **Continuous integration** (owner, 2026-10-05). Every push builds the solution in Debug (so the developer tools
-compile too) and runs the tests on GitHub's Windows runner (`.github/workflows/ci.yml`), with the same
-`eng\dotnet.ps1` as on the PC and the SDK global.json names. Tests that need the owner's PC skip there: the tarkov.dev
-cache, the game's logs, real screenshots, a Release build, the website beside the repository. The repository is
-public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A failed run comes as GitHub's own
-mail. The daily data check is designed in docs/NEXT.md, not built yet.
+compile too) and runs the tests, then builds it in Release and runs them again, on GitHub's Windows runner
+(`.github/workflows/ci.yml`), with the same `eng\dotnet.ps1` as on the PC and the SDK global.json names. Release since
+2026-10-11 (owner): a release compiles the other side of `#if DEVTOOLS`, and its tests check what only a release does;
+they had never run, and one had failed unseen. The Release build takes the Debug build's restore (the packages are the
+same) and its tests run on what it built. Tests that need the owner's PC skip there: the tarkov.dev cache, the game's
+logs, real screenshots, a published build in `artifacts` (`DevToolsGuardTests` read it), the website beside the
+repository. The repository is public and so are the run logs: nothing a test prints may be private (CLAUDE.md). A
+failed run comes as GitHub's own mail. The daily data check is designed in docs/NEXT.md, not built yet. The layout
+check (docs/LANGUAGES.md) doesn't run there: its views need tarkov.dev's data, which a fresh runner would download at
+every push (§3, "No unnecessary load on tarkov.dev"), so it runs on the developer's PC before a release.
 What else runs there (owner, 2026-10-09: every trust step that can be automated). After the tests, CI fails on a NuGet
 package with a known vulnerability, direct or transitive (`eng\audit-packages.ps1`, nuget.org's advisories; also
 when it couldn't check). That stands in for Dependabot: its pull requests would put commits by another identity into
@@ -2416,6 +2467,13 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
   `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
   second.
+
+**Switching the language in a run** (developer builds only; 2026-10-10). `--switch-language <culture>` (`en-US`, `de-DE`,
+`qps-ploc`) switches the language once the window shows the game data, exactly as a choice in settings does but for
+that run only, and before any snapshot is taken (`--snapshot`); with `--culture` the run starts in one language and
+ends in the other. The layout check compares such a run with a fresh one in the second language: every text must be the
+same (docs/LANGUAGES.md, "Layout check"). The folder build (`eng\publish.ps1`, a release configuration) hasn't got it;
+a Debug build and the dev build have.
 
 ### How the parts work
 
@@ -2544,14 +2602,111 @@ JSON in a shape Shturmap doesn't know (tarkov.dev changed its format) stays save
 stays unreadable, not asked for again: downloading it again would bring the same, at every start of every Shturmap. A
 failed download is never a reason to forget a good saved copy.
 
-**The app's own language.** Shturmap's own texts are English, and its numbers and dates are written the English way
-with them ("Pay 5,000 ₽", "25 Sep"), whatever Windows' language is: `UiLanguage` sets the culture once at start, and
-no code asks Windows for its formats (owner, 2026-10-04, on a Windows set to another language showing "5.000 ₽"
-inside English sentences: other languages are likely to come, so the formats belong to the app's language, in one
-place; when the texts are translated, the formats follow the language chosen).
+**The app's own language** (owner, 2026-10-10: multi-language support, English and German first, every language
+tarkov.dev has to follow). **One language for everything**: Shturmap's own texts, its number and date formats ("Pay
+5,000 ₽" and "25 Sep" in English, "5.000 ₽" and "25. Sept." in German, never Windows' formats inside another language's
+sentences; review of 2026-10-04) and the game data's names all follow one choice (owner, 2026-10-10: "the app should
+switch languages entirely, otherwise that makes it weird mixing the two"). `UiLanguage.Choose` makes it:
+1. the player's choice in settings, "Language: Automatic · English · Deutsch", each language in its own name;
+2. else the game's language (its settings' `Language`, `GameLanguage.Common`), when Shturmap's texts are complete in it;
+3. else Windows' display language (the one Windows' own menus are in, read once at start before anything sets the
+   app's), when they are complete in it; Windows' regional formats don't count;
+4. else English.
 
-**Language.** Texts come in the game's language (its settings' `Language`), translated by tarkov.dev's
-`<payload>_<language>` files. The game names some languages its own way, and tarkov.dev answers those with 404:
+A game language Shturmap's texts aren't written in yet (Russian, say) keeps the game data in it: the names stay as the
+game shows them, and only Shturmap's own words take Windows' language or English, as before 2026-10-10, until that
+language's texts are written (owner, 2026-10-10). The pseudo-language (`UiLanguage.Pseudo`, developer runs only;
+docs/LANGUAGES.md) shows English game names. A language is offered, and chosen by itself, only once every text of it is
+translated and reviewed (`UiLanguage.Supported`: English, and German from 2026-10-10, once its texts, tour and What's
+New were reviewed and the layout check passed in it); one being translated (`UiLanguage.InTranslation`, none at the
+moment) shows only in a developer build's settings and a developer run (`--culture fr-FR`), English where a text isn't
+written yet. The language **switches while Shturmap
+runs** (owner, 2026-10-10), from settings at once: every text on screen, the formats and the map's labels change, the
+game data is loaded in the new language as when the game language's texts arrive late (below), and what was on screen
+is the same as after a fresh start in that language (the layout check compares the two; docs/LANGUAGES.md). A new
+notice is said in the new language; one already shown stays as it was said. Logs, the study log, diagnostics, reports
+and the CLI stay English: they are read by whoever fixes Shturmap. The rules that read English data, all but one,
+still read only English: in another data language a Plan row shows the quest's name alone and the raid card an
+objective's own sentence, tarkov.dev's (quest synopses, §5). The one reads German too (owner, 2026-10-11: German cards
+kept both lines and were several lines longer): a quest card leaves out an objective's line of map names where its
+sentence already says where, "… auf Streets of Tarkov" as "… on Streets of Tarkov" (`QuestCards.SaysWhere`; §4, "Quest
+cards"). German says where with "auf" or "in" before the map's name or a list of them, as tarkov.dev's German data
+writes them (the English names but for "Factory bei Nacht"; no comma before "oder"); "nach", "aus" and "von" say where
+to or from. In another data language both lines stay. In tarkov.dev's German PvE data of 2026-10-11 the cards left out
+363 of 936 lines (the English cards 577), none under a sentence that doesn't say where; the 573 that stay are under
+sentences that name none or not all of the line's maps (most of them), say where to or from (17 extracts "aus …", 17
+transits "von … nach …"), or say "on …" in English, still untranslated in the German data (151). The extract
+requirements read the extracts' English names, kept beside the data in another language (`GameData.EnglishName`), so
+they come out the same in every language. The floor buttons keep tarkov.dev's names in English in every language ("2nd
+Floor", "Underground", Icebreaker's decks: the layer names of its maps.json, which it has in English only), beside
+Shturmap's own word for the ground floor, where the map names none (`AppTexts.MapFloorGround`, German "Erdgeschoss";
+owner, 2026-10-11): the game never names its floors, so there is no game word to show instead, and these are
+tarkov.dev's labels for its maps, data like the rest, not Shturmap's words.
+
+How it is made (2026-10-10). The setting is `language` in shturmap.db: `auto` (or none) or a language's code; a value
+that isn't offered (a language only a developer build offers, read by another build) counts as automatic. Windows'
+display language is read once, as the app starts, before anything sets the app's culture. The session opens before the
+window (`GameSession.Open`: the app's settings, the game and its settings), chooses and keeps the choice
+(`GameSession.Language`), and the app sets Shturmap's texts to it (`UiLanguage.Set`) before the window builds them, so
+a start shows no English first. A choice while running: the session chooses again and, when the game data's language
+changes, loads the data and the item sources in a new round, as a change of mode does (what the old language still
+waited for is dropped, the waits of "Asking again" start over, a load in the old language that ends later is dropped),
+the old data staying on screen until the new is here and the maps on screen named anew. The window switches Shturmap's
+texts on its own thread, reads every x:Bind again (`Bindings.Update`, the cards' too), sets again what code sets over
+XAML from its state (the tour's chapter, the report dialog's links and its example while it stands as put there, help's
+legend, What's New, the question after a crash), has the controls that word their own tooltips say them again (the
+pen, the tick, a quest type's glyph; `Controls.SaidAgain`), makes the rows drawn from templates anew, and the session
+composes its snapshot again (`GameSession.RepublishAsync`: the plans and the screenshot keys' names with it); the
+tour's example is staged again once the data has come in the new language (review of 2026-10-10: the layout check's
+switch found these kept from before). The snapshot takes the language in use each time it is made
+(`UiLanguage.ApplyHere`), and so does a developer snapshot's picture: the current culture travels with async work, so
+a loop started before a switch would sort and format in the old one. Names are sorted with the language in use's own
+comparer (`StringComparer.Create(UiLanguage.Culture, …)`), never the thread's culture: the plans, a completion's
+UNLOCKS, the cards' lists, a Scav raid's loot, the rail's objectives and exits. The plans and a completion are made in
+the session's loops before any snapshot, so a loop started before a switch made its next plan in the old language's
+order (review of 2026-10-10).
+
+**Texts.** Every word Shturmap shows is in a project's texts file, never in code or XAML: `CoreTexts`, `MapTexts`,
+`DataTexts`, `GameTexts`, `SessionTexts`, `AppTexts` (the app's code), `ViewTexts` (its XAML) and `RuleTexts` (the
+app's rules, which the Core tests compile too). Each is a `.resx` with the English texts and one `<Name>.<code>.resx`
+per language. A build makes a class of each English file (`Directory.Build.targets`, `ShturmapTexts`): a property per
+text, a method per text with placeholders, its parameters the placeholders' names in alphabetical order, called with
+named arguments (`SessionTexts.ExitListRead(count: n)`), so a misspelt or missing text, or a placeholder left out, is
+a build error. A text is looked up in the language in use when it is shown (`UiLanguage.Text`), never kept from
+before, which is what lets the language switch while Shturmap runs; XAML binds to the classes (`{x:Bind
+local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the language changes.
+- **Whole sentences with named placeholders**, never pieces glued together or a word chosen by code: each language puts
+  the words where its grammar wants them. Plurals are part of the text, in the syntax of ICU's MessageFormat that
+  translators know: `{count, plural, one {# extract} other {# extracts}}`, with Unicode's plural forms of every
+  language tarkov.dev has (`PluralRules`: Polish and Russian need three or four, so code never picks "extract" or
+  "extracts"). `TextFormat` fills them in; a text that doesn't parse shows as written rather than failing. A quest
+  type symbol's tooltip is one text per type, help's table keeping its own two (owner, 2026-10-11: it was "{label}:
+  {explanation}", the table's name and explanation glued, so German, which writes lower case after a colon unless a
+  whole sentence follows, read "Erkunden: Zu einem Spot gehen").
+- **Game names stand where they don't change form**: "Bring: {item}", not "Bring the {item}"; Russian and Polish
+  change a noun's ending with its place in the sentence, and the names come from tarkov.dev as they are. A category's
+  name inside a sentence ("Any sniper rifle") is in lower case only where its language writes a noun so: German
+  writes every noun with a capital (`UiLanguage.InSentence`, one rule per language).
+- **Numbers** in a placeholder are written in the language's format; a number that needs grouping (prices, "5,000 ₽")
+  is formatted by the caller with `UiLanguage.Culture`. Dates and times likewise; a day and month inside a
+  sentence with `UiLanguage.DayMonth` ("4 Oct", German "4. Okt.") or `DayMonthTime`, one table of each language's
+  patterns.
+- **A comment on each English text** says where it shows and what its placeholders are, for the translator.
+- **Each translated text says which English text it was made from** (its comment: `en: <the English text>`). The
+  translation tests (`TranslationTests`) check every file: the English texts parse, a translation has the English
+  text's placeholders and its language's plural forms, and was made from the English text as it is now; a language
+  that is offered has every text. So changing an English text means translating it again in the same commit, reviewed
+  as below (docs/LANGUAGES.md, "Translating"); changing a translation alone needs only the review.
+- **Not translated**: internal values (settings' stored values, ids, file names, log lines), and the words of the
+  game itself that Shturmap reads (the extract list's header in a screenshot): those are matched in the game's
+  language, not shown. A log line or diagnostics that says what a text says takes its English
+  (`UiLanguage.InEnglish`; `LoadProblem.InEnglish`, `RetrySchedule.InEnglish`), never the language in use.
+
+**Language.** The game data comes in the language chosen above (`LanguageChoice.Data`), translated by tarkov.dev's
+`<payload>_<language>` files. The extract list's reader still reads the game's language, which is what the screenshot
+shows: when the data is in another language, the maps' texts in the game's language are loaded beside it (`maps_<code>`,
+about 25 KB, kept for an hour as the other texts), so an exit is matched by its name in the game's language, in English and in the language shown (`GameData.GameNames`); when they can't be had, by the other two, without a word,
+until the data loads again. The game names some languages its own way, and tarkov.dev answers those with 404:
 `GameLanguage.Common` maps `ge`→`de`, `cz`→`cs`, `jp`→`ja`, `kr`→`ko`, `po`→`pt`, `tu`→`tr`, `ch`→`zh`,
 `es-mx`→`es` (2026-10-02: a friend's German game asked for `maps_ge`, and no data loaded at all), one table for
 tarkov.dev and for the extract list's text recognition (review of 2026-10-09: each had a copy). A language
@@ -2663,7 +2818,10 @@ had: "No map render for The Lab: …", the same way.
 `%LOCALAPPDATA%\Shturmap\logs`), PRIVACY ↗ and LICENCES ↗. Copy diagnostics puts plain text on the clipboard and says
 "Diagnostics copied: paste them into your message.": Shturmap's version with commit and whether it is the single
 exe; Windows' version and build; the install type (Steam, BSG launcher, manual) and whether the game, logs and
-screenshots folders were found; mode; the game's language and tarkov.dev's; the data's state (loaded, offline copy
+screenshots folders were found; mode; the game's language, Windows' display language, the language in use with where
+it came from (the setting, the game, Windows, the default; "this run only" for "--culture") and the game data's, and
+tarkov.dev's as loaded (with "extract names also in de" when the game's own names were loaded beside it); the data's
+state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; whether "Delete
 position screenshots" is on (§2); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is

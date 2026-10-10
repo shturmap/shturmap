@@ -10,8 +10,8 @@ namespace Shturmap.Data.TarkovDev;
 
 /// <summary>
 /// Loads tasks, maps, traders and item names from json.tarkov.dev (plus tarkov.dev's maps.json for map geometry),
-/// translated into the game's language. Cached copies are revalidated at most once an hour; offline, the cache is
-/// used. Nothing is bundled: see docs/DESIGN.md §3.
+/// translated into the language chosen (docs/DESIGN.md §8, "Language"). Cached copies are revalidated at most once an
+/// hour; offline, the cache is used. Nothing is bundled: see docs/DESIGN.md §3.
 /// </summary>
 public sealed class GameDataLoader(CachedHttp http)
 {
@@ -19,13 +19,18 @@ public sealed class GameDataLoader(CachedHttp http)
     private static readonly Uri MapDefinitionsUri = new("https://raw.githubusercontent.com/the-hideout/tarkov-dev/main/src/data/maps.json");
     private static readonly TimeSpan MaxAge = TimeSpan.FromHours(1);
 
-    /// <param name="language">The game's language code, as its settings say it ("ge" for German).</param>
-    public async Task<GameData> LoadAsync(GameMode mode, string language, CancellationToken ct = default)
+    /// <param name="language">The language to load the data in, as the game's settings or tarkov.dev say it ("ge" or "de").</param>
+    /// <param name="gameLanguage">
+    /// The game's own language, when the data is loaded in another: its maps' texts (<c>maps_&lt;code&gt;</c>, about 25 KB)
+    /// are loaded too, for the names of the extracts as the game shows them (<see cref="GameData.GameNames"/>; the extract
+    /// list in a screenshot is in the game's language). Null, English or the data's own language load nothing more.
+    /// </param>
+    public async Task<GameData> LoadAsync(GameMode mode, string language, CancellationToken ct = default, string? gameLanguage = null)
     {
         var fetched = new List<Task<CachedResponse>>();
         try
         {
-            return await LoadAsync(mode, language, fetched, ct);
+            return await LoadAsync(mode, language, gameLanguage, fetched, ct);
         }
         catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
         {
@@ -35,10 +40,11 @@ public sealed class GameDataLoader(CachedHttp http)
         }
     }
 
-    private async Task<GameData> LoadAsync(GameMode mode, string language, List<Task<CachedResponse>> fetched, CancellationToken ct)
+    private async Task<GameData> LoadAsync(GameMode mode, string language, string? gameLanguage, List<Task<CachedResponse>> fetched, CancellationToken ct)
     {
         var slug = GameData.Slug(mode);
         language = ApiLanguage(language);
+        var game = ApiLanguage(gameLanguage);
 
         var fetches = new List<Task<CachedResponse>>();
         var translations = new List<Task<CachedResponse>>();
@@ -62,6 +68,19 @@ public sealed class GameDataLoader(CachedHttp http)
         var tasksLang = language == "en" ? tasksEn : Fetch($"{slug}/tasks_{language}", translation: true);
         var tradersLang = language == "en" ? tradersEn : Fetch($"{slug}/traders_{language}", translation: true);
         var itemsLang = language == "en" ? itemsEn : Fetch($"{slug}/items_{language}", TimeSpan.FromHours(24), translation: true);
+        // The extract list in a screenshot is in the game's language: when the data is in another, the extracts' names as
+        // the game shows them come from its maps' texts. Never part of the load's success or failure: without them the
+        // list is matched by the names in the data's language and in English, as before.
+        Task<CachedResponse>? mapsGame = null;
+        if (game != "en" && game != language)
+        {
+            var endpoint = $"{slug}/maps_{game}";
+            mapsGame = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", MaxAge, ct, json: true);
+            fetched.Add(mapsGame);
+            // Looked at whatever comes of the rest: a load that fails before it gets here must not leave its failure
+            // to surface later as a crash record.
+            Observe([mapsGame]);
+        }
         var definitions = http.GetAsync(MapDefinitionsUri, "tarkov-dev_maps.json", TimeSpan.FromHours(24), ct, json: true);
         fetches.Add(definitions);
         fetched.Add(definitions);
@@ -126,6 +145,7 @@ public sealed class GameDataLoader(CachedHttp http)
         }, alsoTranslate: ["conditions"]);
         var mapTextsEn = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(mapsEn.Result.FilePath, ct));
         var englishNames = nameKeys.ToDictionary(n => n.Key, n => JsonTranslator.Text(n.Value, mapTextsEn), StringComparer.Ordinal);
+        var (gameNames, gameNamesLanguage) = await GameNamesAsync(mapsGame, game, extractKeys, ct);
         // Kill targets and exit statuses are translated too ("Savage" becomes "Scavs", or German); the plan's effort
         // groups need the keys, which mean the same in every language.
         var objectiveFacts = new Dictionary<string, ObjectiveFacts>(StringComparer.Ordinal);
@@ -172,6 +192,8 @@ public sealed class GameDataLoader(CachedHttp http)
             ItemShortNames = shortNames,
             ExtractKeys = extractKeys,
             EnglishNames = englishNames,
+            GameNames = gameNames,
+            GameNamesLanguage = gameNamesLanguage,
             ObjectiveFacts = objectiveFacts,
             MapDefinitions = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct)),
             CheckedAt = fetches.Min(f => f.Result.FetchedAt),
@@ -222,6 +244,32 @@ public sealed class GameDataLoader(CachedHttp http)
                 conditions.Add("zone");
         }
         return targets.Count + status.Count + conditions.Count > 0 || exit is not null ? new ObjectiveFacts(targets, status, conditions, exit) : null;
+    }
+
+    // The extracts' names in the game's language, from its maps' texts, by extract id; only the names it has a text for.
+    // Empty with no language for it was asked, or when its texts couldn't be had (tarkov.dev lacks them, no connection
+    // and no saved copy): then the language is null too.
+    private static async Task<(IReadOnlyDictionary<string, string> Names, string? Language)> GameNamesAsync(Task<CachedResponse>? texts, string language,
+        IReadOnlyDictionary<string, string> extractKeys, CancellationToken ct)
+    {
+        if (texts is null)
+            return (new Dictionary<string, string>(), null);
+        Dictionary<string, string> words;
+        try
+        {
+            words = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync((await texts).FilePath, ct));
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return (new Dictionary<string, string>(), null);
+        }
+        var names = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (id, key) in extractKeys)
+        {
+            if (words.TryGetValue(key, out var name) && !string.IsNullOrWhiteSpace(name))
+                names[id] = name;
+        }
+        return (names, language);
     }
 
     /// <summary>

@@ -65,6 +65,26 @@ public class ReportingTests : IDisposable
         Assert.Null(UserReport.Invalid("The map stayed on Woods.", ""));
     }
 
+    // What the dialog says is a whole text with its number and plural in it (docs/DESIGN.md §8, "Texts").
+    [Fact]
+    public void The_dialog_says_its_limits_and_how_many_crash_reports_went()
+    {
+        Assert.Equal("At most 4,000 characters, please.", UserReport.Invalid(new string('x', UserReport.MaxText + 1), ""));
+        Assert.Equal("The contact can be at most 120 characters.", UserReport.Invalid("ok", new string('x', UserReport.MaxContact + 1)));
+        Assert.Equal("Crash report sent. Thank you. Report a1b2c3d4.", SessionTexts.CrashReportsSent(count: 1, id: "a1b2c3d4"));
+        Assert.Equal("3 crash reports sent. Thank you.", SessionTexts.CrashReportsSent(count: 3, id: "a1b2c3d4"));
+    }
+
+    // Why a report didn't go is said to the player in the language in use, and in the app log in English.
+    [Fact]
+    public async Task A_report_that_cant_go_now_says_why()
+    {
+        await using var sentry = new FakeSentry { Status = HttpStatusCode.ServiceUnavailable };
+        var result = await NewReporter(sentry.Dsn).SendAsync(Report());
+        Assert.Equal("Couldn't send it now (the report service answered 503). It's kept on this PC and goes out by itself the next time Shturmap starts.",
+            result.Message);
+    }
+
     // ---- crash records ----
 
     [Fact]

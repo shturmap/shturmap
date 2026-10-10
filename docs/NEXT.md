@@ -755,7 +755,7 @@ for the languages to come).
   picture): each line and NEXT say the objective by its synopsis phrase ("Mark Stryker"). The need stays on every
   line (owner: "keep the item with each sub-item so it's clear that one is needed"); saying it once under the
   quest's name was tried and declined.
-- **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status: done (2026-10-04; English texts).
+- **C2.** A quest card says the map twice per objective ("… on Streets of Tarkov" over "Streets of Tarkov"). Status: done (2026-10-04, English texts; German texts 2026-10-11).
 - **C3. Plan card**: the rank numbers "1", "2" say what the order says; the dashed empty cell stands on most rows;
   the kit cue shows one item twice (to plant, to wear). Status: done (2026-10-04: all three gone).
 - **C4. Status bar**: "NO POSITION YET · PRESS … IN RAID" also outside raids; three green lights with words for a

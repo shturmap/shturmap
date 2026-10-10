@@ -59,6 +59,8 @@ public sealed partial class TickBox : Grid
         };
         DoubleTapped += (_, e) => e.Handled = true;
         Update();
+        // Its tooltip and name in the language in use.
+        SaidAgain.OnLanguage(this, Update);
     }
 
     public string? ObjectiveId
@@ -81,9 +83,9 @@ public sealed partial class TickBox : Grid
         _box.Background = Ticked ? Resource("AmberBrush") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         _check.Foreground = Resource("GroundBrush");
         _check.Visibility = Ticked ? Visibility.Visible : Visibility.Collapsed;
-        AutomationProperties.SetName(this, Ticked ? "Done, ticked by you" : "Tick as done");
+        AutomationProperties.SetName(this, Ticked ? AppTexts.TickTickedName : AppTexts.TickName);
         ToolTipService.SetToolTip(this, Ticked
-            ? "Done (your tick): the map, NEXT and the plan skip it. Click to untick"
-            : "Tick when done. The logs can't tell, so until then the map and the plan lead here");
+            ? AppTexts.TickTickedTip
+            : AppTexts.TickTip);
     }
 }

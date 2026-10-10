@@ -294,7 +294,9 @@ public static partial class MapRenderer
     /// <summary>What a layout is made from, apart from the scene's own data, which <see cref="MapScene.LayoutVersion"/> counts.</summary>
     /// <param name="Fading">Whether the last focus is still drawn while its dimming fades out (<see cref="MapScene.ShownFocus"/>).</param>
     /// <param name="Age">The age tag beside the player and on the guide's plate: the one part that follows the clock.</param>
-    internal readonly record struct LayoutKey(int Scene, MapPoint Center, double Zoom, SKSize Viewport, float Ui, bool Fading, bool Sheet, string Age);
+    /// <param name="Language">The language in use (<see cref="UiLanguage.Code"/>): the badges' and tags' words, and so their
+    /// sizes, follow it.</param>
+    internal readonly record struct LayoutKey(int Scene, MapPoint Center, double Zoom, SKSize Viewport, float Ui, bool Fading, bool Sheet, string Age, string Language);
 
     /// <summary>
     /// The layout for a frame: the last frame's while nothing it is made from changed, else a new one
@@ -306,7 +308,7 @@ public static partial class MapRenderer
     public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui)
     {
         var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
-        var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age);
+        var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age, UiLanguage.Code);
         if (scene.LastLayout is { } last && last.Key == key)
             return last.Layout;
         var layout = Layout(camera, scene, ui);
@@ -438,6 +440,8 @@ public static partial class MapRenderer
                 var tier = NameTier(label.Size);
                 if (zoom < tier.FromZoom)
                     continue;
+                // tarkov.dev's map labels (maps.json) are English in every language, so English rules: the language in
+                // use's would write an English "i" as Turkish "İ".
                 var text = label.Text.ToUpperInvariant();
                 var at = camera.ToScreen(scene.Projection.ToMap(label.X, label.Z));
                 var font = tier.Landmark ? landmark : street;
@@ -921,7 +925,7 @@ public static partial class MapRenderer
     // An optional objective's marker says so in a small badge at its upper left (owner, 2026-10-03: optional places
     // "might still be very relevant for a quest"). Words, because no shape, colour or ring on the map is free to mean
     // "optional" (one symbol, one meaning); the upper right is the floor arrow's, the lower right the count's.
-    private const string OptionalTag = "OPT";
+    private static string OptionalTag => MapTexts.MarkerOptionalBadge;
 
     private static bool ShowsOptional(ShownMarker m) => m.Marker.Optional && m.Marker.Kind is MarkerKind.Objective or MarkerKind.PossibleLocation;
 
@@ -1348,7 +1352,8 @@ public static partial class MapRenderer
         using var font = new SKFont(TypefaceBold, 10 * ui);
         using var paint = new SKPaint { Color = Ink.WithAlpha(110), IsAntialias = true };
         // Without floor data (Labyrinth) every marker is drawn on one plane: say so rather than imply one floor.
-        var caption = $"NO ARTWORK FOR THIS MAP · GRID {SheetSpacing:0} M" + (scene.FloorStack.Count == 0 ? " · NO FLOOR DATA" : "");
+        var spacing = Math.Round(SheetSpacing);
+        var caption = scene.FloorStack.Count == 0 ? MapTexts.MapSheetCaptionNoFloors(spacing: spacing) : MapTexts.MapSheetCaption(spacing: spacing);
         canvas.DrawText(caption, box.Left + 10 * ui, box.Top + 18 * ui, SKTextAlign.Left, font, paint);
     }
 
@@ -1364,7 +1369,7 @@ public static partial class MapRenderer
     };
 
     /// <summary>Hazard areas get a name from this zoom over the overview (like landmarks): "SNIPER ZONE".</summary>
-    public static string? HazardLabel(MapZone zone) => zone.Group == MapContentBuilder.SniperZoneGroup ? "SNIPER ZONE" : null;
+    public static string? HazardLabel(MapZone zone) => zone.Group == MapContentBuilder.SniperZoneGroup ? MapTexts.MapSniperZone : null;
 
     /// <param name="hazardLabels">Collects hazard areas' names ("SNIPER ZONE", from <see cref="LandmarkFromZoom"/>) to draw
     /// after every zone; null draws none.</param>
@@ -1630,8 +1635,10 @@ public static partial class MapRenderer
         return middle;
     }
 
-    /// <summary>A distance as the cards say it: "69 m", "1.2 km".</summary>
-    public static string DistanceText(double metres) => metres < 1000 ? $"{metres:0} m" : $"{metres / 1000:0.0} km";
+    /// <summary>A distance as the cards say it: "69 m", "1.2 km", in the language in use ("1,2 km" in German).</summary>
+    public static string DistanceText(double metres) => metres < 1000
+        ? MapTexts.DistanceMetres(metres: metres.ToString("0", UiLanguage.Culture))
+        : MapTexts.DistanceKilometres(kilometres: (metres / 1000).ToString("0.0", UiLanguage.Culture));
 
     // The part of a segment inside a rectangle (Liang–Barsky), or null.
     private static (SKPoint A, SKPoint B)? Clip(SKPoint a, SKPoint b, SKRect box)
@@ -1789,7 +1796,7 @@ public static partial class MapRenderer
         var half = bar.Metres / 2;
         var marks = new List<(string Text, float X)> { ("0", x), (DistanceText(bar.Metres), x + w) };
         if (half == Math.Floor(half))
-            marks.Add(($"{half:0}", x + w / 2));
+            marks.Add((half.ToString("0", UiLanguage.Culture), x + w / 2));
         foreach (var (label, at) in marks)
         {
             canvas.DrawText(label, at, y - 8 * ui, SKTextAlign.Center, font, textHalo);
@@ -2137,7 +2144,7 @@ public static partial class MapRenderer
         if (!pinging)
             return;
         // Said beside the badge, on the side toward the middle of the view, so it never runs off the edge.
-        const string text = "YOUR NEW POSITION · PRESS F";
+        var text = MapTexts.MapNewPosition;
         using var font = new SKFont(TypefaceBold, 13 * ui);
         var width = font.MeasureText(text);
         var center = new SKPoint(camera.Viewport.Width / 2, camera.Viewport.Height / 2);
@@ -2238,12 +2245,16 @@ public static partial class MapRenderer
     private const float PlayerRing = 12;
 
     /// <summary>A fix's age as the map says it: "4 MIN", "2 H" (whole units, as the top bar).</summary>
-    public static string AgeText(TimeSpan age) => age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} MIN" : $"{(int)age.TotalHours} H";
+    public static string AgeText(TimeSpan age) => age.TotalMinutes < 60
+        ? MapTexts.PlayerAgeMinutes(minutes: (int)age.TotalMinutes)
+        : MapTexts.PlayerAgeHours(hours: (int)age.TotalHours);
 
     /// <summary>The tag beside the player once the position is a minute old: "1 MIN OLD", and from <see cref="PlayerStale"/>
     /// larger and framed ("7 MIN OLD"). Always with "OLD": bare minutes on a map read as a time to get somewhere
     /// (owner, 2026-10-04).</summary>
-    public static (string Text, bool Stale) AgeTag(TimeSpan age) => (AgeText(age) + " OLD", age >= PlayerStale);
+    public static (string Text, bool Stale) AgeTag(TimeSpan age) => (age.TotalMinutes < 60
+        ? MapTexts.PlayerAgeMinutesOld(minutes: (int)age.TotalMinutes)
+        : MapTexts.PlayerAgeHoursOld(hours: (int)age.TotalHours), age >= PlayerStale);
 
     private static float AgeTagSize(bool stale) => stale ? 12.5f : 10.5f;
 

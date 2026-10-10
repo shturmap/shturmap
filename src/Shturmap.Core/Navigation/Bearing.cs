@@ -29,23 +29,33 @@ public static class Bearing
         return (RelativeDirection)sector;
     }
 
-    /// <summary>Eight-point compass label for a heading in degrees clockwise from "up" on the map (map-up = N).</summary>
+    /// <summary>Eight-point compass label for a heading in degrees clockwise from "up" on the map (map-up = N), in the
+    /// language in use (German: N, NO, O, …).</summary>
     public static string Compass(double degreesFromUp)
     {
-        string[] points = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
         var normalized = ((degreesFromUp % 360) + 360) % 360;
-        return points[(int)Math.Floor((normalized + 22.5) / 45) % 8];
+        return ((int)Math.Floor((normalized + 22.5) / 45) % 8) switch
+        {
+            0 => CoreTexts.CompassNorth,
+            1 => CoreTexts.CompassNorthEast,
+            2 => CoreTexts.CompassEast,
+            3 => CoreTexts.CompassSouthEast,
+            4 => CoreTexts.CompassSouth,
+            5 => CoreTexts.CompassSouthWest,
+            6 => CoreTexts.CompassWest,
+            _ => CoreTexts.CompassNorthWest,
+        };
     }
 
     public static string Describe(RelativeDirection direction) => direction switch
     {
-        RelativeDirection.Ahead => "ahead",
-        RelativeDirection.AheadRight => "ahead-right",
-        RelativeDirection.Right => "right",
-        RelativeDirection.BehindRight => "behind-right",
-        RelativeDirection.Behind => "behind",
-        RelativeDirection.BehindLeft => "behind-left",
-        RelativeDirection.Left => "left",
-        _ => "ahead-left",
+        RelativeDirection.Ahead => CoreTexts.DirectionAhead,
+        RelativeDirection.AheadRight => CoreTexts.DirectionAheadRight,
+        RelativeDirection.Right => CoreTexts.DirectionRight,
+        RelativeDirection.BehindRight => CoreTexts.DirectionBehindRight,
+        RelativeDirection.Behind => CoreTexts.DirectionBehind,
+        RelativeDirection.BehindLeft => CoreTexts.DirectionBehindLeft,
+        RelativeDirection.Left => CoreTexts.DirectionLeft,
+        _ => CoreTexts.DirectionAheadLeft,
     };
 }

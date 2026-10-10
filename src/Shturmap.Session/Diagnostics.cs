@@ -42,16 +42,22 @@ public static class Diagnostics
         Line("Screenshots folder", YesNo(s.Locations is { } l && Directory.Exists(l.ScreenshotsFolder)));
         Line("Mode", s.Mode.ToString());
         Line("Game language", s.GameLanguage ?? "unknown");
+        // The language Shturmap shows, where it came from (the setting, the game, Windows, the default) and the game
+        // data's (docs/DESIGN.md §8, "The app's own language").
+        Line("Windows language", s.Language.Windows ?? "unknown");
+        Line("Language", GameSession.Describe(s.Language.Choice) + (s.Language.ForRun ? " (this run only)" : ""));
         Line("tarkov.dev language", s.Data is { } d
             ? d.Language + (d.MissingLanguage is { } missing ? $" (no '{missing}' texts there)" : "")
                 // Why a session in another game language reads English: its texts couldn't be loaded.
                 + (d.LanguageFailure is { } failed ? $" ('{failed.Language}' texts not loaded: {failed.Why.Kind}{(failed.Why.Status is { } answered ? " " + answered : "")})" : "")
+                // The extract list is read in the game's language: its names in it, when the data is in another.
+                + (d.GameNamesLanguage is { } names ? $"; extract names also in {names}" : "")
             : "not loaded");
         Line("Data", s.Data switch
         {
-            { Offline: true } data => $"offline copy, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}",
-            { } data => $"loaded, checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm}",
-            null when s.DataProblem is { } problem => $"failed: {problem.Kind}{(problem.Status is { } code ? " " + code : "")}: {problem.What}",
+            { Offline: true } data => "offline copy, checked " + data.CheckedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            { } data => "loaded, checked " + data.CheckedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            null when s.DataProblem is { } problem => $"failed: {problem.Kind}{(problem.Status is { } code ? " " + code : "")}: {problem.InEnglish}",
             null => "loading",
         });
         Line("Active quests", s.ActiveQuestCount.ToString(CultureInfo.InvariantCulture));

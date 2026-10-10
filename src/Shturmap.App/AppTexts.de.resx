@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="NoticePositionOffScreen" xml:space="preserve">
+    <value>Deine neue Position liegt außerhalb des gezeigten Map-Ausschnitts: Drück F oder klick auf den Pfeil am Rand.</value>
+    <comment>en: Your new position is outside the part of the map shown: press F, or click the arrow at the edge.</comment>
+  </data>
+  <data name="HelpKeyShowMe" xml:space="preserve">
+    <value>F</value>
+    <comment>en: F</comment>
+  </data>
+  <data name="HelpKeyShowMeAction" xml:space="preserve">
+    <value>Meine Position zeigen</value>
+    <comment>en: Show my position</comment>
+  </data>
+  <data name="HelpKeyFollow" xml:space="preserve">
+    <value>UMSCHALT + F</value>
+    <comment>en: SHIFT + F</comment>
+  </data>
+  <data name="HelpKeyFollowAction" xml:space="preserve">
+    <value>Meiner Position folgen</value>
+    <comment>en: Follow my position</comment>
+  </data>
+  <data name="HelpKeyZoom" xml:space="preserve">
+    <value>+ / −</value>
+    <comment>en: + / −</comment>
+  </data>
+  <data name="HelpKeyZoomAction" xml:space="preserve">
+    <value>Vergrößern / Verkleinern (oder Mausrad)</value>
+    <comment>en: Zoom in / out (or mouse wheel)</comment>
+  </data>
+  <data name="HelpKeyFit" xml:space="preserve">
+    <value>0</value>
+    <comment>en: 0</comment>
+  </data>
+  <data name="HelpKeyFitAction" xml:space="preserve">
+    <value>Ganze Map</value>
+    <comment>en: Whole map</comment>
+  </data>
+  <data name="HelpKeyFloor" xml:space="preserve">
+    <value>BILD↑ / BILD↓</value>
+    <comment>en: PGUP / PGDN</comment>
+  </data>
+  <data name="HelpKeyFloorAction" xml:space="preserve">
+    <value>Stock höher / tiefer</value>
+    <comment>en: Floor up / down</comment>
+  </data>
+  <data name="HelpKeyClose" xml:space="preserve">
+    <value>ESC</value>
+    <comment>en: ESC</comment>
+  </data>
+  <data name="HelpKeyCloseAction" xml:space="preserve">
+    <value>Karten schließen</value>
+    <comment>en: Close cards</comment>
+  </data>
+  <data name="HelpKeyHelp" xml:space="preserve">
+    <value>F1 / ?</value>
+    <comment>en: F1 / ?</comment>
+  </data>
+  <data name="HelpKeyHelpAction" xml:space="preserve">
+    <value>Diese Hilfe</value>
+    <comment>en: This help</comment>
+  </data>
+  <data name="HelpKeySettings" xml:space="preserve">
+    <value>STRG + ,</value>
+    <comment>en: CTRL + ,</comment>
+  </data>
+  <data name="HelpKeySettingsAction" xml:space="preserve">
+    <value>Einstellungen</value>
+    <comment>en: Settings</comment>
+  </data>
+  <data name="HelpKeyMouse" xml:space="preserve">
+    <value>MAUS</value>
+    <comment>en: MOUSE</comment>
+  </data>
+  <data name="HelpKeyMouseAction" xml:space="preserve">
+    <value>Ziehen zum Verschieben, Doppelklick zum Vergrößern. Klick auf eine Quest hält ihre Karte fest; Klick auf ihren Stift pickt sie</value>
+    <comment>en: Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it</comment>
+  </data>
+  <data name="HelpLegendOnThisMap" xml:space="preserve">
+    <value>AUF DIESER MAP</value>
+    <comment>en: ON THIS MAP</comment>
+  </data>
+  <data name="HelpLegendHide" xml:space="preserve">
+    <value>{count, plural, one {# SYMBOL AUSBLENDEN} other {# SYMBOLE AUSBLENDEN}}</value>
+    <comment>en: {count, plural, one {HIDE # SYMBOL} other {HIDE # SYMBOLS}}</comment>
+  </data>
+  <data name="HelpLegendShowMore" xml:space="preserve">
+    <value>{count, plural, one {# WEITERES SYMBOL ZEIGEN} other {# WEITERE SYMBOLE ZEIGEN}}</value>
+    <comment>en: {count, plural, one {SHOW # MORE SYMBOL} other {SHOW # MORE SYMBOLS}}</comment>
+  </data>
+  <data name="NoticeDiagnosticsCopied" xml:space="preserve">
+    <value>Diagnosedaten kopiert: Füg sie in deine Nachricht ein.</value>
+    <comment>en: Diagnostics copied: paste them into your message.</comment>
+  </data>
+  <data name="NoticeDiagnosticsNotCopied" xml:space="preserve">
+    <value>Diagnosedaten nicht kopiert: Vielleicht nutzt eine andere App gerade die Zwischenablage. Versuch es noch mal.</value>
+    <comment>en: Couldn't copy the diagnostics: another app may be using the clipboard. Try again.</comment>
+  </data>
+  <data name="SettingsStudyLog" xml:space="preserve">
+    <value>Studien-Log führen</value>
+    <comment>en: Keep a study log</comment>
+  </data>
+  <data name="SettingsStudyLogNote" xml:space="preserve">
+    <value>Nur in Dev-Builds. Zeichnet Raids, Quest-Änderungen, Positionen und App-Nutzung auf, um Shturmap zu verbessern. Bleibt 30 Tage auf diesem PC (%LOCALAPPDATA%\Shturmap-dev\study); wird nie gesendet, auch nicht mit einem Bericht.</value>
+    <comment>en: Developer builds only. Records raids, quest changes, positions and app use, to improve Shturmap. Stays on this PC (%LOCALAPPDATA%\Shturmap-dev\study) for 30 days; never sent, not even with a report.</comment>
+  </data>
+  <data name="SettingsDeleteScreenshotsNote" xml:space="preserve">
+    <value>Löscht jeden Positions-Screenshot {seconds} s nach dem Lesen seines Namens, endgültig (nicht in den Papierkorb). Nur neue aus dem Raid, solange angehakt; ältere und Menü-Screenshots bleiben.</value>
+    <comment>en: Deletes each position screenshot {seconds} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.</comment>
+  </data>
+  <data name="SettingsReadExitsNote" xml:space="preserve">
+    <value>Liest die Extract-Liste oben rechts in jedem Raid-Screenshot, mit der Texterkennung von Windows. Nur auf diesem PC; vom Bild wird nichts behalten oder gesendet. Ohne Haken wird kein Bild geöffnet.</value>
+    <comment>en: Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.</comment>
+  </data>
+  <data name="StatusDataOffline" xml:space="preserve">
+    <value>Gespeicherte Kopie der Daten von tarkov.dev vom {time}: tarkov.dev war nicht erreichbar.</value>
+    <comment>en: A saved copy of tarkov.dev's data from {time}: tarkov.dev couldn't be reached.</comment>
+  </data>
+  <data name="StatusDataChecked" xml:space="preserve">
+    <value>Spieldaten von tarkov.dev, geprüft um {time}.</value>
+    <comment>en: Game data from tarkov.dev, checked {time}.</comment>
+  </data>
+  <data name="StatusDataLoading" xml:space="preserve">
+    <value>Lade Spieldaten von tarkov.dev…</value>
+    <comment>en: Loading game data from tarkov.dev…</comment>
+  </data>
+  <data name="KeysOr" xml:space="preserve">
+    <value> oder </value>
+    <comment>en:  or </comment>
+  </data>
+  <data name="ScreenshotKeyUnknown" xml:space="preserve">
+    <value>deiner Screenshot-Taste</value>
+    <comment>en: your screenshot key</comment>
+  </data>
+  <data name="RaidLength" xml:space="preserve">
+    <value>Raid-Dauer {minutes} min</value>
+    <comment>en: {minutes} min raid</comment>
+  </data>
+  <data name="StatusFix" xml:space="preserve">
+    <value>Position vor {age} · {floor} · Höhe {height} m</value>
+    <comment>en: Fix {age} ago · {floor} · height {height} m</comment>
+  </data>
+  <data name="StatusFloorGround" xml:space="preserve">
+    <value>Erdgeschoss</value>
+    <comment>en: ground</comment>
+  </data>
+  <data name="PlanNoneOfYourQuests" xml:space="preserve">
+    <value>Keine deiner Quests ist auf {map}</value>
+    <comment>en: None of your quests is on {map}</comment>
+  </data>
+  <data name="PlanRowCompleteAndProgress" xml:space="preserve">
+    <value>{complete} abschließen · {progress} Progress</value>
+    <comment>en: Complete {complete} · progress {progress}</comment>
+  </data>
+  <data name="PlanRowComplete" xml:space="preserve">
+    <value>{complete} abschließen</value>
+    <comment>en: Complete {complete}</comment>
+  </data>
+  <data name="PlanRowProgress" xml:space="preserve">
+    <value>{progress} Progress</value>
+    <comment>en: Progress {progress}</comment>
+  </data>
+  <data name="PlanSummaryCompleteAndProgress" xml:space="preserve">
+    <value>{complete, plural, one {# Quest} other {# Quests}} abschließen · Progress bei {progress} weiteren</value>
+    <comment>en: Complete {complete, plural, one {# quest} other {# quests}} · progress {progress} more</comment>
+  </data>
+  <data name="PlanSummaryComplete" xml:space="preserve">
+    <value>{complete, plural, one {# Quest} other {# Quests}} abschließen</value>
+    <comment>en: Complete {complete, plural, one {# quest} other {# quests}}</comment>
+  </data>
+  <data name="PlanSummaryProgress" xml:space="preserve">
+    <value>Progress bei {progress, plural, one {# Quest} other {# Quests}}</value>
+    <comment>en: Progress {progress, plural, one {# quest} other {# quests}}</comment>
+  </data>
+  <data name="RaidMapNotKnown" xml:space="preserve">
+    <value>MAP UNBEKANNT</value>
+    <comment>en: MAP NOT KNOWN</comment>
+  </data>
+  <data name="RaidLookingAt" xml:space="preserve">
+    <value>ANSICHT: {map}</value>
+    <comment>en: LOOKING AT {map}</comment>
+  </data>
+  <data name="RaidLookNote" xml:space="preserve">
+    <value>DER RAID LÄUFT AUF {map} · DEINE NÄCHSTE POSITION HOLT DICH DORTHIN ZURÜCK</value>
+    <comment>en: THE RAID IS ON {map} · YOUR NEXT POSITION SHOWS IT AGAIN</comment>
+  </data>
+  <data name="RaidSidePmc" xml:space="preserve">
+    <value>PMC</value>
+    <comment>en: PMC</comment>
+  </data>
+  <data name="RaidSideScav" xml:space="preserve">
+    <value>SCAV</value>
+    <comment>en: SCAV</comment>
+  </data>
+  <data name="RaidObjectiveDone" xml:space="preserve">
+    <value>erledigt</value>
+    <comment>en: done</comment>
+  </data>
+  <data name="ExtractKindPmc" xml:space="preserve">
+    <value>PMC-Extract</value>
+    <comment>en: PMC extract</comment>
+  </data>
+  <data name="ExtractKindScav" xml:space="preserve">
+    <value>Scav-Extract</value>
+    <comment>en: Scav extract</comment>
+  </data>
+  <data name="ExtractKindTransit" xml:space="preserve">
+    <value>Transit</value>
+    <comment>en: Transit</comment>
+  </data>
+  <data name="ExtractKindShared" xml:space="preserve">
+    <value>Extract für beide Seiten</value>
+    <comment>en: Shared extract</comment>
+  </data>
+  <data name="RaidAllExits" xml:space="preserve">
+    <value>ALLE {count} ↓</value>
+    <comment>en: ALL {count} ↓</comment>
+  </data>
+  <data name="HintLoading" xml:space="preserve">
+    <value>Lade Quests und Maps…</value>
+    <comment>en: Loading quests and maps…</comment>
+  </data>
+  <data name="HintNoQuestOnAMap" xml:space="preserve">
+    <value>Keine deiner aktiven Quests ist an eine Map gebunden.</value>
+    <comment>en: None of your active quests is tied to a map.</comment>
+  </data>
+  <data name="HintNothingLeftHere" xml:space="preserve">
+    <value>{count, plural, one {Deine aktive Quest hat auf dieser Map kein Ziel mehr.} other {Keine deiner # aktiven Quests hat auf dieser Map noch ein Ziel.}}</value>
+    <comment>en: None of your {count, plural, other {# active quests}} has an objective left on this map.</comment>
+  </data>
+  <data name="ScavFindItems" xml:space="preserve">
+    <value>Items für {count, plural, one {# Quest} other {# Quests}} finden</value>
+    <comment>en: Find items for {count, plural, one {# quest} other {# quests}}</comment>
+  </data>
+  <data name="ScavNoteLoading" xml:space="preserve">
+    <value>Scav: Quest-Ziele zählen nicht, also nichts mitzunehmen; FiR-Items schon.</value>
+    <comment>en: Scav: quest objectives don't count, so nothing to bring; found-in-raid items do.</comment>
+  </data>
+  <data name="ScavNote" xml:space="preserve">
+    <value>Scav: Quest-Ziele zählen nicht; FiR-Items schon.</value>
+    <comment>en: Scav: quest objectives don't count; found-in-raid items do.</comment>
+  </data>
+  <data name="ScavLootFor" xml:space="preserve">
+    <value>für {quests}</value>
+    <comment>en: for {quests}</comment>
+  </data>
+  <data name="ScavLooseHere" xml:space="preserve">
+    <value>Loot hier · {count, plural, one {# Spot} other {# Spots}}</value>
+    <comment>en: Loose here · {count, plural, one {# spot} other {# spots}}</comment>
+  </data>
+  <data name="ScavLootMore" xml:space="preserve">
+    <value>{count, plural, one {Und # weiteres Item, das deine Quests FiR brauchen.} other {Und # weitere Items, die deine Quests FiR brauchen.}}</value>
+    <comment>en: And {count, plural, other {# more items}} your quests need found in raid.</comment>
+  </data>
+  <data name="ObjectiveAfterRaid" xml:space="preserve">
+    <value>nach dem Raid</value>
+    <comment>en: after the raid</comment>
+  </data>
+  <data name="ObjectiveAnywhere" xml:space="preserve">
+    <value>überall</value>
+    <comment>en: anywhere</comment>
+  </data>
+  <data name="HeightUp" xml:space="preserve">
+    <value>{metres} m höher</value>
+    <comment>en: {metres} m up</comment>
+  </data>
+  <data name="HeightDown" xml:space="preserve">
+    <value>{metres} m tiefer</value>
+    <comment>en: {metres} m down</comment>
+  </data>
+  <data name="NoticeNoArtwork" xml:space="preserve">
+    <value>Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: a 10 m grid stands in, with your position, objectives and extracts.</comment>
+  </data>
+  <data name="MapCreditArtwork" xml:space="preserve">
+    <value>Map © {author} und Mitwirkende, CC BY-NC-SA 4.0 · Daten tarkov.dev</value>
+    <comment>en: Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev</comment>
+  </data>
+  <data name="MapCreditRender" xml:space="preserve">
+    <value>Map: {author} · Daten tarkov.dev</value>
+    <comment>en: Map: {author} · data tarkov.dev</comment>
+  </data>
+  <data name="MapCreditSheet" xml:space="preserve">
+    <value>Keine Map-Grafik · Raster 10 m · Daten tarkov.dev</value>
+    <comment>en: No map artwork · grid 10 m · data tarkov.dev</comment>
+  </data>
+  <data name="MapCreditData" xml:space="preserve">
+    <value>Daten tarkov.dev</value>
+    <comment>en: Data tarkov.dev</comment>
+  </data>
+  <data name="NoticeNoRender" xml:space="preserve">
+    <value>Kein Map-Render für {map}: Download fehlgeschlagen; prüf die Internetverbindung. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map render for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+  </data>
+  <data name="NoticeArtworkOffline" xml:space="preserve">
+    <value>Keine Map-Grafik für {map}: Download fehlgeschlagen; prüf die Internetverbindung. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+  </data>
+  <data name="NoticeArtworkRefused" xml:space="preserve">
+    <value>Keine Map-Grafik für {map}: Der Server antwortete mit {status}. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: its server answered {status}. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+  </data>
+  <data name="NoticeArtworkDisk" xml:space="preserve">
+    <value>Keine Map-Grafik für {map}: Speichern auf diesem PC fehlgeschlagen; prüf den freien Speicherplatz. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: couldn't save it on this PC; check the free disk space. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+  </data>
+  <data name="NoticeArtworkUnreadable" xml:space="preserve">
+    <value>Keine Map-Grafik für {map}: Lesen fehlgeschlagen. Stattdessen ein 10-m-Raster mit deiner Position, Zielen und Extracts.</value>
+    <comment>en: No map artwork for {map}: couldn't read it. A 10 m grid stands in, with your position, objectives and extracts.</comment>
+  </data>
+  <data name="PreviewMap" xml:space="preserve">
+    <value>VORSCHAU · {map}</value>
+    <comment>en: PREVIEW · {map}</comment>
+  </data>
+  <data name="MapFloorGround" xml:space="preserve">
+    <value>Erdgeschoss</value>
+    <comment>en: Ground</comment>
+  </data>
+  <data name="CueRaidLoading" xml:space="preserve">
+    <value>RAID LÄDT</value>
+    <comment>en: RAID LOADING</comment>
+  </data>
+  <data name="CueTransit" xml:space="preserve">
+    <value>TRANSIT</value>
+    <comment>en: TRANSIT</comment>
+  </data>
+  <data name="CueScavRaid" xml:space="preserve">
+    <value>SCAV-RAID</value>
+    <comment>en: SCAV RAID</comment>
+  </data>
+  <data name="CueScavRaidDetail" xml:space="preserve">
+    <value>Quest-Ziele zählen hier nicht; FiR-Items schon.</value>
+    <comment>en: Quest objectives don't count here; items you find in raid do.</comment>
+  </data>
+  <data name="CueLoadingCancelled" xml:space="preserve">
+    <value>LADEN ABGEBROCHEN</value>
+    <comment>en: LOADING CANCELLED</comment>
+  </data>
+  <data name="CueBackToPlanning" xml:space="preserve">
+    <value>Zurück zur Planung des nächsten Raids.</value>
+    <comment>en: Back to planning the next raid.</comment>
+  </data>
+  <data name="CueGroupPicked" xml:space="preserve">
+    <value>GRUPPE HAT GEPICKT</value>
+    <comment>en: GROUP PICKED</comment>
+  </data>
+  <data name="CueMapAndLength" xml:space="preserve">
+    <value>{map} · {minutes} MIN</value>
+    <comment>en: {map} · {minutes} MIN</comment>
+  </data>
+  <data name="CueRaidOver" xml:space="preserve">
+    <value>RAID VORBEI</value>
+    <comment>en: RAID OVER</comment>
+  </data>
+  <data name="CueNextRaid" xml:space="preserve">
+    <value>Nächster Raid: {map} · {summary}</value>
+    <comment>en: Next raid: {map} · {summary}</comment>
+  </data>
+  <data name="CueExample" xml:space="preserve">
+    <value>Ein Beispiel, nicht dein Raid.</value>
+    <comment>en: An example, not your raid.</comment>
+  </data>
+  <data name="SettingsVersionNamed" xml:space="preserve">
+    <value>Shturmap {version} „{name}“ · {build}</value>
+    <comment>en: Shturmap {version} "{name}" · {build}</comment>
+  </data>
+  <data name="SettingsVersion" xml:space="preserve">
+    <value>Shturmap {version} · {build}</value>
+    <comment>en: Shturmap {version} · {build}</comment>
+  </data>
+  <data name="BuildInstalled" xml:space="preserve">
+    <value>installiert</value>
+    <comment>en: installed</comment>
+  </data>
+  <data name="BuildDev" xml:space="preserve">
+    <value>Dev-Build</value>
+    <comment>en: dev build</comment>
+  </data>
+  <data name="BuildFolder" xml:space="preserve">
+    <value>Ordner-Build</value>
+    <comment>en: folder build</comment>
+  </data>
+  <data name="NoticeTourWaits" xml:space="preserve">
+    <value>Die Tour wartet, bis der Raid vorbei ist.</value>
+    <comment>en: The tour waits until the raid is over.</comment>
+  </data>
+  <data name="NoticeTourStaysInHelp" xml:space="preserve">
+    <value>Die Tour bleibt in der Hilfe: F1, dann TOUR STARTEN.</value>
+    <comment>en: The tour stays in help: F1, then TAKE THE TOUR.</comment>
+  </data>
+  <data name="TourDone" xml:space="preserve">
+    <value>FERTIG</value>
+    <comment>en: DONE</comment>
+  </data>
+  <data name="TourSafeReads" xml:space="preserve">
+    <value>LIEST</value>
+    <comment>en: READS</comment>
+  </data>
+  <data name="TourSafeNever" xml:space="preserve">
+    <value>NIE</value>
+    <comment>en: NEVER</comment>
+  </data>
+  <data name="PreviewTour" xml:space="preserve">
+    <value>VORSCHAU · DIE TOUR · {map}</value>
+    <comment>en: PREVIEW · THE TOUR · {map}</comment>
+  </data>
+  <data name="PreviewExample" xml:space="preserve">
+    <value>EIN BEISPIEL, NICHT DEIN RAID</value>
+    <comment>en: AN EXAMPLE, NOT YOUR RAID</comment>
+  </data>
+  <data name="TourCardExample" xml:space="preserve">
+    <value>DIE RAID-KARTE, MIT BEISPIELWERTEN</value>
+    <comment>en: THE RAID CARD, WITH EXAMPLE VALUES</comment>
+  </data>
+  <data name="TourKeyScreenshot" xml:space="preserve">
+    <value>SCREENSHOT</value>
+    <comment>en: SCREENSHOT</comment>
+  </data>
+  <data name="TourKeyPosition" xml:space="preserve">
+    <value>POSITION AUS DEM DATEINAMEN</value>
+    <comment>en: POSITION FROM THE FILE NAME</comment>
+  </data>
+  <data name="CueFirstRaid" xml:space="preserve">
+    <value>ERSTER RAID MIT SHTURMAP · IM RAID SCREENSHOT MIT {key}</value>
+    <comment>en: FIRST RAID WITH SHTURMAP · PRESS {key} ONCE YOU'RE IN</comment>
+  </data>
+  <data name="NoticeFirstFix" xml:space="preserve">
+    <value>Das bist du, aus dem Namen deines Screenshots. Jeder neue bewegt dich.</value>
+    <comment>en: That's you, from your screenshot's name. Each new one moves you.</comment>
+  </data>
+  <data name="HelpWhatsNew" xml:space="preserve">
+    <value>NEUIGKEITEN IN {version}</value>
+    <comment>en: WHAT'S NEW IN {version}</comment>
+  </data>
+  <data name="PreviewWhatsNew" xml:space="preserve">
+    <value>VORSCHAU · NEU IN {version} · {name}</value>
+    <comment>en: PREVIEW · NEW IN {version} · {name}</comment>
+  </data>
+  <data name="WhatsNewClockExample" xml:space="preserve">
+    <value>DIE UHR DER RAID-KARTE, MIT BEISPIELZEITEN</value>
+    <comment>en: THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES</comment>
+  </data>
+  <data name="PreviewClickToPlan" xml:space="preserve">
+    <value>KLICK ZUM PLANEN AUF DIE ZEILE</value>
+    <comment>en: CLICK ITS ROW TO PLAN IT</comment>
+  </data>
+  <data name="NoticeUpdateDownloadGone" xml:space="preserve">
+    <value>Das Update konnte nicht installiert werden: Der Download ist weg. Shturmap läuft weiter.</value>
+    <comment>en: The update couldn't be applied: its download is gone. Shturmap keeps running.</comment>
+  </data>
+  <data name="NoticeUpdaterDidntStart" xml:space="preserve">
+    <value>Das Update konnte nicht installiert werden: Der Updater startete nicht (warum, steht im Log). Shturmap läuft weiter.</value>
+    <comment>en: The update couldn't be applied: the updater couldn't start (the log says why). Shturmap keeps running.</comment>
+  </data>
+  <data name="FeedbackTip" xml:space="preserve">
+    <value>Problem oder Idee melden</value>
+    <comment>en: Report a problem or idea</comment>
+  </data>
+  <data name="FeedbackTipNotSetUp" xml:space="preserve">
+    <value>Melden ist in diesem Build nicht eingerichtet</value>
+    <comment>en: Reporting isn't set up in this build</comment>
+  </data>
+  <data name="HelpFeedbackPointer" xml:space="preserve">
+    <value>Problem oder Idee? Nutz den Feedback-Button neben dem ?.</value>
+    <comment>en: Problem or idea? Use the feedback button beside the ?.</comment>
+  </data>
+  <data name="NoticeReport" xml:space="preserve">
+    <value>MELDEN</value>
+    <comment>en: REPORT</comment>
+  </data>
+  <data name="NoticeCopyDiagnostics" xml:space="preserve">
+    <value>DIAGNOSEDATEN KOPIEREN</value>
+    <comment>en: COPY DIAGNOSTICS</comment>
+  </data>
+  <data name="NoticePrivacyNotOpened" xml:space="preserve">
+    <value>Der Datenschutzhinweis ließ sich nicht öffnen; er liegt als privacy.txt neben Shturmap.exe.</value>
+    <comment>en: Couldn't open the privacy notice; it is privacy.txt beside Shturmap.exe.</comment>
+  </data>
+  <data name="NoticeReportingNotSetUp" xml:space="preserve">
+    <value>Melden ist in diesem Build nicht eingerichtet: Kopier die Diagnosedaten in der Hilfe (?) und schick sie an die Person, von der du Shturmap hast.</value>
+    <comment>en: Reporting isn't set up in this build: copy the diagnostics in help (?) and send them to whoever gave you Shturmap.</comment>
+  </data>
+  <data name="ReportHideSent" xml:space="preserve">
+    <value>AUSBLENDEN, WAS GESENDET WIRD</value>
+    <comment>en: HIDE WHAT'S SENT</comment>
+  </data>
+  <data name="ReportClose" xml:space="preserve">
+    <value>SCHLIESSEN</value>
+    <comment>en: CLOSE</comment>
+  </data>
+  <data name="ReportIdeaPlaceholder" xml:space="preserve">
+    <value>Was würde helfen, und wann würdest du es nutzen? (Pflichtfeld)</value>
+    <comment>en: What would help, and when would you use it? (Required)</comment>
+  </data>
+  <data name="ReportSending" xml:space="preserve">
+    <value>Wird gesendet…</value>
+    <comment>en: Sending…</comment>
+  </data>
+  <data name="CrashQuestionErrors" xml:space="preserve">
+    <value>{count, plural, one {Shturmap hatte letztes Mal einen Fehler.} other {Shturmap hatte # Fehler seit deiner letzten Antwort.}} Fehlerbericht senden? Das hilft beim Beheben.</value>
+    <comment>en: {count, plural, one {Shturmap ran into an error last time.} other {Shturmap ran into # errors since you last answered.}} Send an error report? It helps to fix it.</comment>
+  </data>
+  <data name="CrashQuestionCrashes" xml:space="preserve">
+    <value>{count, plural, one {Shturmap wurde letztes Mal unerwartet beendet.} other {Shturmap wurde seit deiner letzten Antwort # Mal unerwartet beendet.}} Absturzbericht senden? Das hilft beim Beheben.</value>
+    <comment>en: {count, plural, one {Shturmap closed unexpectedly last time.} other {Shturmap closed unexpectedly # times since you last answered.}} Send a crash report? It helps to fix it.</comment>
+  </data>
+  <data name="SettingsNewerGameLogs" xml:space="preserve">
+    <value>Neuere Spiel-Logs in {folder}</value>
+    <comment>en: Newer game logs in {folder}</comment>
+  </data>
+  <data name="UninstallDataRelease" xml:space="preserve">
+    <value>Der ganze Ordner %LOCALAPPDATA%\Shturmap: Einstellungen, Quest-Verlauf, Logs, nicht gesendete Berichte, Absturzdaten, Download-Cache. Ohne Haken bleibt er für eine spätere Installation.</value>
+    <comment>en: The whole %LOCALAPPDATA%\Shturmap folder: settings, quest history, logs, unsent reports, crash records, download cache. Unticked, it stays for a later install.</comment>
+  </data>
+  <data name="UninstallDataDev" xml:space="preserve">
+    <value>Einstellungen, Quest-Verlauf, Logs, nicht gesendete Berichte und Absturzdaten in %LOCALAPPDATA%\Shturmap-dev. Der Download-Cache bleibt (das Release nutzt ihn mit).</value>
+    <comment>en: Settings, quest history, logs, unsent reports and crash records in %LOCALAPPDATA%\Shturmap-dev. The download cache stays (the release shares it).</comment>
+  </data>
+  <data name="UninstallDataDevWithStudy" xml:space="preserve">
+    <value>Einstellungen, Quest-Verlauf, Logs, Studien-Log, nicht gesendete Berichte und Absturzdaten in %LOCALAPPDATA%\Shturmap-dev. Der Download-Cache bleibt (das Release nutzt ihn mit).</value>
+    <comment>en: Settings, quest history, logs, study log, unsent reports and crash records in %LOCALAPPDATA%\Shturmap-dev. The download cache stays (the release shares it).</comment>
+  </data>
+  <data name="NoticeNoUninstaller" xml:space="preserve">
+    <value>Deinstallationsprogramm von Shturmap nicht gefunden: Deinstallier Shturmap stattdessen über Windows-Einstellungen → Apps → Installierte Apps.</value>
+    <comment>en: Couldn't find Shturmap's uninstaller: remove it in Windows' Settings → Apps instead.</comment>
+  </data>
+  <data name="NoticeCompleted" xml:space="preserve">
+    <value>Abgeschlossen: {quests}</value>
+    <comment>en: Completed: {quests}</comment>
+  </data>
+  <data name="HandoverAfterRaid" xml:space="preserve">
+    <value>Nach dem Raid: {handover}</value>
+    <comment>en: {handover} after the raid</comment>
+  </data>
+  <data name="StatusStarting" xml:space="preserve">
+    <value>Startet…</value>
+    <comment>en: Starting…</comment>
+  </data>
+  <data name="StatusLogs" xml:space="preserve">
+    <value>Logs</value>
+    <comment>en: Logs</comment>
+  </data>
+  <data name="StatusScreenshots" xml:space="preserve">
+    <value>Screenshots</value>
+    <comment>en: Screenshots</comment>
+  </data>
+  <data name="StatusData" xml:space="preserve">
+    <value>Daten</value>
+    <comment>en: Data</comment>
+  </data>
+  <data name="CardKindKey" xml:space="preserve">
+    <value>Key</value>
+    <comment>en: Key</comment>
+  </data>
+  <data name="CardKindItem" xml:space="preserve">
+    <value>Item</value>
+    <comment>en: Item</comment>
+  </data>
+  <data name="PickPickedTip" xml:space="preserve">
+    <value>Für den nächsten Raid gepickt. Klicken: Pick entfernen</value>
+    <comment>en: Picked for the coming raid. Click to unpick</comment>
+  </data>
+  <data name="PickTip" xml:space="preserve">
+    <value>Für den nächsten Raid picken: auf der Map in eigener Farbe hervorgehoben, oben in ihrer Karte</value>
+    <comment>en: Pick for the coming raid: lit on the map in its own colour, first in its card</comment>
+  </data>
+  <data name="TickTickedName" xml:space="preserve">
+    <value>Erledigt, von dir abgehakt</value>
+    <comment>en: Done, ticked by you</comment>
+  </data>
+  <data name="TickName" xml:space="preserve">
+    <value>Als erledigt abhaken</value>
+    <comment>en: Tick as done</comment>
+  </data>
+  <data name="TickTickedTip" xml:space="preserve">
+    <value>Erledigt (dein Haken): Map, ZIEL und Planung überspringen es. Klicken: Haken entfernen</value>
+    <comment>en: Done (your tick): the map, NEXT and the plan skip it. Click to untick</comment>
+  </data>
+  <data name="TickTip" xml:space="preserve">
+    <value>Abhaken, wenn erledigt. Die Logs verraten es nicht, also führen Map und Planung bis dahin hierher</value>
+    <comment>en: Tick when done. The logs can't tell, so until then the map and the plan lead here</comment>
+  </data>
+  <data name="MapEdgeTip" xml:space="preserve">
+    <value>Meine Position zeigen (F)</value>
+    <comment>en: Show my position (F)</comment>
+  </data>
+  <data name="ClockMinIn" xml:space="preserve">
+    <value>MIN IM RAID</value>
+    <comment>en: MIN IN</comment>
+  </data>
+  <data name="ClockMinLeft" xml:space="preserve">
+    <value>MIN ÜBRIG</value>
+    <comment>en: MIN LEFT</comment>
+  </data>
+  <data name="ClockMinutesIn" xml:space="preserve">
+    <value>{minutes} MIN IM RAID</value>
+    <comment>en: {minutes} MIN IN</comment>
+  </data>
+  <data name="ClockPastLength" xml:space="preserve">
+    <value>ÜBER {minutes} MIN RAID-DAUER</value>
+    <comment>en: PAST THE RAID'S {minutes} MIN</comment>
+  </data>
+  <data name="ClockTimeLeftUnknown" xml:space="preserve">
+    <value>RESTZEIT UNBEKANNT</value>
+    <comment>en: TIME LEFT NOT KNOWN</comment>
+  </data>
+  <data name="ReplayMinutes" xml:space="preserve">
+    <value>{minutes} MIN</value>
+    <comment>en: {minutes} MIN</comment>
+  </data>
+  <data name="ReplayPositions" xml:space="preserve">
+    <value>{shown} VON {count, plural, one {# POSITION} other {# POSITIONEN}}</value>
+    <comment>en: {shown} OF {count, plural, one {# POSITION} other {# POSITIONS}}</comment>
+  </data>
+  <data name="ReportExample" xml:space="preserve">
+    <value>Beispiel: Die Map blieb auf Woods, nachdem ich auf Customs reingeladen war.</value>
+    <comment>en: Example: the map stayed on Woods after I loaded into Customs.</comment>
+  </data>
+  <data name="SettingsLanguageAutomatic" xml:space="preserve">
+    <value>AUTOMATISCH</value>
+    <comment>en: AUTOMATIC</comment>
+  </data>
+  <data name="SettingsLanguageAutomaticTip" xml:space="preserve">
+    <value>Die Sprache des Spiels, sonst die von Windows, sonst Englisch</value>
+    <comment>en: The game's language, else Windows', else English</comment>
+  </data>
+  <data name="SettingsLanguageInTranslation" xml:space="preserve">
+    <value>{language} · IN ÜBERSETZUNG</value>
+    <comment>en: {language} · IN TRANSLATION</comment>
+  </data>
+  <data name="SettingsLanguageInTranslationTip" xml:space="preserve">
+    <value>Nur in Dev-Builds: Noch sind nicht alle Texte übersetzt; der Rest erscheint auf Englisch.</value>
+    <comment>en: Developer builds only: not every text is translated yet; the rest shows in English.</comment>
+  </data>
+  <data name="SettingsLanguageFromGame" xml:space="preserve">
+    <value>Automatisch: {language}, wie im Spiel.</value>
+    <comment>en: Automatic: {language}, from the game.</comment>
+  </data>
+  <data name="SettingsLanguageFromWindows" xml:space="preserve">
+    <value>Automatisch: {language}, wie in Windows.</value>
+    <comment>en: Automatic: {language}, from Windows.</comment>
+  </data>
+  <data name="SettingsLanguageNeither" xml:space="preserve">
+    <value>Automatisch: {language}. Weder die Sprache des Spiels noch die von Windows ist bisher übersetzt.</value>
+    <comment>en: Automatic: {language}. Neither the game's nor Windows' language is translated yet.</comment>
+  </data>
+</root>

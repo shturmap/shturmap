@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Shturmap.Core;
 using Shturmap.App.Controls;
 using Shturmap.App.Rules;
 using Shturmap.Core.Logs;
@@ -64,6 +65,7 @@ public sealed partial class MainWindow : Window
 #if DEVTOOLS
         AddStudySwitch();
 #endif
+        WatchLanguage();
 
         Picture.Art = () => _session.Art;
         Study.Log = session.Study;
@@ -124,7 +126,7 @@ public sealed partial class MainWindow : Window
         {
             Study.Ui("fix.ping", ("inView", !offScreen));
             if (offScreen)
-                ShowNotice("Your new position is outside the part of the map shown: press F, or click the arrow at the edge.", TimeSpan.FromSeconds(5));
+                ShowNotice(AppTexts.NoticePositionOffScreen, TimeSpan.FromSeconds(5));
             FirstFixNotice(offScreen);
         };
         Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
@@ -191,29 +193,32 @@ public sealed partial class MainWindow : Window
     public Brush RaidBrush(bool inRaid) => Resource(inRaid ? "AmberBrush" : "InkBrush");
 
     // The OR row under EXIT (Rules.ExitsNote.Plain).
-    public string PlainExitNote { get; } = Caps.Of(Rules.ExitsNote.PlainNote);
+    public string PlainExitNote => Caps.Of(Rules.ExitsNote.PlainNote);
 
     public string PlainExitTip => Rules.ExitsNote.PlainTip;
 
     /// <summary>The keys in the help panel.</summary>
-    public IReadOnlyList<KeyHelp> Keys { get; } =
+    public IReadOnlyList<KeyHelp> Keys =>
     [
-        new("F", "Show my position"),
-        new("SHIFT + F", "Follow my position"),
-        new("+ / −", "Zoom in / out (or mouse wheel)"),
-        new("0", "Whole map"),
-        new("PGUP / PGDN", "Floor up / down"),
-        new("ESC", "Close cards"),
-        new("F1 / ?", "This help"),
-        new("CTRL + ,", "Settings"),
-        new("MOUSE", "Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it"),
+        new(AppTexts.HelpKeyShowMe, AppTexts.HelpKeyShowMeAction),
+        new(AppTexts.HelpKeyFollow, AppTexts.HelpKeyFollowAction),
+        new(AppTexts.HelpKeyZoom, AppTexts.HelpKeyZoomAction),
+        new(AppTexts.HelpKeyFit, AppTexts.HelpKeyFitAction),
+        new(AppTexts.HelpKeyFloor, AppTexts.HelpKeyFloorAction),
+        new(AppTexts.HelpKeyClose, AppTexts.HelpKeyCloseAction),
+        new(AppTexts.HelpKeyHelp, AppTexts.HelpKeyHelpAction),
+        new(AppTexts.HelpKeySettings, AppTexts.HelpKeySettingsAction),
+        new(AppTexts.HelpKeyMouse, AppTexts.HelpKeyMouseAction),
     ];
 
     /// <summary>
     /// The map symbols in the help panel, drawn by the map's own renderer so they can't drift from the map (at twice
     /// the DIP size, which stays sharp up to 200 % and in snapshots).
     /// </summary>
-    private readonly IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = MapLegend.Rows
+    private IReadOnlyList<(LegendSymbol Symbol, MapLegendRow Row)> _legendRows = LegendRows();
+
+    // Made again when the language changes (MainWindow.Language): the rows' words are looked up as they are read.
+    private static List<(LegendSymbol Symbol, MapLegendRow Row)> LegendRows() => MapLegend.Rows
         .Select(row =>
         {
             using var bitmap = MapLegend.Draw(row.Symbol, 2);
@@ -238,7 +243,7 @@ public sealed partial class MainWindow : Window
         if (!opened && (on is null ? _legendOn is null : _legendOn?.SetEquals(on) == true))
             return;
         _legendOn = on;
-        LegendHeading.Text = on is null ? "ON THE MAP" : "ON THIS MAP";
+        LegendHeading.Text = on is null ? ViewTexts.HelpLegendHeading : AppTexts.HelpLegendOnThisMap;
         var (listed, more, elsewhere) = LegendFold.Split(_legendRows, r => on?.Contains(r.Symbol) != false);
         LegendHere.ItemsSource = listed.Select(r => r.Row).ToList();
         LegendRestHere.ItemsSource = more.Select(r => r.Row).ToList();
@@ -256,8 +261,8 @@ public sealed partial class MainWindow : Window
     {
         LegendRest.Visibility = _legendAll && _legendRest > 0 ? Visibility.Visible : Visibility.Collapsed;
         LegendMoreText.Text = _legendAll
-            ? (_legendRest == 1 ? "HIDE 1 SYMBOL" : $"HIDE {_legendRest} SYMBOLS")
-            : (_legendRest == 1 ? "SHOW 1 MORE SYMBOL" : $"SHOW {_legendRest} MORE SYMBOLS");
+            ? AppTexts.HelpLegendHide(count: _legendRest)
+            : AppTexts.HelpLegendShowMore(count: _legendRest);
     }
 
     private void OnLegendMoreClick(object sender, RoutedEventArgs e)
@@ -331,12 +336,12 @@ public sealed partial class MainWindow : Window
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
             // Kept on the clipboard after Shturmap closes.
             Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
-            ShowNotice("Diagnostics copied: paste them into your message.");
+            ShowNotice(AppTexts.NoticeDiagnosticsCopied);
         }
         catch (Exception ex)
         {
             AppLog.Warn("Copying the diagnostics failed", ex);
-            ShowNotice("Couldn't copy the diagnostics: another app may be using the clipboard. Try again.");
+            ShowNotice(AppTexts.NoticeDiagnosticsNotCopied);
         }
         Study.Ui("help.diagnostics");
     }
@@ -365,10 +370,10 @@ public sealed partial class MainWindow : Window
             Content = new StackPanel
             {
                 Orientation = Orientation.Horizontal, Spacing = 9,
-                Children = { box, new TextBlock { Text = "Keep a study log", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold } },
+                Children = { box, new TextBlock { Text = AppTexts.SettingsStudyLog, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold } },
             },
         };
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(toggle, "Keep a study log");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(toggle, AppTexts.SettingsStudyLog);
         void Show()
         {
             var on = ViewModel.StudyLogOn;
@@ -387,7 +392,7 @@ public sealed partial class MainWindow : Window
         StudySwitch.Children.Add(new TextBlock
         {
             Style = (Style)Application.Current.Resources["NoteText"], Margin = new Thickness(22, 0, 0, 0),
-            Text = @"Developer builds only. Records raids, quest changes, positions and app use, to improve Shturmap. Stays on this PC (%LOCALAPPDATA%\Shturmap-dev\study) for 30 days; never sent, not even with a report.",
+            Text = AppTexts.SettingsStudyLogNote,
         });
         StudySwitch.Visibility = Visibility.Visible;
     }
@@ -398,13 +403,13 @@ public sealed partial class MainWindow : Window
 
     // "Delete position screenshots" in settings (owner, 2026-10-04): the one thing Shturmap changes outside its own
     // folders, so it is off unless ticked and its note says what goes and what stays.
-    public string DeleteScreenshotsNote { get; } =
-        $"Deletes each position screenshot {Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds:0} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.";
+    public string DeleteScreenshotsNote =>
+        AppTexts.SettingsDeleteScreenshotsNote(seconds: (int)Math.Round(Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds));
 
     // "Read the extract list from screenshots" in settings (owner, 2026-10-05): the one case where Shturmap opens a
     // screenshot's picture, so its note says what is looked at, and unticking it stops it.
-    public string ReadExitsNote { get; } =
-        "Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.";
+    public string ReadExitsNote =>
+        AppTexts.SettingsReadExitsNote;
 
     private async void OnReadExitsClick(object sender, RoutedEventArgs e)
     {
@@ -445,15 +450,16 @@ public sealed partial class MainWindow : Window
         vm.DataOk = s.DataHealth.Ok;
         vm.DataDetail = s switch
         {
-            { Data: { Offline: true } data } => $"A saved copy of tarkov.dev's data from {data.CheckedAt.ToLocalTime():g}: tarkov.dev couldn't be reached.",
-            { Data: { } data } => $"Game data from tarkov.dev, checked {data.CheckedAt.ToLocalTime():t}.",
+            { Data: { Offline: true } data } => AppTexts.StatusDataOffline(time: UiLanguage.DayMonthTime(data.CheckedAt.ToLocalTime().DateTime)),
+            { Data: { } data } => AppTexts.StatusDataChecked(time: data.CheckedAt.ToLocalTime().ToString("HH:mm", UiLanguage.Culture)),
             { DataProblem: { } problem } => GameSession.DataNotice(problem),
-            _ => "Loading game data from tarkov.dev…",
+            _ => AppTexts.StatusDataLoading,
         };
         vm.StudyLogOn = s.StudyLogOn;
+        ShowLanguage(s);
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
-        vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(" or ", s.ScreenshotKeys) : "your screenshot key";
+        vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys.Select(k => k.Name)) : AppTexts.ScreenshotKeyUnknown;
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
         {
@@ -517,7 +523,7 @@ public sealed partial class MainWindow : Window
         var parts = new List<string>();
         // Before the raid runs (it loads) the map's raid length stands in the facts; once it runs, the line above says more.
         if (s.RaidInfo is { RaidMinutes: > 0 } info && time is null && !(inRaid && s.Raid.Side == RaidSide.Scav))
-            parts.Add($"{info.RaidMinutes} min raid");
+            parts.Add(AppTexts.RaidLength(minutes: info.RaidMinutes));
         // The bosses are parts of their own: each is linked to its spawn zones on the map.
         var raidParts = LinePart.Line(parts.Select(p => new LinePart(p)).Concat(BossParts(s, s.RaidMap?.NormalizedName, s.RaidInfo?.Bosses ?? [])));
         ViewModel.RaidLine = string.Join(" · ", raidParts.Select(p => p.Text));
@@ -531,7 +537,7 @@ public sealed partial class MainWindow : Window
         // the status bar.
         ViewModel.RaidFixNote = age is null && s.Raid.Phase != RaidPhase.InRaid ? "" : FixAge.Note(age, ViewModel.HelpKeys);
         ViewModel.FixText = s.RaidFix is { } fix && age is { } old
-            ? $"Fix {FixAge.Text(old)} ago · {s.RaidFloor?.Name ?? "ground"} · height {fix.Position.Y.ToString("0", CultureInfo.CurrentCulture)} m"
+            ? AppTexts.StatusFix(age: FixAge.Text(old), floor: s.RaidFloor?.Name ?? AppTexts.StatusFloorGround, height: fix.Position.Y.ToString("0", UiLanguage.Culture))
             : StatusBarFit.NoPosition(s.Raid.Phase, ViewModel.HelpKeys);
         FitStatusBar();
     }
@@ -645,13 +651,13 @@ public sealed partial class MainWindow : Window
             return new PlanCard(
                 p.NormalizedName,
                 p.MapName,
-                CardOnly(p, i) ? $"None of your quests is on {p.MapName}" : Summary(p.Finish.Count, p.Progress.Count),
+                CardOnly(p, i) ? AppTexts.PlanNoneOfYourQuests(map: p.MapName) : Summary(p.Finish.Count, p.Progress.Count),
                 Planning.FactsLine(p),
                 i == openIndex,
                 sections.Finish.Select(q => OnMap(q, p)).ToList(),
                 sections.Progress.Select(q => OnMap(q, p)).ToList(),
                 BringLines(s, p.Requirements, s.PicksOn(p.NormalizedName)),
-                (i + 1).ToString(CultureInfo.InvariantCulture),
+                (i + 1).ToString(UiLanguage.Culture),
                 p.Requirements.Select(r => Chip(s, r)).ToList(),
                 sections.Picks.Select(q => OnMap(q, p) with { PickSlot = slots.GetValueOrDefault(q.QuestId, -1) }).ToList())
             {
@@ -718,20 +724,19 @@ public sealed partial class MainWindow : Window
     // The same counts in a row of Plan's map list, where the heading and the card say what they count.
     private static string ShortSummary(int complete, int progress) => (complete, progress) switch
     {
-        (> 0, > 0) => $"Complete {complete} · progress {progress}",
-        (> 0, _) => $"Complete {complete}",
-        _ => $"Progress {progress}",
+        (> 0, > 0) => AppTexts.PlanRowCompleteAndProgress(complete: complete, progress: progress),
+        (> 0, _) => AppTexts.PlanRowComplete(complete: complete),
+        _ => AppTexts.PlanRowProgress(progress: progress),
     };
 
     /// <summary>"Complete 8 quests · progress 2 more": what one raid on the map does for your quest list.</summary>
     private static string Summary(int complete, int progress)
     {
-        static string Quests(int n) => n == 1 ? "1 quest" : $"{n} quests";
         return (complete, progress) switch
         {
-            (> 0, > 0) => $"Complete {Quests(complete)} · progress {progress} more",
-            (> 0, _) => $"Complete {Quests(complete)}",
-            _ => $"Progress {Quests(progress)}",
+            (> 0, > 0) => AppTexts.PlanSummaryCompleteAndProgress(complete: complete, progress: progress),
+            (> 0, _) => AppTexts.PlanSummaryComplete(complete: complete),
+            _ => AppTexts.PlanSummaryProgress(progress: progress),
         };
     }
 
@@ -747,11 +752,11 @@ public sealed partial class MainWindow : Window
             fresh && relative is { } r ? Bearing.Describe(r) : mapBearing is { } b ? Bearing.Compass(b) : "";
 
         // The raid's own map, never one that is only being looked at; a map the data doesn't know is said, not guessed.
-        vm.RaidTitle = s.RaidMapUnknown ? "MAP NOT KNOWN" : Caps.Of(s.RaidMap?.Name ?? s.Map?.Name);
-        vm.LookText = s.LooksAtAnotherMap ? $"LOOKING AT {Caps.Of(s.Map?.Name)}" : "";
-        vm.LookNote = s.LooksAtAnotherMap ? $"THE RAID IS ON {Caps.Of(s.RaidMap?.Name)} · YOUR NEXT POSITION SHOWS IT AGAIN" : "";
+        vm.RaidTitle = s.RaidMapUnknown ? AppTexts.RaidMapNotKnown : Caps.Of(s.RaidMap?.Name ?? s.Map?.Name);
+        vm.LookText = s.LooksAtAnotherMap ? AppTexts.RaidLookingAt(map: Caps.Of(s.Map?.Name)) : "";
+        vm.LookNote = s.LooksAtAnotherMap ? AppTexts.RaidLookNote(map: Caps.Of(s.RaidMap?.Name)) : "";
         // When the logs can't tell (PvE), the raid is shown as a PMC's and the tag is a switch to say otherwise.
-        vm.RaidSide = s.Raid.Side switch { RaidSide.Scav => "SCAV", RaidSide.Pmc => "PMC", _ => vm.InRaid ? "PMC" : "" };
+        vm.RaidSide = s.Raid.Side switch { RaidSide.Scav => AppTexts.RaidSideScav, RaidSide.Pmc => AppTexts.RaidSidePmc, _ => vm.InRaid ? AppTexts.RaidSidePmc : "" };
         vm.SideSwitchable = vm.InRaid && !s.SideFromLogs;
         vm.ScavRaid = vm.InRaid && s.Raid.Side == RaidSide.Scav;
         vm.RaidSummary = s.MapPlan is { } plan && plan.Finish.Count + plan.Progress.Count > 0 ? Summary(plan.Finish.Count, plan.Progress.Count) : "";
@@ -767,14 +772,14 @@ public sealed partial class MainWindow : Window
             {
                 var first = g.First();
                 var objectives = g.OrderBy(o => o.Done ? 1 : 0).ThenBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
-                    .Select(o => ToItem(o, o.Done ? "done" : o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
+                    .Select(o => ToItem(o, o.Done ? AppTexts.RaidObjectiveDone : o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
                     .ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
                     first.QuestName, first.TraderId, first.Trader, objectives, complete.Contains(g.Key), Chips(s, s.MapPlan, g.Key)));
             })
             .OrderBy(q => q.Nearest)
-            .ThenBy(q => q.Quest.Name, StringComparer.CurrentCulture)
+            .ThenBy(q => q.Quest.Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
             .Select(q => q.Quest)
             .ToList();
         // The picks first, nearest first; then COMPLETE and PROGRESS without them. Each list on screen stays while it
@@ -799,10 +804,10 @@ public sealed partial class MainWindow : Window
             e.Name,
             e.Kind switch
             {
-                MarkerKind.ExtractPmc => "PMC extract",
-                MarkerKind.ExtractScav => "Scav extract",
-                MarkerKind.Transit => "Transit",
-                _ => "Shared extract",
+                MarkerKind.ExtractPmc => AppTexts.ExtractKindPmc,
+                MarkerKind.ExtractScav => AppTexts.ExtractKindScav,
+                MarkerKind.Transit => AppTexts.ExtractKindTransit,
+                _ => AppTexts.ExtractKindShared,
             },
             Distance(e.Distance),
             Direction(e.Direction, e.MapBearing),
@@ -825,7 +830,7 @@ public sealed partial class MainWindow : Window
         // The nearest extract, never a transit (Rules.ExitsNote.Exit).
         var exit = Rules.ExitsNote.Exit(vm.Extracts.Select(e => (e.Distance.Length > 0, e.State == ExitState.NotListed, e.Marker == MarkerKind.Transit)).ToList());
         vm.RaidExit = exit is { } at ? vm.Extracts[at] : null;
-        vm.AllExitsText = vm.RaidExit is not null && vm.Extracts.Count > 1 ? $"ALL {vm.Extracts.Count} ↓" : "";
+        vm.AllExitsText = vm.RaidExit is not null && vm.Extracts.Count > 1 ? AppTexts.RaidAllExits(count: vm.Extracts.Count) : "";
         // Under it, where EXIT takes something or isn't sure: the nearest one on the list that takes nothing (owner,
         // 2026-10-05: "where you can simply exfil").
         var plain = Rules.ExitsNote.Plain(
@@ -833,10 +838,10 @@ public sealed partial class MainWindow : Window
             vm.RaidExit is null ? null : vm.Extracts.ToList().IndexOf(vm.RaidExit));
         vm.RaidPlainExit = plain is { } p ? vm.Extracts[p] : null;
 
-        vm.Hint = s.Data is null ? "Loading quests and maps…"
+        vm.Hint = s.Data is null ? AppTexts.HintLoading
             : vm.NoGameLogs ? "" // the no-game line says why there is nothing to plan
-            : !vm.InRaid && s.Plan.Count == 0 ? "None of your active quests is tied to a map."
-            : vm.InRaid && !vm.ScavRaid && !s.Objectives.Any(o => !o.Done) ? $"None of your {s.ActiveQuestCount} active quests has an objective left on this map."
+            : !vm.InRaid && s.Plan.Count == 0 ? AppTexts.HintNoQuestOnAMap
+            : vm.InRaid && !vm.ScavRaid && !s.Objectives.Any(o => !o.Done) ? AppTexts.HintNothingLeftHere(count: s.ActiveQuestCount)
             : "";
         vm.Attribution = AttributionFor(s.Definition);
         // The wiki's interactive map for this map: its page name plus "_Interactive_Map".
@@ -853,34 +858,34 @@ public sealed partial class MainWindow : Window
         var vm = ViewModel;
         var loot = s is { Data: { } data, Map: { } map } ? ScavRaid.Loot(data, s.Quests, data.MapIdsSharing(map.NormalizedName), s.Done) : [];
         var quests = loot.SelectMany(l => l.QuestIds).Distinct().Count();
-        vm.RaidSummary = quests switch { 0 => "", 1 => "Find items for 1 quest", _ => $"Find items for {quests} quests" };
+        vm.RaidSummary = quests switch { 0 => "", _ => AppTexts.ScavFindItems(count: quests) };
         // Loading as a Scav (a server-hosted raid's setup says so early) has no kit to check: nothing counts for quests.
         vm.RaidNote = s.Raid.Phase == RaidPhase.Loading
-            ? "Scav: quest objectives don't count, so nothing to bring; found-in-raid items do."
-            : "Scav: quest objectives don't count; found-in-raid items do.";
+            ? AppTexts.ScavNoteLoading
+            : AppTexts.ScavNote;
         vm.RaidKit = [];
         vm.RaidKitMore = [];
         vm.RaidPicks = [];
         vm.RaidComplete = [];
         vm.RaidProgress = [];
         vm.RaidBring = [];
-        vm.RaidLoot = loot.Take(LootShown).Select(l => new RequirementLine(Glyphs.Bring, l.Text, "for " + l.ForQuests, l.ItemId, l.QuestIds,
-            l.SpotsHere switch { 0 => "", 1 => "Loose here · 1 spot", var n => $"Loose here · {n} spots" })).ToList();
-        vm.RaidLootMore = loot.Count > LootShown ? $"And {loot.Count - LootShown} more items your quests need found in raid." : "";
+        vm.RaidLoot = loot.Take(LootShown).Select(l => new RequirementLine(Glyphs.Bring, l.Text, AppTexts.ScavLootFor(quests: l.ForQuests), l.ItemId, l.QuestIds,
+            l.SpotsHere switch { 0 => "", var n => AppTexts.ScavLooseHere(count: n) })).ToList();
+        vm.RaidLootMore = loot.Count > LootShown ? AppTexts.ScavLootMore(count: loot.Count - LootShown) : "";
     }
 
     // Where an objective without a place on the map is done: kills and finds anywhere on it, hand-overs at the trader.
     private static string Unplaced(ObjectiveKind kind) => kind switch
     {
-        ObjectiveKind.Trader => "after the raid",
+        ObjectiveKind.Trader => AppTexts.ObjectiveAfterRaid,
         ObjectiveKind.Survive => "",
-        _ => "anywhere",
+        _ => AppTexts.ObjectiveAnywhere,
     };
 
     private static ObjectiveItem ToItem(ObjectiveView o, string direction, string? mapName)
     {
         if (o.HeightDifference is { } h)
-            direction += (direction.Length > 0 ? " · " : "") + $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}";
+            direction += (direction.Length > 0 ? " · " : "") + (h > 0 ? AppTexts.HeightUp(metres: Math.Abs(h).ToString("0", UiLanguage.Culture)) : AppTexts.HeightDown(metres: Math.Abs(h).ToString("0", UiLanguage.Culture)));
         // In a few words where the data allows it (owner, 2026-10-04: the raid card is read in seconds; the quest's
         // card keeps tarkov.dev's sentence).
         if (o.Short is { Length: > 0 } few)
@@ -889,13 +894,8 @@ public sealed partial class MainWindow : Window
                 Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover,
                 o.HandoverCount, o.ItemId);
         }
-        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its
-        // "(optional)" at the end.
-        const string optional = " (optional)";
-        var tail = o.Text.EndsWith(optional, StringComparison.Ordinal) ? optional : "";
-        var core = o.Text[..^tail.Length];
-        var suffix = " on " + mapName;
-        var text = (mapName is not null && core.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? core[..^suffix.Length] : core) + tail;
+        // "… on Streets of Tarkov" says nothing while on Streets of Tarkov; an optional objective keeps its "(optional)".
+        var text = o.TextOn(mapName);
         return new ObjectiveItem(o.QuestId, text, string.IsNullOrEmpty(o.Trader) ? o.QuestName : $"{o.QuestName} · {o.Trader}",
             Distance(o.Distance), direction, o.Done, o.Kind, o.Needs ?? "", o.TraderId, o.Trader, o.ObjectiveId, o.NeedKey, o.Handover,
             o.HandoverCount, o.ItemId);
@@ -923,7 +923,7 @@ public sealed partial class MainWindow : Window
             var tiles = artwork is null ? TilesFor(s.Definition, s.Map?.Name) : null;
             // No usable artwork at all (docs/DESIGN.md §3): a sheet with a metric grid stands in; said once per map.
             if (artwork is null && tiles is null && _sheetNoticeShown.Add(key))
-                ShowNotice($"No map artwork for {s.Map?.Name}: a 10 m grid stands in, with your position, objectives and extracts.");
+                ShowNotice(AppTexts.NoticeNoArtwork(map: s.Map?.Name));
             Map.SetScene(new MapScene(s.Definition, artwork, tiles), _restoreView);
             _restoreView = null;
         }
@@ -966,11 +966,11 @@ public sealed partial class MainWindow : Window
     // rendered by tarkov.dev or TarkovBOT.eu; docs/DESIGN.md §3) by who maps.json names; the sheet says what it is.
     private string AttributionFor(MapDefinition? definition) => definition switch
     {
-        { SvgPath: not null, Author: { } author } => $"Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev",
+        { SvgPath: not null, Author: { } author } => AppTexts.MapCreditArtwork(author: author),
         { SvgPath: null } when _session.Artwork?.TilesFor(definition) is { Status: not TileStatus.Unavailable } =>
-            $"Map: {definition.Author ?? "tarkov.dev"} · data tarkov.dev",
-        { SvgPath: null } => "No map artwork · grid 10 m · data tarkov.dev",
-        _ => "Data tarkov.dev",
+            AppTexts.MapCreditRender(author: definition.Author ?? "tarkov.dev"),
+        { SvgPath: null } => AppTexts.MapCreditSheet,
+        _ => AppTexts.MapCreditData,
     };
 
     private readonly HashSet<MapTiles> _tilesWatched = [];
@@ -989,7 +989,7 @@ public sealed partial class MainWindow : Window
                 if (tiles.Status == TileStatus.Unavailable && _sheetNoticeShown.Add(definition.Key))
                 {
                     AppLog.Warn($"Map render for {mapName} not loaded: no tile could be had");
-                    ShowNotice($"No map render for {mapName}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.",
+                    ShowNotice(AppTexts.NoticeNoRender(map: mapName),
                         TimeSpan.FromSeconds(12));
                 }
             });
@@ -1013,12 +1013,12 @@ public sealed partial class MainWindow : Window
             {
                 var why = problem.Kind switch
                 {
-                    LoadFailure.Unreachable or LoadFailure.TimedOut => "couldn't download it; check the internet connection",
-                    LoadFailure.ServerBusy or LoadFailure.Refused => $"its server answered {problem.Status}",
-                    LoadFailure.Disk => "couldn't save it on this PC; check the free disk space",
-                    _ => "couldn't read it",
+                    LoadFailure.Unreachable or LoadFailure.TimedOut => AppTexts.NoticeArtworkOffline(map: mapName),
+                    LoadFailure.ServerBusy or LoadFailure.Refused => AppTexts.NoticeArtworkRefused(map: mapName, status: problem.Status),
+                    LoadFailure.Disk => AppTexts.NoticeArtworkDisk(map: mapName),
+                    _ => AppTexts.NoticeArtworkUnreadable(map: mapName),
                 };
-                ShowNotice($"No map artwork for {mapName}: {why}. A 10 m grid stands in, with your position, objectives and extracts.",
+                ShowNotice(why,
                     TimeSpan.FromSeconds(12));
             }
             return null;
@@ -1111,9 +1111,14 @@ public sealed partial class MainWindow : Window
         Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _scenes.Forget();
-        ViewModel.PreviewText = $"PREVIEW · {Caps.Of(map.Name)}";
+        PreviewHidesFloors();
+        ViewModel.PreviewText = AppTexts.PreviewMap(map: Caps.Of(map.Name));
         Study.Ui("map.preview", ("map", normalizedName));
     }
+
+    // The floor picker is the shown map's: while another map is previewed it steps aside, and the shown map's scene
+    // puts it back when the preview ends (review of 2026-10-10: a tour chapter staged on Customs showed Streets' floors).
+    private void PreviewHidesFloors() => ViewModel.Floors = [];
 
     private void EndPreview(bool restore)
     {
@@ -1192,7 +1197,7 @@ public sealed partial class MainWindow : Window
             _floorPick = null;
         var playerFloor = s.Fix is null ? -1 : IndexOfFloor(s.Floor);
         _shownFloor = _floorPick ?? IndexOfFloor(s.Floor);
-        ViewModel.Floors = _floors.Select((layer, i) => new FloorChoice(i, layer?.Name ?? "Ground", i == _shownFloor, i == playerFloor)).ToList();
+        ViewModel.Floors = _floors.Select((layer, i) => new FloorChoice(i, layer?.Name ?? AppTexts.MapFloorGround, i == _shownFloor, i == playerFloor)).ToList();
         return _shownFloor >= 0 && _shownFloor < _floors.Count ? _floors[_shownFloor] : s.Floor;
     }
 
@@ -1256,7 +1261,7 @@ public sealed partial class MainWindow : Window
             return null;
         var fresh = FixAge.Of(fix.At, DateTime.Now) < FreshFix;
         var direction = fresh && o.Direction is { } r ? Bearing.Describe(r) : o.MapBearing is { } b ? Bearing.Compass(b) : "";
-        var parts = new[] { Distance(o.Distance), Caps.Of(direction), Caps.Of(o.HeightDifference is { } h ? $"{Math.Abs(h):0} m {(h > 0 ? "up" : "down")}" : "") };
+        var parts = new[] { Distance(o.Distance), Caps.Of(direction), Caps.Of(o.HeightDifference is { } h ? (h > 0 ? AppTexts.HeightUp(metres: Math.Abs(h).ToString("0", UiLanguage.Culture)) : AppTexts.HeightDown(metres: Math.Abs(h).ToString("0", UiLanguage.Culture))) : "") };
         return string.Join(" · ", parts.Where(p => p.Length > 0));
     }
 
@@ -1523,16 +1528,16 @@ public sealed partial class MainWindow : Window
         var here = plan is { } p && p.MapName == cue.MapName && p.Finish.Count + p.Progress.Count > 0 ? Summary(p.Finish.Count, p.Progress.Count) : "";
         return cue.Kind switch
         {
-            CueKind.RaidLoading => ("RAID LOADING", map, here),
-            CueKind.Transit => ("TRANSIT", map, here),
-            CueKind.ScavRaid => (map, "SCAV RAID", "Quest objectives don't count here; items you find in raid do."),
-            CueKind.LoadCancelled => (map, "LOADING CANCELLED", "Back to planning the next raid."),
-            CueKind.GroupPick => ("GROUP PICKED", map, here),
+            CueKind.RaidLoading => (AppTexts.CueRaidLoading, map, here),
+            CueKind.Transit => (AppTexts.CueTransit, map, here),
+            CueKind.ScavRaid => (map, AppTexts.CueScavRaid, AppTexts.CueScavRaidDetail),
+            CueKind.LoadCancelled => (map, AppTexts.CueLoadingCancelled, AppTexts.CueBackToPlanning),
+            CueKind.GroupPick => (AppTexts.CueGroupPicked, map, here),
             CueKind.QuestComplete => CompletionText(),
-            _ => (cue.RaidLength is { } length ? $"{map} · {(int)length.TotalMinutes} MIN" : map, "RAID OVER",
+            _ => (cue.RaidLength is { } length ? AppTexts.CueMapAndLength(map: map, minutes: (int)length.TotalMinutes) : map, AppTexts.CueRaidOver,
                 _snapshot?.Plan.FirstOrDefault() is { } next
-                    ? $"Next raid: {next.MapName} · {Summary(next.Finish.Count, next.Progress.Count)}"
-                    : "Back to planning the next raid."),
+                    ? AppTexts.CueNextRaid(map: next.MapName, summary: Summary(next.Finish.Count, next.Progress.Count))
+                    : AppTexts.CueBackToPlanning),
         };
     }
 
@@ -1566,7 +1571,7 @@ public sealed partial class MainWindow : Window
         }
         var (eyebrow, title, detail) = CueText(cue);
         if (example)
-            detail = "An example, not your raid.";
+            detail = AppTexts.CueExample;
         FirstRaidLine(cue, example);
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
@@ -1714,9 +1719,14 @@ public sealed partial class MainWindow : Window
         if (ShowQuest is not { } text || s.Data is null || s.Plan.Count == 0 && s.Objectives.Count == 0)
             return;
         ShowQuest = null;
+        // By its name in the data's language, or by tarkov.dev's normalized name, the same in every language ("Dandies",
+        // "dandies"): a German run found no "Dandies" and showed no card (review of 2026-10-10).
+        var normalized = text.Trim().ToLowerInvariant().Replace(' ', '-');
+        var data = s.Data;
         var id = s.Plan.SelectMany(p => p.Finish.Concat(p.Progress)).Select(q => (q.QuestId, q.Name))
             .Concat(s.Objectives.Select(o => (o.QuestId, Name: o.QuestName)))
-            .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).QuestId;
+            .FirstOrDefault(q => q.Name.Contains(text, StringComparison.OrdinalIgnoreCase)
+                                 || data.Tasks.GetValueOrDefault(q.QuestId)?.NormalizedName?.Contains(normalized, StringComparison.Ordinal) == true).QuestId;
         if (id is null || BuildCard(id) is not { } view)
             return;
         // Let the rail lay out first, so the highlight lands on real rows. Then: the quest's card, and the card of the
@@ -1735,17 +1745,28 @@ public sealed partial class MainWindow : Window
 
     // The help panel opens by itself once, the first time the app has something to show. Not in a raid, where it
     // would lie over the raid card until someone clicks it away: then it opens at the next chance, when the raid is
-    // over (WhileInRaid). A snapshot run opens it for its picture, whatever the state.
+    // over (WhileInRaid). A snapshot run opens it for its picture, whatever the state. Before the window is up it can't
+    // open: then it opens with the next snapshot of the session.
     private void ShowHelpOnFirstRun(SessionSnapshot s)
     {
         if (_helpShownOnce || s.Data is null || DemoMode)
             return;
         if (!SnapshotMode && WhileInRaid.Waits(s.Raid.Phase))
             return;
-        _helpShownOnce = true;
         if (SnapshotMode || _session.GetSetting("help.seen") is null)
-            _helpByItself = ShowHelp();
+        {
+            if (!ShowHelp())
+                return;
+            _helpByItself = true;
+            _helpInSnapshot = SnapshotMode;
+        }
+        _helpShownOnce = true;
     }
+
+    // A snapshot's help, opened for its picture: it is in the picture even if it closed on the way (review of
+    // 2026-10-10: help.png was missing from some of the layout check's runs, in every language, where the panel had
+    // opened; six runs in a row kept it, and what closed it wasn't found).
+    private bool _helpInSnapshot;
 
     // The help panel is open because it opened by itself (the first start), not because the player asked for it.
     private bool _helpByItself;
@@ -1792,16 +1813,19 @@ public sealed partial class MainWindow : Window
         ViewModel.UninstallAsking = false;
     }
 
-    private async Task<bool> OpenSettingsForSnapshotAsync()
+    private Task<bool> OpenSettingsForSnapshotAsync() => OpenForSnapshotAsync(SettingsFlyout, SettingsButton);
+
+    // A flyout opened for a snapshot's picture, once it has opened and laid out its contents.
+    private static async Task<bool> OpenForSnapshotAsync(Flyout flyout, FrameworkElement button)
     {
-        if (SettingsButton.XamlRoot is null)
+        if (button.XamlRoot is null)
             return false;
         var opened = new TaskCompletionSource();
         void Done(object? sender, object e) => opened.TrySetResult();
-        SettingsFlyout.Opened += Done;
+        flyout.Opened += Done;
         try
         {
-            ShowSettings();
+            flyout.ShowAt(button);
             if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
                 return false;
             await Task.Delay(300); // one layout pass for its contents
@@ -1809,15 +1833,15 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
-            SettingsFlyout.Opened -= Done;
+            flyout.Opened -= Done;
         }
     }
 
     /// <summary>The version, its release's name and the kind of this build, at the foot of settings: "Shturmap
     /// 0.4.0+d349909 "Praetorian" · installed" (owner, 2026-10-09: named major releases; Rules.WhatsNew.NameOf).</summary>
     public string VersionText => WhatsNew.NameOf(WhatsNewSections, WhatsNew.VersionOf(GameSession.Version)) is { } name
-        ? $"Shturmap {GameSession.Version} \"{name}\" · {App.BuildKind}"
-        : $"Shturmap {GameSession.Version} · {App.BuildKind}";
+        ? AppTexts.SettingsVersionNamed(build: BuildKindText(App.BuildKind), name: name, version: GameSession.Version)
+        : AppTexts.SettingsVersion(build: BuildKindText(App.BuildKind), version: GameSession.Version);
 
     private void OnHelpClosed(object sender, object e)
     {
@@ -2231,6 +2255,10 @@ public sealed partial class MainWindow : Window
     /// the text Copy diagnostics would copy.</summary>
     public async Task SaveSnapshotAsync(string folder)
     {
+        // In the language in use: the current culture travels with async work, and a snapshot's began with the app,
+        // before a switch ("--switch-language"; the layout check took the German switch for none, its culture still
+        // English, review of 2026-10-10). What the window shows was right: it formats with UiLanguage.Culture.
+        UiLanguage.ApplyHere();
         Directory.CreateDirectory(folder);
         try
         {
@@ -2247,6 +2275,8 @@ public sealed partial class MainWindow : Window
             }
             else
                 await RenderToPngAsync((UIElement)Content, Path.Combine(folder, "window.png"));
+            if (_helpInSnapshot && !TourOpen && !HelpFlyout.IsOpen)
+                await OpenForSnapshotAsync(HelpFlyout, HelpButton);
             if (HelpFlyout.IsOpen && HelpFlyout.Content is UIElement help)
                 await RenderToPngAsync(help, Path.Combine(folder, "help.png"));
             // Settings never opens by itself, so a snapshot opens it just for its picture (help closes with that).
@@ -2297,5 +2327,9 @@ public sealed partial class MainWindow : Window
         encoder.SetPixelData(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8, Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
             (uint)rtb.PixelWidth, (uint)rtb.PixelHeight, dpi, dpi, System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.ToArray(pixels));
         await encoder.FlushAsync();
+#if DEVTOOLS
+        // The layout check: the picture's texts and what a longer language breaks in it, beside it (Dev/LayoutCheck.cs).
+        await CheckLayoutAsync(element, path, rtb);
+#endif
     }
 }

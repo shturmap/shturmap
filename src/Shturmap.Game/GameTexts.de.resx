@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="GameFolderMissing" xml:space="preserve">
+    <value>Diesen Ordner gibt es nicht (mehr).</value>
+    <comment>en: That folder doesn't exist (any more).</comment>
+  </data>
+  <data name="GameFolderNotTheGame" xml:space="preserve">
+    <value>Dieser Ordner enthält kein Escape from Tarkov: Weder darin noch im Unterordner „build“ gibt es EscapeFromTarkov.exe oder einen Logs-Ordner mit Spiel-Sessions. Wähl den Ordner, in dem das Spiel installiert ist.</value>
+    <comment>en: That folder doesn't hold Escape from Tarkov: there's no EscapeFromTarkov.exe and no Logs folder with game sessions in it or in its "build" folder. Choose the folder the game is installed in.</comment>
+  </data>
+  <data name="ScreenshotKeyPrintScreen" xml:space="preserve">
+    <value>Druck</value>
+    <comment>en: PrtSc</comment>
+  </data>
+  <data name="ScreenshotKeyCtrl" xml:space="preserve">
+    <value>Strg</value>
+    <comment>en: Ctrl</comment>
+  </data>
+  <data name="ScreenshotKeyRightCtrl" xml:space="preserve">
+    <value>Strg rechts</value>
+    <comment>en: Right Ctrl</comment>
+  </data>
+  <data name="ScreenshotKeyShift" xml:space="preserve">
+    <value>Umschalt</value>
+    <comment>en: Shift</comment>
+  </data>
+  <data name="ScreenshotKeyRightShift" xml:space="preserve">
+    <value>Umschalt rechts</value>
+    <comment>en: Right Shift</comment>
+  </data>
+  <data name="ScreenshotKeyAlt" xml:space="preserve">
+    <value>Alt</value>
+    <comment>en: Alt</comment>
+  </data>
+  <data name="ScreenshotKeyAltGr" xml:space="preserve">
+    <value>Alt Gr</value>
+    <comment>en: Alt Gr</comment>
+  </data>
+  <data name="ScreenshotKeyNumpad" xml:space="preserve">
+    <value>Num {key}</value>
+    <comment>en: Num {key}</comment>
+  </data>
+  <data name="ScreenshotKeyHome" xml:space="preserve">
+    <value>Pos1</value>
+    <comment>en: Home</comment>
+  </data>
+  <data name="ScreenshotKeyEnd" xml:space="preserve">
+    <value>Ende</value>
+    <comment>en: End</comment>
+  </data>
+  <data name="ScreenshotKeyInsert" xml:space="preserve">
+    <value>Einfg</value>
+    <comment>en: Insert</comment>
+  </data>
+  <data name="ScreenshotKeyDelete" xml:space="preserve">
+    <value>Entf</value>
+    <comment>en: Delete</comment>
+  </data>
+  <data name="ScreenshotKeyPageUp" xml:space="preserve">
+    <value>Bild↑</value>
+    <comment>en: PageUp</comment>
+  </data>
+  <data name="ScreenshotKeyPageDown" xml:space="preserve">
+    <value>Bild↓</value>
+    <comment>en: PageDown</comment>
+  </data>
+  <data name="ScreenshotKeyBackspace" xml:space="preserve">
+    <value>Rücktaste</value>
+    <comment>en: Backspace</comment>
+  </data>
+  <data name="ScreenshotKeyEnter" xml:space="preserve">
+    <value>Enter</value>
+    <comment>en: Return</comment>
+  </data>
+  <data name="ScreenshotKeyNumpadEnter" xml:space="preserve">
+    <value>Num Enter</value>
+    <comment>en: Num Enter</comment>
+  </data>
+  <data name="ScreenshotKeyEscape" xml:space="preserve">
+    <value>Esc</value>
+    <comment>en: Escape</comment>
+  </data>
+  <data name="ScreenshotKeyTab" xml:space="preserve">
+    <value>Tab</value>
+    <comment>en: Tab</comment>
+  </data>
+  <data name="ScreenshotKeySpace" xml:space="preserve">
+    <value>Leertaste</value>
+    <comment>en: Space</comment>
+  </data>
+  <data name="ScreenshotKeyPause" xml:space="preserve">
+    <value>Pause</value>
+    <comment>en: Pause</comment>
+  </data>
+  <data name="ScreenshotKeyCapsLock" xml:space="preserve">
+    <value>Feststelltaste</value>
+    <comment>en: CapsLock</comment>
+  </data>
+  <data name="ScreenshotKeyNumLock" xml:space="preserve">
+    <value>Num</value>
+    <comment>en: Numlock</comment>
+  </data>
+  <data name="ScreenshotKeyScrollLock" xml:space="preserve">
+    <value>Rollen</value>
+    <comment>en: ScrollLock</comment>
+  </data>
+  <data name="ScreenshotKeyUp" xml:space="preserve">
+    <value>↑</value>
+    <comment>en: UpArrow</comment>
+  </data>
+  <data name="ScreenshotKeyDown" xml:space="preserve">
+    <value>↓</value>
+    <comment>en: DownArrow</comment>
+  </data>
+  <data name="ScreenshotKeyLeft" xml:space="preserve">
+    <value>←</value>
+    <comment>en: LeftArrow</comment>
+  </data>
+  <data name="ScreenshotKeyRight" xml:space="preserve">
+    <value>→</value>
+    <comment>en: RightArrow</comment>
+  </data>
+  <data name="ScreenshotKeyMouse" xml:space="preserve">
+    <value>Maus{button}</value>
+    <comment>en: Mouse{button}</comment>
+  </data>
+</root>

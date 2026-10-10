@@ -117,11 +117,13 @@ public static class QuestEffort
         return new Effort(objectives.Max(GroupOf), objectives.Count, kills.Sum(o => o.Conditions?.Count ?? 0), bucket);
     }
 
-    /// <summary>Quests in the plan's order: effort, then trader, then name.</summary>
+    /// <summary>Quests in the plan's order: effort, then trader, then name, as the language in use sorts it. Never by
+    /// the thread's culture: the session makes its plans in loops that keep the culture they started with (review of
+    /// 2026-10-10).</summary>
     public static IEnumerable<QuestOnMap> Order(IEnumerable<QuestOnMap> quests) =>
         quests.Select(q => (Quest: q, Effort: Of(q)))
             .OrderBy(x => x.Effort)
             .ThenBy(x => x.Quest.Quest.TraderOrder)
-            .ThenBy(x => x.Quest.Quest.Name, StringComparer.CurrentCulture)
+            .ThenBy(x => x.Quest.Quest.Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
             .Select(x => x.Quest);
 }

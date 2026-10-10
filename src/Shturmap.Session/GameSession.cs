@@ -191,33 +191,75 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>Short messages for the user ("Ballet Lover: completed", "German texts loaded.").</summary>
     public event Action<SessionNotice>? Notice;
 
+    /// <summary>
+    /// Opens the app's settings, finds the game, reads its settings and chooses the language (<see cref="Language"/>), so
+    /// the window can build its texts in it (docs/DESIGN.md §8, "The app's own language"). <see cref="StartAsync"/> does
+    /// it when it wasn't done before. Called once, before anything else of the session.
+    /// </summary>
+    public LanguageChoice Open()
+    {
+        _gate.Wait();
+        try
+        {
+            OpenOnce();
+            return Language;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private bool _opened;
+    // A settings file that couldn't be read is said once the session starts, when someone listens.
+    private string? _storeNotice;
+
+    // Under _gate.
+    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(_store), nameof(_locations))]
+    private void OpenOnce()
+    {
+        if (_opened)
+        {
+            // Opened before its window by the app. An opening that failed fails again here, rather than open the
+            // settings file a second time beside the first.
+            if (_store is null || _locations is null)
+                throw new InvalidOperationException("The session couldn't be opened; the app log says why");
+            return;
+        }
+        _opened = true;
+        var env = new WindowsGameEnvironment();
+        // A file that can't be read is set aside, so the session starts on a fresh one (review of 2026-10-09).
+        (_store, _storeNotice) = SettingsFile.Open(paths.Database, DateTime.Now);
+        _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
+        _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
+        Study.Context = StudyContext;
+#if DEVTOOLS
+        // Developer builds only (owner, 2026-10-03); a release leaves the study log off and any old days alone.
+        Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
+        Study.Prune(DateTime.Now);
+#endif
+        Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
+            ("build", BuildTime()), ("prevClean", MarkRunning()));
+        _env = env;
+        // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
+        // looked for again (the player chose a folder, or the game was installed later).
+        _locate = locations is not null ? null : Discovery ?? (folder => new InstallLocator(env).Locate(folder, discover: !NoGame));
+        _chosenFolder = _store.GetSetting(InstallFolderSetting);
+        _locations = locations ?? _locate!(_chosenFolder);
+        ReportGameFolders(_locations);
+        _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
+        AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
+        ChooseLanguageAtStart();
+    }
+
     public async Task StartAsync()
     {
         await _gate.WaitAsync();
         try
         {
-            var env = new WindowsGameEnvironment();
-            // A file that can't be read is set aside, so the session starts on a fresh one (review of 2026-10-09).
-            (_store, var storeNotice) = SettingsFile.Open(paths.Database, DateTime.Now);
-            _picks = new QuestPicks(_store.GetSetting, _store.SetSetting);
-            _ticks = new ObjectiveTicks(_store.GetSetting, _store.SetSetting);
-            Study.Context = StudyContext;
-#if DEVTOOLS
-            // Developer builds only (owner, 2026-10-03); a release leaves the study log off and any old days alone.
-            Study.Enabled = StudyOn(StudyOverride, _store.GetSetting(StudySetting));
-            Study.Prune(DateTime.Now);
-#endif
-            Study.Game("app.start", ("version", typeof(GameSession).Assembly.GetName().Version?.ToString()),
-                ("build", BuildTime()), ("prevClean", MarkRunning()));
-            _env = env;
-            // Game folders given by the caller (a fake game, a simulation) stay as they are; discovered ones can be
-            // looked for again (the player chose a folder, or the game was installed later).
-            _locate = locations is not null ? null : Discovery ?? (folder => new InstallLocator(env).Locate(folder, discover: !NoGame));
-            _chosenFolder = _store.GetSetting(InstallFolderSetting);
-            _locations = locations ?? _locate!(_chosenFolder);
-            ReportGameFolders(_locations);
-            _settings = new GameSettingsReader(env).Read(_locations.SettingsFolder);
-            AppLog.Info($"Game settings: language {_settings.Language ?? "unknown"}, screenshot key {(_settings.ScreenshotKeys.Count > 0 ? string.Join(" or ", _settings.ScreenshotKeys) : "unknown")}");
+            OpenOnce();
+            var storeNotice = _storeNotice;
+            _storeNotice = null;
             var http = CachedHttp.CreateClient();
             _loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
             Artwork = new ArtworkProvider(new ArtworkCache(new CachedHttp(http, paths.ArtworkCache)), paths.PictureCache,
@@ -559,9 +601,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>What finding the game automatically says it found.</summary>
     public static string FoundText(GameLocations found) => found.Install switch
     {
-        null => "No game found on this PC: browse the maps, or choose the game folder in settings.",
-        { } install when found.LogsFolder is null => $"Found Escape from Tarkov in {install.Root}; it hasn't run on this PC yet.",
-        { } install => $"Found Escape from Tarkov in {install.Root}: quests and raids follow the game now.",
+        null => SessionTexts.FoundNoGame,
+        { } install when found.LogsFolder is null => SessionTexts.FoundNotRun(folder: install.Root),
+        { } install => SessionTexts.FoundGame(folder: install.Root),
     };
 
     /// <summary>
@@ -571,7 +613,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// </summary>
     public static string FollowedText(GameLocations? before, GameLocations after, bool asked) =>
         !asked && before?.LogsFolder is not null && after is { LogsFolder: not null, Install: { Kind: not InstallKind.Manual } install }
-            ? $"Newer game logs in {install.Root}: quests and raids follow that game now."
+            ? SessionTexts.FoundNewerLogs(folder: install.Root)
             : FoundText(after);
 
     private async Task FollowNowAsync(GameLocations found, bool announce = false)
@@ -730,8 +772,16 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// download fails. Without it, a session with given data loads no item sources.</summary>
     public Func<GameMode, ItemSources>? GivenSources { get; init; }
 
-    private async Task<GameData> FetchDataAsync(GameMode mode) =>
-        GivenData is { } given ? given(mode) : await _loader!.LoadAsync(mode, _settings.Language ?? "en", _stop.Token);
+    /// <summary>The same per mode and data language (tarkov.dev's code, "de"), for tests of the language: it takes the
+    /// place of <see cref="GivenData"/>.</summary>
+    public Func<GameMode, string, GameData>? GivenDataIn { get; init; }
+
+    // In the language chosen (LanguageChoice.Data), with the extracts' names in the game's own language beside it when
+    // that is another (the extract list in a screenshot is in the game's language).
+    private async Task<GameData> FetchDataAsync(GameMode mode, string language) =>
+        GivenDataIn is { } givenIn ? givenIn(mode, language)
+        : GivenData is { } given ? given(mode)
+        : await _loader!.LoadAsync(mode, language, _stop.Token, gameLanguage: _settings.Language);
 
     // Waits before a retry; false when the session closed meanwhile (its token may be gone by then).
     private async Task<bool> WaitedAsync(TimeSpan wait)
@@ -749,15 +799,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private async Task LoadDataAsync(GameMode mode)
     {
+        var language = Language.Data;
         try
         {
-            var data = await FetchDataAsync(mode);
+            var data = await FetchDataAsync(mode, language);
             await _gate.WaitAsync();
             try
             {
-                if (mode != _mode)
-                    return; // the mode changed while loading; a newer load is under way
+                if (mode != _mode || language != Language.Data)
+                    return; // the mode or the language changed while loading; a newer load is under way
                 _data = data;
+                // A load in another language names the maps on screen and in the raid lines anew.
+                RenameMaps();
                 _dataProblem = null;
                 _dataFailures = 0;
                 RecomputeQuests();
@@ -794,18 +847,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             await _gate.WaitAsync();
             try
             {
-                if (mode != _mode)
+                if (mode != _mode || language != Language.Data)
                     return;
                 wait = RetryWait(++_dataFailures);
                 round = _loadRound;
                 var again = _dataProblem?.Kind == problem.Kind;
                 _dataProblem = problem;
-                var next = problem.Transient ? $"; next try in {RetrySchedule.InWords(wait)}" : "";
+                var next = problem.Transient ? $"; next try in {RetrySchedule.InEnglish(wait)}" : "";
                 if (again)
                     AppLog.Warn($"Data load failed again ({problem.Kind}{(problem.Status is { } s ? " " + s : "")}): {e.GetType().Name}: {e.Message}{next}");
                 else
                 {
-                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.What}{next}", e);
+                    AppLog.Error($"Data load failed ({problem.Kind}): {problem.InEnglish}{next}", e);
                     Say(DataNotice(problem, wait), 30, offersReport: DataNoticeOffersReport(problem));
                 }
                 Publish();
@@ -834,19 +887,32 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// said when the failure is new, so the wait it names is the one that follows it. A page in place of the data
     /// (<see cref="LoadFailure.NotData"/>) says the next try only, and asks for no report.
     /// </summary>
-    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => NoGameData(problem, $"in {RetrySchedule.InWords(nextTry)}");
+    public static string DataNotice(LoadProblem problem, TimeSpan nextTry) => NoGameData(problem, nextTry);
 
     /// <summary>The same for a place that stays up while the tries go on (the DATA chip's tooltip): it names no wait,
     /// since the waits grow from 2 to 30 minutes.</summary>
-    public static string DataNotice(LoadProblem problem) => NoGameData(problem, "by itself, at first after 2 minutes, then less often");
+    public static string DataNotice(LoadProblem problem) => NoGameData(problem, null);
 
-    private static string NoGameData(LoadProblem problem, string when) => problem switch
+    // nextTry: the wait before the next try; null where the tries go on by themselves with growing waits.
+    private static string NoGameData(LoadProblem problem, TimeSpan? nextTry)
     {
-        // Its advice is the next try, said here with its wait in place of "in a few minutes".
-        { Kind: LoadFailure.NotData } => $"No game data. {problem.What} Shturmap tries again {when}.",
-        { Transient: true } => $"No game data. {problem.Text} Shturmap tries again {when}; if it keeps failing, please report it.",
-        _ => $"No game data. {problem.Text}",
-    };
+        var (unit, wait) = nextTry is { } next ? Wait(next) : (null, 0);
+        return problem switch
+        {
+            // Its advice is the next try, said here with its wait in place of "in a few minutes".
+            { Kind: LoadFailure.NotData } => unit is null ? SessionTexts.DataNoticeNotDataLater(problem: problem.What)
+                : SessionTexts.DataNoticeNotData(problem: problem.What, unit: unit, wait: wait),
+            { Transient: true } => unit is null ? SessionTexts.DataNoticeTransientLater(problem: problem.Text)
+                : SessionTexts.DataNoticeTransient(problem: problem.Text, unit: unit, wait: wait),
+            _ => SessionTexts.DataNoticeFailed(problem: problem.Text),
+        };
+    }
+
+    // A wait as the notices say it, each with its own plural (Russian and Polish change the noun after "in"): whole
+    // minutes, or seconds for a wait under a minute (the tests' short waits), as RetrySchedule.InWords counts them.
+    private static (string? Unit, int Count) Wait(TimeSpan wait) => wait < TimeSpan.FromMinutes(1)
+        ? ("seconds", (int)Math.Round(wait.TotalSeconds, MidpointRounding.AwayFromZero))
+        : ("minutes", (int)Math.Round(wait.TotalMinutes));
 
     /// <summary>Whether the data notice offers the Report dialog: for a failure only a report can fix, and for one that
     /// may pass, should it keep failing. Never for a page in place of the data: it comes from between the PC and
@@ -863,16 +929,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             return;
         AppLog.Warn($"No '{missing}' texts from tarkov.dev; using English");
         if (_languageSaid.Add(missing))
-            Say($"No {LanguageName(missing)} texts on tarkov.dev; showing English.", 10);
+            Say(SessionTexts.LanguageMissing(language: missing), 10);
     }
 
     /// <summary>
     /// What the player is told when the game language's texts couldn't be loaded and English is shown instead: what
     /// failed, and when it is asked for again (a failure that may pass) or what to do (one that won't).
     /// </summary>
-    public static string LanguageNotice(string languageName, LoadProblem why, TimeSpan nextTry) =>
-        $"Showing English: the {languageName} texts couldn't be loaded. {why.What} " +
-        (why.Transient ? $"Shturmap tries again in {RetrySchedule.InWords(nextTry)}." : why.Advice);
+    /// <param name="language">tarkov.dev's code for the language ("de"); the text names it.</param>
+    public static string LanguageNotice(string language, LoadProblem why, TimeSpan nextTry) =>
+        why.Transient && Wait(nextTry) is var (unit, wait)
+            ? SessionTexts.LanguageNotLoadedRetry(language: language, problem: why.What, unit: unit, wait: wait)
+            : SessionTexts.LanguageNotLoaded(advice: why.Advice, language: language, problem: why.What);
 
     // Under _gate. The game language's texts didn't come, for a reason that says nothing about whether tarkov.dev has
     // them (GameData.LanguageFailure): the data is in English. Said once per language and kind of failure, with what
@@ -884,9 +952,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         var why = failure.Why;
         var wait = RetryWait(++_languageFailures);
         AppLog.Warn($"'{failure.Language}' texts not loaded ({why.Kind}{(why.Status is { } s ? " " + s : "")}); using English" +
-                    (why.Transient ? $", asking again in {RetrySchedule.InWords(wait)}" : ""));
+                    (why.Transient ? $", asking again in {RetrySchedule.InEnglish(wait)}" : ""));
         if (_languageSaid.Add(failure.Language + ":" + why.Kind))
-            Say(LanguageNotice(LanguageName(failure.Language), why, wait), 20, offersReport: !why.Transient && why.Advice == LoadProblem.Report);
+            Say(LanguageNotice(failure.Language, why, wait), 20, offersReport: !why.Transient && why.Advice == LoadProblem.Report);
         // One loop asks again, however often the data itself is loaded meanwhile.
         if (why.Transient && _languageRetryRound != _loadRound)
         {
@@ -921,7 +989,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             GameData? data = null;
             try
             {
-                data = await FetchDataAsync(mode);
+                data = await FetchDataAsync(mode, language);
             }
             catch (Exception e) when (!_stop.IsCancellationRequested)
             {
@@ -948,7 +1016,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     if (data.MissingLanguage is null)
                     {
                         AppLog.Info($"'{language}' texts loaded: language {data.Language}");
-                        Say($"{LanguageName(language)} texts loaded.");
+                        Say(SessionTexts.LanguageLoaded(language: language));
                     }
                     // Station names are part of the texts: the item sources follow the language.
                     StartSources(mode, data.Language);
@@ -960,7 +1028,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     return;
                 }
                 wait = RetryWait(++_languageFailures);
-                AppLog.Warn($"'{language}' texts still not loaded; asking again in {RetrySchedule.InWords(wait)}");
+                AppLog.Warn($"'{language}' texts still not loaded; asking again in {RetrySchedule.InEnglish(wait)}");
             }
             finally
             {
@@ -979,19 +1047,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _map = Named(_map);
         _raidMap = Named(_raidMap);
         _lastRaidMap = Named(_lastRaidMap);
-    }
-
-    private static string LanguageName(string code)
-    {
-        try
-        {
-            var culture = System.Globalization.CultureInfo.GetCultureInfo(code);
-            return culture.ThreeLetterISOLanguageName == "ivl" ? $"'{code}'" : culture.EnglishName;
-        }
-        catch (System.Globalization.CultureNotFoundException)
-        {
-            return $"'{code}'";
-        }
     }
 
     // Logs where the game, its logs and its screenshots were found, or that they weren't. The rail says it as long as
@@ -1018,7 +1073,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     // an earlier language or mode is dropped.
     private void StartSources(GameMode mode, string language)
     {
-        if (GivenData is not null && GivenSources is null)
+        if ((GivenData is not null || GivenDataIn is not null) && GivenSources is null)
             return;
         var round = ++_sourcesRound;
         _sourcesFailures = 0;
@@ -1067,7 +1122,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 }
                 // Only the item cards' "where to get it" is missing; everything else works.
                 AppLog.Warn($"Item sources not loaded ({problem.Kind}): {e.GetType().Name}: {e.Message}" +
-                            (problem.Transient ? $"; asking again in {RetrySchedule.InWords(wait)}" : ""));
+                            (problem.Transient ? $"; asking again in {RetrySchedule.InEnglish(wait)}" : ""));
                 if (!problem.Transient)
                     return;
             }
@@ -1240,7 +1295,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     if (quest.Status == QuestLogStatus.Completed && task is not null && _data is { } data)
                         Announce(new ViewCue(CueKind.QuestComplete, task.Name, Completed: Completion(data, task)));
                     else if (name is not null)
-                        Say($"{name}: {quest.Status switch { QuestLogStatus.Started => "started", QuestLogStatus.Completed => "completed", _ => "failed" }}");
+                        Say(quest.Status switch { QuestLogStatus.Started => SessionTexts.QuestStarted(quest: name), QuestLogStatus.Completed => SessionTexts.QuestCompleted(quest: name), _ => SessionTexts.QuestFailed(quest: name) });
                 }
             }
             return;
@@ -1372,7 +1427,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// <summary>A completed quest for its cue: its trader and the quests that need it done (the quest card's UNLOCKS).</summary>
     public static CompletedQuest Completion(GameData data, ApiTask task) => new(task.Id, task.Name, task.Trader, data.TraderName(task.Trader),
         data.Tasks.Values.Where(t => t.TaskRequirements?.Any(r => r.Task == task.Id) == true)
-            .Select(t => t.Name).Order(StringComparer.CurrentCulture).ToList());
+            .Select(t => t.Name).Order(StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList());
 
     private void ForgetReplay()
     {
@@ -1685,12 +1740,12 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     public static FixPlace PlaceFix(RaidPhase phase, MapIdentity? raidMap, bool logsFollowed, MapIdentity? shownMap, bool onShownMap, bool fromEndedRaid)
     {
         if (phase != RaidPhase.Menu)
-            return raidMap is not null ? new(raidMap) : new(null, "Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown.");
+            return raidMap is not null ? new(raidMap) : new(null, SessionTexts.FixNoRaidMap);
         if (logsFollowed)
-            return new(null, fromEndedRaid ? null : "Got a position, but the game's log shows no raid, so it isn't shown.");
+            return new(null, fromEndedRaid ? null : SessionTexts.FixNoRaid);
         return shownMap is not null && onShownMap
             ? new(shownMap)
-            : new(null, "Got a position, but couldn't tell which map it is on. Pick the map and take another screenshot.");
+            : new(null, SessionTexts.FixNoMap);
     }
 
     // ---- quests ----
@@ -1900,6 +1955,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
 
     private void Publish()
     {
+        // Sorted and written in the language in use now, also from a loop started before it switched.
+        UiLanguage.ApplyHere();
         var raid = ShownRaid;
         var inRaid = raid.Phase != RaidPhase.Menu;
         // The rail follows the raid: its objectives, ways out, plan and raid facts are the raid's own map's, also while
@@ -1965,10 +2022,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     QuestTaxonomy.Classify(o.Objective.Type), Planning.Needs(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0, _sources),
                     bearing, o.Quest.Trader, Planning.NeedKey(_data, o.Quest, o.Objective, sameArtwork, o.Places.Count > 0))
                 {
-                    Short = shorts.GetValueOrDefault(o.Objective.Id) is { } few ? few + (optional ? " (optional)" : "") : null,
+                    Short = shorts.GetValueOrDefault(o.Objective.Id) is { } few ? (optional ? SessionTexts.ObjectiveOptional(objective: few) : few) : null,
                     Handover = QuestCards.HandoverText(_data, o.Quest, o.Objective.Id),
                     HandoverCount = QuestCards.HandoverCount(o.Quest, o.Objective.Id),
                     ItemId = QuestCards.ItemOf(o.Objective),
+                    Description = ObjectiveText(o.Objective, optional: false), Optional = optional,
                 });
             }
             var shownMap = railMap is null ? null : _data.Maps.GetValueOrDefault(railMap.Id);
@@ -2012,13 +2070,13 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Objectives = objectives
                 .OrderBy(o => o.HasPlace ? 0 : 1)
                 .ThenBy(o => o.Distance ?? double.MaxValue)
-                .ThenBy(o => o.QuestName, StringComparer.CurrentCulture)
+                .ThenBy(o => o.QuestName, StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
                 .ToList(),
             // Nearest first; once the game's list was read, the exits it doesn't name come last (they are no way out this raid).
             // Extracts first, nearest first; then transits, which lead to another map, not out (owner, 2026-10-05: "It
             // counts transits as exfils. I would show primarily exfils"); last the extracts the game's list left out.
             Extracts = extracts.OrderBy(e => e.State == ExitState.NotListed ? 2 : e.Kind == MarkerKind.Transit ? 1 : 0)
-                .ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.CurrentCulture).ToList(),
+                .ThenBy(e => e.Distance ?? double.MaxValue).ThenBy(e => e.Name, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList(),
             ExitsReadAt = inRaid ? _exitsReadAt : null,
             ReadExits = _readExits,
             ExitReaderLanguage = _exitReaderLanguage,
@@ -2027,13 +2085,14 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,
             Logs = LogsHealth(),
-            Screenshots = _locations is null ? new(false, "Looking for screenshots…")
-                : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, "Screenshots") : new(false, "No screenshots yet"),
+            Screenshots = _locations is null ? new(false, SessionTexts.ChipLookingForScreenshots)
+                : Directory.Exists(_locations.ScreenshotsFolder) ? new(true, SessionTexts.ChipScreenshots) : new(false, SessionTexts.ChipNoScreenshots),
             DataHealth = _data is not null
-                ? new(!_data.Offline, _data.Offline ? "Data (offline copy)" : "Data")
-                : new(false, _dataProblem is null ? "Loading game data…" : "No game data"),
+                ? new(!_data.Offline, _data.Offline ? SessionTexts.ChipDataOffline : SessionTexts.ChipData)
+                : new(false, _dataProblem is null ? SessionTexts.ChipLoadingData : SessionTexts.ChipNoData),
             DataProblem = _dataProblem,
             GameLanguage = _settings.Language,
+            Language = ShownLanguage(),
             StudyLogOn = Study.Enabled,
             DeleteScreenshots = _deleteScreenshots,
             ScreenshotKeys = _settings.ScreenshotKeys,
@@ -2075,10 +2134,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     private SourceHealth LogsHealth()
     {
         if (_locations?.LogsFolder is null)
-            return new(false, "Game logs not found");
+            return new(false, SessionTexts.ChipNoLogs);
         if (_tailer?.LastActivityUtc is { } at && DateTime.UtcNow - at < LogsLiveFor)
-            return new(true, "Logs live");
-        return new(true, "Logs");
+            return new(true, SessionTexts.ChipLogsLive);
+        return new(true, SessionTexts.ChipLogs);
     }
 
     /// <summary>How long after the game's last line the LOGS light says "live".</summary>
@@ -2089,8 +2148,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
     /// quest card says it (owner, 2026-10-03: optional places "might still be very relevant for a quest").
     /// </summary>
     /// <param name="optional">Whether it reads as optional, where that isn't the data's flag (<see cref="Handovers.Optional"/>).</param>
-    public static string ObjectiveText(ApiObjective objective, bool? optional = null) =>
-        (string.IsNullOrWhiteSpace(objective.Description) ? "(no description)" : objective.Description!) + (optional ?? objective.Optional ? " (optional)" : "");
+    public static string ObjectiveText(ApiObjective objective, bool? optional = null)
+    {
+        var text = string.IsNullOrWhiteSpace(objective.Description) ? SessionTexts.ObjectiveNoDescription : objective.Description!;
+        return optional ?? objective.Optional ? SessionTexts.ObjectiveOptional(objective: text) : text;
+    }
 
     // ---- study log: why a session started ----
 

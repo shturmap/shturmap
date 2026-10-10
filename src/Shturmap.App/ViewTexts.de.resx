@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="HelpAndFeedback" xml:space="preserve">
+    <value>HILFE UND FEEDBACK</value>
+    <comment>en: HELP AND FEEDBACK</comment>
+  </data>
+  <data name="StatusModeChooseTip" xml:space="preserve">
+    <value>Kein Spiel auf diesem PC: Wähl den Modus, dessen Maps und Daten du ansehen willst</value>
+    <comment>en: No game on this PC: choose the mode whose maps and data to browse</comment>
+  </data>
+  <data name="StatusModePve" xml:space="preserve">
+    <value>PvE</value>
+    <comment>en: PvE</comment>
+  </data>
+  <data name="StatusModePvp" xml:space="preserve">
+    <value>PvP</value>
+    <comment>en: PvP</comment>
+  </data>
+  <data name="StatusModeSeasonal" xml:space="preserve">
+    <value>Season</value>
+    <comment>en: Seasonal</comment>
+  </data>
+  <data name="FeedbackButtonName" xml:space="preserve">
+    <value>Problem oder Idee melden</value>
+    <comment>en: Report a problem or idea</comment>
+  </data>
+  <data name="HelpButtonTip" xml:space="preserve">
+    <value>So funktioniert Shturmap (F1)</value>
+    <comment>en: How Shturmap works (F1)</comment>
+  </data>
+  <data name="HelpButtonName" xml:space="preserve">
+    <value>Hilfe</value>
+    <comment>en: Help</comment>
+  </data>
+  <data name="HelpTitle" xml:space="preserve">
+    <value>SO FUNKTIONIERT SHTURMAP</value>
+    <comment>en: HOW SHTURMAP WORKS</comment>
+  </data>
+  <data name="HelpTakeTourTip" xml:space="preserve">
+    <value>Sieben kurze Kapitel über diesem Fenster; Esc beendet die Tour</value>
+    <comment>en: Seven short chapters over this window; Esc ends it</comment>
+  </data>
+  <data name="HelpTakeTour" xml:space="preserve">
+    <value>TOUR STARTEN</value>
+    <comment>en: TAKE THE TOUR</comment>
+  </data>
+  <data name="HelpWhatsNewTip" xml:space="preserve">
+    <value>Zeigt die Neuigkeiten wieder oben in der Liste links</value>
+    <comment>en: Shows what's new at the top of the list on the left again</comment>
+  </data>
+  <data name="HelpKeyBefore" xml:space="preserve">
+    <value>Mach im Raid einen Screenshot mit </value>
+    <comment>en: In a raid, press </comment>
+  </data>
+  <data name="HelpKeyAfter" xml:space="preserve">
+    <value>: Der Name des Screenshots enthält deine Position. Die Map bleibt, wo sie ist; F zeigt dich, Umschalt+F folgt dir. </value>
+    <comment>en: : the screenshot's name holds your position. The map stays put; F shows you, Shift+F follows you. </comment>
+  </data>
+  <data name="HelpShowMe" xml:space="preserve">
+    <value>ZEIGEN</value>
+    <comment>en: SHOW ME</comment>
+  </data>
+  <data name="HelpFollows" xml:space="preserve">
+    <value>Map, Raid und Quests folgen den Logs des Spiels. Beim Spielen musst du nichts klicken. </value>
+    <comment>en: Map, raid and quests follow the game's logs. No clicks needed while you play. </comment>
+  </data>
+  <data name="HelpNextRaid" xml:space="preserve">
+    <value>Zwischen Raids: wohin es geht, was du abschließen kannst, was du mitnehmen sollst. Im Raid: dieselbe Karte, jedes Ziel mit Entfernung und Richtung. </value>
+    <comment>en: Between raids: where to go, what you can complete, what to bring. In a raid: the same card, each objective with its distance and direction. </comment>
+  </data>
+  <data name="HelpExit" xml:space="preserve">
+    <value>EXTRACT: der nächste Extract für deine Seite, aber pro Raid sind nur einige offen. Mach einen Screenshot der Extract-Liste (beim Raid-Start oder zweimal O): Deine leuchten auf, die übrigen erscheinen nur als Umriss, und ODER ist dein nächster, der nichts braucht. </value>
+    <comment>en: EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest turn hollow, and OR is your nearest that needs nothing. </comment>
+  </data>
+  <data name="HelpQuestOrder" xml:space="preserve">
+    <value>Reihenfolge der Quests: erst irgendwo hingehen, dann finden oder überleben, dann kämpfen; das Einfachste zuerst.</value>
+    <comment>en: Quest order: go somewhere, then find or survive, then fight; simplest first.</comment>
+  </data>
+  <data name="HelpPointAtQuest" xml:space="preserve">
+    <value>Zeig auf eine Quest: Die Quest-Karte öffnet sich, und die Quest leuchtet überall auf. Klick, um die Karte festzuhalten; Keys, Items und Quests darauf haben eigene Karten. </value>
+    <comment>en: Point at a quest: its card opens and the quest lights up everywhere. Click to keep the card; a key, item or quest on it has a card of its own. </comment>
+  </data>
+  <data name="HelpPicks" xml:space="preserve">
+    <value>Klick auf den Stift einer Quest, um sie für den nächsten Raid zu picken, so viele du willst. Picks kommen zuerst, jeder in seiner eigenen Farbe, mit einer Linie von dir zum nächsten, bis er erledigt ist oder du ihn entfernst.</value>
+    <comment>en: Click a quest's pen to pick it for the coming raid, as many as you like. Picks come first, each in its own colour, with a line from you to the nearest, until done or unpicked.</comment>
+  </data>
+  <data name="HelpTicks" xml:space="preserve">
+    <value>Ziel erledigt? Hak es auf der Quest-Karte ab (in den Logs steht es nicht): Map, ZIEL und Planung überspringen es. Item mit → und Trader-Porträt: Gib es nach dem Raid bei diesem Trader ab.</value>
+    <comment>en: Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. An item followed by → and a trader's portrait: hand it to that trader after the raid.</comment>
+  </data>
+  <data name="HelpReplay" xml:space="preserve">
+    <value>Nach einem Raid mit ein paar Screenshots spielt die Map nach, wo du sie gemacht hast, am Anfang blass, am Ende hell. REPLAY in der Zeile des letzten Raids spielt ihn noch mal ab, bis zum nächsten Raid.</value>
+    <comment>en: After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid.</comment>
+  </data>
+  <data name="HelpQuestsFromLogs" xml:space="preserve">
+    <value>Quests kommen nur aus den Logs des Spiels: Eine vor deinem ältesten Log gestartete Quest wird nicht gezeigt.</value>
+    <comment>en: Quests come from the game's logs only: one started before your oldest log isn't shown.</comment>
+  </data>
+  <data name="HelpStoryChapters" xml:space="preserve">
+    <value>Story-Kapitel (Falling Skies, Batya, …) fehlen noch: tarkov.dev veröffentlicht sie nicht.</value>
+    <comment>en: Story chapters (Falling Skies, Batya, …) aren't shown yet: tarkov.dev doesn't publish them.</comment>
+  </data>
+  <data name="HelpKeysHeading" xml:space="preserve">
+    <value>TASTEN · WENN DIESES FENSTER DEN FOKUS HAT</value>
+    <comment>en: KEYS · WHEN THIS WINDOW HAS FOCUS</comment>
+  </data>
+  <data name="HelpQuestTypesHeading" xml:space="preserve">
+    <value>QUEST-TYPEN</value>
+    <comment>en: QUEST TYPES</comment>
+  </data>
+  <data name="HelpLegendHeading" xml:space="preserve">
+    <value>AUF DER MAP</value>
+    <comment>en: ON THE MAP</comment>
+  </data>
+  <data name="HelpLegendElsewhereHeading" xml:space="preserve">
+    <value>NICHT AUF DIESER MAP</value>
+    <comment>en: NOT ON THIS MAP</comment>
+  </data>
+  <data name="HelpPrivacy" xml:space="preserve">
+    <value>Liest die Namen der Screenshots, die Logs des Spiels, die öffentlichen Daten von tarkov.dev und die Extract-Liste oben rechts in einem Raid-Screenshot (in den Einstellungen abschaltbar). Liest nichts aus dem Spiel und schickt ihm nichts. Gesendet wird nur, wenn du einen Bericht sendest oder Absturzberichte erlaubst; ein installiertes Shturmap fragt GitHub nach Updates. Ändert nichts außerhalb seiner Ordner, außer du hakst „Positions-Screenshots löschen“ an.</value>
+    <comment>en: Reads screenshot names, the game's logs, tarkov.dev's public data and the extract list in a raid screenshot's top right corner (settings turn that off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots.</comment>
+  </data>
+  <data name="HelpCopyDiagnosticsTip" xml:space="preserve">
+    <value>Kopiert Version, was gefunden wurde, Stand der Daten und das Log von heute (ohne Namen oder IDs), zum Einfügen, wo du willst</value>
+    <comment>en: Copies version, what was found, data state and today's log (no names or ids), to paste anywhere</comment>
+  </data>
+  <data name="HelpCopyDiagnostics" xml:space="preserve">
+    <value>DIAGNOSEDATEN KOPIEREN</value>
+    <comment>en: COPY DIAGNOSTICS</comment>
+  </data>
+  <data name="HelpReportingNotSetUp" xml:space="preserve">
+    <value>Melden ist in diesem Build nicht eingerichtet: Kopier die Diagnosedaten und schick sie an die Person, von der du Shturmap hast.</value>
+    <comment>en: Reporting isn't set up in this build: copy the diagnostics and send them to whoever gave you Shturmap.</comment>
+  </data>
+  <data name="SettingsButtonTip" xml:space="preserve">
+    <value>Einstellungen (Strg+,)</value>
+    <comment>en: Settings (Ctrl+,)</comment>
+  </data>
+  <data name="SettingsButtonName" xml:space="preserve">
+    <value>Einstellungen</value>
+    <comment>en: Settings</comment>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>EINSTELLUNGEN</value>
+    <comment>en: SETTINGS</comment>
+  </data>
+  <data name="SettingsPreferences" xml:space="preserve">
+    <value>OPTIONEN</value>
+    <comment>en: PREFERENCES</comment>
+  </data>
+  <data name="SettingsDeleteScreenshots" xml:space="preserve">
+    <value>Positions-Screenshots löschen</value>
+    <comment>en: Delete position screenshots</comment>
+  </data>
+  <data name="SettingsReadExits" xml:space="preserve">
+    <value>Extract-Liste aus Screenshots lesen</value>
+    <comment>en: Read the extract list from screenshots</comment>
+  </data>
+  <data name="SettingsCrashReports" xml:space="preserve">
+    <value>Absturzberichte</value>
+    <comment>en: Crash reports</comment>
+  </data>
+  <data name="SettingsCrashAskTip" xml:space="preserve">
+    <value>Der nächste Start fragt vor dem Senden</value>
+    <comment>en: The next start asks before sending</comment>
+  </data>
+  <data name="SettingsCrashAsk" xml:space="preserve">
+    <value>NACH ABSTURZ FRAGEN</value>
+    <comment>en: ASK AFTER A CRASH</comment>
+  </data>
+  <data name="SettingsCrashAlwaysTip" xml:space="preserve">
+    <value>Der nächste Start sendet ihn ohne Nachfrage</value>
+    <comment>en: The next start sends it without asking</comment>
+  </data>
+  <data name="SettingsCrashAlways" xml:space="preserve">
+    <value>IMMER SENDEN</value>
+    <comment>en: ALWAYS SEND</comment>
+  </data>
+  <data name="SettingsCrashNeverTip" xml:space="preserve">
+    <value>Abstürze bleiben auf diesem PC</value>
+    <comment>en: Crashes stay on this PC</comment>
+  </data>
+  <data name="SettingsCrashNever" xml:space="preserve">
+    <value>NIE</value>
+    <comment>en: NEVER</comment>
+  </data>
+  <data name="SettingsCrashNote" xml:space="preserve">
+    <value>Enthält den Fehler, wo er passiert ist, Versionen und die letzten 50 Log-Zeilen, Benutzerordner maskiert. Kein Speicherabbild, keine Screenshots, Spieldateien oder IDs.</value>
+    <comment>en: Holds the error, where it happened, versions and the last 50 log lines, user folder masked. No memory, screenshots, game files or ids.</comment>
+  </data>
+  <data name="SettingsUpdates" xml:space="preserve">
+    <value>Updates</value>
+    <comment>en: Updates</comment>
+  </data>
+  <data name="SettingsUpdatesAutomaticTip" xml:space="preserve">
+    <value>Prüft GitHub beim Start und alle 6 h; installiert beim nächsten Start</value>
+    <comment>en: Checks GitHub at start and every 6 h; installs at the next start</comment>
+  </data>
+  <data name="SettingsUpdatesAutomatic" xml:space="preserve">
+    <value>AUTOMATISCH</value>
+    <comment>en: AUTOMATIC</comment>
+  </data>
+  <data name="SettingsUpdatesTellOnlyTip" xml:space="preserve">
+    <value>Prüft GitHub und sagt dir Bescheid; lädt nur auf deinen Klick herunter</value>
+    <comment>en: Checks GitHub and tells you; downloads only on your click</comment>
+  </data>
+  <data name="SettingsUpdatesTellOnly" xml:space="preserve">
+    <value>NUR BENACHRICHTIGEN</value>
+    <comment>en: TELL ME ONLY</comment>
+  </data>
+  <data name="SettingsUpdatesOffTip" xml:space="preserve">
+    <value>Prüft GitHub nie</value>
+    <comment>en: Never checks GitHub</comment>
+  </data>
+  <data name="SettingsUpdatesOff" xml:space="preserve">
+    <value>AUS</value>
+    <comment>en: OFF</comment>
+  </data>
+  <data name="SettingsUpdatesNote" xml:space="preserve">
+    <value>Lädt im Hintergrund herunter, installiert beim nächsten Start, nie im Raid. GitHub sieht deine IP-Adresse, sonst nichts.</value>
+    <comment>en: Downloads in the background, applies at the next start, never in a raid. GitHub sees your internet address, nothing more.</comment>
+  </data>
+  <data name="SettingsAppAndData" xml:space="preserve">
+    <value>APP UND DATEN</value>
+    <comment>en: APP AND DATA</comment>
+  </data>
+  <data name="SettingsChooseGameFolderTip" xml:space="preserve">
+    <value>Installationsordner des Spiels wählen</value>
+    <comment>en: Pick the game's install folder</comment>
+  </data>
+  <data name="SettingsChooseGameFolder" xml:space="preserve">
+    <value>WÄHLEN…</value>
+    <comment>en: CHOOSE…</comment>
+  </data>
+  <data name="SettingsFindGameTip" xml:space="preserve">
+    <value>Gewählten Ordner vergessen, Spiel neu suchen</value>
+    <comment>en: Forget the chosen folder, find the game again</comment>
+  </data>
+  <data name="SettingsFindGame" xml:space="preserve">
+    <value>AUTOMATISCH SUCHEN</value>
+    <comment>en: FIND AUTOMATICALLY</comment>
+  </data>
+  <data name="SettingsLogFolderTip" xml:space="preserve">
+    <value>Öffnet Shturmaps Log-Ordner (%LOCALAPPDATA%\Shturmap\logs)</value>
+    <comment>en: Opens Shturmap's log folder (%LOCALAPPDATA%\Shturmap\logs)</comment>
+  </data>
+  <data name="SettingsLogFolder" xml:space="preserve">
+    <value>LOG-ORDNER ↗</value>
+    <comment>en: LOG FOLDER ↗</comment>
+  </data>
+  <data name="SettingsPrivacyTip" xml:space="preserve">
+    <value>Was Berichte enthalten, wer sie bekommt, wie lange sie aufbewahrt werden</value>
+    <comment>en: What reports hold, who gets them, how long they're kept</comment>
+  </data>
+  <data name="SettingsPrivacy" xml:space="preserve">
+    <value>DATENSCHUTZ ↗</value>
+    <comment>en: PRIVACY ↗</comment>
+  </data>
+  <data name="SettingsLicencesTip" xml:space="preserve">
+    <value>Shturmaps Lizenz und die des Codes, den es nutzt</value>
+    <comment>en: Shturmap's licence and those of the code it uses</comment>
+  </data>
+  <data name="SettingsLicences" xml:space="preserve">
+    <value>LIZENZEN ↗</value>
+    <comment>en: LICENCES ↗</comment>
+  </data>
+  <data name="SettingsUninstallTip" xml:space="preserve">
+    <value>Entfernt Shturmap wie über Windows-Einstellungen → Apps → Installierte Apps</value>
+    <comment>en: Removes Shturmap, as Windows' Settings → Apps does</comment>
+  </data>
+  <data name="SettingsUninstall" xml:space="preserve">
+    <value>SHTURMAP DEINSTALLIEREN…</value>
+    <comment>en: UNINSTALL SHTURMAP…</comment>
+  </data>
+  <data name="SettingsUninstallQuestion" xml:space="preserve">
+    <value>Shturmap von diesem PC entfernen?</value>
+    <comment>en: Remove Shturmap from this PC?</comment>
+  </data>
+  <data name="SettingsUninstallDeleteData" xml:space="preserve">
+    <value>Auch meine Shturmap-Daten löschen</value>
+    <comment>en: Also delete my Shturmap data</comment>
+  </data>
+  <data name="SettingsUninstallConfirm" xml:space="preserve">
+    <value>DEINSTALLIEREN</value>
+    <comment>en: UNINSTALL</comment>
+  </data>
+  <data name="SettingsUninstallCancel" xml:space="preserve">
+    <value>ABBRECHEN</value>
+    <comment>en: CANCEL</comment>
+  </data>
+  <data name="RailMapHeading" xml:space="preserve">
+    <value>MAP</value>
+    <comment>en: MAP</comment>
+  </data>
+  <data name="RaidHeading" xml:space="preserve">
+    <value>DIESER RAID</value>
+    <comment>en: THIS RAID</comment>
+  </data>
+  <data name="RaidSideTip" xml:space="preserve">
+    <value>Deine Seite in diesem Raid, aus dem Log des Spiels</value>
+    <comment>en: The side you play this raid, from the game's log</comment>
+  </data>
+  <data name="RaidSideSwitchTip" xml:space="preserve">
+    <value>Raid auf deinem PC gehostet: Das Log nennt deine Seite nicht. Klick, um zwischen PMC und Scav zu wechseln.</value>
+    <comment>en: Raid hosted on your PC: the log doesn't say your side. Click to switch PMC / Scav.</comment>
+  </data>
+  <data name="UpdateDownloadTip" xml:space="preserve">
+    <value>Lädt das Update im Hintergrund herunter; installiert wird es beim nächsten Start</value>
+    <comment>en: Downloads it in the background; it applies at the next start</comment>
+  </data>
+  <data name="UpdateDownload" xml:space="preserve">
+    <value>HERUNTERLADEN</value>
+    <comment>en: DOWNLOAD</comment>
+  </data>
+  <data name="UpdateRestartTip" xml:space="preserve">
+    <value>Schließt Shturmap, installiert die neue Version und startet es neu</value>
+    <comment>en: Closes Shturmap, applies the new version and starts it again</comment>
+  </data>
+  <data name="UpdateRestart" xml:space="preserve">
+    <value>JETZT NEU STARTEN</value>
+    <comment>en: RESTART NOW</comment>
+  </data>
+  <data name="WhatsNewClockMinutes" xml:space="preserve">
+    <value>MIN</value>
+    <comment>en: MIN</comment>
+  </data>
+  <data name="WhatsNewPointAt" xml:space="preserve">
+    <value>Zeig auf eine Zeile: Die Map zeigt sie.</value>
+    <comment>en: Point at one: the map shows it.</comment>
+  </data>
+  <data name="WhatsNewCloseTip" xml:space="preserve">
+    <value>Schließen. Die Hilfe holt sie zurück.</value>
+    <comment>en: Close. Help brings it back.</comment>
+  </data>
+  <data name="WhatsNewCloseName" xml:space="preserve">
+    <value>Neuigkeiten schließen</value>
+    <comment>en: Close what's new</comment>
+  </data>
+  <data name="PlanReplayTip" xml:space="preserve">
+    <value>Spielt den letzten Raid noch mal ab: wo du Screenshots gemacht hast, der Reihe nach</value>
+    <comment>en: Plays the last raid again: where you took screenshots, in order</comment>
+  </data>
+  <data name="PlanReplay" xml:space="preserve">
+    <value>REPLAY</value>
+    <comment>en: REPLAY</comment>
+  </data>
+  <data name="PlanChooseGameFolderTip" xml:space="preserve">
+    <value>Den Ordner wählen, in dem Escape from Tarkov installiert ist</value>
+    <comment>en: Pick the folder Escape from Tarkov is installed in</comment>
+  </data>
+  <data name="PlanChooseGameFolder" xml:space="preserve">
+    <value>SPIELORDNER WÄHLEN…</value>
+    <comment>en: CHOOSE GAME FOLDER…</comment>
+  </data>
+  <data name="PlanNextRaid" xml:space="preserve">
+    <value>NÄCHSTER RAID</value>
+    <comment>en: NEXT RAID</comment>
+  </data>
+  <data name="PlanClearPicksTip" xml:space="preserve">
+    <value>Entfernt die Picks dieser Map; andere Maps behalten ihre</value>
+    <comment>en: Unpicks this map's quests; other maps keep theirs</comment>
+  </data>
+  <data name="PlanClearPicks" xml:space="preserve">
+    <value>PICKS LÖSCHEN</value>
+    <comment>en: CLEAR PICKS</comment>
+  </data>
+  <data name="CardSummaryTip" xml:space="preserve">
+    <value>Abschließen: alle Raid-Ziele hier in einem Raid machbar, keine FiR-Items, höchstens 3 Kills. Der Rest macht hier nur Progress.</value>
+    <comment>en: Complete: every raid objective doable here in one raid, no found-in-raid items, at most 3 kills. The rest only progress here.</comment>
+  </data>
+  <data name="CardPicked" xml:space="preserve">
+    <value>GEPICKT</value>
+    <comment>en: PICKED</comment>
+  </data>
+  <data name="CardComplete" xml:space="preserve">
+    <value>ABSCHLIESSEN</value>
+    <comment>en: COMPLETE</comment>
+  </data>
+  <data name="CardProgress" xml:space="preserve">
+    <value>PROGRESS</value>
+    <comment>en: PROGRESS</comment>
+  </data>
+  <data name="CardBring" xml:space="preserve">
+    <value>MITNEHMEN</value>
+    <comment>en: BRING</comment>
+  </data>
+  <data name="RaidCheckYourKit" xml:space="preserve">
+    <value>KIT CHECKEN</value>
+    <comment>en: CHECK YOUR KIT</comment>
+  </data>
+  <data name="RaidAlsoUseful" xml:space="preserve">
+    <value>AUCH NÜTZLICH</value>
+    <comment>en: ALSO USEFUL</comment>
+  </data>
+  <data name="RaidNextLabel" xml:space="preserve">
+    <value>ZIEL</value>
+    <comment>en: NEXT</comment>
+  </data>
+  <data name="RaidExitLabel" xml:space="preserve">
+    <value>EXTRACT</value>
+    <comment>en: EXIT</comment>
+  </data>
+  <data name="RaidAllExitsTip" xml:space="preserve">
+    <value>Alle Extracts und Transits für deine Seite, die nächsten zuerst</value>
+    <comment>en: Every extract and transit for your side, nearest first</comment>
+  </data>
+  <data name="RaidOrLabel" xml:space="preserve">
+    <value>ODER</value>
+    <comment>en: OR</comment>
+  </data>
+  <data name="RaidFindInRaid" xml:space="preserve">
+    <value>FIR FINDEN</value>
+    <comment>en: FIND IN RAID</comment>
+  </data>
+  <data name="RaidExtractsHeading" xml:space="preserve">
+    <value>EXTRACTS UND TRANSITS</value>
+    <comment>en: EXTRACTS AND TRANSITS</comment>
+  </data>
+  <data name="AnyMapHeading" xml:space="preserve">
+    <value>JEDE MAP</value>
+    <comment>en: ANY MAP</comment>
+  </data>
+  <data name="NoticeDismissTip" xml:space="preserve">
+    <value>Schließen</value>
+    <comment>en: Dismiss</comment>
+  </data>
+  <data name="NoticeDismissName" xml:space="preserve">
+    <value>Hinweis schließen</value>
+    <comment>en: Dismiss the notice</comment>
+  </data>
+  <data name="CrashSend" xml:space="preserve">
+    <value>SENDEN</value>
+    <comment>en: SEND</comment>
+  </data>
+  <data name="CrashDontSend" xml:space="preserve">
+    <value>NICHT SENDEN</value>
+    <comment>en: DON'T SEND</comment>
+  </data>
+  <data name="CrashAlwaysSendTip" xml:space="preserve">
+    <value>Diesen senden und künftige ohne Nachfrage (in den Einstellungen änderbar)</value>
+    <comment>en: Send this one, and future ones without asking (change it in settings)</comment>
+  </data>
+  <data name="CrashAlwaysSend" xml:space="preserve">
+    <value>IMMER SENDEN</value>
+    <comment>en: ALWAYS SEND</comment>
+  </data>
+  <data name="CrashWhatsSentTip" xml:space="preserve">
+    <value>Zeigt genau, was gesendet würde</value>
+    <comment>en: Shows exactly what would be sent</comment>
+  </data>
+  <data name="CrashWhatsSent" xml:space="preserve">
+    <value>WAS GESENDET WIRD</value>
+    <comment>en: WHAT'S SENT</comment>
+  </data>
+  <data name="CrashAddNoteTip" xml:space="preserve">
+    <value>Schreib dazu, was du beim Absturz gemacht hast</value>
+    <comment>en: Add what you were doing when it happened</comment>
+  </data>
+  <data name="CrashAddNote" xml:space="preserve">
+    <value>NOTIZ HINZUFÜGEN</value>
+    <comment>en: ADD A NOTE</comment>
+  </data>
+  <data name="CrashLater" xml:space="preserve">
+    <value>Nächstes Mal wieder fragen</value>
+    <comment>en: Ask again next time</comment>
+  </data>
+  <data name="MapFloorsTip" xml:space="preserve">
+    <value>Stockwerke. Der Punkt markiert deines, laut deinem letzten Screenshot; wähl ein anderes oder schau dich mit Bild↑ / Bild↓ um.</value>
+    <comment>en: Floors. The dot is yours, from your last screenshot; pick another or use PgUp / PgDn to look around.</comment>
+  </data>
+  <data name="MapFollowTip" xml:space="preserve">
+    <value>Meiner Position folgen (Umschalt+F)</value>
+    <comment>en: Follow my position (Shift+F)</comment>
+  </data>
+  <data name="MapFollowName" xml:space="preserve">
+    <value>Meiner Position folgen</value>
+    <comment>en: Follow my position</comment>
+  </data>
+  <data name="MapShowMeTip" xml:space="preserve">
+    <value>Meine Position zeigen (F)</value>
+    <comment>en: Show my position (F)</comment>
+  </data>
+  <data name="MapShowMeName" xml:space="preserve">
+    <value>Meine Position zeigen</value>
+    <comment>en: Show my position</comment>
+  </data>
+  <data name="MapFitTip" xml:space="preserve">
+    <value>Ganze Map zeigen (0)</value>
+    <comment>en: Show the whole map (0)</comment>
+  </data>
+  <data name="MapFitName" xml:space="preserve">
+    <value>Ganze Map zeigen</value>
+    <comment>en: Show the whole map</comment>
+  </data>
+  <data name="MapZoomInTip" xml:space="preserve">
+    <value>Vergrößern (+)</value>
+    <comment>en: Zoom in (+)</comment>
+  </data>
+  <data name="MapZoomInName" xml:space="preserve">
+    <value>Vergrößern</value>
+    <comment>en: Zoom in</comment>
+  </data>
+  <data name="MapZoomOutTip" xml:space="preserve">
+    <value>Verkleinern (−)</value>
+    <comment>en: Zoom out (−)</comment>
+  </data>
+  <data name="MapZoomOutName" xml:space="preserve">
+    <value>Verkleinern</value>
+    <comment>en: Zoom out</comment>
+  </data>
+  <data name="MapWikiMapTip" xml:space="preserve">
+    <value>Diese Map als interaktive Map im Wiki zu Escape from Tarkov</value>
+    <comment>en: This map's interactive map on the Escape from Tarkov wiki</comment>
+  </data>
+  <data name="MapWikiMap" xml:space="preserve">
+    <value>WIKI-MAP ↗</value>
+    <comment>en: WIKI MAP ↗</comment>
+  </data>
+  <data name="TourBackTip" xml:space="preserve">
+    <value>Zurück (←)</value>
+    <comment>en: Back (←)</comment>
+  </data>
+  <data name="TourBack" xml:space="preserve">
+    <value>← ZURÜCK</value>
+    <comment>en: ← BACK</comment>
+  </data>
+  <data name="TourNextTip" xml:space="preserve">
+    <value>Weiter (→ oder Leertaste)</value>
+    <comment>en: Next (→ or Space)</comment>
+  </data>
+  <data name="TourNext" xml:space="preserve">
+    <value>WEITER →</value>
+    <comment>en: NEXT →</comment>
+  </data>
+  <data name="TourEndTip" xml:space="preserve">
+    <value>Beendet die Tour; die Hilfe holt sie zurück (F1)</value>
+    <comment>en: Ends the tour; help brings it back (F1)</comment>
+  </data>
+  <data name="TourEnd" xml:space="preserve">
+    <value>ESC BEENDET DIE TOUR</value>
+    <comment>en: ESC ENDS THE TOUR</comment>
+  </data>
+  <data name="ReportTitle" xml:space="preserve">
+    <value>PROBLEM ODER IDEE MELDEN</value>
+    <comment>en: REPORT A PROBLEM OR IDEA</comment>
+  </data>
+  <data name="ReportProblem" xml:space="preserve">
+    <value>PROBLEM</value>
+    <comment>en: PROBLEM</comment>
+  </data>
+  <data name="ReportIdea" xml:space="preserve">
+    <value>IDEE</value>
+    <comment>en: IDEA</comment>
+  </data>
+  <data name="ReportTextPlaceholder" xml:space="preserve">
+    <value>Was ist passiert, und was hast du erwartet? (Pflichtfeld)</value>
+    <comment>en: What happened, and what did you expect? (Required)</comment>
+  </data>
+  <data name="ReportContactPlaceholder" xml:space="preserve">
+    <value>Für eine Antwort, z. B. Discord-Name oder E-Mail (optional)</value>
+    <comment>en: For a reply, e.g. Discord name or email (optional)</comment>
+  </data>
+  <data name="ReportIncludeDiagnostics" xml:space="preserve">
+    <value>Diagnosedaten anhängen</value>
+    <comment>en: Include diagnostics</comment>
+  </data>
+  <data name="ReportShowSent" xml:space="preserve">
+    <value>ZEIGEN, WAS GESENDET WIRD</value>
+    <comment>en: SHOW WHAT'S SENT</comment>
+  </data>
+  <data name="ReportPrivacyNote" xml:space="preserve">
+    <value>Der Bericht geht über Sentry in der EU an Shturmaps Entwickler, mit maskiertem Windows-Benutzerordner und ohne IDs. Sonst wird nichts gesendet. </value>
+    <comment>en: It goes to Shturmap's developer through Sentry, in the EU, with your Windows user folder masked and no ids. Nothing else is sent. </comment>
+  </data>
+  <data name="ReportPrivacyLink" xml:space="preserve">
+    <value>Datenschutz</value>
+    <comment>en: Privacy</comment>
+  </data>
+  <data name="ReportCancel" xml:space="preserve">
+    <value>ABBRECHEN</value>
+    <comment>en: CANCEL</comment>
+  </data>
+  <data name="ReportSend" xml:space="preserve">
+    <value>SENDEN</value>
+    <comment>en: SEND</comment>
+  </data>
+  <data name="ItemCardGetIt" xml:space="preserve">
+    <value>BESORGEN</value>
+    <comment>en: GET IT</comment>
+  </data>
+  <data name="ItemCardNeededFor" xml:space="preserve">
+    <value>NÖTIG FÜR</value>
+    <comment>en: NEEDED FOR</comment>
+  </data>
+  <data name="ItemCardNoQuest" xml:space="preserve">
+    <value>Keine deiner aktiven Quests braucht das.</value>
+    <comment>en: None of your active quests needs it.</comment>
+  </data>
+  <data name="QuestCardBring" xml:space="preserve">
+    <value>MITNEHMEN</value>
+    <comment>en: BRING</comment>
+  </data>
+  <data name="QuestCardUnlocks" xml:space="preserve">
+    <value>SCHALTET FREI</value>
+    <comment>en: UNLOCKS</comment>
+  </data>
+  <data name="QuestCardWikiTip" xml:space="preserve">
+    <value>Diese Quest im Wiki zu Escape from Tarkov</value>
+    <comment>en: This quest on the Escape from Tarkov wiki</comment>
+  </data>
+  <data name="QuestCardWikiPage" xml:space="preserve">
+    <value>WIKI-SEITE ↗</value>
+    <comment>en: WIKI PAGE ↗</comment>
+  </data>
+  <data name="SettingsLanguage" xml:space="preserve">
+    <value>Sprache</value>
+    <comment>en: Language</comment>
+  </data>
+</root>

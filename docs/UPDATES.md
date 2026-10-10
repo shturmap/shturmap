@@ -21,8 +21,9 @@ shturmap-cli data pve de
 ```
 
 The commands refresh the cache (`%LOCALAPPDATA%\Shturmap\cache\tarkov-dev`) that the audits and tests read; the
-German texts are for `ExtractRulesTests`. Compare the counts (tasks, maps, traders, definitions) with the last run
-below. Every map should say `svg` or `tiles`: one with `NONE` has no definition in maps.json and drops out of Plan.
+German texts are for `ExtractRulesTests` and `ItemCardTests`. Compare the counts (tasks, maps, traders, definitions)
+with the last run below. Every map should say `svg` or `tiles`: one with `NONE` has no definition in maps.json and
+drops out of Plan.
 
 **Story chapters** (Tour, Falling Skies, Batya, …; owner, 2026-10-08: wait for tarkov.dev). Shturmap has none of
 them: tarkov.dev builds them into the tasks file as `data.story` but deletes that part in production ("not ready
@@ -46,7 +47,9 @@ are told the chapters aren't shown (owner, 2026-10-09): the tour's last chapter 
 
 ## 2. The audits, both modes (5 min)
 
-Run each with `pve` and with `regular`.
+Run each with `pve` and with `regular`. They stay English, with no language to choose (owner, 2026-10-11): they check
+rules that read English data. The German data is covered by `shturmap-cli data pve de` (step 1) and the tests that
+read its cache, `ExtractRulesTests` and `ItemCardTests` (step 3).
 
 | command | look at | if it shows up |
 | --- | --- | --- |
@@ -67,6 +70,8 @@ local cache and skip without it.
 - `SynopsisDataTests`: every quest on every map keeps the synopsis rules (fails on BREAK only).
 - `PlanOrderTests`: over 100 Plan rows and objective facts read.
 - `ExtractRulesTests`: every exit takes the same in German as in English, with at least 5 flare and 5 co-op exits.
+- `ItemCardTests`: German quest cards leave out the line of map names under at least half as many objectives as the
+  English ones (2026-10-11: 363 of 936, English 577).
 - `PicksTests`: picks on the real data.
 
 ## 4. After a game patch (one played raid)
@@ -87,6 +92,14 @@ local cache and skip without it.
 When a check finds drift: fix the rule, add a test with made-up ids (never a real log line or quest text), update
 DESIGN.md in the same change, and add a line to the log at the end.
 
+## 5. Before a release: the layout check (25 min)
+
+New quests, items and maps bring longer names, in German most. With the fresh cache of step 1,
+`.\tools\layout-check.ps1 -Out <folder>` plays every view in English, German and the pseudo-language at the smallest
+window and at 1600x900 (docs/LANGUAGES.md, "Layout check"). It must say PASSED for every language but the
+pseudo-language; read the pseudo-language's warnings in `summary.md` for what a longer language will break next. Its
+pictures stay on the PC.
+
 ## What the rules assume
 
 ⚠ marks a failure that says nothing: something just goes missing or reads wrong.
@@ -97,7 +110,7 @@ DESIGN.md in the same change, and add a line to the log at the end.
 | --- | --- | --- | --- |
 | Payloads at `json.tarkov.dev/<mode>/…` with `data.maps`, `data.tasks`, `data.mobs`, `data.questItems`; traders as `data` itself | `GameDataLoader`, `GameData.Slug` | ⚠ a section with a new shape loads as empty: maps or quests vanish | `data` counts; `PlanOrderTests` |
 | Translations: keys plus a `translations` path list, item names under `<id> Name` / `ShortName`, transit conditions translated by hand | `JsonTranslator`, `GameDataLoader` | raw keys or "Unknown item" on screen | `bring` UNKNOWN ITEM; `data pve de` |
-| The game's language codes map to tarkov.dev's (`ge→de`, `cz→cs`, `jp→ja`, …), in two copies | `GameDataLoader.ApiLanguage`, `ExitListReader.WindowsLanguage` | a 404, then English everywhere | `LoaderLanguageTests` pins the table only |
+| The game's language codes map to the common ones (`ge→de`, `cz→cs`, `jp→ja`, …), one table for tarkov.dev's files, the extract list's text recognition and Automatic's choice of the app's language | `GameLanguage.Common`; its callers `GameDataLoader.ApiLanguage`, `ExitListReader.WindowsLanguage`, `UiLanguage.Choose` | a 404, then English data; the extract list read in English; Automatic takes Windows' language instead of the game's | `GameLanguageTests` pins the table only; `LoaderLanguageTests`: tarkov.dev's code (English for none), and against a fake tarkov.dev that a German game asks for `_de` and a language it lacks loads in English |
 | Objective types are the known ones | `QuestTaxonomy.Classify`, `QuestEffort` | ⚠ a new type is classed as Trader: off the map and out of Plan | `effort` "Unknown objective types" |
 | Kill targets: `Savage`, `Marksman`, `assaultGroup`, `Any` are Scavs; prefixes `boss`, `follower`, `sectant`, `infected` | `QuestEffort` | an unknown target counts as a fight (the safe side) | `effort` UNKNOWN TARGET |
 | The exit status `ExpBonusSurvived` means "survive" | `QuestEffort` | ⚠ every extract objective falls to "Go there" | `effort` group totals against the last run |
@@ -107,6 +120,7 @@ DESIGN.md in the same change, and add a line to the log at the end.
 | Hand-overs pair with their pickup or find by quest item, or by item set, count and found-in-raid | `Handovers` | a hand-over line comes back, or a mark goes missing | `handovers` NEAR |
 | `possibleLocations` with one position is where the thing is; several are each "maybe here" | `MapContentBuilder.PlacesItCanBe`, `QuestCards` | a "?" where the place is certain, or none where it isn't | `PossiblePlaceTests`; the card by eye |
 | Synopsis tables (English): verbs, terms, conditions, place patterns, map names | `QuestSynopsis` | FALLBACK and LONG rows; BREAK | `synopses`; `SynopsisDataTests` |
+| An objective's sentence says where with "on", "in", "from", "at" (English) or "auf", "in" (German) before the map's name as the data writes it, alone or in a list | `QuestSynopsis.MapList`, `QuestCards.SaysWhere` | a quest card says the map twice (longer, never wrong) | `ItemCardTests` against the German cache, counts only |
 | Exit rules: `Alpinist*`/`RedRebel*` climb, `sniper` or "(Flare)" flare, "(Co-op)" co-op; item ids of roubles, dollars, euros, the red flare, ice pick and paracord | `ExtractRules` | wrong or missing "to leave through" items | `ExtractRulesTests`; `bring` NO EXIT |
 | Bosses are mobs whose id starts `boss`; every mob but `pmcUSEC`/`pmcBEAR` is drawn | `GameData.BossMobsOn`, `MapContent` | a boss missing from Plan; ⚠ new AI PMCs drawn as bosses | `spawns` |
 | Spawn sides and categories: `scav`; `bot`, `all`, `sniper` | `MapContent` | ⚠ spawn rings go missing | `spawns` |
@@ -177,3 +191,4 @@ Labyrinth's 18 traps, 60 of 1,418 objectives optional): they say what was true o
 | 2026-10-09 | `synopses`, `handovers`, `spawns` | no FALLBACK or BREAK (153 LONG PvE, 156 PvP); hand-overs 221 fold, 0 NEAR; spawns at most 25 m from a spawn point |
 | 2026-10-09 | story chapters; tests | still none in json.tarkov.dev; 1321 tests passed against the fresh cache, 0 skipped |
 | 2026-10-09 | before 0.4.0: `data`, the five audits in both modes, story chapters, tests | the same counts as the morning's runs, the same NO EXIT rows, no chapters; 1407 tests passed against the fresh cache, 0 skipped |
+| 2026-10-11 | German quest cards' line of map names, over `pve de` (`ItemCardTests`) | 363 of 936 lines left out (English 577), each under a sentence that says where; none taken wrongly. Kept: sentences that name none or not all of the line's maps, 17 extracts "aus …", 17 transits "von … nach …", 151 sentences still English in the German data |

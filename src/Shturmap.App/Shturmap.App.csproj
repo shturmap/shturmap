@@ -41,6 +41,11 @@
     <ProjectReference Include="..\Shturmap.Session\Shturmap.Session.csproj" />
   </ItemGroup>
 
+  <!-- The rules' texts are in their own file: the Core tests compile the rules, and their texts with them. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Rules\RuleTexts*.resx" TextNamespace="Shturmap.App.Rules" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="Assets\Shturmap.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\Shturmap-dev.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
@@ -52,6 +57,10 @@
   <ItemGroup>
     <EmbeddedResource Include="..\..\docs\whats-new.md" LogicalName="whats-new.md" />
     <EmbeddedResource Include="..\..\docs\tour.md" LogicalName="tour.md" />
+    <!-- Their translations beside them, "tour.<code>.md" and "whats-new.<code>.md" (Rules.BuiltDocs; docs/DESIGN.md §8,
+         "Texts"): in the app itself under their own names, not in a satellite assembly, where a file name with a
+         language in it would otherwise go. -->
+    <EmbeddedResource Include="..\..\docs\tour.*.md;..\..\docs\whats-new.*.md" LogicalName="%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 
   <!-- Where reports go: the Sentry DSN, given by eng\release.ps1 (and eng\publish.ps1) from the untracked

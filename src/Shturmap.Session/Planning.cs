@@ -198,7 +198,7 @@ public static class Planning
 
     /// <summary>The first of those facts by itself, "40 min raid", or empty when the data gives no length: the window
     /// shows the line part by part, so each boss can be linked to its markers.</summary>
-    public static string LengthText(MapPlanView plan) => plan.RaidMinutes > 0 ? $"{plan.RaidMinutes} min raid" : "";
+    public static string LengthText(MapPlanView plan) => plan.RaidMinutes > 0 ? SessionTexts.PlanRaidLength(minutes: plan.RaidMinutes) : "";
 
     /// <summary>Active quests whose in-raid work fits any map.</summary>
     public static IReadOnlyList<PlanQuestView> AnyMap(GameData data, IEnumerable<string> activeQuestIds, IReadOnlySet<string>? done = null) =>
@@ -219,7 +219,7 @@ public static class Planning
             : quest with { Objectives = quest.Objectives.Where(o => !done.Contains(o.Id)).ToList() };
 
     /// <summary>"Kaban 75%": a boss and its spawn chance, without the locale's space before the percent sign.</summary>
-    public static string BossText((string Name, double Chance) boss) => $"{boss.Name} {Math.Round(boss.Chance * 100):0}%";
+    public static string BossText((string Name, double Chance) boss) => SessionTexts.BossChance(boss: boss.Name, chance: (int)Math.Round(boss.Chance * 100));
 
     /// <summary>The planner's view of one quest (also used for the per-objective requirement hints).</summary>
     public static PlanQuest ToPlan(ApiTask task) => ToPlan(task, null);
@@ -318,7 +318,7 @@ public static class Planning
         if (distinct.Count > 2 && sources is not null && ClassText(data, sources, distinct) is { } named)
             return named;
         var names = distinct.Select(data.ItemName).Distinct().ToList();
-        return names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others";
+        return OneOf(names);
     }
 
     // A group is named by its category when it holds at least three quarters of the category's members, or when it has
@@ -345,11 +345,11 @@ public static class Planning
             {
                 if (category is not null && list.Count >= 2 && byCategory(list.Count, members))
                 {
-                    var name = Lower(data.ItemName(category));
+                    var name = UiLanguage.InSentence(data.ItemName(category), data.Language);
                     if (list.Count >= members)
-                        whole.Add($"any {name}");
+                        whole.Add(SessionTexts.WeaponAny(category: name));
                     else
-                        some.Add($"{name} ({list.Count} of {members} kinds)");
+                        some.Add(SessionTexts.WeaponSome(category: name, count: list.Count, kinds: members));
                 }
                 else
                 {
@@ -358,7 +358,7 @@ public static class Planning
                 if (whole.Count + some.Count + single.Count > MostParts)
                     return null;
             }
-            return whole.Count + some.Count > 0 ? Capital(string.Join(" or ", whole.Concat(some).Concat(single))) : null;
+            return whole.Count + some.Count > 0 ? Capital(Or(whole.Concat(some).Concat(single))) : null;
         }
 
         return Parts((count, members) => count >= ClassShare * members || count > MostNamed)
@@ -374,17 +374,33 @@ public static class Planning
         if (sources is not null)
         {
             var kinds = items.Select(id => sources.Items.GetValueOrDefault(id)?.Categories?.FirstOrDefault())
-                .OfType<string>().Distinct().Select(c => Lower(data.ItemName(c))).ToList();
+                .OfType<string>().Distinct().Select(c => UiLanguage.InSentence(data.ItemName(c), data.Language)).ToList();
             if (kinds.Count is > 0 and <= 3)
                 return string.Join(", ", kinds);
         }
         return GearText(data, items);
     }
 
-    // "Sniper rifle" → "sniper rifle"; a name that is all capitals ("SMG") stays as it is.
-    private static string Lower(string name) => name.Length > 1 && char.IsLower(name[1]) ? char.ToLowerInvariant(name[0]) + name[1..] : name;
+    // The sentence's first letter in capitals, as the language in use writes it.
+    private static string Capital(string name) => name.Length > 0 ? char.ToUpper(name[0], UiLanguage.Culture) + name[1..] : name;
 
-    private static string Capital(string name) => name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
+    /// <summary>One of several items that will each do: "A", "A or B", "A or 3 others".</summary>
+    internal static string OneOf(IReadOnlyList<string> names) =>
+        names.Count <= 2 ? Or(names) : SessionTexts.ListOrOthers(first: names[0], others: names.Count - 1);
+
+    /// <summary>Several things of which one will do, each named: "A or B or C".</summary>
+    internal static string Or(IEnumerable<string> names) => Joined(names, (list, name) => SessionTexts.ListOr(first: list, second: name));
+
+    /// <summary>Several purposes: "to plant and to mark".</summary>
+    internal static string And(IEnumerable<string> parts) => Joined(parts, (list, part) => SessionTexts.ListAnd(first: list, second: part));
+
+    private static string Joined(IEnumerable<string> parts, Func<string, string, string> join)
+    {
+        string? list = null;
+        foreach (var part in parts)
+            list = list is null ? part : join(list, part);
+        return list ?? "";
+    }
 
     /// <summary>
     /// Gear for a wear condition, short: "Bomber beanie / RayBench Hipster Reserve sunglasses", or "PACA Soft Armor /
@@ -394,7 +410,7 @@ public static class Planning
     public static string GearText(GameData data, IEnumerable<string> items)
     {
         var names = items.Select(data.ItemName).Distinct().ToList();
-        return names.Count <= 2 ? string.Join(" / ", names) : $"{names[0]} / {names.Count - 1} others";
+        return names.Count <= 2 ? string.Join(" / ", names) : SessionTexts.GearOthers(first: names[0], others: names.Count - 1);
     }
 
     /// <summary>What an item is brought for, from the objectives that use it: "to plant", "to mark", "to use", "to fit",
@@ -404,30 +420,30 @@ public static class Planning
         switch (r.Kind)
         {
             case RequirementKind.Wear:
-                return "to wear";
+                return SessionTexts.PurposeWear;
             case RequirementKind.Weapon:
-                return "to use";
+                return SessionTexts.PurposeUse;
             case RequirementKind.WeaponMods:
-                return "to fit";
+                return SessionTexts.PurposeFit;
             case RequirementKind.Exit:
-                return "to leave through " + r.Exit;
+                return SessionTexts.PurposeLeave(exit: r.Exit);
             case RequirementKind.Entry:
-                return "to enter " + r.Enter;
+                return SessionTexts.PurposeEnter(map: r.Enter);
         }
         var item = r.Alternatives[0];
         var uses = r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)).OfType<ApiTask>()
             .SelectMany(t => t.Objectives ?? [])
             .Select(o => o.Type switch
             {
-                "plantItem" when o.Items?.Contains(item) == true => "to plant",
-                "mark" when o.MarkerItem == item => "to mark",
-                "useItem" when o.UseAny?.Contains(item) == true => "to use",
+                "plantItem" when o.Items?.Contains(item) == true => SessionTexts.PurposePlant,
+                "mark" when o.MarkerItem == item => SessionTexts.PurposeMark,
+                "useItem" when o.UseAny?.Contains(item) == true => SessionTexts.PurposeUse,
                 _ => null,
             })
             .OfType<string>()
             .Distinct()
             .ToList();
-        return uses.Count > 0 ? string.Join(" and ", uses) : "to bring";
+        return uses.Count > 0 ? And(uses) : SessionTexts.PurposeBring;
     }
 
     private static void Add(Dictionary<string, List<WorldPoint>> places, string map, WorldPoint p)
@@ -518,11 +534,11 @@ public static class Planning
         var facts = RaidPlanner.WhyProgress(quest);
         var parts = new List<string>();
         if (facts.Here < facts.InRaid)
-            parts.Add($"{facts.Here} of {facts.InRaid} objectives here");
+            parts.Add(SessionTexts.ProgressObjectivesHere(here: facts.Here, total: facts.InRaid));
         if (facts.FoundInRaid)
-            parts.Add("needs items found in raid");
+            parts.Add(SessionTexts.ProgressFoundInRaid);
         if (facts.Kills > 0)
-            parts.Add($"{facts.Kills} kills in all");
+            parts.Add(SessionTexts.ProgressKills(kills: facts.Kills));
         return string.Join(" · ", parts);
     }
 
@@ -560,13 +576,14 @@ public static class Planning
         {
             RequirementKind.Wear or RequirementKind.WeaponMods => GearText(data, r.Alternatives),
             RequirementKind.Weapon => WeaponText(data, sources, r.Alternatives),
-            _ => names.Count <= 2 ? string.Join(" or ", names) : $"{names[0]} or {names.Count - 1} others",
+            _ => OneOf(names),
         };
         if (r.Count > 1)
-            text += " ×" + r.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture);
+            text = SessionTexts.ItemTimes(count: r.Count.ToString("N0", UiLanguage.Culture), item: text);
         var quests = string.Join(", ", r.ForQuests.Select(id => data.Tasks.GetValueOrDefault(id)?.Name ?? id));
         // Says why it is on the list (the study log: gear cards were opened over and over to find out).
-        var why = r.Kind == RequirementKind.Key ? $"key for {quests}" : r.ForQuests.Count == 0 ? Purpose(data, r) : $"{Purpose(data, r)}, for {quests}";
+        var why = r.Kind == RequirementKind.Key ? SessionTexts.RequirementKeyFor(quests: quests)
+            : r.ForQuests.Count == 0 ? Purpose(data, r) : SessionTexts.RequirementFor(purpose: Purpose(data, r), quests: quests);
         return new RequirementView(r.Kind, text, quests, r.Alternatives[0], r.ForQuests.ToList(), why, r.Alternatives.ToList(), Math.Max(1, r.Count))
         {
             CountByQuest = r.CountByQuest,
@@ -599,26 +616,28 @@ public static class Planning
     {
         var plan = ToPlan(objective, data.ObjectiveFacts.GetValueOrDefault(objective.Id), data);
         var parts = new List<string>();
-        var keys = plan.Keys.Select(k => string.Join(" or ", k.Select(data.ItemName))).ToList();
+        var keys = plan.Keys.Select(k => Or(k.Select(data.ItemName))).ToList();
         if (hasPlace)
             keys.AddRange(QuestOnlyKeys(task, mapIds, objective).Select(data.ItemName));
         if (keys.Count > 0)
-            parts.Add("Key: " + string.Join(", ", keys.Distinct()));
+            parts.Add(SessionTexts.NeedKey(keys: string.Join(", ", keys.Distinct())));
         if (plan.Bring.Count > 0)
-            parts.Add("Bring: " + string.Join(", ", plan.Bring.Select(b => data.ItemName(b.ItemId) + (b.Count > 1 ? $" ×{b.Count}" : ""))));
+            parts.Add(SessionTexts.NeedBring(items: string.Join(", ", plan.Bring.Select(b =>
+                b.Count > 1 ? SessionTexts.ItemTimes(count: b.Count, item: data.ItemName(b.ItemId)) : data.ItemName(b.ItemId)))));
         if (QuestItemFrom(data, task, objective) is { } with)
-            parts.Add("With: " + with);
+            parts.Add(SessionTexts.NeedWith(item: with));
         if (plan.Wear is { Count: > 0 } wear)
-            parts.Add("Wear: " + GearText(data, wear.SelectMany(s => s)));
+            parts.Add(SessionTexts.NeedWear(gear: GearText(data, wear.SelectMany(s => s))));
         if (plan.Weapons is { Count: > 0 } weapons)
-            parts.Add("Use: " + WeaponText(data, sources, weapons));
+            parts.Add(SessionTexts.NeedUse(weapons: WeaponText(data, sources, weapons)));
         if (plan.Mods is { Count: > 0 } mods)
-            parts.Add("Fit: " + GearText(data, mods.SelectMany(s => s).Distinct()));
+            parts.Add(SessionTexts.NeedFit(gear: GearText(data, mods.SelectMany(s => s).Distinct())));
         if (plan.ExitItems is { Count: > 0 } exitItems)
-            parts.Add("Bring: " + string.Join(", ", exitItems.Select(b => data.ItemName(b.ItemId) + (b.Count > 1 ? " ×" + b.Count.ToString("N0", System.Globalization.CultureInfo.CurrentCulture) : ""))));
+            parts.Add(SessionTexts.NeedBring(items: string.Join(", ", exitItems.Select(b =>
+                b.Count > 1 ? SessionTexts.ItemTimes(count: b.Count.ToString("N0", UiLanguage.Culture), item: data.ItemName(b.ItemId)) : data.ItemName(b.ItemId)))));
         // Gear the kills forbid isn't something to bring: it is said here, on the objective, only (owner, 2026-10-03).
         if (plan.NotWearing is { Count: > 0 } without)
-            parts.Add("Without: " + WithoutText(data, sources, without));
+            parts.Add(SessionTexts.NeedWithout(gear: WithoutText(data, sources, without)));
         return parts.Count > 0 ? string.Join(" · ", parts) : null;
     }
 
@@ -636,10 +655,10 @@ public static class Planning
         {
             var maps = (get.Maps ?? []).Concat((get.PossibleLocations ?? []).Select(l => l.Map)).Concat((get.Zones ?? []).Select(z => z.Map))
                 .OfType<string>().Select(id => data.Maps.GetValueOrDefault(id)?.Name).OfType<string>().Distinct().ToList();
-            return maps.Count > 0 ? $"{name}, found on {string.Join(" or ", maps)}" : $"{name}, found first";
+            return maps.Count > 0 ? SessionTexts.QuestItemFoundOn(item: name, maps: Or(maps)) : SessionTexts.QuestItemFoundFirst(item: name);
         }
         return data.Tasks.Values.FirstOrDefault(t => t.Id != task.Id && (t.Objectives ?? []).Any(o => o.Type == "findQuestItem" && o.QuestItem == item)) is { } earlier
-            ? $"{name}, from {earlier.Name}"
+            ? SessionTexts.QuestItemFrom(item: name, quest: earlier.Name)
             : name;
     }
 

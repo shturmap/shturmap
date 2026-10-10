@@ -47,7 +47,7 @@ public sealed partial class QuestCard : UserControl, ICard
     public static Visibility ShownIf(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>A hand-over mark's tooltip: "Hand over ×3 to Therapist after the raid"; empty without one.</summary>
-    public static string HandoverTip(string handover) => handover.Length > 0 ? handover + " after the raid" : "";
+    public static string HandoverTip(string handover) => handover.Length > 0 ? AppTexts.HandoverAfterRaid(handover: handover) : "";
 
     public static Visibility ShownIfTrue(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
 

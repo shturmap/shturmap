@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Shturmap.App.Rules;
+using Shturmap.Core.Text;
 
 namespace Shturmap.Core.Tests;
 
@@ -77,6 +78,33 @@ public class TourTests
         Assert.Equal(chapter is not null || WhatsNew.Previews.Contains(preview), WhatsNew.Known(preview));
     }
 
+    // The example is the same for every player and in every language (review of 2026-10-10): the preferred quests the
+    // data has, then the map's quests by level and tarkov.dev's normalized name, which the data of every language
+    // shares. The names shown, which German data sorts otherwise, take no part.
+    [Fact]
+    public void The_example_takes_the_same_quests_in_every_language()
+    {
+        static Tour.ExampleQuest Quest(string id, string name, int? level, bool onMap = true) => new(id, name, level, onMap);
+        Tour.ExampleQuest[] quests =
+        [
+            Quest("q1", "zebra-hunt", 1),
+            Quest("q2", "bp-depot", 5),
+            Quest("q3", "after-dark", 1),
+            Quest("q4", "far-away", 1, onMap: false),
+            Quest("q5", "checking", 2, onMap: false),
+            Quest("q6", "no-level", null),
+        ];
+        var candidates = Tour.ExampleCandidates(quests);
+        Assert.Equal(["q5", "q2", "q3", "q1", "q6"], candidates);
+        // In whatever order the data lists them.
+        Assert.Equal(candidates, Tour.ExampleCandidates(quests.Reverse().ToList()));
+        // The first three with a place on the map.
+        Assert.Equal(["q2", "q3", "q1"], Tour.Example(candidates, new HashSet<string> { "q1", "q2", "q3", "q6" }));
+        Assert.Equal(["q6"], Tour.Example(candidates, new HashSet<string> { "q6", "q4" }));
+        // At most 40 of the map's quests are looked at.
+        Assert.Equal(40, Tour.ExampleCandidates(Enumerable.Range(0, 45).Select(i => Quest($"m{i}", $"map-quest-{i:00}", 1)).ToList()).Count);
+    }
+
     // The app's own tour: short, every stage one the app draws, and every part it frames there in the window.
     [Fact]
     public void The_apps_tour_keeps_to_its_rules_and_points_at_real_parts()
@@ -104,6 +132,87 @@ public class TourTests
         var key = chapters.Single(c => c.Stage == "key").Words;
         Assert.Contains(key, w => w.Key == "list" && w.Text.Contains("{key}", StringComparison.Ordinal));
         Assert.Contains(key, w => w.Key == "read" && w.Text.Contains("{n}", StringComparison.Ordinal) && w.Text.Contains("{all}", StringComparison.Ordinal));
+    }
+
+    // The tour in another language (docs/DESIGN.md §8, "Texts"): docs/tour.<code>.md beside docs/tour.md, chosen by the
+    // language in use, the English tour where a language has none or its translation has fallen behind.
+    [Fact]
+    public void A_translation_is_shown_only_with_the_english_tours_chapters()
+    {
+        var english = Tour.Parse(Sample);
+        var translated = Tour.Parse("""
+            ## safe
+            WAS ES LIEST
+            Liest die Logs des Spiels.
+            - reads · Die Logs des Spiels
+            - never · Fasst das Spiel an
+
+            ## next · PlanRows | MapPicker, Map
+            NÄCHSTER RAID
+            Karten nach dem, was deine Quests dort tun können.
+
+            ## know · HelpButton
+            GUT ZU WISSEN
+            - HelpButton · HILFE · F1
+            """);
+        Assert.Same(translated, Tour.InLanguage(english, translated));
+        Assert.Same(english, Tour.InLanguage(english, null));
+        // Another part framed, a chapter missing, or a stage's key translated: the English tour.
+        Assert.Same(english, Tour.InLanguage(english, Tour.Parse(Sample.Replace("PlanRows | MapPicker", "PlanRows", StringComparison.Ordinal))));
+        Assert.Same(english, Tour.InLanguage(english, translated.Take(2).ToList()));
+        Assert.Same(english, Tour.InLanguage(english, Tour.Parse(Sample.Replace("- never ·", "- nie ·", StringComparison.Ordinal))));
+        Assert.Equal("tour.de.md", BuiltDocs.TranslationOf(BuiltDocs.Tour, "de"));
+        Assert.Null(BuiltDocs.TranslationOf(BuiltDocs.Tour, "en"));
+    }
+
+    // Each translated tour in docs: a language Shturmap knows, exactly the English tour's chapters and the parts they
+    // frame (the x:Names), the same keys for the words the app finds by key, the placeholders those words fill in, and
+    // the band's limits (docs/tour.de.md, and each one after it).
+    [Fact]
+    public void Each_translated_tour_has_the_english_tours_chapters_and_anchors()
+    {
+        var root = RepositoryRoot();
+        var english = Tour.Parse(File.ReadAllText(Path.Combine(root, "docs", "tour.md")));
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(root, "docs"), "tour.*.md"))
+        {
+            var name = Path.GetFileName(file);
+            var language = name["tour.".Length..^".md".Length];
+            Assert.True(UiLanguage.IsWritten(language), $"{name}: '{language}' is neither offered nor being translated (UiLanguage)");
+            var translated = Tour.Parse(File.ReadAllText(file));
+            Assert.Equal(english.Select(c => c.Stage), translated.Select(c => c.Stage));
+            foreach (var (en, tr) in english.Zip(translated))
+            {
+                Assert.True(en.Anchors.Select(a => string.Join("|", a)).SequenceEqual(tr.Anchors.Select(a => string.Join("|", a))),
+                    $"{name}, {tr.Stage}: frames {string.Join(", ", tr.Anchors.Select(a => string.Join("|", a)))}, the English tour {string.Join(", ", en.Anchors.Select(a => string.Join("|", a)))}");
+                Assert.True(tr.Title.Length <= 24 && tr.Title == tr.Title.ToUpperInvariant(), $"{name}, {tr.Stage}: the title '{tr.Title}' is no band title");
+                Assert.InRange(tr.Lines.Count, 1, Tour.MaxLines);
+                Assert.All(tr.Lines, line => Assert.True(line.Length <= 100, $"{name}, {tr.Stage}: '{line}' is longer than a line of the band"));
+                Assert.Equal(en.Words.Count, tr.Words.Count);
+                if (!Tour.KeyedStages.Contains(en.Stage))
+                    continue;
+                Assert.Equal(en.Words.Select(w => w.Key), tr.Words.Select(w => w.Key));
+                foreach (var (enWord, trWord) in en.Words.Zip(tr.Words))
+                {
+                    Assert.True(TextFormat.Problem(trWord.Text) is null, $"{name}, {tr.Stage}: '{trWord.Text}' doesn't parse: {TextFormat.Problem(trWord.Text)}");
+                    var expected = TextFormat.Arguments(enWord.Text)!.Order(StringComparer.Ordinal).ToList();
+                    var actual = TextFormat.Arguments(trWord.Text)!.Order(StringComparer.Ordinal).ToList();
+                    Assert.True(expected.SequenceEqual(actual),
+                        $"{name}, {tr.Stage}, {trWord.Key}: the placeholders {{{string.Join("}, {", actual)}}}, the English word's {{{string.Join("}, {", expected)}}}");
+                }
+            }
+            Assert.True(Tour.SameFrame(english, translated), $"{name} isn't shown: its chapters aren't the English tour's");
+        }
+    }
+
+    // The words a stage fills in are texts like the app's own: placeholders in TextFormat's syntax, so a translation can
+    // give {all} its plural forms.
+    [Fact]
+    public void The_extract_lists_words_fill_in_as_texts_do()
+    {
+        var key = Tour.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "tour.md"))).Single(c => c.Stage == "key").Words;
+        Assert.Equal("IN THE GAME: O TWICE, THEN PRTSC", TextFormat.Format(UiLanguage.CultureFor(UiLanguage.English), key.Single(w => w.Key == "list").Text, ("key", "PRTSC")));
+        Assert.Equal("YOUR LIST THIS RAID: 6 OF 9 EXTRACTS",
+            TextFormat.Format(UiLanguage.CultureFor(UiLanguage.English), key.Single(w => w.Key == "read").Text, ("n", 6), ("all", 9)));
     }
 
     private static string RepositoryRoot()

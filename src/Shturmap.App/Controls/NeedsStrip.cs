@@ -86,7 +86,7 @@ public sealed partial class NeedsStrip : StackPanel
             {
                 Children.Add(new TextBlock
                 {
-                    Text = "×" + need.Count.ToString("N0", Shturmap.Session.UiLanguage.Culture),
+                    Text = "×" + need.Count.ToString("N0", Shturmap.Core.UiLanguage.Culture),
                     FontSize = 11,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                     VerticalAlignment = VerticalAlignment.Center,

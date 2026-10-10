@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="GameFolderMissing" xml:space="preserve">
+    <value>That folder doesn't exist (any more).</value>
+    <comment>Notice, after the player chose a game folder in settings ("Choose game folder…") that doesn't exist, or no longer does.</comment>
+  </data>
+  <data name="GameFolderNotTheGame" xml:space="preserve">
+    <value>That folder doesn't hold Escape from Tarkov: there's no EscapeFromTarkov.exe and no Logs folder with game sessions in it or in its "build" folder. Choose the folder the game is installed in.</value>
+    <comment>Notice, after the player chose a game folder in settings that isn't the game's. EscapeFromTarkov.exe, Logs and "build" are the names of the game's file and folders: keep them as they are.</comment>
+  </data>
+  <data name="ScreenshotKeyPrintScreen" xml:space="preserve">
+    <value>PrtSc</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Print Screen key; the tour shows it where the game's settings name no screenshot key.</comment>
+  </data>
+  <data name="ScreenshotKeyCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left Control key, alone or in a combination ("Ctrl+PrtSc").</comment>
+  </data>
+  <data name="ScreenshotKeyRightCtrl" xml:space="preserve">
+    <value>Right Ctrl</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right Control key.</comment>
+  </data>
+  <data name="ScreenshotKeyShift" xml:space="preserve">
+    <value>Shift</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left Shift key, alone or in a combination.</comment>
+  </data>
+  <data name="ScreenshotKeyRightShift" xml:space="preserve">
+    <value>Right Shift</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right Shift key.</comment>
+  </data>
+  <data name="ScreenshotKeyAlt" xml:space="preserve">
+    <value>Alt</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left Alt key, alone or in a combination.</comment>
+  </data>
+  <data name="ScreenshotKeyAltGr" xml:space="preserve">
+    <value>Alt Gr</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right Alt key.</comment>
+  </data>
+  <data name="ScreenshotKeyNumpad" xml:space="preserve">
+    <value>Num {key}</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). A key of the number pad. {key}: the key's name after the game's "Keypad", as the game writes it: 5, Plus, Enter.</comment>
+  </data>
+  <data name="ScreenshotKeyHome" xml:space="preserve">
+    <value>Home</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Home key (German keyboards: Pos1).</comment>
+  </data>
+  <data name="ScreenshotKeyEnd" xml:space="preserve">
+    <value>End</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The End key (German keyboards: Ende).</comment>
+  </data>
+  <data name="ScreenshotKeyInsert" xml:space="preserve">
+    <value>Insert</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Insert key (German keyboards: Einfg).</comment>
+  </data>
+  <data name="ScreenshotKeyDelete" xml:space="preserve">
+    <value>Delete</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Delete key (German keyboards: Entf).</comment>
+  </data>
+  <data name="ScreenshotKeyPageUp" xml:space="preserve">
+    <value>PageUp</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Page Up key (German keyboards: Bild↑).</comment>
+  </data>
+  <data name="ScreenshotKeyPageDown" xml:space="preserve">
+    <value>PageDown</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Page Down key (German keyboards: Bild↓).</comment>
+  </data>
+  <data name="ScreenshotKeyBackspace" xml:space="preserve">
+    <value>Backspace</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Backspace key (German: Rücktaste).</comment>
+  </data>
+  <data name="ScreenshotKeyEnter" xml:space="preserve">
+    <value>Return</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Enter key of the main keys (German: Enter, as players say it).</comment>
+  </data>
+  <data name="ScreenshotKeyNumpadEnter" xml:space="preserve">
+    <value>Num Enter</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Enter key of the number pad.</comment>
+  </data>
+  <data name="ScreenshotKeyEscape" xml:space="preserve">
+    <value>Escape</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Esc key.</comment>
+  </data>
+  <data name="ScreenshotKeyTab" xml:space="preserve">
+    <value>Tab</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Tab key.</comment>
+  </data>
+  <data name="ScreenshotKeySpace" xml:space="preserve">
+    <value>Space</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The space bar (German: Leertaste).</comment>
+  </data>
+  <data name="ScreenshotKeyPause" xml:space="preserve">
+    <value>Pause</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Pause key.</comment>
+  </data>
+  <data name="ScreenshotKeyCapsLock" xml:space="preserve">
+    <value>CapsLock</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Caps Lock key (German: Feststelltaste).</comment>
+  </data>
+  <data name="ScreenshotKeyNumLock" xml:space="preserve">
+    <value>Numlock</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Num Lock key (German keyboards: Num).</comment>
+  </data>
+  <data name="ScreenshotKeyScrollLock" xml:space="preserve">
+    <value>ScrollLock</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The Scroll Lock key (German keyboards: Rollen).</comment>
+  </data>
+  <data name="ScreenshotKeyUp" xml:space="preserve">
+    <value>UpArrow</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The up arrow key (↑).</comment>
+  </data>
+  <data name="ScreenshotKeyDown" xml:space="preserve">
+    <value>DownArrow</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The down arrow key (↓).</comment>
+  </data>
+  <data name="ScreenshotKeyLeft" xml:space="preserve">
+    <value>LeftArrow</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The left arrow key (←).</comment>
+  </data>
+  <data name="ScreenshotKeyRight" xml:space="preserve">
+    <value>RightArrow</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). The right arrow key (→).</comment>
+  </data>
+  <data name="ScreenshotKeyMouse" xml:space="preserve">
+    <value>Mouse{button}</value>
+    <comment>The game's screenshot key, as help, the tour and the status bar name it ("press PrtSc"). Write it as this language's keyboards label the key (German: Druck for PrtSc, Strg for Ctrl). A mouse button. {button}: its number as the game counts it, from 0: 0 the left button, 1 the right, 2 the middle, 3 and on the side buttons.</comment>
+  </data>
+</root>

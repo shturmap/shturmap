@@ -12,8 +12,8 @@ public static class GameFolder
 {
     /// <summary>"GAME FOLDER: C:\… (chosen by you)", "(found automatically)", or "NOT FOUND".</summary>
     public static string Label(GameLocations? locations) => locations?.Install is not { } install
-        ? "GAME FOLDER: NOT FOUND"
-        : $"GAME FOLDER: {install.Root} ({(install.Kind == InstallKind.Manual ? "chosen by you" : "found automatically")})";
+        ? SessionTexts.GameFolderNotFound
+        : install.Kind == InstallKind.Manual ? SessionTexts.GameFolderChosen(folder: install.Root) : SessionTexts.GameFolderFound(folder: install.Root);
 
     /// <summary>
     /// Another install found by discovery whose newest log session is newer than that of the folder the player chose:
@@ -36,10 +36,10 @@ public static class GameFolder
     public static string LogsTip(GameLocations? locations)
     {
         if (locations?.LogsFolder is not { } logs)
-            return "The game's logs aren't found: quests and raids can't follow the game.";
-        var tip = "Game logs: " + logs;
+            return SessionTexts.LogsTipNotFound;
+        var tip = SessionTexts.LogsTipFolder(folder: logs);
         return NewerElsewhere(locations) is { } newer
-            ? $"{tip}\nNewer game logs in {newer.Root}. Settings → FIND AUTOMATICALLY follows those instead."
+            ? tip + "\n" + SessionTexts.LogsTipNewer(folder: newer.Root)
             : tip;
     }
 }

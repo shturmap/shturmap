@@ -20,7 +20,7 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 
     public Visibility ItemVisibility => ItemId is not null ? Visibility.Visible : Visibility.Collapsed;
 
-    public string HandoverTip => Handover.Length > 0 ? Handover + " after the raid" : "";
+    public string HandoverTip => Handover.Length > 0 ? AppTexts.HandoverAfterRaid(handover: Handover) : "";
 
     // An objective ticked as done needs nothing any more.
     public Visibility NeedsVisibility => Needs.Length > 0 && !Done ? Visibility.Visible : Visibility.Collapsed;
@@ -29,6 +29,10 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
     public Visibility DistanceVisibility => Distance.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility DirectionVisibility => Direction.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>The tag under the distance, in capitals, by its parts (the direction, the height): given less room they
+    /// stand one under the other (Controls.TagLines, Rules.LineRoom).</summary>
+    public IReadOnlyList<string> TagParts => Caps.Of(Direction).Split(" · ");
 
     /// <summary>Muted for what is done at a trader after the raid, and for what the player ticked as done: nothing to
     /// do about either here.</summary>
@@ -287,12 +291,12 @@ public sealed record WhatsNewBlock(string Heading, IReadOnlyList<WhatsNewRow> Ro
 /// <summary>What the window shows, as display-ready text. Filled from each session snapshot.</summary>
 public sealed partial class MainViewModel : ObservableObject
 {
-    [ObservableProperty] public partial string ModeText { get; set; } = "PvE";
+    [ObservableProperty] public partial string ModeText { get; set; } = Shturmap.Session.ModeReading.Text(Shturmap.Core.Logs.GameMode.Pve);
 
     /// <summary>Where the mode comes from: the game's log and when, or the mode last played.</summary>
     [ObservableProperty] public partial string ModeDetail { get; set; } = "";
 
-    [ObservableProperty] public partial string RaidText { get; set; } = "Starting…";
+    [ObservableProperty] public partial string RaidText { get; set; } = AppTexts.StatusStarting;
 
     /// <summary>Where the raid state comes from (the game's log), for its tooltip.</summary>
     [ObservableProperty] public partial string RaidDetail { get; set; } = "";
@@ -311,23 +315,23 @@ public sealed partial class MainViewModel : ObservableObject
     /// (<see cref="Rules.StatusBarFit.Words"/>).</summary>
     [ObservableProperty] public partial bool LightWords { get; set; } = true;
 
-    [ObservableProperty] public partial string LogsText { get; set; } = "Logs";
+    [ObservableProperty] public partial string LogsText { get; set; } = AppTexts.StatusLogs;
 
     [ObservableProperty] public partial bool LogsOk { get; set; }
 
     /// <summary>The LOGS light's tooltip: which logs are followed, and newer game logs elsewhere if a folder was chosen.</summary>
     [ObservableProperty] public partial string LogsDetail { get; set; } = "";
 
-    [ObservableProperty] public partial string ScreenshotsText { get; set; } = "Screenshots";
+    [ObservableProperty] public partial string ScreenshotsText { get; set; } = AppTexts.StatusScreenshots;
 
     [ObservableProperty] public partial bool ScreenshotsOk { get; set; }
 
-    [ObservableProperty] public partial string DataText { get; set; } = "Data";
+    [ObservableProperty] public partial string DataText { get; set; } = AppTexts.StatusData;
 
     [ObservableProperty] public partial bool DataOk { get; set; }
 
     /// <summary>The data chip's tooltip: where the data is from, or why there is none, in plain words.</summary>
-    [ObservableProperty] public partial string DataDetail { get; set; } = "Loading game data from tarkov.dev…";
+    [ObservableProperty] public partial string DataDetail { get; set; } = AppTexts.StatusDataLoading;
 
     [ObservableProperty] public partial bool StudyLogOn { get; set; }
 
@@ -430,7 +434,7 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string PreviewText { get; set; } = "";
 
     /// <summary>Beside <see cref="PreviewText"/>: what to do about it, or that it is an example (What's New).</summary>
-    [ObservableProperty] public partial string PreviewHint { get; set; } = "CLICK ITS ROW TO PLAN IT";
+    [ObservableProperty] public partial string PreviewHint { get; set; } = AppTexts.PreviewClickToPlan;
 
     /// <summary>The last raid can be replayed: REPLAY on its line, until the next raid loads.</summary>
     [ObservableProperty] public partial bool ReplayOffered { get; set; }
@@ -458,7 +462,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial IReadOnlyList<QuestLine> AnyMap { get; set; } = [];
 
-    [ObservableProperty] public partial string HelpKeys { get; set; } = "your screenshot key";
+    [ObservableProperty] public partial string HelpKeys { get; set; } = AppTexts.ScreenshotKeyUnknown;
 
     [ObservableProperty] public partial bool NoticeOpen { get; set; }
 
@@ -530,7 +534,14 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The wiki's interactive map for the shown map, or null.</summary>
     [ObservableProperty] public partial Uri? WikiMap { get; set; }
 
-    public IReadOnlyList<LegendItem> Legend { get; } = Enum.GetValues<ObjectiveKind>()
+    /// <summary>Settings' "Language": Automatic, then each language offered, in its own name.</summary>
+    [ObservableProperty] public partial IReadOnlyList<LanguageOption> LanguageOptions { get; set; } = [];
+
+    /// <summary>Under it: what Automatic comes to, and why ("Automatic: English, from the game.").</summary>
+    [ObservableProperty] public partial string LanguageNote { get; set; } = "";
+
+    // Made anew when read: after a switch of language, Bindings.Update reads it in the new one.
+    public IReadOnlyList<LegendItem> Legend => Enum.GetValues<ObjectiveKind>()
         .Select(k => new LegendItem(k, QuestTaxonomy.Label(k), QuestTaxonomy.Explanation(k)))
         .ToList();
 }

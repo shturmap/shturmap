@@ -11,6 +11,11 @@ section with its release (CLAUDE.md). A release that raises the minor or major n
 its version (`## 0.4.0 · Praetorian`); a patch release keeps its line's name without repeating it. The name shows in
 the card's heading, help's link to it, the version line in settings and the release's title on GitHub.
 
+A translation is `docs/whats-new.<code>.md` beside this file (`whats-new.de.md`), built in the same way and shown in
+that language (docs/DESIGN.md §8, "Texts"): a section per version this file has, from the release the language came
+with on, each with this section's lines in the same order and their previews as they are, the names and words
+translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
+
 ## 0.4.0 · Praetorian
 
 - tour · The tour · Seven short chapters on how it works. Click to take it; help brings it back.

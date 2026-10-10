@@ -10,6 +10,8 @@
          instead of the build machine's folder, which holds the developer's Windows user name. -->
     <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
     <Product>Shturmap</Product>
+    <!-- Shturmap's own texts are written in English; each other language is a satellite (docs/DESIGN.md §8, "Texts"). -->
+    <NeutralLanguage>en</NeutralLanguage>
     <Version>0.4.0</Version>
     <Copyright>Copyright (c) 2026 the Shturmap contributors</Copyright>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>

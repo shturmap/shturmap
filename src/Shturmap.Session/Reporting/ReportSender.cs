@@ -146,7 +146,9 @@ public sealed class ReportSender(ReportEndpoint endpoint, HttpClient http, strin
         Refused,
     }
 
-    public async Task<(Outcome Outcome, string Why)> SendAsync(Envelope envelope, CancellationToken ct = default)
+    /// <returns>How it went, and why it didn't: in English for the app log (<c>Why</c>), and in the language in use for
+    /// the player (<c>Said</c>).</returns>
+    public async Task<(Outcome Outcome, string Why, string Said)> SendAsync(Envelope envelope, CancellationToken ct = default)
     {
         using var body = new MemoryStream();
         await envelope.SerializeAsync(body, null, ct);
@@ -159,18 +161,18 @@ public sealed class ReportSender(ReportEndpoint endpoint, HttpClient http, strin
             using var response = await http.SendAsync(request, ct);
             var code = (int)response.StatusCode;
             if (response.IsSuccessStatusCode)
-                return (Outcome.Sent, "");
+                return (Outcome.Sent, "", "");
             return response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.RequestTimeout || code >= 500
-                ? (Outcome.Later, $"the report service answered {code}")
-                : (Outcome.Refused, $"the report service answered {code}");
+                ? (Outcome.Later, $"the report service answered {code}", SessionTexts.ReportWhyAnswered(status: code))
+                : (Outcome.Refused, $"the report service answered {code}", SessionTexts.ReportWhyAnswered(status: code));
         }
         catch (HttpRequestException)
         {
-            return (Outcome.Later, "no connection");
+            return (Outcome.Later, "no connection", SessionTexts.ReportWhyNoConnection);
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested)
         {
-            return (Outcome.Later, "no answer in time");
+            return (Outcome.Later, "no answer in time", SessionTexts.ReportWhyNoAnswer);
         }
     }
 

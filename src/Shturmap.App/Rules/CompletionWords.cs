@@ -1,3 +1,5 @@
+using Shturmap.Core;
+
 namespace Shturmap.App.Rules;
 
 /// <summary>
@@ -19,21 +21,22 @@ public static class CompletionWords
         if (done.Count == 1)
         {
             var one = done[0];
-            return (one.Trader.Length > 0 ? $"QUEST COMPLETE · {one.Trader.ToUpperInvariant()}" : "QUEST COMPLETE", one.Name, Unlocks(one.Unlocks));
+            return (one.Trader.Length > 0 ? RuleTexts.CompleteOneFrom(trader: UiLanguage.Upper(one.Trader)) : RuleTexts.CompleteOne,
+                one.Name, Unlocks(one.Unlocks));
         }
         var names = Listed(done.Select(d => d.Name).ToList(), 3);
         var unlocks = Unlocks(done.SelectMany(d => d.Unlocks).Distinct().ToList());
-        return ("QUESTS COMPLETE", $"{done.Count} quests", unlocks.Length > 0 ? $"{names}\n{unlocks}" : names);
+        return (RuleTexts.CompleteSeveral, RuleTexts.CompleteSeveralCount(count: done.Count), unlocks.Length > 0 ? $"{names}\n{unlocks}" : names);
     }
 
     // "Unlocks Setup and Shooter Born in Heaven", or nothing when it unlocks nothing.
-    private static string Unlocks(IReadOnlyList<string> names) => names.Count == 0 ? "" : "Unlocks " + Listed(names, 3);
+    private static string Unlocks(IReadOnlyList<string> names) => names.Count == 0 ? "" : RuleTexts.CompleteUnlocks(quests: Listed(names, 3));
 
     // "A", "A and B", "A, B and C", "A, B, C and 2 more".
     private static string Listed(IReadOnlyList<string> names, int most) => names.Count switch
     {
         1 => names[0],
-        _ when names.Count <= most => $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}",
-        _ => $"{string.Join(", ", names.Take(most))} and {names.Count - most} more",
+        _ when names.Count <= most => RuleTexts.ListLast(list: string.Join(RuleTexts.ListSeparator, names.Take(names.Count - 1)), last: names[^1]),
+        _ => RuleTexts.ListMore(count: names.Count - most, list: string.Join(RuleTexts.ListSeparator, names.Take(most))),
     };
 }

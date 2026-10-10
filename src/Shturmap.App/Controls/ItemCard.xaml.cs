@@ -42,7 +42,7 @@ public sealed partial class ItemCard : UserControl, ICard
 
     public string Glyph(bool isKey) => isKey ? Glyphs.Key : Glyphs.Bring;
 
-    public string KindText(bool isKey) => isKey ? "Key" : "Item";
+    public string KindText(bool isKey) => isKey ? AppTexts.CardKindKey : AppTexts.CardKindItem;
 
     public Visibility Shown(int count) => count > 0 ? Visibility.Visible : Visibility.Collapsed;
 

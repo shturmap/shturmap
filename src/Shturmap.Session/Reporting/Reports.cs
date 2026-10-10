@@ -1,4 +1,4 @@
-using System.Globalization;
+using Shturmap.Core;
 
 namespace Shturmap.Session.Reporting;
 
@@ -23,9 +23,9 @@ public sealed record UserReport(string Id, DateTime At, ReportKind Kind, string 
 
     /// <summary>Why the dialog can't send yet, or null when it can.</summary>
     public static string? Invalid(string text, string contact) =>
-        string.IsNullOrWhiteSpace(text) ? "Write what happened, or what would help."
-        : text.Length > MaxText ? $"At most {MaxText.ToString("N0", CultureInfo.InvariantCulture)} characters, please."
-        : contact.Length > MaxContact ? $"The contact can be at most {MaxContact} characters."
+        string.IsNullOrWhiteSpace(text) ? SessionTexts.ReportWriteSomething
+        : text.Length > MaxText ? SessionTexts.ReportTooLong(count: MaxText, max: MaxText.ToString("N0", UiLanguage.Culture))
+        : contact.Length > MaxContact ? SessionTexts.ReportContactTooLong(count: MaxContact)
         : null;
 }
 

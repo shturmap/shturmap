@@ -59,7 +59,8 @@ Essentials:
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - Build and test: `.\eng\dotnet.ps1 build Shturmap.slnx`, `.\eng\dotnet.ps1 test --solution Shturmap.slnx`
-  (the wrapper finds the per-user .NET 10 SDK). Every push runs both on GitHub (`.github/workflows/ci.yml`), and
+  (the wrapper finds the per-user .NET 10 SDK). Every push runs both on GitHub (`.github/workflows/ci.yml`), in
+  Debug and then in Release (`-c Release`; owner, 2026-10-11: the Release tests had never run), and
   `eng\audit-packages.ps1` for packages with known vulnerabilities (no Dependabot: its commits would be another
   identity); logs are public, so a test never prints anything private. Publish the folder build (`artifacts\Shturmap`,
   what `tools\fake-raid.ps1` runs): `.\eng\publish.ps1`. A release (Velopack; DESIGN.md §8, "Distribution"): raise
@@ -105,6 +106,14 @@ Essentials:
 - The website's screenshots and hero clip are re-recorded only when the owner says so (owner, 2026-10-02); remind
   them when a release goes up on GitHub. Then use `tools\make-media.ps1` in `..\shturmap.github.io` (see its
   CLAUDE.md) and go through its hand-check list.
+- **Texts and languages** (owner, 2026-10-10; DESIGN.md §8, "The app's own language" and "Texts";
+  `docs/LANGUAGES.md`): every word the app shows is in a texts file (`<Name>Texts.resx`), never in code or XAML; a
+  whole sentence with named placeholders and its plurals in the text. A new or changed English text is translated into
+  every language in `UiLanguage.Supported` and `UiLanguage.InTranslation` in the same commit (the translation's comment
+  `en: <the English text>`), and reviewed by someone who didn't write it, the senior translator
+  (`.claude/agents/senior-translator.md`, rules in `docs/LANGUAGES.md`, "Review"), until it finds nothing;
+  `TranslationTests` hold the files to it. Before a release, and after a layout change, run the layout check in each
+  language and the pseudo-language (`docs/LANGUAGES.md`, "Layout check"). A new language follows the checklist there.
 - **Keep the tour current** (owner, 2026-10-09; DESIGN.md §4, *The tour*): a change to something a chapter shows
   changes that chapter in `docs/tour.md` in the same commit, and a release that changed a chapter adds a `tour:N` line
   to its What's New section. Before a release, look at each chapter: `tools\fake-raid.ps1 -Exe

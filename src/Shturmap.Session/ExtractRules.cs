@@ -1,4 +1,4 @@
-using System.Globalization;
+using Shturmap.Core;
 using Shturmap.Data.TarkovDev;
 
 namespace Shturmap.Session;
@@ -38,28 +38,29 @@ public static class ExtractRules
         var english = data.EnglishName(extract.Id, extract.Name);
 
         if (Climb(key))
-            parts.Add("Red Rebel ice pick and paracord, no armored rig");
+            parts.Add(SessionTexts.ExtractClimb);
         if (Flare(key, english))
-            parts.Add("Fire a red signal flare there");
+            parts.Add(SessionTexts.ExtractFlare);
         if (CoOp(english))
-            parts.Add("Co-op: a PMC and a player Scav leave together");
+            parts.Add(SessionTexts.ExtractCoOp);
 
         if (extract.TransferItem is { Count: > 0 } transfer)
         {
-            var amount = transfer.Count.ToString("N0", CultureInfo.CurrentCulture);
+            var amount = transfer.Count.ToString("N0", UiLanguage.Culture);
             switch (transfer.Item)
             {
                 case Roubles:
-                    parts.Add($"Pay {amount} ₽");
+                    parts.Add(SessionTexts.ExtractPayRoubles(amount: amount));
                     break;
                 case Dollars:
-                    parts.Add($"Pay ${amount}");
+                    parts.Add(SessionTexts.ExtractPayDollars(amount: amount));
                     break;
                 case Euros:
-                    parts.Add($"Pay €{amount}");
+                    parts.Add(SessionTexts.ExtractPayEuros(amount: amount));
                     break;
                 default:
-                    parts.Add("Hand over " + data.ItemName(transfer.Item) + (transfer.Count > 1 ? $" ×{amount}" : ""));
+                    var name = data.ItemName(transfer.Item);
+                    parts.Add(SessionTexts.ExtractHandOver(item: transfer.Count > 1 ? SessionTexts.ItemTimes(count: amount, item: name) : name));
                     item = transfer.Item;
                     break;
             }
@@ -75,7 +76,7 @@ public static class ExtractRules
                 continue;
             var common = extracts.Count(e => e.Switches?.Contains(id) == true) * 2 > extracts.Count;
             if (!common || (english.Length > 0 && data.EnglishName(id, switchName).Contains(english, StringComparison.OrdinalIgnoreCase)))
-                parts.Add(switchName + " first");
+                parts.Add(SessionTexts.ExtractSwitchFirst(switchName: switchName));
         }
         return (string.Join(" · ", parts.Distinct()), item);
     }

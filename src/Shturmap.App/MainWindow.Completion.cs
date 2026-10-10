@@ -159,7 +159,7 @@ public sealed partial class MainWindow
         _completedWaiting.Clear();
         if (why is "raid" or "cue")
         {
-            ShowNotice("Completed: " + string.Join(", ", waiting.Select(q => q.Name)));
+            ShowNotice(AppTexts.NoticeCompleted(quests: string.Join(RuleTexts.ListSeparator, waiting.Select(q => q.Name))));
             return;
         }
         DispatcherQueue.TryEnqueue(() =>

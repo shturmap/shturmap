@@ -20,6 +20,15 @@ public sealed partial class MainWindow
 
     private UpdateMode CurrentUpdateMode => UpdateModes.Parse(_session.GetSetting(UpdateModes.Setting));
 
+    /// <summary>The kind of build in words, after the version at the foot of settings (<see cref="App.BuildKind"/> is the
+    /// English one reports and diagnostics carry).</summary>
+    private static string BuildKindText(string kind) => kind switch
+    {
+        "installed" => AppTexts.BuildInstalled,
+        "dev build" => AppTexts.BuildDev,
+        _ => AppTexts.BuildFolder,
+    };
+
     /// <summary>The session has started: start asking for new versions, as the setting says.</summary>
     public void StartUpdates(Updater updater)
     {
@@ -114,7 +123,7 @@ public sealed partial class MainWindow
         Study.Ui("updates.restart");
         if (_updater.StartRestart() is { } why)
         {
-            ShowNotice($"The update couldn't be applied: {why}. Shturmap keeps running.", TimeSpan.FromSeconds(12));
+            ShowNotice(why, TimeSpan.FromSeconds(12));
             RefreshUpdates();
             return;
         }

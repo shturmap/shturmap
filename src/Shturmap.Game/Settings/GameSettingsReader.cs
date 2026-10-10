@@ -3,9 +3,10 @@ using Shturmap.Game.Install;
 
 namespace Shturmap.Game.Settings;
 
-/// <param name="ScreenshotKeys">Display names of the keys bound to "MakeScreenshot", e.g. ["PrtSc", "Home"]. Empty if unbound.</param>
+/// <param name="ScreenshotKeys">The keys bound to "MakeScreenshot", e.g. Print and Home, named when shown ("PrtSc",
+/// "Home"; <see cref="GameKey.Name"/>). Empty if unbound.</param>
 /// <param name="Language">The game's UI language code, e.g. "en".</param>
-public sealed record GameSettings(IReadOnlyList<string> ScreenshotKeys, string? Language, bool Found);
+public sealed record GameSettings(IReadOnlyList<GameKey> ScreenshotKeys, string? Language, bool Found);
 
 /// <summary>Reads Control.ini and Game.ini (JSON despite the extension), read-only.</summary>
 public sealed class GameSettingsReader(IGameEnvironment env)
@@ -20,7 +21,7 @@ public sealed class GameSettingsReader(IGameEnvironment env)
             control is not null || game is not null);
     }
 
-    internal static IReadOnlyList<string> ScreenshotKeys(string controlJson)
+    internal static IReadOnlyList<GameKey> ScreenshotKeys(string controlJson)
     {
         try
         {
@@ -31,7 +32,7 @@ public sealed class GameSettingsReader(IGameEnvironment env)
             {
                 if (!Property(binding, "keyName", out var name) || name.ValueKind != JsonValueKind.String || name.GetString() != "MakeScreenshot")
                     continue;
-                var keys = new List<string>();
+                var keys = new List<GameKey>();
                 if (Property(binding, "variants", out var variants) && variants.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var variant in variants.EnumerateArray())
@@ -39,9 +40,9 @@ public sealed class GameSettingsReader(IGameEnvironment env)
                         if (!Property(variant, "keyCode", out var codes) || codes.ValueKind != JsonValueKind.Array)
                             continue;
                         var combo = codes.EnumerateArray().Where(c => c.ValueKind == JsonValueKind.String)
-                            .Select(c => DisplayName(c.GetString() ?? "")).Where(s => s.Length > 0).ToList();
+                            .Select(c => c.GetString() ?? "").Where(s => s.Length > 0 && !s.Contains('+')).ToList();
                         if (combo.Count > 0)
-                            keys.Add(string.Join("+", combo));
+                            keys.Add(new GameKey(string.Join("+", combo)));
                     }
                 }
                 return keys;
@@ -73,20 +74,4 @@ public sealed class GameSettingsReader(IGameEnvironment env)
         value = default;
         return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out value);
     }
-
-    // Unity KeyCode names → what is printed on the key.
-    private static string DisplayName(string keyCode) => keyCode switch
-    {
-        "SysReq" or "Print" => "PrtSc",
-        "BackQuote" => "`",
-        "LeftControl" => "Ctrl",
-        "RightControl" => "Right Ctrl",
-        "LeftShift" => "Shift",
-        "RightShift" => "Right Shift",
-        "LeftAlt" => "Alt",
-        "RightAlt" => "Alt Gr",
-        _ when keyCode.StartsWith("Alpha", StringComparison.Ordinal) => keyCode["Alpha".Length..],
-        _ when keyCode.StartsWith("Keypad", StringComparison.Ordinal) => "Num " + keyCode["Keypad".Length..],
-        _ => keyCode,
-    };
 }

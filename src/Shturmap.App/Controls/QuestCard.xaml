@@ -98,7 +98,7 @@
         </ItemsControl>
 
         <StackPanel Visibility="{x:Bind ShownIfAny(View.Needs)}">
-          <TextBlock Style="{StaticResource EyebrowText}" Text="BRING" Margin="0,2,0,4" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.QuestCardBring}" Margin="0,2,0,4" />
           <ItemsControl ItemsSource="{x:Bind View.Needs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="session:CardNeed">
@@ -125,7 +125,7 @@
         </StackPanel>
 
         <StackPanel Visibility="{x:Bind ShownIfAny(View.Unlocks)}">
-          <TextBlock Style="{StaticResource EyebrowText}" Text="UNLOCKS" Margin="0,2,0,4" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.QuestCardUnlocks}" Margin="0,2,0,4" />
           <ItemsControl ItemsSource="{x:Bind View.Unlocks}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="session:CardQuest">
@@ -149,8 +149,8 @@
         <!-- A link that leaves Shturmap, in the look of the others (WIKI MAP ↗, LOG FOLDER ↗): capitals and the arrow. -->
         <HyperlinkButton NavigateUri="{x:Bind WikiUri(View.WikiLink)}" Click="OnWikiClick" Padding="0"
                          Visibility="{x:Bind ShownIfWiki(View.WikiLink)}"
-                         ToolTipService.ToolTip="This quest on the Escape from Tarkov wiki">
-          <TextBlock Text="WIKI PAGE ↗" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+                         ToolTipService.ToolTip="{x:Bind local:ViewTexts.QuestCardWikiTip}">
+          <TextBlock Text="{x:Bind local:ViewTexts.QuestCardWikiPage}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
         </HyperlinkButton>
       </StackPanel>
     </ScrollViewer>

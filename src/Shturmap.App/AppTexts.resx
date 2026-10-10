@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="NoticePositionOffScreen" xml:space="preserve">
+    <value>Your new position is outside the part of the map shown: press F, or click the arrow at the edge.</value>
+    <comment>Notice at the top of the map when a new position lands outside the part of the map on screen. F is the key that shows the position.</comment>
+  </data>
+  <data name="HelpKeyShowMe" xml:space="preserve">
+    <value>F</value>
+    <comment>Help, KEYS: the key that shows your position, as the keyboard labels it.</comment>
+  </data>
+  <data name="HelpKeyShowMeAction" xml:space="preserve">
+    <value>Show my position</value>
+    <comment>Help, KEYS: what F does.</comment>
+  </data>
+  <data name="HelpKeyFollow" xml:space="preserve">
+    <value>SHIFT + F</value>
+    <comment>Help, KEYS: the keys that switch Follow my position, as the keyboard labels them (capitals).</comment>
+  </data>
+  <data name="HelpKeyFollowAction" xml:space="preserve">
+    <value>Follow my position</value>
+    <comment>Help, KEYS: what Shift + F does (the map follows each new position).</comment>
+  </data>
+  <data name="HelpKeyZoom" xml:space="preserve">
+    <value>+ / −</value>
+    <comment>Help, KEYS: the zoom keys.</comment>
+  </data>
+  <data name="HelpKeyZoomAction" xml:space="preserve">
+    <value>Zoom in / out (or mouse wheel)</value>
+    <comment>Help, KEYS: what + and − do.</comment>
+  </data>
+  <data name="HelpKeyFit" xml:space="preserve">
+    <value>0</value>
+    <comment>Help, KEYS: the key that shows the whole map.</comment>
+  </data>
+  <data name="HelpKeyFitAction" xml:space="preserve">
+    <value>Whole map</value>
+    <comment>Help, KEYS: what 0 does.</comment>
+  </data>
+  <data name="HelpKeyFloor" xml:space="preserve">
+    <value>PGUP / PGDN</value>
+    <comment>Help, KEYS: the Page Up and Page Down keys, as the keyboard labels them (capitals).</comment>
+  </data>
+  <data name="HelpKeyFloorAction" xml:space="preserve">
+    <value>Floor up / down</value>
+    <comment>Help, KEYS: what Page Up and Page Down do (the map's floors).</comment>
+  </data>
+  <data name="HelpKeyClose" xml:space="preserve">
+    <value>ESC</value>
+    <comment>Help, KEYS: the Escape key, as the keyboard labels it (capitals).</comment>
+  </data>
+  <data name="HelpKeyCloseAction" xml:space="preserve">
+    <value>Close cards</value>
+    <comment>Help, KEYS: what Esc does (the quest and item cards).</comment>
+  </data>
+  <data name="HelpKeyHelp" xml:space="preserve">
+    <value>F1 / ?</value>
+    <comment>Help, KEYS: the keys that open help.</comment>
+  </data>
+  <data name="HelpKeyHelpAction" xml:space="preserve">
+    <value>This help</value>
+    <comment>Help, KEYS: what F1 and ? do.</comment>
+  </data>
+  <data name="HelpKeySettings" xml:space="preserve">
+    <value>CTRL + ,</value>
+    <comment>Help, KEYS: the keys that open settings, as the keyboard labels them (capitals).</comment>
+  </data>
+  <data name="HelpKeySettingsAction" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Help, KEYS: what Ctrl + , does.</comment>
+  </data>
+  <data name="HelpKeyMouse" xml:space="preserve">
+    <value>MOUSE</value>
+    <comment>Help, KEYS: the mouse, in the keys' column (capitals).</comment>
+  </data>
+  <data name="HelpKeyMouseAction" xml:space="preserve">
+    <value>Drag to pan, double-click to zoom in. Click a quest to keep its card; click its pen to pick it</value>
+    <comment>Help, KEYS: what the mouse does on the map and in the lists. The pen is the pick button beside a quest.</comment>
+  </data>
+  <data name="HelpLegendOnThisMap" xml:space="preserve">
+    <value>ON THIS MAP</value>
+    <comment>Help, the heading over the symbols of the map on screen; without a map it is ViewTexts.HelpLegendHeading. Capitals.</comment>
+  </data>
+  <data name="HelpLegendHide" xml:space="preserve">
+    <value>{count, plural, one {HIDE # SYMBOL} other {HIDE # SYMBOLS}}</value>
+    <comment>Help, the link under the map symbols once all are shown. {count}: the symbols it hides again. Capitals.</comment>
+  </data>
+  <data name="HelpLegendShowMore" xml:space="preserve">
+    <value>{count, plural, one {SHOW # MORE SYMBOL} other {SHOW # MORE SYMBOLS}}</value>
+    <comment>Help, the link under the map symbols that shows the rest. {count}: how many more there are. Capitals.</comment>
+  </data>
+  <data name="NoticeDiagnosticsCopied" xml:space="preserve">
+    <value>Diagnostics copied: paste them into your message.</value>
+    <comment>Notice after help's COPY DIAGNOSTICS put the diagnostics on the clipboard.</comment>
+  </data>
+  <data name="NoticeDiagnosticsNotCopied" xml:space="preserve">
+    <value>Couldn't copy the diagnostics: another app may be using the clipboard. Try again.</value>
+    <comment>Notice when COPY DIAGNOSTICS couldn't put them on the clipboard.</comment>
+  </data>
+  <data name="SettingsStudyLog" xml:space="preserve">
+    <value>Keep a study log</value>
+    <comment>Settings, a switch in developer builds only: keep a record of how the app is used, on this PC.</comment>
+  </data>
+  <data name="SettingsStudyLogNote" xml:space="preserve">
+    <value>Developer builds only. Records raids, quest changes, positions and app use, to improve Shturmap. Stays on this PC (%LOCALAPPDATA%\Shturmap-dev\study) for 30 days; never sent, not even with a report.</value>
+    <comment>Settings, the note under "Keep a study log". Keep the folder as it is.</comment>
+  </data>
+  <data name="SettingsDeleteScreenshotsNote" xml:space="preserve">
+    <value>Deletes each position screenshot {seconds} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.</value>
+    <comment>Settings, the note under "Delete position screenshots". {seconds}: how long after reading it the screenshot goes. "Recycle Bin" as Windows names it in this language.</comment>
+  </data>
+  <data name="SettingsReadExitsNote" xml:space="preserve">
+    <value>Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.</value>
+    <comment>Settings, the note under "Read the extract list from screenshots".</comment>
+  </data>
+  <data name="StatusDataOffline" xml:space="preserve">
+    <value>A saved copy of tarkov.dev's data from {time}: tarkov.dev couldn't be reached.</value>
+    <comment>Status bar, the DATA light's tooltip when tarkov.dev couldn't be reached and a saved copy is used. {time}: when that copy was checked, date and time in the language's short format.</comment>
+  </data>
+  <data name="StatusDataChecked" xml:space="preserve">
+    <value>Game data from tarkov.dev, checked {time}.</value>
+    <comment>Status bar, the DATA light's tooltip. {time}: when tarkov.dev was last asked, in the language's short time format, 16:40.</comment>
+  </data>
+  <data name="StatusDataLoading" xml:space="preserve">
+    <value>Loading game data from tarkov.dev…</value>
+    <comment>Status bar, the DATA light's tooltip while the game data loads.</comment>
+  </data>
+  <data name="KeysOr" xml:space="preserve">
+    <value> or </value>
+    <comment>Between the game's screenshot keys where it has several ("PrtSc or Home"), with the spaces around it. Shown in the raid card and the status bar.</comment>
+  </data>
+  <data name="ScreenshotKeyUnknown" xml:space="preserve">
+    <value>your screenshot key</value>
+    <comment>Stands for the game's screenshot key where the game's settings don't say it ("press your screenshot key"). Lower case; also shown in capitals.</comment>
+  </data>
+  <data name="RaidLength" xml:space="preserve">
+    <value>{minutes} min raid</value>
+    <comment>The raid card's line of facts while a raid loads: the map's raid length. {minutes}: its length in minutes.</comment>
+  </data>
+  <data name="StatusFix" xml:space="preserve">
+    <value>Fix {age} ago · {floor} · height {height} m</value>
+    <comment>Status bar (shown in capitals): the last position. {age}: how old it is ("12 s", "4 min"); {floor}: the floor it is on, as the map names it, or StatusFloorGround; {height}: its height in metres.</comment>
+  </data>
+  <data name="StatusFloorGround" xml:space="preserve">
+    <value>ground</value>
+    <comment>Status bar, in the last position's line: the ground floor, where the map names none. Lower case.</comment>
+  </data>
+  <data name="PlanNoneOfYourQuests" xml:space="preserve">
+    <value>None of your quests is on {map}</value>
+    <comment>Plan, the open map's card when none of your quests is on the map on screen. {map}: the map's name.</comment>
+  </data>
+  <data name="PlanRowCompleteAndProgress" xml:space="preserve">
+    <value>Complete {complete} · progress {progress}</value>
+    <comment>Plan, a map's row in NEXT RAID and in the MAP list: what one raid there does. {complete}: quests it can complete; {progress}: quests it can progress.</comment>
+  </data>
+  <data name="PlanRowComplete" xml:space="preserve">
+    <value>Complete {complete}</value>
+    <comment>Plan, a map's row: {complete}, the quests a raid there can complete.</comment>
+  </data>
+  <data name="PlanRowProgress" xml:space="preserve">
+    <value>Progress {progress}</value>
+    <comment>Plan, a map's row: {progress}, the quests a raid there can progress.</comment>
+  </data>
+  <data name="PlanSummaryCompleteAndProgress" xml:space="preserve">
+    <value>Complete {complete, plural, one {# quest} other {# quests}} · progress {progress} more</value>
+    <comment>Plan's open card and the raid card: what one raid on the map does for your quests. {complete}: quests it can complete; {progress}: quests it can progress besides.</comment>
+  </data>
+  <data name="PlanSummaryComplete" xml:space="preserve">
+    <value>Complete {complete, plural, one {# quest} other {# quests}}</value>
+    <comment>Plan's open card and the raid card: {complete}, the quests one raid on the map can complete.</comment>
+  </data>
+  <data name="PlanSummaryProgress" xml:space="preserve">
+    <value>Progress {progress, plural, one {# quest} other {# quests}}</value>
+    <comment>Plan's open card and the raid card: {progress}, the quests one raid on the map can progress.</comment>
+  </data>
+  <data name="RaidMapNotKnown" xml:space="preserve">
+    <value>MAP NOT KNOWN</value>
+    <comment>Raid card's title when the game's log names a map tarkov.dev's data doesn't know. Capitals.</comment>
+  </data>
+  <data name="RaidLookingAt" xml:space="preserve">
+    <value>LOOKING AT {map}</value>
+    <comment>Raid card, while another map than the raid's is on screen. {map}: that map's name in capitals.</comment>
+  </data>
+  <data name="RaidLookNote" xml:space="preserve">
+    <value>THE RAID IS ON {map} · YOUR NEXT POSITION SHOWS IT AGAIN</value>
+    <comment>Raid card, beside LOOKING AT: where the raid is, and what brings its map back. {map}: the raid's map in capitals.</comment>
+  </data>
+  <data name="RaidSidePmc" xml:space="preserve">
+    <value>PMC</value>
+    <comment>Raid card, beside its title: the raid is played as a PMC (the game's word). Capitals.</comment>
+  </data>
+  <data name="RaidSideScav" xml:space="preserve">
+    <value>SCAV</value>
+    <comment>Raid card, beside its title: the raid is played as a Scav (the game's word). Capitals.</comment>
+  </data>
+  <data name="RaidObjectiveDone" xml:space="preserve">
+    <value>done</value>
+    <comment>Raid card, an objective ticked as done: in place of its distance. Lower case.</comment>
+  </data>
+  <data name="ExtractKindPmc" xml:space="preserve">
+    <value>PMC extract</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: the kind of a way out, a PMC's extract.</comment>
+  </data>
+  <data name="ExtractKindScav" xml:space="preserve">
+    <value>Scav extract</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: a Scav's extract.</comment>
+  </data>
+  <data name="ExtractKindTransit" xml:space="preserve">
+    <value>Transit</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: a transit to another map (the game's word).</comment>
+  </data>
+  <data name="ExtractKindShared" xml:space="preserve">
+    <value>Shared extract</value>
+    <comment>Rail, EXTRACTS AND TRANSITS: an extract both PMCs and Scavs can use.</comment>
+  </data>
+  <data name="RaidAllExits" xml:space="preserve">
+    <value>ALL {count} ↓</value>
+    <comment>Raid card, beside EXIT: the link down to the list of every way out. {count}: how many there are. Capitals.</comment>
+  </data>
+  <data name="HintLoading" xml:space="preserve">
+    <value>Loading quests and maps…</value>
+    <comment>The rail's hint while the game data loads.</comment>
+  </data>
+  <data name="HintNoQuestOnAMap" xml:space="preserve">
+    <value>None of your active quests is tied to a map.</value>
+    <comment>Plan's hint when none of your quests has work on a map.</comment>
+  </data>
+  <data name="HintNothingLeftHere" xml:space="preserve">
+    <value>None of your {count, plural, other {# active quests}} has an objective left on this map.</value>
+    <comment>The raid card's hint when nothing is left to do on the raid's map. {count}: your active quests.</comment>
+  </data>
+  <data name="ScavFindItems" xml:space="preserve">
+    <value>Find items for {count, plural, one {# quest} other {# quests}}</value>
+    <comment>The raid card's summary in a Scav raid: {count}, the quests that need items found in raid.</comment>
+  </data>
+  <data name="ScavNoteLoading" xml:space="preserve">
+    <value>Scav: quest objectives don't count, so nothing to bring; found-in-raid items do.</value>
+    <comment>The raid card's note while a Scav raid loads.</comment>
+  </data>
+  <data name="ScavNote" xml:space="preserve">
+    <value>Scav: quest objectives don't count; found-in-raid items do.</value>
+    <comment>The raid card's note in a Scav raid.</comment>
+  </data>
+  <data name="ScavLootFor" xml:space="preserve">
+    <value>for {quests}</value>
+    <comment>The raid card in a Scav raid: under an item your quests need found in raid. {quests}: those quests' names, as a list.</comment>
+  </data>
+  <data name="ScavLooseHere" xml:space="preserve">
+    <value>Loose here · {count, plural, one {# spot} other {# spots}}</value>
+    <comment>The raid card in a Scav raid: where an item lies loose on this map. {count}: its spots.</comment>
+  </data>
+  <data name="ScavLootMore" xml:space="preserve">
+    <value>And {count, plural, other {# more items}} your quests need found in raid.</value>
+    <comment>The raid card in a Scav raid, under the list when it is cut short. {count}: the items not listed.</comment>
+  </data>
+  <data name="ObjectiveAfterRaid" xml:space="preserve">
+    <value>after the raid</value>
+    <comment>Raid card, an objective done at the trader after the raid: in place of its distance. Lower case.</comment>
+  </data>
+  <data name="ObjectiveAnywhere" xml:space="preserve">
+    <value>anywhere</value>
+    <comment>Raid card, an objective done anywhere on the map (kills, finds): in place of its distance. Lower case.</comment>
+  </data>
+  <data name="HeightUp" xml:space="preserve">
+    <value>{metres} m up</value>
+    <comment>Raid card and quest card: how far above you an objective is, after its direction. {metres}: whole metres.</comment>
+  </data>
+  <data name="HeightDown" xml:space="preserve">
+    <value>{metres} m down</value>
+    <comment>Raid card and quest card: how far below you an objective is. {metres}: whole metres.</comment>
+  </data>
+  <data name="NoticeNoArtwork" xml:space="preserve">
+    <value>No map artwork for {map}: a 10 m grid stands in, with your position, objectives and extracts.</value>
+    <comment>Notice when a map has no drawing to show. {map}: the map's name.</comment>
+  </data>
+  <data name="MapCreditArtwork" xml:space="preserve">
+    <value>Map © {author} and contributors, CC BY-NC-SA 4.0 · data tarkov.dev</value>
+    <comment>The map's credit line in its corner, for a drawn map. {author}: the map's artist. Keep the licence's name as it is.</comment>
+  </data>
+  <data name="MapCreditRender" xml:space="preserve">
+    <value>Map: {author} · data tarkov.dev</value>
+    <comment>The map's credit line for a map shown as a render. {author}: who made the render (tarkov.dev, TarkovBOT.eu).</comment>
+  </data>
+  <data name="MapCreditSheet" xml:space="preserve">
+    <value>No map artwork · grid 10 m · data tarkov.dev</value>
+    <comment>The map's credit line when a 10 m grid stands in for the map.</comment>
+  </data>
+  <data name="MapCreditData" xml:space="preserve">
+    <value>Data tarkov.dev</value>
+    <comment>The map's credit line before a map is drawn.</comment>
+  </data>
+  <data name="NoticeNoRender" xml:space="preserve">
+    <value>No map render for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <comment>Notice when a map's render couldn't be downloaded. {map}: the map's name.</comment>
+  </data>
+  <data name="NoticeArtworkOffline" xml:space="preserve">
+    <value>No map artwork for {map}: couldn't download it; check the internet connection. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <comment>Notice when a map's drawing couldn't be downloaded. {map}: the map's name.</comment>
+  </data>
+  <data name="NoticeArtworkRefused" xml:space="preserve">
+    <value>No map artwork for {map}: its server answered {status}. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <comment>Notice when the server of a map's drawing refused it. {map}: the map's name; {status}: the HTTP status, 503.</comment>
+  </data>
+  <data name="NoticeArtworkDisk" xml:space="preserve">
+    <value>No map artwork for {map}: couldn't save it on this PC; check the free disk space. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <comment>Notice when a map's drawing couldn't be saved on the PC. {map}: the map's name.</comment>
+  </data>
+  <data name="NoticeArtworkUnreadable" xml:space="preserve">
+    <value>No map artwork for {map}: couldn't read it. A 10 m grid stands in, with your position, objectives and extracts.</value>
+    <comment>Notice when a map's drawing couldn't be read. {map}: the map's name.</comment>
+  </data>
+  <data name="PreviewMap" xml:space="preserve">
+    <value>PREVIEW · {map}</value>
+    <comment>The label over the map while another map is previewed from its row in Plan. {map}: its name in capitals.</comment>
+  </data>
+  <data name="MapFloorGround" xml:space="preserve">
+    <value>Ground</value>
+    <comment>The map's floor buttons: the ground floor, where the map names none.</comment>
+  </data>
+  <data name="CueRaidLoading" xml:space="preserve">
+    <value>RAID LOADING</value>
+    <comment>The cue over the map when a raid loads: its eyebrow, over the map's name. Capitals.</comment>
+  </data>
+  <data name="CueTransit" xml:space="preserve">
+    <value>TRANSIT</value>
+    <comment>The cue's eyebrow when you take a transit to another map (the game's word). Capitals.</comment>
+  </data>
+  <data name="CueScavRaid" xml:space="preserve">
+    <value>SCAV RAID</value>
+    <comment>The cue's title when a Scav raid starts. Capitals.</comment>
+  </data>
+  <data name="CueScavRaidDetail" xml:space="preserve">
+    <value>Quest objectives don't count here; items you find in raid do.</value>
+    <comment>The cue's line under SCAV RAID.</comment>
+  </data>
+  <data name="CueLoadingCancelled" xml:space="preserve">
+    <value>LOADING CANCELLED</value>
+    <comment>The cue's title when the raid's loading was cancelled. Capitals.</comment>
+  </data>
+  <data name="CueBackToPlanning" xml:space="preserve">
+    <value>Back to planning the next raid.</value>
+    <comment>The cue's line under LOADING CANCELLED and RAID OVER.</comment>
+  </data>
+  <data name="CueGroupPicked" xml:space="preserve">
+    <value>GROUP PICKED</value>
+    <comment>The cue's eyebrow when your group's leader picked a map. Capitals.</comment>
+  </data>
+  <data name="CueMapAndLength" xml:space="preserve">
+    <value>{map} · {minutes} MIN</value>
+    <comment>The RAID OVER cue's eyebrow: the raid's map and how long you were in it. {map}: the map's name in capitals; {minutes}: whole minutes. Capitals.</comment>
+  </data>
+  <data name="CueRaidOver" xml:space="preserve">
+    <value>RAID OVER</value>
+    <comment>The cue's title when a raid is over. Capitals.</comment>
+  </data>
+  <data name="CueNextRaid" xml:space="preserve">
+    <value>Next raid: {map} · {summary}</value>
+    <comment>The RAID OVER cue's line: the best map for the next raid. {map}: its name; {summary}: what a raid there does ("Complete 3 quests · progress 1 more"; PlanSummaryCompleteAndProgress).</comment>
+  </data>
+  <data name="CueExample" xml:space="preserve">
+    <value>An example, not your raid.</value>
+    <comment>The cue's line when the tour shows it with an example raid.</comment>
+  </data>
+  <data name="SettingsVersionNamed" xml:space="preserve">
+    <value>Shturmap {version} "{name}" · {build}</value>
+    <comment>Settings, the line at its foot. {version}: the version, 0.4.0+d349909; {name}: its release's name, Praetorian (a name, not translated); {build}: what kind of build it is (BuildInstalled, BuildDev, BuildFolder). The language's quotation marks.</comment>
+  </data>
+  <data name="SettingsVersion" xml:space="preserve">
+    <value>Shturmap {version} · {build}</value>
+    <comment>Settings, the line at its foot, for a version without a release name. {version}: the version; {build}: what kind of build it is.</comment>
+  </data>
+  <data name="BuildInstalled" xml:space="preserve">
+    <value>installed</value>
+    <comment>Settings, after the version: Shturmap installed by its Setup. Lower case.</comment>
+  </data>
+  <data name="BuildDev" xml:space="preserve">
+    <value>dev build</value>
+    <comment>Settings, after the version: a developer build. Lower case.</comment>
+  </data>
+  <data name="BuildFolder" xml:space="preserve">
+    <value>folder build</value>
+    <comment>Settings, after the version: Shturmap run from a folder, not installed. Lower case.</comment>
+  </data>
+  <data name="NoticeTourWaits" xml:space="preserve">
+    <value>The tour waits until the raid is over.</value>
+    <comment>Notice when the tour is asked for during a raid (help's SHOW ME, a What's New line).</comment>
+  </data>
+  <data name="NoticeTourStaysInHelp" xml:space="preserve">
+    <value>The tour stays in help: F1, then TAKE THE TOUR.</value>
+    <comment>Notice when the tour ends. TAKE THE TOUR is help's button (as help says it).</comment>
+  </data>
+  <data name="TourDone" xml:space="preserve">
+    <value>DONE</value>
+    <comment>The tour's band, last chapter: the button that ends it, where the other chapters say ViewTexts.TourNext. Capitals.</comment>
+  </data>
+  <data name="TourSafeReads" xml:space="preserve">
+    <value>READS</value>
+    <comment>The tour's first chapter: the heading over what Shturmap reads. Capitals.</comment>
+  </data>
+  <data name="TourSafeNever" xml:space="preserve">
+    <value>NEVER</value>
+    <comment>The tour's first chapter: the heading over what Shturmap never does. Capitals.</comment>
+  </data>
+  <data name="PreviewTour" xml:space="preserve">
+    <value>PREVIEW · THE TOUR · {map}</value>
+    <comment>The label over the map while the tour shows an example on it. {map}: the map's name in capitals. Capitals.</comment>
+  </data>
+  <data name="PreviewExample" xml:space="preserve">
+    <value>AN EXAMPLE, NOT YOUR RAID</value>
+    <comment>Beside the preview label, while the tour or What's New shows an example on the map. Capitals.</comment>
+  </data>
+  <data name="TourCardExample" xml:space="preserve">
+    <value>THE RAID CARD, WITH EXAMPLE VALUES</value>
+    <comment>The tour's example raid card: the line under it. Capitals.</comment>
+  </data>
+  <data name="TourKeyScreenshot" xml:space="preserve">
+    <value>SCREENSHOT</value>
+    <comment>The tour's screenshot-key chapter: under the key drawn large. Capitals.</comment>
+  </data>
+  <data name="TourKeyPosition" xml:space="preserve">
+    <value>POSITION FROM THE FILE NAME</value>
+    <comment>The tour's screenshot-key chapter: over the screenshot's file name, which says where you are. Capitals.</comment>
+  </data>
+  <data name="CueFirstRaid" xml:space="preserve">
+    <value>FIRST RAID WITH SHTURMAP · PRESS {key} ONCE YOU'RE IN</value>
+    <comment>The RAID LOADING cue, the first raid after a first start. {key}: the game's screenshot key in capitals, PRTSC. Capitals.</comment>
+  </data>
+  <data name="NoticeFirstFix" xml:space="preserve">
+    <value>That's you, from your screenshot's name. Each new one moves you.</value>
+    <comment>Notice when the first position after a first start shows on the map.</comment>
+  </data>
+  <data name="HelpWhatsNew" xml:space="preserve">
+    <value>WHAT'S NEW IN {version}</value>
+    <comment>Help, the link that brings the What's New card back. {version}: the newest version with its release's name, "0.4.0 · PRAETORIAN". Capitals.</comment>
+  </data>
+  <data name="PreviewWhatsNew" xml:space="preserve">
+    <value>PREVIEW · NEW IN {version} · {name}</value>
+    <comment>The label over the map while a What's New line is previewed. {version}: the version, 0.4.0; {name}: the line's name in capitals. Capitals.</comment>
+  </data>
+  <data name="WhatsNewClockExample" xml:space="preserve">
+    <value>THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES</value>
+    <comment>What's New, the clock's preview: the line under the raid card's clock. Capitals.</comment>
+  </data>
+  <data name="PreviewClickToPlan" xml:space="preserve">
+    <value>CLICK ITS ROW TO PLAN IT</value>
+    <comment>Beside the preview label while another map is previewed from its row in Plan. Capitals.</comment>
+  </data>
+  <data name="NoticeUpdateDownloadGone" xml:space="preserve">
+    <value>The update couldn't be applied: its download is gone. Shturmap keeps running.</value>
+    <comment>Notice after RESTART NOW when the downloaded update is no longer there.</comment>
+  </data>
+  <data name="NoticeUpdaterDidntStart" xml:space="preserve">
+    <value>The update couldn't be applied: the updater couldn't start (the log says why). Shturmap keeps running.</value>
+    <comment>Notice after RESTART NOW when the updater couldn't start.</comment>
+  </data>
+  <data name="FeedbackTip" xml:space="preserve">
+    <value>Report a problem or idea</value>
+    <comment>Tooltip of the feedback button (a speech bubble) at the top right.</comment>
+  </data>
+  <data name="FeedbackTipNotSetUp" xml:space="preserve">
+    <value>Reporting isn't set up in this build</value>
+    <comment>Tooltip of the feedback button in a build that can't send reports.</comment>
+  </data>
+  <data name="HelpFeedbackPointer" xml:space="preserve">
+    <value>Problem or idea? Use the feedback button beside the ?.</value>
+    <comment>Help, HELP AND FEEDBACK: where to report. "?" is the help button.</comment>
+  </data>
+  <data name="NoticeReport" xml:space="preserve">
+    <value>REPORT</value>
+    <comment>A notice's link that opens the Report dialog. Capitals.</comment>
+  </data>
+  <data name="NoticeCopyDiagnostics" xml:space="preserve">
+    <value>COPY DIAGNOSTICS</value>
+    <comment>A notice's link that copies the diagnostics, in a build that can't send reports; as help's button says it. Capitals.</comment>
+  </data>
+  <data name="NoticePrivacyNotOpened" xml:space="preserve">
+    <value>Couldn't open the privacy notice; it is privacy.txt beside Shturmap.exe.</value>
+    <comment>Notice when the privacy notice couldn't be opened. Keep the file names as they are.</comment>
+  </data>
+  <data name="NoticeReportingNotSetUp" xml:space="preserve">
+    <value>Reporting isn't set up in this build: copy the diagnostics in help (?) and send them to whoever gave you Shturmap.</value>
+    <comment>Notice when the Report dialog is asked for in a build that can't send reports.</comment>
+  </data>
+  <data name="ReportHideSent" xml:space="preserve">
+    <value>HIDE WHAT'S SENT</value>
+    <comment>The Report dialog: the link ViewTexts.ReportShowSent once what is sent shows. Capitals.</comment>
+  </data>
+  <data name="ReportClose" xml:space="preserve">
+    <value>CLOSE</value>
+    <comment>The Report dialog's button once the report went, where it said ViewTexts.ReportCancel. Capitals.</comment>
+  </data>
+  <data name="ReportIdeaPlaceholder" xml:space="preserve">
+    <value>What would help, and when would you use it? (Required)</value>
+    <comment>The Report dialog: the empty text box's hint, for an idea (for a problem: ViewTexts.ReportTextPlaceholder).</comment>
+  </data>
+  <data name="ReportSending" xml:space="preserve">
+    <value>Sending…</value>
+    <comment>The Report dialog and the question after a crash, while a report is being sent.</comment>
+  </data>
+  <data name="CrashQuestionErrors" xml:space="preserve">
+    <value>{count, plural, one {Shturmap ran into an error last time.} other {Shturmap ran into # errors since you last answered.}} Send an error report? It helps to fix it.</value>
+    <comment>The question at the top of the rail after errors (Shturmap went on running). {count}: the errors not answered yet.</comment>
+  </data>
+  <data name="CrashQuestionCrashes" xml:space="preserve">
+    <value>{count, plural, one {Shturmap closed unexpectedly last time.} other {Shturmap closed unexpectedly # times since you last answered.}} Send a crash report? It helps to fix it.</value>
+    <comment>The question at the top of the rail after crashes. {count}: the crashes not answered yet.</comment>
+  </data>
+  <data name="SettingsNewerGameLogs" xml:space="preserve">
+    <value>Newer game logs in {folder}</value>
+    <comment>Settings, GAME FOLDER: another install of the game has newer logs. {folder}: that install's folder.</comment>
+  </data>
+  <data name="UninstallDataRelease" xml:space="preserve">
+    <value>The whole %LOCALAPPDATA%\Shturmap folder: settings, quest history, logs, unsent reports, crash records, download cache. Unticked, it stays for a later install.</value>
+    <comment>Settings, "Uninstall Shturmap…", the note under "Also delete my Shturmap data". Keep the folder as it is.</comment>
+  </data>
+  <data name="UninstallDataDev" xml:space="preserve">
+    <value>Settings, quest history, logs, unsent reports and crash records in %LOCALAPPDATA%\Shturmap-dev. The download cache stays (the release shares it).</value>
+    <comment>The same note in a developer build. Keep the folder as it is.</comment>
+  </data>
+  <data name="UninstallDataDevWithStudy" xml:space="preserve">
+    <value>Settings, quest history, logs, study log, unsent reports and crash records in %LOCALAPPDATA%\Shturmap-dev. The download cache stays (the release shares it).</value>
+    <comment>The same note in a developer build that keeps a study log. Keep the folder as it is.</comment>
+  </data>
+  <data name="NoticeNoUninstaller" xml:space="preserve">
+    <value>Couldn't find Shturmap's uninstaller: remove it in Windows' Settings → Apps instead.</value>
+    <comment>Notice when "Uninstall Shturmap…" can't find the uninstaller. Name Windows' settings as Windows shows them in this language.</comment>
+  </data>
+  <data name="NoticeCompleted" xml:space="preserve">
+    <value>Completed: {quests}</value>
+    <comment>Notice for quests handed in while a raid replay or another cue was up. {quests}: their names, with ListSeparator between them.</comment>
+  </data>
+  <data name="HandoverAfterRaid" xml:space="preserve">
+    <value>{handover} after the raid</value>
+    <comment>Tooltip of a hand-over mark in the raid card and on quest cards. {handover}: what goes to the trader, "Hand over ×3 to Therapist".</comment>
+  </data>
+  <data name="StatusStarting" xml:space="preserve">
+    <value>Starting…</value>
+    <comment>Status bar, the raid state while Shturmap starts.</comment>
+  </data>
+  <data name="StatusLogs" xml:space="preserve">
+    <value>Logs</value>
+    <comment>Status bar, the word beside the light for the game's logs, until they are read (shown in capitals).</comment>
+  </data>
+  <data name="StatusScreenshots" xml:space="preserve">
+    <value>Screenshots</value>
+    <comment>Status bar, the word beside the light for the screenshots folder, until it is watched (shown in capitals).</comment>
+  </data>
+  <data name="StatusData" xml:space="preserve">
+    <value>Data</value>
+    <comment>Status bar, the word beside the light for tarkov.dev's game data, until it loads (shown in capitals).</comment>
+  </data>
+  <data name="CardKindKey" xml:space="preserve">
+    <value>Key</value>
+    <comment>An item's card: the kind of item, a key.</comment>
+  </data>
+  <data name="CardKindItem" xml:space="preserve">
+    <value>Item</value>
+    <comment>An item's card: the kind of item, anything else than a key.</comment>
+  </data>
+  <data name="PickPickedTip" xml:space="preserve">
+    <value>Picked for the coming raid. Click to unpick</value>
+    <comment>Tooltip of the pen beside a quest once it is picked.</comment>
+  </data>
+  <data name="PickTip" xml:space="preserve">
+    <value>Pick for the coming raid: lit on the map in its own colour, first in its card</value>
+    <comment>Tooltip of the pen beside a quest, not picked.</comment>
+  </data>
+  <data name="TickTickedName" xml:space="preserve">
+    <value>Done, ticked by you</value>
+    <comment>Screen reader's name of an objective's tick box, ticked.</comment>
+  </data>
+  <data name="TickName" xml:space="preserve">
+    <value>Tick as done</value>
+    <comment>Screen reader's name of an objective's tick box, not ticked.</comment>
+  </data>
+  <data name="TickTickedTip" xml:space="preserve">
+    <value>Done (your tick): the map, NEXT and the plan skip it. Click to untick</value>
+    <comment>Tooltip of an objective's tick box on a quest card, ticked. NEXT is the raid card's row.</comment>
+  </data>
+  <data name="TickTip" xml:space="preserve">
+    <value>Tick when done. The logs can't tell, so until then the map and the plan lead here</value>
+    <comment>Tooltip of an objective's tick box on a quest card, not ticked.</comment>
+  </data>
+  <data name="MapEdgeTip" xml:space="preserve">
+    <value>Show my position (F)</value>
+    <comment>Tooltip of the arrow at the map's edge that points to your position off screen. F is its key.</comment>
+  </data>
+  <data name="ClockMinIn" xml:space="preserve">
+    <value>MIN IN</value>
+    <comment>Raid card's clock, under the large figure when it is the minutes since the raid started. Capitals.</comment>
+  </data>
+  <data name="ClockMinLeft" xml:space="preserve">
+    <value>MIN LEFT</value>
+    <comment>Raid card's clock, under the large figure when it is the minutes left. Capitals.</comment>
+  </data>
+  <data name="ClockMinutesIn" xml:space="preserve">
+    <value>{minutes} MIN IN</value>
+    <comment>Raid card's clock, beside the minutes left: the minutes since the raid started. Capitals.</comment>
+  </data>
+  <data name="ClockPastLength" xml:space="preserve">
+    <value>PAST THE RAID'S {minutes} MIN</value>
+    <comment>Raid card's clock, past the map's raid length. {minutes}: that length. Capitals.</comment>
+  </data>
+  <data name="ClockTimeLeftUnknown" xml:space="preserve">
+    <value>TIME LEFT NOT KNOWN</value>
+    <comment>Raid card's clock in a Scav raid. Capitals.</comment>
+  </data>
+  <data name="ReplayMinutes" xml:space="preserve">
+    <value>{minutes} MIN</value>
+    <comment>The raid replay's band, at the end of its timeline: how long the raid ran. Capitals.</comment>
+  </data>
+  <data name="ReplayPositions" xml:space="preserve">
+    <value>{shown} OF {count, plural, one {# POSITION} other {# POSITIONS}}</value>
+    <comment>The raid replay's band: the positions drawn so far. {shown}: drawn so far; {count}: all of the raid's. Capitals.</comment>
+  </data>
+  <data name="ReportExample" xml:space="preserve">
+    <value>Example: the map stayed on Woods after I loaded into Customs.</value>
+    <comment>The Report dialog in a developer snapshot of it ("--show-report"): an example of a problem typed in, for the layout check.</comment>
+  </data>
+  <data name="SettingsLanguageAutomatic" xml:space="preserve">
+    <value>AUTOMATIC</value>
+    <comment>Settings, the Language row: its first choice, beside each language in its own name (ENGLISH, DEUTSCH). Upper case, as every choice in settings.</comment>
+  </data>
+  <data name="SettingsLanguageAutomaticTip" xml:space="preserve">
+    <value>The game's language, else Windows', else English</value>
+    <comment>Settings, the Language row: tooltip of AUTOMATIC. Only a language Shturmap is fully translated into counts.</comment>
+  </data>
+  <data name="SettingsLanguageInTranslation" xml:space="preserve">
+    <value>{language} · IN TRANSLATION</value>
+    <comment>Settings, the Language row, developer builds only: a language whose translation isn't finished. {language}: its own name in upper case, DEUTSCH.</comment>
+  </data>
+  <data name="SettingsLanguageInTranslationTip" xml:space="preserve">
+    <value>Developer builds only: not every text is translated yet; the rest shows in English.</value>
+    <comment>Settings, the Language row, developer builds only: tooltip of a language whose translation isn't finished.</comment>
+  </data>
+  <data name="SettingsLanguageFromGame" xml:space="preserve">
+    <value>Automatic: {language}, from the game.</value>
+    <comment>Settings, the note under the Language row: what AUTOMATIC comes to, the game's language. {language}: that language's own name, Deutsch.</comment>
+  </data>
+  <data name="SettingsLanguageFromWindows" xml:space="preserve">
+    <value>Automatic: {language}, from Windows.</value>
+    <comment>Settings, the note under the Language row: what AUTOMATIC comes to, Windows' display language (the game's is unknown or not translated). {language}: that language's own name, Deutsch.</comment>
+  </data>
+  <data name="SettingsLanguageNeither" xml:space="preserve">
+    <value>Automatic: {language}. Neither the game's nor Windows' language is translated yet.</value>
+    <comment>Settings, the note under the Language row: what AUTOMATIC comes to when Shturmap has no translation for the game's or Windows' language. {language}: English's own name, English.</comment>
+  </data>
+</root>

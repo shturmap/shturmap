@@ -47,8 +47,8 @@ public static class Distribution
     /// said there too, which wasn't the reason (review of 2026-10-04, A40).
     /// </summary>
     public static string NoUpdatesText(bool installed, bool updaterFailed) => installed && updaterFailed
-        ? "Updates: the updater couldn't start, so no update checks. The log says why (LOG FOLDER). Running the Setup again repairs it; your data stays."
-        : "Updates: not available in this build. Installed with the Setup, Shturmap updates itself.";
+        ? SessionTexts.UpdatesBroken
+        : SessionTexts.UpdatesNotInBuild;
 
     /// <summary>
     /// Which install an exe belongs to by where it runs from, for a start in which Velopack itself failed (review of
@@ -150,7 +150,7 @@ public static class UpdatePolicy
     /// wiki link in, working in the install's folder (Program now starts the app in the user's folder instead).
     /// </summary>
     public static string NotAppliedNotice(string? version) =>
-        $"Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.";
+        SessionTexts.UpdateNotApplied(version: version);
 
     /// <summary>
     /// What happens about updates. A build that can't update (not installed by Velopack, or a developer run) does
@@ -168,10 +168,10 @@ public static class UpdatePolicy
         var download = mode == UpdateMode.Automatic && stage == UpdateStage.Found;
         var line = inRaid ? "" : stage switch
         {
-            UpdateStage.Found when mode == UpdateMode.TellOnly => $"Shturmap {version} is available",
-            UpdateStage.Downloading => $"Downloading Shturmap {version}…",
-            UpdateStage.Ready when notApplied => $"Update {version} didn't apply: close what Shturmap opened, then restart",
-            UpdateStage.Ready => $"Update {version} ready: applies at next start",
+            UpdateStage.Found when mode == UpdateMode.TellOnly => SessionTexts.UpdateAvailable(version: version),
+            UpdateStage.Downloading => SessionTexts.UpdateDownloading(version: version),
+            UpdateStage.Ready when notApplied => SessionTexts.UpdateDidNotApply(version: version),
+            UpdateStage.Ready => SessionTexts.UpdateReady(version: version),
             _ => "",
         };
         return new(check, download, line,

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LoadFailedStatus" xml:space="preserve">
+    <value>tarkov.dev hat mit {status} geantwortet.</value>
+    <comment>en: tarkov.dev answered {status}.</comment>
+  </data>
+  <data name="LoadFailedUnreachable" xml:space="preserve">
+    <value>tarkov.dev war nicht erreichbar, und es gibt noch keine gespeicherte Kopie.</value>
+    <comment>en: Couldn't reach tarkov.dev, and there's no saved copy yet.</comment>
+  </data>
+  <data name="LoadFailedTimedOut" xml:space="preserve">
+    <value>tarkov.dev hat nicht rechtzeitig geantwortet, und es gibt noch keine gespeicherte Kopie.</value>
+    <comment>en: tarkov.dev didn't answer in time, and there's no saved copy yet.</comment>
+  </data>
+  <data name="LoadFailedUnreadable" xml:space="preserve">
+    <value>Die Daten von tarkov.dev haben sich so geändert, dass Shturmap sie nicht lesen kann.</value>
+    <comment>en: tarkov.dev's data has changed in a way Shturmap can't read.</comment>
+  </data>
+  <data name="LoadFailedNotData" xml:space="preserve">
+    <value>Statt der Daten von tarkov.dev kam etwas anderes: eine Anmeldeseite oder ein Filter dazwischen?</value>
+    <comment>en: tarkov.dev's answer wasn't its data: a sign-in page or a filter in between?</comment>
+  </data>
+  <data name="LoadFailedDisk" xml:space="preserve">
+    <value>Die Daten von tarkov.dev ließen sich auf diesem PC nicht speichern.</value>
+    <comment>en: Couldn't save tarkov.dev's data on this PC.</comment>
+  </data>
+  <data name="LoadFailedUnknown" xml:space="preserve">
+    <value>Das Laden der Daten von tarkov.dev ist fehlgeschlagen.</value>
+    <comment>en: Loading tarkov.dev's data failed.</comment>
+  </data>
+  <data name="LoadAdviceReport" xml:space="preserve">
+    <value>Bitte melde das.</value>
+    <comment>en: Please report it.</comment>
+  </data>
+  <data name="LoadAdviceServerBusy" xml:space="preserve">
+    <value>Der Server ist gerade überlastet oder kurz down; versuch es in ein paar Minuten noch mal.</value>
+    <comment>en: It is busy or down for a moment; try again in a few minutes.</comment>
+  </data>
+  <data name="LoadAdviceConnection" xml:space="preserve">
+    <value>Prüf die Internetverbindung.</value>
+    <comment>en: Check the internet connection.</comment>
+  </data>
+  <data name="LoadAdviceDisk" xml:space="preserve">
+    <value>Prüf den freien Speicherplatz und ob %LOCALAPPDATA%\Shturmap beschreibbar ist.</value>
+    <comment>en: Check the free disk space and that %LOCALAPPDATA%\Shturmap can be written to.</comment>
+  </data>
+  <data name="LoadAdviceNotData" xml:space="preserve">
+    <value>Shturmap versucht es in ein paar Minuten erneut.</value>
+    <comment>en: Shturmap tries again in a few minutes.</comment>
+  </data>
+  <data name="RetryWaitMinutes" xml:space="preserve">
+    <value>{minutes, plural, one {# Minute} other {# Minuten}}</value>
+    <comment>en: {minutes, plural, one {# minute} other {# minutes}}</comment>
+  </data>
+  <data name="RetryWaitSeconds" xml:space="preserve">
+    <value>{seconds, plural, one {# Sekunde} other {# Sekunden}}</value>
+    <comment>en: {seconds, plural, one {# second} other {# seconds}}</comment>
+  </data>
+  <data name="ItemUnknown" xml:space="preserve">
+    <value>Unbekanntes Item</value>
+    <comment>en: Unknown item</comment>
+  </data>
+</root>

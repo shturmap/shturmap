@@ -33,7 +33,7 @@
         </Grid>
 
         <StackPanel Visibility="{x:Bind Shown(View.Get.Count)}">
-          <TextBlock Style="{StaticResource EyebrowText}" Text="GET IT" Margin="0,8,0,4" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.ItemCardGetIt}" Margin="0,8,0,4" />
           <ItemsControl ItemsSource="{x:Bind View.Get}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="session:ItemSource">
@@ -54,7 +54,7 @@
         </StackPanel>
 
         <StackPanel Visibility="{x:Bind Shown(View.Uses.Count)}">
-          <TextBlock Style="{StaticResource EyebrowText}" Text="NEEDED FOR" Margin="0,8,0,4" />
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.ItemCardNeededFor}" Margin="0,8,0,4" />
           <ItemsControl ItemsSource="{x:Bind View.Uses}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="session:ItemUse">
@@ -75,7 +75,7 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
         </StackPanel>
-        <TextBlock Text="None of your active quests needs it." Style="{StaticResource NoteText}" Visibility="{x:Bind Hidden(View.Uses.Count)}" />
+        <TextBlock Text="{x:Bind local:ViewTexts.ItemCardNoQuest}" Style="{StaticResource NoteText}" Visibility="{x:Bind Hidden(View.Uses.Count)}" />
       </StackPanel>
     </ScrollViewer>
   </Border>

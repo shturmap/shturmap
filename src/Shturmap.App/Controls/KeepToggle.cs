@@ -59,6 +59,8 @@ public sealed partial class KeepToggle : Grid
                 Linked.RequestKeep(quest);
         };
         DoubleTapped += (_, e) => e.Handled = true;
+        // Its tooltip in the language in use.
+        SaidAgain.OnLanguage(this, Update);
     }
 
     public string? QuestId
@@ -91,7 +93,7 @@ public sealed partial class KeepToggle : Grid
             _icon.FontSize = 14;
         }
         ToolTipService.SetToolTip(this, kept
-            ? "Picked for the coming raid. Click to unpick"
-            : "Pick for the coming raid: lit on the map in its own colour, first in its card");
+            ? AppTexts.PickPickedTip
+            : AppTexts.PickTip);
     }
 }

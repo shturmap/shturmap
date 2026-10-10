@@ -47,7 +47,15 @@ public partial class App
     {
         if (_window is null || _session is null)
             return;
+        // "--switch-language <culture>": the language switches as a choice in settings does, once the data is on screen
+        // and before any snapshot (docs/DESIGN.md §8, "Developer aids"; the layout check, docs/LANGUAGES.md).
+        if (Arg(cli, "--switch-language") is { } language)
+            await _window.SwitchLanguageWhenLoadedAsync(language);
         _window.DevInstall(_session, DevGame);
+        // "--whats-new": the newest version's What's New card, as help's link shows it, for a snapshot of it (a snapshot
+        // never shows it by itself; tools\layout-check.ps1).
+        if (cli.Contains("--whats-new"))
+            _window.DevWhatsNew(0);
         if (DevGame is null)
             return;
         AppLog.Info("Developer view: fake game at " + DevGame.Root);

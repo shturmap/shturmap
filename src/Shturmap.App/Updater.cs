@@ -200,7 +200,7 @@ public sealed class Updater
     /// <summary>
     /// RESTART NOW, only on the player's click, outside raids: starts Velopack's updater, which waits for this process to
     /// end (up to a minute), applies the downloaded version and starts it. The caller then closes the session and ends
-    /// the app. Null when the updater is under way; otherwise why it isn't, and the caller's session goes on
+    /// the app. Null when the updater is under way; otherwise why it isn't, as the notice says it, and the caller's session goes on
     /// (review of 2026-10-09: Velopack's own restart returned without a word when the download was gone, after the
     /// session had been closed for it, and could throw).
     /// </summary>
@@ -214,7 +214,7 @@ public sealed class Updater
                 // Not ready any more: the next steps download it again (or offer to), once found.
                 if (Stage == UpdateStage.Ready)
                     Set(_found is null ? UpdateStage.None : UpdateStage.Found);
-                return "its download is gone";
+                return AppTexts.NoticeUpdateDownloadGone;
             }
             AppLog.Info($"Updates: restarting into {pending.Version}");
             _manager.WaitExitThenApplyUpdates(pending, silent: false, restart: true);
@@ -223,7 +223,7 @@ public sealed class Updater
         catch (Exception e)
         {
             AppLog.Warn("Updates: Velopack's updater couldn't start for RESTART NOW", e);
-            return "the updater couldn't start (the log says why)";
+            return AppTexts.NoticeUpdaterDidntStart;
         }
     }
 
