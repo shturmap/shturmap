@@ -25,7 +25,7 @@
     <comment>en: Or browse the maps above. Quests and raids follow the game once it's found; Shturmap keeps looking.</comment>
   </data>
   <data name="NoLogsTitle" xml:space="preserve">
-    <value>Das Spiel lief auf diesem PC noch nicht</value>
+    <value>Das Spiel lief auf diesem PC noch nie</value>
     <comment>en: The game hasn't run on this PC yet</comment>
   </data>
   <data name="NoLogsNote" xml:space="preserve">
@@ -73,7 +73,7 @@
     <comment>en: The game's log shows a raid loading</comment>
   </data>
   <data name="StatusTipInRaidSince" xml:space="preserve">
-    <value>Laut Log des Spiels läuft seit {time} ein Raid</value>
+    <value>Laut Log des Spiels läuft ein Raid, Start: {time}</value>
     <comment>en: The game's log shows a raid, started {time}</comment>
   </data>
   <data name="StatusTipInRaid" xml:space="preserve">
@@ -81,7 +81,7 @@
     <comment>en: The game's log shows a raid</comment>
   </data>
   <data name="StatusTipMenu" xml:space="preserve">
-    <value>Laut Log des Spiels läuft kein Raid (es unterscheidet die Menüs nicht von einem geschlossenen Spiel)</value>
+    <value>Laut Log des Spiels läuft kein Raid (das Log unterscheidet Menüs nicht von einem geschlossenen Spiel)</value>
     <comment>en: The game's log shows no raid (it can't tell the menus from a closed game)</comment>
   </data>
   <data name="ModePvp" xml:space="preserve">
@@ -157,7 +157,7 @@
     <comment>en: Downloading Shturmap {version}…</comment>
   </data>
   <data name="UpdateDidNotApply" xml:space="preserve">
-    <value>Update {version} nicht installiert: Beende, was Shturmap geöffnet hat, und starte neu</value>
+    <value>Update {version} nicht installiert: Schließ, was Shturmap geöffnet hat, dann starte neu</value>
     <comment>en: Update {version} didn't apply: close what Shturmap opened, then restart</comment>
   </data>
   <data name="UpdateReady" xml:space="preserve">
@@ -165,7 +165,7 @@
     <comment>en: Update {version} ready: applies at next start</comment>
   </data>
   <data name="SettingsFileSetAside" xml:space="preserve">
-    <value>Shturmaps Einstellungsdatei war nicht lesbar und wurde beiseitegelegt: Picks, Haken und Einstellungen beginnen von vorn.</value>
+    <value>Shturmaps Einstellungsdatei war nicht lesbar und wurde beiseitegelegt: Picks, Haken und Einstellungen sind zurückgesetzt.</value>
     <comment>en: Shturmap's settings file couldn't be read and was set aside: picks, ticks and settings start over.</comment>
   </data>
   <data name="SettingsFileNotKept" xml:space="preserve">
@@ -221,7 +221,7 @@
     <comment>en: No game found on this PC: browse the maps, or choose the game folder in settings.</comment>
   </data>
   <data name="FoundNotRun" xml:space="preserve">
-    <value>Escape from Tarkov in {folder} gefunden; es lief auf diesem PC noch nicht.</value>
+    <value>Escape from Tarkov in {folder} gefunden; es lief auf diesem PC noch nie.</value>
     <comment>en: Found Escape from Tarkov in {folder}; it hasn't run on this PC yet.</comment>
   </data>
   <data name="FoundGame" xml:space="preserve">
@@ -281,7 +281,7 @@
     <comment>en: {quest}: failed</comment>
   </data>
   <data name="FixNoRaidMap" xml:space="preserve">
-    <value>Position erhalten, aber Shturmap weiß nicht, auf welcher Map dieser Raid läuft, daher wird sie nicht gezeigt.</value>
+    <value>Position erhalten, aber nicht gezeigt: Shturmap weiß nicht, auf welcher Map dieser Raid läuft.</value>
     <comment>en: Got a position, but Shturmap can't tell which map this raid is on, so it isn't shown.</comment>
   </data>
   <data name="FixNoRaid" xml:space="preserve">
@@ -357,7 +357,7 @@
     <comment>en: to enter {map}</comment>
   </data>
   <data name="PlanRaidLength" xml:space="preserve">
-    <value>{minutes} min Raid</value>
+    <value>Raid-Dauer {minutes} min</value>
     <comment>en: {minutes} min raid</comment>
   </data>
   <data name="BossChance" xml:space="preserve">
@@ -661,7 +661,7 @@
     <comment>en: Reporting isn't set up in this build.</comment>
   </data>
   <data name="ReportMuted" xml:space="preserve">
-    <value>Nicht gesendet: Entwickler-Builds senden nichts.</value>
+    <value>Nicht gesendet: Entwickler-Testläufe senden nichts.</value>
     <comment>en: Not sent: developer runs send nothing.</comment>
   </data>
   <data name="ReportSent" xml:space="preserve">
@@ -689,7 +689,7 @@
     <comment>en: {count, plural, =1 {Crash report sent. Thank you. Report {id}.} other {# crash reports sent. Thank you.}}</comment>
   </data>
   <data name="ReportWhyAnswered" xml:space="preserve">
-    <value>der Berichtsdienst antwortete mit {status}</value>
+    <value>Antwort {status} vom Berichtsdienst</value>
     <comment>en: the report service answered {status}</comment>
   </data>
   <data name="ReportWhyNoConnection" xml:space="preserve">
