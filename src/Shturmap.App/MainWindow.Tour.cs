@@ -670,14 +670,19 @@ public sealed partial class MainWindow
                 return;
             if (Anchor(word.Key, 0) is not { } button)
                 continue;
-            // Each label a step lower than the one before, right-aligned under its button, on a hairline up to it.
-            var top = button.Bottom + 14 + below * 24;
+            // Each label a step lower than the one before, right-aligned under its button, on a hairline up to it that
+            // stops short of its letters (review of 2026-10-10: the lines ran into the last letters, "EINSTELLUNGEN",
+            // "IDEE", "F1"): the label's box is its capitals (Tight), the line ends a few pixels above them.
+            var top = button.Bottom + 16 + below * 24;
             var x = button.X + button.Width / 2;
-            var label = new TextBlock { Text = word.Text, Style = TextStyle("StatusText"), FontSize = 11.5, Foreground = Resource("AmberBrush") };
+            var label = new TextBlock
+            {
+                Text = word.Text, Style = TextStyle("StatusText"), FontSize = 11.5, Foreground = Resource("AmberBrush"), TextLineBounds = TextLineBounds.Tight,
+            };
             label.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(label, x - label.DesiredSize.Width + 6);
             Canvas.SetTop(label, top);
-            var line = new Rectangle { Width = 1, Height = top - button.Bottom + 2, Fill = Resource("AmberBrush") };
+            var line = new Rectangle { Width = 1, Height = top - button.Bottom - 4, Fill = Resource("AmberBrush") };
             Canvas.SetLeft(line, x);
             Canvas.SetTop(line, button.Bottom);
             TourCanvas.Children.Add(line);
