@@ -83,7 +83,7 @@ switch (command)
             shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
             shturmap-cli handovers [mode]    which hand-overs fold into the objective that gets their thing, with near misses flagged
             shturmap-cli stash <png|folder>  the 2026-10-11 spike: read stash screenshots and say which quest items they show
-                                            (--set keys|quest|all, --no-ocr, --dump <folder> for pictures of the grids found)
+                                            (--set keys|quest|all, --truth <file>, --dump <folder> for pictures of the grids found)
             shturmap-cli study [on|off]      developer builds: show or set the "Keep a study log" switch (Shturmap closed)
 
             --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
