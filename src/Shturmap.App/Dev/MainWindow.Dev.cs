@@ -206,6 +206,15 @@ public sealed partial class MainWindow
         return null;
     }
 
+    /// <summary>SEEN IN YOUR STASH with the example items (MainWindow.StashCue), as a reading shows it.</summary>
+    internal string? DevStashCue()
+    {
+        if (_snapshot?.Data is not { } data)
+            return "no data";
+        ShowCue(StashExampleCue(data), "dev");
+        return null;
+    }
+
     internal void DevExit()
     {
         _devView?.Close();

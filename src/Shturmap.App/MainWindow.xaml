@@ -38,6 +38,9 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
+          <!-- A mark just arrived: the row flashes gold once (Controls.Glow). -->
+          <Rectangle Grid.ColumnSpan="2" Margin="-6,-4" Fill="{StaticResource AmberBrush}" Opacity="0" IsHitTestVisible="False"
+                     Visibility="{x:Bind FreshVisibility}" Tag="flash" Loaded="OnGlowLoaded" />
           <controls:Picture ItemId="{x:Bind ItemId}" Glyph="{x:Bind Glyph}" Size="40" />
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
             <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
@@ -51,6 +54,11 @@
               </Grid.ColumnDefinitions>
               <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource InkBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />
               <TextBlock Grid.Column="1" Text="{x:Bind Mark}" Style="{StaticResource NoteText}" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+              <!-- The same in gold over it, fading to let the ink through: a mark just arrived glows in (Controls.Glow). -->
+              <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,3,0,0"
+                        Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind FreshVisibility}" Loaded="OnGlowLoaded" />
+              <TextBlock Grid.Column="1" Text="{x:Bind Mark}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
+                         Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind FreshVisibility}" Loaded="OnGlowLoaded" />
             </Grid>
             <TextBlock Text="{x:Bind Source}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}"
                        Visibility="{x:Bind SourceVisibility}" />
@@ -705,6 +713,9 @@
                                     <ColumnDefinition Width="*" />
                                   </Grid.ColumnDefinitions>
                                   <Image Source="{x:Bind Swatch}" Width="56" Height="34" VerticalAlignment="Top" Visibility="{x:Bind SwatchVisibility}" />
+                                  <!-- What you have: the stash grid glyph the marks carry. -->
+                                  <FontIcon Glyph="&#xE80A;" FontSize="22" Foreground="{StaticResource InkBrush}" Width="56" Height="34"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind StashVisibility}" />
                                   <!-- The raid card's clock, small: its figure over its rule. -->
                                   <StackPanel Width="56" Height="34" VerticalAlignment="Top" Visibility="{x:Bind ClockVisibility}" Padding="2,2,2,0">
                                     <StackPanel Orientation="Horizontal" Spacing="3">
@@ -1221,8 +1232,11 @@
                   <ScaleTransform x:Name="CueStampScale" />
                 </Grid.RenderTransform>
                 <Ellipse Fill="{StaticResource AmberBrush}" />
-                <Path Data="M 8.5,15.5 L 13,20 L 21.5,10.5" Stroke="{StaticResource GroundBrush}" StrokeThickness="2.6"
+                <Path x:Name="CueStampCheck" Data="M 8.5,15.5 L 13,20 L 21.5,10.5" Stroke="{StaticResource GroundBrush}" StrokeThickness="2.6"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                <!-- SEEN IN YOUR STASH's stamp: the stash grid glyph the marks carry, in place of the check (MainWindow.StashCue). -->
+                <FontIcon x:Name="CueStampGlyph" Glyph="&#xE80A;" FontSize="14" Foreground="{StaticResource GroundBrush}"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
               </Grid>
             </Grid>
             <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"

@@ -51,6 +51,9 @@ public sealed partial class QuestCard : UserControl, ICard
 
     public static Visibility ShownIfTrue(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
 
+    // A BRING row's mark just arrived: its gold overlay fades to ink, the row flashes (Controls.Glow).
+    private void OnGlowLoaded(object sender, RoutedEventArgs e) => Glow.OnLoaded(sender, e);
+
     /// <summary>An objective's text: muted once it is ticked as done.</summary>
     public static Brush TextBrush(bool done) => (Brush)Application.Current.Resources[done ? "MutedBrush" : "InkBrush"];
 

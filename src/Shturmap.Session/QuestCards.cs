@@ -44,6 +44,9 @@ public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemI
     /// With a mark, <see cref="Source"/> says where to get the rest, if any.</summary>
     public string Mark { get; init; } = "";
 
+    /// <summary>The mark arrived this moment: its line glows in on the card, as on the BRING row.</summary>
+    public bool Fresh { get; init; }
+
     /// <summary>
     /// Every item the row stands for ("A or B", gear worn together, a weapon class): it is each of them for the linked
     /// highlight, though it pictures <see cref="ItemId"/>, the first. One item for a plain row.

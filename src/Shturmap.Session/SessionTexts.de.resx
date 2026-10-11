@@ -793,11 +793,11 @@
     <comment>en: {count} more: {source}</comment>
   </data>
   <data name="StashSeenItems" xml:space="preserve">
-    <value>In deinem Stash gesehen: {count, plural, one {# Item} other {# Items}}, die deine Quests brauchen.</value>
+    <value>In deinem Stash gesehen: {count, plural, one {# Item, das deine Quests brauchen} other {# Items, die deine Quests brauchen}}.</value>
     <comment>en: Seen in your stash: {count, plural, one {# item} other {# items}} your quests need.</comment>
   </data>
   <data name="StashSeenKeys" xml:space="preserve">
-    <value>In deinem Stash gesehen: {count, plural, one {# Key} other {# Keys}}, die deine Quests brauchen.</value>
+    <value>In deinem Stash gesehen: {count, plural, one {# Key, den deine Quests brauchen} other {# Keys, die deine Quests brauchen}}.</value>
     <comment>en: Seen in your stash: {count, plural, one {# key} other {# keys}} your quests need.</comment>
   </data>
 </root>

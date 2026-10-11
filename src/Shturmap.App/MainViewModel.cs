@@ -143,13 +143,19 @@ public sealed record RequirementLine(string Glyph, string Text, string For, stri
 
     public Visibility MarkVisibility => Mark.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>The mark arrived this moment (a reading, a message of the log): its line glows in, gold easing to ink,
+    /// and the row flashes once (Controls.Glow). Left out of <see cref="Same"/>: a row on screen keeps its glow.</summary>
+    public bool Fresh { get; init; }
+
+    public Visibility FreshVisibility => Fresh && Mark.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);
 
     /// <inheritdoc cref="QuestLine.Same"/>
     public static bool Same(RequirementLine a, RequirementLine b) =>
-        a == b with { QuestIds = a.QuestIds, Alternatives = a.Alternatives }
+        a == b with { QuestIds = a.QuestIds, Alternatives = a.Alternatives, Fresh = a.Fresh }
         && Rules.RowLists.Same(a.QuestIds, b.QuestIds) && Rules.RowLists.Same(a.Alternatives, b.Alternatives);
 }
 
@@ -290,11 +296,15 @@ public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explana
 
 /// <summary>A line of the What's New card: what is new, and its picture (a map symbol, or the clock's small drawing).</summary>
 /// <param name="Key">Which line it is, for the preview: "0.4.0:2".</param>
-public sealed record WhatsNewRow(string Key, string Name, string Text, Microsoft.UI.Xaml.Media.ImageSource? Swatch, bool Clock)
+/// <param name="Clock">The line's picture is the raid card's clock, drawn in XAML.</param>
+/// <param name="Stash">The line's picture is the stash grid glyph the marks carry (what you have).</param>
+public sealed record WhatsNewRow(string Key, string Name, string Text, Microsoft.UI.Xaml.Media.ImageSource? Swatch, bool Clock, bool Stash = false)
 {
     public Visibility SwatchVisibility => Swatch is null ? Visibility.Collapsed : Visibility.Visible;
 
     public Visibility ClockVisibility => Clock ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility StashVisibility => Stash ? Visibility.Visible : Visibility.Collapsed;
 }
 
 /// <summary>A version's lines on the What's New card, under "NEW IN 0.4.0".</summary>

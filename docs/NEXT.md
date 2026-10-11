@@ -131,6 +131,24 @@ Left, for the owner to decide or do:
 - **Two needed items of one short name** (two keycards both called "Access") stay silent: the reading won't choose,
   and the session passes both. A rule for that (the art decides when it can; else the first) is a small change if it
   turns out to matter.
+- **The messages screen** (owner, 2026-10-11, testing: "When you get items delivered from the traders through the
+  messages screen, these items will be on the left hand side of the screen"): built the same evening from the owner's
+  two screenshots of it. A message's attachments stand in a grid of the stash's width at the left, set in from the
+  edge by most of a cell (64 px at 2560) where the trader's grid hangs on it (11 px); the reader tells the two apart,
+  never reads the attachments (not the player's until taken) and reads the stash beside them as on any other screen
+  (`StashGrids.PlaceOf`, `StashGridPlace.Message`; a drawn test). On the owner's two screenshots the attachments'
+  faint lines give no grid at all (`shturmap-cli stash --grids`: one grid, the stash), so they read as a stash page
+  either way; the rule holds for when they do. Done.
+- **In a raid, nothing goes into the ledger** (owner, 2026-10-11: "the player still can die"). Holds, and
+  `StashSessionTests` pins it now: a menu-named screenshot while the raid runs opens no picture and marks nothing.
+  Done.
+- **Feedback with motion** (owner, 2026-10-11: "a little eyecandy animation when the app recognises the player updates
+  the stash … give proper feedback and look cool visually"; of the cue, the rail's glow or both, "C"): built the
+  same evening. The SEEN IN YOUR STASH cue pictures the needed items a screenshot showed with their counts, readings
+  in a run join it, and the marks that just arrived glow in on the rail and the quest card (DESIGN.md §4, principle
+  11 and "What you have"; `MainWindow.StashCue`, `Controls.Glow`). What's New's 0.5.0 lines preview it (`stash`,
+  `stash-card`, `stash-given`) instead of opening the tour, which the owner reported as a bug the same evening. The
+  developer view's `stash` shows the cue with the example items. Done.
 - **The layout check in both languages** before the release (docs/LANGUAGES.md; about 45 minutes), and the website's
   words (the website says what Shturmap reads).
 - **I HAVE IT** (the player's word, phase 3): not built; the ledger knows the source. Build it only if the first

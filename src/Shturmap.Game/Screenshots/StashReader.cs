@@ -24,7 +24,8 @@ public enum StashGridKind
 public sealed record StashGridReading(StashGridKind Kind, IReadOnlyList<StashItemSeen> Items);
 
 /// <summary>What one menu screenshot showed. IsTradingScreen: the trading screen, whose stash cells show prices instead
-/// of names; then Grids is empty.</summary>
+/// of names; then Grids is empty. The messages screen's grid of a message's attachments (at the left; not the player's
+/// until taken) is never among the grids: only the stash beside it is.</summary>
 public sealed record StashReading(bool IsTradingScreen, IReadOnlyList<StashGridReading> Grids);
 
 /// <summary>
@@ -208,7 +209,8 @@ public sealed class StashReader
 
         var entries = candidates.Select(c => new Entry(c, c.GridImage is null ? null : Arts.GetValue(c.GridImage, image => new Art(image)))).ToList();
         var looks = new List<StashGridLook>();
-        foreach (var grid in grids)
+        // A message's attachments (the messages screen's grid at the left) aren't the player's until taken: not read.
+        foreach (var grid in grids.Where(g => g.Place != StashGridPlace.Message))
         {
             var hidden = StashGrids.Hidden(grid, grids, pitch);
             var empty = StashGrids.Empty(grid, highPassed, pitch);

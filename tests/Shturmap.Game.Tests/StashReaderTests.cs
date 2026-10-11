@@ -234,6 +234,26 @@ public sealed class StashReaderTests : IDisposable
         Assert.Empty(reading.Grids);
     }
 
+    // The messages screen (owner, 2026-10-11: delivered items "will be on the left hand side of the screen"): a
+    // message's attachments stand in a grid of the stash's width at the left, set in from the edge by most of a cell
+    // where the trader's grid hangs on the edge, level with the stash. They aren't the player's until taken.
+    [Fact]
+    public async Task The_messages_screens_attachments_at_the_left_are_never_read_and_the_stash_beside_them_is()
+    {
+        var page = StashPage(2560, 1440);
+        var (_, y) = page.StashOrigin;
+        page.Grid(64, y, 10, 14, 1);
+        page.Item(64, y, 1, 0, 0, 1, 1, "Ostrel");
+        page.Item(64, y, 1, 3, 0, 1, 1, "Hollin");
+        var path = page.Save(_root, "messages.png");
+        var reading = await Reader().ReadAsync(path, Everything, tries: 1, ct: Ct);
+        Assert.NotNull(reading);
+        Assert.False(reading.IsTradingScreen);
+        var stash = Assert.Single(reading.Grids);
+        Assert.Equal(StashGridKind.Stash, stash.Kind);
+        Assert.Equal([Id(1), Id(2), Id(3), Id(4), Id(5), Id(6), Id(7)], ById(stash).Keys.Order());
+    }
+
     [Fact]
     public async Task A_window_dragged_left_of_the_middle_is_still_a_window()
     {

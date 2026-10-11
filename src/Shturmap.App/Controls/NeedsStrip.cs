@@ -19,9 +19,13 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title)
     /// <summary>Something is known of having it (a mark; docs/DESIGN.md §4, "What you have"): a thin ink bar under the cell.</summary>
     public bool Marked { get; init; }
 
+    /// <summary>The mark arrived this moment: the bar glows in, gold easing to ink (Glow). Left out of <see cref="Same"/>:
+    /// a cell on screen keeps its glow.</summary>
+    public bool Fresh { get; init; }
+
     /// <summary>Whether two cells say the same, their alternatives too (Rules.RowLists).</summary>
     public static bool Same(NeedChip a, NeedChip b) =>
-        a == b with { Alternatives = a.Alternatives } && Rules.RowLists.Same(a.Alternatives, b.Alternatives);
+        a == b with { Alternatives = a.Alternatives, Fresh = a.Fresh } && Rules.RowLists.Same(a.Alternatives, b.Alternatives);
 }
 
 /// <summary>
@@ -94,6 +98,20 @@ public sealed partial class NeedsStrip : StackPanel
                     IsHitTestVisible = false,
                     Background = (Brush)Application.Current.Resources["InkBrush"],
                 });
+                if (need.Fresh)
+                {
+                    // Just arrived: a gold bar over the ink one, fading to let the ink through.
+                    var glow = new Border
+                    {
+                        Height = 2,
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        IsHitTestVisible = false,
+                        Opacity = 0,
+                        Background = (Brush)Application.Current.Resources["AmberBrush"],
+                    };
+                    glow.Loaded += (bar, _) => Glow.Fade((UIElement)bar, 1, Glow.Length);
+                    marked.Children.Add(glow);
+                }
                 Children.Add(marked);
             }
             else

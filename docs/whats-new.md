@@ -4,9 +4,10 @@ The lines of the card at the top of Plan's rail after an update (docs/DESIGN.md 
 Built into the app. One section per version, newest first, up to five lines each:
 `- preview · Name · What it is.` The preview says what pointing at the line shows on the map: `replay` (the raid replay
 on an example raid), `extracts` (an example extract list), `clock` (the raid card's clock with example times), `joined`
-(Gratitude's two objectives on one spot) or `leaders` (symbols set apart at Streets' Scav Checkpoint). A line about the
-tour previews nothing and opens it when clicked: `tour` at its start, `tour:5` at its fifth chapter (a chapter the
-release changed; docs/tour.md). Words as the design system's "Words": short, fragments are fine. Add the next version's
+(Gratitude's two objectives on one spot), `leaders` (symbols set apart at Streets' Scav Checkpoint), `stash` (the SEEN
+IN YOUR STASH cue with example items), `stash-card` (an item card with an example mark from a screenshot and NOT ANY
+MORE) or `stash-given` (one with an example mark from the game's log). A line about the tour previews nothing and
+opens it when clicked: `tour` at its start, `tour:5` at its fifth chapter (a chapter the release changed; docs/tour.md). Words as the design system's "Words": short, fragments are fine. Add the next version's
 section with its release (CLAUDE.md). A release that raises the minor or major number has a name, the owner's, after
 its version (`## 0.4.0 · Praetorian`); a patch release keeps its line's name without repeating it. The name shows in
 the card's heading, help's link to it, the version line in settings and the release's title on GitHub.
@@ -18,9 +19,9 @@ translated. A version the translation lacks, or whose lines aren't this section'
 
 ## 0.5.0
 
-- tour:1 · What you have · Screenshot your key tool or stash in the game: the items your quests need say "Seen in your stash".
-- tour:1 · From the game's log · What a quest hands you at its start, its rewards and insurance returns get a mark too.
-- tour:1 · Not any more · One click on an item's card takes a mark back. Marks never change the plan.
+- stash · What you have · Screenshot your key tool or stash in the game: the items your quests need say "Seen in your stash".
+- stash-given · From the game's log · What a quest hands you at its start, its rewards and insurance returns get a mark too.
+- stash-card · Not any more · One click on an item's card takes a mark back. Marks never change the plan.
 - tour · Deutsch · Shturmap speaks German: it follows the game's language, or pick one in settings.
 
 ## 0.4.0 · Praetorian

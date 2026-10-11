@@ -53,6 +53,7 @@ public static class DevScript
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
         ["whatsnew"] = "[<n>]: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview)",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
+        ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs",
         ["exit"] = "closes the app",

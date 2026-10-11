@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Shturmap.App.Rules;
 using Shturmap.Core;
+using Shturmap.Core.Planning;
 using Shturmap.Core.Text;
 using Shturmap.Map;
 using Shturmap.Session;
@@ -102,7 +103,8 @@ public sealed partial class MainWindow
         _whatsNewShown = sections;
         ViewModel.WhatsNewBlocks = sections
             .Select(section => new WhatsNewBlock(WhatsNew.Heading(section),
-                section.Items.Select((item, i) => new WhatsNewRow($"{section.Label}:{i}", item.Name, item.Text, Swatch(item.Preview), item.Preview == "clock")).ToList()))
+                section.Items.Select((item, i) => new WhatsNewRow($"{section.Label}:{i}", item.Name, item.Text, Swatch(item.Preview), item.Preview == "clock",
+                    item.Preview.StartsWith("stash", StringComparison.Ordinal))).ToList()))
             .ToList();
         ViewModel.WhatsNewShown = sections.Count > 0;
     }
@@ -203,7 +205,7 @@ public sealed partial class MainWindow
             _restoreView = Map.HasView ? Map.View : null;
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewWhatsNew(name: Caps.Of(item.Name), version: section.Label);
-        ViewModel.PreviewHint = AppTexts.PreviewExample;
+        ViewModel.PreviewHint = item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
         Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
         switch (item.Preview)
         {
@@ -212,6 +214,25 @@ public sealed partial class MainWindow
                 WhatsNewPlateBox.Child = new Controls.RaidClock { Reading = RaidTime.Of(true, false, DateTime.Now.AddMinutes(-27), 40, DateTime.Now) };
                 WhatsNewPlateNote.Text = AppTexts.WhatsNewClockExample;
                 WhatsNewPlate.Visibility = Visibility.Visible;
+                break;
+            case "stash":
+                // The SEEN IN YOUR STASH cue with example items, as a reading shows it; it stays while the pointer rests
+                // on the line (MainWindow.StashCue).
+                ShowCue(StashExampleCue(data), example: true);
+                break;
+            case "stash-card":
+            case "stash-given":
+                // An item card with a made-up mark, on the plate: from a screenshot, with NOT ANY MORE; or from the
+                // game's log. The card is its own frame, so the plate's box steps back.
+                if (StashExampleCard(data, given: item.Preview == "stash-given") is { } card)
+                {
+                    WhatsNewPlateBox.Child = card;
+                    WhatsNewPlateBox.Padding = new Thickness(0);
+                    WhatsNewPlateBox.BorderThickness = new Thickness(0);
+                    WhatsNewPlateBox.Background = null;
+                    WhatsNewPlateNote.Text = AppTexts.WhatsNewStashExample;
+                    WhatsNewPlate.Visibility = Visibility.Visible;
+                }
                 break;
             case "extracts":
                 await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(data, scene, content), null, 0);
@@ -311,10 +332,37 @@ public sealed partial class MainWindow
         return new RaidReplay(customs.NormalizedName, customs.Name, fixes, 33) { Ticks = [12, 12.2], ListRead = 0.6 };
     }
 
+    // The example item card: the first of the example items, with a STASH line of today's date, solid (a card beside
+    // its row is see-through; on the plate there is nothing under it).
+    private Controls.ItemCard? StashExampleCard(Shturmap.Data.TarkovDev.GameData data, bool given)
+    {
+        if (_snapshot is not { } s || StashExampleItems(data).FirstOrDefault() is not { Id: { } itemId } example)
+            return null;
+        var date = UiLanguage.DayMonthTime(DateTime.Now);
+        // A key says so even when none of the player's quests needs it (the card learns that from the quests).
+        var view = ItemCards.Build(data, s.Sources, s.Quests, itemId, s.Done) with
+        {
+            IsKey = example.Kind == RequirementKind.Key,
+            Stash = given ? SessionTexts.MarkGiven(date: date) : SessionTexts.MarkSeenCount(count: 2.ToString("N0", UiLanguage.Culture), date: date),
+        };
+        return new Controls.ItemCard(view) { Opacity = 1 };
+    }
+
     private void EndWhatsNewPreview()
     {
         WhatsNewPlate.Visibility = Visibility.Collapsed;
         WhatsNewPlateBox.Child = null;
+        WhatsNewPlateBox.Padding = new Thickness(20, 18, 20, 18);
+        WhatsNewPlateBox.BorderThickness = new Thickness(1);
+        WhatsNewPlateBox.Background = Resource("RailBrush");
         ViewModel.PreviewHint = AppTexts.PreviewClickToPlan;
+        // The stash cue shown as an example ends with its preview.
+        if (_stashExample)
+        {
+            EndStashSeen();
+            _cueStory?.Stop();
+            _cueTimer?.Stop();
+            CuePanel.Visibility = Visibility.Collapsed;
+        }
     }
 }

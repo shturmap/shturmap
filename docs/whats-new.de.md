@@ -6,9 +6,9 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 
 ## 0.5.0
 
-- tour:1 · Was du hast · Screenshot von Key Tool oder Stash: was deine Quests brauchen, sagt „In deinem Stash gesehen“.
-- tour:1 · Aus dem Log des Spiels · Was eine Quest dir zum Start gibt, Belohnungen und Versicherung bekommen auch eine Markierung.
-- tour:1 · Nicht mehr · Ein Klick auf der Item-Karte nimmt eine Markierung zurück. Markierungen ändern nie den Plan.
+- stash · Was du hast · Screenshot von Key Tool oder Stash: was deine Quests brauchen, sagt „In deinem Stash gesehen“.
+- stash-given · Aus dem Log des Spiels · Was eine Quest dir zum Start gibt, Belohnungen und Versicherung bekommen auch eine Markierung.
+- stash-card · Nicht mehr · Ein Klick auf der Item-Karte nimmt eine Markierung zurück. Markierungen ändern nie den Plan.
 - tour · Deutsch · Shturmap spricht Deutsch: es folgt der Sprache des Spiels, oder du wählst eine in den Einstellungen.
 
 ## 0.4.0 · Praetorian

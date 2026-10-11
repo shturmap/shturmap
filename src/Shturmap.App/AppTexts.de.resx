@@ -372,6 +372,26 @@
     <value>Ein Beispiel, nicht dein Raid.</value>
     <comment>en: An example, not your raid.</comment>
   </data>
+  <data name="CueStashSeenEyebrow" xml:space="preserve">
+    <value>AUS DEINEM SCREENSHOT</value>
+    <comment>en: FROM YOUR SCREENSHOT</comment>
+  </data>
+  <data name="CueStashSeen" xml:space="preserve">
+    <value>IN DEINEM STASH GESEHEN</value>
+    <comment>en: SEEN IN YOUR STASH</comment>
+  </data>
+  <data name="CueStashSeenKeys" xml:space="preserve">
+    <value>{count, plural, one {# Key, den deine Quests brauchen} other {# Keys, die deine Quests brauchen}}</value>
+    <comment>en: {count, plural, one {# key} other {# keys}} your quests need</comment>
+  </data>
+  <data name="CueStashSeenItems" xml:space="preserve">
+    <value>{count, plural, one {# Item, das deine Quests brauchen} other {# Items, die deine Quests brauchen}}</value>
+    <comment>en: {count, plural, one {# item} other {# items}} your quests need</comment>
+  </data>
+  <data name="CueExampleStash" xml:space="preserve">
+    <value>Ein Beispiel, nicht dein Stash.</value>
+    <comment>en: An example, not your stash.</comment>
+  </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} „{name}“ · {build}</value>
     <comment>en: Shturmap {version} "{name}" · {build}</comment>
@@ -420,6 +440,10 @@
     <value>EIN BEISPIEL, NICHT DEIN RAID</value>
     <comment>en: AN EXAMPLE, NOT YOUR RAID</comment>
   </data>
+  <data name="PreviewExampleStash" xml:space="preserve">
+    <value>EIN BEISPIEL, NICHT DEIN STASH</value>
+    <comment>en: AN EXAMPLE, NOT YOUR STASH</comment>
+  </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>DIE RAID-KARTE, MIT BEISPIELWERTEN</value>
     <comment>en: THE RAID CARD, WITH EXAMPLE VALUES</comment>
@@ -451,6 +475,10 @@
   <data name="WhatsNewClockExample" xml:space="preserve">
     <value>DIE UHR DER RAID-KARTE, MIT BEISPIELZEITEN</value>
     <comment>en: THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES</comment>
+  </data>
+  <data name="WhatsNewStashExample" xml:space="preserve">
+    <value>EINE ITEM-KARTE, MIT EINER BEISPIELMARKIERUNG</value>
+    <comment>en: AN ITEM CARD, WITH AN EXAMPLE MARK</comment>
   </data>
   <data name="PreviewClickToPlan" xml:space="preserve">
     <value>KLICK ZUM PLANEN AUF DIE ZEILE</value>

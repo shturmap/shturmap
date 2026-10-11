@@ -502,6 +502,7 @@ public sealed partial class MainWindow : Window
             CloseTour("raid");
         }
         _phase = s.Raid.Phase;
+        NoteFreshMarks(s);
         ShowPicks(s);
         UpdateClockTexts();
         UpdatePicker(s);
@@ -686,7 +687,7 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
-    private static IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks) =>
+    private IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks) =>
         Planning.BringOrder(rows, picks).Select(b => BringLine(s, b.Row) with { StartsOthers = b.StartsOthers }).ToList();
 
     /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
@@ -704,20 +705,26 @@ public sealed partial class MainWindow : Window
     private static StashRowView? MarkOf(SessionSnapshot s, RequirementView r) =>
         s.Data is { } data && s.Marks.Count > 0 ? StashMarks.ForRow(data, r, s.Marks) : null;
 
-    /// <summary>A BRING row: the item, what it is for and for which quests, what is known of having it, and where to
-    /// get it (or the rest of it, under a part mark; nothing under a mark that covers the row).</summary>
-    private static RequirementLine BringLine(SessionSnapshot s, RequirementView r)
+    /// <summary>A BRING row: the item, what it is for and for which quests, what is known of having it (glowing in when
+    /// it just arrived), and where to get it (or the rest of it, under a part mark; nothing under a mark that covers
+    /// the row).</summary>
+    private RequirementLine BringLine(SessionSnapshot s, RequirementView r)
     {
         var mark = MarkOf(s, r);
         var source = mark is null ? BestSource(s, r)
             : mark.More > 0 && BestSource(s, r) is { Length: > 0 } rest ? SessionTexts.MarkMore(count: mark.More.ToString("N0", UiLanguage.Culture), source: rest)
             : "";
-        return new RequirementLine(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, source) { Alternatives = r.Alternatives, Mark = mark?.Text ?? "" };
+        return new RequirementLine(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, source)
+        {
+            Alternatives = r.Alternatives,
+            Mark = mark?.Text ?? "",
+            Fresh = mark is not null && FreshMark(r),
+        };
     }
 
     /// <summary>A tiny cell for an item, with how many (the row's, or one quest's); its tooltip says what it is, what
     /// for, what is known of having it, and where to get it.</summary>
-    private static NeedChip Chip(SessionSnapshot s, RequirementView r, int? count = null)
+    private NeedChip Chip(SessionSnapshot s, RequirementView r, int? count = null)
     {
         var mark = MarkOf(s, r);
         return new NeedChip(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, mark?.Text ?? "", BestSource(s, r) }.Where(t => t.Length > 0)))
@@ -725,12 +732,13 @@ public sealed partial class MainWindow : Window
             Alternatives = r.Alternatives,
             Count = count ?? r.Count,
             Marked = mark is not null,
+            Fresh = mark is not null && FreshMark(r),
         };
     }
 
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name, each with that quest's own
     /// number (empty: nothing).</summary>
-    private static IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
+    private IReadOnlyList<NeedChip> Chips(SessionSnapshot s, MapPlanView? plan, string questId) =>
         (plan?.Requirements ?? []).Where(r => r.QuestIds.Contains(questId)).Select(r => Chip(s, r, r.CountFor(questId))).ToList();
 
     /// <summary>
@@ -1271,7 +1279,7 @@ public sealed partial class MainWindow : Window
                 if (StashMarks.ForRow(data, row, s.Marks) is not { } mark)
                     return n;
                 var source = mark.More > 0 && n.Source.Length > 0 ? SessionTexts.MarkMore(count: mark.More.ToString("N0", UiLanguage.Culture), source: n.Source) : "";
-                return n with { Mark = mark.Text, Source = source };
+                return n with { Mark = mark.Text, Source = source, Fresh = FreshMark(row) };
             }).ToList(),
         };
     }
@@ -1602,6 +1610,7 @@ public sealed partial class MainWindow : Window
             CueKind.LoadCancelled => (map, AppTexts.CueLoadingCancelled, AppTexts.CueBackToPlanning),
             CueKind.GroupPick => (AppTexts.CueGroupPicked, map, here),
             CueKind.QuestComplete => CompletionText(),
+            CueKind.StashSeen => StashCueText(cue),
             _ => (cue.RaidLength is { } length ? AppTexts.CueMapAndLength(map: map, minutes: (int)length.TotalMinutes) : map, AppTexts.CueRaidOver,
                 _snapshot?.Plan.FirstOrDefault() is { } next
                     ? AppTexts.CueNextRaid(map: next.MapName, summary: Summary(next.Finish.Count, next.Progress.Count))
@@ -1625,6 +1634,12 @@ public sealed partial class MainWindow : Window
             _completed.Clear();
             _completedHide?.Stop();
         }
+        // SEEN IN YOUR STASH joins one on screen too, or steps back to a notice while a replay plays or QUEST COMPLETE
+        // is up (MainWindow.StashCue); any other cue ends it.
+        if (cue.Kind == CueKind.StashSeen && StashSeenHandled(cue, example))
+            return;
+        if (cue.Kind != CueKind.StashSeen && StashShowing)
+            EndStashSeen();
         // A new cue ends a replay still playing; RAID OVER with a raid to replay plays it (MainWindow.Replay).
         StopReplay("cue");
         if (cue is { Kind: CueKind.RaidOver, Replay: { Plays: false } skipped })
@@ -1639,13 +1654,17 @@ public sealed partial class MainWindow : Window
         }
         var (eyebrow, title, detail) = CueText(cue);
         if (example)
-            detail = AppTexts.CueExample;
+            detail = cue.Kind == CueKind.StashSeen ? AppTexts.CueExampleStash : AppTexts.CueExample;
         FirstRaidLine(cue, example);
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         var kitCells = ShowCueKit(cue);
+        // The stash cue's pictures need no "check your kit" over them: the title says what they are.
+        if (cue.Kind == CueKind.StashSeen)
+            CueKitLabel.Visibility = Visibility.Collapsed;
         CueStamp.Visibility = Visibility.Collapsed;
+        StampShape(cue.Kind);
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();
@@ -1660,10 +1679,10 @@ public sealed partial class MainWindow : Window
             CueRuleTopScale.ScaleX = CueRuleBottomScale.ScaleX = 1;
             CueTitleShift.Y = 0;
             CueFlash.Opacity = 0;
-            if (cue.Kind == CueKind.QuestComplete)
+            if (Stays(cue))
             {
                 StampStill();
-                HideCompletedAfter();
+                HideAfter(cue);
                 return;
             }
             if (SnapshotMode)
@@ -1695,9 +1714,9 @@ public sealed partial class MainWindow : Window
         }
         var end = CueLength(cue).TotalSeconds;
         const double k = CuePace;
-        // Developer snapshots keep the last cue up, so it can be looked at. QUEST COMPLETE stays as long as quests join
-        // it, and fades by itself (HideCompletedAfter).
-        if (SnapshotMode || cue.Kind == CueKind.QuestComplete)
+        // Developer snapshots keep the last cue up, so it can be looked at. QUEST COMPLETE and SEEN IN YOUR STASH stay
+        // as long as their kind keeps coming, and fade by themselves (HideAfter).
+        if (SnapshotMode || Stays(cue))
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1));
         else
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1), (end - 0.6, 1), (end, 0));
@@ -1716,15 +1735,15 @@ public sealed partial class MainWindow : Window
         }
         story.Completed += (_, _) =>
         {
-            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing)
+            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing && !StashShowing)
                 CuePanel.Visibility = Visibility.Collapsed;
         };
         _cueStory = story;
         story.Begin();
-        if (cue.Kind == CueKind.QuestComplete)
+        if (Stays(cue))
         {
             Stamp(0.3 * k);
-            HideCompletedAfter();
+            HideAfter(cue);
         }
         DecodeCueTitle(title);
     }

@@ -110,6 +110,9 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
+                  <!-- A mark just arrived: the row flashes gold once (Controls.Glow). -->
+                  <Rectangle Grid.ColumnSpan="2" Margin="-4,-3" Fill="{StaticResource AmberBrush}" Opacity="0" IsHitTestVisible="False"
+                             Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Fresh)}" Tag="flash" Loaded="OnGlowLoaded" />
                   <controls:Picture ItemId="{x:Bind ItemId}" Size="34" Glyph="{x:Bind controls:QuestCard.NeedGlyph(Kind)}" />
                   <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
@@ -123,6 +126,11 @@
                       </Grid.ColumnDefinitions>
                       <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource InkBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />
                       <TextBlock Grid.Column="1" Text="{x:Bind Mark}" FontSize="12" TextWrapping="Wrap" />
+                      <!-- The same in gold over it, fading to let the ink through: a mark just arrived glows in (Controls.Glow). -->
+                      <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,3,0,0"
+                                Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Fresh)}" Loaded="OnGlowLoaded" />
+                      <TextBlock Grid.Column="1" Text="{x:Bind Mark}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource AmberBrush}"
+                                 Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Fresh)}" Loaded="OnGlowLoaded" />
                     </Grid>
                     <TextBlock Text="{x:Bind Source}" Foreground="{StaticResource AmberBrush}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{x:Bind controls:QuestCard.ShownIf(Source)}" />

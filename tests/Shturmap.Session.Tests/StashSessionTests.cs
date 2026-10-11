@@ -1,6 +1,8 @@
 using System.Globalization;
 using Shturmap.Core.Logs;
+using Shturmap.Core.Planning;
 using Shturmap.Core.Quests;
+using Shturmap.Core.Raid;
 using Shturmap.Core.Stash;
 using Shturmap.Data.TarkovDev;
 using Shturmap.Game.Screenshots;
@@ -150,7 +152,12 @@ public class StashSessionTests
         Assert.Equal(2, s.Marks[Camera].FoundInRaid);
         Assert.Equal(MarkSource.Screenshot, s.Marks[Key].Source);
         Assert.False(s.StashNoteShown);
-        Assert.Contains(rig.Notices, n => n.StartsWith("Seen in your stash: 2 items", StringComparison.Ordinal));
+        // The cue: the two items it showed, with the counts seen, the key as a key.
+        var cue = Assert.Single(rig.Cues, c => c.Kind == CueKind.StashSeen);
+        Assert.Equal([(Key, 1), (Camera, 2)], cue.Kit!.Select(i => (i.ItemId, i.Count)).OrderBy(i => i.ItemId, StringComparer.Ordinal));
+        Assert.Equal(RequirementKind.Key, cue.Kit.Single(i => i.ItemId == Key).Kind);
+        Assert.Equal(RequirementKind.Bring, cue.Kit.Single(i => i.ItemId == Camera).Kind);
+        Assert.Equal(0, cue.KitMore);
         // The rows: the key is covered; two of three cameras were seen, so one more to get.
         Assert.StartsWith("Seen in your stash · ", StashMarks.ForRow(s.Data!, Row(s, Key), s.Marks)!.Text, StringComparison.Ordinal);
         var cameras = StashMarks.ForRow(s.Data!, Row(s, Camera), s.Marks)!;
@@ -185,7 +192,7 @@ public class StashSessionTests
         await rig.Until(() => asked.Count == 1, "the trading screenshot read");
         await Task.Delay(300, TestContext.Current.CancellationToken);
         Assert.Empty(rig.Snapshot.Marks);
-        Assert.Empty(rig.Notices.Where(n => n.StartsWith("Seen in your stash", StringComparison.Ordinal)));
+        Assert.DoesNotContain(rig.Cues, c => c.Kind == CueKind.StashSeen);
 
         await rig.Session.SetReadStashAsync(false);
         Assert.False(rig.Snapshot.ReadStash);
@@ -193,5 +200,23 @@ public class StashSessionTests
         MenuScreenshot(rig);
         await Task.Delay(600, TestContext.Current.CancellationToken);
         Assert.Single(asked);
+    }
+
+    // Owner, 2026-10-11: "when making a screenshot in-raid it should never go into the register since the player
+    // still can die". A screenshot named without a position while a raid runs opens no picture and marks nothing.
+    [Fact]
+    public async Task In_a_raid_no_screenshot_is_read_for_the_stash()
+    {
+        var asked = new List<IReadOnlyList<StashCandidate>>();
+        await using var rig = Rig(_ => Shows((Key, 1, null)), asked);
+        rig.Notification("ChatMessageReceived", QuestMessage(SessionRig.QuestId, 10, DateTime.Now.AddMinutes(-10)), DateTime.Now.AddMinutes(-10));
+        rig.RaidUpToItsStart("maps/customs_preset.bundle", "bigmap", DateTime.Now.AddMinutes(-5));
+        await rig.StartAsync();
+        await rig.Until(s => s.Raid.Phase == RaidPhase.InRaid, "the raid running");
+        MenuScreenshot(rig);
+        await Task.Delay(600, TestContext.Current.CancellationToken);
+        Assert.Empty(asked);
+        Assert.Empty(rig.Snapshot.Marks);
+        Assert.DoesNotContain(rig.Cues, c => c.Kind == CueKind.StashSeen);
     }
 }

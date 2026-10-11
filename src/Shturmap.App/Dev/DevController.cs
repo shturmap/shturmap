@@ -578,6 +578,11 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 if (await window.DevReplayAsync() is { } noReplay)
                     Say(noReplay);
                 break;
+            case "stash":
+                // SEEN IN YOUR STASH with the example items, as a reading shows it.
+                if (window.DevStashCue() is { } noStash)
+                    Say(noStash);
+                break;
             case "trail":
                 // The pointer's last places in the main window, as pairs of x and y, for the cards to tell where it
                 // is heading (CardAim). No pointer moves: the card stack is told what its window would tell it.

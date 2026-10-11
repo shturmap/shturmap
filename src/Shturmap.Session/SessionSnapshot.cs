@@ -30,6 +30,11 @@ public enum CueKind
     /// <summary>The game's log says a quest was completed (at its trader, between raids): the cue says so and what it
     /// unlocks, and its places on the map ring out and go.</summary>
     QuestComplete,
+
+    /// <summary>A menu screenshot showed items the quests need (docs/DESIGN.md §4, "What you have"): the cue pictures
+    /// them (<see cref="ViewCue.Kit"/>, with the counts seen) under SEEN IN YOUR STASH. <see cref="ViewCue.MapName"/>
+    /// is empty.</summary>
+    StashSeen,
 }
 
 /// <summary>A quest the log just reported completed, for the QUEST COMPLETE cue.</summary>
@@ -39,7 +44,8 @@ public sealed record CompletedQuest(string QuestId, string Name, string? TraderI
 /// <summary>A change of view the app makes on its own, announced big in the middle of the map for a few seconds.</summary>
 /// <param name="RaidLength">How long the raid lasted (raid over).</param>
 /// <param name="Kit">For a raid loading or a group's pick, the first items of the kit reminder, pictured under the map's
-/// name (<see cref="Planning.CueKit"/>); <paramref name="KitMore"/> says how many more ("+3").</param>
+/// name (<see cref="Planning.CueKit"/>); for SEEN IN YOUR STASH, the needed items the screenshot showed, with the counts
+/// seen. <paramref name="KitMore"/> says how many more ("+3").</param>
 /// <param name="Replay">At a raid's end, its replay (<see cref="RaidReplay"/>); the cue plays it when it
 /// <see cref="RaidReplay.Plays"/>.</param>
 /// <param name="Completed">For QUEST COMPLETE, the quest (<paramref name="MapName"/> is then its name).</param>

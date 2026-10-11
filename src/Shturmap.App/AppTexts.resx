@@ -372,6 +372,26 @@
     <value>An example, not your raid.</value>
     <comment>The cue's line when the tour shows it with an example raid.</comment>
   </data>
+  <data name="CueStashSeenEyebrow" xml:space="preserve">
+    <value>FROM YOUR SCREENSHOT</value>
+    <comment>The SEEN IN YOUR STASH cue's eyebrow, over its title: a screenshot taken in the game's menus showed items the quests need. Capitals.</comment>
+  </data>
+  <data name="CueStashSeen" xml:space="preserve">
+    <value>SEEN IN YOUR STASH</value>
+    <comment>The cue's title when a menu screenshot showed items the quests need; they are pictured under it. "Stash" is the game's word. Capitals.</comment>
+  </data>
+  <data name="CueStashSeenKeys" xml:space="preserve">
+    <value>{count, plural, one {# key} other {# keys}} your quests need</value>
+    <comment>The SEEN IN YOUR STASH cue's line when everything it pictures is keys. {count}: how many keys.</comment>
+  </data>
+  <data name="CueStashSeenItems" xml:space="preserve">
+    <value>{count, plural, one {# item} other {# items}} your quests need</value>
+    <comment>As CueStashSeenKeys when it pictures items, or keys and items. {count}: how many.</comment>
+  </data>
+  <data name="CueExampleStash" xml:space="preserve">
+    <value>An example, not your stash.</value>
+    <comment>The SEEN IN YOUR STASH cue's line when What's New shows it with example items.</comment>
+  </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} "{name}" · {build}</value>
     <comment>Settings, the line at its foot. {version}: the version, 0.4.0+d349909; {name}: its release's name, Praetorian (a name, not translated); {build}: what kind of build it is (BuildInstalled, BuildDev, BuildFolder). The language's quotation marks.</comment>
@@ -420,6 +440,10 @@
     <value>AN EXAMPLE, NOT YOUR RAID</value>
     <comment>Beside the preview label, while the tour or What's New shows an example on the map. Capitals.</comment>
   </data>
+  <data name="PreviewExampleStash" xml:space="preserve">
+    <value>AN EXAMPLE, NOT YOUR STASH</value>
+    <comment>As PreviewExample, while What's New previews what you have (the SEEN IN YOUR STASH cue, an item card with an example mark). Capitals.</comment>
+  </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>THE RAID CARD, WITH EXAMPLE VALUES</value>
     <comment>The tour's example raid card: the line under it. Capitals.</comment>
@@ -451,6 +475,10 @@
   <data name="WhatsNewClockExample" xml:space="preserve">
     <value>THE RAID CARD'S CLOCK, WITH EXAMPLE TIMES</value>
     <comment>What's New, the clock's preview: the line under the raid card's clock. Capitals.</comment>
+  </data>
+  <data name="WhatsNewStashExample" xml:space="preserve">
+    <value>AN ITEM CARD, WITH AN EXAMPLE MARK</value>
+    <comment>What's New, the previews of what you have: the line under an item card shown with a made-up STASH line. Capitals.</comment>
   </data>
   <data name="PreviewClickToPlan" xml:space="preserve">
     <value>CLICK ITS ROW TO PLAN IT</value>

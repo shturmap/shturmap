@@ -154,9 +154,22 @@ public sealed partial class GameSession
         return candidates;
     }
 
-    // Under the gate: the ids BRING lists as keys, for the notice's words.
-    private HashSet<string> NeededKeys() =>
-        _plan.SelectMany(p => p.Requirements).Where(r => r.Kind == RequirementKind.Key).SelectMany(r => r.Alternatives ?? [r.ItemId]).ToHashSet(StringComparer.Ordinal);
+    // Under the gate: the kind BRING lists each needed item as (a key, or something to bring, wear or fit), for the
+    // cue's glyphs and words; the first row that names an item decides.
+    private Dictionary<string, RequirementKind> NeededKinds()
+    {
+        var kinds = new Dictionary<string, RequirementKind>(StringComparer.Ordinal);
+        foreach (var r in _plan.SelectMany(p => p.Requirements))
+        {
+            foreach (var id in r.Alternatives ?? [r.ItemId])
+                kinds.TryAdd(id, r.Kind);
+        }
+        return kinds;
+    }
+
+    // How many pictures the SEEN IN YOUR STASH cue holds, three rows of eight as the kit reminder (Planning.CueKit);
+    // the rest is "+N".
+    private const int StashCueShown = 24;
 
     // A screenshot without a position, taken in the menus: its item grids, read against what the quests need.
     // Reading takes a moment (decoding, the recognition per cell), so it runs outside the gate.
@@ -204,9 +217,14 @@ public sealed partial class GameSession
             SaveStashIfDirty();
             if (items.Count > 0)
             {
-                var ids = items.Select(i => i.ItemId).Distinct(StringComparer.Ordinal).ToList();
-                var keys = NeededKeys();
-                Say(ids.All(keys.Contains) ? SessionTexts.StashSeenKeys(count: ids.Count) : SessionTexts.StashSeenItems(count: ids.Count));
+                // The SEEN IN YOUR STASH cue (owner, 2026-10-11: "a little eyecandy animation when the app recognises
+                // the player updates the stash"; docs/DESIGN.md §4, principle 11): the needed items it showed, each
+                // once with the most seen of it. Nothing for a screenshot that showed none.
+                var kinds = NeededKinds();
+                var shown = items.GroupBy(i => i.ItemId, StringComparer.Ordinal)
+                    .Select(g => new CueItem(g.Key, kinds.GetValueOrDefault(g.Key, RequirementKind.Bring), Count: g.Max(i => i.Count)))
+                    .ToList();
+                Announce(new ViewCue(CueKind.StashSeen, "", Kit: shown.Take(StashCueShown).ToList(), KitMore: Math.Max(0, shown.Count - StashCueShown)));
             }
             Publish();
         }

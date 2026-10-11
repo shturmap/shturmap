@@ -1,12 +1,17 @@
 namespace Shturmap.Game.Screenshots;
 
-/// <summary>Where a grid stands on the screen: the stash at the right, a container window over it, or the trader's
-/// grid at the left of the trading screen.</summary>
+/// <summary>Where a grid stands on the screen: the stash at the right, a container window over it, the trader's
+/// grid at the left of the trading screen, or a message's attachments at the left of the messages screen.</summary>
 internal enum StashGridPlace
 {
     Stash,
     Window,
     Left,
+
+    /// <summary>The messages screen's grid of what a message delivers (a trader's items, rewards), ten wide at the left
+    /// with a margin to the edge (owner, 2026-10-11: those items "will be on the left hand side of the screen"). Not
+    /// the player's until taken, so never read; the stash at the right is read as on any other screen.</summary>
+    Message,
 }
 
 /// <summary>A grid of cells found in the picture: its top left in pixels, its size in cells, and where it stands.</summary>
@@ -67,11 +72,14 @@ internal static class StashGrids
     }
 
     // The stash is ten wide at the right. The trader's grid on the trading screen hangs on the screen's left edge
-    // (11 px in at 2560 wide) and stands left of the middle; a container window dragged left of the middle but not
-    // to the edge is a window (seen 2026-10-11, three nested windows over the gear screen).
+    // (11 px in at 2560 wide, a seventh of a cell) and stands left of the middle. The messages screen's grid of a
+    // message's attachments is ten wide at the left too, but set in from the edge by most of a cell (64 px at 2560,
+    // the owner's two screenshots of 2026-10-11), its top level with the stash's. A container window dragged left of
+    // the middle but not to the edge is a window (seen 2026-10-11, three nested windows over the gear screen).
     private static StashGridPlace PlaceOf(int x0, int cols, int w, int pitch) =>
         cols == StashColumns && x0 > w / 2 ? StashGridPlace.Stash
-        : x0 < pitch && x0 + cols * pitch < w / 2 ? StashGridPlace.Left
+        : x0 < pitch / 2 && x0 + cols * pitch < w / 2 ? StashGridPlace.Left
+        : cols == StashColumns && x0 < pitch && x0 + cols * pitch < w / 2 ? StashGridPlace.Message
         : StashGridPlace.Window;
 
     private static List<StashGrid> FromFramedCells(StashLines lines, StashGray gray, int w, int h, int pitch)

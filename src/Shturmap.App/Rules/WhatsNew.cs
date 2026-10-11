@@ -24,10 +24,12 @@ public static class WhatsNew
 
     /// <summary>
     /// The previews the app knows: the replay on an example raid, an example extract list, the raid card's clock with
-    /// example times, a quest's objectives on one spot, symbols set apart on a crowded spot.
+    /// example times, a quest's objectives on one spot, symbols set apart on a crowded spot; and, for what you have
+    /// (0.5.0), the SEEN IN YOUR STASH cue with example items ("stash"), an item card with a mark from a screenshot and
+    /// NOT ANY MORE ("stash-card"), and one with a mark from the game's log ("stash-given").
     /// </summary>
     public static readonly IReadOnlySet<string> Previews = new HashSet<string>(StringComparer.Ordinal)
-        { "replay", "extracts", "clock", "joined", "leaders" };
+        { "replay", "extracts", "clock", "joined", "leaders", "stash", "stash-card", "stash-given" };
 
     /// <summary>
     /// Whether the app knows what a line's preview is: one of <see cref="Previews"/>, or a line about the tour ("tour",

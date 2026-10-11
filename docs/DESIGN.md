@@ -98,7 +98,11 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
   menu screenshot so), while the log shows the menus (not a raid loading or running). Never one already in the
   folder, never a raid screenshot (those keep their one corner). The trading screen (a grid of cells hanging on the
   screen's left edge, the trader's; the stash's cells show prices there, not names) is recognised and nothing is read
-  from it.
+  from it. The messages screen (owner, 2026-10-11: a message's attachments, a trader's delivery or a reward, "will be
+  on the left hand side of the screen", in a grid of the stash's width set in from the edge by most of a cell where
+  the trader's hangs on it) is told from it: the attachments aren't the player's until taken and are never read; the
+  stash beside them is read as on any other screen (`StashGridPlace.Message`, a drawn test). On the owner's two
+  screenshots of it the attachments' faint lines give no grid at all, so they read as a stash page either way.
 - **How much of it:** the item grids the picture shows (the stash, a container's window): their cells' labels, read
   with the text recognition built into Windows (`Windows.Media.Ocr`, on the PC, nothing sent), their stack counts
   (a count of one digit reads as one: "at least" holds) and the found-in-raid mark (a drawn shape of Shturmap's own
@@ -451,6 +455,19 @@ outside raids only, and still in the cues' own motion), and the QUEST COMPLETE c
     after the last quest joined, 12 s at most, then fades. It replaces the one-line notice "… completed" (a start or a
     failure keeps its notice). One that comes while a replay plays waits for it to end; never for the log read back
     at start. On the map the quest's places ring out ("Map drawing").
+    **SEEN IN YOUR STASH** (owner, 2026-10-11: "a little eyecandy animation when the app recognises the player updates
+    the stash to reflect the player's action and give proper feedback and look cool visually"; chose the cue and the
+    rail's glow together): when a menu screenshot showed items the quests need ("What you have"), the cue pictures
+    them under its title as the kit reminder pictures the kit, each with the count seen ("×3"), under the stash glyph
+    stamped in as the check is; "FROM YOUR SCREENSHOT" over it, "3 keys your quests need" under it (keys when every
+    one is a key). A stash is paged through in a run of screenshots, so a reading that comes while the cue is up joins
+    it: its new items come in after the ones there, a newer count replaces the shown one, the line counts them all,
+    the stamp pops again, 5 s more, 12 s at most (`MainWindow.StashCue`). Nothing for a reading that showed none:
+    silence stays honest. While a replay plays, QUEST COMPLETE is up or the tour shows its own cue, the one-line
+    notice says it instead ("Seen in your stash: 3 keys your quests need."): none of those is cut for it. On the rail
+    and the quest card the marks that just arrived glow in by themselves, from the snapshot that brought them: a gold
+    copy of the mark's line over the ink one, fading out over 1.2 s so the gold eases to ink, the need cell's bar the
+    same, and the row flashes once, faintly (`Controls.Glow`); with animation effects off the mark simply stands.
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -836,7 +853,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID", and leaving puts the map back as it was. The
     previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
     list on Customs, the raid card's own clock with example times on a plate over the dimmed map (`RaidClock`), Gratitude's
-    two objectives on one spot on Woods, Streets' Scav Checkpoint where an extract and a transit stand apart. Nothing of
+    two objectives on one spot on Woods, Streets' Scav Checkpoint where an extract and a transit stand apart; and for
+    what you have (0.5.0; the lines first opened the tour at its first chapter, which the owner reported as a bug on
+    2026-10-11) `stash`, the SEEN IN YOUR STASH cue with example items (three keys and three items of the data's
+    quests, the same for every player), `stash-card` and `stash-given`, an item card on the plate with a made-up
+    STASH line of today's date, from a screenshot with NOT ANY MORE or from the game's log. Nothing of
     the player's is shown or changed, and nothing is bundled: every picture and preview is drawn when it shows, from the
     cache, by the app's own code (`MainWindow.WhatsNew`). **When:** at the first start of a version with lines, outside
     raids; the versions newer than the one last seen (`whatsNew.seen` in shturmap.db), newest first, each under its
@@ -1860,8 +1881,11 @@ screenshots of …" is said in words, not colour (muted keeps its one meaning). 
 - **The item card:** a STASH section above GET IT with the mark (with the count and the time: "2 seen in your stash,
   found in raid · 5 Oct, 21:40") and NOT ANY MORE, the one click that retracts it, no confirmation. No section when
   nothing is known (nothing to act on; I HAVE IT, the player's word, is not built: "only if gaps remain").
-- **One notice** after a menu screenshot that showed something a quest needs: "Seen in your stash: 3 keys your quests
-  need." Nothing is said for a screenshot that showed none.
+- **The cue** SEEN IN YOUR STASH after a menu screenshot that showed something a quest needs, the items pictured with
+  their counts (principle 11), and **the glow**: the marks that just arrived (from a screenshot or the log) glow in on
+  the BRING rows, the need cells and the quest card's BRING rows, gold easing to ink over a second, the row flashing
+  once (`Controls.Glow`). The one-line notice ("Seen in your stash: 3 keys your quests need.") only while a replay
+  plays or QUEST COMPLETE is up. Nothing is said for a screenshot that showed none.
 - **One note** under BRING on the open card, until the first mark from a screenshot: "Screenshot your key tool in the
   game: the keys your quests need get a mark." Then gone.
 - **One setting** (§2) and a line in tour chapter 1's "reads" list.
