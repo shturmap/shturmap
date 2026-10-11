@@ -800,4 +800,8 @@
     <value>In deinem Stash gesehen: {count, plural, one {# Key, den deine Quests brauchen} other {# Keys, die deine Quests brauchen}}.</value>
     <comment>en: Seen in your stash: {count, plural, one {# key} other {# keys}} your quests need.</comment>
   </data>
+  <data name="StashForgotten" xml:space="preserve">
+    <value>{count, plural, one {# Markierung} other {# Markierungen}} vergessen. Der nächste Menü-Screenshot oder die nächste Log-Nachricht markiert wieder.</value>
+    <comment>en: Forgot {count, plural, one {# mark} other {# marks}}. The next menu screenshot or log message marks again.</comment>
+  </data>
 </root>

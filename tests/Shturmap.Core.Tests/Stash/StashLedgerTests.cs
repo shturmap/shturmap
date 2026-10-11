@@ -134,6 +134,62 @@ public class StashLedgerTests
         Assert.NotNull(ledger.MarkOf(seen));
     }
 
+    // Owner, 2026-10-11: "how do we deal with the inventory depleting over time". A quest completed used up what it
+    // was brought (planted, marked, handed over): the marks from before the completion lose that count, once.
+    [Fact]
+    public void A_quest_completed_takes_what_it_used_up_from_marks_seen_before_it_and_only_once()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "shturmap-ledger-" + Guid.NewGuid(), "stash.json");
+        var ledger = new StashLedger();
+        ledger.ApplyScreenshot(Day, true, [(Camera, 5, true), (Key, 1, null)]);
+        // Three cameras planted: two left, the observation as it was; the key wasn't used up.
+        Assert.Equal([Camera], ledger.HandOver(Day.AddHours(1), Quest, [(Camera, 3)]));
+        var mark = ledger.MarkOf(Camera)!;
+        Assert.Equal(2, mark.Count);
+        Assert.Equal(2, mark.FoundInRaid);
+        Assert.Equal(Day, mark.SeenAt);
+        Assert.Equal(MarkSource.Screenshot, mark.Source);
+        Assert.NotNull(ledger.MarkOf(Key));
+        // The same completion again (the log read back at the next start, after the file): nothing more.
+        ledger.Save(path);
+        ledger = StashLedger.Load(path);
+        Assert.True(ledger.HandedOver(Quest, Day.AddHours(1)));
+        Assert.Empty(ledger.HandOver(Day.AddHours(1), Quest, [(Camera, 3)]));
+        Assert.Equal(2, ledger.MarkOf(Camera)!.Count);
+        // Another quest's hand-over takes the rest: the mark goes.
+        const string other = "000000000000000000000101";
+        Assert.Equal([Camera], ledger.HandOver(Day.AddHours(2), other, [(Camera, 2)]));
+        Assert.Null(ledger.MarkOf(Camera));
+        // A mark observed after a completion isn't touched by it: the player had the item again.
+        ledger.ApplyScreenshot(Day.AddHours(3), true, [(Camera, 1, null)]);
+        const string third = "000000000000000000000102";
+        Assert.Empty(ledger.HandOver(Day.AddHours(2).AddMinutes(30), third, [(Camera, 1)]));
+        Assert.Equal(1, ledger.MarkOf(Camera)!.Count);
+        // The quest done again later (a prestige): that completion counts anew.
+        Assert.Equal([Camera], ledger.HandOver(Day.AddDays(30), Quest, [(Camera, 3)]));
+        Assert.Null(ledger.MarkOf(Camera));
+        Directory.Delete(Path.GetDirectoryName(path)!, true);
+    }
+
+    [Fact]
+    public void Forget_all_takes_every_mark_and_keeps_older_messages_forgotten()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "shturmap-ledger-" + Guid.NewGuid(), "stash.json");
+        var ledger = new StashLedger();
+        ledger.ApplyGrant(Day, GrantKind.QuestReward, Quest, [(Key, 1)]);
+        ledger.ApplyScreenshot(Day.AddHours(1), true, [(Camera, 2, null)]);
+        Assert.Equal(2, ledger.ForgetAll(Day.AddHours(2)));
+        Assert.Empty(ledger.Marks);
+        Assert.Empty(ledger.Passes);
+        // The log read back at the next start: the reward from before stays forgotten; a newer observation stands.
+        ledger.Save(path);
+        var again = StashLedger.Load(path);
+        Assert.Empty(again.ApplyGrant(Day, GrantKind.QuestReward, Quest, [(Key, 1)]));
+        Assert.Empty(again.Marks);
+        Assert.Equal([Camera], again.ApplyScreenshot(Day.AddHours(3), true, [(Camera, 1, null)]));
+        Directory.Delete(Path.GetDirectoryName(path)!, true);
+    }
+
     [Fact]
     public void The_file_round_trips_and_holds_ids_only()
     {

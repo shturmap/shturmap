@@ -632,6 +632,14 @@
     <value>Deinen Stash aus Menü-Screenshots lesen</value>
     <comment>en: Read your stash from menu screenshots</comment>
   </data>
+  <data name="SettingsForgetMarks" xml:space="preserve">
+    <value>ALLE MARKIERUNGEN VERGESSEN</value>
+    <comment>en: FORGET ALL MARKS</comment>
+  </data>
+  <data name="SettingsForgetMarksTip" xml:space="preserve">
+    <value>Nimmt jede Markierung zurück, aus Screenshots und dem Log des Spiels; der nächste Screenshot markiert wieder</value>
+    <comment>en: Takes back every mark, from screenshots and the game's log; the next screenshot marks again</comment>
+  </data>
   <data name="ItemCardStash" xml:space="preserve">
     <value>STASH</value>
     <comment>en: STASH</comment>

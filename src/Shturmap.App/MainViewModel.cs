@@ -366,6 +366,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"Read your stash from menu screenshots" in settings: on unless the player unticked it.</summary>
     [ObservableProperty] public partial bool ReadStash { get; set; } = true;
 
+    /// <summary>Whether anything is known of the stash: FORGET ALL MARKS in settings is live then.</summary>
+    [ObservableProperty] public partial bool HasMarks { get; set; }
+
     /// <summary>Help's "Uninstall Shturmap…" asks its one question.</summary>
     [ObservableProperty] public partial bool UninstallAsking { get; set; }
 

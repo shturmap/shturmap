@@ -800,4 +800,8 @@
     <value>Seen in your stash: {count, plural, one {# key} other {# keys}} your quests need.</value>
     <comment>As StashSeenItems when everything it showed is keys. {count}: how many keys.</comment>
   </data>
+  <data name="StashForgotten" xml:space="preserve">
+    <value>Forgot {count, plural, one {# mark} other {# marks}}. The next menu screenshot or log message marks again.</value>
+    <comment>Notice after FORGET ALL MARKS in settings. {count}: how many marks went.</comment>
+  </data>
 </root>

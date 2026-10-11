@@ -21,7 +21,7 @@ translated. A version the translation lacks, or whose lines aren't this section'
 
 - stash · What you have · Screenshot your key tool or stash in the game: the items your quests need say "Seen in your stash".
 - stash-given · From the game's log · What a quest hands you at its start, its rewards and insurance returns get a mark too.
-- stash-card · Not any more · One click on an item's card takes a mark back. Marks never change the plan.
+- stash-card · Not any more · One click on an item's card takes a mark back; settings forget them all. Never changes the plan.
 - tour · Deutsch · Shturmap speaks German: it follows the game's language, or pick one in settings.
 
 ## 0.4.0 · Praetorian

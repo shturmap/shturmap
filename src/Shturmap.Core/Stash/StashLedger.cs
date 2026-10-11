@@ -58,8 +58,13 @@ public sealed class StashLedger
 
     private readonly Dictionary<string, StashMark> _items = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _retracted = new(StringComparer.Ordinal);
+    // The quests whose completion took something from the marks, with when: the log is read from its start at every
+    // run, and a completion counts once (a quest done again after a prestige completes at a later time).
+    private readonly Dictionary<string, DateTimeOffset> _handovers = new(StringComparer.Ordinal);
     private readonly List<StashPass> _passes = [];
     private Pass? _pass;
+    // FORGET ALL MARKS: nothing observed up to then stands, however often the log says it again.
+    private DateTimeOffset? _forgottenAt;
 
     // The pass under way: what each screenshot showed is folded into "the most any one screenshot showed".
     private sealed class Pass(DateTimeOffset started)
@@ -190,10 +195,67 @@ public sealed class StashLedger
         return gone;
     }
 
+    /// <summary>
+    /// A quest completed (owner, 2026-10-11: "how do we deal with the inventory depleting over time"): what it was
+    /// brought to use up (planted, marked, handed over) is gone from the stash, so a mark observed before the
+    /// completion loses that count, and goes at zero; one observed after it stands, the player had the item again.
+    /// The mark keeps its source and date: it is still that observation, less what the quest took. Once per
+    /// completion (<see cref="HandedOver"/>).
+    /// </summary>
+    /// <param name="at">When the log says the quest completed.</param>
+    /// <returns>The ids whose mark changed or went.</returns>
+    public IReadOnlyList<string> HandOver(DateTimeOffset at, string questId, IEnumerable<(string ItemId, int Count)> items)
+    {
+        if (HandedOver(questId, at))
+            return [];
+        var changed = new List<string>();
+        foreach (var group in items.Where(i => i.ItemId.Length > 0).GroupBy(i => i.ItemId, StringComparer.Ordinal))
+        {
+            if (MarkOf(group.Key) is not { } mark || mark.SeenAt >= at)
+                continue;
+            var left = mark.Count - group.Sum(i => Math.Max(1, i.Count));
+            if (left > 0)
+                _items[group.Key] = mark with { Count = left, FoundInRaid = Math.Min(mark.FoundInRaid, left) };
+            else
+                _items.Remove(group.Key);
+            changed.Add(group.Key);
+        }
+        if (changed.Count > 0)
+        {
+            _handovers[questId] = at;
+            Dirty = true;
+        }
+        return changed;
+    }
+
+    /// <summary>Whether this completion of the quest already took its count (the log read back at a later start).</summary>
+    public bool HandedOver(string questId, DateTimeOffset at) => _handovers.TryGetValue(questId, out var done) && done >= at;
+
+    /// <summary>
+    /// FORGET ALL MARKS in settings (owner, 2026-10-11: "a reset"): everything known goes, the passes with it, and
+    /// nothing observed up to now stands again, however often the log says it (it is read from its start at every
+    /// run); an observation after it stands.
+    /// </summary>
+    /// <returns>How many marks went.</returns>
+    public int ForgetAll(DateTimeOffset at)
+    {
+        var count = Marks.Count;
+        _items.Clear();
+        _retracted.Clear();
+        _handovers.Clear();
+        _passes.Clear();
+        _pass = null;
+        _forgottenAt = at;
+        Dirty = true;
+        return count;
+    }
+
     // The newest observation of an item wins; the same one again changes nothing. A new observation after a
-    // retraction stands: the retraction was about what was known before it.
+    // retraction stands: the retraction was about what was known before it. Nothing from before FORGET ALL MARKS.
     private bool Put(StashMark mark)
     {
+        if (_forgottenAt is { } forgotten && mark.SeenAt <= forgotten)
+            return false;
         if (_items.TryGetValue(mark.ItemId, out var old))
         {
             if (old.SeenAt > mark.SeenAt)
@@ -234,6 +296,9 @@ public sealed class StashLedger
             }
             foreach (var (id, at) in model.Retracted ?? [])
                 ledger._retracted[id] = at;
+            foreach (var (questId, at) in model.Handovers ?? [])
+                ledger._handovers[questId] = at;
+            ledger._forgottenAt = model.ForgottenAt;
             return ledger;
         }
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
@@ -261,7 +326,9 @@ public sealed class StashLedger
                 i.Value.QuestId,
                 i.Value.Grant switch { GrantKind.QuestStart => "start", GrantKind.QuestReward => "reward", GrantKind.Insurance => "insurance", _ => null },
                 i.Value.NotSeenAt), StringComparer.Ordinal),
-            _retracted.OrderBy(r => r.Key, StringComparer.Ordinal).ToDictionary(r => r.Key, r => r.Value, StringComparer.Ordinal));
+            _retracted.OrderBy(r => r.Key, StringComparer.Ordinal).ToDictionary(r => r.Key, r => r.Value, StringComparer.Ordinal),
+            _handovers.Count == 0 ? null : _handovers.OrderBy(h => h.Key, StringComparer.Ordinal).ToDictionary(h => h.Key, h => h.Value, StringComparer.Ordinal),
+            _forgottenAt);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var temp = path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(model, StashJson.Default.StashFile));
@@ -270,8 +337,10 @@ public sealed class StashLedger
     }
 }
 
-// The file's shape (docs/DESIGN.md §8, "The stash file"): item ids and counts, dates with their offset, nothing else.
-internal sealed record StashFile(int Version, List<PassFile> Passes, Dictionary<string, ItemFile> Items, Dictionary<string, DateTimeOffset> Retracted);
+// The file's shape (docs/DESIGN.md §8, "The stash file"): item ids, quest ids and counts, dates with their offset,
+// nothing else. Handovers: the quests whose completion took its count, with when; forgottenAt: FORGET ALL MARKS.
+internal sealed record StashFile(int Version, List<PassFile> Passes, Dictionary<string, ItemFile> Items, Dictionary<string, DateTimeOffset> Retracted,
+    Dictionary<string, DateTimeOffset>? Handovers = null, DateTimeOffset? ForgottenAt = null);
 
 internal sealed record PassFile(DateTimeOffset At, int Screenshots, bool Full);
 

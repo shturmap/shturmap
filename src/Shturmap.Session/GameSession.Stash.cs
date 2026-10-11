@@ -77,6 +77,26 @@ public sealed partial class GameSession
         }
     }
 
+    /// <summary>FORGET ALL MARKS in settings (owner, 2026-10-11: "a reset"): everything known of the stash goes; the
+    /// log's messages from before now stay forgotten, the next screenshot or message marks again.</summary>
+    public async Task ForgetAllMarksAsync()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var count = _ledger.ForgetAll(DateTimeOffset.Now);
+            Study.Ui("stash.forgetAll", ("marks", count));
+            AppLog.Info($"Stash: {count} marks forgotten");
+            SaveStashIfDirty();
+            Say(SessionTexts.StashForgotten(count: count));
+            Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     /// <summary>NOT ANY MORE on the item card: whatever is known of the item is retracted, from any source.</summary>
     public async Task NotAnyMoreAsync(string itemId)
     {
@@ -263,5 +283,35 @@ public sealed partial class GameSession
             if (_quests.GetValueOrDefault(questId)?.State is QuestState.Completed or QuestState.Failed)
                 _ledger.Forget(questId);
         }
+    }
+
+    // Under the gate, after the quests were worked out: a quest the log says completed used up what it was brought
+    // (planted, marked, handed over; the quest card's BRING counts, Planning.ToPlan), so the marks from before the
+    // completion lose that count (owner, 2026-10-11: "how do we deal with the inventory depleting over time"; docs/
+    // DESIGN.md §4, "What you have"). Once per completion: the ledger remembers which. A completion the log never
+    // showed (implied by a later quest's start) has no time, so it takes nothing.
+    private void StashHandovers()
+    {
+        if (_data is null)
+            return;
+        var changed = 0;
+        foreach (var quest in _quests.Values)
+        {
+            if (quest.State != QuestState.Completed || quest.At is not { } when || _data.Tasks.GetValueOrDefault(quest.QuestId) is not { } task)
+                continue;
+            var at = new DateTimeOffset(when);
+            if (_ledger.HandedOver(quest.QuestId, at))
+                continue;
+            var used = new List<(string ItemId, int Count)>();
+            foreach (var objective in Planning.ToPlan(task, _data).Objectives)
+            {
+                foreach (var (item, count) in objective.Bring)
+                    used.Add((item, count));
+            }
+            if (used.Count > 0)
+                changed += _ledger.HandOver(at, quest.QuestId, used).Count;
+        }
+        if (changed > 0 && !_replaying)
+            Study.Game("stash.handover", ("items", changed));
     }
 }

@@ -430,6 +430,17 @@ public sealed partial class MainWindow : Window
         Study.Ui("settings.readStash", ("on", on));
     }
 
+    // FORGET ALL MARKS in settings (owner, 2026-10-11): every mark goes at once, as NOT ANY MORE takes one; no question
+    // asked, as there (a stash pass brings them back).
+    private async void OnForgetMarksClick(object sender, RoutedEventArgs e)
+    {
+        Study.Ui("settings.forgetMarks");
+        await _session.ForgetAllMarksAsync();
+    }
+
+    /// <summary>The FORGET ALL MARKS link's colour: amber while there are marks to forget, muted when there are none.</summary>
+    public Brush MarksLinkBrush(bool hasMarks) => Resource(hasMarks ? "AmberBrush" : "MutedBrush");
+
     private async void OnDeleteScreenshotsClick(object sender, RoutedEventArgs e)
     {
         var on = !ViewModel.DeleteScreenshots;
@@ -472,6 +483,7 @@ public sealed partial class MainWindow : Window
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
         vm.ReadStash = s.ReadStash;
+        vm.HasMarks = s.Marks.Count > 0;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys.Select(k => k.Name)) : AppTexts.ScreenshotKeyUnknown;
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)

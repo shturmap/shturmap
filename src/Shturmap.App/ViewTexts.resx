@@ -632,6 +632,14 @@
     <value>Read your stash from menu screenshots</value>
     <comment>Settings: a tick box's words, and its name for screen readers: read the item grids in a screenshot taken in the game's menus, for the items the quests need.</comment>
   </data>
+  <data name="SettingsForgetMarks" xml:space="preserve">
+    <value>FORGET ALL MARKS</value>
+    <comment>Settings: link under the stash tick box that takes back every mark (what Shturmap learned of the stash from screenshots and the game's log) at once, as NOT ANY MORE takes one. Upper case, small.</comment>
+  </data>
+  <data name="SettingsForgetMarksTip" xml:space="preserve">
+    <value>Takes back every mark, from screenshots and the game's log; the next screenshot marks again</value>
+    <comment>Settings: tooltip of FORGET ALL MARKS.</comment>
+  </data>
   <data name="ItemCardStash" xml:space="preserve">
     <value>STASH</value>
     <comment>An item's or key's card: heading over what Shturmap learned of having the item ("Seen in your stash · 5 Oct"). The game's word for the player's storage. Upper case.</comment>

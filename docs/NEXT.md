@@ -149,6 +149,14 @@ Left, for the owner to decide or do:
   11 and "What you have"; `MainWindow.StashCue`, `Controls.Glow`). What's New's 0.5.0 lines preview it (`stash`,
   `stash-card`, `stash-given`) instead of opening the tour, which the owner reported as a bug the same evening. The
   developer view's `stash` shows the cue with the example items. Done.
+- **Marks going stale** (owner, 2026-10-11: "how do we deal with the inventory depleting over time and info going
+  stale? Can we kind of make a 'reset' of the info after a while?"). Offered: a hand-over rule from the log, a manual
+  FORGET ALL MARKS, a timed expiry (advised against: it drops right marks as silently as wrong ones and reverses "never
+  into silence"); the owner took the first two ("1 and 2"). Built the same evening: a quest the log says completed
+  takes what it used up (planted, marked, handed over) from the marks observed before the completion, once per
+  completion (`StashLedger.HandOver`, `GameSession.Stash.StashHandovers`, the file's `handovers`); FORGET ALL MARKS
+  under the stash setting, one click, with `forgottenAt` in the file so the log read back brings nothing old
+  (`StashLedger.ForgetAll`). DESIGN.md §4 "What you have" and §8 "The stash file". Done.
 - **The layout check in both languages** before the release (docs/LANGUAGES.md; about 45 minutes), and the website's
   words (the website says what Shturmap reads).
 - **I HAVE IT** (the player's word, phase 3): not built; the ledger knows the source. Build it only if the first

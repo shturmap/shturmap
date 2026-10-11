@@ -1862,9 +1862,9 @@ sources, one mark, and every mark is an observation with its source and date, ne
 
 | from | says | taken away when |
 | --- | --- | --- |
-| the game's notification log: the items a quest hands over at its start, its rewards, an insurance return (§8, "Logs and raids"; the item and the count, nothing else of the message) | "Given with the quest · 25 Sep" ("Given with Pharmacist · …" when the row serves several quests), "Reward from Shaking Up the Teller · 1 Oct", "Returned by insurance · 3 Oct" | start items go when their quest completes or fails; a reward or a return stays (another quest may need it); NOT ANY MORE |
-| a menu screenshot the player took, read for the items BRING lists (§2) | "Seen in your stash · 5 Oct"; "2 of 3 seen in your stash, found in raid · 5 Oct" (a hand-over that asks for the game's mark counts only cells that carry it; "…, not found in raid" when none did); "Seen in your stash · 5 Oct, not in your screenshots of 12 Oct" | NOT ANY MORE. Never by a picture: a reading can miss. A full pass (three or more stash pages within a quarter of an hour, no raid between) that didn't show the item adds the words, nothing more |
-| the player's word (not built; the ledger knows the source) | "Marked by you · 6 Oct" | NOT ANY MORE |
+| the game's notification log: the items a quest hands over at its start, its rewards, an insurance return (§8, "Logs and raids"; the item and the count, nothing else of the message) | "Given with the quest · 25 Sep" ("Given with Pharmacist · …" when the row serves several quests), "Reward from Shaking Up the Teller · 1 Oct", "Returned by insurance · 3 Oct" | start items go when their quest completes or fails; a reward or a return stays (another quest may need it); a quest completed after the observation takes what it used up (below); NOT ANY MORE; FORGET ALL MARKS |
+| a menu screenshot the player took, read for the items BRING lists (§2) | "Seen in your stash · 5 Oct"; "2 of 3 seen in your stash, found in raid · 5 Oct" (a hand-over that asks for the game's mark counts only cells that carry it; "…, not found in raid" when none did); "Seen in your stash · 5 Oct, not in your screenshots of 12 Oct" | a quest completed after the observation takes what it used up (below); NOT ANY MORE; FORGET ALL MARKS. Never by a picture: a reading can miss. A full pass (three or more stash pages within a quarter of an hour, no raid between) that didn't show the item adds the words, nothing more |
+| the player's word (not built; the ledger knows the source) | "Marked by you · 6 Oct" | NOT ANY MORE; FORGET ALL MARKS |
 
 Rules (`StashLedger`, `StashMarks`): one mark per item, the newest observation wins; counts are "at least" (two
 overlapping pages never double a stack: within a pass an item's count is the most any one screenshot showed); a row
@@ -1872,7 +1872,16 @@ that needs more than was seen says its part ("3 of 7") and keeps the amber line 
 barter · …"); a row the mark covers has no amber line; marks never change the planner's order or the kit cue (a wrong
 mark costs a glance, never a raid); the game's words throughout (stash, key tool, found in raid; German keeps Stash,
 Key Tool, FiR, as the glossary does); the newest pass dates a mark, marks never age into silence, and "not in your
-screenshots of …" is said in words, not colour (muted keeps its one meaning). The surface:
+screenshots of …" is said in words, not colour (muted keeps its one meaning). **What a quest used up comes off**
+(owner, 2026-10-11: "how do we deal with the inventory depleting over time and info going stale?"; of a hand-over
+rule, a manual reset and a timed expiry they took the first two, the expiry being against "never into silence"):
+when the log says a quest completed, what it was brought to use up (planted, marked, handed over: the quest card's
+BRING counts, `Planning.ToPlan`) comes off the marks observed before the completion, from any source, and a mark
+goes at zero; one observed after it stands, since the player had the item again. The mark keeps its source and date:
+it is still that observation, less what the quest took. Once per completion, however often the log is read back
+(`StashLedger.HandOver`, the file's `handovers`); a completion the log never showed (implied by a later quest's
+start) has no time and takes nothing. Nothing else depletes: a death in a raid, a sale, a craft are invisible to
+Shturmap, and a full pass over the stash is the reset for those. The surface:
 
 - **A BRING row's third line**, in ink after the note line, with the stash grid glyph (Segoe Fluent `E80A`, used
   nowhere else): the mark. The amber "where to get" line under it says where to get the rest, or nothing.
@@ -1888,7 +1897,10 @@ screenshots of …" is said in words, not colour (muted keeps its one meaning). 
   plays or QUEST COMPLETE is up. Nothing is said for a screenshot that showed none.
 - **One note** under BRING on the open card, until the first mark from a screenshot: "Screenshot your key tool in the
   game: the keys your quests need get a mark." Then gone.
-- **One setting** (§2) and a line in tour chapter 1's "reads" list.
+- **One setting** (§2) and a line in tour chapter 1's "reads" list; under the setting, **FORGET ALL MARKS** (owner,
+  2026-10-11: "a reset"): one click, no question, as NOT ANY MORE (a stash pass brings the marks back); every mark
+  goes, and what the log said up to then stays forgotten at every later start (`StashLedger.ForgetAll`, the file's
+  `forgottenAt`); a notice counts what went. Muted and dead while there is nothing to forget.
 
 Cards behave like the nested tooltips in Crusader Kings III:
 
@@ -2467,7 +2479,9 @@ program of the player's could read it (the panel of 2026-10-11 defined it for th
 today): `version` 1; `passes`, each with `at`, `screenshots` and `full`; `items` by id, each with `count`, `fir` (how
 many carried the found-in-raid mark, when any), `seenAt`, `source` (`log`, `screenshot`, `you`), for a log mark
 `quest` and `grant` (`start`, `reward`, `insurance`), and `notSeenAt` after a full pass without it; `retracted` by id,
-the time of NOT ANY MORE. Written as a temporary file and one move, after each change; one that can't be read is set
+the time of NOT ANY MORE; `handovers` by quest id, the time of the completion that took its count from the marks
+(so that the log read back takes it once); `forgottenAt`, the time of FORGET ALL MARKS, before which no observation
+stands. Written as a temporary file and one move, after each change; one that can't be read is set
 aside as `stash.json.unreadable` and the marks start over (the next screenshot or log message brings them back). It
 is never in the shared cache, a report or the diagnostics. Deleted with the data folder.
 

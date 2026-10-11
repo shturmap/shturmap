@@ -8,7 +8,7 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 
 - stash · Was du hast · Screenshot von Key Tool oder Stash: was deine Quests brauchen, sagt „In deinem Stash gesehen“.
 - stash-given · Aus dem Log des Spiels · Was eine Quest dir zum Start gibt, Belohnungen und Versicherung bekommen auch eine Markierung.
-- stash-card · Nicht mehr · Ein Klick auf der Item-Karte nimmt eine Markierung zurück. Markierungen ändern nie den Plan.
+- stash-card · Nicht mehr · Klick auf der Item-Karte nimmt eine Markierung zurück, die Einstellungen alle. Die Planung bleibt.
 - tour · Deutsch · Shturmap spricht Deutsch: es folgt der Sprache des Spiels, oder du wählst eine in den Einstellungen.
 
 ## 0.4.0 · Praetorian

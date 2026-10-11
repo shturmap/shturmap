@@ -137,6 +137,7 @@ gender.
 | Seen in your stash · {date}; "…, found in raid" and "…, not found in raid" on a mark; {seen} of {needed}; "…, not in your screenshots of {date}" | In deinem Stash gesehen · {date}; „, FiR“ and „, nicht FiR“; {seen} von {needed}; „, nicht in deinen Screenshots vom {date}“ | the mark's fixed wording (SessionTexts Mark*), quoted in What's New; the date in the dative, „vom 12. Okt.“ |
 | Given with the quest; given with {quest}; reward from {quest}; {count} as reward from {quest}; {count} more: {source} | Mit der Quest bekommen; mit {quest} bekommen; Belohnung aus {quest}; {count} als Belohnung aus {quest}; Noch {count}: {source} | the log's marks, and the amber line under a part mark |
 | menu screenshot; item cells; What you have; From the game's log | Menü-Screenshot (der); Item-Zellen; Was du hast; Aus dem Log des Spiels | the setting's note; What's New's names |
+| a log message (one the game wrote, as Shturmap reads it); a mark; FORGET ALL MARKS; the plan (what Shturmap planned) | Log-Nachricht (die); Markierung; ALLE MARKIERUNGEN VERGESSEN; die Planung | never „der Plan“ (reads as a Lageplan); „Die Planung bleibt.“ |
 | GAME FOLDER; CHOOSE GAME FOLDER…; FIND AUTOMATICALLY | SPIELORDNER; SPIELORDNER WÄHLEN…; AUTOMATISCH SUCHEN | „(von dir gewählt)“, „(automatisch gefunden)“, NICHT GEFUNDEN |
 
 ## Windows and UI words

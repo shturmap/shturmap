@@ -1800,8 +1800,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Study.Ui("untick", ("objective", gone), ("quest", QuestOf(gone)), ("how", "done"));
         _ticked = _ticks?.Of(_mode) ?? NoTicks;
         _done = _ticked.Count == 0 ? NothingDone : _ticked.Keys.ToHashSet(StringComparer.Ordinal);
-        // And what a quest handed over at its start: used up or moot once the quest is over.
+        // And what a quest handed over at its start: used up or moot once the quest is over; what a completed quest
+        // used up comes off the marks from before it.
         ForgetStashGrantsOfQuestsOver();
+        StashHandovers();
         // Picks from before they were kept per map go to the maps their quests have work on, once the data says which.
         if (_data is not null && _picks is not null)
         {

@@ -454,6 +454,13 @@
                   </StackPanel>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind ReadStashNote}" />
+                <!-- FORGET ALL MARKS (owner, 2026-10-11: "a reset"): every mark goes at once, as NOT ANY MORE on an item's
+                     card takes one; live only while there are marks (docs/DESIGN.md §4, "What you have"). -->
+                <HyperlinkButton Padding="0" Margin="22,2,0,0" Click="OnForgetMarksClick" IsEnabled="{x:Bind ViewModel.HasMarks, Mode=OneWay}"
+                                 ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsForgetMarksTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsForgetMarks}">
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsForgetMarks}" Style="{StaticResource StatusText}" FontSize="11"
+                             Foreground="{x:Bind MarksLinkBrush(ViewModel.HasMarks), Mode=OneWay}" />
+                </HyperlinkButton>
                 <!-- Crash reports go only as the player says here (owner, 2026-10-03: default "Ask after a crash";
                      docs/DESIGN.md §8, "Reports"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0">

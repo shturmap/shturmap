@@ -202,6 +202,54 @@ public class StashSessionTests
         Assert.Single(asked);
     }
 
+    // Owner, 2026-10-11: "how do we deal with the inventory depleting over time". A quest completed used up what it
+    // was brought (the cameras planted): the marks from before the completion lose that count, once.
+    [Fact]
+    public async Task A_quest_completed_takes_what_it_used_up_from_the_marks_seen_before()
+    {
+        await using var rig = Rig(_ => Shows((Camera, 5, true), (Key, 1, null)));
+        rig.Notification("ChatMessageReceived", QuestMessage(SessionRig.QuestId, 10, DateTime.Now.AddMinutes(-10)), DateTime.Now.AddMinutes(-10));
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Plan.Count > 0 && s.Plan[0].Requirements.Count == 2, "the plan");
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Marks.ContainsKey(Camera), "the cameras marked");
+        // The quest completes a moment later: three cameras were planted, two are left; the key wasn't used up.
+        rig.Notification("ChatMessageReceived", QuestMessage(SessionRig.QuestId, 12, DateTime.Now.AddSeconds(2)));
+        var s = await rig.Until(s => s.Marks.TryGetValue(Camera, out var m) && m.Count == 2, "two cameras left");
+        Assert.Equal(2, s.Marks[Camera].FoundInRaid);
+        Assert.Equal(MarkSource.Screenshot, s.Marks[Camera].Source);
+        Assert.Equal(1, s.Marks[Key].Count);
+        // Closed and opened again: the log is read back, and the completion doesn't take its count twice.
+        await rig.RestartAsync();
+        await rig.StartAsync();
+        s = await rig.Until(s => s.Marks.Count == 2 && s.Quests.Count > 0, "the marks from the file");
+        await Task.Delay(300, TestContext.Current.CancellationToken);
+        Assert.Equal(2, rig.Snapshot.Marks[Camera].Count);
+    }
+
+    [Fact]
+    public async Task Forget_all_marks_takes_everything_and_the_log_read_back_brings_nothing_old()
+    {
+        await using var rig = Rig(_ => Shows((Key, 1, null)));
+        rig.Notification("ChatMessageReceived", QuestMessage(SessionRig.QuestId, 10, DateTime.Now.AddMinutes(-10), (Camera, 3)), DateTime.Now.AddMinutes(-10));
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Marks.ContainsKey(Camera) && s.Plan.Count > 0, "the cameras marked");
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Marks.Count == 2, "both marks");
+        await rig.Session.ForgetAllMarksAsync();
+        Assert.Empty(rig.Snapshot.Marks);
+        Assert.Contains(rig.Notices, n => n.StartsWith("Forgot 2 marks", StringComparison.Ordinal));
+        // The log read back at the next start: the quest's start message from before stays forgotten.
+        await rig.RestartAsync();
+        await rig.StartAsync();
+        await rig.Until(s => s.Plan.Count > 0 && s.Plan[0].Requirements.Count == 2, "the plan again");
+        Assert.Empty(rig.Snapshot.Marks);
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Marks.ContainsKey(Key), "the key seen again");
+    }
+
     // Owner, 2026-10-11: "when making a screenshot in-raid it should never go into the register since the player
     // still can die". A screenshot named without a position while a raid runs opens no picture and marks nothing.
     [Fact]
