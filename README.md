@@ -67,9 +67,14 @@ Shturmap works only from files the game writes for you and from public community
 - of a screenshot you take in a raid, **the top right corner of its picture**: if the game's extract list shows
   there, Shturmap reads which extracts are yours this raid, with the text recognition built into Windows. It happens
   on your PC, nothing of the picture is kept or sent, and no other part of any picture is looked at. Untick **Read
-  the extract list from screenshots** in settings and no picture is opened at all;
+  the extract list from screenshots** in settings and no raid screenshot is opened;
+- of a screenshot you take in the game's menus (the stash, a case, the key tool), **the item cells its picture
+  shows**: their names are read the same way, against the items your quests need, and a row that needs one of them
+  says "Seen in your stash" with the date. Nothing of the picture is kept or sent; what was seen stays on your PC as
+  item ids. Untick **Read your stash from menu screenshots** in settings and no menu screenshot is opened;
 - the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
-  quests started, failed and completed;
+  quests started, failed and completed, and the items a quest hands you (its start items, its rewards, an insurance
+  return), which get the same kind of mark;
 - `Control.ini` and `Game.ini`, read-only: your screenshot key and the game language;
 - where the game is installed: the Windows uninstall entry, Steam's library list, and the games folder from the
   Battlestate Games launcher's settings (nothing else from that file);
@@ -87,7 +92,8 @@ It never:
   its name was read, for good. Screenshots already in the folder, and screenshots from the menus, stay;
 - sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
   only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
-  (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log.
+  (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
+  and the items it saw in your screenshots and logs, as ids with a count and a date.
   (The Microsoft runtime it is built on has its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
 To report a problem or suggest an idea, use the **feedback** button at the top right: write what happened, keep

@@ -129,8 +129,8 @@
     <comment>en: NOT ON THIS MAP</comment>
   </data>
   <data name="HelpPrivacy" xml:space="preserve">
-    <value>Liest die Namen der Screenshots, die Logs des Spiels, die öffentlichen Daten von tarkov.dev und die Extract-Liste oben rechts in einem Raid-Screenshot (in den Einstellungen abschaltbar). Liest nichts aus dem Spiel und schickt ihm nichts. Gesendet wird nur, wenn du einen Bericht sendest oder Absturzberichte erlaubst; ein installiertes Shturmap fragt GitHub nach Updates. Ändert nichts außerhalb seiner Ordner, außer du hakst „Positions-Screenshots löschen“ an.</value>
-    <comment>en: Reads screenshot names, the game's logs, tarkov.dev's public data and the extract list in a raid screenshot's top right corner (settings turn that off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots.</comment>
+    <value>Liest die Namen der Screenshots, die Logs des Spiels, die öffentlichen Daten von tarkov.dev, die Extract-Liste oben rechts in einem Raid-Screenshot und die Item-Zellen in einem Menü-Screenshot, für das, was deine Quests brauchen (in den Einstellungen jeweils abschaltbar). Liest nichts aus dem Spiel und schickt ihm nichts. Gesendet wird nur, wenn du einen Bericht sendest oder Absturzberichte erlaubst; ein installiertes Shturmap fragt GitHub nach Updates. Ändert nichts außerhalb seiner Ordner, außer du hakst „Positions-Screenshots löschen“ an.</value>
+    <comment>en: Reads screenshot names, the game's logs, tarkov.dev's public data, the extract list in a raid screenshot's top right corner and the item cells in a menu screenshot, for what your quests need (settings turn each off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete position screenshots.</comment>
   </data>
   <data name="HelpCopyDiagnosticsTip" xml:space="preserve">
     <value>Kopiert Version, was gefunden wurde, Stand der Daten und das Log von heute (ohne Namen oder IDs), zum Einfügen, wo du willst</value>
@@ -627,5 +627,21 @@
   <data name="SettingsLanguage" xml:space="preserve">
     <value>Sprache</value>
     <comment>en: Language</comment>
+  </data>
+  <data name="SettingsReadStash" xml:space="preserve">
+    <value>Deinen Stash aus Menü-Screenshots lesen</value>
+    <comment>en: Read your stash from menu screenshots</comment>
+  </data>
+  <data name="ItemCardStash" xml:space="preserve">
+    <value>STASH</value>
+    <comment>en: STASH</comment>
+  </data>
+  <data name="ItemCardNotAnyMore" xml:space="preserve">
+    <value>NICHT MEHR</value>
+    <comment>en: NOT ANY MORE</comment>
+  </data>
+  <data name="BringStashNote" xml:space="preserve">
+    <value>Mach im Spiel einen Screenshot von deinem Key Tool: die Keys, die deine Quests brauchen, bekommen eine Markierung.</value>
+    <comment>en: Screenshot your key tool in the game: the keys your quests need get a mark.</comment>
   </data>
 </root>

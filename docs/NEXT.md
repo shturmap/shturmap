@@ -98,6 +98,52 @@ follow the game's, as the extract list's does).
 **Where it leaves the design:** the screenshot source is worth building, label first; I5 (the template set) changes
 to the needed items only; the §2 widening is still the owner's to write before the reading goes into the app.
 
+## 2026-10-11: what you have, built (phases 1 and 2)
+
+The owner the same evening: "push it, then start phase 1. Continue with phase 2 as well." Both were built as one
+release, 0.5.0 (the minor number raised: a new feature; **its name is still to be asked of the owner**, the heading in
+docs/whats-new.md and the first line of docs/release-notes/0.5.0.md have none yet). The §2 text the panel drafted went
+into DESIGN.md on that word; the owner reads it there.
+
+Built: the ledger (`StashLedger`, `stash.json`; the newest observation wins, counts at least, passes, retractions,
+start items gone with their quest); the log's grants (types 10, 12 and 8, `QuestEvent.Items`,
+`InsuranceNoticeEvent.Items`); the reader (`StashReader`, label first against the items BRING lists, the picture a
+veto, trading screens skipped); the session (`GameSession.Stash`: the setting `screenshots.readStash`, the needed set
+and its grid images through `GameArt`, the notice, NOT ANY MORE, the file); the words (`StashMarks`, SessionTexts
+`Mark*`, English and German, reviewed); the surface (the BRING row's ink line with the stash glyph, the amber line for
+the rest, the need cells' bar, the quest card's BRING, the item card's STASH section with NOT ANY MORE, the note under
+BRING, the settings row, tour chapter 1, help's note); the docs (DESIGN.md §1, §2, §3, §4 "What you have", §6, §8;
+README, PRIVACY.md, UPDATES.md, the glossary); tests (`StashLedgerTests`, `GrantedItemsTests`, `StashSessionTests`,
+`StashReaderTests`). `tools\fake-raid.ps1` hands two quests their items, so a Plan snapshot shows a whole mark and a
+part mark.
+
+The reader, measured on the three truths with the whole quest set as candidates: the key container 46 of 48 right,
+0 wrong; the medical case 43 of 43; the stash page 50 of 57, 0 wrong (three of the seven silent are two items of one
+short name, which the reading won't choose between; two a hover highlight merged). Both trading screens recognised.
+The found-in-raid mark is read (a drawn circle-and-check correlated at its place: marked cells 0.43–0.54, unmarked
+under 0.3). A count of one digit isn't read by Windows' recognition and counts as one ("at least" holds); counts of
+two or more digits read. 0.75–0.9 s per 1440p screenshot with 60 candidates.
+
+Left, for the owner to decide or do:
+
+- **The release name** (above), and whether 0.5.0 also ships German (the What's New and the notes draft say so; the
+  owner left shipping German out on 2026-10-11, so the lines are a proposal).
+- **Two needed items of one short name** (two keycards both called "Access") stay silent: the reading won't choose,
+  and the session passes both. A rule for that (the art decides when it can; else the first) is a small change if it
+  turns out to matter.
+- **The layout check in both languages** before the release (docs/LANGUAGES.md; about 45 minutes), and the website's
+  words (the website says what Shturmap reads).
+- **I HAVE IT** (the player's word, phase 3): not built; the ledger knows the source. Build it only if the first
+  release leaves gaps that matter (weapons, worn gear).
+- **Other resolutions and screens:** only the owner's 2560×1440 was read. A 1080p screenshot and one of the hideout
+  crafting screen would close two unknowns of the spike (the stash's column rule, the hideout's grids).
+- **The game's language:** the labels are matched to tarkov.dev's short names in the language the data is loaded in,
+  which is the game's by default (the language setting). A player who sets Shturmap to another language than the
+  game's gets no marks from screenshots; a later change could keep the game language's short names beside, as
+  `GameData.GameNames` does for extracts.
+- **What the game's cyan outline marks** on stash cells (seen in the spike): if it is what the hideout or quests
+  need, the words could say so. Not checked.
+
 ## 2026-10-09: the pre-release review
 
 Before going public, six reviewers (privacy, public-repository content, UX, engine code, UI code, features) went

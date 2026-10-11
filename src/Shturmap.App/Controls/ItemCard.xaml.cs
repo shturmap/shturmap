@@ -48,6 +48,13 @@ public sealed partial class ItemCard : UserControl, ICard
 
     public Visibility Hidden(int count) => count > 0 ? Visibility.Collapsed : Visibility.Visible;
 
+    public Visibility ShownIfText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+
+    /// <summary>NOT ANY MORE was clicked: the player retracts what is known of the item.</summary>
+    public event Action<string>? NotAnyMore;
+
+    private void OnNotAnyMoreClick(object sender, RoutedEventArgs e) => NotAnyMore?.Invoke(View.ItemId);
+
     /// <summary>Segoe Fluent Icons for sources without a trader: craft (wrench), flea market (price tag; the shopping bag
     /// is the Find-in-raid quest type, owner 2026-10-03), loose (pin on a surface).</summary>
     public static string SourceGlyph(SourceKind kind) => char.ConvertFromUtf32(kind switch

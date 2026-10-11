@@ -16,6 +16,13 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
+## 0.5.0
+
+- tour:1 · What you have · Screenshot your key tool or stash in the game: the items your quests need say "Seen in your stash".
+- tour:1 · From the game's log · What a quest hands you at its start, its rewards and insurance returns get a mark too.
+- tour:1 · Not any more · One click on an item's card takes a mark back. Marks never change the plan.
+- tour · Deutsch · Shturmap speaks German: it follows the game's language, or pick one in settings.
+
 ## 0.4.0 · Praetorian
 
 - tour · The tour · Seven short chapters on how it works. Click to take it; help brings it back.

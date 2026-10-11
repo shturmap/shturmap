@@ -27,6 +27,10 @@ public sealed record ItemCardView(string ItemId, string Name, bool IsKey, IReadO
 {
     /// <summary>The active quests that need the item, each once: what the card keeps lit beside the item while it is read.</summary>
     public IReadOnlyList<string> QuestIds => Uses.Select(u => u.QuestId).Distinct(StringComparer.Ordinal).ToList();
+
+    /// <summary>What Shturmap learned of having the item ("Seen in your stash · 5 Oct, 21:40"; <see cref="StashMarks.ForCard"/>),
+    /// or null when nothing is known: then the card has no STASH section.</summary>
+    public string? Stash { get; init; }
 }
 
 public static class ItemCards

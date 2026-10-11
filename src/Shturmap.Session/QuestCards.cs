@@ -37,6 +37,13 @@ public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemI
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
 
+    /// <summary>How many of it the quest needs (the "×3" in <see cref="Text"/>).</summary>
+    public int Count { get; init; } = 1;
+
+    /// <summary>What Shturmap learned of having it ("Given with the quest · 25 Sep"; <see cref="StashMarks"/>), or empty.
+    /// With a mark, <see cref="Source"/> says where to get the rest, if any.</summary>
+    public string Mark { get; init; } = "";
+
     /// <summary>
     /// Every item the row stands for ("A or B", gear worn together, a weapon class): it is each of them for the linked
     /// highlight, though it pictures <see cref="ItemId"/>, the first. One item for a plain row.
@@ -333,6 +340,7 @@ public static class QuestCards
                 needs.Add(new CardNeed(task.Id, need.Kind, need.Alternatives[0], text, why, ItemCards.BestOf(data, sources, need.Alternatives, quests))
                 {
                     Alternatives = need.Alternatives.Distinct(StringComparer.Ordinal).ToList(),
+                    Count = Math.Max(1, need.Count),
                 });
             }
         }

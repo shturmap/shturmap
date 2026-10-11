@@ -88,6 +88,11 @@ local cache and skip without it.
    game showed. Copy the screenshot into `tests\fixtures\ocr` (git-ignored) and run `ExitListReaderTests`.
 7. The raid card's MIN LEFT against the game's own timer on a screenshot (within a minute).
 8. `tools\make-log-fixtures.ps1` makes local fixtures of the new session; run the tests.
+9. The stash reading: in the menus, screenshot the key tool and one stash page with the game's key; the app log says
+   "Stash read from a menu screenshot: N grids, M cells with items the quests need", and the rows of what the
+   pictures showed say "Seen in your stash". `shturmap-cli stash "<the screenshot>"` prints what it read cell by
+   cell (a changed cell size, label font or line breaks it silently). Copy both into `tests\fixtures\ocr\stash`
+   (git-ignored) and run `StashReaderTests`.
 
 When a check finds drift: fix the rule, add a test with made-up ids (never a real log line or quest text), update
 DESIGN.md in the same change, and add a line to the log at the end.
@@ -152,6 +157,8 @@ pictures stay on the PC.
 | The folder `Documents\Escape from Tarkov\Screenshots` | `InstallLocator` | no screenshots seen | `locate` |
 | The list in the top right 0.60 × 0.62 of the picture's height, under a green bar, the "??:??:??" column right of it, header "Find an extraction point" | `ExitListReader`, `ExitList` | nothing read (says "not checked": safe); a list of one exit refused | the app log; `ExitListReaderTests` with new screenshots |
 | The list's names are tarkov.dev's extract names, in the game's language or English | `ExitList.Match`, `GameSession.Exits` | ⚠ an extract the game renamed reads "not on your list" and is drawn hollow though it is open | compare the app log's count with the game's list (step 4.6) |
+| A menu screenshot's item grids: cells of 63 px at 1080p scaled by min(width/1920, height/1080), a one-pixel line in the stash and a two-pixel one in a window, the game's cyan outline on marked cells, the short name at the top right, the stack count and the found-in-raid mark at the bottom right, the stash ten wide at the right, the trader's grid on the trading screen hanging on the left edge | `StashReader` | nothing read (no marks: safe), or a wrong count | `shturmap-cli stash <png>` on one stash screenshot and one of the key tool after a patch; `StashReaderTests` with the local screenshots |
+| The items' short names on the cells are tarkov.dev's `shortName` in the game's language | `GameSession.StashCandidates`, `StashReader` | an item the game renamed gets no mark | the app log's "cells with items the quests need" against the picture |
 
 ### Game settings and install
 

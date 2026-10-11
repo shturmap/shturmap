@@ -7,6 +7,10 @@ public enum ArtKind
 {
     Trader,
     Item,
+
+    /// <summary>tarkov.dev's grid image of an item: the cell as the game draws it, 63 px per cell and a line, with its
+    /// short name; the stash reading's template (docs/DESIGN.md §2, "What you have").</summary>
+    Grid,
 }
 
 /// <summary>
@@ -18,8 +22,12 @@ public sealed class GameArt(HttpClient http, string folder)
 {
     private readonly ConcurrentDictionary<string, Task<string?>> _loads = new(StringComparer.Ordinal);
 
-    public static Uri UrlFor(ArtKind kind, string id) =>
-        new(kind == ArtKind.Trader ? $"https://assets.tarkov.dev/{id}.webp" : $"https://assets.tarkov.dev/{id}-icon.webp");
+    public static Uri UrlFor(ArtKind kind, string id) => new(kind switch
+    {
+        ArtKind.Trader => $"https://assets.tarkov.dev/{id}.webp",
+        ArtKind.Grid => $"https://assets.tarkov.dev/{id}-grid-image.webp",
+        _ => $"https://assets.tarkov.dev/{id}-icon.webp",
+    });
 
     /// <summary>The cached PNG, if it is already on disk.</summary>
     public string? Cached(ArtKind kind, string id) =>
@@ -43,7 +51,7 @@ public sealed class GameArt(HttpClient http, string folder)
 
     // Ids are tarkov.dev's hex ids; anything else is not a file name we'd write.
     private static string? Key(ArtKind kind, string id) =>
-        id.Length is > 0 and <= 64 && id.All(char.IsAsciiLetterOrDigit) ? $"{(kind == ArtKind.Trader ? "trader" : "item")}-{id}" : null;
+        id.Length is > 0 and <= 64 && id.All(char.IsAsciiLetterOrDigit) ? $"{kind switch { ArtKind.Trader => "trader", ArtKind.Grid => "grid", _ => "item" }}-{id}" : null;
 
     private async Task<string?> DownloadAsync(Uri url, string path)
     {

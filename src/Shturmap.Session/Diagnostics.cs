@@ -67,6 +67,11 @@ public static class Diagnostics
         Line("Read the extract list from screenshots", !s.ReadExits ? "off"
             : s.ExitReaderMissing ? "on, but Windows has no text recognition language"
             : s.ExitReaderLanguage is { } language ? $"on ({language})" : "on");
+        // And "why has nothing a mark?": the setting and the reader; never the marks themselves (what the player has
+        // is theirs; docs/DESIGN.md §8, "Reports").
+        Line("Read your stash from menu screenshots", !s.ReadStash ? "off"
+            : s.StashReaderMissing ? "on, but Windows has no text recognition language"
+            : s.StashReaderLanguage is { } stashLanguage ? $"on ({stashLanguage})" : "on");
 #if DEVTOOLS
         // Developer builds only: a release has no study log (owner, 2026-10-03).
         Line("Study log", s.StudyLogOn ? "on" : "off");

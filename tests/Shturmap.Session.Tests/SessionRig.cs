@@ -176,6 +176,12 @@ internal sealed class SessionRig : IAsyncDisposable
         File.Move(made, Path.Combine(_root, "Screenshots", name));
     }
 
+    /// <summary>The game's Screenshots folder, for a test that names a file its own way (a menu screenshot).</summary>
+    public string ScreenshotsFolder => Path.Combine(_root, "Screenshots");
+
+    /// <summary>The app's own data folder (its database, its stash file).</summary>
+    public string AppFolder => Path.Combine(_root, "app");
+
     /// <summary>The names of the files in the Screenshots folder now.</summary>
     public IReadOnlyList<string> Screenshots =>
         Directory.EnumerateFiles(Path.Combine(_root, "Screenshots")).Select(Path.GetFileName).OfType<string>().Order().ToList();

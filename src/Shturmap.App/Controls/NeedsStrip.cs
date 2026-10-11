@@ -16,6 +16,9 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title)
     /// <summary>How many of it: from two up, "×3" beside the cell.</summary>
     public int Count { get; init; } = 1;
 
+    /// <summary>Something is known of having it (a mark; docs/DESIGN.md §4, "What you have"): a thin ink bar under the cell.</summary>
+    public bool Marked { get; init; }
+
     /// <summary>Whether two cells say the same, their alternatives too (Rules.RowLists).</summary>
     public static bool Same(NeedChip a, NeedChip b) =>
         a == b with { Alternatives = a.Alternatives } && Rules.RowLists.Same(a.Alternatives, b.Alternatives);
@@ -78,7 +81,25 @@ public sealed partial class NeedsStrip : StackPanel
             Linked.SetItem(cell, need.ItemId);
             if (need.Alternatives is { Count: > 1 } several)
                 Linked.SetItems(cell, several);
-            Children.Add(cell);
+            if (need.Marked)
+            {
+                // A mark: a thin ink bar under the cell, the one thing that says "something is known of having it"
+                // at this size; the words are on the BRING row and the card.
+                var marked = new Grid();
+                marked.Children.Add(cell);
+                marked.Children.Add(new Border
+                {
+                    Height = 2,
+                    VerticalAlignment = VerticalAlignment.Bottom,
+                    IsHitTestVisible = false,
+                    Background = (Brush)Application.Current.Resources["InkBrush"],
+                });
+                Children.Add(marked);
+            }
+            else
+            {
+                Children.Add(cell);
+            }
             // Several of one item: the number right after its cell, as the kit's pictures carry it (owner, 2026-10-05:
             // "If multiple of the same, it should say so with a number"). Beside, since a figure inside an 18 px cell
             // would hide the item.

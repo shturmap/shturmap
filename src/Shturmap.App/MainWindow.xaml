@@ -42,6 +42,16 @@
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
             <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
             <TextBlock Text="{x:Bind For}" Style="{StaticResource NoteText}" />
+            <!-- What Shturmap learned of having it, in ink with the stash grid (docs/DESIGN.md §4, "What you have");
+                 the amber line then says where to get the rest, if any. -->
+            <Grid ColumnSpacing="5" Visibility="{x:Bind MarkVisibility}">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource InkBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />
+              <TextBlock Grid.Column="1" Text="{x:Bind Mark}" Style="{StaticResource NoteText}" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+            </Grid>
             <TextBlock Text="{x:Bind Source}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}"
                        Visibility="{x:Bind SourceVisibility}" />
           </StackPanel>
@@ -421,6 +431,21 @@
                   </StackPanel>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind ReadExitsNote}" />
+                <!-- The item grids in a menu screenshot, read for what the quests need (owner, 2026-10-11): the second
+                     case where a screenshot's picture is opened, so it can be unticked, and its note says what is
+                     looked at and what is kept (docs/DESIGN.md §2). -->
+                <ToggleButton IsChecked="{x:Bind ViewModel.ReadStash, Mode=OneWay}" Click="OnReadStashClick" Margin="0,8,0,0"
+                              Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsReadStash}">
+                  <StackPanel Orientation="Horizontal" Spacing="9">
+                    <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                            Background="{x:Bind StudyBoxBrush(ViewModel.ReadStash), Mode=OneWay}">
+                      <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
+                                Visibility="{x:Bind ShownIfTrue(ViewModel.ReadStash), Mode=OneWay}" />
+                    </Border>
+                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsReadStash}" FontWeight="SemiBold" />
+                  </StackPanel>
+                </ToggleButton>
+                <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind ReadStashNote}" />
                 <!-- Crash reports go only as the player says here (owner, 2026-10-03: default "Ask after a crash";
                      docs/DESIGN.md §8, "Reports"). -->
                 <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0">
@@ -955,6 +980,9 @@
                             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
                                           ItemTemplate="{StaticResource RequirementTemplate}" />
+                            <!-- Once, until the first mark from a menu screenshot: the one thing to do for marks. -->
+                            <TextBlock Text="{x:Bind local:ViewTexts.BringStashNote}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                       Visibility="{x:Bind StashNoteVisibility}" />
                           </StackPanel>
                         </StackPanel>
                       </ContentControl>

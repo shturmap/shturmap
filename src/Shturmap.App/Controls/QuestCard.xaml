@@ -115,6 +115,15 @@
                     <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
                     <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                    <!-- What Shturmap learned of having it, as on the BRING row (docs/DESIGN.md §4, "What you have"). -->
+                    <Grid ColumnSpacing="5" Visibility="{x:Bind controls:QuestCard.ShownIf(Mark)}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource InkBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />
+                      <TextBlock Grid.Column="1" Text="{x:Bind Mark}" FontSize="12" TextWrapping="Wrap" />
+                    </Grid>
                     <TextBlock Text="{x:Bind Source}" Foreground="{StaticResource AmberBrush}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{x:Bind controls:QuestCard.ShownIf(Source)}" />
                   </StackPanel>

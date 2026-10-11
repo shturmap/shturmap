@@ -60,12 +60,21 @@ function Log([string]$message) {
 }
 # Quests come only from the game's notification log, so the fake game "starts" some Streets quests there.
 $push = Join-Path $root ("Logs\$session\" + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510 push-notifications_000.log')
-function QuestStarted([string]$id) {
+# -Items: item ids the quest hands over at its start, as the game's message carries them (top-level entries of
+# items.data); the BRING rows of those items then say "Given with the quest" (docs/DESIGN.md §4, "What you have").
+function QuestStarted([string]$id, [string[]]$Items = @()) {
   $now = Get-Date
   $dt = [DateTimeOffset]::new($now).ToUnixTimeSeconds()
+  # ($itemsJson, not $items: PowerShell's variables don't mind their case, so $items would be the parameter.)
+  $itemsJson = ''
+  if ($Items.Count -gt 0) {
+    $n = 0
+    $entries = ($Items | ForEach-Object { $n++; "{ `"_id`": `"fake-item-$id-$n`", `"_tpl`": `"$_`", `"parentId`": `"fake-stash`", `"slotId`": `"hideout`" }" }) -join ', '
+    $itemsJson = ",`r`n    `"items`": { `"stash`": `"fake-stash`", `"data`": [ $entries ] }"
+  }
   $body = "{`r`n  `"type`": `"new_message`",`r`n  `"eventId`": `"fake-$id`",`r`n  `"dialogId`": `"54cb50c76803fa8b248b4571`",`r`n" +
     "  `"message`": {`r`n    `"_id`": `"fake-$id`",`r`n    `"type`": 10,`r`n    `"dt`": $dt,`r`n    `"text`": `"quest started`",`r`n" +
-    "    `"templateId`": `"$id description`"`r`n  }`r`n}`r`n"
+    "    `"templateId`": `"$id description`"$itemsJson`r`n  }`r`n}`r`n"
   [IO.File]::AppendAllText($push, $now.ToString('yyyy-MM-dd HH:mm:ss.fff') + "|1.1.5.1.47510|Info|push-notifications|Got notification | ChatMessageReceived`r`n" + $body)
 }
 function Shot([string]$position, [int]$n = 0) {
@@ -165,14 +174,17 @@ Log 'Session mode: Pve'
 Log 'PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0'
 # Revision - Streets of Tarkov, Dandies, Ballet Lover, Audit, Glory to CPSU, Road Closed; Shortage and Acquaintance
 # want items found in raid (what a Scav raid can do for them).
-foreach ($quest in '639135f286e646067c176a87', '65734c186dc1e402c80dc19e', '639135a7e705511c8a4a1b78',
-                   '638fcd23dc65553116701d33', '64f5aac4b63b74469b6c14c2', '639282134ed9512be67647ed',
+# Revision "hands over" one of its three markers and Ballet Lover its key, so BRING shows a part mark ("1 of 3: given
+# with …", with where to get the rest) and a whole one ("Given with the quest").
+QuestStarted '639135f286e646067c176a87' -Items '5991b51486f77447b112d44f'
+QuestStarted '639135a7e705511c8a4a1b78' -Items '63a39e1d234195315d4020bd'
+foreach ($quest in '65734c186dc1e402c80dc19e', '638fcd23dc65553116701d33', '64f5aac4b63b74469b6c14c2', '639282134ed9512be67647ed',
                    '5967733e86f774602332fc84', '5d24b81486f77439c92d6ba8') {
   QuestStarted $quest
 }
 if ($PlanOnly) {
-  # Pharmacist and Golden Swag, on Customs.
-  QuestStarted '5969f9e986f7741dde183a50'
+  # Pharmacist and Golden Swag, on Customs; Pharmacist "hands over" its dorm key, so one BRING row carries a mark.
+  QuestStarted '5969f9e986f7741dde183a50' -Items '59387a4986f77401cc236e62'
   QuestStarted '5979eee086f774311955e614'
 }
 if ($Demo) {

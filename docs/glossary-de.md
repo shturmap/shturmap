@@ -70,6 +70,9 @@ gender.
 | the hand-over mark: an item followed by → and a trader's portrait; portrait | „Item mit → und Trader-Porträt“; das Trader-Porträt | help's HelpTicks (owner, 2026-10-10) |
 | mark; MS2000 Marker | markieren; MS2000 Marker | the game too (Markiere, 55 texts) |
 | stash; plant | verstecken; platzieren | The game: verstauen (56 texts), platzieren (54) |
+| stash (the player's storage); STASH | Stash (der); STASH | players' word (2026-10-11, DESIGN.md §4 "What you have"): „in deinem Stash“. Not in the data: its „Lager“ and „Versteck“ are storerooms and the Hideout |
+| key tool; case (a container); found in raid (on a mark) | Key Tool (das); Case (das); FiR | players' words. The game: Schlüssel-Organizer („Schl.Orga.“), Koffer, Behälter |
+| insurance; returned by insurance | Versicherung (die); aus der Versicherung zurück | the game: Versicherung (hideout); players say it too |
 | complete a quest; fail | abschließen; failen (gefailt) | The game: abschließen („Schließe die Aufgabe … ab“), fehlschlagen |
 | spawn; spot; floor, floors; basement | Spawn (der); Spot (der), Spots; Stock (der), Stockwerke (never Stöcke), in compounds Stockwerk- (STOCKWERKDATEN); Keller | maps `BotZone` „Beliebiger Scav-Spawn“, `BotZoneFloor1` „Erstes Stockwerk“, `BotZoneBasement` |
 | PvE, PvP, Seasonal; group | PvE, PvP, Season; Gruppe | tasks „Seasoncharakter“, „Season 1“ |
@@ -129,7 +132,11 @@ gender.
 | dev build, developer builds; developer run; folder build; installed; study log | Dev-Build (der), Dev-Builds; Entwickler-Testlauf (der); Ordner-Build; installiert; Studien-Log (das) | the build is what was built („Nur in Dev-Builds“, the version line); a run is a developer's session: snapshots, fake games, the demo (DESIGN.md §8): „Entwickler-Testläufe senden nichts“ |
 | deadly area; SNIPER ZONE | tödlicher Bereich; SNIPER-ZONE | |
 | map artwork; map render; sheet; 10 m grid | Map-Grafik (in the legend: Grafik); Map-Render; Blatt; 10-m-Raster | „Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster …“; credit line „Raster 10 m“; caps RASTER 10 M |
-| settings rows | Positions-Screenshots löschen; Extract-Liste aus Screenshots lesen; Absturzberichte; Updates | options: NACH ABSTURZ FRAGEN · IMMER SENDEN · NIE; AUTOMATISCH · NUR BENACHRICHTIGEN · AUS |
+| settings rows | Positions-Screenshots löschen; Extract-Liste aus Screenshots lesen; Deinen Stash aus Menü-Screenshots lesen; Absturzberichte; Updates | options: NACH ABSTURZ FRAGEN · IMMER SENDEN · NIE; AUTOMATISCH · NUR BENACHRICHTIGEN · AUS |
+| a mark (what you have); gets a mark; takes a mark back; NOT ANY MORE, Not any more | Markierung (die); bekommt eine Markierung; nimmt eine Markierung zurück; NICHT MEHR, Nicht mehr | Shturmap's own mark on a BRING row or a card (DESIGN.md §4 "What you have"); apart from "mark" the objective (markieren) |
+| Seen in your stash · {date}; "…, found in raid" and "…, not found in raid" on a mark; {seen} of {needed}; "…, not in your screenshots of {date}" | In deinem Stash gesehen · {date}; „, FiR“ and „, nicht FiR“; {seen} von {needed}; „, nicht in deinen Screenshots vom {date}“ | the mark's fixed wording (SessionTexts Mark*), quoted in What's New; the date in the dative, „vom 12. Okt.“ |
+| Given with the quest; given with {quest}; reward from {quest}; {count} as reward from {quest}; {count} more: {source} | Mit der Quest bekommen; mit {quest} bekommen; Belohnung aus {quest}; {count} als Belohnung aus {quest}; Noch {count}: {source} | the log's marks, and the amber line under a part mark |
+| menu screenshot; item cells; What you have; From the game's log | Menü-Screenshot (der); Item-Zellen; Was du hast; Aus dem Log des Spiels | the setting's note; What's New's names |
 | GAME FOLDER; CHOOSE GAME FOLDER…; FIND AUTOMATICALLY | SPIELORDNER; SPIELORDNER WÄHLEN…; AUTOMATISCH SUCHEN | „(von dir gewählt)“, „(automatisch gefunden)“, NICHT GEFUNDEN |
 
 ## Windows and UI words

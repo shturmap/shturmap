@@ -271,6 +271,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             _readExits = ReadExitsOn(_store.GetSetting(ReadExitsSetting));
             if (!_readExits)
                 AppLog.Info("Read the extract list from screenshots: off");
+            _readStash = ReadStashOn(_store.GetSetting(ReadStashSetting));
+            if (!_readStash)
+                AppLog.Info("Read your stash from menu screenshots: off");
+            OpenStash();
             if (_deleteScreenshots)
                 AppLog.Info("Delete position screenshots after reading: on");
 #if DEVTOOLS
@@ -303,15 +307,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 Failed("Placing a position", e);
             }
             // Then, in a raid, the picture's top right corner: the game's extract list, if it shows there (settings,
-            // on unless unticked). After the position, which never waits for it.
+            // on unless unticked). After the position, which never waits for it. A screenshot without a position
+            // was taken in the menus: its item grids, for what the quests need (settings, on unless unticked).
             try
             {
                 if (s.Info.HasPosition)
                     await ReadExitsAsync(s);
+                else
+                    await ReadStashAsync(s);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                Failed("Reading the extract list from a screenshot", e);
+                Failed(s.Info.HasPosition ? "Reading the extract list from a screenshot" : "Reading the stash from a menu screenshot", e);
             }
         });
         // The watcher keeps going and sets itself up again; each kind of trouble is said once (Failed).
@@ -1281,6 +1288,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (item.Event is QuestEvent quest)
         {
             var mode = _tracker.State.Mode == GameMode.Unknown ? _mode : _tracker.State.Mode;
+            // What the message says the game put into the stash: a mark, whether or not the message is new to the store.
+            StashGrant(quest);
             if (_store?.Add([FromLog(mode, quest)]) > 0)
             {
                 // Worked out once for a run of quest messages (RecomputeQuestsIfDue): what follows here reads none of it.
@@ -1316,6 +1325,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                     Study.Game("group.status", ("status", group.Status));
                 return;
             case InsuranceNoticeEvent notice:
+                StashGrant(notice);
                 if (!item.IsReplay)
                 {
                     Study.Game("insurance", ("kind", notice.Kind), ("location", notice.LocationId), ("items", notice.ItemCount));
@@ -1364,6 +1374,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             case RaidStarted started:
                 _loadingCueOwed = null;
                 ResolveMap();
+                // A pass over the stash ends with the raid: what comes back from it is another matter.
+                _ledger.RaidStarted();
                 // The side is only certain now; the kit shown while loading was a PMC's, unless a setup said Scav. The cue
                 // and the card's note say what counts for a Scav; a notice said it a third time until the review of
                 // 2026-10-09.
@@ -1788,6 +1800,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             Study.Ui("untick", ("objective", gone), ("quest", QuestOf(gone)), ("how", "done"));
         _ticked = _ticks?.Of(_mode) ?? NoTicks;
         _done = _ticked.Count == 0 ? NothingDone : _ticked.Keys.ToHashSet(StringComparer.Ordinal);
+        // And what a quest handed over at its start: used up or moot once the quest is over.
+        ForgetStashGrantsOfQuestsOver();
         // Picks from before they were kept per map go to the maps their quests have work on, once the data says which.
         if (_data is not null && _picks is not null)
         {
@@ -2081,6 +2095,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ReadExits = _readExits,
             ExitReaderLanguage = _exitReaderLanguage,
             ExitReaderMissing = _exitReaderLooked && _exitReader is null && ExitReader is null,
+            Marks = _ledger.Marks,
+            ReadStash = _readStash,
+            StashNoteShown = _readStash && !_ledger.Marks.Values.Any(m => m.Source == Shturmap.Core.Stash.MarkSource.Screenshot),
+            StashReaderLanguage = _stashReaderLanguage,
+            StashReaderMissing = _stashReaderLooked && _stashReader is null && StashReader is null,
             Locations = _locations,
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,
@@ -2123,6 +2142,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (activeCount != _publishedActive && _publishedActive >= 0 && !_replaying)
             Study.Game("quests.count", ("from", _publishedActive), ("to", activeCount), ("data", _data is not null), ("mode", _mode));
         _publishedActive = activeCount;
+        SaveStashIfDirty();
         Changed?.Invoke(Snapshot);
     }
 
@@ -2220,6 +2240,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_tailer is not null)
             await _tailer.DisposeAsync();
         Artwork?.Dispose();
+        // The pass over the stash, if one was under way, ends with the session; the file says what it showed.
+        _ledger.EndPass();
+        SaveStashIfDirty();
         _store?.Dispose();
         Study.Game("app.exit");
         if (Study.Enabled)

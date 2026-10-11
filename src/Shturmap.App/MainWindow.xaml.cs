@@ -418,6 +418,18 @@ public sealed partial class MainWindow : Window
         Study.Ui("settings.readExits", ("on", on));
     }
 
+    // "Read your stash from menu screenshots" in settings (owner, 2026-10-11): the second case where Shturmap opens a
+    // screenshot's picture; its note says what is looked at and what is kept, and unticking it stops it.
+    public string ReadStashNote =>
+        AppTexts.SettingsReadStashNote;
+
+    private async void OnReadStashClick(object sender, RoutedEventArgs e)
+    {
+        var on = !ViewModel.ReadStash;
+        await _session.SetReadStashAsync(on);
+        Study.Ui("settings.readStash", ("on", on));
+    }
+
     private async void OnDeleteScreenshotsClick(object sender, RoutedEventArgs e)
     {
         var on = !ViewModel.DeleteScreenshots;
@@ -459,6 +471,7 @@ public sealed partial class MainWindow : Window
         ShowLanguage(s);
         vm.DeleteScreenshots = s.DeleteScreenshots;
         vm.ReadExits = s.ReadExits;
+        vm.ReadStash = s.ReadStash;
         vm.HelpKeys = s.ScreenshotKeys.Count > 0 ? string.Join(AppTexts.KeysOr, s.ScreenshotKeys.Select(k => k.Name)) : AppTexts.ScreenshotKeyUnknown;
         // A raid loading ends any preview at once: the raid's map is what matters now.
         if (vm.InRaid && _previewing is not null)
@@ -664,6 +677,7 @@ public sealed partial class MainWindow : Window
                 ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
                 CardOnly = CardOnly(p, i),
+                StashNote = s.StashNoteShown,
             };
         }).ToList(), PlanCard.Same);
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
@@ -686,18 +700,33 @@ public sealed partial class MainWindow : Window
 
     private static string GlyphOf(RequirementKind kind) => kind == RequirementKind.Key ? Glyphs.Key : Glyphs.Bring;
 
-    /// <summary>A BRING row: the item, what it is for and for which quests, and where to get it.</summary>
-    private static RequirementLine BringLine(SessionSnapshot s, RequirementView r) =>
-        new(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, BestSource(s, r)) { Alternatives = r.Alternatives };
+    /// <summary>What Shturmap learned of having the row's item, or null (Session.StashMarks).</summary>
+    private static StashRowView? MarkOf(SessionSnapshot s, RequirementView r) =>
+        s.Data is { } data && s.Marks.Count > 0 ? StashMarks.ForRow(data, r, s.Marks) : null;
+
+    /// <summary>A BRING row: the item, what it is for and for which quests, what is known of having it, and where to
+    /// get it (or the rest of it, under a part mark; nothing under a mark that covers the row).</summary>
+    private static RequirementLine BringLine(SessionSnapshot s, RequirementView r)
+    {
+        var mark = MarkOf(s, r);
+        var source = mark is null ? BestSource(s, r)
+            : mark.More > 0 && BestSource(s, r) is { Length: > 0 } rest ? SessionTexts.MarkMore(count: mark.More.ToString("N0", UiLanguage.Culture), source: rest)
+            : "";
+        return new RequirementLine(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, source) { Alternatives = r.Alternatives, Mark = mark?.Text ?? "" };
+    }
 
     /// <summary>A tiny cell for an item, with how many (the row's, or one quest's); its tooltip says what it is, what
-    /// for, and where to get it.</summary>
-    private static NeedChip Chip(SessionSnapshot s, RequirementView r, int? count = null) =>
-        new(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, BestSource(s, r) }.Where(t => t.Length > 0)))
+    /// for, what is known of having it, and where to get it.</summary>
+    private static NeedChip Chip(SessionSnapshot s, RequirementView r, int? count = null)
+    {
+        var mark = MarkOf(s, r);
+        return new NeedChip(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, mark?.Text ?? "", BestSource(s, r) }.Where(t => t.Length > 0)))
         {
             Alternatives = r.Alternatives,
             Count = count ?? r.Count,
+            Marked = mark is not null,
         };
+    }
 
     /// <summary>What one quest needs brought on a plan's map, as tiny cells beside its name, each with that quest's own
     /// number (empty: nothing).</summary>
@@ -1226,15 +1255,54 @@ public sealed partial class MainWindow : Window
 
     // ---- quest cards and linked highlighting ----
 
-    private QuestCardView? BuildCard(string questId) =>
-        _snapshot is { Data: { } data } s ? QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources, s.Ticks) : null;
-
-    private FrameworkElement? CreateCard(CardKey key) => key switch
+    private QuestCardView? BuildCard(string questId)
     {
-        CardKey.Quest q when BuildCard(q.Id) is { } view => new QuestCard(view),
-        CardKey.Item i when _snapshot is { Data: { } data } s => new ItemCard(ItemCards.Build(data, s.Sources, s.Quests, i.Id, s.Done)),
-        _ => null,
-    };
+        if (_snapshot is not { Data: { } data } s)
+            return null;
+        var view = QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources, s.Ticks);
+        if (s.Marks.Count == 0 || view is null)
+            return view;
+        // The card's BRING rows carry the marks as Plan's do (Session.StashMarks).
+        return view with
+        {
+            Needs = view.Needs.Select(n =>
+            {
+                var row = new RequirementView(n.Kind, n.Text, "", n.ItemId, n.QuestIds, Alternatives: n.Alternatives, Count: n.Count);
+                if (StashMarks.ForRow(data, row, s.Marks) is not { } mark)
+                    return n;
+                var source = mark.More > 0 && n.Source.Length > 0 ? SessionTexts.MarkMore(count: mark.More.ToString("N0", UiLanguage.Culture), source: n.Source) : "";
+                return n with { Mark = mark.Text, Source = source };
+            }).ToList(),
+        };
+    }
+
+    private FrameworkElement? CreateCard(CardKey key)
+    {
+        switch (key)
+        {
+            case CardKey.Quest q when BuildCard(q.Id) is { } view:
+                return new QuestCard(view);
+            case CardKey.Item i when _snapshot is { Data: not null } s:
+                var card = new ItemCard(BuildItemCard(s, i.Id));
+                // NOT ANY MORE: the mark goes, from any source; the card follows the session's next snapshot.
+                card.NotAnyMore += itemId =>
+                {
+                    Study.Ui("card.notanymore");
+                    _ = _session.NotAnyMoreAsync(itemId);
+                };
+                return card;
+            default:
+                return null;
+        }
+    }
+
+    // The item card's view, with what Shturmap learned of having the item (Session.StashMarks), if anything.
+    private static ItemCardView BuildItemCard(SessionSnapshot s, string itemId)
+    {
+        var data = s.Data!;
+        var view = ItemCards.Build(data, s.Sources, s.Quests, itemId, s.Done);
+        return s.Marks.GetValueOrDefault(itemId) is { } mark ? view with { Stash = StashMarks.ForCard(data, mark) } : view;
+    }
 
     // Open cards follow the session: a quest's status and distances, the quests an item is needed for.
     private bool UpdateCard(FrameworkElement card)
@@ -1244,8 +1312,8 @@ public sealed partial class MainWindow : Window
             case QuestCard quest when BuildCard(quest.View.QuestId) is { } view:
                 quest.Show(view);
                 return true;
-            case ItemCard item when _snapshot is { Data: { } data } s:
-                item.Show(ItemCards.Build(data, s.Sources, s.Quests, item.View.ItemId, s.Done));
+            case ItemCard item when _snapshot is { Data: not null } s:
+                item.Show(BuildItemCard(s, item.View.ItemId));
                 return true;
             default:
                 return false;

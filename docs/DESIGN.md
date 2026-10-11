@@ -20,16 +20,18 @@ completed quests, also make a nice animation"; §4, principle 11).
 
 **Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
 part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
-item scanning by hotkey, ammo charts, squad sharing, achievements, overlays on the game window, statistics
-dashboards, a settings maze.
+item scanning by hotkey, a stash register or inventory browser (what Shturmap learned of having an item shows only
+on the rows that need it; §4, "What you have"), ammo charts, squad sharing, achievements, overlays on the game
+window, statistics dashboards, a settings maze.
 
 ## 2. Ground rules (game terms of service)
 
 Shturmap reads only files the game writes for the player, plus public community data:
 
-- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots`, for positions; and, of a screenshot taken
-  in a raid, **the top right corner of its picture**, for the game's extract list (below; the player can turn that
-  off, and no other part of any picture is looked at);
+- screenshot **file names** in `Documents\Escape from Tarkov\Screenshots`, for positions; of a screenshot taken in
+  a raid, **the top right corner of its picture**, for the game's extract list; and of a screenshot taken in the
+  menus, **the item grids its picture shows**, for the items the active quests need (both below; the player can turn
+  each off, and no other part of any picture is looked at);
 - `application_*.log` and `push-notifications_*.log` in the game's `Logs` folder, with shared read access;
 - `Control.ini` and `Game.ini`, read-only.
 
@@ -57,8 +59,8 @@ taken if it contains this information ... read it and update the map accordingly
 opened: positions come from the names, and the Tasks-screen reading of September was removed on 2026-10-01. The game
 gives each raid its own extracts, by where the player starts, and neither its logs nor tarkov.dev's data say which;
 it shows them in a list at the top right, when a raid starts and when the player asks for it (O twice by default).
-That list is the one thing read from a picture, and the reading is kept this narrow (`ExitListReader`,
-`Shturmap.Core.Screenshots.ExitList`):
+That list was the one thing read from a picture until the menu screenshots below (2026-10-11); each reading is kept
+this narrow (`ExitListReader`, `Shturmap.Core.Screenshots.ExitList`):
 
 - **Which pictures:** only a screenshot the watcher reported as new, named with a position, while the log shows a raid
   running on a map the data knows. Never a menu screenshot, never one already in the folder, never while a raid loads.
@@ -80,10 +82,44 @@ That list is the one thing read from a picture, and the reading is kept this nar
   help, the README, PRIVACY.md and the website say what is looked at; the diagnostics carry the setting's state and
   the recognition's language.
 
-This widens what Shturmap takes from the game's files by one thing, on the owner's word; BSG's 4.3.4 (below) speaks of
-"information reproduced ... by the Game" either way, and the texts that named the risk still do. Nothing else of a
-picture may be read without the owner deciding it anew: not the raid timer beside the list (Windows' recognition
-doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks screen, not the inventory.
+This widened what Shturmap takes from the game's files by one thing, on the owner's word; BSG's 4.3.4 (below) speaks of
+"information reproduced ... by the Game" either way, and the texts that named the risk still do.
+
+**The item grids in a menu screenshot are read, for what the quests need** (owner, 2026-10-11, after a design panel
+and a spike on their own screenshots: "all as recommended", then "start phase 1. Continue with phase 2 as well";
+docs/NEXT.md, "2026-10-11: what you have, the spike"). The pain point: "I don't know which items I have in my
+inventory that are required for quests, for example keys". Neither the logs nor the data say what is in the stash;
+the game draws it as grids of cells, each with the item's short name on it, in the menus. So a screenshot the player
+takes there with the game's own key is read for those grids, and what it showed of the items the active quests need
+becomes a mark on their rows (§4, "What you have"). The reading is kept as narrow as the list's (`StashReader`,
+`GameSession.Stash`):
+
+- **Which pictures:** only a screenshot the watcher reported as new, named without a position (the game names a
+  menu screenshot so), while the log shows the menus (not a raid loading or running). Never one already in the
+  folder, never a raid screenshot (those keep their one corner). The trading screen (a grid of cells hanging on the
+  screen's left edge, the trader's; the stash's cells show prices there, not names) is recognised and nothing is read
+  from it.
+- **How much of it:** the item grids the picture shows (the stash, a container's window): their cells' labels, read
+  with the text recognition built into Windows (`Windows.Media.Ocr`, on the PC, nothing sent), their stack counts
+  (a count of one digit reads as one: "at least" holds) and the found-in-raid mark (a drawn shape of Shturmap's own
+  is correlated at the mark's place, never the game's icon); against the short names of the items BRING lists for any map (keys, items to bring, gear, mods; not
+  weapons), never against the whole catalogue. A cell whose label fits none of them says nothing; a name is never
+  taken from the picture alone (tarkov.dev's grid image of a needed item, when the cache has it, can only veto a
+  label whose art plainly disagrees). The spike of 2026-10-11 measured this on the owner's screenshots: 46 of 48
+  keys, 43 of 43 medical items and 51 of 55 items of a stash page right, none wrong.
+- **What is kept:** per item id, the count seen (at least), how many of those carried the found-in-raid mark, when,
+  and from which source, in `stash.json` in the data folder (§8, "The stash file"). No pixel, no path, no word that
+  didn't match; the study log counts cells, never names. The file never goes into a report.
+- **How:** as the list's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
+  screen captured; a screenshot the player took with their own key press, never one taken for them.
+- **The player's say:** "Read your stash from menu screenshots" in settings, on unless unticked, beside the list's
+  tick and with a note that says what is looked at and what is kept. Unticked, no menu screenshot is opened; the
+  marks learned stay until the player retracts them. Its note, help, the README, PRIVACY.md, the tour's first chapter
+  and the website say it; the diagnostics carry the setting's state and the recognition's language.
+
+Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
+(Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
+screen, not the hideout, not another player's inventory in a group screen.
 
 **It changes nothing outside its own folders, with one exception the player turns on** (owner, 2026-10-04: "a mode
 that auto-deletes screenshots after a couple of seconds grace period"). "Delete position screenshots" in settings,
@@ -118,7 +154,7 @@ BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text
 software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game
 Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
 been permitted. The owner accepted that residual risk. Do not widen the boundary: only the owner does, as with the
-extract list's corner of a screenshot (above, 2026-10-05).
+extract list's corner of a screenshot (above, 2026-10-05) and the item grids of a menu screenshot (2026-10-11).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -240,6 +276,10 @@ quoting it anywhere new.
   display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Screenshots of Shturmap
   on the website and in the README may show them, as the wiki and other community sites do (owner, 2026-10-02,
   accepting that BSG's licence 4.2.2, read literally, doesn't allow it); they are never published on their own.
+  **Grid images** (tarkov.dev's drawing of an item's inventory cell, `assets.tarkov.dev/<id>-grid-image.webp`, a few
+  kilobytes each) are fetched the same way, but only for the items BRING lists when a menu screenshot is read (§2),
+  as the reading's check; never the whole catalogue (the spike of 2026-10-11 fetched 3,905 of them once, 42 MB as
+  PNG, which is what this rule avoids per player). Kept in `cache\game-art` as `grid-<id>.png`.
 - **Not used**: other Battlestate artwork (quest images, game UI art, and map art except tarkov.dev's renders of the
   three maps without SVG artwork, above), text from the EFT wiki or guide
   sites (the quest card links to the wiki page instead), and code from other community tools: TarkovMonitor,
@@ -305,6 +345,9 @@ outside raids only, and still in the cues' own motion), and the QUEST COMPLETE c
    state still comes from the logs alone: a quest with every objective ticked is active until the log says
    otherwise. Editing a quest's state by hand stays declined (owner, 2026-10-04); the code for it is gone, and rows a
    database may still hold from it are ignored like the Tasks-scan and import rows (§8, "Quest progress").
+   **And one thing about what they have, never asked for either: NOT ANY MORE on an item's card** (owner, 2026-10-11),
+   which retracts whatever Shturmap learned of having the item ("What you have"). Nothing asks whether they have
+   something.
 8. **Position is occasional.** Players press the screenshot key now and then, not continuously. Everything except
    the "you are here" parts works without a fix. A fix shows its age; the marker stays at full strength and says
    it (see "Map drawing"). No "you may be
@@ -348,8 +391,8 @@ outside raids only, and still in the cues' own motion), and the QUEST COMPLETE c
      A group's pick comes earlier still (below). A cancelled load goes back to the menus, which ends it.
    - **What** (`Planning.Kit`): every active quest's BRING row for the map; what it takes to get in or out first
      (the entry item, the exits quests name: a flare, climbing gear, money), then what the picks need, then, with
-     picks on this map, the rest under ALSO USEFUL. Without picks there it is all one list. Shturmap knows no
-     inventory, so it is a list to check, never a claim that something is missing.
+     picks on this map, the rest under ALSO USEFUL. Without picks there it is all one list. It is a list to check,
+     never a claim that something is missing: the marks ("What you have") don't change it.
    - **The cue** (RAID LOADING, GROUP PICKED) pictures it under the map's name, under a small "CHECK YOUR KIT":
      **every item, in rows of eight, up to three rows** (then "+3"), in 52 px cells, with "×3" on a picture where
      several are needed; never scaled, like the cue's text. It is a reminder to take in at a glance, not a list to
@@ -1784,10 +1827,44 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
   card, "Without: armor, headwear" (the item categories it spans; before they load, the items).
 - One row per weapon set, mod set or exit item, listing every quest it serves; the quest rows' need cells, the raid
   card's objective lines ("Use: …", "Fit: …"), the quest card's BRING and the item card ("Use, for kills", "Fit, for
-  kills", "Bring, to leave through …") say the same. Only what the data says: Shturmap knows no inventory, so never
-  "you have it". `shturmap-cli bring [mode]` lists every map's rows and flags an item without a name, a weapon list
-  shown as "X or N others" (with the categories it spans) and an exit no map has; run it after a tarkov.dev or game
-  update. Checked 2026-10-03 (PvE and PvP): no unknown items, no unmatched exits.
+  kills", "Bring, to leave through …") say the same. Only what the data says, and never "you have it": a row may carry
+  a mark saying where Shturmap learned the item was had and when ("What you have", below). `shturmap-cli bring
+  [mode]` lists every map's rows and flags an item without a name, a weapon list shown as "X or N others" (with the
+  categories it spans) and an exit no map has; run it after a tarkov.dev or game update. Checked 2026-10-03 (PvE and
+  PvP): no unknown items, no unmatched exits.
+
+**What you have** (owner, 2026-10-07: "I don't know if I already have items that are required for quests";
+2026-10-11: the second design, all twelve decisions as recommended, built after a spike; docs/NEXT.md, both entries).
+Marks on what the quests need, nowhere else: no stash screen, no list to browse, no value (§1's not-goals). Three
+sources, one mark, and every mark is an observation with its source and date, never "you have it", "in your stash" or
+"missing":
+
+| from | says | taken away when |
+| --- | --- | --- |
+| the game's notification log: the items a quest hands over at its start, its rewards, an insurance return (§8, "Logs and raids"; the item and the count, nothing else of the message) | "Given with the quest · 25 Sep" ("Given with Pharmacist · …" when the row serves several quests), "Reward from Shaking Up the Teller · 1 Oct", "Returned by insurance · 3 Oct" | start items go when their quest completes or fails; a reward or a return stays (another quest may need it); NOT ANY MORE |
+| a menu screenshot the player took, read for the items BRING lists (§2) | "Seen in your stash · 5 Oct"; "2 of 3 seen in your stash, found in raid · 5 Oct" (a hand-over that asks for the game's mark counts only cells that carry it; "…, not found in raid" when none did); "Seen in your stash · 5 Oct, not in your screenshots of 12 Oct" | NOT ANY MORE. Never by a picture: a reading can miss. A full pass (three or more stash pages within a quarter of an hour, no raid between) that didn't show the item adds the words, nothing more |
+| the player's word (not built; the ledger knows the source) | "Marked by you · 6 Oct" | NOT ANY MORE |
+
+Rules (`StashLedger`, `StashMarks`): one mark per item, the newest observation wins; counts are "at least" (two
+overlapping pages never double a stack: within a pass an item's count is the most any one screenshot showed); a row
+that needs more than was seen says its part ("3 of 7") and keeps the amber line for the rest ("4 more: Mechanic LL1
+barter · …"); a row the mark covers has no amber line; marks never change the planner's order or the kit cue (a wrong
+mark costs a glance, never a raid); the game's words throughout (stash, key tool, found in raid; German keeps Stash,
+Key Tool, FiR, as the glossary does); the newest pass dates a mark, marks never age into silence, and "not in your
+screenshots of …" is said in words, not colour (muted keeps its one meaning). The surface:
+
+- **A BRING row's third line**, in ink after the note line, with the stash grid glyph (Segoe Fluent `E80A`, used
+  nowhere else): the mark. The amber "where to get" line under it says where to get the rest, or nothing.
+- **The need cells** beside a quest's name: a 2 px ink bar under a cell with a mark; the cell's tooltip carries the
+  mark's words.
+- **The item card:** a STASH section above GET IT with the mark (with the count and the time: "2 seen in your stash,
+  found in raid · 5 Oct, 21:40") and NOT ANY MORE, the one click that retracts it, no confirmation. No section when
+  nothing is known (nothing to act on; I HAVE IT, the player's word, is not built: "only if gaps remain").
+- **One notice** after a menu screenshot that showed something a quest needs: "Seen in your stash: 3 keys your quests
+  need." Nothing is said for a screenshot that showed none.
+- **One note** under BRING on the open card, until the first mark from a screenshot: "Screenshot your key tool in the
+  game: the keys your quests need get a mark." Then gone.
+- **One setting** (§2) and a line in tour chapter 1's "reads" list.
 
 Cards behave like the nested tooltips in Crusader Kings III:
 
@@ -2073,7 +2150,8 @@ labels use, so it stays the thing you recognise.
   `useItem`, the quest item of `plantQuestItem`), with counts summed per item.
 - Shown aggregated per map in Plan, and inline on the objective in Raid ("Key: Dorm room 114 key", "Bring: MS2000 Marker"),
   on every objective that needs it.
-- Shturmap cannot see the stash; it lists what is needed, not what is missing.
+- Shturmap lists what is needed, not what is missing; what it learned of having an item is a dated mark on the row,
+  never a claim (§4, "What you have").
 
 ## 7. Raid planner
 
@@ -2359,8 +2437,18 @@ pass, a folder that can't be written) is never moved; that session keeps its set
 settings file couldn't be opened: picks, ticks and settings aren't kept this time." A second Shturmap opens the same
 file as the first (SQLite's WAL), and Windows moves no file another Shturmap holds open (`SettingsFile`).
 
-The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits and icons) stays shared in
-`%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
+**The stash file** (`stash.json` in the data folder; §4, "What you have"; `StashLedger`): what Shturmap learned of
+the player's possessions, item ids and counts only, no names, no pictures, no paths. Its shape, so that a later
+program of the player's could read it (the panel of 2026-10-11 defined it for that; nothing beside Shturmap reads it
+today): `version` 1; `passes`, each with `at`, `screenshots` and `full`; `items` by id, each with `count`, `fir` (how
+many carried the found-in-raid mark, when any), `seenAt`, `source` (`log`, `screenshot`, `you`), for a log mark
+`quest` and `grant` (`start`, `reward`, `insurance`), and `notSeenAt` after a full pass without it; `retracted` by id,
+the time of NOT ANY MORE. Written as a temporary file and one move, after each change; one that can't be read is set
+aside as `stash.json.unreadable` and the marks start over (the next screenshot or log message brings them back). It
+is never in the shared cache, a report or the diagnostics. Deleted with the data folder.
+
+The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits, icons and grid images)
+stays shared in `%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
 to a temporary file of its own (`CachedHttp.TempFor`, the process id and a GUID) and replaces the cached file in one
 move, retried for a moment while another process reads it (`CachedHttp.Replace`); a reader never sees half a file,
 and a copy that can't be saved is fetched or drawn again next time. A test runs eight writers at once.
@@ -2494,13 +2582,17 @@ fitted into the projected `svgBounds ?? bounds`. Golden test: a made-up Streets 
 **Logs and raids.** Menu → Loading (`scene preset path:`) → InRaid (`GameStarted`) → Menu
 (`PrepareSelectedProfileLocally` or matching cancelled). Map: scene path ↔ `scenePath`, then `Location:` ↔
 `nameId`, then an alias table. Side: the match-setup `Profileid` equals the menu profile for PMC raids and differs
-for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageReceived` type 10/11/12. Loading steps:
+for Scav raids; locally hosted PvE raids stay Unknown. Quests: `ChatMessageReceived` type 10/11/12, and of a start
+(10) and a completion (12) the items the message hands over, for the marks of §4, "What you have": the top-level
+entries of `items.data[]` (those whose `parentId` is `items.stash`; a weapon's parts stay inside it), each as its
+`_tpl` and `upd.StackObjectsCount` (one when absent), nothing else of the message. Loading steps:
 `LocationLoaded`, `GamePrepared`, `GameCreated`, `PlayerSpawnEvent`, `GamePooled`, `GameRunned` (and
 `MatchingCompleted` for the study log). Group: `GroupMatchRaidSettings` (its `raidSettings.location` and
 `timeVariant`); `GroupMatchRaidReady`, `GroupMatchRaidNotReady` and `GroupMatchStartGame` by their header alone,
 because their bodies (and the invites') hold other players' profiles, which Shturmap never reads. The insurer:
 `ChatMessageReceived` type 2 (a trader message) with `systemData.location` when insured gear was lost, type 8 (the
-insurance return) with the gear hours later. Each notification is logged twice ("Got notification" with its body,
+insurance return) with the gear hours later (its top-level items read as a quest's, above, for a "Returned by
+insurance" mark). Each notification is logged twice ("Got notification" with its body,
 then "Received notification"); only the first counts. A raid or load the log leaves open (no end line: the game was
 closed or crashed in it) is closed without a length once the game has started again (a newer log session) or it
 began longer ago than its map's raid length plus 30 minutes (two hours without a known length), at the last line the
@@ -2823,10 +2915,11 @@ it came from (the setting, the game, Windows, the default; "this run only" for "
 tarkov.dev's as loaded (with "extract names also in de" when the game's own names were loaded beside it); the data's
 state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; whether "Delete
-position screenshots" is on (§2); the study log
+position screenshots", "Read the extract list from screenshots" and "Read your stash from menu screenshots" are on
+(§2; the two readings with the recognition's language); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
-cut to `<id>`, and no quest names or lists go along (`Redact`). Copying sends nothing; a report carries the same
-text when the player keeps "Include diagnostics", shown first.
+cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file. Copying sends nothing;
+a report carries the same text when the player keeps "Include diagnostics", shown first.
 
 **Reports** (owner, 2026-10-03: "as easy as possible … one coherent easy to use thing, otherwise people won't
 bother", and crash reports as a mode the player chooses; Sentry, EU region; crash reports "Ask after a crash" by

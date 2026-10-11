@@ -267,6 +267,22 @@ public sealed record SessionSnapshot
     /// <summary>Windows has no text recognition language, so no list can be read (known once a raid's screenshot asked).</summary>
     public bool ExitReaderMissing { get; init; }
 
+    /// <summary>What is known of the player's possessions, by item id (<see cref="Shturmap.Core.Stash.StashLedger"/>):
+    /// marks for BRING's rows and the item card, never a claim.</summary>
+    public IReadOnlyDictionary<string, Shturmap.Core.Stash.StashMark> Marks { get; init; } = new Dictionary<string, Shturmap.Core.Stash.StashMark>();
+
+    /// <summary>Whether "Read your stash from menu screenshots" is ticked (on unless unticked).</summary>
+    public bool ReadStash { get; init; } = true;
+
+    /// <summary>Whether BRING shows the note that teaches the screenshot once: until the first mark from one.</summary>
+    public bool StashNoteShown { get; init; }
+
+    /// <summary>The language Windows reads the stash's labels in ("en-US"), once a menu screenshot asked for it; else null.</summary>
+    public string? StashReaderLanguage { get; init; }
+
+    /// <summary>Windows has no text recognition language, so no menu screenshot can be read (known once one asked).</summary>
+    public bool StashReaderMissing { get; init; }
+
     /// <summary>The game's screenshot keys, named when shown (<see cref="Shturmap.Game.Settings.GameKey.Name"/>).</summary>
     public IReadOnlyList<Shturmap.Game.Settings.GameKey> ScreenshotKeys { get; init; } = [];
 

@@ -712,4 +712,92 @@
     <value>The contact can be at most {count, plural, one {# character} other {# characters}}.</value>
     <comment>Report dialog, when the contact is too long. {count}: the most characters, 120.</comment>
   </data>
+  <data name="MarkSeen" xml:space="preserve">
+    <value>Seen in your stash · {date}</value>
+    <comment>A BRING row's third line, and the item card's STASH line: a menu screenshot showed the item. An observation with its date, never "you have it". {date}: the day, "5 Oct" (on the card with the time, "5 Oct, 21:40").</comment>
+  </data>
+  <data name="MarkSeenFir" xml:space="preserve">
+    <value>Seen in your stash, found in raid · {date}</value>
+    <comment>As MarkSeen, for a row that needs the item found in raid, when what was seen carried the game's found-in-raid mark. {date}: the day.</comment>
+  </data>
+  <data name="MarkSeenNotFir" xml:space="preserve">
+    <value>Seen in your stash, not found in raid · {date}</value>
+    <comment>As MarkSeen, for a row that needs the item found in raid, when what was seen carried no found-in-raid mark: it won't do for this quest. {date}: the day.</comment>
+  </data>
+  <data name="MarkSeenPart" xml:space="preserve">
+    <value>{seen} of {needed} seen in your stash · {date}</value>
+    <comment>As MarkSeen when fewer were seen than the row needs; the amber line under it then says where to get the rest (MarkMore). {seen}, {needed}: counts; {date}: the day.</comment>
+  </data>
+  <data name="MarkSeenPartFir" xml:space="preserve">
+    <value>{seen} of {needed} seen in your stash, found in raid · {date}</value>
+    <comment>As MarkSeenPart for a row that needs the item found in raid: {seen} counts only those with the mark. {seen}, {needed}: counts; {date}: the day.</comment>
+  </data>
+  <data name="MarkSeenCount" xml:space="preserve">
+    <value>{count} seen in your stash · {date}</value>
+    <comment>The item card's STASH line when more than one was seen. {count}: how many; {date}: the day and time.</comment>
+  </data>
+  <data name="MarkSeenCountFir" xml:space="preserve">
+    <value>{count} seen in your stash, found in raid · {date}</value>
+    <comment>As MarkSeenCount when every one of them carried the found-in-raid mark. {count}: how many; {date}: the day and time.</comment>
+  </data>
+  <data name="MarkNotSince" xml:space="preserve">
+    <value>{mark}, not in your screenshots of {date}</value>
+    <comment>Added to a Seen line when a later full pass over the stash (three or more pages) didn't show the item: the mark stays, the words say so. {mark}: the Seen line ("Seen in your stash · 5 Oct"); {date}: the day of that pass.</comment>
+  </data>
+  <data name="MarkGiven" xml:space="preserve">
+    <value>Given with the quest · {date}</value>
+    <comment>A BRING row's third line: the game's log says the quest the row is for handed the item over when it started. {date}: the day.</comment>
+  </data>
+  <data name="MarkGivenBy" xml:space="preserve">
+    <value>Given with {quest} · {date}</value>
+    <comment>As MarkGiven when the row is for several quests, or on the item card: names the quest that handed it over. {quest}: its name; {date}: the day.</comment>
+  </data>
+  <data name="MarkGivenPart" xml:space="preserve">
+    <value>{seen} of {needed}: given with {quest} · {date}</value>
+    <comment>As MarkGivenBy when the quest handed over fewer than the row needs. {seen}, {needed}: counts; {quest}: the quest's name; {date}: the day.</comment>
+  </data>
+  <data name="MarkGivenPartOwn" xml:space="preserve">
+    <value>{seen} of {needed}: given with the quest · {date}</value>
+    <comment>As MarkGivenPart when the row is that quest's alone, so the quest isn't named. {seen}, {needed}: counts; {date}: the day.</comment>
+  </data>
+  <data name="MarkGivenCount" xml:space="preserve">
+    <value>{count} given with {quest} · {date}</value>
+    <comment>The item card's STASH line when a quest handed over more than one. {count}: how many; {quest}: the quest's name; {date}: the day and time.</comment>
+  </data>
+  <data name="MarkReward" xml:space="preserve">
+    <value>Reward from {quest} · {date}</value>
+    <comment>A BRING row's third line, and the item card: the game's log says a completed quest gave the item as its reward. {quest}: the quest's name; {date}: the day.</comment>
+  </data>
+  <data name="MarkRewardPart" xml:space="preserve">
+    <value>{seen} of {needed}: reward from {quest} · {date}</value>
+    <comment>As MarkReward when the reward was fewer than the row needs. {seen}, {needed}: counts; {quest}: the quest's name; {date}: the day.</comment>
+  </data>
+  <data name="MarkRewardCount" xml:space="preserve">
+    <value>{count} as reward from {quest} · {date}</value>
+    <comment>The item card's STASH line when the reward was more than one. {count}: how many; {quest}: the quest's name; {date}: the day and time.</comment>
+  </data>
+  <data name="MarkInsurance" xml:space="preserve">
+    <value>Returned by insurance · {date}</value>
+    <comment>A BRING row's third line, and the item card: the game's log says the insurance returned the item. {date}: the day.</comment>
+  </data>
+  <data name="MarkInsurancePart" xml:space="preserve">
+    <value>{seen} of {needed}: returned by insurance · {date}</value>
+    <comment>As MarkInsurance when fewer came back than the row needs. {seen}, {needed}: counts; {date}: the day.</comment>
+  </data>
+  <data name="MarkInsuranceCount" xml:space="preserve">
+    <value>{count} returned by insurance · {date}</value>
+    <comment>The item card's STASH line when the insurance returned more than one. {count}: how many; {date}: the day and time.</comment>
+  </data>
+  <data name="MarkMore" xml:space="preserve">
+    <value>{count} more: {source}</value>
+    <comment>A BRING row's amber line under a part mark: where to get what is still missing. {count}: how many more; {source}: the easiest way to get it ("Mechanic LL1 barter · 1× Bolts").</comment>
+  </data>
+  <data name="StashSeenItems" xml:space="preserve">
+    <value>Seen in your stash: {count, plural, one {# item} other {# items}} your quests need.</value>
+    <comment>Notice, once per menu screenshot that showed something a quest needs. {count}: how many of the needed items it showed.</comment>
+  </data>
+  <data name="StashSeenKeys" xml:space="preserve">
+    <value>Seen in your stash: {count, plural, one {# key} other {# keys}} your quests need.</value>
+    <comment>As StashSeenItems when everything it showed is keys. {count}: how many keys.</comment>
+  </data>
 </root>

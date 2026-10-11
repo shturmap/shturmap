@@ -32,6 +32,23 @@
           </StackPanel>
         </Grid>
 
+        <!-- What Shturmap learned of having it (docs/DESIGN.md §4, "What you have"): an observation with its source
+             and time, never "you have it", and the one click that retracts it. No section when nothing is known. -->
+        <StackPanel Visibility="{x:Bind ShownIfText(View.Stash)}">
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.ItemCardStash}" Margin="0,8,0,4" />
+          <Grid ColumnSpacing="6">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <FontIcon Glyph="&#xE80A;" FontSize="11" Foreground="{StaticResource InkBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />
+            <TextBlock Grid.Column="1" Text="{x:Bind View.Stash}" TextWrapping="Wrap" />
+          </Grid>
+          <HyperlinkButton Padding="0" Margin="0,4,0,0" Click="OnNotAnyMoreClick" AutomationProperties.Name="{x:Bind local:ViewTexts.ItemCardNotAnyMore}">
+            <TextBlock Text="{x:Bind local:ViewTexts.ItemCardNotAnyMore}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
+          </HyperlinkButton>
+        </StackPanel>
+
         <StackPanel Visibility="{x:Bind Shown(View.Get.Count)}">
           <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.ItemCardGetIt}" Margin="0,8,0,4" />
           <ItemsControl ItemsSource="{x:Bind View.Get}">

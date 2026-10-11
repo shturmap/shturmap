@@ -137,6 +137,12 @@ public sealed record RequirementLine(string Glyph, string Text, string For, stri
     /// class): the row is each of them for the linked highlight.</summary>
     public IReadOnlyList<string>? Alternatives { get; init; }
 
+    /// <summary>What Shturmap learned of having the item ("Seen in your stash · 5 Oct"), in ink under the row; empty
+    /// when nothing is known. <see cref="Source"/> then says where to get the rest, if any (Session.StashMarks).</summary>
+    public string Mark { get; init; } = "";
+
+    public Visibility MarkVisibility => Mark.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);
@@ -230,6 +236,12 @@ public sealed record PlanCard(
     public Visibility GlyphDividerVisibility => Finish.Count > 0 && Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility RequirementsVisibility => Expanded && Requirements.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Whether BRING ends with the note that teaches the menu screenshot: until the first mark from one
+    /// (SessionSnapshot.StashNoteShown), on the open card, under rows there are.</summary>
+    public bool StashNote { get; init; }
+
+    public Visibility StashNoteVisibility => StashNote && Expanded && Requirements.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Microsoft.UI.Xaml.Media.Brush CardBackground =>
         (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[Expanded ? "RaisedBrush" : "RailBrush"];
@@ -340,6 +352,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>"Read the extract list from screenshots" in settings: on unless the player unticked it.</summary>
     [ObservableProperty] public partial bool ReadExits { get; set; } = true;
+
+    /// <summary>"Read your stash from menu screenshots" in settings: on unless the player unticked it.</summary>
+    [ObservableProperty] public partial bool ReadStash { get; set; } = true;
 
     /// <summary>Help's "Uninstall Shturmap…" asks its one question.</summary>
     [ObservableProperty] public partial bool UninstallAsking { get; set; }

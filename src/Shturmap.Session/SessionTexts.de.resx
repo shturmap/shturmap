@@ -712,4 +712,92 @@
     <value>Der Kontakt darf höchstens {count, plural, one {# Zeichen} other {# Zeichen}} lang sein.</value>
     <comment>en: The contact can be at most {count, plural, one {# character} other {# characters}}.</comment>
   </data>
+  <data name="MarkSeen" xml:space="preserve">
+    <value>In deinem Stash gesehen · {date}</value>
+    <comment>en: Seen in your stash · {date}</comment>
+  </data>
+  <data name="MarkSeenFir" xml:space="preserve">
+    <value>In deinem Stash gesehen, FiR · {date}</value>
+    <comment>en: Seen in your stash, found in raid · {date}</comment>
+  </data>
+  <data name="MarkSeenNotFir" xml:space="preserve">
+    <value>In deinem Stash gesehen, nicht FiR · {date}</value>
+    <comment>en: Seen in your stash, not found in raid · {date}</comment>
+  </data>
+  <data name="MarkSeenPart" xml:space="preserve">
+    <value>{seen} von {needed} in deinem Stash gesehen · {date}</value>
+    <comment>en: {seen} of {needed} seen in your stash · {date}</comment>
+  </data>
+  <data name="MarkSeenPartFir" xml:space="preserve">
+    <value>{seen} von {needed} in deinem Stash gesehen, FiR · {date}</value>
+    <comment>en: {seen} of {needed} seen in your stash, found in raid · {date}</comment>
+  </data>
+  <data name="MarkSeenCount" xml:space="preserve">
+    <value>{count} in deinem Stash gesehen · {date}</value>
+    <comment>en: {count} seen in your stash · {date}</comment>
+  </data>
+  <data name="MarkSeenCountFir" xml:space="preserve">
+    <value>{count} in deinem Stash gesehen, FiR · {date}</value>
+    <comment>en: {count} seen in your stash, found in raid · {date}</comment>
+  </data>
+  <data name="MarkNotSince" xml:space="preserve">
+    <value>{mark}, nicht in deinen Screenshots vom {date}</value>
+    <comment>en: {mark}, not in your screenshots of {date}</comment>
+  </data>
+  <data name="MarkGiven" xml:space="preserve">
+    <value>Mit der Quest bekommen · {date}</value>
+    <comment>en: Given with the quest · {date}</comment>
+  </data>
+  <data name="MarkGivenBy" xml:space="preserve">
+    <value>Mit {quest} bekommen · {date}</value>
+    <comment>en: Given with {quest} · {date}</comment>
+  </data>
+  <data name="MarkGivenPart" xml:space="preserve">
+    <value>{seen} von {needed}: mit {quest} bekommen · {date}</value>
+    <comment>en: {seen} of {needed}: given with {quest} · {date}</comment>
+  </data>
+  <data name="MarkGivenPartOwn" xml:space="preserve">
+    <value>{seen} von {needed}: mit der Quest bekommen · {date}</value>
+    <comment>en: {seen} of {needed}: given with the quest · {date}</comment>
+  </data>
+  <data name="MarkGivenCount" xml:space="preserve">
+    <value>{count} mit {quest} bekommen · {date}</value>
+    <comment>en: {count} given with {quest} · {date}</comment>
+  </data>
+  <data name="MarkReward" xml:space="preserve">
+    <value>Belohnung aus {quest} · {date}</value>
+    <comment>en: Reward from {quest} · {date}</comment>
+  </data>
+  <data name="MarkRewardPart" xml:space="preserve">
+    <value>{seen} von {needed}: Belohnung aus {quest} · {date}</value>
+    <comment>en: {seen} of {needed}: reward from {quest} · {date}</comment>
+  </data>
+  <data name="MarkRewardCount" xml:space="preserve">
+    <value>{count} als Belohnung aus {quest} · {date}</value>
+    <comment>en: {count} as reward from {quest} · {date}</comment>
+  </data>
+  <data name="MarkInsurance" xml:space="preserve">
+    <value>Aus der Versicherung zurück · {date}</value>
+    <comment>en: Returned by insurance · {date}</comment>
+  </data>
+  <data name="MarkInsurancePart" xml:space="preserve">
+    <value>{seen} von {needed}: aus der Versicherung zurück · {date}</value>
+    <comment>en: {seen} of {needed}: returned by insurance · {date}</comment>
+  </data>
+  <data name="MarkInsuranceCount" xml:space="preserve">
+    <value>{count} aus der Versicherung zurück · {date}</value>
+    <comment>en: {count} returned by insurance · {date}</comment>
+  </data>
+  <data name="MarkMore" xml:space="preserve">
+    <value>Noch {count}: {source}</value>
+    <comment>en: {count} more: {source}</comment>
+  </data>
+  <data name="StashSeenItems" xml:space="preserve">
+    <value>In deinem Stash gesehen: {count, plural, one {# Item} other {# Items}}, die deine Quests brauchen.</value>
+    <comment>en: Seen in your stash: {count, plural, one {# item} other {# items}} your quests need.</comment>
+  </data>
+  <data name="StashSeenKeys" xml:space="preserve">
+    <value>In deinem Stash gesehen: {count, plural, one {# Key} other {# Keys}}, die deine Quests brauchen.</value>
+    <comment>en: Seen in your stash: {count, plural, one {# key} other {# keys}} your quests need.</comment>
+  </data>
 </root>

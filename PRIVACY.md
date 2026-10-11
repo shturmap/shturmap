@@ -4,9 +4,13 @@ Shturmap: privacy
 Shturmap runs on your PC. It reads the game's log files, your screenshots' file names and public data from
 tarkov.dev, and it keeps its own log on your PC. Of a screenshot you take in a raid it also looks at the top right
 corner of the picture: if the game's extract list shows there, it reads which extracts are yours this raid, with the
-text recognition built into Windows. That happens on your PC; nothing of the picture is kept or sent, and unticking
-"Read the extract list from screenshots" in settings stops it. Nothing about you leaves your PC, with two exceptions that you
-control; and it asks GitHub for new versions of itself (3) and downloads public data and pictures (4).
+text recognition built into Windows. Of a screenshot you take in the game's menus it looks at the item cells the
+picture shows, and reads their names the same way, against the items your quests need; what it saw it keeps on your
+PC as item ids with a count and a date (the "stash.json" file in its data folder), so that a quest's row can say
+"Seen in your stash" with the date. Both happen on your PC; nothing of a picture is kept or sent, and unticking
+"Read the extract list from screenshots" or "Read your stash from menu screenshots" in settings stops each. Nothing
+about you leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself (3) and
+downloads public data and pictures (4).
 
 1. A report you send
 --------------------
@@ -16,8 +20,9 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - Shturmap's version, whether it is installed or a folder build, and your Windows version;
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
-  how many quests are active, whether "Delete position screenshots" and "Read the extract list from screenshots" are
-  ticked (and the language Windows reads the list in), and the last 200 lines of Shturmap's own log.
+  how many quests are active, whether "Delete position screenshots", "Read the extract list from screenshots" and
+  "Read your stash from menu screenshots" are ticked (and the language Windows reads in), and the last 200 lines of
+  Shturmap's own log. Never what it saw in your screenshots or logs.
 
 2. A crash report, if you allow it
 ----------------------------------
@@ -64,8 +69,10 @@ id Shturmap showed after sending (8 letters and digits). Leave a contact if you 
 
 What stays on your PC
 ---------------------
-Everything Shturmap keeps on your PC (settings, quest history, logs, reports waiting to be sent, crash records and
-the download cache) is in %LOCALAPPDATA%\Shturmap. Crash records are kept for 30 days (in its crashes folder), and a
+Everything Shturmap keeps on your PC (settings, quest history, the items it saw in your screenshots and logs, logs,
+reports waiting to be sent, crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. The items it saw are
+in "stash.json" there, as item ids with a count and a date: no names, no pictures. "Not any more" on an item's card
+takes one out. Crash records are kept for 30 days (in its crashes folder), and a
 report that couldn't be sent waits in its outbox folder until it has gone. A report the service refused stays there
 as a ".refused.txt" file, with its text and contact, and isn't sent again: delete it yourself, or with the rest of
 the data. Shturmap keeps no study log of how you use it: only developer builds of Shturmap have one. To delete all of

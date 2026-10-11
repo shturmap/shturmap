@@ -656,4 +656,8 @@
     <value>Automatisch: {language}. Weder die Sprache des Spiels noch die von Windows ist bisher übersetzt.</value>
     <comment>en: Automatic: {language}. Neither the game's nor Windows' language is translated yet.</comment>
   </data>
+  <data name="SettingsReadStashNote" xml:space="preserve">
+    <value>Liest die Item-Zellen in einem Screenshot, den du in den Menüs des Spiels machst (Stash, Case, Key Tool), mit der Texterkennung von Windows und den Item-Bildern von tarkov.dev, für die Items, die deine Quests brauchen. Nur auf diesem PC; was gesehen wurde, bleibt als Item-IDs im Datenordner von Shturmap, vom Bild wird nichts gespeichert oder gesendet. Ohne Haken wird kein Menü-Screenshot geöffnet.</value>
+    <comment>en: Reads the item cells in a screenshot you take in the game's menus (the stash, a case, the key tool), with Windows' own text recognition and tarkov.dev's item images, for the items your quests need. On this PC only; what was seen is kept in Shturmap's data folder as item ids, nothing of the picture is kept or sent. Unticked, no menu screenshot is opened.</comment>
+  </data>
 </root>
