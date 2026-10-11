@@ -158,9 +158,13 @@ public static partial class GameLogParser
 
         var type = Property(message, "type", out var t) && t.ValueKind == JsonValueKind.Number && t.TryGetInt32(out var number) ? number : -1;
         // The insurer writes about a raid by its location: a trader message (2) when insured gear was lost, the
-        // insurance return (8) with the gear hours later.
+        // insurance return (8) with the gear hours later. The return's items are read (what came back); the lost
+        // note's are counted only, as before.
         if (type is 2 or 8 && Property(message, "systemData", out var system) && String(system, "location") is { } raidLocation)
-            return new InsuranceNoticeEvent(record.Timestamp, type == 2 ? InsuranceNotice.Lost : InsuranceNotice.Returned, raidLocation, ItemsIn(message));
+        {
+            var (count, returned) = ItemsIn(message);
+            return new InsuranceNoticeEvent(record.Timestamp, type == 2 ? InsuranceNotice.Lost : InsuranceNotice.Returned, raidLocation, count, type == 8 ? returned : null);
+        }
         QuestLogStatus? status = type switch
         {
             10 => QuestLogStatus.Started,
@@ -181,17 +185,42 @@ public static partial class GameLogParser
             : record.Timestamp;
         var eventId = String(doc.RootElement, "eventId") ?? String(message, "_id") ?? $"{questId}:{status}:{at:O}";
         var trader = String(doc.RootElement, "dialogId") ?? String(message, "uid");
-        return new QuestEvent(at, questId.ToLowerInvariant(), status.Value, eventId, trader);
+        // A start (10) hands over what the quest needs (items to plant or mark with, keys, gear to wear), a
+        // completion (12) its rewards; a failure (11) brings nothing. These items are what the "what you have" marks
+        // rest on (docs/NEXT.md).
+        var given = status == QuestLogStatus.Failed ? null : ItemsIn(message).Items;
+        return new QuestEvent(at, questId.ToLowerInvariant(), status.Value, eventId, trader, given);
     }
 
-    // The items a message carries, without their attachments: those whose parent is the message's own stash.
-    private static int ItemsIn(JsonElement message)
+    // The items a message carries, without their attachments and contents: the entries of items.data whose parent is
+    // the message's own stash (a magazine's parent is its weapon; a message that names no stash has every entry
+    // count). Count is their number, whatever their shape; Items names each one with a template id, by that id and
+    // the stack's size, and nothing else of it: not its own id, slot or flags.
+    private static (int Count, IReadOnlyList<ItemGrant> Items) ItemsIn(JsonElement message)
     {
         if (!Property(message, "items", out var items) || !Property(items, "data", out var data) || data.ValueKind != JsonValueKind.Array)
-            return 0;
+            return (0, []);
         var stash = String(items, "stash");
-        return data.EnumerateArray().Count(i => stash is null || String(i, "parentId") == stash);
+        var count = 0;
+        var grants = new List<ItemGrant>();
+        foreach (var item in data.EnumerateArray())
+        {
+            if (stash is not null && String(item, "parentId") != stash)
+                continue;
+            count++;
+            if (String(item, "_tpl") is { Length: > 0 } template)
+                grants.Add(new ItemGrant(template.ToLowerInvariant(), StackSize(item)));
+        }
+        return (count, grants);
     }
+
+    // A stack's size is upd.StackObjectsCount. A single item often has none, and a count that isn't a whole positive
+    // number (a string, a fraction, nought) is one item too.
+    private static int StackSize(JsonElement item) =>
+        Property(item, "upd", out var upd) && Property(upd, "StackObjectsCount", out var stack)
+            && stack.ValueKind == JsonValueKind.Number && stack.TryGetInt32(out var count) && count > 0
+            ? count
+            : 1;
 
     // A message's "dt" as whole seconds, or null when it isn't a time a DateTimeOffset can hold (a fraction is cut).
     private static long? UnixSeconds(JsonElement e)

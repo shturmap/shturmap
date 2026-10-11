@@ -45,8 +45,18 @@ public sealed record ProfileLoadedEvent(DateTime At, string? ProfileId) : GameEv
 
 public sealed record MatchingCancelledEvent(DateTime At) : GameEvent(At);
 
-/// <summary>A quest started, failed or was completed (push-notifications ChatMessageReceived, types 10–12).</summary>
-public sealed record QuestEvent(DateTime At, string QuestId, QuestLogStatus Status, string EventId, string? TraderId) : GameEvent(At);
+/// <summary>
+/// An item a message put into the player's stash: the item's template id (tarkov.dev's item id) and the stack's
+/// size. Nothing else of the item is read.
+/// </summary>
+public sealed record ItemGrant(string ItemId, int Count);
+
+/// <summary>
+/// A quest started, failed or was completed (push-notifications ChatMessageReceived, types 10–12). Items: what a
+/// start handed over (10) or a completion rewarded (12), empty when the message carried none; null for a failure
+/// (11), which brings nothing.
+/// </summary>
+public sealed record QuestEvent(DateTime At, string QuestId, QuestLogStatus Status, string EventId, string? TraderId, IReadOnlyList<ItemGrant>? Items = null) : GameEvent(At);
 
 /// <summary>
 /// "GroupMatchRaidSettings": the group's leader picked a raid. Location is the map's nameId ("Sandbox_high",
@@ -91,5 +101,9 @@ public enum InsuranceNotice
     Returned,
 }
 
-/// <summary>An insurer's message about a raid (ChatMessageReceived types 2 and 8 with systemData.location).</summary>
-public sealed record InsuranceNoticeEvent(DateTime At, InsuranceNotice Kind, string LocationId, int ItemCount) : GameEvent(At);
+/// <summary>
+/// An insurer's message about a raid (ChatMessageReceived types 2 and 8 with systemData.location). ItemCount is
+/// the number of items it carries; Items names them for the return (8), empty when it carried none, and is null
+/// for the lost note (2).
+/// </summary>
+public sealed record InsuranceNoticeEvent(DateTime At, InsuranceNotice Kind, string LocationId, int ItemCount, IReadOnlyList<ItemGrant>? Items = null) : GameEvent(At);
