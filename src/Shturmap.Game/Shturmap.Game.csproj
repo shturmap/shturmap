@@ -9,7 +9,14 @@
     <ProjectReference Include="..\Shturmap.Core\Shturmap.Core.csproj" />
   </ItemGroup>
 
+  <!-- The stash reader cuts and resizes parts of a screenshot and decodes grid images (StashReader). -->
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
+  </ItemGroup>
+
+  <!-- The CLI's stash command measures the stash reader against hand-written truths with what it saw on the way. -->
   <ItemGroup>
     <InternalsVisibleTo Include="Shturmap.Game.Tests" />
+    <InternalsVisibleTo Include="shturmap-cli" />
   </ItemGroup>
 </Project>
