@@ -73,8 +73,8 @@ gender.
 | complete a quest; fail | abschließen; failen (gefailt) | The game: abschließen („Schließe die Aufgabe … ab“), fehlschlagen |
 | spawn; spot; floor, floors; basement | Spawn (der); Spot (der), Spots; Stock (der), Stockwerke (never Stöcke), in compounds Stockwerk- (STOCKWERKDATEN); Keller | maps `BotZone` „Beliebiger Scav-Spawn“, `BotZoneFloor1` „Erstes Stockwerk“, `BotZoneBasement` |
 | PvE, PvP, Seasonal; group | PvE, PvP, Season; Gruppe | tasks „Seasoncharakter“, „Season 1“ |
-| the extract list's header ("Find an extraction point") | **check** | not in the data; `ExitList` knows only the English header |
-| quest types: Elimination, Exploration, Pickup, Place, Find in raid, Survive, Trader | Kills, Erkunden, Pickup, Platzieren, FiR, Überleben, Trader | players' words; **check** the German game's Tasks screen (not in the data) and note its names |
+| the extract list's header ("Find an extraction point") | **check** | not in the data; `ExitList` knows only the English header (docs/NEXT.md, "2026-10-11: German, left to check in the game") |
+| quest types: Elimination, Exploration, Pickup, Place, Find in raid, Survive, Trader | Kills, Erkunden, Pickup, Platzieren, FiR, Überleben, Trader | players' words; **check** the German game's Tasks screen (not in the data) and note its names (docs/NEXT.md) |
 
 ## Shturmap's words
 
@@ -154,19 +154,19 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | Zoom in; Zoom out; Show the whole map; status bar | Vergrößern; Verkleinern; Ganze Map zeigen; Statusleiste | also in running text: „Vergrößern trennt sie“, „beim Vergrößern“; not „reinzoomen“ |
 | email; (optional); (Required) | E-Mail; (optional); (Pflichtfeld) | |
 | Language: Automatic · English · Deutsch | Sprache: Automatisch · English · Deutsch | each language in its own name |
-| Windows Settings → Apps | Windows-Einstellungen → Apps → Installierte Apps | **check** on a German Windows 11; „Windows-“ because a bare „Einstellungen“ is Shturmap's own |
-| Windows Settings → Time & language → Language | Windows-Einstellungen → Zeit und Sprache → Sprache und Region | **check**; Windows 10: Sprache |
-| text recognition (language feature) | Texterkennung; „Optische Zeichenerkennung“ | **check** the feature's name in the language's options |
-| animation effects | Animationseffekte | **check**: Einstellungen → Barrierefreiheit → Visuelle Effekte |
+| Windows Settings → Apps | Windows-Einstellungen → Apps → Installierte Apps | Windows 11's German Settings texts (checked 2026-10-11); „Windows-“ because a bare „Einstellungen“ is Shturmap's own |
+| Windows Settings → Time & language → Language | Windows-Einstellungen → Zeit und Sprache → Sprache und Region | Windows 11 (checked 2026-10-11): „und“, never „&“; Windows' own help names „Zeit und Sprache“, then „Sprache und Region“. Windows 10: Sprache (**check**) |
+| text recognition (language feature) | Texterkennung; „Optische Zeichenerkennung“ | Shturmap's sentences say Texterkennung; Windows 11 names the feature „Optische Zeichenerkennung“ among a language's features in „Sprachoptionen“ (checked 2026-10-11) |
+| animation effects | Animationseffekte | Einstellungen → Barrierefreiheit → Visuelle Effekte → Animationseffekte (Windows 11, checked 2026-10-11) |
 
 ## Keys
 
-As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameKey.Name`, each
-word a text in GameTexts: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the
-data: **check** in its settings. A sentence that names the screenshot key says „Screenshot mit {keys}“, not „Taste
-{keys} drücken“: that takes every name, two keys („mit Druck oder Pos1“) and a combination („mit Strg+Druck“) as
-they are, and never says „Druck drücken“ or „Taste Leertaste“ („Noch keine Position · Screenshot mit Druck“, „Mach im
-Raid einen Screenshot mit Druck: …“, „DANN SCREENSHOT MIT DRUCK“). Where the game names no key, the stand-in is
+As German keyboards label them. Shturmap names the screenshot key from the game's settings (`GameKey.Name`, each word
+a text in GameTexts: "PrtSc", "Home"); German needs these labels. The game's own German key names aren't in the data:
+**check** in its settings (docs/NEXT.md). A sentence that names the screenshot key says „Screenshot mit {keys}“, not
+„Taste {keys} drücken“: that takes every name, two keys („mit Druck oder Pos1“) and a combination („mit Strg+Druck“)
+as they are, and never says „Druck drücken“ or „Taste Leertaste“ („Noch keine Position · Screenshot mit Druck“, „Mach
+im Raid einen Screenshot mit Druck: …“, „DANN SCREENSHOT MIT DRUCK“). Where the game names no key, the stand-in is
 „deiner Screenshot-Taste“. A fixed letter keeps „Taste“: DEINE NEUE POSITION · TASTE F.
 
 | English | German | Note |

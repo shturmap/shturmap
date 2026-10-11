@@ -6,6 +6,50 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-11: German, left to check in the game
+
+German was merged on 2026-10-11 (not released). The Windows Settings names in its texts were checked the same day in
+Windows 11's own German Settings texts (docs/glossary-de.md). Three things only the German game shows are left (owner,
+2026-10-11: "Note the other ToDos down for later"). Shturmap never touches the game, so the owner takes these steps,
+in one session of about 15 minutes, and can set the game back to English afterwards:
+
+1. Set the game's language to Deutsch in its settings (it may need a restart).
+2. In a raid (a Scav run will do): press O twice so the extract list shows, then take a screenshot with the game's
+   key. The dev build reads that list too: the first German list from the game itself, not one a test drew.
+3. In the menu: screenshots of the controls settings with the screenshot key's row, and of Character → Tasks with
+   the quests' types (Win+Shift+S if the game's key takes none in menus).
+
+From those screenshots, read on the PC and never committed:
+
+- **The extract list's header.** The only one that changes behaviour: a reading that names one exit counts as the
+  list only under the list's header (`ExitList.IsList`), and `ExitList` knows only the English "Find an extraction
+  point"; a German list that names two or more exits is read already. Add the German header with a test on its
+  text, and to the glossary.
+- **The game's German key names** (glossary, "Keys"). Likely no change: the texts use what German keyboards print
+  (Druck, Pos1), which stays even if the game's settings write "PrintScreen", since that is where the player looks
+  for the key. Note the game's names.
+- **Quest types** (glossary, the quest types row). A note only: the players' words win (Kills, Erkunden, Pickup …).
+  Note the game's names.
+- **Windows 10, if a German one is at hand:** the name of its Settings → Time & language → Language page
+  (glossary: „Sprache“). Low: the English text names Windows 11's pages too.
+
+Noticed during the German work, not fixed (owner to decide):
+
+- **Dev tools sort by the thread's culture** (`DevController.cs`, `LayoutCheck.cs`), not by the language in use as
+  the player's views do. Players never see these.
+- **The raid card's map at a sentence's end:** `ObjectiveView.TextOn` strips only the English " on <map>", so a
+  German objective probably keeps its „… auf <map>“. Not checked against the data.
+- **The quest card takes English "from", German doesn't take „aus“:** "extract from Customs" drops the map line in
+  English, „aus Customs“ keeps it in German (17 objectives).
+- **The English map-line pattern** would take "The Lab" from "on The Lab (Dark)" (`\s*\(`). No English text has
+  "(Dark)" today.
+- **Tour chapter 4, German, 900×560:** the example quest's map label "Lieferung aus der Vergangenheit" runs off the
+  map's right edge. The layout check doesn't look at map labels.
+- **Tour chapter 3's pointer** starts at a fixed spot (55 % down the map), which a tall band may cover at small
+  sizes. A guess, not checked.
+- **The tour title's decode** empties the title until its first tick (about 35 ms) at every chapter, so the band
+  shrinks for a frame.
+
 ## 2026-10-09: the pre-release review
 
 Before going public, six reviewers (privacy, public-repository content, UX, engine code, UI code, features) went
