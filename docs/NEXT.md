@@ -50,6 +50,54 @@ Noticed during the German work, not fixed (owner to decide):
 - **The tour title's decode** empties the title until its first tick (about 35 ms) at every chapter, so the band
   shrinks for a frame.
 
+## 2026-10-11: what you have, the spike
+
+The second design of "what you have" (its panel is private; the first is below, "Designed 2026-10-07, deferred")
+ended in twelve decisions, which the owner took as recommended on 2026-10-11, and a spike before anything is built:
+a headless reading of the owner's own menu screenshots, to learn on evidence whether the screenshot source is worth
+building. The spike is `shturmap-cli stash <png|folder>` (`tools/Shturmap.Cli/Stash/StashSpike.cs`): it finds the
+item grids in a screenshot, cuts the cells, matches each against tarkov.dev's grid images and reads the cell's label
+with Windows' text recognition, and scores itself against a hand-written truth (`--truth`). Nothing of it runs in the
+app; DESIGN.md §2 is unchanged (the app still never opens a menu screenshot). The owner's 33 screenshots (2560×1440,
+the gear screen with containers open, a 12×12 window, two trading screens) stay in the git-ignored
+`tests\fixtures\ocr\stash` with the truth files; they never enter the repository.
+
+**Found, 2026-10-11:**
+
+- **The game's screenshot key works in the menus:** 33 files, named without a position, as `ScreenshotName` expects.
+- **The label is the identity, the picture is the family.** Read with Windows' recognition from the cell's top band
+  at four times its size, matched to short names with the extract list's folding, a rule for names the game cuts at
+  the cell's edge, and digits that must agree (lookalike keys differ by one digit): a container of 48 keys came out
+  46 right, 0 wrong, 2 unread; a medical case 43 of 43; a stash page 51 of 55, 0 wrong. The picture, compared as
+  art pixels only against tarkov.dev's grid images at four sizes and small shifts, is right for 4 of the 48 keys
+  (lookalikes share their art exactly), 18 of 43 medical items, 33 of 55 on the stash page: the game draws the art
+  about 15 % larger than tarkov.dev's images, some of those images are stale (one key lies horizontal there and
+  diagonal in the game), and both hatch the cell's field. The picture's use: a check (a label that contradicts it
+  says nothing) and the few cells whose label can't be read but whose art is unique (68 of the 770 names below).
+- **Over all 33 screenshots:** 1,110 item rectangles, 770 named (702 by the label, 68 by the picture alone), 287
+  with nothing said, 53 of an odd shape (cells merged by a hover highlight, a wide item cut into cells); about 1.4 s
+  per screenshot on the owner's PC, recognition included, with 3,905 templates loaded.
+- **The grids:** cells are 84 px at 1440p (63 × 4⁄3), with a one-pixel line in the stash and a two-pixel line in a
+  window; many cells carry the game's own cyan outline (what it marks wasn't checked), which a naive line rule
+  misses. Found on 31 of 33; the two misses are stash pages of mostly large items (helmets, cases), where the rule
+  wants framed one-by-one cells: the fix is the stash's known column positions, not more searching. The trader's
+  grid on the trading screen is told by its place (left) and skipped; a container window over the stash hides the
+  cells under it.
+- **Trading screens are blind:** there the stash's cells carry the sell price at the top instead of the name, so the
+  label reads nothing (7 and 10 of 38 cells named, by the picture). A reading should skip them.
+- **The set is bigger than the panel counted:** keys 259, items objectives take or use 3,774 (many list whole
+  classes), quest items 105: 3,922, not about 1,150; the spike fetched 3,905 grid images once (42 MB as PNG in the
+  cache). The consequence for the design: match against what the active quests need (dozens of items), and fetch
+  templates for those only, a few kilobytes each; the label match against the whole set is what produces false
+  names.
+
+**Not covered:** other resolutions (only 1440p), the hideout screen (no screenshot of it), counts and the
+found-in-raid mark (not read), the German game (tarkov.dev has German short names; the recognition's language would
+follow the game's, as the extract list's does).
+
+**Where it leaves the design:** the screenshot source is worth building, label first; I5 (the template set) changes
+to the needed items only; the §2 widening is still the owner's to write before the reading goes into the app.
+
 ## 2026-10-09: the pre-release review
 
 Before going public, six reviewers (privacy, public-repository content, UX, engine code, UI code, features) went
