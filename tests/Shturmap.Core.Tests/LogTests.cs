@@ -135,6 +135,11 @@ public class LogReplayTests
 
         Assert.Equal(8, quests.Count(q => q.Status == QuestLogStatus.Started));
         Assert.Equal(0, quests.Count(q => q.Status == QuestLogStatus.Completed));
+        // Two of the starts handed items over, one of them a stack; the others carried none, so their lists are empty.
+        var handed = quests.Where(q => q.Status == QuestLogStatus.Started && q.Items is { Count: > 0 }).ToList();
+        Assert.Equal(2, handed.Count);
+        Assert.Contains(handed, q => q.Items!.Any(i => i.Count > 1));
+        Assert.All(quests, q => Assert.NotNull(q.Items));
     }
 
     [Fact]
@@ -173,6 +178,17 @@ public class LogReplayTests
         Assert.Equal(
             new[] { "596a0e1686f7741ddf17dbee", "5d25e44386f77409453bce7b", "616041eb031af660100c9967", "61604635c725987e815b1a46" },
             completions.Where(q => q.Status == QuestLogStatus.Completed).Select(q => q.QuestId).Order(StringComparer.Ordinal).ToArray());
+        // Every completion rewarded something: 13 items in all, each by a template id, one of them a weapon whose
+        // parts (eight entries nested in it) are not listed.
+        var rewarded = completions.Where(q => q.Status == QuestLogStatus.Completed).ToList();
+        Assert.All(rewarded, q => Assert.NotEmpty(q.Items!));
+        Assert.Equal(13, rewarded.Sum(q => q.Items!.Count));
+        Assert.All(rewarded.SelectMany(q => q.Items!), i =>
+        {
+            Assert.Equal(24, i.ItemId.Length);
+            Assert.All(i.ItemId, c => Assert.True(Uri.IsHexDigit(c)));
+            Assert.True(i.Count >= 1);
+        });
     }
 
     [Theory]
@@ -389,5 +405,115 @@ public class GroupLoadingInsuranceTests
         tracker.Apply(new MapLoadingEvent(start.AddHours(3), "maps/customs_preset.bundle", null));
         hints.Notice(Lost("bigmap", start.AddHours(3).AddSeconds(10)), tracker.State, null);
         Assert.Null(hints.Ended((RaidEnded)tracker.Apply(new MatchingCancelledEvent(start.AddHours(3).AddSeconds(20)))!, "bigmap"));
+    }
+}
+
+// The items a message put into the stash (docs/NEXT.md, "what you have"): what a quest hands over at its start, its
+// rewards, and what the insurer returned. Only the top-level items, by template id and stack size; the shapes are
+// the game's, the ids made up.
+public class GrantedItemsTests
+{
+    private const string Head = "|1.1.5.1.47510|Info|";
+    private const string Stash = "0000000000000000000000ab";
+
+    private static GameEvent? Parse(string kind, string body)
+    {
+        var reader = new LogRecordReader();
+        var records = reader.Append(
+            $"2026-01-01 12:00:00.000{Head}push-notifications|Got notification | {kind}\r\n{body}\r\n" +
+            $"2026-01-01 12:00:00.000{Head}push-notifications|NotificationManager.ProcessMessage | Received notification: Type: {kind}, Time: 0, Duration: Default, ShowNotification: False\r\n").ToList();
+        if (reader.Flush(force: true) is { } last)
+            records.Add(last);
+        return records.Select(GameLogParser.Parse).OfType<GameEvent>().Single();
+    }
+
+    // An entry of items.data as the game writes it; the stack count is left out for a single item, as the game does.
+    private static string Entry(string id, string template, string parent, string slot, int? stack = null)
+    {
+        var upd = stack is { } n ? $$"""{ "StackObjectsCount": {{n}} }""" : "{ }";
+        return $$"""{ "_id": "{{id}}", "_tpl": "{{template}}", "parentId": "{{parent}}", "slotId": "{{slot}}", "upd": {{upd}} }""";
+    }
+
+    private static string Message(int type, string templateId, params string[] entries) => $$"""
+        {
+          "type": "new_message",
+          "eventId": "000000000000000000000042",
+          "dialogId": "54cb50c76803fa8b248b4571",
+          "message": {
+            "_id": "000000000000000000000043",
+            "type": {{type}},
+            "dt": 1767265200,
+            "templateId": "{{templateId}}",
+            "systemData": { "location": "bigmap" },
+            "items": {
+              "stash": "{{Stash}}",
+              "data": [
+                {{string.Join(",\r\n        ", entries)}}
+              ]
+            },
+            "hasRewards": true
+          }
+        }
+        """;
+
+    [Fact]
+    public void A_quest_start_lists_what_it_handed_over()
+    {
+        var quest = Assert.IsType<QuestEvent>(Parse("ChatMessageReceived", Message(10, "000000000000000000000010 description",
+            Entry("0000000000000000000000a1", "000000000000000000000001", Stash, "main", stack: 3),
+            Entry("0000000000000000000000a2", "000000000000000000000002", Stash, "main"))));
+
+        Assert.Equal(("000000000000000000000010", QuestLogStatus.Started), (quest.QuestId, quest.Status));
+        Assert.Equal(
+            new[] { new ItemGrant("000000000000000000000001", 3), new ItemGrant("000000000000000000000002", 1) },
+            quest.Items);
+    }
+
+    [Fact]
+    public void A_completion_lists_its_rewards_without_a_weapons_parts()
+    {
+        var quest = Assert.IsType<QuestEvent>(Parse("ChatMessageReceived", Message(12, "000000000000000000000010 successMessageText 54cb50c76803fa8b248b4571 0",
+            Entry("0000000000000000000000a1", "000000000000000000000001", Stash, "main", stack: 25000),
+            Entry("0000000000000000000000a2", "000000000000000000000002", Stash, "main"),
+            Entry("0000000000000000000000a3", "000000000000000000000003", "0000000000000000000000a2", "mod_magazine"),
+            Entry("0000000000000000000000a4", "000000000000000000000004", "0000000000000000000000a3", "cartridges", stack: 30))));
+
+        Assert.Equal(QuestLogStatus.Completed, quest.Status);
+        Assert.Equal(
+            new[] { new ItemGrant("000000000000000000000001", 25000), new ItemGrant("000000000000000000000002", 1) },
+            quest.Items);
+    }
+
+    [Fact]
+    public void A_failure_brings_nothing_even_when_its_message_lists_items()
+    {
+        var quest = Assert.IsType<QuestEvent>(Parse("ChatMessageReceived", Message(11, "000000000000000000000010 failMessageText 54cb50c76803fa8b248b4571 0",
+            Entry("0000000000000000000000a1", "000000000000000000000001", Stash, "main"))));
+
+        Assert.Equal(QuestLogStatus.Failed, quest.Status);
+        Assert.Null(quest.Items);
+    }
+
+    [Fact]
+    public void An_insurance_return_lists_what_came_back_and_the_lost_note_counts_only()
+    {
+        var returned = Assert.IsType<InsuranceNoticeEvent>(Parse("ChatMessageReceived", Message(8, "000000000000000000000000 1",
+            Entry("0000000000000000000000a1", "000000000000000000000001", Stash, "main"),
+            Entry("0000000000000000000000a2", "000000000000000000000002", "0000000000000000000000a1", "mod_scope"))));
+        Assert.Equal((InsuranceNotice.Returned, "bigmap", 1), (returned.Kind, returned.LocationId, returned.ItemCount));
+        Assert.Equal(new[] { new ItemGrant("000000000000000000000001", 1) }, returned.Items);
+
+        var lost = Assert.IsType<InsuranceNoticeEvent>(Parse("ChatMessageReceived", Message(2, "000000000000000000000000 1",
+            Entry("0000000000000000000000a1", "000000000000000000000001", Stash, "main"))));
+        Assert.Equal((InsuranceNotice.Lost, "bigmap", 1), (lost.Kind, lost.LocationId, lost.ItemCount));
+        Assert.Null(lost.Items);
+    }
+
+    [Fact]
+    public void A_template_id_is_kept_in_lower_case()
+    {
+        var quest = Assert.IsType<QuestEvent>(Parse("ChatMessageReceived", Message(10, "000000000000000000000010 description",
+            Entry("0000000000000000000000a1", "00000000000000000000000A", Stash, "main"))));
+        Assert.Equal(new[] { new ItemGrant("00000000000000000000000a", 1) }, quest.Items);
     }
 }

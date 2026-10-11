@@ -50,6 +50,62 @@ public class LogShapeTests
         var note = Assert.IsType<InsuranceNoticeEvent>(Push("ChatMessageReceived",
             $$"""{ "message": { "type": 8, "systemData": { "location": "bigmap" }, "items": {{items}} } }"""));
         Assert.Equal((InsuranceNotice.Returned, "bigmap", 0), (note.Kind, note.LocationId, note.ItemCount));
+        Assert.NotNull(note.Items);
+        Assert.Empty(note.Items);
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"none\"")]
+    [InlineData("[]")]
+    [InlineData("""{ "data": null }""")]
+    [InlineData("""{ "stash": 5, "data": "none" }""")]
+    [InlineData("""{ "stash": "s", "data": { "_tpl": "000000000000000000000001" } }""")]
+    public void A_quest_start_without_an_item_list_hands_nothing_over(string items)
+    {
+        var quest = Assert.IsType<QuestEvent>(Push("ChatMessageReceived",
+            $$"""{ "message": { "type": 10, "templateId": "5936d90786f7742b1420ba5b description", "items": {{items}} } }"""));
+        Assert.Equal(QuestLogStatus.Started, quest.Status);
+        Assert.NotNull(quest.Items);
+        Assert.Empty(quest.Items);
+    }
+
+    [Fact]
+    public void An_item_entry_of_another_shape_is_counted_but_not_named_and_an_odd_count_is_one()
+    {
+        // Entries that are no object are neither counted nor named; one without a usable template id is counted
+        // only; a stack count that isn't a whole positive number is one item.
+        const string data = """
+            [
+              1, "x", null, [],
+              { "parentId": "s" },
+              { "parentId": "s", "_tpl": 5 },
+              { "parentId": "s", "_tpl": "" },
+              { "parentId": "s", "_tpl": null },
+              { "parentId": "s", "_tpl": "000000000000000000000001", "upd": "3" },
+              { "parentId": "s", "_tpl": "000000000000000000000002", "upd": null },
+              { "parentId": "s", "_tpl": "000000000000000000000003", "upd": { "StackObjectsCount": "3" } },
+              { "parentId": "s", "_tpl": "000000000000000000000004", "upd": { "StackObjectsCount": 2.5 } },
+              { "parentId": "s", "_tpl": "000000000000000000000005", "upd": { "StackObjectsCount": 0 } },
+              { "parentId": "s", "_tpl": "000000000000000000000006", "upd": { "StackObjectsCount": -2 } },
+              { "parentId": "s", "_tpl": "000000000000000000000007", "upd": { "StackObjectsCount": 99999999999 } },
+              { "parentId": "s", "_tpl": "000000000000000000000008", "upd": { "StackObjectsCount": 4 } },
+              { "parentId": 7, "_tpl": "000000000000000000000009" },
+              { "_tpl": "000000000000000000000009" }
+            ]
+            """;
+        var note = Assert.IsType<InsuranceNoticeEvent>(Push("ChatMessageReceived",
+            $$"""{ "message": { "type": 8, "systemData": { "location": "bigmap" }, "items": { "stash": "s", "data": {{data}} } } }"""));
+
+        Assert.Equal(12, note.ItemCount);
+        Assert.Equal(
+            new[]
+            {
+                new ItemGrant("000000000000000000000001", 1), new ItemGrant("000000000000000000000002", 1), new ItemGrant("000000000000000000000003", 1),
+                new ItemGrant("000000000000000000000004", 1), new ItemGrant("000000000000000000000005", 1), new ItemGrant("000000000000000000000006", 1),
+                new ItemGrant("000000000000000000000007", 1), new ItemGrant("000000000000000000000008", 4),
+            },
+            note.Items);
     }
 
     [Fact]
