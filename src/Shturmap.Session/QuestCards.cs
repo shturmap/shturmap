@@ -28,6 +28,10 @@ public sealed record CardObjective(string QuestId, string ObjectiveId, Objective
 
     /// <summary>What the map's "?" means for it: "One of 4 places it can be"; empty where it has one place, or is done.</summary>
     public string Possible { get; init; } = "";
+
+    /// <summary>The quest item it stashes and where that is got, as the raid card says it: "With: Lab journal, found on
+    /// Factory" (<see cref="Planning.QuestItemFrom"/>); empty for any other objective, or one that is done.</summary>
+    public string With { get; init; } = "";
 }
 
 /// <summary>A key or an item to take into the raid for this quest.</summary>
@@ -176,11 +180,15 @@ public static class QuestCards
             : new CardObjective(task.Id, o.Id, kind, text, where, item, live, Tickable: active, Handover: handover);
         // Where its thing can be at several places, the card says what the map's "?" on each of them means.
         var places = Shturmap.Map.MapContentBuilder.PlacesItCanBe(o);
+        // A quest item to stash is in no BRING row (it is got in the quest); its objective says what it takes instead
+        // (owner, 2026-10-13: One Less Loose End's card didn't name the lab journal as needed).
+        var with = !row.Done && Planning.QuestItemFrom(data, task, o) is { } from ? SessionTexts.NeedWith(item: from) : "";
         return row with
         {
             HandoverCount = count,
             HandoverTraderId = count > 0 ? task.Trader : null,
             Possible = places > 1 && !row.Done ? SessionTexts.QuestPossiblePlaces(count: places) : "",
+            With = with,
         };
     }
 

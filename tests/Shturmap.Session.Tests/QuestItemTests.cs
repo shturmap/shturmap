@@ -59,6 +59,21 @@ public class QuestItemTests
         Assert.Equal("With: Lab journal, found on Factory", Planning.Needs(data, LooseEnd, Stash, new HashSet<string> { "map-woods" }, true));
     }
 
+    // Owner, 2026-10-13: the card didn't name the lab journal as needed. Its stash objective says it, as the raid card
+    // does; the pickup doesn't, and a ticked stash needs nothing any more.
+    [Fact]
+    public void The_quest_card_names_it_on_the_objective_that_stashes_it()
+    {
+        var data = Data(LooseEnd);
+        var card = QuestCards.Build(data, Active(Quest), Quest)!;
+        Assert.Equal("With: Lab journal, found on Factory", card.Objectives.Single(o => o.ObjectiveId == "o-stash").With);
+        Assert.Equal("", card.Objectives.Single(o => o.ObjectiveId == "o-find").With);
+        Assert.Empty(card.Needs);
+
+        var ticked = QuestCards.Build(data, Active(Quest), Quest, ticks: new Dictionary<string, DateOnly> { ["o-stash"] = new(2026, 1, 1) })!;
+        Assert.Equal("", ticked.Objectives.Single(o => o.ObjectiveId == "o-stash").With);
+    }
+
     [Fact]
     public void One_got_in_a_quest_before_names_that_quest()
     {

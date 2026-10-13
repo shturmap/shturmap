@@ -1807,7 +1807,10 @@ every raid by itself (the game asks "You have quest items in your inventory! Pro
 left behind when parked in the quest items stash): there is nothing to pack. So it is in no BRING row, need cell or kit,
 and the item card says "Stash · Woods", not "Bring, to plant". The raid card's line says where it comes from instead,
 in the place of a "Bring:" line: "With: Lab journal, found on Factory", "With: AK-50 handguard, from Fair Price - Part 2"
-(`Planning.QuestItemFrom`). Until then each stood in BRING as an item to take along.
+(`Planning.QuestItemFrom`). Until then each stood in BRING as an item to take along. The quest card says it on the
+stashing objective, under its map line, in the raid card's amber (owner, 2026-10-13: the card didn't name the lab
+journal as needed; of a line on the objective, a row under BRING marked as found, BRING renamed, or back in BRING, the
+owner chose the line): gone once that objective is ticked, and never on the pickup, which pictures the item already.
 
 **An offer behind a quest isn't a way yet** (the review of 2026-10-04: BRING named "Ragman LL2 · 41,283 ₽ · after
 Dandies" as the easiest source of the beanie Dandies itself asks for). A trader's offer or a barter that tarkov.dev

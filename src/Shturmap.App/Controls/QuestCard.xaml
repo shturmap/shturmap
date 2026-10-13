@@ -67,6 +67,10 @@
                   <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" Foreground="{x:Bind controls:QuestCard.TextBrush(Done)}" />
                   <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"
                              Visibility="{x:Bind controls:QuestCard.ShownIf(Where)}" />
+                  <!-- The quest item it stashes, got in the quest and so in no BRING row: the raid card's line, in its
+                       amber (owner, 2026-10-13). -->
+                  <TextBlock Text="{x:Bind With}" Foreground="{StaticResource AmberBrush}" FontSize="12" TextWrapping="Wrap"
+                             Visibility="{x:Bind controls:QuestCard.ShownIf(With)}" />
                   <!-- The map's "?" said in words, beside the "?" as the map draws it: one of several places (owner,
                        2026-10-06: "It should be displayed in the raid tooltip to explain"). -->
                   <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,0,1" Visibility="{x:Bind controls:QuestCard.ShownIf(Possible)}">
