@@ -38,12 +38,17 @@ public class QuestItemTests
         Maps = new[]
         {
             new ApiMap("map-factory", "Factory", "factory", "factory4_day", null, null, 20, [], [], [], [], []),
+            new ApiMap("map-night-factory", "Night Factory", "night-factory", "factory4_night", null, null, 25, [], [], [], [], []),
             new ApiMap("map-woods", "Woods", "woods", "Woods", null, null, 40, [], [], [], [], []),
         }.ToDictionary(m => m.Id),
         Tasks = tasks.ToDictionary(t => t.Id),
         Traders = new Dictionary<string, ApiTrader>(),
         ItemNames = new Dictionary<string, string> { [Journal] = "Lab journal", [Handguard] = "AK-50 handguard" },
-        MapDefinitions = [new MapDefinition { Key = "woods", Transform = [1, 0, 1, 0], Bounds = new WorldBox(-500, -500, 500, 500) }],
+        MapDefinitions =
+        [
+            new MapDefinition { Key = "woods", Transform = [1, 0, 1, 0], Bounds = new WorldBox(-500, -500, 500, 500) },
+            new MapDefinition { Key = "factory", AltKeys = ["night-factory"], Transform = [1, 0, 1, 0], Bounds = new WorldBox(-100, -100, 100, 100) },
+        ],
         CheckedAt = DateTimeOffset.Now,
     };
 
@@ -72,6 +77,20 @@ public class QuestItemTests
 
         var ticked = QuestCards.Build(data, Active(Quest), Quest, ticks: new Dictionary<string, DateOnly> { ["o-stash"] = new(2026, 1, 1) })!;
         Assert.Equal("", ticked.Objectives.Single(o => o.ObjectiveId == "o-stash").With);
+    }
+
+    // tarkov.dev lists the journal's spots on Factory and on Night Factory: one map drawn twice, named once, as the
+    // card's map lines name it (2026-10-13: "found on Factory or Night Factory").
+    [Fact]
+    public void A_map_and_its_variant_are_named_once()
+    {
+        var findDayOrNight = Find with
+        {
+            Maps = ["map-factory", "map-night-factory"],
+            PossibleLocations = [new ApiPossibleLocation("map-factory", [new(10, 0, 10)]), new ApiPossibleLocation("map-night-factory", [new(10, 0, 10)])],
+        };
+        var quest = Task(Quest, "One Less Loose End", findDayOrNight, Stash);
+        Assert.Equal("With: Lab journal, found on Factory", Planning.Needs(Data(quest), quest, Stash, new HashSet<string> { "map-woods" }, true));
     }
 
     [Fact]

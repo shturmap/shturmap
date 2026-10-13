@@ -237,15 +237,18 @@ public static class QuestCards
             .Concat((o.PossibleLocations ?? []).Select(l => l.Map))
             .OfType<string>();
 
+    internal static string MapNames(GameData data, IEnumerable<string> mapIds) => string.Join(", ", MapNameList(data, mapIds));
+
     // Variants drawn with the same artwork (Ground Zero and Ground Zero 21+) read as one map.
-    internal static string MapNames(GameData data, IEnumerable<string> mapIds) =>
-        string.Join(", ", mapIds
+    internal static IReadOnlyList<string> MapNameList(GameData data, IEnumerable<string> mapIds) =>
+        mapIds
             .Select(id => data.Maps.GetValueOrDefault(id))
             .OfType<ApiMap>()
             .GroupBy(m => data.DefinitionFor(m.NormalizedName)?.Key ?? m.NormalizedName)
             .Select(g => g.MinBy(m => m.Name.Length)!.Name)
             .Distinct()
-            .Order(StringComparer.Create(UiLanguage.Culture, ignoreCase: false)));
+            .Order(StringComparer.Create(UiLanguage.Culture, ignoreCase: false))
+            .ToList();
 
     // One thing the quest takes, gathered over its objectives.
     private sealed class Need(RequirementKind kind, IReadOnlyList<string> alternatives)

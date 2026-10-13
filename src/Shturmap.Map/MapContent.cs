@@ -105,6 +105,9 @@ public static class MapContentBuilder
                         continue;
                     foreach (var position in location.Positions ?? [])
                     {
+                        // The same spot is listed once per map variant (Factory and Night Factory); draw it once.
+                        if (places.Any(p => p.DistanceTo(position.ToWorld()) < SameSpot))
+                            continue;
                         places.Add(position.ToWorld());
                         markers.Add(new MapMarker($"objective:{objective.Id}:{places.Count}",
                             done ? MarkerKind.ObjectiveDone : possible ? MarkerKind.PossibleLocation : MarkerKind.Objective,
@@ -220,9 +223,24 @@ public static class MapContentBuilder
 
     /// <summary>
     /// How many places, on every map, the thing an objective is about can be at (tarkov.dev's possible locations): more
-    /// than one makes each a "maybe here" place, with a "?" on the map and a line on the quest's card saying so.
+    /// than one makes each a "maybe here" place, with a "?" on the map and a line on the quest's card saying so. A spot
+    /// counts once: tarkov.dev lists it once per map variant (Factory and Night Factory, Ground Zero and Ground Zero 21+),
+    /// and once more where it names a map twice (2026-10-13: One Less Loose End's 5 spots read "One of 10 places", and
+    /// Possessor's one spot had a "?"). In three dimensions, so that spots above one another on two floors stay two.
     /// </summary>
-    public static int PlacesItCanBe(ApiObjective objective) => (objective.PossibleLocations ?? []).Sum(l => l.Positions?.Count ?? 0);
+    public static int PlacesItCanBe(ApiObjective objective)
+    {
+        var spots = new List<WorldPoint>();
+        foreach (var position in (objective.PossibleLocations ?? []).SelectMany(l => l.Positions ?? []))
+        {
+            if (!spots.Any(p => p.DistanceTo(position.ToWorld()) < SameSpot))
+                spots.Add(position.ToWorld());
+        }
+        return spots.Count;
+    }
+
+    // Two of tarkov.dev's positions this close are one spot listed twice.
+    private const double SameSpot = 0.5;
 
     /// <summary>The key a lock marker's group names, or null for any other group.</summary>
     public static string? KeyOf(string? group) =>

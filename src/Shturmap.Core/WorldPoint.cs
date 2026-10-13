@@ -6,6 +6,9 @@ public readonly record struct WorldPoint(double X, double Y, double Z)
     public double HorizontalDistanceTo(WorldPoint other) =>
         Math.Sqrt((other.X - X) * (other.X - X) + (other.Z - Z) * (other.Z - Z));
 
+    public double DistanceTo(WorldPoint other) =>
+        Math.Sqrt((other.X - X) * (other.X - X) + (other.Y - Y) * (other.Y - Y) + (other.Z - Z) * (other.Z - Z));
+
     public override string ToString() => FormattableString.Invariant($"({X:0.##}, {Y:0.##}, {Z:0.##})");
 }
 

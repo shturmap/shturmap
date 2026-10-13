@@ -653,8 +653,9 @@ public static class Planning
         var name = data.ItemName(item);
         if ((task.Objectives ?? []).FirstOrDefault(o => o.Type == "findQuestItem" && o.QuestItem == item) is { } get)
         {
-            var maps = (get.Maps ?? []).Concat((get.PossibleLocations ?? []).Select(l => l.Map)).Concat((get.Zones ?? []).Select(z => z.Map))
-                .OfType<string>().Select(id => data.Maps.GetValueOrDefault(id)?.Name).OfType<string>().Distinct().ToList();
+            // Each map once, as the card's map lines name them: "found on Factory", not "on Factory or Night Factory"
+            // (2026-10-13; also The Tarkov Butcher's two Ground Zeros).
+            var maps = QuestCards.MapNameList(data, QuestCards.MapIds(get));
             return maps.Count > 0 ? SessionTexts.QuestItemFoundOn(item: name, maps: Or(maps)) : SessionTexts.QuestItemFoundFirst(item: name);
         }
         return data.Tasks.Values.FirstOrDefault(t => t.Id != task.Id && (t.Objectives ?? []).Any(o => o.Type == "findQuestItem" && o.QuestItem == item)) is { } earlier

@@ -1586,7 +1586,11 @@ spawns below).
   journal, Audit's records, Golden Swag's lighter), and those were drawn with a "?" that said nothing true (owner,
   2026-10-06: "Why does the Population Census have a question mark in the icon?"). A thing with one place is drawn at
   it as a place like any other (`MapContentBuilder.PlacesItCanBe`); with more, across every map, each is a possible
-  place, and the quest's card says so ("Quest cards"). A group with any place on another floor shows the floor arrow. The largest group carries the label;
+  place, and the quest's card says so ("Quest cards"). A spot counts and is drawn once: tarkov.dev lists it once per
+  map variant (Factory and Night Factory, Ground Zero and Ground Zero 21+) and now and then twice under one map, and
+  positions within half a metre, in three dimensions, are one spot (2026-10-13: Possessor's, All Is Revealed's, Health
+  Care Privacy - Part 6's and Postman Pat - Part 1's one spot each had a "?" and "One of 2 places"; One Less Loose End's
+  5 spots read 10; 12 quests in both modes). A group with any place on another floor shows the floor arrow. The largest group carries the label;
   pointing at a cluster points at its quest. Only places in view are merged, so a group that runs out of view keeps
   a marker for the ones in view, with their count (the review of 2026-10-04: merged first, the whole group went when
   its middle place was out of view).
@@ -1807,7 +1811,9 @@ every raid by itself (the game asks "You have quest items in your inventory! Pro
 left behind when parked in the quest items stash): there is nothing to pack. So it is in no BRING row, need cell or kit,
 and the item card says "Stash · Woods", not "Bring, to plant". The raid card's line says where it comes from instead,
 in the place of a "Bring:" line: "With: Lab journal, found on Factory", "With: AK-50 handguard, from Fair Price - Part 2"
-(`Planning.QuestItemFrom`). Until then each stood in BRING as an item to take along. The quest card says it on the
+(`Planning.QuestItemFrom`), each map once as the card's map lines name it (2026-10-13: it read "found on Factory or
+Night Factory" for One Less Loose End and Health Care Privacy - Part 6, and named both Ground Zeros for The Tarkov
+Butcher). Until then each stood in BRING as an item to take along. The quest card says it on the
 stashing objective, under its map line, in the raid card's amber (owner, 2026-10-13: the card didn't name the lab
 journal as needed; of a line on the objective, a row under BRING marked as found, BRING renamed, or back in BRING, the
 owner chose the line): gone once that objective is ticked, and never on the pickup, which pictures the item already.
