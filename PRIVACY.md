@@ -20,7 +20,7 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - Shturmap's version, whether it is installed or a folder build, and your Windows version;
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
-  how many quests are active, whether "Delete position screenshots", "Read the extract list from screenshots" and
+  how many quests are active, whether "Delete screenshots after reading", "Read the extract list from screenshots" and
   "Read your stash from menu screenshots" are ticked (and the language Windows reads in), and the last 200 lines of
   Shturmap's own log. Never what it saw in your screenshots or logs.
 

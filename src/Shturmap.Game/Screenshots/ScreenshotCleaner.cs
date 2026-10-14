@@ -3,21 +3,26 @@ using Shturmap.Core.Screenshots;
 namespace Shturmap.Game.Screenshots;
 
 /// <summary>
-/// Deletes a position screenshot a few seconds after Shturmap has read its name, when the player turned that on
-/// (owner, 2026-10-04: "a mode that auto-deletes screenshots after a couple of seconds grace period"). Off unless
-/// asked for: it is the one thing Shturmap changes outside its own folders, and what it deletes is gone for good.
-/// So what it may delete is narrow and checked when the file is seen and again before it goes
-/// (<see cref="MayDelete"/>): a file the watcher reported as new in this run, directly in the screenshots folder,
-/// named as the game names a screenshot taken in a raid. What was in the folder before Shturmap looked, a menu
-/// screenshot and any other file are never touched.
+/// Deletes a screenshot once Shturmap is done with it, when the player turned that on (owner, 2026-10-04: "a mode
+/// that auto-deletes screenshots after a couple of seconds grace period"; 2026-10-14: menu screenshots too, "because
+/// otherwise the folder is littered with screenshots from the menu"). Off unless asked for: it is the one thing
+/// Shturmap changes outside its own folders, and what it deletes is gone for good. So what it may delete is narrow and
+/// checked when the file is seen and again before it goes (<see cref="MayDelete"/>): a file the watcher reported as new
+/// in this run, directly in the screenshots folder, named as the game names a screenshot, in a raid or in the menus.
+/// What was in the folder before Shturmap looked and any other file are never touched.
+/// It goes when its reading is done (the position from its name, the extract list or the stash from its picture) and
+/// the grace time has passed, whichever is later, so no reading loses its file.
 /// The image is not opened: the file is removed by name. One that is still open elsewhere (the game writing it)
 /// can't be removed, so it is tried again a few times and then left; a file marked read-only is left too.
 /// </summary>
 public sealed class ScreenshotCleaner : IDisposable
 {
-    /// <summary>How long a screenshot stays after it was seen: time for the game to finish writing it, and for any
-    /// other tool the player runs to read its name.</summary>
+    /// <summary>How long a screenshot stays after it was seen, at least: time for the game to finish writing it, and for
+    /// any other tool the player runs to read its name.</summary>
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(5);
+
+    /// <summary>How long a screenshot waits for its reading at most: one that never ends doesn't keep it for ever.</summary>
+    public static readonly TimeSpan ReadingAtMost = TimeSpan.FromMinutes(2);
 
     private const int Tries = 6;
 
@@ -50,8 +55,8 @@ public sealed class ScreenshotCleaner : IDisposable
 
     /// <summary>
     /// Whether a file is one this mode may delete: directly in the screenshots folder, and named as the game names a
-    /// screenshot with a position (one taken in a raid). Says nothing about whether it is new; only what the watcher
-    /// reports is ever asked about.
+    /// screenshot (with a position, taken in a raid, or without, in the menus). Says nothing about whether it is new;
+    /// only what the watcher reports is ever asked about.
     /// </summary>
     public static bool MayDelete(string path, string folder)
     {
@@ -69,16 +74,20 @@ public sealed class ScreenshotCleaner : IDisposable
             return false;
         }
         return string.Equals(Path.TrimEndingDirectorySeparator(parent), root, StringComparison.OrdinalIgnoreCase)
-            && ScreenshotName.TryParse(file, out var info) && info.HasPosition;
+            && ScreenshotName.TryParse(file, out _);
     }
 
-    /// <summary>A new screenshot, as the watcher reports it. With the mode on, it is deleted after the grace time.</summary>
-    public void Seen(ScreenshotSeen seen)
+    /// <summary>
+    /// A new screenshot, as the watcher reports it, and its reading. With the mode on, it is deleted when the reading
+    /// is done and the grace time has passed.
+    /// </summary>
+    /// <param name="read">What Shturmap does with it (its name, its picture); null when nothing reads it.</param>
+    public void Seen(ScreenshotSeen seen, Task? read = null)
     {
         if (_stop.IsCancellationRequested || !_on() || !MayDelete(seen.Path, Folder))
             return;
         Interlocked.Increment(ref _waiting);
-        _ = Task.Run(() => DeleteLaterAsync(seen.Path));
+        _ = Task.Run(() => DeleteLaterAsync(seen.Path, read));
     }
 
     public void Dispose()
@@ -88,12 +97,16 @@ public sealed class ScreenshotCleaner : IDisposable
         _stop.Dispose();
     }
 
-    private async Task DeleteLaterAsync(string path)
+    private async Task DeleteLaterAsync(string path, Task? read)
     {
         try
         {
             var stop = _stop.Token;
             await Task.Delay(_grace, stop);
+            // Its reading may take longer than the grace (the stash's first reading fetches the needed items' pictures).
+            if (read is not null)
+                await Task.WhenAny(read, Task.Delay(ReadingAtMost, stop));
+            stop.ThrowIfCancellationRequested();
             for (var attempt = 1; ; attempt++)
             {
                 // Turned off within the grace time: the screenshot stays.

@@ -3,8 +3,9 @@ using Shturmap.Game.Screenshots;
 
 namespace Shturmap.Game.Tests;
 
-// "Delete position screenshots" (owner, 2026-10-04): the one thing Shturmap changes outside its own folders. What it
-// may delete is narrow: a new screenshot with a position, in the screenshots folder, while the setting is on.
+// "Delete screenshots after reading" (owner, 2026-10-04; menu screenshots too since 2026-10-14): the one thing Shturmap
+// changes outside its own folders. What it may delete is narrow: a new screenshot the game named, in the screenshots
+// folder, while the setting is on, once its reading is done.
 public sealed class ScreenshotCleanerTests : IDisposable
 {
     private const string Shot = "2026-01-01[13-35]_40.00, 2.50, 120.00_0.01000, 0.99900, -0.04000, 0.02000_14.13 (0).png";
@@ -49,13 +50,13 @@ public sealed class ScreenshotCleanerTests : IDisposable
     }
 
     [Fact]
-    public void Only_a_position_screenshot_in_the_screenshots_folder_may_go()
+    public void Only_a_screenshot_the_game_named_in_the_screenshots_folder_may_go()
     {
         Assert.True(ScreenshotCleaner.MayDelete(Path.Combine(_folder, Shot), _folder));
         Assert.True(ScreenshotCleaner.MayDelete(Path.Combine(_folder, Shot), _folder + Path.DirectorySeparatorChar));
         Assert.True(ScreenshotCleaner.MayDelete(Path.Combine(_folder.ToUpperInvariant(), Shot), _folder));
-        // A menu screenshot gave no position: it was taken for its picture.
-        Assert.False(ScreenshotCleaner.MayDelete(Path.Combine(_folder, MenuShot), _folder));
+        // A menu screenshot too (owner, 2026-10-14: "otherwise the folder is littered with screenshots from the menu").
+        Assert.True(ScreenshotCleaner.MayDelete(Path.Combine(_folder, MenuShot), _folder));
         Assert.False(ScreenshotCleaner.MayDelete(Path.Combine(_folder, "holiday.png"), _folder));
         Assert.False(ScreenshotCleaner.MayDelete(Path.Combine(_folder, "notes.txt"), _folder));
         // Not in the folder itself: above it, below it, beside it, or reached through "..".
@@ -68,7 +69,7 @@ public sealed class ScreenshotCleanerTests : IDisposable
     }
 
     [Fact]
-    public async Task A_position_screenshot_goes_after_the_grace_time_and_nothing_else_does()
+    public async Task A_screenshot_goes_after_the_grace_time_and_nothing_else_does()
     {
         var shot = Make(Shot);
         var menu = Make(MenuShot);
@@ -86,10 +87,35 @@ public sealed class ScreenshotCleanerTests : IDisposable
         await Settled(cleaner);
 
         Assert.False(File.Exists(shot));
-        Assert.Equal(new[] { shot }, deleted);
-        Assert.True(File.Exists(menu));
+        Assert.False(File.Exists(menu));
+        Assert.Equal(new[] { shot, menu }.Order(), deleted.Order());
         Assert.True(File.Exists(other));
         Assert.True(File.Exists(outside));
+    }
+
+    [Fact]
+    public async Task A_screenshot_waits_for_its_reading_however_long_it_takes()
+    {
+        var menu = Make(MenuShot);
+        using var cleaner = new ScreenshotCleaner(_folder, () => true, grace: Short, retry: Short);
+        // The stash's first reading fetches the needed items' pictures: longer than the grace.
+        var reading = new TaskCompletionSource();
+        cleaner.Seen(Seen(menu), reading.Task);
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+        Assert.True(File.Exists(menu));
+        reading.SetResult();
+        await Settled(cleaner);
+        Assert.False(File.Exists(menu));
+    }
+
+    [Fact]
+    public async Task A_failed_reading_lets_its_screenshot_go_too()
+    {
+        var shot = Make(Shot);
+        using var cleaner = new ScreenshotCleaner(_folder, () => true, grace: Short, retry: Short);
+        cleaner.Seen(Seen(shot), Task.FromException(new InvalidOperationException("unreadable")));
+        await Settled(cleaner);
+        Assert.False(File.Exists(shot));
     }
 
     [Fact]

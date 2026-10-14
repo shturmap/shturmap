@@ -4,17 +4,18 @@ The German lines of the What's New card, a translation of docs/whats-new.md, whi
 written and read. Each section is a version of that file, with its lines in the same order and their previews as they
 are; the release's name stays as it is. Words: docs/glossary-de.md.
 
-## 0.5.0
+## 0.5.0 · Hyena
 
-- stash · Was du hast · Screenshot von Key Tool oder Stash: was deine Quests brauchen, sagt „In deinem Stash gesehen“.
+- stash · Was du hast · Screenshot von Key Tool oder Stash: Was deine Quests brauchen, sagt „In deinem Stash gesehen“.
 - stash-given · Aus dem Log des Spiels · Was eine Quest dir zum Start gibt, Belohnungen und Versicherung bekommen auch eine Markierung.
 - stash-card · Nicht mehr · Klick auf der Item-Karte nimmt eine Markierung zurück, die Einstellungen alle. Die Planung bleibt.
-- tour · Deutsch · Shturmap spricht Deutsch: es folgt der Sprache des Spiels, oder du wählst eine in den Einstellungen.
+- tour:5 · Deine Extracts, klarer · Nicht auf deiner Liste: durchgestrichen. „??:??:??“: ? im Dreieck. Neue Liste: Deine leuchten auf.
+- tour:1 · Was es liest · Auch Menü-Screenshots, für deinen Stash. „Screenshots nach dem Lesen löschen“ räumt sie mit weg.
 
 ## 0.4.0 · Praetorian
 
 - tour · Die Tour · Sieben kurze Kapitel dazu, wie Shturmap funktioniert. Klick zum Starten; die Hilfe holt sie zurück.
 - replay · Raid-Replay · Nach einem Raid mit ein paar Screenshots: wo du sie gemacht hast, der Reihe nach, zunehmend heller.
-- extracts · Deine Extracts im Raid · Mach einen Screenshot der Extract-Liste: Deine leuchten, die anderen werden zum Umriss.
+- extracts · Deine Extracts im Raid · Mach einen Screenshot der Extract-Liste: Deine leuchten, die anderen werden durchgestrichen.
 - clock · Raid-Zeit, groß · Die übrigen Minuten als größte Zahl der Raid-Karte; rot in den letzten zehn.
 - joined · Ein Spot, ein Marker · Mehrere Ziele einer Quest an einem Spot: ein Marker, der sagt, wie viele.

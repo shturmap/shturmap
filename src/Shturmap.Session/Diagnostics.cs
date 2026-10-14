@@ -62,7 +62,7 @@ public static class Diagnostics
         });
         Line("Active quests", s.ActiveQuestCount.ToString(CultureInfo.InvariantCulture));
         // Answers "where did my screenshots go?" in a report.
-        Line("Delete position screenshots", s.DeleteScreenshots ? "on" : "off");
+        Line("Delete screenshots after reading", s.DeleteScreenshots ? "on" : "off");
         // And "why doesn't it show my extracts?": the setting, and whether Windows can read the list at all.
         Line("Read the extract list from screenshots", !s.ReadExits ? "off"
             : s.ExitReaderMissing ? "on, but Windows has no text recognition language"

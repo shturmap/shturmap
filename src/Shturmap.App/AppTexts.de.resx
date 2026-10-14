@@ -117,8 +117,8 @@
     <comment>en: Developer builds only. Records raids, quest changes, positions and app use, to improve Shturmap. Stays on this PC (%LOCALAPPDATA%\Shturmap-dev\study) for 30 days; never sent, not even with a report.</comment>
   </data>
   <data name="SettingsDeleteScreenshotsNote" xml:space="preserve">
-    <value>Löscht jeden Positions-Screenshot {seconds} s nach dem Lesen seines Namens, endgültig (nicht in den Papierkorb). Nur neue aus dem Raid, solange angehakt; ältere und Menü-Screenshots bleiben.</value>
-    <comment>en: Deletes each position screenshot {seconds} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.</comment>
+    <value>Löscht jeden neuen Screenshot, aus dem Raid oder den Menüs, sobald Shturmap ihn gelesen hat (frühestens nach {seconds} s), endgültig (nicht in den Papierkorb). Nur neue, solange angehakt; ältere bleiben.</value>
+    <comment>en: Deletes each new screenshot, from a raid or the menus, once Shturmap has read it (at least {seconds} s later), for good (not to the Recycle Bin). Only ones taken while ticked; older ones stay.</comment>
   </data>
   <data name="SettingsReadExitsNote" xml:space="preserve">
     <value>Liest die Extract-Liste oben rechts in jedem Raid-Screenshot, mit der Texterkennung von Windows. Nur auf diesem PC; vom Bild wird nichts behalten oder gesendet. Ohne Haken wird kein Bild geöffnet.</value>

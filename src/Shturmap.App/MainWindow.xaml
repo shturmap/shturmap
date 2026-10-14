@@ -409,9 +409,9 @@
                   </ItemsControl>
                 </Grid>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Text="{x:Bind ViewModel.LanguageNote, Mode=OneWay}" />
-                <!-- Position screenshots deleted a few seconds after reading (owner, 2026-10-04: "a mode that auto-deletes
-                     screenshots after a couple of seconds grace period"). Off unless ticked: it is the one thing Shturmap
-                     changes outside its own folders (docs/DESIGN.md §2). -->
+                <!-- Screenshots deleted once read (owner, 2026-10-04: "a mode that auto-deletes screenshots after a couple
+                     of seconds grace period"; menu screenshots too since 2026-10-14). Off unless ticked: it is the one
+                     thing Shturmap changes outside its own folders (docs/DESIGN.md §2). -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.DeleteScreenshots, Mode=OneWay}" Click="OnDeleteScreenshotsClick" Margin="0,6,0,0"
                               Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsDeleteScreenshots}">
                   <StackPanel Orientation="Horizontal" Spacing="9">

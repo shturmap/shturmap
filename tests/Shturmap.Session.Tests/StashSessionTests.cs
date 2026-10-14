@@ -100,6 +100,33 @@ public class StashSessionTests
     public void It_is_on_unless_the_saved_word_is_off(string? setting, bool on) =>
         Assert.Equal(on, GameSession.ReadStashOn(setting));
 
+    // "Delete screenshots after reading" takes menu screenshots too (owner, 2026-10-14: "otherwise the folder is
+    // littered with screenshots from the menu"), and only once their reading is done, however long it takes.
+    [Fact]
+    public async Task A_menu_screenshot_is_deleted_once_its_reading_is_done()
+    {
+        var reading = new TaskCompletionSource<StashReading?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations)
+        {
+            GivenData = Data,
+            ScreenshotGrace = TimeSpan.FromMilliseconds(50),
+            StashReader = (_, _, _) => reading.Task,
+        });
+        rig.Notification("ChatMessageReceived", QuestMessage(SessionRig.QuestId, 10, DateTime.Now.AddMinutes(-10)), DateTime.Now.AddMinutes(-10));
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Plan.Count > 0 && s.Plan[0].Requirements.Count == 2, "the plan with its two rows");
+        await rig.Session.SetDeleteScreenshotsAsync(true);
+
+        MenuScreenshot(rig);
+        // Past the grace, still being read: it stays.
+        await Task.Delay(400, TestContext.Current.CancellationToken);
+        Assert.Single(rig.Screenshots);
+        reading.SetResult(Shows((Key, 1, null)));
+        await rig.Until(s => s.Marks.ContainsKey(Key), "the key marked");
+        await rig.Until(() => rig.Screenshots.Count == 0, "the menu screenshot deleted");
+    }
+
     [Fact]
     public async Task What_a_quest_hands_over_at_its_start_marks_its_row_and_leaves_with_the_quest()
     {

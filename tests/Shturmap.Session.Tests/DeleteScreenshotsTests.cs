@@ -2,8 +2,9 @@ using Shturmap.Core.Raid;
 
 namespace Shturmap.Session.Tests;
 
-// "Delete position screenshots" (owner, 2026-10-04: "a mode that auto-deletes screenshots after a couple of seconds
-// grace period"): off unless the player ticked it, and then only what arrives from that moment on.
+// "Delete screenshots after reading" (owner, 2026-10-04: "a mode that auto-deletes screenshots after a couple of seconds
+// grace period"): off unless the player ticked it, and then only what arrives from that moment on. Menu screenshots
+// go too since 2026-10-14 (StashSessionTests).
 public class DeleteScreenshotsTests
 {
     [Theory]

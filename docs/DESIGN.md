@@ -115,7 +115,8 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
   and from which source, in `stash.json` in the data folder (§8, "The stash file"). No pixel, no path, no word that
   didn't match; the study log counts cells, never names. The file never goes into a report.
 - **How:** as the list's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
-  screen captured; a screenshot the player took with their own key press, never one taken for them.
+  screen captured; a screenshot the player took with their own key press, never one taken for them. With "Delete
+  screenshots after reading" ticked it goes once read, as a raid screenshot does (below).
 - **The player's say:** "Read your stash from menu screenshots" in settings, on unless unticked, beside the list's
   tick and with a note that says what is looked at and what is kept. Unticked, no menu screenshot is opened; the
   marks learned stay until the player retracts them. Its note, help, the README, PRIVACY.md, the tour's first chapter
@@ -126,14 +127,21 @@ Nothing else of a picture may be read without the owner deciding it anew: not th
 screen, not the hideout, not another player's inventory in a group screen.
 
 **It changes nothing outside its own folders, with one exception the player turns on** (owner, 2026-10-04: "a mode
-that auto-deletes screenshots after a couple of seconds grace period"). "Delete position screenshots" in settings,
-off unless ticked: a screenshot whose name gave a position is deleted 5 seconds after its name was read
+that auto-deletes screenshots after a couple of seconds grace period"). "Delete screenshots after reading" in
+settings, off unless ticked: a new screenshot, from a raid or the menus, is deleted once Shturmap is done with it (its
+name's position, and the extract list or the stash its picture shows) and at least 5 seconds after it was seen
 (`ScreenshotCleaner`), for good, not to the Recycle Bin. The 5 seconds leave the game time to finish writing the
-file and any other tool the player runs time to read its name. What may go is narrow, and checked when the file is
-seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a file the watcher reported as new in this run,
-directly in the screenshots folder, named as the game names a screenshot with a position. What was in the folder
-before Shturmap looked, a menu screenshot (no position, so taken for its picture) and every other file stay. Nor is
-a screenshot that comes back new: a file last written before Shturmap started watching, or before a screenshot of
+file and any other tool the player runs time to read its name; the wait for the reading (at most 2 minutes) keeps a
+slow one, such as a stash reading that first fetches the needed items' pictures, from losing its file. Until
+2026-10-14 it was "Delete position screenshots": only a screenshot with a position went, 5 seconds after it was
+seen whatever its picture's reading was doing, and menu screenshots stayed as "taken for their picture". Since the
+stash is read from them they are taken for Shturmap too, and the owner asked for them to go ("otherwise the folder is
+littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash from menu
+screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two. What may
+go is narrow, and checked when the file is seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a
+file the watcher reported as new in this run, directly in the screenshots folder, named as the game names a
+screenshot (with a position or without). What was in the folder before Shturmap looked and every other file stay.
+Nor is a screenshot that comes back new: a file last written before Shturmap started watching, or before a screenshot of
 its name was deleted, is old (`ScreenshotWatcher`; review of 2026-10-09: a Screenshots folder a sync tool or the
 Recycle Bin restored had each file it brought back reported as new and, with the setting on, deleted 5 s later). So
 restored or copied-in screenshots are neither placed on the map nor deleted. The
@@ -1271,7 +1279,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   list the ones still in translation, "FRANÇAIS · IN TRANSLATION", to try them; a choice applies at once, and under it
   one line says what Automatic comes to and why: "Automatic: English, from the game.", "…, from Windows.", or that
   neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Delete
-  position screenshots" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
+  screenshots after reading" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
   §2), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
@@ -2990,7 +2998,7 @@ it came from (the setting, the game, Windows, the default; "this run only" for "
 tarkov.dev's as loaded (with "extract names also in de" when the game's own names were loaded beside it); the data's
 state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; whether "Delete
-position screenshots", "Read the extract list from screenshots" and "Read your stash from menu screenshots" are on
+screenshots after reading", "Read the extract list from screenshots" and "Read your stash from menu screenshots" are on
 (§2; the two readings with the recognition's language); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
 cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file. Copying sends nothing;
@@ -3097,8 +3105,8 @@ every issue goes through it, and the app's report is offered beside it.
   "Distribution" and "Continuous integration").
 - Objective progress: by ticks the player sets on the quest card (2026-10-04; §4, "Quest cards", *Ticks*), since
   the logs don't report it.
-- "Delete position screenshots" (2026-10-04; §2): off unless ticked, the one thing Shturmap changes outside its own
-  folders.
+- "Delete screenshots after reading" (2026-10-04, "Delete position screenshots" until menu screenshots joined on
+  2026-10-14; §2): off unless ticked, the one thing Shturmap changes outside its own folders.
 - Open: the installed size (budget 80–120 MB, needs trimming). Declined (owner, 2026-10-04): editing quests by hand,
   opening with the game or with Windows, a text size setting. Declined (owner, 2026-10-07): shortcuts for zooming and
   panning that work while the game has the focus. They would need a global hotkey (§2), and in a week of the study log

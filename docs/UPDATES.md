@@ -59,8 +59,8 @@ read its cache, `ExtractRulesTests` and `ItemCardTests` (step 3).
 | `handovers` | NEAR; new names under "Quest items handed over with no pickup" | the pairing rule in `Handovers` (DESIGN.md, "Quest cards", *Hand-overs*) |
 | `spawns` | markers far from any spawn point; boss names | the spawn grouping in `MapContent`; a new AI PMC id would draw as a boss |
 
-Last good totals, to compare against: `effort pve` 2026-10-09: 604 rows, Go there 211, Find or survive 124, Fight
-269 (regular 620: 209, 136, 275). `handovers` 2026-10-09: PvE 221 fold, 155 own lines, 0 NEAR; PvP 221, 171, 0.
+Last good totals, to compare against: `effort pve` 2026-10-14: 603 rows, Go there 210, Find or survive 124, Fight
+269 (regular 619: 208, 136, 275; one fewer than on 2026-10-09: Oil Run's mark is on Customs only in tarkov.dev's data now). `handovers` 2026-10-09: PvE 221 fold, 155 own lines, 0 NEAR; PvP 221, 171, 0.
 
 ## 3. The tests against the fresh cache (1 min)
 
@@ -200,3 +200,4 @@ Labyrinth's 18 traps, 60 of 1,418 objectives optional): they say what was true o
 | 2026-10-09 | story chapters; tests | still none in json.tarkov.dev; 1321 tests passed against the fresh cache, 0 skipped |
 | 2026-10-09 | before 0.4.0: `data`, the five audits in both modes, story chapters, tests | the same counts as the morning's runs, the same NO EXIT rows, no chapters; 1407 tests passed against the fresh cache, 0 skipped |
 | 2026-10-11 | German quest cards' line of map names, over `pve de` (`ItemCardTests`) | 363 of 936 lines left out (English 577), each under a sentence that says where; none taken wrongly. Kept: sentences that name none or not all of the line's maps, 17 extracts "aus …", 17 transits "von … nach …", 151 sentences still English in the German data |
+| 2026-10-14 | before 0.5.0: `data`, the five audits in both modes, story chapters, tests | 500 tasks (PvE), 504 (PvP), 17 maps, 16 traders, 13 definitions. `effort` 603 rows (PvE: Go there 210, Find or survive 124, Fight 269); regular 619 (208, 136, 275): Oil Run's mark is on Customs only now, no longer on Reserve too (tarkov.dev's data; v0.4.0's code gives the same). Otherwise as on 2026-10-09: no FALLBACK or BREAK (153 LONG PvE, 156 PvP), no unknown items or types, the same NO EXIT rows, hand-overs 221 fold, 0 NEAR, spawns at most 25 m off; no chapters. 1623 tests passed against the fresh cache, 0 skipped; `ItemCardTests` 363 of 936, English 578 |

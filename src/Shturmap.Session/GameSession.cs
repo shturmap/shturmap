@@ -276,7 +276,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 AppLog.Info("Read your stash from menu screenshots: off");
             OpenStash();
             if (_deleteScreenshots)
-                AppLog.Info("Delete position screenshots after reading: on");
+                AppLog.Info("Delete screenshots after reading: on");
 #if DEVTOOLS
             AppLog.Info($"Mode {_mode}; study log {(Study.Enabled ? "on" : "off")}");
 #else
@@ -296,34 +296,14 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _ = Task.Run(BackfillLogsAsync);
         FollowLogs();
         _watcher = new ScreenshotWatcher(_locations.ScreenshotsFolder);
-        _watcher.ScreenshotTaken += s => _ = Task.Run(async () =>
+        _watcher.ScreenshotTaken += s =>
         {
-            try
-            {
-                await OnScreenshotAsync(s);
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                Failed("Placing a position", e);
-            }
-            // Then, in a raid, the picture's top right corner: the game's extract list, if it shows there (settings,
-            // on unless unticked). After the position, which never waits for it. A screenshot without a position
-            // was taken in the menus: its item grids, for what the quests need (settings, on unless unticked).
-            try
-            {
-                if (s.Info.HasPosition)
-                    await ReadExitsAsync(s);
-                else
-                    await ReadStashAsync(s);
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                Failed(s.Info.HasPosition ? "Reading the extract list from a screenshot" : "Reading the stash from a menu screenshot", e);
-            }
-        });
+            var read = Task.Run(() => ReadScreenshotAsync(s));
+            // "Delete screenshots after reading" (settings, off unless ticked): once this reading is done.
+            _cleaner?.Seen(s, read);
+        };
         // The watcher keeps going and sets itself up again; each kind of trouble is said once (Failed).
         _watcher.WatchProblem += (what, e) => Failed("Watching for screenshots: " + what, e);
-        // "Delete position screenshots" (settings, off unless ticked): after the position was read from the name above.
         var watcher = _watcher;
         _cleaner = new ScreenshotCleaner(watcher.Folder, () => _deleteScreenshots, ScreenshotGrace);
         _cleaner.Deleted += path =>
@@ -331,32 +311,58 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             watcher.Forget(path);
             Study.Game("screenshot.deleted");
         };
-        _cleaner.Problem += (_, e) => Failed("Deleting a position screenshot after reading it", e);
-        _watcher.ScreenshotTaken += _cleaner.Seen;
+        _cleaner.Problem += (_, e) => Failed("Deleting a screenshot after reading it", e);
         _watcher.Start();
         if (_locate is not null)
             _ = Task.Run(LookAgainAsync);
         _ = Task.Run(WatchOpenRaidAsync);
     }
 
-    // ---- deleting position screenshots after reading (owner, 2026-10-04) ----
+    // A new screenshot: its name's position, then its picture's extract list (in a raid) or item grids (in the menus).
+    private async Task ReadScreenshotAsync(ScreenshotSeen s)
+    {
+        try
+        {
+            await OnScreenshotAsync(s);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Failed("Placing a position", e);
+        }
+        // Then, in a raid, the picture's top right corner: the game's extract list, if it shows there (settings,
+        // on unless unticked). After the position, which never waits for it. A screenshot without a position
+        // was taken in the menus: its item grids, for what the quests need (settings, on unless unticked).
+        try
+        {
+            if (s.Info.HasPosition)
+                await ReadExitsAsync(s);
+            else
+                await ReadStashAsync(s);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Failed(s.Info.HasPosition ? "Reading the extract list from a screenshot" : "Reading the stash from a menu screenshot", e);
+        }
+    }
 
-    /// <summary>The key of "Delete position screenshots" in the app's settings ("on" or "off"; absent is off).</summary>
+    // ---- deleting screenshots after reading (owner, 2026-10-04; menu screenshots too since 2026-10-14) ----
+
+    /// <summary>The key of "Delete screenshots after reading" in the app's settings ("on" or "off"; absent is off).</summary>
     public const string DeleteScreenshotsSetting = "screenshots.delete";
 
     private ScreenshotCleaner? _cleaner;
     private volatile bool _deleteScreenshots;
 
-    /// <summary>How long a position screenshot stays after its name was read, with the setting on.</summary>
+    /// <summary>How long a screenshot stays after it was seen at least, with the setting on.</summary>
     public TimeSpan ScreenshotGrace { get; init; } = ScreenshotCleaner.Grace;
 
     /// <summary>Whether the saved setting says on. Only "on" does: deleting the player's files is never a default.</summary>
     public static bool DeleteScreenshotsOn(string? setting) => setting == "on";
 
     /// <summary>
-    /// The "Delete position screenshots" tick, saved with the app's settings. On: each screenshot with a position that
-    /// arrives from now on is deleted <see cref="ScreenshotCleaner.Grace"/> after its name was read. Off: nothing is
-    /// deleted, also not the ones still waiting.
+    /// The "Delete screenshots after reading" tick, saved with the app's settings. On: each screenshot that arrives from
+    /// now on, in a raid or in the menus, is deleted once it was read, and at least <see cref="ScreenshotCleaner.Grace"/>
+    /// after it was seen. Off: nothing is deleted, also not the ones still waiting.
     /// </summary>
     public async Task SetDeleteScreenshotsAsync(bool on)
     {
@@ -365,7 +371,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         {
             _store?.SetSetting(DeleteScreenshotsSetting, on ? "on" : "off");
             _deleteScreenshots = on;
-            AppLog.Info("Delete position screenshots after reading: " + (on ? "on" : "off"));
+            AppLog.Info("Delete screenshots after reading: " + (on ? "on" : "off"));
             Publish();
         }
         finally

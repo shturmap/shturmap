@@ -254,7 +254,7 @@ public sealed class ScreenshotWatcher : IDisposable
     // A file last written before watching started, or before a screenshot of its name was deleted, is no screenshot
     // the game took now: it came back, with a folder a sync tool or the Recycle Bin restored, or copied in, and copies
     // keep the time a file was last written. Every file a restored folder held, or an old one brought back into it, was
-    // reported as new, and with "Delete position screenshots" on, deleted 5 s later (review of 2026-10-09). It stays
+    // reported as new, and with "Delete screenshots after reading" on, deleted 5 s later (review of 2026-10-09). It stays
     // known, as an old one. File times are coarser than the clock (a tick on NTFS, two seconds on FAT): a screenshot
     // written a moment after the start can carry a time a little before it, so only one older by more counts.
     private bool CameBack(string path)

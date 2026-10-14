@@ -401,7 +401,7 @@ public sealed partial class MainWindow : Window
     // The study switch's and the uninstall question's box: filled gold with a check when on, an empty gold square when off.
     public Brush StudyBoxBrush(bool on) => on ? Resource("AmberBrush") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
-    // "Delete position screenshots" in settings (owner, 2026-10-04): the one thing Shturmap changes outside its own
+    // "Delete screenshots after reading" in settings (owner, 2026-10-04): the one thing Shturmap changes outside its own
     // folders, so it is off unless ticked and its note says what goes and what stays.
     public string DeleteScreenshotsNote =>
         AppTexts.SettingsDeleteScreenshotsNote(seconds: (int)Math.Round(Shturmap.Game.Screenshots.ScreenshotCleaner.Grace.TotalSeconds));

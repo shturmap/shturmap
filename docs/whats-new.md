@@ -17,17 +17,18 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
-## 0.5.0
+## 0.5.0 · Hyena
 
 - stash · What you have · Screenshot your key tool or stash in the game: the items your quests need say "Seen in your stash".
 - stash-given · From the game's log · What a quest hands you at its start, its rewards and insurance returns get a mark too.
 - stash-card · Not any more · One click on an item's card takes a mark back; settings forget them all. Never changes the plan.
-- tour · Deutsch · Shturmap speaks German: it follows the game's language, or pick one in settings.
+- tour:5 · Your extracts, clearer · Not on your list: struck out. "??:??:??": a ? in the triangle. A new list rings yours out.
+- tour:1 · What it reads · Menu screenshots too, for your stash. "Delete screenshots after reading" clears them as well.
 
 ## 0.4.0 · Praetorian
 
 - tour · The tour · Seven short chapters on how it works. Click to take it; help brings it back.
 - replay · Raid replay · After a raid with a few screenshots: where you took them, in order, faint to bright by time.
-- extracts · Your extracts this raid · Screenshot the game's extract list: yours glow, the others go hollow.
+- extracts · Your extracts this raid · Screenshot the game's extract list: yours glow, the others are struck out.
 - clock · Raid time, large · Minutes left as the raid card's largest figure; red for the last ten.
 - joined · One spot, one marker · Several objectives of a quest on one spot: one marker that says how many.

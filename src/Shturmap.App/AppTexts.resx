@@ -117,8 +117,8 @@
     <comment>Settings, the note under "Keep a study log". Keep the folder as it is.</comment>
   </data>
   <data name="SettingsDeleteScreenshotsNote" xml:space="preserve">
-    <value>Deletes each position screenshot {seconds} s after reading its name, for good (not to the Recycle Bin). Only new ones taken in a raid while ticked; older ones and menu screenshots stay.</value>
-    <comment>Settings, the note under "Delete position screenshots". {seconds}: how long after reading it the screenshot goes. "Recycle Bin" as Windows names it in this language.</comment>
+    <value>Deletes each new screenshot, from a raid or the menus, once Shturmap has read it (at least {seconds} s later), for good (not to the Recycle Bin). Only ones taken while ticked; older ones stay.</value>
+    <comment>Settings, the note under "Delete screenshots after reading". {seconds}: the least time a screenshot stays after it was taken. "Recycle Bin" as Windows names it in this language.</comment>
   </data>
   <data name="SettingsReadExitsNote" xml:space="preserve">
     <value>Reads the extract list in each raid screenshot's top right corner, with Windows' own text recognition. On this PC only; nothing of the picture is kept or sent. Unticked, no picture is opened.</value>

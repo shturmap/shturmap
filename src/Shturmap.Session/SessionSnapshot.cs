@@ -255,7 +255,7 @@ public sealed record SessionSnapshot
     /// <summary>Whether the study log is being kept this session.</summary>
     public bool StudyLogOn { get; init; }
 
-    /// <summary>Whether "Delete position screenshots" is ticked: each one is deleted a few seconds after its name was read.</summary>
+    /// <summary>Whether "Delete screenshots after reading" is ticked: each new one is deleted once it was read.</summary>
     public bool DeleteScreenshots { get; init; }
 
     /// <summary>Whether "Read the extract list from screenshots" is ticked (on unless unticked).</summary>

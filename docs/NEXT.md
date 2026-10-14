@@ -6,6 +6,27 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-14: before 0.5.0 "Hyena"
+
+The owner's answers to what was left for the release (2026-10-14):
+
+- **The name:** "Hyena" (docs/whats-new.md, its German file, the notes' first line).
+- **German:** stays in the build and is chosen as before (Automatic takes it from the game or Windows), but isn't
+  announced: no What's New line, nothing in the notes ("Keep it, don't announce"). So the German in-game check below
+  stays for later.
+- **0.4.0's extracts line:** says "struck out" now, as its preview shows since the exits' new look (e9c2adf).
+- **DESIGN.md §2's text on menu screenshots:** "Adjust it": checked against the code (which pictures, the candidates
+  BRING lists, what is kept: all as built); it now says that "Delete screenshots after reading" takes them too.
+- **"Delete position screenshots" is "Delete screenshots after reading"** (owner: "rename … and also check if it does
+  so - because otherwise the folder is littered with screenshots from the menu"). It didn't: only screenshots with a
+  position went, and each 5 s after it was seen, whether its picture's reading was done or not. Now every new
+  screenshot the game names goes, raid or menu, once its reading is done and at least 5 s after it was seen
+  (`ScreenshotCleaner`, `GameSession.ReadScreenshotAsync`); the saved key `screenshots.delete` stays.
+- **What's New** for 0.5.0: the three stash lines, the extracts' new look (`tour:5`) and what it reads (`tour:1`, with
+  the deletion). The notes add the extracts, the deletion, NEXT RAID's every map and the quest card's "With:" line.
+- **The website's words and media:** updated in the site repository, committed with the release (the site says what
+  the released app does, so it goes up when 0.5.0 does).
+
 ## 2026-10-11: German, left to check in the game
 
 German was merged on 2026-10-11 (not released). The Windows Settings names in its texts were checked the same day in

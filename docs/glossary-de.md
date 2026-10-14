@@ -106,7 +106,7 @@ gender.
 | marker (on the map) | Marker (der) | the MS2000 Marker too; the context tells |
 | guide line; facing | Linie; Blickrichtung | on screen: gestrichelte Linie |
 | the legend's shapes: disc, ring, cone, triangle, diamond, octagon, hexagon, square, dot, chevron, badge, padlock, trunk, check, glyph, power symbol | Scheibe, Ring, Kegel, Dreieck, Raute, Achteck, Sechseck, Quadrat, Punkt, Pfeil, Badge, Schloss, Kofferraum, Haken, Symbol, Ein/Aus-Symbol | MapTexts' legend |
-| hollow, open, outline; hatched | Umriss (der); schraffiert | „Sechseck-Umriss“, „Quadrat-Umriss“, „werden zum Umriss“; not „hohl“ |
+| hollow, open, outline; hatched | Umriss (der); schraffiert | „Sechseck-Umriss“, „Quadrat-Umriss“; not „hohl“ |
 | struck out (a symbol with a diagonal stroke through it) | durchgestrichen | „die übrigen werden durchgestrichen“, „durchgestrichen, Name blass“; as German interfaces say „durchgestrichenes Mikrofon“; not „durchgekreuzt“ (that is an X) |
 | the legend's colours: sand, gold, green, teal, khaki, violet, red, grey; faint; lit, bright | sandfarben, golden, grün, türkisfarben, khakifarben, violett, rot, grau; blass; hell | „sandfarbene Scheibe“, „geteiltes khakifarbenes Dreieck“ |
 | preview; PREVIEW ·; AN EXAMPLE, NOT YOUR RAID | Vorschau; VORSCHAU ·; EIN BEISPIEL, NICHT DEIN RAID | |
@@ -133,7 +133,7 @@ gender.
 | dev build, developer builds; developer run; folder build; installed; study log | Dev-Build (der), Dev-Builds; Entwickler-Testlauf (der); Ordner-Build; installiert; Studien-Log (das) | the build is what was built („Nur in Dev-Builds“, the version line); a run is a developer's session: snapshots, fake games, the demo (DESIGN.md §8): „Entwickler-Testläufe senden nichts“ |
 | deadly area; SNIPER ZONE | tödlicher Bereich; SNIPER-ZONE | |
 | map artwork; map render; sheet; 10 m grid | Map-Grafik (in the legend: Grafik); Map-Render; Blatt; 10-m-Raster | „Keine Map-Grafik für {map}: stattdessen ein 10-m-Raster …“; credit line „Raster 10 m“; caps RASTER 10 M |
-| settings rows | Positions-Screenshots löschen; Extract-Liste aus Screenshots lesen; Deinen Stash aus Menü-Screenshots lesen; Absturzberichte; Updates | options: NACH ABSTURZ FRAGEN · IMMER SENDEN · NIE; AUTOMATISCH · NUR BENACHRICHTIGEN · AUS |
+| settings rows | Screenshots nach dem Lesen löschen; Extract-Liste aus Screenshots lesen; Deinen Stash aus Menü-Screenshots lesen; Absturzberichte; Updates | options: NACH ABSTURZ FRAGEN · IMMER SENDEN · NIE; AUTOMATISCH · NUR BENACHRICHTIGEN · AUS |
 | a mark (what you have); gets a mark; takes a mark back; NOT ANY MORE, Not any more | Markierung (die); bekommt eine Markierung; nimmt eine Markierung zurück; NICHT MEHR, Nicht mehr | Shturmap's own mark on a BRING row or a card (DESIGN.md §4 "What you have"); apart from "mark" the objective (markieren) |
 | Seen in your stash · {date}; "…, found in raid" and "…, not found in raid" on a mark; {seen} of {needed}; "…, not in your screenshots of {date}" | In deinem Stash gesehen · {date}; „, FiR“ and „, nicht FiR“; {seen} von {needed}; „, nicht in deinen Screenshots vom {date}“ | the mark's fixed wording (SessionTexts Mark*), quoted in What's New; the date in the dative, „vom 12. Okt.“ |
 | Given with the quest; given with {quest}; reward from {quest}; {count} as reward from {quest}; {count} more: {source} | Mit der Quest bekommen; mit {quest} bekommen; Belohnung aus {quest}; {count} als Belohnung aus {quest}; Noch {count}: {source} | the log's marks, and the amber line under a part mark |

@@ -357,7 +357,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool StudyLogOn { get; set; }
 
-    /// <summary>"Delete position screenshots" in settings: off unless the player ticked it.</summary>
+    /// <summary>"Delete screenshots after reading" in settings: off unless the player ticked it.</summary>
     [ObservableProperty] public partial bool DeleteScreenshots { get; set; }
 
     /// <summary>"Read the extract list from screenshots" in settings: on unless the player unticked it.</summary>
