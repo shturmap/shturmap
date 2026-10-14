@@ -2070,6 +2070,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             }
         }
 
+        // The stash file first: a snapshot that shows a mark is never ahead of the file that keeps it (CI, 2026-10-14: a
+        // test read stash.json between the two).
+        SaveStashIfDirty();
         Snapshot = new SessionSnapshot
         {
             Raid = raid,
@@ -2150,7 +2153,6 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (activeCount != _publishedActive && _publishedActive >= 0 && !_replaying)
             Study.Game("quests.count", ("from", _publishedActive), ("to", activeCount), ("data", _data is not null), ("mode", _mode));
         _publishedActive = activeCount;
-        SaveStashIfDirty();
         Changed?.Invoke(Snapshot);
     }
 

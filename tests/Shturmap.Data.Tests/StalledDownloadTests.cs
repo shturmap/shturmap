@@ -11,7 +11,8 @@ public class StalledDownloadTests : IDisposable
 {
     private readonly string _folder = Directory.CreateTempSubdirectory("shturmap-stall-").FullName;
     private static readonly Uri Items = new("https://example.test/pve/items");
-    private static readonly TimeSpan Idle = TimeSpan.FromMilliseconds(250);
+    // Wide enough that a busy runner's pauses stay inside it (CI, 2026-10-14: at 250 ms, pieces 60 ms apart overran it).
+    private static readonly TimeSpan Idle = TimeSpan.FromMilliseconds(1000);
 
     public void Dispose() => Directory.Delete(_folder, true);
 
@@ -99,7 +100,7 @@ public class StalledDownloadTests : IDisposable
     public async Task A_slow_body_that_keeps_coming_is_let_finish()
     {
         // Ten pieces, each well inside the limit; all of them together take longer than it.
-        var pieces = Enumerable.Range(0, 10).Select(i => Send(i.ToString(), afterMs: 60)).ToArray();
+        var pieces = Enumerable.Range(0, 10).Select(i => Send(i.ToString(), afterMs: 150)).ToArray();
         var response = await Cache(() => new Body(pieces)).GetAsync(Items, "pve_items.json", TimeSpan.Zero, TestContext.Current.CancellationToken);
         Assert.Equal("0123456789", File.ReadAllText(response.FilePath));
     }
