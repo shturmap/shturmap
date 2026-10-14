@@ -32,6 +32,10 @@ public enum MarkerKind
     Hazard,
 }
 
+/// <summary>An extract ringing out as a list just read reached it: its turn, and whether it rang as lit (on the list) or as
+/// "??:??:??".</summary>
+public readonly record struct ExitRing(DateTime At, bool Listed);
+
 /// <summary>A point of interest drawn at a fixed screen size.</summary>
 /// <param name="Group">Markers of one quest share a group, so selecting a quest highlights all its points.</param>
 /// <param name="Objective">For quest markers, what the objective asks; drawn as a glyph inside the marker.</param>
@@ -394,8 +398,8 @@ public sealed class MapScene
 
     /// <summary>
     /// The extracts the game's own list didn't name this raid (marker ids), once that list was read from a screenshot
-    /// (owner, 2026-10-05): drawn hollow, their names fainter, so the ones the player can leave by are the solid ones.
-    /// Empty while no list was read: then every extract is drawn solid, as outside a raid.
+    /// (owner, 2026-10-05): struck out and faint, their names fainter, so the ones the player can leave by are the solid
+    /// ones (hollow until 2026-10-14). Empty while no list was read: then every extract is drawn solid, as outside a raid.
     /// </summary>
     public IReadOnlySet<string> ExitsNotListed
     {
@@ -428,7 +432,7 @@ public sealed class MapScene
 
     /// <summary>
     /// The listed extracts the game marked "??:??:??" (marker ids): it may be closed, or it needs something. They
-    /// carry the "?" a possible location carries: maybe here.
+    /// carry the "?" a possible location carries, maybe here, in their triangle (at its corner until 2026-10-14).
     /// </summary>
     public IReadOnlySet<string> ExitsUnsure
     {
@@ -441,6 +445,58 @@ public sealed class MapScene
     }
 
     private IReadOnlySet<string> _exitsUnsure = Nothing;
+
+    /// <summary>
+    /// The extracts a list the player just showed rings out (owner, 2026-10-14: "animate the icons for a couple of
+    /// seconds so they are visible pre-attentively when the exits are read"), each with its turn and whether it rang
+    /// as lit or as "??:??:??" (<see cref="RingExits"/>). Rings that are over stay until the next list.
+    /// </summary>
+    public IReadOnlyDictionary<string, ExitRing> ExitsRinging => _ringing;
+
+    private Dictionary<string, ExitRing> _ringing = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// A list just read, with <see cref="ExitsListed"/> and <see cref="ExitsUnsure"/> set from it: its extracts ring
+    /// out one after another, the lit ones first, each kind nearest you first, for about three seconds. Players take
+    /// several screenshots in a run (owner, 2026-10-14: "updated on the fly with the newly added items that come in
+    /// after the first animation has been started"): while rings are still going, a later list adds only what it lit
+    /// or marked anew, after the last turn, and what is already ringing carries on. Once they are over, a list rings
+    /// them all again: the player looked at it again.
+    /// </summary>
+    public void RingExits(DateTime now)
+    {
+        var going = _ringing.Values.Any(r => now - r.At < MapRenderer.RingLength(r.Listed));
+        if (!going)
+            _ringing = new Dictionary<string, ExitRing>(StringComparer.Ordinal);
+        // Nearest you first, where there is a you.
+        IEnumerable<MapMarker> Near(IReadOnlySet<string> ids)
+        {
+            var these = Markers.Where(m => ids.Contains(m.Id));
+            return Player is { } you ? these.OrderBy(m => m.Position.HorizontalDistanceTo(you.Position)) : these;
+        }
+        var turn = MapRenderer.ExitTurn;
+        // A list read at once: its turns from now, the lit ones' few, then the "??:??:??" ones'. One joining a ring
+        // still going: the turns after its last.
+        var next = going ? Max(now, _ringing.Values.Max(r => r.At) + turn) : now;
+        var cap = going ? int.MaxValue : MapRenderer.ExitTurns;
+        foreach (var listed in new[] { true, false })
+        {
+            var turns = 0;
+            foreach (var exit in Near(listed ? ExitsListed : ExitsUnsure))
+            {
+                if (_ringing.TryGetValue(exit.Id, out var ring) && ring.Listed == listed)
+                    continue;
+                _ringing[exit.Id] = new ExitRing(next + turn * Math.Min(turns, cap - 1), listed);
+                turns++;
+            }
+            next += turn * Math.Min(turns, cap);
+        }
+    }
+
+    private static DateTime Max(DateTime a, DateTime b) => a > b ? a : b;
+
+    /// <summary>Whether an extract still rings out, or waits for its turn to.</summary>
+    public bool ExitsArriving => Pulse && _ringing.Values.Any(r => DateTime.Now - r.At < MapRenderer.RingLength(r.Listed));
 
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];

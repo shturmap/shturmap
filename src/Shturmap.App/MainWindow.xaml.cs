@@ -1000,16 +1000,32 @@ public sealed partial class MainWindow : Window
         scene.ExitsNotListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.NotListed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.ExitsListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Listed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.ExitsUnsure = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Unsure).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
+        // A list the player just showed rings the extracts on it out (owner, 2026-10-14; MapScene.RingExits), and one more
+        // of a run of screenshots adds what it lit anew: not a list read a while ago, found as the logs are read at
+        // start, nor one rung already when the map comes back after another.
+        var exitsArrive = false;
+        if (exitsRead && latest.ExitsReadAt != _exitsReadShown)
+        {
+            _exitsReadShown = latest.ExitsReadAt;
+            exitsArrive = Shturmap.Core.Logs.WallClock.Elapsed(latest.ExitsReadAt!.Value, DateTime.Now) < MapView.JustTaken;
+            if (exitsArrive)
+                scene.RingExits(DateTime.Now);
+        }
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
         // A replay playing on this map: a scene made anew (the map came back after a preview) takes it up.
         ApplyReplay();
         Map.Refresh();
+        if (exitsArrive)
+            Map.Redraw();
         if (HelpFlyout.IsOpen)
             ShowLegend(opened: false);
     }
 
     private static readonly IReadOnlySet<string> NoExits = new HashSet<string>();
+
+    // The screenshot time of the extract list the map last showed as read (SessionSnapshot.ExitsReadAt).
+    private DateTime? _exitsReadShown;
 
     // Who drew what is on the map. The SVG maps' artists by name and licence; the tile renders (Battlestate's level,
     // rendered by tarkov.dev or TarkovBOT.eu; docs/DESIGN.md §3) by who maps.json names; the sheet says what it is.

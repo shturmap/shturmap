@@ -53,8 +53,8 @@
     <comment>en: On your extract list this raid: lit, a glow in its colour, name in bold.</comment>
   </data>
   <data name="LegendExtractNotListed" xml:space="preserve">
-    <value>Nicht auf deiner Extract-Liste in diesem Raid: nur Umriss, Name blass. Mit ?: Das Spiel zeigt ??:??:?? (geschlossen oder braucht etwas).</value>
-    <comment>en: Not on your extract list this raid: hollow, name faint. With a ?: the game shows ??:??:?? (closed, or needs something).</comment>
+    <value>Nicht auf deiner Extract-Liste in diesem Raid: durchgestrichen, Name blass. Ein ? im Dreieck: Das Spiel zeigt ??:??:?? (geschlossen oder braucht etwas).</value>
+    <comment>en: Not on your extract list this raid: struck out, name faint. A ? in the triangle: the game shows ??:??:?? (closed, or needs something).</comment>
   </data>
   <data name="LegendTransit" xml:space="preserve">
     <value>Transit zu einer anderen Map: violette Raute.</value>

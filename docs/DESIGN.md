@@ -563,7 +563,8 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 17 s
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
-position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; the raid card's time
+position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; an extract list just
+read rings its extracts out one after another, about 3 s ("Map drawing", *The player's extracts this raid*); the raid card's time
 doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its figure decoded and a dark notch
 ran along its rule at each minute until then). With Windows' animation
 effects off the app shows and hides without motion, and following jumps to the position. The tour (§1's second
@@ -1181,7 +1182,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
   list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
-  it, the list goes, and the view takes in its extracts as they light up one after another while the rest go hollow), IN THE RAID (RAID LOADING with an example kit, then the raid
+  it, the list goes, and the view takes in its extracts as they ring out one after another, as the map shows any list
+  just read, while the rest are struck out), IN THE RAID (RAID LOADING with an example kit, then the raid
   card's head with example values) and HELP AND FEEDBACK (the story chapters aren't shown yet, anything else missing goes through the feedback button,
   F1; the three buttons named; owner, 2026-10-09: "GOOD TO KNOW" wasn't "really expressive").
   - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
@@ -1370,16 +1372,42 @@ spawns below).
     extract's own colour around its solid triangle, about 2.8 times its size across, strongest near the symbol and
     gone at its edge, drawn under every symbol so it covers none; its name in the bold label face, in ink, placed with
     the bosses' names ahead of other ways out and quests. A glow because the other ways to say it are taken: a ring is
-    a pick's, a pulse the pointer's, a new hue isn't allowed. It never moves (principle 2). Until then the listed
+    a pick's, a pulse the pointer's, a new hue isn't allowed. Once lit it never moves (principle 2). Until then the listed
     extracts were the solid triangles they always were, found only by the others being hollow, and didn't read as
     "active".
-  - **On the list but marked "??:??:??"** (it may be closed, or it needs something): solid, not lit, with the "?" badge
-    at its lower left that a possible location carries: maybe here, maybe open (`MapScene.ExitsUnsure`).
-  - **Left out: hollow**: its outline in its colour on the collar's dark, its name in muted instead of ink
-    (`MapScene.ExitsNotListed`). Nothing is hidden: a hollow extract is still a place on the map, and the list could
-    have been read wrong.
+  - **On the list but marked "??:??:??"** (it may be closed, or it needs something): solid, not lit, with a dark "?"
+    in its triangle, as large as the triangle holds and in the boldest Bahnschrift, as a quest's glyph is dark on its
+    disc: the "?" a possible location carries, maybe here, maybe open (`MapScene.ExitsUnsure`). On a shared extract
+    the split stops above it. Until 2026-10-14 it was the possible location's badge at the lower left, 11 px, which
+    went unseen (owner: "Also mark exits that have a ? better"); inside, it needs no room beside the symbol either.
+  - **Left out: struck out** (owner, 2026-10-14: "Exits that are marked as not open should be marked better as
+    such"): its outline on the collar's dark, and a stroke through it from upper left to lower right, a little past
+    the triangle on a dark band, the sign for "not available" everywhere; both in its colour at 65 %, so they step
+    back beside the solid ones. Its name in muted instead of ink, placed after the quests' and the other ways out's,
+    with the Scav and sniper zones' (`MapScene.ExitsNotListed`). Until then it was the outline alone, at full
+    strength and as large as the others, and at a glance still read as a way out. Nothing is hidden: a struck-out
+    extract is still a place on the map, and the list could have been read wrong. Its size stays: the repel sets
+    symbols apart by their sizes, and a list read would move them.
+  **A list just read rings its extracts out** (owner, 2026-10-14: "animate the icons for a couple of seconds so they
+  are visible pre-attentively when the exits are read"; `MapScene.RingExits`, `MapRenderer.DrawExitsLit`). One after
+  another, 0.16 s apart, the lit ones first, then the "??:??:??" ones, each nearest you first (where there is a
+  position; at most six turns each, the rest share the last). A lit one's glow swells in past its strength and
+  settles over a second, and its triangle's own outline leaves it three times, 0.5 s apart, each over 1.1 s, in its
+  colour on a dark band, under every symbol; a "??:??:??" one's "?" pops in at a size and a half and settles, with one
+  echo. About three seconds in all. Before its turn an extract isn't lit yet, so they light up one after another, as
+  the tour showed them since 2026-10-09. The echo is the triangle, not a ring: round rings that leave a symbol are the
+  pointer's pulse, the player's ping and a completed quest's places; this shape says "way out". A struck-out
+  extract doesn't move: motion goes to where the player can leave. Only a list from a screenshot taken in the last
+  30 s rings (as a position pings: not one found as the logs are read back at start), once per list (not again when
+  the map comes back after another). **Players take several screenshots in a run** (owner, the same day: "updated on
+  the fly with the newly added items that come in after the first animation has been started"): a list that comes
+  while extracts still ring adds only what it lit or marked anew, from after the last turn; what rings carries on,
+  and the same list again changes nothing. Once the rings are over, a list rings them all again: the player looked
+  again. With animation effects off nothing moves: they are simply lit. What's New's `extracts` preview and the tour
+  ring out their example list the same way.
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
-  for the lit ones and one for the other two, each shown once a list was read.
+  for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
+  twelve rows).
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less

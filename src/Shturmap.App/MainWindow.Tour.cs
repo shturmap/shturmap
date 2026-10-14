@@ -536,8 +536,8 @@ public sealed partial class MainWindow
     // The extract list as its own cause and effect (owner, 2026-10-09, after "The your screenshot key panel is weird
     // after the focus on the player position"): an example of the game's list, in Shturmap's own look, decodes where
     // the game shows it (the top right) under what to press; a press reads it; then the view takes in the extracts on
-    // it, which light up one after another, nearest first, each with a ring in its kind's colour, and the rest go
-    // hollow. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
+    // it, which light up one after another, nearest first, as the map shows any list just read, and the rest are
+    // struck out. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
     private async Task StageExtractListRead(Tour.Chapter chapter, GameData data, MapScene scene, MapContent content, WorldPoint you, int run)
     {
         var (listed, unsure, notListed) = ExampleExits(data, content);
@@ -616,21 +616,15 @@ public sealed partial class MainWindow
             return new Rect(x0, y0, Math.Max(0, x1 - x0), Math.Max(0, y1 - y0));
         }
         TourHoles(() => [Region()]);
-        // One after another, nearest first; then the ones the list leaves out go hollow, and the "??:??:??" one gets its "?".
-        var lit = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var exit in listed)
-        {
-            if (!await TourWait(lit.Count == 0 ? 450 : 260, run))
-                return;
-            lit.Add(exit.Id);
-            scene.ExitsListed = new HashSet<string>(lit, StringComparer.Ordinal);
-            Map.Redraw();
-            TourRing(ToLayer(exit.Position), Resource(exit.Kind == MarkerKind.ExtractShared ? "KhakiBrush" : "GreenBrush"));
-        }
-        if (!await TourWait(350, run))
+        // As the map shows a list just read (MapRenderer.DrawExitsLit): the extracts on it light up one after another,
+        // nearest you first, their triangles ringing out, then the "??:??:??" one's "?" pops in; the rest are struck out.
+        if (!await TourWait(450, run))
             return;
+        scene.ExitsListed = listed.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsNotListed = notListed;
+        if (_tourMotion)
+            scene.RingExits(DateTime.Now);
         Map.Redraw();
     }
 

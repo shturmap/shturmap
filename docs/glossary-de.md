@@ -106,7 +106,8 @@ gender.
 | marker (on the map) | Marker (der) | the MS2000 Marker too; the context tells |
 | guide line; facing | Linie; Blickrichtung | on screen: gestrichelte Linie |
 | the legend's shapes: disc, ring, cone, triangle, diamond, octagon, hexagon, square, dot, chevron, badge, padlock, trunk, check, glyph, power symbol | Scheibe, Ring, Kegel, Dreieck, Raute, Achteck, Sechseck, Quadrat, Punkt, Pfeil, Badge, Schloss, Kofferraum, Haken, Symbol, Ein/Aus-Symbol | MapTexts' legend |
-| hollow, open, outline; hatched | Umriss (der); schraffiert | „nur Umriss“, „Sechseck-Umriss“, „Quadrat-Umriss“, „werden zum Umriss“, „erscheinen nur als Umriss“; not „hohl“ |
+| hollow, open, outline; hatched | Umriss (der); schraffiert | „Sechseck-Umriss“, „Quadrat-Umriss“, „werden zum Umriss“; not „hohl“ |
+| struck out (a symbol with a diagonal stroke through it) | durchgestrichen | „die übrigen werden durchgestrichen“, „durchgestrichen, Name blass“; as German interfaces say „durchgestrichenes Mikrofon“; not „durchgekreuzt“ (that is an X) |
 | the legend's colours: sand, gold, green, teal, khaki, violet, red, grey; faint; lit, bright | sandfarben, golden, grün, türkisfarben, khakifarben, violett, rot, grau; blass; hell | „sandfarbene Scheibe“, „geteiltes khakifarbenes Dreieck“ |
 | preview; PREVIEW ·; AN EXAMPLE, NOT YOUR RAID | Vorschau; VORSCHAU ·; EIN BEISPIEL, NICHT DEIN RAID | |
 | point at; point (alone, a heading); rest on; click; hold, keep (a card); row; the list on the left | zeigen auf; draufzeigen; kurz bleiben auf; klicken; festhalten; Zeile; die Liste links | „Zeig auf eine Quest“; PICKEN UND DRAUFZEIGEN (ZEIGEN alone is SHOW ME); „hält ihre Karte fest“ |

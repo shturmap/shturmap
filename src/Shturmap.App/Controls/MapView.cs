@@ -92,8 +92,9 @@ public sealed partial class MapView : Grid
     /// <summary>The edge arrow of an out-of-view player was clicked, and the view moved to them.</summary>
     public event Action? EdgeClicked;
 
-    // A position counts as new for a ping only when it is recent: not an old screenshot found when the app starts.
-    private static readonly TimeSpan PingIfNewerThan = TimeSpan.FromSeconds(30);
+    // A screenshot counts as just taken when it is recent: not an old one found when the app starts. Only then does its
+    // position ping and its extract list ring the extracts out (MainWindow).
+    internal static readonly TimeSpan JustTaken = TimeSpan.FromSeconds(30);
 
     private bool _overEdge;
 
@@ -142,6 +143,9 @@ public sealed partial class MapView : Grid
         // Following, a new map opens on the player (after it is fitted, at its first paint).
         _centerAfterFit = _follow.On;
         Invalidate();
+        // A scene that comes with an extract list just read (What's New's preview) rings its extracts out.
+        if (scene is { ExitsArriving: true })
+            Redraw();
     }
 
     // ---- follow my position (owner, 2026-10-03; docs/DESIGN.md "Follow my position") ----
@@ -265,7 +269,7 @@ public sealed partial class MapView : Grid
                 if (!_fitPending)
                     GlideToPlayer();
             }
-            if (Shturmap.Core.Logs.WallClock.Elapsed(fix.At, DateTime.Now) < PingIfNewerThan)
+            if (Shturmap.Core.Logs.WallClock.Elapsed(fix.At, DateTime.Now) < JustTaken)
             {
                 scene.PingSince = DateTime.Now;
                 // Before the first paint the view isn't fitted yet; the whole map will be in view then. Following, the
@@ -312,7 +316,7 @@ public sealed partial class MapView : Grid
     private static float DimTarget(MapScene scene) => scene.HasHighlight ? 1f : 0f;
 
     private static bool Animating(MapScene scene) =>
-        scene.Pulsing || scene.Pinging || scene.LeavingNow || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
+        scene.Pulsing || scene.Pinging || scene.LeavingNow || scene.ExitsArriving || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
 
     private void Step()
     {

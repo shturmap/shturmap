@@ -282,13 +282,15 @@ public sealed partial class MainWindow
         PreviewHidesFloors();
     }
 
-    // An example extract list on Customs: some lit, one marked "??:??:??", the rest hollow.
+    // An example extract list on Customs: some lit, one marked "??:??:??", the rest struck out; rung out as a list just
+    // read is (MapScene.RingExits).
     private static void StageExtractList(Shturmap.Data.TarkovDev.GameData data, MapScene scene, MapContent content)
     {
         var (listed, unsure, notListed) = ExampleExits(data, content);
         scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsNotListed = notListed;
+        scene.RingExits(DateTime.Now);
     }
 
     /// <summary>

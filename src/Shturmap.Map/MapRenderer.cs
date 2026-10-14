@@ -96,9 +96,9 @@ public static partial class MapRenderer
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
-        // The extracts on the player's list this raid are lit, under every symbol, so a glow never covers one.
-        foreach (var marker in layout.Markers.Where(m => m.Listed))
-            DrawListedGlow(canvas, marker);
+        // The extracts on the player's list this raid are lit, under every symbol, so a glow never covers one; a list
+        // just read rings them out.
+        DrawExitsLit(canvas, scene, layout.Markers, uiScale);
         DrawUnderlay(canvas, scene, layout.Markers, uiScale);
         void Draw(ShownMarker marker) => DrawMarker(canvas, scene, marker, uiScale);
 
@@ -252,13 +252,13 @@ public static partial class MapRenderer
         /// </summary>
         public bool Pointed { get; init; }
 
-        /// <summary>An extract the game's own list didn't name this raid (<see cref="MapScene.ExitsNotListed"/>): hollow.</summary>
+        /// <summary>An extract the game's own list didn't name this raid (<see cref="MapScene.ExitsNotListed"/>): struck out.</summary>
         public bool NotListed { get; init; }
 
         /// <summary>An extract on the player's list this raid (<see cref="MapScene.ExitsListed"/>): lit.</summary>
         public bool Listed { get; init; }
 
-        /// <summary>A listed extract the game marked "??:??:??" (<see cref="MapScene.ExitsUnsure"/>): a "?" at its corner.</summary>
+        /// <summary>A listed extract the game marked "??:??:??" (<see cref="MapScene.ExitsUnsure"/>): a "?" in its triangle.</summary>
         public bool Unsure { get; init; }
 
         /// <summary>Drawn off its true place, for a neighbour that would cover it or be covered (<see cref="Repel"/>,
@@ -461,8 +461,9 @@ public static partial class MapRenderer
 
     // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
     // An extract on the player's list this raid is placed with the bosses, ahead of other ways out and of quests: at
-    // the raid's end it is the name to find.
-    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Listed ? 1 : RestRank(m.Marker.Kind);
+    // the raid's end it is the name to find. One the list leaves out comes with the Scav and sniper zones', after the
+    // quests' and the other ways out's.
+    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Listed ? 1 : m.NotListed ? 4 : RestRank(m.Marker.Kind);
 
     /// <summary>A kind's rank at rest, whatever is picked or pointed at: bosses, quests, ways out, Scav and sniper
     /// zones, locks and switches. Where symbols would cover each other, the lesser one yields (<see cref="Repel"/>), and
@@ -953,8 +954,8 @@ public static partial class MapRenderer
     // lower right, "OPT" upper left).
     private const string PossibleTag = "?";
 
-    // An extract the game's list marked "??:??:??" carries it too: maybe open (MapScene.ExitsUnsure).
-    private static bool ShowsPossible(ShownMarker m) => m.Marker.Kind == MarkerKind.PossibleLocation || m.Unsure;
+    // An extract the game's list marked "??:??:??" (MapScene.ExitsUnsure) has its "?" in its triangle (DrawExtract).
+    private static bool ShowsPossible(ShownMarker m) => m.Marker.Kind == MarkerKind.PossibleLocation;
 
     private static SKRect PossibleBadgeBox(ShownMarker m, float ui)
     {
@@ -1865,20 +1866,6 @@ public static partial class MapRenderer
         canvas.DrawCircle(at, r, collar);
     }
 
-    // An extract on the player's list this raid is lit (owner, 2026-10-05: "highlighted better on the map so it can be
-    // seen that they are active"): a steady glow in its own colour around the triangle. A glow, since a ring is a
-    // pick's and a pulse the pointer's; steady, since nothing moves for long on a second monitor.
-    private const float ListedGlowReach = 2.8f;
-
-    internal static void DrawListedGlow(SKCanvas canvas, ShownMarker m)
-    {
-        var radius = m.R * ListedGlowReach;
-        using var shader = SKShader.CreateRadialGradient(m.At, radius,
-            [m.Color.WithAlpha(210), m.Color.WithAlpha(120), m.Color.WithAlpha(0)], [0.3f, 0.55f, 1f], SKShaderTileMode.Clamp);
-        using var paint = new SKPaint { Shader = shader, IsAntialias = true };
-        canvas.DrawCircle(m.At, radius, paint);
-    }
-
     // What lies under every symbol (owner, 2026-10-05, from the overlap panel: "Go for F"): a pick's ring and a
     // pointed-at symbol's pulse, around symbols that keep their rest size, so neither covers a neighbour; and the
     // leaders of symbols set off their places (Repel), stepping back with their symbols while something else is
@@ -1948,29 +1935,7 @@ public static partial class MapRenderer
                 Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);
                 break;
             case MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared:
-                using (var tri = Triangle(at, r))
-                {
-                    DrawCollar(canvas, tri, ui);
-                    if (shown.NotListed)
-                    {
-                        // Not on the player's list this raid (read from their screenshot; owner, 2026-10-05): the
-                        // triangle's outline alone, on the collar's dark, so the solid ones are the ways out.
-                        using var ground = new SKPaint { Color = Background.WithAlpha(215), IsAntialias = true };
-                        using var edge = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f * ui, StrokeJoin = SKStrokeJoin.Round };
-                        canvas.DrawPath(tri, ground);
-                        canvas.DrawPath(tri, edge);
-                        break;
-                    }
-                    canvas.DrawPath(tri, fill);
-                    canvas.DrawPath(tri, outline);
-                }
-                // Shared by both sides: split down the middle, so it differs from your side's triangle in shape too
-                // (green and khaki come within ΔE 7 with red-green colour blindness).
-                if (marker.Kind == MarkerKind.ExtractShared)
-                {
-                    using var split = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.2f * ui };
-                    canvas.DrawLine(at.X, at.Y - r * 0.85f, at.X, at.Y + r * 0.8f, split);
-                }
+                DrawExtract(canvas, scene, shown, ui);
                 break;
             case MarkerKind.SniperSpawn:
                 // A hollow hexagon: a shape no other marker uses (a reticle would repeat the Elimination glyph).

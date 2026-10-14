@@ -53,7 +53,7 @@
     <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. The extract list is the game's own, read from a screenshot.</comment>
   </data>
   <data name="LegendExtractNotListed" xml:space="preserve">
-    <value>Not on your extract list this raid: hollow, name faint. With a ?: the game shows ??:??:?? (closed, or needs something).</value>
+    <value>Not on your extract list this raid: struck out, name faint. A ? in the triangle: the game shows ??:??:?? (closed, or needs something).</value>
     <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. ??:??:?? is what the game's extract list shows in place of an extract's time: keep it as it is.</comment>
   </data>
   <data name="LegendTransit" xml:space="preserve">

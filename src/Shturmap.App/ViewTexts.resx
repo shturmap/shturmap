@@ -81,7 +81,7 @@
     <comment>Help: paragraph about the left column, between raids and in a raid. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
   </data>
   <data name="HelpExit" xml:space="preserve">
-    <value>EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest turn hollow, and OR is your nearest that needs nothing. </value>
+    <value>EXIT: the nearest extract for your side, but only some are open each raid. Screenshot the game's extract list (raid start, or O twice): yours light up, the rest are struck out, and OR is your nearest that needs nothing. </value>
     <comment>Help: paragraph about the raid card's way out. EXIT and OR are the raid card's labels (RaidExitLabel, RaidOrLabel); "O twice" is the game's key. Keep the space at the end: the SHOW ME link (HelpShowMe) follows on the same line.</comment>
   </data>
   <data name="HelpQuestOrder" xml:space="preserve">
