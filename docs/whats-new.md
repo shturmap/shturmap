@@ -6,7 +6,8 @@ Built into the app. One section per version, newest first, up to five lines each
 on an example raid), `extracts` (an example extract list), `clock` (the raid card's clock with example times), `joined`
 (Gratitude's two objectives on one spot), `leaders` (symbols set apart at Streets' Scav Checkpoint), `stash` (the SEEN
 IN YOUR STASH cue with example items), `stash-card` (an item card with an example mark from a screenshot and NOT ANY
-MORE) or `stash-given` (one with an example mark from the game's log). A line about the tour previews nothing and
+MORE), `stash-given` (one with an example mark from the game's log) or `notes` (a held quest card with two example
+notes). A line about the tour previews nothing and
 opens it when clicked: `tour` at its start, `tour:5` at its fifth chapter (a chapter the release changed; docs/tour.md). Words as the design system's "Words": short, fragments are fine. Add the next version's
 section with its release (CLAUDE.md). A release that raises the minor or major number has a name, the owner's, after
 its version (`## 0.4.0 · Praetorian`); a patch release keeps its line's name without repeating it. The name shows in
@@ -16,6 +17,12 @@ A translation is `docs/whats-new.<code>.md` beside this file (`whats-new.de.md`)
 that language (docs/DESIGN.md §8, "Texts"): a section per version this file has, from the release the language came
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
+
+## 0.6.0 · Okami
+
+- extracts · Your extracts, called out · Screenshot the extract list: yours line up mid-map, nearest first, then fly to their places.
+- notes · Notes on a quest · Click a quest and write on its card what to remember next raid. Each note keeps its time.
+- tour:5 · Your list, in the tour · Chapter 5 shows the call-out. A screenshot taken as the raid fades in is read now too.
 
 ## 0.5.0 · Hyena
 

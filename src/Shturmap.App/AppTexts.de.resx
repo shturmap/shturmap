@@ -452,6 +452,10 @@
     <value>EIN BEISPIEL, NICHT DEIN STASH</value>
     <comment>en: AN EXAMPLE, NOT YOUR STASH</comment>
   </data>
+  <data name="PreviewExampleNotes" xml:space="preserve">
+    <value>EIN BEISPIEL, NICHT DEINE NOTIZEN</value>
+    <comment>en: AN EXAMPLE, NOT YOUR NOTES</comment>
+  </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>DIE RAID-KARTE, MIT BEISPIELWERTEN</value>
     <comment>en: THE RAID CARD, WITH EXAMPLE VALUES</comment>
@@ -487,6 +491,18 @@
   <data name="WhatsNewStashExample" xml:space="preserve">
     <value>EINE ITEM-KARTE, MIT EINER BEISPIELMARKIERUNG</value>
     <comment>en: AN ITEM CARD, WITH AN EXAMPLE MARK</comment>
+  </data>
+  <data name="WhatsNewNotesExample" xml:space="preserve">
+    <value>EINE QUEST-KARTE, MIT BEISPIELNOTIZEN</value>
+    <comment>en: A QUEST CARD, WITH EXAMPLE NOTES</comment>
+  </data>
+  <data name="WhatsNewNoteExampleNewer" xml:space="preserve">
+    <value>Nächster Raid: von Norden rein.</value>
+    <comment>en: Next raid: come in from the north.</comment>
+  </data>
+  <data name="WhatsNewNoteExampleOlder" xml:space="preserve">
+    <value>Mittags zu viele Scavs. Früh hin.</value>
+    <comment>en: Too many Scavs at noon. Go early.</comment>
   </data>
   <data name="PreviewClickToPlan" xml:space="preserve">
     <value>KLICK ZUM PLANEN AUF DIE ZEILE</value>

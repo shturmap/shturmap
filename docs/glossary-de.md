@@ -98,6 +98,9 @@ gender.
 | EXIT; OR; nearest | EXTRACT; ODER; nächster, nächste | decided; NÄCHSTER · NICHT MIT DEINER LISTE ABGEGLICHEN |
 | ON YOUR LIST (THIS RAID); NOT ON YOUR LIST | AUF DEINER LISTE (IN DIESEM RAID); NICHT AUF DEINER LISTE | |
 | YOUR EXTRACTS THIS RAID (the feature's name: What's New since 0.4.0, the extract list's cue) | DEINE EXTRACTS IM RAID; Deine Extracts im Raid | a name, as wide as the English in the cue's 48 px title; in a sentence „this raid“ stays „in diesem Raid“ |
+| called out; the call-out (the extract list's roll call, What's New 0.6.0) | aufgerufen; der Aufruf | names called one at a time („der Reihe nach aufrufen“): „Deine Extracts, aufgerufen“, „Kapitel 5 zeigt den Aufruf“; no other text says „aufrufen“, so it doesn't read as „open“ |
+| nearest first | die nächsten zuerst; nächste zuerst where room is short | as sort options say „Neueste zuerst“ |
+| fade in (the raid's picture coming up from black at its start) | einblenden; beim Einblenden des Raids | software's ein-/ausblenden; not „aufblenden“ (headlights) |
 | ??? IN GAME; NOTHING NEEDED; ALL 15 ↓ | ??? IM SPIEL; NICHTS NÖTIG; ALLE 15 ↓ | |
 | EXTRACTS AND TRANSITS; ways out | EXTRACTS UND TRANSITS; Extracts und Transits | |
 | the game's extract list; to check (against it); your side; for your side | Extract-Liste; abgleichen; deine Seite; für deine Seite | side: PMC ⇄ SCAV; „Mach zum Abgleichen einen Screenshot der Extract-Liste“ |

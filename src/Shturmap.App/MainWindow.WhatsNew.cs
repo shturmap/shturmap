@@ -229,7 +229,8 @@ public sealed partial class MainWindow
             _restoreView = Map.HasView ? Map.View : null;
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewWhatsNew(name: Caps.Of(item.Name), version: section.Label);
-        ViewModel.PreviewHint = item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
+        ViewModel.PreviewHint = item.Preview == "notes" ? AppTexts.PreviewExampleNotes
+            : item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
         Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
         switch (item.Preview)
         {
@@ -279,6 +280,19 @@ public sealed partial class MainWindow
                     scene.Replay = ReplayExample(data, content);
                     scene.ReplayDone = true;
                 }, content => ReplayExample(data, content)?.Fixes.Select(f => f.Position).ToList(), 300);
+                break;
+            case "notes":
+                // A held quest card with two made-up notes, on the plate as the stash card is; its own frame, so the
+                // plate's box steps back.
+                if (NotesExampleCard(data) is { } questCard)
+                {
+                    WhatsNewPlateBox.Child = questCard;
+                    WhatsNewPlateBox.Padding = new Thickness(0);
+                    WhatsNewPlateBox.BorderThickness = new Thickness(0);
+                    WhatsNewPlateBox.Background = null;
+                    WhatsNewPlateNote.Text = AppTexts.WhatsNewNotesExample;
+                    WhatsNewPlate.Visibility = Visibility.Visible;
+                }
                 break;
         }
     }
@@ -380,6 +394,35 @@ public sealed partial class MainWindow
             Stash = given ? SessionTexts.MarkGiven(date: date) : SessionTexts.MarkSeenCount(count: 2.ToString("N0", UiLanguage.Culture), date: date),
         };
         return new Controls.ItemCard(view) { Opacity = 1 };
+    }
+
+    // The example quest card for the notes' preview (owner, 2026-10-15; docs/DESIGN.md §4, "Quest cards", Notes): Ballet
+    // Lover, or where the data has none by that name the first quest by name with a place on a map, active, with two
+    // made-up notes written today, held, so its field and each note's × show. Nothing of the player's: neither the
+    // quest's state nor their notes.
+    private Controls.QuestCard? NotesExampleCard(Shturmap.Data.TarkovDev.GameData data)
+    {
+        var quest = data.Tasks.Values.FirstOrDefault(t => t.NormalizedName == "ballet-lover")
+            ?? data.Tasks.Values.OrderBy(t => t.Name, StringComparer.Ordinal).FirstOrDefault(t => t.Objectives?.Any(o => o.Maps is { Count: > 0 }) == true);
+        if (quest is null)
+            return null;
+        // Both of today: the older one 40 minutes before, but never before midnight.
+        var now = DateTimeOffset.Now;
+        var older = now - TimeSpan.FromMinutes(Math.Min(40, now.TimeOfDay.TotalMinutes));
+        IReadOnlyList<QuestNote> notes =
+        [
+            new("example-newer", now, AppTexts.WhatsNewNoteExampleNewer),
+            new("example-older", older, AppTexts.WhatsNewNoteExampleOlder),
+        ];
+        var active = new Dictionary<string, Shturmap.Core.Quests.QuestStatus>(StringComparer.Ordinal)
+            { [quest.Id] = new(quest.Id, Shturmap.Core.Quests.QuestState.Active, null, null) };
+        var view = QuestCards.Build(data, active, quest.Id, sources: _snapshot?.Sources,
+            notes: new Dictionary<string, IReadOnlyList<QuestNote>>(StringComparer.Ordinal) { [quest.Id] = notes });
+        if (view is null)
+            return null;
+        var card = new Controls.QuestCard(view);
+        card.SetMode(Controls.CardMode.Held);
+        return card;
     }
 
     // The plate stands in the middle of the map, and lower only as far as it must to keep clear of the notes at the map's
