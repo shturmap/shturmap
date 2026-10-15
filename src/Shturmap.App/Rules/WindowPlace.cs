@@ -6,7 +6,8 @@ namespace Shturmap.App.Rules;
 /// Where the main window stood, kept between runs (owner, 2026-10-04: remember the window's monitor and size): the
 /// monitor it was on, its bounds while not maximised, and whether it was maximised. It comes back there only if
 /// that monitor is still connected in the same place; otherwise the first start's rule applies again (the first
-/// monitor that isn't the primary one, maximised). Everything is in screen pixels.
+/// monitor that isn't the primary one, maximised). A run that only takes pictures opens off every monitor instead
+/// (<see cref="OffScreen"/>). Everything is in screen pixels.
 /// </summary>
 public static class WindowPlace
 {
@@ -31,6 +32,10 @@ public static class WindowPlace
     private const int Grab = 120;
     private const int Inset = 40;
     private const int Border = 16;
+
+    // How far past the right-most monitor (or its main window) a picture-taking run's window stands: Windows draws a
+    // window's shadow outside its bounds, a few dozen pixels at a large scale.
+    private const int OffScreenGap = 200;
 
     public readonly record struct Rect(int X, int Y, int Width, int Height)
     {
@@ -91,6 +96,29 @@ public static class WindowPlace
     /// 800×500 at 200 % and past the edge of a 1366×768 screen).
     /// </summary>
     public static Rect First(Rect workArea, double scale = 1) => OnMonitor(default, workArea, scale);
+
+    /// <summary>The monitor whose right edge lies furthest right (of those that share it, the first listed); none
+    /// without monitors.</summary>
+    public static Rect? RightMost(IReadOnlyList<Rect> monitors) => monitors.Count == 0 ? null : monitors.MaxBy(m => m.Right);
+
+    /// <summary>
+    /// Where a run that only takes pictures opens its window (owner, 2026-10-15, "quiet local runs": the UI is checked
+    /// while the owner plays on the same PC): past the right edge of the right-most monitor, level with its top, so no
+    /// monitor shows any of it, its shadow included, and that monitor is the nearest, whose scale Windows gives a window
+    /// off every monitor. The size is the caller's; without monitors, as if one stood at the origin.
+    /// </summary>
+    public static Rect OffScreen(IReadOnlyList<Rect> monitors, int width, int height)
+    {
+        var beside = RightMost(monitors) ?? default;
+        return Beside(beside, width, height);
+    }
+
+    /// <summary>
+    /// A window past the right edge of another, level with its top, as far off as <see cref="OffScreen"/> stands from a
+    /// monitor: a quiet run's second window (the developer view of a script's run, owner 2026-10-15) beside its main
+    /// window, off every monitor as that one is, and not over it.
+    /// </summary>
+    public static Rect Beside(Rect other, int width, int height) => new(other.Right + OffScreenGap, other.Y, width, height);
 
     private static string Text(Rect r) => string.Create(CultureInfo.InvariantCulture, $"{r.X},{r.Y},{r.Width},{r.Height}");
 

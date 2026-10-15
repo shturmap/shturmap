@@ -347,7 +347,8 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
 
     // ---- a script ----
 
-    public async Task RunScriptAsync(string path)
+    /// <summary>Plays a script's steps in order; true when its "exit" ended the app.</summary>
+    public async Task<bool> RunScriptAsync(string path)
     {
         string text;
         try
@@ -357,7 +358,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             Say($"Script {path} couldn't be read: {e.Message}");
-            return;
+            return false;
         }
         var (steps, errors) = DevScript.Parse(text);
         foreach (var error in errors)
@@ -371,7 +372,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
             try
             {
                 if (!await RunAsync(step))
-                    return;
+                    return true;
             }
             catch (Exception e)
             {
@@ -383,6 +384,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
             if (step.Verb is not ("hover" or "point" or "trail" or "cards" or "wait"))
                 await Task.Delay(300);
         }
+        return false;
     }
 
     // One step; false ends the script.

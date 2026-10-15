@@ -4,6 +4,9 @@
 # With -Demo it records the website's hero clip instead: the app plays its scripted interaction (src\Shturmap.App\
 # Demo.cs), this script writes the one screenshot that follows the demo's key press, and tools\record-window records
 # Shturmap's own window into <Out>\capture.mkv; <Out>\cut.txt holds the loop's in and out points in seconds.
+# The app opens its window off every monitor, without taking the focus and out of the taskbar and Alt+Tab, so it can run
+# while a game is played (owner, 2026-10-15; docs/DESIGN.md §8, "Developer aids", *Quiet runs*); -MoreArgs --visible
+# opens it to watch, as before.
 param(
   [Parameter(Mandatory)] [string] $Exe,
   [Parameter(Mandatory)] [string] $Out,
@@ -18,7 +21,8 @@ param(
   [switch] $LocalRaid,
   # No raid at all: the quests start and the app stays in Plan (with two Customs quests, so Plan has folded cards).
   [switch] $PlanOnly,
-  # Window size for the snapshot, e.g. 1600x900 (website media); maximised when empty.
+  # Window size for the snapshot, e.g. 1600x900 (website media); when empty, the work area of the monitor the app would
+  # open on (it was maximised there before quiet runs).
   [string] $Window,
   # Culture for dates and numbers in the snapshot.
   [string] $Culture = 'en-US',
@@ -40,7 +44,8 @@ param(
   # sheets (no artwork, docs/DESIGN.md §3).
   [ValidateSet('streets', 'lab', 'labyrinth', 'icebreaker')] [string] $Map = 'streets',
   # More arguments for the app, passed on as they are: --show-report, --show-crash, --whats-new (developer builds),
-  # --switch-language <culture> (tools\layout-check.ps1 uses them).
+  # --switch-language <culture> (tools\layout-check.ps1 uses them), --visible (the window on a monitor, to watch; the
+  # demo's too).
   [string[]] $MoreArgs = @()
 )
 if ($Demo -and $Map -ne 'streets') { throw 'The demo plays Streets only.' }
@@ -199,7 +204,7 @@ if ($Demo) {
     Select-Object -First 1 -ExpandProperty FullName
   New-Item -ItemType Directory -Force $Out | Out-Null
   $capture = Join-Path (Resolve-Path $Out) 'capture.mkv'
-  $appArgs = @('--fake-game', $root, '--demo', "`"$DemoQuest`"", '--culture', $Culture, '--window', $(if ($Window) { $Window } else { '1600x900' }))
+  $appArgs = @('--fake-game', $root, '--demo', "`"$DemoQuest`"", '--culture', $Culture, '--window', $(if ($Window) { $Window } else { '1600x900' })) + $MoreArgs
   $launched = Get-Date
   $p = Start-Process $Exe -ArgumentList $appArgs -PassThru
   # The app's own log says when the demo presses the drawn key ("Demo: press"); the screenshot follows it, as the

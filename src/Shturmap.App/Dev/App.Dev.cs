@@ -62,7 +62,13 @@ public partial class App
         _window.DevOpenView();
         if (Arg(cli, "--dev-script") is { } script)
         {
-            await _window.DevRunScriptAsync(script);
+            // A script's run is quiet unless "--visible" (owner, 2026-10-15): nobody can see its windows to close them,
+            // so it ends with its script, "exit" or not.
+            if (!await _window.DevRunScriptAsync(script) && _window.Quiet)
+            {
+                AppLog.Info("Developer script done: a quiet run ends with it");
+                _window.DevExit();
+            }
         }
     }
 }

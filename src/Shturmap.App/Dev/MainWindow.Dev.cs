@@ -1,6 +1,7 @@
 #if DEVTOOLS
 using Microsoft.UI.Xaml;
 using Shturmap.App.Controls;
+using Shturmap.App.Rules;
 using Shturmap.Session;
 using Shturmap.Session.Dev;
 using Shturmap.Session.Reporting;
@@ -42,10 +43,26 @@ public sealed partial class MainWindow
                 _devView = null;
             };
         }
-        _devView.Activate();
+        if (Quiet)
+        {
+            // A script's run takes pictures (owner, 2026-10-15, "quiet local runs"): the view stands beside the main
+            // window, off every monitor as that one is and not over it, shown without activation and out of the
+            // taskbar and Alt+Tab. Its two pictures are rendered from its XAML (DevView.SaveSnapshotsAsync).
+            var size = _devView.AppWindow.Size;
+            var place = WindowPlace.Beside(BoundsNow(), size.Width, size.Height);
+            _devView.AppWindow.IsShownInSwitchers = false;
+            _devView.AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(place.X, place.Y, place.Width, place.Height));
+            _devView.AppWindow.Show(activateWindow: false);
+            AppLog.Info($"Developer view off every monitor, beside the window: {place.Width}×{place.Height} at {place.X},{place.Y}");
+        }
+        else
+        {
+            _devView.Activate();
+        }
     }
 
-    public Task DevRunScriptAsync(string path) => _dev?.RunScriptAsync(path) ?? Task.CompletedTask;
+    /// <summary>Plays a script (<see cref="Dev.DevController.RunScriptAsync"/>); true when its "exit" ended the app.</summary>
+    public Task<bool> DevRunScriptAsync(string path) => _dev?.RunScriptAsync(path) ?? Task.FromResult(false);
 
     internal MapView DevMapView => Map;
 

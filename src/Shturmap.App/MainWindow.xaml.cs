@@ -46,9 +46,11 @@ public sealed partial class MainWindow : Window
     /// <param name="size">A size to open at (developer runs: "--window"); kept as is, and nothing is remembered.</param>
     /// <param name="savedPlace">Where the window stood when it was last closed (<see cref="WindowPlace"/>), or null.</param>
     /// <param name="rememberPlace">Whether this run restores and saves the window's place (not snapshots or the demo).</param>
-    public MainWindow(GameSession session, SizeInt32? size = null, string? savedPlace = null, bool rememberPlace = false)
+    /// <param name="quiet">A run that only takes pictures: off every monitor, unactivated, out of the switchers (<see cref="Quiet"/>).</param>
+    public MainWindow(GameSession session, SizeInt32? size = null, string? savedPlace = null, bool rememberPlace = false, bool quiet = false)
     {
         _session = session;
+        Quiet = quiet;
         InitializeComponent();
         Title = App.Title;
         AppWindow.SetIcon(App.IconPath);
@@ -1984,12 +1986,31 @@ public sealed partial class MainWindow : Window
     private WindowPlace.Rect _unmaximised;
     private DispatcherQueueTimer? _placeSettled;
 
+    /// <summary>
+    /// A run that only takes pictures ("--snapshot", "--demo": every run of tools\fake-raid.ps1 and the layout check; a
+    /// developer script's, whose view stands beside this window), unless "--visible" asks to watch it: the window opens
+    /// off every monitor, is shown without activation and stays out of the taskbar and Alt+Tab, so it never interrupts
+    /// a game on the other monitor (owner, 2026-10-15, "quiet local runs": the UI is checked while the owner plays on
+    /// the same PC). Its pictures are rendered from the XAML tree, not from the screen (<see cref="SaveSnapshotAsync"/>).
+    /// </summary>
+    public bool Quiet { get; }
+
+    /// <summary>Shows the window: activated, or in a quiet run without taking the focus from the window that has it.</summary>
+    public void Open()
+    {
+        if (Quiet)
+            AppWindow.Show(activateWindow: false);
+        else
+            Activate();
+    }
+
     // Where the player left it: on its monitor, at its bounds, maximised or not, as long as that monitor is still
-    // there. Otherwise, and at a first start, the rule below. A given size (developer runs) is kept as is.
+    // there. Otherwise, and at a first start, the rule below; a quiet run off every monitor. A given size (developer
+    // runs) is kept as is.
     private void PlaceWindow(SizeInt32? size, string? saved, bool remember)
     {
         _sizeGiven = size is not null;
-        _rememberPlace = remember && size is null;
+        _rememberPlace = remember && size is null && !Quiet;
         var parsed = WindowPlace.Parse(saved);
         var last = _rememberPlace ? WindowPlace.Restorable(parsed, Monitors(), ScaleOn(parsed?.Monitor)) : null;
         if (last is { } place)
@@ -1999,12 +2020,19 @@ public sealed partial class MainWindow : Window
             if (place.Maximised && AppWindow.Presenter is OverlappedPresenter presenter)
                 presenter.Maximize();
         }
+        else if (Quiet)
+        {
+            PlaceOffScreen(size);
+        }
         else
         {
             PlaceOnSecondMonitor(size);
         }
         var now = BoundsNow();
-        AppLog.Info($"Window {(last is null ? "placed anew" : "where it was last")}: {now.Width}×{now.Height} at {now.X},{now.Y}" +
+        var how = last is not null ? "where it was last" : Quiet
+            ? "off every monitor, shown without activation and out of the taskbar and Alt+Tab (a run that takes pictures; --visible shows it)"
+            : "placed anew";
+        AppLog.Info($"Window {how}: {now.Width}×{now.Height} at {now.X},{now.Y}" +
                     (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized } ? ", maximised" : ""));
         AppWindow.Changed += (_, e) =>
         {
@@ -2073,25 +2101,52 @@ public sealed partial class MainWindow : Window
     // kept as is.
     private void PlaceOnSecondMonitor(SizeInt32? size)
     {
-        var displays = DisplayArea.FindAll();
-        DisplayArea? second = null;
-        for (var i = 0; i < displays.Count; i++)
-        {
-            if (displays[i].DisplayId.Value != DisplayArea.Primary.DisplayId.Value)
-            {
-                second = displays[i];
-                break;
-            }
-        }
-        var target = second ?? DisplayArea.Primary;
+        var target = OpeningMonitor(out var second);
         var work = target.WorkArea;
         var first = WindowPlace.First(new WindowPlace.Rect(work.X, work.Y, work.Width, work.Height), ScaleOf(target));
         AppWindow.MoveAndResize(size is { } fixedSize
             ? new RectInt32(first.X, first.Y, fixedSize.Width, fixedSize.Height)
             : new RectInt32(first.X, first.Y, first.Width, first.Height));
         _unmaximised = BoundsNow();
-        if (second is not null && size is null && AppWindow.Presenter is OverlappedPresenter presenter)
+        if (second && size is null && AppWindow.Presenter is OverlappedPresenter presenter)
             presenter.Maximize();
+    }
+
+    // The monitor a window opens on without a saved place: the first that isn't the primary one (the game's), else the
+    // primary.
+    private static DisplayArea OpeningMonitor(out bool second)
+    {
+        var displays = DisplayArea.FindAll();
+        for (var i = 0; i < displays.Count; i++)
+        {
+            if (displays[i].DisplayId.Value != DisplayArea.Primary.DisplayId.Value)
+            {
+                second = true;
+                return displays[i];
+            }
+        }
+        second = false;
+        return DisplayArea.Primary;
+    }
+
+    // A quiet run (owner, 2026-10-15): off every monitor (WindowPlace.OffScreen), never maximised, at the size it would
+    // open at: the second monitor's work area, where it would be maximised, the first start's size on the only monitor,
+    // or a given size, each in pixels at the scale of the monitor it would open on. Off every monitor it takes the scale
+    // of the one it stands beside, so the size is converted to that one's: the content is laid out as it would be on
+    // the monitor it used to open on (the layout check's sizes are counted there).
+    private void PlaceOffScreen(SizeInt32? size)
+    {
+        var target = OpeningMonitor(out var second);
+        var work = target.WorkArea;
+        var scale = ScaleOf(target);
+        var first = WindowPlace.First(new WindowPlace.Rect(work.X, work.Y, work.Width, work.Height), scale);
+        var (width, height) = size is { } given ? (given.Width, given.Height) : second ? (work.Width, work.Height) : (first.Width, first.Height);
+        var monitors = Monitors();
+        var ratio = ScaleOn(WindowPlace.RightMost(monitors)) / scale;
+        var place = WindowPlace.OffScreen(monitors, (int)Math.Round(width * ratio), (int)Math.Round(height * ratio));
+        AppWindow.IsShownInSwitchers = false;
+        AppWindow.MoveAndResize(new RectInt32(place.X, place.Y, place.Width, place.Height));
+        _unmaximised = BoundsNow();
     }
 
     // The window moved, was resized, maximised or put back: its bounds while it isn't maximised are what it goes back
