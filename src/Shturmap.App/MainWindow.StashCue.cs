@@ -35,13 +35,16 @@ public sealed partial class MainWindow
 
     private bool StashShowing => _stashSeen.Count > 0;
 
-    // The cues that stay as long as their kind keeps coming and fade by themselves (HideAfter), not after CueLength.
-    private static bool Stays(ViewCue cue) => cue.Kind is CueKind.QuestComplete or CueKind.StashSeen;
+    // The cues that stay as long as their kind keeps coming and fade by themselves (HideAfter), not after CueLength:
+    // YOUR EXTRACTS THIS RAID until 1.5 s after its last icon landed (MainWindow.RollCall).
+    private static bool Stays(ViewCue cue) => cue.Kind is CueKind.QuestComplete or CueKind.StashSeen or CueKind.ExitsListed;
 
     private void HideAfter(ViewCue cue)
     {
         if (cue.Kind == CueKind.QuestComplete)
             HideCompletedAfter();
+        else if (cue.Kind == CueKind.ExitsListed)
+            HideRollCallAfter();
         else
             HideStashAfter();
     }

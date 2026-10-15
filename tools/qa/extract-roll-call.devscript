@@ -1,0 +1,47 @@
+# QA replay of the extract list's roll call, YOUR EXTRACTS THIS RAID (owner, 2026-10-15, from a panel of four: A, "Roll
+# call, then fly-out"). A developer build plays it with --dev-view --dev-script; how to run it, and what each still must
+# show: extract-roll-call.md beside this file. Times are in seconds.
+#
+# A snapshot step takes about 1.6 s and the step after it follows 0.3 s later, so one roll call can't give a still at
+# each of its moments: two raids on Customs read the same list, the first for its start (t0, t1), the second for its
+# middle and its end (t2, t3, t4). The second also shows that a new raid calls its list out afresh.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first.
+tour end
+# A PMC raid on Customs: its artwork read first, then the loading, its steps and the start. The RAID LOADING cue goes
+# before the list is read.
+map customs
+wait 3
+load
+steps
+start
+wait 3
+# The position, at a PMC spawn west of the middle, between Crossroads and ZB-1013; its first-fix notice goes in 6 s.
+pos -220.21 1.07 -141.94 90
+wait 6.5
+
+# The game's extract list, as a screenshot taken now shows it: three extracts lit and ZB-1013 marked ??:??:??. Customs'
+# other PMC extracts are struck out at once.
+exits Crossroads "Trailer Park" "ZB-1013?" "Railroad Passage (Flare)"
+wait 0.3
+snapshot %TEMP%\shturmap-qa\extract-roll-call\t0
+snapshot %TEMP%\shturmap-qa\extract-roll-call\t1
+
+# The raid ends (RAID OVER, its replay), and the next one on Customs reads the same list.
+wait 4
+end
+wait 3
+load
+steps
+start
+wait 6
+pos -220.21 1.07 -141.94 90
+wait 1
+exits Crossroads "Trailer Park" "ZB-1013?" "Railroad Passage (Flare)"
+wait 1.6
+snapshot %TEMP%\shturmap-qa\extract-roll-call\t2
+snapshot %TEMP%\shturmap-qa\extract-roll-call\t3
+wait 1
+snapshot %TEMP%\shturmap-qa\extract-roll-call\t4
+exit

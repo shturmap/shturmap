@@ -137,6 +137,9 @@ public sealed partial class MainWindow : Window
         AddShortcuts((UIElement)Content);
         // The floor picker steps aside while a cue or What's New's plate shows, and is back when it goes (ShowFloors).
         CuePanel.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
+        // The cue's line under its title stands in a box with its halo (MainWindow.RollCall): the box goes with the line,
+        // so the band keeps its spacing without one.
+        CueDetail.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => CueDetailBox.Visibility = CueDetail.Visibility);
         WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
         // What's New's plate keeps clear of the notes at the map's top (PlaceWhatsNewPlate).
         MapNotes.SizeChanged += (_, _) => PlaceWhatsNewPlate();
@@ -1011,24 +1014,24 @@ public sealed partial class MainWindow : Window
         scene.ExitsNotListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.NotListed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.ExitsListed = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Listed).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
         scene.ExitsUnsure = exitsRead ? latest.Extracts.Where(e => e.State == ExitState.Unsure).Select(e => e.Id).ToHashSet(StringComparer.Ordinal) : NoExits;
-        // A list the player just showed rings the extracts on it out (owner, 2026-10-14; MapScene.RingExits), and one more
-        // of a run of screenshots adds what it lit anew: not a list read a while ago, found as the logs are read at
-        // start, nor one rung already when the map comes back after another.
+        // A list the player just showed is called out: YOUR EXTRACTS THIS RAID names its extracts and flies each to its place
+        // (owner, 2026-10-15, from a panel of four: A, "Roll call, then fly-out"; MainWindow.RollCall), and one more of a
+        // run of screenshots joins it, or after it rings what it lit anew: not a list read a while ago, found as the logs
+        // are read at start, nor one called out already when the map comes back after another.
         var exitsArrive = false;
         if (exitsRead && latest.ExitsReadAt != _exitsReadShown)
         {
             _exitsReadShown = latest.ExitsReadAt;
             exitsArrive = Shturmap.Core.Logs.WallClock.Elapsed(latest.ExitsReadAt!.Value, DateTime.Now) < MapView.JustTaken;
-            if (exitsArrive)
-                scene.RingExits(DateTime.Now);
         }
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
         // A replay playing on this map: a scene made anew (the map came back after a preview) takes it up.
         ApplyReplay();
+        // The position first (it pings, and with Follow my position on its glide begins), then the list's roll call.
         Map.Refresh();
         if (exitsArrive)
-            Map.Redraw();
+            ExitListJustRead(scene, latest);
         if (HelpFlyout.IsOpen)
             ShowLegend(opened: false);
     }
@@ -1671,6 +1674,7 @@ public sealed partial class MainWindow : Window
             CueKind.GroupPick => (AppTexts.CueGroupPicked, map, here),
             CueKind.QuestComplete => CompletionText(),
             CueKind.StashSeen => StashCueText(cue),
+            CueKind.ExitsListed => RollCallText(),
             _ => (cue.RaidLength is { } length ? AppTexts.CueMapAndLength(map: map, minutes: (int)length.TotalMinutes) : map, AppTexts.CueRaidOver,
                 _snapshot?.Plan.FirstOrDefault() is { } next
                     ? AppTexts.CueNextRaid(map: next.MapName, summary: Summary(next.Finish.Count, next.Progress.Count))
@@ -1700,6 +1704,10 @@ public sealed partial class MainWindow : Window
             return;
         if (cue.Kind != CueKind.StashSeen && StashShowing)
             EndStashSeen();
+        // YOUR EXTRACTS THIS RAID gives way to any other cue as they do; its icons flying carry on, on the map
+        // (MainWindow.RollCall).
+        if (cue.Kind != CueKind.ExitsListed && _rollRows.Count > 0)
+            EndRollCall();
         // A new cue ends a replay still playing; RAID OVER with a raid to replay plays it (MainWindow.Replay).
         StopReplay("cue");
         if (cue is { Kind: CueKind.RaidOver, Replay: { Plays: false } skipped })
@@ -1723,6 +1731,9 @@ public sealed partial class MainWindow : Window
         // The stash cue's pictures need no "check your kit" over them: the title says what they are.
         if (cue.Kind == CueKind.StashSeen)
             CueKitLabel.Visibility = Visibility.Collapsed;
+        // The roll call's rows stand where the kit would (MainWindow.RollCall).
+        if (cue.Kind == CueKind.ExitsListed)
+            ShowRollRows();
         CueStamp.Visibility = Visibility.Collapsed;
         StampShape(cue.Kind);
         CuePanel.Visibility = Visibility.Visible;
@@ -1730,6 +1741,12 @@ public sealed partial class MainWindow : Window
         _cueTimer?.Stop();
         if (Replays(cue))
             PlayReplay(cue.Replay!, how);
+        // Laid out with its title as it ends, each row's triangle is handed to the map where it stands.
+        if (cue.Kind == CueKind.ExitsListed)
+        {
+            CueTitle.Text = title;
+            StartRollCall();
+        }
 
         if (!animations)
         {
@@ -1741,7 +1758,8 @@ public sealed partial class MainWindow : Window
             CueFlash.Opacity = 0;
             if (Stays(cue))
             {
-                StampStill();
+                if (cue.Kind != CueKind.ExitsListed)
+                    StampStill();
                 HideAfter(cue);
                 return;
             }
@@ -1795,14 +1813,15 @@ public sealed partial class MainWindow : Window
         }
         story.Completed += (_, _) =>
         {
-            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing && !StashShowing)
+            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing && !StashShowing && _rollRows.Count == 0)
                 CuePanel.Visibility = Visibility.Collapsed;
         };
         _cueStory = story;
         story.Begin();
         if (Stays(cue))
         {
-            Stamp(0.3 * k);
+            if (cue.Kind != CueKind.ExitsListed)
+                Stamp(0.3 * k);
             HideAfter(cue);
         }
         DecodeCueTitle(title);

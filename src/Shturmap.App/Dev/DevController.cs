@@ -556,6 +556,15 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
             case "pos":
                 Shoot(new WorldPoint(step.Number(0), step.Number(1), step.Number(2)), step.Number(3, Yaw));
                 break;
+            case "exits":
+                // The game's extract list as a screenshot taken now shows it: the session takes it from where text
+                // recognition hands over its reading, so the window calls it out as a real one (the roll call).
+                var rows = DevScript.ExitsOf(step);
+                if (await session.DevReadExitsAsync(rows) is { } noList)
+                    Say(noList);
+                else
+                    Say(rows is null ? "extract list: every extract of the map" : "extract list: " + string.Join(", ", rows.Select(r => r.Marked ? r.Name + " ???" : r.Name)));
+                break;
             case "repeat":
                 Repeat();
                 break;

@@ -280,6 +280,45 @@ public sealed class DevToolsTests : IDisposable
             steps.Select(s => DevScript.WhatsNewOf(s)!.Value));
     }
 
+    // The QA pass replays the roll call without a screenshot (owner, 2026-10-15, from a panel of four: A): "exits" names the
+    // game's list as a screenshot would show it, "?" at a name's end for "??:??:??", "all" for every extract of the side.
+    [Fact]
+    public void The_exits_step_reads_its_names_their_marks_and_all()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "exits Crossroads \"Trailer Park\" \"ZB-1013?\" \"Railroad Passage (Flare)\"",
+            "exits all",
+            "Exits ALL",
+            "exits \"Dorms V-Ex ?\"",
+            "exits",
+            "exits ? \"\""));
+        Assert.Equal(["line 5: 'exits' needs the extracts' names, or 'all'", "line 6: 'exits' needs the extracts' names, or 'all'"], errors);
+        Assert.Equal(4, steps.Count);
+        Assert.Equal([("Crossroads", false), ("Trailer Park", false), ("ZB-1013", true), ("Railroad Passage (Flare)", false)], DevScript.ExitsOf(steps[0]));
+        Assert.Null(DevScript.ExitsOf(steps[1]));
+        Assert.Null(DevScript.ExitsOf(steps[2]));
+        Assert.Equal([("Dorms V-Ex", true)], DevScript.ExitsOf(steps[3]));
+        // It writes for the app to read, as a screenshot does: the app is given its 0.3 s.
+        Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
+    // tools\qa\extract-roll-call.devscript: a raid on Customs, a position, the list read, the stills, then a second raid
+    // that reads it again.
+    [Fact]
+    public void The_qa_replay_of_the_roll_call_reads_without_errors()
+    {
+        var (steps, errors) = DevScript.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "qa", "extract-roll-call.devscript")));
+        Assert.Empty(errors);
+        var lists = steps.Where(s => s.Verb == "exits").Select(DevScript.ExitsOf).ToList();
+        Assert.Equal(2, lists.Count);
+        Assert.All(lists, list => Assert.Equal([("Crossroads", false), ("Trailer Park", false), ("ZB-1013", true), ("Railroad Passage (Flare)", false)], list));
+        Assert.Contains(steps, s => s.Verb == "map" && s.Arg(0) == "customs");
+        Assert.True(steps.ToList().FindIndex(s => s.Verb == "pos") < steps.ToList().FindIndex(s => s.Verb == "exits"));
+        Assert.Equal(["t0", "t1", "t2", "t3", "t4"], steps.Where(s => s.Verb == "snapshot").Select(s => Path.GetFileName(s.Arg(0))));
+        Assert.All(steps.Where(s => s.Verb == "snapshot"), s => Assert.StartsWith(@"%TEMP%\shturmap-qa\extract-roll-call\", s.Arg(0)));
+        Assert.Equal("exit", steps[^1].Verb);
+    }
+
     [Fact]
     public void The_tour_step_ends_the_tour_and_takes_nothing_else()
     {

@@ -138,13 +138,16 @@ A check that didn't run is a finding: `· not run: <why> ·`. `PASS` only when e
 
 `tools\qa\` holds the replays of flows, one `<flow>.devscript` and one `<flow>.md` of expectations per flow; the QA pass
 runs every script there, on the Debug build, as its `.md` says, then again in de-DE and at the smallest window. The
-first is `whatsnew-tour-line` (the 0.5.0 card's tour line).
+first is `whatsnew-tour-line` (the 0.5.0 card's tour line); `extract-roll-call` (2026-10-15) replays the extract
+list's roll call, YOUR EXTRACTS THIS RAID, from a list the script hands the session.
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id
   or name>`, `pick`, `show`, `hover`, `point`, `whatsnew [<n>]`, `whatsnew click <n>` (taps line n, as a click does),
   `whatsnew leave` (the pointer leaves the line), `note <quest id or name> <text>` (a quest note through the session),
-  `cards`, `wait <s>`, `snapshot <folder>`, `exit`. Each `snapshot` names `%TEMP%\shturmap-qa\<flow>\<moment>`, a
+  `exits <name> [<name> …] | all` (the game's extract list as a screenshot taken now shows it; `"ZB-1013?"` marked
+  "??:??:??"), `cards`, `wait <s>`, `snapshot <folder>` (with a cue up, also `cue.png`, the band alone, placed by its
+  log line), `exit`. Each `snapshot` names `%TEMP%\shturmap-qa\<flow>\<moment>`, a
   folder per moment; the app expands `%TEMP%`, so a script in the repository names no user's folder.
 - **`<flow>.md`**: the flow and the fault it guards against, "Run it" (its command line, with its own flags), when each
   still is taken, and per still what it must and must not show, with the DESIGN.md words it holds to.
