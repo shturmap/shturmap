@@ -518,8 +518,15 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>This build can update itself (installed by its Setup); otherwise help says it can't.</summary>
     [ObservableProperty] public partial bool UpdatesAvailable { get; set; }
 
-    /// <summary>The one quiet line about a new version, between raids; empty when there is none.</summary>
-    [ObservableProperty] public partial string UpdateLine { get; set; } = "";
+    /// <summary>The update band's eyebrow (UPDATE READY), pinned under MAP between raids; empty when there is no band
+    /// (owner, 2026-10-15, from a panel of four: B, "A cue, then the band").</summary>
+    [ObservableProperty] public partial string UpdateEyebrow { get; set; } = "";
+
+    /// <summary>The band's version with its release's name, "0.6.1 · OKAMI", or the version alone.</summary>
+    [ObservableProperty] public partial string UpdateTitle { get; set; } = "";
+
+    /// <summary>The band's note line: what RESTART NOW does, what to close where the version didn't apply.</summary>
+    [ObservableProperty] public partial string UpdateNote { get; set; } = "";
 
     /// <summary>The rail's line while the game, or its logs, aren't found (<see cref="Shturmap.Session.GameStateLine"/>); empty otherwise.</summary>
     [ObservableProperty] public partial string GameLine { get; set; } = "";

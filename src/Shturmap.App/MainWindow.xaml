@@ -639,6 +639,51 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
         </StackPanel>
+        <!-- A new version: a band pinned under MAP, above what scrolls, so it never scrolls away (owner, 2026-10-15: "A
+             Beta-tester did not realize there is an update, which shows me that it is currently too subtle. I, however, do
+             not want to have a blocking modal like a pop-up"; from a panel of four: B, "A cue, then the band";
+             docs/DESIGN.md §8, "Updates"). Until then one quiet line at the top of what scrolls. Between raids only: in a
+             raid and while one loads this row holds the raid card's head. A plate in the panel's colour with an amber
+             hairline: the update glyph, the eyebrow, the version with its release's name, one note line and RESTART NOW
+             (or DOWNLOAD) as a button. It glows in as the stash marks do (Controls.Glow) when it shows and at each return
+             to the menus, as the UPDATE READY cue fades where there is one (MainWindow.Updates). No ×: it goes with the
+             restart, which comes on a click only, never during a raid (owner, 2026-10-03). -->
+        <Grid x:Name="UpdatePlate" Grid.Row="1" Margin="16,14,16,0" Visibility="{x:Bind ShownIf(ViewModel.UpdateEyebrow), Mode=OneWay}">
+          <Border Padding="12,10,12,12" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1">
+            <Grid ColumnSpacing="12">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <FontIcon Glyph="&#xE777;" FontSize="20" Foreground="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,3,0,0" />
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
+                           Text="{x:Bind ViewModel.UpdateEyebrow, Mode=OneWay}" />
+                <Grid>
+                  <TextBlock Style="{StaticResource TitleText}" CharacterSpacing="60" Text="{x:Bind ViewModel.UpdateTitle, Mode=OneWay}" />
+                  <!-- The same in gold over it, fading to let the ink through: the band glows in (Controls.Glow). -->
+                  <TextBlock x:Name="UpdateBandGlow" Style="{StaticResource TitleText}" CharacterSpacing="60" Foreground="{StaticResource AmberBrush}"
+                             Text="{x:Bind ViewModel.UpdateTitle, Mode=OneWay}" Opacity="0" IsHitTestVisible="False" />
+                </Grid>
+                <TextBlock Style="{StaticResource NoteText}" Text="{x:Bind ViewModel.UpdateNote, Mode=OneWay}" />
+                <!-- The app's button: the panel's fill, an amber hairline and amber words, as the Report dialog's SEND. -->
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0"
+                            Visibility="{x:Bind ShownIfEither(ViewModel.UpdateOffersRestart, ViewModel.UpdateOffersDownload), Mode=OneWay}">
+                  <Button Content="{x:Bind local:ViewTexts.UpdateRestart}" Click="OnUpdateRestartClick" Padding="20,5" FontSize="11.5" FontWeight="SemiBold"
+                          FontStretch="SemiCondensed" CharacterSpacing="80" BorderBrush="{StaticResource AmberBrush}" Foreground="{StaticResource AmberBrush}"
+                          Visibility="{x:Bind ShownIfTrue(ViewModel.UpdateOffersRestart), Mode=OneWay}"
+                          ToolTipService.ToolTip="{x:Bind local:ViewTexts.UpdateRestartTip}" />
+                  <Button Content="{x:Bind local:ViewTexts.UpdateDownload}" Click="OnUpdateDownloadClick" Padding="20,5" FontSize="11.5" FontWeight="SemiBold"
+                          FontStretch="SemiCondensed" CharacterSpacing="80" BorderBrush="{StaticResource AmberBrush}" Foreground="{StaticResource AmberBrush}"
+                          Visibility="{x:Bind ShownIfTrue(ViewModel.UpdateOffersDownload), Mode=OneWay}"
+                          ToolTipService.ToolTip="{x:Bind local:ViewTexts.UpdateDownloadTip}" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <!-- The plate flashes once, faintly, as it glows in (Controls.Glow). -->
+          <Rectangle x:Name="UpdateBandFlash" Fill="{StaticResource AmberBrush}" Opacity="0" IsHitTestVisible="False" />
+        </Grid>
         <!-- RAID, the card's head: the map's name, the side and the raid's time stay at the top of the rail, and the rest
              of the card scrolls under them (owner, 2026-10-08: "the remaining time is crucial information and when
              scrolling down in the quest window it gets pushed outside of view. It should always stay on top"). The
@@ -685,22 +730,6 @@
 
             <!-- PLAN -->
             <StackPanel Visibility="{x:Bind ShownIfNot(ViewModel.InRaid), Mode=OneWay}">
-              <!-- A new version: one quiet line, between raids only; it restarts only on a click (owner, 2026-10-03;
-                   docs/DESIGN.md §8, "Distribution"). -->
-              <StackPanel Margin="0,18,0,0" Spacing="2" Visibility="{x:Bind ShownIf(ViewModel.UpdateLine), Mode=OneWay}">
-                <TextBlock Style="{StaticResource EyebrowText}" Margin="0" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
-                           Text="{x:Bind local:Caps.Of(ViewModel.UpdateLine), Mode=OneWay}" />
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                  <HyperlinkButton Padding="0" Click="OnUpdateDownloadClick" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdateOffersDownload), Mode=OneWay}"
-                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.UpdateDownloadTip}">
-                    <TextBlock Text="{x:Bind local:ViewTexts.UpdateDownload}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
-                  </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Click="OnUpdateRestartClick" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdateOffersRestart), Mode=OneWay}"
-                                   ToolTipService.ToolTip="{x:Bind local:ViewTexts.UpdateRestartTip}">
-                    <TextBlock Text="{x:Bind local:ViewTexts.UpdateRestart}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" />
-                  </HyperlinkButton>
-                </StackPanel>
-              </StackPanel>
               <!-- What's New (owner, 2026-10-07; docs/DESIGN.md §4, "Screen anatomy"): after an update, until closed or the
                    first raid is over. Pointing at a line previews it on the map, as pointing at a map's row does. -->
               <Grid Margin="0,18,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.WhatsNewShown), Mode=OneWay}">

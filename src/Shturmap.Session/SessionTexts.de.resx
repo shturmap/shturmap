@@ -144,21 +144,37 @@
     <value>Update {version} konnte nicht installiert werden: Ein anderes Programm hat Shturmaps Ordner belegt, oft ein Browser, den Shturmap geöffnet hat. Schließ es, dann starte Shturmap neu.</value>
     <comment>en: Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.</comment>
   </data>
-  <data name="UpdateAvailable" xml:space="preserve">
-    <value>Shturmap {version} ist verfügbar</value>
-    <comment>en: Shturmap {version} is available</comment>
+  <data name="UpdateBandAvailable" xml:space="preserve">
+    <value>UPDATE VERFÜGBAR</value>
+    <comment>en: DOWNLOAD AVAILABLE</comment>
   </data>
-  <data name="UpdateDownloading" xml:space="preserve">
-    <value>Lade Shturmap {version} herunter…</value>
-    <comment>en: Downloading Shturmap {version}…</comment>
+  <data name="UpdateBandDownloading" xml:space="preserve">
+    <value>WIRD HERUNTERGELADEN</value>
+    <comment>en: DOWNLOADING</comment>
   </data>
-  <data name="UpdateDidNotApply" xml:space="preserve">
-    <value>Update {version} nicht installiert: Schließ, was Shturmap geöffnet hat, dann starte neu</value>
-    <comment>en: Update {version} didn't apply: close what Shturmap opened, then restart</comment>
+  <data name="UpdateBandReady" xml:space="preserve">
+    <value>UPDATE BEREIT</value>
+    <comment>en: UPDATE READY</comment>
   </data>
-  <data name="UpdateReady" xml:space="preserve">
-    <value>Update {version} bereit: wird beim nächsten Start installiert</value>
-    <comment>en: Update {version} ready: applies at next start</comment>
+  <data name="UpdateBandDidNotApply" xml:space="preserve">
+    <value>UPDATE NICHT INSTALLIERT</value>
+    <comment>en: UPDATE DIDN'T APPLY</comment>
+  </data>
+  <data name="UpdateNoteAvailable" xml:space="preserve">
+    <value>Lädt im Hintergrund herunter. Wird beim nächsten Start installiert.</value>
+    <comment>en: Downloads in the background. Applies at the next start.</comment>
+  </data>
+  <data name="UpdateNoteDownloading" xml:space="preserve">
+    <value>Wird beim nächsten Start installiert.</value>
+    <comment>en: Applies at the next start.</comment>
+  </data>
+  <data name="UpdateNoteReady" xml:space="preserve">
+    <value>Startet Shturmap in wenigen Sekunden neu. Nie im Raid.</value>
+    <comment>en: Restarts Shturmap in a few seconds. Never in a raid.</comment>
+  </data>
+  <data name="UpdateNoteDidNotApply" xml:space="preserve">
+    <value>Schließ, was Shturmap geöffnet hat, dann starte neu.</value>
+    <comment>en: Close what Shturmap opened, then restart.</comment>
   </data>
   <data name="SettingsFileSetAside" xml:space="preserve">
     <value>Shturmaps Einstellungsdatei war nicht lesbar und wurde beiseitegelegt: Picks, Haken und Einstellungen sind zurückgesetzt.</value>

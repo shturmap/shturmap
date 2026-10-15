@@ -169,14 +169,19 @@ public sealed partial class MainWindow
         AskAboutCrashes([record]);
     }
 
-    /// <summary>The line an update ready to apply shows (with RESTART NOW, which does nothing here: no update is
-    /// downloaded).</summary>
-    internal void DevShowUpdateReady(string version)
+    /// <summary>
+    /// An update ready to apply, as a download that just completed leaves it (Updater.DevReady): the band, and the
+    /// UPDATE READY cue where it is due, never in a snapshot run (RESTART NOW finds no download here and says so). The
+    /// version is the next patch of this one, so both say its line's name ("0.6.1 · OKAMI"); "0.2.1" where this one has
+    /// no number. Returns it, or null before the updates have started.
+    /// </summary>
+    internal string? DevShowUpdateReady()
     {
-        var decision = UpdatePolicy.Decide(UpdateMode.Automatic, canUpdate: true, ViewModel.InRaid, UpdateStage.Ready, version);
-        ViewModel.UpdateLine = decision.Line;
-        ViewModel.UpdateOffersDownload = decision.OfferDownload;
-        ViewModel.UpdateOffersRestart = decision.OfferRestart;
+        if (_updater is null)
+            return null;
+        var version = WhatsNew.VersionOf(GameSession.Version) is { } v ? $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build) + 1}" : "0.2.1";
+        _updater.DevReady(version);
+        return version;
     }
 
     /// <summary>The window and the map as PNGs (as "--snapshot" does), and the developer view when it is open.</summary>

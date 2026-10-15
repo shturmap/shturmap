@@ -115,7 +115,7 @@ gender.
 | struck out (a symbol with a diagonal stroke through it) | durchgestrichen | „die übrigen werden durchgestrichen“, „durchgestrichen, Name blass“; as German interfaces say „durchgestrichenes Mikrofon“; not „durchgekreuzt“ (that is an X) |
 | the legend's colours: sand, gold, green, teal, khaki, violet, red, grey; faint; lit, bright | sandfarben, golden, grün, türkisfarben, khakifarben, violett, rot, grau; blass; hell | „sandfarbene Scheibe“, „geteiltes khakifarbenes Dreieck“ |
 | preview; PREVIEW ·; AN EXAMPLE, NOT YOUR RAID | Vorschau; VORSCHAU ·; EIN BEISPIEL, NICHT DEIN RAID | |
-| point at; point (alone, a heading); rest on; click; hold, keep (a card); row; the list on the left | zeigen auf; draufzeigen; kurz bleiben auf; klicken; festhalten; Zeile; die Liste links | „Zeig auf eine Quest“; PICKEN UND DRAUFZEIGEN (ZEIGEN alone is SHOW ME); „hält ihre Karte fest“ |
+| point at; point (alone, a heading); rest on; click; hold, keep (a card); row; the list on the left (on screen also "the rail": IN THE RAIL) | zeigen auf; draufzeigen; kurz bleiben auf; klicken; festhalten; Zeile; die Liste links (IN DER LISTE LINKS) | „Zeig auf eine Quest“; PICKEN UND DRAUFZEIGEN (ZEIGEN alone is SHOW ME); „hält ihre Karte fest“; never „links in der Liste“ (the left edge of a list) |
 | position, fix; last fix; 7 MIN OLD | Position; letzte Position; 7 MIN ALT | |
 | Follow my position; Show my position; YOUR NEW POSITION · PRESS F | Meiner Position folgen; Meine Position zeigen; DEINE NEUE POSITION · TASTE F | |
 | ahead, ahead-left, left, behind-left, behind, behind-right, right, ahead-right; 8 M UP, DOWN | vorne, vorne links, links, hinten links, hinten, hinten rechts, rechts, vorne rechts; 8 M HÖHER, TIEFER | facing-relative for 45 s; caps VORNE LINKS |
@@ -158,6 +158,7 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | Send; Don't send; Always send | Senden; Nicht senden; Immer senden | |
 | Copy; Download; Install; installed; Uninstall; Restart now | Kopieren; Herunterladen; Installieren; installiert; Deinstallieren; Jetzt neu starten | |
 | update, updates; Automatic; On; Off; Never; Always | Update, Updates; Automatisch; Ein; Aus; Nie; Immer | Update is Windows Update's word |
+| apply (an update); the update band's stages: DOWNLOAD AVAILABLE; DOWNLOADING; UPDATE READY; UPDATE DIDN'T APPLY | installieren; UPDATE VERFÜGBAR; WIRD HERUNTERGELADEN; UPDATE BEREIT; UPDATE NICHT INSTALLIERT | decided (2026-10-15): VERFÜGBAR as German update screens say it, with HERUNTERLADEN under it, not „DOWNLOAD VERFÜGBAR“ |
 | App and data; Privacy; Licences | App und Daten; Datenschutz; Lizenzen | |
 | crash; crash report; error report | Absturz; Absturzbericht; Fehlerbericht | |
 | report (noun); to report; Report a problem or idea; Reporting isn't set up in this build | Bericht; melden; Problem oder Idee melden; Melden ist in diesem Build nicht eingerichtet | PROBLEM · IDEE; not „Berichte sind … nicht eingerichtet“; whoever gave you Shturmap: die Person, von der du Shturmap hast |

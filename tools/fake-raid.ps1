@@ -43,7 +43,7 @@ param(
   # The raid's map, for snapshots (the demo always plays Streets). The Lab, Labyrinth and Icebreaker are drawn as
   # sheets (no artwork, docs/DESIGN.md §3).
   [ValidateSet('streets', 'lab', 'labyrinth', 'icebreaker')] [string] $Map = 'streets',
-  # More arguments for the app, passed on as they are: --show-report, --show-crash, --whats-new (developer builds),
+  # More arguments for the app, passed on as they are: --show-report, --show-crash, --whats-new, --show-update (developer builds),
   # --switch-language <culture> (tools\layout-check.ps1 uses them), --visible (the window on a monitor, to watch; the
   # demo's too).
   [string[]] $MoreArgs = @()

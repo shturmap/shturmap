@@ -519,6 +519,14 @@ quoting it anywhere new.
     one-line notice "Your extract list is read: …" went with the cue (2026-10-15, provisional, as QUEST COMPLETE's and
     SEEN IN YOUR STASH's did); the rail's line under EXTRACTS AND TRANSITS still says it. Any other cue ends it, as it
     ends theirs; What's New's preview of it ends with the preview, the tour's with the chapter.
+    **UPDATE READY** (owner, 2026-10-15: "A Beta-tester did not realize there is an update, which shows me that it is
+    currently too subtle. I, however, do not want to have a blocking modal like a pop-up"; from a panel of four,
+    2026-10-15: B, "A cue, then the band"; §8, "Updates"): a new version of Shturmap downloaded, the cue says UPDATE
+    READY over the version with its release's name ("0.6.1 · OKAMI"), decoding as every title does, and under it, in
+    the amber line the first raid's cue has, "RESTART NOW IN THE RAIL · NEVER IN A RAID" (DOWNLOAD AVAILABLE and
+    "DOWNLOAD IN THE RAIL" in "Tell me only"). As the download completes in the menus, then **once per raid while it
+    waits**, at the first menu after each raid, after RAID OVER and its replay, QUEST COMPLETE and SEEN IN YOUR STASH;
+    as it fades the rail's update band glows. Like QUEST COMPLETE and SEEN IN YOUR STASH it moves no view.
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -908,10 +916,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     on screen with its counts. It is made anew only when what it says changes, and not while it is open
     (`Rules.MapList`, `SessionSnapshot.AllPlans`). Of the panel's other ways, the other maps by name under Plan's rows
     (B), every map as a folded row (C) and every map by name in place of the list (D) were not taken.
+  - *The update band* (owner, 2026-10-15, from a panel of four: B, "A cue, then the band"; §8, "Updates"): the row
+    under the MAP list, outside what scrolls, holds the band about a new version between raids (UPDATE READY, the
+    version with its release's name, one note line, RESTART NOW as a button), and in a raid and while one loads the
+    raid card's head (*Raid*, below), so the band hides then. It glows in when it shows, at each return to the menus
+    after a raid, and as the UPDATE READY cue fades (principle 11). Until then the update was one quiet line at the
+    top of what scrolls, which a beta tester missed.
   - *What's New* (owner, 2026-10-07: "how to inform the user about news and changes in the app ... ideally accompanied
     with screenshots"; from two panels, "C", then "Whats new: A"). A window was ruled out (principle 3), and so were
     screenshots bundled in a build (§3: map artwork, renders, portraits and icons) and pictures from the website (a new
-    host, §2). So: a card at the top of Plan's rail, under the MAP picker and after the update line, in the panel's
+    host, §2). So: a card at the top of Plan's rail, under the MAP picker (and the update band), in the panel's
     colour with a `Line` hairline. NEW IN 0.4.0 · PRAETORIAN in the eyebrow style in amber (the version and its
     release's name, below), × in its corner (`E711`, as on a notice),
     up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
@@ -1034,8 +1048,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     alone (`Rules.RaidTime`). While the raid loads, "40 min raid" stands with the bosses, as in Plan.)
     **The card's head stays at the top of the rail** (owner, 2026-10-08: "the remaining time is crucial information
     and when scrolling down in the quest window it gets pushed outside of view. It should always stay on top"): THIS
-    RAID, the map's name with the side, and the readout stand under the MAP list, outside what scrolls, and the rest of
-    the card scrolls under them. The card is drawn in two parts that meet without a seam, the head open at its foot and
+    RAID, the map's name with the side, and the readout stand under the MAP list, outside what scrolls (the row the
+    update band has between raids), and the rest of the card scrolls under them. The card is drawn in two parts that meet without a seam, the head open at its foot and
     the body open at its top, so unscrolled it looks as before; once anything has scrolled under it, the head closes at
     its foot with the card's edge. The rail's hint stands above THIS RAID in a raid. A copy
     of the readout pinned only once the card has scrolled away was considered and not built: it would cover the top of
@@ -2559,9 +2573,11 @@ Rules:
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
   is trimmed, text over text, and in the pseudo-language one untranslated) and a copy with them boxed beside it
-  (`<picture>.texts.txt`, `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), and `--whats-new`
-  shows the newest What's New card for one; `tools\layout-check.ps1` plays every view in each language and window size
-  and sums it up (docs/LANGUAGES.md, "Layout check").
+  (`<picture>.texts.txt`, `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), `--whats-new`
+  shows the newest What's New card for one, and `--show-update` the update band, the next patch of the running version
+  taken for downloaded (`Updater.DevReady`; a snapshot never shows the UPDATE READY cue, a script's `trigger update`
+  plays it); `tools\layout-check.ps1` plays every view in each language and window size and sums it up
+  (docs/LANGUAGES.md, "Layout check").
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
   drawn press of the screenshot key. The key comes in a pause: the window dims, the key stands large in the middle
@@ -2622,15 +2638,51 @@ self-unpacking exe, without updates; they need the Setup once.
   starts again with the same arguments). Then WinUI's own start (`DISABLE_XAML_GENERATED_MAIN`). An installed app
   asks GitHub at start and then every 6 hours, never more often (`UpdatePolicy`), anonymously: GitHub allows 60
   such requests an hour per address. A new version downloads in the background (a delta when there is one) and
-  applies at the next start. One quiet line at the top of the Plan rail says "Update 0.2.1 ready: applies at next
-  start", with RESTART NOW, between raids only: Shturmap never restarts by itself, and never during a raid.
+  applies at the next start, or on RESTART NOW, between raids only: Shturmap never restarts by itself, and never
+  during a raid (owner, 2026-10-03; it stands).
+  **A cue, then the band** (owner, 2026-10-15: "A Beta-tester did not realize there is an update, which shows me that it
+  is currently too subtle. I, however, do not want to have a blocking modal like a pop-up"; from a panel of four,
+  2026-10-15: B). Until then one quiet line at the top of the Plan rail said it ("Update 0.2.1 ready: applies at next
+  start", 11 px amber over an 11 px RESTART NOW link), scrolling with the rail; that line is gone. Now:
+  - **The band**, pinned under the MAP picker, above what scrolls, so it never scrolls away (the row that holds the
+    raid card's head in a raid; "Screen anatomy", *Rail*): a plate in the panel's colour with an amber hairline; the
+    update glyph (Segoe Fluent `E777`); the eyebrow in amber, by the stage (`UpdatePolicy.Decide`, `UpdateBand`):
+    DOWNLOAD AVAILABLE (a version found in "Tell me only"), DOWNLOADING, UPDATE READY, UPDATE DIDN'T APPLY; the version
+    with its release's name in the rail's title type, "0.6.1 · OKAMI", the name where the app's What's New knows it (a
+    patch keeps its line's name, `Rules.WhatsNew.NameOf`; a new line's name comes with its release, so "0.7.0" alone);
+    one note line, "Restarts Shturmap in a few seconds. Never in a raid." (where it didn't apply "Close what Shturmap
+    opened, then restart.", the line's words until then; while it downloads "Applies at the next start.", over
+    DOWNLOAD "Downloads in the background. Applies at the next start."; the panel drew the ready band only, so these
+    two are the build's, 2026-10-15, provisional); and RESTART NOW (or DOWNLOAD) as a real button in the app's button
+    style, the Report dialog's SEND (the panel's fill, an amber hairline, amber words; the app has no filled button). It glows in as the stash marks do (`Controls.Glow`: the
+    title's gold copy eases to ink over 1.2 s, the plate flashes once at 22 % for 0.9 s) when it shows, again at each
+    return to the menus after a raid, and as the cue fades. In a raid and while one loads the row holds the raid
+    card's head, so the band hides. It has no ×: it goes with the restart. With animation effects off it doesn't glow.
+  - **The cue**, UPDATE READY (`CueKind.UpdateReady`, principle 11): the app's cue across the map's middle, its dark
+    band, gold flash and rules, the title decoding, 5 s, no clicks. Eyebrow UPDATE READY, title "0.6.1 · OKAMI", under
+    it the amber line "RESTART NOW IN THE RAIL · NEVER IN A RAID" (in "Tell me only", for a version found: DOWNLOAD
+    AVAILABLE and "DOWNLOAD IN THE RAIL"). **When** (`UpdateCue`): as a download completes outside a raid (one that
+    completes in a raid or while one loads waits for the menus), and once more at the first menu after each raid
+    while the update waits, once per raid (a raid over live: RAID OVER; a load cancelled is no raid). It waits its
+    turn behind RAID OVER and its replay, QUEST COMPLETE and SEEN IN YOUR STASH, as those wait among themselves, and
+    behind the tour and a preview, then comes once the map's middle has been free for 0.5 s. Never during a raid or a
+    load, never with "Off" (a version downloaded before still has its band), never for the log read back at start nor
+    for a version still waiting at start (its notice says it), never after RESTART NOW, and never in a snapshot by
+    itself. The band's glow plays as it fades (4.6 s). With animation effects off it stands still 5 s.
+  - Not taken from the panel: A, "The update band", the band alone (only in the rail, so a player looking at the map
+    between raids could still miss it); C, "Applies by itself when the game is quiet", a restart by itself with
+    Automatic, between raids, after 10 minutes without a log line (it reversed the decision of 2026-10-03, and the log
+    can't tell the menus from a closed game, so the installer could still meet a running game); D, "Lights and title",
+    a fourth light before LOGS · SCREENSHOTS · DATA and "Shturmap · update ready" in the window's title (the tester
+    already overlooked the squares, an update is no input, and it didn't say what to do). A Windows toast was declined
+    before the panel: it shows on the game's monitor, over the game (§2; principle 3).
   RESTART NOW starts Velopack's updater first, which waits for the app to end (a minute at most), applies the version
   and starts it; only then is the session closed and the app ended. Where the downloaded version is gone or the
   updater can't start, the session goes on and a notice says why ("The update couldn't be applied: its download is
   gone. Shturmap keeps running."), and a version whose download is gone counts as not downloaded (review of
   2026-10-09: the session was closed first, and Velopack's own restart returned without a word, leaving a window
   that drew nothing).
-  "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the line offers DOWNLOAD), **Off** (no
+  "Updates" in settings: **Automatic** (the default), **Tell me only** (it asks; the band offers DOWNLOAD), **Off** (no
   request at all). A version already downloaded applies at the next start whatever the setting.
   **When applying fails** (owner, 2026-10-05: "it tells me always that the update is available even though i
   downloaded and restarted"). Velopack applies a version by moving the install's `current` folder aside, and that
@@ -2647,8 +2699,9 @@ self-unpacking exe, without updates; they need the Setup once.
   Velopack applies a downloaded version before every start (Program), so one still waiting when the app starts is
   one that couldn't be applied (`Updater.NotApplied`): the app log says so (WARN), a notice says it once, "Update
   0.3.1 couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it,
-  then restart Shturmap.", and the line says "Update 0.3.1 didn't apply: close what Shturmap opened, then restart",
-  with RESTART NOW. Builds the Setup
+  then restart Shturmap.", and the band says UPDATE DIDN'T APPLY over the version and "Close what Shturmap opened, then
+  restart.", with RESTART NOW (until 2026-10-15 the line, "Update 0.3.1 didn't apply: close what Shturmap opened, then
+  restart"); the UPDATE READY cue waits for the first raid over. Builds the Setup
   didn't install (the folder build, `dotnet run`) and developer runs (snapshots, fake games, the demo) ask nothing;
   help says "Updates: not available in this build". Checks, finds and downloads are logged at INFO; a failure is a
   WARN line and a retry at the next check, never a notice.
@@ -3436,5 +3489,8 @@ every issue goes through it, and the app's report is offered beside it.
 - The extract list's roll call, designed and built (2026-10-15; docs/NEXT.md; §4, principle 11; "Map drawing", *The
   player's extracts this raid*): a list just read is called out in YOUR EXTRACTS THIS RAID and each extract flown to
   its place; after it, a later list rings its additions where they stand, as lists did from 2026-10-14.
+- A new version said louder, without a pop-up (2026-10-15; docs/NEXT.md; §8, "Updates"; from a panel of four: B): the
+  update band pinned under MAP between raids, and the UPDATE READY cue as the download completes and once per raid
+  while it waits.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).
