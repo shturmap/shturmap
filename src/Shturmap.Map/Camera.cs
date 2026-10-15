@@ -23,7 +23,9 @@ public sealed class Camera
     /// <summary>
     /// DIPs a view keeps right of what it fits or frames, for the label the map writes right of a symbol (owner,
     /// 2026-10-09: on a wide map the rightmost names ran off the window, "Transit to I…", "Crossr…"; the tour's 90
-    /// DIP cut its picked quest's). The other sides keep their padding. Callers give it in pixels: times the UI scale.
+    /// DIP cut its picked quest's). The other sides keep their padding. Callers give it in pixels: times the UI scale. A
+    /// picked or pointed-at name that needs more finds it in the layout (owner, 2026-10-15;
+    /// <see cref="MapRenderer.LitNameMost"/>).
     /// </summary>
     public const float LabelRoom = 150;
 

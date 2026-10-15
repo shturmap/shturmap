@@ -125,6 +125,150 @@ public class LabelTests
         Assert.True(Assert.Single(MapRenderer.Layout(middleCamera, middle, 1).Labels).Box.Right < 500);
     }
 
+    // A made-up name as long as the tour's German picked quest's (owner, 2026-10-15, E3: at full size it read
+    // "Lieferung aus der Vergan" at the map's right edge, past the 150 DIP the view keeps there, Camera.LabelRoom).
+    private const string LongName = "Eine Lieferung aus ferner Vergangenheit";
+
+    // One longer than LitNameMost, made up too (tarkov.dev's longest, German, is 307 px in the bold label face).
+    private const string LongerName = "Der Weg der Überlebenden - Ungeschützt, aber ziemlich gefährlich";
+
+    private static readonly DateTime T0 = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Local);
+
+    // Its left, above and below taken, 150 px in from the right edge (screen x 850).
+    private static MapMarker[] AroundFar =>
+    [
+        new("extract:l", MarkerKind.ExtractPmc, new WorldPoint(325, 0, 0), ""),
+        new("extract:u", MarkerKind.ExtractPmc, new WorldPoint(350, 0, 22), ""),
+        new("extract:d", MarkerKind.ExtractPmc, new WorldPoint(350, 0, -22), ""),
+    ];
+
+    // The mirror of the left edge's rule, for a picked or pointed-at name at the right edge: one above or below its symbol
+    // slides left to end there, one beside it isn't a place.
+    [Fact]
+    public void A_lit_candidate_past_the_right_edge_slides_in_over_or_under_its_symbol_or_is_no_place()
+    {
+        var at = new SKPoint(980, 100);
+        var boxes = MapRenderer.LabelCandidates(at, 10, 60, 10).ToList();
+        Assert.Null(MapRenderer.Inward(boxes[0], at, 2, 998));
+        Assert.Equal(boxes[1], MapRenderer.Inward(boxes[1], at, 2, 998));
+        foreach (var box in boxes.Skip(2))
+        {
+            var inward = MapRenderer.Inward(box, at, 2, 998)!.Value;
+            Assert.Equal(SKRect.Create(998 - box.Width, box.Top, box.Width, box.Height), inward);
+            Assert.True(inward.Left <= at.X && inward.Right >= at.X);
+        }
+        // Without a right edge (every other label) it stays where it is.
+        Assert.All(boxes, b => Assert.Equal(b, MapRenderer.Inward(b, at, 2)));
+    }
+
+    [Fact]
+    public void A_picked_or_pointed_at_name_at_the_right_edge_goes_left_of_its_symbol_whole()
+    {
+        // 150 px in from the right edge, as a framing leaves the place furthest right.
+        var (camera, scene) = View([Quest("far", 350, 0, LongName)]);
+        // Not lit, it keeps the rule of the room on the right: it goes right and runs past the edge, as before.
+        var rest = Assert.Single(MapRenderer.Layout(camera, scene, 1).Labels);
+        Assert.Equal(0, rest.Side);
+        Assert.True(rest.Box.Right > 1000, $"{rest.Box}");
+
+        scene.Kept = new HashSet<string> { "quest-far" };
+        var picked = Assert.Single(MapRenderer.Layout(camera, scene, 1).Labels);
+        Assert.Equal(LongName, picked.Text);
+        Assert.Equal(1, picked.Side);
+        Assert.True(picked.Box.Right < 850 && picked.Box.Left >= MapRenderer.LabelEdge, $"{picked.Box}");
+
+        scene.Kept = new HashSet<string>();
+        scene.Focus = new HashSet<string> { "quest-far" };
+        var pointed = Assert.Single(MapRenderer.Layout(camera, scene, 1).Labels);
+        Assert.Equal((LongName, 1), (pointed.Text, pointed.Side));
+    }
+
+    [Fact]
+    public void A_lit_name_with_no_other_side_free_stays_right_trimmed_with_an_ellipsis_at_the_edge()
+    {
+        var (camera, scene) = View([Quest("far", 350, 0, LongName), .. AroundFar]);
+        scene.Kept = new HashSet<string> { "quest-far" };
+        var label = Assert.Single(MapRenderer.Layout(camera, scene, 1).Labels);
+        Assert.Equal(0, label.Side);
+        Assert.EndsWith("…", label.Text);
+        Assert.StartsWith(label.Text[..^1], LongName);
+        Assert.True(label.Text.Length > 10, label.Text);
+        Assert.True(label.Box.Left > 850 && label.Box.Right <= 1000 - MapRenderer.LabelEdge, $"{label.Box}");
+    }
+
+    [Fact]
+    public void A_lit_name_longer_than_the_limit_moves_in_trimmed_to_it_and_reads_whole_where_its_right_has_room()
+    {
+        var (camera, scene) = View([Quest("far", 350, 0, LongerName)]);
+        scene.Kept = new HashSet<string> { "quest-far" };
+        var moved = Assert.Single(MapRenderer.Layout(camera, scene, 1).Labels);
+        Assert.Equal(1, moved.Side);
+        Assert.EndsWith("…", moved.Text);
+        Assert.InRange(moved.Box.Width, MapRenderer.LitNameMost - 20, MapRenderer.LitNameMost);
+
+        var (middleCamera, middle) = View([Quest("mid", -300, 0, LongerName)]);
+        middle.Kept = new HashSet<string> { "quest-mid" };
+        var whole = Assert.Single(MapRenderer.Layout(middleCamera, middle, 1).Labels);
+        Assert.Equal((LongerName, 0), (whole.Text, whole.Side));
+        Assert.True(whole.Box.Width > MapRenderer.LitNameMost, $"{whole.Box}");
+
+        // A map 500 px wide (the smallest window's): 40 % of it, 200 px.
+        var (smallCamera, small) = View([Quest("far", 100, 0, LongName)]);
+        smallCamera.Resize(new SKSize(500, 1000));
+        small.Kept = new HashSet<string> { "quest-far" };
+        var narrow = Assert.Single(MapRenderer.Layout(smallCamera, small, 1).Labels);
+        Assert.Equal(1, narrow.Side);
+        Assert.EndsWith("…", narrow.Text);
+        Assert.True(narrow.Box.Width <= 500 * MapRenderer.LitNameShare && narrow.Box.Left >= MapRenderer.LabelEdge, $"{narrow.Box}");
+    }
+
+    // No label moves while the view moves (the rule Steady while the view moves): a lit name panned toward the right edge
+    // keeps its right, trimmed with "…" as it reaches the edge, rather than going over to its left in the middle of the
+    // pan; with the view still it is placed afresh, as the scale bar is.
+    [Fact]
+    public void A_lit_name_keeps_its_side_while_the_view_moves_and_is_placed_afresh_once_still()
+    {
+        var (camera, scene) = View([Quest("far", 200, 0, LongName)]);
+        scene.Kept = new HashSet<string> { "quest-far" };
+        var first = Assert.Single(MapRenderer.LayoutOf(camera, scene, 1, T0).Labels);
+        Assert.Equal((LongName, 0), (first.Text, first.Side));
+        var trimmed = 0;
+        for (var k = 1; k <= 15; k++)
+        {
+            camera.Pan(10, 0);
+            var label = Assert.Single(MapRenderer.LayoutOf(camera, scene, 1, T0).Labels);
+            Assert.Equal(0, label.Side);
+            Assert.Equal(first.Box.Left + 10 * k, label.Box.Left, 2);
+            Assert.True(label.Box.Right <= 1000 - MapRenderer.LabelEdge, $"frame {k}: {label.Box}");
+            Assert.True(label.Text == LongName || (label.Text.EndsWith('…') && LongName.StartsWith(label.Text[..^1], StringComparison.Ordinal)), label.Text);
+            trimmed += label.Text == LongName ? 0 : 1;
+        }
+        Assert.True(trimmed >= 5, $"{trimmed} frames trimmed: the pan doesn't reach the edge");
+        // The view still: on its left, whole, as a fresh layout of that view has it.
+        var still = Assert.Single(MapRenderer.LayoutOf(camera, scene, 1, T0).Labels);
+        Assert.Equal((LongName, 1), (still.Text, still.Side));
+        var (fresh, freshScene) = View([Quest("far", 200, 0, LongName)]);
+        freshScene.Kept = scene.Kept;
+        fresh.Restore(camera.Center, camera.Zoom);
+        Assert.Equal(Assert.Single(MapRenderer.Layout(fresh, freshScene, 1, T0).Labels).Box, still.Box);
+        // Panned back, it keeps its left until the view is still again.
+        camera.Pan(-150, 0);
+        Assert.Equal(1, Assert.Single(MapRenderer.LayoutOf(camera, scene, 1, T0).Labels).Side);
+        Assert.Equal(0, Assert.Single(MapRenderer.LayoutOf(camera, scene, 1, T0).Labels).Side);
+    }
+
+    [Fact]
+    public void Trimmed_keeps_the_longest_start_that_fits_with_an_ellipsis()
+    {
+        using var font = new SKFont(SKTypeface.Default, 13);
+        Assert.Equal("Abc", MapRenderer.Trimmed(font, "Abc", 1000));
+        var width = font.MeasureText("Lieferung aus…");
+        Assert.Equal("Lieferung aus…", MapRenderer.Trimmed(font, "Lieferung aus der Vergangenheit", width));
+        // No space or dash before the ellipsis.
+        Assert.Equal("Weg…", MapRenderer.Trimmed(font, "Weg - Biest", font.MeasureText("Weg - …")));
+        Assert.Null(MapRenderer.Trimmed(font, "Lieferung", 1));
+    }
+
     [Fact]
     public void A_name_is_said_once_per_neighbourhood()
     {
