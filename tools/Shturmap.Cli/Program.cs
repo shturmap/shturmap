@@ -111,7 +111,8 @@ switch (command)
 }
 
 // The audit of what BRING lists, after a tarkov.dev or game update: every map's rows with all quests active, in the
-// app's own words (classes named from the item categories), and what to look at: UNKNOWN ITEM (an id without a name),
+// app's own words (classes named from the item categories), with each quest's own count on a row of things to use up
+// for several quests ("Humanitarian Supplies ×2"), and what to look at: UNKNOWN ITEM (an id without a name),
 // LIST (more than three weapons that aren't one class: shown as "X or N others"), and, over all quests, NO EXIT (an
 // extract objective naming an exit no map has).
 static async Task Bring(string mode)
@@ -142,7 +143,14 @@ static async Task Bring(string mode)
                     .OrderByDescending(g => g.Count())
                     .Select(g => g.Key is null ? $"? {g.Count()}" : $"{data.ItemName(g.Key)} {g.Count()}/{sources.Members[g.Key].Count()}")));
             flagged += flags.Count > 0 ? 1 : 0;
-            Console.WriteLine($"  {r.Kind,-10} {view.Text} | {view.Why}" + (flags.Count > 0 ? $"  [{string.Join(", ", flags)}]" : ""));
+            // A row of things used up for several quests counts them all; each quest's own number, as the cell beside
+            // its name says it, where it needs more than one (Requirement.CountFor; owner, 2026-10-15: a marker per
+            // place). An exit's items are the exit's, the same whichever quest names it.
+            var each = r.Kind == Shturmap.Core.Planning.RequirementKind.Bring && r.ForQuests.Count > 1
+                ? string.Join(", ", r.ForQuests.Where(q => r.CountFor(q) > 1).Select(q => $"{data.Tasks.GetValueOrDefault(q)?.Name ?? q} ×{r.CountFor(q)}"))
+                : "";
+            Console.WriteLine($"  {r.Kind,-10} {view.Text} | {view.Why}" + (each.Length > 0 ? $" ({each})" : "") +
+                              (flags.Count > 0 ? $"  [{string.Join(", ", flags)}]" : ""));
         }
     }
     var noExit = data.Tasks.Values
