@@ -126,7 +126,7 @@ gender.
 | REPLAY; raid replay; in order | REPLAY; Raid-Replay (das); der Reihe nach | decided |
 | Active, Completed, Failed, Not started, Locked | Aktiv, Abgeschlossen, Gefailt, Nicht gestartet, Gesperrt | notice: „{quest}: gestartet / abgeschlossen / gefailt“ |
 | from the game log, 25 Sep | aus dem Log des Spiels, 25. Sept. | |
-| the game's logs; game logs; LOGS, SCREENSHOTS, DATA | die Logs des Spiels; Spiel-Logs; LOGS, SCREENSHOTS, DATEN | Log, not Protokoll; „Neuere Spiel-Logs in {folder}“ |
+| the game's logs; game logs; the game's log shows …, the game's logs show …; LOGS, SCREENSHOTS, DATA | die Logs des Spiels; Spiel-Logs; Laut Log des Spiels …, Laut den Logs des Spiels …; LOGS, SCREENSHOTS, DATEN | Log, not Protokoll; „Neuere Spiel-Logs in {folder}“; „Laut Log des Spiels läuft ein Raid“, „Laut den Logs des Spiels ist keine Quest aktiv.“ |
 | notice | Hinweis | |
 | the tour; TAKE THE TOUR; SHOW ME; TOUR · 3 OF 7; ESC ENDS THE TOUR | die Tour; TOUR STARTEN; ZEIGEN; TOUR · 3 VON 7; ESC BEENDET DIE TOUR | ← ZURÜCK, WEITER →; „Esc beendet die Tour“; help brings it back: „die Hilfe holt sie zurück“ |
 | What's New; NEW IN 0.4.0 · PRAETORIAN | Neuigkeiten; NEU IN 0.4.0 · PRAETORIAN | release names stay |

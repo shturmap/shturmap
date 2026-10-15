@@ -237,8 +237,8 @@
     <comment>en: None of your active quests is tied to a map.</comment>
   </data>
   <data name="HintNothingLeftHere" xml:space="preserve">
-    <value>{count, plural, one {Deine aktive Quest hat auf dieser Map kein Ziel mehr.} other {Keine deiner # aktiven Quests hat auf dieser Map noch ein Ziel.}}</value>
-    <comment>en: None of your {count, plural, other {# active quests}} has an objective left on this map.</comment>
+    <value>{count, plural, =0 {Laut den Logs des Spiels ist keine Quest aktiv.} one {Deine aktive Quest hat auf dieser Map kein Ziel mehr.} other {Keine deiner # aktiven Quests hat auf dieser Map noch ein Ziel.}}</value>
+    <comment>en: {count, plural, =0 {The game's logs show no active quests.} one {Your active quest has no objective left on this map.} other {None of your # active quests has an objective left on this map.}}</comment>
   </data>
   <data name="ScavFindItems" xml:space="preserve">
     <value>Items für {count, plural, one {# Quest} other {# Quests}} finden</value>
