@@ -1987,11 +1987,11 @@ public sealed partial class MainWindow : Window
     private DispatcherQueueTimer? _placeSettled;
 
     /// <summary>
-    /// A run that only takes pictures ("--snapshot", "--demo": every run of tools\fake-raid.ps1 and the layout check),
-    /// unless "--visible" asks to watch it: the window opens off every monitor, is shown without activation and stays
-    /// out of the taskbar and Alt+Tab, so it never interrupts a game on the other monitor (owner, 2026-10-15, "quiet
-    /// local runs": the UI is checked while the owner plays on the same PC). Its pictures are rendered from the XAML
-    /// tree, not from the screen (<see cref="SaveSnapshotAsync"/>).
+    /// A run that only takes pictures ("--snapshot", "--demo": every run of tools\fake-raid.ps1 and the layout check; a
+    /// developer script's, whose view stands beside this window), unless "--visible" asks to watch it: the window opens
+    /// off every monitor, is shown without activation and stays out of the taskbar and Alt+Tab, so it never interrupts
+    /// a game on the other monitor (owner, 2026-10-15, "quiet local runs": the UI is checked while the owner plays on
+    /// the same PC). Its pictures are rendered from the XAML tree, not from the screen (<see cref="SaveSnapshotAsync"/>).
     /// </summary>
     public bool Quiet { get; }
 

@@ -33,8 +33,8 @@ public static class WindowPlace
     private const int Inset = 40;
     private const int Border = 16;
 
-    // How far past the right-most monitor a picture-taking run's window stands: Windows draws a window's shadow outside
-    // its bounds, a few dozen pixels at a large scale.
+    // How far past the right-most monitor (or its main window) a picture-taking run's window stands: Windows draws a
+    // window's shadow outside its bounds, a few dozen pixels at a large scale.
     private const int OffScreenGap = 200;
 
     public readonly record struct Rect(int X, int Y, int Width, int Height)
@@ -110,8 +110,15 @@ public static class WindowPlace
     public static Rect OffScreen(IReadOnlyList<Rect> monitors, int width, int height)
     {
         var beside = RightMost(monitors) ?? default;
-        return new Rect(beside.Right + OffScreenGap, beside.Y, width, height);
+        return Beside(beside, width, height);
     }
+
+    /// <summary>
+    /// A window past the right edge of another, level with its top, as far off as <see cref="OffScreen"/> stands from a
+    /// monitor: a quiet run's second window (the developer view of a script's run, owner 2026-10-15) beside its main
+    /// window, off every monitor as that one is, and not over it.
+    /// </summary>
+    public static Rect Beside(Rect other, int width, int height) => new(other.Right + OffScreenGap, other.Y, width, height);
 
     private static string Text(Rect r) => string.Create(CultureInfo.InvariantCulture, $"{r.X},{r.Y},{r.Width},{r.Height}");
 

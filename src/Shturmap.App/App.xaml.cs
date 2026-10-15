@@ -177,13 +177,15 @@ public partial class App : Application
         _session.NoticeGameBuilds = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
 #endif
         ChooseLanguage(cli);
-        // The window comes back where the player left it (owner, 2026-10-04). Snapshots, the demo and a given size
-        // place it themselves and remember nothing.
-        var rememberPlace = windowSize is null && !cli.Contains("--snapshot") && !cli.Contains("--demo");
         // A run that only takes pictures opens off every monitor, unactivated and out of the taskbar and Alt+Tab, so it
-        // never interrupts a game on the other monitor (owner, 2026-10-15: checking the UI while playing); "--visible"
-        // opens one to watch, as before (MainWindow.Quiet).
-        var quiet = (cli.Contains("--snapshot") || cli.Contains("--demo")) && !cli.Contains("--visible");
+        // never interrupts a game on the other monitor (owner, 2026-10-15: checking the UI while playing): a snapshot,
+        // the demo, and a developer script's run (its "snapshot" steps; developer builds only, where it plays).
+        // "--visible" opens one to watch, as before (MainWindow.Quiet); the developer view without a script is used.
+        var devScript = IsDevBuild && cli.Contains("--dev-view") && cli.Contains("--dev-script");
+        var quiet = (cli.Contains("--snapshot") || cli.Contains("--demo") || devScript) && !cli.Contains("--visible");
+        // The window comes back where the player left it (owner, 2026-10-04). Snapshots, the demo, a quiet run and a
+        // given size place it themselves and remember nothing.
+        var rememberPlace = windowSize is null && !quiet && !cli.Contains("--snapshot") && !cli.Contains("--demo");
         _window = new MainWindow(_session, windowSize, rememberPlace ? SavedWindowPlace(paths) : null, rememberPlace, quiet)
         {
             SnapshotMode = cli.Contains("--snapshot"),

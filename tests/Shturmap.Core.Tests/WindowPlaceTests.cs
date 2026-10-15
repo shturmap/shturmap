@@ -154,6 +154,22 @@ public class WindowPlaceTests
             Assert.True(place.X >= m.Right || place.Right <= m.X || place.Y >= m.Bottom || place.Bottom <= m.Y));
     }
 
+    // A developer script's run is quiet too (owner, 2026-10-15): its developer view stands beside the main window, off
+    // every monitor as that one is, and not over it.
+    [Theory]
+    [MemberData(nameof(OffScreenCases))]
+    public void A_quiet_run_s_second_window_stands_beside_the_first_off_every_monitor(
+        WindowPlace.Rect[] monitors, WindowPlace.Rect expected)
+    {
+        var main = WindowPlace.OffScreen(monitors, 1600, 1000);
+        Assert.Equal(expected, main);
+        var view = WindowPlace.Beside(main, 520, 980);
+        Assert.Equal(new WindowPlace.Rect(main.Right + 200, main.Y, 520, 980), view);
+        Assert.True(view.X >= main.Right);
+        Assert.All(monitors, m =>
+            Assert.True(view.X >= m.Right || view.Right <= m.X || view.Y >= m.Bottom || view.Bottom <= m.Y));
+    }
+
     [Fact]
     public void Without_monitors_the_window_stands_past_the_origin()
     {

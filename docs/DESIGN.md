@@ -775,16 +775,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   for what must stay readable, the status bar and the rail's glance (the raid card's head, NEXT, EXIT); at that size the
   map is for a laptop beside the game, not for reading from a metre away on a second monitor (owner, 2026-10-09).
   Snapshot and demo runs and a given size (`--window`) place the window themselves and remember nothing. Runs that only
-  take pictures (`--snapshot`, `--demo`: every run of `tools\fake-raid.ps1` and the layout check) open it off every
-  monitor, past the right edge of the right-most one and level with its top, at the size it would have on the monitor
-  it opens on (that monitor's work area where it would be maximised, the first start's size on one monitor, or
-  `--window`'s), never maximised, shown without activation and out of the taskbar and Alt+Tab (`WindowPlace.OffScreen`,
-  `MainWindow.Quiet`; owner, 2026-10-15: the UI is checked while the owner plays on the same PC, and such a run opened
-  maximised on the second monitor and took the focus from the game). Off every monitor Windows gives the window the
-  scale of the one beside it, so the size is converted to that scale: the content is laid out as on the monitor it
-  would open on. Snapshots are rendered from the window's XAML and the map's own drawing, not from the screen, so they
-  come out as before (checked 2026-10-15). `--visible` opens such a run as before, to watch it. The app log says
-  where it opened ("Window where it was last: 1300×800 at …", "Window off every monitor, …: 2560×1392 at …").
+  take pictures (`--snapshot`, `--demo`: every run of `tools\fake-raid.ps1` and the layout check; a developer script's,
+  §8, "Developer aids", *Quiet runs*) open it off every monitor, past the right edge of the right-most one and level
+  with its top, at the size it would have on the monitor it opens on (that monitor's work area where it would be
+  maximised, the first start's size on one monitor, or `--window`'s), never maximised, shown without activation and
+  out of the taskbar and Alt+Tab (`WindowPlace.OffScreen`, `MainWindow.Quiet`; owner, 2026-10-15: the UI is checked
+  while the owner plays on the same PC, and such a run opened maximised on the second monitor and took the focus from
+  the game). Off every monitor Windows gives the window the scale of the one beside it, so the size is converted to
+  that scale: the content is laid out as on the monitor it would open on. Snapshots are rendered from the window's
+  XAML and the map's own drawing, not from the screen, so they come out as before (checked 2026-10-15). `--visible`
+  opens such a run as before, to watch it. The app log says where it opened ("Window where it was last: 1300×800 at
+  …", "Window off every monitor, …: 2560×1392 at …").
   A saved place is checked at its monitor's scale, the smallest window and the inset from the corner too (review of
   2026-10-09: they were taken at 100 %, so at 150 % or 200 % a window under the smallest came back as it was).
 - **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when
@@ -2648,7 +2649,9 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
   A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
   `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
-  second.
+  second. A script's run is quiet (owner, 2026-10-15; *Quiet runs*, below): the window and the view open off every
+  monitor without taking the focus, and the app ends with the script; `--visible` shows both and keeps the app open
+  after a script without `exit`, as before.
 
 **Switching the language in a run** (developer builds only; 2026-10-10). `--switch-language <culture>` (`en-US`, `de-DE`,
 `qps-ploc`) switches the language once the window shows the game data, exactly as a choice in settings does but for
@@ -2657,18 +2660,21 @@ ends in the other. The layout check compares such a run with a fresh one in the 
 same (docs/LANGUAGES.md, "Layout check"). The folder build (`eng\publish.ps1`, a release configuration) hasn't got it;
 a Debug build and the dev build have.
 
-**Quiet runs** (owner, 2026-10-15: checking the UI while playing). A run that only takes pictures, `--snapshot` or
-`--demo` (so every run `tools\fake-raid.ps1` starts, and the layout check's), opens its window off every monitor,
-never maximised, shows it without activation and keeps it out of the taskbar and Alt+Tab (§4, "Screen anatomy", *The
-window*). Such runs opened maximised on the second monitor and took the focus, so a check or a layout check of 25
-minutes interrupted a game on the other monitor. Snapshots lose nothing: they are rendered from the window's XAML
-(`RenderTargetBitmap`) and the map's own drawing, never from the screen (a fake raid's window, rail, help, settings
-and map came out whole off every monitor, 2026-10-15). The demo's clip is recorded from Shturmap's own window
-(`tools\record-window`), which hasn't been tried off every monitor yet; if it can't find or record the window there,
-`-MoreArgs --visible` records it as before. `--visible` opens any such run to watch
-(`tools\fake-raid.ps1 -MoreArgs --visible`). Only the window's placement and showing change (AppWindow), no capture,
-input or hook in the app; normal runs and the installed app are untouched, and the developer view (`--dev-view`)
-still opens to be used.
+**Quiet runs** (owner, 2026-10-15: checking the UI while playing). A run that only takes pictures, `--snapshot`,
+`--demo` (so every run `tools\fake-raid.ps1` starts, and the layout check's) or a developer script's
+(`--dev-view --dev-script <file>`, which the QA pass replays flows with), opens its window off every monitor, never
+maximised, shows it without activation and keeps it out of the taskbar and Alt+Tab (§4, "Screen anatomy", *The
+window*). A script's developer view does the same, beside the main window and not over it (`WindowPlace.Beside`), and
+the run ends with its script, `exit` or not: nobody could see its windows to close them. Such runs opened maximised
+on the second monitor and took the focus, so a check or a layout check of 25 minutes interrupted a game on the other
+monitor. Snapshots lose nothing: they are rendered from the window's XAML (`RenderTargetBitmap`) and the map's own
+drawing, never from the screen (a fake raid's window, rail, help, settings and map came out whole off every monitor,
+2026-10-15; a script's run off every monitor hasn't been tried yet). The demo's clip is recorded from Shturmap's own
+window (`tools\record-window`), which hasn't been tried off every monitor yet; if it can't find or record the window
+there, `-MoreArgs --visible` records it as before. `--visible` opens any such run to watch
+(`tools\fake-raid.ps1 -MoreArgs --visible`), a script's with its view as before, until its `exit`. Only the windows'
+placement and showing change (AppWindow), no capture, input or hook in the app; normal runs and the installed app are
+untouched, and the developer view without a script (`--dev-view`, F12) still opens to be used.
 
 ### How the parts work
 
