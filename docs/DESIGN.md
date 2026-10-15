@@ -927,8 +927,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     of the label (QA pass, 2026-10-15: at 900×560 the stash lines' "AN EXAMPLE, NOT YOUR STASH" ran out of the label's
     frame, the German one by its last word), and leaving puts the map back as it was: a
     preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
-    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`) leaves the map's scene alone, so the last
-    position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
+    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`) leaves the map's scene alone, so
+    the last position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
     on the `tour:5` line below; `SceneGate.MakeAnew`). The
     previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
     list on Customs, called out as a list just read is (YOUR EXTRACTS THIS RAID with its rows, the view taking the
@@ -940,7 +940,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     what you have (0.5.0; the lines first opened the tour at its first chapter, which the owner reported as a bug on
     2026-10-11) `stash`, the SEEN IN YOUR STASH cue with example items (three keys and three items of the data's
     quests, the same for every player), `stash-card` and `stash-given`, an item card on the plate with a made-up
-    STASH line of today's date, from a screenshot with NOT ANY MORE or from the game's log. Nothing of
+    STASH line of today's date, from a screenshot with NOT ANY MORE or from the game's log; and for quest notes (0.6.0)
+    `notes`, a quest card on the plate, held so its field and each note's × show, with two made-up notes written today,
+    under A QUEST CARD, WITH EXAMPLE NOTES and beside AN EXAMPLE, NOT YOUR NOTES: Ballet Lover (where the data has none
+    by that name, the first quest by name with a place on a map), active whatever the player's is. Nothing of
     the player's is shown or changed, and nothing is bundled: every picture and preview is drawn when it shows, from the
     cache, by the app's own code (`MainWindow.WhatsNew`). **When:** at the first start of a version with lines, outside
     raids; the versions newer than the one last seen (`whatsNew.seen` in shturmap.db), newest first, each under its

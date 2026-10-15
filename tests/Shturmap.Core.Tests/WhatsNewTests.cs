@@ -128,6 +128,7 @@ public class WhatsNewTests
     [InlineData("stash", true)]
     [InlineData("stash-card", true)]
     [InlineData("stash-given", true)]
+    [InlineData("notes", true)]
     [InlineData("tour", false)]
     [InlineData("tour:1", false)]
     [InlineData("tour:5", false)]

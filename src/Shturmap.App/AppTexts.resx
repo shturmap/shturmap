@@ -452,6 +452,10 @@
     <value>AN EXAMPLE, NOT YOUR STASH</value>
     <comment>As PreviewExample, while What's New previews what you have (the SEEN IN YOUR STASH cue, an item card with an example mark). Capitals.</comment>
   </data>
+  <data name="PreviewExampleNotes" xml:space="preserve">
+    <value>AN EXAMPLE, NOT YOUR NOTES</value>
+    <comment>As PreviewExample, while What's New previews quest notes (a quest card with two made-up notes). Capitals.</comment>
+  </data>
   <data name="TourCardExample" xml:space="preserve">
     <value>THE RAID CARD, WITH EXAMPLE VALUES</value>
     <comment>The tour's example raid card: the line under it. Capitals.</comment>
@@ -487,6 +491,18 @@
   <data name="WhatsNewStashExample" xml:space="preserve">
     <value>AN ITEM CARD, WITH AN EXAMPLE MARK</value>
     <comment>What's New, the previews of what you have: the line under an item card shown with a made-up STASH line. Capitals.</comment>
+  </data>
+  <data name="WhatsNewNotesExample" xml:space="preserve">
+    <value>A QUEST CARD, WITH EXAMPLE NOTES</value>
+    <comment>What's New, the notes' preview: the line under a held quest card shown with two made-up notes. Capitals.</comment>
+  </data>
+  <data name="WhatsNewNoteExampleNewer" xml:space="preserve">
+    <value>Next raid: come in from the north.</value>
+    <comment>What's New, the notes' preview: the newer of two made-up notes on an example quest card, under its time (written now). A player's own words, jotted in a hurry; it fits any quest.</comment>
+  </data>
+  <data name="WhatsNewNoteExampleOlder" xml:space="preserve">
+    <value>Too many Scavs at noon. Go early.</value>
+    <comment>What's New, the notes' preview: the older of the two made-up notes, under its time (earlier today). A player's own words, as WhatsNewNoteExampleNewer.</comment>
   </data>
   <data name="PreviewClickToPlan" xml:space="preserve">
     <value>CLICK ITS ROW TO PLAN IT</value>
