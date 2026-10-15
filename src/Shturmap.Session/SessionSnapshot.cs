@@ -330,6 +330,13 @@ public sealed record SessionSnapshot
     /// <summary>The ticked objectives' ids.</summary>
     public IReadOnlySet<string> Done { get; init; } = new HashSet<string>();
 
+    /// <summary>
+    /// The player's notes in this mode, by quest id, each quest's newest first (<see cref="Shturmap.Session.QuestNotes"/>;
+    /// owner, 2026-10-15); empty when there are none. The quest card shows its quest's (<see cref="QuestCardView.Notes"/>).
+    /// The player's own words: never in the diagnostics or a report.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<QuestNote>> QuestNotes { get; init; } = new Dictionary<string, IReadOnlyList<QuestNote>>();
+
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];
 
