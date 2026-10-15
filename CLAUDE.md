@@ -17,6 +17,13 @@ Requests and ideas, the owner's included, are judged against the design, not agr
 
 Once the owner has decided, follow it and update `docs/DESIGN.md` if the decision changes it.
 
+**Design panels** (owner, 2026-10-15): a new design or interface idea is discussed on a panel of the best possible
+solutions for the owner to judge, as an HTML page (a local `.html` file or a private claude.ai artifact; never as
+local images): each option drawn as it would look in the app's visual language (`docs/DESIGN.md` §4), its trade-offs
+beside it, and a recommendation. The owner's choice goes into `docs/DESIGN.md` with its date, as the tour's and What
+You Have's panels did (`docs/NEXT.md`). The page's link stays out of the repository ("Secrets and private data",
+below).
+
 ## Secrets and private data: the repository is public (owner, 2026-10-03)
 
 Everything committed is public for good: history can't be taken back once pushed. So never put any of these into a
