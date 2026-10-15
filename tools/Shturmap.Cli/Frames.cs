@@ -31,8 +31,9 @@ internal static class Frames
     private const double GlideZoom = 3;
 
     // A symbol set off its place by more than this between two frames while the view glides has jumped: the view's own
-    // motion moves its place, not its offset from it.
-    private const float Jump = 2;
+    // motion moves its place, not its offset from it, and while it moves a symbol goes toward where the repel puts it a
+    // step a frame (MapRenderer.RepelStep, 2 px), a neighbour's push on top.
+    private const float Jump = 3;
 
     public static async Task RunAsync(List<string> args)
     {
@@ -336,6 +337,7 @@ internal static class Frames
         var maxMove = (Px: 0.0, Name: "", Frame: 0);
         var still = new List<string>();
         var jumps = new List<string>();
+        var leaders = new Dictionary<string, int>(StringComparer.Ordinal);
         Dictionary<string, (ExitRecord? Exit, SymbolRecord? Other)>? before = null;
         foreach (var frame in frames)
         {
@@ -383,7 +385,10 @@ internal static class Frames
                     }
                 }
                 if ((leader is null) != (wLeader is null))
+                {
                     lines.Add($"  leader   {name} {(leader is null ? "loses its leader" : "gets a leader")}");
+                    leaders[id] = leaders.GetValueOrDefault(id) + 1;
+                }
                 if (Math.Abs(r - wr) > 0.001)
                     lines.Add(Fmt($"  size     {name} r {wr:0.##} -> {r:0.##}"));
                 if (exit is null || was.Exit is null)
@@ -427,6 +432,8 @@ internal static class Frames
             s.AppendLine(Fmt($"  largest move of an extract's or transit's centre between two frames: {maxMove.Px:0.##} px{(maxMove.Px > 0 ? Fmt($" ({maxMove.Name}, frame {maxMove.Frame:000})") : "")}"));
         else
             s.AppendLine(Fmt($"  symbols set off their place by more than {Jump} px more or less from one frame to the next: {(jumps.Count == 0 ? "none" : jumps.Count.ToString(CultureInfo.InvariantCulture))}"));
+        var twice = leaders.Where(l => l.Value > 1).Select(l => NameOf(scene, l.Key)).ToList();
+        s.AppendLine(Fmt($"  leaders that came or went: {(leaders.Count == 0 ? "none" : Fmt($"{leaders.Values.Sum()}, {(twice.Count == 0 ? "none" : string.Join(", ", twice))} more than once"))}"));
         s.AppendLine($"  struck out, plain and transit symbols whose glow, echoes or \"?\" changed: {(still.Count == 0 ? "none" : string.Join("; ", still))}");
         var last = frames[^1];
         var differ = new List<string>();
