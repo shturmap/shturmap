@@ -105,6 +105,13 @@ window and at 1600x900 (docs/LANGUAGES.md, "Layout check"). It must say PASSED f
 pseudo-language; read the pseudo-language's warnings in `summary.md` for what a longer language will break next. Its
 pictures stay on the PC.
 
+## 6. Before a release: the QA pass (about an hour)
+
+The UI QA pass for a release (docs/QA.md, "What it runs"), by someone who didn't make the release's changes: the views
+in English and German at both sizes, the tour's seven chapters, What's New and each line's preview, every replay script
+in `tools\qa\`, `shturmap-cli frames` in both scenes, and the layout check of step 5 with `-SwitchCheck`, every picture
+opened. It must say PASS; a finding left open goes to the owner before the Release workflow runs.
+
 ## What the rules assume
 
 ⚠ marks a failure that says nothing: something just goes missing or reads wrong.

@@ -2344,7 +2344,9 @@ Rules:
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs, and writes what Copy
   diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render` (an animation: `shturmap-cli frames`, §8
   "Developer aids"); never capture the user's screens. Such a run opens its window unseen, off every monitor and
-  without taking the focus, so it can run while the owner plays ("Developer aids", *Quiet runs*).
+  without taking the focus, so it can run while the owner plays ("Developer aids", *Quiet runs*). A change to what
+  the player sees, and every release, is then reviewed by a UI QA pass that runs these checks and judges their pictures
+  against this document (owner, 2026-10-15; docs/QA.md).
   `--verbose` adds the app log's DEBUG lines; `--study` (developer builds) keeps a study log for one session; `--show-report` opens
   the Report dialog with an example and what's sent, `--show-crash` the question after a crash (for snapshots;
   snapshots send nothing); `--send-report <text> <folder>` is a release's delivery check (§8 "Reports"; with
