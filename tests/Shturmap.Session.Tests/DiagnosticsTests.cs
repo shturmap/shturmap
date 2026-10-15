@@ -11,6 +11,9 @@ public class DiagnosticsTests
     private const string Profile = @"C:\Users\Jane Doe";
     private const string ProfileId = "5f2a9c1e8b7d6a4f3e2d1c0b";
 
+    // The player's own words on a quest's card (owner, 2026-10-15): never in the diagnostics.
+    private const string NoteText = "Meet at the old gas station with the flare";
+
     private static SessionSnapshot Snapshot(LoadProblem? problem = null)
     {
         var install = new InstallCandidate(InstallKind.Steam, @"C:\Users\Jane Doe\Games\EFT\build", @"C:\Users\Jane Doe\Games\EFT\build\Logs",
@@ -28,6 +31,10 @@ public class DiagnosticsTests
             DataProblem = problem,
             Quests = quests,
             StudyLogOn = true,
+            QuestNotes = new Dictionary<string, IReadOnlyList<QuestNote>>
+            {
+                ["5936d90786f7742b1420ba5b"] = [new QuestNote("aaaa0001", new DateTimeOffset(2026, 1, 1, 9, 5, 0, TimeSpan.FromHours(1)), NoteText)],
+            },
         };
     }
 
@@ -64,6 +71,8 @@ public class DiagnosticsTests
         Assert.Contains(@"%USERPROFILE%\Games", text);
         Assert.DoesNotContain("5936d90786f7742b1420ba5b", text);
         Assert.DoesNotContain("5967733e86f774602332fc84", text);
+        Assert.DoesNotContain("gas station", text);
+        Assert.DoesNotContain("aaaa0001", text);
     }
 
     [Fact]

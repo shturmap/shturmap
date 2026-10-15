@@ -2530,6 +2530,20 @@ stands. Written as a temporary file and one move, after each change; one that ca
 aside as `stash.json.unreadable` and the marks start over (the next screenshot or log message brings them back). It
 is never in the shared cache, a report or the diagnostics. Deleted with the data folder.
 
+**The notes file** (`notes.json` in the data folder; owner, 2026-10-15; `QuestNotes`): the notes the player writes on
+a quest's card, one set per quest and game mode (PvE and PvP apart, as ticks and picks are), each with when it was
+written. Add and delete only, no editing: the time always says when the words were written. A note is trimmed, keeps
+its line breaks and is cut at 500 characters; an empty one isn't added. Newest first wherever they are listed.
+Its shape: `version` 1; `notes`, in the order written, each with `id` (eight hex digits, by which it is deleted),
+`mode` (`pve`, `pvp`), `quest` (tarkov.dev's task id), `at` (to the second, with the PC's offset:
+`2026-01-01T15:40:12+01:00`) and `text`, readable as written. Written as a temporary file and one move, after each
+change, before the snapshot that shows it. One that can't be read is set aside with the time in its name, as the
+settings file is (`notes.json.unreadable-20260101-1540`, never over an earlier one: unlike the stash's marks, nothing
+brings the notes back), and the notes start empty; one that is only out of reach for now is left as it is and not
+written over that run; either is a WARN line in the app log. The notes are the player's own words: never in a report,
+the diagnostics, the app log or the study log, which records `note.add` (quest, length) and `note.delete` (quest)
+only. Deleted with the data folder.
+
 The download cache (tarkov.dev's data, map artwork, the pictures drawn from it, portraits, icons and grid images)
 stays shared in `%LOCALAPPDATA%\Shturmap\cache`, so nothing downloads twice. Two Shturmaps can write it at once: every download goes
 to a temporary file of its own (`CachedHttp.TempFor`, the process id and a GUID) and replaces the cached file in one
@@ -3001,8 +3015,8 @@ or failed with the kind, status and plain reason, and when it was checked); the 
 screenshots after reading", "Read the extract list from screenshots" and "Read your stash from menu screenshots" are on
 (§2; the two readings with the recognition's language); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
-cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file. Copying sends nothing;
-a report carries the same text when the player keeps "Include diagnostics", shown first.
+cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file or the notes file.
+Copying sends nothing; a report carries the same text when the player keeps "Include diagnostics", shown first.
 
 **Reports** (owner, 2026-10-03: "as easy as possible … one coherent easy to use thing, otherwise people won't
 bother", and crash reports as a mode the player chooses; Sentry, EU region; crash reports "Ask after a crash" by

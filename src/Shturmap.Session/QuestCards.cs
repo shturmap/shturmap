@@ -80,6 +80,10 @@ public sealed record QuestCardView(
     string? WikiLink)
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
+
+    /// <summary>The player's notes on the quest in this mode, newest first (<see cref="QuestNotes"/>; owner, 2026-10-15);
+    /// empty when it has none.</summary>
+    public IReadOnlyList<QuestNote> Notes { get; init; } = [];
 }
 
 public static class QuestCards
@@ -90,8 +94,11 @@ public static class QuestCards
     /// <param name="sources">Where items come from, for one line under each thing to bring.</param>
     /// <param name="ticks">The objectives the player ticked as done, each with its day (<see cref="ObjectiveTicks"/>):
     /// they read as done and say why, and BRING lists only what the open objectives need.</param>
+    /// <param name="notes">The player's notes in this mode by quest id (<see cref="SessionSnapshot.QuestNotes"/>): the
+    /// card carries its quest's, newest first.</param>
     public static QuestCardView? Build(GameData data, IReadOnlyDictionary<string, QuestStatus> quests, string questId,
-        Func<string, string?>? live = null, ItemSources? sources = null, IReadOnlyDictionary<string, DateOnly>? ticks = null)
+        Func<string, string?>? live = null, ItemSources? sources = null, IReadOnlyDictionary<string, DateOnly>? ticks = null,
+        IReadOnlyDictionary<string, IReadOnlyList<QuestNote>>? notes = null)
     {
         if (!data.Tasks.TryGetValue(questId, out var task))
             return null;
@@ -126,7 +133,10 @@ public static class QuestCards
             Needs(data, task, sources, quests, ticks),
             unlocks.Take(ShownUnlocks).ToList(),
             unlocks.Count > ShownUnlocks ? SessionTexts.QuestUnlocksMore(count: unlocks.Count - ShownUnlocks) : "",
-            task.WikiLink);
+            task.WikiLink)
+        {
+            Notes = notes?.GetValueOrDefault(questId) ?? [],
+        };
     }
 
     internal static CardQuest Reference(GameData data, ApiTask task) => new(task.Id, task.Name, KindOf(task), task.Trader);

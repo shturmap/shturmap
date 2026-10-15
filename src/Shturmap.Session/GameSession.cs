@@ -275,6 +275,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             if (!_readStash)
                 AppLog.Info("Read your stash from menu screenshots: off");
             OpenStash();
+            OpenNotes();
             if (_deleteScreenshots)
                 AppLog.Info("Delete screenshots after reading: on");
 #if DEVTOOLS
@@ -2133,6 +2134,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             PickSlotsByMap = _picks?.ByMap(_mode).Keys.ToDictionary(m => m, m => _picks.Slots(_mode, m)) ?? new Dictionary<string, IReadOnlyDictionary<string, int>>(),
             Ticks = _ticked,
             Done = _done,
+            QuestNotes = _notes?.Of(_mode) ?? NoNotes,
             AnyMap = _anyMap,
             MapPlan = _data is not null && railMap is not null
                 ? _plan.FirstOrDefault(p => p.NormalizedName == railMap.NormalizedName)
