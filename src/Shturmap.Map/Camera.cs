@@ -141,9 +141,10 @@ public sealed class Camera
     /// <paramref name="padding"/> pixels on the left, top and bottom and <paramref name="labelRoom"/> pixels on the right
     /// for their names, as every framing keeps them (<see cref="FramingAbove"/>). It is a fit, not a zoom out only: points
     /// already in view are framed all the same, but never past the zoom limits (<paramref name="minZoom"/>,
-    /// <paramref name="maxZoom"/>: the map's <see cref="MinZoom"/> and <see cref="MaxZoom"/>), so one extract by the
-    /// player doesn't fill the window. Null with nothing to frame, or in a view with no room for the padding (minimised,
-    /// not laid out). Pure: the window moves the view to it with MapView.AnimateView.
+    /// <paramref name="maxZoom"/>: the map's <see cref="MinZoom"/> and <see cref="MaxZoom"/>), so points close together
+    /// stop at the closest zoom the wheel reaches; a caller that wants the view only to zoom out gives its zoom as
+    /// <paramref name="maxZoom"/>. Null with nothing to frame, or in a view with no room for the padding (minimised, not
+    /// laid out). Pure: the window moves the view to it with MapView.AnimateView.
     /// </summary>
     public static (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport, float labelRoom,
         float padding, double minZoom, double maxZoom)
