@@ -333,6 +333,37 @@ public sealed class DevToolsTests : IDisposable
         Assert.Equal("exit", steps[^1].Verb);
     }
 
+    // tools\qa (docs/QA.md, "Replay scripts"): one .devscript and one .md of expectations per flow, every step one the
+    // app knows, each still in a folder of its own flow under %TEMP%\shturmap-qa, and the run ends with "exit".
+    [Fact]
+    public void Every_qa_replay_reads_without_errors_and_has_its_expectations_beside_it()
+    {
+        var scripts = Directory.GetFiles(Path.Combine(RepositoryRoot(), "tools", "qa"), "*.devscript");
+        Assert.NotEmpty(scripts);
+        foreach (var script in scripts)
+        {
+            var flow = Path.GetFileNameWithoutExtension(script);
+            Assert.True(File.Exists(Path.ChangeExtension(script, ".md")), $"{flow}.md is missing beside {flow}.devscript");
+            var (steps, errors) = DevScript.Parse(File.ReadAllText(script));
+            Assert.Empty(errors);
+            Assert.All(steps.Where(s => s.Verb == "snapshot"), s => Assert.StartsWith($@"%TEMP%\shturmap-qa\{flow}\", s.Arg(0)));
+            Assert.Equal("exit", steps[^1].Verb);
+        }
+    }
+
+    // DESIGN.md §8's list of the script's verbs follows DevScript.Verbs, the one source of truth: none is left out.
+    [Fact]
+    public void Designs_list_of_script_verbs_names_every_verb_the_parser_knows()
+    {
+        var design = File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "DESIGN.md"));
+        var start = design.IndexOf("`--dev-script <file>` plays", StringComparison.Ordinal);
+        Assert.True(start >= 0, "DESIGN.md §8 has no --dev-script bullet");
+        var end = design.IndexOf("for checks without clicking", start, StringComparison.Ordinal);
+        Assert.True(end > start, "DESIGN.md's --dev-script bullet doesn't end its list with \"for checks without clicking\"");
+        var list = design[start..end];
+        Assert.All(DevScript.Verbs.Keys, verb => Assert.Contains("`" + verb, list));
+    }
+
     private static string RepositoryRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

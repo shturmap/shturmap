@@ -40,7 +40,7 @@ public static class DevScript
         ["end"] = "the raid ends",
         ["cancel"] = "matching cancelled",
         ["transit"] = "<normalized name>: a transit to that map, during a raid",
-        ["quest"] = "start | complete | fail <quest id or part of its name>",
+        ["quest"] = "start | complete | fail <quest id or part of its name>; here [<n>]: starts the first n (8) of the shown map's quests by level",
         ["place"] = "<fx> <fy> [<to fx> <to fy>]: a click (or drag, for the facing) on the map at fractions of its size",
         ["pick"] = "<id or name>: picks (or unpicks) the quest for the coming raid, as its pen does",
         ["tick"] = "<quest id or name> <n>: ticks (or unticks) the quest's n-th objective as done, as the box on its card does; not saved",

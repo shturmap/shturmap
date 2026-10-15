@@ -4,7 +4,7 @@
 # the picture with them boxed (<picture>.problems.png; src\Shturmap.App\Dev\LayoutCheck.cs), and sums them up in
 # <Out>\summary.md.
 # Usage: .\tools\layout-check.ps1 -Out <folder> [-Exe <a developer build's Shturmap.exe>] [-Languages en-US,de-DE,qps-ploc]
-#        [-Sizes 900x560,1600x900] [-States plan,raid,...] [-SwitchCheck] [-SummaryOnly]
+#        [-Sizes 900x560,1600x900] [-States plan,raid,...] [-SwitchCheck] [-SummaryOnly] [-MoreArgs '--data', <folder>]
 # Exit code: 0 when every language but the pseudo-language is free of problems (the pseudo-language's are warnings:
 # they forecast what a longer language will break); 1 when one has a problem, or a switch differs from a fresh start;
 # 2 when a view couldn't be checked.
@@ -27,7 +27,10 @@ param(
   # Seconds from the start to the snapshot (tools\fake-raid.ps1 -SnapshotAfter).
   [int] $SnapshotAfter = 16,
   # Only sum up again what an earlier run left in -Out (after a fix to this script, or with other -Languages).
-  [switch] $SummaryOnly
+  [switch] $SummaryOnly,
+  # More arguments for the app in every run, passed on as they are (tools\fake-raid.ps1 -MoreArgs): '--data', <folder>
+  # puts the runs' app log there instead of %LOCALAPPDATA%\Shturmap-dev (docs/QA.md).
+  [string[]] $MoreArgs = @()
 )
 $ErrorActionPreference = 'Stop'
 # Typographic characters by their codes: Windows PowerShell 5.1 reads a script without a BOM in the ANSI code page.
@@ -129,7 +132,7 @@ public static class LayoutCheckMonitors
     if ($spec.PlanOnly) { $arguments.PlanOnly = $true }
     if ($spec.Tour) { $arguments.Tour = $spec.Tour }
     if ($spec.ShowQuest) { $arguments.ShowQuest = $spec.ShowQuest }
-    $appArgs = @($spec.AppArgs) + @($more) | Where-Object { $_ }
+    $appArgs = @($spec.AppArgs) + @($more) + @($MoreArgs) | Where-Object { $_ }
     if ($appArgs) { $arguments.MoreArgs = $appArgs }
     & $fakeRaid @arguments | Out-Null
   }
