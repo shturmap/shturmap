@@ -57,7 +57,15 @@ public static class DevScript
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs",
         ["exit"] = "closes the app",
+        ["note"] = "<quest id or name> <text>: adds a note to the quest, as the field on its card does (the quest one word or \"quoted\"; \\n in the text breaks the line); not saved",
     };
+
+    /// <summary>
+    /// A <c>note</c> step's quest and words: the first word is the quest (its id or its name, "quoted" when the name has
+    /// spaces), the rest of the line is the note, where "\n" breaks the line. Null without both.
+    /// </summary>
+    public static (string Quest, string Text)? Note(DevStep step) =>
+        step.Args.Count < 2 ? null : (step.Args[0], string.Join(' ', step.Args.Skip(1)).Replace("\\n", "\n", StringComparison.Ordinal));
 
     public static (IReadOnlyList<DevStep> Steps, IReadOnlyList<string> Errors) Parse(string text)
     {

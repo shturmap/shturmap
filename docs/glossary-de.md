@@ -102,6 +102,7 @@ gender.
 | the game's extract list; to check (against it); your side; for your side | Extract-Liste; abgleichen; deine Seite; für deine Seite | side: PMC ⇄ SCAV; „Mach zum Abgleichen einen Screenshot der Extract-Liste“ |
 | anywhere; after the raid; raid start | überall; nach dem Raid; Raid-Start (der) | the raid card's place for kills and finds; hand-overs; „beim Raid-Start oder zweimal O“ |
 | done; DONE; tick, untick | erledigt; ERLEDIGT; abhaken, Haken entfernen | „Erledigt · von dir abgehakt, 4. Okt.“ |
+| note (the player's own words: on a quest card, or added to a sent crash report); NOTES; Add a note…; ADD A NOTE; Delete this note | Notiz (die), Notizen; NOTIZEN; Notiz hinzufügen…; NOTIZ HINZUFÜGEN; Diese Notiz löschen | the quest card's last section (DESIGN.md §4, "Quest cards", *Notes*) and the crash question's link; never Hinweis, which is the app's notice |
 | place; loose (lying on the map) | Spot; Loot, Loot-Spot | „Einer von 4 möglichen Spots“; „Loot auf Customs · 3 Spots“, „Loot hier · 3 Spots“; the legend: „Loot-Spot eines Items“ |
 | marker (on the map) | Marker (der) | the MS2000 Marker too; the context tells |
 | guide line; facing | Linie; Blickrichtung | on screen: gestrichelte Linie |

@@ -173,6 +173,43 @@
                          ToolTipService.ToolTip="{x:Bind local:ViewTexts.QuestCardWikiTip}">
           <TextBlock Text="{x:Bind local:ViewTexts.QuestCardWikiPage}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource AmberBrush}" />
         </HyperlinkButton>
+
+        <!-- The player's own notes on the quest (owner, 2026-10-15): newest first, each with when it was written, on any
+             card that has them. The field and the × only on a held card: a hover card goes with the pointer. Added and
+             deleted, never edited, so the stamp always says when the words were written. Shown from the code
+             (ShowNotes), which never makes the field anew: its words and its focus stay while the card follows the
+             session's snapshots. -->
+        <StackPanel x:Name="NotesSection" Visibility="Collapsed">
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.QuestCardNotes}" Margin="0,2,0,4" />
+          <ItemsControl x:Name="NoteRows">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="controls:NoteRow">
+                <Grid ColumnSpacing="8" Padding="0,3">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{x:Bind Stamp}" Style="{StaticResource NoteText}" />
+                    <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <!-- A notice's ×, at once and without a question: a note is a few words, written again as fast. -->
+                  <Button Grid.Column="1" Width="24" Height="24" Padding="0" Margin="0,-4,0,0" VerticalAlignment="Top"
+                          Background="Transparent" BorderThickness="0" Click="OnNoteDeleteClick" Visibility="{x:Bind Delete}"
+                          ToolTipService.ToolTip="{x:Bind local:ViewTexts.QuestCardNoteDeleteTip}"
+                          AutomationProperties.Name="{x:Bind local:ViewTexts.QuestCardNoteDeleteTip}">
+                    <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                  </Button>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <!-- The Report dialog's text box, one line to start with. Enter adds the note, Shift+Enter breaks the line, Esc
+               clears it; while it has the focus none of the window's shortcuts fires (MainWindow.TypingText). -->
+          <TextBox x:Name="NoteField" AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="120" Margin="0,4,0,0"
+                   ScrollViewer.VerticalScrollBarVisibility="Auto" PreviewKeyDown="OnNoteKeyDown"
+                   PlaceholderText="{x:Bind local:ViewTexts.QuestCardNoteAdd}" />
+        </StackPanel>
       </StackPanel>
     </ScrollViewer>
   </Border>

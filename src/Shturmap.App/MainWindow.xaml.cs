@@ -1297,7 +1297,7 @@ public sealed partial class MainWindow : Window
     {
         if (_snapshot is not { Data: { } data } s)
             return null;
-        var view = QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources, s.Ticks);
+        var view = QuestCards.Build(data, s.Quests, questId, LiveText, s.Sources, s.Ticks, notes: s.QuestNotes);
         if (s.Marks.Count == 0 || view is null)
             return view;
         // The card's BRING rows carry the marks as Plan's do (Session.StashMarks).
@@ -1319,7 +1319,12 @@ public sealed partial class MainWindow : Window
         switch (key)
         {
             case CardKey.Quest q when BuildCard(q.Id) is { } view:
-                return new QuestCard(view);
+                var questCard = new QuestCard(view);
+                // A note written on the card, or deleted from it (owner, 2026-10-15): the card follows the session's
+                // next snapshot, which comes after the notes file is written.
+                questCard.NoteAdded += (quest, text) => _ = _session.AddQuestNoteAsync(quest, text);
+                questCard.NoteDeleted += note => _ = _session.DeleteQuestNoteAsync(note);
+                return questCard;
             case CardKey.Item i when _snapshot is { Data: not null } s:
                 var card = new ItemCard(BuildItemCard(s, i.Id));
                 // NOT ANY MORE: the mark goes, from any source; the card follows the session's next snapshot.
@@ -2194,6 +2199,11 @@ public sealed partial class MainWindow : Window
 
     // ---- keyboard (only while this window has focus; Shturmap registers no global hotkeys) ----
 
+    // A text box has the keyboard: a held quest card's note field (owner, 2026-10-15). Its keys are text, so none of
+    // the window's shortcuts fires, Esc included (the field clears itself), and typing a note never moves the map or
+    // changes the picks. Asked of the window's XAML root: the cards lie in popups, which share it.
+    private bool TypingText => Content?.XamlRoot is { } xamlRoot && FocusManager.GetFocusedElement(xamlRoot) is TextBox;
+
     private void AddShortcuts(UIElement root)
     {
         // Accelerators on the root would otherwise show their key ("F") as a tooltip over the whole window.
@@ -2215,6 +2225,9 @@ public sealed partial class MainWindow : Window
                     }
                     return;
                 }
+                // In a note's field keys are text: unhandled, they go on to it.
+                if (TypingText)
+                    return;
                 // While the tour is up, its keys step through it, Esc ends it, and the rest do nothing.
                 if (TourOpen)
                 {
@@ -2239,7 +2252,7 @@ public sealed partial class MainWindow : Window
         })
         {
             var accelerator = new KeyboardAccelerator { Key = tourKey };
-            accelerator.Invoked += (_, e) => e.Handled = TourOpen && !ReportOpen && TourKey(tourKey);
+            accelerator.Invoked += (_, e) => e.Handled = TourOpen && !ReportOpen && !TypingText && TourKey(tourKey);
             root.KeyboardAccelerators.Add(accelerator);
         }
 
@@ -2261,7 +2274,7 @@ public sealed partial class MainWindow : Window
         var settingsKey = new KeyboardAccelerator { Key = (Windows.System.VirtualKey)188, Modifiers = Windows.System.VirtualKeyModifiers.Control };
         settingsKey.Invoked += (_, e) =>
         {
-            if (ReportOpen || TourOpen)
+            if (ReportOpen || TourOpen || TypingText)
                 return;
             Study.Ui("key", ("key", "Ctrl+Comma"));
             ShowSettings();
@@ -2272,7 +2285,7 @@ public sealed partial class MainWindow : Window
         var followKey = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F, Modifiers = Windows.System.VirtualKeyModifiers.Shift };
         followKey.Invoked += (_, e) =>
         {
-            if (ReportOpen || TourOpen)
+            if (ReportOpen || TourOpen || TypingText)
                 return;
             Study.Ui("key", ("key", "Shift+F"));
             SetFollow(!Map.Follow, "key");
@@ -2284,7 +2297,7 @@ public sealed partial class MainWindow : Window
 #endif
         root.CharacterReceived += (_, e) =>
         {
-            if (e.Character == '?' && !ReportOpen && !TourOpen)
+            if (e.Character == '?' && !ReportOpen && !TourOpen && !TypingText)
             {
                 ShowHelp();
                 e.Handled = true;

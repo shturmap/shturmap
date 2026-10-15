@@ -19,17 +19,20 @@ public sealed partial class GameSession
     /// Adds a note to a quest in the mode Shturmap is in, stamped now. A text that is empty or only white space adds
     /// nothing (the card doesn't offer it); a longer one than <see cref="QuestNotes.MaxLength"/> characters is cut.
     /// </summary>
-    public async Task AddQuestNoteAsync(string questId, string text)
+    /// <param name="save">False for a note for this session only (the developer script's <c>note</c>, as its <c>tick</c>):
+    /// a script leaves no notes in the data folder.</param>
+    public async Task AddQuestNoteAsync(string questId, string text, bool save = true)
     {
         await _gate.WaitAsync();
         try
         {
             if (_notes is null || string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(text))
                 return;
-            var note = _notes.Add(_mode, questId, text, new DateTimeOffset(Clock()));
+            var note = _notes.Add(_mode, questId, text, new DateTimeOffset(Clock()), save);
             // How long, never what: the words are the player's.
             Study.Ui("note.add", ("quest", questId), ("length", note.Text.Length));
-            SaveNotes();
+            if (save)
+                SaveNotes();
             Publish();
         }
         finally

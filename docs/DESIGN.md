@@ -1759,7 +1759,8 @@ Lightkeeper; the state and where it came from ("Active · from the game log, 25 
 glyph, where it is, the item it is about and, in a raid on its map, how far and which way it is from the last fix
 ("69 m · AHEAD-LEFT · 8 M UP": the raid card's style, the figure as it is and the direction and height in capitals;
 until 2026-10-09 in small letters, beside the raid card's capitals); BRING (keys and items, with icons and maps);
-UNLOCKS (the quests it opens); a link to the wiki page. Nothing else: no rewards, no guides.
+UNLOCKS (the quests it opens); a link to the wiki page; NOTES, the player's own words (*Notes*, below). Nothing else:
+no rewards, no guides.
 The state line is in the accent while the quest is active ("on") and muted for every other state. It was green,
 which on the map and in the rail is a PMC extract (one colour, one meaning; the review of 2026-10-04, B2).
 An objective says where it is once (the review, C2): the line of map names under its text is left out when the
@@ -1795,6 +1796,28 @@ a single objective is done, so a quest that takes several raids kept leading to 
   objective asked for. A quest with no raid work left appears on no map. Its type glyph stays the whole quest's.
 - Developer builds: the study log records `tick` and `untick` (objective, quest, how: card, done, dev); the
   developer script's `tick <quest> <n>` sets one for the session only, and `show <quest>` holds a card for a snapshot.
+
+**Notes: the player's own words on a quest** (owner, 2026-10-15). What the player wants to remember of a quest for the
+next raid ("Behind the bar, ground floor"), on its card, where they look for it.
+- **Where.** NOTES, the card's last section, after the wiki link: every note, newest first, its stamp over its words. The
+  stamp is when it was written, "1 Jan 15:40", the day as the tick's is written and the time (`QuestCards.NoteStamp`,
+  in this PC's time; German "1. Jan., 15:40"), in the note style; the words in the body's, wrapping, their line breaks
+  kept. A held card adds a field under them, the Report dialog's text box, one line to start with ("Add a note…"), and
+  a × at the end of each note (a notice's, "Delete this note"). A hover card shows the notes alone, and no section when
+  there are none: it leaves with the pointer, no place to type or to delete in (a click holds it, and the field is
+  there). A held card without notes shows the heading and the field. A card that grows long scrolls inside, as any card
+  does (below).
+- **Add and delete only, no editing**: the stamp always says when the words were written. Enter adds the note and
+  empties the field, Shift+Enter breaks the line, Esc clears the field; the × deletes at once, without asking. A note
+  is trimmed and cut at 500 characters (the field takes no more).
+- **Never needed.** A note can be written any time, also in a raid (on a card held then), but nothing asks for one and
+  nothing reads one: the map, the rail, the plan and the cues don't know them.
+- **The keys are the field's.** While it has the focus none of the window's shortcuts fires, Esc included ("Keyboard"):
+  typing a note never moves the map or changes the picks.
+- **Kept.** One set per quest and game mode, in `notes.json` (§8, "The notes file"). The card follows the session's
+  next snapshot, which comes after the file is written; the field is never made anew, so what is typed in it and its
+  focus stay meanwhile.
+- Developer builds: the developer script's `note <quest> <text>` adds one for the session only, for a snapshot.
 
 **Hand-overs: a mark on what gets the thing, not a line** (owner, 2026-10-05: "many quests have a thing where you
 have to get something or pick up something and then at a later step you need to hand it off after the raid. That
@@ -2002,7 +2025,9 @@ read.
 
 A card is never taller than the room there is in the window. A longer card (Collector, a quest with many
 objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay in reach (2026-10-04: it was cut at
-the window's edge).
+the window's edge). A card that grows while it is open (held, with its NOTES field; a note added; a tick's line) moves
+up as far as it needs to stay in the window, never down (2026-10-15: placed by a row near the window's foot, the
+field it gets when held lay below the edge, where nothing scrolls it into view).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow. The card's body keeps its subject in
@@ -2145,6 +2170,12 @@ Keyboard accelerators sit on the window root with their placement hidden; WinUI 
 one's key as a tooltip over the whole window. "+" is a key of its own on some keyboards and Shift with "=" on
 others (US); both are one virtual key, and a shortcut without Shift never saw the second, so "+" didn't zoom on a
 US keyboard (`ZoomKeys`; review of 2026-10-04).
+
+**A text box has the keys** (owner, 2026-10-15, with the quest card's notes). While one has the focus, a held card's
+note field, none of these shortcuts fires: its keys are text, and Esc is the field's (it clears it). The Report dialog
+already kept its keys this way (Esc closes it there). Every shortcut is an accelerator on the window's root or its
+one `CharacterReceived` ("?"), and each lets a key go on, unhandled, while a text box has the focus
+(`MainWindow.TypingText`, asked of the window's XAML root, which the cards' popups share).
 
 **The rail's rows by keyboard** (Down and Up through the rows, Enter as a click on one, P as its pen; the review of
 2026-10-04, E6: the linked highlight needed a pointer) were removed on 2026-10-09 (owner): this section itself said
@@ -2669,7 +2700,9 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
   `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `wait <s>`,
-  `snapshot <folder>`, `exit`), for checks without clicking; `snapshot` also saves the view's two tabs.
+  `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
+  the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking;
+  `snapshot` also saves the view's two tabs.
   A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
   `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
   second. A script's run is quiet (owner, 2026-10-15; *Quiet runs*, below): the window and the view open off every
