@@ -48,8 +48,15 @@ public static partial class MapRenderer
 
     /// <param name="stepBack">How markers outside the focus step back; <see cref="StepBackOf"/> unless a developer
     /// render compares alternatives.</param>
-    public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null)
+    /// <param name="now">The frame's time, which every animation and the player's age are drawn at; the clock's when
+    /// null. Read once, so a whole frame shows one moment, and a frame drawn at a given time is the same every run
+    /// (owner, 2026-10-15: the QA pass must see animations frame by frame; <c>shturmap-cli frames</c>).</param>
+    /// <param name="trace">Filled with what the frame drew of each symbol (<see cref="SymbolTrace"/>), for that look;
+    /// null in the app.</param>
+    public static void Render(SKCanvas canvas, Camera camera, MapScene scene, float uiScale = 1, Func<MarkerKind, bool, StepBack>? stepBack = null,
+        DateTime? now = null, ICollection<SymbolTrace>? trace = null)
     {
+        var time = now ?? DateTime.Now;
         canvas.Clear(Background);
         // The zoom limit is the map's that is drawn, not the one's fitted last (a preview leaves its own behind).
         camera.LimitTo(scene.Projection.WorldRect, 24 * uiScale, Camera.LabelRoom * uiScale);
@@ -74,7 +81,7 @@ public static partial class MapRenderer
         if (sheet)
             DrawContainers(canvas, camera, scene, uiScale);
 
-        var layout = LayoutOf(camera, scene, uiScale);
+        var layout = LayoutOf(camera, scene, uiScale, time);
         foreach (var name in layout.Names)
             DrawMapName(canvas, name, uiScale);
         var hazardLabels = new List<(string Text, SKPoint At)>();
@@ -98,9 +105,11 @@ public static partial class MapRenderer
         DrawSpawns(canvas, camera, scene, uiScale);
         // The extracts on the player's list this raid are lit, under every symbol, so a glow never covers one; a list
         // just read rings them out.
-        DrawExitsLit(canvas, scene, layout.Markers, uiScale);
-        DrawUnderlay(canvas, scene, layout.Markers, uiScale);
-        void Draw(ShownMarker marker) => DrawMarker(canvas, scene, marker, uiScale);
+        // What a trace records of a symbol: its place and size from the layout, its animation from the drawing below.
+        var traced = trace is null ? null : new Dictionary<ShownMarker, SymbolTrace>(ReferenceEqualityComparer.Instance);
+        DrawExitsLit(canvas, scene, layout.Markers, uiScale, time, traced);
+        DrawUnderlay(canvas, scene, layout.Markers, uiScale, time);
+        void Draw(ShownMarker marker) => DrawMarker(canvas, scene, marker, uiScale, time, traced);
 
         // Markers outside the focus step back while something is highlighted (easing with the scene's Dim), each kind
         // by its own measure (StepBackOf), one layer per measure so overlapping ones fade as one. A marker on another
@@ -140,13 +149,21 @@ public static partial class MapRenderer
             // What is pointed at pulses where it is in view; out of view, its chevron does (owner, 2026-10-04: "if a
             // quest marker is outside of the current viewport, it should probably indicate that").
             if (chevron.Pointed && scene.Pulsing)
-                DrawPulse(canvas, scene, chevron.At, 7 * uiScale, chevron.Color, uiScale);
+                DrawPulse(canvas, scene, chevron.At, 7 * uiScale, chevron.Color, uiScale, time);
             DrawChevron(canvas, chevron, uiScale);
         }
         DrawScaleBar(canvas, layout.Scale, uiScale);
-        DrawLeaving(canvas, camera, scene, uiScale);
-        DrawPlayer(canvas, camera, scene, uiScale);
+        DrawLeaving(canvas, camera, scene, uiScale, time);
+        DrawPlayer(canvas, camera, scene, uiScale, time);
         DrawReplay(canvas, camera, scene, uiScale);
+        if (trace is not null)
+        {
+            foreach (var marker in layout.Markers)
+            {
+                if (traced!.TryGetValue(marker, out var drawn))
+                    trace.Add(drawn);
+            }
+        }
     }
 
     // ---- stepping back: what is outside the focus while something is highlighted ----
@@ -305,13 +322,15 @@ public static partial class MapRenderer
     /// of a frame's work (the review of 2026-10-04, A17). The view, the display's scale and the scene's data decide
     /// the layout; the clock only through the player's age tag, which changes with the minute.
     /// </summary>
-    public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui)
+    /// <param name="now">The frame's time (<see cref="Render"/>'s); the clock's when null.</param>
+    public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui, DateTime? now = null)
     {
-        var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
+        var time = now ?? DateTime.Now;
+        var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, time) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
         var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age, UiLanguage.Code);
         if (scene.LastLayout is { } last && last.Key == key)
             return last.Layout;
-        var layout = Layout(camera, scene, ui);
+        var layout = Layout(camera, scene, ui, time);
         scene.LastLayout = (key, layout);
         return layout;
     }
@@ -322,9 +341,11 @@ public static partial class MapRenderer
     /// left, above and below its symbol and is dropped when all four are taken; no label covers a symbol. A selected
     /// label that finds no free place still shows on the right, giving way only to its own copies.
     /// </summary>
-    public static MapLayout Layout(Camera camera, MapScene scene, float ui)
+    /// <param name="now">The frame's time (<see cref="Render"/>'s): the player's age tag takes room. The clock's when null.</param>
+    public static MapLayout Layout(Camera camera, MapScene scene, float ui, DateTime? now = null)
     {
-        var markers = ShownMarkers(camera, scene, ui);
+        var time = now ?? DateTime.Now;
+        var markers = ShownMarkers(camera, scene, ui, time);
         var taken = new List<SKRect>();
         foreach (var m in markers)
         {
@@ -352,7 +373,7 @@ public static partial class MapRenderer
         {
             var at = Screen(camera, scene, player.Position);
             taken.Add(Square(at, (PlayerRing + 3) * ui));
-            var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now);
+            var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, time);
             if (age >= PlayerOld)
             {
                 var (text, stale) = AgeTag(age);
@@ -792,7 +813,8 @@ public static partial class MapRenderer
     /// <see cref="SideBySide"/>): their <see cref="ShownMarker.At"/> is where they are drawn, <see cref="ShownMarker.Beside"/>
     /// says so, and <see cref="ShownMarker.Leader"/> holds the place of one set so far off it that a leader joins them.
     /// </summary>
-    public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui)
+    /// <param name="now">The frame's time (<see cref="Render"/>'s): no symbol covers the player's age tag. The clock's when null.</param>
+    public static List<ShownMarker> ShownMarkers(Camera camera, MapScene scene, float ui, DateTime? now = null)
     {
         var view = SKRect.Create(0, 0, camera.Viewport.Width, camera.Viewport.Height);
         view.Inflate(40 * ui, 40 * ui);
@@ -823,7 +845,7 @@ public static partial class MapRenderer
         // In the data's order, not the drawing order below: which of two goes left must not turn on what is pointed at.
         JoinSpots(result, ui);
         result.Sort((a, b) => a.Index.CompareTo(b.Index));
-        var places = SetApart(camera, scene, result.Select(r => r.Shown).ToList(), ui, result.Select(r => r.Index));
+        var places = SetApart(camera, scene, result.Select(r => r.Shown).ToList(), ui, result.Select(r => r.Index), now ?? DateTime.Now);
         return result
             .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with
             {
@@ -841,10 +863,10 @@ public static partial class MapRenderer
     // and Scav zones' rings side by side among themselves, under the rest (their leaders were a web of ink between the
     // quests). Panning moves every place alike, so while the same symbols are in view at the same zoom the last repel's
     // offsets hold: it is most of a layout's work, and a pan lays the map out for every frame.
-    private static SKPoint[] SetApart(Camera camera, MapScene scene, List<ShownMarker> markers, float ui, IEnumerable<int> indices)
+    private static SKPoint[] SetApart(Camera camera, MapScene scene, List<ShownMarker> markers, float ui, IEnumerable<int> indices, DateTime now)
     {
         var places = SideBySide(markers.Select(m => (m.At, RestHalf(m.Marker, ui), RestRank(m.Marker.Kind))).ToList(), MarkerCollar * ui);
-        var (player, ageTag) = PlayerObstacles(camera, scene, ui);
+        var (player, ageTag) = PlayerObstacles(camera, scene, ui, now);
         var key = $"{scene.LayoutVersion}|{camera.Zoom:R}|{ui:R}|{ageTag}|{string.Join(",", indices.Zip(markers, (i, m) => $"{i}:{m.Count}"))}";
         if (scene.LastRepel is not { } last || last.Key != key)
         {
@@ -865,13 +887,13 @@ public static partial class MapRenderer
     // objective the player icon is drawn on top of the quest icon"): the player's ring with its dark band, and the age
     // tag beside it, as circles along it. The player is level 1 and never moves for a symbol; the facing cone and the
     // glow are see-through and hide nothing. With the tag's words, for the repel's memo: they change with the minute.
-    private static (List<(SKPoint At, float Half)> Circles, string AgeTag) PlayerObstacles(Camera camera, MapScene scene, float ui)
+    private static (List<(SKPoint At, float Half)> Circles, string AgeTag) PlayerObstacles(Camera camera, MapScene scene, float ui, DateTime now)
     {
         if (scene.Player is not { } player)
             return ([], "");
         var at = Screen(camera, scene, player.Position);
         var circles = new List<(SKPoint, float)> { (at, (PlayerRing + 2.5f) * ui) };
-        if (PlayerAgeTag(camera, scene, ui) is not { } tag)
+        if (PlayerAgeTag(camera, scene, ui, now) is not { } tag)
             return (circles, "");
         var (box, text) = tag;
         var r = box.Height / 2;
@@ -885,9 +907,10 @@ public static partial class MapRenderer
     }
 
     /// <summary>The player's age tag, where it stands and what it says, once the position is a minute old; else null.</summary>
-    internal static (SKRect Box, string Text)? PlayerAgeTag(Camera camera, MapScene scene, float ui)
+    /// <param name="now">The frame's time (<see cref="Render"/>'s); the clock's when null.</param>
+    internal static (SKRect Box, string Text)? PlayerAgeTag(Camera camera, MapScene scene, float ui, DateTime? now = null)
     {
-        if (scene.Player is not { } player || Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now) is var age && age < PlayerOld)
+        if (scene.Player is not { } player || Shturmap.Core.Logs.WallClock.Elapsed(player.At, now ?? DateTime.Now) is var age && age < PlayerOld)
             return null;
         var (text, stale) = AgeTag(age);
         using var font = new SKFont(TypefaceBold, AgeTagSize(stale) * ui);
@@ -1813,9 +1836,9 @@ public static partial class MapRenderer
     // out; each starts 4.5 px wide and travels 38 px, on a dark band so it shows on light streets too (owner,
     // 2026-10-04: "I really like it, but the effect is too subtle"; it was one ring, 2.5 px wide, that travelled
     // 26 px and faded with the square of the way).
-    private static void DrawPulse(SKCanvas canvas, MapScene scene, SKPoint at, float r, SKColor color, float ui)
+    private static void DrawPulse(SKCanvas canvas, MapScene scene, SKPoint at, float r, SKColor color, float ui, DateTime now)
     {
-        var phase = (DateTime.Now - scene.FocusSince).TotalSeconds % PulsePeriod.TotalSeconds / PulsePeriod.TotalSeconds;
+        var phase = (now - scene.FocusSince).TotalSeconds % PulsePeriod.TotalSeconds / PulsePeriod.TotalSeconds;
         for (var i = 0; i < 2; i++)
         {
             var t = (float)((phase + i * 0.5) % 1);
@@ -1870,7 +1893,7 @@ public static partial class MapRenderer
     // pointed-at symbol's pulse, around symbols that keep their rest size, so neither covers a neighbour; and the
     // leaders of symbols set off their places (Repel), stepping back with their symbols while something else is
     // pointed at.
-    private static void DrawUnderlay(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui)
+    private static void DrawUnderlay(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui, DateTime now)
     {
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
         foreach (var m in markers.Where(m => m.Leader is not null))
@@ -1878,7 +1901,7 @@ public static partial class MapRenderer
         foreach (var m in markers.Where(m => m.Kept))
             DrawPickRing(canvas, m, ui);
         foreach (var m in markers.Where(m => m.Pointed && scene.Pulsing))
-            DrawPulse(canvas, scene, m.At, m.R, m.Color, ui);
+            DrawPulse(canvas, scene, m.At, m.R, m.Color, ui, now);
     }
 
     /// <summary>A leader from a symbol's true place to where it is drawn: a hairline in its colour on a dark band, and a
@@ -1912,11 +1935,15 @@ public static partial class MapRenderer
     private static SKPath Diamond(SKPoint at, float r) =>
         Polygon(new(at.X, at.Y - r), new(at.X + r, at.Y), new(at.X, at.Y + r), new(at.X - r, at.Y));
 
-    private static void DrawMarker(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui)
+    /// <param name="now">The frame's time: a "??:??:??" extract's "?" pops in as a list just read reaches it.</param>
+    /// <param name="traced">What a developer's trace records of the frame's symbols (<see cref="Render"/>), or null.</param>
+    private static void DrawMarker(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui, DateTime now,
+        Dictionary<ShownMarker, SymbolTrace>? traced = null)
     {
         var (marker, at, r, color) = (shown.Marker, shown.At, shown.R, shown.Color);
         using var fill = new SKPaint { Color = color, IsAntialias = true };
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
+        var trace = traced is null ? null : Traced(traced, shown);
         // A pick's ring and a pointed-at symbol's pulse lie under every symbol (DrawUnderlay).
 
         switch (marker.Kind)
@@ -1935,7 +1962,7 @@ public static partial class MapRenderer
                 Glyphs.Draw(canvas, kind, at, r * 1.05f, Background);
                 break;
             case MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared:
-                DrawExtract(canvas, scene, shown, ui);
+                DrawExtract(canvas, scene, shown, ui, now, trace);
                 break;
             case MarkerKind.SniperSpawn:
                 // A hollow hexagon: a shape no other marker uses (a reticle would repeat the Elimination glyph).
@@ -1973,6 +2000,8 @@ public static partial class MapRenderer
                     canvas.DrawPath(diamond, fill);
                     canvas.DrawPath(diamond, outline);
                 }
+                if (trace is not null)
+                    trace.Look = ExitLook.Transit;
                 break;
             case MarkerKind.Lock or MarkerKind.Switch:
                 // A glyph on a dark collar, no plate: quiet, and a shape no other marker has (a padlock, a power
@@ -2079,16 +2108,16 @@ public static partial class MapRenderer
 
     // The player out of view: a badge at the edge with an arrow pointing their way. While a new position pings it
     // is larger, pings itself and says so. Not while the view glides to the position (Follow my position).
-    private static void DrawEdge(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    private static void DrawEdge(SKCanvas canvas, Camera camera, MapScene scene, float ui, DateTime now)
     {
         if (scene.Gliding || EdgeOf(camera, scene, ui) is not { } edge || scene.Player is not { } player)
             return;
         var toward = Screen(camera, scene, player.Position) - edge;
         var angle = (float)(Math.Atan2(toward.Y, toward.X) * 180 / Math.PI);
-        var pinging = scene.Pinging;
+        var pinging = scene.PingingAt(now);
         var r = (pinging ? 17f : 13f) * ui;
         if (pinging)
-            DrawPing(canvas, edge, (DateTime.Now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui, 28);
+            DrawPing(canvas, edge, (now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui, 28);
 
         using var plate = new SKPaint { Color = Background.WithAlpha(230), IsAntialias = true };
         using var edgeLine = new SKPaint { Color = Player, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
@@ -2127,15 +2156,15 @@ public static partial class MapRenderer
         canvas.DrawText(text, left, baseline, SKTextAlign.Left, font, label);
     }
 
-    private static void DrawPlayer(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    private static void DrawPlayer(SKCanvas canvas, Camera camera, MapScene scene, float ui, DateTime now)
     {
         if (scene.Player is not { } player)
             return;
-        DrawEdge(canvas, camera, scene, ui);
+        DrawEdge(canvas, camera, scene, ui, now);
         var at = Screen(camera, scene, player.Position);
-        var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, DateTime.Now);
-        if (scene.Pinging)
-            DrawPing(canvas, at, (DateTime.Now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui);
+        var age = Shturmap.Core.Logs.WallClock.Elapsed(player.At, now);
+        if (scene.PingingAt(now))
+            DrawPing(canvas, at, (now - scene.PingSince!.Value).TotalSeconds, scene.Pulse, ui);
 
         // Full strength at any age (cartography review, 2026-10-02: fading it said "less important" and sank it below
         // the quest markers). The age is said instead: a steady ring, sand on a dark band like the kept quest's, turns

@@ -190,6 +190,8 @@ public static partial class MapRenderer
     internal static void DrawSwatch(SKCanvas canvas, LegendSymbol symbol, SKSize size, float ui)
     {
         var scene = new MapScene(SwatchSheet, null) { Pulse = false };
+        // One moment for the swatch: the player's fix is taken at it, so it is drawn fresh.
+        var now = DateTime.Now;
         var camera = new Camera();
         camera.Resize(size);
         camera.Restore(new MapPoint(0, 0), ui);
@@ -203,19 +205,19 @@ public static partial class MapRenderer
             // A pick's ring lies under the symbols on the map (DrawUnderlay); here it is the one symbol.
             if (shown.Kept)
                 DrawPickRing(canvas, shown, ui * scale);
-            DrawMarker(canvas, scene, shown, ui * scale);
+            DrawMarker(canvas, scene, shown, ui * scale, now);
         }
 
         switch (symbol)
         {
             case LegendSymbol.Player:
-                scene.Player = new PlayerFix(At(0, 0), null, DateTime.Now);
-                DrawPlayer(canvas, camera, scene, ui * 0.8f);
+                scene.Player = new PlayerFix(At(0, 0), null, now);
+                DrawPlayer(canvas, camera, scene, ui * 0.8f, now);
                 break;
             case LegendSymbol.PlayerOutOfView:
                 // Far to the right: the edge badge stands in the middle of a view this small and points that way.
-                scene.Player = new PlayerFix(At(1000, 0), null, DateTime.Now);
-                DrawEdge(canvas, camera, scene, ui * 0.7f);
+                scene.Player = new PlayerFix(At(1000, 0), null, now);
+                DrawEdge(canvas, camera, scene, ui * 0.7f, now);
                 break;
             case LegendSymbol.Ping:
             {
@@ -272,7 +274,7 @@ public static partial class MapRenderer
                 var place = camera.ToScreen(new MapPoint(-15, 0));
                 var shown = Show(camera, scene, Quest(MarkerKind.Objective, 7), ui * 0.85f);
                 DrawLeader(canvas, place, shown.At, shown.Color, ui * 0.85f);
-                DrawMarker(canvas, scene, shown, ui * 0.85f);
+                DrawMarker(canvas, scene, shown, ui * 0.85f, now);
                 break;
             }
             case LegendSymbol.Optional:
@@ -298,7 +300,7 @@ public static partial class MapRenderer
                 var u = ui * 0.75f;
                 var shown = Show(camera, scene, new MapMarker("listed", MarkerKind.ExtractPmc, At(0, 0), ""), u) with { Listed = true };
                 DrawListedGlow(canvas, shown);
-                DrawMarker(canvas, scene, shown, u);
+                DrawMarker(canvas, scene, shown, u, now);
                 break;
             }
             case LegendSymbol.ExtractNotListed:
@@ -339,7 +341,7 @@ public static partial class MapRenderer
                 break;
             case LegendSymbol.Trail:
                 scene.Trail = [At(-24, -6), At(-4, 8)];
-                scene.Player = new PlayerFix(At(22, -4), null, DateTime.Now);
+                scene.Player = new PlayerFix(At(22, -4), null, now);
                 DrawTrail(canvas, camera, scene, ui);
                 break;
             case LegendSymbol.Replay:

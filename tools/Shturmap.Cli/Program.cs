@@ -33,6 +33,9 @@ switch (command)
     case "render":
         await Render(args.ElementAtOrDefault(1) ?? "streets-of-tarkov", args.ElementAtOrDefault(2) ?? "map.png", args.Skip(3).ToList());
         break;
+    case "frames":
+        await Shturmap.Cli.Frames.RunAsync(args.Skip(1).ToList());
+        break;
     case "watch":
         await Watch(int.TryParse(args.ElementAtOrDefault(1), out var seconds) ? seconds : 20);
         break;
@@ -74,6 +77,15 @@ switch (command)
                                             draw a map with the positions from screenshot names; --focus-item
                                             draws it as pointing at that item does (a key lights its locks);
                                             --pick <quest name> picks that quest (with the locks of its keys)
+            shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts] [--every <ms>] [--count <n>]
+                                [--fix <x> <y> <z>] [--glide [ms]]
+                                            draw a map's animations headless, frame by frame: an extract list just
+                                            read (list-read: every other extract lit, two "??:??:??", the rest struck
+                                            out, at a PMC spawn or --fix; whatsnew-extracts: What's New's preview, no
+                                            position), rung out at t0 and drawn every 100 ms 36 times into
+                                            frame-000.png..., with frames.json (each symbol's place, size, state and
+                                            animation values as drawn) and summary.txt (what changed frame by frame);
+                                            --glide moves the view from the whole map to 3x on the position, 1200 ms
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them
