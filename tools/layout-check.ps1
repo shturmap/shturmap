@@ -6,8 +6,9 @@
 # Usage: .\tools\layout-check.ps1 -Out <folder> [-Exe <a developer build's Shturmap.exe>] [-Languages en-US,de-DE,qps-ploc]
 #        [-Sizes 900x560,1600x900] [-States plan,raid,...] [-SwitchCheck] [-SummaryOnly] [-MoreArgs '--data', <folder>]
 # Exit code: 0 when every language but the pseudo-language is free of problems (the pseudo-language's are warnings:
-# they forecast what a longer language will break); 1 when one has a problem, or a switch differs from a fresh start;
-# 2 when a view couldn't be checked.
+# they forecast what a longer language will break) and no picture misses a text it always shows (in any language, the
+# pseudo-language too); 1 when one has a problem, or a switch differs from a fresh start; 2 when a view couldn't be
+# checked.
 param(
   [Parameter(Mandatory)] [string] $Out,
   # A developer build's Shturmap.exe (Debug, or built with ShturmapDev=true): the check is compiled into those only.
@@ -167,7 +168,7 @@ $userFolder = [Environment]::GetFolderPath('UserProfile')
 function Masked([string]$text) { if ($userFolder.Length -gt 3) { $text.Replace($userFolder, '%USERPROFILE%') } else { $text } }
 function Cell([string]$text) { (Masked $text).Replace("`n", ' ').Replace('|', '\|') }
 function Short([string]$text, [int]$length = 90) { $one = (Cell $text); if ($one.Length -le $length) { $one } else { $one.Substring(0, $length - 1) + $ellipsis } }
-$kinds = @('overflow', 'trimmed', 'overlap', 'untranslated')
+$kinds = @('missing', 'overflow', 'trimmed', 'overlap', 'untranslated')
 $lines = New-Object System.Collections.Generic.List[string]
 $failed = New-Object System.Collections.Generic.List[string]
 $unchecked = New-Object System.Collections.Generic.List[string]
@@ -222,15 +223,17 @@ foreach ($culture in $Languages) {
     $counts = @{}
     foreach ($k in $kinds) { $counts[$k] = @($groups.Values | Where-Object { $_.Problem.kind -eq $k }).Count }
     $counts.untranslated = $sizeUntranslated.Count
-    $problemCount = ($kinds | ForEach-Object { $counts[$_] } | Measure-Object -Sum).Sum
-    if ($problemCount -gt 0) { if ($isPseudo) { $warnings += $problemCount } else { $failed.Add("$culture $size") | Out-Null } }
-    $rows.Add(('| {0} | {1} | {2} | {3} | {4} | {5} |' -f $culture, $size, $counts.overflow, $counts.trimmed, $counts.overlap,
+    # A missing text is no forecast: it fails the run in the pseudo-language too.
+    $problemCount = ($kinds | Where-Object { $_ -ne 'missing' } | ForEach-Object { $counts[$_] } | Measure-Object -Sum).Sum
+    if ($counts.missing -gt 0 -or ($problemCount -gt 0 -and -not $isPseudo)) { $failed.Add("$culture $size") | Out-Null }
+    if ($isPseudo) { $warnings += $problemCount }
+    $rows.Add(('| {0} | {1} | {2} | {3} | {4} | {5} | {6} |' -f $culture, $size, $counts.missing, $counts.overflow, $counts.trimmed, $counts.overlap,
         $(if ($isPseudo) { $counts.untranslated } else { $enDash }))) | Out-Null
     $sections.Add('') | Out-Null
-    $sections.Add("## $culture $dot $size$(if ($isPseudo) { ' (pseudo-language: warnings)' })") | Out-Null
+    $sections.Add("## $culture $dot $size$(if ($isPseudo) { ' (pseudo-language: warnings, but for a missing text)' })") | Out-Null
     $sections.Add('') | Out-Null
     if ($windowNote) { $sections.Add("Window: $windowNote.") | Out-Null; $sections.Add('') | Out-Null }
-    if ($groups.Count -eq 0) { $sections.Add("No overflow, trimmed or overlapping texts.") | Out-Null; $sections.Add('') | Out-Null }
+    if ($groups.Count -eq 0) { $sections.Add("No missing, overflowing, trimmed or overlapping texts.") | Out-Null; $sections.Add('') | Out-Null }
     foreach ($kind in $kinds) {
       $ofKind = @($groups.Values | Where-Object { $_.Problem.kind -eq $kind })
       if (-not $ofKind) { continue }
@@ -310,10 +313,10 @@ $lines.Add('') | Out-Null
 $lines.Add("**$result.** " + $(if ($failed.Count) { "Problems in: $(@($failed | Select-Object -Unique) -join '; '). " } else { '' }) +
   $(if ($warnings) { "Pseudo-language: $warnings warnings (what a longer language will break, and texts not in the texts files yet). " } else { '' })) | Out-Null
 $lines.Add('') | Out-Null
-$lines.Add("Problems per language and size, each counted once however many views show it. Kinds: overflow (sticks out of what clips it or of the window, cut off without `"$ellipsis`", a word that breaks inside), trimmed (`"$ellipsis`" where the design doesn't let a text give way), overlap (text over text), untranslated (pseudo-language only: not in the texts files).") | Out-Null
+$lines.Add("Problems per language and size, each counted once however many views show it. Kinds: missing (a text the picture always shows isn't in it: a heading, the tour's BACK or ESC; a problem in the pseudo-language too), overflow (sticks out of what clips it or of the window, cut off without `"$ellipsis`", a word that breaks inside), trimmed (`"$ellipsis`" where the design doesn't let a text give way), overlap (text over text), untranslated (pseudo-language only: not in the texts files).") | Out-Null
 $lines.Add('') | Out-Null
-$lines.Add('| language | size (DIP) | overflow | trimmed | overlap | untranslated |') | Out-Null
-$lines.Add('| --- | --- | --- | --- | --- | --- |') | Out-Null
+$lines.Add('| language | size (DIP) | missing | overflow | trimmed | overlap | untranslated |') | Out-Null
+$lines.Add('| --- | --- | --- | --- | --- | --- | --- |') | Out-Null
 foreach ($row in $rows) { $lines.Add($row) | Out-Null }
 if ($unchecked.Count -gt 0) {
   $lines.Add('') | Out-Null

@@ -30,7 +30,7 @@ public sealed partial class MainWindow
             var pseudo = UiLanguage.Code == UiLanguage.Pseudo
                          || string.Equals(CultureInfo.CurrentUICulture.Name, UiLanguage.Pseudo, StringComparison.OrdinalIgnoreCase);
             var context = new Dev.LayoutCheck.Context(pseudo, UiLanguage.Code, CultureInfo.CurrentUICulture.Name, await LayoutNamesAsync(),
-                (AppWindow.Size.Width, AppWindow.Size.Height));
+                (AppWindow.Size.Width, AppWindow.Size.Height), LayoutExpected(Path.GetFileNameWithoutExtension(path)));
             await Dev.LayoutCheck.RunAsync(element, path, pixels, rendered.PixelWidth, rendered.PixelHeight, context);
         }
         catch (Exception e)
@@ -38,6 +38,25 @@ public sealed partial class MainWindow
             AppLog.Warn("Layout check of " + Path.GetFileName(path) + " failed", e);
         }
     }
+
+    // What each picture always shows, as its texts file writes it, in the language in use (LayoutWords.Missing): texts
+    // its XAML binds, which went missing all together when the window's bindings were never set (QA pass of 2026-10-15),
+    // in every state the picture is taken in. The window: the rail's MAP and the status bar's help and settings buttons
+    // (their words, LOGS and the rest, change with the state and give way in a narrow window). The tour: its band's
+    // ← BACK (from the second chapter), NEXT → (DONE at the last) and ESC ENDS THE TOUR. Help and settings: their titles.
+    private IReadOnlyList<string> LayoutExpected(string picture) => picture switch
+    {
+        "window" => [ViewTexts.RailMapHeading, "name: " + ViewTexts.HelpButtonName, "name: " + ViewTexts.SettingsButtonName],
+        "tour" when TourOpen =>
+        [
+            .. _tourAt > 0 ? [ViewTexts.TourBack] : Array.Empty<string>(),
+            _tourAt + 1 < TourChapters.Count ? ViewTexts.TourNext : AppTexts.TourDone,
+            ViewTexts.TourEnd,
+        ],
+        "help" => [ViewTexts.HelpTitle],
+        "settings" => [ViewTexts.SettingsTitle],
+        _ => [],
+    };
 
     // The synopsis phrases the tour's example raid card shows (MainWindow.Tour, ExampleRaidCard): not in the snapshot.
     private readonly HashSet<string> _layoutTourPhrases = new(StringComparer.Ordinal);

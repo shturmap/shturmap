@@ -80,9 +80,9 @@ The fixes go in, and it reviews again, until every text is OK. It checks:
 Other languages are longer (German about a third, more in places), so a layout that fits English can cut words off
 or overflow. The layout check (`tools\layout-check.ps1`) opens every view of the app in a language at the window sizes
 Shturmap supports and reports each text that is cut off where it isn't meant to be, each part that sticks out of its
-container or the window, and text over other text, with a screenshot of each view and the problems boxed. Run it in
-every offered and in-translation language and in the pseudo-language before a release and after a change to the
-layout or to many texts.
+container or the window, text over other text, and a text a picture always shows that isn't in it, with a screenshot of
+each view and the problems boxed. Run it in every offered and in-translation language and in the pseudo-language before
+a release and after a change to the layout or to many texts.
 
 **The pseudo-language** (`--culture qps-ploc`, developer runs only) shows every English text accented, about 40%
 longer and in brackets: "[Ŝéţţîñğš ···]". It finds what a longer language will break before anyone translates, and
@@ -125,17 +125,27 @@ each picture of the window or a popup (`window.png`, `tour.png`, `help.png`, `se
 - `<picture>.layout.json`: the language and culture, the window's size and scale, and the problems, numbered, each with
   its kind, its element (its `x:Name`, else its type and the elements around it), its text, its bounds in window pixels
   and what is wrong.
-- `<picture>.problems.png`: the picture with each problem boxed and numbered in its kind's colour (overflow red, trimmed
-  orange, overlap magenta, untranslated cyan); one outside the picture has its number at the edge it lies beyond.
+- `<picture>.problems.png`: the picture with each problem boxed and numbered in its kind's colour (missing yellow, around
+  the whole picture; overflow red, trimmed orange, overlap magenta, untranslated cyan); one outside the picture has its
+  number at the edge it lies beyond.
 
 `<folder>\summary.md` counts the problems per language and size and lists each once, with the views it shows in and
 links to the boxed pictures; the pseudo-language's untranslated texts come as one list, each text once. The exit code
-is 1 when a language other than the pseudo-language has a problem or a switch differs, 2 when a view couldn't be
-checked; the pseudo-language's problems are warnings. `-SummaryOnly` sums up an earlier run's folder again. The folder
-holds pictures of the app and the fake raid's paths: it stays on the PC and goes into no commit.
+is 1 when a language other than the pseudo-language has a problem, a picture misses a text in any language, or a switch
+differs, 2 when a view couldn't be checked; the pseudo-language's other problems are warnings. `-SummaryOnly` sums up
+an earlier run's folder again. The folder holds pictures of the app and the fake raid's paths: it stays on the PC and
+goes into no commit.
 
 **The problems** (`src\Shturmap.App\Dev\LayoutCheck.cs`):
 
+- *missing*: a text the picture always shows, in every state it is taken in, isn't in its texts file (in view or not):
+  in `window.png` the rail's MAP and the screen reader's names of the status bar's help and settings buttons (the
+  status bar's words, LOGS and the rest, change with the state and give way in a narrow window); in `tour.png` the
+  band's ← BACK (from the second chapter), NEXT → (DONE at the last) and ESC ENDS THE TOUR; in `help.png` and
+  `settings.png` their titles (`MainWindow.LayoutExpected`, read from the texts files in the language in use, so every
+  language and the pseudo-language are checked alike; `LayoutWords.Missing`). Texts bound in XAML go missing all
+  together when the window's bindings were never set: the QA pass of 2026-10-15 found the tour's chapters with a band
+  without BACK and ESC over a window of empty frames, which the check had passed.
 - *overflow*: a text or a control that sticks out of the nearest element that clips it (an element given less room
   than it takes is cut at its slot; content in a scrolling list must fit the list's whole extent, not its viewport) or
   out of the window; a text that needs more width or height than it was given and is cut without "…"; a word too wide

@@ -36,7 +36,8 @@ namespace Shturmap.App.Dev;
 /// without "…"), and a word too long for its line (it breaks inside the word). <b>overlap</b>: two texts over each
 /// other, except within deliberate layers (<see cref="Layers"/>). <b>untranslated</b>, in the pseudo-language only: a
 /// text, or part of one, that isn't the pseudo-language's, nor a game name, a number with its unit, a key or a word on
-/// <see cref="LayoutWords.Neutral"/>'s short list.</item>
+/// <see cref="LayoutWords.Neutral"/>'s short list. <b>missing</b>: a text the picture always shows that isn't in it
+/// (<see cref="Context.Expected"/>, <see cref="LayoutWords.Missing"/>).</item>
 /// <item>"&lt;name&gt;.problems.png": the picture with each problem boxed and numbered as in the JSON (written only
 /// when there is one).</item>
 /// </list>
@@ -45,7 +46,7 @@ namespace Shturmap.App.Dev;
 internal sealed class LayoutCheck
 {
     /// <summary>The kinds of problem, in the order they are numbered.</summary>
-    public static readonly string[] Kinds = ["overflow", "trimmed", "overlap", "untranslated"];
+    public static readonly string[] Kinds = ["missing", "overflow", "trimmed", "overlap", "untranslated"];
 
     /// <summary>
     /// Elements that lie over the rest of the window on purpose: the tour's dim and band, the Report dialog, a cue's
@@ -76,7 +77,9 @@ internal sealed class LayoutCheck
     /// <param name="Names">Names that stay as they are in every language: the game data's (in <see cref="Key"/>'s
     /// form) and the releases' names.</param>
     /// <param name="OuterWindow">The window's outer size in pixels, title bar and frame included.</param>
-    public sealed record Context(bool Pseudo, string Language, string Culture, IReadOnlySet<string> Names, (int Width, int Height) OuterWindow);
+    /// <param name="Expected">Lines its texts file must hold, in the language in use: texts the picture always shows.</param>
+    public sealed record Context(bool Pseudo, string Language, string Culture, IReadOnlySet<string> Names, (int Width, int Height) OuterWindow,
+        IReadOnlyList<string> Expected);
 
     private LayoutCheck(UIElement picture, Context context)
     {
@@ -142,9 +145,20 @@ internal sealed class LayoutCheck
         }
         _rootDepth = chain.Count;
         Walk(_picture, chain, clips, inScrollBar: false);
+        FindMissing(chain);
         FindOverlaps();
         if (_context.Pseudo)
             FindUntranslated();
+    }
+
+    // A text the picture always shows that isn't in it: boxed as the whole picture, since it has no place of its own.
+    private void FindMissing(List<DependencyObject> outer)
+    {
+        if (_picture is not FrameworkElement picture)
+            return;
+        foreach (var text in LayoutWords.Missing(_context.Expected, _shown.Select(Line)))
+            Report("missing", picture, [.. outer, picture], text, BoundsOf(picture) ?? _window, true,
+                "a text this picture always shows isn't in it: a text bound in XAML that was never set, or a part gone");
     }
 
     private void Walk(DependencyObject node, List<DependencyObject> chain, List<Clip> clips, bool inScrollBar)
@@ -744,6 +758,7 @@ internal sealed class LayoutCheck
 
     private static readonly Dictionary<string, SKColor> KindColours = new()
     {
+        ["missing"] = new SKColor(0xFF, 0xF0, 0x20),
         ["overflow"] = new SKColor(0xFF, 0x30, 0x30),
         ["trimmed"] = new SKColor(0xFF, 0x9F, 0x1A),
         ["overlap"] = new SKColor(0xFF, 0x40, 0xFF),

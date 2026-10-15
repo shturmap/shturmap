@@ -101,5 +101,27 @@ public class LayoutWordsTests
         Assert.DoesNotContain("SHOOT", names);
         Assert.DoesNotContain("5C0E534186F7747FA1419868", names);
     }
+
+    // The layout check's "missing" (QA pass of 2026-10-15: a window whose x:Bind texts were never set passed the check).
+    [Fact]
+    public void A_picture_misses_each_text_it_always_shows_that_its_texts_file_has_not()
+    {
+        string[] window = ["MAP", "name: Help", "name: Settings"];
+        // The window as the pass found it: only the texts its XAML writes out, none it binds.
+        Assert.Equal(window, LayoutWords.Missing(window, ["SHTURMAP", "?"]));
+        // A whole window, its rail scrolled so far that the heading is out of view: there all the same.
+        Assert.Empty(LayoutWords.Missing(window, ["SHTURMAP", "PVE", "name: Help", "?", "name: Settings", "--- not in view ---", "MAP"]));
+    }
+
+    [Fact]
+    public void A_text_counts_only_as_a_whole_line_of_its_kind()
+    {
+        // The tour's band as the pass found it: NEXT → is set in code, ← BACK and ESC ENDS THE TOUR are bound.
+        Assert.Equal(["← BACK", "ESC ENDS THE TOUR"],
+            LayoutWords.Missing(["← BACK", "NEXT →", "ESC ENDS THE TOUR"], ["TOUR · 5 OF 7", "YOUR SCREENSHOT KEY", "NEXT →"]));
+        // Its words in a tooltip or inside a longer line aren't the text.
+        Assert.Equal(["MAP"], LayoutWords.Missing(["MAP"], ["tooltip: MAP", "MAP OF CUSTOMS", "map"]));
+        Assert.Empty(LayoutWords.Missing([], ["SHTURMAP"]));
+    }
 }
 #endif
