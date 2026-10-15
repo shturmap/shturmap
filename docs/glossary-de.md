@@ -97,6 +97,7 @@ gender.
 | NEXT (the glance's nearest objective) | ZIEL | decided: what the row is, as short as EXTRACT under it |
 | EXIT; OR; nearest | EXTRACT; ODER; nächster, nächste | decided; NÄCHSTER · NICHT MIT DEINER LISTE ABGEGLICHEN |
 | ON YOUR LIST (THIS RAID); NOT ON YOUR LIST | AUF DEINER LISTE (IN DIESEM RAID); NICHT AUF DEINER LISTE | |
+| YOUR EXTRACTS THIS RAID (the feature's name: What's New since 0.4.0, the extract list's cue) | DEINE EXTRACTS IM RAID; Deine Extracts im Raid | a name, as wide as the English in the cue's 48 px title; in a sentence „this raid“ stays „in diesem Raid“ |
 | ??? IN GAME; NOTHING NEEDED; ALL 15 ↓ | ??? IM SPIEL; NICHTS NÖTIG; ALLE 15 ↓ | |
 | EXTRACTS AND TRANSITS; ways out | EXTRACTS UND TRANSITS; Extracts und Transits | |
 | the game's extract list; to check (against it); your side; for your side | Extract-Liste; abgleichen; deine Seite; für deine Seite | side: PMC ⇄ SCAV; „Mach zum Abgleichen einen Screenshot der Extract-Liste“ |

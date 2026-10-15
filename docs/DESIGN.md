@@ -16,7 +16,11 @@ eye candy at a raid's end: the raid replay (owner, 2026-10-07: "more on the eye-
 animations"; "Map drawing", *The raid replay*). And one for learning the app: the tour at a first start (owner,
 2026-10-09: "a proper first-time-opening tour of the app ... Here we can be a bit more flashy with nice animations";
 §4, "Screen anatomy", *The tour*). And one for a quest handed in: the QUEST COMPLETE cue (owner, 2026-10-07: "For
-completed quests, also make a nice animation"; §4, principle 11).
+completed quests, also make a nice animation"; §4, principle 11). And one in a raid, for the extract list just read:
+its roll call (owner, 2026-10-15: "When the extraction list is read, I want a nice fancy animation in line with the
+others where a list of the extracts appears in the middle of the screen along with their icons. Then, the icons move
+where extracts are (also outside of the current view pane) so it contextualizes them and the player knows where they
+are"; from a panel of four, 2026-10-15: A; §4, principle 11, and "Map drawing", *The player's extracts this raid*).
 
 **Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
 part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
@@ -335,8 +339,9 @@ quoting it anywhere new.
 2. **Glanceable from a second monitor.** High contrast on a dark ground, the important line first and largest (the
    glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
    change, the raid replay at a raid's end (§1's exception), and the tour (§1's second exception, owner, 2026-10-09:
-outside raids only, and still in the cues' own motion), and the QUEST COMPLETE cue (§1's third). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the app never
-   kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
+   outside raids only, and still in the cues' own motion), the QUEST COMPLETE cue (§1's third), and the extract list's
+   roll call (§1's fourth). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the
+   app never kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
 3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
    automatic. No tabs, no modes to pick, no modal dialogs. Shturmap has one window, never topmost, so it can't cover
    the game (popped-out quest cards, the only other windows, were removed on 2026-10-09). One thing does
@@ -449,10 +454,10 @@ outside raids only, and still in the cues' own motion), and the QUEST COMPLETE c
     map and first in the rail, several at once ("Picks"; owner, 2026-10-01: one click doing both was misleading; the
     study log had the player toggling quests on and off and losing held cards on the way to the map).
 11. **Show when the view changes by itself.** When Shturmap changes its view without being asked (a raid
-    loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid), a cue
-    holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and with more pop). Its
-    entrance plays at 1.8 times its first pace, about 1.6 s (owner, 2026-10-02: the elements should appear more
-    slowly; a briefly tried 8 s RAID LOADING cue was too long): a dark band springs open
+    loading, a transit, a Scav raid starting, the raid over, loading cancelled, the group picking a raid, an extract
+    list read), a cue holds the middle of the map for 5 s (owner, 2026-10-01; first 2.8 s, then longer, sharper and
+    with more pop). Its entrance plays at 1.8 times its first pace, about 1.6 s (owner, 2026-10-02: the elements
+    should appear more slowly; a briefly tried 8 s RAID LOADING cue was too long): a dark band springs open
     behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
@@ -482,6 +487,21 @@ outside raids only, and still in the cues' own motion), and the QUEST COMPLETE c
     and the quest card the marks that just arrived glow in by themselves, from the snapshot that brought them: a gold
     copy of the mark's line over the ink one, fading out over 1.2 s so the gold eases to ink, the need cell's bar the
     same, and the row flashes once, faintly (`Controls.Glow`); with animation effects off the mark simply stands.
+    **YOUR EXTRACTS THIS RAID**, the extract list's roll call (owner, 2026-10-15, §1's fourth exception; from a panel
+    of four, 2026-10-15: A, "Roll call, then fly-out"): when a screenshot taken in the last 30 s showed the game's
+    extract list (§2), the cue says "FROM YOUR SCREENSHOT" over "YOUR EXTRACTS THIS RAID · 6 OF 12" (the extracts the
+    list names, of the map's for your side, as the rail counts them), its title decoding as every title does, and under
+    it **a row for each extract on the list**, rising in one after another, nearest you first: the extract's triangle in
+    its kind's colour, its name, and "???" where the game marks it "??:??:??" (a sign, not a word to translate).
+    Struck-out extracts get no row, nor do transits. Then each triangle lifts off its row and flies to its place on the
+    map, which the view has meanwhile taken in, its row fading as it leaves; the band's dark backing goes with the rows,
+    so it covers no landing, and the title stays on its halo until 1.5 s after the last landing ("Map drawing", *The
+    player's extracts this raid*, has the timings). Both halves of the ask in one cue: the list in the
+    middle, then where each one is, the ones off screen too; and the one change of view is made while the cue says
+    why. A list that comes while it is up joins it: its new extracts come in as rows after the others, the title counts
+    them all, and they fly after the others. With animation effects off it stands 5 s with all its rows and goes; the
+    view takes the extracts in at once and they are simply lit. In the tour and What's New it calls out the example
+    list, with "An example, not your raid." under its title: every cue they show says it is an example.
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -578,17 +598,20 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
 position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; an extract list just
-read rings its extracts out one after another, about 3 s ("Map drawing", *The player's extracts this raid*); the raid card's time
-doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its figure decoded and a dark notch
-ran along its rule at each minute until then). With Windows' animation
-effects off the app shows and hides without motion, and following jumps to the position. The tour (§1's second
-exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide from part to part over
-0.65 s eased in and out while the map sheet's corner marks close in on them with a small overshoot, the band's gold
-rule shoots out and its title decodes over 0.7 s at each chapter, a stage's lines rise in one after another, and its
-staged moments are the app's own (a drawn pointer as the website clip's, the screenshot key pressed, the ping, the
-pulse, the cue); with the effects off each chapter shows its end at once. The website follows the
-reader's "reduce motion": what moves only with the reader's own scrolling stays (the logo, the route marker, without
-easing; owner, 2026-10-02), the rest stops.
+read is called out (§1's fourth exception): its rows rise in 0.1 s apart from 0.5 s, the view takes in its extracts
+from 1.2 s over 1.2 s, eased in and out as the tour's moves, and from 1.6 s each triangle flies to its place over 0.9 s,
+0.16 s after the one before, on an arc, eased in and out, and rings out as it lands; with six extracts the last lands
+at 3.3 s, the title goes from 4.8 s and the rings end at about 5.4 s ("Map drawing", *The player's extracts this
+raid*); the raid card's time doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its
+figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
+the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts.
+The tour (§1's second exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide
+from part to part over 0.65 s eased in and out while the map sheet's corner marks close in on them with a small
+overshoot, the band's gold rule shoots out and its title decodes over 0.7 s at each chapter, a stage's lines rise in
+one after another, and its staged moments are the app's own (a drawn pointer as the website clip's, the screenshot
+key pressed, the ping, the pulse, the cue, the extract list's roll call); with the effects off each chapter shows its
+end at once. The website follows the reader's "reduce motion": what moves only with the reader's own scrolling stays
+(the logo, the route marker, without easing; owner, 2026-10-02), the rest stops.
 
 **Icons.** Segoe Fluent Icons in the app, drawn glyphs on the map (`Glyphs`), one symbol with one meaning everywhere
 ("Visual language", the list of checked symbols); quest types by glyph, never by colour. Text links that leave
@@ -881,7 +904,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
     on the `tour:5` line below; `SceneGate.MakeAnew`). The
     previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
-    list on Customs, on a PMC raid's map, so without the Scav extracts (2026-10-15: tarkov.dev's Scav twins of five of
+    list on Customs, called out as a list just read is (YOUR EXTRACTS THIS RAID with its rows, the view taking the
+    extracts in, each flown to its place; without a position, in the data's order), on a PMC raid's map, so without the
+    Scav extracts (2026-10-15: tarkov.dev's Scav twins of five of
     them, under 5 m away, stood unlit beside the lit and struck-out ones), the raid card's own clock with example
     times on a plate over the dimmed map (`RaidClock`), Gratitude's
     two objectives on one spot on Woods, Streets' Scav Checkpoint where an extract and a transit stand apart; and for
@@ -1066,9 +1091,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the way out's colour; one the list leaves out says "· NOT ON YOUR LIST", its name and distance muted, without
     what it would take, and comes after everything else. The list puts extracts first, nearest first, then the
     transits, then the extracts the list left out (owner, 2026-10-05: "I would show primarily exfils"). A
-    notice says it once ("Your extract list is read: 6 extracts for this raid"). What a raid's screenshots name adds
-    up: a later list adds extracts and renews the "???" marks of the ones it names, and never takes one away (a
-    reading that missed a row must not close an exit). A transit is never said to be on or off the list: it is open
+    notice says it once ("Your extract list is read: 6 extracts for this raid"). On the map, a list just read is called
+    out: its extracts in a cue across the map's middle, then each flown to its place, the view taking them in (YOUR
+    EXTRACTS THIS RAID, principle 11; "Map drawing", *The player's extracts this raid*). What a raid's screenshots
+    name adds up: a later list adds extracts and renews the "???" marks of the ones it names, and never takes one away
+    (a reading that missed a row must not close an exit). A transit is never said to be on or off the list: it is open
     to everyone, and its rows aren't matched. **What counts as the list**: rows that name two or more of the map's
     extracts for the player's side; one named extract counts only under the header "Find an extraction point", since
     the box the game shows while the player stands in an exit ("Stay in the extraction point") has the same green bar
@@ -1219,12 +1246,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
   list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
-  it, the list goes, and the view takes in its extracts as they ring out one after another, nearest the position first,
-  as the map shows any list just read, while the rest are struck out; the chapter's map is a PMC raid's, without the
-  Scav extracts, as What's New's `extracts` preview is), IN THE RAID (RAID LOADING with an example kit, then the raid
-  card's head with example values; a PMC raid's map too, while PICK AND POINT's, in the menus, has both sides'
-  extracts, as Plan's map has) and HELP AND FEEDBACK (the story chapters aren't shown yet, anything else missing goes through the feedback button,
-  F1; the three buttons named; owner, 2026-10-09: "GOOD TO KNOW" wasn't "really expressive").
+  it, the list goes, and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
+  for each of its extracts, the view taking them in with the position above the tour's band, and each triangle flown
+  to its place, where it rings out, nearest the position first, while the rest are struck out; the chapter's map is a
+  PMC raid's, without the Scav extracts, as What's New's `extracts` preview is), IN THE RAID (RAID LOADING with an
+  example kit, then the raid card's head with example values; a PMC raid's map too, while PICK AND POINT's, in the
+  menus, has both sides' extracts, as Plan's map has) and HELP AND FEEDBACK (the story chapters aren't shown yet,
+  anything else missing goes through the feedback button, F1; the three buttons named; owner, 2026-10-09: "GOOD TO
+  KNOW" wasn't "really expressive").
   - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
     map sheet's corner marks in amber; a band at the map's foot, where the replay's band stands, on the ground colour
     with nothing showing through (review of 2026-10-09: at 94 % the map's labels read through its words, and through
@@ -1456,27 +1485,55 @@ spawns below).
     strength and as large as the others, and at a glance still read as a way out. Nothing is hidden: a struck-out
     extract is still a place on the map, and the list could have been read wrong. Its size stays: the repel sets
     symbols apart by their sizes, and a list read would move them.
-  **A list just read rings its extracts out** (owner, 2026-10-14: "animate the icons for a couple of seconds so they
-  are visible pre-attentively when the exits are read"; `MapScene.RingExits`, `MapRenderer.DrawExitsLit`). One after
-  another, 0.16 s apart, the lit ones first, then the "??:??:??" ones, each nearest you first (where there is a
-  position, else in the data's order; at most six turns each, the rest share the last). A lit one's glow swells in
-  past its strength and
-  settles over a second, and its triangle's own outline leaves it three times, 0.5 s apart, each over 1.1 s, in its
-  colour on a dark band, under every symbol; a "??:??:??" one's "?" pops in at a size and a half and settles, with one
-  echo. About three seconds in all. Before its turn an extract isn't lit yet, so they light up one after another, as
-  the tour showed them since 2026-10-09. The echo is the triangle, not a ring: round rings that leave a symbol are the
-  pointer's pulse, the player's ping and a completed quest's places; this shape says "way out". A struck-out
-  extract doesn't move: motion goes to where the player can leave. Only a list from a screenshot taken in the last
-  30 s rings (as a position pings: not one found as the logs are read back at start), once per list (not again when
-  the map comes back after another). **Players take several screenshots in a run** (owner, the same day: "updated on
+  **A list just read is called out: the roll call, then the fly-out** (owner, 2026-10-15: "a list of the extracts
+  appears in the middle of the screen along with their icons. Then, the icons move where extracts are (also outside
+  of the current view pane) so it contextualizes them and the player knows where they are"; from a panel of four,
+  2026-10-15: A; §1's fourth exception; `MapScene.CallOutExits`, `MapRenderer.DrawExitsLit`). It takes the place of
+  the ring of 2026-10-14 (owner: "animate the icons for a couple of seconds so they are visible pre-attentively when
+  the exits are read"), which each extract still gets as it lands. From the moment the list is read:
+  - **0 s:** the YOUR EXTRACTS THIS RAID cue (principle 11) opens across the middle of the map column, its title
+    decoding letter by letter and its gold rule shooting out. **From 0.5 s** the rows of the listed extracts rise in,
+    0.1 s apart, nearest you first, lit and "??:??:??" alike (where there is a position, else in the data's order;
+    the ring took the lit ones first). The extracts the list leaves out are struck out at once, get no row and don't
+    move: motion goes to where the player can leave.
+  - **1.2 s:** the view moves over 1.2 s, eased in and out (`MapView.AnimateView`), to frame every listed extract and
+    you, with the label room on the right (*Room for labels on the right*); those that were out of view come into it.
+    A Follow glide under way stops for it: the screenshot's own position is in the frame.
+  - **1.6 s:** each triangle lifts off its row, 0.16 s after the one before and in the same order, and flies 0.9 s on
+    an arc, eased in and out, to its extract's symbol where the frame draws it (on its leader where it is set apart),
+    so it follows the view as the view settles. Its row fades as it leaves, and the band's dark backing goes with the
+    rows, so no landing near the middle is under it (as the panel drew it, four of seven landed under the band). Until
+    its triangle lands an extract is drawn as before the list, solid and unlit. Landing, it lights up and rings out:
+    a lit one's glow swells in past its strength and settles over a second, and its triangle's own outline leaves it
+    three times, 0.5 s apart, each over 1.1 s, in its colour on a dark band, under every symbol; a "??:??:??" one's
+    "?" pops in at a size and a half and settles, with one echo. With six extracts the last lands at 3.3 s.
+  - **After the last landing** the title stays on its halo 1.5 s more (4.8 s with six), then fades; the rings end at
+    about 5.4 s.
+
+  The echo is the triangle, not a ring: round rings that leave a symbol are the pointer's pulse, the player's ping
+  and a completed quest's places; this shape says "way out". Only a list from a screenshot taken in the last 30 s is
+  called out (as a position pings: not one found as the logs are read back at start), once per list (not again when
+  the map comes back after another). **Players take several screenshots in a run** (owner, 2026-10-14: "updated on
   the fly with the newly added items that come in after the first animation has been started"): a list that comes
-  while extracts still ring adds only what it lit or marked anew, from after the last turn; what rings carries on,
-  and the same list again changes nothing. Once the rings are over, a list rings them all again: the player looked
-  again. With animation effects off nothing moves: they are simply lit. What's New's `extracts` preview and the tour
-  ring out their example list the same way.
+  while the cue is up adds what it lit or marked anew as rows after the others, the title counting them all, and they
+  fly after the last; one that comes after the cue has gone rings what it lit or marked anew where they stand, 0.16 s
+  apart, nearest you first, with no cue and no change of view; the same list again changes nothing. (Until
+  2026-10-15 a list that came after the rings were over rang them all again.) With animation effects off nothing
+  moves: the cue stands 5 s with all its rows, the view takes the extracts in at once, and they are simply lit.
+  What's New's `extracts` preview and the tour call their example list out the same way. Of the panel's other ways,
+  badges at the map's edge for the extracts out of view, with no change of view (B), the fly-out and then a glide
+  back (C), and the cue alone with the ring of 2026-10-14 (D) were drawn and not taken: A alone does both halves of
+  the ask, changes the view once and while the cue says why, and leaves the view a player at the spawn plans the route
+  on.
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
+- **The view leaves the player** (2026-10-15, with the roll call above). The view the roll call ends on, every listed
+  extract and you, is the one a player at the spawn plans the route on, so nothing takes it back when the cue goes.
+  With Follow my position on, the next position glides it onto the player as any new position does (2.4 s, at the
+  zoom the view then has; "Screen anatomy", *Follow my position*). With Follow off, principle 8 holds, a position
+  never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom, F or the
+  show-my-position button).
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
@@ -3287,5 +3344,8 @@ every issue goes through it, and the app's report is offered beside it.
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
   ringing out (2026-10-07; §4, principle 11; "Map drawing").
+- Designed, to build (2026-10-15; docs/NEXT.md): the extract list's roll call (§4, principle 11; "Map drawing", *The
+  player's extracts this raid*). Until it is built, a list just read rings its extracts out where they stand, as
+  since 2026-10-14.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).
