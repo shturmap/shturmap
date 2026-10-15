@@ -1498,7 +1498,8 @@ spawns below).
     (all where a cluster parted), the largest from 120 px to 4 px, and leaders that came or went from 61 (12 symbols
     more than once) to 7 (none twice); in What's New's extracts preview, Boiler Room's 17 px and a Sniper zone's 15 px
     snap as their leaders went became slides of 2 px a frame. A glide's frame costs less than before: the repel's
-    median 0.2 ms against 0.9 ms afresh.
+    median 0.2 ms against 0.9 ms afresh. The scale bar keeps its place by the same rule while the view moves, and
+    settles once it is still (*Distances on the map*).
   - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol
     another lay well over put every symbol touching it on a ring around its place, on a dark plate, each on a
     hairline to its own place. It needed the mouse, so it went with the leaders, which leave nothing stacked.
@@ -1764,10 +1765,17 @@ spawns below).
   WIKI MAP link and the credit line, and left-aligned with them. On every map's whole view with a list read
   (`shturmap-cli frames <map> --scene list-read`, 15 maps, 2026-10-15) it stands at its place at 1600 × 1000; at
   500 × 481, the map of the smallest window, it steps up on Streets (49 px, past Crash Site and a quest), Factory and
-  Night Factory (42 px). It is placed afresh in every frame, also while the view moves, so it steps up and back down
-  as symbols pass under it: in the roll call's 1.2 s zoom out (`--scene list-callout`) it changed place 30 times on
-  Streets at 500 × 481, 18 on Customs, 17 on Factory, none on Reserve and Terminal; at 1600 × 1000, 7 times on
-  Interchange, twice on Streets and never on the eight other maps tried.
+  Night Factory (42 px). **While the view only moves it keeps its place** (owner, 2026-10-15; the rule *Steady while
+  the view moves* holds the symbols by: a pan, or less than a tenth more or less zoom from one frame to the next, with
+  the same position, display scale and age tag; `MapRenderer.Scale`, `ScaleBar.Held`), and the first frame drawn with
+  the view still places it afresh. Placed afresh in every frame, it stepped up and back as symbols passed under it: in
+  a 1.2 s glide (`shturmap-cli frames streets-of-tarkov --scene list-read --glide --every 16 --viewport 500x481`) it
+  changed place 59 times, now once, as the view comes to rest; in the roll call's zoom out (`--scene list-callout`)
+  30 times, now once. A frame laid out while the view moved is laid out again when the next one is drawn at the same
+  view, the symbols keeping their places (the repel's placement holds), and the window draws that frame: a frame whose
+  bar held asks for one more (`MapView`), since the end of a move draws none by itself (`AnimateView`, the roll call's
+  and the tour's; a wheel's notches; a Follow glide; a drag). At 100 ms a frame a 1.2 s glide zooms by more than a
+  tenth in some frames, which places it afresh as it lays the symbols out afresh (5 changes, 12 before).
   No range rings (three circles on every view for a question the bar and
   the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
   relative to the facing).
@@ -2972,7 +2980,8 @@ name, state (listed, unsure, notListed, plain or transit), drawn centre and size
 own place, leader, its ring's values and its name's face; per frame where the scale bar stands) and `summary.txt` (per
 frame what changed: turns, rings over, moves, states, names turning bold; frame 000's bold names; then the checks: the
 largest move, anything off the list that animated, names bold before their extract was lit or struck out, the scale
-bar stepped up from a symbol, the first frame against the last). Three scenes: `list-read`, a list read in a PMC raid
+bar stepped up from a symbol, how often it changed place and in how many frames it held its place while the view
+moved, the first frame against the last). Three scenes: `list-read`, a list read in a PMC raid
 (every other extract lit, two "??:??:??", the rest struck out, Scav extracts left out as a raid leaves them out, the
 position at the map's first PMC spawn or `--fix`, pinging), `whatsnew-extracts`, What's New's `extracts` preview
 as it is staged (a PMC raid's map, so without the Scav extracts, which it kept until 2026-10-15; no quests, no

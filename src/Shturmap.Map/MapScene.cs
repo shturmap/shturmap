@@ -123,6 +123,15 @@ public sealed class MapScene
     /// moves, the next repel goes on from it, so nothing jumps from one frame to the next.</summary>
     internal MapRenderer.RepelPlacement? LastRepel { get; set; }
 
+    /// <summary>Where the scale bar stood in the last layout, for which view: while the view only moves it keeps that
+    /// place (<see cref="MapRenderer.ScaleBar.Held"/>).</summary>
+    internal MapRenderer.ScaleBarPlacement? LastScaleBar { get; set; }
+
+    /// <summary>The scale bar as the last frame drew it (<see cref="MapRenderer.Render"/>; null before one): where it
+    /// stood, and whether it held its place while the view moved, so the window draws one more frame for it to settle
+    /// in once the view is still (MapView), and the frames tool records where it stood.</summary>
+    public MapRenderer.ScaleBar? ScaleBarShown => LastLayout?.Layout.Scale;
+
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>
     public MapLayer? Floor
     {

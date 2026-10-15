@@ -333,7 +333,9 @@ public static partial class MapRenderer
     /// (<see cref="Layout"/>). While a pointed-at quest pulses or a new position pings, the map is drawn again about 60
     /// times a second and nothing in it moves; placing every marker and label anew for each of those frames was most
     /// of a frame's work (the review of 2026-10-04, A17). The view, the display's scale and the scene's data decide
-    /// the layout; the clock only through the player's age tag, which changes with the minute.
+    /// the layout; the clock only through the player's age tag, which changes with the minute. One whose scale bar held
+    /// its place while the view moved (<see cref="ScaleBar.Held"/>) is laid out again in the first frame drawn with the
+    /// view still, where the bar settles; the symbols keep their places (the repel's last placement holds).
     /// </summary>
     /// <param name="now">The frame's time (<see cref="Render"/>'s); the clock's when null.</param>
     public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui, DateTime? now = null)
@@ -341,7 +343,7 @@ public static partial class MapRenderer
         var time = now ?? DateTime.Now;
         var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, time) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
         var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age, UiLanguage.Code);
-        if (scene.LastLayout is { } last && last.Key == key)
+        if (scene.LastLayout is { } last && last.Key == key && !last.Layout.Scale.Held)
             return last.Layout;
         var layout = Layout(camera, scene, ui, time);
         scene.LastLayout = (key, layout);
@@ -408,7 +410,7 @@ public static partial class MapRenderer
         var symbols = markers.Where(m => Repels(m.Marker.Kind)).Select(m => Square(m.At, m.Reach)).Concat(chevrons.Select(c => Square(c.At, 10 * ui))).ToList();
         if (scene.Player is { } you)
             symbols.Add(Square(Screen(camera, scene, you.Position), (PlayerRing + 3) * ui));
-        var scale = Scale(camera, scene, ui, symbols);
+        var scale = Scale(camera, scene, ui, symbols, time);
         taken.Add(scale.Box);
 
         var labels = new List<PlacedLabel>();
@@ -2012,7 +2014,15 @@ public static partial class MapRenderer
     // ---- the scale bar ----
 
     /// <summary>The scale bar: its round length in metres, its length on screen, and where it stands.</summary>
-    public sealed record ScaleBar(double Metres, float Pixels, SKPoint Origin, SKRect Box);
+    public sealed record ScaleBar(double Metres, float Pixels, SKPoint Origin, SKRect Box)
+    {
+        /// <summary>Whether it kept the place of the frame before because the view only moved (<see cref="Scale"/>): the
+        /// window then draws one more frame, in which, with the view still, it settles.</summary>
+        public bool Held { get; init; }
+    }
+
+    /// <summary>Where the scale bar stood in the last layout: how far above its own place, for which view.</summary>
+    internal readonly record struct ScaleBarPlacement(RepelView View, SKSize Viewport, float Rise);
 
     private static readonly double[] ScaleSteps = [1, 2, 5, 10, 25, 50, 100, 200, 500, 1000, 2000];
 
@@ -2031,8 +2041,14 @@ public static partial class MapRenderer
     // extract on Streets, whose name then had no room): it stands 2 px above the highest of the symbols it would cover,
     // again until it covers none, and at its own place where that takes it more than ScaleBarRise up. The labels then
     // give way to it (Layout).
+    // While the view only moves (the repel's rule, RepelView.GlidesTo: a pan, or less than a tenth more or less zoom, with
+    // the same position, display scale and age tag), it keeps the place of the layout before (owner, 2026-10-15: placed
+    // afresh in every frame, it went up and back 30 times in the roll call's 1.2 s zoom out on Streets at the smallest
+    // window, as symbols passed under it). The first layout with the view still places it afresh (LayoutOf lays a
+    // frame whose bar was held out again; the window draws that frame, MapView).
     /// <param name="symbols">What it steps aside from: the symbols' boxes as drawn, collars included (pixels).</param>
-    private static ScaleBar Scale(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols)
+    /// <param name="now">The frame's time: the player's age tag is part of the view the rule compares.</param>
+    private static ScaleBar Scale(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols, DateTime now)
     {
         var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
         var from = scene.Projection.ToWorld(camera.ToMap(at));
@@ -2042,6 +2058,13 @@ public static partial class MapRenderer
         var metres = ScaleBarMetres(perMetre, 120 * ui);
         var pixels = (float)(metres * perMetre);
         SKRect Box(float y) => new(at.X - 6 * ui, y - 20 * ui, at.X + pixels + 34 * ui, y + 4 * ui);
+        var view = new RepelView(camera.Zoom, camera.Center, ui, scene.Player, PlayerAgeTag(camera, scene, ui, now) is { } tag ? tag.Text : "");
+        if (scene.LastScaleBar is { } last && last.Viewport == camera.Viewport && last.View.GlidesTo(view))
+        {
+            scene.LastScaleBar = last with { View = view };
+            var held = at.Y - last.Rise;
+            return new ScaleBar(metres, pixels, new SKPoint(at.X, held), Box(held)) { Held = true };
+        }
         var y = at.Y;
         while (symbols.Where(s => s.IntersectsWith(Box(y))).Select(s => s.Top).DefaultIfEmpty(float.NaN).Min() is var top && !float.IsNaN(top))
         {
@@ -2052,6 +2075,7 @@ public static partial class MapRenderer
                 break;
             }
         }
+        scene.LastScaleBar = new ScaleBarPlacement(view, camera.Viewport, at.Y - y);
         return new ScaleBar(metres, pixels, new SKPoint(at.X, y), Box(y));
     }
 

@@ -200,6 +200,67 @@ public class GlideFramesTests
         }
     }
 
+    // The scale bar steps up from a symbol under it (owner, 2026-10-15), and while the view only moves it keeps its place,
+    // as the symbols on leaders go on from theirs: placed afresh in every frame, it went up and back 59 times in this
+    // 1.2 s glide's frames on Streets at the smallest window, as symbols streamed under it. The first frame drawn with the
+    // view still places it afresh.
+    [Fact]
+    public void The_scale_bar_holds_its_place_while_the_view_glides_and_settles_once_it_is_still()
+    {
+        // Quests 40 m apart over the lower left quarter of the sheet: as the view zooms in toward the position they
+        // stream out past the bar's corner.
+        var grid = new List<MapMarker>();
+        for (var x = -480; x <= 0; x += 40)
+        {
+            for (var z = -480; z <= 0; z += 40)
+                grid.Add(Quest($"g{x}:{z}", x, z, ""));
+        }
+        (Camera Camera, MapScene Scene) Grid()
+        {
+            var (c, s) = Of(grid);
+            s.Player = new PlayerFix(new WorldPoint(0, 0, 0), null, T0);
+            return (c, s);
+        }
+        var (camera, scene) = Grid();
+        var target = scene.Projection.ToMap(scene.Player!.Position);
+        var (from, to) = ((new MapPoint(target.X + 60, target.Y + 30), 0.6), (target, 1.8));
+        // Where it stands in each frame, and where a fresh layout of that frame's view puts it.
+        var drawn = new List<SKPoint>();
+        var fresh = new List<SKPoint>();
+        for (var k = 0; k <= Count; k++)
+        {
+            // Frame Count is the first drawn with the view still, at the glide's end.
+            var (center, zoom) = Glide(from, to, Math.Min(k * EveryMs, GlideMs) / GlideMs);
+            camera.Restore(center, zoom);
+            var at = T0.AddMilliseconds(k * EveryMs);
+            Frame(camera, scene, at);
+            drawn.Add(scene.ScaleBarShown!.Origin);
+            var (alone, aloneScene) = Grid();
+            alone.Restore(center, zoom);
+            fresh.Add(MapRenderer.Layout(alone, aloneScene, 1, at).Scale.Origin);
+        }
+        static int Changes(List<SKPoint> places) => places.Skip(1).Where((p, i) => SKPoint.Distance(p, places[i]) > 0.01f).Count();
+
+        // Placed afresh, it would go up and back as the grid passes under it.
+        Assert.True(Changes(fresh) >= 4, $"{Changes(fresh)} changes of place placed afresh: the grid doesn't reach the bar");
+        // It holds: from the glide's first frame to its last, where the first frame put it; it changes at most once, as the
+        // view comes to rest, and stands where a fresh layout of the still view puts it.
+        Assert.Equal(fresh[0], drawn[0]);
+        Assert.All(drawn.Take(Count), p => Assert.Equal(drawn[0], p));
+        Assert.True(Changes(drawn) <= 1, $"{Changes(drawn)} changes of place");
+        Assert.Equal(fresh[^1], drawn[^1]);
+        Assert.False(scene.ScaleBarShown!.Held);
+
+        // A zoom at once by more than a tenth (a double-click, + or −) isn't a move: it is placed afresh at once.
+        camera.ZoomAt(new SKPoint(500, 500), 0.5);
+        var later = T0.AddMilliseconds((Count + 1) * EveryMs);
+        Frame(camera, scene, later);
+        var (zoomed, zoomedScene) = Grid();
+        zoomed.Restore(camera.Center, camera.Zoom);
+        Assert.Equal(MapRenderer.Layout(zoomed, zoomedScene, 1, later).Scale.Origin, scene.ScaleBarShown!.Origin);
+        Assert.False(scene.ScaleBarShown!.Held);
+    }
+
     [Fact]
     public void A_wheels_notch_or_a_new_position_lays_the_crowd_out_as_a_still_view_shows_it()
     {

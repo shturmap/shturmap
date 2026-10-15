@@ -373,6 +373,9 @@ internal static class Frames
         /// <summary>Where the scale bar's left end is drawn, in pixels: at its place at the lower left, or stepped up from a
         /// symbol under it (MapRenderer.ScaleBarRise).</summary>
         public PointRecord? ScaleBar { get; init; }
+
+        /// <summary>Whether the scale bar kept the frame before's place because the view only moved (MapRenderer.ScaleBar.Held).</summary>
+        public bool ScaleBarHeld { get; init; }
     }
 
     /// <param name="Zoom">Pixels per map unit.</param>
@@ -431,10 +434,10 @@ internal static class Frames
                     Round(t.At.X - place.X), Round(t.At.Y - place.Y), leader));
             }
         }
-        // The frame's own layout (MapRenderer.LayoutOf keeps it), as drawn.
-        var bar = MapRenderer.LayoutOf(camera, scene, 1, time).Scale.Origin;
+        // As the frame drew it.
+        var bar = scene.ScaleBarShown!;
         return new FrameRecord(index, ms, file, new ViewRecord(Round(camera.Center.X, 3), Round(camera.Center.Y, 3), Round(camera.Zoom, 6)),
-            scene.ExitsArrivingAt(time), exits, others) { ScaleBar = new PointRecord(Round(bar.X), Round(bar.Y)) };
+            scene.ExitsArrivingAt(time), exits, others) { ScaleBar = new PointRecord(Round(bar.Origin.X), Round(bar.Origin.Y)), ScaleBarHeld = bar.Held };
     }
 
     private static double Round(double v, int digits = 2) => Math.Round(v, digits, MidpointRounding.AwayFromZero);
@@ -606,8 +609,10 @@ internal static class Frames
         // The scale bar's place is 66 px above the view's foot; a symbol under it moves it up (owner, 2026-10-15).
         var risen = frames.Where(f => f.ScaleBar is { } b && Height - 66 - b.Y > 0.01).ToList();
         var barMoves = frames.Skip(1).Count(f => Math.Abs(f.ScaleBar!.Y - frames[f.Index - 1].ScaleBar!.Y) > 0.01);
-        s.AppendLine(risen.Count == 0 ? "  the scale bar: at its place at the lower left in every frame"
-            : Fmt($"  the scale bar: stepped up from a symbol under it in {risen.Count} of {frames.Count} frames (from frame {risen[0].Index:000}), by up to {risen.Max(f => Height - 66 - f.ScaleBar!.Y):0.#} px; it changed place from one frame to the next {barMoves} times"));
+        var held = frames.Count(f => f.ScaleBarHeld);
+        s.AppendLine((risen.Count == 0 ? "  the scale bar: at its place at the lower left in every frame"
+            : Fmt($"  the scale bar: stepped up from a symbol under it in {risen.Count} of {frames.Count} frames (from frame {risen[0].Index:000}), by up to {risen.Max(f => Height - 66 - f.ScaleBar!.Y):0.#} px"))
+            + Fmt($"; it changed place from one frame to the next {barMoves} times, and held its place while the view moved in {held} frames"));
         var last = frames[^1];
         var differ = new List<string>();
         foreach (var e in last.Exits.Where(e => e.InView))

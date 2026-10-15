@@ -89,12 +89,14 @@ day; DESIGN.md says so):
   "ansit to Interchange", and the scale bar lay over a lit Crash Site, whose name then had no free side. Now a side of
   a label that would start past the left edge isn't free (above and below slide in to start at it), and a symbol under
   the scale bar moves it up by what it takes, at most 96 px ("Map drawing", *Room for labels on the right*, *Distances
-  on the map*). `shturmap-cli frames <map> --viewport 500x481` draws the map of the smallest window. **Open, for the
-  owner:** the bar is placed afresh in every frame, so while the view moves it steps up and back as symbols pass under
-  it (the roll call's zoom out at 500 × 481: 30 changes of place on Streets, 17 on Factory; at 1600 × 1000, 7 on
-  Interchange). Proposed if that reads as restless: hold it where it stood while the view only moves, and place it
-  afresh in the first frame drawn with the view still (a Follow glide draws one as it stops; `MapView.AnimateView`
-  doesn't by itself, so its end would need one).
+  on the map*). `shturmap-cli frames <map> --viewport 500x481` draws the map of the smallest window. Placed afresh in
+  every frame, the bar stepped up and back while the view moved, as symbols passed under it (the roll call's zoom out
+  at 500 × 481: 30 changes of place on Streets, 17 on Factory; at 1600 × 1000, 7 on Interchange). Built the same day,
+  as proposed: while the view only moves (the steady placement's rule) it keeps its place, and the first frame drawn
+  with the view still places it afresh; a frame whose bar held asks the window for one more, since the end of
+  `MapView.AnimateView`, of a wheel's notches or of a drag draws none by itself. Streets at 500 × 481: a 1.2 s glide
+  at 16 ms a frame (`--scene list-read --glide --every 16`) 59 changes of place, now 1; the roll call 30, now 1
+  (`GlideFramesTests`).
 
 **What is built where** (this commit has the docs, the cue's texts and the tour's words; the rest is to build, and
 the UI QA role reviews it before it is reported done):
