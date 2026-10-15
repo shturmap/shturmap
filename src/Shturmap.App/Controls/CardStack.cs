@@ -348,8 +348,21 @@ public sealed class CardStack
         card.MaxHeight = Math.Max(MinCardHeight, _space().Height - 16);
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
+        // A card that grows while it is open (a held quest card's NOTES field, a note added, a tick's line) moves up as
+        // far as it needs to stay in the window: placed by its row near the window's foot, it ran off the edge, where
+        // nothing scrolls it into view (2026-10-15).
+        card.SizeChanged += (_, e) => KeepInside(popup, e.NewSize.Height);
         popup.IsOpen = true;
         _pendingKey = null;
+    }
+
+    // Up, never down, and never above the top of the room: its height is no more than the room (MaxHeight above).
+    private void KeepInside(Popup popup, double height)
+    {
+        var space = _space();
+        var over = popup.VerticalOffset + height - (space.Bottom - 8);
+        if (over > 0)
+            popup.VerticalOffset = Math.Max(space.Top + 8, popup.VerticalOffset - over);
     }
 
     // In a window too small for it a card still gets this much height.

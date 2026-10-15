@@ -624,6 +624,18 @@
     <value>WIKI PAGE ↗</value>
     <comment>A quest's card: link to the quest's page on the game's wiki. Upper case, small; the arrow says it leaves Shturmap.</comment>
   </data>
+  <data name="QuestCardNotes" xml:space="preserve">
+    <value>NOTES</value>
+    <comment>A quest's card, its last section: heading over the player's own notes on the quest (a few words each, with the day and time they were written). Upper case.</comment>
+  </data>
+  <data name="QuestCardNoteAdd" xml:space="preserve">
+    <value>Add a note…</value>
+    <comment>A quest's card, under NOTES: the hint in the empty one-line field where the player writes a note on the quest (Enter adds it). About 300 px wide.</comment>
+  </data>
+  <data name="QuestCardNoteDeleteTip" xml:space="preserve">
+    <value>Delete this note</value>
+    <comment>A quest's card, under NOTES: tooltip and screen reader name of the × at the end of a note, which deletes it at once, without asking.</comment>
+  </data>
   <data name="SettingsLanguage" xml:space="preserve">
     <value>Language</value>
     <comment>Settings: the name of the row with AUTOMATIC and the languages, each in its own name. Short: it stands beside them on one line.</comment>

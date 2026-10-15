@@ -624,6 +624,18 @@
     <value>WIKI-SEITE ↗</value>
     <comment>en: WIKI PAGE ↗</comment>
   </data>
+  <data name="QuestCardNotes" xml:space="preserve">
+    <value>NOTIZEN</value>
+    <comment>en: NOTES</comment>
+  </data>
+  <data name="QuestCardNoteAdd" xml:space="preserve">
+    <value>Notiz hinzufügen…</value>
+    <comment>en: Add a note…</comment>
+  </data>
+  <data name="QuestCardNoteDeleteTip" xml:space="preserve">
+    <value>Diese Notiz löschen</value>
+    <comment>en: Delete this note</comment>
+  </data>
   <data name="SettingsLanguage" xml:space="preserve">
     <value>Sprache</value>
     <comment>en: Language</comment>

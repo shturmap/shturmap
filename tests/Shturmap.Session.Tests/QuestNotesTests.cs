@@ -1,3 +1,4 @@
+using Shturmap.Core;
 using Shturmap.Core.Logs;
 using Shturmap.Data.TarkovDev;
 
@@ -227,6 +228,20 @@ public sealed class QuestNotesTests : IDisposable
         Assert.Empty(QuestCards.Build(data, quests, Quest)!.Notes);
     }
 
+    // A developer script's note (its "note" step), as its ticks: on the card for the run, never in the file, so a
+    // script run on the developer folder leaves no notes behind.
+    [Fact]
+    public void A_note_for_the_session_only_is_listed_and_never_written()
+    {
+        var notes = Load();
+        var kept = notes.Add(GameMode.Pve, Quest, "kept", Morning);
+        var scripted = notes.Add(GameMode.Pve, Quest, "for a snapshot", Morning.AddMinutes(1), save: false);
+        Assert.Equal([scripted, kept], notes.For(GameMode.Pve, Quest));
+        notes.Save();
+        Assert.DoesNotContain("for a snapshot", File.ReadAllText(NotesFile));
+        Assert.Equal([kept], Load().For(GameMode.Pve, Quest));
+    }
+
     // ---- the session ----
 
     private static GameData Data(GameMode mode)
@@ -317,6 +332,20 @@ public sealed class QuestNotesTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task A_scripts_note_shows_on_the_card_and_writes_no_file()
+    {
+        await using var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations) { GivenData = Data });
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null && s.Mode == GameMode.Pve, "the data in PvE");
+
+        await rig.Session.AddQuestNoteAsync(Quest, Words, save: false);
+        var s = rig.Snapshot;
+        Assert.Equal(Words, Assert.Single(QuestCards.Build(s.Data!, s.Quests, Quest, notes: s.QuestNotes)!.Notes).Text);
+        Assert.False(File.Exists(Path.Combine(rig.AppFolder, QuestNotes.FileName)));
+    }
+
     // The study log is held open by the running session.
     private static string ReadShared(string path)
     {
@@ -324,4 +353,34 @@ public sealed class QuestNotesTests : IDisposable
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
+}
+
+// When a note was written, as its card says it (QuestCards.NoteStamp; owner, 2026-10-15): the day and
+// the time, in this PC's time, as the language in use writes them, as the tick's day and the stash's marks are.
+[Collection("UiLanguage")]
+public sealed class QuestNoteStampTests
+{
+    // 15:40 on the examples' day in this PC's time zone, whichever it is: the stamp is read in the PC's time.
+    private static readonly DateTimeOffset Written = new(new DateTime(2026, 1, 1, 15, 40, 12, DateTimeKind.Local));
+
+    [Fact]
+    public void A_notes_stamp_is_its_day_and_time_as_the_language_in_use_writes_them()
+    {
+        try
+        {
+            Assert.Equal("1 Jan 15:40", QuestCards.NoteStamp(Written));
+            UiLanguage.Set(UiLanguage.German);
+            Assert.Equal("1. Jan., 15:40", QuestCards.NoteStamp(Written));
+        }
+        finally
+        {
+            UiLanguage.Set(UiLanguage.English);
+        }
+    }
+
+    // The moment counts, not the offset it was written with: the same moment is the same stamp.
+    [Fact]
+    public void The_same_moment_under_another_offset_is_the_same_stamp() =>
+        Assert.Equal(QuestCards.NoteStamp(new DateTimeOffset(2026, 1, 1, 15, 40, 0, TimeSpan.FromHours(1))),
+            QuestCards.NoteStamp(new DateTimeOffset(2026, 1, 1, 14, 40, 0, TimeSpan.Zero)));
 }

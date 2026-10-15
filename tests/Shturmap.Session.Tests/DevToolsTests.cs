@@ -241,5 +241,21 @@ public sealed class DevToolsTests : IDisposable
         Assert.Equal(7, steps[3].Number(9, 7));
         Assert.Equal(["line 6: unknown step 'jump'"], errors);
     }
+
+    [Fact]
+    public void A_note_step_reads_its_quest_and_the_rest_of_the_line_as_its_words()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "note Dandies \"Behind the bar, ground floor\"",
+            "note \"Shooting Cans\" under the bridge",
+            "note Dandies \"Key in the jacket\\nthird floor\"",
+            "note Dandies"));
+        Assert.Empty(errors);
+        Assert.Equal(("Dandies", "Behind the bar, ground floor"), DevScript.Note(steps[0]));
+        Assert.Equal(("Shooting Cans", "under the bridge"), DevScript.Note(steps[1]));
+        // "\n" breaks the line, as Shift+Enter does in the card's field.
+        Assert.Equal(("Dandies", "Key in the jacket\nthird floor"), DevScript.Note(steps[2]));
+        Assert.Null(DevScript.Note(steps[3]));
+    }
 }
 #endif

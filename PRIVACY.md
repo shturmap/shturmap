@@ -72,7 +72,8 @@ What stays on your PC
 Everything Shturmap keeps on your PC (settings, quest history, the items it saw in your screenshots and logs, logs,
 reports waiting to be sent, crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. The items it saw are
 in "stash.json" there, as item ids with a count and a date: no names, no pictures. "Not any more" on an item's card
-takes one out. Crash records are kept for 30 days (in its crashes folder), and a
+takes one out. The notes you write on quest cards are in "notes.json" there, in your words, and are never sent, not
+even with a report; the × beside a note deletes it. Crash records are kept for 30 days (in its crashes folder), and a
 report that couldn't be sent waits in its outbox folder until it has gone. A report the service refused stays there
 as a ".refused.txt" file, with its text and contact, and isn't sent again: delete it yourself, or with the rest of
 the data. Shturmap keeps no study log of how you use it: only developer builds of Shturmap have one. To delete all of

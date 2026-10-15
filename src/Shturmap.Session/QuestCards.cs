@@ -169,6 +169,13 @@ public static class QuestCards
     public static string TickedText(DateOnly day) =>
         day == default ? SessionTexts.TickedByYou : SessionTexts.TickedByYouOn(day: UiLanguage.DayMonth(day));
 
+    /// <summary>
+    /// "1 Jan 15:40" (German "1. Jan., 15:40"): when a note was written, in this PC's time, as the language in use
+    /// writes a day with its time, as the stash's marks do. Notes aren't edited, so it is when its words were written
+    /// (owner, 2026-10-15; docs/DESIGN.md §4, "Quest cards", <i>Notes</i>).
+    /// </summary>
+    public static string NoteStamp(DateTimeOffset at) => UiLanguage.DayMonthTime(at.LocalDateTime);
+
     private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live, bool active, IReadOnlyDictionary<string, DateOnly>? ticks)
     {
         var kind = QuestTaxonomy.Classify(o.Type);

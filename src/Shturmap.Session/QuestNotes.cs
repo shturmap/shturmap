@@ -42,7 +42,8 @@ public sealed class QuestNotes
     // player's, so nothing is written over it this run.
     private bool _keep = true;
 
-    private sealed record Entry(GameMode Mode, string QuestId, QuestNote Note);
+    // Kept false for a note that must not outlive the session (a developer script's): shown, never written.
+    private sealed record Entry(GameMode Mode, string QuestId, QuestNote Note, bool Kept = true);
 
     private QuestNotes(string path) => _path = path;
 
@@ -67,15 +68,17 @@ public sealed class QuestNotes
     /// Adds a note to a quest: the text trimmed, line breaks kept, cut at <see cref="MaxLength"/> characters; the time
     /// to the second. Changes the notes in memory only: <see cref="Save"/> writes them.
     /// </summary>
+    /// <param name="save">False for a note that must not outlive the session (a developer script's, for a snapshot):
+    /// it is listed like any other, and <see cref="Save"/> leaves it out.</param>
     /// <exception cref="ArgumentException">The text is empty or only white space (nothing to keep), or the quest id is.</exception>
-    public QuestNote Add(GameMode mode, string questId, string text, DateTimeOffset at)
+    public QuestNote Add(GameMode mode, string questId, string text, DateTimeOffset at, bool save = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(questId);
         var words = Clean(text ?? "");
         if (words.Length == 0)
             throw new ArgumentException("A note needs words.", nameof(text));
         var note = new QuestNote(NewId(), at.AddTicks(-(at.Ticks % TimeSpan.TicksPerSecond)), words);
-        _notes.Add(new Entry(mode, questId, note));
+        _notes.Add(new Entry(mode, questId, note, save));
         _views.Remove(mode);
         return note;
     }
@@ -187,7 +190,8 @@ public sealed class QuestNotes
     {
         if (!_keep)
             return;
-        var model = new NotesFile(Version, _notes.Select(n => new NoteFile(n.Note.Id, ModeName(n.Mode), n.QuestId, n.Note.At, n.Note.Text)).ToList());
+        var model = new NotesFile(Version, _notes.Where(n => n.Kept)
+            .Select(n => new NoteFile(n.Note.Id, ModeName(n.Mode), n.QuestId, n.Note.At, n.Note.Text)).ToList());
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         var temp = _path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(model, Json.NotesFile));

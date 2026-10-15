@@ -607,6 +607,16 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
             case "exit":
                 window.DevExit();
                 return false;
+            case "note":
+                // A note on a quest, as the field on its card adds one ("note Dandies \"Behind the bar\"", then "show
+                // Dandies" for its card). For this session only, as "tick": a script leaves no notes.
+                if (DevScript.Note(step) is not { } note)
+                    Say("note <quest id or name> <text>");
+                else if (QuestNamed(note.Quest) is { } noteQuest)
+                    await session.AddQuestNoteAsync(noteQuest, note.Text, save: false);
+                else
+                    Say("No quest " + note.Quest);
+                break;
         }
         return true;
     }
