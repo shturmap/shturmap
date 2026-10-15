@@ -311,7 +311,7 @@ public sealed partial class MainWindow
         var points = frame?.Invoke(content);
         Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, padding, foot, minMetres) : null);
         _scenes.Forget();
-        PreviewHidesFloors();
+        ShowFloors();
     }
 
     // An example extract list on Customs: some lit, one marked "??:??:??", the rest struck out; rung out as a list just
@@ -380,6 +380,19 @@ public sealed partial class MainWindow
             Stash = given ? SessionTexts.MarkGiven(date: date) : SessionTexts.MarkSeenCount(count: 2.ToString("N0", UiLanguage.Culture), date: date),
         };
         return new Controls.ItemCard(view) { Opacity = 1 };
+    }
+
+    // The plate stands in the middle of the map, and lower only as far as it must to keep clear of the notes at the map's
+    // top, its preview label among them (QA pass of 2026-10-15: at 900×560 the label, in two lines now, lay over the item
+    // card's top). Centred under a padding, the plate moves down by half of it.
+    private void PlaceWhatsNewPlate()
+    {
+        const double gap = 8;
+        var clear = MapNotes.Margin.Top + MapNotes.ActualHeight + gap;
+        var top = (WhatsNewPlate.ActualHeight - WhatsNewPlateStack.ActualHeight) / 2;
+        var padding = Math.Max(0, 2 * (clear - top));
+        if (Math.Abs(WhatsNewPlate.Padding.Top - padding) > 0.5)
+            WhatsNewPlate.Padding = new Thickness(0, padding, 0, 0);
     }
 
     private void EndWhatsNewPreview()

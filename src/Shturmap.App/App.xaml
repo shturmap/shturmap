@@ -71,6 +71,12 @@
       <Color x:Key="SystemAccentColorLight2">#E2CF9C</Color>
       <Color x:Key="SystemAccentColorDark1">#A88F4E</Color>
 
+      <!-- The focus ring, every control's: AmberHi with a ground-coloured inner line (docs/DESIGN.md §4, "Design system").
+           WinUI draws it in its own white and black (FocusStrokeColorOuter and Inner), not in the accent ramp above, so
+           until the QA pass of 2026-10-15 every focused control wore those (seen on "?" in a developer script's stills). -->
+      <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="{StaticResource SystemAccentColorLight2}" />
+      <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="{StaticResource GroundColor}" />
+
       <SolidColorBrush x:Key="ButtonBackground" Color="{StaticResource PanelColor}" />
       <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{StaticResource RaisedColor}" />
       <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{StaticResource LineColor}" />

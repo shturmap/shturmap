@@ -1286,14 +1286,14 @@
         <!-- What's New's preview of something that isn't on the map (the raid card's clock): the app's own control, with
              example values, on a plate over the dimmed map. -->
         <Grid x:Name="WhatsNewPlate" Visibility="Collapsed" IsHitTestVisible="False" Background="#960B0C0B">
-          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+          <StackPanel x:Name="WhatsNewPlateStack" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
             <Border x:Name="WhatsNewPlateBox" Width="360" Padding="20,18" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" />
             <TextBlock x:Name="WhatsNewPlateNote" Style="{StaticResource EyebrowText}" Margin="0" HorizontalAlignment="Center" />
           </StackPanel>
         </Grid>
 
         <!-- One-line notices, top centre; they go by themselves. -->
-        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" Spacing="8">
+        <StackPanel x:Name="MapNotes" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" Spacing="8">
         <Border HorizontalAlignment="Center" MaxWidth="900" Padding="14,8,6,8"
                 Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1"
                 Visibility="{x:Bind ShownIfTrue(ViewModel.NoticeOpen), Mode=OneWay}">
@@ -1361,13 +1361,15 @@
             </Button>
           </Grid>
         </Border>
-        <!-- Another map shown for a moment from its row in Plan under the pointer. -->
+        <!-- Another map shown for a moment from its row in Plan under the pointer. The hint stands beside the title, or
+             under it where the map leaves too little room for both, each whole (QA pass of 2026-10-15: at 900×560 What's
+             New's "AN EXAMPLE, NOT YOUR STASH" ran out of the frame, the German one by a word). -->
         <Border HorizontalAlignment="Center" Padding="14,6" Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"
                 Visibility="{x:Bind ShownIf(ViewModel.PreviewText), Mode=OneWay}" IsHitTestVisible="False">
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="{x:Bind ViewModel.PreviewText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" />
-            <TextBlock Text="{x:Bind ViewModel.PreviewHint, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" />
-          </StackPanel>
+          <controls:WrapRow HorizontalSpacing="10" VerticalSpacing="6">
+            <TextBlock Text="{x:Bind ViewModel.PreviewText, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Bind ViewModel.PreviewHint, Mode=OneWay}" Style="{StaticResource StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+          </controls:WrapRow>
         </Border>
         <!-- In a raid, another map picked in the MAP list is a look: the rail stays the raid's, and this says so. -->
         <Border HorizontalAlignment="Center" Padding="14,6" Background="#F00B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"
