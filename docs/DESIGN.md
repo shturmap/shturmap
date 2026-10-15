@@ -1806,6 +1806,8 @@ next raid ("Behind the bar, ground floor"), on its card, where they look for it.
 - **Kept.** One set per quest and game mode, in `notes.json` (§8, "The notes file"). The card follows the session's
   next snapshot, which comes after the file is written; the field is never made anew, so what is typed in it and its
   focus stay meanwhile.
+- **Help** says it in a paragraph after the ticks' (`HelpNotes`): what NOTES is, the time on each note, add or delete
+  only, never needed, also in a raid, and kept on this PC.
 - Developer builds: the developer script's `note <quest> <text>` adds one for the session only, for a snapshot.
 
 **Hand-overs: a mark on what gets the thing, not a line** (owner, 2026-10-05: "many quests have a thing where you

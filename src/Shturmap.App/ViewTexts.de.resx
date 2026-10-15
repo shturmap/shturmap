@@ -100,6 +100,10 @@
     <value>Ziel erledigt? Hak es auf der Quest-Karte ab (in den Logs steht es nicht): Map, ZIEL und Planung überspringen es. Item mit → und Trader-Porträt: Gib es nach dem Raid bei diesem Trader ab.</value>
     <comment>en: Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. An item followed by → and a trader's portrait: hand it to that trader after the raid.</comment>
   </data>
+  <data name="HelpNotes" xml:space="preserve">
+    <value>Eine festgehaltene Quest-Karte endet mit NOTIZEN: deine eigenen Worte zur Quest, jede Notiz mit dem Zeitpunkt, zu dem du sie geschrieben hast; hinzufügen oder löschen, kein Bearbeiten. Jederzeit, auch im Raid, aber nichts hängt von ihnen ab; sie bleiben auf diesem PC.</value>
+    <comment>en: A kept quest card ends in NOTES: your own words on the quest, each with the time you wrote it; add or delete, no editing. Any time, also in a raid, but nothing needs them; they stay on this PC.</comment>
+  </data>
   <data name="HelpReplay" xml:space="preserve">
     <value>Nach einem Raid mit ein paar Screenshots spielt die Map nach, wo du sie gemacht hast, am Anfang blass, am Ende hell. REPLAY in der Zeile des letzten Raids spielt ihn noch mal ab, bis zum nächsten Raid.</value>
     <comment>en: After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid.</comment>

@@ -284,6 +284,7 @@
                 </TextBlock>
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpPicks}" />
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpTicks}" />
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpNotes}" />
                 <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpReplay}" />
                 <TextBlock Style="{StaticResource NoteText}" Text="{x:Bind local:ViewTexts.HelpQuestsFromLogs}" />
                 <!-- True as long as tarkov.dev leaves them out of its data (docs/UPDATES.md, "Story chapters"; owner, 2026-10-09). -->
