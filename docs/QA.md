@@ -68,6 +68,8 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\whatsnew" --scene whatsnew-extracts --data "$pass\frames\data"
 # The roll call: its view zooms out by itself, so no second run with --glide
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\callout" --scene list-callout --data "$pass\frames\data"
+# The map at the smallest window (900x560): names at its left edge, the scale bar stepping up from a symbol
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames streets-of-tarkov "$pass\frames\small" --viewport 500x481 --data "$pass\frames\data"
 # A release: the tour's chapters (also with -Culture de-DE), What's New (developer build), the full layout check
 foreach ($n in 1..7) { $out = "$pass\tour\$n"; .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -Tour $n -MoreArgs '--data', "$out\data" }
 $out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\Shturmap.exe -Out $out -PlanOnly -MoreArgs '--whats-new', '--data', "$out\data"
@@ -76,8 +78,9 @@ $out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\S
 
 Other states where a change reaches them: `-Scav`, `-LocalRaid`, `-HoldLoading`, `-GroupPick`, `-Map lab` (a sheet),
 `-MoreArgs '--show-report'` or `'--show-crash'`. `render` also takes made-up screenshot names (dated 2026-01-01) for
-positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms apart (`--every`, `--count`, `--fix`),
-`summary.txt` first. What each tool writes: DESIGN.md §8, "Developer aids", and docs/LANGUAGES.md, "Layout check".
+positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms apart (`--every`, `--count`, `--fix`,
+`--viewport`), `summary.txt` first. What each tool writes: DESIGN.md §8, "Developer aids", and docs/LANGUAGES.md,
+"Layout check".
 
 ## How it looks
 

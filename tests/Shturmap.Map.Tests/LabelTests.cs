@@ -79,6 +79,52 @@ public class LabelTests
         Assert.DoesNotContain(layout.Labels, l => l.Text == "Dandies");
     }
 
+    // At the smallest window a name placed left of its symbol by the map's left edge lost its first letters ("ansit to
+    // Interchange" on Streets; owner, 2026-10-15): no label starts past the edge. One above or below slides in to start
+    // there, still over or under its symbol; one beside it isn't a place; with no side left the label is dropped.
+    [Fact]
+    public void A_candidate_past_the_left_edge_slides_in_over_or_under_its_symbol_or_is_no_place()
+    {
+        var at = new SKPoint(20, 100);
+        var boxes = MapRenderer.LabelCandidates(at, 10, 60, 10).ToList();
+        Assert.Equal(boxes[0], MapRenderer.Inward(boxes[0], at, 2));
+        Assert.Null(MapRenderer.Inward(boxes[1], at, 2));
+        foreach (var box in boxes.Skip(2))
+        {
+            var inward = MapRenderer.Inward(box, at, 2)!.Value;
+            Assert.Equal(SKRect.Create(2, box.Top, box.Width, box.Height), inward);
+            Assert.True(inward.Left <= at.X && inward.Right >= at.X);
+        }
+        // A symbol itself past the edge: nothing over or under it stays whole; on its right, its name may.
+        var off = new SKPoint(-5, 100);
+        var offBoxes = MapRenderer.LabelCandidates(off, 10, 60, 10).ToList();
+        Assert.Equal(offBoxes[0], MapRenderer.Inward(offBoxes[0], off, 2));
+        Assert.All(offBoxes.Skip(1), b => Assert.Null(MapRenderer.Inward(b, off, 2)));
+        // Clear of the edge, nothing changes.
+        Assert.All(MapRenderer.LabelCandidates(new SKPoint(200, 100), 10, 60, 10), b => Assert.Equal(b, MapRenderer.Inward(b, new SKPoint(200, 100), 2)));
+    }
+
+    [Fact]
+    public void No_label_starts_past_the_maps_left_edge()
+    {
+        // 30 px in from the left edge, a symbol on its right: its name would go left of it, past the edge.
+        var transit = new MapMarker("transit:i", MarkerKind.Transit, new WorldPoint(-470, 0, 0), "Transit to Interchange");
+        var right = new MapMarker("extract:r", MarkerKind.ExtractPmc, new WorldPoint(-440, 0, 0), "");
+        var (camera, scene) = View([transit, right]);
+        var label = Assert.Single(MapRenderer.Layout(camera, scene, 1).Labels);
+        // Above it instead, slid in to start at the edge, still over its symbol.
+        Assert.Equal(MapRenderer.LabelEdge, label.Box.Left, 3);
+        Assert.True(label.Box.Bottom < 490 && label.Box.Right > 30, $"{label.Box}");
+
+        // With above and below taken too, it is dropped rather than cut.
+        var (crowdedCamera, crowded) = View([transit, right, new MapMarker("extract:u", MarkerKind.ExtractPmc, new WorldPoint(-470, 0, 22), ""),
+            new MapMarker("extract:d", MarkerKind.ExtractPmc, new WorldPoint(-470, 0, -22), "")]);
+        Assert.Empty(MapRenderer.Layout(crowdedCamera, crowded, 1).Labels);
+        // Without the edge it would have gone on the left: the same crowd in the middle of the view.
+        var (middleCamera, middle) = View([.. crowded.Markers.Select(m => m with { Position = new WorldPoint(m.Position.X + 470, 0, m.Position.Z) })]);
+        Assert.True(Assert.Single(MapRenderer.Layout(middleCamera, middle, 1).Labels).Box.Right < 500);
+    }
+
     [Fact]
     public void A_name_is_said_once_per_neighbourhood()
     {

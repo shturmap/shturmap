@@ -446,7 +446,8 @@ public sealed class MapScene
     /// <summary>
     /// The extracts the game's own list named this raid without "??:??:??" (marker ids): they are lit, a steady glow in
     /// their colour and their names in bold (owner, 2026-10-05: "highlighted better on the map so it can be seen that
-    /// they are active"). Empty while no list was read.
+    /// they are active"); a list just read lights each at its turn, its name bold from then on (owner, 2026-10-15;
+    /// <see cref="ExitsRinging"/>). Empty while no list was read.
     /// </summary>
     public IReadOnlySet<string> ExitsListed
     {

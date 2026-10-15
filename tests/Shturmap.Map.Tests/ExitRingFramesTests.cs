@@ -125,6 +125,28 @@ public class ExitRingFramesTests
         Assert.True(near > 100 && far < 20, $"{near} glowing pixels around the nearest, {far} around the farthest");
     }
 
+    // The bold comes with the lighting (owner, 2026-10-15): in a plain ring a lit one's name is regular before its turn and
+    // bold from it on; the "??:??:??" and struck-out ones' never.
+    [Fact]
+    public void A_lit_ones_name_turns_bold_at_its_turn()
+    {
+        var (camera, scene) = Raid();
+        var frames = Frames(scene, camera);
+        foreach (var id in new[] { "extract:near", "extract:mid", "extract:far" })
+        {
+            // The first frame at or after its turn.
+            var turn = (int)Math.Ceiling(TurnMs(frames, id)!.Value / Every.TotalMilliseconds - 1e-6);
+            for (var k = 0; k < Count; k++)
+                Assert.True(frames[k][id].Bold == k >= turn, $"{id} {frames[k][id].Bold} at frame {k}, its turn at {turn}");
+        }
+        // The nearest's turn is t0: bold from the first frame; mid's at 160 ms.
+        Assert.True(frames[0]["extract:near"].Bold);
+        Assert.False(frames[1]["extract:mid"].Bold);
+        Assert.True(frames[2]["extract:mid"].Bold);
+        foreach (var id in new[] { "extract:unsure-a", "extract:unsure-b", "extract:closed-a", "extract:closed-b", "extract:twin", "transit:t" })
+            Assert.All(frames, f => Assert.NotEqual(true, f[id].Bold));
+    }
+
     [Fact]
     public void No_extract_moves_between_frames()
     {
@@ -251,7 +273,7 @@ public class ExitRingFramesTests
     }
 
     [Fact]
-    public void The_first_and_the_last_frame_differ_only_in_the_glow_and_the_question_marks()
+    public void The_first_and_the_last_frame_differ_only_in_the_glow_the_question_marks_and_the_lit_ones_names()
     {
         var (camera, scene) = Raid();
         var frames = Frames(scene, camera);
@@ -266,32 +288,42 @@ public class ExitRingFramesTests
             switch (a.Look)
             {
                 case ExitLook.Listed:
-                    // Unlit before its turn, or (the first) at its very start; lit at the end, every ring over.
+                    // Unlit before its turn, or (the first) at its very start; lit at the end, every ring over. Its name
+                    // bold from its turn on (owner, 2026-10-15): regular at t0 but the first's, whose turn t0 is.
                     Assert.Equal(0, a.Glow);
                     Assert.Equal(1, b.Glow);
                     Assert.Null(b.Arrival);
                     Assert.Empty(b.Echoes);
+                    Assert.Equal(a.Arrival >= 0, a.Bold);
+                    Assert.True(b.Bold);
                     break;
                 case ExitLook.Unsure:
                     Assert.Equal(0, a.Question);
                     Assert.Equal(1, b.Question);
                     Assert.Null(b.Arrival);
+                    Assert.NotEqual(true, a.Bold);
+                    Assert.NotEqual(true, b.Bold);
                     break;
                 default:
                     Assert.Null(a.Glow ?? b.Glow);
                     Assert.Null(a.Question ?? b.Question);
                     Assert.Empty(a.Echoes);
                     Assert.Empty(b.Echoes);
+                    Assert.Equal(a.Bold, b.Bold);
+                    Assert.NotEqual(true, a.Bold);
                     break;
             }
         }
 
         // The pictures differ only where the trace says something differs: around the lit ones (their glow and the
-        // first one's echo) and in the unsure ones' triangles (their "?").
+        // first one's echo), in the unsure ones' triangles (their "?") and in the lit ones' names (their face), which
+        // keep their bold names' boxes from t0.
         using var at0 = Picture(scene, camera, T0);
         using var atLast = Picture(scene, camera, T0 + Every * (Count - 1));
         var lit = first.Values.Where(t => t.Look == ExitLook.Listed).ToList();
         var unsure = first.Values.Where(t => t.Look == ExitLook.Unsure).ToList();
+        var names = MapRenderer.LayoutOf(camera, scene, 1, T0).Labels.Where(l => l.Of.Listed).Select(l => SKRect.Inflate(l.Box, 2, 2)).ToList();
+        Assert.Equal(names, MapRenderer.LayoutOf(camera, scene, 1, T0 + Every * (Count - 1)).Labels.Where(l => l.Of.Listed).Select(l => SKRect.Inflate(l.Box, 2, 2)));
         var stray = 0;
         var differing = 0;
         for (var y = 0; y < 1000; y++)
@@ -303,7 +335,8 @@ public class ExitRingFramesTests
                     continue;
                 differing++;
                 var point = new SKPoint(x, y);
-                if (!lit.Any(t => SKPoint.Distance(point, t.At) <= t.R * 3.4f + 2) && !unsure.Any(t => SKPoint.Distance(point, t.At) <= t.R * 1.4f))
+                if (!lit.Any(t => SKPoint.Distance(point, t.At) <= t.R * 3.4f + 2) && !unsure.Any(t => SKPoint.Distance(point, t.At) <= t.R * 1.4f)
+                    && !names.Any(n => n.Contains(point)))
                     stray++;
             }
         }

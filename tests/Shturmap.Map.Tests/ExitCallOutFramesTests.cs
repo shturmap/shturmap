@@ -253,6 +253,54 @@ public class ExitCallOutFramesTests
         Assert.True(Glow(before, place) < 20 && Glow(after, place) > 100, $"{Glow(before, place)} glowing pixels before landing, {Glow(after, place)} after");
     }
 
+    // The bold comes with the lighting (owner, 2026-10-15: until then every listed name was bold from the first frame):
+    // a listed extract's name is in the regular face, as an unlit one's, until its icon lands, and bold from its landing
+    // on; it keeps the bold name's box throughout, so no label moves as one lights. "??:??:??" and struck-out names are
+    // never bold.
+    [Fact]
+    public void A_listed_name_is_regular_until_its_icon_lands_and_bold_from_then_on()
+    {
+        var (scene, camera, frames) = CalledOut.Value;
+        Assert.All(frames[0].Values.Where(t => t.Look is not null), t => Assert.NotEqual(true, t.Bold));
+        var lit = Called.Where(scene.ExitsListed.Contains).ToList();
+        Assert.Equal(3, lit.Count);
+        foreach (var id in lit)
+        {
+            var landing = (int)Math.Round((scene.ExitFlights[id].Landing - T0).TotalMilliseconds / 20);
+            for (var k = 0; k < frames.Count; k++)
+                Assert.True(frames[k][id].Bold == k >= landing, $"{id} {(frames[k][id].Bold is { } b ? b ? "bold" : "regular" : "not drawn")} at frame {k}, landing at {landing}");
+        }
+        foreach (var t in frames.SelectMany(f => f.Values.Where(t => t.Look is ExitLook.Unsure or ExitLook.NotListed or ExitLook.Plain or ExitLook.Transit)))
+            Assert.NotEqual(true, t.Bold);
+
+        // Its name's box is the same from the first frame to the last.
+        string Boxes(DateTime at) => string.Join(" ", MapRenderer.LayoutOf(camera, scene, 1, at).Labels.Select(l => $"{l.Text} {l.Box}"));
+        Assert.Equal(Boxes(T0), Boxes(T0 + Ms(5900)));
+
+        // The picture says so: more ink in the nearest's name once it has landed than a moment before.
+        var near = scene.ExitFlights["extract:near"].Landing;
+        var box = SKRect.Inflate(MapRenderer.LayoutOf(camera, scene, 1, near).Labels.Single(l => l.Of.Marker.Id == "extract:near").Box, 2, 2);
+        using var before = Picture(scene, camera, near - TimeSpan.FromMilliseconds(1));
+        using var after = Picture(scene, camera, near + TimeSpan.FromMilliseconds(1500));
+        Assert.True(Ink(after, box) > Ink(before, box) * 1.1, $"{Ink(before, box)} ink pixels in the name before landing, {Ink(after, box)} after");
+    }
+
+    // Pixels of the labels' ink in a box.
+    private static int Ink(SKBitmap bitmap, SKRect box)
+    {
+        var ink = Palette.Sk(Palette.Ink);
+        var count = 0;
+        for (var y = (int)box.Top; y < box.Bottom; y++)
+        {
+            for (var x = (int)box.Left; x < box.Right; x++)
+            {
+                if (Near(bitmap.GetPixel(x, y), ink))
+                    count++;
+            }
+        }
+        return count;
+    }
+
     [Fact]
     public void Struck_out_scav_and_transit_symbols_never_change_and_no_call_moves_them()
     {
@@ -376,6 +424,8 @@ public class ExitCallOutFramesTests
                     Assert.Equal(1, t.Glow);
                 else
                     Assert.Equal(1, t.Question);
+                // Its name bold from the first moment, as it is lit.
+                Assert.Equal(t.Look == ExitLook.Listed, t.Bold);
             }
         }
         // Lit from the first moment.

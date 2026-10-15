@@ -24,8 +24,10 @@ internal static class Frames
     // t0, the moment the list is read: a fixed time on the day every example uses, so the frames are the same every run.
     private static readonly DateTime Start = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Local);
 
-    private const int Width = 1600;
-    private const int Height = 1000;
+    // The view's size in pixels: 1600 x 1000, or --viewport's (the map at the smallest window, 900 x 560, is about
+    // 500 x 481). Set once per run, before anything is drawn.
+    private static int Width = 1600;
+    private static int Height = 1000;
 
     // What the view's glide does (MapView.AnimateView, the tour's 1.2 s): to three times the zoom, eased in and out.
     private const double GlideZoom = 3;
@@ -55,6 +57,14 @@ internal static class Frames
         var count = int.Parse(Take(options, "--count") ?? (callOut ? "180" : "36"), CultureInfo.InvariantCulture);
         if (every <= 0 || count is < 1 or > 2000)
             throw new ArgumentException("--every takes milliseconds above 0, --count 1 to 2000 frames");
+        if (Take(options, "--viewport") is { } viewport)
+        {
+            var wh = viewport.Split('x', 'X');
+            if (wh.Length != 2 || !int.TryParse(wh[0], NumberStyles.None, CultureInfo.InvariantCulture, out var w)
+                               || !int.TryParse(wh[1], NumberStyles.None, CultureInfo.InvariantCulture, out var h) || w is < 200 or > 8000 || h is < 200 or > 8000)
+                throw new ArgumentException("--viewport takes the view's size in pixels as WxH, 200 to 8000 each (500x481: the map at the smallest window)");
+            (Width, Height) = (w, h);
+        }
         WorldPoint? fixAt = null;
         if (options.IndexOf("--fix") is var f and >= 0)
         {
@@ -81,7 +91,7 @@ internal static class Frames
         if (options.Count != 2)
         {
             throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>] [--count <n>] " +
-                                        "[--fix <x> <y> <z>] [--glide [ms]]");
+                                        "[--fix <x> <y> <z>] [--glide [ms]] [--viewport <W>x<H>]");
         }
         var (mapName, output) = (options[0], Path.GetFullPath(options[1]));
 
@@ -322,7 +332,12 @@ internal static class Frames
     private sealed record RingRecord(string Id, string Name, double TurnMs, bool Listed);
 
     /// <param name="Ringing">Whether an extract still rings out or waits for its turn (MapScene.ExitsArrivingAt).</param>
-    private sealed record FrameRecord(int Index, double Ms, string File, ViewRecord View, bool Ringing, IReadOnlyList<ExitRecord> Exits, IReadOnlyList<SymbolRecord> Others);
+    private sealed record FrameRecord(int Index, double Ms, string File, ViewRecord View, bool Ringing, IReadOnlyList<ExitRecord> Exits, IReadOnlyList<SymbolRecord> Others)
+    {
+        /// <summary>Where the scale bar's left end is drawn, in pixels: at its place at the lower left, or stepped up from a
+        /// symbol under it (MapRenderer.ScaleBarRise).</summary>
+        public PointRecord? ScaleBar { get; init; }
+    }
 
     /// <param name="Zoom">Pixels per map unit.</param>
     private sealed record ViewRecord(double CenterX, double CenterY, double Zoom);
@@ -333,7 +348,7 @@ internal static class Frames
     /// in map units, how far it stands from its own place in pixels (set off by the repel), the leader's end at that place
     /// where it has one, and the animation values the renderer drew it with; for one the roll call flies, how far its icon
     /// is on its way (0 to 1), where it is drawn and how large, and whether its place is in view yet (out of view, only the
-    /// flight is drawn, toward the place's x, y).</summary>
+    /// flight is drawn, toward the place's x, y); and whether its name was drawn bold (null where it wasn't drawn).</summary>
     private sealed record ExitRecord(string Id, string Name, MarkerKind Kind, ExitLook State, double X, double Y, double R, double MapX, double MapY,
         double OffX, double OffY, PointRecord? Leader, double? Arrival, double? Glow, IReadOnlyList<double> Echoes, double? Question)
     {
@@ -344,6 +359,8 @@ internal static class Frames
         public double? FlightScale { get; init; }
 
         public bool InView { get; init; } = true;
+
+        public bool? Bold { get; init; }
     }
 
     /// <summary>Any other symbol as drawn: where, how large, and how far off its own place.</summary>
@@ -369,6 +386,7 @@ internal static class Frames
                     Flying = t.Flying is { } at ? new PointRecord(Round(at.X), Round(at.Y)) : null,
                     FlightScale = t.FlightScale is { } s ? Round(s, 4) : null,
                     InView = t.InView,
+                    Bold = t.Bold,
                 });
             }
             else
@@ -377,8 +395,10 @@ internal static class Frames
                     Round(t.At.X - place.X), Round(t.At.Y - place.Y), leader));
             }
         }
+        // The frame's own layout (MapRenderer.LayoutOf keeps it), as drawn.
+        var bar = MapRenderer.LayoutOf(camera, scene, 1, time).Scale.Origin;
         return new FrameRecord(index, ms, file, new ViewRecord(Round(camera.Center.X, 3), Round(camera.Center.Y, 3), Round(camera.Zoom, 6)),
-            scene.ExitsArrivingAt(time), exits, others);
+            scene.ExitsArrivingAt(time), exits, others) { ScaleBar = new PointRecord(Round(bar.X), Round(bar.Y)) };
     }
 
     private static double Round(double v, int digits = 2) => Math.Round(v, digits, MidpointRounding.AwayFromZero);
@@ -499,6 +519,8 @@ internal static class Frames
                     continue;
                 if (exit.State != was.Exit.State)
                     lines.Add($"  state    {name} {was.Exit.State} -> {exit.State}");
+                if (exit.Bold != was.Exit.Bold)
+                    lines.Add($"  name     {name} {Face(was.Exit.Bold)} -> {Face(exit.Bold)}");
                 if (exit.Arrival is >= 0 && was.Exit.Arrival is null or < 0)
                     lines.Add($"  turn     {name} ({(exit.State == ExitLook.Listed ? "lit" : "??:??:??")})");
                 if (exit.Arrival is null && was.Exit.Arrival is not null)
@@ -520,6 +542,8 @@ internal static class Frames
                 var waiting = frame.Exits.Where(e => e.InView && e.Arrival is < 0).Select(e => e.Name).ToList();
                 if (waiting.Count > 0)
                     lines.Add($"  waiting  {string.Join(", ", waiting)} (not lit before their turn)");
+                var bold = frame.Exits.Where(e => e.InView && e.Bold == true).Select(e => e.Name).ToList();
+                lines.Add($"  bold     {(bold.Count == 0 ? "no extract's name" : string.Join(", ", bold))}");
             }
             if (lines.Count > 0)
             {
@@ -539,6 +563,15 @@ internal static class Frames
         var twice = leaders.Where(l => l.Value > 1).Select(l => NameOf(scene, l.Key)).ToList();
         s.AppendLine(Fmt($"  leaders that came or went: {(leaders.Count == 0 ? "none" : Fmt($"{leaders.Values.Sum()}, {(twice.Count == 0 ? "none" : string.Join(", ", twice))} more than once"))}"));
         s.AppendLine($"  struck out, plain and transit symbols whose glow, echoes or \"?\" changed: {(still.Count == 0 ? "none" : string.Join("; ", still))}");
+        // The bold comes with the lighting (owner, 2026-10-15): no name bold before its extract's turn, a struck-out one's never.
+        var early = frames.SelectMany(f => f.Exits.Where(e => e.InView && e.Bold == true && (e.Arrival is < 0 || e.State == ExitLook.NotListed))
+            .Select(e => Fmt($"frame {f.Index:000}: {e.Name} ({e.State})"))).ToList();
+        s.AppendLine($"  names bold before their extract is lit, or struck out: {(early.Count == 0 ? "none" : string.Join("; ", early))}");
+        // The scale bar's place is 66 px above the view's foot; a symbol under it moves it up (owner, 2026-10-15).
+        var risen = frames.Where(f => f.ScaleBar is { } b && Height - 66 - b.Y > 0.01).ToList();
+        var moves = frames.Skip(1).Count(f => Math.Abs(f.ScaleBar!.Y - frames[f.Index - 1].ScaleBar!.Y) > 0.01);
+        s.AppendLine(risen.Count == 0 ? "  the scale bar: at its place at the lower left in every frame"
+            : Fmt($"  the scale bar: stepped up from a symbol under it in {risen.Count} of {frames.Count} frames (from frame {risen[0].Index:000}), by up to {risen.Max(f => Height - 66 - f.ScaleBar!.Y):0.#} px; it changed place from one frame to the next {moves} times"));
         var last = frames[^1];
         var differ = new List<string>();
         foreach (var e in last.Exits.Where(e => e.InView))
@@ -627,6 +660,9 @@ internal static class Frames
     }
 
     private static string Fmt(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
+
+    // The face an extract's name was drawn in.
+    private static string Face(bool? bold) => bold switch { true => "bold", false => "regular", null => "not drawn" };
 
     private static Dictionary<string, (ExitRecord? Exit, SymbolRecord? Other)> Index(FrameRecord frame)
     {
