@@ -414,6 +414,12 @@ public static class Linked
             Exit(element);
     }
 
+    /// <summary>
+    /// Developer scripts: a tap on a linked element that opens a card, as its Tapped event raises it ("show &lt;quest&gt; at
+    /// row"; owner, 2026-10-15, D10).
+    /// </summary>
+    internal static void DevClick(FrameworkElement element) => Clicked?.Invoke(element, KeyOf(element));
+
     /// <summary>The linked element pointed at now, for a script to leave it.</summary>
     internal static FrameworkElement? DevSource => _source;
 

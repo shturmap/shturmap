@@ -280,6 +280,67 @@ public sealed class DevToolsTests : IDisposable
             steps.Select(s => DevScript.WhatsNewOf(s)!.Value));
     }
 
+    // An older version's lines (owner, 2026-10-15, D10: 0.4.0's extracts preview): the version first, then what the step
+    // does, as for the newest version's card. A line's number is never taken for a version.
+    [Fact]
+    public void Whats_new_steps_reach_an_older_versions_card_by_its_version()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "whatsnew 0.4.0",
+            "whatsnew 0.4.0 2",
+            "whatsnew 0.5.0 click 4",
+            "whatsnew 0.4.0 leave",
+            "whatsnew 3",
+            "whatsnew 0.4.0 click"));
+        Assert.Equal(["line 6: 'whatsnew click' needs the line's number, from 1"], errors);
+        Assert.Equal(["0.4.0", "0.4.0", "0.5.0", "0.4.0", null], steps.Select(DevScript.WhatsNewVersionOf));
+        Assert.Equal(
+            [(DevScript.WhatsNewAct.Point, 0), (DevScript.WhatsNewAct.Point, 2), (DevScript.WhatsNewAct.Click, 4), (DevScript.WhatsNewAct.Leave, 0),
+                (DevScript.WhatsNewAct.Point, 3)],
+            steps.Select(s => DevScript.WhatsNewOf(s)!.Value));
+        // A tap and a leaving follow at once, the version or none.
+        Assert.True(DevScript.FollowsAtOnce(steps[2]));
+        Assert.False(DevScript.FollowsAtOnce(steps[1]));
+    }
+
+    // "show <quest> at row" (owner, 2026-10-15, D10): the card held at the quest's own row, as a click on the row holds it;
+    // without "at row", where --show-quest puts it, as before.
+    [Fact]
+    public void A_show_step_holds_the_card_at_its_row_with_at_row()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "show Dandies",
+            "show insomnia at row",
+            "show \"The Tarkov Shooter - Part 1\" AT ROW",
+            "show Shooting at",
+            "show"));
+        Assert.Equal(["line 5: 'show' needs a quest's name"], errors);
+        Assert.Equal(("Dandies", false), DevScript.ShowOf(steps[0]));
+        Assert.Equal(("insomnia", true), DevScript.ShowOf(steps[1]));
+        Assert.Equal(("The Tarkov Shooter - Part 1", true), DevScript.ShowOf(steps[2]));
+        // "at" alone is a word of the name.
+        Assert.Equal(("Shooting at", false), DevScript.ShowOf(steps[3]));
+    }
+
+    // "focus <part>" (QA pass, 2026-10-15: no step could focus a status bar button, so no still showed a focus ring): the
+    // status bar's three buttons, the map and the rail by a word, any other control by its x:Name.
+    [Fact]
+    public void A_focus_step_names_the_control_by_its_word_or_its_x_name()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "focus help",
+            "focus Feedback",
+            "focus settings",
+            "focus map",
+            "focus rail",
+            "focus MapPicker",
+            "focus",
+            "focus help settings"));
+        Assert.Equal(["line 7: 'focus' takes one of help, feedback, settings, map, rail or a control's x:Name",
+            "line 8: 'focus' takes one of help, feedback, settings, map, rail or a control's x:Name"], errors);
+        Assert.Equal(["HelpButton", "FeedbackButton", "SettingsButton", "Map", "Rail", "MapPicker"], steps.Select(DevScript.FocusOf));
+    }
+
     // The QA pass replays the roll call without a screenshot (owner, 2026-10-15, from a panel of four: A): "exits" names the
     // game's list as a screenshot would show it, "?" at a name's end for "??:??:??", "all" for every extract of the side.
     [Fact]
@@ -367,6 +428,8 @@ public sealed class DevToolsTests : IDisposable
         var (steps, errors) = DevScript.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "qa", "whatsnew-tour-line.devscript")));
         Assert.Empty(errors);
         Assert.Contains(steps, s => DevScript.WhatsNewOf(s) is (DevScript.WhatsNewAct.Click, > 0) && s.Verb == "whatsnew");
+        // The line of the owner's report: 0.5.0's fourth, its tour:5 line (0.6.0 is the newest card now).
+        Assert.Contains(steps, s => s.Verb == "whatsnew" && DevScript.WhatsNewVersionOf(s) == "0.5.0" && DevScript.WhatsNewOf(s) is (DevScript.WhatsNewAct.Click, 4));
         Assert.Contains(steps, s => s.Verb == "whatsnew" && DevScript.WhatsNewOf(s) is (DevScript.WhatsNewAct.Leave, _));
         Assert.All(steps.Where(s => s.Verb == "snapshot"), s => Assert.StartsWith("%TEMP%", s.Arg(0)));
         Assert.Equal("exit", steps[^1].Verb);

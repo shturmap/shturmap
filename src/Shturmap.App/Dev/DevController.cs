@@ -192,7 +192,10 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
             return [];
         var words = (filter ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return data.Tasks.Values
-            .Where(t => words.All(w => t.Name.Contains(w, StringComparison.OrdinalIgnoreCase) || t.Id.StartsWith(w, StringComparison.OrdinalIgnoreCase)))
+            // By its name in the data's language, its id, or tarkov.dev's normalized name, the same in every language
+            // ("insomnia"), so one script finds the quest in German too.
+            .Where(t => words.All(w => t.Name.Contains(w, StringComparison.OrdinalIgnoreCase) || t.Id.StartsWith(w, StringComparison.OrdinalIgnoreCase)
+                || t.NormalizedName?.Contains(w, StringComparison.OrdinalIgnoreCase) == true))
             .OrderBy(t => t.Name, StringComparer.CurrentCulture)
             .Take(max)
             .Select(t => (t.Id, t.Name, data.TraderName(t.Trader)))
@@ -484,7 +487,22 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 }
                 break;
             case "show":
-                window.DevShowQuest(string.Join(' ', step.Args));
+                // Its card held: where --show-quest puts it, or "at row" at the quest's own row in the rail, as a click on
+                // the row holds it (owner, 2026-10-15, D10: a card from a row near the window's foot).
+                if (DevScript.ShowOf(step) is not { } show)
+                    break;
+                if (!show.AtRow)
+                    window.DevShowQuest(show.Quest);
+                else if (QuestNamed(show.Quest) is not { } rowQuest)
+                    Say("No quest " + show.Quest);
+                else if (window.DevHoldAtRow(rowQuest) is { } noRow)
+                    Say($"show {show.Quest} at row: {noRow}");
+                break;
+            case "focus":
+                // The keyboard focus on a control, as Tab moves it there: a snapshot shows its focus ring (QA pass,
+                // 2026-10-15).
+                if (DevScript.FocusOf(step) is { } part && await window.DevFocusAsync(part) is { } noFocus)
+                    Say($"focus {step.Arg(0)}: {noFocus}");
                 break;
             case "hover":
                 // The pointer, as far as the linked highlight goes: onto a quest's block in the lists, and from there
@@ -595,11 +613,12 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 // The card with the pointer on a line or off it; a tap on a line; the pointer off the line it is on
                 // (DevScript.WhatsNewOf; a click without a line doesn't get past Parse).
                 var whatsNew = DevScript.WhatsNewOf(step) ?? (DevScript.WhatsNewAct.Point, 0);
+                var version = DevScript.WhatsNewVersionOf(step);
                 var noWhatsNew = whatsNew.Act switch
                 {
-                    DevScript.WhatsNewAct.Click => window.DevWhatsNewClick(whatsNew.Line),
+                    DevScript.WhatsNewAct.Click => window.DevWhatsNewClick(whatsNew.Line, version),
                     DevScript.WhatsNewAct.Leave => window.DevWhatsNewLeave(),
-                    _ => window.DevWhatsNew(whatsNew.Line),
+                    _ => window.DevWhatsNew(whatsNew.Line, version),
                 };
                 if (noWhatsNew is not null)
                     Say(noWhatsNew);

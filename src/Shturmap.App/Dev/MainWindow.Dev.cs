@@ -104,12 +104,11 @@ public sealed partial class MainWindow
             return null;
         }
         var root = Content.XamlRoot;
-        // The quest's own block: not the glance's NEXT (an objective's row), not a glyph on a folded card.
-        var row = Linked.DevLive(root)
-            .Where(e => Linked.GetQuest(e) == questId && Linked.GetObjective(e) is null && !Linked.GetInline(e) && e.ActualHeight > 0 && !_cards.Contains(e))
-            .OrderByDescending(e => e.ActualHeight).FirstOrDefault();
-        if (row is null)
+        if (DevQuestRow(questId) is not { } row)
             return "no row of that quest in the lists";
+        // In view first, as a player scrolls to a row before resting on it.
+        row.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
+        ((FrameworkElement)Content).UpdateLayout();
         var inside = Linked.DevLive(root, row).ToList();
         var chain = new List<FrameworkElement> { row };
         switch (part)
@@ -137,6 +136,51 @@ public sealed partial class MainWindow
         foreach (var element in chain)
             Linked.DevPointer(element, enters: true);
         return null;
+    }
+
+    // A quest's own block in the lists: not the glance's NEXT (an objective's row), not a glyph on a folded card.
+    private FrameworkElement? DevQuestRow(string questId) =>
+        Linked.DevLive(Content.XamlRoot)
+            .Where(e => Linked.GetQuest(e) == questId && Linked.GetObjective(e) is null && !Linked.GetInline(e) && e.ActualHeight > 0 && !_cards.Contains(e))
+            .OrderByDescending(e => e.ActualHeight).FirstOrDefault();
+
+    /// <summary>
+    /// "show &lt;quest&gt; at row" (owner, 2026-10-15, D10): the quest's card held at its own row in the rail, as a click on
+    /// the row holds it: the pointer onto the row, then the tap, through the code the pointer's own events call, so the
+    /// card opens where a click opens it (a row near the window's foot: the card's place and its move up can be pictured).
+    /// The row is scrolled into view first, as a player would scroll to it. Returns what it couldn't find, or null.
+    /// </summary>
+    internal string? DevHoldAtRow(string questId)
+    {
+        if (DevQuestRow(questId) is not { } row)
+            return "no row of that quest in the lists";
+        row.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = false });
+        ((FrameworkElement)Content).UpdateLayout();
+        ScriptedPointer = true;
+        Linked.DevPointer(row, enters: true);
+        Linked.DevClick(row);
+        return null;
+    }
+
+    /// <summary>
+    /// "focus &lt;part&gt;" (QA pass, 2026-10-15: no step could focus a status bar button, so no still showed a focus ring):
+    /// the keyboard focus on the control of that x:Name, or, where it takes none itself (the map, the rail), on the first
+    /// control inside it that does, as Tab moves it there (FocusState.Keyboard: its ring shows). The window isn't activated.
+    /// Returns what it couldn't do, or null.
+    /// </summary>
+    internal async Task<string?> DevFocusAsync(string name)
+    {
+        if (((FrameworkElement)Content).FindName(name) is not FrameworkElement element || !Shown(element))
+            return "no such control shown in the window";
+        DependencyObject? target = element is Microsoft.UI.Xaml.Controls.Control { IsTabStop: true, IsEnabled: true } ? element
+            : Microsoft.UI.Xaml.Input.FocusManager.FindFirstFocusableElement(element);
+        if (target is null)
+            return "nothing in it takes the focus";
+        var moved = await Microsoft.UI.Xaml.Input.FocusManager.TryFocusAsync(target, FocusState.Keyboard);
+        var now = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(Content.XamlRoot);
+        var named = (now as FrameworkElement)?.Name is { Length: > 0 } n ? n : now?.GetType().Name ?? "nothing";
+        AppLog.Info("Developer view: focus on " + named);
+        return moved.Succeeded ? null : "it didn't take the focus";
     }
 
     /// <summary>
@@ -198,12 +242,13 @@ public sealed partial class MainWindow
 
     internal Task DevRenderAsync(UIElement element, string path) => RenderToPngAsync(element, path);
 
-    /// <summary>What's New of the newest version, as help's link shows it; with a line (counted from 1), the pointer on
-    /// it: its preview starts at once.</summary>
-    internal string? DevWhatsNew(int line)
+    /// <summary>What's New of the newest version, as help's link shows it, or of the version named (its card alone; owner,
+    /// 2026-10-15, D10: 0.4.0's extracts preview); with a line (counted from 1), the pointer on it: its preview starts at
+    /// once.</summary>
+    internal string? DevWhatsNew(int line, string? version = null)
     {
-        if (WhatsNewSections.FirstOrDefault() is not { } newest)
-            return "no What's New in this build";
+        if (DevWhatsNewSection(version) is not { } newest)
+            return version is null ? "no What's New in this build" : $"no What's New {version} in this build";
         ShowWhatsNew([newest], "dev");
         if (line < 1)
         {
@@ -228,13 +273,13 @@ public sealed partial class MainWindow
     /// (a script can replay the owner's report of 2026-10-15 on the tour:5 line without a mouse). The card shows first
     /// if it isn't up. Returns what it couldn't find, or null.
     /// </summary>
-    internal string? DevWhatsNewClick(int line)
+    internal string? DevWhatsNewClick(int line, string? version = null)
     {
-        if (WhatsNewSections.FirstOrDefault() is not { } newest)
-            return "no What's New in this build";
+        if (DevWhatsNewSection(version) is not { } newest)
+            return version is null ? "no What's New in this build" : $"no What's New {version} in this build";
         if (line < 1 || line > newest.Items.Count)
             return $"What's New {newest.Label} has {newest.Items.Count} lines";
-        if (!ViewModel.WhatsNewShown)
+        if (!ViewModel.WhatsNewShown || !_whatsNewShown.Contains(newest))
         {
             ShowWhatsNew([newest], "dev");
             ((FrameworkElement)Content).UpdateLayout();
@@ -247,6 +292,10 @@ public sealed partial class MainWindow
         WhatsNewTapped(row);
         return null;
     }
+
+    // The newest version's section, or the one a script names ("0.4.0", as docs/whats-new.md heads it).
+    private WhatsNew.Section? DevWhatsNewSection(string? version) =>
+        version is null ? WhatsNewSections.FirstOrDefault() : WhatsNewSections.FirstOrDefault(s => s.Label == version);
 
     /// <summary>The pointer leaves the line a script's "whatsnew click" put it on (or, with none, the card), as moving
     /// off it does, the tour's layer coming over it too: what the line's PointerExited does.</summary>

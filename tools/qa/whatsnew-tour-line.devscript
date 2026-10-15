@@ -12,13 +12,14 @@ wait 3
 map woods
 wait 4
 
-# The newest version's card, as help's link shows it: 0.5.0 · Hyena.
-whatsnew
+# 0.5.0's card (Hyena), the version the owner's report was on: "whatsnew 0.5.0" shows that version's card alone, as help's
+# link shows the newest's (0.6.0 is the newest now, and its card has three lines).
+whatsnew 0.5.0
 wait 1
 
 # Line 4 of 0.5.0 is the tour:5 line, "Your extracts, clearer": the pointer onto it and a tap there. The tour opens
 # at chapter 5, YOUR SCREENSHOT KEY, and stages its example on Customs.
-whatsnew click 4
+whatsnew 0.5.0 click 4
 wait 0.4
 snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t0
 wait 1.2

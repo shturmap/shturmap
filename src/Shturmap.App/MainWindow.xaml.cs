@@ -2523,7 +2523,15 @@ public sealed partial class MainWindow : Window
             }
             var cards = _cards.Cards;
             for (var i = 0; i < cards.Count; i++)
-                await RenderToPngAsync(cards[i], Path.Combine(folder, i == 0 ? "card.png" : $"card-{i + 1}.png"));
+            {
+                var name = i == 0 ? "card.png" : $"card-{i + 1}.png";
+                await RenderToPngAsync(cards[i], Path.Combine(folder, name));
+                // Where it stands in the window, to put it over window.png: the picture is the whole card, the part a
+                // window too low for it would cut too (owner, 2026-10-15: a card from a row at the lower border).
+                var at = cards[i].TransformToVisual((UIElement)Content).TransformPoint(new Windows.Foundation.Point(0, 0));
+                AppLog.Debug(FormattableString.Invariant(
+                    $"Snapshot: {name} at {at.X:0},{at.Y:0} DIP, {cards[i].ActualWidth:0}×{cards[i].ActualHeight:0}, in a window of {((FrameworkElement)Content).ActualWidth:0}×{((FrameworkElement)Content).ActualHeight:0}"));
+            }
             // A tile render (The Lab, Labyrinth, Icebreaker) loads its tiles for this view first.
             await Map.TilesLoadedAsync(TimeSpan.FromSeconds(20));
             Map.SaveSnapshot(Path.Combine(folder, "map.png"), SnapshotScale);

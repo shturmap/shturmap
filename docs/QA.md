@@ -143,8 +143,12 @@ list's roll call, YOUR EXTRACTS THIS RAID, from a list the script hands the sess
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id
-  or name>`, `pick`, `show`, `hover`, `point`, `whatsnew [<n>]`, `whatsnew click <n>` (taps line n, as a click does),
-  `whatsnew leave` (the pointer leaves the line), `note <quest id or name> <text>` (a quest note through the session),
+  or name>`, `pick`, `show` (`show <quest> at row`: its card held at its own row, as a click holds it, so a card from
+  a row near the window's foot can be pictured), `hover`, `point`, `whatsnew [<version>] [<n>]` (an older version's
+  card with its version, `whatsnew 0.4.0 3`), `whatsnew [<version>] click <n>` (taps line n, as a click does),
+  `whatsnew leave` (the pointer leaves the line), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus
+  there, as Tab moves it, so the next still shows its focus ring), `note <quest id or name> <text>` (a quest note
+  through the session),
   `exits <name> [<name> …] | all` (the game's extract list as a screenshot taken now shows it; `"ZB-1013?"` marked
   "??:??:??"), `cards`, `wait <s>`, `snapshot <folder>` (with a cue up, also `cue.png`, the band alone, placed by its
   log line), `exit`. Each `snapshot` names `%TEMP%\shturmap-qa\<flow>\<moment>`, a
