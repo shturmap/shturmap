@@ -44,34 +44,39 @@ plate, the band), `diagnostics.txt`, and the developer view's `devview-build.png
 
 ## When each still is taken
 
-A snapshot takes about a second, and holds the window's thread while it draws the map, so neither the stills nor the
-chapter keep to the script's times: each still's moment is in the app log. The click is the line `Developer view:
-script: whatsnew click 4`; a still is taken between its `script: snapshot …\tN` line and its `Snapshot saved to
-…\tN` line (`window.png` first, then `tour.png`, `map.png` last).
+A `snapshot` step takes about 1.7 s: the window's pictures about 0.7 s, holding the window's thread while it draws the
+map, then the developer view's two. A step of the chapter that falls due while the thread is held comes when it is
+free, so neither the stills nor the chapter keep to the script's times: each still's moment is in the app log. The
+click is the line `Developer view: script: whatsnew click 4`; a still is taken between its `script: snapshot …\tN` line
+and its `Snapshot saved to …\tN` line (`window.png` first, `tour.png` about 0.2 s later, `map.png` last). In runs on a
+Debug build the stills were taken about 0.4, 3.4, 7.3, 9.5, 13.2, 18 and 22.6 s after the click.
 
-The chapter, in seconds after the click, each later step pushed back by the snapshots taken before it:
+A still shows one moment: what the chapter does over time shows in it as where it was by then. In seconds after the
+click, give or take the snapshots before it:
 
-| From | Chapter 5 shows |
+| From | A still taken then shows |
 | --- | --- |
-| 0 | The window dims, no cut-out. The band at the map's foot: TOUR · 5 OF 7, YOUR SCREENSHOT KEY decoding, its two lines. Customs framed on the example position, above the band. The key plate in the middle: the screenshot key drawn large, SCREENSHOT, POSITION FROM THE FILE NAME. |
-| about 1.0 | The key sinks and comes back up; from about 1.7 the file name decodes under it, `…_x, y, z_…`. |
-| about 3.2 | The plate goes. The example position appears and pings; one square cut-out, centred on it. |
-| about 5.6 | The example extract list at the map's top right: IN THE GAME: O TWICE, THEN (the key), the names coming in one after another, one of them `· ???`; a second cut-out around the list. At about 7.8 its frame flashes amber and YOUR LIST THIS RAID: n OF m EXTRACTS shows in green. |
-| about 9.3 | The list fades. The view moves for 1.2 s to take in the listed extracts and the position, above the band; then one cut-out glides around them. |
-| about 11.2 | The listed extracts light up one after another, nearest the position first, their triangles ringing out three times; then the `??:??:??` one's "?" pops in. The other PMC extracts are struck out (a faint outline with a stroke). The map is a PMC raid's: no Scav extract is drawn (teal triangles), so no lit or struck-out extract has an unlit twin beside it on a leader. |
-| about 14.5 on | The chapter's end, held until NEXT, Esc or the exit. |
+| 0 | The window dimmed, no cut-out. The band at the map's foot: TOUR · 5 OF 7, the title YOUR SCREENSHOT KEY (some of its letters still scrambled before about 0.7), its two lines, ← BACK, NEXT → and ESC ENDS THE TOUR. Customs framed on the example position, above the band; no position drawn. The key plate in the middle, faint before about 0.3: the screenshot key drawn large, SCREENSHOT, POSITION FROM THE FILE NAME. |
+| about 1.0 | The key down or on its way back up, its frame amber, until about 1.6; from then the file name under it, `…_x, y, z_…`, some of its characters still scrambled before about 2.2. |
+| about 3.2 | No plate. The example position's marker with a ping ring around it (at whatever size the ping has reached) and one square cut-out centred on it, faint before about 3.6. |
+| about 5.6 | Also the example extract list at the map's top right, in a second cut-out: IN THE GAME: O TWICE, THEN (the key), and the names in by then, the last one perhaps still scrambled; one of them ends `· ???`. From about 7.8 YOUR LIST THIS RAID: n OF m EXTRACTS in green under them; a still between about 7.8 and 8.2 has the list's frame amber, a later one grey again. |
+| about 9.3 | The list faint, or gone after about 9.6; the view on its way to the listed extracts and the position, above the band, or there after about 10.8; the cut-outs where they were until then, after that one cut-out on its way to them or around them. |
+| about 11.2 | The listed extracts lit, nearest the position first, a later one perhaps not yet; a ring around the triangles of those ringing out (at whatever size it has reached); the `??:??:??` one's "?" once all are lit. The other PMC extracts struck out (a faint outline with a stroke). The map is a PMC raid's: no Scav extract is drawn (teal triangles), so no lit or struck-out extract has an unlit twin beside it on a leader. |
+| about 14.5 on | The chapter's end, the same in every still until NEXT, Esc or the exit. |
 
 ## What each still must show
 
 In every still, t0 to t6:
 
-- `tour.png`: the tour's layer up, the band saying TOUR · 5 OF 7 and YOUR SCREENSHOT KEY.
+- `tour.png`: the tour's layer up, the band saying TOUR · 5 OF 7 and YOUR SCREENSHOT KEY, with ← BACK, NEXT → and
+  ESC ENDS THE TOUR (`tour.texts.txt` lists them; the layout check reports one missing).
 - `map.png`: Customs. Never Woods, the map this replay's "player" has on screen.
 - `window.png`: the label over the map reads PREVIEW · THE TOUR · CUSTOMS, with AN EXAMPLE, NOT YOUR RAID: the
   tour's own label. No What's New label (PREVIEW · NEW IN 0.5.0 · …): a tour line previews nothing. Line 4 of the card
-  in the rail without the linked tint.
-- Every cut-out on its part: the square centred on the example position's marker, the list's cut-out around the list,
-  the last one around the lit extracts and the position.
+  in the rail without the linked tint. The rail and the status bar with their words (`window.texts.txt` has some sixty
+  lines; a window of empty frames is the fault of the QA pass of 2026-10-15, below).
+- Every cut-out on its part, or on its way from one to the next (they glide): the square centred on the example
+  position's marker, the list's cut-out around the list, the last one around the lit extracts and the position.
 
 Each still, against the table above:
 
@@ -107,3 +112,9 @@ Before the fix, in this replay:
 - Even without the fault, Customs' Scav extracts were on the chapter's map: five of them, under 5 m from a PMC extract
   of the same name (Crossroads, RUAF Roadblock, Trailer Park, Old Gas Station, ZB-1011), stood solid teal and unlit
   beside the lit or struck-out one, set apart on a leader.
+
+A fault of the quiet runs, found by the QA pass of 2026-10-15: the script's window, shown without activation, never
+had its texts bound in XAML set, since the tour that opens by itself at its start took help's place and nothing
+activated the window (DESIGN.md §8, "Developer aids", *Quiet runs*). Every `window.png` was frames without a word
+(`window.texts.txt`: SHTURMAP and "?"), the What's New card had no lines, so `whatsnew click 4` said "line 4 of What's
+New 0.5.0 isn't in the window", and all seven stills showed Woods without the tour.

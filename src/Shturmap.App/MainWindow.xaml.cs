@@ -2029,7 +2029,16 @@ public sealed partial class MainWindow : Window
     public void Open()
     {
         if (Quiet)
+        {
+            // The window's x:Bind values, every text in its XAML among them, are set here: the generated code sets them
+            // when the window is first activated, and a quiet run's window never is by itself. Help opening activated it
+            // (a snapshot run opens help), so the window had its texts; with the tour opened at the start instead, nothing
+            // did, and the window and the tour's band showed no bound text for the whole run (QA pass of 2026-10-15:
+            // "-Tour 5" had the band without ← BACK and ESC ENDS THE TOUR, the window its frames without a word, and a
+            // script's run kept them so after "tour end"). Activate, below, sets them as before.
+            Bindings.Initialize();
             AppWindow.Show(activateWindow: false);
+        }
         else
             Activate();
     }

@@ -2441,10 +2441,11 @@ Rules:
   for a language still being translated, `qps-ploc` the pseudo-language; `--switch-language <culture>` switches it while running, §8 "Developer aids") and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading;
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
-  popup also gets its texts, its layout problems and a copy with them boxed beside it (`<picture>.texts.txt`,
-  `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), and `--whats-new` shows the newest What's
-  New card for one; `tools\layout-check.ps1` plays every view in each language and window size and sums it up
-  (docs/LANGUAGES.md, "Layout check").
+  popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
+  is trimmed, text over text, and in the pseudo-language one untranslated) and a copy with them boxed beside it
+  (`<picture>.texts.txt`, `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), and `--whats-new`
+  shows the newest What's New card for one; `tools\layout-check.ps1` plays every view in each language and window size
+  and sums it up (docs/LANGUAGES.md, "Layout check").
 - The website's hero clip comes from a demo mode, `--demo <quest>` (fake games only; `src/Shturmap.App/Demo.cs`).
   It must never read as live tracking (owner, 2026-10-02): the position changes exactly once, and visibly after a
   drawn press of the screenshot key. The key comes in a pause: the window dims, the key stands large in the middle
@@ -2791,9 +2792,12 @@ the run ends with its script, `exit` or not: nobody could see its windows to clo
 on the second monitor and took the focus, so a check or a layout check of 25 minutes interrupted a game on the other
 monitor. Snapshots lose nothing: they are rendered from the window's XAML (`RenderTargetBitmap`) and the map's own
 drawing, never from the screen (a fake raid's window, rail, help, settings and map came out whole off every monitor,
-2026-10-15; a script's run off every monitor hasn't been tried yet). The demo's clip is recorded from Shturmap's own
-window (`tools\record-window`), which hasn't been tried off every monitor yet; if it can't find or record the window
-there, `-MoreArgs --visible` records it as before. `--visible` opens any such run to watch
+2026-10-15). A window shown without activation is never activated by itself, and its x:Bind values are set at its
+first activation: `MainWindow.Open` sets them at once (QA pass of 2026-10-15: help opening had activated the window in
+a snapshot run; with the tour opened at the start instead, the window and the tour's band stood without a bound word,
+in fake raids with `-Tour` and in every script's run, which starts as a first start). The demo's clip is recorded from
+Shturmap's own window (`tools\record-window`), which hasn't been tried off every monitor yet; if it can't find or
+record the window there, `-MoreArgs --visible` records it as before. `--visible` opens any such run to watch
 (`tools\fake-raid.ps1 -MoreArgs --visible`), a script's with its view as before, until its `exit`. Only the windows'
 placement and showing change (AppWindow), no capture, input or hook in the app; normal runs and the installed app are
 untouched, and the developer view without a script (`--dev-view`, F12) still opens to be used.

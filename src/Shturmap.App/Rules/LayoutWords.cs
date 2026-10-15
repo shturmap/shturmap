@@ -60,6 +60,19 @@ public static partial class LayoutWords
 
     private static readonly char[] Around = ['.', '!', '?', '\'', '"', '‘', '’'];
 
+    /// <summary>
+    /// The texts a picture always shows that aren't in it (the layout check's "missing"; QA pass of 2026-10-15: the
+    /// window's x:Bind texts were never set, its frames stood without a word, the tour's band without ← BACK and ESC
+    /// ENDS THE TOUR, and the check found nothing wrong). Both are lines as the texts file writes them ("MAP",
+    /// "name: Help"), the expected ones in the language in use; <paramref name="shown"/> holds every line of the picture,
+    /// in view or not (a heading scrolled out of its list is still there).
+    /// </summary>
+    public static IReadOnlyList<string> Missing(IEnumerable<string> expected, IEnumerable<string> shown)
+    {
+        var lines = new HashSet<string>(shown, StringComparer.Ordinal);
+        return expected.Where(e => !lines.Contains(e)).Distinct(StringComparer.Ordinal).ToList();
+    }
+
     /// <summary>A name as the check compares it: trimmed of punctuation around it, one space between words, upper case.</summary>
     public static string Key(string text) => Spaces().Replace(text.Trim().Trim(Around), " ").Trim().ToUpperInvariant();
 
