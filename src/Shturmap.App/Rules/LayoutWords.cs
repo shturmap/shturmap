@@ -73,8 +73,11 @@ public static partial class LayoutWords
         return expected.Where(e => !lines.Contains(e)).Distinct(StringComparer.Ordinal).ToList();
     }
 
-    /// <summary>A name as the check compares it: trimmed of punctuation around it, one space between words, upper case.</summary>
-    public static string Key(string text) => Spaces().Replace(text.Trim().Trim(Around), " ").Trim().ToUpperInvariant();
+    /// <summary>A name as the check compares it: trimmed of punctuation around it, one space between words, upper case, and
+    /// without the word joiners that hold a hyphenated word together on screen (<see cref="WordBreaks"/>; the roll call's
+    /// "Primorsky Ave Taxi V-Ex" was taken for an untranslated text, 2026-10-15).</summary>
+    public static string Key(string text) =>
+        Spaces().Replace(text.Replace(WordBreaks.Joiner.ToString(), "", StringComparison.Ordinal).Trim().Trim(Around), " ").Trim().ToUpperInvariant();
 
     /// <summary>
     /// The parts of a text shown in the pseudo-language that aren't the pseudo-language's: what is left outside its

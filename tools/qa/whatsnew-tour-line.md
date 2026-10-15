@@ -36,6 +36,10 @@ $app.WaitForExit()
   once, and nothing here can show. Keep the mouse off Shturmap's window: a real pointer over it raises real events.
 - A `--dev-view` session starts on settings of its own, as at a first start, so the tour opens by itself at chapter 1;
   `tour end` ends it first, and its notice ("The tour stays in help …") is gone by the click.
+- The card is 0.5.0's, the version of the owner's report: `whatsnew 0.5.0` shows that version's card alone (0.6.0 is
+  the newest now, and its card has three lines), and `whatsnew 0.5.0 click 4` taps its fourth line.
+- The QA pass runs it again at the smallest window, `--window 900x560` added to the arguments (and in German,
+  `--culture de-DE`): there the chapter has the least room between the label at the map's top and the band.
 
 Each folder holds `window.png` (the window without the tour; its map's panel is empty), `map.png` (the map alone),
 `tour.png` (the tour's layer alone, with its transparency: the dim, the cut-outs and their amber corner marks, the
@@ -77,6 +81,12 @@ In every still, t0 to t6:
   lines; a window of empty frames is the fault of the QA pass of 2026-10-15, below).
 - Every cut-out on its part, or on its way from one to the next (they glide): the square centred on the example
   position's marker, the list's cut-out around the list, the last one around the lit extracts and the position.
+  None reaches the label at the map's top or runs under the band, and no frame's edge or corner mark crosses the
+  label, but for a moment while a frame glides (QA pass, 2026-10-15: at 900×560 the last cut-out reached the label,
+  which hid framed extracts; DESIGN.md §4, *The tour*).
+- The list's plate whole above the band, its last row and YOUR LIST THIS RAID: n OF 11 EXTRACTS in sight once read: at
+  the map's top right at 1600×900, under the label at 900×560, where it names fewer extracts (two lit and one ???,
+  "3 OF 11") and, in German, is drawn smaller (QA pass, 2026-10-15: the band covered its last row and the read line).
 
 Each still, against the table above:
 

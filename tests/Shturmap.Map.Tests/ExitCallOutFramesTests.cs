@@ -411,15 +411,15 @@ public class ExitCallOutFramesTests
     public void After_a_roll_call_a_later_list_rings_only_what_it_lit_or_marked_anew_where_it_stands()
     {
         var (camera, scene) = Raid();
-        Assert.False(scene.CalledOut);
         scene.CallOutExits(Calls(scene), T0);
-        Assert.True(scene.CalledOut);
+        // What the roll call called, as the window keeps it for the raid (Rules.RollCallRecord).
+        var record = Record(scene);
         var later = T0 + Ms(10_000);
         Assert.False(scene.ExitsArrivingAt(later));
         var called = scene.ExitsRinging.ToDictionary(r => r.Key, r => r.Value);
 
         // The same list again: nothing rings, nothing flies.
-        scene.RingExits(later);
+        scene.RingExits(later, record);
         Assert.Equal(called, scene.ExitsRinging);
         Assert.False(scene.ExitsArrivingAt(later));
 
@@ -428,7 +428,7 @@ public class ExitCallOutFramesTests
         scene.ExitsUnsure = new HashSet<string>(scene.ExitsUnsure) { "extract:closed-b" };
         scene.ExitsNotListed = new HashSet<string>();
         var standing = Frame(scene, camera, later);
-        scene.RingExits(later);
+        scene.RingExits(later, record);
         Assert.Equal(new ExitRing(later, true), scene.ExitsRinging["extract:closed-a"]);
         Assert.Equal(new ExitRing(later + MapRenderer.ExitTurn, false), scene.ExitsRinging["extract:closed-b"]);
         foreach (var id in Called)
@@ -447,24 +447,48 @@ public class ExitCallOutFramesTests
             Assert.Empty(ringing[id].Echoes);
         }
 
-        // And again: nothing changes.
+        // And again, with the record the window keeps by now: nothing changes.
+        record = Record(scene);
         var rung = scene.ExitsRinging.ToDictionary(r => r.Key, r => r.Value);
-        scene.RingExits(later + Ms(500));
+        scene.RingExits(later + Ms(500), record);
         Assert.Equal(rung, scene.ExitsRinging);
     }
 
+    // A look at another map in the raid and back makes the raid map's scene anew, with nothing ringing or flown on it. The
+    // roll call's record is the window's, kept for the raid (coordinator, 2026-10-15): until then it was the scene's, so it
+    // went with the scene, and the next list got a whole roll call again. With the record, the new scene rings only what the
+    // list lit or marked anew.
     [Fact]
-    public void A_new_raid_without_a_list_forgets_the_roll_call_and_a_list_after_the_rings_rings_them_all_again()
+    public void A_scene_made_anew_in_the_raid_rings_only_what_a_later_list_lit_or_marked_anew()
+    {
+        var (_, before) = Raid();
+        before.CallOutExits(Calls(before), T0);
+        var record = Record(before);
+
+        var (_, again) = Raid();
+        var later = T0 + Ms(30_000);
+        // The same list: nothing rings.
+        again.RingExits(later, record);
+        Assert.Empty(again.ExitsRinging);
+        // A list that lights closed-a anew: it alone rings, where it stands.
+        again.ExitsListed = new HashSet<string>(again.ExitsListed) { "extract:closed-a" };
+        again.ExitsNotListed = new HashSet<string> { "extract:closed-b" };
+        again.RingExits(later, record);
+        Assert.Equal(["extract:closed-a"], again.ExitsRinging.Keys);
+        Assert.Equal(new ExitRing(later, true), again.ExitsRinging["extract:closed-a"]);
+        Assert.Empty(again.ExitFlights);
+    }
+
+    [Fact]
+    public void Without_a_roll_call_in_the_raid_a_list_after_the_rings_rings_them_all_again()
     {
         var (_, scene) = Raid();
         scene.CallOutExits(Calls(scene), T0);
-        // The raid is over and the next one on the same map has no list yet: the window clears the three sets.
+        // The raid is over and the next one on the same map has no list yet: the window clears the three sets, and its
+        // record is the last raid's, so the next list gets none (Rules.RollCallRecord).
         scene.ExitsNotListed = new HashSet<string>();
-        Assert.True(scene.CalledOut);
         scene.ExitsListed = new HashSet<string>();
-        Assert.True(scene.CalledOut);
         scene.ExitsUnsure = new HashSet<string>();
-        Assert.False(scene.CalledOut);
         // Without a roll call, rings that are over ring again with the next list, as before.
         var later = T0 + Ms(10_000);
         scene.ExitsListed = new HashSet<string> { "extract:far", "extract:mid", "extract:near" };
@@ -473,6 +497,10 @@ public class ExitCallOutFramesTests
         Assert.Empty(scene.ExitFlights);
     }
 
+    // The roll call's extracts as the window records them for the raid: each, lit or "??:??:??".
+    private static Dictionary<string, bool> Record(MapScene scene) =>
+        scene.ExitsToCall().ToDictionary(m => m.Id, m => scene.ExitsListed.Contains(m.Id), StringComparer.Ordinal);
+
     [Fact]
     public void With_animation_effects_off_they_are_simply_lit_and_nothing_flies()
     {
@@ -480,8 +508,6 @@ public class ExitCallOutFramesTests
         scene.Pulse = false;
         Assert.Empty(scene.CallOutExits(Calls(scene), T0));
         Assert.Empty(scene.ExitFlights);
-        // The roll call ran all the same (its cue stood still): a later list rings, with no cue.
-        Assert.True(scene.CalledOut);
         Assert.False(scene.ExitsArrivingAt(T0));
         foreach (var frame in Frames(scene, camera, 40, TimeSpan.FromMilliseconds(100)))
         {

@@ -44,7 +44,10 @@ public static class DevScript
         ["place"] = "<fx> <fy> [<to fx> <to fy>]: a click (or drag, for the facing) on the map at fractions of its size",
         ["pick"] = "<id or name>: picks (or unpicks) the quest for the coming raid, as its pen does",
         ["tick"] = "<quest id or name> <n>: ticks (or unticks) the quest's n-th objective as done, as the box on its card does; not saved",
-        ["show"] = "<part of a quest's name>: its card held and the first thing it needs beside it, as --show-quest does for snapshots",
+        ["show"] = "<part of a quest's name> [at row]: its card held and the first thing it needs beside it, as --show-quest does for snapshots; "
+            + "with at row, its card held at the quest's own row in the rail, as a click on the row holds it (a row near the window's foot: where its card opens)",
+        ["focus"] = "help | feedback | settings | map | rail | <x:Name>: the keyboard focus on that control (in the map or the rail, the first that takes it), "
+            + "as Tab moves it there, so a snapshot shows its focus ring",
         ["hover"] = "[<quest id or name> [<n> | cell | key]]: the pointer on the quest's block in the lists, and in it on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's events call; alone, it leaves the innermost of them",
         ["point"] = "[<quest id or name> [<n>] | item <id or name>]: points at the quest, at its n-th objective or at an item, as the pointer on its line would; alone, at nothing again",
         ["trail"] = "<x> <y> [<x> <y> ...]: where the pointer has been in the main window, for the cards to tell where it is heading; no pointer moves",
@@ -56,7 +59,8 @@ public static class DevScript
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
         ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload (nogame: as if no game were on this PC)",
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
-        ["whatsnew"] = "[<n>] | click <n> | leave: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview; a line about the tour previews nothing, as for the pointer); "
+        ["whatsnew"] = "[<version>] [<n>] | [<version>] click <n> | leave: What's New of the newest version, as help's link shows it, or of that version (0.4.0), its card alone; "
+            + "with n, the pointer on its n-th line (its preview; a line about the tour previews nothing, as for the pointer); "
             + "click n, the pointer onto line n and a tap there, through the code the pointer's events call (a line about the tour opens it); "
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
@@ -95,15 +99,58 @@ public static class DevScript
     }
 
     /// <summary>
-    /// "whatsnew [&lt;n&gt;]", "whatsnew click &lt;n&gt;", "whatsnew leave": what the step does, and the line it is about,
-    /// counted from 1 (0: none). Null for a click without a line.
+    /// "whatsnew [&lt;n&gt;]", "whatsnew click &lt;n&gt;", "whatsnew leave", each after a version if it names one
+    /// (<see cref="WhatsNewVersionOf"/>): what the step does, and the line it is about, counted from 1 (0: none). Null
+    /// for a click without a line.
     /// </summary>
-    public static (WhatsNewAct Act, int Line)? WhatsNewOf(DevStep step) => step.Arg(0).ToLowerInvariant() switch
+    public static (WhatsNewAct Act, int Line)? WhatsNewOf(DevStep step)
     {
-        "click" => step.Number(1) >= 1 ? (WhatsNewAct.Click, (int)step.Number(1)) : null,
-        "leave" => (WhatsNewAct.Leave, 0),
-        _ => (WhatsNewAct.Point, (int)step.Number(0, 0)),
+        var at = WhatsNewVersionOf(step) is null ? 0 : 1;
+        return step.Arg(at).ToLowerInvariant() switch
+        {
+            "click" => step.Number(at + 1) >= 1 ? (WhatsNewAct.Click, (int)step.Number(at + 1)) : null,
+            "leave" => (WhatsNewAct.Leave, 0),
+            _ => (WhatsNewAct.Point, (int)step.Number(at, 0)),
+        };
+    }
+
+    /// <summary>
+    /// The version a "whatsnew" step names before what it does ("whatsnew 0.4.0 2"; owner, 2026-10-15, D10: a script
+    /// reaches an older version's lines, 0.4.0's extracts preview among them), as docs/whats-new.md heads its section;
+    /// null for the newest version's card. A version has a dot, so a line's number is never taken for one.
+    /// </summary>
+    public static string? WhatsNewVersionOf(DevStep step) =>
+        step.Args.Count > 0 && step.Args[0].Contains('.', StringComparison.Ordinal) && Version.TryParse(step.Args[0], out _) ? step.Args[0] : null;
+
+    /// <summary>
+    /// A "show" step's quest, and whether its card is held at the quest's own row ("show Dandies at row"; owner,
+    /// 2026-10-15, D10), as a click on the row holds it, rather than where --show-quest puts it. Null without a quest.
+    /// </summary>
+    public static (string Quest, bool AtRow)? ShowOf(DevStep step)
+    {
+        var atRow = step.Args.Count > 2 && step.Args[^2].Equals("at", StringComparison.OrdinalIgnoreCase)
+            && step.Args[^1].Equals("row", StringComparison.OrdinalIgnoreCase);
+        var quest = string.Join(' ', atRow ? step.Args.Take(step.Args.Count - 2) : step.Args);
+        return quest.Length == 0 ? null : (quest, atRow);
+    }
+
+    /// <summary>The words a "focus" step knows, and the x:Name in MainWindow.xaml each stands for; any other word is
+    /// taken for an x:Name itself.</summary>
+    public static IReadOnlyDictionary<string, string> FocusParts { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["help"] = "HelpButton",
+        ["feedback"] = "FeedbackButton",
+        ["settings"] = "SettingsButton",
+        ["map"] = "Map",
+        ["rail"] = "Rail",
     };
+
+    /// <summary>
+    /// The control a "focus" step moves the keyboard focus to, by its x:Name (QA pass, 2026-10-15: no step could focus a
+    /// status bar button, so no still showed a focus ring). Null without one.
+    /// </summary>
+    public static string? FocusOf(DevStep step) =>
+        step.Args.Count != 1 ? null : FocusParts.GetValueOrDefault(step.Args[0]) ?? step.Args[0];
 
     /// <summary>
     /// Whether the next step follows at once. The pointer's steps (hover, point, trail, cards, and What's New's click
@@ -152,6 +199,16 @@ public static class DevScript
             if (verb == "exits" && ExitsOf(step) is { Count: 0 })
             {
                 errors.Add($"line {i + 1}: 'exits' needs the extracts' names, or 'all'");
+                continue;
+            }
+            if (verb == "show" && ShowOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'show' needs a quest's name");
+                continue;
+            }
+            if (verb == "focus" && FocusOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'focus' takes one of help, feedback, settings, map, rail or a control's x:Name");
                 continue;
             }
             steps.Add(step);

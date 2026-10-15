@@ -63,7 +63,8 @@ public sealed class CardStack
 
     /// <param name="root">The window content; positions are in its coordinates.</param>
     /// <param name="create">A new card (QuestCard or ItemCard) for a key, or null if there is nothing to show.</param>
-    /// <param name="space">Where cards may go, in root coordinates (the window).</param>
+    /// <param name="space">Where cards may go, in root coordinates: the window, up and down only as far as it is on the
+    /// screen (<see cref="CardPlace.Room"/>).</param>
     public CardStack(FrameworkElement root, Func<CardKey, FrameworkElement?> create, Func<Rect> space)
     {
         _root = root;
@@ -345,31 +346,27 @@ public sealed class CardStack
         Study.Ui("card.open", ("card", face.Key.ToString()), ("name", face.Title), ("level", level));
 
         // No taller than the room there is: a long quest's card scrolls inside instead of running off the window.
-        card.MaxHeight = Math.Max(MinCardHeight, _space().Height - 16);
+        card.MaxHeight = CardPlace.MaxHeight(Room());
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
         // A card that grows while it is open (a held quest card's NOTES field, a note added, a tick's line) moves up as
-        // far as it needs to stay in the window: placed by its row near the window's foot, it ran off the edge, where
-        // nothing scrolls it into view (2026-10-15).
-        card.SizeChanged += (_, e) => KeepInside(popup, e.NewSize.Height);
+        // far as it needs to stay in the room: placed by its row near the window's foot, it ran off the edge, where
+        // nothing scrolls it into view (2026-10-15). The same rule as its place at opening (CardPlace).
+        card.SizeChanged += (_, e) => popup.VerticalOffset = CardPlace.Kept(popup.VerticalOffset, e.NewSize.Height, Room());
         popup.IsOpen = true;
         _pendingKey = null;
     }
 
-    // Up, never down, and never above the top of the room: its height is no more than the room (MaxHeight above).
-    private void KeepInside(Popup popup, double height)
+    // The room up and down: the window, less what of it is off the screen (CardPlace.Room; the window's own part).
+    private CardPlace.Span Room()
     {
         var space = _space();
-        var over = popup.VerticalOffset + height - (space.Bottom - 8);
-        if (over > 0)
-            popup.VerticalOffset = Math.Max(space.Top + 8, popup.VerticalOffset - over);
+        return new CardPlace.Span(space.Top, space.Bottom);
     }
 
-    // In a window too small for it a card still gets this much height.
-    private const double MinCardHeight = 160;
-
     // Beside whatever it opened from: the row (the first card) or the card it came from. Right if there is room,
-    // else left; top-aligned with the row.
+    // else left; its top a little above the row's, and up as far as its whole height needs to stay in the room
+    // (owner, 2026-10-15: "When selecting a quest at the lower border of the screen it gets cut off"; CardPlace.Top).
     private void Place(Popup popup, Size size, int level)
     {
         var space = _space();
@@ -378,7 +375,7 @@ public sealed class CardStack
         if (x + size.Width > space.Right - 8)
             x = beside.Left - 8 - size.Width;
         popup.HorizontalOffset = Math.Clamp(x, space.Left + 8, Math.Max(space.Left + 8, space.Right - size.Width - 8));
-        popup.VerticalOffset = Math.Clamp(_pendingAnchor.Top - 10, space.Top + 8, Math.Max(space.Top + 8, space.Bottom - size.Height - 8));
+        popup.VerticalOffset = CardPlace.Top(_pendingAnchor.Top, size.Height, Room());
     }
 
     private static Rect Bounds(Level level) =>

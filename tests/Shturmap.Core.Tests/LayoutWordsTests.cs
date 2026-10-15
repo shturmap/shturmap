@@ -23,6 +23,14 @@ public class LayoutWordsTests
         Assert.Empty(English(PseudoText.Of("Not in a raid")));
     }
 
+    // The roll call's rows hold a hyphenated word together with a word joiner (WordBreaks): the name is still the game's.
+    [Fact]
+    public void A_game_name_held_together_at_its_hyphen_is_still_the_game_name()
+    {
+        var names = new HashSet<string>(new[] { "Primorsky Ave Taxi V-Ex" }.Select(LayoutWords.Key));
+        Assert.Empty(LayoutWords.EnglishParts(WordBreaks.BetweenWordsOnly("Primorsky Ave Taxi V-Ex"), names, Us));
+    }
+
     [Fact]
     public void A_text_inside_another_ones_placeholder_is_one_too()
     {

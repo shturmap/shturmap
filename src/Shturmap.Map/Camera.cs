@@ -124,8 +124,10 @@ public sealed class Camera
     /// the right anyway (a tall map in a wide view), and moves left only as far as the room needs. Not held to the zoom
     /// limits: they may still be another map's (a preview's, about to be shown).
     /// </summary>
-    public (MapPoint Center, double Zoom) FramingAbove(MapRect rect, float padding, float foot, float labelRoom = 0) =>
-        Place(Viewport, rect, padding, labelRoom, foot, 1e-6, MaxZoom);
+    /// <param name="head">Pixels at the view's top that what is framed stays under (the preview label the map's top holds
+    /// in the tour; QA pass, 2026-10-15).</param>
+    public (MapPoint Center, double Zoom) FramingAbove(MapRect rect, float padding, float foot, float labelRoom = 0, float head = 0) =>
+        Place(Viewport, rect, padding, labelRoom, foot, 1e-6, MaxZoom, head);
 
     /// <summary>
     /// The padding (DIPs) the roll call's framing keeps around the listed extracts and the player
@@ -161,23 +163,63 @@ public sealed class Camera
     public (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, float labelRoom, float padding) =>
         FittingAll(points, player, Viewport, labelRoom, padding, MinZoom, MaxZoom);
 
+    /// <summary>
+    /// The roll call's move (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"; docs/DESIGN.md,
+    /// "Map drawing", *The view leaves the player*): none where every one of <paramref name="points"/> and the
+    /// <paramref name="player"/> is in <paramref name="view"/> already (<see cref="Holds"/>), the view then as it is; else
+    /// <see cref="FittingAll(IReadOnlyCollection{MapPoint}, MapPoint?, SKSize, float, float, double, double)"/> with the
+    /// view's zoom as its closest, a zoom out only. Until 2026-10-15 a fit that zoomed out nothing still took them into the
+    /// view's middle (coordinator, from the roll call's build: on Customs it cut off the map's west and left empty map at
+    /// the top). Null with nothing to frame or no room for the padding.
+    /// </summary>
+    public static ((MapPoint Center, double Zoom) View, bool Moves)? CallOut(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport,
+        (MapPoint Center, double Zoom) view, float labelRoom, float padding, double minZoom)
+    {
+        if (points.Count == 0 && player is null)
+            return null;
+        if (Holds(points, player, viewport, view, labelRoom, padding))
+            return (view, false);
+        return FittingAll(points, player, viewport, labelRoom, padding, minZoom, view.Zoom) is { } fit ? (fit, true) : null;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="view"/> of <paramref name="viewport"/> shows every one of <paramref name="points"/> and the
+    /// <paramref name="player"/> where a fit of them would put them: <paramref name="padding"/> pixels inside the view's
+    /// left, top and bottom, and the label room inside its right (as <see cref="FramingAbove"/> keeps it), so each name
+    /// reads too.
+    /// </summary>
+    public static bool Holds(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport, (MapPoint Center, double Zoom) view,
+        float labelRoom, float padding)
+    {
+        var right = Math.Max(padding, Math.Min(labelRoom, viewport.Width * LabelRoomShare));
+        foreach (var p in player is { } you ? points.Append(you) : points)
+        {
+            var x = (p.X - view.Center.X) * view.Zoom + viewport.Width / 2;
+            var y = (p.Y - view.Center.Y) * view.Zoom + viewport.Height / 2;
+            if (x < padding || x > viewport.Width - right || y < padding || y > viewport.Height - padding)
+                return false;
+        }
+        return true;
+    }
+
     private (MapPoint Center, double Zoom) Place(MapRect rect, float padding, float labelRoom, float foot, double minZoom) =>
         Place(Viewport, rect, padding, labelRoom, foot, minZoom, MaxZoom);
 
-    private static (MapPoint Center, double Zoom) Place(SKSize viewport, MapRect rect, float padding, float labelRoom, float foot, double minZoom, double maxZoom)
+    private static (MapPoint Center, double Zoom) Place(SKSize viewport, MapRect rect, float padding, float labelRoom, float foot, double minZoom, double maxZoom,
+        float head = 0)
     {
         var width = viewport.Width;
         var right = Math.Max(padding, Math.Min(labelRoom, width * LabelRoomShare));
         var zx = (width - padding - right) / Math.Max(rect.Width, 1e-6);
-        var zy = (viewport.Height - foot - 2 * padding) / Math.Max(rect.Height, 1e-6);
+        var zy = (viewport.Height - foot - head - 2 * padding) / Math.Max(rect.Height, 1e-6);
         var zoom = Math.Clamp(Math.Min(zx, zy), minZoom, maxZoom);
         // Where the rectangle's left edge goes on screen: the middle, or left of it as far as the room on the right
         // needs but not into the padding on the left; one too wide even for the padding (held at the zoom limit) stays
         // in the middle.
         var shown = rect.Width * zoom;
         var left = Math.Min((width - shown) / 2, Math.Max(padding, width - right - shown));
-        // The middle of what is framed lies in the middle of the part above the foot.
-        return (new MapPoint(rect.Left + (width / 2 - left) / zoom, (rect.Top + rect.Bottom) / 2 + foot / 2 / zoom), zoom);
+        // The middle of what is framed lies in the middle of the part between the head and the foot.
+        return (new MapPoint(rect.Left + (width / 2 - left) / zoom, (rect.Top + rect.Bottom) / 2 + (foot - head) / 2 / zoom), zoom);
     }
 
     public void CenterOn(MapPoint p) => Center = p;

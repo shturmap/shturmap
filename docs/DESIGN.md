@@ -511,8 +511,10 @@ quoting it anywhere new.
     first and evened out (six stand three and three); each row is the extract's triangle as the map draws it at the size
     its flight starts from (0.8 of the map's: R 6 DIP, its 3 DIP dark collar, the kind's colour, the shared kind's split
     line), its name in the cue's 15 px and "???" muted. A name too long for its column breaks between words, never
-    inside one, and where the map's column has no room for the rows even so (twelve at the smallest window), they are
-    drawn smaller to fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
+    inside one, nor at a hyphen in it (QA pass, 2026-10-15: "Primorsky Ave Taxi V-" over "Ex" in the pseudo-language at
+    900×560; a word joiner follows each hyphen, Bahnschrift having no non-breaking hyphen; `Rules.WordBreaks`), and
+    where the map's column has no room for the rows even so (twelve at the smallest window), they are drawn smaller to
+    fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
     the dark the map's labels stand on, around its letters only (and the eyebrow's, and the example's line), so an
     icon landing under the title still shows between them; until 2026-10-15's build a halo was a dark box behind the
     title, which hid a landing in the replay's stills. A list that joins the cue holds the band where it stands, so the
@@ -1298,8 +1300,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   and Raid), NEXT RAID (Plan's rows, one resting under a drawn pointer previews its map), PICK AND POINT (an example
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
-  list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
-  it, the list goes, and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
+  list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC" (under the label
+  where the two would share the map's columns, at the smallest window; whole above the band: where its room is too
+  short, the example names fewer extracts, the farthest of the lit ones going, down to two lit and the "??:??:??"
+  one, and the list read says so, "3 OF 11"; where even those don't fit, it is drawn smaller to fit, never cut; QA
+  pass, 2026-10-15: at 900×560 the band covered its last row and the list read), a press reads it, the list goes,
+  and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
   for each of its extracts, the view taking them in with the position above the tour's band, and each triangle flown
   to its place, where it rings out, nearest the position first, while the rest are struck out (as built, 2026-10-15:
   the plate, then the cue, centred above the tour's band, with the map above the band cut out of the dim while it
@@ -1364,6 +1370,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     chapter, the empty band's when the tour opened, and the pointer set off 240 DIP above the map's foot, under that
     band). Where the band leaves little room above it, the 90 gives way, so what is framed keeps at least 90 itself
     (PICK AND POINT's German band at 900×560 leaves 181, and 90 on each side would have left it 1).
+    **The framing keeps clear of the label** at the map's top ("PREVIEW · THE TOUR · CUSTOMS" with "AN EXAMPLE, NOT YOUR
+    RAID"), as What's New's plate does (QA pass, 2026-10-15: at 900×560 YOUR SCREENSHOT KEY's last cut-out reached the
+    label, which, nearly opaque, hid framed extracts, struck-out Railroad Passage and the top of Trailer Park's lit
+    triangle, and the cut-out's edge ran through its words): what a chapter stages is framed under the label, 8 DIP and
+    a cut-out's corner marks below it, and above the band, the roll call's view too; a cut-out on the map starts there
+    and ends at the band's top. The label stays where it is, in the dim unless a chapter cuts out the whole map (PICK
+    AND POINT, IN THE RAID), where it is read whole. Of the QA's two ways, the label stepping aside while a chapter
+    frames the map's top would have left more room at the smallest window, but the label is what says the map is an
+    example once the cue has gone. The roll call's cue keeps its own place above the band.
     IN THE RAID's example card says NEXT as the raid card does: in a few words where the data is English ("Get valuable
     folder"; `Planning.ObjectiveSynopses`), else tarkov.dev's whole sentence, wrapping (owner, 2026-10-11: until then
     it was cut at 34 characters, mid-word, German "Besorge die geschützte Dokumenten…"), and its clock reads 13 MIN
@@ -1598,9 +1613,12 @@ spawns below).
   its place and lands as its ring starts (`MapRenderer.FlightAt`; the view zooms out to `Camera.FittingAll`). The
   window's side is `MainWindow.RollCall`: it hands each row over as the centre of its triangle in the map panel's
   pixels (`ExitCall`), at the cue's start, and moves the view with `MapView.CallOutView` (a zoom out only, the current
-  zoom as the fit's closest; above the tour's band in the tour). Once a roll call ran in a raid (`MapScene.CalledOut`;
-  a new raid on the map, its list not read yet, forgets it), a later list after the cue rings only what it lit or
-  marked anew (`MapScene.RingExits`).
+  zoom as the fit's closest; above the tour's band in the tour). Once a roll call ran in a raid, a later list after the
+  cue rings only what it lit or marked anew (`MapScene.RingExits`). What the roll call called is kept by the window for
+  the raid and its map (`Rules.RollCallRecord`: the raid's map, its id and start), not on the map's scene: a look at
+  another map in the raid and back makes the scene anew, and the scene's record (`MapScene.CalledOut` until
+  2026-10-15) went with it, so the next list got a whole roll call again (coordinator, 2026-10-15). A new raid, or a
+  transit to another map, starts without one.
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
@@ -1611,8 +1629,11 @@ spawns below).
   holds, a position never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom,
   F or the show-my-position button). A position that comes while the view is moving for the roll call (its 1.2 s; a run of
   screenshots) pings where it is and lets the move finish; the one after it glides (2026-10-15, as built: the two
-  pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only: where every listed extract and
-  the position are in view already, it keeps its zoom and takes them into its middle.
+  pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only, and where every listed extract
+  and the position are in view already, with the padding and the label room a fit keeps, it doesn't move at all, and a
+  Follow glide under way goes on (coordinator, 2026-10-15, from the roll call's build: a fit that zoomed out nothing still
+  took them into the view's middle, which on Customs cut off the map's west and left empty map at the top;
+  `Camera.CallOut`).
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
@@ -2249,9 +2270,17 @@ read.
 
 A card is never taller than the room there is in the window. A longer card (Collector, a quest with many
 objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay in reach (2026-10-04: it was cut at
-the window's edge). A card that grows while it is open (held, with its NOTES field; a note added; a tick's line) moves
-up as far as it needs to stay in the window, never down (2026-10-15: placed by a row near the window's foot, the
-field it gets when held lay below the edge, where nothing scrolls it into view).
+the window's edge). **Where a card opens** (owner, 2026-10-15: "When selecting a quest at the lower border of the
+screen it gets cut off"; `Rules.CardPlace`): beside its row, its top 10 DIP above the row's, and up as far as its whole
+height needs to stay inside the room with 8 DIP to spare, never above the room's top; at most the room's height less
+16 (its MaxHeight), past which it scrolls inside. A card that grows while it is open (held, with its NOTES field; a
+note added; a tick's line) moves up by the same rule, never down (2026-10-15: placed by a row near the window's foot,
+the field it gets when held lay below the edge, where nothing scrolls it into view). The room is the window, less what
+of it lies off its monitor's work area: a window that reaches behind the taskbar or past the screen's lower edge keeps
+its cards in sight. In quiet runs at 900×560 and 1600×900, in English and German, a card held from the lowest row of
+the rail (Insomnia at the foot of Streets' card, held, on hover, and held with five notes) already stood inside the
+window before this; the one cut that rule could leave was the screen's, so that is the change (a guess at the owner's
+window, which was not seen).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow. The card's body keeps its subject in
@@ -2969,8 +2998,8 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   name> [look]` (with look, the map only shown, as a pick in the MAP list shows it: in a raid, a look), `side pmc|scav`,
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
-  `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
+  `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list

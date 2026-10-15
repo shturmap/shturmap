@@ -307,9 +307,10 @@ public sealed partial class MainWindow
     /// <param name="padding">DIPs around what is framed (the tour's are wider); the right side keeps the label room
     /// (<see cref="Controls.MapView.FramingAbove"/>).</param>
     /// <param name="pmc">A PMC raid's map, as an example extract list is read in one: only that side's extracts.</param>
+    /// <param name="head">DIPs at the map's top that what is framed stays under (the tour's label; QA pass, 2026-10-15).</param>
     private async Task PreviewSceneAsync(string wanted, Shturmap.Data.TarkovDev.GameData data, string mapName, IReadOnlyCollection<string> quests,
         Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, double foot = 0, double padding = 40,
-        bool pmc = false)
+        bool pmc = false, double head = 0)
     {
         if (data.MapByNormalizedName(mapName) is not { } map || data.DefinitionFor(mapName) is not { } definition || _session.Artwork is null)
             return;
@@ -328,7 +329,7 @@ public sealed partial class MainWindow
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
         stage?.Invoke(scene, content);
         var points = frame?.Invoke(content);
-        Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, padding, foot, minMetres) : null);
+        Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, padding, foot, minMetres, head) : null);
         _scenes.Forget();
         ShowFloors();
     }
