@@ -72,6 +72,32 @@ public class WindowRulesTests
         Assert.False(scenes.Arrived("customs"));
     }
 
+    // Found 2026-10-15: every preview's end made the shown map's scene anew, also after a cue or a plate that never took
+    // the view (What's New's stash lines, its clock); the last position pinged again, and following glided to it.
+    [Fact]
+    public void A_preview_that_only_lay_over_the_map_leaves_its_scene_and_one_that_took_the_view_has_it_made_anew()
+    {
+        var scenes = new SceneGate();
+        scenes.Wants("woods");
+        scenes.Arrived("woods");
+        // A cue or a plate: the view still holds Woods' scene, and it stays.
+        Assert.False(scenes.MakeAnew("woods"));
+        Assert.True(scenes.Holds("woods"));
+
+        // A map of its own (Customs for the tour, another map's row): the view took it, Woods is made anew.
+        scenes.Forget();
+        Assert.True(scenes.MakeAnew("woods"));
+        Assert.True(scenes.Wants("woods"));
+
+        // Woods' artwork was on its way when a plate came: its arrival was dropped, so it is fetched again.
+        var loading = new SceneGate();
+        loading.Wants("woods");
+        Assert.True(loading.MakeAnew("woods"));
+        Assert.True(loading.Wants("woods"));
+        // No map at all yet.
+        Assert.True(new SceneGate().MakeAnew(null));
+    }
+
     // ---- A42, H9: around a raid ----
 
     [Theory]

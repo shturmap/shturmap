@@ -208,6 +208,70 @@ public sealed partial class MainWindow
         return null;
     }
 
+    // The What's New line a script's "whatsnew click" put the pointer on, for its "whatsnew leave".
+    private Microsoft.UI.Xaml.Controls.Grid? _devWhatsNewRow;
+
+    /// <summary>
+    /// A click on the newest version's n-th What's New line (counted from 1), as the mouse makes it: the pointer onto
+    /// the line, then the tap, through the code the pointer's own events call, so a line about the tour opens it there
+    /// (a script can replay the owner's report of 2026-10-15 on the tour:5 line without a mouse). The card shows first
+    /// if it isn't up. Returns what it couldn't find, or null.
+    /// </summary>
+    internal string? DevWhatsNewClick(int line)
+    {
+        if (WhatsNewSections.FirstOrDefault() is not { } newest)
+            return "no What's New in this build";
+        if (line < 1 || line > newest.Items.Count)
+            return $"What's New {newest.Label} has {newest.Items.Count} lines";
+        if (!ViewModel.WhatsNewShown)
+        {
+            ShowWhatsNew([newest], "dev");
+            ((FrameworkElement)Content).UpdateLayout();
+        }
+        var key = $"{newest.Label}:{line - 1}";
+        if (DevWhatsNewRows(Content).FirstOrDefault(r => r.Tag as string == key) is not { } row)
+            return $"line {line} of What's New {newest.Label} isn't in the window";
+        _devWhatsNewRow = row;
+        WhatsNewPointerEntered(row);
+        WhatsNewTapped(row);
+        return null;
+    }
+
+    /// <summary>The pointer leaves the line a script's "whatsnew click" put it on (or, with none, the card), as moving
+    /// off it does, the tour's layer coming over it too: what the line's PointerExited does.</summary>
+    internal string? DevWhatsNewLeave()
+    {
+        var row = _devWhatsNewRow;
+        _devWhatsNewRow = null;
+        WhatsNewPointerExited(row);
+        return null;
+    }
+
+    // What's New's lines in the window: the rows its card's template made (MainWindow.xaml, WhatsNewRow).
+    private static IEnumerable<Microsoft.UI.Xaml.Controls.Grid> DevWhatsNewRows(DependencyObject under)
+    {
+        for (var i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(under); i++)
+        {
+            var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(under, i);
+            if (child is Microsoft.UI.Xaml.Controls.Grid { DataContext: WhatsNewRow, Tag: string } row)
+            {
+                yield return row;
+                continue;
+            }
+            foreach (var deeper in DevWhatsNewRows(child))
+                yield return deeper;
+        }
+    }
+
+    /// <summary>Ends the tour as Esc does ("tour end"); false when none is up.</summary>
+    internal bool DevEndTour()
+    {
+        if (!TourOpen)
+            return false;
+        CloseTour("dev");
+        return true;
+    }
+
     /// <summary>The made-up raid of the previews replayed on Customs, as at a raid's end (the map switches to Customs).</summary>
     internal async Task<string?> DevReplayAsync()
     {

@@ -18,7 +18,11 @@ public sealed record DevStep(int Line, string Verb, IReadOnlyList<string> Args)
 /// <summary>
 /// "--dev-script &lt;file&gt;": the developer view's buttons, one per line, played in order after the session has
 /// started, so a dev raid can be replayed headless and snapshotted (docs/DESIGN.md §8, "Developer aids"). A line is a
-/// verb and its arguments, separated by spaces ("quotes" keep spaces); "#" starts a comment.
+/// verb and its arguments, separated by spaces ("quotes" keep spaces); "#" starts a comment. A step is followed by
+/// 0.3 s for the app to read what it wrote, but the pointer's steps and "wait" (<see cref="FollowsAtOnce"/>). The
+/// file's path and a snapshot's folder are read from the app's working folder, %USERPROFILE% (Program): give them
+/// whole, a folder with %VARIABLES% if it likes (<see cref="Folder"/>). A session of "--dev-view" starts on settings
+/// of its own, as at a first start, so the tour opens by itself once the data is there: "tour end" ends it.
 /// </summary>
 public static class DevScript
 {
@@ -51,11 +55,14 @@ public static class DevScript
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
         ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload (nogame: as if no game were on this PC)",
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
-        ["whatsnew"] = "[<n>]: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview)",
+        ["whatsnew"] = "[<n>] | click <n> | leave: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview); "
+            + "click n, the pointer onto line n and a tap there, through the code the pointer's events call (a line about the tour opens it); "
+            + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
+        ["tour"] = "end: ends the tour as Esc does (a --dev-view session starts as a first start, and the tour opens by itself)",
         ["wait"] = "<seconds>",
-        ["snapshot"] = "<folder>: the window and the map as PNGs",
+        ["snapshot"] = "<folder>: the window and the map as PNGs, written over what the folder had; %VARIABLES% in it are expanded",
         ["exit"] = "closes the app",
         ["note"] = "<quest id or name> <text>: adds a note to the quest, as the field on its card does (the quest one word or \"quoted\"; \\n in the text breaks the line); not saved",
     };
@@ -66,6 +73,39 @@ public static class DevScript
     /// </summary>
     public static (string Quest, string Text)? Note(DevStep step) =>
         step.Args.Count < 2 ? null : (step.Args[0], string.Join(' ', step.Args.Skip(1)).Replace("\\n", "\n", StringComparison.Ordinal));
+
+    /// <summary>What a "whatsnew" step does with the card: the pointer onto a line (or, with none, off the card), a tap
+    /// on a line, or the pointer off the line it is on.</summary>
+    public enum WhatsNewAct
+    {
+        Point,
+        Click,
+        Leave,
+    }
+
+    /// <summary>
+    /// "whatsnew [&lt;n&gt;]", "whatsnew click &lt;n&gt;", "whatsnew leave": what the step does, and the line it is about,
+    /// counted from 1 (0: none). Null for a click without a line.
+    /// </summary>
+    public static (WhatsNewAct Act, int Line)? WhatsNewOf(DevStep step) => step.Arg(0).ToLowerInvariant() switch
+    {
+        "click" => step.Number(1) >= 1 ? (WhatsNewAct.Click, (int)step.Number(1)) : null,
+        "leave" => (WhatsNewAct.Leave, 0),
+        _ => (WhatsNewAct.Point, (int)step.Number(0, 0)),
+    };
+
+    /// <summary>
+    /// Whether the next step follows at once. The pointer's steps (hover, point, trail, cards, and What's New's click
+    /// and leave) and "wait" write nothing for the app to read, and what they check is a matter of tenths of a second;
+    /// after every other step the app is given 0.3 s, as it reads the logs about twice a second.
+    /// </summary>
+    public static bool FollowsAtOnce(DevStep step) =>
+        step.Verb is "hover" or "point" or "trail" or "cards" or "wait"
+        || step.Verb == "whatsnew" && WhatsNewOf(step) is { Act: WhatsNewAct.Click or WhatsNewAct.Leave };
+
+    /// <summary>A folder a step names, with its %VARIABLES% expanded: a script kept in the repository names no user's
+    /// folder ("%TEMP%\shturmap-qa\t0"). One left relative is in the app's working folder, %USERPROFILE%.</summary>
+    public static string Folder(string folder) => Environment.ExpandEnvironmentVariables(folder);
 
     public static (IReadOnlyList<DevStep> Steps, IReadOnlyList<string> Errors) Parse(string text)
     {
@@ -87,7 +127,18 @@ public static class DevScript
                 errors.Add($"line {i + 1}: unknown step '{words[0]}'");
                 continue;
             }
-            steps.Add(new DevStep(i + 1, verb, words.Skip(1).ToList()));
+            var step = new DevStep(i + 1, verb, words.Skip(1).ToList());
+            if (verb == "whatsnew" && WhatsNewOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'whatsnew click' needs the line's number, from 1");
+                continue;
+            }
+            if (verb == "tour" && !step.Arg(0).Equals("end", StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add($"line {i + 1}: 'tour' takes 'end'");
+                continue;
+            }
+            steps.Add(step);
         }
         return (steps, errors);
     }

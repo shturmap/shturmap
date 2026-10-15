@@ -110,9 +110,15 @@ public sealed partial class MainWindow
         story.Begin();
     }
 
+    // The stamp's storyboard, as the cue's own is kept (_cueStory): a stamp starting stops the one before, which was
+    // left running on the same parts when a quest joined within its 1.6 s, or What's New's stash line was pointed at
+    // again (found 2026-10-15, looking into the owner's report on What's New's tour:5 line).
+    private Storyboard? _stampStory;
+
     // The stamp: the disc pops in on the quests' gold, a ring leaves it and fades. From <paramref name="at"/> seconds.
     private void Stamp(double at)
     {
+        _stampStory?.Stop();
         CueStamp.Visibility = Visibility.Visible;
         var story = new Storyboard();
         void Animate(DependencyObject target, string property, EasingFunctionBase ease, params (double Seconds, double Value)[] keys)
@@ -137,6 +143,7 @@ public sealed partial class MainWindow
         Animate(CueStampRing, "Opacity", easeOut, (0, 0), (0.2, 0), (0.25, 0.9), (1.05, 0));
         Animate(CueStampRingScale, "ScaleX", easeOut, (0, 1), (0.2, 1), (1.05, 2.1));
         Animate(CueStampRingScale, "ScaleY", easeOut, (0, 1), (0.2, 1), (1.05, 2.1));
+        _stampStory = story;
         story.Begin();
     }
 

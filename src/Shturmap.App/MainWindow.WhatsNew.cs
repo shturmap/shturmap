@@ -155,7 +155,15 @@ public sealed partial class MainWindow
 
     private void OnWhatsNewPointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        if (sender is not Grid { Tag: string key } row)
+        if (sender is Grid row)
+            WhatsNewPointerEntered(row);
+    }
+
+    // The pointer onto a line (and a developer script's "whatsnew click"): the line takes the linked tint, and its
+    // preview shows once the pointer rests there.
+    private void WhatsNewPointerEntered(Grid row)
+    {
+        if (row.Tag is not string key)
             return;
         row.Background = Resource("LinkBrush");
         // A line about the tour previews nothing: a click on it opens the tour (OnWhatsNewTapped).
@@ -164,14 +172,24 @@ public sealed partial class MainWindow
         Preview(WhatsNewPreviewPrefix + key, PreviewAfter);
     }
 
-    // A click on a line about the tour opens it, at the chapter the line names (owner, 2026-10-09: a release that
-    // changes a chapter says so here; docs/tour.md).
     private void OnWhatsNewTapped(object sender, TappedRoutedEventArgs e)
     {
-        if (sender is not Grid { Tag: string key } || WhatsNewItem(key) is not { } item || Tour.ChapterOf(item.Preview) is not { } chapter)
+        if (sender is Grid row)
+            WhatsNewTapped(row);
+    }
+
+    // A click on a line about the tour opens it, at the chapter the line names (owner, 2026-10-09: a release that
+    // changes a chapter says so here; docs/tour.md). The tour takes the map then (OpenTour), and its layer covers the
+    // line: the line lets go of its tint, and its leaving, under the layer, asks for nothing (owner, 2026-10-15: it
+    // ended the chapter's staging, "the highlight does weird movements and highlights the wrong things sometimes").
+    private void WhatsNewTapped(Grid row)
+    {
+        if (row.Tag is not string key || WhatsNewItem(key) is not { } item || Tour.ChapterOf(item.Preview) is not { } chapter)
             return;
         Study.Ui("whatsnew.tour", ("chapter", chapter + 1));
         OpenTour(chapter, "whatsnew");
+        if (TourOpen)
+            row.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
     }
 
     // The line a row's key ("0.4.0:2") stands for.
@@ -183,9 +201,12 @@ public sealed partial class MainWindow
             ? section.Items[index] : null;
     }
 
-    private void OnWhatsNewPointerExited(object sender, PointerRoutedEventArgs e)
+    private void OnWhatsNewPointerExited(object sender, PointerRoutedEventArgs e) => WhatsNewPointerExited(sender as Grid);
+
+    // The pointer off a line (and a developer script's "whatsnew leave"): its tint goes, and its preview a moment later.
+    private void WhatsNewPointerExited(Grid? row)
     {
-        if (sender is Grid row)
+        if (row is not null)
             row.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         Preview(null, PreviewEndAfter);
     }
@@ -235,7 +256,7 @@ public sealed partial class MainWindow
                 }
                 break;
             case "extracts":
-                await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(data, scene, content), null, 0);
+                await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(data, scene, content), null, 0, pmc: true);
                 break;
             case "joined":
                 // Gratitude's two stashes on one spot (docs/DESIGN.md "Map drawing", *Objectives of one quest on one spot*).
@@ -263,8 +284,10 @@ public sealed partial class MainWindow
     /// <param name="foot">DIPs at the map's foot that what is framed stays above (the tour's band).</param>
     /// <param name="padding">DIPs around what is framed (the tour's are wider); the right side keeps the label room
     /// (<see cref="Controls.MapView.FramingAbove"/>).</param>
+    /// <param name="pmc">A PMC raid's map, as an example extract list is read in one: only that side's extracts.</param>
     private async Task PreviewSceneAsync(string wanted, Shturmap.Data.TarkovDev.GameData data, string mapName, IReadOnlyCollection<string> quests,
-        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, double foot = 0, double padding = 40)
+        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, double foot = 0, double padding = 40,
+        bool pmc = false)
     {
         if (data.MapByNormalizedName(mapName) is not { } map || data.DefinitionFor(mapName) is not { } definition || _session.Artwork is null)
             return;
@@ -273,6 +296,12 @@ public sealed partial class MainWindow
             return;
         var ids = data.Tasks.Values.Where(t => t.NormalizedName is { } n && quests.Contains(n)).Select(t => t.Id).ToList();
         var content = MapContentBuilder.Build(data, map.Id, ids, new HashSet<string>());
+        // As a PMC raid's map shows it (GameSession's content in a raid): the Scav extracts go. Left in, tarkov.dev's
+        // Scav twins of Crossroads, RUAF Roadblock, Trailer Park, Old Gas Station and ZB-1011, under 5 m from them,
+        // stood unlit beside the example list's lit and struck-out ones, set apart on leaders (found 2026-10-15 in
+        // frames drawn of the example, looking into the owner's report on What's New's tour:5 line).
+        if (pmc)
+            content = content with { Markers = content.Markers.Where(m => m.Kind != MarkerKind.ExtractScav).ToList() };
         var scene = new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
         stage?.Invoke(scene, content);

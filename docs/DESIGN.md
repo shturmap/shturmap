@@ -875,9 +875,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, or a small
     drawing of the raid card's clock. **Pointing at a line previews it** on the map, as resting on a map's row in Plan
     does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
-    0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID", and leaving puts the map back as it was. The
+    0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID", and leaving puts the map back as it was: a
+    preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
+    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`) leaves the map's scene alone, so the last
+    position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
+    on the `tour:5` line below; `SceneGate.MakeAnew`). The
     previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
-    list on Customs, the raid card's own clock with example times on a plate over the dimmed map (`RaidClock`), Gratitude's
+    list on Customs, on a PMC raid's map, so without the Scav extracts (2026-10-15: tarkov.dev's Scav twins of five of
+    them, under 5 m away, stood unlit beside the lit and struck-out ones), the raid card's own clock with example
+    times on a plate over the dimmed map (`RaidClock`), Gratitude's
     two objectives on one spot on Woods, Streets' Scav Checkpoint where an extract and a transit stand apart; and for
     what you have (0.5.0; the lines first opened the tour at its first chapter, which the owner reported as a bug on
     2026-10-11) `stash`, the SEEN IN YOUR STASH cue with example items (three keys and three items of the data's
@@ -894,6 +900,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     `Rules.WhatsNew.InLanguage`): one section
     per version, "- preview · Name · What it is.", at most five (a test checks the file: known previews, short words). A line about the tour (`tour`, or `tour:5` for a
     chapter a release changed) previews nothing; a click on it opens the tour there (owner, 2026-10-09, T13; *The tour*).
+    Once it is clicked the tour owns the map: the preview timer stands still until the tour ends, a request the pointer
+    made before is dropped, and the line's leaving under the tour's layer asks for nothing (owner, 2026-10-15, on the
+    `tour:5` line: "the highlight does weird movements and highlights the wrong things sometimes"; the leaving ended a
+    preview 0.3 s later, which put the player's map back under YOUR SCREENSHOT KEY while the chapter went on staging on
+    Customs, so its view moved and its cut-outs sat by a map no longer shown; `Rules.PreviewOwner`).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
     **Release names** (owner, 2026-10-09: "I would like to have names major releases. The first one would be
     praetorian"). A release that raises the minor or major number gets a name, the owner's, written after its version
@@ -1159,7 +1170,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   a toggle at the top of the map controls, the same 36 px square-cornered frame, its own symbol `E759`, the tooltip
   "Follow my position (Shift+F)"; on, its symbol and frame are amber, the app's colour for "on" (2026-10-04: it was
   the picks' cyan, which then had two meanings; "Design system", one meaning per colour). Off by default, and kept
-  between runs (`followPosition` in shturmap.db).
+  between runs (`followPosition` in shturmap.db). It stands still while the tour is up (*The tour*; 2026-10-15).
   - **On**, each new position glides into view over 2.4 s, eased in and out, at the current zoom; the
     floor follows the height as always, and the position pings as it arrives. Turning it on glides to the last
     position at once. **Slow, and with room ahead** (owner, 2026-10-04: "that smooth panning should be way slower.
@@ -1208,8 +1219,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
   list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
-  it, the list goes, and the view takes in its extracts as they ring out one after another, as the map shows any list
-  just read, while the rest are struck out), IN THE RAID (RAID LOADING with an example kit, then the raid
+  it, the list goes, and the view takes in its extracts as they ring out one after another, nearest the position first,
+  as the map shows any list just read, while the rest are struck out; the chapter's map is a PMC raid's, without the
+  Scav extracts, as What's New's `extracts` preview is), IN THE RAID (RAID LOADING with an example kit, then the raid
   card's head with example values) and HELP AND FEEDBACK (the story chapters aren't shown yet, anything else missing goes through the feedback button,
   F1; the three buttons named; owner, 2026-10-09: "GOOD TO KNOW" wasn't "really expressive").
   - **How it looks.** The window dims (ground at 86 %) except where a chapter's parts are cut out, each framed with the
@@ -1249,6 +1261,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     origin, from chapter 7 on).
     A glide a chapter starts stops when its map goes (the same review: Esc during YOUR SCREENSHOT KEY's glide went on
     moving the map that came back).
+    While it is up the tour owns the map (owner, 2026-10-15, on What's New's `tour:5` line: "the highlight does weird
+    movements and highlights the wrong things sometimes"; `Rules.PreviewOwner`): a preview the pointer asks for counts
+    for nothing, one asked for before it opened is dropped, and only a chapter's own stage starts or ends what the map
+    shows (*What's New*). Follow my position stands still meanwhile: each chapter frames its example itself, and the
+    example's position is nobody's to follow (YOUR SCREENSHOT KEY's, set right after the chapter framed it, glided the
+    view off that framing for 2.4 s under a cut-out placed before the glide; `MapView.FollowHeld`). At its end following
+    is the player's again before their map comes back, so it comes back as after any preview.
     A chapter frames what it stages above the band with 90 DIP around it, room for the labels the map writes beside
     its symbols (the same review: 40 and 60 cut them at the map's edge, and IN THE RAID, fitted, ran under the band),
     and 150 on the right, the map's label room (owner, 2026-10-09: 90 still cut PICK AND POINT's picked quest there;
@@ -2697,17 +2716,27 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
 - "What's in this build" shows `dev\changelog.json` beside the app (written by `eng\dev.ps1`: the build's commit
   and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
   with the app's version and commit.
-- `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `load`,
-  `steps`, `start`, `end`, `transit`, `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `wait <s>`,
+- `--dev-script <file>` plays the view's steps headless, one per line (`mode`, `map`, `side`, `hosting`, `group` (the
+  group's leader picks the current map), `load`, `steps`, `start`, `end`, `cancel` (matching cancelled), `transit`,
+  `quest start|complete|fail <id or name>`, `quest here <n>`, `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger <what>`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
-  the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking;
-  `snapshot` also saves the view's two tabs.
+  the session only; the quest one word or quoted, `
+` in the text a line break)), for checks without clicking;
+  `snapshot` also saves the view's two tabs, writing over
+  what the folder had (one folder per moment), and expands `%VARIABLES%` in it, so a script kept in the repository
+  names no user's folder. The script's path, and a folder left relative, are read from the app's working folder,
+  `%USERPROFILE%` (`Program`). A `--dev-view` session starts on settings of its own, as at a first start, so the tour
+  opens by itself once the data is there; `tour end` ends it.
   A step is followed by 0.3 s for the app to read what it wrote; the pointer's steps (`hover`,
-  `point`, `trail`, `cards`) and `wait` write nothing and follow at once, since what they check lasts tenths of a
-  second. A script's run is quiet (owner, 2026-10-15; *Quiet runs*, below): the window and the view open off every
+  `point`, `trail`, `cards`, `whatsnew click`, `whatsnew leave`) and `wait` write nothing and follow at once, since
+  what they check lasts tenths of a second (`DevScript.FollowsAtOnce`).
+  A script's run is quiet (owner, 2026-10-15; *Quiet runs*, below): the window and the view open off every
   monitor without taking the focus, and the app ends with the script; `--visible` shows both and keeps the app open
   after a script without `exit`, as before.
+- `tools\qa` keeps such scripts for a QA pass, each with what its stills must show beside it: run on a developer
+  build, they check in the window what no test reaches. `whatsnew-tour-line.devscript` (2026-10-15) replays the
+  owner's report on What's New's `tour:5` line (*What's New*, *The tour*).
 
 **Switching the language in a run** (developer builds only; 2026-10-10). `--switch-language <culture>` (`en-US`, `de-DE`,
 `qps-ploc`) switches the language once the window shows the game data, exactly as a choice in settings does but for

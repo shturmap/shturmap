@@ -6,6 +6,48 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-15: What's New's tour line tore down the tour's staging
+
+The owner, on 0.5.0's What's New line "Your extracts, clearer" (`tour:5`): "the highlight does weird movements and
+highlights the wrong things sometimes". Found in the code (not seen in the app yet):
+
+- **The cause.** A click on the line opens the tour at YOUR SCREENSHOT KEY, which stages its example on Customs as a
+  preview (`TourScene` sets `_previewing`). The tour's layer then covers the line, so at the pointer's next move at the
+  latest the line's `PointerExited` asks for the end of a preview, `Preview(null, 0.3 s)`, as for any line;
+  nothing in the preview machinery looked at the tour. 0.3 s later `EndPreview` ran: the label went, the player's own
+  map came back under the tour, and the chapter went on against the Customs scene that had gone: its ping, its
+  framing and its 1.2 s move were worked out on Customs and applied to the player's map, its cut-outs placed by it, its
+  extracts rung out on a scene not drawn. "Sometimes": it waits for the pointer to leave, and what it spoils depends on
+  where the chapter is by then. 0.4.0's tour line opened chapter 1, which stages nothing, so it never showed.
+- **A second fault in the same chapter**, with Follow my position on: the example position, set right after the chapter
+  framed it, glided the view for 2.4 s toward it (a sixth of the view ahead, the way it faces), under a cut-out placed
+  before the glide.
+- **The fix.** While the tour is up it owns the map (`Rules.PreviewOwner`, DESIGN.md §4, *What's New* and *The tour*):
+  the pointer's preview requests count for nothing, the timer's end does nothing, and opening the tour drops a request
+  still waiting; the chapter's own `EndTourStage` ends what it staged, as before. The tapped line lets go of its tint.
+  Follow my position stands still while the tour is up (`MapView.FollowHeld`) and is the player's again before their
+  map comes back at the end.
+- **Found on the way, fixed too.** Every preview's end made the shown map's scene anew, also after a cue or a plate
+  that never took the view (What's New's stash lines and clock): the last position counted as new, pinged again and,
+  following, glided; now only a preview that put its own map in the view has the player's made anew
+  (`SceneGate.MakeAnew`), at its view as before; the map still comes back fitted after a preview that began before any
+  map was drawn, and picks still stay off a preview's map. The cue's stamp (QUEST COMPLETE, SEEN IN YOUR STASH) was
+  started anew on the same parts while the one before still ran (a quest joining within 1.6 s, the stash line pointed
+  at again); a stamp now stops the one before. The chapter's map, and What's New's `extracts` preview with the same
+  example list, kept both sides' extracts: Customs' 17 Scav ones stood solid and unlit, five of them under 5 m from
+  a lit or struck-out PMC extract of the same name, set apart from it on a leader (frames drawn of the example; the
+  places checked in tarkov.dev's data, PvE and PvP). Both are a PMC raid's map now, as in a raid: no Scav extracts.
+  The extracts ring out nearest the example position first: it is set at the ping, long before the list is read.
+- **Left as it is.** While the view moves (the chapter's 1.2 s move, a replay's framing), symbols set apart on leaders
+  are placed anew at every frame for the zoom of that frame, so one can jump; the chapter already works out its framing
+  once, before the move, and its last cut-out after the move has settled, so only not moving the zoom, or placing the
+  symbols once for the move, would avoid it: the map's general behaviour, not this report's. What's New's `extracts`
+  preview has no position, so its extracts ring out in the data's order, from one end of the map to the other.
+- **The check in the app** is the QA pass's: `tools\qa\whatsnew-tour-line.devscript` on a developer build, with what each
+  still must show and what the fault looked like in `tools\qa\whatsnew-tour-line.md`. New script steps for it:
+  `whatsnew click <n>`, `whatsnew leave` and `tour end` (a `--dev-view` session starts as a first start, so the tour
+  opens by itself); `snapshot` expands `%VARIABLES%` (DESIGN.md §8, "Developer aids").
+
 ## 2026-10-14: before 0.5.0 "Hyena"
 
 The owner's answers to what was left for the release (2026-10-14):

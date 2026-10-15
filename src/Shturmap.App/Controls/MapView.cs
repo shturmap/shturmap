@@ -141,7 +141,7 @@ public sealed partial class MapView : Grid
             _camera.Restore(v.Center, v.Zoom);
         _seenFix = null;
         // Following, a new map opens on the player (after it is fitted, at its first paint).
-        _centerAfterFit = _follow.On;
+        _centerAfterFit = Following;
         Invalidate();
         // A scene that comes with an extract list just read (What's New's preview) rings its extracts out.
         if (scene is { ExitsArriving: true })
@@ -162,6 +162,17 @@ public sealed partial class MapView : Grid
 
     /// <summary>Whether the view follows the player's position.</summary>
     public bool Follow => _follow.On;
+
+    /// <summary>
+    /// While set, following stands still: a new position pings where it is, and neither it nor a new scene moves the
+    /// view. The tour sets it while it is up (owner, 2026-10-15, on What's New's tour:5 line: "the highlight does weird
+    /// movements and highlights the wrong things sometimes"): it frames each chapter's example itself, above its band,
+    /// and YOUR SCREENSHOT KEY's example position, set right after the chapter framed it, glided off that framing
+    /// over 2.4 s, under a cut-out placed where the position was before the glide. An example is nobody's to follow.
+    /// </summary>
+    public bool FollowHeld { get; set; }
+
+    private bool Following => _follow.On && !FollowHeld;
 
     /// <summary>Turns following on or off; on, the view glides to the player's position at once.</summary>
     public void SetFollow(bool on)
@@ -262,7 +273,7 @@ public sealed partial class MapView : Grid
         if (_scene is { Player: { } fix } scene && !ReferenceEquals(fix, _seenFix))
         {
             _seenFix = fix;
-            if (_follow.On)
+            if (Following)
             {
                 // Before the first paint the view has no size: it starts on the position then. After it, it glides.
                 _centerAfterFit = _fitPending;
