@@ -241,5 +241,90 @@ public sealed class DevToolsTests : IDisposable
         Assert.Equal(7, steps[3].Number(9, 7));
         Assert.Equal(["line 6: unknown step 'jump'"], errors);
     }
+
+    // The owner's report of 2026-10-15 on What's New's tour:5 line, replayed without a mouse: a tap on a line, and the
+    // pointer leaving it, beside the card and its previews as before.
+    [Fact]
+    public void Whats_new_steps_point_at_a_line_click_one_or_leave_it()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n',
+            "whatsnew",
+            "whatsnew 3",
+            "whatsnew click 4",
+            "WhatsNew Click 2",
+            "whatsnew leave",
+            "whatsnew click",
+            "whatsnew click none",
+            "whatsnew click 0"));
+        Assert.Equal(["line 6: 'whatsnew click' needs the line's number, from 1", "line 7: 'whatsnew click' needs the line's number, from 1",
+            "line 8: 'whatsnew click' needs the line's number, from 1"], errors);
+        Assert.Equal(
+            [(DevScript.WhatsNewAct.Point, 0), (DevScript.WhatsNewAct.Point, 3), (DevScript.WhatsNewAct.Click, 4), (DevScript.WhatsNewAct.Click, 2),
+                (DevScript.WhatsNewAct.Leave, 0)],
+            steps.Select(s => DevScript.WhatsNewOf(s)!.Value));
+    }
+
+    [Fact]
+    public void The_tour_step_ends_the_tour_and_takes_nothing_else()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "tour end", "tour", "tour 5"));
+        Assert.Equal(["tour end"], steps.Select(s => s.ToString()));
+        Assert.Equal(["line 2: 'tour' takes 'end'", "line 3: 'tour' takes 'end'"], errors);
+    }
+
+    // A step that writes nothing for the app to read follows at once: the click on a tour line, the pointer's leaving
+    // 0.4 s later and the snapshot after it keep the times the script gives them.
+    [Theory]
+    [InlineData("whatsnew click 4", true)]
+    [InlineData("whatsnew leave", true)]
+    [InlineData("hover", true)]
+    [InlineData("point", true)]
+    [InlineData("trail 1 2", true)]
+    [InlineData("cards", true)]
+    [InlineData("wait 0.4", true)]
+    [InlineData("whatsnew", false)]
+    [InlineData("whatsnew 2", false)]
+    [InlineData("tour end", false)]
+    [InlineData("map woods", false)]
+    [InlineData("snapshot t0", false)]
+    public void Only_the_pointers_steps_and_wait_follow_at_once(string line, bool atOnce) =>
+        Assert.Equal(atOnce, DevScript.FollowsAtOnce(Assert.Single(DevScript.Parse(line).Steps)));
+
+    [Fact]
+    public void A_snapshots_folder_takes_its_variables_so_a_script_in_the_repository_names_no_users_folder()
+    {
+        Environment.SetEnvironmentVariable("SHTURMAP_DEVSCRIPT_TEST", @"D:\qa");
+        try
+        {
+            Assert.Equal(@"D:\qa\whatsnew-tour-line\t0", DevScript.Folder(@"%SHTURMAP_DEVSCRIPT_TEST%\whatsnew-tour-line\t0"));
+            Assert.Equal(@"D:\plain", DevScript.Folder(@"D:\plain"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("SHTURMAP_DEVSCRIPT_TEST", null);
+        }
+    }
+
+    // The QA pass's replay of the tour:5 line (tools\qa): every step one the app knows, with what it takes.
+    [Fact]
+    public void The_qa_replay_of_whats_news_tour_line_reads_without_errors()
+    {
+        var (steps, errors) = DevScript.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "qa", "whatsnew-tour-line.devscript")));
+        Assert.Empty(errors);
+        Assert.Contains(steps, s => DevScript.WhatsNewOf(s) is (DevScript.WhatsNewAct.Click, > 0) && s.Verb == "whatsnew");
+        Assert.Contains(steps, s => s.Verb == "whatsnew" && DevScript.WhatsNewOf(s) is (DevScript.WhatsNewAct.Leave, _));
+        Assert.All(steps.Where(s => s.Verb == "snapshot"), s => Assert.StartsWith("%TEMP%", s.Arg(0)));
+        Assert.Equal("exit", steps[^1].Verb);
+    }
+
+    private static string RepositoryRoot()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "Shturmap.slnx")))
+                return dir.FullName;
+        }
+        throw new InvalidOperationException("Repository root not found.");
+    }
 }
 #endif

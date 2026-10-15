@@ -379,8 +379,8 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 Say($"line {step.Line} failed: {e.Message}");
             }
             // The app reads the logs about twice a second. The pointer's steps write nothing for it to read, and
-            // what they check is a matter of tenths of a second: they follow each other at once.
-            if (step.Verb is not ("hover" or "point" or "trail" or "cards" or "wait"))
+            // what they check is a matter of tenths of a second: they follow each other at once (DevScript.FollowsAtOnce).
+            if (!DevScript.FollowsAtOnce(step))
                 await Task.Delay(300);
         }
     }
@@ -571,7 +571,16 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 Say(await session.ChooseGameFolderAsync(folder) ? "game folder chosen: " + folder : "not the game: " + folder);
                 break;
             case "whatsnew":
-                if (window.DevWhatsNew((int)step.Number(0, 0)) is { } noWhatsNew)
+                // The card with the pointer on a line or off it; a tap on a line; the pointer off the line it is on
+                // (DevScript.WhatsNewOf; a click without a line doesn't get past Parse).
+                var whatsNew = DevScript.WhatsNewOf(step) ?? (DevScript.WhatsNewAct.Point, 0);
+                var noWhatsNew = whatsNew.Act switch
+                {
+                    DevScript.WhatsNewAct.Click => window.DevWhatsNewClick(whatsNew.Line),
+                    DevScript.WhatsNewAct.Leave => window.DevWhatsNewLeave(),
+                    _ => window.DevWhatsNew(whatsNew.Line),
+                };
+                if (noWhatsNew is not null)
                     Say(noWhatsNew);
                 break;
             case "replay":
@@ -582,6 +591,10 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 // SEEN IN YOUR STASH with the example items, as a reading shows it.
                 if (window.DevStashCue() is { } noStash)
                     Say(noStash);
+                break;
+            case "tour":
+                // "tour end": as Esc does. A --dev-view session's settings are new, so the tour opened by itself.
+                Say(window.DevEndTour() ? "tour ended" : "no tour to end");
                 break;
             case "trail":
                 // The pointer's last places in the main window, as pairs of x and y, for the cards to tell where it
@@ -602,7 +615,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 await Task.Delay(TimeSpan.FromSeconds(step.Number(0, 1)));
                 break;
             case "snapshot":
-                await window.DevSnapshotAsync(step.Arg(0, System.IO.Path.Combine(System.IO.Path.GetTempPath(), "shturmap-devview-snapshot")));
+                await window.DevSnapshotAsync(DevScript.Folder(step.Arg(0, System.IO.Path.Combine(System.IO.Path.GetTempPath(), "shturmap-devview-snapshot"))));
                 break;
             case "exit":
                 window.DevExit();

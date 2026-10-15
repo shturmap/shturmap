@@ -151,6 +151,13 @@ public sealed partial class MainWindow
             SettingsFlyout.Hide();
         _cards.CloseAll();
         _tourMotion = !SnapshotMode && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+        // The tour owns the map from here until it ends (Rules.PreviewOwner): what the pointer asked for and that hasn't
+        // come yet is dropped, a preview showing ends with the chapter's own stage (EndTourStage), and Follow my position
+        // stands still, since each chapter frames its example itself (owner, 2026-10-15, on the tour:5 line: "the
+        // highlight does weird movements and highlights the wrong things sometimes"; MapView.FollowHeld).
+        _previewTimer?.Stop();
+        _previewWanted = null;
+        Map.FollowHeld = true;
         if (!TourOpen)
         {
             Study.Ui("tour.open", ("how", how), ("chapter", at + 1));
@@ -176,6 +183,8 @@ public sealed partial class MainWindow
         var at = _tourAt;
         _tourRun++;
         _tourHolesRun++;
+        // Follow my position is the player's again before their map comes back, so it comes back as after any preview.
+        Map.FollowHeld = false;
         EndTourStage();
         _tourAt = -1;
         _tourHoles = [];
@@ -508,7 +517,7 @@ public sealed partial class MainWindow
         RaidReplay? walk = null;
         // Framed on where "you" will be, with room around: the chapter is about that spot.
         await TourScene(data, example, [], run, (_, c) => { content = c; walk = ReplayExample(data, c); },
-            c => ReplayExample(data, c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420);
+            c => ReplayExample(data, c)?.Fixes.TakeLast(1).Select(f => f.Position).ToList(), 420, pmc: true);
         if (content is null || walk is null || Map.Scene is not { } scene)
             return;
         var you = walk.Fixes[^1].Position;
@@ -751,9 +760,10 @@ public sealed partial class MainWindow
     // 181 above it; 90 on each side would leave what is framed 1 DIP, and the map would shrink to a speck).
     private double TourPadding => Math.Clamp((Map.ActualHeight - TourFoot - TourFraming) / 2, 0, TourFraming);
 
-    // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band.
+    // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band;
+    // with <paramref name="pmc"/>, a PMC raid's (only its side's extracts: YOUR SCREENSHOT KEY reads its list in one).
     private async Task TourScene(GameData data, TourExampleSet example, IReadOnlyCollection<string> quests, int run,
-        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres)
+        Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, bool pmc = false)
     {
         var wanted = TourPreviewPrefix + run;
         StopReplay("preview");
@@ -762,7 +772,7 @@ public sealed partial class MainWindow
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewTour(map: Caps.Of(example.MapName));
         ViewModel.PreviewHint = AppTexts.PreviewExample;
-        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourFoot, TourPadding);
+        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourFoot, TourPadding, pmc);
         // One layout pass, so the view's points are where they are drawn.
         await Task.Delay(_tourMotion ? 60 : 30);
     }

@@ -1130,6 +1130,10 @@ public sealed partial class MainWindow : Window
 
     private void Preview(string? map, TimeSpan after)
     {
+        // While the tour is up it owns the map, and what the pointer asks for counts for nothing (Rules.PreviewOwner;
+        // owner, 2026-10-15: the tour:5 line's leaving, under the tour's layer, ended YOUR SCREENSHOT KEY's staging).
+        if (!PreviewOwner.Heeds(TourOpen))
+            return;
         _previewWanted = map;
         if (_previewTimer is null)
         {
@@ -1137,12 +1141,15 @@ public sealed partial class MainWindow : Window
             _previewTimer.IsRepeating = false;
             _previewTimer.Tick += (_, _) =>
             {
-                if (_previewWanted == _previewing)
-                    return;
-                if (_previewWanted is { } wanted)
-                    StartPreview(wanted);
-                else
-                    EndPreview(restore: true);
+                switch (PreviewOwner.After(TourOpen, _previewing, _previewWanted))
+                {
+                    case PreviewOwner.Step.Start:
+                        StartPreview(_previewWanted!);
+                        break;
+                    case PreviewOwner.Step.End:
+                        EndPreview(restore: true);
+                        break;
+                }
             };
         }
         _previewTimer.Stop();
@@ -1193,10 +1200,13 @@ public sealed partial class MainWindow : Window
         _previewWanted = null;
         ViewModel.PreviewText = "";
         EndWhatsNewPreview();
-        _scenes.Forget();
-        if (!restore)
+        var s = _snapshot;
+        // A preview that put a map of its own in the view gives the player's back, made anew, at the view it had (or
+        // fitted, when none was drawn before); one that showed only a cue or a plate over it leaves that scene as it
+        // was, and the view where it is (SceneGate.MakeAnew).
+        if (!_scenes.MakeAnew(s?.Definition?.Key) || !restore)
             _restoreView = null;
-        if (_snapshot is { } s)
+        if (s is not null)
             UpdateMap(s);
     }
 

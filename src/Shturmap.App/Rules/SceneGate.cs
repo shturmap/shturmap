@@ -52,4 +52,20 @@ public sealed class SceneGate
 
     /// <summary>Whether a snapshot about this map may write into the scene in the view.</summary>
     public bool Holds(string? map) => map is not null && map == Shown;
+
+    /// <summary>
+    /// A preview ended. True when the shown map's scene has to be made anew, and then nothing counts as shown: the
+    /// preview put a map of its own in the view, or the map's artwork was on its way when it began, and that arrival
+    /// was dropped. False when the view still holds that map's scene: the preview only showed a cue or a plate over it
+    /// (What's New's stash lines and clock), and the scene stays as it was. Made anew, it took the last position for a
+    /// new one, which pinged, glided while following, and eased the dim in again (found 2026-10-15, looking into the
+    /// owner's report on What's New's tour:5 line).
+    /// </summary>
+    public bool MakeAnew(string? map)
+    {
+        if (Holds(map))
+            return false;
+        Forget();
+        return true;
+    }
 }

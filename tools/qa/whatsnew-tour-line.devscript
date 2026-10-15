@@ -1,0 +1,43 @@
+# QA replay of What's New's tour:5 line, "Your extracts, clearer" (owner, 2026-10-15: "the highlight does weird
+# movements and highlights the wrong things sometimes"). A developer build plays it with --dev-view --dev-script;
+# how to run it, and what each still must show: whatsnew-tour-line.md beside this file. Times are in seconds.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first, so that the click below opens the tour as it opens for a player.
+tour end
+# Customs' artwork read once, so chapter 5's map comes at once; then the player's own map is Woods, not Customs, so a
+# map of the player's put back under the tour would show.
+map customs
+wait 3
+map woods
+wait 4
+
+# The newest version's card, as help's link shows it: 0.5.0 · Hyena.
+whatsnew
+wait 1
+
+# Line 4 of 0.5.0 is the tour:5 line, "Your extracts, clearer": the pointer onto it and a tap there. The tour opens
+# at chapter 5, YOUR SCREENSHOT KEY, and stages its example on Customs.
+whatsnew click 4
+wait 0.4
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t0
+wait 1.2
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t1
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t2
+
+# The pointer leaves the line, as the tour's layer coming over it makes it leave. Before the fix, the chapter's map
+# went 0.3 s later and the player's came back under the tour.
+whatsnew leave
+wait 0.5
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t3
+
+# The chapter's later moments: the example extract list read, the view taking in its extracts, the extracts ringing out,
+# and the chapter's end.
+wait 2
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t4
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t5
+wait 3
+snapshot %TEMP%\shturmap-qa\whatsnew-tour-line\t6
+exit
