@@ -330,6 +330,8 @@ public sealed partial class MainWindow
         if (_tourCue)
         {
             _tourCue = false;
+            if (_rollRows.Count > 0 && _rollOwner == RollOwner.Tour)
+                EndRollCall();
             _cueStory?.Stop();
             _cueTimer?.Stop();
             CuePanel.Visibility = Visibility.Collapsed;
@@ -544,9 +546,12 @@ public sealed partial class MainWindow
 
     // The extract list as its own cause and effect (owner, 2026-10-09, after "The your screenshot key panel is weird
     // after the focus on the player position"): an example of the game's list, in Shturmap's own look, decodes where
-    // the game shows it (the top right) under what to press; a press reads it; then the view takes in the extracts on
-    // it, which light up one after another, nearest first, as the map shows any list just read, and the rest are
-    // struck out. The frame follows: from you to the list, then, as the list goes, to what the view shows of the extracts.
+    // the game shows it (the top right) under what to press; a press reads it; then, as the list goes, it is called out
+    // as any list just read is (owner, 2026-10-15, from a panel of four: A, "Roll call, then fly-out"; MainWindow.RollCall):
+    // YOUR EXTRACTS THIS RAID across the map above the band, "An example, not your raid." under its title, a row per
+    // extract nearest the position first, the view taking them in at 1.2 s and each icon flown to its place, while the
+    // rest are struck out. The frame follows: from you to the list, to the map above the band while the cue is up, then
+    // to what the view shows of the extracts.
     private async Task StageExtractListRead(Tour.Chapter chapter, GameData data, MapScene scene, MapContent content, WorldPoint you, int run)
     {
         var (listed, unsure, notListed) = ExampleExits(data, content);
@@ -601,16 +606,42 @@ public sealed partial class MainWindow
         if (run != _tourRun || !TourOpen)
             return;
         TourCanvas.Children.Remove(plate);
-        // The view takes in the listed extracts and you, above the band; the frame follows to what it shows of them.
+        // The list is read: what it leaves out is struck out at once, and what it names waits, unlit, for its icon.
+        scene.ExitsListed = listed.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsUnsure = unsure.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsNotListed = notListed;
         var points = listed.Concat(unsure).Select(m => m.Position).Append(you).ToList();
-        var view = Map.FramingAbove(scene, points, TourPadding, TourFoot, 300);
+        // The room the view keeps around them: the roll call's, or the chapter's wider one.
+        var padding = Math.Max(Camera.CallOutPadding, TourPadding);
         if (_tourMotion)
         {
-            Map.AnimateView(view, TimeSpan.FromMilliseconds(1200));
-            await Task.Delay(1250);
+            // The roll call over the map above the band, which is cut out of the dim while it plays: the cue, the icons'
+            // flights and their places. The chapter waits for its end.
+            TourHoles(() =>
+            {
+                var now = MapRect();
+                return [new Rect(now.X + 8, now.Y + 8, Math.Max(0, now.Width - 16), Math.Max(0, now.Height - TourFoot - 16))];
+            });
+            _tourCue = true;
+            RollCallExample(scene, RollOwner.Tour, TourFoot, padding);
+            for (var waited = 0; _rollRows.Count > 0 && waited < 15_000; waited += 100)
+            {
+                await Task.Delay(100);
+                if (run != _tourRun || !TourOpen)
+                    return;
+            }
+            _tourCue = false;
         }
         else
-            Map.Jump(view);
+        {
+            // The chapter's end at once: the view on the listed extracts and you, above the band, as the roll call leaves
+            // it; the extracts simply lit.
+            if (Map.CallOutView(points.Take(points.Count - 1).ToList(), you, TourFoot, padding) is { } view)
+                Map.Jump(view);
+            else
+                Map.Jump(Map.FramingAbove(scene, points, TourPadding, TourFoot, 300));
+            Map.Redraw();
+        }
         if (run != _tourRun || !TourOpen)
             return;
         // What the view shows of them, with room for the labels the map writes to the right of its symbols (the room
@@ -625,16 +656,6 @@ public sealed partial class MainWindow
             return new Rect(x0, y0, Math.Max(0, x1 - x0), Math.Max(0, y1 - y0));
         }
         TourHoles(() => [Region()]);
-        // As the map shows a list just read (MapRenderer.DrawExitsLit): the extracts on it light up one after another,
-        // nearest you first, their triangles ringing out, then the "??:??:??" one's "?" pops in; the rest are struck out.
-        if (!await TourWait(450, run))
-            return;
-        scene.ExitsListed = listed.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
-        scene.ExitsUnsure = unsure.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
-        scene.ExitsNotListed = notListed;
-        if (_tourMotion)
-            scene.RingExits(DateTime.Now);
-        Map.Redraw();
     }
 
     // The game's extract list as an example, in Shturmap's own look (no picture of the game's, §3): what to press over
@@ -1130,14 +1151,22 @@ public sealed partial class MainWindow
         });
     }
 
-    // The drawn pointer, an arrow like the system's (the website clip's), inside the tour so a snapshot shows it.
+    /// <summary>
+    /// The drawn pointer's outline, an arrow like the system's (the website clip's), drawn white on a dark rim at 1.2
+    /// times. The tour draws it, and What's New's lines about the tour carry it as their picture (owner, 2026-10-15;
+    /// MainWindow.xaml). A new one at each use, one for each Path.
+    /// </summary>
+    public static Geometry TourPointerShape =>
+        (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), "M0,0 L0,19 L4.6,14.6 L7.9,21.6 L10.6,20.4 L7.4,13.5 L13.6,13.5 Z");
+
+    // The drawn pointer, inside the tour so a snapshot shows it.
     private void TourPointer(Point at)
     {
         if (_tourPointer is null)
         {
             _tourPointer = new Path
             {
-                Data = (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), "M0,0 L0,19 L4.6,14.6 L7.9,21.6 L10.6,20.4 L7.4,13.5 L13.6,13.5 Z"),
+                Data = TourPointerShape,
                 Fill = new SolidColorBrush(Microsoft.UI.Colors.White),
                 Stroke = Resource("GroundBrush"),
                 StrokeThickness = 1.2,

@@ -37,6 +37,26 @@ the player*. In short, from the list's arrival (a screenshot taken in the last 3
   its rows, the view fits at once, the extracts are simply lit. The tour's chapter 5 and What's New's `extracts` show
   the example list the same way.
 
+**Built (2026-10-15).** The map side (`MapScene.CallOutExits`, `FlightAt`, `Camera.FittingAll`, the frames scene
+`list-callout`) and then the window's side (`MainWindow.RollCall`): the cue kind `ExitsListed`, its rows in `CuePanel`
+(`CueExits` in a Viewbox that draws them smaller only where the map's column has no room, as the tour's plates; the
+title's halo of letters, `CueTitleHalo`), each row handed to the map as the centre of its triangle in the map panel's
+pixels, the fit at 1.2 s (`MapView.CallOutView`, a zoom out only), the rows fading at their lift-offs and the band's dark
+with them, the cue going 1.5 s after the last landing. The points this entry left open, as built (DESIGN.md says them):
+the notice went with the cue (as QUEST COMPLETE's and SEEN IN YOUR STASH's); a joining extract outside the fitted view
+has the view take them all in again; chapter 5's plate keeps its YOUR LIST THIS RAID line (the cue comes after the
+plate has gone). The owner confirmed all three on 2026-10-15 (below, "Settled 2026-10-15"). A list after the cue rings only its
+additions (`MapScene.CalledOut`; a new raid forgets it), with a test. What wasn't drawn on the panel and was decided in
+the build: columns evened out (six stand three and three), names broken between words in a narrow column, twelve rows
+at the smallest window drawn smaller (German about two thirds), the title's halo the dark around its letters (a box hid
+a landing under the title), a position that comes while the view moves for the roll call pings without gliding.
+The replay `tools\qa\extract-roll-call.devscript` with the script step `exits` (the session's exit-list path after
+the reader, as a screenshot taken now): a list read on Customs in two raids, stills of the band with its rows rising
+(about 0.6 s), the icons near landing with the band gone (2.5), the hand-off (rows leaving, 1.9, second raid), all
+landed with the title on its halo (3.6) and the end (5.9); its `.md` says what each still shows. What's New's
+`extracts` preview isn't reached by a script (`whatsnew <n>` reaches the newest version's lines only): looked at in
+the code, not in the window. The UI QA role reviews it before it is reported done.
+
 **Why A:** the only option doing both halves of the ask; one change of view, made while the cue says why (principle
 11); the fitted view is the one a player at the spawn plans the route on; built from what is there: the cue's band,
 the ring, the camera's framing and glide.
@@ -94,8 +114,8 @@ the UI QA role reviews it before it is reported done):
   before; the cue (a kind of its own, joining itself as the stash cue does); the fit at 1.2 s (`Map.AnimateView` to
   `Map.FramingOf` the listed extracts and the position), which stops a Follow glide under way; nothing moves the view
   back afterwards; a joining list with an extract outside the fitted view frames them all again with the same move
-  (settled above); the one-line notice goes (`GameSession.Exits`: `Say(SessionTexts.ExitListRead(...))`, its text in
-  both languages with it); animation effects off: the cue still for 5 s and `Map.Jump`. The tour's chapter 5
+  (settled above); the one-line notice goes, its texts with it (both built, "Built (2026-10-15)" above); animation
+  effects off: the cue still for 5 s and `Map.Jump`. The tour's chapter 5
   (`MainWindow.Tour`, framed above the tour's band, with "An example, not your raid.") and What's New's `extracts`
   (`StageExtractList`, no position) call out the example list the same way.
 - **The frames scene `list-callout`** (`shturmap-cli frames`; DESIGN.md §8, *Animations frame by frame*, names it once

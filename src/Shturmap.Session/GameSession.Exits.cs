@@ -153,31 +153,39 @@ public sealed partial class GameSession
         {
             if (!_readExits || _data is null || _tracker.State.Phase != RaidPhase.InRaid || _tracker.State.RaidStartedAt != raid || _raidMap?.Id != mapId)
                 return;
-            var named = ExitList.Match(reading, ExitNames(_data, mapId, ShownRaid.Side));
-            var isList = ExitList.IsList(reading, named.Count);
-            Study.Game("exits.read", ("rows", reading.Rows.Count), ("named", named.Count), ("marked", named.Count(n => n.Value)), ("list", isList),
-                ("gain", Math.Round(reading.Gain, 2)), ("ms", System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds));
-            if (!isList)
-            {
-                // A green bar and rows, but not the list: the box the game shows in an exit, or names Windows couldn't read.
-                AppLog.Info($"Extract list: a screenshot showed {reading.Rows.Count} rows, {named.Count} of them an exit of this map; not taken as the list");
-                return;
-            }
-            var first = _exits is null;
-            _exits ??= new Dictionary<string, bool>(StringComparer.Ordinal);
-            foreach (var (id, marked) in named)
-                _exits[id] = marked;
-            _exitsReadAt = seen.CreatedAt;
-            _raidListRead ??= RaidMinute(seen.CreatedAt);
-            AppLog.Info($"Extract list read from a screenshot: {_exits.Count} exits, {_exits.Count(e => e.Value)} marked ???");
-            if (first)
-                Say(SessionTexts.ExitListRead(count: _exits.Count));
-            Publish();
+            TakeExitList(reading, seen.CreatedAt, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
         finally
         {
             _gate.Release();
         }
+    }
+
+    // Under the gate, in a raid on _raidMap with the data: a reading of a screenshot taken at takenAt, matched to the map's
+    // exits for the side; if it is the list, what it names holds for the raid. Nothing is said: the window calls the list
+    // out with the YOUR EXTRACTS THIS RAID cue (owner, 2026-10-15, from a panel of four: A, "Roll call, then fly-out"), and
+    // the rail's line says it was read. The one-line notice "Your extract list is read: …" went with the cue, as QUEST
+    // COMPLETE's and SEEN IN YOUR STASH's went with theirs.
+    private void TakeExitList(ExitListReading reading, DateTime takenAt, double ms)
+    {
+        var mapId = _raidMap!.Id;
+        var named = ExitList.Match(reading, ExitNames(_data!, mapId, ShownRaid.Side));
+        var isList = ExitList.IsList(reading, named.Count);
+        Study.Game("exits.read", ("rows", reading.Rows.Count), ("named", named.Count), ("marked", named.Count(n => n.Value)), ("list", isList),
+            ("gain", Math.Round(reading.Gain, 2)), ("ms", ms));
+        if (!isList)
+        {
+            // A green bar and rows, but not the list: the box the game shows in an exit, or names Windows couldn't read.
+            AppLog.Info($"Extract list: a screenshot showed {reading.Rows.Count} rows, {named.Count} of them an exit of this map; not taken as the list");
+            return;
+        }
+        _exits ??= new Dictionary<string, bool>(StringComparer.Ordinal);
+        foreach (var (id, marked) in named)
+            _exits[id] = marked;
+        _exitsReadAt = takenAt;
+        _raidListRead ??= RaidMinute(takenAt);
+        AppLog.Info($"Extract list read from a screenshot: {_exits.Count} exits, {_exits.Count(e => e.Value)} marked ???");
+        Publish();
     }
 
     // Under the gate: what is known of a way out now.

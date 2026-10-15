@@ -506,6 +506,21 @@ quoting it anywhere new.
     with all its rows and goes; the view takes the extracts in at once and they are simply lit. In the tour and What's
     New it calls out the example list, with "An example, not your raid." under its title: every cue they show says it
     is an example.
+    As built (2026-10-15, `MainWindow.RollCall`): the rows stand in columns of up to four, up to three of them (a map
+    lists up to twelve extracts for a side; past that the twelfth place would say "+N"), filled down the first column
+    first and evened out (six stand three and three); each row is the extract's triangle as the map draws it at the size
+    its flight starts from (0.8 of the map's: R 6 DIP, its 3 DIP dark collar, the kind's colour, the shared kind's split
+    line), its name in the cue's 15 px and "???" muted. A name too long for its column breaks between words, never
+    inside one, and where the map's column has no room for the rows even so (twelve at the smallest window), they are
+    drawn smaller to fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
+    the dark the map's labels stand on, around its letters only (and the eyebrow's, and the example's line), so an
+    icon landing under the title still shows between them; until 2026-10-15's build a halo was a dark box behind the
+    title, which hid a landing in the replay's stills. A list that joins the cue holds the band where it stands, so the
+    rows still waiting lift off from where they were called; one whose extract lies outside the view the roll call took
+    has the view take them all in again, the same way (owner, confirmed 2026-10-15: the panel drew no joining list). The
+    one-line notice "Your extract list is read: …" went with the cue (owner, confirmed 2026-10-15, as QUEST COMPLETE's
+    and SEEN IN YOUR STASH's did); the rail's line under EXTRACTS AND TRANSITS still says it. Any other cue ends it, as
+    it ends theirs; What's New's preview of it ends with the preview, the tour's with the chapter.
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -601,14 +616,17 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 17 s
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
-position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; an extract list just
+position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; a notch of the
+wheel zooms over 0.15 s, eased in and out, and notches in a row run on into one zoom ("Map drawing", *The wheel zooms
+over 0.15 s*; owner, 2026-10-15); an extract list just
 read is called out (§1's fourth exception): its rows rise in 0.1 s apart from 0.5 s, the view takes in its extracts
 from 1.2 s over 1.2 s, eased in and out as the tour's moves, and from 1.6 s each triangle flies to its place over 0.9 s,
 0.16 s after the one before, on an arc, eased in and out, and rings out as it lands; with six extracts the last lands
 at 3.3 s, the title goes from 4.8 s and the rings end at about 5.4 s ("Map drawing", *The player's extracts this
 raid*); the raid card's time doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
-the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts.
+the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
+the wheel's zoom to its notch.
 The tour (§1's second exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide
 from part to part over 0.65 s eased in and out while the map sheet's corner marks close in on them with a small
 overshoot, the band's gold rule shoots out and its title decodes over 0.7 s at each chapter, a stage's lines rise in
@@ -899,16 +917,20 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     colour with a `Line` hairline. NEW IN 0.4.0 · PRAETORIAN in the eyebrow style in amber (the version and its
     release's name, below), × in its corner (`E711`, as on a notice),
     up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
-    map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, or a small
-    drawing of the raid card's clock. **Pointing at a line previews it** on the map, as resting on a map's row in Plan
+    map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, a small
+    drawing of the raid card's clock, the stash grid glyph the marks carry (what you have), a sticky note (`E70B`,
+    Segoe's QuickNote) for quest notes (`notes`), or, on a line about the tour (`tour`, `tour:5`), the tour's drawn
+    pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the picture's place (owner,
+    2026-10-15: until then a tour line had none, the one gap in the column; `MainWindow.TourPointerShape`). **Pointing
+    at a line previews it** on the map, as resting on a map's row in Plan
     does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
     0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID" beside it, or under it where the map leaves too
     little room for both, each whole, a plate then standing as much lower than the map's middle as it takes to keep clear
     of the label (QA pass, 2026-10-15: at 900×560 the stash lines' "AN EXAMPLE, NOT YOUR STASH" ran out of the label's
     frame, the German one by its last word), and leaving puts the map back as it was: a
     preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
-    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`) leaves the map's scene alone, so the last
-    position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
+    cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`) leaves the map's scene alone, so
+    the last position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
     on the `tour:5` line below; `SceneGate.MakeAnew`). The
     previews (`replay`, `extracts`, `clock`, `joined`, `leaders`): a made-up raid replayed on Customs, an example extract
     list on Customs, called out as a list just read is (YOUR EXTRACTS THIS RAID with its rows, the view taking the
@@ -920,7 +942,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     what you have (0.5.0; the lines first opened the tour at its first chapter, which the owner reported as a bug on
     2026-10-11) `stash`, the SEEN IN YOUR STASH cue with example items (three keys and three items of the data's
     quests, the same for every player), `stash-card` and `stash-given`, an item card on the plate with a made-up
-    STASH line of today's date, from a screenshot with NOT ANY MORE or from the game's log. Nothing of
+    STASH line of today's date, from a screenshot with NOT ANY MORE or from the game's log; and for quest notes (0.6.0)
+    `notes`, a quest card on the plate, held so its field and each note's × show, with two made-up notes written today,
+    under A QUEST CARD, WITH EXAMPLE NOTES and beside AN EXAMPLE, NOT YOUR NOTES: Ballet Lover (where the data has none
+    by that name, the first quest by name with a place on a map), active whatever the player's is. Nothing of
     the player's is shown or changed, and nothing is bundled: every picture and preview is drawn when it shows, from the
     cache, by the app's own code (`MainWindow.WhatsNew`). **When:** at the first start of a version with lines, outside
     raids; the versions newer than the one last seen (`whatsNew.seen` in shturmap.db), newest first, each under its
@@ -1103,9 +1128,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     transits, then the extracts the list left out (owner, 2026-10-05: "I would show primarily exfils"). On the map, a
     list just read is called out: its extracts in a cue across the map's middle, then each flown to its place, the view
     taking them in (YOUR EXTRACTS THIS RAID, principle 11; "Map drawing", *The player's extracts this raid*). The cue
-    took the place of the one-line notice that said it once ("Your extract list is read: 6 extracts for this raid";
-    owner, confirmed 2026-10-15). What a raid's screenshots name adds up: a later list adds extracts and renews the
-    "???" marks of the ones it names, and never takes one away (a reading that missed a row must not close an exit). A
+    says it, and the line under the heading; the one-line notice that said it once ("Your extract list is read: 6
+    extracts for this raid") went with the cue (owner, confirmed 2026-10-15, as QUEST COMPLETE's and SEEN IN YOUR
+    STASH's went with theirs). What a raid's screenshots name adds up: a later list adds extracts and renews the "???"
+    marks of the ones it names, and never takes one away (a reading that missed a row must not close an exit). A
     transit is never said to be on or off the list: it is open to everyone, and its rows aren't matched. **What counts
     as the list**: rows that name two or more of the map's
     extracts for the player's side; one named extract counts only under the header "Find an extraction point", since
@@ -1261,7 +1287,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
   it, the list goes, and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
   for each of its extracts, the view taking them in with the position above the tour's band, and each triangle flown
-  to its place, where it rings out, nearest the position first, while the rest are struck out; the chapter's map is a
+  to its place, where it rings out, nearest the position first, while the rest are struck out (as built, 2026-10-15:
+  the plate, then the cue, centred above the tour's band, with the map above the band cut out of the dim while it
+  plays; the view's move is the roll call's, at 1.2 s; when the cue has gone the frame goes to the listed extracts and
+  the position; with the effects off, and in a snapshot, the chapter's end: the view on them, simply lit, no cue); the chapter's map is a
   PMC raid's, without the Scav extracts, as What's New's `extracts` preview is), IN THE RAID (RAID LOADING with an
   example kit, then the raid card's head with example values; a PMC raid's map too, while PICK AND POINT's, in the
   menus, has both sides' extracts, as Plan's map has) and HELP AND FEEDBACK (the story chapters aren't shown yet,
@@ -1458,8 +1487,11 @@ spawns below).
     past the distance at which a symbol clears its place's dot and goes 2.5 px short of it, so neither comes and goes
     from frame to frame. A symbol that comes into view or out of a parting cluster makes way for those already
     standing; the push-only passes keep symbols off each other and the player, and off each other's places only
-    through the passes the symbols follow. Anything else (the map opened, a wheel's notch, a new position, other
-    quests) lays them out afresh, as a still view always shows them; once the view is still nothing moves. After a
+    through the passes the symbols follow. A wheel's notch is such a move since 2026-10-15 (owner: it zooms over
+    0.15 s, below, *The wheel zooms over 0.15 s*); until then it zoomed by a fifth at once and laid the crowd out afresh,
+    which could flip a symbol to the other side of its place. Anything else (the map opened, a zoom at once: a
+    double-click, + or −, a notch with Windows' animation effects off; a new position, other quests) lays them out
+    afresh, as a still view always shows them; once the view is still nothing moves. After a
     glide a crowd can stand otherwise than a fresh layout of the same view would have it, until the next fresh one. In
     a 1.2 s glide on Customs at 60 frames a second (`shturmap-cli frames customs --scene list-read --glide 1200 --every
     16`), symbols set off their places by more than 3 px more or less from one frame to the next went from 466 to 3
@@ -1548,7 +1580,12 @@ spawns below).
   the ask, changes the view once and while the cue says why, and leaves the view a player at the spawn plans the route
   on.
   The roll call's map side is `MapScene.CallOutExits`: each called extract's icon flies from its row in the band to
-  its place and lands as its ring starts (`MapRenderer.FlightAt`; the view zooms out to `Camera.FittingAll`).
+  its place and lands as its ring starts (`MapRenderer.FlightAt`; the view zooms out to `Camera.FittingAll`). The
+  window's side is `MainWindow.RollCall`: it hands each row over as the centre of its triangle in the map panel's
+  pixels (`ExitCall`), at the cue's start, and moves the view with `MapView.CallOutView` (a zoom out only, the current
+  zoom as the fit's closest; above the tour's band in the tour). Once a roll call ran in a raid (`MapScene.CalledOut`;
+  a new raid on the map, its list not read yet, forgets it), a later list after the cue rings only what it lit or
+  marked anew (`MapScene.RingExits`).
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
@@ -1557,7 +1594,10 @@ spawns below).
   back when the cue goes. With Follow my position on, the next position glides it onto the player as any new position
   does (2.4 s, at the zoom the view then has; "Screen anatomy", *Follow my position*). With Follow off, principle 8
   holds, a position never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom,
-  F or the show-my-position button).
+  F or the show-my-position button). A position that comes while the view is moving for the roll call (its 1.2 s; a run of
+  screenshots) pings where it is and lets the move finish; the one after it glides (2026-10-15, as built: the two
+  pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only: where every listed extract and
+  the position are in view already, it keeps its zoom and takes them into its middle.
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
@@ -1737,6 +1777,20 @@ spawns below).
   outside the limits moves toward them or stays, never jumps. A map fitted while the view has no room (the window
   minimised, or not laid out yet) is fitted when it has; before, its zoom fell to almost nothing and the map stayed out
   of sight until "show the whole map".
+- **The wheel zooms over 0.15 s** (owner, 2026-10-15: a notch zoomed by a fifth at once, which laid the crowded symbols
+  out afresh and could flip them to the other side of their places). A notch (1.197 times, about a fifth;
+  `WheelZoom.FactorOf`) zooms over 0.15 s, eased in and out on a log scale, keeping the point under the pointer in
+  place (following with the view on the player, about the player), so its frames come under *Steady while the view
+  moves* (above). A notch during another adds its step to where that one goes and sets off from where it is, at the
+  speed it has there (a cubic from that speed to rest on the target, never past it), so a turn of several notches is
+  one zoom without a stop, landing 0.15 s after the last notch where the notches at once would have put it
+  (`WheelZoom`). With Windows' animation effects off a notch zooms at once. A turn while the view moves by itself (the
+  replay's glide, the roll call's) is left out: that move set the view again at its next frame anyway. + and −, the
+  zoom buttons (1.5 times) and a double-click (2 times) zoom at once, as before. Three notches 0.3 s apart on Customs
+  at 60 frames a second (`shturmap-cli frames customs --notch`): symbols set off their places by more than 3 px more or
+  less from one frame to the next went from 82 (the largest 91 px) to 3, all at the frame where Abandoned Cargo's
+  places part; a frame zooms by 2.9 % at most. A quick turn keeps under the tenth a frame up to about a notch every
+  30 ms at 60 frames a second; a faster spin lays some of its frames out afresh.
 - **Room for labels on the right** (owner, 2026-10-09). The map writes a symbol's label to its right, so the whole map
   (a new map, a Plan row's preview, 0 and the button) and every framing (What's New's and the tour's previews, the raid
   replay) keep 150 DIP between what they show and the view's right edge (`Camera.LabelRoom`); the other sides keep
@@ -2853,12 +2907,13 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
   follows it, and `DevToolsTests` fail when a verb there is missing here.
-  `snapshot` also saves the view's two tabs, writing over
+  `snapshot` also saves the view's two tabs, and while a cue is up the cue alone with its transparency (`cue.png`, its
+  place in the map's panel in the app log: `window.png` shows that panel empty), writing over
   what the folder had (one folder per moment), and expands `%VARIABLES%` in it, so a script kept in the repository
   names no user's folder. The script's path, and a folder left relative, are read from the app's working folder,
   `%USERPROFILE%` (`Program`). A `--dev-view` session starts on settings of its own, as at a first start, so the tour
@@ -2871,7 +2926,9 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   after a script without `exit`, as before.
 - `tools\qa` keeps such scripts for a QA pass, each with what its stills must show beside it: run on a developer
   build, they check in the window what no test reaches. `whatsnew-tour-line.devscript` (2026-10-15) replays the
-  owner's report on What's New's `tour:5` line (*What's New*, *The tour*).
+  owner's report on What's New's `tour:5` line (*What's New*, *The tour*); `extract-roll-call.devscript` (2026-10-15)
+  the roll call of a list read on Customs, in two raids, for stills of its start, its middle and its end ("Map
+  drawing", *A list just read is called out*).
 
 **Switching the language in a run** (developer builds only; 2026-10-10). `--switch-language <culture>` (`en-US`, `de-DE`,
 `qps-ploc`) switches the language once the window shows the game data, exactly as a choice in settings does but for
@@ -2933,8 +2990,13 @@ times the zoom on the position in 1.2 s (for `list-callout`, its zoom out), and 
 symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
 motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing", *Steady
 while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did more
-than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, `GlideFramesTests`
-the symbols on leaders in a glide, and `ExitCallOutFramesTests` the roll call's flights; both read the names' face.
+than once. `--notch [ms]` turns the wheel three notches in at the position (without one, the middle of the extracts on
+the list), [ms] apart (300 by default) from the whole map's view, as `MapView` animates them (`WheelZoom`; "Map
+drawing", *The wheel zooms over 0.15 s*), drawn every 16 ms until the last has landed, with the same checks as
+`--glide` (not with it, nor with `list-callout`). `ExitRingFramesTests` hold the ring to "Map drawing" the same way,
+on a made-up raid, `GlideFramesTests` the symbols on leaders in a glide and in the wheel's notches, `WheelZoomTests`
+the notches' zoom, and `ExitCallOutFramesTests` the roll call's flights; the ring's and the roll call's tests read the
+names' face too.
 
 ### How the parts work
 
@@ -3136,7 +3198,7 @@ order (review of 2026-10-10).
 app's rules, which the Core tests compile too). Each is a `.resx` with the English texts and one `<Name>.<code>.resx`
 per language. A build makes a class of each English file (`Directory.Build.targets`, `ShturmapTexts`): a property per
 text, a method per text with placeholders, its parameters the placeholders' names in alphabetical order, called with
-named arguments (`SessionTexts.ExitListRead(count: n)`), so a misspelt or missing text, or a placeholder left out, is
+named arguments (`AppTexts.CueExitsListed(count: n, total: all)`), so a misspelt or missing text, or a placeholder left out, is
 a build error. A text is looked up in the language in use when it is shown (`UiLanguage.Text`), never kept from
 before, which is what lets the language switch while Shturmap runs; XAML binds to the classes (`{x:Bind
 local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the language changes.
@@ -3408,8 +3470,8 @@ every issue goes through it, and the app's report is offered beside it.
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
   ringing out (2026-10-07; §4, principle 11; "Map drawing").
-- Designed, to build (2026-10-15; docs/NEXT.md): the extract list's roll call (§4, principle 11; "Map drawing", *The
-  player's extracts this raid*). Until it is built, a list just read rings its extracts out where they stand, as
-  since 2026-10-14.
+- The extract list's roll call, designed and built (2026-10-15; docs/NEXT.md; §4, principle 11; "Map drawing", *The
+  player's extracts this raid*): a list just read is called out in YOUR EXTRACTS THIS RAID and each extract flown to
+  its place; after it, a later list rings its additions where they stand, as lists did from 2026-10-14.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).

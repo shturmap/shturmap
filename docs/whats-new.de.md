@@ -4,6 +4,12 @@ The German lines of the What's New card, a translation of docs/whats-new.md, whi
 written and read. Each section is a version of that file, with its lines in the same order and their previews as they
 are; the release's name stays as it is. Words: docs/glossary-de.md.
 
+## 0.6.0 · Okami
+
+- extracts · Deine Extracts, aufgerufen · Screenshot der Extract-Liste: Deine erscheinen mittig, nächste zuerst, und fliegen an ihren Platz.
+- notes · Notizen zu Quests · Klick auf eine Quest, schreib auf ihre Karte, was du dir für den nächsten Raid merkst. Mit Uhrzeit.
+- tour:5 · Deine Liste in der Tour · Kapitel 5 zeigt den Aufruf. Auch ein Screenshot beim Einblenden des Raids wird jetzt gelesen.
+
 ## 0.5.0 · Hyena
 
 - stash · Was du hast · Screenshot von Key Tool oder Stash: Was deine Quests brauchen, sagt „In deinem Stash gesehen“.

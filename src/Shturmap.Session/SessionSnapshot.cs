@@ -35,6 +35,12 @@ public enum CueKind
     /// them (<see cref="ViewCue.Kit"/>, with the counts seen) under SEEN IN YOUR STASH. <see cref="ViewCue.MapName"/>
     /// is empty.</summary>
     StashSeen,
+
+    /// <summary>A raid screenshot just taken showed the game's extract list: YOUR EXTRACTS THIS RAID names them, a row
+    /// each, and each row's icon flies to its place (owner, 2026-10-15, from a panel of four: A, "Roll call, then fly-out";
+    /// docs/DESIGN.md §4, principle 11). The window makes it from the map's own list (MainWindow.RollCall), not the
+    /// session: whether the list is new to the view is the view's. <see cref="ViewCue.MapName"/> is empty.</summary>
+    ExitsListed,
 }
 
 /// <summary>A quest the log just reported completed, for the QUEST COMPLETE cue.</summary>

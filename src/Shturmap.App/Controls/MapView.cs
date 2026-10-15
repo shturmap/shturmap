@@ -44,6 +44,7 @@ public sealed partial class MapView : Grid
         _animation?.Stop();
         _glideFrames?.Stop();
         _wheelEnd?.Stop();
+        _wheelFrames?.Stop();
         _panel.PaintSurface -= OnPaintSurface;
     }
 
@@ -143,7 +144,7 @@ public sealed partial class MapView : Grid
         // Following, a new map opens on the player (after it is fitted, at its first paint).
         _centerAfterFit = Following;
         Invalidate();
-        // A scene that comes with an extract list just read (What's New's preview) rings its extracts out.
+        // A scene that comes with its extracts already ringing or flying draws them on.
         if (scene is { ExitsArriving: true })
             Redraw();
     }
@@ -273,7 +274,10 @@ public sealed partial class MapView : Grid
         if (_scene is { Player: { } fix } scene && !ReferenceEquals(fix, _seenFix))
         {
             _seenFix = fix;
-            if (Following)
+            // A move of the view under way (the roll call's zoom out to the extracts just read, owner, 2026-10-15) is let
+            // finish: a glide started now would pull its centre one way while the move takes it another. The position
+            // pings all the same, and the next one glides.
+            if (Following && _viewAnimation is null)
             {
                 // Before the first paint the view has no size: it starts on the position then. After it, it glides.
                 _centerAfterFit = _fitPending;
@@ -362,6 +366,7 @@ public sealed partial class MapView : Grid
     {
         _follow.Fitted();
         StopGlide();
+        StopWheel();
         _centerAfterFit = false;
         _fitPending = true;
         Invalidate();
@@ -369,6 +374,7 @@ public sealed partial class MapView : Grid
 
     public void ZoomBy(double factor)
     {
+        StopWheel();
         _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor);
         KeepPlayerCentered();
         Invalidate();
@@ -400,9 +406,10 @@ public sealed partial class MapView : Grid
         CompositionTarget.Rendering += _viewAnimation;
     }
 
-    /// <summary>Stops a move of the view under way (<see cref="AnimateView"/>) where it is.</summary>
+    /// <summary>Stops a move of the view under way (<see cref="AnimateView"/>, or the wheel's zoom) where it is.</summary>
     public void StopViewAnimation()
     {
+        StopWheel();
         if (_viewAnimation is null)
             return;
         CompositionTarget.Rendering -= _viewAnimation;
@@ -433,6 +440,44 @@ public sealed partial class MapView : Grid
         var map = room.Select(p => scene.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
         return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * PixelScale);
+    }
+
+    /// <summary>
+    /// The view the roll call zooms out to (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out";
+    /// <see cref="Camera.FittingAll(IReadOnlyCollection{Shturmap.Core.Maps.MapPoint}, Shturmap.Core.Maps.MapPoint?, SKSize, float, float, double, double)"/>):
+    /// every one of <paramref name="extracts"/> and the <paramref name="player"/> in view, <paramref name="padding"/> DIPs
+    /// around them and the label room on their right, in the part of this view above <paramref name="foot"/> DIPs at its
+    /// foot (the tour's band). A zoom out only: points that fit at the zoom the view has are framed at that zoom, never
+    /// closer (the camera's zoom as the fit's closest). Null without a scene, before the view is laid out and fitted, or
+    /// with no room for the padding. The window moves the view there with <see cref="AnimateView"/>, or <see cref="Jump"/>
+    /// with animation effects off.
+    /// </summary>
+    public (Shturmap.Core.Maps.MapPoint Center, double Zoom)? CallOutView(IReadOnlyCollection<Shturmap.Core.WorldPoint> extracts,
+        Shturmap.Core.WorldPoint? player, double foot = 0, double padding = Camera.CallOutPadding)
+    {
+        if (_scene is not { } scene || _fitPending)
+            return null;
+        var scale = PixelScale;
+        var footPixels = (float)(foot * scale);
+        var above = new SKSize(_camera.Viewport.Width, Math.Max(0, _camera.Viewport.Height - footPixels));
+        var points = extracts.Select(e => scene.Projection.ToMap(e)).ToList();
+        Shturmap.Core.Maps.MapPoint? you = player is { } at ? scene.Projection.ToMap(at) : null;
+        if (Camera.FittingAll(points, you, above, Camera.LabelRoom * scale, (float)(padding * scale), _camera.MinZoom, _camera.Zoom) is not { } fit)
+            return null;
+        // Framed in the part above the foot: its middle lies half the foot above the view's.
+        return (new Shturmap.Core.Maps.MapPoint(fit.Center.X, fit.Center.Y + footPixels / 2 / fit.Zoom), fit.Zoom);
+    }
+
+    /// <summary>Whether a view (a centre and zoom, as <see cref="View"/> gives one) shows a world position, in the part of
+    /// this view above <paramref name="foot"/> DIPs at its foot.</summary>
+    public bool Shows((Shturmap.Core.Maps.MapPoint Center, double Zoom) view, Shturmap.Core.WorldPoint world, double foot = 0)
+    {
+        if (_scene is null)
+            return false;
+        var p = _scene.Projection.ToMap(world);
+        var x = (p.X - view.Center.X) * view.Zoom + _camera.Viewport.Width / 2;
+        var y = (p.Y - view.Center.Y) * view.Zoom + _camera.Viewport.Height / 2;
+        return x >= 0 && x <= _camera.Viewport.Width && y >= 0 && y <= _camera.Viewport.Height - foot * PixelScale;
     }
 
     /// <summary>Puts the view at a centre and zoom at once (the replay with animation effects off).</summary>
@@ -516,6 +561,7 @@ public sealed partial class MapView : Grid
             _camera.CenterOn(player);
         }
         GlideStep();
+        WheelStep();
         MapRenderer.Render(canvas, _camera, _scene, PixelScale);
     }
 
@@ -678,14 +724,43 @@ public sealed partial class MapView : Grid
     private double _wheelFactor = 1;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _wheelEnd;
 
+    // ---- the wheel's zoom, animated (owner, 2026-10-15; WheelZoom) ----
+
+    private readonly WheelZoom _wheel = new();
+    private SKPoint _wheelAt;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _wheelFrames;
+
     private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
-        var point = e.GetCurrentPoint(this);
-        var factor = Math.Pow(1.0015, point.Properties.MouseWheelDelta);
-        _camera.ZoomAt(Pixels(point.Position), factor);
-        KeepPlayerCentered();
-        Invalidate();
         e.Handled = true;
+        // While the view moves by itself (the replay's glide, the roll call's), each of its frames puts the view where
+        // that move has it, and a notch's zoom lasted a frame: a turn then is left out.
+        if (_viewAnimation is not null)
+            return;
+        var point = e.GetCurrentPoint(this);
+        var factor = WheelZoom.FactorOf(point.Properties.MouseWheelDelta);
+        // A notch zooms over 0.15 s, eased, keeping the point under the pointer in place; one during another goes on from
+        // it. So its frames come under the rule that holds the symbols steady while the view moves (docs/DESIGN.md "Map
+        // drawing"); at once, a notch laid them out afresh. With Windows' animation effects off it zooms at once.
+        _wheelAt = Pixels(point.Position);
+        _wheel.Turn(_camera.Zoom, factor, _camera.MinZoom, _camera.MaxZoom, DateTime.Now, _scene?.Pulse == true);
+        WheelStep();
+        if (_wheel.Running)
+        {
+            // Frames at the system timer's pace, as a glide's (GlideToPlayer).
+            if (_wheelFrames is null)
+            {
+                _wheelFrames = DispatcherQueue.CreateTimer();
+                _wheelFrames.Interval = TimeSpan.FromMilliseconds(15);
+                _wheelFrames.Tick += (_, _) =>
+                {
+                    WheelStep();
+                    Invalidate();
+                };
+            }
+            _wheelFrames.Start();
+        }
+        Invalidate();
 
         // One study event per burst of wheel turns.
         _wheelFactor *= factor;
@@ -704,8 +779,28 @@ public sealed partial class MapView : Grid
         _wheelEnd.Start();
     }
 
+    // As a frame is drawn (and on each tick, so it lands unseen too): the zoom at this moment of the notches under way,
+    // the point under the pointer in place; following with the view on the player, about the player.
+    private void WheelStep()
+    {
+        if (!_wheel.Running)
+            return;
+        var now = DateTime.Now;
+        _camera.ZoomAt(_wheelAt, _wheel.At(now) / _camera.Zoom);
+        KeepPlayerCentered();
+        if (_wheel.Over(now))
+            StopWheel();
+    }
+
+    private void StopWheel()
+    {
+        _wheel.Stop();
+        _wheelFrames?.Stop();
+    }
+
     private void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
+        StopWheel();
         _camera.ZoomAt(Pixels(e.GetPosition(this)), 2);
         KeepPlayerCentered();
         Invalidate();

@@ -50,6 +50,7 @@ public static class DevScript
         ["trail"] = "<x> <y> [<x> <y> ...]: where the pointer has been in the main window, for the cards to tell where it is heading; no pointer moves",
         ["cards"] = "writes the open cards' titles to the app log, with its time",
         ["pos"] = "<x> <y> <z> [yaw]: a screenshot at that world position",
+        ["exits"] = "<name> [<name> ...] | all: the game's extract list as a screenshot taken now shows it, read from where text recognition hands it over (\"quoted\" names with spaces; a name ending in ? is marked ??:??:??); all: every extract of the raid's map for the side",
         ["repeat"] = "a screenshot at the last position again",
         ["age"] = "<minutes>: the last position becomes older",
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
@@ -73,6 +74,16 @@ public static class DevScript
     /// </summary>
     public static (string Quest, string Text)? Note(DevStep step) =>
         step.Args.Count < 2 ? null : (step.Args[0], string.Join(' ', step.Args.Skip(1)).Replace("\\n", "\n", StringComparison.Ordinal));
+
+    /// <summary>
+    /// An "exits" step's rows, in the order the list shows them: each name, and whether the game marks it "??:??:??" (the
+    /// name ends in "?", which goes; "ZB-1013?"). Null for "exits all": every extract of the raid's map for the side,
+    /// none marked. Empty without names.
+    /// </summary>
+    public static IReadOnlyList<(string Name, bool Marked)>? ExitsOf(DevStep step) =>
+        step.Args is [var only] && only.Equals("all", StringComparison.OrdinalIgnoreCase) ? null
+            : step.Args.Select(a => a.Trim()).Where(a => a.TrimEnd('?').Length > 0)
+                .Select(a => a.EndsWith('?') ? (a.TrimEnd('?').TrimEnd(), true) : (a, false)).ToList();
 
     /// <summary>What a "whatsnew" step does with the card: the pointer onto a line (or, with none, off the card), a tap
     /// on a line, or the pointer off the line it is on.</summary>
@@ -136,6 +147,11 @@ public static class DevScript
             if (verb == "tour" && !step.Arg(0).Equals("end", StringComparison.OrdinalIgnoreCase))
             {
                 errors.Add($"line {i + 1}: 'tour' takes 'end'");
+                continue;
+            }
+            if (verb == "exits" && ExitsOf(step) is { Count: 0 })
+            {
+                errors.Add($"line {i + 1}: 'exits' needs the extracts' names, or 'all'");
                 continue;
             }
             steps.Add(step);

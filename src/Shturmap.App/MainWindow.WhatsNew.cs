@@ -104,7 +104,8 @@ public sealed partial class MainWindow
         ViewModel.WhatsNewBlocks = sections
             .Select(section => new WhatsNewBlock(WhatsNew.Heading(section),
                 section.Items.Select((item, i) => new WhatsNewRow($"{section.Label}:{i}", item.Name, item.Text, Swatch(item.Preview), item.Preview == "clock",
-                    item.Preview.StartsWith("stash", StringComparison.Ordinal))).ToList()))
+                    item.Preview.StartsWith("stash", StringComparison.Ordinal), AboutTour: !WhatsNew.ShowsPreview(item.Preview), Notes: item.Preview == "notes"))
+                    .ToList()))
             .ToList();
         ViewModel.WhatsNewShown = sections.Count > 0;
     }
@@ -229,7 +230,8 @@ public sealed partial class MainWindow
             _restoreView = Map.HasView ? Map.View : null;
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewWhatsNew(name: Caps.Of(item.Name), version: section.Label);
-        ViewModel.PreviewHint = item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
+        ViewModel.PreviewHint = item.Preview == "notes" ? AppTexts.PreviewExampleNotes
+            : item.Preview.StartsWith("stash", StringComparison.Ordinal) ? AppTexts.PreviewExampleStash : AppTexts.PreviewExample;
         Study.Ui("whatsnew.point", ("version", section.Label), ("item", item.Preview));
         switch (item.Preview)
         {
@@ -259,7 +261,11 @@ public sealed partial class MainWindow
                 }
                 break;
             case "extracts":
+                // The example list read on Customs and called out as a list just read is: YOUR EXTRACTS THIS RAID with its
+                // rows, "An example, not your raid." under the title, each icon flown to its place (MainWindow.RollCall).
                 await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(data, scene, content), null, 0, pmc: true);
+                if (_previewing == wanted && Map.Scene is { } listed)
+                    RollCallExample(listed, RollOwner.WhatsNew);
                 break;
             case "joined":
                 // Gratitude's two stashes on one spot (docs/DESIGN.md "Map drawing", *Objectives of one quest on one spot*).
@@ -279,6 +285,19 @@ public sealed partial class MainWindow
                     scene.Replay = ReplayExample(data, content);
                     scene.ReplayDone = true;
                 }, content => ReplayExample(data, content)?.Fixes.Select(f => f.Position).ToList(), 300);
+                break;
+            case "notes":
+                // A held quest card with two made-up notes, on the plate as the stash card is; its own frame, so the
+                // plate's box steps back.
+                if (NotesExampleCard(data) is { } questCard)
+                {
+                    WhatsNewPlateBox.Child = questCard;
+                    WhatsNewPlateBox.Padding = new Thickness(0);
+                    WhatsNewPlateBox.BorderThickness = new Thickness(0);
+                    WhatsNewPlateBox.Background = null;
+                    WhatsNewPlateNote.Text = AppTexts.WhatsNewNotesExample;
+                    WhatsNewPlate.Visibility = Visibility.Visible;
+                }
                 break;
         }
     }
@@ -314,15 +333,14 @@ public sealed partial class MainWindow
         ShowFloors();
     }
 
-    // An example extract list on Customs: some lit, one marked "??:??:??", the rest struck out; rung out as a list just
-    // read is (MapScene.RingExits).
+    // An example extract list on Customs: some lit, one marked "??:??:??", the rest struck out; called out once the scene
+    // is in the view (RollCallExample), as a list just read is.
     private static void StageExtractList(Shturmap.Data.TarkovDev.GameData data, MapScene scene, MapContent content)
     {
         var (listed, unsure, notListed) = ExampleExits(data, content);
         scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsNotListed = notListed;
-        scene.RingExits(DateTime.Now);
     }
 
     /// <summary>
@@ -382,6 +400,35 @@ public sealed partial class MainWindow
         return new Controls.ItemCard(view) { Opacity = 1 };
     }
 
+    // The example quest card for the notes' preview (owner, 2026-10-15; docs/DESIGN.md §4, "Quest cards", Notes): Ballet
+    // Lover, or where the data has none by that name the first quest by name with a place on a map, active, with two
+    // made-up notes written today, held, so its field and each note's × show. Nothing of the player's: neither the
+    // quest's state nor their notes.
+    private Controls.QuestCard? NotesExampleCard(Shturmap.Data.TarkovDev.GameData data)
+    {
+        var quest = data.Tasks.Values.FirstOrDefault(t => t.NormalizedName == "ballet-lover")
+            ?? data.Tasks.Values.OrderBy(t => t.Name, StringComparer.Ordinal).FirstOrDefault(t => t.Objectives?.Any(o => o.Maps is { Count: > 0 }) == true);
+        if (quest is null)
+            return null;
+        // Both of today: the older one 40 minutes before, but never before midnight.
+        var now = DateTimeOffset.Now;
+        var older = now - TimeSpan.FromMinutes(Math.Min(40, now.TimeOfDay.TotalMinutes));
+        IReadOnlyList<QuestNote> notes =
+        [
+            new("example-newer", now, AppTexts.WhatsNewNoteExampleNewer),
+            new("example-older", older, AppTexts.WhatsNewNoteExampleOlder),
+        ];
+        var active = new Dictionary<string, Shturmap.Core.Quests.QuestStatus>(StringComparer.Ordinal)
+            { [quest.Id] = new(quest.Id, Shturmap.Core.Quests.QuestState.Active, null, null) };
+        var view = QuestCards.Build(data, active, quest.Id, sources: _snapshot?.Sources,
+            notes: new Dictionary<string, IReadOnlyList<QuestNote>>(StringComparer.Ordinal) { [quest.Id] = notes });
+        if (view is null)
+            return null;
+        var card = new Controls.QuestCard(view);
+        card.SetMode(Controls.CardMode.Held);
+        return card;
+    }
+
     // The plate stands in the middle of the map, and lower only as far as it must to keep clear of the notes at the map's
     // top, its preview label among them (QA pass of 2026-10-15: at 900×560 the label, in two lines now, lay over the item
     // card's top). Centred under a padding, the plate moves down by half of it.
@@ -403,10 +450,11 @@ public sealed partial class MainWindow
         WhatsNewPlateBox.BorderThickness = new Thickness(1);
         WhatsNewPlateBox.Background = Resource("RailBrush");
         ViewModel.PreviewHint = AppTexts.PreviewClickToPlan;
-        // The stash cue shown as an example ends with its preview.
-        if (_stashExample)
+        // The stash cue shown as an example ends with its preview, and so does the example list's roll call.
+        if (_stashExample || (_rollRows.Count > 0 && _rollOwner == RollOwner.WhatsNew))
         {
             EndStashSeen();
+            EndRollCall();
             _cueStory?.Stop();
             _cueTimer?.Stop();
             CuePanel.Visibility = Visibility.Collapsed;

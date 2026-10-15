@@ -50,7 +50,7 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 | change | checks |
 | --- | --- |
 | the rail, a card, a cue, a dialog, the status bar, help, settings, a text | views plan, raid, quest (help and settings in each) in en-US and de-DE at 900x560 and 1600x900, folder build; the layout check for those views in en-US, de-DE and qps-ploc at both sizes |
-| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames`, both scenes, with and without `--glide`; the raid view at both sizes |
+| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames`, both scenes, with and without `--glide`, and with `--notch`; the raid view at both sizes |
 | an animation or a flow | the replay scripts; one drafted in the pass folder for a flow without one; `frames` for the map's animations |
 | the layout, in any language | the layout check, every view, en-US, de-DE and qps-ploc, both sizes |
 | a release | all of the above for every view; the tour's seven chapters in both languages; What's New and each line's preview; the layout check in full with `-SwitchCheck` |
@@ -62,7 +62,7 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -ShowQuest Dandies -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 # The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, tour1 … tour7
 .\tools\layout-check.ps1 -Out "$pass\layout" -Exe artifacts\layout-check\app\Shturmap.exe -Languages en-US,de-DE,qps-ploc -Sizes 900x560,1600x900 -States plan,raid,quest -MoreArgs '--data', "$pass\layout\data"
-# Map drawing; each frames run again with --glide into a folder of its own
+# Map drawing; each frames run again with --glide, and list-read with --notch, into a folder of its own
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$pass\render\streets.png" --data "$pass\render\data"
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\list-read" --data "$pass\frames\data"
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\whatsnew" --scene whatsnew-extracts --data "$pass\frames\data"
@@ -141,13 +141,16 @@ A check that didn't run is a finding: `· not run: <why> ·`. `PASS` only when e
 
 `tools\qa\` holds the replays of flows, one `<flow>.devscript` and one `<flow>.md` of expectations per flow; the QA pass
 runs every script there, on the Debug build, as its `.md` says, then again in de-DE and at the smallest window. The
-first is `whatsnew-tour-line` (the 0.5.0 card's tour line).
+first is `whatsnew-tour-line` (the 0.5.0 card's tour line); `extract-roll-call` (2026-10-15) replays the extract
+list's roll call, YOUR EXTRACTS THIS RAID, from a list the script hands the session.
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id
   or name>`, `pick`, `show`, `hover`, `point`, `whatsnew [<n>]`, `whatsnew click <n>` (taps line n, as a click does),
   `whatsnew leave` (the pointer leaves the line), `note <quest id or name> <text>` (a quest note through the session),
-  `cards`, `wait <s>`, `snapshot <folder>`, `exit`. Each `snapshot` names `%TEMP%\shturmap-qa\<flow>\<moment>`, a
+  `exits <name> [<name> …] | all` (the game's extract list as a screenshot taken now shows it; `"ZB-1013?"` marked
+  "??:??:??"), `cards`, `wait <s>`, `snapshot <folder>` (with a cue up, also `cue.png`, the band alone, placed by its
+  log line), `exit`. Each `snapshot` names `%TEMP%\shturmap-qa\<flow>\<moment>`, a
   folder per moment; the app expands `%TEMP%`, so a script in the repository names no user's folder.
 - **`<flow>.md`**: the flow and the fault it guards against, "Run it" (its command line, with its own flags), when each
   still is taken, and per still what it must and must not show, with the DESIGN.md words it holds to.
