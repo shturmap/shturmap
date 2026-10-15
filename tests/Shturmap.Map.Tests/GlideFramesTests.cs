@@ -152,6 +152,44 @@ public class GlideFramesTests
         Assert.NotEmpty(leaders);
     }
 
+    // A double-click and + as MapView animates them (owner, 2026-10-15, evening; WheelZoom.Step): a double-click zooms in
+    // twice as far over 0.2 s at the pointer, + half again over 0.2 s about the view's middle, so their frames come under
+    // the steady rule as a notch's do (a frame zooms by 9 % at most at 16 ms); at once, each laid the crowd out afresh (in
+    // these frames a quest's symbol went 52 px off its place at the double-click, 36 px at +). From far out off to one
+    // side, as the glide above starts, a frame still, then a double-click and + 0.4 s later, a frame every 16 ms: as far
+    // in as the glide goes.
+    [Fact]
+    public void No_symbol_jumps_or_changes_side_while_a_double_click_or_a_key_zooms()
+    {
+        var (camera, scene) = Crowd();
+        var target = scene.Projection.ToMap(scene.Player!.Position);
+        camera.Restore(new MapPoint(target.X + 60, target.Y + 30), 0.6);
+        var pointer = camera.ToScreen(new MapPoint(target.X + 10, target.Y - 5));
+        var middle = new SKPoint(camera.Viewport.Width / 2, camera.Viewport.Height / 2);
+        (int Ms, double Factor, SKPoint At)[] presses = [(EveryMs, 2, pointer), (EveryMs + 400, 1.5, middle)];
+        var zoom = new WheelZoom();
+        var at = pointer;
+        var frames = new List<Dictionary<string, Drawn>>();
+        for (var ms = 0; ms <= 720; ms++)
+        {
+            var now = T0.AddMilliseconds(ms);
+            foreach (var press in presses.Where(p => p.Ms == ms))
+            {
+                at = press.At;
+                zoom.Turn(camera.Zoom, press.Factor, camera.MinZoom, camera.MaxZoom, now, over: WheelZoom.Step);
+            }
+            if (ms % EveryMs != 0)
+                continue;
+            if (zoom.Running)
+                camera.ZoomAt(at, zoom.At(now) / camera.Zoom);
+            frames.Add(Frame(camera, scene, now));
+        }
+        Assert.Equal(0.6 * 2 * 1.5, camera.Zoom, 6);
+        var (_, leaders) = Steadily(frames);
+        Assert.True(frames[0].Count(f => f.Value.Leader) >= 5, $"{frames[0].Count(f => f.Value.Leader)} leaders at the start");
+        Assert.NotEmpty(leaders);
+    }
+
     // From one frame to the next no symbol's offset from its place changes by more than a step, but where its cluster
     // merges or parts; none's leader comes or goes more than once, and none on a leader swings to the other side of its
     // place more than once. The frames at which a cluster changed, and how often each symbol's leader came or went.
@@ -251,7 +289,8 @@ public class GlideFramesTests
         Assert.Equal(fresh[^1], drawn[^1]);
         Assert.False(scene.ScaleBarShown!.Held);
 
-        // A zoom at once by more than a tenth (a double-click, + or −) isn't a move: it is placed afresh at once.
+        // A zoom at once by more than a tenth (a double-click, + or − with Windows' animation effects off) isn't a move: it
+        // is placed afresh at once.
         camera.ZoomAt(new SKPoint(500, 500), 0.5);
         var later = T0.AddMilliseconds((Count + 1) * EveryMs);
         Frame(camera, scene, later);

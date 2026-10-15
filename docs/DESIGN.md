@@ -1518,9 +1518,11 @@ spawns below).
     standing; the push-only passes keep symbols off each other and the player, and off each other's places only
     through the passes the symbols follow. A wheel's notch is such a move since 2026-10-15 (owner: it zooms over
     0.15 s, below, *The wheel zooms over 0.15 s*); until then it zoomed by a fifth at once and laid the crowd out afresh,
-    which could flip a symbol to the other side of its place. Anything else (the map opened, a zoom at once: a
-    double-click, + or −, a notch with Windows' animation effects off; a new position, other quests) lays them out
-    afresh, as a still view always shows them; once the view is still nothing moves. After a
+    which could flip a symbol to the other side of its place. So are + and −, the zoom buttons and a double-click since
+    the evening of 2026-10-15 (owner: over 0.2 s, below, *The keys, the buttons and a double-click zoom over 0.2 s*).
+    Anything else (the map opened, a zoom at once with Windows' animation effects off: a double-click, + or −, a notch; a
+    frame that zooms by a tenth or more; a new position, other quests) lays them out afresh, as a still view always
+    shows them; once the view is still nothing moves. After a
     glide a crowd can stand otherwise than a fresh layout of the same view would have it, until the next fresh one. In
     a 1.2 s glide on Customs at 60 frames a second (`shturmap-cli frames customs --scene list-read --glide 1200 --every
     16`), symbols set off their places by more than 3 px more or less from one frame to the next went from 466 to 3
@@ -1828,12 +1830,30 @@ spawns below).
   speed it has there (a cubic from that speed to rest on the target, never past it), so a turn of several notches is
   one zoom without a stop, landing 0.15 s after the last notch where the notches at once would have put it
   (`WheelZoom`). With Windows' animation effects off a notch zooms at once. A turn while the view moves by itself (the
-  replay's glide, the roll call's) is left out: that move set the view again at its next frame anyway. + and −, the
-  zoom buttons (1.5 times) and a double-click (2 times) zoom at once, as before. Three notches 0.3 s apart on Customs
-  at 60 frames a second (`shturmap-cli frames customs --notch`): symbols set off their places by more than 3 px more or
-  less from one frame to the next went from 82 (the largest 91 px) to 3, all at the frame where Abandoned Cargo's
-  places part; a frame zooms by 2.9 % at most. A quick turn keeps under the tenth a frame up to about a notch every
-  30 ms at 60 frames a second; a faster spin lays some of its frames out afresh.
+  replay's glide, the roll call's) is left out: that move set the view again at its next frame anyway. Three notches
+  0.3 s apart on Customs at 60 frames a second (`shturmap-cli frames customs --notch`): symbols set off their places by
+  more than 3 px more or less from one frame to the next went from 82 (the largest 91 px) to 3, all at the frame where
+  Abandoned Cargo's places part; a frame zooms by 2.9 % at most. A quick turn keeps under the tenth a frame up to about
+  a notch every 30 ms at 60 frames a second; a faster spin lays some of its frames out afresh. At 30 frames a second a
+  notch's frames zoom by 6.2 % at most.
+- **The keys, the buttons and a double-click zoom over 0.2 s** (owner, 2026-10-15, evening page: they zoomed at once
+  and laid the crowded symbols out afresh, so crowded ones could flip sides there). + and − and the zoom buttons zoom
+  by 1.5 times about the view's middle, a double-click by 2 times about the point clicked, each over 0.2 s, eased in and
+  out on a log scale as a notch is (`WheelZoom.Step`), following with the view on the player about the player. A press
+  during a zoom under way, its own or the wheel's, goes on from it as a notch does: it adds its step to where that one
+  goes and lands 0.2 s after the press (+ twice, 0.1 s apart: one zoom to 2.25 times, landing 0.3 s after the first).
+  With Windows' animation effects off they zoom at once, as before; while the view moves by itself one is left out, as
+  a turn is. So their frames come under *Steady while the view moves*: at 60 frames a second a frame of + or − zooms
+  by 5.2 % at most (3.4 % on average), of a double-click by 9 % (6 % on average), under the tenth. On Customs at 60
+  frames a second (`shturmap-cli frames customs --step 2`, `--step 1.5`), symbols set off their places by more than
+  3 px more or less from one frame to the next went from 47 (the largest 91 px) to 3 for a double-click, from 58 (92 px)
+  to 3 for +, all at the frame where Abandoned Cargo's places part; at the smallest window's map (`--viewport
+  500x481`) a double-click's went from 93 (272 px) to 112 moves of at most 8 px, the repel's steps while the crowd opens
+  fast. **Below about 55 frames a second** a double-click's middle frames zoom by a tenth or more, and below about 32
+  those of + and −; such a frame lays the symbols out afresh, as a zoom at once did. At 30 frames a second (`--every
+  33`) a double-click zooms by up to 18.7 % a frame and lays 4 of its frames out afresh (150 moves over 3 px, the
+  largest 111 px), + up to 10.6 % and 2 (84, 108 px): more than at once. The window asks for a frame every 15 ms
+  (about 64 a second, `MapView`).
 - **Room for labels on the right** (owner, 2026-10-09). The map writes a symbol's label to its right, so the whole map
   (a new map, a Plan row's preview, 0 and the button) and every framing (What's New's and the tour's previews, the raid
   replay) keep 150 DIP between what they show and the view's right edge (`Camera.LabelRoom`); the other sides keep
@@ -3092,10 +3112,16 @@ while the view moves*); the checks count the leaders that came or went, and name
 than once. `--notch [ms]` turns the wheel three notches in at the position (without one, the middle of the extracts on
 the list), [ms] apart (300 by default) from the whole map's view, as `MapView` animates them (`WheelZoom`; "Map
 drawing", *The wheel zooms over 0.15 s*), drawn every 16 ms until the last has landed, with the same checks as
-`--glide` (not with it, nor with `list-callout`). `ExitRingFramesTests` hold the ring to "Map drawing" the same way,
-on a made-up raid, `GlideFramesTests` the symbols on leaders in a glide and in the wheel's notches, `WheelZoomTests`
-the notches' zoom, and `ExitCallOutFramesTests` the roll call's flights; the ring's and the roll call's tests read the
-names' face too.
+`--glide` (not with it, nor with `list-callout`). `--step <factor> [ms]` zooms by <factor> over 0.2 s as + and − and
+the zoom buttons (1.5, 0.667) or a double-click (2) do (`WheelZoom.Step`; "Map drawing", *The keys, the buttons and a
+double-click zoom over 0.2 s*), about the position as a double-click there does (+ and − zoom about the view's middle,
+which only moves where the zoom centres), with [ms] the same step again that much later; drawn every 16 ms until it
+has landed, with the same checks (not with `--glide`, `--notch` or `list-callout`); `--every 33` draws it as at 30
+frames a second. With a moving view the checks also name the largest zoom from one frame to the next and count the
+frames that zoom by a tenth or more, which lay the symbols out afresh. `ExitRingFramesTests` hold the ring to "Map
+drawing" the same way, on a made-up raid, `GlideFramesTests` the symbols on leaders in a glide, in the wheel's notches
+and in a double-click's and +'s steps, `WheelZoomTests` the notches' and the steps' zoom, and `ExitCallOutFramesTests`
+the roll call's flights; the ring's and the roll call's tests read the names' face too.
 
 ### How the parts work
 
