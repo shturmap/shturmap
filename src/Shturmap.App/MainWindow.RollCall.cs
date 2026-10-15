@@ -219,22 +219,103 @@ public sealed partial class MainWindow
     private const double RollNameMost = 320;
     private double _rollNameWidth = RollNameMost;
 
+    // DIPs the cue keeps above the tour's band (or the map's foot), and under the notes at the map's top (the preview label).
+    private const double RollCueFoot = 16;
+    private const double RollCueHead = 8;
+
+    // The least the rows alone are drawn at, of the size the column's width leaves them, before the whole cue is drawn
+    // smaller instead; and the least the whole cue is drawn at before an example list names fewer extracts (FitRollCue). The
+    // tour's German example raid card at 900×560 stands at about 60 % (owner, 2026-10-10 and 2026-10-11).
+    private const double RollRowsLeast = 0.6;
+    private const double RollCueLeast = 0.6;
+
     /// <summary>
-    /// The rows in the room the band has under its title, in the map's column above <see cref="_rollFoot"/>: each name on one
-    /// line where its column has room, else broken between words (never inside one), the names' width chosen so the rows
-    /// stand as large as the room lets them; and where even so they don't fit (twelve rows at the smallest window), drawn
-    /// smaller to fit, never cut, as the tour's plates are (owner, 2026-10-10). Before the rows are handed to the map.
+    /// The cue whole in its room (QA pass 3, 2026-10-15, the coordinator's rule: at 900×560 the preview label covered the
+    /// cue's top rule and eyebrow in What's New's extracts preview, and in the tour's chapter 5 the band covered its rows and
+    /// "An example, not your raid.", the rows' hand-off points under it): from <see cref="RollCueHead"/> under the notes at
+    /// the map's top (What's New's or the tour's preview label) to <see cref="RollCueFoot"/> above the tour's band, its title
+    /// in two lines at most (FitCueTitle). Where it is taller than that room, its rows are drawn smaller (FitRollRows), down
+    /// to <see cref="RollRowsLeast"/>; where even that doesn't fit, the whole cue is drawn smaller to fit, never cut, as the
+    /// tour's plates are, and an example list (What's New's, the tour's) names fewer extracts while it would be drawn under
+    /// <see cref="RollCueLeast"/>: the farthest of its lit ones goes, as the tour's plate drops them, down to two lit and
+    /// the "??:??:??" one. It stands in the middle of the map above the band, and lower only as far as it must to keep clear
+    /// of the notes, as What's New's plate does: its rows, and so their hand-off points, are always in view.
     /// </summary>
-    private void FitRollRows()
+    private void FitRollCue()
+    {
+        if (_rollRows.Count == 0 || Map.ActualWidth <= 0)
+            return;
+        // The notes laid out first: What's New's label is set in the same moment as its preview's list is called.
+        CuePanel.UpdateLayout();
+        var head = Math.Max(_rollHead, NotesClearance());
+        var room = Math.Max(4 * RollLine, Map.ActualHeight - head - _rollFoot - RollCueFoot);
+        while (true)
+        {
+            CueFit.MaxHeight = double.PositiveInfinity;
+            var wide = FitRollRows(double.PositiveInfinity);
+            var tall = FitRollRows(room);
+            if (tall >= RollRowsLeast || tall >= wide - 1e-3)
+                break;
+            // The rows at the size the column's width leaves them, and the whole cue drawn smaller to the room.
+            FitRollRows(double.PositiveInfinity);
+            if (room / Math.Max(1, CueStack.ActualHeight) >= RollCueLeast || !DropFarthestExample())
+            {
+                CueFit.MaxHeight = room;
+                break;
+            }
+        }
+        CuePanel.UpdateLayout();
+        // Centred above the band, under a margin that lowers it by half of it as far as the notes need.
+        var lower = Math.Max(0, 2 * head - (Map.ActualHeight - _rollFoot - CueFit.ActualHeight));
+        CuePanel.Margin = new Thickness(0, lower, 0, _rollFoot);
+        CuePanel.UpdateLayout();
+        // The sizes in the app log (developer detail), for the QA's stills.
+        static double Scale(FrameworkElement box, FrameworkElement child) => child.ActualWidth > 0 ? box.ActualWidth / child.ActualWidth : 1;
+        Shturmap.Session.AppLog.Debug(FormattableString.Invariant(
+            $"Roll call's cue: {CueFit.ActualHeight:0} DIP of a room of {room:0} under {head:0}; drawn at {Scale(CueFit, CueStack):0.00}, its title at {Scale(CueTitleBox, (FrameworkElement)CueTitleBox.Child):0.00}, its {_rollRows.Count} rows at {Scale(CueExitsBox, CueExits):0.00}"));
+    }
+
+    // DIPs at the map's top that the notes there take (What's New's preview label among them, or a notice) and
+    // RollCueHead more; none while they show nothing.
+    private double NotesClearance() =>
+        MapNotes.ActualHeight >= 1 && Shown(MapNotes) ? MapNotes.Margin.Top + MapNotes.ActualHeight + RollCueHead : 0;
+
+    // An example list (What's New's, the tour's; never the player's) names one extract fewer: the farthest of its lit ones,
+    // struck out with the rest, as the tour's plate drops them; the title counts one fewer. False where it is down to two lit
+    // ones (and the "??:??:??" one).
+    private bool DropFarthestExample()
+    {
+        if (_rollOwner == RollOwner.Raid || _rollScene is not { } scene || _rollRows.Where(r => r.Listed).ToList() is not { Count: > 2 } lit)
+            return false;
+        var id = lit[^1].Exit.Id;
+        scene.ExitsListed = scene.ExitsListed.Where(e => e != id).ToHashSet(StringComparer.Ordinal);
+        scene.ExitsNotListed = scene.ExitsNotListed.Append(id).ToHashSet(StringComparer.Ordinal);
+        _rollIds.Remove(id);
+        _rollRows.Clear();
+        _rollWaiting = scene.ExitsToCall();
+        ShowRollRows();
+        CueTitle.Text = RollCallText().Title;
+        FitCueTitle(CueTitle.Text);
+        return true;
+    }
+
+    /// <summary>
+    /// The rows in the room the band has under its title, the cue's room being <paramref name="room"/> DIPs tall (FitRollCue):
+    /// each name on one line where its column has room, else broken between words (never inside one), the names' width
+    /// chosen so the rows stand as large as the room lets them; and where even so they don't fit (twelve rows at the smallest
+    /// window), drawn smaller to fit, never cut, as the tour's plates are (owner, 2026-10-10). Before the rows are handed to
+    /// the map. Returns the scale they are drawn at.
+    /// </summary>
+    private double FitRollRows(double room)
     {
         var names = _rollRows.Select(r => r.Name).ToList();
         if (names.Count == 0 || Map.ActualWidth <= 0)
-            return;
+            return 1;
         CueExitsBox.MaxWidth = CueExitsBox.MaxHeight = double.PositiveInfinity;
         CuePanel.UpdateLayout();
         // Clear of the map's buttons at the right (16 from the edge, 36 wide), on both sides: the rows stand in the middle.
         var width = Map.ActualWidth - 2 * RollClearOfButtons;
-        var height = Map.ActualHeight - _rollFoot - 16 - (CueStack.ActualHeight - CueExitsBox.ActualHeight);
+        var height = room - (CueStack.ActualHeight - CueExitsBox.ActualHeight);
         // Never narrower than a name's longest word: a word too long for its line would be broken inside or cut.
         var narrowest = names.Max(WidestWord);
         var best = (Scale: -1.0, Width: RollNameMost);
@@ -244,7 +325,7 @@ public sealed partial class MainWindow
                 name.MaxWidth = w;
             CueExits.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
             var size = CueExits.DesiredSize;
-            var scale = Math.Min(1, Math.Min(width / Math.Max(1, size.Width), height / Math.Max(1, size.Height)));
+            var scale = Math.Min(1, Math.Min(width / Math.Max(1, size.Width), Math.Max(0, height) / Math.Max(1, size.Height)));
             // The largest scale, and of the widths that give it the widest: fewer lines broken.
             if (scale >= best.Scale - 1e-6)
                 best = (Math.Max(scale, best.Scale), w);
@@ -257,11 +338,12 @@ public sealed partial class MainWindow
         CueExitsBox.MaxWidth = Math.Max(1, width);
         CueExitsBox.MaxHeight = Math.Max(RollLine, height);
         CuePanel.UpdateLayout();
+        return best.Scale;
     }
 
-    // The widest word of a name, as the row sets it.
+    // The widest word of a name, as the row sets it ("???" after the name joined to its last word).
     private static double WidestWord(TextBlock name) =>
-        name.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(word =>
+        string.Concat(name.Inlines.OfType<Microsoft.UI.Xaml.Documents.Run>().Select(r => r.Text)).Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(word =>
         {
             var probe = new TextBlock { Text = word, Style = name.Style, FontSize = name.FontSize };
             probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -275,30 +357,24 @@ public sealed partial class MainWindow
         var element = new Grid { ColumnSpacing = 8, RenderTransform = shift };
         element.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         element.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        element.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var triangle = ExitTriangle(exit.Kind);
         triangle.VerticalAlignment = VerticalAlignment.Top;
         element.Children.Add(triangle);
         // The name in the cue's item type (its 15), broken between words in a narrow column rather than cut (FitRollRows),
         // never after a hyphen in a word (Rules.WordBreaks; QA pass, 2026-10-15); "???" where the game marks the extract
-        // "??:??:??", muted: a sign, not a word.
+        // "??:??:??", muted: a sign, not a word. It follows the name's last word, joined to it by a no-break space, so it
+        // stands after the name's last line, never inside a name broken over two (QA pass 3, 2026-10-15: "Boiler Room
+        // Basement ???" over "(Co-op)", German "Taxi in der ???" over "Primorsky-Straße").
         var name = new TextBlock
         {
-            Text = WordBreaks.BetweenWordsOnly(exit.Label), Style = TextStyle("TitleText"), FontSize = 15, LineHeight = RollLine, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+            Style = TextStyle("TitleText"), FontSize = 15, LineHeight = RollLine, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
             TextWrapping = TextWrapping.WrapWholeWords, MaxWidth = _rollNameWidth,
         };
+        name.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = WordBreaks.BetweenWordsOnly(exit.Label) });
+        if (!listed)
+            name.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = " ???", Foreground = Resource("MutedBrush") });
         Grid.SetColumn(name, 1);
         element.Children.Add(name);
-        if (!listed)
-        {
-            var sign = new TextBlock
-            {
-                Text = "???", Style = TextStyle("TitleText"), FontSize = 15, LineHeight = RollLine, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-                Foreground = Resource("MutedBrush"), TextWrapping = TextWrapping.NoWrap,
-            };
-            Grid.SetColumn(sign, 2);
-            element.Children.Add(sign);
-        }
         Place(element, column, row);
         CueExits.Children.Add(element);
         _rollFill[column] = Math.Max(_rollFill[column], row + 1);
@@ -351,10 +427,8 @@ public sealed partial class MainWindow
     /// </summary>
     private void StartRollCall()
     {
+        FitRollCue();
         _rollWaiting = [];
-        CuePanel.Margin = new Thickness(0, 0, 0, _rollFoot);
-        FitRollRows();
-        CuePanel.UpdateLayout();
         HoldRollTitle();
         FillHalos();
         var calls = RollCalls(0);
@@ -557,8 +631,9 @@ public sealed partial class MainWindow
         if (_rollRows.Count == before)
             return;
         var (_, title, _) = RollCallText();
-        // The count grows ("7 OF 12"): laid out anew as it ends, and held there while it decodes.
+        // The count grows ("7 OF 12"): laid out anew as it ends, in two lines at most, and held there while it decodes.
         LetGoOfRollTitle();
+        FitCueTitle(title);
         CueTitle.Text = title;
         CuePanel.UpdateLayout();
         HoldRollTitle();
@@ -612,12 +687,12 @@ public sealed partial class MainWindow
         if (CuePanel.VerticalAlignment == VerticalAlignment.Top)
             return;
         var top = CuePanel.TransformToVisual(Map).TransformPoint(new Point(0, 0)).Y;
-        var stack = CueStack.TransformToVisual(CuePanel).TransformPoint(new Point(0, 0)).X;
+        var words = CueFit.TransformToVisual(CuePanel).TransformPoint(new Point(0, 0)).X;
         var rows = CueExitsBox.TransformToVisual(CueStack).TransformPoint(new Point(0, 0)).X - CueStack.Padding.Left;
         CuePanel.VerticalAlignment = VerticalAlignment.Top;
         CuePanel.Margin = new Thickness(0, top, 0, 0);
-        CueStack.HorizontalAlignment = HorizontalAlignment.Left;
-        CueStack.Margin = new Thickness(stack, 0, 0, 0);
+        CueFit.HorizontalAlignment = HorizontalAlignment.Left;
+        CueFit.Margin = new Thickness(words, 0, 0, 0);
         CueExitsBox.HorizontalAlignment = HorizontalAlignment.Left;
         CueExitsBox.Margin = new Thickness(rows, CueExitsBox.Margin.Top, 0, 0);
     }
@@ -695,8 +770,9 @@ public sealed partial class MainWindow
             halo.Opacity = 0;
         }
         LetGoOfRollTitle();
-        CueStack.HorizontalAlignment = HorizontalAlignment.Center;
-        CueStack.Margin = new Thickness(0);
+        CueFit.HorizontalAlignment = HorizontalAlignment.Center;
+        CueFit.Margin = new Thickness(0);
+        CueFit.MaxHeight = double.PositiveInfinity;
         CuePanel.VerticalAlignment = VerticalAlignment.Center;
         CuePanel.Margin = new Thickness(0);
     }

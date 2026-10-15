@@ -141,8 +141,18 @@ public sealed partial class MainWindow : Window
         // so the band keeps its spacing without one.
         CueDetail.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => CueDetailBox.Visibility = CueDetail.Visibility);
         WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
-        // What's New's plate keeps clear of the notes at the map's top (PlaceWhatsNewPlate).
+        // What's New's plate keeps clear of the notes at the map's top and of its foot (PlaceWhatsNewPlate), from the moment
+        // it shows: a plate of the size it last had changes no size as it comes back.
+        WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) =>
+        {
+            if (WhatsNewPlate.Visibility != Visibility.Visible)
+                return;
+            WhatsNewPlate.UpdateLayout();
+            PlaceWhatsNewPlate();
+        });
         MapNotes.SizeChanged += (_, _) => PlaceWhatsNewPlate();
+        MapFoot.SizeChanged += (_, _) => PlaceWhatsNewPlate();
+        WhatsNewPlateBox.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         WhatsNewPlate.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         WhatsNewPlateStack.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         // The status bar gives way in a narrow window (FitStatusBar): looked at when its size or its words' change.
@@ -1742,16 +1752,22 @@ public sealed partial class MainWindow : Window
             ShowRollRows();
         CueStamp.Visibility = Visibility.Collapsed;
         StampShape(cue.Kind);
+        // The words as wide as the map's column, the title in two lines at most (FitCueTitle).
+        if (Map.ActualWidth > 0)
+            CueStack.MaxWidth = Map.ActualWidth;
+        FitCueTitle(title);
         CuePanel.Visibility = Visibility.Visible;
         _cueStory?.Stop();
         _cueTimer?.Stop();
         if (Replays(cue))
             PlayReplay(cue.Replay!, how);
-        // Laid out with its title as it ends, each row's triangle is handed to the map where it stands.
+        // Laid out with its title as it ends, each row's triangle is handed to the map where it stands. An example list
+        // may name fewer extracts to fit its room (MainWindow.RollCall, FitRollCue): the title counts what it names.
         if (cue.Kind == CueKind.ExitsListed)
         {
             CueTitle.Text = title;
             StartRollCall();
+            title = CueTitle.Text;
         }
 
         if (!animations)
@@ -1839,16 +1855,104 @@ public sealed partial class MainWindow : Window
         _cueTimer = Decode(CueTitle, title, TimeSpan.FromMilliseconds(900 * CuePace));
     }
 
+    // The cue's words as wide as the map's column, as the window's size changes too (CueFit draws them at that width).
+    private void OnCuePanelSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.NewSize.Width > 0 && Math.Abs(e.NewSize.Width - CueStack.MaxWidth) > 0.5)
+            CueStack.MaxWidth = e.NewSize.Width;
+    }
+
+    /// <summary>
+    /// The cue's title in two lines at most (QA pass 3, 2026-10-15: at 900×560 "YOUR EXTRACTS THIS RAID · 7 OF 12" took
+    /// three, and the cue ran under the preview label and the tour's band; owner, confirmed the same day). Where two lines or one
+    /// hold it in the map's column, it breaks there as it did; where the column is too narrow for two at its 48 px (the
+    /// smallest window), it breaks where two lines take the least width, never inside a word, and CueTitleBox draws it
+    /// smaller to the column, never cut, as the roll call's rows are.
+    /// </summary>
+    private void FitCueTitle(string title)
+    {
+        var column = (Map.ActualWidth > 0 ? Map.ActualWidth : CueStack.MaxWidth) - CueStack.Padding.Left - CueStack.Padding.Right;
+        if (title.Length == 0 || !(column > 0) || double.IsInfinity(column))
+        {
+            CueTitle.MaxWidth = double.PositiveInfinity;
+            return;
+        }
+        var probe = TextProbe(CueTitle);
+        probe.Text = title;
+        Windows.Foundation.Size Measured(double width)
+        {
+            probe.MaxWidth = width;
+            probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+            return probe.DesiredSize;
+        }
+        var one = Measured(double.PositiveInfinity);
+        // Never narrower than its widest word: a word too long for its line would break inside it.
+        var widestWord = title.Split(' ', StringSplitOptions.RemoveEmptyEntries).Max(word =>
+        {
+            probe.Text = word;
+            return Measured(double.PositiveInfinity).Width;
+        }) + 1;
+        probe.Text = title;
+        bool TwoLines(double width) => Measured(width).Height <= 2 * one.Height + 1;
+        if (widestWord <= column && TwoLines(column))
+        {
+            CueTitle.MaxWidth = column;
+            return;
+        }
+        // The least width two lines hold it in, to a DIP: between the column (or its widest word) and its one line.
+        double narrow = Math.Max(column, widestWord), wide = Math.Ceiling(one.Width) + 1;
+        if (TwoLines(narrow))
+            wide = narrow;
+        while (wide - narrow > 1)
+        {
+            var middle = (narrow + wide) / 2;
+            if (TwoLines(middle))
+                wide = middle;
+            else
+                narrow = middle;
+        }
+        CueTitle.MaxWidth = Math.Ceiling(wide) + 1;
+    }
+
+    // A text block measured off screen as the given one sets its words (FitCueTitle, Decode).
+    private static TextBlock TextProbe(TextBlock like) => new()
+    {
+        FontFamily = like.FontFamily, FontSize = like.FontSize, FontWeight = like.FontWeight, FontStretch = like.FontStretch, FontStyle = like.FontStyle,
+        CharacterSpacing = like.CharacterSpacing, TextWrapping = like.TextWrapping, TextAlignment = like.TextAlignment, LineHeight = like.LineHeight,
+        LineStackingStrategy = like.LineStackingStrategy, TextLineBounds = like.TextLineBounds,
+    };
+
     // Text decodes like a terminal (the cue's title, the tour's, the screenshot key's file name): undecoded letters
-    // flicker through random ones in gold, settling left to right in ink.
+    // flicker through random ones in gold, settling left to right in ink. Each flickers through glyphs no wider than
+    // itself, and a frame whose glyphs would still take the words past the box they end in (a pair the font sets closer
+    // in the words than in the glyphs) shows the letters themselves in gold: the text never grows while it decodes, so
+    // it never leaves the box held for it (QA pass 3, 2026-10-15: the roll call's title, held at its width as it ends,
+    // read "YOUR EXTRACTS THIS RAID · 7 OF" and nothing after at 1600×900, its gold glyphs being wider than its letters).
     private DispatcherQueueTimer Decode(TextBlock block, string text, TimeSpan length)
     {
-        const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var glyphs = DecodeGlyphs(block, text);
         var settled = new Microsoft.UI.Xaml.Documents.Run();
         var flicker = new Microsoft.UI.Xaml.Documents.Run { Foreground = Resource("AmberBrush") };
         block.Inlines.Clear();
         block.Inlines.Add(settled);
         block.Inlines.Add(flicker);
+        // The box the words end in: the width the block is held at (the roll call's title) or its words' own as they end
+        // (its widest line), and their lines.
+        var probe = TextProbe(block);
+        var probeSettled = new Microsoft.UI.Xaml.Documents.Run();
+        var probeFlicker = new Microsoft.UI.Xaml.Documents.Run();
+        probe.Inlines.Add(probeSettled);
+        probe.Inlines.Add(probeFlicker);
+        probe.MaxWidth = double.IsNaN(block.Width) ? block.MaxWidth : block.Width;
+        Windows.Foundation.Size Measured(string done, string rest)
+        {
+            probeSettled.Text = done;
+            probeFlicker.Text = rest;
+            probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+            return probe.DesiredSize;
+        }
+        var end = Measured(text, "");
+        var widest = double.IsNaN(block.Width) ? end.Width + 1 : block.Width;
         var started = DateTime.Now;
         var timer = DispatcherQueue.CreateTimer();
         timer.Interval = TimeSpan.FromMilliseconds(35);
@@ -1856,14 +1960,52 @@ public sealed partial class MainWindow : Window
         {
             var p = Math.Min(1, (DateTime.Now - started) / length);
             var resolved = (int)Math.Round(p * text.Length);
+            var rest = text[resolved..];
+            var scrambled = string.Concat(rest.Select(c => glyphs.TryGetValue(c, out var any) ? any[Random.Shared.Next(any.Length)] : c));
+            if (scrambled != rest && Measured(text[..resolved], scrambled) is var size && (size.Width > widest + 0.5 || size.Height > end.Height + 0.5))
+                scrambled = rest;
             settled.Text = text[..resolved];
-            flicker.Text = string.Concat(text[resolved..].Select(c => char.IsLetterOrDigit(c) ? glyphs[Random.Shared.Next(glyphs.Length)] : c));
+            flicker.Text = scrambled;
             if (p >= 1)
                 t.Stop();
         };
         timer.Start();
         return timer;
     }
+
+    // The glyphs a letter or digit of the words flickers through: of A–Z and 0–9, those no wider than it in the block's
+    // type (itself where none is), measured once per type.
+    private static Dictionary<char, char[]> DecodeGlyphs(TextBlock block, string text)
+    {
+        const string glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var key = $"{block.FontFamily?.Source}|{block.FontSize}|{block.FontWeight.Weight}|{block.FontStretch}|{block.FontStyle}|{block.CharacterSpacing}";
+        if (!GlyphWidths.TryGetValue(key, out var widths))
+            GlyphWidths[key] = widths = [];
+        var probe = TextProbe(block);
+        probe.TextWrapping = TextWrapping.NoWrap;
+        double Width(char c)
+        {
+            if (!widths.TryGetValue(c, out var width))
+            {
+                // Eight in a row, so a pixel's rounding and the edges' bearings weigh an eighth.
+                probe.Text = new string(c, 8);
+                probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+                widths[c] = width = probe.DesiredSize.Width / 8;
+            }
+            return width;
+        }
+        var choices = new Dictionary<char, char[]>();
+        foreach (var c in text.Distinct().Where(char.IsLetterOrDigit))
+        {
+            var room = Width(c) + 0.01;
+            var narrower = glyphs.Where(g => Width(g) <= room).ToArray();
+            choices[c] = narrower.Length > 0 ? narrower : [c];
+        }
+        return choices;
+    }
+
+    // Each type's glyph widths, in DIPs (DecodeGlyphs).
+    private static readonly Dictionary<string, Dictionary<char, double>> GlyphWidths = new(StringComparer.Ordinal);
 
     private void ShowNotice(string message, TimeSpan? duration = null, bool offersReport = false)
     {

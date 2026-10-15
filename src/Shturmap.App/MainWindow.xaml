@@ -1253,7 +1253,7 @@
 
         <!-- A change of view Shturmap made on its own (a raid loading, a transit, a Scav raid, the raid over): big, in
              the middle, for under three seconds, never taking a click. Owner, 2026-10-01. -->
-        <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0">
+        <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0" SizeChanged="OnCuePanelSizeChanged">
           <!-- The band springs open behind the text; the text itself is never scaled, so it stays sharp. -->
           <Grid x:Name="CueBand" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform>
@@ -1262,78 +1262,90 @@
             <Border Background="#EB0B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" />
             <Rectangle x:Name="CueFlash" Fill="{StaticResource AmberBrush}" Opacity="0" />
           </Grid>
-          <StackPanel x:Name="CueStack" HorizontalAlignment="Center" Spacing="10" Padding="24,30">
-            <Rectangle x:Name="CueRuleTop" Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
-              <Rectangle.RenderTransform>
-                <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
-              </Rectangle.RenderTransform>
-            </Rectangle>
-            <!-- QUEST COMPLETE's stamp: the done objective's check on the quests' gold, popping in as a ring leaves it
-                 (owner, 2026-10-07: "For completed quests, also make a nice animation"). No text in it, so scaling it
-                 blurs nothing. -->
-            <Grid x:Name="CueStamp" Width="44" Height="44" HorizontalAlignment="Center" Visibility="Collapsed">
-              <Ellipse x:Name="CueStampRing" Width="44" Height="44" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" RenderTransformOrigin="0.5,0.5">
-                <Ellipse.RenderTransform>
-                  <ScaleTransform x:Name="CueStampRingScale" />
-                </Ellipse.RenderTransform>
-              </Ellipse>
-              <Grid x:Name="CueStampDisc" Width="30" Height="30" RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                  <ScaleTransform x:Name="CueStampScale" />
-                </Grid.RenderTransform>
-                <Ellipse Fill="{StaticResource AmberBrush}" />
-                <Path x:Name="CueStampCheck" Data="M 8.5,15.5 L 13,20 L 21.5,10.5" Stroke="{StaticResource GroundBrush}" StrokeThickness="2.6"
-                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
-                <!-- SEEN IN YOUR STASH's stamp: the stash grid glyph the marks carry, in place of the check (MainWindow.StashCue). -->
-                <FontIcon x:Name="CueStampGlyph" Glyph="&#xE80A;" FontSize="14" Foreground="{StaticResource GroundBrush}"
-                          HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+          <!-- The words as wide as the map's column (CueStack's MaxWidth, ShowCue). YOUR EXTRACTS THIS RAID's cue, whole,
+               where the room between the preview label and the tour's band is too short for it even with its title and
+               rows drawn smaller: drawn smaller to that room, never cut (QA pass 3, 2026-10-15, the coordinator's rule;
+               MainWindow.RollCall, FitRollCue). Any other cue stands at its size. -->
+          <Viewbox x:Name="CueFit" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly">
+            <StackPanel x:Name="CueStack" Spacing="10" Padding="24,30">
+              <Rectangle x:Name="CueRuleTop" Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
+                <Rectangle.RenderTransform>
+                  <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
+                </Rectangle.RenderTransform>
+              </Rectangle>
+              <!-- QUEST COMPLETE's stamp: the done objective's check on the quests' gold, popping in as a ring leaves it
+                   (owner, 2026-10-07: "For completed quests, also make a nice animation"). No text in it, so scaling it
+                   blurs nothing. -->
+              <Grid x:Name="CueStamp" Width="44" Height="44" HorizontalAlignment="Center" Visibility="Collapsed">
+                <Ellipse x:Name="CueStampRing" Width="44" Height="44" Stroke="{StaticResource AmberBrush}" StrokeThickness="2" RenderTransformOrigin="0.5,0.5">
+                  <Ellipse.RenderTransform>
+                    <ScaleTransform x:Name="CueStampRingScale" />
+                  </Ellipse.RenderTransform>
+                </Ellipse>
+                <Grid x:Name="CueStampDisc" Width="30" Height="30" RenderTransformOrigin="0.5,0.5">
+                  <Grid.RenderTransform>
+                    <ScaleTransform x:Name="CueStampScale" />
+                  </Grid.RenderTransform>
+                  <Ellipse Fill="{StaticResource AmberBrush}" />
+                  <Path x:Name="CueStampCheck" Data="M 8.5,15.5 L 13,20 L 21.5,10.5" Stroke="{StaticResource GroundBrush}" StrokeThickness="2.6"
+                        StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                  <!-- SEEN IN YOUR STASH's stamp: the stash grid glyph the marks carry, in place of the check (MainWindow.StashCue). -->
+                  <FontIcon x:Name="CueStampGlyph" Glyph="&#xE80A;" FontSize="14" Foreground="{StaticResource GroundBrush}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                </Grid>
               </Grid>
-            </Grid>
-            <!-- The title and its lines on their halo, the dark the map's labels stand on, around their letters only:
-                 YOUR EXTRACTS THIS RAID's band goes with its rows as their icons fly out, and its words stay on this until
-                 they fade, without covering an extract that lands under them (owner, 2026-10-15, from a panel of four: A,
-                 "Roll call, then fly-out"; MainWindow.RollCall). Shown only as the band goes. -->
-            <Grid>
-              <Grid x:Name="CueEyebrowHalo" IsHitTestVisible="False" Opacity="0" />
-              <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
-                         CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
-            </Grid>
-            <Grid>
-              <Grid x:Name="CueTitleHalo" IsHitTestVisible="False" Opacity="0" />
-              <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="48" FontWeight="SemiBold"
-                         FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}">
-                <TextBlock.RenderTransform>
-                  <TranslateTransform x:Name="CueTitleShift" />
-                </TextBlock.RenderTransform>
-              </TextBlock>
-            </Grid>
-            <Grid x:Name="CueDetailBox" Visibility="Collapsed">
-              <Grid x:Name="CueDetailHalo" IsHitTestVisible="False" Opacity="0" />
-              <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
-                         Foreground="{StaticResource MutedBrush}" Visibility="Collapsed" />
-            </Grid>
-            <!-- YOUR EXTRACTS THIS RAID's rows, nearest first: each extract's triangle, its name and "???" where the game marks it
-                 "??:??:??", in columns of up to four; each triangle flies to its place on the map (MainWindow.RollCall). Drawn
-                 smaller only where the map's column has no room for them, never cut. -->
-            <Viewbox x:Name="CueExitsBox" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,6,0,0" Visibility="Collapsed">
-              <Grid x:Name="CueExits" ColumnSpacing="28" RowSpacing="5" />
-            </Viewbox>
-            <!-- A raid loading's or a group pick's kit, pictured (owner, 2026-10-03: "with icon previews"): a reminder
-                 to take in at a glance, "did I pack everything?", so pictures and nothing to read (owner, 2026-10-04).
-                 Rows of eight, up to three, built in ShowCueKit; never scaled, like the text. -->
-            <TextBlock x:Name="CueKitLabel" Text="{x:Bind local:ViewTexts.RaidCheckYourKit}" HorizontalAlignment="Center" Style="{StaticResource EyebrowText}" Margin="0,8,0,0" Visibility="Collapsed" />
-            <StackPanel x:Name="CueKit" HorizontalAlignment="Center" Spacing="8" Visibility="Collapsed" />
-            <!-- The first raid's one extra line (owner, 2026-10-09, the tour's first-time lines): the habit Shturmap needs,
-                 said when it matters. Once, then never again (MainWindow.Tour, FirstRaidLine). -->
-            <TextBlock x:Name="CueFirst" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" Margin="0,10,0,0"
-                       FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="200"
-                       Foreground="{StaticResource AmberBrush}" Visibility="Collapsed" />
-            <Rectangle x:Name="CueRuleBottom" Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
-              <Rectangle.RenderTransform>
-                <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
-              </Rectangle.RenderTransform>
-            </Rectangle>
-          </StackPanel>
+              <!-- The title and its lines on their halo, the dark the map's labels stand on, around their letters only:
+                   YOUR EXTRACTS THIS RAID's band goes with its rows as their icons fly out, and its words stay on this until
+                   they fade, without covering an extract that lands under them (owner, 2026-10-15, from a panel of four: A,
+                   "Roll call, then fly-out"; MainWindow.RollCall). Shown only as the band goes. -->
+              <Grid>
+                <Grid x:Name="CueEyebrowHalo" IsHitTestVisible="False" Opacity="0" />
+                <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
+                           CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
+              </Grid>
+              <!-- The title in two lines at most (QA pass 3, 2026-10-15: at 900×560 YOUR EXTRACTS THIS RAID took three; owner,
+                   confirmed the same day): where the map's column is too narrow for two at its 48 px (the smallest window),
+                   it breaks where two lines take the least width and is drawn smaller to the column, never cut, as the rows
+                   are (FitCueTitle). -->
+              <Viewbox x:Name="CueTitleBox" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly">
+                <Grid>
+                  <Grid x:Name="CueTitleHalo" IsHitTestVisible="False" Opacity="0" />
+                  <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="48" FontWeight="SemiBold"
+                             FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}">
+                    <TextBlock.RenderTransform>
+                      <TranslateTransform x:Name="CueTitleShift" />
+                    </TextBlock.RenderTransform>
+                  </TextBlock>
+                </Grid>
+              </Viewbox>
+              <Grid x:Name="CueDetailBox" Visibility="Collapsed">
+                <Grid x:Name="CueDetailHalo" IsHitTestVisible="False" Opacity="0" />
+                <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
+                           Foreground="{StaticResource MutedBrush}" Visibility="Collapsed" />
+              </Grid>
+              <!-- YOUR EXTRACTS THIS RAID's rows, nearest first: each extract's triangle, its name and "???" where the game marks it
+                   "??:??:??", in columns of up to four; each triangle flies to its place on the map (MainWindow.RollCall). Drawn
+                   smaller only where the map's column has no room for them, never cut. -->
+              <Viewbox x:Name="CueExitsBox" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,6,0,0" Visibility="Collapsed">
+                <Grid x:Name="CueExits" ColumnSpacing="28" RowSpacing="5" />
+              </Viewbox>
+              <!-- A raid loading's or a group pick's kit, pictured (owner, 2026-10-03: "with icon previews"): a reminder
+                   to take in at a glance, "did I pack everything?", so pictures and nothing to read (owner, 2026-10-04).
+                   Rows of eight, up to three, built in ShowCueKit; never scaled, like the text. -->
+              <TextBlock x:Name="CueKitLabel" Text="{x:Bind local:ViewTexts.RaidCheckYourKit}" HorizontalAlignment="Center" Style="{StaticResource EyebrowText}" Margin="0,8,0,0" Visibility="Collapsed" />
+              <StackPanel x:Name="CueKit" HorizontalAlignment="Center" Spacing="8" Visibility="Collapsed" />
+              <!-- The first raid's one extra line (owner, 2026-10-09, the tour's first-time lines): the habit Shturmap needs,
+                   said when it matters. Once, then never again (MainWindow.Tour, FirstRaidLine). -->
+              <TextBlock x:Name="CueFirst" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" Margin="0,10,0,0"
+                         FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="200"
+                         Foreground="{StaticResource AmberBrush}" Visibility="Collapsed" />
+              <Rectangle x:Name="CueRuleBottom" Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
+                <Rectangle.RenderTransform>
+                  <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
+                </Rectangle.RenderTransform>
+              </Rectangle>
+            </StackPanel>
+          </Viewbox>
         </Grid>
 
         <!-- The raid replay's band at the map's foot, the timeline in it (owner, 2026-10-07; Controls.ReplayBand). Clear of
@@ -1345,10 +1357,15 @@
         </controls:ReplayBand>
 
         <!-- What's New's preview of something that isn't on the map (the raid card's clock): the app's own control, with
-             example values, on a plate over the dimmed map. -->
+             example values, on a plate over the dimmed map. Between the preview label and the map's foot (WIKI MAP and
+             the credit): where the plate is taller than that room, it is drawn smaller to fit, never cut, its caption
+             always whole under it (QA pass 3, 2026-10-15: at 900×560 the notes' example card was cut at its top, its
+             caption not drawn and its foot under WIKI MAP; PlaceWhatsNewPlate). -->
         <Grid x:Name="WhatsNewPlate" Visibility="Collapsed" IsHitTestVisible="False" Background="#960B0C0B">
           <StackPanel x:Name="WhatsNewPlateStack" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
-            <Border x:Name="WhatsNewPlateBox" Width="360" Padding="20,18" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" />
+            <Viewbox x:Name="WhatsNewPlateFit" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly">
+              <Border x:Name="WhatsNewPlateBox" Width="360" Padding="20,18" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" />
+            </Viewbox>
             <TextBlock x:Name="WhatsNewPlateNote" Style="{StaticResource EyebrowText}" Margin="0" HorizontalAlignment="Center" />
           </StackPanel>
         </Grid>
@@ -1483,7 +1500,7 @@
           <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapZoomInTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapZoomInName}"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapZoomOutTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapZoomOutName}"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
         </StackPanel>
-        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
+        <StackPanel x:Name="MapFoot" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
           <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
           <HyperlinkButton Padding="0" NavigateUri="{x:Bind ViewModel.WikiMap, Mode=OneWay}" Click="OnWikiMapClick"
                            Visibility="{x:Bind ShownIfLink(ViewModel.WikiMap), Mode=OneWay}"

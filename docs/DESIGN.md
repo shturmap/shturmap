@@ -460,8 +460,15 @@ quoting it anywhere new.
     should appear more slowly; a briefly tried 8 s RAID LOADING cue was too long): a dark band springs open
     behind the text with a short gold flash, gold rules shoot out from the centre with a slight overshoot, and the
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
-    flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
-    suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks.
+    flickering in gold and settling in ink (each through glyphs no wider than itself, so a title never grows while it
+    decodes: QA pass 3, 2026-10-15, the roll call's title, held at its width as it ends, lost its last word at 1600×900),
+    with one line under it (what the raid can do, or the next raid suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks.
+    **Its title in two lines at most** (owner, confirmed 2026-10-15 (evening page, E1); QA pass 3, the same day: at
+    900×560 "YOUR EXTRACTS THIS RAID · 7 OF 12" took three lines at 48 px, and the cue ran under the preview label and
+    the tour's band): where one or two lines hold it in the map's column, it breaks there; where the column is too
+    narrow for two at 48 px (the smallest window), it breaks where two lines take the least width, never inside a word,
+    and is drawn smaller to the column, never cut, as the roll call's rows are (`MainWindow.FitCueTitle`; at 900×560
+    YOUR EXTRACTS THIS RAID stands at about 95 % of its size in English, 98 % in German).
     The map's floor picker steps aside while it is up (QA pass, 2026-10-15: at the smallest window it lay over the end
     of the title; "Screen anatomy", *Plan*).
     RAID OVER of a raid with a replay gives way after its entrance to the replay's band at the map's foot ("Map
@@ -510,11 +517,26 @@ quoting it anywhere new.
     lists up to twelve extracts for a side; past that the twelfth place would say "+N"), filled down the first column
     first and evened out (six stand three and three); each row is the extract's triangle as the map draws it at the size
     its flight starts from (0.8 of the map's: R 6 DIP, its 3 DIP dark collar, the kind's colour, the shared kind's split
-    line), its name in the cue's 15 px and "???" muted. A name too long for its column breaks between words, never
+    line), its name in the cue's 15 px and "???" muted after it, joined to its last word, so it stands after a broken
+    name's last line, never inside the name (QA pass 3, 2026-10-15: "Boiler Room Basement ???" over "(Co-op)", German
+    "Taxi in der ???" over "Primorsky-Straße"). A name too long for its column breaks between words, never
     inside one, nor at a hyphen in it (QA pass, 2026-10-15: "Primorsky Ave Taxi V-" over "Ex" in the pseudo-language at
     900×560; a word joiner follows each hyphen, Bahnschrift having no non-breaking hyphen; `Rules.WordBreaks`), and
     where the map's column has no room for the rows even so (twelve at the smallest window), they are drawn smaller to
-    fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
+    fit, never cut, as the tour's plates are; they keep clear of the map's buttons.
+    **The whole cue in its room** (the coordinator's rule after QA pass 3, 2026-10-15: at 900×560 What's New's preview
+    label covered the cue's top rule and eyebrow, and in the tour's YOUR SCREENSHOT KEY its band covered the rows, "An
+    example, not your raid." and the rows' hand-off points; `MainWindow.FitRollCue`): eyebrow, title, the example's line
+    and the rows stand 8 DIP under the notes at the map's top (What's New's or the tour's preview label, a notice) and 16
+    above the tour's band, in the middle of the map above the band and lower only as far as the label needs, as What's
+    New's plate does. Where that room is too short, the rows are drawn smaller, down to 60 % of the size the column's
+    width leaves them; past that the whole cue is drawn smaller to the room, never cut, as the tour's plates are, and an
+    example list names fewer extracts while the cue would stand under 60 %, the farthest of its lit ones going as the
+    tour's plate drops them, down to two lit and the "??:??:??" one. So the rows, and the points their icons lift off
+    from, are always in view. At 900×560 What's New's cue stands whole under its label, its rows at their size in
+    English and at 95 % in German; the tour's has some 143 DIP between its label and its band and is drawn at about 41 %
+    in English (the same in German), its example already down to two lit and the "??:??:??" one by the plate's rule.
+    The title's halo is
     the dark the map's labels stand on, around its letters only (and the eyebrow's, and the example's line), so an
     icon landing under the title still shows between them; until 2026-10-15's build a halo was a dark box behind the
     title, which hid a landing in the replay's stills. A list that joins the cue holds the band where it stands, so the
@@ -943,8 +965,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID" beside it, or under it where the map leaves too
     little room for both, each whole, a plate then standing as much lower than the map's middle as it takes to keep clear
     of the label (QA pass, 2026-10-15: at 900×560 the stash lines' "AN EXAMPLE, NOT YOUR STASH" ran out of the label's
-    frame, the German one by its last word), and leaving puts the map back as it was: a
-    preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
+    frame, the German one by its last word) and above the map's foot, WIKI MAP and the credit; a plate taller than the
+    room between them is drawn smaller to fit, never cut, as the tour's plates are, its caption whole under it (QA pass
+    3, 2026-10-15: at 900×560 the `notes` example card was cut at its top, portrait, name and pen gone, its caption not
+    drawn and its foot under WIKI MAP and the credit; at 900×560 it now stands at about 82 % in English, 74 % in
+    German; YOUR EXTRACTS THIS RAID keeps clear of the label too, principle 11), and leaving puts the map back as it
+    was: a preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
     cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`, `notes`) leaves the map's scene alone, so
     the last position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
     on the `tour:5` line below; `SceneGate.MakeAnew`). The
@@ -1309,8 +1335,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   for each of its extracts, the view taking them in with the position above the tour's band, and each triangle flown
   to its place, where it rings out, nearest the position first, while the rest are struck out (as built, 2026-10-15:
   the plate, then the cue, centred above the tour's band, with the map above the band cut out of the dim while it
-  plays; the view's move is the roll call's, at 1.2 s; when the cue has gone the frame goes to the listed extracts and
-  the position; with the effects off, and in a snapshot, the chapter's end: the view on them, simply lit, no cue); the chapter's map is a
+  plays; the cue whole, under the label and above the band with its rows, its title in two lines at most, drawn smaller
+  where that room is too short, never cut, as the plates are, and the example naming fewer extracts while it would
+  stand under 60 % (owner, confirmed 2026-10-15 (evening page, E1), for the title; the coordinator's rule for the rest,
+  after the third QA pass: at 900×560 the band covered its rows, "An example, not your raid." and the rows' hand-off
+  points; principle 11); the view's move is the roll call's, at 1.2 s; when the cue has gone the frame goes to the
+  listed extracts and the position; with the effects off, and in a snapshot, the chapter's end: the view on them, simply lit, no cue); the chapter's map is a
   PMC raid's, without the Scav extracts, as What's New's `extracts` preview is), IN THE RAID (RAID LOADING with an
   example kit, then the raid card's head with example values; a PMC raid's map too, while PICK AND POINT's, in the
   menus, has both sides' extracts, as Plan's map has) and HELP AND FEEDBACK (the story chapters aren't shown yet,
@@ -1378,7 +1408,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     and ends at the band's top. The label stays where it is, in the dim unless a chapter cuts out the whole map (PICK
     AND POINT, IN THE RAID), where it is read whole. Of the QA's two ways, the label stepping aside while a chapter
     frames the map's top would have left more room at the smallest window, but the label is what says the map is an
-    example once the cue has gone. The roll call's cue keeps its own place above the band.
+    example once the cue has gone. The roll call's cue keeps its own place above the band and under the label, drawn
+    smaller, never cut, where the room between them is too short for it (principle 11).
     IN THE RAID's example card says NEXT as the raid card does: in a few words where the data is English ("Get valuable
     folder"; `Planning.ObjectiveSynopses`), else tarkov.dev's whole sentence, wrapping (owner, 2026-10-11: until then
     it was cut at 34 characters, mid-word, German "Besorge die geschützte Dokumenten…"), and its clock reads 13 MIN

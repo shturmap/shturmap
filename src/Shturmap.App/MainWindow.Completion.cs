@@ -52,6 +52,8 @@ public sealed partial class MainWindow
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        // The names together in two lines at most, as every cue's title (FitCueTitle).
+        FitCueTitle(title);
         if (new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
         {
             DecodeCueTitle(title);

@@ -432,15 +432,38 @@ public sealed partial class MainWindow
 
     // The plate stands in the middle of the map, and lower only as far as it must to keep clear of the notes at the map's
     // top, its preview label among them (QA pass of 2026-10-15: at 900×560 the label, in two lines now, lay over the item
-    // card's top). Centred under a padding, the plate moves down by half of it.
+    // card's top), and higher only as far as it must to keep clear of the map's foot, WIKI MAP and the credit. Where it is
+    // taller than the room between them, its box is drawn smaller to fit, never cut, as the tour's plates are, and its
+    // caption stands whole under it (QA pass 3, 2026-10-15: at 900×560 the notes' example card was cut at its top, its
+    // portrait, name and pen gone, its caption not drawn and its foot under WIKI MAP and the credit). Centred between two
+    // paddings, the plate moves by half of their difference.
     private void PlaceWhatsNewPlate()
     {
         const double gap = 8;
-        var clear = MapNotes.Margin.Top + MapNotes.ActualHeight + gap;
-        var top = (WhatsNewPlate.ActualHeight - WhatsNewPlateStack.ActualHeight) / 2;
-        var padding = Math.Max(0, 2 * (clear - top));
-        if (Math.Abs(WhatsNewPlate.Padding.Top - padding) > 0.5)
-            WhatsNewPlate.Padding = new Thickness(0, padding, 0, 0);
+        var height = WhatsNewPlate.ActualHeight;
+        if (height <= 0 || WhatsNewPlate.Visibility != Visibility.Visible)
+            return;
+        var top = MapNotes.Margin.Top + MapNotes.ActualHeight + gap;
+        var bottom = height - (MapFoot.ActualHeight > 0 ? MapFoot.Margin.Bottom + MapFoot.ActualHeight : 0) - gap;
+        // The box at its own size (measured whole in its Viewbox), and the room the caption leaves it.
+        var box = WhatsNewPlateBox.DesiredSize.Height;
+        var caption = WhatsNewPlateStack.Spacing + WhatsNewPlateNote.ActualHeight;
+        var room = Math.Max(40, bottom - top - caption);
+        var fit = box > room + 0.5 ? room : double.PositiveInfinity;
+        var was = WhatsNewPlateFit.MaxHeight;
+        if (double.IsInfinity(fit) != double.IsInfinity(was) || (!double.IsInfinity(fit) && Math.Abs(fit - was) > 0.5))
+        {
+            WhatsNewPlateFit.MaxHeight = fit;
+            // In the app log (developer detail), for the QA's stills.
+            if (!double.IsInfinity(fit))
+                AppLog.Debug(FormattableString.Invariant($"What's New's plate: its box drawn at {fit / box:0.00}, {fit:0} of {box:0} DIP"));
+        }
+        var stack = Math.Min(box, room) + caption;
+        var at = Math.Clamp((height - stack) / 2, top, Math.Max(top, bottom - stack));
+        var shift = 2 * at - (height - stack);
+        var padding = shift >= 0 ? new Thickness(0, shift, 0, 0) : new Thickness(0, 0, 0, -shift);
+        if (Math.Abs(WhatsNewPlate.Padding.Top - padding.Top) > 0.5 || Math.Abs(WhatsNewPlate.Padding.Bottom - padding.Bottom) > 0.5)
+            WhatsNewPlate.Padding = padding;
     }
 
     private void EndWhatsNewPreview()

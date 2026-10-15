@@ -83,8 +83,9 @@ t0 0.63, t1 2.55, t2 1.93, t3 3.65, t4 5.9.
   "?", the other PMC extracts struck out (a faint outline with a stroke), no Scav extract on the map; nothing ringing; the
   view where the roll call left it. Follow my position is off, so nothing moves it back (principle 8).
 
-At 900×560 the title takes three lines and the band most of the map's column; the four rows stand in one column, clear
-of the map's buttons. Once the band's dark has gone, the title on its halo lies over the middle of the map, where some
+At 900×560 the title takes two lines, drawn a little smaller to the map's column (owner, confirmed 2026-10-15; the app
+log's `Roll call's cue:` line gives the sizes), and the band most of the column; the four rows stand in one column,
+clear of the map's buttons, "???" after ZB-1013's name. Once the band's dark has gone, the title on its halo lies over the middle of the map, where some
 icons land, until it fades: the design keeps it 1.5 s past the last landing.
 
 ## What would be a fault
@@ -96,4 +97,7 @@ icons land, until it fades: the design keeps it 1.5 s past the last landing.
   roll call for the same list.
 - The rows cut, a name broken inside a word, the band taller than the map's column (docs/DESIGN.md: twelve rows, the most
   a side has, are drawn smaller at the smallest window rather than cut).
+- The title in three lines, or sticking out of its slot in a still taken while it decodes (`CueTitle` in
+  `window.layout.json`; QA pass 3, 2026-10-15: its gold glyphs were wider than its letters, and at 1600×900 "7 OF" ended
+  it); "???" inside a name broken over two lines rather than after its last line.
 - A notice "Your extract list is read: …" beside the cue (it went with the cue, 2026-10-15).
