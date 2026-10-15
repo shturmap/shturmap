@@ -392,6 +392,14 @@
     <value>Ein Beispiel, nicht dein Stash.</value>
     <comment>en: An example, not your stash.</comment>
   </data>
+  <data name="CueExitsListedEyebrow" xml:space="preserve">
+    <value>AUS DEINEM SCREENSHOT</value>
+    <comment>en: FROM YOUR SCREENSHOT</comment>
+  </data>
+  <data name="CueExitsListed" xml:space="preserve">
+    <value>DEINE EXTRACTS IM RAID · {count} VON {total}</value>
+    <comment>en: YOUR EXTRACTS THIS RAID · {count} OF {total}</comment>
+  </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} „{name}“ · {build}</value>
     <comment>en: Shturmap {version} "{name}" · {build}</comment>

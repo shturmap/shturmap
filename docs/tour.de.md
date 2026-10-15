@@ -36,7 +36,7 @@ Zeig auf irgendwas: Überall, wo es vorkommt, leuchtet es auf.
 ## key · Map
 SCREENSHOT-TASTE
 Drück sie im Raid ab und zu: Der Dateiname sagt, wo du bist.
-Öffne vorher die Extract-Liste (zweimal O): Shturmap liest, welche Extracts deine sind.
+Öffne vorher die Extract-Liste (zweimal O): Shturmap zeigt, welche Extracts deine sind und wo.
 - list · IM SPIEL: ZWEIMAL O, DANN SCREENSHOT MIT {key}
 - read · DEINE LISTE IN DIESEM RAID: {n} VON {all, plural, one {# EXTRACT} other {# EXTRACTS}}
 

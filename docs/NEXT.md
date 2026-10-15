@@ -6,6 +6,83 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-15: the extract list's roll call
+
+**The ask** (owner, 2026-10-15): "When the extraction list is read, I want a nice fancy animation in line with the
+others where a list of the extracts appears in the middle of the screen along with their icons. Then, the icons move
+where extracts are (also outside of the current view pane) so it contextualizes them and the player knows where they
+are." From a panel of four, drawn in the app's look on the same day, the owner chose A, "Roll call, then fly-out"
+(no notes). Not taken: B, badges at the map's edge for the extracts out of view, with no change of view; C, the
+fly-out and then a glide back; D, the cue alone with the ring of 2026-10-14. The panel stays outside the repository.
+
+**The decision, as A was drawn.** DESIGN.md is the binding description: §1 (the fourth exception for eye candy),
+§4 principles 2 and 11 (YOUR EXTRACTS THIS RAID), "Design system", *Motion*, "Screen anatomy" (the extract list, the
+tour's chapter 5, What's New's `extracts`) and "Map drawing", *The player's extracts this raid* and *The view leaves
+the player*. In short, from the list's arrival (a screenshot taken in the last 30 s, once per list):
+
+- 0 s: the cue across the middle of the map column, "FROM YOUR SCREENSHOT" over "YOUR EXTRACTS THIS RAID · 6 OF 12",
+  the title decoding, the gold rule shooting out; from 0.5 s a row per listed extract rises in, 0.1 s apart, nearest
+  you first: its triangle in its kind's colour, its name, "???" for a "??:??:??" one. No row for a struck-out extract
+  or a transit.
+- 1.2 s: the view frames every listed extract and you over 1.2 s, eased in and out, with the label room on the right.
+- 1.6 s: each triangle lifts off its row, 0.16 s apart, and flies 0.9 s on an eased arc to its extract, landing with
+  the ring of 2026-10-14; its row fades as it leaves, and the band's dark backing goes with the rows (the panel's
+  drawing had four of seven landings under the band). With six, the last lands at 3.3 s; the title stays on its halo
+  until 4.8 s, the rings end at about 5.4 s.
+- After: the view stays fitted. Follow my position on: the next position glides it back as usual (2.4 s). Follow off:
+  principle 8 holds, it stays until the player moves the view (a drag, a zoom, F) **(2026-10-15; to confirm)**: the
+  one point the owner didn't note on the panel.
+- A list while the cue is up joins it (rows after the others, flown after them); one after it has gone rings what it
+  lit anew where they stand; the same list again changes nothing. Animation effects off: the cue stands 5 s with all
+  its rows, the view fits at once, the extracts are simply lit. The tour's chapter 5 and What's New's `extracts` show
+  the example list the same way.
+
+**Why A:** the only option doing both halves of the ask; one change of view, made while the cue says why (principle
+11); the fitted view is the one a player at the spawn plans the route on; built from what is there: the cue's band,
+the ring, the camera's framing and glide.
+
+**What changes of the ring of 2026-10-14:** the rows and flights go nearest you first, lit and "??:??:??" alike, as
+drawn (the ring took the lit ones first, at most six turns each); a list after the cue has gone rings only what it lit
+or marked anew (the ring's rule had a list after the rings were over ring them all again). Read into the decision and
+written so in DESIGN.md: the title's count follows the rows a joining list adds, as the stash cue's line does.
+
+**Not settled** (not drawn on the panel; DESIGN.md says nothing of them yet):
+
+- An extract a joining list adds that lies outside the fitted view. Proposed: the view frames them all again, with
+  the same 1.2 s move.
+- The notice "Your extract list is read: 6 extracts for this raid" still comes once per raid beside the cue; QUEST
+  COMPLETE and SEEN IN YOUR STASH each replaced their notice.
+- Chapter 5's plate says "YOUR LIST THIS RAID: {n} OF {all} EXTRACTS" once read, and the cue says the same right
+  after it. Dropping the plate's line takes its `read` word in docs/tour.md and its `TourTests` check with it.
+
+**What is built where** (this commit has the docs, the cue's texts and the tour's words; the rest is to build, and
+the UI QA role reviews it before it is reported done):
+
+- **Map side** (`Shturmap.Map`): `MapScene.CallOutExits` in place of `RingExits`: the turns, nearest you first; each
+  triangle's flight from where its row hands it over (a point on screen) to where the frame draws its symbol (on its
+  leader where it is set apart, so it follows the view still settling), 0.9 s on an eased arc; and from its landing
+  the ring as `MapRenderer.DrawExitsLit` draws it today. A listed extract stays solid and unlit until its landing. A
+  list joining while the cue is up takes the turns after the last; one after the cue rings in place by the ring's
+  rule. The flight is never drawn under the band's backing.
+- **The cue's body** (`MainWindow`, `CuePanel`): the rows, each the extract's triangle (as the legend draws it), its
+  name and "???", rising in from 0.5 s; each row's triangle handed to the map as it lifts off, the row fading; the
+  backing going with the rows; the title on its halo until 1.5 s after the last landing; rows a joining list adds.
+  Its texts, `AppTexts.CueExitsListedEyebrow` and `AppTexts.CueExitsListed`, are in (English and German).
+- **Orchestration** (`MainWindow`, where a list just read calls `RingExits` today): the 30 s rule and once per list as
+  before; the cue (a kind of its own, joining itself as the stash cue does); the fit at 1.2 s (`Map.AnimateView` to
+  `Map.FramingOf` the listed extracts and the position), which stops a Follow glide under way; nothing moves the view
+  back afterwards; animation effects off: the cue still for 5 s and `Map.Jump`. The tour's chapter 5
+  (`MainWindow.Tour`, framed above the tour's band, with "An example, not your raid.") and What's New's `extracts`
+  (`StageExtractList`, no position) call out the example list the same way.
+- **The frames scene `list-callout`** (`shturmap-cli frames`; DESIGN.md §8, *Animations frame by frame*, names it once
+  it is built): the call-out drawn at chosen times from t0, with the fit; per frame each triangle's place in flight,
+  its landing and its ring's values; the checks: every listed extract lands on its symbol, nothing off the list moves,
+  the last landing and the rings' end at the times above. A frames test beside `ExitRingFramesTests`.
+- **The replay script** in `tools\qa\`, with what its stills must show beside it: a raid on Customs, a position, a
+  list read, with Follow off and with Follow on, stills at 0.6, 1.4, 2.4, 3.3 and 5 s and after the next position. It
+  needs a script step that reads a list (none does: `pos` gives a position only).
+- The release that ships it adds a `tour:5` line to What's New (CLAUDE.md, the tour rule): chapter 5 changes.
+
 ## 2026-10-15: What's New's tour line tore down the tour's staging
 
 The owner, on 0.5.0's What's New line "Your extracts, clearer" (`tour:5`): "the highlight does weird movements and

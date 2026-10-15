@@ -392,6 +392,14 @@
     <value>An example, not your stash.</value>
     <comment>The SEEN IN YOUR STASH cue's line when What's New shows it with example items.</comment>
   </data>
+  <data name="CueExitsListedEyebrow" xml:space="preserve">
+    <value>FROM YOUR SCREENSHOT</value>
+    <comment>The YOUR EXTRACTS THIS RAID cue's eyebrow, over its title: a raid screenshot showed the game's extract list. Capitals.</comment>
+  </data>
+  <data name="CueExitsListed" xml:space="preserve">
+    <value>YOUR EXTRACTS THIS RAID · {count} OF {total}</value>
+    <comment>The cue's title when a raid screenshot showed the game's extract list; under it a row for each extract on the list, which then flies to its place on the map. {count}: the extracts the list names, 6; {total}: all of the map's extracts for your side, 12 (transits not counted). In the 48 px title type: keep it short. Capitals.</comment>
+  </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} "{name}" · {build}</value>
     <comment>Settings, the line at its foot. {version}: the version, 0.4.0+d349909; {name}: its release's name, Praetorian (a name, not translated); {build}: what kind of build it is (BuildInstalled, BuildDev, BuildFolder). The language's quotation marks.</comment>
