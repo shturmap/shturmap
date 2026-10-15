@@ -104,6 +104,14 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
         Say("map " + map.Name);
     }
 
+    /// <summary>The map shown as a pick in the MAP list shows it, also in a raid, where it is a look (the label says the
+    /// raid's map); the raid commands keep their map (QA pass of 2026-10-15: the look label had no script step).</summary>
+    public async Task LookAtAsync(DevMap map)
+    {
+        await session.SelectMapAsync(map.NormalizedName);
+        Say("look at " + map.Name);
+    }
+
     public void GroupPick()
     {
         if (!NeedGame() || !NeedMap())
@@ -401,10 +409,12 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 });
                 break;
             case "map":
-                if (MapNamed(step.Arg(0)) is { } map)
-                    await SelectMapAsync(map);
-                else
+                if (MapNamed(step.Arg(0)) is not { } map)
                     Say("No map " + step.Arg(0));
+                else if (step.Arg(1).Equals("look", StringComparison.OrdinalIgnoreCase))
+                    await LookAtAsync(map);
+                else
+                    await SelectMapAsync(map);
                 break;
             case "side":
                 Scav = step.Arg(0).Equals("scav", StringComparison.OrdinalIgnoreCase);
