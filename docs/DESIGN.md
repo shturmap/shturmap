@@ -504,6 +504,21 @@ quoting it anywhere new.
     them all, and they fly after the others. With animation effects off it stands 5 s with all its rows and goes; the
     view takes the extracts in at once and they are simply lit. In the tour and What's New it calls out the example
     list, with "An example, not your raid." under its title: every cue they show says it is an example.
+    As built (2026-10-15, `MainWindow.RollCall`): the rows stand in columns of up to four, up to three of them (a map
+    lists up to twelve extracts for a side; past that the twelfth place would say "+N"), filled down the first column
+    first and evened out (six stand three and three); each row is the extract's triangle as the map draws it at the size
+    its flight starts from (0.8 of the map's: R 6 DIP, its 3 DIP dark collar, the kind's colour, the shared kind's split
+    line), its name in the cue's 15 px and "???" muted. A name too long for its column breaks between words, never
+    inside one, and where the map's column has no room for the rows even so (twelve at the smallest window), they are
+    drawn smaller to fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
+    the dark the map's labels stand on, around its letters only (and the eyebrow's, and the example's line), so an
+    icon landing under the title still shows between them; until 2026-10-15's build a halo was a dark box behind the
+    title, which hid a landing in the replay's stills. A list that joins the cue holds the band where it stands, so the
+    rows still waiting lift off from where they were called; one whose extract lies outside the view the roll call took
+    has the view take them all in again, the same way (provisional, 2026-10-15: the panel drew no joining list). The
+    one-line notice "Your extract list is read: …" went with the cue (2026-10-15, provisional, as QUEST COMPLETE's and
+    SEEN IN YOUR STASH's did); the rail's line under EXTRACTS AND TRANSITS still says it. Any other cue ends it, as it
+    ends theirs; What's New's preview of it ends with the preview, the tour's with the chapter.
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -1098,10 +1113,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     unticked). Once read, each extract's small line adds "· ON YOUR LIST" or "· ON YOUR LIST · ??? IN GAME" and takes
     the way out's colour; one the list leaves out says "· NOT ON YOUR LIST", its name and distance muted, without
     what it would take, and comes after everything else. The list puts extracts first, nearest first, then the
-    transits, then the extracts the list left out (owner, 2026-10-05: "I would show primarily exfils"). A
-    notice says it once ("Your extract list is read: 6 extracts for this raid"). On the map, a list just read is called
-    out: its extracts in a cue across the map's middle, then each flown to its place, the view taking them in (YOUR
-    EXTRACTS THIS RAID, principle 11; "Map drawing", *The player's extracts this raid*). What a raid's screenshots
+    transits, then the extracts the list left out (owner, 2026-10-05: "I would show primarily exfils"). On the map, a
+    list just read is called out: its extracts in a cue across the map's middle, then each flown to its place, the view
+    taking them in (YOUR EXTRACTS THIS RAID, principle 11; "Map drawing", *The player's extracts this raid*). The cue
+    says it, and the line under the heading; the one-line notice that said it once ("Your extract list is read: 6
+    extracts for this raid") went with the cue (2026-10-15, as QUEST COMPLETE's and SEEN IN YOUR STASH's went with
+    theirs; provisional, as theirs). What a raid's screenshots
     name adds up: a later list adds extracts and renews the "???" marks of the ones it names, and never takes one away
     (a reading that missed a row must not close an exit). A transit is never said to be on or off the list: it is open
     to everyone, and its rows aren't matched. **What counts as the list**: rows that name two or more of the map's
@@ -1258,7 +1275,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
   it, the list goes, and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
   for each of its extracts, the view taking them in with the position above the tour's band, and each triangle flown
-  to its place, where it rings out, nearest the position first, while the rest are struck out; the chapter's map is a
+  to its place, where it rings out, nearest the position first, while the rest are struck out (as built, 2026-10-15:
+  the plate, then the cue, centred above the tour's band, with the map above the band cut out of the dim while it
+  plays; the view's move is the roll call's, at 1.2 s; when the cue has gone the frame goes to the listed extracts and
+  the position; with the effects off, and in a snapshot, the chapter's end: the view on them, simply lit, no cue); the chapter's map is a
   PMC raid's, without the Scav extracts, as What's New's `extracts` preview is), IN THE RAID (RAID LOADING with an
   example kit, then the raid card's head with example values; a PMC raid's map too, while PICK AND POINT's, in the
   menus, has both sides' extracts, as Plan's map has) and HELP AND FEEDBACK (the story chapters aren't shown yet,
@@ -1536,7 +1556,12 @@ spawns below).
   the ask, changes the view once and while the cue says why, and leaves the view a player at the spawn plans the route
   on.
   The roll call's map side is `MapScene.CallOutExits`: each called extract's icon flies from its row in the band to
-  its place and lands as its ring starts (`MapRenderer.FlightAt`; the view zooms out to `Camera.FittingAll`).
+  its place and lands as its ring starts (`MapRenderer.FlightAt`; the view zooms out to `Camera.FittingAll`). The
+  window's side is `MainWindow.RollCall`: it hands each row over as the centre of its triangle in the map panel's
+  pixels (`ExitCall`), at the cue's start, and moves the view with `MapView.CallOutView` (a zoom out only, the current
+  zoom as the fit's closest; above the tour's band in the tour). Once a roll call ran in a raid (`MapScene.CalledOut`;
+  a new raid on the map, its list not read yet, forgets it), a later list after the cue rings only what it lit or
+  marked anew (`MapScene.RingExits`).
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
@@ -1545,7 +1570,10 @@ spawns below).
   With Follow my position on, the next position glides it onto the player as any new position does (2.4 s, at the
   zoom the view then has; "Screen anatomy", *Follow my position*). With Follow off, principle 8 holds, a position
   never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom, F or the
-  show-my-position button).
+  show-my-position button). A position that comes while the view is moving for the roll call (its 1.2 s; a run of
+  screenshots) pings where it is and lets the move finish; the one after it glides (2026-10-15, as built: the two
+  pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only: where every listed extract and
+  the position are in view already, it keeps its zoom and takes them into its middle.
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
@@ -2818,12 +2846,13 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
   follows it, and `DevToolsTests` fail when a verb there is missing here.
-  `snapshot` also saves the view's two tabs, writing over
+  `snapshot` also saves the view's two tabs, and while a cue is up the cue alone with its transparency (`cue.png`, its
+  place in the map's panel in the app log: `window.png` shows that panel empty), writing over
   what the folder had (one folder per moment), and expands `%VARIABLES%` in it, so a script kept in the repository
   names no user's folder. The script's path, and a folder left relative, are read from the app's working folder,
   `%USERPROFILE%` (`Program`). A `--dev-view` session starts on settings of its own, as at a first start, so the tour
@@ -2836,7 +2865,9 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   after a script without `exit`, as before.
 - `tools\qa` keeps such scripts for a QA pass, each with what its stills must show beside it: run on a developer
   build, they check in the window what no test reaches. `whatsnew-tour-line.devscript` (2026-10-15) replays the
-  owner's report on What's New's `tour:5` line (*What's New*, *The tour*).
+  owner's report on What's New's `tour:5` line (*What's New*, *The tour*); `extract-roll-call.devscript` (2026-10-15)
+  the roll call of a list read on Customs, in two raids, for stills of its start, its middle and its end ("Map
+  drawing", *A list just read is called out*).
 
 **Switching the language in a run** (developer builds only; 2026-10-10). `--switch-language <culture>` (`en-US`, `de-DE`,
 `qps-ploc`) switches the language once the window shows the game data, exactly as a choice in settings does but for
@@ -3099,7 +3130,7 @@ order (review of 2026-10-10).
 app's rules, which the Core tests compile too). Each is a `.resx` with the English texts and one `<Name>.<code>.resx`
 per language. A build makes a class of each English file (`Directory.Build.targets`, `ShturmapTexts`): a property per
 text, a method per text with placeholders, its parameters the placeholders' names in alphabetical order, called with
-named arguments (`SessionTexts.ExitListRead(count: n)`), so a misspelt or missing text, or a placeholder left out, is
+named arguments (`AppTexts.CueExitsListed(count: n, total: all)`), so a misspelt or missing text, or a placeholder left out, is
 a build error. A text is looked up in the language in use when it is shown (`UiLanguage.Text`), never kept from
 before, which is what lets the language switch while Shturmap runs; XAML binds to the classes (`{x:Bind
 local:ViewTexts.HelpAndFeedback}`) and the window updates its bindings when the language changes.
@@ -3371,8 +3402,8 @@ every issue goes through it, and the app's report is offered beside it.
   REPLAY on the last-raid line (2026-10-07; §4, "Screen anatomy"; "Map drawing", *The raid replay*). Designed and
   deferred (docs/NEXT.md): marks for what the player has. The QUEST COMPLETE cue and a completed quest's places
   ringing out (2026-10-07; §4, principle 11; "Map drawing").
-- Designed, to build (2026-10-15; docs/NEXT.md): the extract list's roll call (§4, principle 11; "Map drawing", *The
-  player's extracts this raid*). Until it is built, a list just read rings its extracts out where they stand, as
-  since 2026-10-14.
+- The extract list's roll call, designed and built (2026-10-15; docs/NEXT.md; §4, principle 11; "Map drawing", *The
+  player's extracts this raid*): a list just read is called out in YOUR EXTRACTS THIS RAID and each extract flown to
+  its place; after it, a later list rings its additions where they stand, as lists did from 2026-10-14.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).

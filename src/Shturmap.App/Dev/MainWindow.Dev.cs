@@ -183,6 +183,15 @@ public sealed partial class MainWindow
     internal async Task DevSnapshotAsync(string folder)
     {
         await SaveSnapshotAsync(folder);
+        // The cue alone, with its transparency (cue.png), right after map.png: window.png shows the map's panel empty, so
+        // a cue's dark band (YOUR EXTRACTS THIS RAID's going with its rows, its title's halo) shows only over map.png, put
+        // in at the place the log line gives.
+        if (CuePanel.Visibility == Visibility.Visible && CuePanel.ActualHeight > 0)
+        {
+            var at = CuePanel.TransformToVisual(Map).TransformPoint(new Windows.Foundation.Point(0, 0));
+            await RenderToPngAsync(CuePanel, Path.Combine(folder, "cue.png"));
+            AppLog.Debug(FormattableString.Invariant($"Snapshot: cue.png at {at.X:0},{at.Y:0} DIP in the map's panel"));
+        }
         if (_devView is not null)
             await _devView.SaveSnapshotsAsync(folder);
     }

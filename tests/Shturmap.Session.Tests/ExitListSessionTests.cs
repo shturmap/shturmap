@@ -84,7 +84,9 @@ public class ExitListSessionTests
         Assert.Equal(ExitState.NotChecked, StateOf(s, "Transit to another map"));
         // Crossroads is the nearest, and not on the list: it comes last, after the transit.
         Assert.Equal(["Trailer Park", "ZB-1011", "Transit to another map", "Crossroads"], s.Extracts.Select(e => e.Name));
-        Assert.Contains(rig.Notices, n => n.Contains("2 extracts", StringComparison.Ordinal));
+        // No notice: the window calls the list out with YOUR EXTRACTS THIS RAID, and the rail says it was read (owner,
+        // 2026-10-15, from a panel of four: A; until then "Your extract list is read: 2 extracts for this raid").
+        Assert.DoesNotContain(rig.Notices, n => n.Contains("extract", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -171,7 +173,7 @@ public class ExitListSessionTests
         Assert.Equal(ExitState.Listed, StateOf(s, "ZB-1011"));
         Assert.Equal(ExitState.NotListed, StateOf(s, "Crossroads"));
         Assert.Equal(ExitState.NotChecked, StateOf(s, "Transit to another map"));
-        Assert.Contains(rig.Notices, n => n.Contains("2 extracts", StringComparison.Ordinal));
+        Assert.DoesNotContain(rig.Notices, n => n.Contains("extract", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>A 2560×1440 screenshot's PNG with the game's list in its top right corner, as the game lays it out, the
@@ -206,6 +208,37 @@ public class ExitListSessionTests
         using var png = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
         return png.ToArray();
     }
+
+#if DEVTOOLS
+    // A developer script's "exits" step (tools\qa\extract-roll-call.devscript): the rows go the way a screenshot's reading
+    // goes once text recognition hands it over, matched to the map's exits for the side, taken as read now (the window
+    // calls a list out only when it is from a screenshot taken in the last 30 s).
+    [Fact]
+    public async Task A_scripts_list_is_taken_as_a_screenshot_taken_now_would_be()
+    {
+        await using var rig = await RaidOnCustoms(_ => null);
+        var asked = DateTime.Now;
+        Assert.Null(await rig.Session.DevReadExitsAsync([("Trailer Park", true), ("ZB-1011", false)]));
+        var s = await rig.Until(s => s.ExitsReadAt is not null, "the list read");
+        Assert.InRange(s.ExitsReadAt!.Value, asked, DateTime.Now);
+        Assert.Equal(ExitState.Unsure, StateOf(s, "Trailer Park"));
+        Assert.Equal(ExitState.Listed, StateOf(s, "ZB-1011"));
+        Assert.Equal(ExitState.NotListed, StateOf(s, "Crossroads"));
+        Assert.DoesNotContain(rig.Notices, n => n.Contains("extract", StringComparison.OrdinalIgnoreCase));
+
+        // "all": every extract of the side, none marked; the Scav's isn't the PMC's.
+        Assert.Null(await rig.Session.DevReadExitsAsync(null));
+        s = await rig.Until(s => StateOf(s, "Crossroads") == ExitState.Listed, "every extract listed");
+        Assert.Equal(ExitState.Listed, StateOf(s, "Trailer Park"));
+        Assert.Equal(ExitState.NotChecked, StateOf(s, "Transit to another map"));
+
+        // Out of a raid there is no list to read.
+        rig.Log("PrepareSelectedProfileLocally ProfileId:000000000000000000000003 AccountId:0");
+        await rig.Until(s => s.Raid.Phase == RaidPhase.Menu, "the raid over");
+        Assert.NotNull(await rig.Session.DevReadExitsAsync(null));
+        Assert.Null(rig.Snapshot.ExitsReadAt);
+    }
+#endif
 
     [Fact]
     public void A_sides_exits_are_the_ones_a_row_can_name()

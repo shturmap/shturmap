@@ -12,10 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ExitListRead" xml:space="preserve">
-    <value>Deine Extract-Liste wurde gelesen: {count, plural, one {# Extract} other {# Extracts}} für diesen Raid</value>
-    <comment>en: Your extract list is read: {count, plural, one {# extract} other {# extracts}} for this raid</comment>
-  </data>
   <data name="NoGameTitle" xml:space="preserve">
     <value>Kein Spiel auf diesem PC gefunden</value>
     <comment>en: No game found on this PC</comment>

@@ -1,4 +1,6 @@
 #if DEVTOOLS
+using Shturmap.Core.Raid;
+using Shturmap.Core.Screenshots;
 using Shturmap.Data.TarkovDev;
 using Shturmap.Game.Install;
 using Shturmap.Map;
@@ -47,6 +49,35 @@ public sealed partial class GameSession
             Say(DataNotice(problem), 30, offersReport: DataNoticeOffersReport(problem));
             RecomputeQuests();
             Publish();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Developer view: as if a screenshot taken now had shown the game's extract list with these rows (a script's
+    /// "exits"; owner, 2026-10-15, so the QA pass can replay the roll call without a picture): from where Windows' text
+    /// recognition hands over its reading on, every step is a real screenshot's (<see cref="TakeExitList"/>: matched to
+    /// the map's exits for the side, taken only if it is the list, the time of the reading now). A row marked is one the
+    /// game shows "??:??:??" beside. Null rows: every extract of the raid's map for the side. Says why not when nothing
+    /// is read: no raid, no data, or reading the list turned off.
+    /// </summary>
+    public async Task<string?> DevReadExitsAsync(IReadOnlyList<(string Name, bool Marked)>? rows)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (!_readExits)
+                return "Reading the extract list from screenshots is off.";
+            if (_tracker.State.Phase != RaidPhase.InRaid || _raidMap is null || _data is null)
+                return "No raid to read an extract list in.";
+            rows ??= ExitNames(_data, _raidMap.Id, ShownRaid.Side).Select(e => (e.Names[0], false)).ToList();
+            var reading = new ExitListReading(ExitList.EnglishHeader, rows.Select((r, i) => new ExitListRow($"EXFIL{i + 1:00} {r.Name}", r.Marked)).ToList());
+            AppLog.Info($"Developer view: an extract list of {reading.Rows.Count} rows, as a screenshot taken now would show it");
+            TakeExitList(reading, DateTime.Now, 0);
+            return null;
         }
         finally
         {

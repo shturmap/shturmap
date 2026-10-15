@@ -156,7 +156,8 @@ goes into no commit.
   synopses after two lines, the notes of EXIT and OR after two lines (DESIGN.md §4). A new place needs the design to say
   so first.
 - *overlap*: two texts over each other, where both can be seen. The deliberate layers (the tour, the Report dialog, a
-  cue's band, What's New's plate; `LayoutCheck.Layers`) are compared within themselves, not with what they cover.
+  cue's band, What's New's plate, and the copies of a cue's words its halo is made of; `LayoutCheck.Layers`) are
+  compared within themselves, not with what they cover.
 - *untranslated*, in the pseudo-language only: a text, or part of one, outside the pseudo-language's brackets that isn't
   a game name (the loaded game data's names, tarkov.dev's sentences and a transit's conditions), a release's name, a
   language's own name (settings: ENGLISH, DEUTSCH), a number with its unit, a key, a month or day of the culture, a

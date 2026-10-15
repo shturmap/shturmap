@@ -12,10 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ExitListRead" xml:space="preserve">
-    <value>Your extract list is read: {count, plural, one {# extract} other {# extracts}} for this raid</value>
-    <comment>Notice, once per raid, after the extract list was read from a screenshot. {count}: how many extracts it names.</comment>
-  </data>
   <data name="NoGameTitle" xml:space="preserve">
     <value>No game found on this PC</value>
     <comment>Rail, where the Plan card would be while no game is found on this PC; shown in capitals.</comment>

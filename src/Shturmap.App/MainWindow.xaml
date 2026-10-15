@@ -1213,15 +1213,15 @@
              the middle, for under three seconds, never taking a click. Owner, 2026-10-01. -->
         <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0">
           <!-- The band springs open behind the text; the text itself is never scaled, so it stays sharp. -->
-          <Grid RenderTransformOrigin="0.5,0.5">
+          <Grid x:Name="CueBand" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform>
               <ScaleTransform x:Name="CueBandScale" ScaleY="0" />
             </Grid.RenderTransform>
             <Border Background="#EB0B0C0B" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,1" />
             <Rectangle x:Name="CueFlash" Fill="{StaticResource AmberBrush}" Opacity="0" />
           </Grid>
-          <StackPanel HorizontalAlignment="Center" Spacing="10" Padding="24,30">
-            <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
+          <StackPanel x:Name="CueStack" HorizontalAlignment="Center" Spacing="10" Padding="24,30">
+            <Rectangle x:Name="CueRuleTop" Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,6">
               <Rectangle.RenderTransform>
                 <ScaleTransform x:Name="CueRuleTopScale" ScaleX="0" />
               </Rectangle.RenderTransform>
@@ -1247,16 +1247,35 @@
                           HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
               </Grid>
             </Grid>
-            <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
-                       CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
-            <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="48" FontWeight="SemiBold"
-                       FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}">
-              <TextBlock.RenderTransform>
-                <TranslateTransform x:Name="CueTitleShift" />
-              </TextBlock.RenderTransform>
-            </TextBlock>
-            <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
-                       Foreground="{StaticResource MutedBrush}" />
+            <!-- The title and its lines on their halo, the dark the map's labels stand on, around their letters only:
+                 YOUR EXTRACTS THIS RAID's band goes with its rows as their icons fly out, and its words stay on this until
+                 they fade, without covering an extract that lands under them (owner, 2026-10-15, from a panel of four: A,
+                 "Roll call, then fly-out"; MainWindow.RollCall). Shown only as the band goes. -->
+            <Grid>
+              <Grid x:Name="CueEyebrowHalo" IsHitTestVisible="False" Opacity="0" />
+              <TextBlock x:Name="CueEyebrow" HorizontalAlignment="Center" FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed"
+                         CharacterSpacing="400" Foreground="{StaticResource AmberBrush}" />
+            </Grid>
+            <Grid>
+              <Grid x:Name="CueTitleHalo" IsHitTestVisible="False" Opacity="0" />
+              <TextBlock x:Name="CueTitle" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="48" FontWeight="SemiBold"
+                         FontStretch="SemiCondensed" CharacterSpacing="160" Foreground="{StaticResource InkBrush}">
+                <TextBlock.RenderTransform>
+                  <TranslateTransform x:Name="CueTitleShift" />
+                </TextBlock.RenderTransform>
+              </TextBlock>
+            </Grid>
+            <Grid x:Name="CueDetailBox" Visibility="Collapsed">
+              <Grid x:Name="CueDetailHalo" IsHitTestVisible="False" Opacity="0" />
+              <TextBlock x:Name="CueDetail" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" FontSize="15"
+                         Foreground="{StaticResource MutedBrush}" Visibility="Collapsed" />
+            </Grid>
+            <!-- YOUR EXTRACTS THIS RAID's rows, nearest first: each extract's triangle, its name and "???" where the game marks it
+                 "??:??:??", in columns of up to four; each triangle flies to its place on the map (MainWindow.RollCall). Drawn
+                 smaller only where the map's column has no room for them, never cut. -->
+            <Viewbox x:Name="CueExitsBox" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,6,0,0" Visibility="Collapsed">
+              <Grid x:Name="CueExits" ColumnSpacing="28" RowSpacing="5" />
+            </Viewbox>
             <!-- A raid loading's or a group pick's kit, pictured (owner, 2026-10-03: "with icon previews"): a reminder
                  to take in at a glance, "did I pack everything?", so pictures and nothing to read (owner, 2026-10-04).
                  Rows of eight, up to three, built in ShowCueKit; never scaled, like the text. -->
@@ -1267,7 +1286,7 @@
             <TextBlock x:Name="CueFirst" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="640" Margin="0,10,0,0"
                        FontSize="13" FontWeight="SemiBold" FontStretch="SemiCondensed" CharacterSpacing="200"
                        Foreground="{StaticResource AmberBrush}" Visibility="Collapsed" />
-            <Rectangle Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
+            <Rectangle x:Name="CueRuleBottom" Height="2" Width="460" Fill="{StaticResource AmberBrush}" RenderTransformOrigin="0.5,0.5" Margin="0,6,0,0">
               <Rectangle.RenderTransform>
                 <ScaleTransform x:Name="CueRuleBottomScale" ScaleX="0" />
               </Rectangle.RenderTransform>

@@ -259,7 +259,11 @@ public sealed partial class MainWindow
                 }
                 break;
             case "extracts":
+                // The example list read on Customs and called out as a list just read is: YOUR EXTRACTS THIS RAID with its
+                // rows, "An example, not your raid." under the title, each icon flown to its place (MainWindow.RollCall).
                 await PreviewSceneAsync(wanted, data, "customs", [], (scene, content) => StageExtractList(data, scene, content), null, 0, pmc: true);
+                if (_previewing == wanted && Map.Scene is { } listed)
+                    RollCallExample(listed, RollOwner.WhatsNew);
                 break;
             case "joined":
                 // Gratitude's two stashes on one spot (docs/DESIGN.md "Map drawing", *Objectives of one quest on one spot*).
@@ -314,15 +318,14 @@ public sealed partial class MainWindow
         ShowFloors();
     }
 
-    // An example extract list on Customs: some lit, one marked "??:??:??", the rest struck out; rung out as a list just
-    // read is (MapScene.RingExits).
+    // An example extract list on Customs: some lit, one marked "??:??:??", the rest struck out; called out once the scene
+    // is in the view (RollCallExample), as a list just read is.
     private static void StageExtractList(Shturmap.Data.TarkovDev.GameData data, MapScene scene, MapContent content)
     {
         var (listed, unsure, notListed) = ExampleExits(data, content);
         scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsNotListed = notListed;
-        scene.RingExits(DateTime.Now);
     }
 
     /// <summary>
@@ -403,10 +406,11 @@ public sealed partial class MainWindow
         WhatsNewPlateBox.BorderThickness = new Thickness(1);
         WhatsNewPlateBox.Background = Resource("RailBrush");
         ViewModel.PreviewHint = AppTexts.PreviewClickToPlan;
-        // The stash cue shown as an example ends with its preview.
-        if (_stashExample)
+        // The stash cue shown as an example ends with its preview, and so does the example list's roll call.
+        if (_stashExample || (_rollRows.Count > 0 && _rollOwner == RollOwner.WhatsNew))
         {
             EndStashSeen();
+            EndRollCall();
             _cueStory?.Stop();
             _cueTimer?.Stop();
             CuePanel.Visibility = Visibility.Collapsed;

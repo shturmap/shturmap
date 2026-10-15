@@ -355,6 +355,76 @@ public class ExitCallOutFramesTests
         Assert.Equal(later + MapScene.CallOutLiftOff, scene.ExitFlights["extract:near"].LiftOff);
     }
 
+    // A list that comes once the roll call's cue has gone (the window rings it, MapScene.RingExits): only what it lit or
+    // marked anew rings, where it stands, a turn apart, nearest the player first, lit and "??:??:??" alike; the same list
+    // again changes nothing (owner, 2026-10-15, from the design panel: option A; docs/DESIGN.md, "Map drawing"). Until
+    // then a list after the rings rang every extract again.
+    [Fact]
+    public void After_a_roll_call_a_later_list_rings_only_what_it_lit_or_marked_anew_where_it_stands()
+    {
+        var (camera, scene) = Raid();
+        Assert.False(scene.CalledOut);
+        scene.CallOutExits(Calls(scene), T0);
+        Assert.True(scene.CalledOut);
+        var later = T0 + Ms(10_000);
+        Assert.False(scene.ExitsArrivingAt(later));
+        var called = scene.ExitsRinging.ToDictionary(r => r.Key, r => r.Value);
+
+        // The same list again: nothing rings, nothing flies.
+        scene.RingExits(later);
+        Assert.Equal(called, scene.ExitsRinging);
+        Assert.False(scene.ExitsArrivingAt(later));
+
+        // A third screenshot's list lights closed-a (102 m away) and marks closed-b "??:??:??" (361 m).
+        scene.ExitsListed = new HashSet<string>(scene.ExitsListed) { "extract:closed-a" };
+        scene.ExitsUnsure = new HashSet<string>(scene.ExitsUnsure) { "extract:closed-b" };
+        scene.ExitsNotListed = new HashSet<string>();
+        var standing = Frame(scene, camera, later);
+        scene.RingExits(later);
+        Assert.Equal(new ExitRing(later, true), scene.ExitsRinging["extract:closed-a"]);
+        Assert.Equal(new ExitRing(later + MapRenderer.ExitTurn, false), scene.ExitsRinging["extract:closed-b"]);
+        foreach (var id in Called)
+            Assert.Equal(called[id], scene.ExitsRinging[id]);
+        // Rung where they stand: nothing flies, and the others rest lit.
+        Assert.DoesNotContain("extract:closed-a", scene.ExitFlights.Keys);
+        Assert.DoesNotContain("extract:closed-b", scene.ExitFlights.Keys);
+        var ringing = Frame(scene, camera, later + Ms(300));
+        Assert.NotEmpty(ringing["extract:closed-a"].Echoes);
+        Assert.Null(ringing["extract:closed-a"].Flying);
+        Assert.Equal(standing["extract:closed-a"].At, ringing["extract:closed-a"].At);
+        Assert.Equal(0.14, ringing["extract:closed-b"].Arrival!.Value, 6);
+        foreach (var id in Called)
+        {
+            Assert.Null(ringing[id].Arrival);
+            Assert.Empty(ringing[id].Echoes);
+        }
+
+        // And again: nothing changes.
+        var rung = scene.ExitsRinging.ToDictionary(r => r.Key, r => r.Value);
+        scene.RingExits(later + Ms(500));
+        Assert.Equal(rung, scene.ExitsRinging);
+    }
+
+    [Fact]
+    public void A_new_raid_without_a_list_forgets_the_roll_call_and_a_list_after_the_rings_rings_them_all_again()
+    {
+        var (_, scene) = Raid();
+        scene.CallOutExits(Calls(scene), T0);
+        // The raid is over and the next one on the same map has no list yet: the window clears the three sets.
+        scene.ExitsNotListed = new HashSet<string>();
+        Assert.True(scene.CalledOut);
+        scene.ExitsListed = new HashSet<string>();
+        Assert.True(scene.CalledOut);
+        scene.ExitsUnsure = new HashSet<string>();
+        Assert.False(scene.CalledOut);
+        // Without a roll call, rings that are over ring again with the next list, as before.
+        var later = T0 + Ms(10_000);
+        scene.ExitsListed = new HashSet<string> { "extract:far", "extract:mid", "extract:near" };
+        scene.RingExits(later);
+        Assert.Equal(later, scene.ExitsRinging["extract:near"].At);
+        Assert.Empty(scene.ExitFlights);
+    }
+
     [Fact]
     public void With_animation_effects_off_they_are_simply_lit_and_nothing_flies()
     {
@@ -362,6 +432,8 @@ public class ExitCallOutFramesTests
         scene.Pulse = false;
         Assert.Empty(scene.CallOutExits(Calls(scene), T0));
         Assert.Empty(scene.ExitFlights);
+        // The roll call ran all the same (its cue stood still): a later list rings, with no cue.
+        Assert.True(scene.CalledOut);
         Assert.False(scene.ExitsArrivingAt(T0));
         foreach (var frame in Frames(scene, camera, 40, TimeSpan.FromMilliseconds(100)))
         {
