@@ -1550,9 +1550,12 @@ spawns below).
     leader comes or goes over a few frames instead of in one jump. One on a leader keeps it until the passes bring it
     back within three quarters of the nudge that sends one off (`LeaderKept`), and the leader line itself comes 2.5 px
     past the distance at which a symbol clears its place's dot and goes 2.5 px short of it, so neither comes and goes
-    from frame to frame. A symbol that comes into view or out of a parting cluster makes way for those already
-    standing; the push-only passes keep symbols off each other and the player, and off each other's places only
-    through the passes the symbols follow. A wheel's notch is such a move since 2026-10-15 (owner: it zooms over
+    from frame to frame; while the view zooms out, the line stays as long as the passes still have its symbol off its
+    place, though the crowd push it back over its dot for a few frames. A symbol that comes into view or out of a
+    parting cluster makes way for those already standing, and only such a one is searched a free spot for; the
+    push-only passes keep symbols off each other and the player within the same 2 px a frame, and past them only so far
+    as keeps their bodies apart (their collars may meet for a few frames), and off each other's places only through the
+    passes the symbols follow. A wheel's notch is such a move since 2026-10-15 (owner: it zooms over
     0.15 s, below, *The wheel zooms over 0.15 s*); until then it zoomed by a fifth at once and laid the crowd out afresh,
     which could flip a symbol to the other side of its place. So are + and −, the zoom buttons and a double-click since
     the evening of 2026-10-15 (owner: over 0.2 s, below, *The keys, the buttons and a double-click zoom over 0.2 s*).
@@ -1565,7 +1568,23 @@ spawns below).
     (all where a cluster parted), the largest from 120 px to 4 px, and leaders that came or went from 61 (12 symbols
     more than once) to 7 (none twice); in What's New's extracts preview, Boiler Room's 17 px and a Sniper zone's 15 px
     snap as their leaders went became slides of 2 px a frame. A glide's frame costs less than before: the repel's
-    median 0.2 ms against 0.9 ms afresh. The scale bar keeps its place by the same rule while the view moves, and
+    median 0.2 ms against 0.9 ms afresh. **At the smallest window** (QA pass 3, 2026-10-15) the whole map is about
+    500 × 481 px, and a zoom out packs a crowd tighter than its symbols fit (the roll call's on Customs with every
+    quest: about 100 symbols, the view zooming out by up to 7.7 % a frame at 30 frames a second). There the search for a
+    free spot, which then ran for every symbol still covering another, sent ones that only touched a neighbour's collar
+    up to 144 px across the crowd and back, and the push-only passes moved standing symbols up to 9.6 px a frame: hence
+    the newcomers-only search and the 2 px for pushes too, above. In `shturmap-cli frames customs --scene list-callout
+    --viewport 500x481` (30 frames a second) symbols set off their places by more than 3 px from one frame to the next
+    went from 235 (the largest 143.8 px) to 127 (6.0 px, all where a body would otherwise have covered another's or a
+    cluster merged), and leaders that came or went from 41 (8 symbols more than once) to 22 (none twice), with no body
+    covering another in any frame; at 60 frames a second, as the window draws it, from 117 (125 px) to 1 (3.1 px, where
+    a cluster merged). The 1.2 s glide at that size (`--glide 1200 --every 16 --count 76`) went from 39 to 9 (5.8 px at
+    most) and the wheel's notches (`--notch`) from 22 to 3; at 1600 × 1000 the roll call, the glide and the notches have
+    none (3 each in the glide and the notches before), and the trace says how each frame placed the symbols (afresh,
+    going on from the frame before, or as before). Still open at the smallest window: in a zoom in, a few leaders come
+    and go again within one move (9 symbols in that glide, 4 in the notches). The repel's median in the roll call's
+    zoom out there stays about 1.2 ms a frame; its slowest frame went from 44.7 ms to 5.5 ms. The scale bar keeps its
+    place by the same rule while the view moves, and
     settles once it is still (*Distances on the map*); so does a picked or pointed-at name its side (*Room for labels
     on the right*).
   - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol

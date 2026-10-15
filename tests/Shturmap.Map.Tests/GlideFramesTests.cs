@@ -54,9 +54,9 @@ public class GlideFramesTests
     // What a frame drew of a symbol: how far off its own place (pixels), whether on a leader, and the cluster it stands for.
     private sealed record Drawn(SKPoint Off, bool Leader, int Count, string Cluster);
 
-    private static Dictionary<string, Drawn> Frame(Camera camera, MapScene scene, DateTime at)
+    private static Dictionary<string, Drawn> Frame(Camera camera, MapScene scene, DateTime at, List<SymbolTrace>? drawn = null)
     {
-        var trace = new List<SymbolTrace>();
+        var trace = drawn ?? [];
         using (var bitmap = new SKBitmap(1000, 1000))
         using (var canvas = new SKCanvas(bitmap))
             MapRenderer.Render(canvas, camera, scene, 1, null, at, trace);
@@ -88,7 +88,8 @@ public class GlideFramesTests
         return frames;
     }
 
-    // The frames at which a cluster's places merged or parted: what it stands for differs from the frame before.
+    // The frames at which a cluster's places merged or parted: what it stands for differs from the frame before. One that
+    // comes into view or leaves it doesn't count: it has nothing to jump from or to.
     private static HashSet<(int Frame, string Cluster)> ClusterChanges(List<Dictionary<string, Drawn>> frames)
     {
         static Dictionary<string, string> Members(Dictionary<string, Drawn> frame) =>
@@ -97,9 +98,9 @@ public class GlideFramesTests
         for (var k = 1; k < frames.Count; k++)
         {
             var (was, now) = (Members(frames[k - 1]), Members(frames[k]));
-            foreach (var cluster in was.Keys.Union(now.Keys))
+            foreach (var cluster in was.Keys.Intersect(now.Keys))
             {
-                if (was.GetValueOrDefault(cluster) != now.GetValueOrDefault(cluster))
+                if (was[cluster] != now[cluster])
                     changes.Add((k, cluster));
             }
         }
@@ -120,6 +121,77 @@ public class GlideFramesTests
         // The crowd is one: far out many stand off on leaders, and as it opens some come back to their places.
         Assert.True(frames[0].Count(f => f.Value.Leader) >= 5, $"{frames[0].Count(f => f.Value.Leader)} leaders at the start");
         Assert.Contains(leaders, l => frames[0].TryGetValue(l.Key, out var first) && first.Leader && !frames[^1][l.Key].Leader);
+    }
+
+    // A crowd over the whole of a 1000 m sheet: 160 quests' places on a sunflower spiral, four spots where six quests each
+    // lie within a few metres, one objective's five places 30 m apart in a row, ways out round the edge and a boss; the
+    // position near the middle.
+    private static (Camera Camera, MapScene Scene) Spread()
+    {
+        var markers = new List<MapMarker>();
+        for (var i = 0; i < 160; i++)
+        {
+            var (r, a) = (450 * Math.Sqrt((i + 0.5) / 160), i * 2.39996);
+            markers.Add(Quest($"s{i}", r * Math.Cos(a), r * Math.Sin(a), $"Spread {i}"));
+        }
+        foreach (var (spot, x, z) in new[] { ("a", 120.0, 80.0), ("b", -200.0, -150.0), ("c", 250.0, -300.0), ("d", -30.0, 20.0) })
+        {
+            for (var k = 0; k < 6; k++)
+                markers.Add(Quest($"{spot}{k}", x + 5 * Math.Cos(k * 1.1), z + 5 * Math.Sin(k * 1.1), $"Spot {spot}{k}"));
+        }
+        markers.AddRange(Enumerable.Range(1, 5).Select(k => Place("line", k, -360 + 30 * k, 210)));
+        for (var k = 0; k < 6; k++)
+            markers.Add(new MapMarker($"extract:{k}", MarkerKind.ExtractPmc, new WorldPoint(470 * Math.Cos(k * 1.05), 0, 470 * Math.Sin(k * 1.05)), $"Exit {k}"));
+        markers.Add(new MapMarker("boss:spread", MarkerKind.BossSpawn, new WorldPoint(-60, 0, 40), "Boss"));
+        var (camera, scene) = Of(markers);
+        scene.Player = new PlayerFix(new WorldPoint(20, 0, -10), null, T0);
+        return (camera, scene);
+    }
+
+    // The map at the smallest window (900 x 560: the map about 500 x 481 px; QA pass 3, 2026-10-15), zooming out as the roll
+    // call does, from three times the whole map's zoom on the position to the whole map over 1.2 s, eased as
+    // MapView.AnimateView moves the view, a frame every 16 ms. Most of the crowd comes into view as it widens, and the view
+    // packs it tighter than its symbols fit. On Customs with every quest, the search for a free spot sent standing symbols
+    // up to 144 px across such a crowd and back, the push-only passes moved them up to 9.6 px a frame, and 8 symbols'
+    // leaders came or went more than once (shturmap-cli frames customs --scene list-callout --viewport 500x481).
+    [Fact]
+    public void No_symbol_jumps_or_changes_side_as_the_smallest_window_zooms_out_over_a_crowd()
+    {
+        var (camera, scene) = Spread();
+        camera.Resize(new SKSize(500, 481));
+        camera.Fit(scene.Projection.WorldRect, 24, Camera.LabelRoom);
+        var whole = (camera.Center, camera.Zoom);
+        var position = (scene.Projection.ToMap(scene.Player!.Position), whole.Zoom * 3);
+        var frames = new List<Dictionary<string, Drawn>>();
+        var bodies = new List<string>();
+        for (var k = 0; k < Count; k++)
+        {
+            var (center, zoom) = Glide(position, whole, k * EveryMs / GlideMs);
+            camera.Restore(center, zoom);
+            var trace = new List<SymbolTrace>();
+            frames.Add(Frame(camera, scene, T0.AddMilliseconds(k * EveryMs), trace));
+            // No symbol's body covers another's in any frame: their collars may meet for a few frames while the view packs
+            // them, never more.
+            var set = trace.Where(t => MapRenderer.Repels(t.Kind)).ToList();
+            for (var a = 0; a < set.Count; a++)
+            {
+                for (var b = a + 1; b < set.Count; b++)
+                {
+                    if (SKPoint.Distance(set[a].At, set[b].At) < set[a].R + set[b].R - 0.5f)
+                        bodies.Add($"frame {k}: {set[a].Id} over {set[b].Id}");
+                }
+            }
+        }
+        Assert.Empty(bodies);
+
+        // Most of the crowd comes into view as the view zooms out, and the view packs it: more stand off on leaders.
+        Assert.True(frames[^1].Count >= 2 * frames[0].Count, $"{frames[0].Count} symbols at the start, {frames[^1].Count} at the end");
+        var (parted, leaders) = Steadily(frames);
+        var at = parted.Select(p => p.Frame).Distinct().Order().ToList();
+        Assert.InRange(at.Count, 1, 4);
+        Assert.DoesNotContain(at, k => at.Contains(k + 1) && at.Contains(k + 2));
+        Assert.True(frames[^1].Count(f => f.Value.Leader) >= 5, $"{frames[^1].Count(f => f.Value.Leader)} leaders at the end");
+        Assert.Contains(leaders, l => frames[0].TryGetValue(l.Key, out var first) && !first.Leader && frames[^1][l.Key].Leader);
     }
 
     // A wheel's notches as MapView animates them (owner, 2026-10-15; WheelZoom): each zooms by a fifth over 0.15 s at the
