@@ -97,6 +97,7 @@ with a fresh start in that language; a difference is a text that was kept from b
 .\tools\layout-check.ps1 -Out <folder>                    # every view in en-US, de-DE and qps-ploc, 900x560 and 1600x900
 .\tools\layout-check.ps1 -Out <folder> -Languages qps-ploc -States plan,raid -Sizes 900x560
 .\tools\layout-check.ps1 -Out <folder> -Languages de-DE -SwitchCheck  # also the switch from English
+.\tools\layout-check.ps1 -Out <folder> -MoreArgs '--data', <folder>   # more app flags for every run: here the runs' app log, not in %LOCALAPPDATA%\Shturmap-dev
 ```
 
 It builds a developer build into `artifacts\layout-check\app` (the check is compiled into developer builds only: Debug,

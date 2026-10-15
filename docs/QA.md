@@ -26,16 +26,19 @@ PASS.
 
 - **The folder build** (Release, what players run, no developer tools): `.\eng\publish.ps1` →
   `artifacts\Shturmap\Shturmap.exe`.
-- **A developer build** (the layout files beside each picture, `--whats-new`, `--dev-view --dev-script`,
-  `--switch-language`, `qps-ploc`): `.\eng\dotnet.ps1 publish src\Shturmap.App\Shturmap.App.csproj -c Release -o
-  artifacts\layout-check\app '-p:ShturmapDev=true'`, what `tools\layout-check.ps1` builds when given no `-Exe`. Not
-  `eng\dev.ps1`: it also packs into the dev feed, and the owner's installed dev app takes that build at its next start.
-- Both from the commit under review, again after each fix; the app log's first line names the build and commit.
+- **Developer builds** (the layout files beside each picture, `--whats-new`, `--dev-view --dev-script`,
+  `--switch-language`, `qps-ploc`): for the layout check and `--whats-new`, `.\eng\dotnet.ps1 publish
+  src\Shturmap.App\Shturmap.App.csproj -c Release -o artifacts\layout-check\app '-p:ShturmapDev=true'`, what
+  `tools\layout-check.ps1` builds when given no `-Exe`; for the replay scripts, the Debug build of `.\eng\dotnet.ps1
+  build Shturmap.slnx`, as their `.md` says. Not `eng\dev.ps1`: it also packs into the dev feed, and the owner's
+  installed dev app takes that build at its next start.
+- All from the commit under review, again after each fix; the app log's first line names the build and commit.
 - The CLI: `.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- <command>` (`shturmap-cli`).
-- `$qa`: one folder per pass, outside the repository (an agent's session scratchpad); each run gets its own folder in it.
-  Paths absolute and without spaces (`fake-raid.ps1` passes `-Out` and `-MoreArgs` to the app as they are).
-- Every app run gets `--data <its folder>\data`: its app log lands beside its pictures, and nothing goes into
-  `%LOCALAPPDATA%\Shturmap-dev`. `tools\layout-check.ps1` passes no `--data`: its runs add their app log lines there.
+- `$pass`: one folder per pass, outside the repository (an agent's session scratchpad); each run gets its own folder in it.
+  Paths absolute and without spaces (`fake-raid.ps1` passes `-Out` and `-MoreArgs` to the app as they are). The replay
+  scripts' stills go where the script names them, `%TEMP%\shturmap-qa\<flow>\`, and are copied into `$pass` after each run.
+- Every app run gets `--data <a folder of its own>`: its app log lands beside its pictures, and nothing goes into
+  `%LOCALAPPDATA%\Shturmap-dev`. `tools\layout-check.ps1` takes it through `-MoreArgs`, as `fake-raid.ps1` does.
 - Sizes are DIP: 900x560 the smallest window, 1600x900 the large one. The layout check converts them to pixels at the
   scale of the monitor the app would open on (its `summary.md` names it); `fake-raid.ps1 -Window` (`--window`) takes
   pixels: the DIP size times that scale.
@@ -58,15 +61,15 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -ShowQuest Dandies -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 # The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, tour1 … tour7
-.\tools\layout-check.ps1 -Out "$qa\layout" -Exe artifacts\layout-check\app\Shturmap.exe -Languages en-US,de-DE,qps-ploc -Sizes 900x560,1600x900 -States plan,raid,quest
+.\tools\layout-check.ps1 -Out "$pass\layout" -Exe artifacts\layout-check\app\Shturmap.exe -Languages en-US,de-DE,qps-ploc -Sizes 900x560,1600x900 -States plan,raid,quest -MoreArgs '--data', "$pass\layout\data"
 # Map drawing; each frames run again with --glide into a folder of its own
-.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$qa\render\streets.png" --data "$qa\render\data"
-.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$qa\frames\list-read" --data "$qa\frames\data"
-.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$qa\frames\whatsnew" --scene whatsnew-extracts --data "$qa\frames\data"
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$pass\render\streets.png" --data "$pass\render\data"
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\list-read" --data "$pass\frames\data"
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\whatsnew" --scene whatsnew-extracts --data "$pass\frames\data"
 # A release: the tour's chapters (also with -Culture de-DE), What's New (developer build), the full layout check
-foreach ($n in 1..7) { $out = "$qa\tour\$n"; .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -Tour $n -MoreArgs '--data', "$out\data" }
-$out = "$qa\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\Shturmap.exe -Out $out -PlanOnly -MoreArgs '--whats-new', '--data', "$out\data"
-.\tools\layout-check.ps1 -Out "$qa\layout" -Exe artifacts\layout-check\app\Shturmap.exe -SwitchCheck
+foreach ($n in 1..7) { $out = "$pass\tour\$n"; .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -Tour $n -MoreArgs '--data', "$out\data" }
+$out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\Shturmap.exe -Out $out -PlanOnly -MoreArgs '--whats-new', '--data', "$out\data"
+.\tools\layout-check.ps1 -Out "$pass\layout" -Exe artifacts\layout-check\app\Shturmap.exe -SwitchCheck -MoreArgs '--data', "$pass\layout\data"
 ```
 
 Other states where a change reaches them: `-Scav`, `-LocalRaid`, `-HoldLoading`, `-GroupPick`, `-Map lab` (a sheet),
@@ -79,11 +82,19 @@ positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms
 - **Every picture** a run wrote, opened: `window.png`, `map.png`, `help.png`, `settings.png`, `card*.png`, `tour.png`,
   `devview-*.png`, every `*.problems.png`, and of `frames` the first, each frame something rings or moves in, each it
   flags and the last. A picture not opened is a check not run; one empty, cut short or missing is a finding.
+- **The popups not empty**: every `settings.png` and `help.png` of a quiet run must show its panel. They are drawn on
+  transparency, so an empty one looks like a blank page: count the pixels that aren't transparent
+  (`[Drawing.Bitmap]::FromFile(…).GetPixel(x, y).A`); none is a finding.
+- **Known open**, re-checked first in every pass: on 2026-10-15, at f028dff, a quiet run's `settings.png` came out
+  empty (480×655, every pixel transparent) while `window.png`, `map.png` and `help.png` rendered:
+  `.\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -MoreArgs '--data', "$out\data"` →
+  `settings.png`. A finding until it renders.
 - **Against the words**: DESIGN.md's for that view (what shows, in which order, colour, type role, size; what is lit,
   framed, pulsing, stepped back), `docs/tour.md` and `docs/whats-new.md` (and their German files), a replay's `.md`.
 - **Against the last pass**, where one is kept: what changed that the change didn't mean to.
 - **The states DESIGN.md names**, where the change reaches them: animation effects off (a `--snapshot` run draws the
-  tour and the raid replay without motion; elsewhere it is Windows' setting, which only the owner changes), both
+  tour and the raid replay without motion; elsewhere it is Windows' setting, which only the owner changes; a replay
+  that needs it on reads it first, `SystemParametersInfo` with SPI_GETCLIENTAREAANIMATION, and isn't run when off), both
   languages, the pseudo-language for layout, the smallest window, PMC and Scav, Plan and Raid, a sheet map, no game.
 - **The app log** of each run (`<out>\data\logs\shturmap-*.log`): any ERROR or WARN the run didn't provoke on purpose;
   the window line, which must say "Window off every monitor, …" (and a script's run "Developer view off every monitor,
@@ -124,33 +135,38 @@ A check that didn't run is a finding: `· not run: <why> ·`. `PASS` only when e
 ## Replay scripts
 
 `tools\qa\` holds the replays of flows, one `<flow>.devscript` and one `<flow>.md` of expectations per flow; the QA pass
-runs every script there, in en-US and de-DE at both sizes, with the developer build. The first is
-`whatsnew-tour-line` (the 0.5.0 card's tour line).
+runs every script there, on the Debug build, as its `.md` says, then again in de-DE and at the smallest window. The
+first is `whatsnew-tour-line` (the 0.5.0 card's tour line).
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
-  instance `quest start <id or name>`, `pick`, `show`, `hover`, `point`, `whatsnew [<n>]`, `whatsnew click <n>` (taps
-  line n, as a click does), `whatsnew leave` (the pointer leaves the card), `note <quest id or name> <text>` (a quest note
-  through the session), `cards`, `wait <s>`, `snapshot <moment>`, `exit`. A moment is a bare folder name
-  (`snapshot 2-after-click`), never a path.
-- **`<flow>.md`**: the flow in a line, the DESIGN.md words it holds to, and per moment what each picture must and must
-  not show, and the app log lines expected.
-- **Running one**: a copy of the script, its moments made folders of the run, played quietly (the app ends with the
-  script):
+  instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id
+  or name>`, `pick`, `show`, `hover`, `point`, `whatsnew [<n>]`, `whatsnew click <n>` (taps line n, as a click does),
+  `whatsnew leave` (the pointer leaves the line), `note <quest id or name> <text>` (a quest note through the session),
+  `cards`, `wait <s>`, `snapshot <folder>`, `exit`. Each `snapshot` names `%TEMP%\shturmap-qa\<flow>\<moment>`, a
+  folder per moment; the app expands `%TEMP%`, so a script in the repository names no user's folder.
+- **`<flow>.md`**: the flow and the fault it guards against, "Run it" (its command line, with its own flags), when each
+  still is taken, and per still what it must and must not show, with the DESIGN.md words it holds to.
+- `DevToolsTests` read every script here: a `.md` beside it, every step one the app knows, every still under
+  `%TEMP%\shturmap-qa\<flow>\`, `exit` last.
+- **Running one**, as `whatsnew-tour-line.md` says, from the repository's root (quiet: the app ends with the script):
 
 ```powershell
-$out = "$qa\flows\$flow\$culture\$size"; New-Item -ItemType Directory -Force $out | Out-Null
-(Get-Content -Encoding UTF8 "tools\qa\$flow.devscript") -replace '^(\s*snapshot\s+)([^\s#]+)', "`${1}$out\`$2" |
-  Set-Content -Encoding UTF8 "$out\$flow.devscript"
-$p = Start-Process artifacts\layout-check\app\Shturmap.exe -PassThru -ArgumentList '--dev-view', '--dev-script',
-  "$out\$flow.devscript", '--culture', $culture, '--window', $px, '--data', "$out\data", '--verbose'
-if (-not $p.WaitForExit(300000)) { Stop-Process -Id $p.Id }
+.\eng\dotnet.ps1 build Shturmap.slnx
+$qa = Join-Path $env:TEMP 'shturmap-qa\whatsnew-tour-line'
+if (Test-Path $qa) { Remove-Item -Recurse -Force $qa }
+$exe = (Get-ChildItem src\Shturmap.App\bin\Debug -Recurse -Filter Shturmap.exe | Select-Object -First 1).FullName
+$script = (Resolve-Path tools\qa\whatsnew-tour-line.devscript).Path
+$app = Start-Process -FilePath $exe -PassThru -ArgumentList "--dev-view --follow --verbose --data `"$qa\data`" --dev-script `"$script`""
+$app.WaitForExit()
 ```
 
-Each moment holds the window's pictures with their layout files and the developer view's tabs (`devview-play.png` shows the
-script's last ten lines, newest first); with `--verbose` the app log has every step and what it said, with its time. A
-step that found no quest or failed leaves its moments unchecked. A snapshot takes a second or two, so a moment inside a motion shows where the motion
-was by then; the map's own motion frame by frame is `shturmap-cli frames`. A flow a change reaches without a script gets
-one, added here with the change.
+Then `--culture de-DE` and `--window <px>` added to the arguments for the other runs, and after each run
+`Copy-Item -Recurse $qa "$pass\flows\<flow>\<culture>\<size>"`: the next run clears `$qa`. Each moment holds the
+window's pictures with their layout files and the developer view's tabs (`devview-play.png` shows the script's last ten
+lines, newest first); with `--verbose` the app log (`$qa\data\logs`) has every step, what it said and when each still
+was taken. A step that found no quest or failed leaves its moments unchecked. A snapshot takes a second or two, so a
+moment inside a motion shows where the motion was by then; the map's own motion frame by frame is `shturmap-cli frames`.
+A flow a change reaches without a script gets one, added here with the change.
 
 ## Rules
 
@@ -159,7 +175,7 @@ one, added here with the change.
 - "Not run" is a finding, never a pass.
 - No `--visible`, `tools\record-window` or `fake-raid.ps1 -Demo` unless the owner has said they aren't playing; then
   `tools\record-window` records Shturmap's own window only (DESIGN.md §8). Never the owner's monitors.
-- `--data` on every run that would otherwise use `%LOCALAPPDATA%\Shturmap-dev`; never the release's data folder; no
-  change to Windows' settings.
+- `--data` on every run that would otherwise use `%LOCALAPPDATA%\Shturmap-dev` (the layout check's through `-MoreArgs`);
+  never the release's data folder; no change to Windows' settings.
 - Nothing private in a report: `%USERPROFILE%` for the user folder, no real screenshot names, log lines or player data.
   The pictures stay on the PC and go into no commit.
