@@ -2124,7 +2124,12 @@ the quest's objectives the way Plan's BRING is (`RaidPlanner`'s requirements): w
 objectives are "MS2000 Marker ×3" and "Bring ×3, to mark"), one item used two ways is one row saying both ("to plant
 and to use"), and a key or item needed on two maps names both. Gear to wear, weapons and mods aren't used up and stay
 rows of their own; an exit's items are counted once per exit. Until 2026-10-04 the card made one row per objective and
-dropped a row whose text was already there, which lost the count and the second map.
+dropped a row whose text was already there, which lost the count and the second map. Only open objectives count: a
+marker is one per place marked, so a place ticked as done takes its marker off ("×2" becomes one), an untick puts it
+back, and a place only located keeps it (the mark is what uses it up). Checked on the owner's report of 2026-10-15
+("does not show that you have to bring multiple ms2000 or jammers"; Humanitarian Supplies and Ill-Wisher, two places
+each on Shoreline): ×2 on the card, the plan's row and need cell, the kit and the item card, one after a tick, in both
+modes (`BringCountTests`, also against the local cache).
 
 **A quest item is never brought** (owner, 2026-10-06: "In mission one less loose end, the lab journal is marked as a item
 to bring, but it is one you actually have to collect first as part of the mission"). A quest item an objective stashes
@@ -2182,9 +2187,10 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
   card's objective lines ("Use: …", "Fit: …"), the quest card's BRING and the item card ("Use, for kills", "Fit, for
   kills", "Bring, to leave through …") say the same. Only what the data says, and never "you have it": a row may carry
   a mark saying where Shturmap learned the item was had and when ("What you have", below). `shturmap-cli bring
-  [mode]` lists every map's rows and flags an item without a name, a weapon list shown as "X or N others" (with the
-  categories it spans) and an exit no map has; run it after a tarkov.dev or game update. Checked 2026-10-03 (PvE and
-  PvP): no unknown items, no unmatched exits.
+  [mode]` lists every map's rows (a row of things to use up for several quests with each one's own count where it
+  needs more than one, "Humanitarian Supplies ×2", as its need cell says; 2026-10-15) and flags an item without a
+  name, a weapon list shown as "X or N others" (with the categories it spans) and an exit no map has; run it after a
+  tarkov.dev or game update. Checked 2026-10-03 (PvE and PvP): no unknown items, no unmatched exits.
 
 **What you have** (owner, 2026-10-07: "I don't know if I already have items that are required for quests";
 2026-10-11: the second design, all twelve decisions as recommended, built after a spike; docs/NEXT.md, both entries).
