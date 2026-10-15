@@ -100,6 +100,10 @@
     <value>Done an objective? Tick its box on the quest's card (the logs can't tell): the map, NEXT and the plan skip it. An item followed by → and a trader's portrait: hand it to that trader after the raid.</value>
     <comment>Help: paragraph about ticking objectives done, and the hand-over mark. NEXT is the raid card's label (RaidNextLabel). The hand-over mark (HandoverMark) is drawn right after an item's cell: its count when more than one, an arrow → and the portrait of the trader it goes to.</comment>
   </data>
+  <data name="HelpNotes" xml:space="preserve">
+    <value>A kept quest card ends in NOTES: your own words on the quest, each with the time you wrote it; add or delete, no editing. Any time, also in a raid, but nothing needs them; they stay on this PC.</value>
+    <comment>Help: paragraph about the player's own notes on a quest. NOTES is the heading of the quest card's last section (QuestCardNotes). A kept card is one clicked to stay open (HelpPointAtQuest, the paragraph before: "Click to keep the card"); only there can a note be added or deleted. Each note shows the day and time it was written; notes are never edited; nothing in Shturmap reads them.</comment>
+  </data>
   <data name="HelpReplay" xml:space="preserve">
     <value>After a raid with a few screenshots, the map replays where you took them, faint at the start, bright at the end. REPLAY on the last raid's line plays it again, until the next raid.</value>
     <comment>Help: paragraph about the replay of the last raid. REPLAY is the link on the last raid's line (PlanReplay).</comment>
