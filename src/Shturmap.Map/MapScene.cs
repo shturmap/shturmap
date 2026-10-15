@@ -93,8 +93,9 @@ public sealed class MapScene
     internal (MapRenderer.LayoutKey Key, MapRenderer.MapLayout Layout)? LastLayout { get; set; }
 
     /// <summary>The last repel's input and how far it set each symbol off its place (<see cref="MapRenderer.Repel"/>):
-    /// panning moves every place alike, so the same symbols at the same zoom are set off alike.</summary>
-    internal (string Key, SkiaSharp.SKPoint[] Offsets)? LastRepel { get; set; }
+    /// panning moves every place alike, so the same symbols at the same zoom are set off alike; and while the view
+    /// moves, the next repel goes on from it, so nothing jumps from one frame to the next.</summary>
+    internal MapRenderer.RepelPlacement? LastRepel { get; set; }
 
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>
     public MapLayer? Floor

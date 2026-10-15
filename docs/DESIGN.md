@@ -1377,12 +1377,34 @@ spawns below).
     it never moves, and no symbol stands under its ring or, once the position is a minute old, its age tag; one beside
     you steps off on a leader to its place, as from any symbol that matters more (`MapRenderer.PlayerObstacles`). The
     facing cone and the glow are see-through and hide nothing. Positions turn only on the places, where the player
-    is, the zoom and the symbols' sizes and ranks at rest, never on picks or the pointer, so nothing moves when
-    something is picked or pointed at, and a new position moves only what stood in its way. Locks, switches and
-    Scav zones' rings take no part (their leaders were a web of ink between the quests in the panel): they stand side
-    by side among themselves, under the rest. A pan moves every place alike, so the repel's offsets are kept while
-    the same symbols are in view at the same zoom (`MapScene.LastRepel`): it is most of a layout's work (3 to 6 ms
-    for a 1600 × 1000 view of Streets with every quest active), and a pan lays the map out for every frame.
+    is, the zoom and the symbols' sizes and ranks at rest (and while the view moves, on where they stood the frame
+    before: below), never on picks or the pointer, so nothing moves when something is picked or pointed at, and a new
+    position moves only what stood in its way. Locks, switches and Scav zones' rings take no part (their leaders were a
+    web of ink between the quests in the panel): they stand side by side among themselves, under the rest. A pan moves
+    every place alike, so the repel's offsets are kept while it is given the same symbols the same distances apart
+    (`MapScene.LastRepel`; a pick, the pointer or a list read gives it nothing new): it is most of a layout's work (3
+    to 6 ms for a 1600 × 1000 view of Streets with every quest active), and a pan lays the map out for every frame.
+  - **Steady while the view moves** (owner, 2026-10-15: "weird movements" in the tour's 1.2 s view move, every Follow
+    glide and zoom; `MapRenderer.SetApart`, `Repel`). Laid out afresh at each frame's zoom, a crowd settled one way at
+    one zoom and another way at the next: the repel's passes swing back and forth in a crowd and never come to rest, and
+    the search for a free spot sent a wedged symbol far off. While the view only moves (from one frame to the next a
+    pan, or less than a tenth more or less zoom, with the same position: a glide, a pinch, a pan that brings symbols
+    into view or takes them out of it), the repel goes on from where it left off, one pass a frame, and each symbol is
+    drawn at most 2 px a frame nearer to where that puts it (`RepelStep`), so it keeps its side of its place and a
+    leader comes or goes over a few frames instead of in one jump. One on a leader keeps it until the passes bring it
+    back within three quarters of the nudge that sends one off (`LeaderKept`), and the leader line itself comes 2.5 px
+    past the distance at which a symbol clears its place's dot and goes 2.5 px short of it, so neither comes and goes
+    from frame to frame. A symbol that comes into view or out of a parting cluster makes way for those already
+    standing; the push-only passes keep symbols off each other and the player, and off each other's places only
+    through the passes the symbols follow. Anything else (the map opened, a wheel's notch, a new position, other
+    quests) lays them out afresh, as a still view always shows them; once the view is still nothing moves. After a
+    glide a crowd can stand otherwise than a fresh layout of the same view would have it, until the next fresh one. In
+    a 1.2 s glide on Customs at 60 frames a second (`shturmap-cli frames customs --scene list-read --glide 1200 --every
+    16`), symbols set off their places by more than 3 px more or less from one frame to the next went from 466 to 3
+    (all where a cluster parted), the largest from 120 px to 4 px, and leaders that came or went from 61 (12 symbols
+    more than once) to 7 (none twice); in What's New's extracts preview, Boiler Room's 17 px and a Sniper zone's 15 px
+    snap as their leaders went became slides of 2 px a frame. A glide's frame costs less than before: the repel's
+    median 0.2 ms against 0.9 ms afresh.
   - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol
     another lay well over put every symbol touching it on a ring around its place, on a dark plate, each on a
     hairline to its own place. It needed the mouse, so it went with the leaders, which leave nothing stacked.
@@ -2716,8 +2738,11 @@ off the list that animated, the first frame against the last). Two scenes: `list
 position at the map's first PMC spawn or `--fix`, pinging), and `whatsnew-extracts`, What's New's `extracts` preview
 as it is staged (no quests, no position, the sets of `MainWindow.ExampleExits`, which the CLI repeats). `--glide [ms]`
 moves the view as `MapView.AnimateView` does, from the whole map to three times the zoom on the position in 1.2 s, and
-lists the symbols whose offset from their own place changes by more than 2 px from one frame to the next, which the
-view's motion doesn't explain. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid.
+lists the symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the
+view's motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing",
+*Steady while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did
+more than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, and
+`GlideFramesTests` the symbols on leaders in a glide.
 
 ### How the parts work
 

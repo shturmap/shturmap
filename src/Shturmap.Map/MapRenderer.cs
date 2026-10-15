@@ -572,6 +572,21 @@ public static partial class MapRenderer
     /// scaling), so its leader is long enough to follow.</summary>
     public const float LeaderLeast = 10;
 
+    // A symbol pushed off its place by up to this share of its half width is only nudged: it keeps to its place, without
+    // a leader. Further, it has to leave it and stands a leader off it.
+    private const float NudgedMost = 0.6f;
+
+    /// <summary>
+    /// While the view moves (the repel going on from the last placement), a symbol that stands off on a leader goes back
+    /// onto its place only once the passes bring it within this share of the nudge that sends one off: a quarter less,
+    /// so one whose crowd draws apart loses its leader once, not on and off from frame to frame.
+    /// </summary>
+    public const float LeaderKept = 0.75f;
+
+    /// <summary>While the view moves, how far a symbol goes from one frame to the next toward where the repel puts it
+    /// (pixels, before scaling): it keeps its side, and a leader comes or goes over a few frames, not in one.</summary>
+    public const float RepelStep = 2;
+
     /// <summary>
     /// Where symbols stand that would cover each other, as ggrepel sets labels apart (owner, 2026-10-06: "Whenever there is
     /// overplotting going on, it automatically draws a line between the datapoint and its annotation … it should not be
@@ -595,17 +610,51 @@ public static partial class MapRenderer
     /// <param name="fixedAround">What no symbol may cover and that never moves itself: the player's marker and its age tag,
     /// as circles (centre, half width).</param>
     public static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear = 0, float minLine = 0,
-        IReadOnlyList<(SKPoint At, float Half)>? fixedAround = null)
+        IReadOnlyList<(SKPoint At, float Half)>? fixedAround = null) =>
+        Repel(symbols, gap, placeClear, minLine, fixedAround, null, 0, out _);
+
+    /// <summary>A symbol as a placement left it (<see cref="Repel"/>): how far off its place the passes had settled it before
+    /// any was set a leader off its place (<paramref name="Settled"/>), how far off it it was drawn
+    /// (<paramref name="Shown"/>), whether it had to leave its place (<paramref name="Off"/>), and whether it was drawn on a
+    /// leader (<paramref name="Led"/>, which the layout decides).</summary>
+    internal readonly record struct Stood(SKPoint Settled, SKPoint Shown, bool Off, bool Led = false);
+
+    /// <summary>
+    /// <see cref="Repel"/> afresh, or, while the view moves, from where the last placement left the symbols (owner,
+    /// 2026-10-15: "weird movements" in the tour's view move and every Follow glide; docs/DESIGN.md, "Map drawing").
+    /// Afresh, 80 passes settle a crowd one way at one zoom and as often another way at the next: in a crowd the passes
+    /// swing back and forth and never come to rest, so in a 1.2 s glide on Customs symbols flipped up to 120 px from side
+    /// to side, the last step's search for a free spot sent some 60 px off and back every other frame, and leaders came
+    /// and went 61 times. From the last placement, the passes go on where they had got to, one a frame, so the crowd
+    /// opens and closes with the view instead of being laid out anew each frame; a symbol that stood off on a leader
+    /// keeps it until its place is clearly free (<see cref="LeaderKept"/>); and where it is drawn goes at most
+    /// <paramref name="step"/> a frame toward where that puts it, so it keeps its side and a leader comes or goes over a
+    /// few frames. The push-only passes and the search for a free spot still see that none covers another or the player
+    /// (keeping off the others' places is the passes' part, which the symbols follow), and one that comes into the
+    /// placement makes way for those already standing.
+    /// </summary>
+    /// <param name="last">Each symbol as the last placement left it (null for one it didn't have), while the view moves;
+    /// null for a fresh start.</param>
+    /// <param name="step">How far a symbol the last placement had goes toward where the passes put it (pixels).</param>
+    /// <param name="stood">Each symbol as this placement leaves it, for the next.</param>
+    internal static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear, float minLine,
+        IReadOnlyList<(SKPoint At, float Half)>? fixedAround, IReadOnlyList<Stood?>? last, float step, out Stood[] stood)
     {
         var n = symbols.Count;
         var at = symbols.Select(s => s.At).ToArray();
         var obstacles = fixedAround ?? [];
+        stood = new Stood[n];
         if (n == 0 || (n < 2 && obstacles.Count == 0))
             return at;
         // A crowd at one place: the k-th of it starts a hair off, round the place by the golden angle, the first to the
-        // left (as side by side had it).
+        // left (as side by side had it). One the last placement had starts where the passes had settled it.
         for (var i = 0; i < n; i++)
         {
+            if (last?[i] is { } was && symbols[i].Moves)
+            {
+                at[i] = symbols[i].At + was.Settled;
+                continue;
+            }
             var k = 0;
             for (var j = 0; j < i; j++)
             {
@@ -622,24 +671,40 @@ public static partial class MapRenderer
                 at[i] = new SKPoint(at[i].X - 0.5f, at[i].Y);
             }
         }
+        // While the view moves, the passes go on from where they were, one a frame.
+        var passes = last is null ? RepelPasses : 1;
         var widest = symbols.Where(s => s.Moves).Select(s => s.Half).DefaultIfEmpty(0).Max();
         var order = Enumerable.Range(0, n).Where(i => symbols[i].Moves).ToArray();
         // The places kept in sight, by x, for a sweep: those of every symbol taking part but locks and switches (level 4).
         var places = placeClear <= 0 ? [] : order.Where(i => symbols[i].Rank < 5).OrderBy(i => symbols[i].At.X).ToArray();
         var placeXs = places.Select(i => symbols[i].At.X).ToArray();
         bool OnPlace(int i, SKPoint p, int j) => j != i && SKPoint.Distance(p, symbols[j].At) < symbols[i].Half + placeClear - 0.01f;
-        for (var pass = 0; pass < RepelPasses + RepelSettlePasses; pass++)
+        // While the view moves, the push-only passes and the search for a free spot keep the symbols off each other, not
+        // off each other's places: that the passes see to (the one a frame), and the symbols follow them a step a frame.
+        // And one that comes into the placement (into view, or out of a cluster that parts) makes way for those already
+        // standing, whatever its rank, so they don't jump aside for it.
+        var follows = last is not null;
+        bool New(int i) => follows && last![i] is null;
+        var off = new bool[n];
+        for (var pass = 0; pass < passes + RepelSettlePasses; pass++)
         {
             // Before the last passes: a symbol that had to leave its place (more than half its width off it) stands off
-            // it by its leader's least length; one only nudged stays where it is.
-            if (pass == RepelPasses && minLine > 0)
+            // it by its leader's least length; one only nudged stays where it is. While the view moves, one that stood
+            // off keeps standing off until it would be back within less (LeaderKept), and each is drawn at most a step
+            // from where it was toward where that puts it.
+            if (pass == passes)
             {
                 foreach (var i in order)
                 {
-                    var off = at[i] - symbols[i].At;
+                    var settled = at[i] - symbols[i].At;
+                    stood[i] = stood[i] with { Settled = settled };
+                    var nudged = symbols[i].Half * NudgedMost * (last?[i] is { Off: true } ? LeaderKept : 1);
+                    off[i] = minLine > 0 && settled.Length > nudged;
                     var least = symbols[i].Half + gap + minLine;
-                    if (off.Length > symbols[i].Half * 0.6f && off.Length < least)
-                        at[i] = new SKPoint(symbols[i].At.X + off.X / off.Length * least, symbols[i].At.Y + off.Y / off.Length * least);
+                    if (off[i] && settled.Length < least)
+                        at[i] = new SKPoint(symbols[i].At.X + settled.X / settled.Length * least, symbols[i].At.Y + settled.Y / settled.Length * least);
+                    if (last?[i] is { } was)
+                        at[i] = symbols[i].At + Within(at[i] - symbols[i].At, was.Shown, step);
                 }
             }
             // A sweep along x: only symbols closer than the two widest together can overlap.
@@ -659,7 +724,8 @@ public static partial class MapRenderer
                     if (apart >= want - 0.01f)
                         continue;
                     var along = apart < 0.001f ? new SKPoint(1, 0) : new SKPoint(line.X / apart, line.Y / apart);
-                    var (shareI, shareJ) = symbols[i].Rank == symbols[j].Rank ? (0.5f, 0.5f)
+                    var (shareI, shareJ) = follows && pass >= passes ? (New(i) == New(j) ? (0.5f, 0.5f) : New(i) ? (1f, 0f) : (0f, 1f))
+                        : symbols[i].Rank == symbols[j].Rank ? (0.5f, 0.5f)
                         : symbols[i].Rank < symbols[j].Rank ? (0f, 1f) : (1f, 0f);
                     var push = want - apart;
                     at[i] = new SKPoint(at[i].X - along.X * push * shareI, at[i].Y - along.Y * push * shareI);
@@ -668,7 +734,7 @@ public static partial class MapRenderer
                 }
             }
             // Off the others' places, by the whole step: a place doesn't move.
-            if (places.Length > 0)
+            if (places.Length > 0 && !(follows && pass >= passes))
             {
                 foreach (var i in order)
                 {
@@ -707,7 +773,7 @@ public static partial class MapRenderer
                     moved = true;
                 }
             }
-            if (pass < RepelPasses)
+            if (pass < passes)
             {
                 foreach (var i in order)
                     at[i] = new SKPoint(at[i].X + (symbols[i].At.X - at[i].X) * RepelPull, at[i].Y + (symbols[i].At.Y - at[i].Y) * RepelPull);
@@ -718,14 +784,17 @@ public static partial class MapRenderer
             }
         }
         // A lesser symbol can be wedged between two that keep their places, pushed back and forth for good: whatever
-        // still covers another goes to the nearest place round it where it covers none, the least important first.
+        // still covers another goes to the nearest place round it where it covers none, the least important first (and
+        // while the view moves, one new to the placement before them).
         bool Clear(int i, SKPoint p) => order.All(j => j == i || SKPoint.Distance(p, at[j]) >= symbols[i].Half + symbols[j].Half + gap - 0.01f)
-                                        && places.All(j => !OnPlace(i, p, j))
+                                        && (follows || places.All(j => !OnPlace(i, p, j)))
                                         && obstacles.All(o => SKPoint.Distance(p, o.At) >= symbols[i].Half + o.Half + gap - 0.01f);
-        foreach (var i in order.OrderByDescending(i => symbols[i].Rank).ThenBy(i => i))
+        var searched = new bool[n];
+        foreach (var i in order.OrderByDescending(New).ThenByDescending(i => symbols[i].Rank).ThenBy(i => i))
         {
             if (Clear(i, at[i]))
                 continue;
+            searched[i] = true;
             var from = at[i];
             for (var radius = 1f; radius < 40 * (symbols[i].Half + gap) && !Clear(i, at[i]); radius += 1)
             {
@@ -742,6 +811,23 @@ public static partial class MapRenderer
                     }
                 }
             }
+        }
+        foreach (var i in order)
+        {
+            // From the last placement, one whose place is free again is drawn back to within a hair of it (12 % a frame):
+            // it goes onto it, where a fresh start leaves it.
+            if (last is not null && SKPoint.Distance(at[i], symbols[i].At) < 0.05f)
+                at[i] = symbols[i].At;
+            // The next passes go on from where it is drawn where that is the other side of its place from where they had
+            // it (the push-only passes took it round the player or past a neighbour), or where the search put it: going
+            // on from their own side, it would cross over its place to get back. As far off its place as the passes had
+            // it, not at its leader's end, or nothing would bring it back.
+            var (shown, settled) = (at[i] - symbols[i].At, stood[i].Settled);
+            if (searched[i])
+                settled = shown;
+            else if (shown.X * settled.X + shown.Y * settled.Y < 0)
+                settled = new SKPoint(shown.X / shown.Length * settled.Length, shown.Y / shown.Length * settled.Length);
+            stood[i] = new Stood(settled, shown, off[i]);
         }
         return at;
     }
@@ -845,13 +931,13 @@ public static partial class MapRenderer
         // In the data's order, not the drawing order below: which of two goes left must not turn on what is pointed at.
         JoinSpots(result, ui);
         result.Sort((a, b) => a.Index.CompareTo(b.Index));
-        var places = SetApart(camera, scene, result.Select(r => r.Shown).ToList(), ui, result.Select(r => r.Index), now ?? DateTime.Now);
+        var (places, led) = SetApart(camera, scene, result.Select(r => r.Shown).ToList(), ui, now ?? DateTime.Now);
         return result
             .Select((r, i) => (r.Index, Shown: places[i] == r.Shown.At ? r.Shown : r.Shown with
             {
                 At = places[i],
                 Beside = true,
-                Leader = Repels(r.Shown.Marker.Kind) && SKPoint.Distance(places[i], r.Shown.At) > LeaderFrom(r.Shown.Marker, ui) ? r.Shown.At : null,
+                Leader = led[i] ? r.Shown.At : null,
             }))
             .OrderBy(r => r.Shown.Focused ? 2 : r.Shown.Selected ? 1 : 0)
             .ThenBy(r => r.Index)
@@ -861,26 +947,119 @@ public static partial class MapRenderer
 
     // Where each symbol stands: quests, bosses and ways out set apart on leaders (Repel), the receded locks, switches
     // and Scav zones' rings side by side among themselves, under the rest (their leaders were a web of ink between the
-    // quests). Panning moves every place alike, so while the same symbols are in view at the same zoom the last repel's
-    // offsets hold: it is most of a layout's work, and a pan lays the map out for every frame.
-    private static SKPoint[] SetApart(Camera camera, MapScene scene, List<ShownMarker> markers, float ui, IEnumerable<int> indices, DateTime now)
+    // quests). The repel is most of a layout's work, and a pan lays the map out for every frame: while what it is given
+    // is the same (a pan moves every place alike; a pick, the pointer or a list read moves none), the last offsets hold.
+    // While the view moves (a glide, a pinch, a pan that brings symbols into view or takes them out of it), the repel
+    // goes on from the last placement, so nothing jumps from one frame to the next (owner, 2026-10-15: "weird
+    // movements"; Repel). Anything else (the map opened, a wheel's notch, a new position, other symbols at the same
+    // view) lays them out afresh, as a still view always shows them.
+    private static (SKPoint[] At, bool[] Led) SetApart(Camera camera, MapScene scene, List<ShownMarker> markers, float ui, DateTime now)
     {
         var places = SideBySide(markers.Select(m => (m.At, RestHalf(m.Marker, ui), RestRank(m.Marker.Kind))).ToList(), MarkerCollar * ui);
         var (player, ageTag) = PlayerObstacles(camera, scene, ui, now);
-        var key = $"{scene.LayoutVersion}|{camera.Zoom:R}|{ui:R}|{ageTag}|{string.Join(",", indices.Zip(markers, (i, m) => $"{i}:{m.Count}"))}";
-        if (scene.LastRepel is not { } last || last.Key != key)
+        var symbols = markers.Select(m => (m.At, RepelHalf(m, ui), RestRank(m.Marker.Kind), Repels(m.Marker.Kind))).ToArray();
+        var ids = markers.Select(m => m.Marker.Id).ToArray();
+        if (scene.LastRepel is not { } last || !last.Holds(ids, symbols, player))
         {
-            var repelled = Repel(markers.Select(m => (m.At, RepelHalf(m, ui), RestRank(m.Marker.Kind), Repels(m.Marker.Kind))).ToList(),
-                MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui, player);
-            last = (key, repelled.Select((p, i) => p - markers[i].At).ToArray());
+            var view = new RepelView(camera.Zoom, camera.Center, ui, scene.Player, ageTag);
+            var from = scene.LastRepel is { } before && before.View.GlidesTo(view) ? before.From(ids) : null;
+            var repelled = Repel(symbols, MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui, player, from, RepelStep * ui, out var stood);
+            var offsets = repelled.Select((p, i) => p - markers[i].At).ToArray();
+            // A leader joins one that stands clear of its place's dot. While the view moves, one drawn a step at a time
+            // passes that distance, and may stay near it: its leader comes once it is clearly past, and goes once it is
+            // clearly back.
+            for (var i = 0; i < stood.Length; i++)
+            {
+                var slack = from?[i] is { } was ? (was.Led ? -LeaderSlack : LeaderSlack) * ui : 0;
+                var off = SKPoint.Distance(markers[i].At + offsets[i], markers[i].At);
+                stood[i] = stood[i] with { Led = symbols[i].Item4 && off > LeaderFrom(markers[i].Marker, ui) + slack };
+            }
+            last = new RepelPlacement(ids, symbols, [.. player], offsets, stood, view);
             scene.LastRepel = last;
         }
+        var led = new bool[places.Length];
         for (var i = 0; i < places.Length; i++)
         {
-            if (Repels(markers[i].Marker.Kind))
-                places[i] = markers[i].At + last.Offsets[i];
+            if (!Repels(markers[i].Marker.Kind))
+                continue;
+            places[i] = markers[i].At + last.Offsets[i];
+            led[i] = last.Led(i);
         }
-        return places;
+        return (places, led);
+    }
+
+    // How much further than it takes for a leader one drawn a step at a time while the view moves must go before its
+    // leader comes, and how much nearer before it goes (pixels, before scaling).
+    private const float LeaderSlack = 2.5f;
+
+    /// <summary>The view a placement was made for, and what else the repel turns on that doesn't show in its input's
+    /// shape: the player's fix and its age tag.</summary>
+    internal readonly record struct RepelView(double Zoom, MapPoint Center, float Ui, PlayerFix? Player, string AgeTag)
+    {
+        // A frame of a glide or a pinch zooms by a few per cent at most (the tour's 1.2 s glide to three times the zoom:
+        // up to 4 % a frame at 60 frames a second); a wheel's notch by 20 %.
+        private const double GlideMost = 1.1;
+
+        /// <summary>Whether the view only moved from this one to <paramref name="next"/>, as a frame of a glide does: it
+        /// panned or zoomed by less than a tenth, with the same position and display scale.</summary>
+        public bool GlidesTo(RepelView next) =>
+            (next.Zoom != Zoom || next.Center != Center) && Math.Abs(Math.Log(next.Zoom / Zoom)) < Math.Log(GlideMost)
+            && next.Ui == Ui && Equals(next.Player, Player) && next.AgeTag == AgeTag;
+    }
+
+    /// <summary>
+    /// The last repel (<see cref="Repel"/>): what it was given, the symbols by their markers' ids, the view, and where it
+    /// left each. It holds while it would be given the same again, and the next starts from it while the view moves.
+    /// </summary>
+    internal sealed class RepelPlacement(string[] ids, (SKPoint At, float Half, int Rank, bool Moves)[] symbols, (SKPoint At, float Half)[] around,
+        SKPoint[] offsets, Stood[] stood, RepelView view)
+    {
+        /// <summary>How far it set each symbol off its place, in the order it was given them.</summary>
+        public SKPoint[] Offsets { get; } = offsets;
+
+        /// <summary>Whether the i-th symbol is drawn on a leader.</summary>
+        public bool Led(int i) => stood[i].Led;
+
+        public RepelView View { get; } = view;
+
+        // Places a pan moved alike are the same: compared from the first symbol's place, to a hundredth of a pixel (a
+        // pan's sums round differently in the last bits).
+        private const float Same = 0.01f;
+
+        /// <summary>Whether a repel would be given what this one was: the same symbols with the same sizes and ranks, their
+        /// places the same distances apart, and what they keep clear of where it was from them.</summary>
+        public bool Holds(string[] nowIds, (SKPoint At, float Half, int Rank, bool Moves)[] now, List<(SKPoint At, float Half)> nowAround)
+        {
+            if (nowIds.Length != ids.Length || now.Length != symbols.Length || nowAround.Count != around.Length)
+                return false;
+            if (now.Length == 0)
+                return true;
+            var (origin, was) = (now[0].At, symbols[0].At);
+            bool Near(SKPoint a, SKPoint b) => Math.Abs(a.X - origin.X - (b.X - was.X)) <= Same && Math.Abs(a.Y - origin.Y - (b.Y - was.Y)) <= Same;
+            for (var i = 0; i < now.Length; i++)
+            {
+                if (!string.Equals(nowIds[i], ids[i], StringComparison.Ordinal) || now[i].Half != symbols[i].Half || now[i].Rank != symbols[i].Rank
+                    || now[i].Moves != symbols[i].Moves || !Near(now[i].At, symbols[i].At))
+                {
+                    return false;
+                }
+            }
+            for (var i = 0; i < around.Length; i++)
+            {
+                if (nowAround[i].Half != around[i].Half || !Near(nowAround[i].At, around[i].At))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>Each of these symbols as this placement left it, by its marker's id; null for one it didn't have.</summary>
+        public Stood?[] From(string[] nowIds)
+        {
+            var by = new Dictionary<string, Stood>(ids.Length, StringComparer.Ordinal);
+            for (var i = 0; i < ids.Length; i++)
+                by.TryAdd(ids[i], stood[i]);
+            return [.. nowIds.Select(id => by.TryGetValue(id, out var was) ? was : (Stood?)null)];
+        }
     }
 
     // What no symbol may cover (owner, 2026-10-06: "the player icon is also an icon - if you are right next to a
