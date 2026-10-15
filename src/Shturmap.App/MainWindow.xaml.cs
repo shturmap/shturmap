@@ -75,7 +75,7 @@ public sealed partial class MainWindow : Window
         Study.Log = session.Study;
         var root = (FrameworkElement)Content;
         StudyAttention(root);
-        _cards = new CardStack(root, CreateCard, () => new Windows.Foundation.Rect(0, 0, root.ActualWidth, root.ActualHeight));
+        _cards = new CardStack(root, CreateCard, CardRoom);
         // Rows open their cards in their window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
@@ -2153,6 +2153,26 @@ public sealed partial class MainWindow : Window
     private static extern int GetDpiForMonitor(IntPtr monitor, int dpiType, out uint dpiX, out uint dpiY);
 
     private WindowPlace.Rect BoundsNow() => new(AppWindow.Position.X, AppWindow.Position.Y, AppWindow.Size.Width, AppWindow.Size.Height);
+
+    /// <summary>
+    /// Where cards may go (CardStack), in the window's DIPs: its whole width, and up and down as far as it is on its
+    /// monitor's work area (CardPlace.Room; owner, 2026-10-15: "When selecting a quest at the lower border of the screen it
+    /// gets cut off"): a window that reaches behind the taskbar or past the screen's edge keeps its cards where they can be
+    /// seen. The client area's place on the screen is the window's less its frame, as wide at the foot as at the sides.
+    /// </summary>
+    private Windows.Foundation.Rect CardRoom()
+    {
+        var root = (FrameworkElement)Content;
+        var room = new CardPlace.Span(0, root.ActualHeight);
+        if (!Quiet && root.XamlRoot is { } xaml && AppWindow is { } window)
+        {
+            var work = DisplayArea.GetFromWindowId(window.Id, DisplayAreaFallback.Nearest).WorkArea;
+            var frame = Math.Max(0, (window.Size.Width - window.ClientSize.Width) / 2.0);
+            var clientTop = window.Position.Y + window.Size.Height - frame - window.ClientSize.Height;
+            room = CardPlace.Room(root.ActualHeight, clientTop, work.Y, work.Y + work.Height, xaml.RasterizationScale);
+        }
+        return new Windows.Foundation.Rect(0, room.Top, root.ActualWidth, room.Height);
+    }
 
     // Maximised on the second monitor, or on the only one at 1600×1000 at its scale and within its work area
     // (WindowPlace.First, which is also where the maximised window goes back to); a given size (developer runs) is

@@ -2193,9 +2193,17 @@ read.
 
 A card is never taller than the room there is in the window. A longer card (Collector, a quest with many
 objectives at 150 % scaling) scrolls inside, so UNLOCKS and the wiki link stay in reach (2026-10-04: it was cut at
-the window's edge). A card that grows while it is open (held, with its NOTES field; a note added; a tick's line) moves
-up as far as it needs to stay in the window, never down (2026-10-15: placed by a row near the window's foot, the
-field it gets when held lay below the edge, where nothing scrolls it into view).
+the window's edge). **Where a card opens** (owner, 2026-10-15: "When selecting a quest at the lower border of the
+screen it gets cut off"; `Rules.CardPlace`): beside its row, its top 10 DIP above the row's, and up as far as its whole
+height needs to stay inside the room with 8 DIP to spare, never above the room's top; at most the room's height less
+16 (its MaxHeight), past which it scrolls inside. A card that grows while it is open (held, with its NOTES field; a
+note added; a tick's line) moves up by the same rule, never down (2026-10-15: placed by a row near the window's foot,
+the field it gets when held lay below the edge, where nothing scrolls it into view). The room is the window, less what
+of it lies off its monitor's work area: a window that reaches behind the taskbar or past the screen's lower edge keeps
+its cards in sight. In quiet runs at 900×560 and 1600×900, in English and German, a card held from the lowest row of
+the rail (Insomnia at the foot of Streets' card, held, on hover, and held with five notes) already stood inside the
+window before this; the one cut that rule could leave was the screen's, so that is the change (a guess at the owner's
+window, which was not seen).
 
 Rows on a card take part in linked highlighting (pointing at a key lights it up in BRING and the quest on the map),
 but don't light up for their own card's quest, or the whole card would glow. The card's body keeps its subject in
