@@ -66,6 +66,8 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$pass\render\streets.png" --data "$pass\render\data"
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\list-read" --data "$pass\frames\data"
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\whatsnew" --scene whatsnew-extracts --data "$pass\frames\data"
+# The roll call: its view zooms out by itself, so no second run with --glide
+.\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\callout" --scene list-callout --data "$pass\frames\data"
 # A release: the tour's chapters (also with -Culture de-DE), What's New (developer build), the full layout check
 foreach ($n in 1..7) { $out = "$pass\tour\$n"; .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -Tour $n -MoreArgs '--data', "$out\data" }
 $out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\Shturmap.exe -Out $out -PlanOnly -MoreArgs '--whats-new', '--data', "$out\data"

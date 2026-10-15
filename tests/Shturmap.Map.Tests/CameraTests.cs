@@ -136,6 +136,98 @@ public class CameraTests
         Assert.Equal(2, camera.Zoom, 9);
     }
 
+    // ---- the roll call's view: zoomed out to every extract on the list and the player (owner, 2026-10-15, from the
+    // design panel: option A, "Roll call, then fly-out") ----
+
+    private static readonly SKSize RollCallView = new(1200, 820);
+
+    // Where a view puts a map point on screen.
+    private static SKPoint On((MapPoint Center, double Zoom) view, MapPoint p, SKSize size)
+    {
+        var camera = new Camera();
+        camera.Resize(size);
+        camera.Restore(view.Center, view.Zoom);
+        return camera.ToScreen(p);
+    }
+
+    // Inside the view, with the padding on the left, top and bottom and the label room on the right (half a pixel of
+    // rounding either way).
+    private static void Inside(SKPoint p, SKSize size, float padding, float right)
+    {
+        Assert.InRange(p.X, padding - 0.5, size.Width - right + 0.5);
+        Assert.InRange(p.Y, padding - 0.5, size.Height - padding + 0.5);
+    }
+
+    [Fact]
+    public void The_roll_calls_view_holds_every_extract_and_the_player_with_the_padding_and_the_label_room()
+    {
+        MapPoint[] exits = [new(100, 200), new(700, 260), new(380, 440), new(520, 90)];
+        var player = new MapPoint(40, 300);
+        var view = Camera.FittingAll(exits, player, RollCallView, Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64)!.Value;
+        foreach (var p in exits.Append(player))
+            Inside(On(view, p, RollCallView), RollCallView, Camera.CallOutPadding, Camera.LabelRoom);
+        // A fit, not just any view that holds them: the rightmost touches the label room, the leftmost the padding (a
+        // wide spread: its width decides).
+        Assert.Equal(RollCallView.Width - Camera.LabelRoom, On(view, new MapPoint(700, 260), RollCallView).X, 2);
+        Assert.Equal(Camera.CallOutPadding, On(view, player, RollCallView).X, 2);
+
+        // Without a position, the extracts alone.
+        var alone = Camera.FittingAll(exits, null, RollCallView, Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64)!.Value;
+        Assert.Equal(Camera.CallOutPadding, On(alone, new MapPoint(100, 200), RollCallView).X, 2);
+        foreach (var p in exits)
+            Inside(On(alone, p, RollCallView), RollCallView, Camera.CallOutPadding, Camera.LabelRoom);
+    }
+
+    [Fact]
+    public void A_single_far_extract_is_framed_with_the_player()
+    {
+        var player = new MapPoint(500, 400);
+        var far = new MapPoint(-2500, 3100);
+        var view = Camera.FittingAll([far], player, RollCallView, Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64)!.Value;
+        Inside(On(view, far, RollCallView), RollCallView, Camera.CallOutPadding, Camera.LabelRoom);
+        Inside(On(view, player, RollCallView), RollCallView, Camera.CallOutPadding, Camera.LabelRoom);
+        // Tall: the two lie on the top and bottom padding.
+        Assert.Equal(Camera.CallOutPadding, On(view, player, RollCallView).Y, 2);
+        Assert.Equal(RollCallView.Height - Camera.CallOutPadding, On(view, far, RollCallView).Y, 2);
+    }
+
+    [Fact]
+    public void Points_already_in_view_are_framed_too_but_never_past_the_zoom_limits()
+    {
+        // The map's whole view at 0.9 px per unit, its limits as every frame sets them: out to half of that, in to 64.
+        var camera = new Camera();
+        camera.Resize(RollCallView);
+        camera.Fit(new MapRect(0, 0, 1200, 800), 24, Camera.LabelRoom);
+        var whole = camera.Zoom;
+        Assert.Equal(whole * 0.5, camera.MinZoom, 9);
+
+        // Close together and all in view: framed, which here zooms in, as a fit does.
+        MapPoint[] near = [new(500, 400), new(620, 430)];
+        var view = camera.FittingAll(near, new MapPoint(530, 390), Camera.LabelRoom, Camera.CallOutPadding)!.Value;
+        Assert.True(view.Zoom > whole, $"{view.Zoom} against the whole map's {whole}");
+        Assert.True(view.Zoom <= camera.MaxZoom);
+        Assert.Equal(RollCallView.Width - Camera.LabelRoom, On(view, new MapPoint(620, 430), RollCallView).X, 2);
+
+        // One extract right by the player: not filling the window, held at the limit, the two in the middle.
+        var by = camera.FittingAll([new MapPoint(500, 400)], new MapPoint(500.5, 400.2), Camera.LabelRoom, Camera.CallOutPadding)!.Value;
+        Assert.Equal(camera.MaxZoom, by.Zoom, 9);
+        Inside(On(by, new MapPoint(500, 400), RollCallView), RollCallView, Camera.CallOutPadding, Camera.LabelRoom);
+
+        // Wider than the limit out allows (the whole map would need less than half its zoom): held there, never further.
+        var wide = camera.FittingAll([new MapPoint(-3000, 0), new MapPoint(4000, 800)], null, Camera.LabelRoom, Camera.CallOutPadding)!.Value;
+        Assert.Equal(camera.MinZoom, wide.Zoom, 9);
+    }
+
+    [Fact]
+    public void Nothing_to_frame_or_no_room_gives_no_view()
+    {
+        Assert.Null(Camera.FittingAll([], null, RollCallView, Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64));
+        // A minimised window, or one not laid out yet: the view stays as it is.
+        Assert.Null(Camera.FittingAll([new MapPoint(1, 1)], null, new SKSize(0, 0), Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64));
+        // The player alone is something to frame.
+        Assert.NotNull(Camera.FittingAll([], new MapPoint(1, 1), RollCallView, Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64));
+    }
+
     [Fact]
     public void A_view_chosen_meanwhile_isnt_replaced_by_the_waiting_fit()
     {

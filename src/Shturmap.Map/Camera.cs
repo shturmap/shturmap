@@ -125,15 +125,52 @@ public sealed class Camera
     /// limits: they may still be another map's (a preview's, about to be shown).
     /// </summary>
     public (MapPoint Center, double Zoom) FramingAbove(MapRect rect, float padding, float foot, float labelRoom = 0) =>
-        Place(rect, padding, labelRoom, foot, 1e-6);
+        Place(Viewport, rect, padding, labelRoom, foot, 1e-6, MaxZoom);
 
-    private (MapPoint Center, double Zoom) Place(MapRect rect, float padding, float labelRoom, float foot, double minZoom)
+    /// <summary>
+    /// The padding (DIPs) the roll call's framing keeps around the listed extracts and the player
+    /// (<see cref="FittingAll(IReadOnlyCollection{MapPoint}, MapPoint?, SKSize, float, float, double, double)"/>): room for
+    /// a triangle with its glow and its echoes' first reach. Callers give it in pixels: times the UI scale.
+    /// </summary>
+    public const float CallOutPadding = 48;
+
+    /// <summary>
+    /// The view the roll call zooms out to (owner, 2026-10-15, from the design panel: option A, "Roll call, then
+    /// fly-out"): every one of <paramref name="points"/> (the listed extracts' places, in map units) and the player's
+    /// <paramref name="player"/> (map units; null without a position) inside <paramref name="viewport"/> (pixels), with
+    /// <paramref name="padding"/> pixels on the left, top and bottom and <paramref name="labelRoom"/> pixels on the right
+    /// for their names, as every framing keeps them (<see cref="FramingAbove"/>). It is a fit, not a zoom out only: points
+    /// already in view are framed all the same, but never past the zoom limits (<paramref name="minZoom"/>,
+    /// <paramref name="maxZoom"/>: the map's <see cref="MinZoom"/> and <see cref="MaxZoom"/>), so points close together
+    /// stop at the closest zoom the wheel reaches; a caller that wants the view only to zoom out gives its zoom as
+    /// <paramref name="maxZoom"/>. Null with nothing to frame, or in a view with no room for the padding (minimised, not
+    /// laid out). Pure: the window moves the view to it with MapView.AnimateView.
+    /// </summary>
+    public static (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport, float labelRoom,
+        float padding, double minZoom, double maxZoom)
     {
-        var width = Viewport.Width;
+        var all = player is { } you ? points.Append(you).ToList() : points.ToList();
+        if (all.Count == 0 || viewport.Width <= 2 * padding || viewport.Height <= 2 * padding)
+            return null;
+        var rect = new MapRect(all.Min(p => p.X), all.Min(p => p.Y), all.Max(p => p.X), all.Max(p => p.Y));
+        return Place(viewport, rect, padding, labelRoom, 0, minZoom, Math.Max(minZoom, maxZoom));
+    }
+
+    /// <summary>The roll call's view (<see cref="FittingAll(IReadOnlyCollection{MapPoint}, MapPoint?, SKSize, float, float, double, double)"/>)
+    /// in this camera's viewport, within the zoom limits of the map shown.</summary>
+    public (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, float labelRoom, float padding) =>
+        FittingAll(points, player, Viewport, labelRoom, padding, MinZoom, MaxZoom);
+
+    private (MapPoint Center, double Zoom) Place(MapRect rect, float padding, float labelRoom, float foot, double minZoom) =>
+        Place(Viewport, rect, padding, labelRoom, foot, minZoom, MaxZoom);
+
+    private static (MapPoint Center, double Zoom) Place(SKSize viewport, MapRect rect, float padding, float labelRoom, float foot, double minZoom, double maxZoom)
+    {
+        var width = viewport.Width;
         var right = Math.Max(padding, Math.Min(labelRoom, width * LabelRoomShare));
         var zx = (width - padding - right) / Math.Max(rect.Width, 1e-6);
-        var zy = (Viewport.Height - foot - 2 * padding) / Math.Max(rect.Height, 1e-6);
-        var zoom = Math.Clamp(Math.Min(zx, zy), minZoom, MaxZoom);
+        var zy = (viewport.Height - foot - 2 * padding) / Math.Max(rect.Height, 1e-6);
+        var zoom = Math.Clamp(Math.Min(zx, zy), minZoom, maxZoom);
         // Where the rectangle's left edge goes on screen: the middle, or left of it as far as the room on the right
         // needs but not into the padding on the left; one too wide even for the padding (held at the zoom limit) stays
         // in the middle.

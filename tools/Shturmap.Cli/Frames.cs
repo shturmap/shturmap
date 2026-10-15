@@ -35,14 +35,24 @@ internal static class Frames
     // step a frame (MapRenderer.RepelStep, 2 px), a neighbour's push on top.
     private const float Jump = 3;
 
+    // The roll call's band (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"), as the panel
+    // drew it: in the middle of the map column, two columns of three rows 22 px apart, the turns down the first column and
+    // then the second; each row's triangle at its left, where its icon lifts off. A longer list (Customs' has eight) takes
+    // a third column here; the window's band is the window's.
+    private const float BandRowGap = 22;
+    private const float BandColumn = 170;
+
     public static async Task RunAsync(List<string> args)
     {
         var options = new List<string>(args);
         var scene = Take(options, "--scene") ?? "list-read";
-        if (scene is not ("list-read" or "whatsnew-extracts"))
-            throw new ArgumentException($"Unknown scene {scene}: list-read or whatsnew-extracts");
-        var every = int.Parse(Take(options, "--every") ?? "100", CultureInfo.InvariantCulture);
-        var count = int.Parse(Take(options, "--count") ?? "36", CultureInfo.InvariantCulture);
+        if (scene is not ("list-read" or "whatsnew-extracts" or "list-callout"))
+            throw new ArgumentException($"Unknown scene {scene}: list-read, whatsnew-extracts or list-callout");
+        var callOut = scene == "list-callout";
+        // The roll call runs to about 5.4 s, and its view zooms out by more than a tenth in a frame 100 ms apart, where the
+        // window's frames hold symbols steady (MapRenderer.SetApart): 30 frames a second by default.
+        var every = int.Parse(Take(options, "--every") ?? (callOut ? "33" : "100"), CultureInfo.InvariantCulture);
+        var count = int.Parse(Take(options, "--count") ?? (callOut ? "180" : "36"), CultureInfo.InvariantCulture);
         if (every <= 0 || count is < 1 or > 2000)
             throw new ArgumentException("--every takes milliseconds above 0, --count 1 to 2000 frames");
         WorldPoint? fixAt = null;
@@ -65,9 +75,12 @@ internal static class Frames
             }
             options.RemoveAt(g);
         }
+        // The roll call moves the view as the window will, --glide or not: its length is the glide's.
+        if (callOut)
+            glideMs ??= MapScene.CallOutFitLength.TotalMilliseconds;
         if (options.Count != 2)
         {
-            throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts] [--every <ms>] [--count <n>] " +
+            throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>] [--count <n>] " +
                                         "[--fix <x> <y> <z>] [--glide [ms]]");
         }
         var (mapName, output) = (options[0], Path.GetFullPath(options[1]));
@@ -100,19 +113,40 @@ internal static class Frames
             shown.Floor = FloorResolver.LayerFor(definition, given);
             about.Add(FormattableString.Invariant($"Player: --fix ({given.X:0.#}, {given.Y:0.#}, {given.Z:0.#}), which the preview itself hasn't got"));
         }
-        shown.RingExits(Start);
-
         // One fitted view for every frame, as the map opens; with --glide the view moves from it as AnimateView moves it.
         var camera = new Camera();
         camera.Resize(new SKSize(Width, Height));
         camera.Fit(shown.Projection.WorldRect, 24, Camera.LabelRoom);
         var from = (camera.Center, camera.Zoom);
         var to = from;
-        if (glideMs is not null)
+        var glideAt = 0.0;
+        IReadOnlyList<ExitFlight> flights = [];
+        if (callOut)
         {
+            // The roll call: the band's rows called nearest the player first, each icon flying from its row; the view
+            // starts as a raid's often is, three times the whole map's zoom on the position, and zooms out to frame the
+            // list and the player as the window moves it.
+            var calling = shown.ExitsToCall();
+            var calls = calling.Select((m, i) => BandRow(i, calling.Count) is var row ? new ExitCall(m.Id, row.X, row.Y, i) : default).ToList();
+            flights = shown.CallOutExits(calls, Start);
             var target = shown.Player is { } p ? shown.Projection.ToMap(p.Position) : Middle(shown);
-            to = (target, from.Zoom * GlideZoom);
-            about.Add(FormattableString.Invariant($"View: glides from the whole map to {GlideZoom}x on {(shown.Player is null ? "the middle of the extracts on the list" : "the position")} over {glideMs} ms, eased in and out as MapView.AnimateView"));
+            from = (target, camera.Zoom * GlideZoom);
+            camera.Restore(from.Center, from.Zoom);
+            var fit = camera.FittingAll(calling.Select(m => shown.Projection.ToMap(m.Position)).ToList(), PlayerAt(shown), Camera.LabelRoom, Camera.CallOutPadding);
+            to = fit ?? from;
+            glideAt = MapScene.CallOutFitAt.TotalMilliseconds;
+            about.Add(FormattableString.Invariant($"Band: {calls.Count} rows, {BandRowGap} px apart in columns of three {BandColumn} px apart, in the middle of the view; each icon lifts off its row's triangle (the calls' From)"));
+            about.Add(FormattableString.Invariant($"View: from {GlideZoom}x the whole map's zoom on the position (centre {from.Center.X:0.#}, {from.Center.Y:0.#}; zoom {from.Zoom:0.####}), at +{glideAt:0} ms it zooms out over {glideMs} ms to Camera.FittingAll with {Camera.CallOutPadding} px padding and the label room (centre {to.Center.X:0.#}, {to.Center.Y:0.#}; zoom {to.Zoom:0.####}), eased in and out as MapView.AnimateView"));
+        }
+        else
+        {
+            shown.RingExits(Start);
+            if (glideMs is not null)
+            {
+                var target = shown.Player is { } p ? shown.Projection.ToMap(p.Position) : Middle(shown);
+                to = (target, from.Zoom * GlideZoom);
+                about.Add(FormattableString.Invariant($"View: glides from the whole map to {GlideZoom}x on {(shown.Player is null ? "the middle of the extracts on the list" : "the position")} over {glideMs} ms, eased in and out as MapView.AnimateView"));
+            }
         }
 
         Directory.CreateDirectory(output);
@@ -123,7 +157,7 @@ internal static class Frames
             var time = Start + TimeSpan.FromMilliseconds(ms);
             if (glideMs is { } length)
             {
-                var (center, zoom) = Glide(from, to, ms / length);
+                var (center, zoom) = Glide(from, to, (ms - glideAt) / length);
                 camera.Restore(center, zoom);
             }
             if (tiles is not null && definition.TilePath is { } basePath)
@@ -145,12 +179,18 @@ internal static class Frames
 
         var rings = shown.ExitsRinging.OrderBy(r => r.Value.At).ThenBy(r => r.Key, StringComparer.Ordinal)
             .Select(r => new RingRecord(r.Key, NameOf(shown, r.Key), Round((r.Value.At - Start).TotalMilliseconds, 1), r.Value.Listed)).ToList();
+        var flown = flights.Select(f => Flown(f, shown, frames)).ToList();
+        var checks = callOut ? CallOutChecks(shown, camera, flown, frames) : [];
         var json = new FramesRecord(map.NormalizedName, scene, every, count, Width, Height,
             shown.Player is { } fix ? new PositionRecord(fix.Position.X, fix.Position.Y, fix.Position.Z) : null,
             glideMs, new ListsRecord([.. Ids(shown, shown.ExitsListed)], [.. Ids(shown, shown.ExitsUnsure)], [.. Ids(shown, shown.ExitsNotListed)]),
-            rings, frames);
+            rings, frames)
+        {
+            GlideAtMs = glideMs is null ? null : glideAt,
+            Flights = callOut ? flown : null,
+        };
         await File.WriteAllTextAsync(Path.Combine(output, "frames.json"), JsonSerializer.Serialize(json, Json));
-        var summary = Summary(map.Name, scene, every, glideMs, about, shown, rings, frames);
+        var summary = Summary(map.Name, scene, every, glideMs, about, shown, rings, frames, flown, checks);
         await File.WriteAllTextAsync(Path.Combine(output, "summary.txt"), summary);
         Console.WriteLine(summary);
         Console.WriteLine($"{count} frames, frames.json and summary.txt in {output}");
@@ -223,6 +263,16 @@ internal static class Frames
         return (scene, about);
     }
 
+    // Where the band's row of a turn has its triangle, in the view's pixels: the turns go down a column of three, then the
+    // next; the columns sit in the middle of the view.
+    private static SKPoint BandRow(int turn, int rows)
+    {
+        var columns = Math.Max(1, (rows + 2) / 3);
+        return new SKPoint(Width / 2f - columns * BandColumn / 2 + turn / 3 * BandColumn + 10, Height / 2f + (turn % 3 - 1) * BandRowGap);
+    }
+
+    private static MapPoint? PlayerAt(MapScene scene) => scene.Player is { } p ? scene.Projection.ToMap(p.Position) : null;
+
     // Where the glide goes without a position: the middle of the extracts on the list.
     private static MapPoint Middle(MapScene scene)
     {
@@ -249,7 +299,20 @@ internal static class Frames
     };
 
     private sealed record FramesRecord(string Map, string Scene, int EveryMs, int Count, int Width, int Height, PositionRecord? Fix, double? GlideMs,
-        ListsRecord Lists, IReadOnlyList<RingRecord> Rings, IReadOnlyList<FrameRecord> Frames);
+        ListsRecord Lists, IReadOnlyList<RingRecord> Rings, IReadOnlyList<FrameRecord> Frames)
+    {
+        /// <summary>When the view's glide starts, from t0: at once, or the roll call's zoom out at 1.2 s.</summary>
+        public double? GlideAtMs { get; init; }
+
+        /// <summary>The roll call's flights (list-callout), in their turns' order.</summary>
+        public IReadOnlyList<FlightRecord>? Flights { get; init; }
+    }
+
+    /// <summary>A flight from the band to an extract's place (MapScene.ExitFlights): its turn, when it lifts off and lands
+    /// (from t0), where from (the row's triangle) and where to (its symbol as drawn in the first frame at or after the
+    /// landing; null when no frame is), in pixels.</summary>
+    private sealed record FlightRecord(string Id, string Name, int Turn, bool Listed, double LiftOffMs, double LandingMs, PointRecord From, PointRecord? To,
+        double? ToMs);
 
     private sealed record PositionRecord(double X, double Y, double Z);
 
@@ -268,9 +331,20 @@ internal static class Frames
 
     /// <summary>An extract or a transit as drawn (<see cref="SymbolTrace"/>): its centre and radius in pixels, its centre
     /// in map units, how far it stands from its own place in pixels (set off by the repel), the leader's end at that place
-    /// where it has one, and the animation values the renderer drew it with.</summary>
+    /// where it has one, and the animation values the renderer drew it with; for one the roll call flies, how far its icon
+    /// is on its way (0 to 1), where it is drawn and how large, and whether its place is in view yet (out of view, only the
+    /// flight is drawn, toward the place's x, y).</summary>
     private sealed record ExitRecord(string Id, string Name, MarkerKind Kind, ExitLook State, double X, double Y, double R, double MapX, double MapY,
-        double OffX, double OffY, PointRecord? Leader, double? Arrival, double? Glow, IReadOnlyList<double> Echoes, double? Question);
+        double OffX, double OffY, PointRecord? Leader, double? Arrival, double? Glow, IReadOnlyList<double> Echoes, double? Question)
+    {
+        public double? Flight { get; init; }
+
+        public PointRecord? Flying { get; init; }
+
+        public double? FlightScale { get; init; }
+
+        public bool InView { get; init; } = true;
+    }
 
     /// <summary>Any other symbol as drawn: where, how large, and how far off its own place.</summary>
     private sealed record SymbolRecord(string Id, string Name, MarkerKind Kind, double X, double Y, double R, double MapX, double MapY,
@@ -289,7 +363,13 @@ internal static class Frames
             {
                 exits.Add(new ExitRecord(t.Id, t.Name, t.Kind, look, Round(t.At.X), Round(t.At.Y), Round(t.R), Round(map.X, 3), Round(map.Y, 3),
                     Round(t.At.X - place.X), Round(t.At.Y - place.Y), leader, t.Arrival is { } a ? Round(a, 4) : null, t.Glow is { } g ? Round(g, 4) : null,
-                    t.Echoes.Select(e => Round(e, 4)).ToList(), t.Question is { } q ? Round(q, 4) : null));
+                    t.Echoes.Select(e => Round(e, 4)).ToList(), t.Question is { } q ? Round(q, 4) : null)
+                {
+                    Flight = t.Flight is { } f ? Round(f, 4) : null,
+                    Flying = t.Flying is { } at ? new PointRecord(Round(at.X), Round(at.Y)) : null,
+                    FlightScale = t.FlightScale is { } s ? Round(s, 4) : null,
+                    InView = t.InView,
+                });
             }
             else
             {
@@ -311,17 +391,22 @@ internal static class Frames
     // ---- summary.txt ----
 
     private static string Summary(string mapName, string sceneName, int every, double? glideMs, List<string> about, MapScene scene,
-        List<RingRecord> rings, List<FrameRecord> frames)
+        List<RingRecord> rings, List<FrameRecord> frames, List<FlightRecord> flights, List<string> callOutChecks)
     {
         var s = new StringBuilder();
         var first = frames[0];
-        s.AppendLine(Fmt($"{mapName}, scene {sceneName}: {frames.Count} frames {every} ms apart from t0 (the moment the list is read: RingExits), {Width} x {Height} px"));
-        s.AppendLine(Fmt($"View: fitted to the map (centre {first.View.CenterX:0.#}, {first.View.CenterY:0.#}; zoom {first.View.Zoom:0.####} px per map unit)"));
+        var callOut = sceneName == "list-callout";
+        s.AppendLine(Fmt($"{mapName}, scene {sceneName}: {frames.Count} frames {every} ms apart from t0 (the moment the list is read: {(callOut ? "CallOutExits" : "RingExits")}), {Width} x {Height} px"));
+        if (!callOut)
+            s.AppendLine(Fmt($"View: fitted to the map (centre {first.View.CenterX:0.#}, {first.View.CenterY:0.#}; zoom {first.View.Zoom:0.####} px per map unit)"));
         foreach (var line in about)
             s.AppendLine(line);
         if (scene.Player is null)
             s.AppendLine("Player: none. The rings go in the data's order (MapScene.RingExits: nearest first only where there is a position)");
-        var exits = first.Exits;
+        // The roll call starts close in: what is in view by the end is what it framed.
+        var exits = callOut ? frames[^1].Exits.Where(e => e.InView).ToList() : first.Exits;
+        if (callOut)
+            s.AppendLine("In view at the last frame, after the zoom out:");
         void Group(string title, ExitLook look) =>
             s.AppendLine($"{title} ({exits.Count(e => e.State == look)}): {string.Join(", ", exits.Where(e => e.State == look).Select(e => e.Name))}");
         Group("Lit, on the list", ExitLook.Listed);
@@ -330,6 +415,15 @@ internal static class Frames
         Group("Plain, no state", ExitLook.Plain);
         Group("Transits", ExitLook.Transit);
         s.AppendLine("Turns (MapScene.ExitsRinging): " + string.Join("; ", rings.Select(r => Fmt($"+{r.TurnMs:0} ms {r.Name} ({(r.Listed ? "lit" : "??:??:??")})"))));
+        if (callOut)
+        {
+            s.AppendLine("Flights (MapScene.ExitFlights), from the band's row to the symbol as drawn at the first frame at or after the landing:");
+            foreach (var f in flights)
+            {
+                var to = f.To is { } at ? Fmt($"({at.X:0.#}, {at.Y:0.#}) at +{f.ToMs:0} ms") : "(no frame after it)";
+                s.AppendLine(Fmt($"  turn {f.Turn}  {f.Name} ({(f.Listed ? "lit" : "??:??:??")}): lifts off +{f.LiftOffMs:0} ms from ({f.From.X:0.#}, {f.From.Y:0.#}), lands +{f.LandingMs:0} ms on {to}"));
+            }
+        }
         if (frames.FirstOrDefault(f => !f.Ringing) is { } over)
             s.AppendLine(Fmt($"The rings are over from frame {over.Index:000} (+{over.Ms:0} ms)."));
         else
@@ -341,10 +435,18 @@ internal static class Frames
         var jumps = new List<string>();
         var leaders = new Dictionary<string, int>(StringComparer.Ordinal);
         Dictionary<string, (ExitRecord? Exit, SymbolRecord? Other)>? before = null;
+        var wasFlying = new Dictionary<string, ExitRecord>(StringComparer.Ordinal);
         foreach (var frame in frames)
         {
             var now = Index(frame);
             var lines = new List<string>();
+            // The roll call's icons: which lift off and which land between this frame and the one before.
+            var flying = frame.Exits.Where(e => e.Flight is not null).ToDictionary(e => e.Id, StringComparer.Ordinal);
+            foreach (var (id, e) in flying.Where(f => !wasFlying.ContainsKey(f.Key)))
+                lines.Add(Fmt($"  lift-off {e.Name} at ({e.Flying!.X:0.#}, {e.Flying.Y:0.#}), {e.Flight:0.00} of its way{(e.InView ? "" : ", its place out of view")}"));
+            foreach (var (id, e) in wasFlying.Where(f => !flying.ContainsKey(f.Key)))
+                lines.Add($"  lands    {e.Name}");
+            wasFlying = flying;
             if (glideMs is not null && before is not null)
             {
                 var previous = frames[frame.Index - 1].View;
@@ -409,13 +511,13 @@ internal static class Frames
             {
                 foreach (var (id, was) in before.Where(b => !now.ContainsKey(b.Key)))
                     lines.Add($"  gone     {was.Exit?.Name ?? was.Other!.Name}");
-                var animating = frame.Exits.Where(e => before.TryGetValue(e.Id, out var w) && w.Exit is not null && Drawn(e) != Drawn(w.Exit)).ToList();
+                var animating = frame.Exits.Where(e => e.InView && before.TryGetValue(e.Id, out var w) && w.Exit is not null && Drawn(e) != Drawn(w.Exit)).ToList();
                 if (animating.Count > 0)
                     lines.Add("  drawn    " + string.Join("; ", animating.Select(e => $"{e.Name} {Drawn(e)}")));
             }
             else
             {
-                var waiting = frame.Exits.Where(e => e.Arrival is < 0).Select(e => e.Name).ToList();
+                var waiting = frame.Exits.Where(e => e.InView && e.Arrival is < 0).Select(e => e.Name).ToList();
                 if (waiting.Count > 0)
                     lines.Add($"  waiting  {string.Join(", ", waiting)} (not lit before their turn)");
             }
@@ -439,9 +541,9 @@ internal static class Frames
         s.AppendLine($"  struck out, plain and transit symbols whose glow, echoes or \"?\" changed: {(still.Count == 0 ? "none" : string.Join("; ", still))}");
         var last = frames[^1];
         var differ = new List<string>();
-        foreach (var e in last.Exits)
+        foreach (var e in last.Exits.Where(e => e.InView))
         {
-            if (first.Exits.FirstOrDefault(f => f.Id == e.Id) is not { } f)
+            if (first.Exits.FirstOrDefault(f => f.Id == e.Id && f.InView) is not { } f)
                 differ.Add($"{e.Name}: not in frame 000");
             else if (glideMs is null && f with { Arrival = e.Arrival, Echoes = e.Echoes, Glow = e.Glow, Question = e.Question } != e)
                 differ.Add($"{e.Name} ({e.State}): its place, size or state");
@@ -449,7 +551,66 @@ internal static class Frames
                 differ.Add($"{e.Name} ({e.State}): {Drawn(f)} -> {Drawn(e)}");
         }
         s.AppendLine(Fmt($"  frame 000 against frame {last.Index:000}: {(differ.Count == 0 ? "no extract or transit differs" : string.Join("; ", differ))}"));
+        foreach (var line in callOutChecks)
+            s.AppendLine("  " + line);
         return s.ToString();
+    }
+
+    // A flight as the frames drew it: its times from t0, its row, and where it landed (its symbol in the first frame at or
+    // after the landing, laid out in view).
+    private static FlightRecord Flown(ExitFlight f, MapScene scene, List<FrameRecord> frames)
+    {
+        var landing = (f.Landing - Start).TotalMilliseconds;
+        var after = frames.FirstOrDefault(fr => fr.Ms >= landing - 1e-6 && fr.Exits.Any(e => e.Id == f.MarkerId && e.InView));
+        var at = after?.Exits.First(e => e.Id == f.MarkerId && e.InView);
+        return new FlightRecord(f.MarkerId, NameOf(scene, f.MarkerId), f.Turn, f.Listed, Round((f.LiftOff - Start).TotalMilliseconds, 1), Round(landing, 1),
+            new PointRecord(Round(f.FromX), Round(f.FromY)), at is null ? null : new PointRecord(at.X, at.Y), after?.Ms);
+    }
+
+    // The roll call's own checks (owner, 2026-10-15): every landing is its ring's start, its symbol unlit until then and
+    // never lit while its icon flies; and the view it zooms out to holds every extract it called and the player, within
+    // the padding and the label room.
+    private static List<string> CallOutChecks(MapScene scene, Camera camera, List<FlightRecord> flights, List<FrameRecord> frames)
+    {
+        var checks = new List<string>();
+        var off = new List<string>();
+        foreach (var f in flights)
+        {
+            if (!scene.ExitsRinging.TryGetValue(f.Id, out var ring) || Math.Abs((ring.At - Start).TotalMilliseconds - f.LandingMs) > 0.05)
+                off.Add($"{f.Name}: its ring doesn't start at its landing");
+        }
+        foreach (var frame in frames)
+        {
+            foreach (var e in frame.Exits)
+            {
+                if (e.Flight is not null && (e.Arrival is not < 0 || e.Glow is > 0 || e.Question is > 0 || e.Echoes.Count > 0))
+                    off.Add(Fmt($"frame {frame.Index:000}: {e.Name} lit or ringing while it flies ({Drawn(e)})"));
+                if (e.Flight is null && e.Arrival is < 0 && (e.Glow is > 0 || e.Question is > 0 || e.Echoes.Count > 0))
+                    off.Add(Fmt($"frame {frame.Index:000}: {e.Name} lit before it lands ({Drawn(e)})"));
+            }
+        }
+        checks.Add(Fmt($"every landing is a ring start, nothing lit before it lands: {(off.Count == 0 ? Fmt($"yes, {flights.Count} flights") : string.Join("; ", off))}"));
+
+        // At the last frame's view: each called extract's place and its symbol as drawn, and the player.
+        var right = Width - Math.Max(Camera.CallOutPadding, Math.Min(Camera.LabelRoom, Width * Camera.LabelRoomShare));
+        var room = SKRect.Create(Camera.CallOutPadding - 0.5f, Camera.CallOutPadding - 0.5f, right - Camera.CallOutPadding + 1, Height - 2 * Camera.CallOutPadding + 1);
+        var outside = new List<string>();
+        var last = frames[^1];
+        foreach (var f in flights)
+        {
+            var marker = scene.Markers.First(m => m.Id == f.Id);
+            var place = camera.ToScreen(scene.Projection.ToMap(marker.Position));
+            if (!room.Contains(place))
+                outside.Add(Fmt($"{f.Name}'s place at ({place.X:0.#}, {place.Y:0.#})"));
+            if (last.Exits.FirstOrDefault(e => e.Id == f.Id && e.InView) is not { } drawn)
+                outside.Add($"{f.Name} not drawn");
+            else if (drawn.X < 0 || drawn.X > Width || drawn.Y < 0 || drawn.Y > Height)
+                outside.Add(Fmt($"{f.Name} drawn at ({drawn.X:0.#}, {drawn.Y:0.#})"));
+        }
+        if (PlayerAt(scene) is { } you && camera.ToScreen(you) is var player && !room.Contains(player))
+            outside.Add(Fmt($"the player at ({player.X:0.#}, {player.Y:0.#})"));
+        checks.Add(Fmt($"the fit at frame {last.Index:000} (+{last.Ms:0} ms) holds every called extract and the player within {Camera.CallOutPadding} px and the label room: {(outside.Count == 0 ? "yes" : string.Join("; ", outside))}"));
+        return checks;
     }
 
     // What the renderer drew an extract with that moves: its glow, its echoes, its "?".
@@ -470,7 +631,8 @@ internal static class Frames
     private static Dictionary<string, (ExitRecord? Exit, SymbolRecord? Other)> Index(FrameRecord frame)
     {
         var all = new Dictionary<string, (ExitRecord?, SymbolRecord?)>(StringComparer.Ordinal);
-        foreach (var e in frame.Exits)
+        // An extract the roll call flies to while its place is out of view isn't laid out: only its flight is drawn.
+        foreach (var e in frame.Exits.Where(e => e.InView))
             all.TryAdd(e.Id, (e, null));
         foreach (var o in frame.Others)
             all.TryAdd(o.Id, (null, o));
