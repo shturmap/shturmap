@@ -599,14 +599,17 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 17 s
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
 pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
-position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; an extract list just
+position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; a notch of the
+wheel zooms over 0.15 s, eased in and out, and notches in a row run on into one zoom ("Map drawing", *The wheel zooms
+over 0.15 s*; owner, 2026-10-15); an extract list just
 read is called out (§1's fourth exception): its rows rise in 0.1 s apart from 0.5 s, the view takes in its extracts
 from 1.2 s over 1.2 s, eased in and out as the tour's moves, and from 1.6 s each triangle flies to its place over 0.9 s,
 0.16 s after the one before, on an arc, eased in and out, and rings out as it lands; with six extracts the last lands
 at 3.3 s, the title goes from 4.8 s and the rings end at about 5.4 s ("Map drawing", *The player's extracts this
 raid*); the raid card's time doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
-the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts.
+the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
+the wheel's zoom to its notch.
 The tour (§1's second exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide
 from part to part over 0.65 s eased in and out while the map sheet's corner marks close in on them with a small
 overshoot, the band's gold rule shoots out and its title decodes over 0.7 s at each chapter, a stage's lines rise in
@@ -897,8 +900,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     colour with a `Line` hairline. NEW IN 0.4.0 · PRAETORIAN in the eyebrow style in amber (the version and its
     release's name, below), × in its corner (`E711`, as on a notice),
     up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
-    map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, or a small
-    drawing of the raid card's clock. **Pointing at a line previews it** on the map, as resting on a map's row in Plan
+    map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, a small
+    drawing of the raid card's clock, the stash grid glyph the marks carry (what you have), a sticky note (`E70B`,
+    Segoe's QuickNote) for quest notes (`notes`), or, on a line about the tour (`tour`, `tour:5`), the tour's drawn
+    pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the picture's place (owner,
+    2026-10-15: until then a tour line had none, the one gap in the column; `MainWindow.TourPointerShape`). **Pointing
+    at a line previews it** on the map, as resting on a map's row in Plan
     does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
     0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID" beside it, or under it where the map leaves too
     little room for both, each whole, a plate then standing as much lower than the map's middle as it takes to keep clear
@@ -1455,8 +1462,11 @@ spawns below).
     past the distance at which a symbol clears its place's dot and goes 2.5 px short of it, so neither comes and goes
     from frame to frame. A symbol that comes into view or out of a parting cluster makes way for those already
     standing; the push-only passes keep symbols off each other and the player, and off each other's places only
-    through the passes the symbols follow. Anything else (the map opened, a wheel's notch, a new position, other
-    quests) lays them out afresh, as a still view always shows them; once the view is still nothing moves. After a
+    through the passes the symbols follow. A wheel's notch is such a move since 2026-10-15 (owner: it zooms over
+    0.15 s, below, *The wheel zooms over 0.15 s*); until then it zoomed by a fifth at once and laid the crowd out afresh,
+    which could flip a symbol to the other side of its place. Anything else (the map opened, a zoom at once: a
+    double-click, + or −, a notch with Windows' animation effects off; a new position, other quests) lays them out
+    afresh, as a still view always shows them; once the view is still nothing moves. After a
     glide a crowd can stand otherwise than a fresh layout of the same view would have it, until the next fresh one. In
     a 1.2 s glide on Customs at 60 frames a second (`shturmap-cli frames customs --scene list-read --glide 1200 --every
     16`), symbols set off their places by more than 3 px more or less from one frame to the next went from 466 to 3
@@ -1710,6 +1720,20 @@ spawns below).
   outside the limits moves toward them or stays, never jumps. A map fitted while the view has no room (the window
   minimised, or not laid out yet) is fitted when it has; before, its zoom fell to almost nothing and the map stayed out
   of sight until "show the whole map".
+- **The wheel zooms over 0.15 s** (owner, 2026-10-15: a notch zoomed by a fifth at once, which laid the crowded symbols
+  out afresh and could flip them to the other side of their places). A notch (1.197 times, about a fifth;
+  `WheelZoom.FactorOf`) zooms over 0.15 s, eased in and out on a log scale, keeping the point under the pointer in
+  place (following with the view on the player, about the player), so its frames come under *Steady while the view
+  moves* (above). A notch during another adds its step to where that one goes and sets off from where it is, at the
+  speed it has there (a cubic from that speed to rest on the target, never past it), so a turn of several notches is
+  one zoom without a stop, landing 0.15 s after the last notch where the notches at once would have put it
+  (`WheelZoom`). With Windows' animation effects off a notch zooms at once. A turn while the view moves by itself (the
+  replay's glide, the roll call's) is left out: that move set the view again at its next frame anyway. + and −, the
+  zoom buttons (1.5 times) and a double-click (2 times) zoom at once, as before. Three notches 0.3 s apart on Customs
+  at 60 frames a second (`shturmap-cli frames customs --notch`): symbols set off their places by more than 3 px more or
+  less from one frame to the next went from 82 (the largest 91 px) to 3, all at the frame where Abandoned Cargo's
+  places part; a frame zooms by 2.9 % at most. A quick turn keeps under the tenth a frame up to about a notch every
+  30 ms at 60 frames a second; a faster spin lays some of its frames out afresh.
 - **Room for labels on the right** (owner, 2026-10-09). The map writes a symbol's label to its right, so the whole map
   (a new map, a Plan row's preview, 0 and the button) and every framing (What's New's and the tour's previews, the raid
   replay) keep 150 DIP between what they show and the view's right edge (`Camera.LabelRoom`); the other sides keep
@@ -2896,8 +2920,12 @@ times the zoom on the position in 1.2 s (for `list-callout`, its zoom out), and 
 symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
 motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing", *Steady
 while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did more
-than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, `GlideFramesTests`
-the symbols on leaders in a glide, and `ExitCallOutFramesTests` the roll call's flights.
+than once. `--notch [ms]` turns the wheel three notches in at the position (without one, the middle of the extracts on
+the list), [ms] apart (300 by default) from the whole map's view, as `MapView` animates them (`WheelZoom`; "Map
+drawing", *The wheel zooms over 0.15 s*), drawn every 16 ms until the last has landed, with the same checks as
+`--glide` (not with it, nor with `list-callout`). `ExitRingFramesTests` hold the ring to "Map drawing" the same way,
+on a made-up raid, `GlideFramesTests` the symbols on leaders in a glide and in the wheel's notches, `WheelZoomTests`
+the notches' zoom, and `ExitCallOutFramesTests` the roll call's flights.
 
 ### How the parts work
 

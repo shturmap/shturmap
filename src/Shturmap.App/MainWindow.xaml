@@ -724,6 +724,19 @@
                                   <!-- What you have: the stash grid glyph the marks carry. -->
                                   <FontIcon Glyph="&#xE80A;" FontSize="22" Foreground="{StaticResource InkBrush}" Width="56" Height="34"
                                             HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind StashVisibility}" />
+                                  <!-- Quest notes: a sticky note, Segoe's QuickNote. -->
+                                  <FontIcon Glyph="&#xE70B;" FontSize="22" Foreground="{StaticResource InkBrush}" Width="56" Height="34"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind NotesVisibility}" />
+                                  <!-- A line about the tour: the tour's drawn pointer, as it draws it (MainWindow.TourPointer;
+                                       owner, 2026-10-15). -->
+                                  <Grid Width="56" Height="34" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind TourVisibility}">
+                                    <Path Data="{x:Bind local:MainWindow.TourPointerShape}" Fill="White" Stroke="{StaticResource GroundBrush}" StrokeThickness="1.2"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                      <Path.RenderTransform>
+                                        <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
+                                      </Path.RenderTransform>
+                                    </Path>
+                                  </Grid>
                                   <!-- The raid card's clock, small: its figure over its rule. -->
                                   <StackPanel Width="56" Height="34" VerticalAlignment="Top" Visibility="{x:Bind ClockVisibility}" Padding="2,2,2,0">
                                     <StackPanel Orientation="Horizontal" Spacing="3">

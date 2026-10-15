@@ -1130,14 +1130,22 @@ public sealed partial class MainWindow
         });
     }
 
-    // The drawn pointer, an arrow like the system's (the website clip's), inside the tour so a snapshot shows it.
+    /// <summary>
+    /// The drawn pointer's outline, an arrow like the system's (the website clip's), drawn white on a dark rim at 1.2
+    /// times. The tour draws it, and What's New's lines about the tour carry it as their picture (owner, 2026-10-15;
+    /// MainWindow.xaml). A new one at each use, one for each Path.
+    /// </summary>
+    public static Geometry TourPointerShape =>
+        (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), "M0,0 L0,19 L4.6,14.6 L7.9,21.6 L10.6,20.4 L7.4,13.5 L13.6,13.5 Z");
+
+    // The drawn pointer, inside the tour so a snapshot shows it.
     private void TourPointer(Point at)
     {
         if (_tourPointer is null)
         {
             _tourPointer = new Path
             {
-                Data = (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), "M0,0 L0,19 L4.6,14.6 L7.9,21.6 L10.6,20.4 L7.4,13.5 L13.6,13.5 Z"),
+                Data = TourPointerShape,
                 Fill = new SolidColorBrush(Microsoft.UI.Colors.White),
                 Stroke = Resource("GroundBrush"),
                 StrokeThickness = 1.2,

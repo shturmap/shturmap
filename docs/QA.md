@@ -50,7 +50,7 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 | change | checks |
 | --- | --- |
 | the rail, a card, a cue, a dialog, the status bar, help, settings, a text | views plan, raid, quest (help and settings in each) in en-US and de-DE at 900x560 and 1600x900, folder build; the layout check for those views in en-US, de-DE and qps-ploc at both sizes |
-| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames`, both scenes, with and without `--glide`; the raid view at both sizes |
+| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames`, both scenes, with and without `--glide`, and with `--notch`; the raid view at both sizes |
 | an animation or a flow | the replay scripts; one drafted in the pass folder for a flow without one; `frames` for the map's animations |
 | the layout, in any language | the layout check, every view, en-US, de-DE and qps-ploc, both sizes |
 | a release | all of the above for every view; the tour's seven chapters in both languages; What's New and each line's preview; the layout check in full with `-SwitchCheck` |
@@ -62,7 +62,7 @@ Every pass runs the replay scripts in `tools\qa\` (below), and the checks of eac
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -ShowQuest Dandies -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 # The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, tour1 … tour7
 .\tools\layout-check.ps1 -Out "$pass\layout" -Exe artifacts\layout-check\app\Shturmap.exe -Languages en-US,de-DE,qps-ploc -Sizes 900x560,1600x900 -States plan,raid,quest -MoreArgs '--data', "$pass\layout\data"
-# Map drawing; each frames run again with --glide into a folder of its own
+# Map drawing; each frames run again with --glide, and list-read with --notch, into a folder of its own
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$pass\render\streets.png" --data "$pass\render\data"
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\list-read" --data "$pass\frames\data"
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- frames customs "$pass\frames\whatsnew" --scene whatsnew-extracts --data "$pass\frames\data"

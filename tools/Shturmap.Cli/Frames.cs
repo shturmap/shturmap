@@ -30,6 +30,9 @@ internal static class Frames
     // What the view's glide does (MapView.AnimateView, the tour's 1.2 s): to three times the zoom, eased in and out.
     private const double GlideZoom = 3;
 
+    // --notch turns the wheel this many notches in, each as MapView turns one (WheelZoom: 1.197 over 0.15 s).
+    private const int Notches = 3;
+
     // A symbol set off its place by more than this between two frames while the view glides has jumped: the view's own
     // motion moves its place, not its offset from it, and while it moves a symbol goes toward where the repel puts it a
     // step a frame (MapRenderer.RepelStep, 2 px), a neighbour's push on top.
@@ -49,10 +52,24 @@ internal static class Frames
         if (scene is not ("list-read" or "whatsnew-extracts" or "list-callout"))
             throw new ArgumentException($"Unknown scene {scene}: list-read, whatsnew-extracts or list-callout");
         var callOut = scene == "list-callout";
+        double? notchMs = null;
+        if (options.IndexOf("--notch") is var n and >= 0)
+        {
+            notchMs = 300;
+            if (n + 1 < options.Count && double.TryParse(options[n + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out var apart) && apart > 0)
+            {
+                notchMs = apart;
+                options.RemoveAt(n + 1);
+            }
+            options.RemoveAt(n);
+        }
         // The roll call runs to about 5.4 s, and its view zooms out by more than a tenth in a frame 100 ms apart, where the
-        // window's frames hold symbols steady (MapRenderer.SetApart): 30 frames a second by default.
-        var every = int.Parse(Take(options, "--every") ?? (callOut ? "33" : "100"), CultureInfo.InvariantCulture);
-        var count = int.Parse(Take(options, "--count") ?? (callOut ? "180" : "36"), CultureInfo.InvariantCulture);
+        // window's frames hold symbols steady (MapRenderer.SetApart): 30 frames a second by default. The wheel's notches
+        // take 0.15 s each: 60 frames a second, until the last has landed.
+        var every = int.Parse(Take(options, "--every") ?? (callOut ? "33" : notchMs is not null ? "16" : "100"), CultureInfo.InvariantCulture);
+        var count = int.Parse(Take(options, "--count")
+            ?? (callOut ? "180" : notchMs is { } apartMs ? ((int)((Notches - 1) * apartMs / every) + 160 / every + 6).ToString(CultureInfo.InvariantCulture) : "36"),
+            CultureInfo.InvariantCulture);
         if (every <= 0 || count is < 1 or > 2000)
             throw new ArgumentException("--every takes milliseconds above 0, --count 1 to 2000 frames");
         WorldPoint? fixAt = null;
@@ -75,13 +92,15 @@ internal static class Frames
             }
             options.RemoveAt(g);
         }
+        if (notchMs is not null && (glideMs is not null || callOut))
+            throw new ArgumentException("--notch turns the wheel at the map's whole view: not with --glide or list-callout, which move the view themselves");
         // The roll call moves the view as the window will, --glide or not: its length is the glide's.
         if (callOut)
             glideMs ??= MapScene.CallOutFitLength.TotalMilliseconds;
         if (options.Count != 2)
         {
             throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>] [--count <n>] " +
-                                        "[--fix <x> <y> <z>] [--glide [ms]]");
+                                        "[--fix <x> <y> <z>] [--glide [ms] | --notch [ms]]");
         }
         var (mapName, output) = (options[0], Path.GetFullPath(options[1]));
 
@@ -120,6 +139,9 @@ internal static class Frames
         var from = (camera.Center, camera.Zoom);
         var to = from;
         var glideAt = 0.0;
+        var pointer = new SKPoint(Width / 2f, Height / 2f);
+        var wheel = new WheelZoom();
+        var turned = 0;
         IReadOnlyList<ExitFlight> flights = [];
         if (callOut)
         {
@@ -147,6 +169,11 @@ internal static class Frames
                 to = (target, from.Zoom * GlideZoom);
                 about.Add(FormattableString.Invariant($"View: glides from the whole map to {GlideZoom}x on {(shown.Player is null ? "the middle of the extracts on the list" : "the position")} over {glideMs} ms, eased in and out as MapView.AnimateView"));
             }
+            if (notchMs is not null)
+            {
+                pointer = camera.ToScreen(shown.Player is { } p ? shown.Projection.ToMap(p.Position) : Middle(shown));
+                about.Add(FormattableString.Invariant($"View: the wheel turned {Notches} notches in at {(shown.Player is null ? "the middle of the extracts on the list" : "the position")} ({pointer.X:0}, {pointer.Y:0} px), {notchMs} ms apart from t0, each {WheelZoom.FactorOf(120):0.###}x over {WheelZoom.Notch.TotalMilliseconds} ms as MapView turns them (WheelZoom), the point under the pointer in place"));
+            }
         }
 
         Directory.CreateDirectory(output);
@@ -160,6 +187,11 @@ internal static class Frames
                 var (center, zoom) = Glide(from, to, (ms - glideAt) / length);
                 camera.Restore(center, zoom);
             }
+            // Each notch turned at its own time, between frames as a hand turns it; each frame draws the zoom at its time.
+            for (; notchMs is { } apart && turned < Notches && turned * apart <= ms; turned++)
+                wheel.Turn(camera.Zoom, WheelZoom.FactorOf(120), camera.MinZoom, camera.MaxZoom, Start.AddMilliseconds(turned * apart));
+            if (wheel.Running)
+                camera.ZoomAt(pointer, wheel.At(time) / camera.Zoom);
             if (tiles is not null && definition.TilePath is { } basePath)
             {
                 var a = camera.ToMap(new SKPoint(0, 0));
@@ -187,10 +219,11 @@ internal static class Frames
             rings, frames)
         {
             GlideAtMs = glideMs is null ? null : glideAt,
+            NotchMs = notchMs,
             Flights = callOut ? flown : null,
         };
         await File.WriteAllTextAsync(Path.Combine(output, "frames.json"), JsonSerializer.Serialize(json, Json));
-        var summary = Summary(map.Name, scene, every, glideMs, about, shown, rings, frames, flown, checks);
+        var summary = Summary(map.Name, scene, every, glideMs is not null || notchMs is not null, about, shown, rings, frames, flown, checks);
         await File.WriteAllTextAsync(Path.Combine(output, "summary.txt"), summary);
         Console.WriteLine(summary);
         Console.WriteLine($"{count} frames, frames.json and summary.txt in {output}");
@@ -304,6 +337,9 @@ internal static class Frames
         /// <summary>When the view's glide starts, from t0: at once, or the roll call's zoom out at 1.2 s.</summary>
         public double? GlideAtMs { get; init; }
 
+        /// <summary>--notch: how far apart the wheel's notches are, from t0.</summary>
+        public double? NotchMs { get; init; }
+
         /// <summary>The roll call's flights (list-callout), in their turns' order.</summary>
         public IReadOnlyList<FlightRecord>? Flights { get; init; }
     }
@@ -390,7 +426,7 @@ internal static class Frames
 
     // ---- summary.txt ----
 
-    private static string Summary(string mapName, string sceneName, int every, double? glideMs, List<string> about, MapScene scene,
+    private static string Summary(string mapName, string sceneName, int every, bool moves, List<string> about, MapScene scene,
         List<RingRecord> rings, List<FrameRecord> frames, List<FlightRecord> flights, List<string> callOutChecks)
     {
         var s = new StringBuilder();
@@ -447,7 +483,7 @@ internal static class Frames
             foreach (var (id, e) in wasFlying.Where(f => !flying.ContainsKey(f.Key)))
                 lines.Add($"  lands    {e.Name}");
             wasFlying = flying;
-            if (glideMs is not null && before is not null)
+            if (moves && before is not null)
             {
                 var previous = frames[frame.Index - 1].View;
                 if (previous != frame.View)
@@ -469,7 +505,7 @@ internal static class Frames
                     continue;
                 }
                 var (wx, wy, wr, wOffX, wOffY, wLeader) = was.Exit is { } e ? (e.X, e.Y, e.R, e.OffX, e.OffY, e.Leader) : (was.Other!.X, was.Other.Y, was.Other.R, was.Other.OffX, was.Other.OffY, was.Other.Leader);
-                if (glideMs is null)
+                if (!moves)
                 {
                     var moved = Math.Sqrt((x - wx) * (x - wx) + (y - wy) * (y - wy));
                     if (moved > 0.01)
@@ -532,7 +568,7 @@ internal static class Frames
 
         s.AppendLine();
         s.AppendLine("Checks");
-        if (glideMs is null)
+        if (!moves)
             s.AppendLine(Fmt($"  largest move of an extract's or transit's centre between two frames: {maxMove.Px:0.##} px{(maxMove.Px > 0 ? Fmt($" ({maxMove.Name}, frame {maxMove.Frame:000})") : "")}"));
         else
             s.AppendLine(Fmt($"  symbols set off their place by more than {Jump} px more or less from one frame to the next: {(jumps.Count == 0 ? "none" : jumps.Count.ToString(CultureInfo.InvariantCulture))}"));
@@ -545,7 +581,7 @@ internal static class Frames
         {
             if (first.Exits.FirstOrDefault(f => f.Id == e.Id && f.InView) is not { } f)
                 differ.Add($"{e.Name}: not in frame 000");
-            else if (glideMs is null && f with { Arrival = e.Arrival, Echoes = e.Echoes, Glow = e.Glow, Question = e.Question } != e)
+            else if (!moves && f with { Arrival = e.Arrival, Echoes = e.Echoes, Glow = e.Glow, Question = e.Question } != e)
                 differ.Add($"{e.Name} ({e.State}): its place, size or state");
             else if (Drawn(f) != Drawn(e))
                 differ.Add($"{e.Name} ({e.State}): {Drawn(f)} -> {Drawn(e)}");

@@ -111,10 +111,56 @@ public class GlideFramesTests
     {
         var (camera, scene) = Crowd();
         var frames = Frames(camera, scene);
+        var (parted, leaders) = Steadily(frames);
+        // The row of one objective's places parts as the view zooms in, at a few frames, never three in a row.
+        var at = parted.Select(p => p.Frame).Distinct().Order().ToList();
+        Assert.InRange(at.Count, 1, 4);
+        Assert.DoesNotContain(at, k => at.Contains(k + 1) && at.Contains(k + 2));
+
+        // The crowd is one: far out many stand off on leaders, and as it opens some come back to their places.
+        Assert.True(frames[0].Count(f => f.Value.Leader) >= 5, $"{frames[0].Count(f => f.Value.Leader)} leaders at the start");
+        Assert.Contains(leaders, l => frames[0].TryGetValue(l.Key, out var first) && first.Leader && !frames[^1][l.Key].Leader);
+    }
+
+    // A wheel's notches as MapView animates them (owner, 2026-10-15; WheelZoom): each zooms by a fifth over 0.15 s at the
+    // pointer, so its frames come under the steady rule as a glide's do. Three notches 0.3 s apart, then a quick turn of
+    // three 48 ms apart, from far out off to one side, as the glide above starts: about as far in as the glide goes.
+    [Fact]
+    public void No_symbol_jumps_or_changes_side_while_the_wheel_zooms()
+    {
+        var (camera, scene) = Crowd();
+        var target = scene.Projection.ToMap(scene.Player!.Position);
+        camera.Restore(new MapPoint(target.X + 60, target.Y + 30), 0.6);
+        var pointer = camera.ToScreen(new MapPoint(target.X + 10, target.Y - 5));
+        int[] notches = [0, 300, 600, 900, 948, 996];
+        var wheel = new WheelZoom();
+        var frames = new List<Dictionary<string, Drawn>>();
+        for (var ms = 0; ms <= 1300; ms++)
+        {
+            var now = T0.AddMilliseconds(ms);
+            if (notches.Contains(ms))
+                wheel.Turn(camera.Zoom, WheelZoom.FactorOf(120), camera.MinZoom, camera.MaxZoom, now);
+            if (ms % EveryMs != 0)
+                continue;
+            if (wheel.Running)
+                camera.ZoomAt(pointer, wheel.At(now) / camera.Zoom);
+            frames.Add(Frame(camera, scene, now));
+        }
+        Assert.Equal(0.6 * Math.Pow(WheelZoom.FactorOf(120), 6), camera.Zoom, 6);
+        var (_, leaders) = Steadily(frames);
+        Assert.True(frames[0].Count(f => f.Value.Leader) >= 5, $"{frames[0].Count(f => f.Value.Leader)} leaders at the start");
+        Assert.NotEmpty(leaders);
+    }
+
+    // From one frame to the next no symbol's offset from its place changes by more than a step, but where its cluster
+    // merges or parts; none's leader comes or goes more than once, and none on a leader swings to the other side of its
+    // place more than once. The frames at which a cluster changed, and how often each symbol's leader came or went.
+    private static (HashSet<(int Frame, string Cluster)> Parted, Dictionary<string, int> Leaders) Steadily(List<Dictionary<string, Drawn>> frames)
+    {
         var parted = ClusterChanges(frames);
         var leaders = new Dictionary<string, int>();
         var flips = new Dictionary<string, int>();
-        for (var k = 1; k < Count; k++)
+        for (var k = 1; k < frames.Count; k++)
         {
             foreach (var (id, now) in frames[k])
             {
@@ -136,14 +182,7 @@ public class GlideFramesTests
         }
         Assert.All(leaders, l => Assert.True(l.Value <= 1, $"{l.Key}'s leader came or went {l.Value} times"));
         Assert.All(flips, f => Assert.True(f.Value <= 1, $"{f.Key} changed sides {f.Value} times"));
-        // The row of one objective's places parts as the view zooms in, at a few frames, never three in a row.
-        var at = parted.Select(p => p.Frame).Distinct().Order().ToList();
-        Assert.InRange(at.Count, 1, 4);
-        Assert.DoesNotContain(at, k => at.Contains(k + 1) && at.Contains(k + 2));
-
-        // The crowd is one: far out many stand off on leaders, and as it opens some come back to their places.
-        Assert.True(frames[0].Count(f => f.Value.Leader) >= 5, $"{frames[0].Count(f => f.Value.Leader)} leaders at the start");
-        Assert.Contains(leaders, l => frames[0].TryGetValue(l.Key, out var first) && first.Leader && !frames[^1][l.Key].Leader);
+        return (parted, leaders);
     }
 
     [Fact]
@@ -164,7 +203,8 @@ public class GlideFramesTests
     [Fact]
     public void A_wheels_notch_or_a_new_position_lays_the_crowd_out_as_a_still_view_shows_it()
     {
-        // After the glide, a wheel's notch (a fifth more zoom at once) lays the crowd out as a map opened at that view does.
+        // After the glide, a fifth more zoom at once (a wheel's notch with Windows' animation effects off; with them on,
+        // it takes 0.15 s, above) lays the crowd out as a map opened at that view does.
         var (camera, scene) = Crowd();
         Frames(camera, scene);
         camera.ZoomAt(new SKPoint(500, 500), 1.2);
