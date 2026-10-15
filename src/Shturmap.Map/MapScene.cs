@@ -36,6 +36,32 @@ public enum MarkerKind
 /// "??:??:??".</summary>
 public readonly record struct ExitRing(DateTime At, bool Listed);
 
+/// <summary>
+/// One row of the roll call's band, which the window hands the map so the row's icon can fly to its extract's place
+/// (<see cref="MapScene.CallOutExits"/>).
+/// </summary>
+/// <param name="MarkerId">The extract's marker id.</param>
+/// <param name="FromX">Where the icon lifts off: the centre of the row's triangle, in the map panel's pixels, the space
+/// <see cref="MapRenderer.Render"/> draws in and <see cref="SymbolTrace.At"/> reports (physical pixels from the panel's top
+/// left: a point in the map view's DIPs times its RasterizationScale). The centre is <see cref="MapRenderer"/>'s triangle
+/// centre: a tenth of the triangle's height below the middle of its box.</param>
+/// <param name="FromY">See <paramref name="FromX"/>.</param>
+/// <param name="Turn">Its row's place in the roll call: 0, 1, 2 …, nearest the player first
+/// (<see cref="MapScene.ExitsToCall"/>).</param>
+public readonly record struct ExitCall(string MarkerId, float FromX, float FromY, int Turn);
+
+/// <summary>An extract's flight from its row in the roll call's band to its place (<see cref="MapScene.CallOutExits"/>).</summary>
+/// <param name="FromX">Where it lifts off, in the map panel's pixels (<see cref="ExitCall.FromX"/>).</param>
+/// <param name="LiftOff">When its icon leaves its row; it lands <see cref="MapScene.FlightLength"/> later, and its ring
+/// starts there (<see cref="Landing"/>).</param>
+/// <param name="Turn">Its place in the flights' order: the call's own, or after the last for one a later list added.</param>
+/// <param name="Listed">Whether it flies to be lit (on the list) or to carry its "?" ("??:??:??").</param>
+public readonly record struct ExitFlight(string MarkerId, float FromX, float FromY, DateTime LiftOff, int Turn, bool Listed)
+{
+    /// <summary>When it lands on its place, and its ring starts (<see cref="MapScene.ExitsRinging"/>).</summary>
+    public DateTime Landing => LiftOff + MapScene.FlightLength;
+}
+
 /// <summary>A point of interest drawn at a fixed screen size.</summary>
 /// <param name="Group">Markers of one quest share a group, so selecting a quest highlights all its points.</param>
 /// <param name="Objective">For quest markers, what the objective asks; drawn as a glyph inside the marker.</param>
@@ -469,15 +495,9 @@ public sealed class MapScene
     /// </summary>
     public void RingExits(DateTime now)
     {
-        var going = _ringing.Values.Any(r => now - r.At < MapRenderer.RingLength(r.Listed));
+        var going = RingsGoing(now);
         if (!going)
-            _ringing = new Dictionary<string, ExitRing>(StringComparer.Ordinal);
-        // Nearest you first, where there is a you.
-        IEnumerable<MapMarker> Near(IReadOnlySet<string> ids)
-        {
-            var these = Markers.Where(m => ids.Contains(m.Id));
-            return Player is { } you ? these.OrderBy(m => m.Position.HorizontalDistanceTo(you.Position)) : these;
-        }
+            StartAfresh();
         var turn = MapRenderer.ExitTurn;
         // A list read at once: its turns from now, the lit ones' few, then the "??:??:??" ones'. One joining a ring
         // still going: the turns after its last.
@@ -491,13 +511,142 @@ public sealed class MapScene
                 if (_ringing.TryGetValue(exit.Id, out var ring) && ring.Listed == listed)
                     continue;
                 _ringing[exit.Id] = new ExitRing(next + turn * Math.Min(turns, cap - 1), listed);
+                // Rung where it stands now: a flight it had (one marked "??:??:??" lit meanwhile) would land off its ring.
+                _flights.Remove(exit.Id);
                 turns++;
             }
             next += turn * Math.Min(turns, cap);
         }
     }
 
+    // Nearest you first, where there is a you; else in the data's order.
+    private IEnumerable<MapMarker> Near(IReadOnlySet<string> ids)
+    {
+        var these = Markers.Where(m => ids.Contains(m.Id));
+        return Player is { } you ? these.OrderBy(m => m.Position.HorizontalDistanceTo(you.Position)) : these;
+    }
+
+    // Whether an extract still rings out, flies or waits for its turn at this moment.
+    private bool RingsGoing(DateTime now) => _ringing.Values.Any(r => now - r.At < MapRenderer.RingLength(r.Listed));
+
+    // A list with nothing going: what rang before is over, and goes.
+    private void StartAfresh()
+    {
+        _ringing = new Dictionary<string, ExitRing>(StringComparer.Ordinal);
+        _flights = new Dictionary<string, ExitFlight>(StringComparer.Ordinal);
+    }
+
     private static DateTime Max(DateTime a, DateTime b) => a > b ? a : b;
+
+    // ---- the roll call: the band names the list's extracts, then each flies to its place (owner, 2026-10-15, from the
+    // design panel: option A, "Roll call, then fly-out") ----
+
+    /// <summary>From the list's reading to the first icon's lift-off: the band has come in and called its rows by then, and
+    /// the view has begun to zoom out.</summary>
+    public static readonly TimeSpan CallOutLiftOff = TimeSpan.FromSeconds(1.6);
+
+    /// <summary>How far apart the icons lift off, in their turns' order: the rings' own turn (<see cref="MapRenderer.ExitTurn"/>).</summary>
+    public static TimeSpan FlightTurn => MapRenderer.ExitTurn;
+
+    /// <summary>How long an icon takes from its row to its extract's place, eased in and out.</summary>
+    public static readonly TimeSpan FlightLength = TimeSpan.FromSeconds(0.9);
+
+    /// <summary>When the view begins to zoom out to frame the listed extracts and the player (<see cref="Camera.FittingAll"/>),
+    /// from the list's reading; the window moves it with MapView.AnimateView.</summary>
+    public static readonly TimeSpan CallOutFitAt = TimeSpan.FromSeconds(1.2);
+
+    /// <summary>How long the view takes to zoom out to that framing.</summary>
+    public static readonly TimeSpan CallOutFitLength = TimeSpan.FromSeconds(1.2);
+
+    /// <summary>
+    /// The extracts the roll call names, in its order: the list's lit and "??:??:??" ones alike, nearest the player first,
+    /// in the data's order without a position. The window lays out the band's rows by it and gives their
+    /// <see cref="ExitCall.Turn"/>s from it.
+    /// </summary>
+    public IReadOnlyList<MapMarker> ExitsToCall()
+    {
+        var on = new HashSet<string>(ExitsListed, StringComparer.Ordinal);
+        on.UnionWith(ExitsUnsure);
+        on.ExceptWith(ExitsNotListed);
+        return [.. Near(on).Where(m => IsExtract(m.Kind))];
+    }
+
+    private static bool IsExtract(MarkerKind kind) => kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared;
+
+    /// <summary>
+    /// The extracts flying from the roll call's band to their places, or flown there (<see cref="CallOutExits"/>), by
+    /// marker id. Flights that are over stay until the next list that starts afresh.
+    /// </summary>
+    public IReadOnlyDictionary<string, ExitFlight> ExitFlights => _flights;
+
+    private Dictionary<string, ExitFlight> _flights = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The map's side of the roll call (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"): a
+    /// list just read, with <see cref="ExitsListed"/>, <see cref="ExitsUnsure"/> and <see cref="ExitsNotListed"/> set from
+    /// it, and the band's rows. Each called extract's icon lifts off its row <see cref="CallOutLiftOff"/> after
+    /// <paramref name="now"/> plus a <see cref="FlightTurn"/> per <see cref="ExitCall.Turn"/>, flies to its place over
+    /// <see cref="FlightLength"/>, and lands as its ring starts: the ring <see cref="RingExits"/> rings, at the landing
+    /// (<see cref="ExitsRinging"/>). Until then the extract at its place is drawn as before its turn: not lit, no "?". A
+    /// call for an extract the list doesn't light or mark (struck out, a transit, one it leaves out), or for one already
+    /// ringing, flying or waiting in that state, changes nothing; while flights or rings are going, a later list's new
+    /// calls go after the last turn, as <see cref="RingExits"/> adds what a later list lit anew; once all is over, a list
+    /// calls afresh (the player looked again). With animation effects off nothing flies and nothing is recorded: the
+    /// extracts are simply lit, as with <see cref="RingExits"/>.
+    /// </summary>
+    /// <returns>The flights it added, in their turns' order: when each row's icon lifts off, for the band to fade the row
+    /// as it leaves.</returns>
+    public IReadOnlyList<ExitFlight> CallOutExits(IReadOnlyList<ExitCall> calls, DateTime now)
+    {
+        if (!Pulse)
+            return [];
+        var going = RingsGoing(now);
+        if (!going)
+            StartAfresh();
+        var markers = Markers.Where(m => IsExtract(m.Kind)).GroupBy(m => m.Id, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var added = new List<ExitFlight>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var call in calls.Select((c, i) => (Call: c, Index: i)).OrderBy(c => c.Call.Turn).ThenBy(c => c.Index).Select(c => c.Call))
+        {
+            // Struck-out extracts never move, and transits take no part: only what the list lights or marks flies.
+            if (!markers.ContainsKey(call.MarkerId) || ExitsNotListed.Contains(call.MarkerId) || !seen.Add(call.MarkerId))
+                continue;
+            bool listed;
+            if (ExitsListed.Contains(call.MarkerId))
+                listed = true;
+            else if (ExitsUnsure.Contains(call.MarkerId))
+                listed = false;
+            else
+                continue;
+            if (_ringing.TryGetValue(call.MarkerId, out var ring) && ring.Listed == listed)
+                continue;
+            added.Add(new ExitFlight(call.MarkerId, call.FromX, call.FromY, default, Math.Max(0, call.Turn), listed));
+        }
+        if (added.Count == 0)
+            return [];
+        // Called at once: each lifts off at its own turn, as its row in the band was called. Joining flights still going:
+        // after the last turn, never in the past.
+        var flights = _flights.Values.ToList();
+        if (flights.Count == 0)
+        {
+            for (var i = 0; i < added.Count; i++)
+                added[i] = added[i] with { LiftOff = now + CallOutLiftOff + FlightTurn * added[i].Turn };
+        }
+        else
+        {
+            var last = flights.MaxBy(f => f.LiftOff);
+            var next = Max(now, last.LiftOff + FlightTurn);
+            var turn = flights.Max(f => f.Turn) + 1;
+            for (var i = 0; i < added.Count; i++)
+                added[i] = added[i] with { LiftOff = next + FlightTurn * i, Turn = turn + i };
+        }
+        foreach (var flight in added)
+        {
+            _flights[flight.MarkerId] = flight;
+            _ringing[flight.MarkerId] = new ExitRing(flight.Landing, flight.Listed);
+        }
+        return added;
+    }
 
     /// <summary>Whether an extract still rings out, or waits for its turn to.</summary>
     public bool ExitsArriving => ExitsArrivingAt(DateTime.Now);

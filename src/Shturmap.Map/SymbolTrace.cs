@@ -69,4 +69,20 @@ public sealed class SymbolTrace
     /// <summary>A "??:??:??" extract's "?" scale (QuestionPop): 0 before its turn, popping in past 1 and settling at 1;
     /// null for one without a "?".</summary>
     public float? Question { get; internal set; }
+
+    /// <summary>How far a called extract's icon is on its flight from the roll call's band to its place, 0 at lift-off to
+    /// 1 at landing, before easing (<see cref="MapScene.CallOutExits"/>); null while it isn't in the air.</summary>
+    public double? Flight { get; internal set; }
+
+    /// <summary>Where the flying icon's centre is drawn, in pixels (the space of <see cref="At"/> and
+    /// <see cref="ExitCall.FromX"/>); null while it isn't in the air.</summary>
+    public SKPoint? Flying { get; internal set; }
+
+    /// <summary>The flying icon's size against its symbol's: 0.8 at lift-off, lifted to about 1.12 halfway, 1 at landing;
+    /// null while it isn't in the air.</summary>
+    public float? FlightScale { get; internal set; }
+
+    /// <summary>Whether the symbol was laid out and drawn in this frame. False for a called extract whose place is out of
+    /// view while its icon flies there: only the flight is drawn, toward where the place is (<see cref="At"/>).</summary>
+    public bool InView { get; internal set; } = true;
 }

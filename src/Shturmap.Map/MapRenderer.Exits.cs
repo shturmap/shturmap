@@ -200,6 +200,81 @@ public static partial class MapRenderer
         return true;
     }
 
+    // ---- the roll call: each extract the band names flies from its row to its place and lands as its ring starts
+    // (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"; MapScene.CallOutExits) ----
+
+    // Within this lean of the vertical (a fifth of the way across for the way along) the "upper side" of a flight's line
+    // turns on which way it leans, and its end moves while the view zooms out: there the arc flattens toward the straight
+    // line instead of swinging from one side of it to the other between two frames.
+    private const float ArcUpright = 0.2f;
+
+    /// <summary>
+    /// Where a called extract's icon is <paramref name="p"/> of its flight's time (0 to 1) from <paramref name="from"/> (its
+    /// row in the band) to <paramref name="to"/> (its symbol as drawn), and how large against its symbol, as the design
+    /// panel drew it: a quadratic arc whose control point lies a fifth of the distance off the straight line on its upper
+    /// side, eased in and out, growing from 0.8 to 1 with a slight lift halfway (0.22 more at the top).
+    /// </summary>
+    public static (SKPoint At, float Scale) FlightAt(SKPoint from, SKPoint to, double p)
+    {
+        p = Math.Clamp(p, 0, 1);
+        var u = p < 0.5 ? 4 * p * p * p : 1 - Math.Pow(-2 * p + 2, 3) / 2;
+        var d = to - from;
+        var length = d.Length;
+        // (dy, -dx) is the line's normal that points up where it runs right; leaning left, the other one does.
+        var lean = length > 0 ? Math.Clamp(d.X / (ArcUpright * length), -1f, 1f) : 0;
+        var control = new SKPoint(from.X + d.X / 2 + lean * d.Y / 5, from.Y + d.Y / 2 - lean * d.X / 5);
+        var (a, b, c) = ((1 - u) * (1 - u), 2 * u * (1 - u), u * u);
+        var at = new SKPoint((float)(a * from.X + b * control.X + c * to.X), (float)(a * from.Y + b * control.Y + c * to.Y));
+        return (p >= 1 ? to : at, (float)(0.8 + 0.2 * u + 0.22 * Math.Sin(Math.PI * u)));
+    }
+
+    /// <summary>
+    /// Over every symbol and under the player: the icons in the air from the roll call's band to their places. Each is its
+    /// extract's own symbol (its kind's colour, the dark collar, no "?" yet), drawn along its arc toward the symbol as this
+    /// frame draws it, which waits unlit until the icon lands on it and its ring starts (<see cref="ArrivalOf"/>). One whose
+    /// place is still out of view flies toward where the place is, as the view zooms out to it. Nothing flies with
+    /// animation effects off, or for one the list no longer lights or marks.
+    /// </summary>
+    /// <returns>The trace's records of called extracts out of view, which the layout's symbols don't hold; null for none.</returns>
+    private static List<SymbolTrace>? DrawFlights(SKCanvas canvas, Camera camera, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui,
+        DateTime now, Dictionary<ShownMarker, SymbolTrace>? traced)
+    {
+        if (!scene.Pulse || scene.ExitFlights.Count == 0)
+            return null;
+        List<SymbolTrace>? outOfView = null;
+        foreach (var flight in scene.ExitFlights.Values.OrderBy(f => f.LiftOff).ThenBy(f => f.Turn))
+        {
+            var p = (now - flight.LiftOff) / MapScene.FlightLength;
+            var id = flight.MarkerId;
+            if (p is < 0 or >= 1 || scene.ExitsNotListed.Contains(id) || !(scene.ExitsListed.Contains(id) || scene.ExitsUnsure.Contains(id)))
+                continue;
+            var shown = markers.FirstOrDefault(m => m.Marker.Id == id);
+            var inView = shown is not null;
+            if (shown is null)
+            {
+                if (scene.Markers.FirstOrDefault(m => m.Id == id) is not { } marker)
+                    continue;
+                shown = Show(camera, scene, marker, ui);
+            }
+            var (at, scale) = FlightAt(new SKPoint(flight.FromX, flight.FromY), shown.At, p);
+            DrawExtract(canvas, scene, shown with { At = at, R = shown.R * scale }, ui, now, null);
+            if (traced is null)
+                continue;
+            var trace = Traced(traced, shown);
+            if (!inView)
+            {
+                trace.InView = false;
+                trace.Look = shown.Unsure ? ExitLook.Unsure : ExitLook.Listed;
+                trace.Arrival = ArrivalOf(scene, shown.Marker, now);
+                (outOfView ??= []).Add(trace);
+            }
+            trace.Flight = p;
+            trace.Flying = at;
+            trace.FlightScale = scale;
+        }
+        return outOfView;
+    }
+
     // A symbol's record in a developer's trace of the frame (Render), made by whichever drawing reaches it first.
     private static SymbolTrace Traced(Dictionary<ShownMarker, SymbolTrace> traced, ShownMarker shown)
     {

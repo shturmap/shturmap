@@ -154,6 +154,8 @@ public static partial class MapRenderer
         }
         DrawScaleBar(canvas, layout.Scale, uiScale);
         DrawLeaving(canvas, camera, scene, uiScale, time);
+        // The roll call's icons on their way from the band to their places: over every symbol, under the player.
+        var flyingOutOfView = DrawFlights(canvas, camera, scene, layout.Markers, uiScale, time, traced);
         DrawPlayer(canvas, camera, scene, uiScale, time);
         DrawReplay(canvas, camera, scene, uiScale);
         if (trace is not null)
@@ -163,6 +165,8 @@ public static partial class MapRenderer
                 if (traced!.TryGetValue(marker, out var drawn))
                     trace.Add(drawn);
             }
+            foreach (var flying in flyingOutOfView ?? [])
+                trace.Add(flying);
         }
     }
 

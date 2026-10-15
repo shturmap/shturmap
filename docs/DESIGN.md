@@ -1474,6 +1474,9 @@ spawns below).
   and the same list again changes nothing. Once the rings are over, a list rings them all again: the player looked
   again. With animation effects off nothing moves: they are simply lit. What's New's `extracts` preview and the tour
   ring out their example list the same way.
+  The roll call's map side (owner, 2026-10-15) is `MapScene.CallOutExits`: each called extract's icon flies from its row
+  in the band to its place and lands as this ring starts (`MapRenderer.FlightAt`; the view zooms out to
+  `Camera.FittingAll`).
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
@@ -2796,24 +2799,34 @@ CPU and everything in it that moves is a function of time, so it can be drawn at
 `MapRenderer.Render` takes the frame's time (`now`; the clock's where none is given, as in the app) and reads it once
 for the whole frame, so a frame at t0 + 100 ms is the same every run; its `trace`, off in the app, records what the
 frame drew of each symbol (`SymbolTrace`): where, how large, and for an extract its state and the values its ring was
-drawn with (`Arrival`, `Glow`, `Echoes`, `Question`), taken from the drawing itself, not worked out beside it.
+drawn with (`Arrival`, `Glow`, `Echoes`, `Question`) and its icon's flight from the roll call's band (`Flight`,
+`Flying`, `FlightScale`; `InView` false while it flies toward a place out of view), taken from the drawing itself, not
+worked out beside it.
 `shturmap-cli frames <map> <folder>` builds a scene from the data cache as `render` does, reads an extract list at t0
 (`RingExits`) and draws 36 frames 100 ms apart (`--every`, `--count`) in one fitted 1600 × 1000 view:
 `frame-000.png`…, `frames.json` (per frame and symbol: its id, name, state (listed, unsure, notListed, plain or
 transit), drawn centre and size, centre in map units, offset from its own place, leader, and its ring's values) and
 `summary.txt` (per frame what changed: turns, rings over, moves, states; then the checks: the largest move, anything
-off the list that animated, the first frame against the last). Two scenes: `list-read`, a list read in a PMC raid
+off the list that animated, the first frame against the last). Three scenes: `list-read`, a list read in a PMC raid
 (every other extract lit, two "??:??:??", the rest struck out, Scav extracts left out as a raid leaves them out, the
-position at the map's first PMC spawn or `--fix`, pinging), and `whatsnew-extracts`, What's New's `extracts` preview
+position at the map's first PMC spawn or `--fix`, pinging), `whatsnew-extracts`, What's New's `extracts` preview
 as it is staged (a PMC raid's map, so without the Scav extracts, which it kept until 2026-10-15; no quests, no
-position; the sets of `MainWindow.ExampleExits`, which the CLI repeats). Both scenes leave the Scav extracts out with
-`MapContent.InPmcRaid`, the rule GameSession and the app's PMC scenes hold in their own code. `--glide [ms]` moves the
-view as `MapView.AnimateView` does, from the whole map to three times the zoom on the position in 1.2 s, and lists the
+position; the sets of `MainWindow.ExampleExits`, which the CLI repeats), and `list-callout`, the roll call ("Map
+drawing"): `list-read`'s list called out at t0 (`MapScene.CallOutExits`) from the band's rows as the design panel
+drew them (the view's middle, columns of three rows 22 px apart, nearest the position first; eight rows on Customs),
+the view starting at three times the whole map's zoom on the position and zooming out at 1.2 s over 1.2 s (`--glide
+[ms]`) to `Camera.FittingAll` as the window will, drawn every 33 ms 180 times, so no frame zooms by the tenth past
+which symbols are laid out afresh. Its `frames.json` adds the flights (turn, lift-off, landing, from, where it
+landed), and `summary.txt` their lift-offs and landings and two checks: every landing is its ring's start with nothing
+lit before, and the view it zoomed out to holds every called extract and the player within the padding and the label
+room. Every scene leaves the Scav extracts out with `MapContent.InPmcRaid`, the rule GameSession and the app's PMC
+scenes hold in their own code. `--glide [ms]` moves the view as `MapView.AnimateView` does, from the whole map to three
+times the zoom on the position in 1.2 s (for `list-callout`, its zoom out), and lists the
 symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
 motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing", *Steady
 while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did more
-than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, and `GlideFramesTests`
-the symbols on leaders in a glide.
+than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, `GlideFramesTests`
+the symbols on leaders in a glide, and `ExitCallOutFramesTests` the roll call's flights.
 
 ### How the parts work
 
