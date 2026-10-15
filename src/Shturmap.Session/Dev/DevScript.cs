@@ -30,7 +30,7 @@ public static class DevScript
     public static IReadOnlyDictionary<string, string> Verbs { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["mode"] = "pve | pvp | seasonal: the Session mode line",
-        ["map"] = "<normalized name>: the map the next raid commands use, shown in the app",
+        ["map"] = "<normalized name> [look]: the map the next raid commands use, shown in the app; with look, only shown, as a pick in the MAP list (in a raid, a look at another map)",
         ["side"] = "pmc | scav",
         ["hosting"] = "server | local",
         ["group"] = "the leader picks the current map",

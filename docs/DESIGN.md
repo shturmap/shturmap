@@ -1097,7 +1097,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     raid, as a look: the map shows the picked map without a "you", the rail stays the raid's, and the next position
     is plotted on the raid's map and brings it back on screen, as the raid's end does (2026-10-06). A label at the top of the map says so for as long
     as it lasts, in the preview label's style: "LOOKING AT WOODS · THE RAID IS ON CUSTOMS · YOUR NEXT POSITION SHOWS
-    IT AGAIN". A raid on a map the data doesn't know names no map ("IN RAID · PMC · 12 MIN", "LOADING"; the raid
+    IT AGAIN", the note beside the words or, where the map leaves too little room for both, under them, each whole (QA
+    pass, 2026-10-15: laid out in one line, it ran out of its frame at 900×560 as the preview label did, the German
+    note by 142 DIP). A raid on a map the data doesn't know names no map ("IN RAID · PMC · 12 MIN", "LOADING"; the raid
     card is titled "MAP NOT KNOWN") and plots no position, with a notice saying why: the map on screen is
     never taken for the raid's. A map tarkov.dev gives no scene for (Ground Zero 21+) is named by the match
     setup's or the transit line's location a moment after the scene line, and its RAID LOADING cue comes with that
@@ -2753,7 +2755,8 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   and time, its commits newest first, with a filter: is a change in this build?), or "No changelog in this build"
   with the app's version and commit.
 - `--dev-script <file>` plays the view's steps headless, one per line (`mode pve|pvp|seasonal`, `map <normalized
-  name>`, `side pmc|scav`, `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
+  name> [look]` (with look, the map only shown, as a pick in the MAP list shows it: in a raid, a look), `side pmc|scav`,
+  `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name>` (its card held, for a snapshot), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<n>]` (the newest version's What's New card, as help's link shows it; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
