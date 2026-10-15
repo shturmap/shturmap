@@ -137,12 +137,12 @@ public static partial class MapRenderer
         {
             using var layer = new StepBackLayer(canvas, group.Key, 1, dim);
             foreach (var label in group)
-                DrawLabel(canvas, label);
+                DrawLabel(canvas, scene, label, time, traced);
         }
         foreach (var marker in layout.Markers.Where(m => m.Focused))
             Draw(marker);
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
-            DrawLabel(canvas, label);
+            DrawLabel(canvas, scene, label, time, traced);
         DrawGuidePlate(canvas, layout.Guide, uiScale);
         foreach (var chevron in layout.Chevrons)
         {
@@ -295,7 +295,16 @@ public static partial class MapRenderer
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
-    public sealed record PlacedLabel(string Text, SKRect Box, float Baseline, float Size, bool Bold, SKColor Color, ShownMarker Of);
+    public sealed record PlacedLabel(string Text, SKRect Box, float Baseline, float Size, bool Bold, SKColor Color, ShownMarker Of)
+    {
+        /// <summary>A listed extract's name as it is drawn until a list just read lights it (<see cref="MapScene.ExitsRinging"/>):
+        /// in the regular face, where a regular name would stand on the same side; <see cref="Box"/> is its bold name's,
+        /// kept from the first frame. Null for every other label.</summary>
+        public UnlitLabel? Unlit { get; init; }
+    }
+
+    /// <summary>A listed extract's name before its turn lights it: in the regular face, its box and baseline.</summary>
+    public sealed record UnlitLabel(SKRect Box, float Baseline, float Size);
 
     /// <summary>A map name that fits, rotated about its anchor.</summary>
     public sealed record PlacedName(string Text, SKPoint At, float Rotation, float Size, SKRect Box)
@@ -324,7 +333,9 @@ public static partial class MapRenderer
     /// (<see cref="Layout"/>). While a pointed-at quest pulses or a new position pings, the map is drawn again about 60
     /// times a second and nothing in it moves; placing every marker and label anew for each of those frames was most
     /// of a frame's work (the review of 2026-10-04, A17). The view, the display's scale and the scene's data decide
-    /// the layout; the clock only through the player's age tag, which changes with the minute.
+    /// the layout; the clock only through the player's age tag, which changes with the minute. One whose scale bar held
+    /// its place while the view moved (<see cref="ScaleBar.Held"/>) is laid out again in the first frame drawn with the
+    /// view still, where the bar settles; the symbols keep their places (the repel's last placement holds).
     /// </summary>
     /// <param name="now">The frame's time (<see cref="Render"/>'s); the clock's when null.</param>
     public static MapLayout LayoutOf(Camera camera, MapScene scene, float ui, DateTime? now = null)
@@ -332,7 +343,7 @@ public static partial class MapRenderer
         var time = now ?? DateTime.Now;
         var age = scene.Player is { } player && Shturmap.Core.Logs.WallClock.Elapsed(player.At, time) is var old && old >= PlayerOld ? AgeTag(old).Text : "";
         var key = new LayoutKey(scene.LayoutVersion, camera.Center, camera.Zoom, camera.Viewport, ui, scene.Dim > 0, scene.IsSheet, age, UiLanguage.Code);
-        if (scene.LastLayout is { } last && last.Key == key)
+        if (scene.LastLayout is { } last && last.Key == key && !last.Layout.Scale.Held)
             return last.Layout;
         var layout = Layout(camera, scene, ui, time);
         scene.LastLayout = (key, layout);
@@ -342,8 +353,9 @@ public static partial class MapRenderer
     /// <summary>
     /// Places symbols first, then labels by priority (cartography review, 2026-10-02): the kept or pointed-at quest,
     /// bosses, quests, extracts and transits, snipers, and the map's own names last. Each marker label tries right,
-    /// left, above and below its symbol and is dropped when all four are taken; no label covers a symbol. A selected
-    /// label that finds no free place still shows on the right, giving way only to its own copies.
+    /// left, above and below its symbol and is dropped when all four are taken; no label covers a symbol, and none starts
+    /// past the map's left edge (<see cref="Inward"/>). A selected label that finds no free place still shows on the
+    /// right, giving way only to its own copies. The scale bar steps aside from the symbols first (<see cref="Scale"/>).
     /// </summary>
     /// <param name="now">The frame's time (<see cref="Render"/>'s): the player's age tag takes room. The clock's when null.</param>
     public static MapLayout Layout(Camera camera, MapScene scene, float ui, DateTime? now = null)
@@ -391,14 +403,38 @@ public static partial class MapRenderer
         var guide = Guide(camera, scene, ui, taken, drawnAt);
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
-        var scale = Scale(camera, scene, ui);
         var chevrons = Chevrons(camera, scene, ui, drawnAt);
         taken.AddRange(chevrons.Select(c => Square(c.At, 10 * ui)));
+        // The scale bar steps aside from the symbols the repel sets apart, the player's ring and the chevrons (not from the
+        // receded locks, switches and Scav zones' rings); the labels then give way to it.
+        var symbols = markers.Where(m => Repels(m.Marker.Kind)).Select(m => Square(m.At, m.Reach)).Concat(chevrons.Select(c => Square(c.At, 10 * ui))).ToList();
+        if (scene.Player is { } you)
+            symbols.Add(Square(Screen(camera, scene, you.Position), (PlayerRing + 3) * ui));
+        var scale = Scale(camera, scene, ui, symbols, time);
         taken.Add(scale.Box);
 
         var labels = new List<PlacedLabel>();
         using var regular = new SKFont(Typeface, 11.5f * ui);
         using var bold = new SKFont(TypefaceBold, 13 * ui);
+        var gap = 4 * ui;
+        // Where a marker's label may go, in order (null where it may not: past the map's left edge).
+        List<SKRect?> Candidates(ShownMarker m, SKFont font)
+        {
+            var width = font.MeasureText(m.Marker.Label);
+            var candidates = LabelCandidates(m.At, m.Reach + gap, width, font.Size).ToList();
+            // A marker with a tab says its name after the tab: "◉×2 Gratitude".
+            if (HasTab(m))
+                candidates[0] = SKRect.Create(TabBox(m, ui).Right + MarkerCollar * ui + gap, candidates[0].Top, width, candidates[0].Height);
+            // One of a pair set side by side has its neighbour on one side and, as often as not, that one's name
+            // below: its own may stand a line further down, where the two read as the pair's caption.
+            if (m.Beside)
+            {
+                // A little further than one line: the neighbour's symbol may be the taller, and its name the lower.
+                var below = candidates[^1];
+                candidates.Add(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
+            }
+            return candidates.Select(c => Inward(c, m.At, LabelEdge * ui)).ToList();
+        }
         // A lock's key and a switch's name are said close up, or for the one pointed at.
         var landmarkLabels = ZoomOverOverview(camera, scene, ui) >= LandmarkLabelFromZoom;
         foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && m.Marker.Kind != MarkerKind.ObjectiveDone && (scene.ShowLabels || m.Selected)
@@ -410,34 +446,11 @@ public static partial class MapRenderer
                 continue;
             // An extract on the player's list this raid says its name in bold, as what is picked or pointed at does.
             var font = m.Selected || m.Listed ? bold : regular;
-            var width = font.MeasureText(m.Marker.Label);
-            var gap = 4 * ui;
-            SKRect? box = null;
-            var candidates = LabelCandidates(m.At, m.Reach + gap, width, font.Size);
-            // A marker with a tab says its name after the tab: "◉×2 Gratitude".
-            if (HasTab(m))
-            {
-                var right = candidates.First();
-                candidates = candidates.Skip(1).Prepend(SKRect.Create(TabBox(m, ui).Right + MarkerCollar * ui + gap, right.Top, right.Width, right.Height));
-            }
-            // One of a pair set side by side has its neighbour on one side and, as often as not, that one's name
-            // below: its own may stand a line further down, where the two read as the pair's caption.
-            if (m.Beside)
-            {
-                // A little further than one line: the neighbour's symbol may be the taller, and its name the lower.
-                var below = candidates.Last();
-                candidates = candidates.Append(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
-            }
-            foreach (var candidate in candidates)
-            {
-                if (!taken.Any(t => t.IntersectsWith(candidate)))
-                {
-                    box = candidate;
-                    break;
-                }
-            }
+            var candidates = Candidates(m, font);
+            var side = candidates.FindIndex(c => c is { } free && !taken.Any(t => t.IntersectsWith(free)));
+            SKRect? box = side >= 0 ? candidates[side] : null;
             if (box is null && m.Selected)
-                box = LabelCandidates(m.At, m.Reach + gap, width, font.Size).First();
+                box = LabelCandidates(m.At, m.Reach + gap, font.MeasureText(m.Marker.Label), font.Size).First();
             if (box is not { } placed)
                 continue;
             taken.Add(placed);
@@ -446,7 +459,12 @@ public static partial class MapRenderer
             // marker's colour.
             // An extract that isn't on the player's list this raid steps back, name and symbol (MapScene.ExitsNotListed).
             var color = m.Selected ? m.Color : m.NotListed ? Muted : Ink;
-            labels.Add(new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m));
+            var label = new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m);
+            // Until a list just read lights it, a listed extract's name is in the regular face, as an unlit one's, on the
+            // same side (owner, 2026-10-15): the bold name's box is kept from the first frame, so nothing moves as it lights.
+            if (m.Listed && !m.Selected && side >= 0 && Candidates(m, regular)[side] is { } unlit)
+                label = label with { Unlit = new UnlitLabel(unlit, unlit.Top + regular.Size * 1.1f, regular.Size) };
+            labels.Add(label);
         }
 
         var names = new List<PlacedName>();
@@ -882,6 +900,30 @@ public static partial class MapRenderer
         yield return SKRect.Create(at.X - width / 2, at.Y + clearance, width, height);
     }
 
+    /// <summary>How far in from the map's left edge a marker label starts at least (pixels, before scaling): its halo whole.</summary>
+    public const float LabelEdge = 2;
+
+    /// <summary>
+    /// A label candidate kept whole at the map's left edge (owner, 2026-10-15: at the smallest window "ansit to
+    /// Interchange" on Streets): one above or below its symbol that would start past <paramref name="edge"/> slides right
+    /// to start there, still over or under the symbol; one beside it can't move without leaving its symbol or covering
+    /// it, so it is not a place for the label (null), and the next side is tried. A label none of whose sides is left is
+    /// dropped, as one whose four sides are taken is. The right edge keeps its rule: the label room on the right
+    /// (<see cref="Camera.LabelRoom"/>), and at the smallest window a long name may lose its last letters there.
+    /// </summary>
+    /// <param name="at">The symbol's centre, where it is drawn.</param>
+    /// <param name="edge">The least left of a label (pixels).</param>
+    public static SKRect? Inward(SKRect candidate, SKPoint at, float edge)
+    {
+        if (candidate.Left >= edge)
+            return candidate;
+        var overOrUnder = candidate.Left < at.X && candidate.Right > at.X;
+        if (!overOrUnder || at.X < edge)
+            return null;
+        candidate.Offset(edge - candidate.Left, 0);
+        return candidate;
+    }
+
     private static SKRect Square(SKPoint at, float half) => new(at.X - half, at.Y - half, at.X + half, at.Y + half);
 
     // The axis-aligned box around a rectangle rotated about a point.
@@ -1244,14 +1286,21 @@ public static partial class MapRenderer
         };
     }
 
-    private static void DrawLabel(SKCanvas canvas, PlacedLabel label)
+    /// <param name="now">The frame's time: a listed extract's name is bold from the moment a list just read lights it (<see cref="PlacedLabel.Unlit"/>).</param>
+    /// <param name="traced">What a developer's trace records of the frame's symbols (<see cref="Render"/>), or null: the face its name was drawn in.</param>
+    private static void DrawLabel(SKCanvas canvas, MapScene scene, PlacedLabel label, DateTime now, Dictionary<ShownMarker, SymbolTrace>? traced = null)
     {
-        using var font = new SKFont(label.Bold ? TypefaceBold : Typeface, label.Size);
-        var ui = label.Size / (label.Bold ? 13 : 11.5f);
+        var (box, baseline, size, bold) = label.Unlit is { } unlit && ArrivalOf(scene, label.Of.Marker, now) < 0
+            ? (unlit.Box, unlit.Baseline, unlit.Size, false)
+            : (label.Box, label.Baseline, label.Size, label.Bold);
+        if (traced is not null && traced.TryGetValue(label.Of, out var trace))
+            trace.Bold = bold;
+        using var font = new SKFont(bold ? TypefaceBold : Typeface, size);
+        var ui = size / (bold ? 13 : 11.5f);
         using var shadow = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
         using var text = new SKPaint { Color = label.Color, IsAntialias = true };
-        canvas.DrawText(label.Text, label.Box.Left, label.Baseline, SKTextAlign.Left, font, shadow);
-        canvas.DrawText(label.Text, label.Box.Left, label.Baseline, SKTextAlign.Left, font, text);
+        canvas.DrawText(label.Text, box.Left, baseline, SKTextAlign.Left, font, shadow);
+        canvas.DrawText(label.Text, box.Left, baseline, SKTextAlign.Left, font, text);
     }
 
     // ---- the map's own names, by tarkov.dev's label size ----
@@ -1965,7 +2014,15 @@ public static partial class MapRenderer
     // ---- the scale bar ----
 
     /// <summary>The scale bar: its round length in metres, its length on screen, and where it stands.</summary>
-    public sealed record ScaleBar(double Metres, float Pixels, SKPoint Origin, SKRect Box);
+    public sealed record ScaleBar(double Metres, float Pixels, SKPoint Origin, SKRect Box)
+    {
+        /// <summary>Whether it kept the place of the frame before because the view only moved (<see cref="Scale"/>): the
+        /// window then draws one more frame, in which, with the view still, it settles.</summary>
+        public bool Held { get; init; }
+    }
+
+    /// <summary>Where the scale bar stood in the last layout: how far above its own place, for which view.</summary>
+    internal readonly record struct ScaleBarPlacement(RepelView View, SKSize Viewport, float Rise);
 
     private static readonly double[] ScaleSteps = [1, 2, 5, 10, 25, 50, 100, 200, 500, 1000, 2000];
 
@@ -1973,10 +2030,25 @@ public static partial class MapRenderer
     public static double ScaleBarMetres(double pixelsPerMetre, float maxPixels) =>
         ScaleSteps.Where(s => s * pixelsPerMetre <= maxPixels).DefaultIfEmpty(ScaleSteps[0]).Max();
 
+    /// <summary>How far above its place at the lower left the scale bar goes at most to step aside from a symbol (pixels,
+    /// before scaling): four times its own height. Where that finds no free place it stays at its own.</summary>
+    public const float ScaleBarRise = 96;
+
     // Bottom left, above the wiki link and the credit line the window lays over that corner. Its metres are measured
     // the way the bar lies, along the screen's horizontal: a render stretched along one axis (Icebreaker, 1.75×) has
     // no one scale, and the mean of both axes made the bar 27 % wrong there (the review of 2026-10-04).
-    private static ScaleBar Scale(Camera camera, MapScene scene, float ui)
+    // A symbol under it moves it up by what it takes (owner, 2026-10-15: at the smallest window it was drawn over a lit
+    // extract on Streets, whose name then had no room): it stands 2 px above the highest of the symbols it would cover,
+    // again until it covers none, and at its own place where that takes it more than ScaleBarRise up. The labels then
+    // give way to it (Layout).
+    // While the view only moves (the repel's rule, RepelView.GlidesTo: a pan, or less than a tenth more or less zoom, with
+    // the same position, display scale and age tag), it keeps the place of the layout before (owner, 2026-10-15: placed
+    // afresh in every frame, it went up and back 30 times in the roll call's 1.2 s zoom out on Streets at the smallest
+    // window, as symbols passed under it). The first layout with the view still places it afresh (LayoutOf lays a
+    // frame whose bar was held out again; the window draws that frame, MapView).
+    /// <param name="symbols">What it steps aside from: the symbols' boxes as drawn, collars included (pixels).</param>
+    /// <param name="now">The frame's time: the player's age tag is part of the view the rule compares.</param>
+    private static ScaleBar Scale(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols, DateTime now)
     {
         var at = new SKPoint(18 * ui, camera.Viewport.Height - 66 * ui);
         var from = scene.Projection.ToWorld(camera.ToMap(at));
@@ -1985,7 +2057,26 @@ public static partial class MapRenderer
         var perMetre = metresIn100 > 0 ? 100 / metresIn100 : 1;
         var metres = ScaleBarMetres(perMetre, 120 * ui);
         var pixels = (float)(metres * perMetre);
-        return new ScaleBar(metres, pixels, at, new SKRect(at.X - 6 * ui, at.Y - 20 * ui, at.X + pixels + 34 * ui, at.Y + 4 * ui));
+        SKRect Box(float y) => new(at.X - 6 * ui, y - 20 * ui, at.X + pixels + 34 * ui, y + 4 * ui);
+        var view = new RepelView(camera.Zoom, camera.Center, ui, scene.Player, PlayerAgeTag(camera, scene, ui, now) is { } tag ? tag.Text : "");
+        if (scene.LastScaleBar is { } last && last.Viewport == camera.Viewport && last.View.GlidesTo(view))
+        {
+            scene.LastScaleBar = last with { View = view };
+            var held = at.Y - last.Rise;
+            return new ScaleBar(metres, pixels, new SKPoint(at.X, held), Box(held)) { Held = true };
+        }
+        var y = at.Y;
+        while (symbols.Where(s => s.IntersectsWith(Box(y))).Select(s => s.Top).DefaultIfEmpty(float.NaN).Min() is var top && !float.IsNaN(top))
+        {
+            y = top - (2 + 4) * ui;
+            if (at.Y - y > ScaleBarRise * ui)
+            {
+                y = at.Y;
+                break;
+            }
+        }
+        scene.LastScaleBar = new ScaleBarPlacement(view, camera.Viewport, at.Y - y);
+        return new ScaleBar(metres, pixels, new SKPoint(at.X, y), Box(y));
     }
 
     private static void DrawScaleBar(SKCanvas canvas, ScaleBar bar, float ui)

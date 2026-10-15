@@ -501,9 +501,11 @@ quoting it anywhere new.
     player's extracts this raid*, has the timings). Both halves of the ask in one cue: the list in the
     middle, then where each one is, the ones off screen too; and the one change of view is made while the cue says
     why. A list that comes while it is up joins it: its new extracts come in as rows after the others, the title counts
-    them all, and they fly after the others. With animation effects off it stands 5 s with all its rows and goes; the
-    view takes the extracts in at once and they are simply lit. In the tour and What's New it calls out the example
-    list, with "An example, not your raid." under its title: every cue they show says it is an example.
+    them all, and they fly after the others, the view framing them all again where one lies outside it. It replaces the
+    one-line notice "Your extract list is read" (owner, confirmed 2026-10-15). With animation effects off it stands 5 s
+    with all its rows and goes; the view takes the extracts in at once and they are simply lit. In the tour and What's
+    New it calls out the example list, with "An example, not your raid." under its title: every cue they show says it
+    is an example.
     As built (2026-10-15, `MainWindow.RollCall`): the rows stand in columns of up to four, up to three of them (a map
     lists up to twelve extracts for a side; past that the twelfth place would say "+N"), filled down the first column
     first and evened out (six stand three and three); each row is the extract's triangle as the map draws it at the size
@@ -515,10 +517,10 @@ quoting it anywhere new.
     icon landing under the title still shows between them; until 2026-10-15's build a halo was a dark box behind the
     title, which hid a landing in the replay's stills. A list that joins the cue holds the band where it stands, so the
     rows still waiting lift off from where they were called; one whose extract lies outside the view the roll call took
-    has the view take them all in again, the same way (provisional, 2026-10-15: the panel drew no joining list). The
-    one-line notice "Your extract list is read: …" went with the cue (2026-10-15, provisional, as QUEST COMPLETE's and
-    SEEN IN YOUR STASH's did); the rail's line under EXTRACTS AND TRANSITS still says it. Any other cue ends it, as it
-    ends theirs; What's New's preview of it ends with the preview, the tour's with the chapter.
+    has the view take them all in again, the same way (owner, confirmed 2026-10-15: the panel drew no joining list). The
+    one-line notice "Your extract list is read: …" went with the cue (owner, confirmed 2026-10-15, as QUEST COMPLETE's
+    and SEEN IN YOUR STASH's did); the rail's line under EXTRACTS AND TRANSITS still says it. Any other cue ends it, as
+    it ends theirs; What's New's preview of it ends with the preview, the tour's with the chapter.
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -1127,11 +1129,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     list just read is called out: its extracts in a cue across the map's middle, then each flown to its place, the view
     taking them in (YOUR EXTRACTS THIS RAID, principle 11; "Map drawing", *The player's extracts this raid*). The cue
     says it, and the line under the heading; the one-line notice that said it once ("Your extract list is read: 6
-    extracts for this raid") went with the cue (2026-10-15, as QUEST COMPLETE's and SEEN IN YOUR STASH's went with
-    theirs; provisional, as theirs). What a raid's screenshots
-    name adds up: a later list adds extracts and renews the "???" marks of the ones it names, and never takes one away
-    (a reading that missed a row must not close an exit). A transit is never said to be on or off the list: it is open
-    to everyone, and its rows aren't matched. **What counts as the list**: rows that name two or more of the map's
+    extracts for this raid") went with the cue (owner, confirmed 2026-10-15, as QUEST COMPLETE's and SEEN IN YOUR
+    STASH's went with theirs). What a raid's screenshots name adds up: a later list adds extracts and renews the "???"
+    marks of the ones it names, and never takes one away (a reading that missed a row must not close an exit). A
+    transit is never said to be on or off the list: it is open to everyone, and its rows aren't matched. **What counts
+    as the list**: rows that name two or more of the map's
     extracts for the player's side; one named extract counts only under the header "Find an extraction point", since
     the box the game shows while the player stands in an exit ("Stay in the extraction point") has the same green bar
     and one row, and taking it for the list would call every other exit closed (so in another game language a list
@@ -1496,7 +1498,8 @@ spawns below).
     (all where a cluster parted), the largest from 120 px to 4 px, and leaders that came or went from 61 (12 symbols
     more than once) to 7 (none twice); in What's New's extracts preview, Boiler Room's 17 px and a Sniper zone's 15 px
     snap as their leaders went became slides of 2 px a frame. A glide's frame costs less than before: the repel's
-    median 0.2 ms against 0.9 ms afresh.
+    median 0.2 ms against 0.9 ms afresh. The scale bar keeps its place by the same rule while the view moves, and
+    settles once it is still (*Distances on the map*).
   - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol
     another lay well over put every symbol touching it on a ring around its place, on a dark plate, each on a
     hairline to its own place. It needed the mouse, so it went with the leaders, which leave nothing stacked.
@@ -1514,7 +1517,10 @@ spawns below).
     the bosses' names ahead of other ways out and quests. A glow because the other ways to say it are taken: a ring is
     a pick's, a pulse the pointer's, a new hue isn't allowed. Once lit it never moves (principle 2). Until then the listed
     extracts were the solid triangles they always were, found only by the others being hollow, and didn't read as
-    "active".
+    "active". **The bold comes with the lighting** (owner, 2026-10-15): a list just read lights each extract at its turn
+    (below), and until then its name is in the regular face, as a not-yet-lit extract's, on the side its bold name
+    will take; that name's room is kept from the first frame, so no label moves as one lights (`PlacedLabel.Unlit`).
+    Until 2026-10-15 every listed name was bold from the list's first frame, before its extract was lit.
   - **On the list but marked "??:??:??"** (it may be closed, or it needs something): solid, not lit, with a dark "?"
     in its triangle, as large as the triangle holds and in the boldest Bahnschrift, as a quest's glyph is dark on its
     disc: the "?" a possible location carries, maybe here, maybe open (`MapScene.ExitsUnsure`). On a shared extract
@@ -1546,8 +1552,9 @@ spawns below).
     an arc, eased in and out, to its extract's symbol where the frame draws it (on its leader where it is set apart),
     so it follows the view as the view settles. Its row fades as it leaves, and the band's dark backing goes with the
     rows, so no landing near the middle is under it (as the panel drew it, four of seven landed under the band). Until
-    its triangle lands an extract is drawn as before the list, solid and unlit. Landing, it lights up and rings out:
-    a lit one's glow swells in past its strength and settles over a second, and its triangle's own outline leaves it
+    its triangle lands an extract is drawn as before the list, solid and unlit, its name in the regular face. Landing,
+    it lights up, its name turns bold (owner, 2026-10-15), and it rings out: a lit one's glow swells in past its
+    strength and settles over a second, and its triangle's own outline leaves it
     three times, 0.5 s apart, each over 1.1 s, in its colour on a dark band, under every symbol; a "??:??:??" one's
     "?" pops in at a size and a half and settles, with one echo. With six extracts the last lands at 3.3 s.
   - **After the last landing** the title stays on its halo 1.5 s more (4.8 s with six), then fades; the rings end at
@@ -1559,10 +1566,15 @@ spawns below).
   the map comes back after another). **Players take several screenshots in a run** (owner, 2026-10-14: "updated on
   the fly with the newly added items that come in after the first animation has been started"): a list that comes
   while the cue is up adds what it lit or marked anew as rows after the others, the title counting them all, and they
-  fly after the last; one that comes after the cue has gone rings what it lit or marked anew where they stand, 0.16 s
-  apart, nearest you first, with no cue and no change of view; the same list again changes nothing. (Until
-  2026-10-15 a list that came after the rings were over rang them all again.) With animation effects off nothing
-  moves: the cue stands 5 s with all its rows, the view takes the extracts in at once, and they are simply lit.
+  fly after the last; where one of them lies outside the view the roll call framed, the view frames every listed
+  extract and you again, with the same 1.2 s move (owner, confirmed 2026-10-15). One that comes after the cue has gone
+  rings what it lit or marked anew where they stand, 0.16 s apart, nearest you first, each name turning bold at its
+  turn, with no cue and no change of view; the same list again changes nothing. (Until 2026-10-15 a list that came
+  after the rings were over rang them all again.) With animation effects off nothing moves: the cue stands 5 s with
+  all its rows, the view takes the extracts in at once, and they are simply lit, their names bold. **The cue takes
+  the place of the one-line notice** "Your extract list is read: 6 extracts for this raid" (owner, confirmed
+  2026-10-15), as QUEST COMPLETE and SEEN IN YOUR STASH took the place of theirs; the extract list's own line ("Your
+  list this raid: 6 of 12 extracts …", "Screen anatomy") still says it, also for a list the cue doesn't call out.
   What's New's `extracts` preview and the tour call their example list out the same way. Of the panel's other ways,
   badges at the map's edge for the extracts out of view, with no change of view (B), the fly-out and then a glide
   back (C), and the cue alone with the ring of 2026-10-14 (D) were drawn and not taken: A alone does both halves of
@@ -1578,12 +1590,12 @@ spawns below).
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
-- **The view leaves the player** (2026-10-15, with the roll call above). The view the roll call ends on, every listed
-  extract and you, is the one a player at the spawn plans the route on, so nothing takes it back when the cue goes.
-  With Follow my position on, the next position glides it onto the player as any new position does (2.4 s, at the
-  zoom the view then has; "Screen anatomy", *Follow my position*). With Follow off, principle 8 holds, a position
-  never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom, F or the
-  show-my-position button). A position that comes while the view is moving for the roll call (its 1.2 s; a run of
+- **The view leaves the player** (2026-10-15, with the roll call above; owner, confirmed 2026-10-15). The view the roll
+  call ends on, every listed extract and you, is the one a player at the spawn plans the route on, so nothing takes it
+  back when the cue goes. With Follow my position on, the next position glides it onto the player as any new position
+  does (2.4 s, at the zoom the view then has; "Screen anatomy", *Follow my position*). With Follow off, principle 8
+  holds, a position never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom,
+  F or the show-my-position button). A position that comes while the view is moving for the roll call (its 1.2 s; a run of
   screenshots) pings where it is and lets the move finish; the one after it glides (2026-10-15, as built: the two
   pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only: where every listed extract and
   the position are in view already, it keeps its zoom and takes them into its middle.
@@ -1719,7 +1731,8 @@ spawns below).
   symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,
   snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above
   and below its symbol, in that order, and is dropped when all four are taken (pointing at the marker still names
-  it); a selected label that finds no free place goes on the right anyway. A name is said once per neighbourhood
+  it); a selected label that finds no free place goes on the right anyway. A side that would start past the map's
+  left edge isn't free (*Room for labels on the right*, the left edge). A name is said once per neighbourhood
   (250 px): eight "Abandoned Cargo" places in one block carry one label. Map names are boxed by their rotated
   extent and drawn on the marker labels' halo (the ground at 86 %, 3 px): without it Ink at 59 % measured 1.4:1 on
   Streets' light streets, with it 4.7:1.
@@ -1742,6 +1755,27 @@ spawns below).
   that fits in 120 px and follows the zoom. Its metres are those along the bar, the screen's horizontal (the review of
   2026-10-04: it took the mean of both axes, and on Icebreaker, whose render is stretched 1.75× along one axis, "50 m"
   spanned 69 m; there a metre up or down the screen is 1.75 times a metre across it, so the bar holds across only).
+  **It steps aside from a symbol** (owner, 2026-10-15: at the smallest window Streets' Crash Site, lit, lay under its
+  "100", and its name, finding no free side, wasn't drawn): before any label is placed, a symbol under its box (the
+  bar and its figures) moves it up by what it takes, its box 2 px above the symbol's, again until it covers none
+  (`MapRenderer.Scale`); the labels then give way to it where it stands. The symbols it steps aside from are those the
+  repel sets apart (quests, bosses, sniper zones, extracts, transits), the player's ring and the edge chevrons; the
+  receded locks, switches and Scav zones' rings it may cover, as other symbols do. Where that would take it more than
+  96 px (four of its heights) above its place, it stays at its place, as before. Up, not right: it stays above the
+  WIKI MAP link and the credit line, and left-aligned with them. On every map's whole view with a list read
+  (`shturmap-cli frames <map> --scene list-read`, 15 maps, 2026-10-15) it stands at its place at 1600 × 1000; at
+  500 × 481, the map of the smallest window, it steps up on Streets (49 px, past Crash Site and a quest), Factory and
+  Night Factory (42 px). **While the view only moves it keeps its place** (owner, 2026-10-15; the rule *Steady while
+  the view moves* holds the symbols by: a pan, or less than a tenth more or less zoom from one frame to the next, with
+  the same position, display scale and age tag; `MapRenderer.Scale`, `ScaleBar.Held`), and the first frame drawn with
+  the view still places it afresh. Placed afresh in every frame, it stepped up and back as symbols passed under it: in
+  a 1.2 s glide (`shturmap-cli frames streets-of-tarkov --scene list-read --glide --every 16 --viewport 500x481`) it
+  changed place 59 times, now once, as the view comes to rest; in the roll call's zoom out (`--scene list-callout`)
+  30 times, now once. A frame laid out while the view moved is laid out again when the next one is drawn at the same
+  view, the symbols keeping their places (the repel's placement holds), and the window draws that frame: a frame whose
+  bar held asks for one more (`MapView`), since the end of a move draws none by itself (`AnimateView`, the roll call's
+  and the tour's; a wheel's notches; a Follow glide; a drag). At 100 ms a frame a 1.2 s glide zooms by more than a
+  tenth in some frames, which places it afresh as it lays the symbols out afresh (5 changes, 12 before).
   No range rings (three circles on every view for a question the bar and
   the plate answer) and no north arrow (the artwork's orientation isn't verified; the cards give directions
   relative to the facing).
@@ -1776,6 +1810,14 @@ spawns below).
   tall map such as Streets in a wide view); otherwise it moves left only as far as the room needs
   (`Camera.FramingAbove`, the one place a view is worked out). "The zoom that shows the whole map" (the zoom limit, when
   the map's smaller names show) is this view's.
+  **The left edge cuts no name** (owner, 2026-10-15: at the smallest window Streets' "Transit to Interchange", its
+  right taken, went on its left and read "ansit to Interchange"; Customs' "…ation Gate" before). No label starts
+  less than 2 px in from the map's left edge (`MapRenderer.Inward`, `LabelEdge`). Of its four sides, one above or
+  below its symbol that would start further left slides right to start there, still over or under the symbol; one
+  beside it can't move without leaving the symbol or covering it, so it is not a free side, and the next is tried;
+  with no side left the label is dropped, as one whose four sides are taken is (pointing at the marker still names
+  it). No room is kept on the left as on the right: a name goes right of its symbol first, away from that edge. A
+  symbol itself past the edge keeps its name only on its right, where that starts in view.
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
@@ -2928,15 +2970,18 @@ CPU and everything in it that moves is a function of time, so it can be drawn at
 `MapRenderer.Render` takes the frame's time (`now`; the clock's where none is given, as in the app) and reads it once
 for the whole frame, so a frame at t0 + 100 ms is the same every run; its `trace`, off in the app, records what the
 frame drew of each symbol (`SymbolTrace`): where, how large, and for an extract its state and the values its ring was
-drawn with (`Arrival`, `Glow`, `Echoes`, `Question`) and its icon's flight from the roll call's band (`Flight`,
-`Flying`, `FlightScale`; `InView` false while it flies toward a place out of view), taken from the drawing itself, not
-worked out beside it.
+drawn with (`Arrival`, `Glow`, `Echoes`, `Question`), its icon's flight from the roll call's band (`Flight`,
+`Flying`, `FlightScale`; `InView` false while it flies toward a place out of view) and the face its name was drawn in
+(`Bold`; null where it wasn't drawn), taken from the drawing itself, not worked out beside it.
 `shturmap-cli frames <map> <folder>` builds a scene from the data cache as `render` does, reads an extract list at t0
-(`RingExits`) and draws 36 frames 100 ms apart (`--every`, `--count`) in one fitted 1600 × 1000 view:
-`frame-000.png`…, `frames.json` (per frame and symbol: its id, name, state (listed, unsure, notListed, plain or
-transit), drawn centre and size, centre in map units, offset from its own place, leader, and its ring's values) and
-`summary.txt` (per frame what changed: turns, rings over, moves, states; then the checks: the largest move, anything
-off the list that animated, the first frame against the last). Three scenes: `list-read`, a list read in a PMC raid
+(`RingExits`) and draws 36 frames 100 ms apart (`--every`, `--count`) in one fitted 1600 × 1000 view (`--viewport
+500x481`: the map at the smallest window, 900 × 560): `frame-000.png`…, `frames.json` (per frame and symbol: its id,
+name, state (listed, unsure, notListed, plain or transit), drawn centre and size, centre in map units, offset from its
+own place, leader, its ring's values and its name's face; per frame where the scale bar stands) and `summary.txt` (per
+frame what changed: turns, rings over, moves, states, names turning bold; frame 000's bold names; then the checks: the
+largest move, anything off the list that animated, names bold before their extract was lit or struck out, the scale
+bar stepped up from a symbol, how often it changed place and in how many frames it held its place while the view
+moved, the first frame against the last). Three scenes: `list-read`, a list read in a PMC raid
 (every other extract lit, two "??:??:??", the rest struck out, Scav extracts left out as a raid leaves them out, the
 position at the map's first PMC spawn or `--fix`, pinging), `whatsnew-extracts`, What's New's `extracts` preview
 as it is staged (a PMC raid's map, so without the Scav extracts, which it kept until 2026-10-15; no quests, no
@@ -2959,7 +3004,8 @@ the list), [ms] apart (300 by default) from the whole map's view, as `MapView` a
 drawing", *The wheel zooms over 0.15 s*), drawn every 16 ms until the last has landed, with the same checks as
 `--glide` (not with it, nor with `list-callout`). `ExitRingFramesTests` hold the ring to "Map drawing" the same way,
 on a made-up raid, `GlideFramesTests` the symbols on leaders in a glide and in the wheel's notches, `WheelZoomTests`
-the notches' zoom, and `ExitCallOutFramesTests` the roll call's flights.
+the notches' zoom, and `ExitCallOutFramesTests` the roll call's flights; the ring's and the roll call's tests read the
+names' face too.
 
 ### How the parts work
 

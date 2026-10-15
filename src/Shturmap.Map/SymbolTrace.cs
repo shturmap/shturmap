@@ -70,6 +70,11 @@ public sealed class SymbolTrace
     /// null for one without a "?".</summary>
     public float? Question { get; internal set; }
 
+    /// <summary>Whether its name was drawn in the bold label face (true) or the regular one (false); null where its name
+    /// wasn't drawn (it has none, or no side of it was free). A listed extract's turns bold as a list just read lights it,
+    /// a picked or pointed-at symbol's is bold (MapRenderer.DrawLabel).</summary>
+    public bool? Bold { get; internal set; }
+
     /// <summary>How far a called extract's icon is on its flight from the roll call's band to its place, 0 at lift-off to
     /// 1 at landing, before easing (<see cref="MapScene.CallOutExits"/>); null while it isn't in the air.</summary>
     public double? Flight { get; internal set; }

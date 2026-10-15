@@ -78,7 +78,7 @@ switch (command)
                                             draws it as pointing at that item does (a key lights its locks);
                                             --pick <quest name> picks that quest (with the locks of its keys)
             shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>]
-                                [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms]]
+                                [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms]] [--viewport <W>x<H>]
                                             draw a map's animations headless, frame by frame: an extract list just
                                             read (list-read: every other extract lit, two "??:??:??", the rest struck
                                             out, at a PMC spawn or --fix; whatsnew-extracts: What's New's preview, no
@@ -89,7 +89,9 @@ switch (command)
                                             --notch turns the wheel 3 notches in at the position, 300 ms apart, as
                                             the window animates them (every 16 ms by default);
                                             list-callout: list-read's list called from the roll call's band, each
-                                            extract flown from its row as the view zooms out (every 33 ms, 180 times)
+                                            extract flown from its row as the view zooms out (every 33 ms, 180 times);
+                                            --viewport: the view's size instead of 1600x1000 (500x481: the map at
+                                            the smallest window, 900x560)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
             shturmap-cli simulate            play a scripted Streets raid against a temporary fake game folder
             shturmap-cli quests [mode]       list active quests with every stored observation behind them

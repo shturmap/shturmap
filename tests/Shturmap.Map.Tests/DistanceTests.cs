@@ -27,6 +27,39 @@ public class DistanceTests
         Assert.Equal(100, scale.Pixels, 3);
     }
 
+    // At the smallest window the bar lay over a lit extract on Streets, whose name then had no room (owner, 2026-10-15): a
+    // symbol under it moves it up by what it takes, 2 px clear of the symbol's box, and the labels give way to it there.
+    [Fact]
+    public void The_scale_bar_steps_up_from_a_symbol_under_it()
+    {
+        var (camera, scene) = Of([]);
+        var home = MapRenderer.Layout(camera, scene, 1).Scale;
+        Assert.Equal(new SkiaSharp.SKPoint(18, 934), home.Origin);
+
+        // A lit extract on the bar's middle mark (68, 930 on screen).
+        scene.Markers = [new MapMarker("extract:a", MarkerKind.ExtractPmc, new WorldPoint(-432, 0, -430), "Crash Site")];
+        scene.ExitsListed = new HashSet<string> { "extract:a" };
+        var layout = MapRenderer.Layout(camera, scene, 1);
+        var m = layout.Markers.Single();
+        var symbol = new SkiaSharp.SKRect(m.At.X - m.Reach, m.At.Y - m.Reach, m.At.X + m.Reach, m.At.Y + m.Reach);
+        var bar = layout.Scale;
+        Assert.False(bar.Box.IntersectsWith(symbol), $"the bar {bar.Box} over the extract {symbol}");
+        Assert.Equal(symbol.Top - 2, bar.Box.Bottom, 3);
+        Assert.Equal(18, bar.Origin.X);
+        Assert.Equal((home.Metres, home.Pixels), (bar.Metres, bar.Pixels));
+        // Its name has room again, clear of the bar.
+        var name = Assert.Single(layout.Labels);
+        Assert.False(name.Box.IntersectsWith(bar.Box), $"{name.Box} under the bar {bar.Box}");
+
+        // A receded symbol, a Scav zone's ring, it may cover, as other symbols do.
+        scene.Markers = [new MapMarker("spawn:scav:1", MarkerKind.ScavSpawn, new WorldPoint(-432, 0, -430), "")];
+        Assert.Equal(home.Origin, MapRenderer.Layout(camera, scene, 1).Scale.Origin);
+
+        // A crowd up the corner, no free place within four of its heights: it stays where it stands.
+        scene.Markers = [.. Enumerable.Range(0, 7).Select(i => Quest($"q{i}", i % 2 == 0 ? -460 : -400, -430 + 24 * i, "", group: $"q{i}"))];
+        Assert.Equal(home.Origin, MapRenderer.Layout(camera, scene, 1).Scale.Origin);
+    }
+
     // A render stretched along one axis has no one scale: the bar is true the way it lies (the review of 2026-10-04:
     // it took the mean of both axes, which made "50 m" span 69 m on Icebreaker).
     [Fact]

@@ -30,8 +30,8 @@ the player*. In short, from the list's arrival (a screenshot taken in the last 3
   drawing had four of seven landings under the band). With six, the last lands at 3.3 s; the title stays on its halo
   until 4.8 s, the rings end at about 5.4 s.
 - After: the view stays fitted. Follow my position on: the next position glides it back as usual (2.4 s). Follow off:
-  principle 8 holds, it stays until the player moves the view (a drag, a zoom, F) **(2026-10-15; to confirm)**: the
-  one point the owner didn't note on the panel.
+  principle 8 holds, it stays until the player moves the view (a drag, a zoom, F): the one point the owner didn't
+  note on the panel, confirmed 2026-10-15.
 - A list while the cue is up joins it (rows after the others, flown after them); one after it has gone rings what it
   lit anew where they stand; the same list again changes nothing. Animation effects off: the cue stands 5 s with all
   its rows, the view fits at once, the extracts are simply lit. The tour's chapter 5 and What's New's `extracts` show
@@ -43,9 +43,9 @@ the player*. In short, from the list's arrival (a screenshot taken in the last 3
 title's halo of letters, `CueTitleHalo`), each row handed to the map as the centre of its triangle in the map panel's
 pixels, the fit at 1.2 s (`MapView.CallOutView`, a zoom out only), the rows fading at their lift-offs and the band's dark
 with them, the cue going 1.5 s after the last landing. The points this entry left open, as built (DESIGN.md says them):
-the notice went with the cue (provisional, as QUEST COMPLETE's and SEEN IN YOUR STASH's); a joining extract outside the
-fitted view has the view take them all in again (provisional); chapter 5's plate keeps its YOUR LIST THIS RAID line
-(the cue comes after the plate has gone; dropping it is the owner's call). A list after the cue rings only its
+the notice went with the cue (as QUEST COMPLETE's and SEEN IN YOUR STASH's); a joining extract outside the fitted view
+has the view take them all in again; chapter 5's plate keeps its YOUR LIST THIS RAID line (the cue comes after the
+plate has gone). The owner confirmed all three on 2026-10-15 (below, "Settled 2026-10-15"). A list after the cue rings only its
 additions (`MapScene.CalledOut`; a new raid forgets it), with a test. What wasn't drawn on the panel and was decided in
 the build: columns evened out (six stand three and three), names broken between words in a narrow column, twelve rows
 at the smallest window drawn smaller (German about two thirds), the title's halo the dark around its letters (a box hid
@@ -66,14 +66,37 @@ drawn (the ring took the lit ones first, at most six turns each); a list after t
 or marked anew (the ring's rule had a list after the rings were over ring them all again). Read into the decision and
 written so in DESIGN.md: the title's count follows the rows a joining list adds, as the stash cue's line does.
 
-**Not settled** (not drawn on the panel; DESIGN.md says nothing of them yet):
+**Settled 2026-10-15** (not drawn on the panel; the owner confirmed each as proposed, on a decision page the same
+day; DESIGN.md says so):
 
-- An extract a joining list adds that lies outside the fitted view. Proposed: the view frames them all again, with
-  the same 1.2 s move.
-- The notice "Your extract list is read: 6 extracts for this raid" still comes once per raid beside the cue; QUEST
-  COMPLETE and SEEN IN YOUR STASH each replaced their notice.
-- Chapter 5's plate says "YOUR LIST THIS RAID: {n} OF {all} EXTRACTS" once read, and the cue says the same right
-  after it. Dropping the plate's line takes its `read` word in docs/tour.md and its `TourTests` check with it.
+- An extract a joining list adds that lies outside the fitted view: the view frames every listed extract and the
+  player again, with the same 1.2 s move ("Map drawing", *The player's extracts this raid*; principle 11). A list
+  after the cue has gone still rings in place with no change of view.
+- The notice "Your extract list is read: 6 extracts for this raid" goes: the cue takes its place, as QUEST COMPLETE
+  and SEEN IN YOUR STASH took the place of theirs. The extract list's own line still says the list was read.
+- Chapter 5 keeps its plate's line "YOUR LIST THIS RAID: {n} OF {all} EXTRACTS" beside the cue (docs/tour.md's `read`
+  and its `TourTests` check stay).
+
+**Decided 2026-10-15 from the first QA pass** (owner, on the same decision page; built with the confirmations above):
+
+- **The bold comes with the lighting.** Every listed name was bold from the list's first frame, before its extract was
+  lit (`shturmap-cli frames customs --scene list-read`: Old Gas Station, ZB-1013, Trailer Park, Crossroads bold at
+  +0 ms). Now a listed name is in the regular face until its extract lights, from its landing in the roll call and
+  from its turn in a plain ring, and bold from then on, on the same side and in the bold name's kept room, so no label
+  moves (`PlacedLabel.Unlit`, `SymbolTrace.Bold`; the frames' summary lists frame 000's bold names and checks that none
+  is bold before its extract is lit).
+- **No name cut at the map's left edge, and the scale bar steps aside.** At the smallest window Streets read
+  "ansit to Interchange", and the scale bar lay over a lit Crash Site, whose name then had no free side. Now a side of
+  a label that would start past the left edge isn't free (above and below slide in to start at it), and a symbol under
+  the scale bar moves it up by what it takes, at most 96 px ("Map drawing", *Room for labels on the right*, *Distances
+  on the map*). `shturmap-cli frames <map> --viewport 500x481` draws the map of the smallest window. Placed afresh in
+  every frame, the bar stepped up and back while the view moved, as symbols passed under it (the roll call's zoom out
+  at 500 × 481: 30 changes of place on Streets, 17 on Factory; at 1600 × 1000, 7 on Interchange). Built the same day,
+  as proposed: while the view only moves (the steady placement's rule) it keeps its place, and the first frame drawn
+  with the view still places it afresh; a frame whose bar held asks the window for one more, since the end of
+  `MapView.AnimateView`, of a wheel's notches or of a drag draws none by itself. Streets at 500 × 481: a 1.2 s glide
+  at 16 ms a frame (`--scene list-read --glide --every 16`) 59 changes of place, now 1; the roll call 30, now 1
+  (`GlideFramesTests`).
 
 **What is built where** (this commit has the docs, the cue's texts and the tour's words; the rest is to build, and
 the UI QA role reviews it before it is reported done):
@@ -81,7 +104,8 @@ the UI QA role reviews it before it is reported done):
 - **Map side** (`Shturmap.Map`): `MapScene.CallOutExits` in place of `RingExits`: the turns, nearest you first; each
   triangle's flight from where its row hands it over (a point on screen) to where the frame draws its symbol (on its
   leader where it is set apart, so it follows the view still settling), 0.9 s on an eased arc; and from its landing
-  the ring as `MapRenderer.DrawExitsLit` draws it today. A listed extract stays solid and unlit until its landing. A
+  the ring as `MapRenderer.DrawExitsLit` draws it today. A listed extract stays solid and unlit, its name in the
+  regular face, until its landing (the face: built 2026-10-15, above). A
   list joining while the cue is up takes the turns after the last; one after the cue rings in place by the ring's
   rule. The flight is never drawn under the band's backing.
 - **The cue's body** (`MainWindow`, `CuePanel`): the rows, each the extract's triangle (as the legend draws it), its
@@ -91,7 +115,9 @@ the UI QA role reviews it before it is reported done):
 - **Orchestration** (`MainWindow`, where a list just read calls `RingExits` today): the 30 s rule and once per list as
   before; the cue (a kind of its own, joining itself as the stash cue does); the fit at 1.2 s (`Map.AnimateView` to
   `Map.FramingOf` the listed extracts and the position), which stops a Follow glide under way; nothing moves the view
-  back afterwards; animation effects off: the cue still for 5 s and `Map.Jump`. The tour's chapter 5
+  back afterwards; a joining list with an extract outside the fitted view frames them all again with the same move
+  (settled above); the one-line notice goes, its texts with it (both built, "Built (2026-10-15)" above); animation
+  effects off: the cue still for 5 s and `Map.Jump`. The tour's chapter 5
   (`MainWindow.Tour`, framed above the tour's band, with "An example, not your raid.") and What's New's `extracts`
   (`StageExtractList`, no position) call out the example list the same way.
 - **The frames scene `list-callout`** (`shturmap-cli frames`; DESIGN.md §8, *Animations frame by frame*, names it once
@@ -380,7 +406,8 @@ Open:
 - Measure the renderer's hot path before changing it.
 - DESIGN.md §4 doesn't name the extract list's cost in the game (two key presses for a list on demand).
 - Labels placed left of their symbols are cut at the window's left edge ("…ation Gate" on Customs); at 900×560 the
-  room on the right is capped at 100 DIP, so a long name there can still be cut.
+  room on the right is capped at 100 DIP, so a long name there can still be cut. The left edge: done 2026-10-15 (no
+  label starts past it; "Map drawing", *Room for labels on the right*); the right edge stays as it was.
 - The review's proposals, for the owner: a glide to a position out of view after a while without input, Follow on by
   default, items given with a quest, the raid clock from the screenshot name.
 

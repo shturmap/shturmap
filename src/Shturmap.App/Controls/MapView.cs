@@ -563,6 +563,11 @@ public sealed partial class MapView : Grid
         GlideStep();
         WheelStep();
         MapRenderer.Render(canvas, _camera, _scene, PixelScale);
+        // The scale bar keeps its place while the view only moves, and settles in the first frame drawn with the view still
+        // (MapRenderer.Scale). The end of a move draws no frame after its last by itself (AnimateView, the roll call's and
+        // the tour's; a wheel's notches; a Follow glide; a drag), so a frame whose bar held asks for one more, after it.
+        if (_scene.ScaleBarShown is { Held: true })
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, Invalidate);
     }
 
     private SKPoint Pixels(Windows.Foundation.Point p) => new((float)p.X * PixelScale, (float)p.Y * PixelScale);
