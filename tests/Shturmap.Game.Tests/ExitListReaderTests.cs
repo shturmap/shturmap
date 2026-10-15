@@ -37,7 +37,12 @@ public sealed class ExitListReaderTests : IDisposable
 
     /// <summary>A picture with a list in its top right corner, in the game's layout scaled to the picture's height.</summary>
     /// <param name="header">The green bar's words; "" for the bar without words, null for no bar.</param>
-    private string Picture(string name, int width, int height, string? header, params (string Label, string Name, string Right)[] rows)
+    private string Picture(string name, int width, int height, string? header, params (string Label, string Name, string Right)[] rows) =>
+        Picture(name, width, height, header, fadedTo: 1, rows);
+
+    /// <param name="fadedTo">How much of its light the picture has: 1 in full light, less while the game fades a raid in
+    /// from black (everything in it, the list too, darkened alike).</param>
+    private string Picture(string name, int width, int height, string? header, double fadedTo, params (string Label, string Name, string Right)[] rows)
     {
         var k = height / 1440f;
         using var bitmap = new SKBitmap(width, height);
@@ -66,6 +71,8 @@ public sealed class ExitListReaderTests : IDisposable
                 canvas.DrawText(rows[i].Name, left + 14 * k + big.MeasureText(rows[i].Label) + 14 * k, y, SKTextAlign.Left, small, light);
                 canvas.DrawText(rows[i].Right, left + 605 * k, y, SKTextAlign.Left, big, light);
             }
+            using var fade = new SKPaint { Color = new SKColor(0, 0, 0, (byte)Math.Round(255 * (1 - fadedTo))) };
+            canvas.DrawRect(0, 0, width, height, fade);
         }
         var path = Path.Combine(_root, name);
         using var data = bitmap.Encode(SKEncodedImageFormat.Png, 100);
@@ -99,6 +106,46 @@ public sealed class ExitListReaderTests : IDisposable
     {
         var path = Picture("none.png", 2560, 1440, null, ("EXFIL01", "Courtyard", ""), ("EXFIL02", "Crash Site", ""));
         Assert.Null(await Reader().ReadAsync(path, tries: 1, ct: TestContext.Current.CancellationToken));
+    }
+
+    // The game fades a raid in from black, and its first seconds are when the list shows by itself: a screenshot taken
+    // then is dark all over, the list with it. Five of the owner's ten latest that showed the list peaked at 69 to 121
+    // of 255, and none of the five was read until 2026-10-15: the bar's green fell short of what was looked for.
+    [Theory]
+    [InlineData(0.6)]
+    [InlineData(0.3)]
+    [InlineData(0.2)]
+    public async Task A_list_the_game_is_still_fading_in_is_read_with_its_marks(double fadedTo)
+    {
+        var path = Picture("fading.png", 2560, 1440, ExitList.EnglishHeader, fadedTo,
+            ("EXFIL01", "Courtyard", "??:??:??"), ("EXFIL02", "Primorsky Ave Taxi V-Ex", ""), ("EXFIL03", "Crash Site", ""),
+            ("EXFIL04", "Damaged House", "??:??:??"), ("TRANSIT01", "Transit to Ground Zero", "0:00:50"));
+        var reading = await Reader().ReadAsync(path, tries: 1, ct: TestContext.Current.CancellationToken);
+        Assert.NotNull(reading);
+        Assert.True(reading.Gain > 1);
+        var found = ExitList.Match(reading, Streets);
+        Assert.Equal(["courtyard", "crash", "house", "taxi"], found.Keys.Order());
+        Assert.Equal(["courtyard", "house"], found.Where(f => f.Value).Select(f => f.Key).Order());
+        Assert.True(ExitList.IsList(reading, found.Count));
+    }
+
+    [Fact]
+    public async Task A_dark_picture_without_the_green_bar_has_no_list()
+    {
+        var path = Picture("dark.png", 2560, 1440, null, fadedTo: 0.25, ("EXFIL01", "Courtyard", ""), ("EXFIL02", "Crash Site", ""));
+        Assert.Null(await Reader().ReadAsync(path, tries: 1, ct: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void A_corner_in_full_light_is_left_as_it_is()
+    {
+        // The lightest of the corner at 210 of 255, as a list's words stand in full light.
+        var pixels = new byte[4 * 100 * 100];
+        for (var i = 0; i < pixels.Length; i += 4)
+            (pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]) = i % 40 == 0 ? ((byte)200, (byte)210, (byte)205, (byte)255) : ((byte)20, (byte)30, (byte)25, (byte)255);
+        var before = pixels.ToArray();
+        Assert.Equal(1, ExitListReader.Brighten(pixels));
+        Assert.Equal(before, pixels);
     }
 
     [Fact]
@@ -232,6 +279,49 @@ public sealed class ExitListReaderTests : IDisposable
     [InlineData("no-list-timer.png")]
     [InlineData("no-list-trees.png")]
     [InlineData("no-list-sky.png")]
+    [InlineData("no-list-dark-a.png")]
+    [InlineData("no-list-dark-b.png")]
+    [InlineData("no-list-dark-c.png")]
     public async Task A_real_screenshot_without_the_list_has_none(string name) =>
         Assert.Null(await Reader().ReadAsync(Real(name), tries: 1, ct: TestContext.Current.CancellationToken));
+
+    private static ExitName[] Exits(params string[] names) => names.Select(n => new ExitName(n, [n])).ToArray();
+
+    // The PMC's extracts of four maps as tarkov.dev names them (2026-10-15).
+    private static readonly Dictionary<string, ExitName[]> MapExits = new()
+    {
+        ["customs"] = Exits("Boiler Room Basement (Co-op)", "Crossroads", "Dorms V-Ex", "Old Gas Station", "RUAF Roadblock",
+            "Railroad Passage (Flare)", "Smugglers' Boat", "Smugglers' Bunker (ZB-1012)", "Trailer Park", "ZB-1011", "ZB-1013"),
+        ["factory"] = Exits("Cellars", "Courtyard Gate", "Gate 0", "Gate 2", "Gate 3", "Med Tent Gate", "Smugglers' Passage"),
+        ["woods"] = Exits("Bridge V-Ex", "Friendship Bridge (Co-Op)", "Northern UN Roadblock", "Outskirts", "Power Line Passage (Flare)",
+            "RUAF Gate", "Railway Bridge to Tarkov", "UN Roadblock", "ZB-014", "ZB-016"),
+        ["shoreline"] = Exits("CCP Temporary", "Cliff Descent", "Climber's Trail", "Mountain Bunker", "Path to Lighthouse", "Pier Boat",
+            "Railway Bridge", "Road to Customs", "Road to North V-Ex", "Rock Passage", "Smugglers' Path (Co-op)", "Tunnel"),
+    };
+
+    // The owner's ten latest screenshots that showed the list (2026-10-15), under made-up names: what the list says
+    // (looked at by eye), which of its rows the game marked "??:??:??", and what the reader still misses. The "fading"
+    // ones were taken while the raid faded in, the "dim" one in a dimmed moment; none of those five was read before
+    // 2026-10-15. Factory's "Gate Ø" is read "Gate" (ExitList.Match); ZB-1013 read "ZB-IØI$" is as near to ZB-1011
+    // and names neither.
+    [Theory]
+    [InlineData("exits-customs-ten.png", "customs", "Dorms V-Ex|ZB-1013|Crossroads|Trailer Park|Railroad Passage (Flare)|Boiler Room Basement (Co-op)", "Dorms V-Ex", "")]
+    [InlineData("exits-customs-fading-a.png", "customs", "Dorms V-Ex|ZB-1013|Crossroads|Trailer Park|Railroad Passage (Flare)|Boiler Room Basement (Co-op)", "Dorms V-Ex", "")]
+    [InlineData("exits-customs-fading-b.png", "customs", "Dorms V-Ex|ZB-1013|Crossroads|Trailer Park|Railroad Passage (Flare)|Boiler Room Basement (Co-op)", "Dorms V-Ex", "ZB-1013")]
+    [InlineData("exits-factory-nine.png", "factory", "Cellars|Gate 3|Gate 0|Med Tent Gate|Courtyard Gate", "", "")]
+    [InlineData("exits-factory-fading-a.png", "factory", "Cellars|Gate 3|Gate 0|Med Tent Gate|Courtyard Gate", "", "")]
+    [InlineData("exits-factory-fading-b.png", "factory", "Cellars|Gate 3|Gate 0|Med Tent Gate|Courtyard Gate", "", "")]
+    [InlineData("exits-woods-ten.png", "woods", "Friendship Bridge (Co-Op)|ZB-014|Bridge V-Ex|Outskirts|Power Line Passage (Flare)", "ZB-014|Bridge V-Ex", "")]
+    [InlineData("exits-shoreline-seven.png", "shoreline", "Road to North V-Ex|Tunnel|Path to Lighthouse|Smugglers' Path (Co-op)|Pier Boat|Climber's Trail", "Pier Boat", "")]
+    [InlineData("exits-shoreline-dim.png", "shoreline", "Road to North V-Ex|Tunnel|Path to Lighthouse|Smugglers' Path (Co-op)|Pier Boat|Climber's Trail", "Pier Boat", "")]
+    public async Task Every_real_list_is_read(string name, string map, string listed, string marked, string missed)
+    {
+        static string[] Split(string names) => names.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        var reading = await Reader().ReadAsync(Real(name), tries: 1, ct: TestContext.Current.CancellationToken);
+        Assert.NotNull(reading);
+        var found = ExitList.Match(reading, MapExits[map]);
+        Assert.True(ExitList.IsList(reading, found.Count));
+        Assert.Equal(Split(listed).Except(Split(missed)).Order(), found.Keys.Order());
+        Assert.Equal(Split(marked).Except(Split(missed)).Order(), found.Where(f => f.Value).Select(f => f.Key).Order());
+    }
 }

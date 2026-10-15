@@ -127,14 +127,64 @@ public sealed class ExitListReader
             ExifOrientationMode.IgnoreExifOrientation, ColorManagementMode.DoNotColorManage).AsTask(ct);
         var pixels = new byte[4 * corner.PixelWidth * corner.PixelHeight];
         corner.CopyToBuffer(pixels.AsBuffer());
+        var gain = Brighten(pixels);
         if (FindBar(pixels, corner.PixelWidth, corner.PixelHeight) is not { } bar)
             return (null, true);
+        if (gain > 1)
+            corner.CopyFromBuffer(pixels.AsBuffer()); // the words are read in the same light the bar was found in
 
         var result = await _engine.RecognizeAsync(corner).AsTask(ct);
         var words = result.Lines.SelectMany(l => l.Words).Select(w => new ReadWord(w.Text, w.BoundingRect.X, w.BoundingRect.Y, w.BoundingRect.Width, w.BoundingRect.Height));
         var (header, lines) = ExitList.Lines(words, bar.Left, bar.Top, bar.Bottom);
         var rows = lines.Select(l => new ExitListRow(l.Text, Marked(pixels, corner.PixelWidth, corner.PixelHeight, bar, l))).ToList();
-        return (new ExitListReading(header, rows), true);
+        return (new ExitListReading(header, rows) { Gain = gain }, true);
+    }
+
+    // The share of a corner's pixels that are its lightest: a list's words and bar take more than this (two rows' words
+    // alone about 0.5 %), a spark or a lamp in the scene less.
+    private const double LightShare = 0.002;
+
+    // How far a dark corner is brightened at most: past this it is too dark to hold a list worth reading.
+    private const double MostGain = 8;
+
+    // Less than this is no fade: the list's lightest pixels stand at 200 of 255 or more in full light, and at 1.5 times
+    // darker the bar's green and the marks' light are still above what FindBar and Marked look for.
+    private const double LeastGain = 1.5;
+
+    /// <summary>
+    /// Brightens a dark corner until its lightest pixels are white again. The game fades a raid in from black, and its
+    /// first seconds are when the list shows by itself, so a screenshot taken then is dark all over, the list with it:
+    /// five of the owner's ten latest that showed the list (2026-10-15) peaked at 69 to 121 of 255, the bar's green at a
+    /// third of its own, and none of the five was read (a faded list is the same list). A corner in full light is left
+    /// as it is.
+    /// </summary>
+    /// <returns>The factor the corner was brightened by; 1 when it was left as it was.</returns>
+    internal static double Brighten(byte[] pixels)
+    {
+        Span<int> counts = stackalloc int[256];
+        for (var i = 0; i < pixels.Length; i += 4)
+            counts[Math.Max(pixels[i], Math.Max(pixels[i + 1], pixels[i + 2]))]++;
+        var lightest = pixels.Length / 4 * LightShare;
+        int level = 255, seen = 0;
+        for (; level > 1; level--)
+        {
+            seen += counts[level];
+            if (seen >= lightest)
+                break;
+        }
+        var gain = Math.Min(MostGain, 255.0 / level);
+        if (gain < LeastGain)
+            return 1;
+        Span<byte> brighter = stackalloc byte[256];
+        for (var v = 0; v < 256; v++)
+            brighter[v] = (byte)Math.Min(255, Math.Round(v * gain));
+        for (var i = 0; i < pixels.Length; i += 4)
+        {
+            pixels[i] = brighter[pixels[i]];
+            pixels[i + 1] = brighter[pixels[i + 1]];
+            pixels[i + 2] = brighter[pixels[i + 2]];
+        }
+        return gain;
     }
 
     private static readonly byte[] PngEnd = [0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82]; // "IEND" and its checksum

@@ -66,6 +66,19 @@ public class ExitListTests
     }
 
     [Fact]
+    public void A_slashed_zero_the_reader_left_out_breaks_a_tie()
+    {
+        // Factory as Windows read it from each of the owner's screenshots: the lone "Ø" of Gate 0 left out, so "Gate"
+        // was as near to Gate 2 and Gate 3, named neither, and an open Gate 0 was said to be off the list.
+        var factory = new[] { new ExitName("cellars", ["Cellars"]), new ExitName("gate0", ["Gate 0"]), new ExitName("gate2", ["Gate 2"]), new ExitName("gate3", ["Gate 3"]) };
+        var found = ExitList.Match(Reading(("EXFILØI Cellars", false), ("EXFILØ2 Gate 3", false), ("EXFILØ3 Gate", true)), factory);
+        Assert.Equal(["cellars", "gate0", "gate3"], found.Keys.Order());
+        Assert.True(found["gate0"]);
+        // A row that names one exit as it is gets no zero.
+        Assert.Equal(["gate2"], ExitList.Match(Reading(("EXFILØ4 Gate 2", false)), factory).Keys);
+    }
+
+    [Fact]
     public void Two_exits_of_one_name_are_one_row()
     {
         var exits = new[] { new ExitName("pmc", ["Crossroads"]), new ExitName("shared", ["Crossroads"]) };

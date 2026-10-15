@@ -142,7 +142,12 @@ public sealed partial class GameSession
         var started = System.Diagnostics.Stopwatch.GetTimestamp();
         var reading = await read(seen.Path, _stop.Token);
         if (reading is null)
+        {
+            // No list in the corner, as in most raid screenshots. Counted all the same, so a list that was there and
+            // went unread shows: until 2026-10-15 the dark screenshots of a raid's first seconds went without a trace.
+            Study.Game("exits.none", ("ms", System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds));
             return;
+        }
         await _gate.WaitAsync();
         try
         {
@@ -151,7 +156,7 @@ public sealed partial class GameSession
             var named = ExitList.Match(reading, ExitNames(_data, mapId, ShownRaid.Side));
             var isList = ExitList.IsList(reading, named.Count);
             Study.Game("exits.read", ("rows", reading.Rows.Count), ("named", named.Count), ("marked", named.Count(n => n.Value)), ("list", isList),
-                ("ms", System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds));
+                ("gain", Math.Round(reading.Gain, 2)), ("ms", System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds));
             if (!isList)
             {
                 // A green bar and rows, but not the list: the box the game shows in an exit, or names Windows couldn't read.

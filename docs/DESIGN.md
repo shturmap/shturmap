@@ -64,13 +64,19 @@ this narrow (`ExitListReader`, `Shturmap.Core.Screenshots.ExitList`):
 
 - **Which pictures:** only a screenshot the watcher reported as new, named with a position, while the log shows a raid
   running on a map the data knows. Never a menu screenshot, never one already in the folder, never while a raid loads.
-- **How much of it:** the top right corner (0.60 by 0.62 of the picture's height). If no green bar stands near its top
+- **How much of it:** the top right corner (0.60 by 0.62 of the picture's height). A corner whose lightest pixels
+  stand below 170 of 255 is first brightened until they are white again, by up to 8 times (`ExitListReader.Brighten`):
+  the game fades a raid in from black, and its first seconds are when the list shows by itself, so a screenshot taken
+  then is dark all over, the list with it (2026-10-15: of the owner's ten latest screenshots that showed the list, five
+  peaked at 69 to 121 of 255, the bar's green at a third of its own, and none of those five was read, without a trace;
+  in full light the list's lightest pixels stand at 200 or more). If no green bar stands near its top
   (the list's header), nothing is read and the picture is let go. With the bar, the words in the corner are read with
   the text recognition built into Windows (`Windows.Media.Ocr`): on the PC, with no download, no model of Shturmap's
   own and nothing sent. On a full-size screenshot a look takes 110–180 ms, most of it decoding the PNG.
 - **What is kept:** which of the raid map's extracts the rows name, and whether the game marked a row "??:??:??".
-  No pixel and no other word is kept, logged or sent; the study log notes counts only (`exits.read`). It is forgotten
-  when the raid ends.
+  No pixel and no other word is kept, logged or sent; the study log notes counts only (`exits.read`, with how much
+  the corner was brightened; `exits.none` for a raid screenshot that showed no list, so a list that went unread shows).
+  It is forgotten when the raid ends.
 - **How:** the file is opened for reading, shared with the game that may still be writing it, and only once it is
   written to its end (a PNG's IEND chunk; half a list read as the whole would call the missing rows' exits closed);
   it is tried for about three seconds, then left. Nothing is written to the screenshots folder. This is a file the
@@ -1048,8 +1054,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     and one row, and taking it for the list would call every other exit closed (so in another game language a list
     of one exit isn't taken). Names are matched in the game's language and in English, letter by letter with what a
     reader confuses folded together (the slashed zero comes back as "Ø", 1 as "I"), one letter in five may be off,
-    and a row that fits two exits equally names neither (`ExitList.Match`). Every map is unchecked again when the
-    raid ends or a transit loads the next map. A way out wears
+    and a row that fits two exits equally names neither (`ExitList.Match`), unless a zero at its end tells them apart:
+    the reader leaves out a slashed zero that stands alone, and Factory's "Gate Ø" came back "Gate", as near to Gate 2
+    and Gate 3, in each of the owner's Factory screenshots, so an open Gate 0 was struck out (2026-10-15). Every map
+    is unchecked again when the raid ends or a transit loads the next map. A way out wears
     the colour of its kind here as on the map, in EXIT's label and distance and in each row's distance: a PMC
     extract green, a Scav's teal, one for both sides khaki, a transit violet (2026-10-04: every way out was green
     in the rail, the PMC extract's colour on the map). ANY MAP closes the rail in both states.

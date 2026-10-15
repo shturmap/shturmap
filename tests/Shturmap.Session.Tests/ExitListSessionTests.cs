@@ -149,6 +149,64 @@ public class ExitListSessionTests
         Assert.All(rig.Snapshot.Extracts, e => Assert.Equal(ExitState.NotChecked, e.State));
     }
 
+    // The whole way, with the reader the app uses: the game writes a screenshot while the raid fades in from black, the
+    // watcher sees it, Windows' text recognition reads its top right corner, and the extracts take what the list says,
+    // as the map draws them (lit, "?", struck out). Until 2026-10-15 such a dark picture was let go unread, without a
+    // word: five of the owner's ten latest lists. The picture is drawn, so this runs on any PC with English text
+    // recognition; tests\Shturmap.Game.Tests reads the owner's real ones.
+    [Fact]
+    public async Task A_screenshot_taken_as_the_raid_fades_in_is_read_and_the_map_takes_its_list()
+    {
+        if (Shturmap.Game.Screenshots.ExitListReader.Create("en") is null)
+            Assert.Skip("This Windows has no text recognition language installed.");
+        await using var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations) { GivenData = Data });
+        rig.RaidUpToItsStart("maps/customs_preset.bundle", "bigmap", DateTime.Now.AddMinutes(-5));
+        await rig.StartAsync();
+        await rig.Until(s => s.Raid.Phase == RaidPhase.InRaid && s.RaidMap?.NormalizedName == "customs" && s.Extracts.Count > 0, "the raid on Customs");
+
+        rig.Screenshot(0, 0, 0, ListPicture(fadedTo: 0.3,
+            ("EXFIL01", "Trailer Park", "??:??:??"), ("EXFIL02", "ZB-1011", ""), ("TRANSIT01", "Transit to Reserve", "0:00:57")));
+        var s = await rig.Until(s => s.ExitsReadAt is not null, "the list read from the screenshot");
+        Assert.Equal(ExitState.Unsure, StateOf(s, "Trailer Park"));
+        Assert.Equal(ExitState.Listed, StateOf(s, "ZB-1011"));
+        Assert.Equal(ExitState.NotListed, StateOf(s, "Crossroads"));
+        Assert.Equal(ExitState.NotChecked, StateOf(s, "Transit to another map"));
+        Assert.Contains(rig.Notices, n => n.Contains("2 extracts", StringComparison.Ordinal));
+    }
+
+    /// <summary>A 2560×1440 screenshot's PNG with the game's list in its top right corner, as the game lays it out, the
+    /// whole picture darkened to <paramref name="fadedTo"/> of its light.</summary>
+    private static byte[] ListPicture(double fadedTo, params (string Label, string Name, string Right)[] rows)
+    {
+        using var bitmap = new SkiaSharp.SKBitmap(2560, 1440);
+        using (var canvas = new SkiaSharp.SKCanvas(bitmap))
+        {
+            canvas.Clear(new SkiaSharp.SKColor(96, 104, 92));
+            const float left = 2560 - 768, top = 5;
+            using var panel = new SkiaSharp.SKPaint { Color = new SkiaSharp.SKColor(14, 16, 14) };
+            canvas.DrawRect(left, top, 768, 74 + 70 * rows.Length, panel);
+            using var green = new SkiaSharp.SKPaint { Color = new SkiaSharp.SKColor(124, 167, 14) };
+            canvas.DrawRect(left, top, 573, 74, green);
+            using var face = SkiaSharp.SKTypeface.FromFamilyName("Bahnschrift", SkiaSharp.SKFontStyle.Bold) ?? SkiaSharp.SKTypeface.Default;
+            using var big = new SkiaSharp.SKFont(face, 30);
+            using var small = new SkiaSharp.SKFont(face, 24);
+            using var dark = new SkiaSharp.SKPaint { Color = new SkiaSharp.SKColor(10, 12, 10), IsAntialias = true };
+            using var light = new SkiaSharp.SKPaint { Color = new SkiaSharp.SKColor(205, 210, 205), IsAntialias = true };
+            canvas.DrawText(ExitList.EnglishHeader, left + 70, top + 48, SkiaSharp.SKTextAlign.Left, big, dark);
+            for (var i = 0; i < rows.Length; i++)
+            {
+                var y = top + 74 + 70 * i + 46;
+                canvas.DrawText(rows[i].Label, left + 14, y, SkiaSharp.SKTextAlign.Left, big, light);
+                canvas.DrawText(rows[i].Name, left + 28 + big.MeasureText(rows[i].Label), y, SkiaSharp.SKTextAlign.Left, small, light);
+                canvas.DrawText(rows[i].Right, left + 605, y, SkiaSharp.SKTextAlign.Left, big, light);
+            }
+            using var fade = new SkiaSharp.SKPaint { Color = new SkiaSharp.SKColor(0, 0, 0, (byte)Math.Round(255 * (1 - fadedTo))) };
+            canvas.DrawRect(0, 0, 2560, 1440, fade);
+        }
+        using var png = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+        return png.ToArray();
+    }
+
     [Fact]
     public void A_sides_exits_are_the_ones_a_row_can_name()
     {

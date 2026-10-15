@@ -18,7 +18,12 @@ public sealed record ExitListLine(string Text, double Top, double Bottom);
 public sealed record ExitListRow(string Text, bool Marked);
 
 /// <summary>The game's extract list as read from one screenshot: the green bar's words and the rows under it.</summary>
-public sealed record ExitListReading(string Header, IReadOnlyList<ExitListRow> Rows);
+public sealed record ExitListReading(string Header, IReadOnlyList<ExitListRow> Rows)
+{
+    /// <summary>How much the picture's corner was brightened to be read: 1 for one taken in full light, more for one the
+    /// game was still fading in (a count for the study log).</summary>
+    public double Gain { get; init; } = 1;
+}
 
 /// <summary>An exit of the raid's map that a row can name: the names it goes by (the game's language, and English).</summary>
 public sealed record ExitName(string Id, IReadOnlyList<string> Names);
@@ -66,8 +71,9 @@ public static class ExitList
     /// then the exit's name; the name is compared without the label, letter by letter with what a reader confuses
     /// folded together (the game's slashed zero is read as "Ø", "1" as "I"), and may be a little off. A row that
     /// names no exit (a transit, the note under one, something from the scene) names none; a row that could be two
-    /// exits equally well names neither. A row with nothing to compare ("??:??:??" read on a line of its own, a dash,
-    /// noise) names none, and an exit whose names fold to nothing is never named.
+    /// exits equally well names neither, unless a slashed zero the reader left out at its end tells them apart
+    /// ("Gate" for Gate 0, beside Gate 2 and Gate 3). A row with nothing to compare ("??:??:??" read on a line of its
+    /// own, a dash, noise) names none, and an exit whose names fold to nothing is never named.
     /// </summary>
     public static IReadOnlyDictionary<string, bool> Match(ExitListReading reading, IReadOnlyList<ExitName> exits)
     {
@@ -82,19 +88,30 @@ public static class ExitList
             // Review of 2026-10-09: such a row threw here, and the whole screenshot's list was lost.
             if (said.Count == 0)
                 continue;
-            var scores = known.Select(k => (k.Id, k.Forms, Score: k.Forms.Max(f => said.Max(s => Similarity(f, s))))).Where(k => k.Score >= Enough).ToList();
-            if (scores.Count == 0)
-                continue;
-            var best = scores.Max(k => k.Score);
-            // Two exits of one name (one entry per side in the data) are one row; two different names equally near are a guess.
-            var winners = scores.Where(k => k.Score == best).ToList();
-            if (winners.Select(k => k.Forms[0]).Distinct(StringComparer.Ordinal).Count() > 1)
+            var winners = Nearest(known, said);
+            // The reader leaves out a slashed zero that stands alone: Factory's "Gate Ø" comes back "Gate", as near
+            // to Gate 2 and Gate 3 as to Gate 0 (each of the owner's four Factory screenshots of the list until
+            // 2026-10-15). Such a tie is broken by a zero at the end; a row that names one exit as it is never gets one.
+            if (Guess(winners))
+                winners = Nearest(winners, said.Select(s => s + "0").ToList());
+            if (winners.Count == 0 || Guess(winners))
                 continue;
             foreach (var winner in winners)
                 found[winner.Id] = row.Marked || found.GetValueOrDefault(winner.Id);
         }
         return found;
     }
+
+    // The exits nearest to what a row says, if near enough: one, or more of one name (one entry per side in the data).
+    private static List<(string Id, List<string> Forms)> Nearest(IEnumerable<(string Id, List<string> Forms)> exits, List<string> said)
+    {
+        var scores = exits.Select(k => (k.Id, k.Forms, Score: k.Forms.Max(f => said.Max(s => Similarity(f, s))))).Where(k => k.Score >= Enough).ToList();
+        return scores.Count == 0 ? [] : scores.Where(k => k.Score == scores.Max(s => s.Score)).Select(k => (k.Id, k.Forms)).ToList();
+    }
+
+    // Two different names equally near: naming either would be a guess.
+    private static bool Guess(List<(string Id, List<string> Forms)> winners) =>
+        winners.Select(k => k.Forms[0]).Distinct(StringComparer.Ordinal).Count() > 1;
 
     /// <summary>
     /// Whether what was read is the list. Two exits named: yes. One: only under the list's own header, since the box

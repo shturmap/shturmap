@@ -152,12 +152,15 @@ internal sealed class SessionRig : IAsyncDisposable
     }
 
     /// <summary>A screenshot file named as the game names it, with a position; empty, since only the name is read.</summary>
-    public void Screenshot(double x, double y, double z)
+    public void Screenshot(double x, double y, double z) => Screenshot(x, y, z, picture: []);
+
+    /// <summary>A screenshot with a position and a picture (a PNG's bytes), for the reading of its extract list.</summary>
+    public void Screenshot(double x, double y, double z, byte[] picture)
     {
         var now = DateTime.Now;
         var name = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd}[{0:HH-mm}]_{1:0.00}, {2:0.00}, {3:0.00}_0.00000, 0.00000, 0.00000, 1.00000_14.13 ({4}).png",
             now, x, y, z, Interlocked.Increment(ref _shots));
-        File.WriteAllBytes(Path.Combine(_root, "Screenshots", name), []);
+        File.WriteAllBytes(Path.Combine(_root, "Screenshots", name), picture);
     }
 
     private int _shots;
