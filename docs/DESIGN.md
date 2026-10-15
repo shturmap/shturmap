@@ -2805,13 +2805,15 @@ transit), drawn centre and size, centre in map units, offset from its own place,
 off the list that animated, the first frame against the last). Two scenes: `list-read`, a list read in a PMC raid
 (every other extract lit, two "??:??:??", the rest struck out, Scav extracts left out as a raid leaves them out, the
 position at the map's first PMC spawn or `--fix`, pinging), and `whatsnew-extracts`, What's New's `extracts` preview
-as it is staged (no quests, no position, the sets of `MainWindow.ExampleExits`, which the CLI repeats). `--glide [ms]`
-moves the view as `MapView.AnimateView` does, from the whole map to three times the zoom on the position in 1.2 s, and
-lists the symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the
-view's motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing",
-*Steady while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did
-more than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, and
-`GlideFramesTests` the symbols on leaders in a glide.
+as it is staged (a PMC raid's map, so without the Scav extracts, which it kept until 2026-10-15; no quests, no
+position; the sets of `MainWindow.ExampleExits`, which the CLI repeats). Both scenes leave the Scav extracts out with
+`MapContent.InPmcRaid`, the rule GameSession and the app's PMC scenes hold in their own code. `--glide [ms]` moves the
+view as `MapView.AnimateView` does, from the whole map to three times the zoom on the position in 1.2 s, and lists the
+symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
+motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing", *Steady
+while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did more
+than once. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid, and `GlideFramesTests`
+the symbols on leaders in a glide.
 
 ### How the parts work
 

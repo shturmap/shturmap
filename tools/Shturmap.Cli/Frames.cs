@@ -159,17 +159,18 @@ internal static class Frames
     // ---- the scenes ----
 
     // What's New's `extracts` preview (0.4.0's "Your extracts this raid"; MainWindow.WhatsNew: PreviewSceneAsync with
-    // StageExtractList): the map with no quests and no position, the example list's sets, rung out as it is set.
+    // StageExtractList and pmc): a PMC raid's map, so without the Scav extracts (MapContent.InPmcRaid, the app's rule),
+    // with no quests and no position, the example list's sets, rung out as it is set.
     private static (MapScene Scene, List<string> About) WhatsNewExtracts(GameData data, string mapId, MapDefinition definition, MapArtwork? artwork, MapTiles? tiles)
     {
-        var content = MapContentBuilder.Build(data, mapId, [], new HashSet<string>());
+        var content = MapContentBuilder.Build(data, mapId, [], new HashSet<string>()).InPmcRaid();
         var scene = new MapScene(definition, artwork, tiles)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
         var (listed, unsure, notListed) = ExampleExits(data, content);
         scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsNotListed = notListed;
-        return (scene, ["Scene: What's New's extracts preview (MainWindow.StageExtractList): no quests, no raid, no position"]);
+        return (scene, ["Scene: What's New's extracts preview (MainWindow.StageExtractList): a PMC raid's map, Scav extracts left out; no quests, no raid, no position"]);
     }
 
     // MainWindow.ExampleExits, as it stands (the app's code can't be referenced here): the extracts it names, one it
@@ -187,8 +188,9 @@ internal static class Frames
     }
 
     // A list read in a PMC raid, as a screenshot gives it: the map as the raid shows it (render's example quests, your
-    // side's extracts only: GameSession), every other one of its extracts lit, two of the rest "??:??:??", the others
-    // struck out; the position from the same screenshot pings. At a PMC spawn unless --fix says where.
+    // side's extracts only: GameSession's rule, MapContent.InPmcRaid), every other one of its extracts lit, two of the
+    // rest "??:??:??", the others struck out; the position from the same screenshot pings. At a PMC spawn unless --fix
+    // says where.
     private static (MapScene Scene, List<string> About) ListRead(GameData data, ApiMap map, MapDefinition definition, MapArtwork? artwork, MapTiles? tiles,
         WorldPoint? fix)
     {
@@ -197,7 +199,7 @@ internal static class Frames
         var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
         if (content.Objectives.All(o => o.Places.Count == 0))
             content = MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
-        var markers = content.Markers.Where(m => m.Kind != MarkerKind.ExtractScav).ToList();
+        var markers = content.InPmcRaid().Markers;
         var scene = new MapScene(definition, artwork, tiles)
             { Markers = markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, InRaid = true };
         var exits = markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();

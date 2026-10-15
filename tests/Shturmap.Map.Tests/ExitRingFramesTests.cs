@@ -204,6 +204,52 @@ public class ExitRingFramesTests
         }
     }
 
+    // What's New's `extracts` preview is a PMC raid's map (MainWindow.PreviewSceneAsync's pmc; shturmap-cli frames
+    // --scene whatsnew-extracts stages it with MapContent.InPmcRaid, the same rule): the Scav-only extracts go, the shared
+    // and the PMC ones stay. Left in, tarkov.dev's Scav twins on Customs, each under 5 m from an extract of the same name
+    // on the example list, stood unlit beside the lit ones (found 2026-10-15 by the UI QA pass, in these frames).
+    [Fact]
+    public void The_whats_new_scene_keeps_the_shared_extracts_and_drops_the_scav_only_ones()
+    {
+        var map = Fixtures.TestMap("test") with
+        {
+            Extracts =
+            [
+                new("shared", "Crossroads", "shared", Fixtures.At(-150, 100), null, null, null),
+                new("twin", "Crossroads", "scav", Fixtures.At(-150, 102), null, null, null),
+                new("scav", "Sniper Roadblock", "scav", Fixtures.At(200, -200), null, null, null),
+                new("pmc", "Trailer Park", "pmc", Fixtures.At(100, 20), null, null, null),
+            ],
+        };
+        var all = MapContentBuilder.Build(Fixtures.With(map), map.Id, [], new HashSet<string>());
+        (Camera, MapScene) Scene(MapContent content)
+        {
+            var (camera, scene) = Of(content.Markers);
+            scene.ExitsListed = new HashSet<string> { "extract:shared" };
+            scene.ExitsNotListed = new HashSet<string> { "extract:pmc" };
+            return (camera, scene);
+        }
+
+        var (camera, scene) = Scene(all.InPmcRaid());
+        var frames = Frames(scene, camera);
+        foreach (var frame in frames)
+        {
+            Assert.Equal(new[] { "extract:pmc", "extract:shared" }, frame.Keys.Order());
+            // The lit one stands on its own place: no twin sets it aside.
+            Assert.False(frame["extract:shared"].Shown.Beside);
+            Assert.Null(frame["extract:shared"].Shown.Leader);
+        }
+        Assert.Equal(ExitLook.Listed, frames[^1]["extract:shared"].Look);
+        Assert.Equal(1, frames[^1]["extract:shared"].Glow);
+
+        // Both sides' extracts, as the scene had them before: the Scav ones drawn plain, the twin setting the lit one aside.
+        var (camera2, before) = Scene(all);
+        var first = Frames(before, camera2)[0];
+        Assert.Equal(ExitLook.Plain, first["extract:twin"].Look);
+        Assert.Equal(ExitLook.Plain, first["extract:scav"].Look);
+        Assert.True(first["extract:shared"].Shown.Beside);
+    }
+
     [Fact]
     public void The_first_and_the_last_frame_differ_only_in_the_glow_and_the_question_marks()
     {

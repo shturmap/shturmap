@@ -19,6 +19,15 @@ public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<
 
     /// <summary>Per quest, the lock groups of the keys it needs on this map (<see cref="MapContentBuilder.QuestKeys"/>).</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> QuestKeys { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
+    /// <summary>
+    /// As a PMC raid's map shows it: without the Scav extracts (tarkov.dev's faction "scav"); the PMC's and the shared
+    /// ones stay. The app holds the same rule in its own code: GameSession's content in a raid, and
+    /// MainWindow.PreviewSceneAsync's <c>pmc</c> (What's New's <c>extracts</c> preview, the tour's PMC chapters).
+    /// <c>shturmap-cli frames</c>' scenes, which can't reference the app, use this one, where the tests reach it. Keep
+    /// them alike.
+    /// </summary>
+    public MapContent InPmcRaid() => this with { Markers = Markers.Where(m => m.Kind != MarkerKind.ExtractScav).ToList() };
 }
 
 /// <summary>Builds what to draw on a map: extracts, transits, and the active quests' objectives.</summary>
