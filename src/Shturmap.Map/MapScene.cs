@@ -438,7 +438,6 @@ public sealed class MapScene
         {
             _exitsNotListed = value.Count == 0 ? Nothing : value;
             LayoutVersion++;
-            ForgetCallOutWithoutList();
         }
     }
 
@@ -456,7 +455,6 @@ public sealed class MapScene
         {
             _exitsListed = value.Count == 0 ? Nothing : value;
             LayoutVersion++;
-            ForgetCallOutWithoutList();
         }
     }
 
@@ -473,26 +471,10 @@ public sealed class MapScene
         {
             _exitsUnsure = value.Count == 0 ? Nothing : value;
             LayoutVersion++;
-            ForgetCallOutWithoutList();
         }
     }
 
     private IReadOnlySet<string> _exitsUnsure = Nothing;
-
-    /// <summary>
-    /// Whether a roll call ran on this scene in this raid (<see cref="CallOutExits"/> was called with the band's rows, with
-    /// animation effects off too): from then on a later list rings only what it lit or marked anew
-    /// (<see cref="RingExits"/>), and the window shows no cue for it. A new map is a new scene; a new raid on the same map
-    /// starts without a list, and with the list the roll call is forgotten.
-    /// </summary>
-    public bool CalledOut { get; private set; }
-
-    // No list read (a new raid on the same map, the menus): what a roll call before did is no longer this raid's.
-    private void ForgetCallOutWithoutList()
-    {
-        if (_exitsListed.Count == 0 && _exitsUnsure.Count == 0 && _exitsNotListed.Count == 0)
-            CalledOut = false;
-    }
 
     /// <summary>
     /// The extracts a list the player just showed rings out (owner, 2026-10-14: "animate the icons for a couple of
@@ -509,23 +491,27 @@ public sealed class MapScene
     /// several screenshots in a run (owner, 2026-10-14: "updated on the fly with the newly added items that come in
     /// after the first animation has been started"): while rings are still going, a later list adds only what it lit
     /// or marked anew, after the last turn, and what is already ringing carries on. Once they are over, a list rings
-    /// them all again: the player looked at it again. Not after a roll call in this raid (<see cref="CalledOut"/>; owner,
-    /// 2026-10-15, from the design panel: option A, "Roll call, then fly-out"): a list that comes once the roll call's cue
-    /// has gone rings only what it lit or marked anew, where it stands, a turn apart, nearest you first, lit and
+    /// them all again: the player looked at it again. Not after a roll call in this raid (<paramref name="called"/>;
+    /// owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"): a list that comes once the roll
+    /// call's cue has gone rings only what it lit or marked anew, where it stands, a turn apart, nearest you first, lit and
     /// "??:??:??" alike as the roll call names them; the same list again changes nothing. Until then a list after the
     /// rings rang them all again.
     /// </summary>
-    public void RingExits(DateTime now)
+    /// <param name="called">What a roll call called in this raid (marker id to lit), or null where none ran in it. The
+    /// window keeps it for the raid, not the scene: a look at another map and back makes the scene anew, and the scene's
+    /// own record went with it, so the next list got a whole roll call again (coordinator, 2026-10-15).</param>
+    public void RingExits(DateTime now, IReadOnlyDictionary<string, bool>? called = null)
     {
         var going = RingsGoing(now);
         var turn = MapRenderer.ExitTurn;
-        if (CalledOut)
+        if (called is not null)
         {
             var at = going ? Max(now, _ringing.Values.Max(r => r.At) + turn) : now;
             foreach (var exit in ExitsToCall())
             {
                 var listed = ExitsListed.Contains(exit.Id);
-                if (_ringing.TryGetValue(exit.Id, out var rung) && rung.Listed == listed)
+                if ((_ringing.TryGetValue(exit.Id, out var rung) && rung.Listed == listed)
+                    || (called.TryGetValue(exit.Id, out var was) && was == listed))
                     continue;
                 _ringing[exit.Id] = new ExitRing(at, listed);
                 // Rung where it stands: a flight it had (one marked "??:??:??" lit meanwhile) would land off its ring.
@@ -635,9 +621,6 @@ public sealed class MapScene
     /// as it leaves.</returns>
     public IReadOnlyList<ExitFlight> CallOutExits(IReadOnlyList<ExitCall> calls, DateTime now)
     {
-        // The roll call ran, with animation effects off too (its cue stood still): a later list after it rings, no cue.
-        if (calls.Count > 0)
-            CalledOut = true;
         if (!Pulse)
             return [];
         var going = RingsGoing(now);

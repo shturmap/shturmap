@@ -429,43 +429,50 @@ public sealed partial class MapView : Grid
     /// The view of <paramref name="scene"/> that shows these world positions, with <paramref name="padding"/> DIPs
     /// around them and the label room on their right (<see cref="Camera.FramingAbove"/>), at least
     /// <paramref name="minMetres"/> across, in the part of this view above <paramref name="foot"/> DIPs at its foot (the
-    /// raid replay's band).
+    /// raid replay's band), and under <paramref name="head"/> DIPs at its top (the preview label, in the tour).
     /// </summary>
     public (Shturmap.Core.Maps.MapPoint Center, double Zoom) FramingAbove(MapScene scene, IReadOnlyCollection<Shturmap.Core.WorldPoint> points,
-        double padding, double foot, double minMetres)
+        double padding, double foot, double minMetres, double head = 0)
     {
         var x = points.Average(p => p.X);
         var z = points.Average(p => p.Z);
         var room = points.Append(new(x - minMetres / 2, 0, z - minMetres * 0.3)).Append(new(x + minMetres / 2, 0, z + minMetres * 0.3));
         var map = room.Select(p => scene.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * PixelScale);
+        return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * PixelScale, (float)(head * PixelScale));
     }
 
     /// <summary>
-    /// The view the roll call zooms out to (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out";
-    /// <see cref="Camera.FittingAll(IReadOnlyCollection{Shturmap.Core.Maps.MapPoint}, Shturmap.Core.Maps.MapPoint?, SKSize, float, float, double, double)"/>):
-    /// every one of <paramref name="extracts"/> and the <paramref name="player"/> in view, <paramref name="padding"/> DIPs
-    /// around them and the label room on their right, in the part of this view above <paramref name="foot"/> DIPs at its
-    /// foot (the tour's band). A zoom out only: points that fit at the zoom the view has are framed at that zoom, never
-    /// closer (the camera's zoom as the fit's closest). Null without a scene, before the view is laid out and fitted, or
-    /// with no room for the padding. The window moves the view there with <see cref="AnimateView"/>, or <see cref="Jump"/>
-    /// with animation effects off.
+    /// Where the roll call takes the view (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out";
+    /// <see cref="Camera.CallOut"/>): every one of <paramref name="extracts"/> and the <paramref name="player"/> in view,
+    /// <paramref name="padding"/> DIPs around them and the label room on their right, in the part of this view between
+    /// <paramref name="head"/> DIPs at its top and <paramref name="foot"/> DIPs at its foot (the tour's label and band). A
+    /// zoom out only, and no move at all where they are all in view already (Moves false; the view as it is, or where a
+    /// Follow glide under way ends it, which then goes on): a fit that zoomed out nothing still took them into the view's
+    /// middle (coordinator, 2026-10-15: on Customs it cut off the map's west and left empty map at the top). Null without a
+    /// scene, before the view is laid out and fitted, or with no room for the padding. The window moves the view there with
+    /// <see cref="AnimateView"/>, or <see cref="Jump"/> with animation effects off.
     /// </summary>
-    public (Shturmap.Core.Maps.MapPoint Center, double Zoom)? CallOutView(IReadOnlyCollection<Shturmap.Core.WorldPoint> extracts,
-        Shturmap.Core.WorldPoint? player, double foot = 0, double padding = Camera.CallOutPadding)
+    public ((Shturmap.Core.Maps.MapPoint Center, double Zoom) View, bool Moves)? CallOutView(IReadOnlyCollection<Shturmap.Core.WorldPoint> extracts,
+        Shturmap.Core.WorldPoint? player, double foot = 0, double padding = Camera.CallOutPadding, double head = 0)
     {
         if (_scene is not { } scene || _fitPending)
             return null;
         var scale = PixelScale;
         var footPixels = (float)(foot * scale);
-        var above = new SKSize(_camera.Viewport.Width, Math.Max(0, _camera.Viewport.Height - footPixels));
+        var headPixels = (float)(head * scale);
+        // The part between the head and the foot, as a view of its own: its middle lies (foot - head) / 2 above the view's.
+        var between = new SKSize(_camera.Viewport.Width, Math.Max(0, _camera.Viewport.Height - footPixels - headPixels));
+        double Shift(double zoom) => (footPixels - headPixels) / 2 / zoom;
+        var settled = _glide is { } glide ? (glide.To, _camera.Zoom) : View;
+        var inPart = (new Shturmap.Core.Maps.MapPoint(settled.Item1.X, settled.Item1.Y - Shift(settled.Item2)), settled.Item2);
         var points = extracts.Select(e => scene.Projection.ToMap(e)).ToList();
         Shturmap.Core.Maps.MapPoint? you = player is { } at ? scene.Projection.ToMap(at) : null;
-        if (Camera.FittingAll(points, you, above, Camera.LabelRoom * scale, (float)(padding * scale), _camera.MinZoom, _camera.Zoom) is not { } fit)
+        if (Camera.CallOut(points, you, between, inPart, Camera.LabelRoom * scale, (float)(padding * scale), _camera.MinZoom) is not { } fit)
             return null;
-        // Framed in the part above the foot: its middle lies half the foot above the view's.
-        return (new Shturmap.Core.Maps.MapPoint(fit.Center.X, fit.Center.Y + footPixels / 2 / fit.Zoom), fit.Zoom);
+        if (!fit.Moves)
+            return (settled, false);
+        return ((new Shturmap.Core.Maps.MapPoint(fit.View.Center.X, fit.View.Center.Y + Shift(fit.View.Zoom)), fit.View.Zoom), true);
     }
 
     /// <summary>Whether a view (a centre and zoom, as <see cref="View"/> gives one) shows a world position, in the part of

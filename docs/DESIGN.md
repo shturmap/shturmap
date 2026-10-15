@@ -509,8 +509,10 @@ quoting it anywhere new.
     first and evened out (six stand three and three); each row is the extract's triangle as the map draws it at the size
     its flight starts from (0.8 of the map's: R 6 DIP, its 3 DIP dark collar, the kind's colour, the shared kind's split
     line), its name in the cue's 15 px and "???" muted. A name too long for its column breaks between words, never
-    inside one, and where the map's column has no room for the rows even so (twelve at the smallest window), they are
-    drawn smaller to fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
+    inside one, nor at a hyphen in it (QA pass, 2026-10-15: "Primorsky Ave Taxi V-" over "Ex" in the pseudo-language at
+    900×560; a word joiner follows each hyphen, Bahnschrift having no non-breaking hyphen; `Rules.WordBreaks`), and
+    where the map's column has no room for the rows even so (twelve at the smallest window), they are drawn smaller to
+    fit, never cut, as the tour's plates are; they keep clear of the map's buttons. The title's halo is
     the dark the map's labels stand on, around its letters only (and the eyebrow's, and the example's line), so an
     icon landing under the title still shows between them; until 2026-10-15's build a halo was a dark box behind the
     title, which hid a landing in the replay's stills. A list that joins the cue holds the band where it stands, so the
@@ -1282,8 +1284,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   and Raid), NEXT RAID (Plan's rows, one resting under a drawn pointer previews its map), PICK AND POINT (an example
   quest picked, another pointed at), YOUR SCREENSHOT KEY (the one habit Shturmap needs: the key pressed large, the file
   name decoding, the position pinging; then the extract list as its own cause and effect: an example of the game's
-  list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC", a press reads
-  it, the list goes, and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
+  list, in Shturmap's look, decodes in the map's top right under "IN THE GAME: O TWICE, THEN PRTSC" (under the label
+  where the two would share the map's columns, at the smallest window; whole above the band: where its room is too
+  short, the example names fewer extracts, the farthest of the lit ones going, down to two lit and the "??:??:??"
+  one, and the list read says so, "3 OF 11"; where even those don't fit, it is drawn smaller to fit, never cut; QA
+  pass, 2026-10-15: at 900×560 the band covered its last row and the list read), a press reads it, the list goes,
+  and it is called out as any list just read is: YOUR EXTRACTS THIS RAID across the map with a row
   for each of its extracts, the view taking them in with the position above the tour's band, and each triangle flown
   to its place, where it rings out, nearest the position first, while the rest are struck out (as built, 2026-10-15:
   the plate, then the cue, centred above the tour's band, with the map above the band cut out of the dim while it
@@ -1348,6 +1354,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     chapter, the empty band's when the tour opened, and the pointer set off 240 DIP above the map's foot, under that
     band). Where the band leaves little room above it, the 90 gives way, so what is framed keeps at least 90 itself
     (PICK AND POINT's German band at 900×560 leaves 181, and 90 on each side would have left it 1).
+    **The framing keeps clear of the label** at the map's top ("PREVIEW · THE TOUR · CUSTOMS" with "AN EXAMPLE, NOT YOUR
+    RAID"), as What's New's plate does (QA pass, 2026-10-15: at 900×560 YOUR SCREENSHOT KEY's last cut-out reached the
+    label, which, nearly opaque, hid framed extracts, struck-out Railroad Passage and the top of Trailer Park's lit
+    triangle, and the cut-out's edge ran through its words): what a chapter stages is framed under the label, 8 DIP and
+    a cut-out's corner marks below it, and above the band, the roll call's view too; a cut-out on the map starts there
+    and ends at the band's top. The label stays where it is, in the dim unless a chapter cuts out the whole map (PICK
+    AND POINT, IN THE RAID), where it is read whole. Of the QA's two ways, the label stepping aside while a chapter
+    frames the map's top would have left more room at the smallest window, but the label is what says the map is an
+    example once the cue has gone. The roll call's cue keeps its own place above the band.
     IN THE RAID's example card says NEXT as the raid card does: in a few words where the data is English ("Get valuable
     folder"; `Planning.ObjectiveSynopses`), else tarkov.dev's whole sentence, wrapping (owner, 2026-10-11: until then
     it was cut at 34 characters, mid-word, German "Besorge die geschützte Dokumenten…"), and its clock reads 13 MIN
@@ -1572,9 +1587,12 @@ spawns below).
   its place and lands as its ring starts (`MapRenderer.FlightAt`; the view zooms out to `Camera.FittingAll`). The
   window's side is `MainWindow.RollCall`: it hands each row over as the centre of its triangle in the map panel's
   pixels (`ExitCall`), at the cue's start, and moves the view with `MapView.CallOutView` (a zoom out only, the current
-  zoom as the fit's closest; above the tour's band in the tour). Once a roll call ran in a raid (`MapScene.CalledOut`;
-  a new raid on the map, its list not read yet, forgets it), a later list after the cue rings only what it lit or
-  marked anew (`MapScene.RingExits`).
+  zoom as the fit's closest; above the tour's band in the tour). Once a roll call ran in a raid, a later list after the
+  cue rings only what it lit or marked anew (`MapScene.RingExits`). What the roll call called is kept by the window for
+  the raid and its map (`Rules.RollCallRecord`: the raid's map, its id and start), not on the map's scene: a look at
+  another map in the raid and back makes the scene anew, and the scene's record (`MapScene.CalledOut` until
+  2026-10-15) went with it, so the next list got a whole roll call again (coordinator, 2026-10-15). A new raid, or a
+  transit to another map, starts without one.
   Transits are drawn as ever. Until a list was read, and outside raids, every extract is solid. The legend has a row
   for the lit ones and one for the other two, each shown once a list was read (one each would put Transit past help's
   twelve rows).
@@ -1585,8 +1603,11 @@ spawns below).
   never moves the view: it stays as the roll call left it until the player moves it (a drag, a zoom, F or the
   show-my-position button). A position that comes while the view is moving for the roll call (its 1.2 s; a run of
   screenshots) pings where it is and lets the move finish; the one after it glides (2026-10-15, as built: the two
-  pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only: where every listed extract and
-  the position are in view already, it keeps its zoom and takes them into its middle.
+  pulled the view two ways at once, `MapView.Refresh`). The view is a zoom out only, and where every listed extract
+  and the position are in view already, with the padding and the label room a fit keeps, it doesn't move at all, and a
+  Follow glide under way goes on (coordinator, 2026-10-15, from the roll call's build: a fit that zoomed out nothing still
+  took them into the view's middle, which on Customs cut off the map's west and left empty map at the top;
+  `Camera.CallOut`).
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less

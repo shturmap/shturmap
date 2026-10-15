@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
+using Shturmap.App.Rules;
 using Shturmap.Map;
 using Shturmap.Session;
 using Point = Windows.Foundation.Point;
@@ -68,8 +69,10 @@ public sealed partial class MainWindow
     private DateTime _rollLastJoin;
     // The icons fly and the rows fade: off with animation effects off.
     private bool _rollMotion;
-    // DIPs at the map's foot that the band and the view keep above (the tour's band), and the room the view keeps around.
+    // DIPs at the map's foot that the band and the view keep above (the tour's band), at its top that the view keeps under
+    // (the tour's label), and the room the view keeps around.
     private double _rollFoot;
+    private double _rollHead;
     private double _rollPadding = Camera.CallOutPadding;
     // The cue fades out: a list that comes now rings where it stands, as after the cue.
     private bool _rollEnding;
@@ -118,23 +121,40 @@ public sealed partial class MainWindow
     private void ExitListJustRead(MapScene scene, SessionSnapshot s)
     {
         var now = DateTime.Now;
+        _rollRaid = RollCallRecord.Of(s.RaidMap?.Id, s.Raid);
         if (RollCallShowing && _rollOwner == RollOwner.Raid && ReferenceEquals(_rollScene, scene)
             && (!_rollMotion || scene.ExitsArrivingAt(now + RollJoinRise)))
             JoinRollCall(now);
-        else if (scene.CalledOut)
-            scene.RingExits(now);
+        else if (_rollCalls.In(_rollRaid) is { } called)
+        {
+            scene.RingExits(now, called);
+            RecordRollCall(scene);
+        }
         else
             RollCall(scene, s.Extracts.Count(e => e.Kind != MarkerKind.Transit), RollOwner.Raid);
         Map.Redraw();
+    }
+
+    // What the roll call called in the raid it ran in, kept for the raid, not on the map's scene (Rules.RollCallRecord):
+    // a look at another map and back makes the scene anew, and a later list then got a whole roll call again.
+    private readonly RollCallRecord _rollCalls = new();
+    private RollCallRecord.Raid? _rollRaid;
+
+    // The raid's list as called now (by the roll call, a list joining it or one rung after it): kept for the raid.
+    private void RecordRollCall(MapScene scene)
+    {
+        if (_rollRaid is { } raid)
+            _rollCalls.Called(raid, scene.ExitsToCall().Select(m => (m.Id, scene.ExitsListed.Contains(m.Id))));
     }
 
     /// <summary>
     /// Calls the scene's list out (its ExitsListed, ExitsUnsure and ExitsNotListed set): the YOUR EXTRACTS THIS RAID cue with
     /// a row per extract to call (MapScene.ExitsToCall), each row's icon flown to its place. <paramref name="total"/>: the
     /// map's extracts for the side, as the rail counts them. <paramref name="foot"/> DIPs at the map's foot stay clear (the
-    /// tour's band), <paramref name="padding"/> DIPs around what the view takes in.
+    /// tour's band), and the view takes its extracts in under <paramref name="head"/> DIPs at its top (the tour's label; QA
+    /// pass, 2026-10-15), <paramref name="padding"/> DIPs around them.
     /// </summary>
-    private void RollCall(MapScene scene, int total, RollOwner owner, double foot = 0, double padding = Camera.CallOutPadding)
+    private void RollCall(MapScene scene, int total, RollOwner owner, double foot = 0, double padding = Camera.CallOutPadding, double head = 0)
     {
         var exits = scene.ExitsToCall();
         if (exits.Count == 0)
@@ -144,6 +164,7 @@ public sealed partial class MainWindow
         _rollOwner = owner;
         _rollTotal = total;
         _rollFoot = foot;
+        _rollHead = head;
         _rollPadding = padding;
         _rollStart = _rollLastJoin = DateTime.Now;
         _rollMotion = scene.Pulse;
@@ -258,11 +279,12 @@ public sealed partial class MainWindow
         var triangle = ExitTriangle(exit.Kind);
         triangle.VerticalAlignment = VerticalAlignment.Top;
         element.Children.Add(triangle);
-        // The name in the cue's item type (its 15), broken between words in a narrow column rather than cut (FitRollRows);
-        // "???" where the game marks the extract "??:??:??", muted: a sign, not a word.
+        // The name in the cue's item type (its 15), broken between words in a narrow column rather than cut (FitRollRows),
+        // never after a hyphen in a word (Rules.WordBreaks; QA pass, 2026-10-15); "???" where the game marks the extract
+        // "??:??:??", muted: a sign, not a word.
         var name = new TextBlock
         {
-            Text = exit.Label, Style = TextStyle("TitleText"), FontSize = 15, LineHeight = RollLine, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+            Text = WordBreaks.BetweenWordsOnly(exit.Label), Style = TextStyle("TitleText"), FontSize = 15, LineHeight = RollLine, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
             TextWrapping = TextWrapping.WrapWholeWords, MaxWidth = _rollNameWidth,
         };
         Grid.SetColumn(name, 1);
@@ -338,6 +360,9 @@ public sealed partial class MainWindow
         var calls = RollCalls(0);
         var flights = _rollScene!.CallOutExits(calls, _rollStart);
         LogRollCall(calls, flights, _rollStart);
+        // The roll call ran in this raid, with animation effects off too (its cue stands still): a later list rings, no cue.
+        if (_rollOwner == RollOwner.Raid)
+            RecordRollCall(_rollScene);
         for (var i = 0; i < _rollRows.Count; i++)
             _rollRows[i].RiseAt = _rollStart + RollRiseFrom + RollRiseApart * i;
         Lifting(flights, 0, _rollStart, join: false);
@@ -478,21 +503,25 @@ public sealed partial class MainWindow
         return most;
     }
 
-    // The view takes in every extract on the band and the player (MapView.CallOutView, a zoom out only), above the tour's
-    // band where it is up; over 1.2 s, eased, or at once with animation effects off. A Follow glide under way stops for it
-    // (MapView.AnimateView), and nothing moves the view back afterwards ("Map drawing", *The view leaves the player*).
+    // The view takes in every extract on the band and the player (MapView.CallOutView, a zoom out only), between the tour's
+    // label and band where it is up; over 1.2 s, eased, or at once with animation effects off. Where they are all in view
+    // already, the view doesn't move at all (coordinator, 2026-10-15), and a Follow glide under way goes on; else the glide
+    // stops for it (MapView.AnimateView). Nothing moves the view back afterwards ("Map drawing", *The view leaves the
+    // player*).
     private void RollFit(bool animate)
     {
         if (_rollScene is not { } scene || !ReferenceEquals(Map.Scene, scene) || _rollRows.Count == 0)
             return;
-        var view = Map.CallOutView(_rollRows.Select(r => r.Exit.Position).ToList(), scene.Player?.Position, _rollFoot, _rollPadding);
-        if (view is not { } to)
+        var fit = Map.CallOutView(_rollRows.Select(r => r.Exit.Position).ToList(), scene.Player?.Position, _rollFoot, _rollPadding, _rollHead);
+        if (fit is not { } call)
             return;
-        _rollView = to;
+        _rollView = call.View;
+        if (!call.Moves)
+            return;
         if (animate)
-            Map.AnimateView(to, MapScene.CallOutFitLength);
+            Map.AnimateView(call.View, MapScene.CallOutFitLength);
         else
-            Map.Jump(to);
+            Map.Jump(call.View);
     }
 
     /// <summary>
@@ -524,6 +553,7 @@ public sealed partial class MainWindow
             AddRollRow(exit, column, _rollFill[column]);
         }
         _rollIds.UnionWith(fresh.Select(m => m.Id));
+        RecordRollCall(scene);
         if (_rollRows.Count == before)
             return;
         var (_, title, _) = RollCallText();
@@ -681,6 +711,6 @@ public sealed partial class MainWindow
 
     /// <summary>The scene's example list (the tour's, What's New's) called out as a list just read: the map's extracts for
     /// the side, all three sets of it.</summary>
-    private void RollCallExample(MapScene scene, RollOwner owner, double foot = 0, double padding = Camera.CallOutPadding) =>
-        RollCall(scene, scene.ExitsListed.Count + scene.ExitsUnsure.Count + scene.ExitsNotListed.Count, owner, foot, padding);
+    private void RollCallExample(MapScene scene, RollOwner owner, double foot = 0, double padding = Camera.CallOutPadding, double head = 0) =>
+        RollCall(scene, scene.ExitsListed.Count + scene.ExitsUnsure.Count + scene.ExitsNotListed.Count, owner, foot, padding, head);
 }

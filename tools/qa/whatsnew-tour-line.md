@@ -81,6 +81,12 @@ In every still, t0 to t6:
   lines; a window of empty frames is the fault of the QA pass of 2026-10-15, below).
 - Every cut-out on its part, or on its way from one to the next (they glide): the square centred on the example
   position's marker, the list's cut-out around the list, the last one around the lit extracts and the position.
+  None reaches the label at the map's top or runs under the band, and no frame's edge or corner mark crosses the
+  label, but for a moment while a frame glides (QA pass, 2026-10-15: at 900×560 the last cut-out reached the label,
+  which hid framed extracts; DESIGN.md §4, *The tour*).
+- The list's plate whole above the band, its last row and YOUR LIST THIS RAID: n OF 11 EXTRACTS in sight once read: at
+  the map's top right at 1600×900, under the label at 900×560, where it names fewer extracts (two lit and one ???,
+  "3 OF 11") and, in German, is drawn smaller (QA pass, 2026-10-15: the band covered its last row and the read line).
 
 Each still, against the table above:
 

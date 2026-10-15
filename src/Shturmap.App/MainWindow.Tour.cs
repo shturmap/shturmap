@@ -538,7 +538,7 @@ public sealed partial class MainWindow
         TourPlate.Visibility = Visibility.Collapsed;
         scene.Player = new PlayerFix(you, 35, DateTime.Now);
         Map.Refresh();
-        TourHoles(() => [Square(ToLayer(you), 150)]);
+        TourHoles(() => [UnderHead(Square(ToLayer(you), 150))]);
         if (!await TourWait(2400, run))
             return;
         await StageExtractListRead(chapter, data, scene, content, you, run);
@@ -563,18 +563,54 @@ public sealed partial class MainWindow
         // example list, {all} the map's, so a translation may put them where its grammar wants and give {all} plural forms.
         var how = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "list")?.Text ?? "", ("key", keyName));
         var all = listed.Count + unsure.Count + notListed.Count;
-        var readText = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "",
-            ("n", listed.Count + unsure.Count), ("all", all));
-        var names = listed.Select(m => (m.Label, false)).Concat(unsure.Select(m => (m.Label, true))).ToList();
-        var (plate, rows, read) = ExtractListPlate(how, names, readText);
-        TourCanvas.Children.Add(plate);
-        plate.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        // The plate stands in the map's top right, where the game shows its list, 16 DIP in from the map's top, or under the
+        // label where it would share the label's columns (QA pass, 2026-10-15: the tour's framing keeps clear of the label),
+        // down to 16 DIP above the band. Where it is taller than that room, the example list names fewer extracts, the
+        // farthest of the lit ones going (the list read says so, "3 OF 11", and they are struck out with the rest), down to
+        // two lit and the "??:??:??" one; and where even those don't fit, it is drawn smaller to fit, never cut, as the
+        // tour's plates are (QA pass, 2026-10-15: at 900×560 the band covered its last row and the list read, and its
+        // cut-out ran under the band's top).
         var map = MapRect();
-        var plateAt = new Rect(map.Right - 16 - plate.DesiredSize.Width, map.Y + 16, plate.DesiredSize.Width, plate.DesiredSize.Height);
-        Canvas.SetLeft(plate, plateAt.X);
-        Canvas.SetTop(plate, plateAt.Y);
+        var room = map.Bottom - TourFoot - 16;
+        Border plate;
+        List<(TextBlock Row, string Text)> rows;
+        TextBlock read;
+        Rect plateAt;
+        for (var keep = listed.Count; ; keep--)
+        {
+            var names = listed.Take(keep).Select(m => (m.Label, false)).Concat(unsure.Select(m => (m.Label, true))).ToList();
+            var readText = TextFormat.Format(chapter.Words.FirstOrDefault(w => w.Key == "read")?.Text ?? "", ("n", keep + unsure.Count), ("all", all));
+            (plate, rows, read) = ExtractListPlate(how, names, readText);
+            TourCanvas.Children.Add(plate);
+            plate.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+            var size = plate.DesiredSize;
+            var x = map.Right - 16 - size.Width;
+            // Under the label, its cut-out (6 DIP around it) starting where the frames do (TourHead).
+            var top = TourNotes() is { } notes && notes.Right > x && notes.Left < map.Right - 16 ? map.Y + TourHead + 6 : map.Y + 16;
+            plateAt = new Rect(x, top, size.Width, size.Height);
+            if (size.Height <= room - top || keep <= Math.Min(2, listed.Count))
+            {
+                notListed = [.. notListed, .. listed.Skip(keep).Select(m => m.Id)];
+                listed = listed.Take(keep).ToList();
+                break;
+            }
+            TourCanvas.Children.Remove(plate);
+        }
+        // Still taller than its room: drawn smaller, from its top right.
+        FrameworkElement holder = plate;
+        var shrink = Math.Min(1, Math.Max(0.2, (room - plateAt.Y) / plateAt.Height));
+        if (shrink < 1)
+        {
+            TourCanvas.Children.Remove(plate);
+            var drawn = new Rect(plateAt.Right - plateAt.Width * shrink, plateAt.Y, plateAt.Width * shrink, plateAt.Height * shrink);
+            holder = new Viewbox { Child = plate, Width = drawn.Width, Height = drawn.Height, Stretch = Stretch.Uniform };
+            TourCanvas.Children.Add(holder);
+            plateAt = drawn;
+        }
+        Canvas.SetLeft(holder, plateAt.X);
+        Canvas.SetTop(holder, plateAt.Y);
         var plateHole = new Rect(plateAt.X - 6, plateAt.Y - 6, plateAt.Width + 12, plateAt.Height + 12);
-        TourHoles(() => [Square(ToLayer(you), 150), plateHole]);
+        TourHoles(() => [UnderHead(Square(ToLayer(you), 150)), plateHole]);
         if (_tourMotion)
         {
             plate.Opacity = 0;
@@ -605,7 +641,7 @@ public sealed partial class MainWindow
             await Animate(250, t => plate.Opacity = 1 - t);
         if (run != _tourRun || !TourOpen)
             return;
-        TourCanvas.Children.Remove(plate);
+        TourCanvas.Children.Remove(holder);
         // The list is read: what it leaves out is struck out at once, and what it names waits, unlit, for its icon.
         scene.ExitsListed = listed.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
@@ -620,10 +656,11 @@ public sealed partial class MainWindow
             TourHoles(() =>
             {
                 var now = MapRect();
-                return [new Rect(now.X + 8, now.Y + 8, Math.Max(0, now.Width - 16), Math.Max(0, now.Height - TourFoot - 16))];
+                var top = Math.Max(8, TourHead);
+                return [new Rect(now.X + 8, now.Y + top, Math.Max(0, now.Width - 16), Math.Max(0, now.Height - TourFoot - top - 8))];
             });
             _tourCue = true;
-            RollCallExample(scene, RollOwner.Tour, TourFoot, padding);
+            RollCallExample(scene, RollOwner.Tour, TourFoot, padding, TourHead);
             for (var waited = 0; _rollRows.Count > 0 && waited < 15_000; waited += 100)
             {
                 await Task.Delay(100);
@@ -636,23 +673,26 @@ public sealed partial class MainWindow
         {
             // The chapter's end at once: the view on the listed extracts and you, above the band, as the roll call leaves
             // it; the extracts simply lit.
-            if (Map.CallOutView(points.Take(points.Count - 1).ToList(), you, TourFoot, padding) is { } view)
-                Map.Jump(view);
+            if (Map.CallOutView(points.Take(points.Count - 1).ToList(), you, TourFoot, padding, TourHead) is { } call)
+            {
+                if (call.Moves)
+                    Map.Jump(call.View);
+            }
             else
-                Map.Jump(Map.FramingAbove(scene, points, TourPadding, TourFoot, 300));
+                Map.Jump(Map.FramingAbove(scene, points, TourPadding, TourFoot, 300, TourHead));
             Map.Redraw();
         }
         if (run != _tourRun || !TourOpen)
             return;
         // What the view shows of them, with room for the labels the map writes to the right of its symbols (the room
-        // the framing keeps there).
+        // the framing keeps there), under the label and above the band (QA pass, 2026-10-15: it reached the label).
         Rect Region()
         {
             var at = points.Select(ToLayer).ToList();
             var r = new Rect(at.Min(p => p.X) - 40, at.Min(p => p.Y) - 40, 0, 0);
             var mapNow = MapRect();
-            double x0 = Math.Max(mapNow.X, r.X), y0 = Math.Max(mapNow.Y, r.Y);
-            double x1 = Math.Min(mapNow.Right, at.Max(p => p.X) + Camera.LabelRoom), y1 = Math.Min(mapNow.Bottom, at.Max(p => p.Y) + 40);
+            double x0 = Math.Max(mapNow.X, r.X), y0 = Math.Max(mapNow.Y + TourHead, r.Y);
+            double x1 = Math.Min(mapNow.Right, at.Max(p => p.X) + Camera.LabelRoom), y1 = Math.Min(mapNow.Bottom - TourFoot, at.Max(p => p.Y) + 40);
             return new Rect(x0, y0, Math.Max(0, x1 - x0), Math.Max(0, y1 - y0));
         }
         TourHoles(() => [Region()]);
@@ -777,10 +817,32 @@ public sealed partial class MainWindow
     // and the 46 under it.
     private double TourFoot => TourBand.ActualHeight + 46;
 
-    // The room around what a chapter frames: TourFraming, less where the band leaves too little above it, so that what
-    // is framed keeps at least TourFraming itself (2026-10-11: at 900×560 PICK AND POINT's German band, 254 DIP, leaves
-    // 181 above it; 90 on each side would leave what is framed 1 DIP, and the map would shrink to a speck).
-    private double TourPadding => Math.Clamp((Map.ActualHeight - TourFoot - TourFraming) / 2, 0, TourFraming);
+    // The room around what a chapter frames: TourFraming, less where the band (and the label) leave too little between
+    // them, so that what is framed keeps at least TourFraming itself (2026-10-11: at 900×560 PICK AND POINT's German band,
+    // 254 DIP, leaves 181 above it; 90 on each side would leave what is framed 1 DIP, and the map would shrink to a speck).
+    private double TourPadding => Math.Clamp((Map.ActualHeight - TourFoot - TourHead - TourFraming) / 2, 0, TourFraming);
+
+    // DIPs at the map's top that a chapter frames its map under: the notes there, the preview label among them ("PREVIEW ·
+    // THE TOUR · CUSTOMS" with "AN EXAMPLE, NOT YOUR RAID"), 8 more and the 5 a cut-out's corner marks stand out; none
+    // while they show nothing. As What's New's plate keeps clear of the label (QA pass, 2026-10-15: at 900×560 YOUR
+    // SCREENSHOT KEY's last cut-out reached the label, which, nearly opaque, hid framed extracts, struck-out Railroad
+    // Passage and the top of Trailer Park's lit triangle, and the cut-out's edge ran through its words).
+    private double TourHead => TourNotes() is { } notes ? Math.Max(0, notes.Bottom + 8 + 5 - MapRect().Y) : 0;
+
+    // The notes at the map's top in the tour's coordinates, or null while they show nothing.
+    private Rect? TourNotes()
+    {
+        if (MapNotes.ActualHeight < 1 || MapNotes.ActualWidth < 1 || !Shown(MapNotes))
+            return null;
+        return MapNotes.TransformToVisual(TourLayer).TransformBounds(new Rect(0, 0, MapNotes.ActualWidth, MapNotes.ActualHeight));
+    }
+
+    // A cut-out on the map kept under the label: its top no higher than the head's (TourHead).
+    private Rect UnderHead(Rect r)
+    {
+        var top = MapRect().Y + TourHead;
+        return r.Y >= top ? r : new Rect(r.X, top, r.Width, Math.Max(0, r.Bottom - top));
+    }
 
     // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band;
     // with <paramref name="pmc"/>, a PMC raid's (only its side's extracts): YOUR SCREENSHOT KEY and IN THE RAID are in
@@ -795,7 +857,9 @@ public sealed partial class MainWindow
         _previewing = wanted;
         ViewModel.PreviewText = AppTexts.PreviewTour(map: Caps.Of(example.MapName));
         ViewModel.PreviewHint = AppTexts.PreviewExample;
-        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourFoot, TourPadding, pmc);
+        // The label laid out with its words, so the framing knows how far down it reaches (TourHead).
+        MapNotes.UpdateLayout();
+        await PreviewSceneAsync(wanted, data, example.Map, quests, stage, frame, minMetres, TourFoot, TourPadding, pmc, TourHead);
         // One layout pass, so the view's points are where they are drawn.
         await Task.Delay(_tourMotion ? 60 : 30);
     }

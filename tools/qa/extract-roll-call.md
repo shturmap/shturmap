@@ -7,7 +7,8 @@ From a panel of four the owner chose A, "Roll call, then fly-out" (docs/DESIGN.m
 RAID; "Map drawing", *A list just read is called out*; *Motion*). A list read from a screenshot taken in the last 30 s
 opens the cue across the map's middle; from 0.5 s a row per listed extract rises in, nearest the position first (its
 triangle, its name, "???" for a "??:??:??" one); from 1.2 s the view zooms out over 1.2 s to take in the listed extracts
-and the position; from 1.6 s each row's triangle lifts off, 0.16 s after the one before, and flies 0.9 s to its place,
+and the position, where they aren't all in view already (where they are, it doesn't move); from 1.6 s each row's
+triangle lifts off, 0.16 s after the one before, and flies 0.9 s to its place,
 its row fading as it leaves and the band's dark going with the rows; it lands as its ring starts; the title stays on its
 halo until 1.5 s after the last landing, then fades.
 
@@ -57,7 +58,7 @@ t0 0.63, t1 2.55, t2 1.93, t3 3.65, t4 5.9.
 | --- | --- |
 | 0 | The band across the map's middle: its dark, the gold rules, FROM YOUR SCREENSHOT over YOUR EXTRACTS THIS RAID · 4 OF 11 (DEINE EXTRACTS IM RAID · 4 VON 11), some of its letters still scrambled in gold before about 1.6. On the map the four listed extracts solid and unlit, the other PMC extracts struck out, the position's marker. |
 | 0.5 | The rows rising in, 0.1 s apart, nearest the position first: Crossroads, Trailer Park, Railroad Passage (Flare), ZB-1013 ??? (Kreuzung, Anhängerstellplatz, …), each with its green triangle in a dark collar; all four by about 1.1. |
-| 1.2 | The view on its way to the listed extracts and the position (on Customs, fitted whole before, it pans more than it zooms). |
+| 1.2 | On Customs, fitted whole, the listed extracts and the position are all in view already: the view doesn't move (coordinator, 2026-10-15: until then it panned to take them into its middle, which cut off the map's west and left empty map at the top). |
 | 1.6 | Each row's triangle gone from its row as its icon leaves, a row 0.16 s after the one before, the row's name fading over 0.3 s; the band's dark and its rules thinning with them, gone by about 2.4; on the map the icons in flight from the rows to their places. |
 | 2.5 | Icons landing, 0.16 s apart: each lights up and rings out (its triangle's outline leaving it), ZB-1013's "?" popping in; the last lands at 2.98. The title and FROM YOUR SCREENSHOT stand on their halo, the dark around their letters, over the map. |
 | 4.5 | The title fading, gone by about 5.1; the rings over by about 5.1. |
@@ -70,7 +71,7 @@ t0 0.63, t1 2.55, t2 1.93, t3 3.65, t4 5.9.
   them over: the map panel's top left is `window.png`'s (384, 40) at 1600×900. No notice "Your extract list is read":
   the cue says it (2026-10-15).
 - **t1** (first raid, about 2.5): no band, no rules, no rows; the title and eyebrow on their halo. On the map (put
-  together as above) the view at the roll call's frame, the listed extracts in it; Crossroads landed and ringing, the
+  together as above) the view as it was, Customs whole, the listed extracts in it; Crossroads landed and ringing, the
   others landed or a few pixels short of their places. Nothing lit that hasn't landed.
 - **t2** (second raid, about 1.9): the hand-off: Crossroads' row gone, Trailer Park's fading without its triangle, the
   third's triangle gone or going, ZB-1013 ??? with its triangle still in its row; the band's dark and rules half gone.

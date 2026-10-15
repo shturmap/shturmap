@@ -228,6 +228,58 @@ public class CameraTests
         Assert.NotNull(Camera.FittingAll([], new MapPoint(1, 1), RollCallView, Camera.LabelRoom, Camera.CallOutPadding, 0.01, 64));
     }
 
+    // The roll call doesn't move the view at all where every called extract and the player are in view already, with the
+    // padding and the label room (coordinator, 2026-10-15, from the roll call's build: a fit that zoomed out nothing still
+    // took them into the view's middle, which on Customs cut off the map's west and left empty map at the top).
+    [Fact]
+    public void All_in_view_already_the_roll_call_leaves_the_view_where_it_is()
+    {
+        // Customs' whole map, fitted; the extracts and the player off to the east and the north of its middle.
+        var camera = new Camera();
+        camera.Resize(RollCallView);
+        camera.Fit(new MapRect(0, 0, 1200, 800), 24, Camera.LabelRoom);
+        var view = (camera.Center, camera.Zoom);
+        MapPoint[] exits = [new(700, 150), new(900, 300), new(820, 90)];
+        var player = new MapPoint(760, 260);
+        Assert.True(Camera.Holds(exits, player, RollCallView, view, Camera.LabelRoom, Camera.CallOutPadding));
+        var call = Camera.CallOut(exits, player, RollCallView, view, Camera.LabelRoom, Camera.CallOutPadding, camera.MinZoom)!.Value;
+        Assert.False(call.Moves);
+        Assert.Equal(view, call.View);
+
+        // Closer in, one on screen but in the label room on the right (at x 1060 of 1200), where its name would run off:
+        // not in view as a fit means it; the view zooms out, never in, and holds them all.
+        var close = (new MapPoint(700, 200), 2.0);
+        MapPoint[] edge = [new(700, 150), new(930, 300)];
+        Assert.Equal(1060, On(close, new MapPoint(930, 300), RollCallView).X, 1);
+        Assert.False(Camera.Holds(edge, player, RollCallView, close, Camera.LabelRoom, Camera.CallOutPadding));
+        var moved = Camera.CallOut(edge, player, RollCallView, close, Camera.LabelRoom, Camera.CallOutPadding, camera.MinZoom)!.Value;
+        Assert.True(moved.Moves);
+        Assert.True(moved.View.Zoom <= close.Item2);
+        foreach (var p in edge.Append(player))
+            Inside(On(moved.View, p, RollCallView), RollCallView, Camera.CallOutPadding, Camera.LabelRoom);
+
+        // One out of view: moved, as before.
+        Assert.True(Camera.CallOut([new MapPoint(-900, 400)], player, RollCallView, view, Camera.LabelRoom, Camera.CallOutPadding, camera.MinZoom)!.Value.Moves);
+        Assert.Null(Camera.CallOut([], null, RollCallView, view, Camera.LabelRoom, Camera.CallOutPadding, camera.MinZoom));
+    }
+
+    // The tour frames its example under the preview label at the map's top as well as above its band (QA pass, 2026-10-15).
+    [Fact]
+    public void A_framing_under_a_head_and_above_a_foot_keeps_between_them()
+    {
+        var camera = new Camera();
+        camera.Resize(new SKSize(500, 480));
+        var rect = new MapRect(100, 100, 400, 300);
+        var (center, zoom) = camera.FramingAbove(rect, 40, 260, Camera.LabelRoom, 60);
+        var view = new Camera();
+        view.Resize(new SKSize(500, 480));
+        view.Restore(center, zoom);
+        // Height decides: 480 - 260 - 60 - 2 × 40 = 80 px for 200 units.
+        Assert.Equal(0.4, zoom, 6);
+        Assert.Equal(60 + 40, view.ToScreen(new MapPoint(250, 100)).Y, 1);
+        Assert.Equal(480 - 260 - 40, view.ToScreen(new MapPoint(250, 300)).Y, 1);
+    }
+
     [Fact]
     public void A_view_chosen_meanwhile_isnt_replaced_by_the_waiting_fit()
     {

@@ -46,7 +46,9 @@ with them, the cue going 1.5 s after the last landing. The points this entry lef
 the notice went with the cue (provisional, as QUEST COMPLETE's and SEEN IN YOUR STASH's); a joining extract outside the
 fitted view has the view take them all in again (provisional); chapter 5's plate keeps its YOUR LIST THIS RAID line
 (the cue comes after the plate has gone; dropping it is the owner's call). A list after the cue rings only its
-additions (`MapScene.CalledOut`; a new raid forgets it), with a test. What wasn't drawn on the panel and was decided in
+additions (`MapScene.CalledOut` then; since the QA follow-ups of 2026-10-15 the window keeps it for the raid,
+`Rules.RollCallRecord`, as a look at another map made the scene anew and lost it), with a test. What wasn't drawn on
+the panel and was decided in
 the build: columns evened out (six stand three and three), names broken between words in a narrow column, twelve rows
 at the smallest window drawn smaller (German about two thirds), the title's halo the dark around its letters (a box hid
 a landing under the title), a position that comes while the view moves for the roll call pings without gliding.
