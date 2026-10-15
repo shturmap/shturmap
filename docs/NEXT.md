@@ -6,6 +6,30 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-15, evening: the decision page
+
+**Settled 2026-10-15, evening** (the owner, on a decision page of eight points, E1 to E8; the page stays outside the
+repository):
+
+- **E1.** The title rule, confirmed.
+- **E2.** The floor names stay the data's English: the decision of 2026-10-11 stands (DESIGN.md §8, *The app's own
+  language*: tarkov.dev has its maps' layer names in English only, and the game names no floors).
+- **E3.** The label room, as proposed; another agent builds it.
+- **E4.** + and −, the zoom buttons and a double-click zoom over 0.2 s, eased, keeping the view's middle or the point
+  clicked in place and going on from a zoom under way, as the wheel's notches do; at once with Windows' animation
+  effects off (DESIGN.md "Map drawing", *The keys, the buttons and a double-click zoom over 0.2 s*). Built 2026-10-15.
+  At 60 frames a second a frame zooms by 5.2 % at most for + and −, 9 % for a double-click, under the tenth the steady
+  placement holds to; **open**: below about 55 frames a second a double-click's middle frames pass it, below about 32
+  those of + and −, and such a frame lays the symbols out afresh (at 30 a second a double-click 4 frames, + 2: more jumps
+  than at once). A longer double-click (about 0.37 s holds it at 30 frames a second) or a flatter ease would cover it;
+  the owner's call.
+- **E5.** Twelve rows in the roll call, drawn smaller at the smallest window, accepted as drawn.
+- **E6.** The feedback button's focus ring stays unpictured in developer builds.
+- **E7.** The first raid's line in the RAID LOADING cue wraps clear of the map's buttons, as the other labels do: it
+  breaks at its "·", each part whole on a line of its own, in English, German and the pseudo-language (DESIGN.md §4,
+  "Screen anatomy", *The tour*, *First-time lines*). Built 2026-10-15.
+- **E8.** The release goes once the re-check passes.
+
 ## 2026-10-15: a new version, said louder: a cue, then the band
 
 **The ask** (owner, 2026-10-15): "A Beta-tester did not realize there is an update, which shows me that it is currently
