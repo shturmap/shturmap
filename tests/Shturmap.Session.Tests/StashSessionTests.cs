@@ -88,6 +88,17 @@ public class StashSessionTests
         File.WriteAllBytes(Path.Combine(rig.ScreenshotsFolder, name), []);
     }
 
+    // The next menu screenshot after a click the ledger dates (NOT ANY MORE, FORGET ALL MARKS): a moment later, as a
+    // player's would be. The click is dated by the precise clock, the screenshot by its file's creation time, which
+    // Windows takes from the clock's last tick (15.6 ms apart unless a program asks for finer): a file written within a
+    // tick of the click can carry a time before it, and the ledger then rightly holds the screenshot to be older than
+    // the click (CI, 2026-10-15: the key, retracted, never came back). A tenth of a second is several ticks.
+    private static async Task MenuScreenshotAfterAClick(SessionRig rig)
+    {
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        MenuScreenshot(rig);
+    }
+
     private static int _shots;
 
     private static RequirementView Row(SessionSnapshot s, string itemId) =>
@@ -196,7 +207,7 @@ public class StashSessionTests
         // NOT ANY MORE: the mark goes; the next screenshot brings it back.
         await rig.Session.NotAnyMoreAsync(Key);
         Assert.False(rig.Snapshot.Marks.ContainsKey(Key));
-        MenuScreenshot(rig);
+        await MenuScreenshotAfterAClick(rig);
         await rig.Until(s => s.Marks.ContainsKey(Key), "the key seen again");
 
         // Closed and opened again: the file brings the marks back.
@@ -273,7 +284,7 @@ public class StashSessionTests
         await rig.StartAsync();
         await rig.Until(s => s.Plan.Count > 0 && s.Plan[0].Requirements.Count == 2, "the plan again");
         Assert.Empty(rig.Snapshot.Marks);
-        MenuScreenshot(rig);
+        await MenuScreenshotAfterAClick(rig);
         await rig.Until(s => s.Marks.ContainsKey(Key), "the key seen again");
     }
 
