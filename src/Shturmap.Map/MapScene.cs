@@ -123,6 +123,9 @@ public sealed class MapScene
     /// moves, the next repel goes on from it, so nothing jumps from one frame to the next.</summary>
     internal MapRenderer.RepelPlacement? LastRepel { get; set; }
 
+    /// <summary>How the last repel's placement came about, for the layout that asked for it (<see cref="MapRenderer.MapLayout.Repel"/>).</summary>
+    internal MapRenderer.RepelRun LastRepelRun { get; set; }
+
     /// <summary>Where the scale bar stood in the last layout, for which view: while the view only moves it keeps that
     /// place (<see cref="MapRenderer.ScaleBar.Held"/>).</summary>
     internal MapRenderer.ScaleBarPlacement? LastScaleBar { get; set; }
@@ -131,6 +134,11 @@ public sealed class MapScene
     /// stood, and whether it held its place while the view moved, so the window draws one more frame for it to settle
     /// in once the view is still (MapView), and the frames tool records where it stood.</summary>
     public MapRenderer.ScaleBar? ScaleBarShown => LastLayout?.Layout.Scale;
+
+    /// <summary>How the last frame placed the symbols set apart on leaders (null before one): afresh, going on from the
+    /// frame before while the view only moved, or as the frame before (its layout or its repel's placement held); the
+    /// frames tool records it.</summary>
+    public MapRenderer.RepelRun? RepelShown { get; internal set; }
 
     /// <summary>The floor shown above the base layer, or null for the base layer only.</summary>
     public MapLayer? Floor

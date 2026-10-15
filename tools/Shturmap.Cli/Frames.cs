@@ -421,6 +421,10 @@ internal static class Frames
 
         /// <summary>Whether the scale bar kept the frame before's place because the view only moved (MapRenderer.ScaleBar.Held).</summary>
         public bool ScaleBarHeld { get; init; }
+
+        /// <summary>How the symbols set apart on leaders were placed (MapRenderer.RepelRun): afresh, going on from the frame
+        /// before while the view only moved, or held.</summary>
+        public MapRenderer.RepelRun? Repel { get; init; }
     }
 
     /// <param name="Zoom">Pixels per map unit.</param>
@@ -447,9 +451,15 @@ internal static class Frames
         public bool? Bold { get; init; }
     }
 
-    /// <summary>Any other symbol as drawn: where, how large, and how far off its own place.</summary>
+    /// <summary>Any other symbol as drawn: where, how large, and how far off its own place; for one of a quest objective's
+    /// places, the objective, and how many of its places it stands for (a cluster's count, MapRenderer.ShownMarkers).</summary>
     private sealed record SymbolRecord(string Id, string Name, MarkerKind Kind, double X, double Y, double R, double MapX, double MapY,
-        double OffX, double OffY, PointRecord? Leader);
+        double OffX, double OffY, PointRecord? Leader)
+    {
+        public string? Objective { get; init; }
+
+        public int Count { get; init; } = 1;
+    }
 
     private static FrameRecord Record(int index, double ms, string file, Camera camera, MapScene scene, List<SymbolTrace> trace, DateTime time)
     {
@@ -476,13 +486,18 @@ internal static class Frames
             else
             {
                 others.Add(new SymbolRecord(t.Id, t.Name, t.Kind, Round(t.At.X), Round(t.At.Y), Round(t.R), Round(map.X, 3), Round(map.Y, 3),
-                    Round(t.At.X - place.X), Round(t.At.Y - place.Y), leader));
+                    Round(t.At.X - place.X), Round(t.At.Y - place.Y), leader) { Objective = MapRenderer.ObjectiveOf(t.Shown.Marker), Count = t.Shown.Count });
             }
         }
         // As the frame drew it.
         var bar = scene.ScaleBarShown!;
         return new FrameRecord(index, ms, file, new ViewRecord(Round(camera.Center.X, 3), Round(camera.Center.Y, 3), Round(camera.Zoom, 6)),
-            scene.ExitsArrivingAt(time), exits, others) { ScaleBar = new PointRecord(Round(bar.Origin.X), Round(bar.Origin.Y)), ScaleBarHeld = bar.Held };
+            scene.ExitsArrivingAt(time), exits, others)
+        {
+            ScaleBar = new PointRecord(Round(bar.Origin.X), Round(bar.Origin.Y)),
+            ScaleBarHeld = bar.Held,
+            Repel = scene.RepelShown,
+        };
     }
 
     private static double Round(double v, int digits = 2) => Math.Round(v, digits, MidpointRounding.AwayFromZero);
@@ -537,12 +552,19 @@ internal static class Frames
         var maxMove = (Px: 0.0, Name: "", Frame: 0);
         var still = new List<string>();
         var jumps = new List<string>();
+        // The frames with a jump, and the jumps of a marker whose cluster merged or parted in that frame: it stands for
+        // other places then, and may move with them.
+        var jumpFrames = new SortedSet<int>();
+        var clusterFrames = new SortedSet<int>();
+        var clusterJumps = 0;
         var leaders = new Dictionary<string, int>(StringComparer.Ordinal);
         Dictionary<string, (ExitRecord? Exit, SymbolRecord? Other)>? before = null;
+        Dictionary<string, string>? clustersBefore = null;
         var wasFlying = new Dictionary<string, ExitRecord>(StringComparer.Ordinal);
         foreach (var frame in frames)
         {
             var now = Index(frame);
+            var clusters = Clusters(frame);
             var lines = new List<string>();
             // The roll call's icons: which lift off and which land between this frame and the one before.
             var flying = frame.Exits.Where(e => e.Flight is not null).ToDictionary(e => e.Id, StringComparer.Ordinal);
@@ -587,9 +609,20 @@ internal static class Frames
                     var jumped = Math.Sqrt((offX - wOffX) * (offX - wOffX) + (offY - wOffY) * (offY - wOffY));
                     if (jumped > Jump)
                     {
-                        var text = Fmt($"{name} ({(exit?.Kind ?? other!.Kind)}) {jumped:0.#} px off its place");
+                        var parted = other is { Objective: not null } && ClusterOf(other) is var key
+                                     && clusters.GetValueOrDefault(key) != clustersBefore!.GetValueOrDefault(key);
+                        var text = Fmt($"{name} ({(exit?.Kind ?? other!.Kind)}) {jumped:0.#} px off its place{(parted ? ", as its cluster merges or parts" : "")}");
                         lines.Add($"  jump     {text}");
                         jumps.Add(Fmt($"frame {frame.Index:000}: {text}"));
+                        if (parted)
+                        {
+                            clusterJumps++;
+                            clusterFrames.Add(frame.Index);
+                        }
+                        else
+                        {
+                            jumpFrames.Add(frame.Index);
+                        }
                     }
                 }
                 if ((leader is null) != (wLeader is null))
@@ -636,15 +669,23 @@ internal static class Frames
                     s.AppendLine(line);
             }
             before = now;
+            clustersBefore = clusters;
         }
 
         s.AppendLine();
         s.AppendLine("Checks");
         if (!moves)
+        {
             s.AppendLine(Fmt($"  largest move of an extract's or transit's centre between two frames: {maxMove.Px:0.##} px{(maxMove.Px > 0 ? Fmt($" ({maxMove.Name}, frame {maxMove.Frame:000})") : "")}"));
+        }
         else
         {
-            s.AppendLine(Fmt($"  symbols set off their place by more than {Jump} px more or less from one frame to the next: {(jumps.Count == 0 ? "none" : jumps.Count.ToString(CultureInfo.InvariantCulture))}"));
+            // Where a cluster merges or parts, its marker stands for other places and may move with them (the steady rule's
+            // exception); the rest the rule holds to a step a frame.
+            var others = jumps.Count - clusterJumps;
+            s.AppendLine(Fmt($"  symbols set off their place by more than {Jump} px more or less from one frame to the next: {(jumps.Count == 0 ? "none" : jumps.Count.ToString(CultureInfo.InvariantCulture))}")
+                + (clusterJumps == 0 ? "" : Fmt($"; {clusterJumps} as their cluster merges or parts, in {clusterFrames.Count} frames, at most {InARow(clusterFrames)} in a row"))
+                + (others == 0 ? "" : Fmt($"; {(clusterJumps == 0 ? "" : Fmt($"the other {others} "))}in {jumpFrames.Count} frames, at most {InARow(jumpFrames)} in a row")));
             // A frame that zooms by a tenth or more isn't a move: it lays the symbols out afresh (MapRenderer's GlideMost).
             var zoomed = frames.Skip(1).Select(f => (f.Index, By: Math.Abs(Math.Log(f.View.Zoom / frames[f.Index - 1].View.Zoom)))).ToList();
             if (zoomed.Count > 0)
@@ -654,6 +695,11 @@ internal static class Frames
                 s.AppendLine(Fmt($"  the largest zoom from one frame to the next: x{Math.Exp(most.By):0.###} (frame {most.Index:000}); frames that zoomed by a tenth or more, laid out afresh: {(afresh == 0 ? "none" : afresh.ToString(CultureInfo.InvariantCulture))}"));
             }
         }
+        // While the view only moves, the repel goes on from the frame before (MapRenderer.RepelView.GlidesTo); a frame laid
+        // out afresh in a move is one the rule didn't hold.
+        var placedAfresh = frames.Where(f => f.Repel == MapRenderer.RepelRun.Afresh).Select(f => Fmt($"{f.Index:000}")).ToList();
+        s.AppendLine(Fmt($"  symbols on leaders placed afresh in {placedAfresh.Count} frames ({string.Join(", ", placedAfresh.Take(8))}{(placedAfresh.Count > 8 ? ", ..." : "")}), ")
+            + Fmt($"going on from the frame before in {frames.Count(f => f.Repel == MapRenderer.RepelRun.Continued)}, as the frame before in {frames.Count(f => f.Repel == MapRenderer.RepelRun.Held)}"));
         var twice = leaders.Where(l => l.Value > 1).Select(l => NameOf(scene, l.Key)).ToList();
         s.AppendLine(Fmt($"  leaders that came or went: {(leaders.Count == 0 ? "none" : Fmt($"{leaders.Values.Sum()}, {(twice.Count == 0 ? "none" : string.Join(", ", twice))} more than once"))}"));
         s.AppendLine($"  struck out, plain and transit symbols whose glow, echoes or \"?\" changed: {(still.Count == 0 ? "none" : string.Join("; ", still))}");
@@ -759,6 +805,27 @@ internal static class Frames
 
     // The face an extract's name was drawn in.
     private static string Face(bool? bold) => bold switch { true => "bold", false => "regular", null => "not drawn" };
+
+    // A quest marker's cluster: the places of one objective and one kind (MapRenderer.ShownMarkers).
+    private static string ClusterOf(SymbolRecord s) => $"{s.Objective}|{s.Kind}";
+
+    // Each cluster's markers in a frame, as one text: which marker stands for how many places.
+    private static Dictionary<string, string> Clusters(FrameRecord frame) =>
+        frame.Others.Where(o => o.Objective is not null).GroupBy(ClusterOf, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => string.Join(",", g.Select(o => Fmt($"{o.Id}:{o.Count}")).Order(StringComparer.Ordinal)), StringComparer.Ordinal);
+
+    // The most frames in a row in a set of frame indices.
+    private static int InARow(SortedSet<int> frames)
+    {
+        var (most, run, last) = (0, 0, int.MinValue);
+        foreach (var k in frames)
+        {
+            run = k == last + 1 ? run + 1 : 1;
+            most = Math.Max(most, run);
+            last = k;
+        }
+        return most;
+    }
 
     private static Dictionary<string, (ExitRecord? Exit, SymbolRecord? Other)> Index(FrameRecord frame)
     {
