@@ -1131,8 +1131,9 @@ public static partial class MapRenderer
     {
         // A frame of a glide or a pinch zooms by a few per cent at most (the tour's 1.2 s glide to three times the zoom:
         // up to 4 % a frame at 60 frames a second; a wheel's notch, a fifth over 0.15 s: up to 3 %, and a quick turn
-        // under a tenth up to a notch every 30 ms, WheelZoom); a double-click by 100 % at once, + and − by 50 %, a notch
-        // with the animation effects off by 20 %.
+        // under a tenth up to a notch every 30 ms; + and −, half again over 0.2 s: up to 5 %; a double-click, twice over
+        // 0.2 s: up to 9 %, WheelZoom). With the animation effects off a double-click zooms by 100 % at once, + and − by
+        // 50 %, a notch by 20 %.
         private const double GlideMost = 1.1;
 
         /// <summary>Whether the view only moved from this one to <paramref name="next"/>, as a frame of a glide does: it

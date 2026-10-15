@@ -199,19 +199,12 @@ public sealed partial class MainWindow
         (UpdatePolicy.Words(_updater?.Stage == UpdateStage.Found ? UpdateBand.Available : UpdateBand.Ready).Eyebrow, cue.MapName, "");
 
     /// <summary>The cue's amber line under its title, where the first raid's line stands (CueFirst): where to restart
-    /// (or download), and never in a raid. It wraps clear of the map's buttons, as the roll call's rows keep clear of
-    /// them: at the smallest window the German line ran under them. Another cue's line keeps its width.</summary>
+    /// (or download), and never in a raid. It wraps clear of the map's buttons as the first raid's line does
+    /// (<see cref="ShowCueLine"/>): at the smallest window the German line ran under them.</summary>
     private void UpdateCueLine(ViewCue cue)
     {
-        const double widest = 640;
-        if (cue.Kind != CueKind.UpdateReady)
-        {
-            CueFirst.MaxWidth = widest;
-            return;
-        }
-        CueFirst.MaxWidth = Map.ActualWidth > 0 ? Math.Clamp(Map.ActualWidth - 2 * RollClearOfButtons, 200, widest) : widest;
-        CueFirst.Text = _updater?.Stage == UpdateStage.Found ? AppTexts.CueUpdateDownload : AppTexts.CueUpdateRestart;
-        CueFirst.Visibility = Visibility.Visible;
+        if (cue.Kind == CueKind.UpdateReady)
+            ShowCueLine(_updater?.Stage == UpdateStage.Found ? AppTexts.CueUpdateDownload : AppTexts.CueUpdateRestart);
     }
 
     /// <summary>A raid is over, live (RAID OVER; never one read back from the log at start): the cue is due once more.</summary>

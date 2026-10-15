@@ -1278,9 +1278,49 @@ public sealed partial class MainWindow
         if (!show)
             return;
         var key = _snapshot?.ScreenshotKeys.FirstOrDefault()?.Name ?? AppTexts.ScreenshotKeyUnknown;
-        CueFirst.Text = AppTexts.CueFirstRaid(key: Caps.Of(key));
+        ShowCueLine(AppTexts.CueFirstRaid(key: Caps.Of(key)));
         _session.SetSetting(FirstRaidSetting, "done");
         Study.Ui("first.raid");
+    }
+
+    // The cue's amber line at its widest, where the map's column has room for it; and what joins its parts.
+    private const double CueLineMost = 640;
+    private const string CueLineJoint = " · ";
+
+    /// <summary>
+    /// The cue's amber line (CueFirst): the first raid's, or UPDATE READY's (MainWindow.Updates). It keeps clear of the
+    /// map's buttons, as the roll call's rows do, and where its parts (what its " · " joins) don't all fit on one line it
+    /// breaks between them, each part whole and each line centred, as the preview label's hint goes under its title; a
+    /// part too long for a line of its own breaks between its words (owner, 2026-10-15, evening page: at the smallest
+    /// window the first raid's line ran under the map's buttons and lost its last word, "IN", the German one its "MIT").
+    /// </summary>
+    private void ShowCueLine(string text)
+    {
+        var room = Map.ActualWidth > 0 ? Math.Clamp(Map.ActualWidth - 2 * RollClearOfButtons, 200, CueLineMost) : CueLineMost;
+        var lines = new List<string>();
+        foreach (var part in text.Split(CueLineJoint))
+        {
+            // A pixel to spare: the line's own layout rounds its width.
+            if (lines.Count > 0 && CueLineWidth(lines[^1] + CueLineJoint + part) <= room - 1)
+                lines[^1] += CueLineJoint + part;
+            else
+                lines.Add(part);
+        }
+        CueFirst.MaxWidth = room;
+        CueFirst.Text = string.Join("\n", lines);
+        CueFirst.Visibility = Visibility.Visible;
+    }
+
+    // How wide a text stands on one line in the cue's amber line, as CueFirst draws it.
+    private double CueLineWidth(string text)
+    {
+        var probe = new TextBlock
+        {
+            Text = text, FontFamily = CueFirst.FontFamily, FontSize = CueFirst.FontSize, FontWeight = CueFirst.FontWeight,
+            FontStretch = CueFirst.FontStretch, CharacterSpacing = CueFirst.CharacterSpacing,
+        };
+        probe.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        return probe.DesiredSize.Width;
     }
 
     // The first position after a first start: one line that says what it is.

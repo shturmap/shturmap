@@ -158,4 +158,132 @@ public class WheelZoomTests
         Assert.False(wheel.Running);
         Assert.True(wheel.Over(T0));
     }
+
+    // ---- + and −, the zoom buttons and a double-click (owner, 2026-10-15, evening; docs/DESIGN.md "Map drawing", *The
+    // keys, the buttons and a double-click zoom over 0.2 s*): half again (1.5) or twice (2) the zoom over 0.2 s, eased,
+    // as a notch is; until then at once. ----
+
+    private const double Key = 1.5;
+
+    private const double DoubleClick = 2;
+
+    // The largest zoom from one frame to the next of a step from rest, frames every frameMs, however they fall in its time
+    // (log scale).
+    private static double LargestFrame(double factor, double frameMs)
+    {
+        var zoom = new WheelZoom();
+        zoom.Turn(1, factor, 0.1, 64, T0, over: WheelZoom.Step);
+        var largest = 0.0;
+        for (var phase = 0.0; phase < frameMs; phase += frameMs / 20)
+        {
+            for (var ms = phase; ms < 200 + frameMs; ms += frameMs)
+                largest = Math.Max(largest, Step(zoom.At(T0.AddMilliseconds(ms - frameMs)), zoom.At(T0.AddMilliseconds(ms))));
+        }
+        return largest;
+    }
+
+    [Theory]
+    [InlineData(Key)]
+    [InlineData(1 / Key)]
+    [InlineData(DoubleClick)]
+    public void A_step_reaches_its_zoom_in_0_2_s_eased_in_and_out_halfway_at_0_1_s(double factor)
+    {
+        Assert.Equal(TimeSpan.FromMilliseconds(200), WheelZoom.Step);
+        var zoom = new WheelZoom();
+        zoom.Turn(2, factor, 0.1, 64, T0, over: WheelZoom.Step);
+        Assert.Equal(2 * factor, zoom.Target, 9);
+        Assert.Equal(2, zoom.At(T0), 9);
+        Assert.Equal(2 * Math.Sqrt(factor), zoom.At(T0.AddMilliseconds(100)), 9);
+        // Slow at its start and its end: the first and last frames move it by little.
+        Assert.True(Step(2, zoom.At(T0.AddMilliseconds(FrameMs))) < 0.1 * Math.Abs(Math.Log(factor)));
+        Assert.True(Step(zoom.At(T0.AddMilliseconds(200 - FrameMs)), 2 * factor) < 0.1 * Math.Abs(Math.Log(factor)));
+        Assert.False(zoom.Over(T0.AddMilliseconds(199)));
+        Assert.True(zoom.Over(T0.AddMilliseconds(200)));
+        Assert.Equal(2 * factor, zoom.At(T0.AddMilliseconds(200)), 9);
+        Assert.Equal(2 * factor, zoom.At(T0.AddSeconds(5)), 9);
+    }
+
+    [Fact]
+    public void A_steps_frames_zoom_by_less_than_a_tenth_at_60_frames_a_second_and_not_all_at_30()
+    {
+        // At 60 frames a second (16.7 ms; the window's timer asks for one every 15 ms) every frame of + or − zooms by 5.2 %
+        // at most, of a double-click by 9 %: under the tenth past which the symbols are laid out afresh.
+        Assert.InRange(Math.Exp(LargestFrame(Key, 1000 / 60.0)), 1.05, 1.053);
+        Assert.InRange(Math.Exp(LargestFrame(DoubleClick, 1000 / 60.0)), 1.09, 1.091);
+        Assert.True(LargestFrame(DoubleClick, FrameMs) < Steady);
+        Assert.True(LargestFrame(1 / DoubleClick, 1000 / 60.0) < Steady);
+        // At 30 frames a second the middle frames zoom by more (docs/DESIGN.md says so): + and − by up to 10.6 %, a
+        // double-click by up to 18.7 %; those frames lay the symbols out afresh, as a zoom at once did. Under a tenth, + and
+        // − keep down to about 32 frames a second, a double-click down to about 55.
+        Assert.InRange(Math.Exp(LargestFrame(Key, 1000 / 30.0)), 1.105, 1.107);
+        Assert.InRange(Math.Exp(LargestFrame(DoubleClick, 1000 / 30.0)), 1.186, 1.188);
+        Assert.True(LargestFrame(Key, 1000 / 32.0) < Steady);
+        Assert.True(LargestFrame(DoubleClick, 1000 / 55.0) < Steady);
+    }
+
+    [Fact]
+    public void A_step_pressed_again_goes_on_from_the_first_and_lands_0_2_s_after_the_second()
+    {
+        // + twice, 100 ms apart: one zoom to 2.25 times, landing at 300 ms, without a stop, a turn back or a jump.
+        var zoom = new WheelZoom();
+        var shown = new List<double>();
+        var z = 1.0;
+        for (var ms = 0; ms <= 400; ms++)
+        {
+            if (ms is 0 or 100)
+                zoom.Turn(z, Key, 0.1, 64, T0.AddMilliseconds(ms), over: WheelZoom.Step);
+            if (zoom.Running)
+                z = zoom.At(T0.AddMilliseconds(ms));
+            if (ms % FrameMs == 0)
+                shown.Add(z);
+        }
+        var steps = shown.Zip(shown.Skip(1), (a, b) => Math.Log(b / a)).ToList();
+        Assert.All(steps.Take(300 / FrameMs), s => Assert.True(s > 0, $"a frame stood still or went back: {s}"));
+        Assert.All(steps, s => Assert.True(s < Steady, $"a frame zoomed by {Math.Exp(s):0.###}"));
+        Assert.Equal(Key * Key, zoom.Target, 9);
+        Assert.False(zoom.Over(T0.AddMilliseconds(299)));
+        Assert.True(zoom.Over(T0.AddMilliseconds(300)));
+        Assert.Equal(Key * Key, shown[^1], 9);
+        // Where the second press comes, the frame after it zooms at least as fast as the one before: it carries the speed.
+        Assert.True(steps[100 / FrameMs] >= steps[100 / FrameMs - 1]);
+
+        // A wheel's notch, then + during it: + goes on from the notch and lands 0.2 s after it, on both together.
+        var mixed = new WheelZoom();
+        mixed.Turn(1, Notch, 0.1, 64, T0);
+        mixed.Turn(mixed.At(T0.AddMilliseconds(60)), Key, 0.1, 64, T0.AddMilliseconds(60), over: WheelZoom.Step);
+        Assert.Equal(Notch * Key, mixed.Target, 9);
+        Assert.False(mixed.Over(T0.AddMilliseconds(259)));
+        Assert.True(mixed.Over(T0.AddMilliseconds(260)));
+        Assert.All(Enumerable.Range(0, 20), k => Assert.True(mixed.At(T0.AddMilliseconds(60 + k * 10)) <= mixed.At(T0.AddMilliseconds(70 + k * 10)) + 1e-12));
+
+        // − during +: back the other way, never past where it ends.
+        var back = new WheelZoom();
+        back.Turn(1, Key, 0.1, 64, T0, over: WheelZoom.Step);
+        back.Turn(back.At(T0.AddMilliseconds(80)), 1 / Key, 0.1, 64, T0.AddMilliseconds(80), over: WheelZoom.Step);
+        Assert.Equal(1, back.Target, 9);
+        Assert.All(Enumerable.Range(0, 30), k => Assert.True(back.At(T0.AddMilliseconds(80 + k * 8)) >= 1 - 1e-9));
+        Assert.Equal(1, back.At(T0.AddMilliseconds(280)), 9);
+    }
+
+    [Fact]
+    public void A_step_keeps_to_the_zoom_limits_and_with_the_effects_off_is_at_once()
+    {
+        var zoom = new WheelZoom();
+        zoom.Turn(40, DoubleClick, 0.5, 64, T0, over: WheelZoom.Step);
+        Assert.Equal(64, zoom.Target, 9);
+        Assert.All(Enumerable.Range(0, 14), k => Assert.InRange(zoom.At(T0.AddMilliseconds(k * FrameMs)), 40 - 1e-9, 64 + 1e-9));
+        var outward = new WheelZoom();
+        outward.Turn(0.6, 1 / Key, 0.5, 64, T0, over: WheelZoom.Step);
+        Assert.Equal(0.5, outward.Target, 9);
+        Assert.All(Enumerable.Range(0, 14), k => Assert.InRange(outward.At(T0.AddMilliseconds(k * FrameMs)), 0.5 - 1e-9, 0.6 + 1e-9));
+
+        var off = new WheelZoom();
+        off.Turn(2, DoubleClick, 0.5, 64, T0, animate: false, over: WheelZoom.Step);
+        Assert.True(off.Over(T0));
+        Assert.Equal(4, off.At(T0), 9);
+        off.Turn(off.At(T0.AddMilliseconds(50)), 1 / Key, 0.5, 64, T0.AddMilliseconds(50), animate: false, over: WheelZoom.Step);
+        Assert.Equal(4 / Key, off.At(T0.AddMilliseconds(50)), 9);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new WheelZoom().Turn(1, Key, 0.5, 64, T0, over: TimeSpan.Zero));
+    }
 }

@@ -44,7 +44,7 @@ public sealed partial class MapView : Grid
         _animation?.Stop();
         _glideFrames?.Stop();
         _wheelEnd?.Stop();
-        _wheelFrames?.Stop();
+        _zoomFrames?.Stop();
         _panel.PaintSurface -= OnPaintSurface;
     }
 
@@ -366,19 +366,16 @@ public sealed partial class MapView : Grid
     {
         _follow.Fitted();
         StopGlide();
-        StopWheel();
+        StopZoom();
         _centerAfterFit = false;
         _fitPending = true;
         Invalidate();
     }
 
-    public void ZoomBy(double factor)
-    {
-        StopWheel();
-        _camera.ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor);
-        KeepPlayerCentered();
-        Invalidate();
-    }
+    /// <summary>+ and −, the zoom buttons: zooms by <paramref name="factor"/> about the view's middle, over 0.2 s
+    /// (<see cref="ZoomAt"/>).</summary>
+    public void ZoomBy(double factor) =>
+        ZoomAt(new SKPoint(_camera.Viewport.Width / 2, _camera.Viewport.Height / 2), factor, WheelZoom.Step);
 
     // ---- the website demo's camera moves (players move the view themselves) ----
 
@@ -406,10 +403,11 @@ public sealed partial class MapView : Grid
         CompositionTarget.Rendering += _viewAnimation;
     }
 
-    /// <summary>Stops a move of the view under way (<see cref="AnimateView"/>, or the wheel's zoom) where it is.</summary>
+    /// <summary>Stops a move of the view under way (<see cref="AnimateView"/>, or a zoom of the wheel, the keys, the
+    /// buttons or a double-click) where it is.</summary>
     public void StopViewAnimation()
     {
-        StopWheel();
+        StopZoom();
         if (_viewAnimation is null)
             return;
         CompositionTarget.Rendering -= _viewAnimation;
@@ -568,11 +566,12 @@ public sealed partial class MapView : Grid
             _camera.CenterOn(player);
         }
         GlideStep();
-        WheelStep();
+        ZoomStep();
         MapRenderer.Render(canvas, _camera, _scene, PixelScale);
         // The scale bar keeps its place while the view only moves, and settles in the first frame drawn with the view still
         // (MapRenderer.Scale). The end of a move draws no frame after its last by itself (AnimateView, the roll call's and
-        // the tour's; a wheel's notches; a Follow glide; a drag), so a frame whose bar held asks for one more, after it.
+        // the tour's; a zoom of the wheel, the keys, the buttons or a double-click; a Follow glide; a drag), so a frame
+        // whose bar held asks for one more, after it.
         if (_scene.ScaleBarShown is { Held: true })
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, Invalidate);
     }
@@ -736,43 +735,55 @@ public sealed partial class MapView : Grid
     private double _wheelFactor = 1;
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _wheelEnd;
 
-    // ---- the wheel's zoom, animated (owner, 2026-10-15; WheelZoom) ----
+    // ---- the zoom, animated: the wheel's (owner, 2026-10-15), the keys', the buttons' and a double-click's (owner,
+    // 2026-10-15, evening; WheelZoom) ----
 
-    private readonly WheelZoom _wheel = new();
-    private SKPoint _wheelAt;
-    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _wheelFrames;
+    private readonly WheelZoom _zoom = new();
+    private SKPoint _zoomAt;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _zoomFrames;
+
+    /// <summary>
+    /// Zooms by <paramref name="factor"/> over <paramref name="over"/>, eased, keeping <paramref name="at"/> (pixels in
+    /// this view: the point under the pointer, or the view's middle) in place; following with the view on the player,
+    /// about the player. One during another goes on from it. So its frames come under the rule that holds the symbols
+    /// steady while the view moves (docs/DESIGN.md "Map drawing"); at once, a zoom laid them out afresh. With Windows'
+    /// animation effects off it zooms at once. While the view moves by itself (the replay's glide, the roll call's), each
+    /// of that move's frames puts the view where the move has it, and a zoom lasted a frame: it is left out then (false).
+    /// </summary>
+    private bool ZoomAt(SKPoint at, double factor, TimeSpan over)
+    {
+        if (_viewAnimation is not null)
+            return false;
+        _zoomAt = at;
+        _zoom.Turn(_camera.Zoom, factor, _camera.MinZoom, _camera.MaxZoom, DateTime.Now, _scene?.Pulse == true, over);
+        ZoomStep();
+        if (_zoom.Running)
+        {
+            // Frames at the system timer's pace, as a glide's (GlideToPlayer).
+            if (_zoomFrames is null)
+            {
+                _zoomFrames = DispatcherQueue.CreateTimer();
+                _zoomFrames.Interval = TimeSpan.FromMilliseconds(15);
+                _zoomFrames.Tick += (_, _) =>
+                {
+                    ZoomStep();
+                    Invalidate();
+                };
+            }
+            _zoomFrames.Start();
+        }
+        Invalidate();
+        return true;
+    }
 
     private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
     {
         e.Handled = true;
-        // While the view moves by itself (the replay's glide, the roll call's), each of its frames puts the view where
-        // that move has it, and a notch's zoom lasted a frame: a turn then is left out.
-        if (_viewAnimation is not null)
-            return;
         var point = e.GetCurrentPoint(this);
         var factor = WheelZoom.FactorOf(point.Properties.MouseWheelDelta);
-        // A notch zooms over 0.15 s, eased, keeping the point under the pointer in place; one during another goes on from
-        // it. So its frames come under the rule that holds the symbols steady while the view moves (docs/DESIGN.md "Map
-        // drawing"); at once, a notch laid them out afresh. With Windows' animation effects off it zooms at once.
-        _wheelAt = Pixels(point.Position);
-        _wheel.Turn(_camera.Zoom, factor, _camera.MinZoom, _camera.MaxZoom, DateTime.Now, _scene?.Pulse == true);
-        WheelStep();
-        if (_wheel.Running)
-        {
-            // Frames at the system timer's pace, as a glide's (GlideToPlayer).
-            if (_wheelFrames is null)
-            {
-                _wheelFrames = DispatcherQueue.CreateTimer();
-                _wheelFrames.Interval = TimeSpan.FromMilliseconds(15);
-                _wheelFrames.Tick += (_, _) =>
-                {
-                    WheelStep();
-                    Invalidate();
-                };
-            }
-            _wheelFrames.Start();
-        }
-        Invalidate();
+        // A notch zooms over 0.15 s, at the pointer.
+        if (!ZoomAt(Pixels(point.Position), factor, WheelZoom.Notch))
+            return;
 
         // One study event per burst of wheel turns.
         _wheelFactor *= factor;
@@ -791,31 +802,29 @@ public sealed partial class MapView : Grid
         _wheelEnd.Start();
     }
 
-    // As a frame is drawn (and on each tick, so it lands unseen too): the zoom at this moment of the notches under way,
-    // the point under the pointer in place; following with the view on the player, about the player.
-    private void WheelStep()
+    // As a frame is drawn (and on each tick, so it lands unseen too): the zoom at this moment of the zoom under way, its
+    // point in place; following with the view on the player, about the player.
+    private void ZoomStep()
     {
-        if (!_wheel.Running)
+        if (!_zoom.Running)
             return;
         var now = DateTime.Now;
-        _camera.ZoomAt(_wheelAt, _wheel.At(now) / _camera.Zoom);
+        _camera.ZoomAt(_zoomAt, _zoom.At(now) / _camera.Zoom);
         KeepPlayerCentered();
-        if (_wheel.Over(now))
-            StopWheel();
+        if (_zoom.Over(now))
+            StopZoom();
     }
 
-    private void StopWheel()
+    private void StopZoom()
     {
-        _wheel.Stop();
-        _wheelFrames?.Stop();
+        _zoom.Stop();
+        _zoomFrames?.Stop();
     }
 
+    // A double-click zooms in twice as far over 0.2 s, at the pointer.
     private void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
-        StopWheel();
-        _camera.ZoomAt(Pixels(e.GetPosition(this)), 2);
-        KeepPlayerCentered();
-        Invalidate();
-        Study.Ui("map.zoom", ("factor", 2.0), ("how", "double-click"), ("zoom", _camera.Zoom));
+        if (ZoomAt(Pixels(e.GetPosition(this)), 2, WheelZoom.Step))
+            Study.Ui("map.zoom", ("factor", 2.0), ("how", "double-click"), ("zoom", _zoom.Target));
     }
 }

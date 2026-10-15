@@ -78,7 +78,8 @@ switch (command)
                                             draws it as pointing at that item does (a key lights its locks);
                                             --pick <quest name> picks that quest (with the locks of its keys)
             shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>]
-                                [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms]] [--viewport <W>x<H>]
+                                [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]]
+                                [--viewport <W>x<H>]
                                             draw a map's animations headless, frame by frame: an extract list just
                                             read (list-read: every other extract lit, two "??:??:??", the rest struck
                                             out, at a PMC spawn or --fix; whatsnew-extracts: What's New's preview, no
@@ -87,7 +88,9 @@ switch (command)
                                             animation values as drawn) and summary.txt (what changed frame by frame);
                                             --glide moves the view from the whole map to 3x on the position, 1200 ms;
                                             --notch turns the wheel 3 notches in at the position, 300 ms apart, as
-                                            the window animates them (every 16 ms by default);
+                                            the window animates them (every 16 ms by default); --step zooms by
+                                            <factor> over 0.2 s at the position as + and − (1.5, 0.667), the zoom
+                                            buttons and a double-click (2) do, and again [ms] later if given;
                                             list-callout: list-read's list called from the roll call's band, each
                                             extract flown from its row as the view zooms out (every 33 ms, 180 times);
                                             --viewport: the view's size instead of 1600x1000 (500x481: the map at
