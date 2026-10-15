@@ -1417,7 +1417,8 @@ spawns below).
   **A list just read rings its extracts out** (owner, 2026-10-14: "animate the icons for a couple of seconds so they
   are visible pre-attentively when the exits are read"; `MapScene.RingExits`, `MapRenderer.DrawExitsLit`). One after
   another, 0.16 s apart, the lit ones first, then the "??:??:??" ones, each nearest you first (where there is a
-  position; at most six turns each, the rest share the last). A lit one's glow swells in past its strength and
+  position, else in the data's order; at most six turns each, the rest share the last). A lit one's glow swells in
+  past its strength and
   settles over a second, and its triangle's own outline leaves it three times, 0.5 s apart, each over 1.1 s, in its
   colour on a dark band, under every symbol; a "??:??:??" one's "?" pops in at a size and a half and settles, with one
   echo. About three seconds in all. Before its turn an extract isn't lit yet, so they light up one after another, as
@@ -2341,9 +2342,9 @@ Rules:
   on the developer's PC and out of the repository (§3, "Test fixtures").
 - Every change keeps `.\eng\dotnet.ps1 test --solution Shturmap.slnx` green, including `SafetyTests`.
 - Verify UI with `Shturmap.exe --snapshot <folder>` (renders the window and the map to PNGs, and writes what Copy
-  diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render`; never capture the user's screens. Such a run
-  opens its window unseen, off every monitor and without taking the focus, so it can run while the owner plays
-  ("Developer aids", *Quiet runs*).
+  diagnostics would copy to `diagnostics.txt`) or `shturmap-cli render` (an animation: `shturmap-cli frames`, §8
+  "Developer aids"); never capture the user's screens. Such a run opens its window unseen, off every monitor and
+  without taking the focus, so it can run while the owner plays ("Developer aids", *Quiet runs*).
   `--verbose` adds the app log's DEBUG lines; `--study` (developer builds) keeps a study log for one session; `--show-report` opens
   the Report dialog with an example and what's sent, `--show-crash` the question after a crash (for snapshots;
   snapshots send nothing); `--send-report <text> <folder>` is a release's delivery check (§8 "Reports"; with
@@ -2697,6 +2698,26 @@ there, `-MoreArgs --visible` records it as before. `--visible` opens any such ru
 (`tools\fake-raid.ps1 -MoreArgs --visible`), a script's with its view as before, until its `exit`. Only the windows'
 placement and showing change (AppWindow), no capture, input or hook in the app; normal runs and the installed app are
 untouched, and the developer view without a script (`--dev-view`, F12) still opens to be used.
+
+**Animations frame by frame** (owner, 2026-10-15: the QA pass must see animations frame by frame). A window snapshot
+takes seconds and shows one moment, so what an animation does over time went unseen. The map is drawn by Skia on the
+CPU and everything in it that moves is a function of time, so it can be drawn at chosen times without a window.
+`MapRenderer.Render` takes the frame's time (`now`; the clock's where none is given, as in the app) and reads it once
+for the whole frame, so a frame at t0 + 100 ms is the same every run; its `trace`, off in the app, records what the
+frame drew of each symbol (`SymbolTrace`): where, how large, and for an extract its state and the values its ring was
+drawn with (`Arrival`, `Glow`, `Echoes`, `Question`), taken from the drawing itself, not worked out beside it.
+`shturmap-cli frames <map> <folder>` builds a scene from the data cache as `render` does, reads an extract list at t0
+(`RingExits`) and draws 36 frames 100 ms apart (`--every`, `--count`) in one fitted 1600 × 1000 view:
+`frame-000.png`…, `frames.json` (per frame and symbol: its id, name, state (listed, unsure, notListed, plain or
+transit), drawn centre and size, centre in map units, offset from its own place, leader, and its ring's values) and
+`summary.txt` (per frame what changed: turns, rings over, moves, states; then the checks: the largest move, anything
+off the list that animated, the first frame against the last). Two scenes: `list-read`, a list read in a PMC raid
+(every other extract lit, two "??:??:??", the rest struck out, Scav extracts left out as a raid leaves them out, the
+position at the map's first PMC spawn or `--fix`, pinging), and `whatsnew-extracts`, What's New's `extracts` preview
+as it is staged (no quests, no position, the sets of `MainWindow.ExampleExits`, which the CLI repeats). `--glide [ms]`
+moves the view as `MapView.AnimateView` does, from the whole map to three times the zoom on the position in 1.2 s, and
+lists the symbols whose offset from their own place changes by more than 2 px from one frame to the next, which the
+view's motion doesn't explain. `ExitRingFramesTests` hold the ring to "Map drawing" the same way, on a made-up raid.
 
 ### How the parts work
 

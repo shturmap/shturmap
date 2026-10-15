@@ -1,0 +1,72 @@
+using SkiaSharp;
+
+namespace Shturmap.Map;
+
+/// <summary>How a frame drew an extract or a transit, by what the game's list said of it this raid (docs/DESIGN.md, "Map
+/// drawing", *The player's extracts this raid*).</summary>
+public enum ExitLook
+{
+    /// <summary>Solid: no list read, or one that doesn't speak of it.</summary>
+    Plain,
+
+    /// <summary>On the list: lit (<see cref="MapScene.ExitsListed"/>).</summary>
+    Listed,
+
+    /// <summary>On the list, marked "??:??:??": a "?" in its triangle (<see cref="MapScene.ExitsUnsure"/>).</summary>
+    Unsure,
+
+    /// <summary>Left out: struck out (<see cref="MapScene.ExitsNotListed"/>).</summary>
+    NotListed,
+
+    /// <summary>A transit, drawn as ever.</summary>
+    Transit,
+}
+
+/// <summary>
+/// What one frame drew of a symbol, for a look at the map's animations frame by frame without a window (owner,
+/// 2026-10-15: the QA pass must see animations frame by frame; <c>shturmap-cli frames</c>, ExitRingFramesTests). The
+/// renderer fills it as it draws, from the values it draws with (<see cref="MapRenderer.Render"/>'s trace), so it says
+/// what the picture shows, not what a second computation thinks it should.
+/// </summary>
+public sealed class SymbolTrace
+{
+    internal SymbolTrace(MapRenderer.ShownMarker shown) => Shown = shown;
+
+    /// <summary>The symbol as the frame laid it out: its marker, where it is drawn, its radius, and its true place where
+    /// it was set off it (<see cref="MapRenderer.ShownMarker.Leader"/>).</summary>
+    public MapRenderer.ShownMarker Shown { get; }
+
+    public string Id => Shown.Marker.Id;
+
+    public string Name => Shown.Marker.Label;
+
+    public MarkerKind Kind => Shown.Marker.Kind;
+
+    /// <summary>Where its centre is drawn, in pixels (<see cref="MapRenderer.ShownMarker.At"/>).</summary>
+    public SKPoint At => Shown.At;
+
+    /// <summary>The radius it is drawn at, in pixels (<see cref="MapRenderer.ShownMarker.R"/>): an extract's triangle
+    /// reaches 1.2 R up and 1.1 R to either side.</summary>
+    public float R => Shown.R;
+
+    /// <summary>How an extract or a transit was drawn; null for every other symbol.</summary>
+    public ExitLook? Look { get; internal set; }
+
+    /// <summary>Seconds since its turn came as a list just read reached it, negative before (ArrivalOf); null while it
+    /// doesn't ring.</summary>
+    public double? Arrival { get; internal set; }
+
+    /// <summary>A lit extract's glow strength (GlowAt): 0 before its turn, swelling to 1.6 and settling at 1; null for
+    /// one not lit.</summary>
+    public float? Glow { get; internal set; }
+
+    /// <summary>How far each echo of its triangle that was drawn is on its way out (DrawEcho's p, 0 to 1); empty when
+    /// none was.</summary>
+    public IReadOnlyList<double> Echoes => EchoesDrawn;
+
+    internal readonly List<double> EchoesDrawn = [];
+
+    /// <summary>A "??:??:??" extract's "?" scale (QuestionPop): 0 before its turn, popping in past 1 and settling at 1;
+    /// null for one without a "?".</summary>
+    public float? Question { get; internal set; }
+}

@@ -11,11 +11,10 @@ public static partial class MapRenderer
     /// gold rings leaving it as a ping's do, then fading; gone after <see cref="MapScene.LeaveLength"/>. The quest's own
     /// colour, so the eye sees which places went. Nothing with animation effects off: the places simply go.
     /// </summary>
-    private static void DrawLeaving(SKCanvas canvas, Camera camera, MapScene scene, float ui)
+    private static void DrawLeaving(SKCanvas canvas, Camera camera, MapScene scene, float ui, DateTime now)
     {
         if (!scene.Pulse || scene.Leaving.Count == 0)
             return;
-        var now = DateTime.Now;
         foreach (var (marker, since) in scene.Leaving)
         {
             var t = (now - since) / MapScene.LeaveLength;

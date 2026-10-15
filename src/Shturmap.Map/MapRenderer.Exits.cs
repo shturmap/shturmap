@@ -12,11 +12,13 @@ public static partial class MapRenderer
     /// 2026-10-14: "Exits that are marked as not open should be marked better as such"; "Also mark exits that have a ?
     /// better"). Until a list was read, and outside raids, every extract is solid.
     /// </summary>
-    private static void DrawExtract(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui)
+    private static void DrawExtract(SKCanvas canvas, MapScene scene, ShownMarker shown, float ui, DateTime now, SymbolTrace? trace)
     {
         var (at, r, color) = (shown.At, shown.R, shown.Color);
         using var tri = Triangle(at, r);
         DrawCollar(canvas, tri, ui);
+        if (trace is not null)
+            trace.Look = shown.NotListed ? ExitLook.NotListed : shown.Unsure ? ExitLook.Unsure : shown.Listed ? ExitLook.Listed : ExitLook.Plain;
         if (shown.NotListed)
         {
             // Not one of the player's ways out this raid: the triangle's outline on the collar's dark, faint, and a
@@ -40,7 +42,9 @@ public static partial class MapRenderer
         canvas.DrawPath(tri, outline);
         // "??:??:??" on the list: maybe open, maybe it needs something. A dark "?" in the triangle, as a quest's glyph
         // is dark on its disc; it pops in as the list just read reaches it.
-        var question = shown.Unsure ? QuestionPop(ArrivalOf(scene, shown.Marker)) : 0;
+        var question = shown.Unsure ? QuestionPop(ArrivalOf(scene, shown.Marker, now)) : 0;
+        if (trace is not null && shown.Unsure)
+            trace.Question = question;
         // Shared by both sides: split down the middle, so it differs from your side's triangle in shape too (green and
         // khaki come within ΔE 7 with red-green colour blindness); above the "?" where there is one.
         if (shown.Marker.Kind == MarkerKind.ExtractShared)
@@ -108,11 +112,11 @@ public static partial class MapRenderer
     /// isn't ringing: no list was read just now, animation effects are off, or its ring is over (<see
     /// cref="MapScene.RingExits"/>).
     /// </summary>
-    internal static double? ArrivalOf(MapScene scene, MapMarker marker)
+    internal static double? ArrivalOf(MapScene scene, MapMarker marker, DateTime now)
     {
         if (!scene.Pulse || !scene.ExitsRinging.TryGetValue(marker.Id, out var ring))
             return null;
-        var t = (DateTime.Now - ring.At).TotalSeconds;
+        var t = (now - ring.At).TotalSeconds;
         return t < RingLength(ring.Listed).TotalSeconds ? t : null;
     }
 
@@ -144,26 +148,39 @@ public static partial class MapRenderer
     /// and a completed quest's leave its places, in the shape that says "way out" (a pulse's round rings are the
     /// pointer's). Nothing moves with animation effects off: they are simply lit.
     /// </summary>
-    private static void DrawExitsLit(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui)
+    private static void DrawExitsLit(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui, DateTime now,
+        Dictionary<ShownMarker, SymbolTrace>? traced)
     {
         foreach (var m in markers.Where(m => m.Listed || m.Unsure))
         {
-            var t = ArrivalOf(scene, m.Marker);
+            var t = ArrivalOf(scene, m.Marker, now);
+            var trace = traced is null ? null : Traced(traced, m);
+            if (trace is not null)
+                trace.Arrival = t;
             if (m.Listed)
-                DrawListedGlow(canvas, m, GlowAt(t));
+            {
+                var glow = GlowAt(t);
+                DrawListedGlow(canvas, m, glow);
+                if (trace is not null)
+                    trace.Glow = glow;
+            }
             if (t is { } since)
             {
                 foreach (var start in m.Listed ? ListedEchoes : UnsureEchoes)
-                    DrawEcho(canvas, m, (since - start) / EchoLength, ui);
+                {
+                    var p = (since - start) / EchoLength;
+                    if (DrawEcho(canvas, m, p, ui))
+                        trace?.EchoesDrawn.Add(p);
+                }
             }
         }
     }
 
-    // One echo of an extract's triangle, p of the way out (0 to 1).
-    private static void DrawEcho(SKCanvas canvas, ShownMarker m, double p, float ui)
+    // One echo of an extract's triangle, p of the way out (0 to 1); false when it is out of that range and isn't drawn.
+    private static bool DrawEcho(SKCanvas canvas, ShownMarker m, double p, float ui)
     {
         if (p is < 0 or >= 1)
-            return;
+            return false;
         var eased = 1 - Math.Pow(1 - p, 3);
         var fade = (float)Math.Pow(1 - p, 1.5);
         var width = (float)(3.5 - 2 * p) * ui;
@@ -180,5 +197,14 @@ public static partial class MapRenderer
         };
         canvas.DrawPath(echo, band);
         canvas.DrawPath(echo, line);
+        return true;
+    }
+
+    // A symbol's record in a developer's trace of the frame (Render), made by whichever drawing reaches it first.
+    private static SymbolTrace Traced(Dictionary<ShownMarker, SymbolTrace> traced, ShownMarker shown)
+    {
+        if (!traced.TryGetValue(shown, out var trace))
+            traced[shown] = trace = new SymbolTrace(shown);
+        return trace;
     }
 }

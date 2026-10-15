@@ -388,7 +388,10 @@ public sealed class MapScene
     public DateTime? PingSince { get; set; }
 
     /// <summary>Whether the newest position is still pinging.</summary>
-    public bool Pinging => PingSince is { } since && DateTime.Now - since < PingLength;
+    public bool Pinging => PingingAt(DateTime.Now);
+
+    /// <summary>Whether the newest position pings at a frame's time (<see cref="MapRenderer.Render"/>'s).</summary>
+    public bool PingingAt(DateTime now) => PingSince is { } since && now - since < PingLength;
 
     /// <summary>
     /// While the view glides to a new position (Follow my position): the position is on its way into view, so the edge
@@ -496,7 +499,10 @@ public sealed class MapScene
     private static DateTime Max(DateTime a, DateTime b) => a > b ? a : b;
 
     /// <summary>Whether an extract still rings out, or waits for its turn to.</summary>
-    public bool ExitsArriving => Pulse && _ringing.Values.Any(r => DateTime.Now - r.At < MapRenderer.RingLength(r.Listed));
+    public bool ExitsArriving => ExitsArrivingAt(DateTime.Now);
+
+    /// <summary>Whether an extract rings out, or waits for its turn to, at a frame's time (<see cref="MapRenderer.Render"/>'s).</summary>
+    public bool ExitsArrivingAt(DateTime now) => Pulse && _ringing.Values.Any(r => now - r.At < MapRenderer.RingLength(r.Listed));
 
     /// <summary>Where the item the pointer is on spawns as loose loot on this map (shown only while pointing at it).</summary>
     public IReadOnlyList<WorldPoint> Spawns { get; set; } = [];
