@@ -523,8 +523,8 @@ quoting it anywhere new.
     currently too subtle. I, however, do not want to have a blocking modal like a pop-up"; from a panel of four,
     2026-10-15: B, "A cue, then the band"; §8, "Updates"): a new version of Shturmap downloaded, the cue says UPDATE
     READY over the version with its release's name ("0.6.1 · OKAMI"), decoding as every title does, and under it, in
-    the amber line the first raid's cue has, "RESTART NOW IN THE RAIL · NEVER IN A RAID" (DOWNLOAD AVAILABLE and
-    "DOWNLOAD IN THE RAIL" in "Tell me only"). As the download completes in the menus, then **once per raid while it
+    the amber line the first raid's cue has, "RESTART NOW · TOP LEFT · NEVER IN A RAID" (DOWNLOAD AVAILABLE and
+    "DOWNLOAD · TOP LEFT" in "Tell me only"). As the download completes in the menus, then **once per raid while it
     waits**, at the first menu after each raid, after RAID OVER and its replay, QUEST COMPLETE and SEEN IN YOUR STASH;
     as it fades the rail's update band glows. Like QUEST COMPLETE and SEEN IN YOUR STASH it moves no view.
     Picks the player makes (a Plan card, the map
@@ -2660,8 +2660,10 @@ self-unpacking exe, without updates; they need the Setup once.
     card's head, so the band hides. It has no ×: it goes with the restart. With animation effects off it doesn't glow.
   - **The cue**, UPDATE READY (`CueKind.UpdateReady`, principle 11): the app's cue across the map's middle, its dark
     band, gold flash and rules, the title decoding, 5 s, no clicks. Eyebrow UPDATE READY, title "0.6.1 · OKAMI", under
-    it the amber line "RESTART NOW IN THE RAIL · NEVER IN A RAID" (in "Tell me only", for a version found: DOWNLOAD
-    AVAILABLE and "DOWNLOAD IN THE RAIL"). **When** (`UpdateCue`): as a download completes outside a raid (one that
+    it the amber line "RESTART NOW · TOP LEFT · NEVER IN A RAID" (in "Tell me only", for a version found: DOWNLOAD
+    AVAILABLE and "DOWNLOAD · TOP LEFT"). The panel drew "RESTART NOW IN THE RAIL"; players never see the word "rail",
+    so the line names the place as the band stands, pinned at the window's top left (2026-10-15, before the merge).
+    **When** (`UpdateCue`): as a download completes outside a raid (one that
     completes in a raid or while one loads waits for the menus), and once more at the first menu after each raid
     while the update waits, once per raid (a raid over live: RAID OVER; a load cancelled is no raid). It waits its
     turn behind RAID OVER and its replay, QUEST COMPLETE and SEEN IN YOUR STASH, as those wait among themselves, and

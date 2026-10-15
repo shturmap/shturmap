@@ -401,12 +401,12 @@
     <comment>en: YOUR EXTRACTS THIS RAID · {count} OF {total}</comment>
   </data>
   <data name="CueUpdateRestart" xml:space="preserve">
-    <value>JETZT NEU STARTEN: IN DER LISTE LINKS · NIE IM RAID</value>
-    <comment>en: RESTART NOW IN THE RAIL · NEVER IN A RAID</comment>
+    <value>JETZT NEU STARTEN · OBEN LINKS · NIE IM RAID</value>
+    <comment>en: RESTART NOW · TOP LEFT · NEVER IN A RAID</comment>
   </data>
   <data name="CueUpdateDownload" xml:space="preserve">
-    <value>HERUNTERLADEN: IN DER LISTE LINKS</value>
-    <comment>en: DOWNLOAD IN THE RAIL</comment>
+    <value>HERUNTERLADEN · OBEN LINKS</value>
+    <comment>en: DOWNLOAD · TOP LEFT</comment>
   </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} „{name}“ · {build}</value>

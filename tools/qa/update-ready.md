@@ -55,7 +55,7 @@ about 3.6 after `start`; t4 2.4 to 2.8 after the second cue's line.
 | From the cue's start | A still taken then shows |
 | --- | --- |
 | before 0 | The band under MAP, the title's gold copy easing to ink (1.2 s) and the plate's faint flash (0.9 s) from `trigger update` on; no cue yet. |
-| 0 | The cue springing open across the map's middle with its gold flash, UPDATE READY (UPDATE BEREIT), the title "0.6.1 · OKAMI" sliding up and decoding, its undecoded letters flickering in gold until about 1.6; the amber line RESTART NOW IN THE RAIL · NEVER IN A RAID (JETZT NEU STARTEN: IN DER LISTE LINKS · NIE IM RAID) under it, the gold rules shooting out. The floor picker stepped aside. |
+| 0 | The cue springing open across the map's middle with its gold flash, UPDATE READY (UPDATE BEREIT), the title "0.6.1 · OKAMI" sliding up and decoding, its undecoded letters flickering in gold until about 1.6; the amber line RESTART NOW · TOP LEFT · NEVER IN A RAID (JETZT NEU STARTEN · OBEN LINKS · NIE IM RAID) under it, the gold rules shooting out. The floor picker stepped aside. |
 | 1.6 | The cue whole and still: dark band, gold rules, the title decoded in ink. |
 | 4.4 | The cue fading, gone at 5.0; from 4.6 the band glows again (gold title, faint flash), until 5.8. |
 | 5.8 on | The band standing in ink, the floor picker back at the map's right. |
@@ -87,8 +87,9 @@ The band's glow as the cue fades (4.6 s) falls between t1 and t2, where a snapsh
 log's `Updates: the cue for …` line and the code (`MainWindow.Updates`, `UpdateGlowAt`) time it.
 
 At 900×560 the band's note takes two lines, as at 1600×900 (the rail is 384 px wide at every size), and the rail under
-it is shorter. The cue's title fits the map's column; its amber line keeps clear of the map's buttons: in German it
-wraps, "NIE IM" at the end of the first line and "RAID" on the second.
+it is shorter. The cue's title fits the map's column; its amber line keeps clear of the map's buttons (it wraps short
+of them where it must): in German "JETZT NEU STARTEN · OBEN LINKS · NIE IM RAID" stands on one line that ends some 20 px
+left of the buttons' column.
 
 ## What would be a fault
 

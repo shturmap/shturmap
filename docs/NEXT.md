@@ -40,9 +40,10 @@ READY) and "Screen anatomy", *Rail* (*The update band*) say the rest.
   band in a snapshot (the layout check's plan and raid views). The replay `tools\qa\update-ready.devscript` and its
   `.md`: the cue's entrance with the band glowing in (t0), the cue whole (t1), the band alone (t2), the raid card's head
   in the row in a raid (t3), the cue again after RAID OVER (t4); run in English and German at 1600×900 and 900×560.
-- Open for the owner: the cue's line says "IN THE RAIL", the project's word for the left column, which a player sees
-  nowhere else (help says "the list on the left"; the German says „in der Liste links“). The panel drew it so, and it
-  stays until the owner says otherwise. The senior translator suggested "IN THE LIST ON THE LEFT" or "TOP LEFT".
+- Changed from the panel before the merge: its cue line said "RESTART NOW IN THE RAIL", the project's word for the left
+  column, which a player sees nowhere on screen (the senior translator noticed it too). The line names the place as the
+  band stands, pinned at the window's top left: "RESTART NOW · TOP LEFT · NEVER IN A RAID", "DOWNLOAD · TOP LEFT"
+  (German „JETZT NEU STARTEN · OBEN LINKS · NIE IM RAID“, „HERUNTERLADEN · OBEN LINKS“).
 
 ## 2026-10-15: the extract list's roll call
 
