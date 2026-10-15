@@ -36,7 +36,9 @@ highlights the wrong things sometimes". Found in the code (not seen in the app y
   at again); a stamp now stops the one before. The chapter's map, and What's New's `extracts` preview with the same
   example list, kept both sides' extracts: Customs' 17 Scav ones stood solid and unlit, five of them under 5 m from
   a lit or struck-out PMC extract of the same name, set apart from it on a leader (frames drawn of the example; the
-  places checked in tarkov.dev's data, PvE and PvP). Both are a PMC raid's map now, as in a raid: no Scav extracts.
+  places checked in tarkov.dev's data, PvE and PvP). Both are a PMC raid's map now, as in a raid: no Scav extracts;
+  so is IN THE RAID's. PICK AND POINT (in the menus, as Plan's map), NEXT RAID's previews of the player's own rows and
+  What's New's `replay` (a raid's replay plays after it, in the menus) keep both sides', as the app shows them.
   The extracts ring out nearest the example position first: it is set at the ping, long before the list is read.
 - **Left as it is.** While the view moves (the chapter's 1.2 s move, a replay's framing), symbols set apart on leaders
   are placed anew at every frame for the zoom of that frame, so one can jump; the chapter already works out its framing
@@ -46,7 +48,9 @@ highlights the wrong things sometimes". Found in the code (not seen in the app y
 - **The check in the app** is the QA pass's: `tools\qa\whatsnew-tour-line.devscript` on a developer build, with what each
   still must show and what the fault looked like in `tools\qa\whatsnew-tour-line.md`. New script steps for it:
   `whatsnew click <n>`, `whatsnew leave` and `tour end` (a `--dev-view` session starts as a first start, so the tour
-  opens by itself); `snapshot` expands `%VARIABLES%` (DESIGN.md §8, "Developer aids").
+  opens by itself); `snapshot` expands `%VARIABLES%` (DESIGN.md §8, "Developer aids"). `whatsnew <n>` on a line about
+  the tour previews nothing now, as the pointer: it put up the line's preview label over nothing staged, a state no
+  player sees (`Rules.WhatsNew.ShowsPreview`).
 
 ## 2026-10-14: before 0.5.0 "Hyena"
 

@@ -672,7 +672,8 @@ public sealed partial class MainWindow
             return;
         MapContent? content = null;
         // Framed on the whole example, above the band (fitted, the map ran under the band and its labels off the right edge).
-        await TourScene(data, example, example.QuestNames, run, (_, c) => content = c, c => c.Markers.Select(m => m.Position).ToList(), 0);
+        // A PMC raid's map, as the raid card's PMC says: the Scav extracts go, as in YOUR SCREENSHOT KEY (2026-10-15).
+        await TourScene(data, example, example.QuestNames, run, (_, c) => content = c, c => c.Markers.Select(m => m.Position).ToList(), 0, pmc: true);
         if (content is null || !await TourWait(300, run))
             return;
         var plan = Planning.PlanFor(data, example.QuestIds, example.Map);
@@ -761,7 +762,8 @@ public sealed partial class MainWindow
     private double TourPadding => Math.Clamp((Map.ActualHeight - TourFoot - TourFraming) / 2, 0, TourFraming);
 
     // The example's map, staged as What's New's previews are (its label says it is an example), framed above the band;
-    // with <paramref name="pmc"/>, a PMC raid's (only its side's extracts: YOUR SCREENSHOT KEY reads its list in one).
+    // with <paramref name="pmc"/>, a PMC raid's (only its side's extracts): YOUR SCREENSHOT KEY and IN THE RAID are in
+    // one, PICK AND POINT is in the menus, where the map shows both sides'.
     private async Task TourScene(GameData data, TourExampleSet example, IReadOnlyCollection<string> quests, int run,
         Action<MapScene, MapContent>? stage, Func<MapContent, IReadOnlyCollection<WorldPoint>?>? frame, double minMetres, bool pmc = false)
     {

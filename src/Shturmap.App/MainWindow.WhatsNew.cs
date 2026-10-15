@@ -166,11 +166,14 @@ public sealed partial class MainWindow
         if (row.Tag is not string key)
             return;
         row.Background = Resource("LinkBrush");
-        // A line about the tour previews nothing: a click on it opens the tour (OnWhatsNewTapped).
-        if (WhatsNewItem(key) is { } item && Tour.ChapterOf(item.Preview) is not null)
-            return;
-        Preview(WhatsNewPreviewPrefix + key, PreviewAfter);
+        if (WhatsNewPreviewOf(key) is { } wanted)
+            Preview(wanted, PreviewAfter);
     }
+
+    // What resting on a line asks for: its preview, or nothing for a line about the tour, whose click opens it
+    // (OnWhatsNewTapped; Rules.WhatsNew.ShowsPreview). A developer script's "whatsnew <n>" asks the same.
+    private string? WhatsNewPreviewOf(string key) =>
+        WhatsNewItem(key) is { } item && !WhatsNew.ShowsPreview(item.Preview) ? null : WhatsNewPreviewPrefix + key;
 
     private void OnWhatsNewTapped(object sender, TappedRoutedEventArgs e)
     {

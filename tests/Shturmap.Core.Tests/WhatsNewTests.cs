@@ -117,6 +117,33 @@ public class WhatsNewTests
         });
     }
 
+    // Resting on a line shows its preview, but on a line about the tour, whose click opens it: there nothing shows, for
+    // the pointer and for a developer script's "whatsnew <n>" alike (2026-10-15: the script's put up a label over nothing).
+    [Theory]
+    [InlineData("replay", true)]
+    [InlineData("extracts", true)]
+    [InlineData("clock", true)]
+    [InlineData("joined", true)]
+    [InlineData("leaders", true)]
+    [InlineData("stash", true)]
+    [InlineData("stash-card", true)]
+    [InlineData("stash-given", true)]
+    [InlineData("tour", false)]
+    [InlineData("tour:1", false)]
+    [InlineData("tour:5", false)]
+    public void A_line_about_the_tour_previews_nothing(string preview, bool shows) => Assert.Equal(shows, WhatsNew.ShowsPreview(preview));
+
+    [Fact]
+    public void Every_preview_the_app_knows_shows_one()
+    {
+        Assert.All(WhatsNew.Previews, preview => Assert.True(WhatsNew.ShowsPreview(preview), preview));
+        // 0.5.0's tour:5 line, the one the owner reported on 2026-10-15, is fourth (tools\qa\whatsnew-tour-line.devscript).
+        var hyena = WhatsNew.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "whats-new.md")))
+            .Single(s => s.Label == "0.5.0");
+        Assert.Equal("tour:5", hyena.Items[3].Preview);
+        Assert.False(WhatsNew.ShowsPreview(hyena.Items[3].Preview));
+    }
+
     // What's New in another language (docs/DESIGN.md §8, "Texts"): docs/whats-new.<code>.md beside docs/whats-new.md, each
     // version's lines in the translation where it has them, else in English.
     [Fact]
