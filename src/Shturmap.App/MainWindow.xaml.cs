@@ -42,6 +42,8 @@ public sealed partial class MainWindow : Window
     private int? _floorPick;
     private DateTime? _floorPickFix;
     private int _shownFloor = -1;
+    // The shown map's floors as the picker lists them, also while it steps aside (ShowFloors).
+    private IReadOnlyList<FloorChoice> _floorChoices = [];
 
     /// <param name="size">A size to open at (developer runs: "--window"); kept as is, and nothing is remembered.</param>
     /// <param name="savedPlace">Where the window stood when it was last closed (<see cref="WindowPlace"/>), or null.</param>
@@ -133,6 +135,13 @@ public sealed partial class MainWindow : Window
         };
         Map.EdgeClicked += () => Study.Ui("map.showme", ("how", "edge"));
         AddShortcuts((UIElement)Content);
+        // The floor picker steps aside while a cue or What's New's plate shows, and is back when it goes (ShowFloors).
+        CuePanel.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
+        WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
+        // What's New's plate keeps clear of the notes at the map's top (PlaceWhatsNewPlate).
+        MapNotes.SizeChanged += (_, _) => PlaceWhatsNewPlate();
+        WhatsNewPlate.SizeChanged += (_, _) => PlaceWhatsNewPlate();
+        WhatsNewPlateStack.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         // The status bar gives way in a narrow window (FitStatusBar): looked at when its size or its words' change.
         StatusBar.SizeChanged += (_, _) => FitStatusBar();
         RaidWord.SizeChanged += (_, _) => FitStatusBar();
@@ -1185,14 +1194,19 @@ public sealed partial class MainWindow : Window
         Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
             { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
         _scenes.Forget();
-        PreviewHidesFloors();
+        ShowFloors();
         ViewModel.PreviewText = AppTexts.PreviewMap(map: Caps.Of(map.Name));
         Study.Ui("map.preview", ("map", normalizedName));
     }
 
     // The floor picker is the shown map's: while another map is previewed it steps aside, and the shown map's scene
     // puts it back when the preview ends (review of 2026-10-10: a tour chapter staged on Customs showed Streets' floors).
-    private void PreviewHidesFloors() => ViewModel.Floors = [];
+    // It steps aside the same way while a cue or What's New's plate shows, and is back when that goes (QA pass of
+    // 2026-10-15: at 900×560 it lay over the end of SEEN IN YOUR STASH's and RAID LOADING's titles, and over the right
+    // edge of the item card on the plate).
+    private void ShowFloors() =>
+        ViewModel.Floors = _previewing is not null || CuePanel.Visibility == Visibility.Visible || WhatsNewPlate.Visibility == Visibility.Visible
+            ? [] : _floorChoices;
 
     private void EndPreview(bool restore)
     {
@@ -1274,7 +1288,8 @@ public sealed partial class MainWindow : Window
             _floorPick = null;
         var playerFloor = s.Fix is null ? -1 : IndexOfFloor(s.Floor);
         _shownFloor = _floorPick ?? IndexOfFloor(s.Floor);
-        ViewModel.Floors = _floors.Select((layer, i) => new FloorChoice(i, layer?.Name ?? AppTexts.MapFloorGround, i == _shownFloor, i == playerFloor)).ToList();
+        _floorChoices = _floors.Select((layer, i) => new FloorChoice(i, layer?.Name ?? AppTexts.MapFloorGround, i == _shownFloor, i == playerFloor)).ToList();
+        ShowFloors();
         return _shownFloor >= 0 && _shownFloor < _floors.Count ? _floors[_shownFloor] : s.Floor;
     }
 

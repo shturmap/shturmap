@@ -457,6 +457,8 @@ outside raids only, and still in the cues' own motion), and the QUEST COMPLETE c
     map's name (or RAID OVER) slides up while it decodes letter by letter like a terminal, undecoded letters
     flickering in gold and settling in ink, with one line under it (what the raid can do, or the next raid
     suggested); then it fades. Nothing with text in it is ever scaled, so the text stays sharp. It takes no clicks.
+    The map's floor picker steps aside while it is up (QA pass, 2026-10-15: at the smallest window it lay over the end
+    of the title; "Screen anatomy", *Plan*).
     RAID OVER of a raid with a replay gives way after its entrance to the replay's band at the map's foot ("Map
     drawing", *The raid replay*).
     **QUEST COMPLETE** (owner, 2026-10-07: "For completed quests, also make a nice animation"): when the log reports a
@@ -518,7 +520,7 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `Muted` | `#8A8778` | secondary text; what happens after the raid or at a trader; done objectives | MutedColor · Muted · `--muted` |
 | `Amber` | `#C9AD62` | the one accent: quests, objectives, distances, "on" | AmberColor, SystemAccentColor · Amber · `--amber` |
 | `AmberHover` | `#D6BE7E` | the accent under the pointer | SystemAccentColorLight1 · — · `--amber-hover` |
-| `AmberHi` | `#E2CF9C` | focus rings, link hover on the web | SystemAccentColorLight2 · — · `--amber-hi` |
+| `AmberHi` | `#E2CF9C` | focus rings (a `Ground` line inside), link hover on the web | SystemAccentColorLight2, SystemControlFocusVisualPrimaryBrush (QA pass, 2026-10-15; WinUI's white ring until then) · — · `--amber-hi` |
 | `AmberDeep` | `#A88F4E` | the accent pressed | SystemAccentColorDark1 · — · — |
 | `Green` | `#8DA65E` | PMC extracts, success, healthy inputs | GreenColor · Green · — |
 | `Teal` | `#6F9A94` | Scav extracts | TealColor · Teal · `--teal` |
@@ -875,7 +877,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, or a small
     drawing of the raid card's clock. **Pointing at a line previews it** on the map, as resting on a map's row in Plan
     does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
-    0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID", and leaving puts the map back as it was: a
+    0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID" beside it, or under it where the map leaves too
+    little room for both, each whole, a plate then standing as much lower than the map's middle as it takes to keep clear
+    of the label (QA pass, 2026-10-15: at 900×560 the stash lines' "AN EXAMPLE, NOT YOUR STASH" ran out of the label's
+    frame, the German one by its last word), and leaving puts the map back as it was: a
     preview that staged a map of its own gives the player's back made anew, at the view it had; one that showed only a
     cue or a plate over it (`stash`, `stash-card`, `stash-given`, `clock`) leaves the map's scene alone, so the last
     position doesn't ping again nor, with Follow my position on, glide (found 2026-10-15, looking into the owner's report
@@ -954,7 +959,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     review of 2026-10-09), and a click on the row keeps it. A raid loading ends a preview.
     The picks of the map on screen stay off a preview's map (the same review: each snapshot wrote them into it, and
     into the tour's example), and so does its floor picker, which steps aside until the preview ends (review of
-    2026-10-10: a tour chapter staged on Customs showed Streets' floors; approved by the owner the same day).
+    2026-10-10: a tour chapter staged on Customs showed Streets' floors; approved by the owner the same day). It steps
+    aside the same way while a cue (principle 11) or What's New's plate shows, and is back when that goes (QA pass,
+    2026-10-15: at 900×560 it lay over the end of SEEN IN YOUR STASH's and RAID LOADING's titles and over the right edge
+    of the item card on the plate; `MainWindow.ShowFloors`).
     **Only a row switches the map** (`PlanList`; review of 2026-10-04, "two clicks, two meanings"). The open map's
     card was one button until then: when its map wasn't the one on screen (another picked in the MAP list), a click
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
