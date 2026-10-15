@@ -55,7 +55,7 @@ public static class DevScript
         ["walk"] = "<seconds between>: a screenshot at each place picked for the path",
         ["trigger"] = "report | crash | update | offline | 404 | 503 | nogame | reload (nogame: as if no game were on this PC)",
         ["choose"] = "<folder> | game | auto: \"Choose game folder…\" with that folder; game is this view's fake game; auto is FIND AUTOMATICALLY",
-        ["whatsnew"] = "[<n>] | click <n> | leave: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview); "
+        ["whatsnew"] = "[<n>] | click <n> | leave: What's New of the newest version, as help's link shows it; with n, the pointer on its n-th line (its preview; a line about the tour previews nothing, as for the pointer); "
             + "click n, the pointer onto line n and a tap there, through the code the pointer's events call (a line about the tour opens it); "
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",

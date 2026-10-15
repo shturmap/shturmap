@@ -38,6 +38,13 @@ public static class WhatsNew
     public static bool Known(string preview) => Previews.Contains(preview) || Tour.ChapterOf(preview) is not null;
 
     /// <summary>
+    /// Whether resting on a line shows a preview on the map: not a line about the tour, whose click opens it. The
+    /// pointer's way onto a line and a developer script's ("whatsnew &lt;n&gt;") both ask this, so a script can't show
+    /// what no player sees: until 2026-10-15 the script's way put up a tour line's preview label over nothing staged.
+    /// </summary>
+    public static bool ShowsPreview(string preview) => Tour.ChapterOf(preview) is null;
+
+    /// <summary>
     /// The sections of docs/whats-new.md, newest first: "## 0.4.0" and its "- preview · Name · Text" lines. A release
     /// that raises the minor or major number has a name, the owner's (owner, 2026-10-09: "named major releases", the
     /// first "Praetorian"), after the version: "## 0.4.0 · Praetorian". A patch release keeps its line's name, so 0.4.1

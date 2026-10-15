@@ -187,7 +187,9 @@ public sealed partial class MainWindow
         }
         if (line > newest.Items.Count)
             return $"What's New {newest.Label} has {newest.Items.Count} lines";
-        Preview(WhatsNewPreviewPrefix + $"{newest.Label}:{line - 1}", TimeSpan.FromMilliseconds(1));
+        // As the pointer's way onto the line asks (WhatsNewPreviewOf): a line about the tour previews nothing, and the
+        // preview of the line before ends, as the pointer's leaving that line ends it; no label over nothing staged.
+        Preview(WhatsNewPreviewOf($"{newest.Label}:{line - 1}"), TimeSpan.FromMilliseconds(1));
         return null;
     }
 
