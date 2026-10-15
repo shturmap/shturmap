@@ -1411,7 +1411,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     the first raid's RAID LOADING cue carries one line under its kit, "FIRST RAID WITH SHTURMAP · PRESS PRTSC ONCE YOU'RE
     IN" (the key as the game's settings name it), and the first position plotted gets a notice, "That's you, from your
     screenshot's name. Each new one moves you." Each once; a player who used Shturmap before the tour never sees them
-    (they are armed only by a first start: `firstRaid`, `firstFix` in shturmap.db), so their words stay true.
+    (they are armed only by a first start: `firstRaid`, `firstFix` in shturmap.db), so their words stay true. The line
+    keeps clear of the map's buttons, as the roll call's rows and UPDATE READY's line do, and where its two parts don't
+    fit on one line it breaks at its "·", each part whole on a line of its own, centred, as the preview label's hint goes
+    under its title (owner, 2026-10-15, evening page: at the smallest window it ran under the buttons and lost its last
+    word, "IN", and the German one its "MIT", "DRUCK" alone on the next line; `MainWindow.ShowCueLine`, which UPDATE
+    READY's line takes too). At 900 × 560 it stands in two lines in English, German and the pseudo-language.
 - **Settings** (the gear, Ctrl+,): SETTINGS, then PREFERENCES: "Keep a study log" (developer builds only), "Language"
   (AUTOMATIC, then each language Shturmap is translated into, in its own name: ENGLISH, DEUTSCH; developer builds also
   list the ones still in translation, "FRANÇAIS · IN TRANSLATION", to try them; a choice applies at once, and under it
