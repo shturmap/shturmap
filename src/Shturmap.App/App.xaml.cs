@@ -180,7 +180,11 @@ public partial class App : Application
         // The window comes back where the player left it (owner, 2026-10-04). Snapshots, the demo and a given size
         // place it themselves and remember nothing.
         var rememberPlace = windowSize is null && !cli.Contains("--snapshot") && !cli.Contains("--demo");
-        _window = new MainWindow(_session, windowSize, rememberPlace ? SavedWindowPlace(paths) : null, rememberPlace)
+        // A run that only takes pictures opens off every monitor, unactivated and out of the taskbar and Alt+Tab, so it
+        // never interrupts a game on the other monitor (owner, 2026-10-15: checking the UI while playing); "--visible"
+        // opens one to watch, as before (MainWindow.Quiet).
+        var quiet = (cli.Contains("--snapshot") || cli.Contains("--demo")) && !cli.Contains("--visible");
+        _window = new MainWindow(_session, windowSize, rememberPlace ? SavedWindowPlace(paths) : null, rememberPlace, quiet)
         {
             SnapshotMode = cli.Contains("--snapshot"),
             SnapshotScale = int.TryParse(Arg(cli, "--snapshot-scale"), out var snapshotScale) ? Math.Clamp(snapshotScale, 1, 4) : 1,
@@ -197,7 +201,7 @@ public partial class App : Application
             _marker?.Dispose();
             await _session.DisposeAsync();
         };
-        _window.Activate();
+        _window.Open();
         try
         {
             await _session.StartAsync();

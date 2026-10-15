@@ -120,4 +120,44 @@ public class WindowPlaceTests
     public void A_first_window_is_the_default_size_at_the_monitor_s_scale_within_its_work_area(
         int w, int h, double scale, int ex, int ey, int ew, int eh) =>
         Assert.Equal(new WindowPlace.Rect(ex, ey, ew, eh), WindowPlace.First(new(0, 0, w, h), scale));
+
+    // A run that only takes pictures opens off every monitor (owner, 2026-10-15, "quiet local runs": the UI is checked
+    // while the owner plays on the same PC): past the right-most monitor's right edge, level with its top.
+    public static TheoryData<WindowPlace.Rect[], WindowPlace.Rect> OffScreenCases => new()
+    {
+        // One monitor.
+        { [new(0, 0, 1920, 1080)], new(1920 + 200, 0, 1600, 1000) },
+        // Two side by side, the second a little higher: beside the second.
+        { [new(0, 0, 2560, 1440), new(2560, -154, 2560, 1440)], new(5120 + 200, -154, 1600, 1000) },
+        // The primary on the right of the other, whatever the order they are listed in.
+        { [new(-1920, 0, 1920, 1080), new(0, 0, 2560, 1440)], new(2560 + 200, 0, 1600, 1000) },
+        { [new(0, 0, 2560, 1440), new(-1920, 0, 1920, 1080)], new(2560 + 200, 0, 1600, 1000) },
+        // One above the other, the same right edge: beside the first listed.
+        { [new(0, 0, 1920, 1080), new(0, -1080, 1920, 1080)], new(1920 + 200, 0, 1600, 1000) },
+        // One above the other, the upper one reaching further right.
+        { [new(0, 0, 1920, 1080), new(-320, -1440, 2560, 1440)], new(2240 + 200, -1440, 1600, 1000) },
+        // All of them left of and above the origin.
+        { [new(-3840, -1080, 1920, 1080), new(-1920, -1080, 1920, 1080)], new(0 + 200, -1080, 1600, 1000) },
+        // The three of this class.
+        { All, new(4480 + 200, 0, 1600, 1000) },
+    };
+
+    [Theory]
+    [MemberData(nameof(OffScreenCases))]
+    public void A_picture_taking_run_s_window_stands_past_the_right_most_monitor_level_with_its_top(
+        WindowPlace.Rect[] monitors, WindowPlace.Rect expected)
+    {
+        var place = WindowPlace.OffScreen(monitors, 1600, 1000);
+        Assert.Equal(expected, place);
+        // No monitor shows any of it.
+        Assert.All(monitors, m =>
+            Assert.True(place.X >= m.Right || place.Right <= m.X || place.Y >= m.Bottom || place.Bottom <= m.Y));
+    }
+
+    [Fact]
+    public void Without_monitors_the_window_stands_past_the_origin()
+    {
+        Assert.Null(WindowPlace.RightMost([]));
+        Assert.Equal(new WindowPlace.Rect(200, 0, 900, 560), WindowPlace.OffScreen([], 900, 560));
+    }
 }

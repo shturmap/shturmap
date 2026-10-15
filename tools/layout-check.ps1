@@ -73,8 +73,9 @@ if (-not $SummaryOnly) {
     throw "$Exe is no developer build: the layout check is compiled into Debug and ShturmapDev=true builds only. Leave out -Exe to build one."
   }
 
-  # The monitor the app opens on (the first that isn't the primary one, else the primary: MainWindow.PlaceOnSecondMonitor)
-  # and its scale, so a size in DIP is the window's size in pixels there.
+  # The monitor the app opens on (the first that isn't the primary one, else the primary: MainWindow.OpeningMonitor)
+  # and its scale, so a size in DIP is the window's size in pixels there. These runs open off every monitor (quiet runs,
+  # owner 2026-10-15), and the app converts the size to the scale it gets there, so the layout is that monitor's.
   Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
