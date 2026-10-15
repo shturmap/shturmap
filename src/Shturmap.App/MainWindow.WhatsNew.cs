@@ -104,7 +104,8 @@ public sealed partial class MainWindow
         ViewModel.WhatsNewBlocks = sections
             .Select(section => new WhatsNewBlock(WhatsNew.Heading(section),
                 section.Items.Select((item, i) => new WhatsNewRow($"{section.Label}:{i}", item.Name, item.Text, Swatch(item.Preview), item.Preview == "clock",
-                    item.Preview.StartsWith("stash", StringComparison.Ordinal), AboutTour: !WhatsNew.ShowsPreview(item.Preview))).ToList()))
+                    item.Preview.StartsWith("stash", StringComparison.Ordinal), AboutTour: !WhatsNew.ShowsPreview(item.Preview), Notes: item.Preview == "notes"))
+                    .ToList()))
             .ToList();
         ViewModel.WhatsNewShown = sections.Count > 0;
     }

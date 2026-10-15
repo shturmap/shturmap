@@ -299,8 +299,9 @@ public sealed record LegendItem(ObjectiveKind Kind, string Label, string Explana
 /// <param name="Clock">The line's picture is the raid card's clock, drawn in XAML.</param>
 /// <param name="Stash">The line's picture is the stash grid glyph the marks carry (what you have).</param>
 /// <param name="AboutTour">A line about the tour: its picture is the tour's drawn pointer (owner, 2026-10-15).</param>
+/// <param name="Notes">A line about quest notes: its picture is a note glyph.</param>
 public sealed record WhatsNewRow(string Key, string Name, string Text, Microsoft.UI.Xaml.Media.ImageSource? Swatch, bool Clock, bool Stash = false,
-    bool AboutTour = false)
+    bool AboutTour = false, bool Notes = false)
 {
     public Visibility SwatchVisibility => Swatch is null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -309,6 +310,8 @@ public sealed record WhatsNewRow(string Key, string Name, string Text, Microsoft
     public Visibility StashVisibility => Stash ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility TourVisibility => AboutTour ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility NotesVisibility => Notes ? Visibility.Visible : Visibility.Collapsed;
 }
 
 /// <summary>A version's lines on the What's New card, under "NEW IN 0.4.0".</summary>

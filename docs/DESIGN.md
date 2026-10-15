@@ -898,10 +898,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     release's name, below), × in its corner (`E711`, as on a notice),
     up to five lines per version, each a 56×34 picture and the thing's name over one note line, then "Point at one: the
     map shows it." The picture is the thing's map symbol drawn by `MapLegend`, as help's legend rows are, a small
-    drawing of the raid card's clock, the stash grid glyph the marks carry (what you have), or, on a line about the tour
-    (`tour`, `tour:5`), the tour's drawn pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle
-    of the picture's place (owner, 2026-10-15: until then a tour line had none, the one gap in the column;
-    `MainWindow.TourPointerShape`). **Pointing at a line previews it** on the map, as resting on a map's row in Plan
+    drawing of the raid card's clock, the stash grid glyph the marks carry (what you have), a sticky note (`E70B`,
+    Segoe's QuickNote) for quest notes (`notes`), or, on a line about the tour (`tour`, `tour:5`), the tour's drawn
+    pointer as the tour draws it, white on a dark rim at 1.2 times, in the middle of the picture's place (owner,
+    2026-10-15: until then a tour line had none, the one gap in the column; `MainWindow.TourPointerShape`). **Pointing
+    at a line previews it** on the map, as resting on a map's row in Plan
     does (0.6 s; the line takes the linked tint): its map with the thing staged, the preview label "PREVIEW · NEW IN
     0.4.0 · YOUR EXTRACTS THIS RAID" with "AN EXAMPLE, NOT YOUR RAID" beside it, or under it where the map leaves too
     little room for both, each whole, a plate then standing as much lower than the map's middle as it takes to keep clear

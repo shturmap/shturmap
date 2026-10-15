@@ -724,6 +724,9 @@
                                   <!-- What you have: the stash grid glyph the marks carry. -->
                                   <FontIcon Glyph="&#xE80A;" FontSize="22" Foreground="{StaticResource InkBrush}" Width="56" Height="34"
                                             HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind StashVisibility}" />
+                                  <!-- Quest notes: a sticky note, Segoe's QuickNote. -->
+                                  <FontIcon Glyph="&#xE70B;" FontSize="22" Foreground="{StaticResource InkBrush}" Width="56" Height="34"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind NotesVisibility}" />
                                   <!-- A line about the tour: the tour's drawn pointer, as it draws it (MainWindow.TourPointer;
                                        owner, 2026-10-15). -->
                                   <Grid Width="56" Height="34" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="{x:Bind TourVisibility}">
