@@ -81,6 +81,57 @@ public class RenderTests
         Assert.Equal(TimeSpan.FromSeconds(45), Shturmap.Core.Navigation.Facing.Fresh);
     }
 
+    // A picked or pointed-at name at the map's right edge is drawn whole or trimmed with "…", never cut by the edge
+    // (owner, 2026-10-15, E3: in German the tour's chapter 4 read "Lieferung aus der Vergan" there at full size). A
+    // made-up name as long, its symbol 150 px in from the edge, as a framing leaves the place furthest right
+    // (Camera.LabelRoom): no pixel of the name's colour in the map's last two columns, and as many of them as the name
+    // has drawn in the middle of the map, or, crowded on its other sides, the dots of the "…" at its end.
+    [Fact]
+    public void A_picked_name_at_the_right_edge_is_drawn_whole_or_with_an_ellipsis_never_cut()
+    {
+        const string name = "Eine Lieferung aus ferner Vergangenheit";
+        static int Lit(SKBitmap bitmap, SKColor color, SKRect box)
+        {
+            var n = 0;
+            for (var y = Math.Max(0, (int)box.Top); y < Math.Min(bitmap.Height, (int)Math.Ceiling(box.Bottom)); y++)
+            {
+                for (var x = Math.Max(0, (int)box.Left); x < Math.Min(bitmap.Width, (int)Math.Ceiling(box.Right)); x++)
+                {
+                    var c = bitmap.GetPixel(x, y);
+                    n += Math.Abs(c.Red - color.Red) + Math.Abs(c.Green - color.Green) + Math.Abs(c.Blue - color.Blue) <= 60 ? 1 : 0;
+                }
+            }
+            return n;
+        }
+        var edge = SKRect.Create(998, 0, 2, 1000);
+        (Camera, MapScene, MapRenderer.PlacedLabel) Picked(params MapMarker[] markers)
+        {
+            var (camera, scene) = Of(markers);
+            scene.Kept = new HashSet<string> { "quest-q" };
+            return (camera, scene, MapRenderer.Layout(camera, scene, 1).Labels.Single(l => l.Of.Marker.Group == "quest-q"));
+        }
+
+        var (middleCamera, middle, inMiddle) = Picked(Quest("q", 0, 0, name));
+        using var middleBitmap = Render(middle, middleCamera);
+        var whole = Lit(middleBitmap, inMiddle.Color, inMiddle.Box);
+        Assert.True(whole > 100, $"{whole} pixels of the name's colour");
+
+        var (camera, scene, atEdge) = Picked(Quest("q", 350, 0, name));
+        using var bitmap = Render(scene, camera);
+        Assert.Equal(name, atEdge.Text);
+        Assert.InRange(Lit(bitmap, atEdge.Color, atEdge.Box), whole * 0.9, whole * 1.1);
+        Assert.Equal(0, Lit(bitmap, atEdge.Color, edge));
+
+        var (crowdedCamera, crowded, trimmed) = Picked(Quest("q", 350, 0, name),
+            new MapMarker("extract:l", MarkerKind.ExtractPmc, new WorldPoint(325, 0, 0), ""),
+            new MapMarker("extract:u", MarkerKind.ExtractPmc, new WorldPoint(350, 0, 22), ""),
+            new MapMarker("extract:d", MarkerKind.ExtractPmc, new WorldPoint(350, 0, -22), ""));
+        using var crowdedBitmap = Render(crowded, crowdedCamera);
+        Assert.EndsWith("…", trimmed.Text);
+        Assert.Equal(0, Lit(crowdedBitmap, trimmed.Color, edge));
+        Assert.True(Lit(crowdedBitmap, trimmed.Color, SKRect.Create(trimmed.Box.Right - 8, trimmed.Box.Top, 8, trimmed.Box.Height)) > 0, "no ellipsis drawn");
+    }
+
     [Fact]
     public void A_loose_items_square_is_ink()
     {

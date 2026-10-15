@@ -294,9 +294,14 @@ public static partial class MapRenderer
         public IReadOnlyList<MapMarker> Joined { get; init; } = [];
     }
 
-    /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor).</summary>
+    /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor). <see cref="Text"/> is as drawn: a
+    /// picked or pointed-at name may be trimmed with "…" (<see cref="LitNameMost"/>).</summary>
     public sealed record PlacedLabel(string Text, SKRect Box, float Baseline, float Size, bool Bold, SKColor Color, ShownMarker Of)
     {
+        /// <summary>Which of its places it took (<see cref="LabelCandidates"/>): 0 right of its symbol, 1 left, 2 above, 3
+        /// below, 4 a line further down. A picked or pointed-at name keeps it while the view only moves.</summary>
+        public int Side { get; init; }
+
         /// <summary>A listed extract's name as it is drawn until a list just read lights it (<see cref="MapScene.ExitsRinging"/>):
         /// in the regular face, where a regular name would stand on the same side; <see cref="Box"/> is its bold name's,
         /// kept from the first frame. Null for every other label.</summary>
@@ -355,7 +360,8 @@ public static partial class MapRenderer
     /// bosses, quests, extracts and transits, snipers, and the map's own names last. Each marker label tries right,
     /// left, above and below its symbol and is dropped when all four are taken; no label covers a symbol, and none starts
     /// past the map's left edge (<see cref="Inward"/>). A selected label that finds no free place still shows on the
-    /// right, giving way only to its own copies. The scale bar steps aside from the symbols first (<see cref="Scale"/>).
+    /// right, giving way only to its own copies; it never runs past the map's right edge either (<see cref="LitNameMost"/>).
+    /// The scale bar steps aside from the symbols first (<see cref="Scale"/>).
     /// </summary>
     /// <param name="now">The frame's time (<see cref="Render"/>'s): the player's age tag takes room. The clock's when null.</param>
     public static MapLayout Layout(Camera camera, MapScene scene, float ui, DateTime? now = null)
@@ -417,10 +423,14 @@ public static partial class MapRenderer
         using var regular = new SKFont(Typeface, 11.5f * ui);
         using var bold = new SKFont(TypefaceBold, 13 * ui);
         var gap = 4 * ui;
-        // Where a marker's label may go, in order (null where it may not: past the map's left edge).
-        List<SKRect?> Candidates(ShownMarker m, SKFont font)
+        // Where a picked or pointed-at name ends at most, LabelEdge in from the map's right edge, and how wide it moves in
+        // from there at most (LitNameMost).
+        var litEdge = camera.Viewport.Width - LabelEdge * ui;
+        var litMost = Math.Min(LitNameMost * ui, camera.Viewport.Width * LitNameShare);
+        // Where a marker's label may go, in order (null where it may not: past the map's left edge, or past right).
+        List<SKRect?> Candidates(ShownMarker m, SKFont font, string text, float right = float.PositiveInfinity)
         {
-            var width = font.MeasureText(m.Marker.Label);
+            var width = font.MeasureText(text);
             var candidates = LabelCandidates(m.At, m.Reach + gap, width, font.Size).ToList();
             // A marker with a tab says its name after the tab: "◉×2 Gratitude".
             if (HasTab(m))
@@ -433,8 +443,13 @@ public static partial class MapRenderer
                 var below = candidates[^1];
                 candidates.Add(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
             }
-            return candidates.Select(c => Inward(c, m.At, LabelEdge * ui)).ToList();
+            return candidates.Select(c => Inward(c, m.At, LabelEdge * ui, right)).ToList();
         }
+        // While the view only moves (the scale bar's rule, Scale), a picked or pointed-at name keeps the side it took in
+        // the layout before (the rule Steady while the view moves): on its right it is trimmed at the edge rather than sent
+        // to its left in the middle of a move. The first layout with the view still places it afresh.
+        int? HeldSide(ShownMarker m) =>
+            scale.Held && scene.LastLayout?.Layout.Labels.FirstOrDefault(l => l.Of.Selected && l.Of.Marker.Id == m.Marker.Id) is { } before ? before.Side : null;
         // A lock's key and a switch's name are said close up, or for the one pointed at.
         var landmarkLabels = ZoomOverOverview(camera, scene, ui) >= LandmarkLabelFromZoom;
         foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && m.Marker.Kind != MarkerKind.ObjectiveDone && (scene.ShowLabels || m.Selected)
@@ -442,27 +457,58 @@ public static partial class MapRenderer
                      .OrderBy(LabelRank).ThenByDescending(m => m.Count))
         {
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
-            if (labels.Any(l => l.Text == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
+            if (labels.Any(l => l.Of.Marker.Label == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
                 continue;
             // An extract on the player's list this raid says its name in bold, as what is picked or pointed at does.
             var font = m.Selected || m.Listed ? bold : regular;
-            var candidates = Candidates(m, font);
-            var side = candidates.FindIndex(c => c is { } free && !taken.Any(t => t.IntersectsWith(free)));
-            SKRect? box = side >= 0 ? candidates[side] : null;
+            var text = m.Marker.Label;
+            var candidates = Candidates(m, font, text);
+            // A picked or pointed-at name doesn't run past the map's right edge (LitNameMost): where its right does, it
+            // moves in, trimmed with "…" to LitNameMost if longer, to its left or above or below its symbol, slid in.
+            if (m.Selected)
+            {
+                if (candidates[0] is { } whole && whole.Right > litEdge && Trimmed(font, text, litMost) is { } most)
+                    text = most;
+                candidates = Candidates(m, font, text, litEdge);
+            }
+            SKRect? box = null;
+            var side = -1;
+            if (m.Selected && HeldSide(m) is { } held && held < candidates.Count)
+            {
+                box = candidates[held] ?? (held == 0 ? Candidates(m, font, text)[0] : null);
+                side = box is null ? -1 : held;
+            }
+            if (box is null)
+            {
+                side = candidates.FindIndex(c => c is { } free && !taken.Any(t => t.IntersectsWith(free)));
+                box = side >= 0 ? candidates[side] : null;
+            }
             if (box is null && m.Selected)
-                box = LabelCandidates(m.At, m.Reach + gap, font.MeasureText(m.Marker.Label), font.Size).First();
+            {
+                box = LabelCandidates(m.At, m.Reach + gap, font.MeasureText(text), font.Size).First();
+                side = 0;
+            }
             if (box is not { } placed)
                 continue;
+            // On its right past the edge (with no other side free, or kept there while the view moves), a lit name is
+            // trimmed with "…" to end at it: never cut.
+            if (m.Selected && placed.Right > litEdge)
+            {
+                if (Trimmed(font, text, litEdge - placed.Left) is not { } fits)
+                    continue;
+                text = fits;
+                placed = SKRect.Create(placed.Left, placed.Top, font.MeasureText(fits), placed.Height);
+            }
             taken.Add(placed);
             // Ink for every label at rest, a boss's too: its red octagon is the danger sign, and red type on the dark
             // ground read worse than any other label (the review of 2026-10-04). What is picked or pointed at takes its
             // marker's colour.
             // An extract that isn't on the player's list this raid steps back, name and symbol (MapScene.ExitsNotListed).
             var color = m.Selected ? m.Color : m.NotListed ? Muted : Ink;
-            var label = new PlacedLabel(m.Marker.Label, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m);
+            var label = new PlacedLabel(text, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m) { Side = side };
             // Until a list just read lights it, a listed extract's name is in the regular face, as an unlit one's, on the
             // same side (owner, 2026-10-15): the bold name's box is kept from the first frame, so nothing moves as it lights.
-            if (m.Listed && !m.Selected && side >= 0 && Candidates(m, regular)[side] is { } unlit)
+            if (m.Listed && !m.Selected && side >= 0 && Candidates(m, regular, text)[side] is { } unlit)
                 label = label with { Unlit = new UnlitLabel(unlit, unlit.Top + regular.Size * 1.1f, regular.Size) };
             labels.Add(label);
         }
@@ -909,19 +955,59 @@ public static partial class MapRenderer
     /// to start there, still over or under the symbol; one beside it can't move without leaving its symbol or covering
     /// it, so it is not a place for the label (null), and the next side is tried. A label none of whose sides is left is
     /// dropped, as one whose four sides are taken is. The right edge keeps its rule: the label room on the right
-    /// (<see cref="Camera.LabelRoom"/>), and at the smallest window a long name may lose its last letters there.
+    /// (<see cref="Camera.LabelRoom"/>), and at the smallest window a long name may lose its last letters there; a picked
+    /// or pointed-at name's is kept whole at <paramref name="right"/> the same way (<see cref="LitNameMost"/>).
     /// </summary>
     /// <param name="at">The symbol's centre, where it is drawn.</param>
     /// <param name="edge">The least left of a label (pixels).</param>
-    public static SKRect? Inward(SKRect candidate, SKPoint at, float edge)
+    /// <param name="right">The most right of a label (pixels): the map's right edge for a picked or pointed-at name, none
+    /// for the others.</param>
+    public static SKRect? Inward(SKRect candidate, SKPoint at, float edge, float right = float.PositiveInfinity)
     {
-        if (candidate.Left >= edge)
+        if (candidate.Left >= edge && candidate.Right <= right)
             return candidate;
         var overOrUnder = candidate.Left < at.X && candidate.Right > at.X;
-        if (!overOrUnder || at.X < edge)
+        if (!overOrUnder || at.X < edge || at.X > right)
             return null;
-        candidate.Offset(edge - candidate.Left, 0);
+        candidate.Offset(candidate.Left < edge ? edge - candidate.Left : right - candidate.Right, 0);
         return candidate;
+    }
+
+    /// <summary>
+    /// The widest a picked or pointed-at name moves in from the map's right edge (pixels, before scaling; owner,
+    /// 2026-10-15, E3: at full size the tour's German picked quest read "Lieferung aus der Vergan" at the edge, past
+    /// the 150 DIP the view keeps there, <see cref="Camera.LabelRoom"/>). Where its right side would run past the edge,
+    /// the name goes left of its symbol, or above or below it slid in to end at the edge (<see cref="Inward"/>), whole up
+    /// to this width or <see cref="LitNameShare"/> of the map's, whichever is less, and trimmed with "…" to it beyond.
+    /// 260 holds every quest name in tarkov.dev's data whole but one in the bold label face (October 2026: English's
+    /// longest 251, German's 256 and 307, "Weg des Überlebenskünstlers - Ungeschützt, aber gefährlich"; the tour's 166).
+    /// One with no other side free stays on its right, trimmed with "…" at the edge, never cut (<see cref="Trimmed"/>).
+    /// </summary>
+    public const float LitNameMost = 260;
+
+    /// <summary>The share of the map's width a picked or pointed-at name moved in from its right edge takes at most
+    /// (<see cref="LitNameMost"/>): at the smallest window, the map about 500 DIP wide, 200 DIP, which hold 95 % of the
+    /// German quest names and 97 % of the English whole.</summary>
+    public const float LitNameShare = 0.4f;
+
+    /// <summary>
+    /// <paramref name="text"/> as it fits in <paramref name="width"/> pixels in <paramref name="font"/>: whole, or its
+    /// longest start that fits with "…" after it (a dash, comma or space before the "…" left out); null where not even its
+    /// first letter does.
+    /// </summary>
+    public static string? Trimmed(SKFont font, string text, float width)
+    {
+        if (font.MeasureText(text) <= width)
+            return text;
+        for (var n = text.Length - 1; n > 0; n--)
+        {
+            if (char.IsLowSurrogate(text[n]))
+                continue;
+            var start = text[..n].TrimEnd(' ', '-', '–', '—', ',', ':', '·');
+            if (start.Length > 0 && font.MeasureText(start + "…") <= width)
+                return start + "…";
+        }
+        return null;
     }
 
     private static SKRect Square(SKPoint at, float half) => new(at.X - half, at.Y - half, at.X + half, at.Y + half);

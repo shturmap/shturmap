@@ -1528,7 +1528,8 @@ spawns below).
     more than once) to 7 (none twice); in What's New's extracts preview, Boiler Room's 17 px and a Sniper zone's 15 px
     snap as their leaders went became slides of 2 px a frame. A glide's frame costs less than before: the repel's
     median 0.2 ms against 0.9 ms afresh. The scale bar keeps its place by the same rule while the view moves, and
-    settles once it is still (*Distances on the map*).
+    settles once it is still (*Distances on the map*); so does a picked or pointed-at name its side (*Room for labels
+    on the right*).
   - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol
     another lay well over put every symbol touching it on a ring around its place, on a dark plate, each on a
     hairline to its own place. It needed the mouse, so it went with the leaders, which leave nothing stacked.
@@ -1766,8 +1767,9 @@ spawns below).
   symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,
   snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above
   and below its symbol, in that order, and is dropped when all four are taken (pointing at the marker still names
-  it); a selected label that finds no free place goes on the right anyway. A side that would start past the map's
-  left edge isn't free (*Room for labels on the right*, the left edge). A name is said once per neighbourhood
+  it); a selected label that finds no free place goes on the right anyway, trimmed with "…" where it would run past
+  the map's right edge. A side that would start past the map's left edge isn't free, nor, for a picked or pointed-at
+  name, one that would end past its right edge (*Room for labels on the right*). A name is said once per neighbourhood
   (250 px): eight "Abandoned Cargo" places in one block carry one label. Map names are boxed by their rotated
   extent and drawn on the marker labels' halo (the ground at 86 %, 3 px): without it Ink at 59 % measured 1.4:1 on
   Streets' light streets, with it 4.7:1.
@@ -1841,10 +1843,10 @@ spawns below).
   only the padding, and on a wide map the rightmost names ran off the window (Customs: "Transit to I…", "Crossr…"; the
   tour's picked quest past its 90 DIP). The room is at most a fifth of the view's width (`Camera.LabelRoomShare`): at
   the smallest window, the map about 500 DIP wide, 150 would shrink a wide map by more than a quarter; 100 shrink it by
-  a sixth, and a long name there may still lose its last letters. What fits with room to spare stays in the middle (a
-  tall map such as Streets in a wide view); otherwise it moves left only as far as the room needs
-  (`Camera.FramingAbove`, the one place a view is worked out). "The zoom that shows the whole map" (the zoom limit, when
-  the map's smaller names show) is this view's.
+  a sixth, and a long name there may still lose its last letters (not a picked or pointed-at one, below). What fits
+  with room to spare stays in the middle (a tall map such as Streets in a wide view); otherwise it moves left only as
+  far as the room needs (`Camera.FramingAbove`, the one place a view is worked out). "The zoom that shows the whole
+  map" (the zoom limit, when the map's smaller names show) is this view's.
   **The left edge cuts no name** (owner, 2026-10-15: at the smallest window Streets' "Transit to Interchange", its
   right taken, went on its left and read "ansit to Interchange"; Customs' "…ation Gate" before). No label starts
   less than 2 px in from the map's left edge (`MapRenderer.Inward`, `LabelEdge`). Of its four sides, one above or
@@ -1853,6 +1855,23 @@ spawns below).
   with no side left the label is dropped, as one whose four sides are taken is (pointing at the marker still names
   it). No room is kept on the left as on the right: a name goes right of its symbol first, away from that edge. A
   symbol itself past the edge keeps its name only on its right, where that starts in view.
+  **A picked or pointed-at name isn't cut at the right edge either** (owner, 2026-10-15, evening page E3: at full size
+  the tour's chapter 4 in German read "Lieferung aus der Vergan": its picked quest's name, 166 DIP in the bold face,
+  ran past the 150 DIP room). The room grows for that name, the bold one placed first (*Labels by priority*), and only
+  for it: where its right side would end past the map's right edge (2 DIP in, `LabelEdge`), that side isn't free, and
+  the name goes left of its symbol, or above or below it slid left to end at the edge, the left edge's rule mirrored
+  (`MapRenderer.Inward`). It moves in whole up to 260 DIP or 40 % of the map's width, whichever is less, and trimmed
+  with "…" to that beyond (`LitNameMost`, `LitNameShare`): 260 holds every quest name of tarkov.dev's data in the bold
+  face but one (October 2026: English's longest 251 DIP; German's 307, "Weg des Überlebenskünstlers - Ungeschützt,
+  aber gefährlich", then 256), and at the smallest window 40 %, 200 DIP, holds 95 % of the German names and 97 % of the
+  English. With no other side free it stays on its right, as before, now trimmed with "…" to end at the edge, never cut
+  (`MapRenderer.Trimmed`; a dash or space before the "…" left out). While the view only moves (*Steady while the view
+  moves*) it keeps the side it had in the frame before, on its right trimmed with "…" at the edge rather than going
+  over to its left mid-move; the first frame with the view still places it afresh, as the scale bar settles. Every
+  other name keeps the 150 DIP rule. The room grows in the layout, not in the view's fit: the tour frames chapter 4
+  before it picks and points, and pointing doesn't move the view, so no fit knows the lit name; the layout finds its
+  room wherever the view is. Chapter 4's view at full size (2160 × 1313) now shows the name whole, left of its symbol;
+  a 500 × 481 view of the same places, where that symbol's other sides are taken, "Lieferung au…".
 - **The player at full strength.** The sand disc no longer fades with age (it sank to 45 % after 3.5 minutes,
   below the quest markers; transparency reads as "less important", the reason half-strength other-floor markers
   were rejected). It has the picks' vocabulary instead: a steady ring, sand on a dark band, at 12 px. Once
