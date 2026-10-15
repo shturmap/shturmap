@@ -953,10 +953,11 @@ public static partial class MapRenderer
     // and Scav zones' rings side by side among themselves, under the rest (their leaders were a web of ink between the
     // quests). The repel is most of a layout's work, and a pan lays the map out for every frame: while what it is given
     // is the same (a pan moves every place alike; a pick, the pointer or a list read moves none), the last offsets hold.
-    // While the view moves (a glide, a pinch, a pan that brings symbols into view or takes them out of it), the repel
-    // goes on from the last placement, so nothing jumps from one frame to the next (owner, 2026-10-15: "weird
-    // movements"; Repel). Anything else (the map opened, a wheel's notch, a new position, other symbols at the same
-    // view) lays them out afresh, as a still view always shows them.
+    // While the view moves (a glide, a pinch, a wheel's notch over 0.15 s, a pan that brings symbols into view or takes
+    // them out of it), the repel goes on from the last placement, so nothing jumps from one frame to the next (owner,
+    // 2026-10-15: "weird movements"; Repel). Anything else (the map opened, a zoom at once: a double-click, + or −, a
+    // notch with Windows' animation effects off; a new position, other symbols at the same view) lays them out afresh,
+    // as a still view always shows them.
     private static (SKPoint[] At, bool[] Led) SetApart(Camera camera, MapScene scene, List<ShownMarker> markers, float ui, DateTime now)
     {
         var places = SideBySide(markers.Select(m => (m.At, RestHalf(m.Marker, ui), RestRank(m.Marker.Kind))).ToList(), MarkerCollar * ui);
@@ -1001,7 +1002,9 @@ public static partial class MapRenderer
     internal readonly record struct RepelView(double Zoom, MapPoint Center, float Ui, PlayerFix? Player, string AgeTag)
     {
         // A frame of a glide or a pinch zooms by a few per cent at most (the tour's 1.2 s glide to three times the zoom:
-        // up to 4 % a frame at 60 frames a second); a wheel's notch by 20 %.
+        // up to 4 % a frame at 60 frames a second; a wheel's notch, a fifth over 0.15 s: up to 3 %, and a quick turn
+        // under a tenth up to a notch every 30 ms, WheelZoom); a double-click by 100 % at once, + and − by 50 %, a notch
+        // with the animation effects off by 20 %.
         private const double GlideMost = 1.1;
 
         /// <summary>Whether the view only moved from this one to <paramref name="next"/>, as a frame of a glide does: it
