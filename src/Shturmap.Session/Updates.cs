@@ -1,3 +1,5 @@
+using Shturmap.Core.Raid;
+
 namespace Shturmap.Session;
 
 /// <summary>
@@ -128,12 +130,35 @@ public enum UpdateStage
     Ready,
 }
 
+/// <summary>
+/// What the rail's update band says, pinned under MAP between raids (owner, 2026-10-15, from a panel of four: B, "A cue,
+/// then the band"; docs/DESIGN.md §8, "Updates"): its eyebrow and its note (<see cref="UpdatePolicy.Words"/>).
+/// </summary>
+public enum UpdateBand
+{
+    /// <summary>No band: nothing to say, a raid, or a build that can't update.</summary>
+    None,
+
+    /// <summary>"Tell me only" found a version: DOWNLOAD AVAILABLE, with DOWNLOAD.</summary>
+    Available,
+
+    /// <summary>A version is downloading: DOWNLOADING, no button.</summary>
+    Downloading,
+
+    /// <summary>Downloaded: UPDATE READY, with RESTART NOW.</summary>
+    Ready,
+
+    /// <summary>Downloaded before this start and still waiting: applying it failed (<see cref="UpdatePolicy.NotAppliedNotice"/>),
+    /// with RESTART NOW.</summary>
+    DidNotApply,
+}
+
 /// <param name="Check">Ask the update source (when it is due: <see cref="UpdatePolicy.CheckDue"/>).</param>
 /// <param name="Download">Download the version found, now.</param>
-/// <param name="Line">The one quiet line in the rail; empty for none.</param>
-/// <param name="OfferDownload">The line offers DOWNLOAD.</param>
-/// <param name="OfferRestart">The line offers RESTART NOW.</param>
-public sealed record UpdateDecision(bool Check, bool Download, string Line, bool OfferDownload, bool OfferRestart);
+/// <param name="Band">What the rail's update band says; <see cref="UpdateBand.None"/> for no band.</param>
+/// <param name="OfferDownload">The band offers DOWNLOAD.</param>
+/// <param name="OfferRestart">The band offers RESTART NOW.</param>
+public sealed record UpdateDecision(bool Check, bool Download, UpdateBand Band, bool OfferDownload, bool OfferRestart);
 
 public static class UpdatePolicy
 {
@@ -154,7 +179,7 @@ public static class UpdatePolicy
 
     /// <summary>
     /// What happens about updates. A build that can't update (not installed by Velopack, or a developer run) does
-    /// nothing; "Off" asks nothing; "Automatic" downloads what it finds; "Tell me only" offers the download. The line
+    /// nothing; "Off" asks nothing; "Automatic" downloads what it finds; "Tell me only" offers the download. The band
     /// shows only outside raids, and so does RESTART NOW: Shturmap never restarts by itself, and never during a raid.
     /// A downloaded version applies at the next start whatever the setting.
     /// </summary>
@@ -163,19 +188,84 @@ public static class UpdatePolicy
     public static UpdateDecision Decide(UpdateMode mode, bool canUpdate, bool inRaid, UpdateStage stage, string? version, bool notApplied = false)
     {
         if (!canUpdate)
-            return new(false, false, "", false, false);
+            return new(false, false, UpdateBand.None, false, false);
         var check = mode != UpdateMode.Off && stage is UpdateStage.None or UpdateStage.Found;
         var download = mode == UpdateMode.Automatic && stage == UpdateStage.Found;
-        var line = inRaid ? "" : stage switch
+        var band = inRaid ? UpdateBand.None : stage switch
         {
-            UpdateStage.Found when mode == UpdateMode.TellOnly => SessionTexts.UpdateAvailable(version: version),
-            UpdateStage.Downloading => SessionTexts.UpdateDownloading(version: version),
-            UpdateStage.Ready when notApplied => SessionTexts.UpdateDidNotApply(version: version),
-            UpdateStage.Ready => SessionTexts.UpdateReady(version: version),
-            _ => "",
+            UpdateStage.Found when mode == UpdateMode.TellOnly => UpdateBand.Available,
+            UpdateStage.Downloading => UpdateBand.Downloading,
+            UpdateStage.Ready when notApplied => UpdateBand.DidNotApply,
+            UpdateStage.Ready => UpdateBand.Ready,
+            _ => UpdateBand.None,
         };
-        return new(check, download, line,
-            OfferDownload: !inRaid && mode == UpdateMode.TellOnly && stage == UpdateStage.Found,
-            OfferRestart: !inRaid && stage == UpdateStage.Ready);
+        return new(check, download, band,
+            OfferDownload: band == UpdateBand.Available,
+            OfferRestart: band is UpdateBand.Ready or UpdateBand.DidNotApply);
     }
+
+    /// <summary>
+    /// The band's eyebrow, in capitals, and its note line: what RESTART NOW does ("Restarts Shturmap in a few seconds.
+    /// Never in a raid."), what to close where the version didn't apply. The UPDATE READY cue says the same eyebrow, so
+    /// the eye goes from the one to the other. Empty for <see cref="UpdateBand.None"/>.
+    /// </summary>
+    public static (string Eyebrow, string Note) Words(UpdateBand band) => band switch
+    {
+        UpdateBand.Available => (SessionTexts.UpdateBandAvailable, SessionTexts.UpdateNoteAvailable),
+        UpdateBand.Downloading => (SessionTexts.UpdateBandDownloading, SessionTexts.UpdateNoteDownloading),
+        UpdateBand.Ready => (SessionTexts.UpdateBandReady, SessionTexts.UpdateNoteReady),
+        UpdateBand.DidNotApply => (SessionTexts.UpdateBandDidNotApply, SessionTexts.UpdateNoteDidNotApply),
+        _ => ("", ""),
+    };
+}
+
+/// <summary>
+/// When the UPDATE READY cue shows (owner, 2026-10-15: "A Beta-tester did not realize there is an update, which shows me
+/// that it is currently too subtle. I, however, do not want to have a blocking modal like a pop-up"; from a panel of
+/// four: B, "A cue, then the band"; docs/DESIGN.md §8, "Updates", and §4, principle 11). It shows when a download
+/// completes in the menus (one that completes in a raid or while one loads waits for the menus), then once more at the
+/// first menu after each raid while the update waits: once per raid. In "Tell me only" a version found takes the
+/// download's place (DOWNLOAD AVAILABLE). Never in a raid or while one loads, never with "Off", never after RESTART NOW,
+/// and never for what the start found: a version still waiting then has its notice (<see cref="UpdatePolicy.NotAppliedNotice"/>),
+/// and a raid read back from the log at start never counts as one that ended (<see cref="RaidEnded"/> is told of a raid
+/// over live). Where it stands among the other cues is the window's to keep (it waits for RAID OVER and its replay,
+/// QUEST COMPLETE and SEEN IN YOUR STASH).
+/// </summary>
+public sealed class UpdateCue
+{
+    // What the cue (or the start's notice) last said: the stage and the version. A new one is due at once in the menus.
+    private (UpdateStage Stage, string? Version)? _said;
+    // A raid has ended since then: the cue is due once more.
+    private bool _raidSince;
+    private bool _restarting;
+
+    /// <summary>A stage the cue is about: a version downloaded, or one found that "Tell me only" offers to download.
+    /// "Off" never cues: a version downloaded before the player chose it still has its band.</summary>
+    public static bool About(UpdateMode mode, UpdateStage stage) =>
+        mode != UpdateMode.Off && (stage == UpdateStage.Ready || stage == UpdateStage.Found && mode == UpdateMode.TellOnly);
+
+    /// <summary>Whether the cue is due now.</summary>
+    public bool Due(UpdateMode mode, bool canUpdate, UpdateStage stage, string? version, RaidPhase phase) =>
+        !_restarting && canUpdate && phase == RaidPhase.Menu && About(mode, stage) && (_said != (stage, version) || _raidSince);
+
+    /// <summary>The cue showed for this stage and version.</summary>
+    public void Shown(UpdateStage stage, string? version)
+    {
+        _said = (stage, version);
+        _raidSince = false;
+    }
+
+    /// <summary>The start found a version still waiting (it couldn't be applied): its notice says it, so no cue until a
+    /// raid has ended.</summary>
+    public void AtStart(UpdateStage stage, string? version)
+    {
+        if (stage != UpdateStage.None)
+            _said = (stage, version);
+    }
+
+    /// <summary>A raid ended, live: RAID OVER (never one read back from the log at start).</summary>
+    public void RaidEnded() => _raidSince = true;
+
+    /// <summary>RESTART NOW was clicked: nothing more, whatever comes of it.</summary>
+    public void Restarting() => _restarting = true;
 }

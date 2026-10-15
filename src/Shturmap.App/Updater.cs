@@ -68,7 +68,7 @@ public sealed class Updater
     public string? AppId { get; }
 
     /// <summary>This run may ask for and download new versions.</summary>
-    public bool CanUpdate { get; }
+    public bool CanUpdate { get; private set; }
 
     public UpdateStage Stage { get; private set; }
 
@@ -232,4 +232,21 @@ public sealed class Updater
         Stage = stage;
         Changed?.Invoke();
     }
+
+#if DEVTOOLS
+    /// <summary>
+    /// Developer aid (a script's "trigger update", "--show-update"; docs/DESIGN.md §8, "Developer aids"): this run takes
+    /// <paramref name="version"/> for downloaded, as a download that just completed leaves it, so the update band and the
+    /// UPDATE READY cue read the stage they read for a real one (owner, 2026-10-15, from a panel of four: B, "A cue, then
+    /// the band"). Nothing is asked or downloaded: a downloaded version asks for neither, and RESTART NOW finds no
+    /// download and says so, as for one that has gone.
+    /// </summary>
+    internal void DevReady(string version)
+    {
+        CanUpdate = true;
+        Version = version;
+        AppLog.Info($"Updates: developer aid, {version} taken for downloaded");
+        Set(UpdateStage.Ready);
+    }
+#endif
 }

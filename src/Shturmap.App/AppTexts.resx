@@ -400,6 +400,14 @@
     <value>YOUR EXTRACTS THIS RAID · {count} OF {total}</value>
     <comment>The cue's title when a raid screenshot showed the game's extract list; under it a row for each extract on the list, which then flies to its place on the map. {count}: the extracts the list names, 6; {total}: all of the map's extracts for your side, 12 (transits not counted). In the 48 px title type: keep it short. Capitals.</comment>
   </data>
+  <data name="CueUpdateRestart" xml:space="preserve">
+    <value>RESTART NOW · TOP LEFT · NEVER IN A RAID</value>
+    <comment>The UPDATE READY cue over the map, between raids: its amber line under the new version ("0.6.1 · OKAMI"). RESTART NOW is the button in the update band pinned at the top of the left column, so at the window's top left; Shturmap never restarts during a raid. Capitals.</comment>
+  </data>
+  <data name="CueUpdateDownload" xml:space="preserve">
+    <value>DOWNLOAD · TOP LEFT</value>
+    <comment>The DOWNLOAD AVAILABLE cue over the map, between raids ('Tell me only' found a new version): its amber line under the new version ("0.6.1 · OKAMI"). DOWNLOAD is the button in the update band pinned at the top of the left column, so at the window's top left. Capitals.</comment>
+  </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} "{name}" · {build}</value>
     <comment>Settings, the line at its foot. {version}: the version, 0.4.0+d349909; {name}: its release's name, Praetorian (a name, not translated); {build}: what kind of build it is (BuildInstalled, BuildDev, BuildFolder). The language's quotation marks.</comment>

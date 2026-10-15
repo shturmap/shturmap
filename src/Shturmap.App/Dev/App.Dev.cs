@@ -56,6 +56,11 @@ public partial class App
         // never shows it by itself; tools\layout-check.ps1).
         if (cli.Contains("--whats-new"))
             _window.DevWhatsNew(0);
+        // "--show-update": an update ready to apply, as a download that just completed leaves it, for a snapshot of the
+        // band pinned under MAP (a snapshot never shows the UPDATE READY cue: a script's "trigger update" plays it;
+        // tools\layout-check.ps1's plan and raid views).
+        if (cli.Contains("--show-update"))
+            _window.DevShowUpdateReady();
         if (DevGame is null)
             return;
         AppLog.Info("Developer view: fake game at " + DevGame.Root);

@@ -1,0 +1,38 @@
+# QA replay of the update band and its cue, UPDATE READY (owner, 2026-10-15: "A Beta-tester did not realize there is an
+# update, which shows me that it is currently too subtle. I, however, do not want to have a blocking modal like a
+# pop-up"; from a panel of four: B, "A cue, then the band"). A developer build plays it with --dev-view --dev-script;
+# how to run it, and what each still must show: update-ready.md beside this file. Times are in seconds.
+#
+# A snapshot step takes about 1.6 s and the step after it follows 0.3 s later, so the waits below are what is left
+# between the stills, not their moments: update-ready.md has those.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first.
+tour end
+# Customs' artwork read once, so the raid below has its map at once.
+map customs
+wait 3
+
+# The next patch of this version taken for downloaded, in the menus, as a download that just completed leaves it: the
+# band under MAP glows in, and the cue comes once the map's middle has been free 0.5 s.
+trigger update
+wait 0.5
+snapshot %TEMP%\shturmap-qa\update-ready\t0
+wait 0.5
+snapshot %TEMP%\shturmap-qa\update-ready\t1
+# The cue fades from 4.4 s; from 4.6 s the band glows again, for 1.2 s.
+wait 3
+snapshot %TEMP%\shturmap-qa\update-ready\t2
+
+# A PMC raid on Customs: the band goes as the raid loads, and the raid card's head holds its row.
+load
+steps
+start
+wait 3
+snapshot %TEMP%\shturmap-qa\update-ready\t3
+
+# The raid ends: RAID OVER for 5 s (no positions, so no replay), the band back with its glow; then the cue once more.
+end
+wait 9
+snapshot %TEMP%\shturmap-qa\update-ready\t4
+exit

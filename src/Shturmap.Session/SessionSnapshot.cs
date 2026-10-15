@@ -41,6 +41,13 @@ public enum CueKind
     /// docs/DESIGN.md §4, principle 11). The window makes it from the map's own list (MainWindow.RollCall), not the
     /// session: whether the list is new to the view is the view's. <see cref="ViewCue.MapName"/> is empty.</summary>
     ExitsListed,
+
+    /// <summary>A new version of Shturmap is downloaded (or, with "Tell me only", found): UPDATE READY over the version
+    /// with its release's name, and where to restart, the rail's update band (owner, 2026-10-15, from a panel of four: B,
+    /// "A cue, then the band"; docs/DESIGN.md §8, "Updates"). The window makes it when <see cref="UpdateCue"/> says it is
+    /// due, not the session: the updater is the window's. <see cref="ViewCue.MapName"/> is the version as the title says
+    /// it.</summary>
+    UpdateReady,
 }
 
 /// <summary>A quest the log just reported completed, for the QUEST COMPLETE cue.</summary>

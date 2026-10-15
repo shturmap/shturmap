@@ -41,8 +41,9 @@ $pseudo = 'qps-ploc'
 
 # The views: each a run of tools\fake-raid.ps1.
 $views = [ordered]@{
-  plan     = @{ PlanOnly = $true }
-  raid     = @{ PlanOnly = $false }
+  # The update band pinned under MAP (--show-update): in Plan it stands there, in a raid the raid card's head has its row.
+  plan     = @{ PlanOnly = $true; AppArgs = @('--show-update') }
+  raid     = @{ PlanOnly = $false; AppArgs = @('--show-update') }
   report   = @{ PlanOnly = $true; AppArgs = @('--show-report') }
   crash    = @{ PlanOnly = $true; AppArgs = @('--show-crash') }
   whatsnew = @{ PlanOnly = $true; AppArgs = @('--whats-new') }

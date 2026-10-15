@@ -160,9 +160,13 @@ public sealed partial class MainWindow : Window
         session.Cue += cue => DispatcherQueue.TryEnqueue(() =>
         {
             ShowCue(cue);
-            // What's New goes once the first raid since the update is over.
+            // What's New goes once the first raid since the update is over; an update waiting is said once more
+            // (MainWindow.Updates).
             if (cue.Kind == CueKind.RaidOver)
+            {
                 WhatsNewSeen("raid");
+                UpdatesAfterRaid();
+            }
         });
     }
 
@@ -1675,6 +1679,7 @@ public sealed partial class MainWindow : Window
             CueKind.QuestComplete => CompletionText(),
             CueKind.StashSeen => StashCueText(cue),
             CueKind.ExitsListed => RollCallText(),
+            CueKind.UpdateReady => UpdateCueText(cue),
             _ => (cue.RaidLength is { } length ? AppTexts.CueMapAndLength(map: map, minutes: (int)length.TotalMinutes) : map, AppTexts.CueRaidOver,
                 _snapshot?.Plan.FirstOrDefault() is { } next
                     ? AppTexts.CueNextRaid(map: next.MapName, summary: Summary(next.Finish.Count, next.Progress.Count))
@@ -1724,6 +1729,7 @@ public sealed partial class MainWindow : Window
         if (example)
             detail = cue.Kind == CueKind.StashSeen ? AppTexts.CueExampleStash : AppTexts.CueExample;
         FirstRaidLine(cue, example);
+        UpdateCueLine(cue);
         CueEyebrow.Text = eyebrow;
         CueDetail.Text = detail;
         CueDetail.Visibility = detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;

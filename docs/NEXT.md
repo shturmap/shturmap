@@ -6,6 +6,45 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-15: a new version, said louder: a cue, then the band
+
+**The ask** (owner, 2026-10-15): "A Beta-tester did not realize there is an update, which shows me that it is currently
+too subtle. I, however, do not want to have a blocking modal like a pop-up." The one sign was a line at the top of what
+the rail scrolls, in the 11 px eyebrow type and amber like NEW IN 0.5.0 · HYENA beside it, with an 11 px RESTART NOW
+link; no glyph, frame or motion, and it scrolled away. From a panel of four, drawn in the app's look on the same day,
+the owner chose B, "A cue, then the band" (no notes). Not taken: A, the band alone; C, applying by itself when the game
+is quiet (it reversed the decision of 2026-10-03); D, a fourth status light and the window's title. A Windows toast was
+declined before the panel (it shows over the game). The panel stays outside the repository.
+
+**Built (2026-10-15), as B was drawn.** DESIGN.md §8, "Updates", is the binding description; §4, principle 11 (UPDATE
+READY) and "Screen anatomy", *Rail* (*The update band*) say the rest.
+
+- The band in the rail's pinned row under MAP, which holds the raid card's head in a raid and while one loads
+  (`MainWindow.xaml`, `UpdatePlate`): a Panel plate with an Amber hairline, the glyph `E777`, the eyebrow by stage
+  (`UpdatePolicy.Decide` now gives `UpdateBand`: DOWNLOAD AVAILABLE, DOWNLOADING, UPDATE READY, UPDATE DIDN'T APPLY;
+  `UpdatePolicy.Words`), "0.6.1 · OKAMI" (the name from What's New, `Rules.WhatsNew.NameOf`, else the version alone),
+  the note, and RESTART NOW or DOWNLOAD in the Report dialog's SEND style. `Controls.Glow` on it when it shows, at each
+  return to the menus, and 4.6 s into the cue. The old line and its four texts are gone.
+- The cue `CueKind.UpdateReady`, made by the window (`MainWindow.Updates`), its amber line in `CueFirst`, kept clear of
+  the map's buttons. The rule is `UpdateCue` in Shturmap.Session, with tests (`UpdateTests`): due in the menus for a
+  stage not said yet (Ready; Found in Tell me only), or once more after a raid over live (RAID OVER); never with Off,
+  for the version still waiting at start (its notice), after RESTART NOW, or in a snapshot run. The window waits for the
+  map's middle (a cue up, a replay or the completions waiting for it, the tour, a preview) and shows it once that has
+  been free 0.5 s.
+- Decided in the build, not drawn on the panel (provisional): the band's notes while downloading ("Applies at the next
+  start.") and over DOWNLOAD ("Downloads in the background. Applies at the next start."); a cue cut short by another cue
+  counts as shown; a load cancelled is no raid (no cue after it); the band glows both as it shows and as the cue fades
+  (A's glow and B's together, as B said "the band works as in A").
+- Developer aid: `trigger update` (and the developer view's "Update ready") now takes the next patch of the running
+  version for downloaded (`Updater.DevReady`), so the band and the cue read the real stage; `--show-update` shows the
+  band in a snapshot (the layout check's plan and raid views). The replay `tools\qa\update-ready.devscript` and its
+  `.md`: the cue's entrance with the band glowing in (t0), the cue whole (t1), the band alone (t2), the raid card's head
+  in the row in a raid (t3), the cue again after RAID OVER (t4); run in English and German at 1600×900 and 900×560.
+- Changed from the panel before the merge: its cue line said "RESTART NOW IN THE RAIL", the project's word for the left
+  column, which a player sees nowhere on screen (the senior translator noticed it too). The line names the place as the
+  band stands, pinned at the window's top left: "RESTART NOW · TOP LEFT · NEVER IN A RAID", "DOWNLOAD · TOP LEFT"
+  (German „JETZT NEU STARTEN · OBEN LINKS · NIE IM RAID“, „HERUNTERLADEN · OBEN LINKS“).
+
 ## 2026-10-15: the extract list's roll call
 
 **The ask** (owner, 2026-10-15): "When the extraction list is read, I want a nice fancy animation in line with the

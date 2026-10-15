@@ -106,7 +106,7 @@ tarkov.dev cache, in each culture of `-Languages` (passed as `--culture`) and at
 DIP and count the whole window, as Windows does: 900x560 is the smallest Shturmap allows (DESIGN.md §4, "The window");
 they are scaled to the monitor the app would open on. Its windows open off every monitor, without taking the focus
 (DESIGN.md §8, "Developer aids", *Quiet runs*), so the check can run beside a game. The views, `-States` to pick some:
-`plan`, `raid` (the fake raid on Streets), `report` (the Report dialog with what's sent shown, `--show-report`),
+`plan`, `raid` (the fake raid on Streets; both with the update band, `--show-update`, which a raid hides), `report` (the Report dialog with what's sent shown, `--show-report`),
 `crash` (the question after a crash, `--show-crash`), `whatsnew` (the newest What's New card, `--whats-new`), `quest`
 (a quest's card and an item's, `--show-quest`) and `tour1` to `tour7` (`--tour <n>`); settings is in each, as every
 snapshot opens it, and help in all but the tour's, where it opens by itself. A view takes about 20 seconds: all of them

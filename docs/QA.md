@@ -142,7 +142,9 @@ A check that didn't run is a finding: `· not run: <why> ·`. `PASS` only when e
 `tools\qa\` holds the replays of flows, one `<flow>.devscript` and one `<flow>.md` of expectations per flow; the QA pass
 runs every script there, on the Debug build, as its `.md` says, then again in de-DE and at the smallest window. The
 first is `whatsnew-tour-line` (the 0.5.0 card's tour line); `extract-roll-call` (2026-10-15) replays the extract
-list's roll call, YOUR EXTRACTS THIS RAID, from a list the script hands the session.
+list's roll call, YOUR EXTRACTS THIS RAID, from a list the script hands the session; `update-ready` (2026-10-15) the
+update band under MAP and its cue, UPDATE READY, from `trigger update` (the next patch taken for downloaded) through a
+raid and back.
 
 - **`<flow>.devscript`**: a developer script (DESIGN.md §8, "Developer aids", `--dev-script`; `DevScript.Verbs`), for
   instance `tour end` (a `--dev-view` session starts as a first start, and the tour opens by itself), `quest start <id

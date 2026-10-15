@@ -327,9 +327,9 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 window.DevShowCrash();
                 break;
             case "update":
-                window.DevShowUpdateReady("0.2.1");
+                Say(window.DevShowUpdateReady() is { } version ? $"update {version} downloaded, as far as this run knows" : "(no updater yet: try again once the session has started)");
                 if (Snapshot?.Raid.Phase is RaidPhase.InRaid or RaidPhase.Loading)
-                    Say("(the update line stays hidden in a raid, as designed: end the raid to see it)");
+                    Say("(the update band and its cue wait for the menus, as designed: end the raid to see them)");
                 break;
             case "offline":
                 await session.DevFailDataAsync(new HttpRequestException("Developer view: no connection"));

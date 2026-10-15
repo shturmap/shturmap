@@ -400,6 +400,14 @@
     <value>DEINE EXTRACTS IM RAID · {count} VON {total}</value>
     <comment>en: YOUR EXTRACTS THIS RAID · {count} OF {total}</comment>
   </data>
+  <data name="CueUpdateRestart" xml:space="preserve">
+    <value>JETZT NEU STARTEN · OBEN LINKS · NIE IM RAID</value>
+    <comment>en: RESTART NOW · TOP LEFT · NEVER IN A RAID</comment>
+  </data>
+  <data name="CueUpdateDownload" xml:space="preserve">
+    <value>HERUNTERLADEN · OBEN LINKS</value>
+    <comment>en: DOWNLOAD · TOP LEFT</comment>
+  </data>
   <data name="SettingsVersionNamed" xml:space="preserve">
     <value>Shturmap {version} „{name}“ · {build}</value>
     <comment>en: Shturmap {version} "{name}" · {build}</comment>

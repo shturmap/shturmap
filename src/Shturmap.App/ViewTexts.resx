@@ -322,19 +322,19 @@
   </data>
   <data name="UpdateDownloadTip" xml:space="preserve">
     <value>Downloads it in the background; it applies at the next start</value>
-    <comment>Left column, between raids: tooltip of DOWNLOAD under the line that says a new version is out.</comment>
+    <comment>Left column, top, between raids: tooltip of DOWNLOAD, the button in the update band that says a new version is out.</comment>
   </data>
   <data name="UpdateDownload" xml:space="preserve">
     <value>DOWNLOAD</value>
-    <comment>Left column, between raids: link under the line that says a new version is out. Upper case, small.</comment>
+    <comment>Left column, top, between raids: the button in the update band that says a new version is out. Upper case, small.</comment>
   </data>
   <data name="UpdateRestartTip" xml:space="preserve">
     <value>Closes Shturmap, applies the new version and starts it again</value>
-    <comment>Left column, between raids: tooltip of RESTART NOW under the line that says a new version is ready.</comment>
+    <comment>Left column, top, between raids: tooltip of RESTART NOW, the button in the update band that says a new version is ready.</comment>
   </data>
   <data name="UpdateRestart" xml:space="preserve">
     <value>RESTART NOW</value>
-    <comment>Left column, between raids: link under the line that says a new version is ready. Upper case, small.</comment>
+    <comment>Left column, top, between raids: the button in the update band that says a new version is ready. Upper case, small.</comment>
   </data>
   <data name="WhatsNewClockMinutes" xml:space="preserve">
     <value>MIN</value>

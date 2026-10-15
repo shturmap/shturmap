@@ -144,21 +144,37 @@
     <value>Update {version} couldn't be applied: another program kept Shturmap's folder in use, often a browser Shturmap opened. Close it, then restart Shturmap.</value>
     <comment>Notice at start, when a downloaded update failed to apply. {version}: the version, 0.4.1.</comment>
   </data>
-  <data name="UpdateAvailable" xml:space="preserve">
-    <value>Shturmap {version} is available</value>
-    <comment>Rail, the update line above Plan between raids ('Tell me only'), shown in capitals. {version}: the version, 0.4.1.</comment>
+  <data name="UpdateBandAvailable" xml:space="preserve">
+    <value>DOWNLOAD AVAILABLE</value>
+    <comment>Left column, top, between raids: the update band's eyebrow over the new version ("0.6.1 · OKAMI"), with DOWNLOAD under it, when 'Tell me only' found a new version of Shturmap. Also the eyebrow of the cue over the map that says so. Capitals.</comment>
   </data>
-  <data name="UpdateDownloading" xml:space="preserve">
-    <value>Downloading Shturmap {version}…</value>
-    <comment>Rail, the update line above Plan between raids, shown in capitals. {version}: the version, 0.4.1.</comment>
+  <data name="UpdateBandDownloading" xml:space="preserve">
+    <value>DOWNLOADING</value>
+    <comment>Left column, top, between raids: the update band's eyebrow over the new version ("0.6.1 · OKAMI") while it downloads. Capitals.</comment>
   </data>
-  <data name="UpdateDidNotApply" xml:space="preserve">
-    <value>Update {version} didn't apply: close what Shturmap opened, then restart</value>
-    <comment>Rail, the update line above Plan between raids, shown in capitals, over RESTART NOW. {version}: the version, 0.4.1.</comment>
+  <data name="UpdateBandReady" xml:space="preserve">
+    <value>UPDATE READY</value>
+    <comment>Left column, top, between raids: the update band's eyebrow over the new version ("0.6.1 · OKAMI"), with RESTART NOW under it, once it is downloaded. Also the eyebrow of the cue over the map that says so. Capitals.</comment>
   </data>
-  <data name="UpdateReady" xml:space="preserve">
-    <value>Update {version} ready: applies at next start</value>
-    <comment>Rail, the update line above Plan between raids, shown in capitals, over RESTART NOW. {version}: the version, 0.4.1.</comment>
+  <data name="UpdateBandDidNotApply" xml:space="preserve">
+    <value>UPDATE DIDN'T APPLY</value>
+    <comment>Left column, top, between raids: the update band's eyebrow over the new version ("0.6.1 · OKAMI"), with RESTART NOW under it, when a version downloaded before this start couldn't be installed (another program kept Shturmap's folder in use). Capitals.</comment>
+  </data>
+  <data name="UpdateNoteAvailable" xml:space="preserve">
+    <value>Downloads in the background. Applies at the next start.</value>
+    <comment>Left column, the update band's line under the new version, over DOWNLOAD ('Tell me only'): what DOWNLOAD does.</comment>
+  </data>
+  <data name="UpdateNoteDownloading" xml:space="preserve">
+    <value>Applies at the next start.</value>
+    <comment>Left column, the update band's line under the new version while it downloads.</comment>
+  </data>
+  <data name="UpdateNoteReady" xml:space="preserve">
+    <value>Restarts Shturmap in a few seconds. Never in a raid.</value>
+    <comment>Left column, the update band's line under the new version, over RESTART NOW: what RESTART NOW does. The band shows between raids only.</comment>
+  </data>
+  <data name="UpdateNoteDidNotApply" xml:space="preserve">
+    <value>Close what Shturmap opened, then restart.</value>
+    <comment>Left column, the update band's line under a version that couldn't be installed at this start, over RESTART NOW: often a browser Shturmap opened kept its folder in use.</comment>
   </data>
   <data name="SettingsFileSetAside" xml:space="preserve">
     <value>Shturmap's settings file couldn't be read and was set aside: picks, ticks and settings start over.</value>
