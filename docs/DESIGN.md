@@ -806,12 +806,22 @@ line still reads and wraps as one), and a boss's part stands for the groups of i
 (`GameData.BossMobsOn` gives the id those groups are made of). Pointing at "Kaban 75%" lights Kaban's zones, and
 pointing at one of them tints the name with the weaker tint. While another map is shown the names are plain text.
 Markers on another floor than the one shown are drawn at full strength, highlighted
-like any other, with a small dark disc at their upper right holding an up or down chevron (owner, 2026-10-01: half
-strength read as "unimportant" and hid highlighted markers). Two or more floors away the disc becomes a small plate
-with the chevron and the number of floors, counted in the map's floor list ("▲ 4": Streets has six levels, so up or
-down alone didn't say how far; cartography review, 2026-10-02). A floor without artwork of its own isn't in that list
+like any other, with a dark disc at their upper right holding a bold up or down caret (owner, 2026-10-01: half
+strength read as "unimportant" and hid highlighted markers): a stroked chevron, 2.2 DIP, about 9 × 5 DIP, in a disc
+⌀ 14 with a 1.5 rim. Two or more floors away the disc becomes a 22 × 15 plate with the caret and the number of floors
+in an 11 px digit, counted in the map's floor list ("⌃ 4": Streets has six levels, so up or down alone didn't say how
+far; cartography review, 2026-10-02). **The caret is bold** (a beta tester through the owner, 2026-10-16: "the icon
+indicator if a location is above or below the current position is hard to read on smaller second screens"): until
+then it was a filled chevron of about 6 × 5 DIP in a disc ⌀ 11 with a 1.2 rim (an 18 × 13 plate, a 9.5 px digit),
+and at 100 %, where a DIP is a pixel, so small a triangle ran into a blob whose up and down differed only in which edge
+was flat; a stroke keeps its open V at that size. Chosen from a panel of five: the same shape larger (A), the bold
+caret (B, taken), B with the floor in words on a lit name (C), offset outlines instead of a badge (D), and a Normal or
+Large setting for the symbols' size (E). E was named for later, should testers report other small things; C is a
+possible later addition for picks. The disc stands 1 DIP further out each way than the smaller one did, so it covers
+no more of its own symbol (`MapRenderer.FloorBadgeCenter`), and the repel counts it 6 DIP wider than its symbol where
+the other badges count 3 ("Map drawing"). A floor without artwork of its own isn't in the map's floor list
 (Customs' 4th floor in the oil rig, drawn in the base layer); a place on it counts by its building's floors in height
-order (`FloorResolver.Ladder`), so it reads "▲ 2" from the 2nd floor (owner, 2026-10-05: the first WI-FI camera of
+order (`FloorResolver.Ladder`), so it reads "⌃ 2" from the 2nd floor (owner, 2026-10-05: the first WI-FI camera of
 Provide Viewership, 14 m up, said "7 M UP" in the raid card and showed a down arrow: counted as the ground it is drawn
 in). A marker's badges wear the marker's own colour: the
 floor badge like the count and "OPT" (the review of 2026-10-04: it was the player's sand, which says "you"). Badge places are fixed: the floor at the upper
@@ -1527,7 +1537,8 @@ spawns below).
     dark rim where it belongs (the opened stack's hairline of 2026-10-05, now always there). One only nudged (by
     less than about half its width) keeps to its place without a leader, and as the view zooms in and the places
     draw apart, each symbol comes back to its own and its leader goes. A corner badge (floor, count, OPT, "?")
-    counts in its symbol's width, so no neighbour is pushed under it. Leaders lie under every symbol and step back
+    counts in its symbol's width, 3 px, so no neighbour is pushed under it; the floor arrow 6 px since its disc grew
+    (2026-10-16, "Visual language": 3.1 px further along the diagonal). Leaders lie under every symbol and step back
     with their symbols while something else is pointed at; no label covers a leader or its dot; pointing at the
     dot points at its symbol. **The player is a symbol too** (owner, 2026-10-06: "keep in mind that the player icon is
     also an icon - if you are right next to a objective the player icon is drawn on top of the quest icon"): level 1,

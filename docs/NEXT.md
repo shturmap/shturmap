@@ -6,6 +6,48 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-16: the other-floor arrow, bolder
+
+**The ask** (owner, 2026-10-16): "One of the beta testers said that the icon indicator if a location is above or below
+the current position is hard to read on smaller second screens." Measured in `MapRenderer.DrawFloorArrow`: a dark disc
+⌀ 11 DIP with a 1.2 rim in the marker's colour holding a filled chevron of about 6.4 × 4.7 DIP; two or more floors away
+an 18 × 13 plate with a chevron of 5.6 × 4.1 and a 9.5 px digit. At 100 %, as on a small second screen, a DIP is a
+pixel, and a filled triangle of 6 × 5 px runs into a blob whose up and down differ only in which edge is flat. A panel
+of five:
+
+- A. The same shape, larger.
+- B. A bold caret, a stroked chevron, in a larger disc (recommended).
+- C. B, and the floor in words on a lit name.
+- D. Offset outlines of the symbol instead of a badge.
+- E. A Normal or Large setting for the symbols' size.
+
+The owner chose B ("Go ahead with your recommendation").
+
+**Built (2026-10-16).** Binding: DESIGN.md, *Visual language* (the other-floor paragraph) and "Map drawing" (the
+repel).
+
+- The caret: a line through (−3.4, +1.4), (0, −1.4) and (+3.4, +1.4) DIP from the disc's centre for up, mirrored for
+  down, stroked 2.2 DIP with round caps and joins in the marker's colour, about 9 × 5 DIP outside, in a disc ⌀ 14 with
+  a 1.5 rim. Two or more floors away a 22 × 15 plate, the caret 6.75 DIP in from its left end and an 11 px bold digit
+  5.25 in from its right; the plate's box (left c.x − 6.75, top c.y − 7.5) puts its caret where the disc's centre is.
+  The sizes are named constants (`MapRenderer.FloorDisc` …), and `FloorTests` hold them at 200 %.
+- The badge stands 1 DIP further out each way, so the larger disc covers no more of its own symbol. Labels keep clear
+  of it as before (its box, the disc's square ± 7.5 DIP, is among what they avoid); an extract one floor away now
+  loses the place right of it for its name, which the disc reaches into, and the name goes left: in The Lab, where
+  every extract is on another floor than the ground, all five names moved to the left. A transit's, a boss's and a
+  sniper zone's had gone left before.
+- The repel counts a floor arrow 6 DIP wider than its symbol (3 before, as the count, OPT and "?" still are): along
+  the diagonal the badge reaches 3.1 DIP further than it did, so a neighbour set as close as the repel allows comes no
+  further into it. On `shturmap-cli render interchange` at the whole map the mall's crowd opens a little more and the
+  picked Minute of Fame stands off on a leader; at 3× a few symbols move a few pixels. Kept at 3, the larger badges
+  lie partly under their neighbours' (there, the pick's plate over Killa's disc).
+- The legend's swatch is drawn by the same code; its two quests are drawn at 0.8 of their size instead of 0.85, so the
+  larger badges clear the second quest and the swatch's edge.
+
+**Left for later.** E, a Normal or Large setting for every symbol, should testers report other small things; C, the
+floor in words on a lit name, as a possible addition for picks. Open for the owner: the repel's 6 DIP against 3 (the
+renders of both, with the UI QA pass), and the extracts' names on the left in The Lab.
+
 ## 2026-10-16: the fly-out slower
 
 **The ask** (owner, 2026-10-16): "The animation that 'flies' the exits to their position is too fast." Measured on

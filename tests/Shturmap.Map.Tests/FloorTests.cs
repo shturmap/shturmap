@@ -1,3 +1,4 @@
+using SkiaSharp;
 using Shturmap.Core;
 using Shturmap.Core.Maps;
 
@@ -54,5 +55,68 @@ public class FloorTests
         Assert.Equal(2, MapRenderer.FloorOffset(scene, fourth));
         Assert.Equal(-1, MapRenderer.FloorOffset(scene, new WorldPoint(254.7, 2.54, -75.2)));
         Assert.Equal(0, MapRenderer.FloorOffset(scene, new WorldPoint(264.03, 7.03, -38.9)));
+    }
+
+    // A beta tester through the owner, 2026-10-16: the arrow was hard to read on small second screens. It is a bold
+    // caret, a stroked chevron of 2.2 DIP, about 9 × 5 DIP, in a dark disc ⌀ 14 with a 1.5 rim; two or more floors away
+    // a 22 × 15 plate with the caret and an 11 px digit (docs/DESIGN.md, "Visual language"). Drawn at 200 %, in white
+    // on the dark plate, the badge alone.
+    [Theory]
+    [InlineData(1)]
+    [InlineData(-1)]
+    [InlineData(2)]
+    [InlineData(-3)]
+    public void The_floor_arrow_is_a_bold_caret_in_a_disc_or_with_the_count_on_a_plate(int floor)
+    {
+        const float ui = 2;
+        var marker = new MapMarker("objective:a:1", MarkerKind.Objective, new WorldPoint(0, 0, 0), "A", "quest-a");
+        // The badge's centre on a pixel's centre.
+        var shown = new MapRenderer.ShownMarker(marker, new SKPoint(40.5f, 80.5f), 10 * ui, SKColors.White, false, false, false, floor);
+        var c = MapRenderer.FloorBadgeCenter(shown, ui);
+        using var bitmap = new SKBitmap(new SKImageInfo(120, 120, SKColorType.Rgba8888, SKAlphaType.Premul));
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            canvas.Clear(SKColors.Transparent);
+            MapRenderer.DrawFloorArrow(canvas, shown, ui);
+        }
+        bool Lit(int x, int y) => bitmap.GetPixel(x, y) is { Alpha: > 200, Red: > 128 };
+        (int Width, int Height) Ink(Func<int, int, bool> counts)
+        {
+            int left = 120, top = 120, right = -1, bottom = -1;
+            for (var y = 0; y < 120; y++)
+                for (var x = 0; x < 120; x++)
+                    if (counts(x, y))
+                    {
+                        left = Math.Min(left, x); top = Math.Min(top, y); right = Math.Max(right, x); bottom = Math.Max(bottom, y);
+                    }
+            return right < 0 ? (0, 0) : (right - left + 1, bottom - top + 1);
+        }
+        // The badge with its rim: a disc ⌀ 14 + 1.5, or a plate 22 × 15 + 1.5.
+        var badge = Ink((x, y) => bitmap.GetPixel(x, y).Alpha > 128);
+        var (width, height) = Math.Abs(floor) > 1 ? (22 + 1.5, 15 + 1.5) : (14 + 1.5, 14 + 1.5);
+        Assert.InRange(badge.Width, width * ui - 1, width * ui + 1);
+        Assert.InRange(badge.Height, height * ui - 1, height * ui + 1);
+        // Its rim: 1.5 DIP of the marker's colour, then the dark plate, on the line through the caret.
+        var cx = (int)c.X;
+        var cy = (int)c.Y;
+        var from = Enumerable.Range(0, cx).First(x => bitmap.GetPixel(x, cy).Alpha > 200);
+        var rim = Enumerable.Range(from, cx - from).TakeWhile(x => Lit(x, cy)).Count();
+        Assert.InRange(rim, 1.5 * ui - 1, 1.5 * ui + 1);
+        // The caret, centred on the disc's centre (on a plate, as far in from its left end), clear of the rim and the
+        // digit: about 9 × 5 DIP.
+        var caret = Ink((x, y) => SKPoint.Distance(new SKPoint(x + 0.5f, y + 0.5f), c) < 5.5f * ui && Lit(x, y));
+        Assert.InRange(caret.Width, 9 * ui - 1, 9 * ui + 1);
+        Assert.InRange(caret.Height, 5 * ui - 1, 5 * ui + 1);
+        // An open V, stroked, not a filled triangle: lit at its point, dark inside it where a triangle would be lit.
+        var up = floor > 0 ? 1 : -1;
+        Assert.True(Lit(cx, cy - up * (int)ui), "the caret's point");
+        Assert.False(Lit(cx, cy + up * (int)ui), "inside the caret's V");
+        if (Math.Abs(floor) > 1)
+        {
+            // The digit, 11 px bold, right of the caret: a figure's height is 0.7 of its size.
+            var box = MapRenderer.FloorBadgeBox(shown, ui);
+            var digit = Ink((x, y) => x > c.X + 6 * ui && x < box.Right - 2 * ui && y > box.Top + 2 * ui && y < box.Bottom - 2 * ui && Lit(x, y));
+            Assert.InRange(digit.Height, 11 * ui * 0.7 - 2, 11 * ui * 0.7 + 2);
+        }
     }
 }
