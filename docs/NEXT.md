@@ -28,7 +28,28 @@ repository):
 - **E7.** The first raid's line in the RAID LOADING cue wraps clear of the map's buttons, as the other labels do: it
   breaks at its "·", each part whole on a line of its own, in English, German and the pseudo-language (DESIGN.md §4,
   "Screen anatomy", *The tour*, *First-time lines*). Built 2026-10-15.
-- **E8.** The release goes once the re-check passes.
+- **E8.** The release goes once the re-check passes. **Re-checked 2026-10-16** (a targeted UI QA pass on c6618a2, not a
+  full one; the owner's call of 2026-10-15): every fix of the third pass holds at 900×560 and 1600×900 in English and
+  German (F1 to F6, F11, E3, E4, E7), nothing else changed, and the empty `settings.png` of 2026-10-15 no longer
+  reproduces. 0.6.0 "Okami" goes out from this state the same day. Left open by the pass, none in a player's path:
+  - `--snapshot` failed twice ("Snapshot failed: ArgumentException: Value does not fall within the expected range" in
+    `RenderToPngAsync`) while three snapshot apps rendered at once (the layout check, a replay and a chapter run); run
+    alone, each view rendered whole, and passes 1 to 3 never saw it. The QA role's "one app at a time" stands; why the
+    renderer fails under load is not known.
+  - `tools\layout-check.ps1` says PASSED for a view whose `window.layout.json` exists even when its other pictures
+    (`card.png`, `map.png`, `settings.png`) are missing; exit 2 is meant for that (docs/LANGUAGES.md, "Layout check").
+  - Of the pass's 2,122 pictures about 95 were opened (every moment a fix is judged at, the problem pictures, a sample
+    of the layout check's); the rest were judged from the tools' summaries.
+  - Five replay scripts drafted for the pass (What's New 0.6.0's previews, chapter 5's rows, a long Streets roll call, a
+    picked name at the right edge, the first raid's loading cue) are proposed for `tools\qa\`, each with its `.md`.
+  - For the owner to confirm: an untrimmed lit name over a door label at the smallest window ("Delivery From the Past"
+    over "Director's" when picked or pointed at in Plan; chapter 4's "The Extortionist" over "Unknown", the same at
+    3bc6d3f).
+- **Accepted for 0.6.0, open** (owner, 2026-10-16: "Accept all four"): the tour's cue at 900×560 drawn at 0.41 (rows
+  about 6 px); the 2 px push limit lets two collars touch for a few frames mid-move; below about 55 frames a second a
+  double-click's middle frames pass the steady rule (E4 above); a trimmed lit name may overlap a door label at 500×481.
+  Unanswered: which screen showed BRING without the x2 of Ill Wisher's and Humanitarian Supplies' items, and how the
+  held quest card was cut off at the window's foot (a rail row, a map marker or a raid card line; maximised?).
 
 ## 2026-10-15: a new version, said louder: a cue, then the band
 
