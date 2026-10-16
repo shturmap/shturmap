@@ -6,7 +6,31 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
-## 2026-10-15, evening: the decision page
+## 2026-10-16: the fly-out slower
+
+**The ask** (owner, 2026-10-16): "The animation that 'flies' the exits to their position is too fast." Measured on
+`shturmap-cli frames customs --scene list-callout` (a 1600 × 1000 view, eight rows): each icon flew a fixed 0.9 s
+whatever the distance, the farthest (Crossroads) 575 px at about 1,800 px/s at its peak measured frame to frame (first
+reckoned at 1,300), the nearest (ZB-1013) 69 px in the same time; the lift-offs were 0.16 s apart, the rings' turn, so
+all eight were in the air within 1.1 s and the fly-out was over 2 s after it began, while the view zoomed out until
+2.4 s. Of three options (A, flights of 1.5 s, lift-offs 0.4 s apart; B, flights paced by their distance; C, one icon at
+a time) the owner chose A. Nothing else of the roll call changes.
+
+**Built (2026-10-16).** Binding: DESIGN.md, *Motion* and "Map drawing", *A list just read is called out*.
+
+- `MapScene.FlightLength` 0.9 → 1.5 s, and the lift-offs have a turn of their own, `MapScene.CallOutTurn`, 0.4 s; they
+  shared the rings' `MapRenderer.ExitTurn` (0.16 s), which a list after the cue still rings by. Lift-offs from 1.6 s
+  as before, the view's fit from 1.2 s over 1.2 s, the title 1.5 s past the last landing. Six rows: the last lands at
+  5.1 s, the title goes from 6.6 s, the rings end at about 7.2 s; eight: 5.9, 7.4 and 8.0 s; twelve: 7.5, 9.0, 9.6 s.
+- In the Customs example the lift-offs are at +1600, +2000 … +4400 ms, each landing 1500 ms later and a ring start,
+  the first after the view has settled; the farthest's peak is about 1,100 px/s, and the rings are over at +8019 ms.
+- The window follows by itself: the title's hold and the rows' fades are worked out from the flights. The tour's
+  chapter 5 waits for the cue's end (up to 15 s; twelve rows end at 9.6 s); What's New's `extracts` preview has no end
+  of its own.
+- `shturmap-cli frames --scene list-callout` draws 260 frames by default (to 8.55 s, past the eight rows' last ring).
+  The replay `tools\qa\extract-roll-call.devscript` waits longer between its stills, so each still shows what its
+  `.md` says at the new pace (about t0 0.6, t1 4.0, t2 2.5, t3 4.7, t4 7.5 s; reckoned, not yet measured).
+- `ExitCallOutFramesTests` hold the design's 1.6, 0.4 and 1.5 s, and the rings' 0.16 s.
 
 **Settled 2026-10-15, evening** (the owner, on a decision page of eight points, E1 to E8; the page stays outside the
 repository):
