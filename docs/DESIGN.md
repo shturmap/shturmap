@@ -652,10 +652,11 @@ position pings, and with Follow my position on the view glides to it over 2.4 s,
 wheel zooms over 0.15 s, eased in and out, and notches in a row run on into one zoom ("Map drawing", *The wheel zooms
 over 0.15 s*; owner, 2026-10-15); an extract list just
 read is called out (§1's fourth exception): its rows rise in 0.1 s apart from 0.5 s, the view takes in its extracts
-from 1.2 s over 1.2 s, eased in and out as the tour's moves, and from 1.6 s each triangle flies to its place over 0.9 s,
-0.16 s after the one before, on an arc, eased in and out, and rings out as it lands; with six extracts the last lands
-at 3.3 s, the title goes from 4.8 s and the rings end at about 5.4 s ("Map drawing", *The player's extracts this
-raid*); the raid card's time doesn't move: at a new minute its figure and rule just change (owner, 2026-10-09: its
+from 1.2 s over 1.2 s, eased in and out as the tour's moves, and from 1.6 s each triangle flies to its place over 1.5 s,
+0.4 s after the one before, on an arc, eased in and out, and rings out as it lands (owner, 2026-10-16: "too fast"; until
+then 0.9 s, 0.16 s apart); with six extracts the last lands at 5.1 s, the title goes from 6.6 s and the rings end at
+about 7.2 s ("Map drawing", *The player's extracts this raid*); the raid card's time doesn't move: at a new minute its
+figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
 the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
 the wheel's zoom to its notch.
@@ -1635,7 +1636,7 @@ spawns below).
   - **1.2 s:** the view moves over 1.2 s, eased in and out (`MapView.AnimateView`), to frame every listed extract and
     you, with the label room on the right (*Room for labels on the right*); those that were out of view come into it.
     A Follow glide under way stops for it: the screenshot's own position is in the frame.
-  - **1.6 s:** each triangle lifts off its row, 0.16 s after the one before and in the same order, and flies 0.9 s on
+  - **1.6 s:** each triangle lifts off its row, 0.4 s after the one before and in the same order, and flies 1.5 s on
     an arc, eased in and out, to its extract's symbol where the frame draws it (on its leader where it is set apart),
     so it follows the view as the view settles. Its row fades as it leaves, and the band's dark backing goes with the
     rows, so no landing near the middle is under it (as the panel drew it, four of seven landed under the band). Until
@@ -1643,9 +1644,14 @@ spawns below).
     it lights up, its name turns bold (owner, 2026-10-15), and it rings out: a lit one's glow swells in past its
     strength and settles over a second, and its triangle's own outline leaves it
     three times, 0.5 s apart, each over 1.1 s, in its colour on a dark band, under every symbol; a "??:??:??" one's
-    "?" pops in at a size and a half and settles, with one echo. With six extracts the last lands at 3.3 s.
-  - **After the last landing** the title stays on its halo 1.5 s more (4.8 s with six), then fades; the rings end at
-    about 5.4 s.
+    "?" pops in at a size and a half and settles, with one echo. With six extracts the last lands at 5.1 s. Until
+    2026-10-16 each flew 0.9 s, near or far, 0.16 s after the one before (the rings' turn): in `shturmap-cli frames
+    customs --scene list-callout` (a 1600 × 1000 view) the farthest crossed 575 px at about 1,800 px/s at its peak (now
+    about 1,100), and all eight were in the air within 1.1 s (owner, 2026-10-16: "The animation that 'flies' the exits
+    to their position is too fast"). Of the three ways offered, flights paced by their distance and one icon at a time
+    were not taken.
+  - **After the last landing** the title stays on its halo 1.5 s more (6.6 s with six), then fades; the rings end at
+    about 7.2 s (a lit extract rings 2.1 s from its landing, `MapRenderer.RingLength`).
 
   The echo is the triangle, not a ring: round rings that leave a symbol are the pointer's pulse, the player's ping
   and a completed quest's places; this shape says "way out". Only a list from a screenshot taken in the last 30 s is
@@ -3173,14 +3179,14 @@ position; the sets of `MainWindow.ExampleExits`, which the CLI repeats), and `li
 drawing"): `list-read`'s list called out at t0 (`MapScene.CallOutExits`) from the band's rows as the design panel
 drew them (the view's middle, columns of three rows 22 px apart, nearest the position first; eight rows on Customs),
 the view starting at three times the whole map's zoom on the position and zooming out at 1.2 s over 1.2 s (`--glide
-[ms]`) to `Camera.FittingAll` as the window will, drawn every 33 ms 180 times, so no frame zooms by the tenth past
-which symbols are laid out afresh. Its `frames.json` adds the flights (turn, lift-off, landing, from, where it
-landed), and `summary.txt` their lift-offs and landings and two checks: every landing is its ring's start with nothing
-lit before, and the view it zoomed out to holds every called extract and the player within the padding and the label
-room. Every scene leaves the Scav extracts out with `MapContent.InPmcRaid`, the rule GameSession and the app's PMC
-scenes hold in their own code. `--glide [ms]` moves the view as `MapView.AnimateView` does, from the whole map to three
-times the zoom on the position in 1.2 s (for `list-callout`, its zoom out), and lists the
-symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
+[ms]`) to `Camera.FittingAll` as the window will, drawn every 33 ms 260 times (to 8.55 s, past the eight rows' last
+ring), so no frame zooms by the tenth past which symbols are laid out afresh. Its `frames.json` adds the flights
+(turn, lift-off, landing, from, where it landed), and `summary.txt` their lift-offs and landings and two checks: every
+landing is its ring's start with nothing lit before, and the view it zoomed out to holds every called extract and the
+player within the padding and the label room. Every scene leaves the Scav extracts out with `MapContent.InPmcRaid`, the
+rule GameSession and the app's PMC scenes hold in their own code. `--glide [ms]` moves the view as `MapView.AnimateView`
+does, from the whole map to three times the zoom on the position in 1.2 s (for `list-callout`, its zoom out), and lists
+the symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
 motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing", *Steady
 while the view moves*); the checks count the leaders that came or went, and name the symbols whose leader did more
 than once. `--notch [ms]` turns the wheel three notches in at the position (without one, the middle of the extracts on

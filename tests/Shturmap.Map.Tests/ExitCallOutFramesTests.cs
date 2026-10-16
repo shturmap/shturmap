@@ -7,9 +7,9 @@ namespace Shturmap.Map.Tests;
 
 // The roll call (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"; docs/DESIGN.md, "Map
 // drawing"), seen frame by frame as shturmap-cli frames --scene list-callout draws it: a list just read, its extracts
-// called from the band nearest the player first, each icon lifting off its row 0.16 s after the one before from 1.6 s,
-// flying to its place in 0.9 s and landing as its ring starts. The asserts read the renderer's trace (SymbolTrace); a
-// few pixels show that the trace is what the picture shows.
+// called from the band nearest the player first, each icon lifting off its row 0.4 s after the one before from 1.6 s,
+// flying to its place in 1.5 s and landing as its ring starts (owner, 2026-10-16: "too fast"; until then 0.16 s apart and
+// 0.9 s). The asserts read the renderer's trace (SymbolTrace); a few pixels show that the trace is what the picture shows.
 public class ExitCallOutFramesTests
 {
     // t0, the moment the list is read: the day every example uses.
@@ -114,29 +114,39 @@ public class ExitCallOutFramesTests
         Assert.Equal(new[] { "extract:far", "extract:unsure-b", "extract:mid", "extract:near", "extract:unsure-a" }, alone.ExitsToCall().Select(m => m.Id));
     }
 
+    // The design's words (docs/DESIGN.md, "Map drawing", *A list just read is called out*; owner, 2026-10-16: "too fast"):
+    // from 1.6 s the icons lift off 0.4 s apart, the roll call's own turn, and each flies 1.5 s; a list after the cue still
+    // rings its extracts at the rings' turn, 0.16 s apart.
     [Fact]
-    public void Each_lifts_off_a_turn_after_the_one_before_from_1_6_s_and_flies_0_9_s()
+    public void The_icons_lift_off_0_4_s_apart_from_1_6_s_and_fly_1_5_s_while_rings_keep_their_0_16_s()
+    {
+        Assert.Equal((Ms(1600), Ms(400), Ms(1500), Ms(160)), (MapScene.CallOutLiftOff, MapScene.CallOutTurn, MapScene.FlightLength, MapRenderer.ExitTurn));
+    }
+
+    [Fact]
+    public void Each_lifts_off_a_turn_after_the_one_before_from_1_6_s_and_flies_1_5_s()
     {
         var (scene, _, frames) = CalledOut.Value;
         for (var turn = 0; turn < Called.Length; turn++)
         {
             var id = Called[turn];
             var flight = scene.ExitFlights[id];
-            var liftOff = 1600 + 160 * turn;
+            var liftOff = 1600 + 400 * turn;
             Assert.Equal(turn, flight.Turn);
             Assert.Equal(T0 + Ms(liftOff), flight.LiftOff);
-            Assert.Equal(T0 + Ms(liftOff + 900), flight.Landing);
+            Assert.Equal(T0 + Ms(liftOff + 1500), flight.Landing);
             // The frames say so: in the air from its lift-off's frame to the one before its landing's, never else.
             var flying = frames.Select((f, k) => (K: k, f[id].Flight)).Where(f => f.Flight is not null).ToList();
             Assert.Equal(liftOff / 20, flying[0].K);
-            Assert.Equal((liftOff + 900) / 20 - 1, flying[^1].K);
-            Assert.Equal(45, flying.Count);
+            Assert.Equal((liftOff + 1500) / 20 - 1, flying[^1].K);
+            Assert.Equal(75, flying.Count);
             foreach (var (k, p) in flying)
-                Assert.Equal(liftOff, k * 20 - p!.Value * 900, 6);
+                Assert.Equal(liftOff, k * 20 - p!.Value * 1500, 6);
         }
-        // Last landing at 3.14 s for five; the rings go on to about 5.2 s, and the window draws until they are over.
-        Assert.True(scene.ExitsArrivingAt(T0 + Ms(5200)));
-        Assert.False(scene.ExitsArrivingAt(T0 + Ms(5250)));
+        // Last landing at 4.7 s for five (far, lit); its rings go on 2.1 s, to 6.8 s, and the window draws until they are
+        // over.
+        Assert.True(scene.ExitsArrivingAt(T0 + Ms(6750)));
+        Assert.False(scene.ExitsArrivingAt(T0 + Ms(6800)));
     }
 
     [Fact]
@@ -351,10 +361,10 @@ public class ExitCallOutFramesTests
         scene.CallOutExits(Calls(scene), T0);
         var once = Frames(scene, camera, 60, tenth, (k, at) => Later(scene, k, at));
 
-        // Only closed-a flies anew, after the last turn: at 2.4 s, not at once and not before the others.
+        // Only closed-a flies anew, after the last turn (far's, at 3.2 s): at 3.6 s, not at once and not before the others.
         var flight = Assert.Single(added);
-        Assert.Equal(("extract:closed-a", 5, T0 + Ms(2400), true), (flight.MarkerId, flight.Turn, flight.LiftOff, flight.Listed));
-        Assert.Equal(new ExitRing(T0 + Ms(3300), true), scene.ExitsRinging["extract:closed-a"]);
+        Assert.Equal(("extract:closed-a", 5, T0 + Ms(3600), true), (flight.MarkerId, flight.Turn, flight.LiftOff, flight.Listed));
+        Assert.Equal(new ExitRing(T0 + Ms(5100), true), scene.ExitsRinging["extract:closed-a"]);
         // Its symbol turns from struck out to unlit as the list is read, and stays where it stood.
         Assert.Equal(ExitLook.NotListed, once[4]["extract:closed-a"].Look);
         Assert.Equal(ExitLook.Listed, once[5]["extract:closed-a"].Look);
@@ -383,11 +393,12 @@ public class ExitCallOutFramesTests
         for (var k = 0; k < 60; k++)
             Assert.Equal(once[k].Values.Where(t => t.Look is not null).Select(Drawn).Order(), twice[k].Values.Where(t => t.Look is not null).Select(Drawn).Order());
 
-        // One more at 3 s, after every icon has left its row: it lifts off then, never in the past.
+        // One more at 4.5 s, after every icon has left its row (closed-a last, at 3.6 s) and while the rings go on: it lifts
+        // off then, never in the past.
         again.ExitsListed = new HashSet<string>(again.ExitsListed) { "extract:closed-b" };
         again.ExitsNotListed = new HashSet<string>();
-        var last = Assert.Single(again.CallOutExits(Calls(again), T0 + Ms(3000)));
-        Assert.Equal(("extract:closed-b", 6, T0 + Ms(3000)), (last.MarkerId, last.Turn, last.LiftOff));
+        var last = Assert.Single(again.CallOutExits(Calls(again), T0 + Ms(4500)));
+        Assert.Equal(("extract:closed-b", 6, T0 + Ms(4500)), (last.MarkerId, last.Turn, last.LiftOff));
     }
 
     [Fact]
@@ -541,14 +552,14 @@ public class ExitCallOutFramesTests
         scene.CallOutExits([new ExitCall("extract:near", quest.X, quest.Y, 0), new ExitCall("extract:unsure-a", you.X, you.Y, 1)], T0);
         using var still = Picture(scene, camera, T0);
         using var first = Picture(scene, camera, T0 + MapScene.CallOutLiftOff);
-        using var second = Picture(scene, camera, T0 + MapScene.CallOutLiftOff + MapScene.FlightTurn);
+        using var second = Picture(scene, camera, T0 + MapScene.CallOutLiftOff + MapScene.CallOutTurn);
         // Over the quest: the triangle's green where the disc was.
         Assert.False(Near(still.GetPixel((int)quest.X, (int)quest.Y), Green), $"{still.GetPixel((int)quest.X, (int)quest.Y)} at the quest before");
         Assert.True(Near(first.GetPixel((int)quest.X, (int)quest.Y), Green), $"{first.GetPixel((int)quest.X, (int)quest.Y)} at the quest as the icon lifts off on it");
         // Under the player: the player's sand stays.
         var sand = Palette.Sk(Palette.Sand);
         Assert.True(Near(second.GetPixel(500, 500), sand), $"{second.GetPixel(500, 500)} at the player as the icon lifts off under it");
-        Assert.Equal(you, Frame(scene, camera, T0 + MapScene.CallOutLiftOff + MapScene.FlightTurn)["extract:unsure-a"].Flying);
+        Assert.Equal(you, Frame(scene, camera, T0 + MapScene.CallOutLiftOff + MapScene.CallOutTurn)["extract:unsure-a"].Flying);
     }
 
     [Fact]

@@ -586,11 +586,19 @@ public sealed class MapScene
     /// the view has begun to zoom out.</summary>
     public static readonly TimeSpan CallOutLiftOff = TimeSpan.FromSeconds(1.6);
 
-    /// <summary>How far apart the icons lift off, in their turns' order: the rings' own turn (<see cref="MapRenderer.ExitTurn"/>).</summary>
-    public static TimeSpan FlightTurn => MapRenderer.ExitTurn;
+    /// <summary>
+    /// How far apart the icons lift off, in their turns' order: the roll call's own turn, not the rings'
+    /// (<see cref="MapRenderer.ExitTurn"/>, 0.16 s, which a list after the cue still rings by). Owner, 2026-10-16: "too
+    /// fast"; at the rings' turn eight icons were in the air within 1.1 s.
+    /// </summary>
+    public static readonly TimeSpan CallOutTurn = TimeSpan.FromSeconds(0.4);
 
-    /// <summary>How long an icon takes from its row to its extract's place, eased in and out.</summary>
-    public static readonly TimeSpan FlightLength = TimeSpan.FromSeconds(0.9);
+    /// <summary>
+    /// How long an icon takes from its row to its extract's place, eased in and out, near or far. Owner, 2026-10-16: "too
+    /// fast"; at 0.9 s the farthest on Customs crossed 575 px of a 1600 px view at about 1,800 px/s at its peak, now about
+    /// 1,100.
+    /// </summary>
+    public static readonly TimeSpan FlightLength = TimeSpan.FromSeconds(1.5);
 
     /// <summary>When the view begins to zoom out to frame the listed extracts and the player (<see cref="Camera.FittingAll"/>),
     /// from the list's reading; the window moves it with MapView.AnimateView.</summary>
@@ -626,7 +634,7 @@ public sealed class MapScene
     /// The map's side of the roll call (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"): a
     /// list just read, with <see cref="ExitsListed"/>, <see cref="ExitsUnsure"/> and <see cref="ExitsNotListed"/> set from
     /// it, and the band's rows. Each called extract's icon lifts off its row <see cref="CallOutLiftOff"/> after
-    /// <paramref name="now"/> plus a <see cref="FlightTurn"/> per <see cref="ExitCall.Turn"/>, flies to its place over
+    /// <paramref name="now"/> plus a <see cref="CallOutTurn"/> per <see cref="ExitCall.Turn"/>, flies to its place over
     /// <see cref="FlightLength"/>, and lands as its ring starts: the ring <see cref="RingExits"/> rings, at the landing
     /// (<see cref="ExitsRinging"/>). Until then the extract at its place is drawn as before its turn: not lit, no "?". A
     /// call for an extract the list doesn't light or mark (struck out, a transit, one it leaves out), or for one already
@@ -671,15 +679,15 @@ public sealed class MapScene
         if (flights.Count == 0)
         {
             for (var i = 0; i < added.Count; i++)
-                added[i] = added[i] with { LiftOff = now + CallOutLiftOff + FlightTurn * added[i].Turn };
+                added[i] = added[i] with { LiftOff = now + CallOutLiftOff + CallOutTurn * added[i].Turn };
         }
         else
         {
             var last = flights.MaxBy(f => f.LiftOff);
-            var next = Max(now, last.LiftOff + FlightTurn);
+            var next = Max(now, last.LiftOff + CallOutTurn);
             var turn = flights.Max(f => f.Turn) + 1;
             for (var i = 0; i < added.Count; i++)
-                added[i] = added[i] with { LiftOff = next + FlightTurn * i, Turn = turn + i };
+                added[i] = added[i] with { LiftOff = next + CallOutTurn * i, Turn = turn + i };
         }
         foreach (var flight in added)
         {

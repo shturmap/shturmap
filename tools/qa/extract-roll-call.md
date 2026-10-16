@@ -8,9 +8,9 @@ RAID; "Map drawing", *A list just read is called out*; *Motion*). A list read fr
 opens the cue across the map's middle; from 0.5 s a row per listed extract rises in, nearest the position first (its
 triangle, its name, "???" for a "??:??:??" one); from 1.2 s the view zooms out over 1.2 s to take in the listed extracts
 and the position, where they aren't all in view already (where they are, it doesn't move); from 1.6 s each row's
-triangle lifts off, 0.16 s after the one before, and flies 0.9 s to its place,
-its row fading as it leaves and the band's dark going with the rows; it lands as its ring starts; the title stays on its
-halo until 1.5 s after the last landing, then fades.
+triangle lifts off, 0.4 s after the one before, and flies 1.5 s to its place (owner, 2026-10-16: "too fast"; until then
+0.16 s apart and 0.9 s), its row fading as it leaves and the band's dark going with the rows; it lands as its ring
+starts; the title stays on its halo until 1.5 s after the last landing, then fades.
 
 `extract-roll-call.devscript` replays it without a screenshot: the script's `exits` step hands the session a reading of
 the game's list as a screenshot taken now would (`GameSession.DevReadExitsAsync`, from where text recognition hands its
@@ -47,22 +47,24 @@ map's panel of `window.png` and `cue.png` over it at that place to see what a pl
 
 ## When each still is taken
 
-A `snapshot` step takes about 1.6 s (`window.png` first, `map.png` some 0.2 s later, `cue.png` right after it), and the
-step after it follows 0.3 s later, so one roll call gives two stills at most before it is over. The script reads the
-same list in two raids on Customs: the first for the roll call's start (t0, t1), the second for its middle and its end
-(t2, t3, t4); the second raid also shows that a new raid calls its list out afresh. In runs on the developer build
-(2026-10-15, both languages, both sizes) `window.png` was taken, in seconds after its raid's `exits` line in the log:
-t0 0.63, t1 2.55, t2 1.93, t3 3.65, t4 5.9.
+A `snapshot` step takes 1 to 1.6 s (`window.png` first, `map.png` some 0.2 s later, `cue.png` right after it), and the
+step after it follows 0.3 s later, so one roll call can't give a still at each of its moments. The script reads the
+same list in two raids on Customs: the first for the roll call's start and the band gone (t0, t1), the second for its
+icons in the air, its landings and its end (t2, t3, t4); the second raid also shows that a new raid calls its list out
+afresh. In runs on the developer build (2026-10-15, both languages, both sizes, at the pace of then) `window.png` was
+taken, in seconds after its raid's `exits` line in the log: t0 0.63, t1 2.55, t2 1.93, t3 3.65, t4 5.9. The waits of
+2026-10-16, for the slower fly-out, should put it at about t0 0.6, t1 4.0, t2 2.5, t3 4.7, t4 7.5 (not measured yet;
+the log gives each still's moment).
 
 | From | A still taken then shows |
 | --- | --- |
 | 0 | The band across the map's middle: its dark, the gold rules, FROM YOUR SCREENSHOT over YOUR EXTRACTS THIS RAID · 4 OF 11 (DEINE EXTRACTS IM RAID · 4 VON 11), some of its letters still scrambled in gold before about 1.6. On the map the four listed extracts solid and unlit, the other PMC extracts struck out, the position's marker. |
 | 0.5 | The rows rising in, 0.1 s apart, nearest the position first: Crossroads, Trailer Park, Railroad Passage (Flare), ZB-1013 ??? (Kreuzung, Anhängerstellplatz, …), each with its green triangle in a dark collar; all four by about 1.1. |
 | 1.2 | On Customs, fitted whole, the listed extracts and the position are all in view already: the view doesn't move (coordinator, 2026-10-15: until then it panned to take them into its middle, which cut off the map's west and left empty map at the top). |
-| 1.6 | Each row's triangle gone from its row as its icon leaves, a row 0.16 s after the one before, the row's name fading over 0.3 s; the band's dark and its rules thinning with them, gone by about 2.4; on the map the icons in flight from the rows to their places. |
-| 2.5 | Icons landing, 0.16 s apart: each lights up and rings out (its triangle's outline leaving it), ZB-1013's "?" popping in; the last lands at 2.98. The title and FROM YOUR SCREENSHOT stand on their halo, the dark around their letters, over the map. |
-| 4.5 | The title fading, gone by about 5.1; the rings over by about 5.1. |
-| 5.1 on | The end, the same in every still: no cue, the floor picker back at the map's right; the view as the roll call left it. |
+| 1.6 | Each row's triangle gone from its row as its icon leaves, a row 0.4 s after the one before (at 1.6, 2.0, 2.4 and 2.8), the row's name fading over 0.3 s; the band's dark and its rules thinning with them, gone by about 3.1; on the map the icons in flight from the rows to their places, 1.5 s each. |
+| 3.1 | Icons landing, 0.4 s apart: each lights up and rings out (its triangle's outline leaving it), ZB-1013's "?" popping in; the last lands at 4.3. The title and FROM YOUR SCREENSHOT stand on their halo, the dark around their letters, over the map. |
+| 5.8 | The title fading, gone by about 6.4; the rings over by about 6.0. |
+| 6.4 on | The end, the same in every still: no cue, the floor picker back at the map's right; the view as the roll call left it. |
 
 ## What each still must show
 
@@ -70,16 +72,17 @@ t0 0.63, t1 2.55, t2 1.93, t3 3.65, t4 5.9.
   rising (`cue.png`, a moment later, has more of them). The rows' triangles are where the log's `Roll call:` line hands
   them over: the map panel's top left is `window.png`'s (384, 40) at 1600×900. No notice "Your extract list is read":
   the cue says it (2026-10-15).
-- **t1** (first raid, about 2.5): no band, no rules, no rows; the title and eyebrow on their halo. On the map (put
-  together as above) the view as it was, Customs whole, the listed extracts in it; Crossroads landed and ringing, the
-  others landed or a few pixels short of their places. Nothing lit that hasn't landed.
-- **t2** (second raid, about 1.9): the hand-off: Crossroads' row gone, Trailer Park's fading without its triangle, the
-  third's triangle gone or going, ZB-1013 ??? with its triangle still in its row; the band's dark and rules half gone.
-  `map.png` (later) has icons in flight. In the second raid the roll call runs as in the first: a new raid on the same map
-  calls its list out afresh.
-- **t3** (second raid, about 3.6): all four landed; the lit ones' outlines leaving them, ZB-1013 with its "?"; no band;
-  the title on its halo.
-- **t4** (second raid, about 5.9): the end: no cue; the three listed extracts glowing in green, ZB-1013 solid with its
+- **t1** (first raid, about 4.0): no band, no rules, no rows; the title and eyebrow on their halo. On the map (put
+  together as above) the view as it was, Customs whole, the listed extracts in it; Crossroads, Trailer Park and Railroad
+  Passage landed and ringing, ZB-1013 landed or a few pixels short of its place. Nothing lit that hasn't landed.
+- **t2** (second raid, about 2.5): the hand-off: Crossroads' and Trailer Park's rows gone, Railroad Passage's fading
+  without its triangle, ZB-1013 ??? with its triangle still in its row (it lifts off at 2.8); the band's dark and rules
+  more than half gone. `map.png` (later) has three icons in flight, the first close to its place, and nothing lit
+  yet. In the second raid the roll call runs as in the first: a new raid on the same map calls its list out
+  afresh.
+- **t3** (second raid, about 4.7): all four landed (the last at 4.3); the lit ones' outlines leaving them, ZB-1013 with
+  its "?"; no band; the title on its halo (it fades from 5.8).
+- **t4** (second raid, about 7.5): the end: no cue; the three listed extracts glowing in green, ZB-1013 solid with its
   "?", the other PMC extracts struck out (a faint outline with a stroke), no Scav extract on the map; nothing ringing; the
   view where the roll call left it. Follow my position is off, so nothing moves it back (principle 8).
 

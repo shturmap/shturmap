@@ -82,13 +82,15 @@ internal static class Frames
             }
             options.RemoveAt(st);
         }
-        // The roll call runs to about 5.4 s, and its view zooms out by more than a tenth in a frame 100 ms apart, where the
-        // window's frames hold symbols steady (MapRenderer.SetApart): 30 frames a second by default. The wheel's notches
-        // take 0.15 s each, a step 0.2 s: 60 frames a second, until the last has landed.
+        // The roll call of Customs' eight rows runs to about 8 s (owner, 2026-10-16: lift-offs 0.4 s apart, flights of 1.5 s;
+        // the last lands at 5.9 s and its rings end 2.1 s later): 260 frames run to 8.55 s. Its view zooms out by more than a
+        // tenth in a frame 100 ms apart, where the window's frames hold symbols steady (MapRenderer.SetApart): 30 frames a
+        // second by default. The wheel's notches take 0.15 s each, a step 0.2 s: 60 frames a second, until the last has
+        // landed.
         var zooms = notchMs is not null || stepFactor is not null;
         var every = int.Parse(Take(options, "--every") ?? (callOut ? "33" : zooms ? "16" : "100"), CultureInfo.InvariantCulture);
         var count = int.Parse(Take(options, "--count")
-            ?? (callOut ? "180"
+            ?? (callOut ? "260"
                 : notchMs is { } apartMs ? ((int)((Notches - 1) * apartMs / every) + 160 / every + 6).ToString(CultureInfo.InvariantCulture)
                 : stepFactor is not null ? ((int)((stepAgainMs ?? 0) / every) + 210 / every + 6).ToString(CultureInfo.InvariantCulture)
                 : "36"),

@@ -92,7 +92,7 @@ switch (command)
                                             <factor> over 0.2 s at the position as + and − (1.5, 0.667), the zoom
                                             buttons and a double-click (2) do, and again [ms] later if given;
                                             list-callout: list-read's list called from the roll call's band, each
-                                            extract flown from its row as the view zooms out (every 33 ms, 180 times);
+                                            extract flown from its row as the view zooms out (every 33 ms, 260 times);
                                             --viewport: the view's size instead of 1600x1000 (500x481: the map at
                                             the smallest window, 900x560)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
