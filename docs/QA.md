@@ -45,13 +45,16 @@ PASS.
 
 ## What it runs
 
-Every pass runs the replay scripts in `tools\qa\` (below), and the checks of each row the change reaches:
+A pass runs the checks of each row the change reaches, and only those, with the replay scripts of the flows it reaches
+(every script before a release). A pass for a change takes about 20 minutes, a release pass about an hour (owner,
+2026-10-16: the passes had grown to 30 minutes and 200 tool calls; "we need to cut a bit on the computation time").
+Within the time the checks the change is judged by come first; what didn't fit is reported as not run:
 
 | change | checks |
 | --- | --- |
-| the rail, a card, a cue, a dialog, the status bar, help, settings, a text | views plan, raid, quest (help and settings in each) in en-US and de-DE at 900x560 and 1600x900, folder build; the layout check for those views in en-US, de-DE and qps-ploc at both sizes |
-| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames`, both scenes, with and without `--glide`, and with `--notch` and `--step 2`; the raid view at both sizes |
-| an animation or a flow | the replay scripts; one drafted in the pass folder for a flow without one; `frames` for the map's animations |
+| the rail, a card, a cue, a dialog, the status bar, help, settings, a text | the views plan, raid, quest (help and settings in each) it reaches, en-US at 900x560 and 1600x900, de-DE at 900x560 (both sizes only when a text changed), folder build; the layout check only when a text or the layout changed, for those views, en-US and de-DE (qps-ploc before a release) |
+| map drawing | `shturmap-cli render` of the maps it reaches; `shturmap-cli frames` in the scene the change reaches, with `--glide`, `--notch` or `--step 2` only when the change moves the view; the raid view at the smallest window |
+| an animation or a flow | the replay script of that flow, or one drafted in the pass folder for a flow without one; `frames` for a map animation |
 | the layout, in any language | the layout check, every view, en-US, de-DE and qps-ploc, both sizes |
 | a release | all of the above for every view; the tour's seven chapters in both languages; What's New and each line's preview; the layout check in full with `-SwitchCheck` |
 
@@ -84,19 +87,20 @@ positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms
 
 ## How it looks
 
-- **Every picture** a run wrote, opened: `window.png`, `map.png`, `help.png`, `settings.png`, `card*.png`, `tour.png`,
-  `devview-*.png`, every `*.problems.png`, and of `frames` the first, each frame something rings or moves in, each it
-  flags and the last. A picture not opened is a check not run; one empty, cut short or missing is a finding.
+- **The pictures the change is judged by**, opened: of each run the one that shows the change (`window.png` or
+  `map.png`, a `card*.png`, `tour.png`, a replay's still), every `*.problems.png`, and of `frames` the first, one frame per
+  moment the summary names and the last. The rest is checked without opening: the file is there and not empty, the
+  layout files, the app log, the tools' summaries. A judged-by picture not opened is a check not run; one empty, cut
+  short or missing is a finding.
 - **The popups not empty**: every `settings.png` and `help.png` of a quiet run must show its panel. They are drawn on
   transparency, so an empty one looks like a blank page: count the pixels that aren't transparent
   (`[Drawing.Bitmap]::FromFile(…).GetPixel(x, y).A`); none is a finding.
-- **Known open**, re-checked first in every pass: on 2026-10-15, at f028dff, a quiet run's `settings.png` came out
-  empty (480×655, every pixel transparent) while `window.png`, `map.png` and `help.png` rendered:
-  `.\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -MoreArgs '--data', "$out\data"` →
-  `settings.png`. A finding until it renders.
+- **Closed 2026-10-16**: the empty `settings.png` of 2026-10-15 (f028dff, a quiet run's panel every pixel transparent)
+  rendered in every run of the three passes since (74 panels counted); the pixel count stays part of a pass.
 - **Against the words**: DESIGN.md's for that view (what shows, in which order, colour, type role, size; what is lit,
   framed, pulsing, stepped back), `docs/tour.md` and `docs/whats-new.md` (and their German files), a replay's `.md`.
-- **Against the last pass**, where one is kept: what changed that the change didn't mean to.
+- **Against the last pass**, where one is kept, for the views the change is judged by: what changed that the change
+  didn't mean to. Never an older commit built for a comparison.
 - **The states DESIGN.md names**, where the change reaches them: animation effects off (a `--snapshot` run draws the
   tour and the raid replay without motion; elsewhere it is Windows' setting, which only the owner changes; a replay
   that needs it on reads it first, `SystemParametersInfo` with SPI_GETCLIENTAREAANIMATION, and isn't run when off), both
