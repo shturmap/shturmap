@@ -48,6 +48,43 @@ repel).
 floor in words on a lit name, as a possible addition for picks. Open for the owner: the repel's 6 DIP against 3 (the
 renders of both, with the UI QA pass), and the extracts' names on the left in The Lab.
 
+**QA pass, 2026-10-16** (a targeted UI QA pass on 1193e67, the day's two changes; not a full one): 0 blocks, 4 should,
+3 nits. Fixed in the commit that adds this paragraph:
+
+- The roll call's replay took t1 too early at the smallest window: 3.60 s after the list (3.66 in German), with
+  Railroad Passage still unlit and ZB-1013 in flight, as a snapshot saves in about 0.3 s at 900×560 against about 1.0 s
+  at the default window. Its wait is 2.2 s (was 1.5), for about 4.3 s at 900×560 and 5.0 s at the default window
+  (*the fly-out slower*, below).
+- At 3× on Interchange the picked "Minute of Fame" started 0 to 1 px from its ⌃2 plate's rim and read "⌃2 Minute of
+  Fame" (about 6 px at 1551313); the name's halo cut into the plate's corner. Names keep 3 DIP off a floor badge now
+  (`MapRenderer.FloorBadgeClear`, in the boxes labels avoid), and a name beside its own marker's badge moves out along
+  its side by what it lacks (`OffFloorBadge`, as a name after a tab does): the margin in those boxes alone sent every
+  name beside a one-floor disc to its left and left the pick, every other side of it taken, where it was. On `render
+  interchange` with the position at 3×, 3 px of clear ground between the plate's rim and the "M", the names beside
+  one-floor discs 1 to 2 px further right; at the whole map one name moves, Inventory Files, from left of its quest to
+  above it, clear of The Key to Success's disc. `FloorTests` hold it at 100 and 200 %; DESIGN.md, *Visual language*.
+- The legend's OTHER FLOOR swatch: the two quests' collars ran into one another with no clear pixel between them, and
+  the first quest's disc touched the second's collar. The quests at 0.75 of their size (was 0.8) and 23 DIP apart (was
+  20): at 100 % 3 clear pixels between the collars, at least one between the disc and the collar, the plate's rim 2 px
+  inside the swatch's edge.
+
+Open for the owner:
+
+- The CLI's `frames --scene whatsnew-extracts` only rings the listed extracts 0.16 s apart (`MapScene.RingExits`);
+  since the roll call of 2026-10-15 the app's What's New `extracts` preview calls its list out with the roll call
+  (`StageExtractList`, `RollCallExample`), so DESIGN.md §8 *Animations frame by frame* ("What's New's `extracts`
+  preview as it is staged") no longer holds for that scene. The fix: the scene calls the example list out as
+  `list-callout` does.
+- At 900×560, What's New's `extracts` preview pointed at 2 s after the tour ended, while the notice "The tour stays in
+  help: F1, then TAKE THE TOUR." is up: the cue stands lower (341 DIP of a room of 341 under 124) and the last "1" of
+  "7 OF 11" runs under the map's locate button; at 1600×900 it is clear (DESIGN.md §4 *The cue*: the whole cue in its
+  room, the title never cut, the rows clear of the map's buttons). Not from the day's commits.
+- Interchange's whole-map view: the floor badge's repel room of 6 DIP (was 3) opens the mall's crowd and drops two
+  names there, "Saferoom Exfil" and "Killa 75% · 20% here" (allowed by *Labels by priority*; both show at 3×). Whether
+  6 stays is the owner's call.
+- Not run in the targeted pass: `frames` list-read with `--glide`, `--notch`, `--step` and `--viewport 500x481`, the
+  layout check, the other replay scripts, the preview in de-DE.
+
 ## 2026-10-16: the fly-out slower
 
 **The ask** (owner, 2026-10-16): "The animation that 'flies' the exits to their position is too fast." Measured on
@@ -73,6 +110,9 @@ a time) the owner chose A. Nothing else of the roll call changes.
   The replay `tools\qa\extract-roll-call.devscript` waits longer between its stills, so each still shows what its
   `.md` says at the new pace (about t0 0.6, t1 4.0, t2 2.5, t3 4.7, t4 7.5 s; reckoned, not yet measured).
 - `ExitCallOutFramesTests` hold the design's 1.6, 0.4 and 1.5 s, and the rings' 0.16 s.
+- Measured in the QA pass of 2026-10-16 (seconds after the list): at the default window t0 0.65, t2 2.52, t3 4.79, t4
+  8.13; at 900×560 t0 0.65, t2 2.53, t3 4.31, t4 7.08; t1 came at 4.31 and 3.60, too early at the smaller, and now
+  waits 2.2 s for about 4.3 and 5.0 (*the other-floor arrow, bolder*, "QA pass").
 
 **Settled 2026-10-15, evening** (the owner, on a decision page of eight points, E1 to E8; the page stays outside the
 repository):

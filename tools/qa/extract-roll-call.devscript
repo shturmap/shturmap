@@ -2,11 +2,12 @@
 # call, then fly-out"). A developer build plays it with --dev-view --dev-script; how to run it, and what each still must
 # show: extract-roll-call.md beside this file. Times are in seconds.
 #
-# A snapshot step takes 1 to 1.6 s and the step after it follows 0.3 s later, so one roll call can't give a still at
-# each of its moments: two raids on Customs read the same list, the first for its start and the band gone (t0, t1), the
-# second for its icons in the air, its landings and its end (t2, t3, t4). The second also shows that a new raid calls
-# its list out afresh. The waits keep to the pace of 2026-10-16 (owner: "too fast"): the four icons lift off 0.4 s
-# apart from 1.6 s and fly 1.5 s, the last lands at 4.3 s, and the cue is gone by 6.4 s.
+# A snapshot step takes 1 to 1.9 s (it saves the window and the map in about 0.3 s at 900x560, in about 1.0 s at the
+# default window) and the step after it follows 0.3 s later, so one roll call can't give a still at each of its
+# moments: two raids on Customs read the same list, the first for its start and the band gone (t0, t1), the second for
+# its icons in the air, its landings and its end (t2, t3, t4). The second also shows that a new raid calls its list out
+# afresh. The waits keep to the pace of 2026-10-16 (owner: "too fast"): the four icons lift off 0.4 s apart from 1.6 s
+# and fly 1.5 s, the last lands at 4.3 s, and the cue is gone by 6.4 s.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
 # once the data was there. It ends first.
@@ -28,8 +29,10 @@ wait 6.5
 exits Crossroads "Trailer Park" "ZB-1013?" "Railroad Passage (Flare)"
 wait 0.3
 snapshot %TEMP%\shturmap-qa\extract-roll-call\t0
-# The band gone with its rows (3.1 s), three icons landed and the last on its way in.
-wait 1.5
+# The band gone with its rows (3.1 s), all four landed (the last at 4.3 s), the title on its halo (to 5.8 s). Timed for
+# the smallest window, where t0 saves fastest: about 4.3 s there, about 5.0 s at the default window (QA, 2026-10-16:
+# after a wait of 1.5 s it came at 3.6 s at 900x560, Railroad Passage still unlit and ZB-1013 in flight).
+wait 2.2
 snapshot %TEMP%\shturmap-qa\extract-roll-call\t1
 
 # The raid ends (RAID OVER, its replay), and the next one on Customs reads the same list.

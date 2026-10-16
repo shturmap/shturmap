@@ -336,10 +336,12 @@ public static partial class MapRenderer
                 DrawContainers(canvas, camera, scene, ui);
                 break;
             case LegendSymbol.OtherFloor:
-                // A little smaller than the other quests here, so the larger badges of 2026-10-16 clear the second
-                // marker and the swatch's edge.
-                Marker(Quest(MarkerKind.Objective, -14), 0.8f, m => m with { Floor = 1 });
-                Marker(Quest(MarkerKind.Objective, 6), 0.8f, m => m with { Floor = -2 });
+                // Smaller than the other quests here, so the larger badges of 2026-10-16 fit: at 0.75, 23 DIP apart, the
+                // two collars keep 3.5 DIP between them, the disc 2 DIP off the second's collar, and the plate's rim and
+                // the first's collar 2.25 DIP inside the swatch's edges (QA, 2026-10-16: at 0.8, 20 apart, the collars
+                // ran into one another and the disc's rim touched the second's collar).
+                Marker(Quest(MarkerKind.Objective, -16), 0.75f, m => m with { Floor = 1 });
+                Marker(Quest(MarkerKind.Objective, 7), 0.75f, m => m with { Floor = -2 });
                 break;
             case LegendSymbol.Trail:
                 scene.Trail = [At(-24, -6), At(-4, 8)];

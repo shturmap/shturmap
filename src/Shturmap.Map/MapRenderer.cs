@@ -399,7 +399,7 @@ public static partial class MapRenderer
             if (HasTab(m))
                 taken.Add(SKRect.Inflate(TabBox(m, ui), MarkerCollar * ui, MarkerCollar * ui));
             if (m.Floor != 0)
-                taken.Add(FloorBadgeBox(m, ui));
+                taken.Add(FloorBadgeKeepOut(m, ui));
             // No label covers a leader or the dot at its end (Repel).
             if (m.Leader is { } place)
             {
@@ -461,7 +461,7 @@ public static partial class MapRenderer
                 var below = candidates[^1];
                 candidates.Add(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
             }
-            return candidates.Select(c => Inward(c, m.At, LabelEdge * ui, right)).ToList();
+            return candidates.Select((c, side) => Inward(OffFloorBadge(m, c, side, ui), m.At, LabelEdge * ui, right)).ToList();
         }
         // While the view only moves (the scale bar's rule, Scale), a picked or pointed-at name keeps the side it took in
         // the layout before (the rule Steady while the view moves): on its right it is trimmed at the edge rather than sent
@@ -503,7 +503,7 @@ public static partial class MapRenderer
             }
             if (box is null && m.Selected)
             {
-                box = LabelCandidates(m.At, m.Reach + gap, font.MeasureText(text), font.Size).First();
+                box = OffFloorBadge(m, LabelCandidates(m.At, m.Reach + gap, font.MeasureText(text), font.Size).First(), 0, ui);
                 side = 0;
             }
             if (box is not { } placed)
@@ -1612,6 +1612,37 @@ public static partial class MapRenderer
         return Math.Abs(m.Floor) > 1
             ? SKRect.Create(c.X - FloorPlateCaretIn * ui, c.Y - FloorPlateHeight / 2 * ui, FloorPlateWidth * ui, FloorPlateHeight * ui)
             : Square(c, (FloorDisc + 0.5f) * ui);
+    }
+
+    /// <summary>How far a name keeps off a floor badge (DIP; QA, 2026-10-16: at 3× on Interchange the picked "Minute of
+    /// Fame" started 0 to 1 px from its ⌃2 plate's rim and read "⌃2 Minute of Fame"; with the smaller plate of before
+    /// 2026-10-16 there had been about 6 px).</summary>
+    internal const float FloorBadgeClear = 3;
+
+    // Where no name goes for a floor badge (Layout's taken boxes): its box and FloorBadgeClear around it. The badge is
+    // drawn, and the repel counts it, as before.
+    internal static SKRect FloorBadgeKeepOut(ShownMarker m, float ui) =>
+        SKRect.Inflate(FloorBadgeBox(m, ui), FloorBadgeClear * ui, FloorBadgeClear * ui);
+
+    // A side of a marker's name (LabelCandidates' order: right, left, above, below, then a pair's further below) clear of
+    // its own floor badge but inside its FloorBadgeClear moves out along that side by what it lacks, as a name after a
+    // tab does, rather than giving the side up: a name right of a one-floor disc stood 1.5 DIP off its square, and
+    // keeping the margin by the taken boxes alone sent every such name to the disc's left. A side over the badge itself
+    // stays where it is, for the taken boxes to rule out.
+    internal static SKRect OffFloorBadge(ShownMarker m, SKRect candidate, int side, float ui)
+    {
+        if (m.Floor == 0 || candidate.IntersectsWith(FloorBadgeBox(m, ui)))
+            return candidate;
+        var keep = FloorBadgeKeepOut(m, ui);
+        if (!candidate.IntersectsWith(keep))
+            return candidate;
+        return side switch
+        {
+            0 => SKRect.Create(keep.Right, candidate.Top, candidate.Width, candidate.Height),
+            1 => SKRect.Create(keep.Left - candidate.Width, candidate.Top, candidate.Width, candidate.Height),
+            2 => SKRect.Create(candidate.Left, keep.Top - candidate.Height, candidate.Width, candidate.Height),
+            _ => SKRect.Create(candidate.Left, keep.Bottom, candidate.Width, candidate.Height),
+        };
     }
 
     // The other-floor arrow: a dark disc with a bold caret pointing up or down; two or more floors away, a plate with

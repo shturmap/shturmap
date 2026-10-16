@@ -819,11 +819,13 @@ caret (B, taken), B with the floor in words on a lit name (C), offset outlines i
 Large setting for the symbols' size (E). E was named for later, should testers report other small things; C is a
 possible later addition for picks. The disc stands 1 DIP further out each way than the smaller one did, so it covers
 no more of its own symbol (`MapRenderer.FloorBadgeCenter`), and the repel counts it 6 DIP wider than its symbol where
-the other badges count 3 ("Map drawing"). A floor without artwork of its own isn't in the map's floor list
-(Customs' 4th floor in the oil rig, drawn in the base layer); a place on it counts by its building's floors in height
-order (`FloorResolver.Ladder`), so it reads "⌃ 2" from the 2nd floor (owner, 2026-10-05: the first WI-FI camera of
-Provide Viewership, 14 m up, said "7 M UP" in the raid card and showed a down arrow: counted as the ground it is drawn
-in). A marker's badges wear the marker's own colour: the
+the other badges count 3 ("Map drawing"). Names keep 3 DIP off it (`MapRenderer.FloorBadgeClear`); one beside its own
+marker's badge moves out along its side by what it lacks rather than giving the side up (QA, 2026-10-16: at 3× on
+Interchange the picked "Minute of Fame" started 0 to 1 px from its ⌃2 plate and read "⌃2 Minute of Fame"). A floor
+without artwork of its own isn't in the map's floor list (Customs' 4th floor in the oil rig, drawn in the base layer); a
+place on it counts by its building's floors in height order (`FloorResolver.Ladder`), so it reads "⌃ 2" from the 2nd
+floor (owner, 2026-10-05: the first WI-FI camera of Provide Viewership, 14 m up, said "7 M UP" in the raid card and
+showed a down arrow: counted as the ground it is drawn in). A marker's badges wear the marker's own colour: the
 floor badge like the count and "OPT" (the review of 2026-10-04: it was the player's sand, which says "you"). Badge places are fixed: the floor at the upper
 right, a cluster's count at the lower right, an optional objective's "OPT" at the upper left; beside small symbols
 (Scav and sniper zones, bosses) the floor badge moves out so the symbol stays visible. Spawn zone markers carry it
