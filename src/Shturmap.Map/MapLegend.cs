@@ -336,8 +336,10 @@ public static partial class MapRenderer
                 DrawContainers(canvas, camera, scene, ui);
                 break;
             case LegendSymbol.OtherFloor:
-                Marker(Quest(MarkerKind.Objective, -14), 0.85f, m => m with { Floor = 1 });
-                Marker(Quest(MarkerKind.Objective, 6), 0.85f, m => m with { Floor = -2 });
+                // A little smaller than the other quests here, so the larger badges of 2026-10-16 clear the second
+                // marker and the swatch's edge.
+                Marker(Quest(MarkerKind.Objective, -14), 0.8f, m => m with { Floor = 1 });
+                Marker(Quest(MarkerKind.Objective, 6), 0.8f, m => m with { Floor = -2 });
                 break;
             case LegendSymbol.Trail:
                 scene.Trail = [At(-24, -6), At(-4, 8)];

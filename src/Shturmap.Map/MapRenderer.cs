@@ -963,9 +963,21 @@ public static partial class MapRenderer
     public static bool Repels(MarkerKind kind) => kind is not (MarkerKind.ScavSpawn or MarkerKind.Lock or MarkerKind.Switch);
 
     /// <summary>Half a symbol's width as the repel sees it: its body at rest, and a little more where a badge stands
-    /// out at a corner (a floor arrow, a count, "OPT", "?"), so no neighbour is pushed under a badge.</summary>
+    /// out at a corner (a count, "OPT", "?": <see cref="BadgeRoom"/>; a floor arrow: <see cref="FloorBadgeRoom"/>), so no
+    /// neighbour is pushed under a badge.</summary>
     public static float RepelHalf(ShownMarker m, float ui) =>
-        RestHalf(m.Marker, ui) + (m.Floor != 0 || m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? 3 * ui : 0) + JoinedExtra(m, ui);
+        RestHalf(m.Marker, ui) + (m.Floor != 0 ? FloorBadgeRoom : m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? BadgeRoom : 0) * ui + JoinedExtra(m, ui);
+
+    /// <summary>How much wider a symbol with a corner badge counts for the repel (pixels, before scaling).</summary>
+    public const float BadgeRoom = 3;
+
+    /// <summary>
+    /// The same for a floor arrow: the 3 DIP every badge had, and 3 more since its disc grew (owner, 2026-10-16: from a
+    /// radius of 5.5 DIP to 7, its rim from 1.2 to 1.5, its centre 1 DIP further out each way). Along the diagonal it
+    /// reaches 3.1 DIP further from its symbol than it did, so a neighbour set as close as the repel allows comes no
+    /// further into the larger disc than it came into the smaller one.
+    /// </summary>
+    public const float FloorBadgeRoom = 6;
 
     /// <summary>How far a symbol must stand from its place before a leader joins the two: clear of its own body, so
     /// the dot at the place shows. Closer, it still covers its place and needs none.</summary>
@@ -1569,9 +1581,17 @@ public static partial class MapRenderer
         return IndexOf(scene.Floor) - IndexOf(layer);
     }
 
+    // The other-floor badge's sizes (DIP; owner, 2026-10-16, docs/DESIGN.md, "Visual language"): the disc's radius and
+    // its rim; the caret's half width and half height between its line's centres, and its stroke; two or more floors
+    // away the plate, where the caret and the digit stand, each centred this far in from its end, and the digit's size.
+    internal const float FloorDisc = 7, FloorRim = 1.5f;
+    internal const float FloorCaretHalfWidth = 3.4f, FloorCaretHalfHeight = 1.4f, FloorCaretStroke = 2.2f;
+    internal const float FloorPlateWidth = 22, FloorPlateHeight = 15, FloorPlateCaretIn = 6.75f, FloorPlateDigitIn = 5.25f, FloorDigit = 11;
+
     // The floor arrow sits at the marker's upper right (the lower right is the cluster badge's); beside small symbols
-    // it moves out so they stay visible.
-    private static SKPoint FloorBadgeCenter(ShownMarker m, float ui)
+    // it moves out so they stay visible. 1 DIP further out each way than the smaller disc of before 2026-10-16 stood,
+    // so the larger one covers no more of its own symbol.
+    internal static SKPoint FloorBadgeCenter(ShownMarker m, float ui)
     {
         var r = m.Marker.Kind switch
         {
@@ -1580,48 +1600,62 @@ public static partial class MapRenderer
             MarkerKind.BossSpawn => m.R * 1.25f,
             _ => m.R,
         };
-        var d = r < 8 * ui ? r + 3 * ui : r * 0.8f;
+        var d = (r < 8 * ui ? r + 3 * ui : r * 0.8f) + 1 * ui;
         // Above a tab (MapJoin), not on it.
         return new SKPoint(m.At.X + d, m.At.Y - d - (HasTab(m) ? 4 * ui : 0));
     }
 
-    private static SKRect FloorBadgeBox(ShownMarker m, float ui)
+    // The disc's square (with half a DIP of its rim), or the plate, whose caret stands where the disc's would.
+    internal static SKRect FloorBadgeBox(ShownMarker m, float ui)
     {
         var c = FloorBadgeCenter(m, ui);
-        return Math.Abs(m.Floor) > 1 ? SKRect.Create(c.X - 6 * ui, c.Y - 6.5f * ui, 18 * ui, 13 * ui) : Square(c, 6 * ui);
+        return Math.Abs(m.Floor) > 1
+            ? SKRect.Create(c.X - FloorPlateCaretIn * ui, c.Y - FloorPlateHeight / 2 * ui, FloorPlateWidth * ui, FloorPlateHeight * ui)
+            : Square(c, (FloorDisc + 0.5f) * ui);
     }
 
-    // The other-floor arrow: a small dark disc with a chevron pointing up or down; two or more floors away, a small
-    // plate with the chevron and the number of floors. In the marker's own colour, like its count and OPT badges: a
-    // marker's badges are the marker's (the review of 2026-10-04: it was the player's sand, which says "you").
-    private static void DrawFloorArrow(SKCanvas canvas, ShownMarker m, float ui)
+    // The other-floor arrow: a dark disc with a bold caret pointing up or down; two or more floors away, a plate with
+    // the caret and the number of floors. In the marker's own colour, like its count and OPT badges: a marker's badges
+    // are the marker's (the review of 2026-10-04: it was the player's sand, which says "you"). The caret is a stroked
+    // chevron, about 9 × 5 DIP outside (owner, 2026-10-16, from a beta tester: hard to read on small second screens;
+    // until then a filled triangle of about 6 × 5 DIP, which at 100 % ran into a blob where up and down differed only
+    // in which edge was flat: an open V keeps its shape at that size).
+    internal static void DrawFloorArrow(SKCanvas canvas, ShownMarker m, float ui)
     {
         var c = FloorBadgeCenter(m, ui);
         var offset = m.Floor;
         using var plate = new SKPaint { Color = Background, IsAntialias = true };
-        using var rim = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.2f * ui };
-        using var fill = new SKPaint { Color = m.Color, IsAntialias = true };
+        using var rim = new SKPaint { Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FloorRim * ui };
         var count = Math.Abs(offset);
         if (count > 1)
         {
             var box = FloorBadgeBox(m, ui);
             canvas.DrawRect(box, plate);
             canvas.DrawRect(box, rim);
-            c = new SKPoint(box.Left + 5.5f * ui, box.MidY);
-            using var font = new SKFont(TypefaceBold, 9.5f * ui);
-            canvas.DrawText(count.ToString(System.Globalization.CultureInfo.InvariantCulture), box.Right - 5 * ui, box.MidY + font.Size * 0.36f, SKTextAlign.Center, font, fill);
+            c = new SKPoint(box.Left + FloorPlateCaretIn * ui, box.MidY);
+            using var fill = new SKPaint { Color = m.Color, IsAntialias = true };
+            using var font = new SKFont(TypefaceBold, FloorDigit * ui);
+            canvas.DrawText(count.ToString(System.Globalization.CultureInfo.InvariantCulture), box.Right - FloorPlateDigitIn * ui, box.MidY + font.Size * 0.36f,
+                SKTextAlign.Center, font, fill);
         }
         else
         {
-            canvas.DrawCircle(c, 5.5f * ui, plate);
-            canvas.DrawCircle(c, 5.5f * ui, rim);
+            canvas.DrawCircle(c, FloorDisc * ui, plate);
+            canvas.DrawCircle(c, FloorDisc * ui, rim);
         }
-        var h = (count > 1 ? 2.3f : 2.6f) * ui;
-        var w = (count > 1 ? 2.8f : 3.2f) * ui;
-        using var chevron = offset > 0
-            ? Polygon(new(c.X, c.Y - h), new(c.X + w, c.Y + h * 0.8f), new(c.X - w, c.Y + h * 0.8f))
-            : Polygon(new(c.X, c.Y + h), new(c.X + w, c.Y - h * 0.8f), new(c.X - w, c.Y - h * 0.8f));
-        canvas.DrawPath(chevron, fill);
+        // The point up (above) or down (below), the arms' ends the other way.
+        var (w, h) = (FloorCaretHalfWidth * ui, (offset > 0 ? 1 : -1) * FloorCaretHalfHeight * ui);
+        using var stroke = new SKPaint
+        {
+            Color = m.Color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = FloorCaretStroke * ui,
+            StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round,
+        };
+        using var caret = new SKPathBuilder();
+        caret.MoveTo(c.X - w, c.Y + h);
+        caret.LineTo(c.X, c.Y - h);
+        caret.LineTo(c.X + w, c.Y + h);
+        using var path = caret.Detach();
+        canvas.DrawPath(path, stroke);
     }
 
     /// <summary>The marker under a screen point (pixels), nearest first, or null.</summary>
