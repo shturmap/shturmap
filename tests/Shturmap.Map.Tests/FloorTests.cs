@@ -119,4 +119,44 @@ public class FloorTests
             Assert.InRange(digit.Height, 11 * ui * 0.7 - 2, 11 * ui * 0.7 + 2);
         }
     }
+
+    // QA, 2026-10-16: at 3× on Interchange the picked "Minute of Fame" started 0 to 1 px from its ⌃2 plate's rim, reading
+    // "⌃2 Minute of Fame". A name keeps 3 DIP off every floor badge, its own too: the picked name two floors up keeps its
+    // right side, moved out past the plate's margin, and a name beside a one-floor disc keeps its right as before.
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void A_name_keeps_3_DIP_off_a_floor_badge_and_its_side(float ui)
+    {
+        // Two floors with artwork above the ground; the ground shown.
+        var definition = new MapDefinition
+        {
+            Key = "test",
+            Transform = [1, 0, 1, 0],
+            Bounds = new WorldBox(-500, -500, 500, 500),
+            Layers =
+            [
+                new MapLayer("2nd", null, "2nd", false, [new LayerExtent(new HeightRange(5, 10), [])]),
+                new MapLayer("3rd", null, "3rd", false, [new LayerExtent(new HeightRange(10, 15), [])]),
+            ],
+        };
+        MapMarker Quest(string id, double x, double y, double z, string name) =>
+            new($"objective:{id}:1", MarkerKind.Objective, new WorldPoint(x, y, z), name, "quest-" + id, Shturmap.Core.Quests.ObjectiveKind.Exploration);
+        var camera = new Camera();
+        camera.Resize(new SKSize(1000, 1000));
+        camera.Restore(new MapPoint(0, 0), 1);
+        var scene = new MapScene(definition, null)
+        {
+            Markers = [Quest("a", 0, 12, 0, "Minute of Fame"), Quest("b", 0, 7, -150, "Big Sale")],
+            Kept = new HashSet<string> { "quest-a" },
+        };
+        var layout = MapRenderer.Layout(camera, scene, ui);
+        var badged = layout.Markers.Where(m => m.Floor != 0).OrderByDescending(m => m.Floor).ToList();
+        Assert.Equal([2, 1], badged.Select(m => m.Floor));
+        Assert.All(layout.Labels, label => Assert.All(badged, m =>
+            Assert.False(label.Box.IntersectsWith(SKRect.Inflate(MapRenderer.FloorBadgeBox(m, ui), 3 * ui, 3 * ui)), $"{label.Text} within 3 DIP of {m.Marker.Id}'s floor badge")));
+        Assert.All(layout.Labels, label => Assert.Equal(0, label.Side));
+        var picked = layout.Labels.Single(l => l.Text == "Minute of Fame");
+        Assert.InRange(picked.Box.Left - MapRenderer.FloorBadgeBox(badged[0], ui).Right, 3 * ui - 0.01, 3 * ui + 0.01);
+    }
 }
