@@ -284,7 +284,7 @@ public static class RaidPlanner
                     Merge(weapons, guns.Distinct().ToList(), quest.Id);
                 if (objective.Mods is { Count: > 0 } modSets)
                     Merge(mods, modSets.SelectMany(s => s).Distinct().ToList(), quest.Id);
-                // What the exit a quest names takes (Cease Fire!: a red flare for Klimov Street): one row per item.
+                // What the exit a quest names takes (Cease Fire!: a green flare for Klimov Street): one row per item.
                 if (objective.Exit is { } exit)
                 {
                     foreach (var (itemId, count) in objective.ExitItems ?? [])

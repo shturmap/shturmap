@@ -360,6 +360,19 @@ public sealed partial class MainWindow
         var triangle = ExitTriangle(exit.Kind);
         triangle.VerticalAlignment = VerticalAlignment.Top;
         element.Children.Add(triangle);
+        // An extract a switch gates carries the map's switch badge before its name (owner, 2026-10-17, from a panel of
+        // three: "A"; MapMarker.SwitchSteps), 4 DIP after the triangle: the name keeps its column.
+        var nameColumn = 1;
+        if (exit.SwitchSteps is not null)
+        {
+            element.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var badge = SwitchBadge(exit.Kind);
+            badge.VerticalAlignment = VerticalAlignment.Top;
+            badge.Margin = new Thickness(-4, 0, 0, 0);
+            Grid.SetColumn(badge, 1);
+            element.Children.Add(badge);
+            nameColumn = 2;
+        }
         // The name in the cue's item type (its 15), broken between words in a narrow column rather than cut (FitRollRows),
         // never after a hyphen in a word (Rules.WordBreaks; QA pass, 2026-10-15); "???" where the game marks the extract
         // "??:??:??", muted: a sign, not a word. It follows the name's last word, joined to it by a no-break space, so it
@@ -373,7 +386,7 @@ public sealed partial class MainWindow
         name.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = WordBreaks.BetweenWordsOnly(exit.Label) });
         if (!listed)
             name.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = " ???", Foreground = Resource("MutedBrush") });
-        Grid.SetColumn(name, 1);
+        Grid.SetColumn(name, nameColumn);
         element.Children.Add(name);
         Place(element, column, row);
         CueExits.Children.Add(element);
@@ -403,19 +416,34 @@ public sealed partial class MainWindow
         var collar = new SolidColorBrush(Windows.UI.Color.FromArgb(170, 0x0B, 0x0C, 0x0B));
         var canvas = new Canvas { Width = RollTriangleWidth, Height = RollLine, IsHitTestVisible = false };
         canvas.Children.Add(new Polygon { Points = Corners(), Fill = collar, Stroke = collar, StrokeThickness = 6, StrokeLineJoin = PenLineJoin.Round });
-        canvas.Children.Add(new Polygon
-        {
-            Points = Corners(), StrokeThickness = 1.6, Stroke = Resource("GroundBrush"),
-            Fill = Resource(kind switch
-            {
-                MarkerKind.ExtractScav => "TealBrush",
-                MarkerKind.ExtractShared => "KhakiBrush",
-                _ => "GreenBrush",
-            }),
-        });
+        canvas.Children.Add(new Polygon { Points = Corners(), StrokeThickness = 1.6, Stroke = Resource("GroundBrush"), Fill = Resource(KindBrush(kind)) });
         // Shared by both sides: split down the middle, as on the map.
         if (kind == MarkerKind.ExtractShared)
             canvas.Children.Add(new Line { X1 = cx, X2 = cx, Y1 = cy - 0.85 * r, Y2 = cy + 0.8 * r, Stroke = Resource("GroundBrush"), StrokeThickness = 1.8 });
+        return canvas;
+    }
+
+    // An extract kind's brush, as the map colours it.
+    private static string KindBrush(MarkerKind kind) => kind switch
+    {
+        MarkerKind.ExtractScav => "TealBrush",
+        MarkerKind.ExtractShared => "KhakiBrush",
+        _ => "GreenBrush",
+    };
+
+    // The map's switch badge (MapRenderer.DrawSwitchBadge): a dark disc ⌀ 14 DIP with a 1.5 DIP rim in the kind's colour,
+    // the switches' power symbol in it in that colour; centred on the row's line.
+    private static Canvas SwitchBadge(MarkerKind kind)
+    {
+        const double r = MapRenderer.SwitchBadgeDisc, size = 2 * r + MapRenderer.SwitchBadgeRim;
+        var brush = Resource(KindBrush(kind));
+        var canvas = new Canvas { Width = size, Height = RollLine, IsHitTestVisible = false };
+        var disc = new Ellipse { Width = 2 * r, Height = 2 * r, Fill = Resource("GroundBrush"), Stroke = brush, StrokeThickness = MapRenderer.SwitchBadgeRim };
+        Canvas.SetLeft(disc, (size - 2 * r) / 2);
+        Canvas.SetTop(disc, RollLine / 2 - r);
+        canvas.Children.Add(disc);
+        var glyph = new FontIcon { Glyph = Glyphs.Switch, FontSize = MapRenderer.SwitchGlyph, Foreground = brush, Width = size, Height = RollLine };
+        canvas.Children.Add(glyph);
         return canvas;
     }
 

@@ -77,7 +77,9 @@ switch (command)
                                             draw a map with the positions from screenshot names; --focus-item
                                             draws it as pointing at that item does (a key lights its locks);
                                             --pick <quest name> picks that quest (with the locks of its keys
-                                            and the bosses it targets)
+                                            and the bosses it targets); --point-exit <extract name> draws it as
+                                            pointing at that extract does (a gated one lights its switches, with
+                                            the guide to the first)
             shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>]
                                 [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]]
                                 [--viewport <W>x<H>]
@@ -102,7 +104,8 @@ switch (command)
             shturmap-cli spawns [mode]       per map, the spawn zone markers and how far each stands from a real spawn point
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
-            shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged
+            shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged,
+                                            and the hand-kept switch exits and flare exits against the data
             shturmap-cli handovers [mode]    which hand-overs fold into the objective that gets their thing, with near misses flagged
             shturmap-cli stash <png|folder>  the 2026-10-11 spike: read stash screenshots and say which quest items they show
                                             (--set keys|quest|all, --truth <file>, --dump <folder> for pictures of the grids found)
@@ -118,7 +121,9 @@ switch (command)
 // app's own words (classes named from the item categories), with each quest's own count on a row of things to use up
 // for several quests ("Humanitarian Supplies ×2"), and what to look at: UNKNOWN ITEM (an id without a name),
 // LIST (more than three weapons that aren't one class: shown as "X or N others"), and, over all quests, NO EXIT (an
-// extract objective naming an exit no map has).
+// extract objective naming an exit no map has). Then the hand-kept tables of what exits take against the data
+// (docs/UPDATES.md): SWITCH EXITS (Data.TarkovDev.SwitchExits: STALE where a row's extract or step is gone or its id
+// changed, DATA where the data now names switches of its own for a table exit) and FLARE EXITS (ExtractRules.FlaresByHand).
 static async Task Bring(string mode)
 {
     var cache = Shturmap.Session.AppPaths.Default.DataCache;
@@ -166,6 +171,12 @@ static async Task Bring(string mode)
     Console.WriteLine();
     Console.WriteLine("Rows: " + string.Join(", ", kinds.OrderBy(k => k.Key).Select(k => $"{k.Key} {k.Value}")) + $"; flagged {flagged}");
     Console.WriteLine($"NO EXIT: {(noExit.Count == 0 ? "none" : string.Join("; ", noExit))}");
+    var drift = SwitchExits.Drift(data);
+    Console.WriteLine($"SWITCH EXITS: {SwitchExits.Table.Count} by hand, " + (drift.Count == 0
+        ? "as the data has them"
+        : string.Join("; ", drift.Select(d => (d.Stale ? "STALE " : "DATA ") + d.Text))));
+    var flares = Shturmap.Session.ExtractRules.FlareDrift(data);
+    Console.WriteLine($"FLARE EXITS: {Shturmap.Session.ExtractRules.FlaresByHand.Count} by hand, " + (flares.Count == 0 ? "as the data has them" : "STALE " + string.Join("; ", flares)));
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's
@@ -525,6 +536,13 @@ static async Task Render(string mapName, string output, List<string> screenshots
         pickName = screenshots[pi + 1];
         screenshots.RemoveRange(pi, 2);
     }
+    // "--point-exit <extract name>": as if the pointer were on that extract (its symbol, its row): it and what it links.
+    string? pointExit = null;
+    if (screenshots.IndexOf("--point-exit") is var pe and >= 0 && pe + 1 < screenshots.Count)
+    {
+        pointExit = screenshots[pe + 1];
+        screenshots.RemoveRange(pe, 2);
+    }
     var paths = Shturmap.Session.AppPaths.Default;
     var http = new CachedHttp(CachedHttp.CreateClient(), paths.DataCache);
     var data = await new GameDataLoader(http).LoadAsync(GameMode.Pve, "en");
@@ -594,6 +612,21 @@ static async Task Render(string mapName, string output, List<string> screenshots
               ?? throw new ArgumentException("Unknown item " + focusItem);
         Console.WriteLine($"Pointing at {data.ItemName(item)} ({item})");
         scene.Focus = new HashSet<string> { Shturmap.Map.MapContentBuilder.KeyGroup(item) };
+        scene.Dim = 1;
+    }
+    if (pointExit is not null)
+    {
+        // By its English name or its name in the data; the app's MapFocus adds what it links (MapContent.Links).
+        var exit = content.Markers.FirstOrDefault(m => m.Id.StartsWith("extract:", StringComparison.Ordinal)
+                       && (Shturmap.Map.MapContentBuilder.EnglishName(data, m).Equals(pointExit, StringComparison.OrdinalIgnoreCase) || m.Label.Equals(pointExit, StringComparison.OrdinalIgnoreCase)))
+                   ?? throw new ArgumentException("No extract " + pointExit + " on " + mapName);
+        var focus = new HashSet<string> { exit.Id };
+        if (content.Links.TryGetValue(exit.Id, out var linked))
+            focus.UnionWith(linked);
+        Console.WriteLine($"Pointing at {exit.Label} ({exit.Id}): " + (exit.SwitchSteps is { } steps
+            ? "steps " + string.Join(" → ", steps.Select(s => content.Markers.FirstOrDefault(m => m.Id == s)?.Label ?? s))
+            : "no switch gates it"));
+        scene.Focus = focus;
         scene.Dim = 1;
     }
 

@@ -641,8 +641,8 @@
     <comment>Raid card, under an extract: what a climbing exit takes. Item names as the game has them.</comment>
   </data>
   <data name="ExtractFlare" xml:space="preserve">
-    <value>Fire a red signal flare there</value>
-    <comment>Raid card, under an extract: what a flare exit takes.</comment>
+    <value>Fire a green signal flare there</value>
+    <comment>Raid card, under an extract: what a flare exit takes. Green: the wiki's account of every flare exit (2026-10-17); a red flare doesn't open them.</comment>
   </data>
   <data name="ExtractCoOp" xml:space="preserve">
     <value>Co-op: a PMC and a player Scav leave together</value>
@@ -667,6 +667,10 @@
   <data name="ExtractSwitchFirst" xml:space="preserve">
     <value>{switchName} first</value>
     <comment>Raid card, under an extract: a switch to turn on before leaving there. {switchName}: the switch's name, 'ZB-013 Power Switch'.</comment>
+  </data>
+  <data name="ExtractSwitchChain" xml:space="preserve">
+    <value>{switchName} first · {steps, plural, one {# step} other {# steps}}</value>
+    <comment>Raid card, under an extract: leaving there takes several switches (and a keycard) in a row; the map shows them all while the extract is pointed at. {switchName}: the first one's name, 'Mall Main Power Switch'; {steps}: how many there are in all, 4.</comment>
   </data>
   <data name="ReportNotConfigured" xml:space="preserve">
     <value>Reporting isn't set up in this build.</value>

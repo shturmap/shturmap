@@ -43,6 +43,55 @@ table, the levels, the label priority).
 were left as they are; whether a guard's kill objective lights its boss; at rest the name reads like a place name
 ("KABAN 75%" by "CONSTRUCTION" on Streets), told apart by its chance and its octagon.
 
+## 2026-10-17: switch-gated exits on the map
+
+**The ask** (owner, 2026-10-17): "Some exits still require specific actions, for example one exit in interchange
+requires the power to be switched on. This is currently not represented in the map at all and should be added as
+information." A panel of three:
+
+- A. A badge on the exit, the link on pointing (recommended).
+- B. Words on the exit's label.
+- C. The switch as part of the exit: in the exit's colour, joined to it by a dashed line at all times.
+
+The owner chose A.
+
+**What the verification of 2026-10-17 found.** tarkov.dev lists `switches` on Customs (all 28 extracts, the one ZB-013
+lever) and The Lab (all 7, the Med Elevator's three buttons) only, so every entry fell under the "most extracts" rule,
+and the name check meant to rescue the right one never matched ("ZB-013" against "ZB-1013", "Med Elevator" against
+"Medical Block Elevator"): no extract ever showed a switch line or lit a switch, on any map, in either mode.
+Interchange's Saferoom and Reserve's D-2 and bunker list none, though the data places their switches. The same check
+found that the flare exits take a green flare, not the red the rules said, and that Icebreaker's helicopter is one too
+(owner, the same day: "Fix").
+
+**Built (2026-10-17).** Binding: DESIGN.md, "Extract requirements", "Map drawing" (*Switches*, *Distances on the map*,
+the roll call's rows).
+
+- A hand-kept table of the ten gated extracts (`Data.TarkovDev.SwitchExits`, below the map's code and the rules, which
+  both read it): Customs' ZB-1013; Interchange's Saferoom Exfil (Mall Main Power Switch, Saferoom Exfil Unlock Switch,
+  the Object #11SR keycard's lock, Saferoom Exfil Switch); Reserve's D-2 (power, door) and Bunker Hermetic Door; The
+  Lab's three elevators (power, call, extract), Hangar Gate, Parking Gate and Sewage Conduit (pump, water level). By
+  map and internal name, for that id only; the steps' ids in the order of use. The data's own `switches` still count
+  where they tell an extract apart (none today); the name check is gone.
+- The line under the exit in the Raid rail: "ZB-013 Power Switch first", "Mall Main Power Switch first · 4 steps".
+- The badge: a dark disc ⌀ 14 DIP with a 1.5 rim at the extract's lower left (the floor arrow's size), the power symbol
+  in the extract's colour, at rest at every zoom; the roll call's row of such an extract carries it before the name.
+  Names keep off it and move out past it; in The Lab, where the floor arrow takes the right, they stand left of it.
+- Pointed at (its symbol, its row): every step lights in the extract's colour at any zoom, named for it ("Mall Main
+  Power Switch · Saferoom Exfil"), and the guide line runs from the extract to the first step with the distance (430 m
+  at the Saferoom). The steps' names come after the extract's and give way where there is no room.
+- The legend has a row for the badge. `shturmap-cli render <map> <out.png> --point-exit "<extract>"` draws the pointed
+  state; `bring` prints SWITCH EXITS and FLARE EXITS against the data (both "as the data has them" on 2026-10-17), and
+  `ExtractRulesTests` against the cache fails on a stale row and warns where the data names switches of its own.
+- The flare exits say "Fire a green signal flare there", and BRING's row brings the RSP-30 green; Icebreaker's
+  helicopter says it before its fare, by internal name and id.
+
+**Open for the owner.** The roll call's rows wear the badge but can't be pointed at: the cue lets the pointer through
+to the map, and its rows leave as their icons fly. The steps' names give way in a crowd: at 3× the Saferoom's last two
+steps, within 5 m of its door, show lit and unnamed, and at the whole map so does D-2's power switch in the bunker.
+Only the Saferoom's keycard is a step; the keys at other exit doors (ZB-1013's, Factory's emergency exit key) are not
+in the table. The verification's other findings (exits not always open, timed windows, no-backpack exits, wrong
+factions in the data) are not built.
+
 ## 2026-10-16: the other-floor arrow, bolder
 
 **The ask** (owner, 2026-10-16): "One of the beta testers said that the icon indicator if a location is above or below

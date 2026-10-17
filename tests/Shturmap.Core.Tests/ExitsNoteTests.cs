@@ -64,7 +64,7 @@ public class ExitsNoteTests
         // EXIT is that one already: nothing under it.
         Assert.Null(ExitsNote.Plain([Exit(), Exit(needs: "Pay 5,000 ₽")], exit: 0));
         // Not one marked ??:??:?? (not "listed" here), not a transit, not one that takes something.
-        Assert.Equal(3, ExitsNote.Plain([Exit(listed: false), Exit(transit: true), Exit(needs: "Fire a red signal flare there"), Exit()], exit: 0));
+        Assert.Equal(3, ExitsNote.Plain([Exit(listed: false), Exit(transit: true), Exit(needs: "Fire a green signal flare there"), Exit()], exit: 0));
         // Without a list read nothing is sure to be open, and without a position nothing is measured.
         Assert.Null(ExitsNote.Plain([Exit(listed: false), Exit(listed: false)], exit: 0));
         Assert.Null(ExitsNote.Plain([Exit(measured: false)], exit: null));

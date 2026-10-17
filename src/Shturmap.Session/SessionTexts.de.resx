@@ -641,8 +641,8 @@
     <comment>en: Red Rebel ice pick and paracord, no armored rig</comment>
   </data>
   <data name="ExtractFlare" xml:space="preserve">
-    <value>Dort eine rote Flare abfeuern</value>
-    <comment>en: Fire a red signal flare there</comment>
+    <value>Dort eine grüne Flare abfeuern</value>
+    <comment>en: Fire a green signal flare there</comment>
   </data>
   <data name="ExtractCoOp" xml:space="preserve">
     <value>Co-Op: ein PMC und ein Player-Scav extracten zusammen</value>
@@ -667,6 +667,10 @@
   <data name="ExtractSwitchFirst" xml:space="preserve">
     <value>Zuerst {switchName}</value>
     <comment>en: {switchName} first</comment>
+  </data>
+  <data name="ExtractSwitchChain" xml:space="preserve">
+    <value>Zuerst {switchName} · {steps, plural, one {# Schritt} other {# Schritte}}</value>
+    <comment>en: {switchName} first · {steps, plural, one {# step} other {# steps}}</comment>
   </data>
   <data name="ReportNotConfigured" xml:space="preserve">
     <value>Melden ist in diesem Build nicht eingerichtet.</value>

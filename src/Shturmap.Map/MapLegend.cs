@@ -29,6 +29,7 @@ public enum LegendSymbol
     SharedExtract,
     ExtractListed,
     ExtractNotListed,
+    ExtractSwitch,
     Transit,
     Boss,
     Sniper,
@@ -100,6 +101,8 @@ public static class MapLegend
         // Once a screenshot showed the game's own extract list this raid.
         If(scene.ExitsListed.Count > 0, LegendSymbol.ExtractListed);
         If(scene.ExitsNotListed.Count > 0 || scene.ExitsUnsure.Count > 0, LegendSymbol.ExtractNotListed);
+        // An extract a switch gates (owner, 2026-10-17): its badge.
+        If(scene.Markers.Any(m => m.SwitchSteps is not null), LegendSymbol.ExtractSwitch);
         If(kinds.Contains(MarkerKind.Transit), LegendSymbol.Transit);
         If(kinds.Contains(MarkerKind.BossSpawn), LegendSymbol.Boss);
         If(kinds.Contains(MarkerKind.SniperSpawn), LegendSymbol.Sniper);
@@ -145,6 +148,7 @@ public static class MapLegend
         new(LegendSymbol.KeptLock, MapTexts.LegendKeptLock),
         new(LegendSymbol.Joined, MapTexts.LegendJoined),
         new(LegendSymbol.Optional, MapTexts.LegendOptional),
+        new(LegendSymbol.ExtractSwitch, MapTexts.LegendExtractSwitch),
         new(LegendSymbol.Done, MapTexts.LegendDone),
         new(LegendSymbol.QuestZone, MapTexts.LegendQuestZone),
         new(LegendSymbol.Leader, MapTexts.LegendLeader),
@@ -309,6 +313,10 @@ public static partial class MapRenderer
                 break;
             case LegendSymbol.SharedExtract:
                 Marker(new MapMarker("shared", MarkerKind.ExtractShared, At(0, 0), ""));
+                break;
+            case LegendSymbol.ExtractSwitch:
+                // Up and right of the middle, so its badge at the lower left stays in the swatch.
+                Marker(new MapMarker("gated", MarkerKind.ExtractPmc, At(4, 3), "") { SwitchSteps = [] }, 0.9f);
                 break;
             case LegendSymbol.Transit:
                 Marker(new MapMarker("transit", MarkerKind.Transit, At(0, 0), ""));

@@ -13,7 +13,7 @@ public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<
     /// <summary>Where the map's loot containers stand; drawn only on a sheet (<see cref="MapScene.Containers"/>).</summary>
     public IReadOnlyList<WorldPoint> Containers { get; init; } = [];
 
-    /// <summary>Markers that light with a marker pointed at: an extract's switches, a switch's extracts
+    /// <summary>Markers that light with a marker pointed at: a gated extract's switches and lock, a switch's extracts
     /// (<see cref="MapContentBuilder.ExtractSwitchLinks"/>).</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Links { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
@@ -64,7 +64,10 @@ public static class MapContentBuilder
                 "scav" => MarkerKind.ExtractScav,
                 _ => MarkerKind.ExtractShared,
             };
-            markers.Add(new MapMarker("extract:" + extract.Id, kind, extract.Position.ToWorld(), extract.Name ?? MapTexts.MarkerExtract));
+            markers.Add(new MapMarker("extract:" + extract.Id, kind, extract.Position.ToWorld(), extract.Name ?? MapTexts.MarkerExtract)
+            {
+                SwitchSteps = SwitchSteps(data, map, extract),
+            });
         }
 
         foreach (var transit in map.Transits ?? [])
@@ -147,7 +150,7 @@ public static class MapContentBuilder
         return new MapContent(markers, zones, objectives)
         {
             Containers = Containers(map),
-            Links = ExtractSwitchLinks(map),
+            Links = ExtractSwitchLinks(data, map),
             QuestKeys = QuestKeys(objectives, sameArtwork),
             QuestBosses = QuestBosses(data, targets, markers),
         };
@@ -213,22 +216,16 @@ public static class MapContentBuilder
     }
 
     /// <summary>
-    /// An extract and the switches it needs light together (owner, 2026-10-03, from the map audit: you have to find
-    /// the switch to leave). An extract lists its switches; a switch that unlocks one of those (a power switch freeing
-    /// a lever) counts too, up to a few steps. Only switches the data places have markers; the chain runs through the
-    /// others. A switch the data lists on most of a map's extracts tells none of them apart and links nothing
-    /// (<see cref="OnMostExtracts"/>). Marker ids: "extract:&lt;id&gt;" and "switch:&lt;id&gt;".
+    /// An extract and what leaving there takes light together (owner, 2026-10-03, from the map audit: you have to find
+    /// the switch to leave; 2026-10-17, from a panel of three: "A", a badge on the extract and the link on pointing).
+    /// The steps are the hand-kept table's (<see cref="SwitchExits"/>: tarkov.dev's own switches tell no extract apart,
+    /// the verification of 2026-10-17), else the data's switches where they tell the extract apart (a switch that unlocks
+    /// one of those counts too; <see cref="SwitchExits.FromData"/>). Only steps the data places have markers; the chain
+    /// runs through the others. Marker ids: "extract:&lt;id&gt;", "switch:&lt;id&gt;" and, for a keycard's panel on the way,
+    /// "lock:&lt;id&gt;".
     /// </summary>
-    public static IReadOnlyDictionary<string, IReadOnlyList<string>> ExtractSwitchLinks(ApiMap map)
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> ExtractSwitchLinks(GameData data, ApiMap map)
     {
-        var placed = (map.Switches ?? []).Where(s => s.Position is not null).Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
-        var extracts = map.Extracts ?? [];
-        var everywhere = extracts.SelectMany(e => e.Switches ?? []).Distinct(StringComparer.Ordinal)
-            .Where(s => OnMostExtracts(map, s)).ToHashSet(StringComparer.Ordinal);
-        // Who unlocks whom, read backwards: for each switch, the switches whose flipping unlocks it (not those that lock it).
-        var activators = (map.Switches ?? [])
-            .SelectMany(s => (s.Activates ?? []).Where(a => a is { Operation: "Unlock", Switch: not null }).Select(a => (By: s.Id, Of: a.Switch!)))
-            .ToLookup(a => a.Of, a => a.By, StringComparer.Ordinal);
         var links = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         void Link(string a, string b)
         {
@@ -236,35 +233,33 @@ public static class MapContentBuilder
                 links[a] = set = new HashSet<string>(StringComparer.Ordinal);
             set.Add(b);
         }
-        foreach (var extract in extracts)
+        foreach (var extract in map.Extracts ?? [])
         {
-            var direct = (extract.Switches ?? []).Where(s => !everywhere.Contains(s)).ToList();
-            if (extract.Position is null || direct.Count == 0)
+            if (extract.Position is null)
                 continue;
-            var needed = new HashSet<string>(direct, StringComparer.Ordinal);
-            var frontier = direct.ToList();
-            for (var step = 0; step < 4 && frontier.Count > 0; step++)
-                frontier = frontier.SelectMany(s => activators[s]).Where(needed.Add).ToList();
-            foreach (var s in needed.Where(placed.Contains))
+            foreach (var step in SwitchSteps(data, map, extract) ?? [])
             {
-                Link("extract:" + extract.Id, "switch:" + s);
-                Link("switch:" + s, "extract:" + extract.Id);
+                Link("extract:" + extract.Id, step);
+                Link(step, "extract:" + extract.Id);
             }
         }
         return links.ToDictionary(l => l.Key, l => (IReadOnlyList<string>)l.Value.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
     }
 
     /// <summary>
-    /// Whether tarkov.dev lists a switch on most of a map's extracts (more than half of them): then it tells none of
-    /// them apart. Customs lists one lever on all 27 extracts and The Lab the Med Elevator's three buttons on all 7,
-    /// though most of them need no switch. "Most", as for the extract list's requirement line (ExtractRules.Needs), not
-    /// "every": with one extract put right in the data, the other 26 would all have lit the lever (the review of
-    /// 2026-10-04). A map's only extract is told apart by any switch.
+    /// The markers of the steps an extract takes, in the order of use (<see cref="MapMarker.SwitchSteps"/>): those of
+    /// <see cref="SwitchExits.Of"/> the data places, a switch's or a lock's that has a marker (<see cref="Landmarks"/>).
+    /// Null for an extract no switch gates.
     /// </summary>
-    public static bool OnMostExtracts(ApiMap map, string switchId)
+    public static IReadOnlyList<string>? SwitchSteps(GameData data, ApiMap map, ApiExtract extract)
     {
-        var extracts = map.Extracts ?? [];
-        return extracts.Count > 1 && extracts.Count(e => e.Switches?.Contains(switchId) == true) * 2 > extracts.Count;
+        var steps = SwitchExits.Of(data, map, extract);
+        if (steps.Count == 0)
+            return null;
+        bool Placed(SwitchExits.Step step) => step.Lock
+            ? (map.Locks ?? []).Any(l => l.Id == step.Id && l.Position is not null && l.LockType is "door" or "trunk")
+            : (map.Switches ?? []).Any(s => s.Id == step.Id && s.Position is not null);
+        return steps.Where(Placed).Select(s => s.MarkerId).Distinct(StringComparer.Ordinal).ToList();
     }
 
     /// <summary>The group a lock's marker carries: pointing at its key (anywhere in the window) lights it.</summary>

@@ -133,7 +133,7 @@ public class LandmarkTests
             new("hidden", "Hidden", null, [new("Unlock", "power")]),
             new("alarm", "Alarm", At(9, 9)),
         ]) with { Extracts = [new("d2", "D-2", "pmc", At(10, 0), null, null, null, ["lever"])] };
-        var links = MapContentBuilder.ExtractSwitchLinks(map);
+        var links = MapContentBuilder.ExtractSwitchLinks(Data(map), map);
         Assert.Equal(["switch:lever", "switch:power"], links["extract:d2"]);
         Assert.Equal(["extract:d2"], links["switch:power"]);
         Assert.Equal(["extract:d2"], links["switch:lever"]);
@@ -158,7 +158,7 @@ public class LandmarkTests
                 new("b", "Gate", "pmc", At(20, 0), null, null, null, ["lever", "gate"]),
             ],
         };
-        var links = MapContentBuilder.ExtractSwitchLinks(map);
+        var links = MapContentBuilder.ExtractSwitchLinks(Data(map), map);
         Assert.Equal(["switch:gate"], links["extract:b"]);
         Assert.False(links.ContainsKey("extract:a"));
         Assert.False(links.ContainsKey("switch:lever"));
@@ -180,16 +180,16 @@ public class LandmarkTests
                 new("d", "Smugglers' Boat", "pmc", At(40, 0), null, null, null, null),
             ],
         };
-        Assert.True(MapContentBuilder.OnMostExtracts(map, "lever"));
-        Assert.False(MapContentBuilder.OnMostExtracts(map, "gate"));
-        var links = MapContentBuilder.ExtractSwitchLinks(map);
+        Assert.True(SwitchExits.OnMostExtracts(map, "lever"));
+        Assert.False(SwitchExits.OnMostExtracts(map, "gate"));
+        var links = MapContentBuilder.ExtractSwitchLinks(Data(map), map);
         Assert.Equal(["extract:b"], links.Keys.Where(k => k.StartsWith("extract:", StringComparison.Ordinal)));
         Assert.Equal(["switch:gate"], links["extract:b"]);
         Assert.False(links.ContainsKey("switch:lever"));
         // A switch on exactly half of the extracts tells them apart; a map's only extract is told apart by any.
         var two = map with { Extracts = [.. map.Extracts!.Take(1), map.Extracts![3]] };
-        Assert.False(MapContentBuilder.OnMostExtracts(two, "lever"));
-        Assert.False(MapContentBuilder.OnMostExtracts(map with { Extracts = [.. map.Extracts!.Take(1)] }, "lever"));
+        Assert.False(SwitchExits.OnMostExtracts(two, "lever"));
+        Assert.False(SwitchExits.OnMostExtracts(map with { Extracts = [.. map.Extracts!.Take(1)] }, "lever"));
     }
 
     [Fact]

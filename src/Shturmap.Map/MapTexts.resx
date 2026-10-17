@@ -76,6 +76,10 @@
     <value>Optional objective: OPT at the upper left.</value>
     <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. OPT: the badge's text on the map (MarkerOptionalBadge); write it the same.</comment>
   </data>
+  <data name="LegendExtractSwitch" xml:space="preserve">
+    <value>Extract that needs a switch first: power symbol at its lower left. Point at it: its switches light, a dashed line to the first.</value>
+    <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks. The power symbol is the switches' own symbol on the map (LegendSwitch).</comment>
+  </data>
   <data name="LegendDone" xml:space="preserve">
     <value>Done objective: small grey disc with a check.</value>
     <comment>Help panel, the map's legend: the line beside the symbol's swatch, what it is and how it looks.</comment>
@@ -175,6 +179,10 @@
   <data name="MarkerSwitch" xml:space="preserve">
     <value>Switch</value>
     <comment>Map: the name beside a marker. A switch the data gives no name of its own.</comment>
+  </data>
+  <data name="MarkerStepOfExit" xml:space="preserve">
+    <value>{step} · {exit}</value>
+    <comment>Map: the name beside a switch (or a keycard's lock) while the extract it opens is pointed at: what it is, and for which extract. {step}: the switch's name, 'Mall Main Power Switch', or the key's short name; {exit}: the extract's name, 'Saferoom Exfil'.</comment>
   </data>
   <data name="MarkerSniper" xml:space="preserve">
     <value>Sniper</value>
