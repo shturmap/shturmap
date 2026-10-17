@@ -1871,6 +1871,15 @@ Raise these with the owner when the app gets its first public GitHub Release (no
       planner without a position. Before the release, check what a screenshot name without coordinates does (a
       fake-raid run with such a name), and say it in the README and on the website.
 
+## To do later (owner, 2026-10-17)
+
+- **Dailies and weeklies from a screenshot** (owner, 2026-10-17: "Add dailies and weeklies via screenshot"). The game's
+  daily and weekly operational tasks aren't in tarkov.dev's data, so the app can't show them today. The way in is a
+  menu screenshot of the Tasks screen read on the PC, as the stash is read from a menu screenshot (DESIGN.md §2,
+  *Menu screenshots*; `StashReader`): the owner's decision, which CLAUDE.md asks for before anything else is read from
+  a picture, is given with this note. Still to design: what of a daily or weekly the map can use (its map and objective
+  kind, from the screen's words), how long it is kept (they expire), and where it shows in Plan.
+
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an
