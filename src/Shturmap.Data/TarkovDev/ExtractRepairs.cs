@@ -18,10 +18,15 @@ namespace Shturmap.Data.TarkovDev;
 /// <item>a map variant's extract with no faction takes the faction of its base map's extract of the same internal name,
 /// the nearest where there are several (Night Factory from Factory, Ground Zero 21+ from Ground Zero); without one there
 /// it stays shared;</item>
-/// <item>a map variant with no extracts takes its base map's (The Lab (Dark) The Lab's), as its artwork is its base's
-/// (<see cref="GameData.DefinitionFor(string)"/>).</item>
+/// <item>a map variant with no extracts takes its base map's (The Lab (Dark) The Lab's), and its switches where it has
+/// none, as its artwork is its base's: the extracts keep their ids, so the hand-kept tables find them under the base
+/// map's name (<see cref="GameData.ExtractsFrom"/>), and their switch chains have their steps on the map.</item>
 /// </list>
-/// A variant's base map is the map whose <c>normalizedName</c> is the key of the artwork the variant is drawn with.
+/// A variant's base map is the map whose entry in tarkov.dev's maps.json lists it among its <c>altMaps</c>, that is,
+/// whose artwork tarkov.dev draws it with (<see cref="MapDefinition.AltKeys"/>: Night Factory under Factory, Ground Zero
+/// 21+ under Ground Zero, The Lab (Dark) under The Lab). A map the app draws with another's artwork only because its
+/// name starts with that map's (Ground Zero Tutorial, <see cref="GameData.DefinitionFor(string)"/>'s fallback) has no
+/// base here, and borrows nothing (coordinator, 2026-10-17).
 /// </summary>
 public static class ExtractRepairs
 {
@@ -46,7 +51,8 @@ public static class ExtractRepairs
     /// <summary>What a rule did, in English words for the audit (<c>shturmap-cli bring</c>) and the tests.</summary>
     /// <param name="Map">The map's normalizedName.</param>
     /// <param name="ExtractId">The extract's id, or null where the rule took a map's extracts as a whole.</param>
-    public sealed record Done(Rule Rule, string Map, string? ExtractId, string Text);
+    /// <param name="From">The base map's normalizedName where a variant took its extracts (<see cref="Rule.ExtractsFromBase"/>).</param>
+    public sealed record Done(Rule Rule, string Map, string? ExtractId, string Text, string? From = null);
 
     /// <summary>The maps with the rules applied, and what each did.</summary>
     /// <param name="keys">Extracts' internal names by id (<see cref="GameData.ExtractKeys"/>).</param>
@@ -129,22 +135,28 @@ public static class ExtractRepairs
             result[id] = map with { Extracts = fixedExtracts };
         }
 
-        // A variant without extracts: its base map's.
+        // A variant without extracts: its base map's, and the switches their chains take where it has none of its own (the
+        // same layout; SwitchExits and ExitFacts find the extracts under the base map's name, GameData.ExtractsFrom).
         foreach (var (id, map) in result.ToList())
         {
             if (map.Extracts is { Count: > 0 } || BaseOf(map, result, definitions) is not { Extracts: { Count: > 0 } baseExtracts } baseMap)
                 continue;
-            result[id] = map with { Extracts = baseExtracts };
+            var switches = map.Switches is { Count: > 0 } own ? own : baseMap.Switches;
+            result[id] = map with { Extracts = baseExtracts, Switches = switches };
             done.Add(new(Rule.ExtractsFromBase, map.NormalizedName, null,
-                $"{map.NormalizedName}: no extracts in the data, takes the {baseExtracts.Count} of {baseMap.NormalizedName}"));
+                $"{map.NormalizedName}: no extracts in the data, takes the {baseExtracts.Count} of {baseMap.NormalizedName}"
+                + (ReferenceEquals(switches, baseMap.Switches) && switches is { Count: > 0 } ? $" and its {switches.Count} switches" : ""), baseMap.NormalizedName));
         }
         return (result, done);
     }
 
-    /// <summary>A map variant's base map: the map whose normalizedName is the key of the artwork the variant is drawn
-    /// with ("night-factory" → "factory", "the-lab-dark" → "the-lab"). Null for a map with artwork of its own.</summary>
+    /// <summary>
+    /// A map variant's base map: the map whose entry in tarkov.dev's maps.json lists the variant among its <c>altMaps</c>
+    /// ("night-factory" → "factory", "the-lab-dark" → "the-lab"). Null for a map with an entry of its own, and for one the
+    /// app draws with another map's artwork only by the start of its name ("ground-zero-tutorial").
+    /// </summary>
     public static ApiMap? BaseOf(ApiMap map, IReadOnlyDictionary<string, ApiMap> maps, IReadOnlyList<MapDefinition> definitions) =>
-        GameData.DefinitionFor(definitions, map.NormalizedName) is { } definition && !string.Equals(definition.Key, map.NormalizedName, StringComparison.OrdinalIgnoreCase)
+        definitions.FirstOrDefault(d => d.AltKeys.Any(k => string.Equals(k, map.NormalizedName, StringComparison.OrdinalIgnoreCase))) is { } definition
             ? maps.Values.FirstOrDefault(m => string.Equals(m.NormalizedName, definition.Key, StringComparison.OrdinalIgnoreCase))
             : null;
 

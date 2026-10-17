@@ -75,6 +75,20 @@ public sealed class GameData
     /// </summary>
     public IReadOnlyList<ExtractRepairs.Done> ExtractRepairs { get; init; } = [];
 
+    private Dictionary<string, string>? _extractsFrom;
+
+    /// <summary>
+    /// The maps whose extracts are their base map's, by normalizedName, to the base's (The Lab (Dark) → The Lab;
+    /// <see cref="TarkovDev.ExtractRepairs"/>). The extracts keep their ids, so the hand-kept tables name them by the base.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ExtractsFrom => LazyInitializer.EnsureInitialized(ref _extractsFrom, () =>
+        ExtractRepairs.Where(r => r is { Rule: global::Shturmap.Data.TarkovDev.ExtractRepairs.Rule.ExtractsFromBase, From: not null })
+            .ToDictionary(r => r.Map, r => r.From!, StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>The map name the hand-kept tables (<see cref="SwitchExits"/>, <see cref="ExitFacts"/>) give a map's
+    /// extracts under: its base map's where it took that map's extracts (<see cref="ExtractsFrom"/>), else its own.</summary>
+    public string ExtractMapName(ApiMap map) => ExtractsFrom.GetValueOrDefault(map.NormalizedName) ?? map.NormalizedName;
+
     /// <summary>The fields tarkov.dev's extracts carried (with a value) as the data loaded, for <see cref="ExitFacts.Drift"/>:
     /// a new one may be a fact the table keeps by hand. Empty for data made by hand.</summary>
     public IReadOnlySet<string> ExtractFields { get; init; } = new HashSet<string>();

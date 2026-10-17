@@ -701,7 +701,7 @@
     <comment>Raid card, under an extract, muted: it opens only {minutes} min after the raid's start (MIN IN on the raid card), 15.</comment>
   </data>
   <data name="ExtractOpenAfterLever" xml:space="preserve">
-    <value>open {minutes} min after the lever</value>
+    <value>open for {minutes} min after the lever</value>
     <comment>Raid card, under an extract, muted: once its lever is pulled, it stays open {minutes} min, 4.</comment>
   </data>
   <data name="ExtractAfterPump" xml:space="preserve">

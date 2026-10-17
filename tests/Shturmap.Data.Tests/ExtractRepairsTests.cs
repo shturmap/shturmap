@@ -79,21 +79,48 @@ public class ExtractRepairsTests : IDisposable
     }
 
     [Fact]
-    public void A_variant_without_extracts_takes_its_base_maps_as_it_takes_its_artwork()
+    public void A_variant_without_extracts_takes_its_base_maps_and_their_switches_as_it_takes_its_artwork()
     {
-        // The Lab (Dark) is drawn with The Lab's artwork (no entry of its own: "the-lab-dark" starts "the-lab-").
-        var lab = Map("m-lab", "the-lab", Exit("vent", "pmc", 1), Exit("cargo", "shared", 2));
+        // tarkov.dev's maps.json draws The Lab (Dark) with The Lab's artwork (`altMaps`). Its data has no extracts and no
+        // switches: it takes The Lab's of both, the elevators' chains with their steps.
+        var lever = new ApiSwitch("power", "Power Button", new ApiPosition(5, 0, 5));
+        var lab = Map("m-lab", "the-lab", Exit("vent", "pmc", 1), Exit("cargo", "shared", 2)) with { Switches = [lever] };
         var dark = Map("m-dark", "the-lab-dark");
-        var (maps, done) = ExtractRepairs.Apply(Maps(lab, dark), new Dictionary<string, string>(), [Definition("the-lab", 100)]);
+        MapDefinition[] art = [Definition("the-lab", 100, "the-lab-dark")];
+        var (maps, done) = ExtractRepairs.Apply(Maps(lab, dark), new Dictionary<string, string>(), art);
         Assert.Equal(["vent", "cargo"], maps["m-dark"].Extracts!.Select(e => e.Id));
-        Assert.Equal(ExtractRepairs.Rule.ExtractsFromBase, Assert.Single(done).Rule);
+        Assert.Same(lab.Switches, maps["m-dark"].Switches);
+        var took = Assert.Single(done);
+        Assert.Equal((ExtractRepairs.Rule.ExtractsFromBase, "the-lab-dark", "the-lab"), (took.Rule, took.Map, took.From));
+        Assert.Equal("the-lab-dark: no extracts in the data, takes the 2 of the-lab and its 1 switches", took.Text);
         // Once the data gives it extracts of its own, they are its.
         var fixedDark = Map("m-dark", "the-lab-dark", Exit("own", "pmc", 3));
-        var (again, none) = ExtractRepairs.Apply(Maps(lab, fixedDark), new Dictionary<string, string>(), [Definition("the-lab", 100)]);
+        var (again, none) = ExtractRepairs.Apply(Maps(lab, fixedDark), new Dictionary<string, string>(), art);
         Assert.Equal(["own"], again["m-dark"].Extracts!.Select(e => e.Id));
         Assert.Empty(none);
         // A map with artwork of its own has no base.
-        Assert.Null(ExtractRepairs.BaseOf(lab, Maps(lab, dark), [Definition("the-lab", 100)]));
+        Assert.Null(ExtractRepairs.BaseOf(lab, Maps(lab, dark), art));
+    }
+
+    [Fact]
+    public void A_map_drawn_with_another_maps_artwork_only_by_its_name_borrows_nothing()
+    {
+        // Ground Zero Tutorial: maps.json has no entry for it and lists it under no map's altMaps; the app draws it with
+        // Ground Zero's artwork only because its name starts "ground-zero-" (GameData.DefinitionFor). Nothing says its
+        // exits are Ground Zero's: it takes none (coordinator, 2026-10-17).
+        var gz = Map("m-gz", "ground-zero", Exit("gate", "pmc", 1));
+        var tutorial = Map("m-t", "ground-zero-tutorial");
+        MapDefinition[] art = [Definition("ground-zero", 100, "ground-zero-21")];
+        Assert.Same(art[0], GameData.DefinitionFor(art, "ground-zero-tutorial"));
+        var (maps, done) = ExtractRepairs.Apply(Maps(gz, tutorial), new Dictionary<string, string>(), art);
+        Assert.Empty(maps["m-t"].Extracts!);
+        Assert.Empty(done);
+        Assert.Null(ExtractRepairs.BaseOf(tutorial, Maps(gz, tutorial), art));
+        // Nor does a map with an entry of its own.
+        var own = Map("m-o", "ground-zero-own");
+        var (owned, nothing) = ExtractRepairs.Apply(Maps(gz, own), new Dictionary<string, string>(), [.. art, Definition("ground-zero-own", 50)]);
+        Assert.Empty(owned["m-o"].Extracts!);
+        Assert.Empty(nothing);
     }
 
     [Fact]
@@ -189,7 +216,7 @@ public class ExtractRepairsTests : IDisposable
             {
                 "maps.json" => """
                     [ { "normalizedName": "base", "maps": [ { "key": "base", "projection": "interactive", "transform": [1, 0, 1, 0],
-                        "bounds": [[100, -100], [-100, 100]], "altMaps": ["base-21"] } ] },
+                        "bounds": [[100, -100], [-100, 100]], "altMaps": ["base-21", "base-dark"] } ] },
                       { "normalizedName": "far", "maps": [ { "key": "far", "projection": "interactive", "transform": [1, 0, 1, 0],
                         "bounds": [[1000, -1000], [-1000, 1000]] } ] } ]
                     """,
@@ -202,6 +229,7 @@ public class ExtractRepairsTests : IDisposable
                         "m-21": { "id": "m-21", "name": "Base 21+", "normalizedName": "base-21", "nameId": "base_high", "raidDuration": 30, "extracts": [
                           { "id": "gate-21", "name": "Gate", "faction": null, "position": { "x": 10, "y": 0, "z": 10 } } ] },
                         "m-dark": { "id": "m-dark", "name": "Base (Dark)", "normalizedName": "base-dark", "nameId": "base_dark", "raidDuration": 30, "extracts": [] },
+                        "m-tutorial": { "id": "m-tutorial", "name": "Base Tutorial", "normalizedName": "base-tutorial", "nameId": "base_start", "raidDuration": 30, "extracts": [] },
                         "m-far": { "id": "m-far", "name": "Far", "normalizedName": "far", "nameId": "far", "raidDuration": 30, "extracts": [
                           { "id": "far-road", "name": "Far Road", "faction": "scav", "position": { "x": -505, "y": 0, "z": 0 } } ] } },
                         "mobs": {} } }
@@ -220,8 +248,14 @@ public class ExtractRepairsTests : IDisposable
         Assert.Equal(["gate"], data.Maps["m-base"].Extracts!.Select(e => e.Id));
         Assert.Equal("pmc", Assert.Single(data.Maps["m-21"].Extracts!).Faction);
         Assert.Equal(["gate"], data.Maps["m-dark"].Extracts!.Select(e => e.Id));
+        // The tutorial is drawn with the base's artwork by its name only (no altMaps entry): it takes nothing.
+        Assert.Same(data.DefinitionFor("base"), data.DefinitionFor("base-tutorial"));
+        Assert.Empty(data.Maps["m-tutorial"].Extracts!);
         Assert.Equal([ExtractRepairs.Rule.Outside, ExtractRepairs.Rule.FactionFromBase, ExtractRepairs.Rule.ExtractsFromBase],
             data.ExtractRepairs.Select(r => r.Rule));
+        // The tables name the dark variant's extracts by the base's name.
+        Assert.Equal("base", data.ExtractMapName(data.Maps["m-dark"]));
+        Assert.Equal("base-21", data.ExtractMapName(data.Maps["m-21"]));
         // The fields the extracts carried with a value ("faction": null isn't one).
         Assert.Equal(["faction", "id", "name", "position", "size"], data.ExtractFields.Order(StringComparer.Ordinal));
     }

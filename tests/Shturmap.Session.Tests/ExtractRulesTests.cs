@@ -256,7 +256,7 @@ public class ExtractRulesTests
     [InlineData("interchange", "ex_interchange_pmc_auto", 20000, "Pay 20,000 ₽ · single use · up to 4 players", "may be closed")]
     [InlineData("reserve", "EXFIL_Train", null, "", "Train from 16 min left · stays 7 min · may be closed")]
     [InlineData("reserve", "EXFIL_vent", null, "No backpack", "")]
-    [InlineData("reserve", "EXFIL_Bunker", null, "First Switch first", "open 4 min after the lever")]
+    [InlineData("reserve", "EXFIL_Bunker", null, "First Switch first", "open for 4 min after the lever")]
     [InlineData("the-lab", "lab_Vent", null, "No backpack", "")]
     [InlineData("the-lab", "lab_Elevator_Cargo", null, "First Switch first · 3 steps · single use", "")]
     [InlineData("the-lab", "lab_Hangar_Gate", null, "First Switch first", "may be closed")]
@@ -357,6 +357,48 @@ public class ExtractRulesTests
             Assert.All(new[] { (In: 1, Left: 29), (In: 29, Left: 1) }, t => Assert.False(ExtractRules.NoteLine(after, false, t.In, t.Left, false).Passed));
             Assert.False(ExtractRules.NoteLine(after, false, 41, null, true).Passed);
         }
+    }
+
+    // The Lab (Dark) takes The Lab's extracts and switches (ExtractRepairs): they keep their ids, so the tables find them
+    // under The Lab's name, and its elevators get their switch chains, their badges and their facts (coordinator,
+    // 2026-10-17: the layout is the same with the lights off).
+    [Fact]
+    public void A_variant_that_took_its_base_maps_extracts_gets_their_switch_chains_badges_and_facts()
+    {
+        var cargo = SwitchExits.Table.Single(r => r.Key == "lab_Elevator_Cargo");
+        var hangar = ExitFacts.Table.Single(r => r.Key == "lab_Hangar_Gate");
+        var switches = cargo.Steps.Select((s, i) => new ApiSwitch(s.Id, i == 0 ? "First Switch" : $"Step {i + 1}", new ApiPosition(10 * (i + 1), 0, 0))).ToList();
+        ApiExtract Exit(string id, string name) => new(id, name, "shared", new ApiPosition(0, 0, 0), null, null, null);
+        var lab = new ApiMap("m-lab", "The Lab", "the-lab", "laboratory", null, null, 30,
+            [Exit(cargo.ExtractId, "Cargo Elevator"), Exit(hangar.ExtractId, "Hangar Gate")], [], [], [], [], Switches: switches);
+        var dark = new ApiMap("m-dark", "The Lab (Dark)", "the-lab-dark", "laboratory_dark", null, null, 35, [], [], [], [], []);
+        var keys = new Dictionary<string, string> { [cargo.ExtractId] = cargo.Key, [hangar.ExtractId] = hangar.Key };
+        Shturmap.Core.Maps.MapDefinition art = new()
+        {
+            Key = "the-lab", AltKeys = ["the-lab-dark"], Transform = [1, 0, 1, 0], Bounds = new Shturmap.Core.Maps.WorldBox(100, -100, -100, 100),
+        };
+        var (maps, done) = ExtractRepairs.Apply(new Dictionary<string, ApiMap> { [lab.Id] = lab, [dark.Id] = dark }, keys, [art]);
+        var data = new GameData
+        {
+            Mode = GameMode.Pve,
+            Language = "en",
+            Maps = maps,
+            Tasks = new Dictionary<string, ApiTask>(),
+            Traders = new Dictionary<string, ApiTrader>(),
+            ExtractKeys = keys,
+            ExtractRepairs = done,
+            MapDefinitions = [art],
+            CheckedAt = DateTimeOffset.UnixEpoch,
+        };
+        var darkMap = data.Maps["m-dark"];
+        var darkCargo = darkMap.Extracts!.Single(e => e.Id == cargo.ExtractId);
+        Assert.Equal("First Switch first · 3 steps · single use", ExtractRules.Needs(data, darkMap, darkCargo).Text);
+        // Its badge on the map: the steps, placed on The Lab (Dark) as on The Lab.
+        Assert.Equal(cargo.Steps.Select(s => s.MarkerId), Shturmap.Map.MapContentBuilder.SwitchSteps(data, darkMap, darkCargo));
+        Assert.Equal("may be closed", ExtractRules.NoteLine(ExtractRules.Notes(data, darkMap, darkMap.Extracts!.Single(e => e.Id == hangar.ExtractId)),
+            false, null, null, false).Text);
+        // Another map without the borrowing finds nothing under The Lab's rows.
+        Assert.Equal("", ExtractRules.Needs(data, darkMap with { NormalizedName = "woods" }, darkCargo).Text);
     }
 
     [Fact]
@@ -516,14 +558,28 @@ public class ExtractRulesTests
             Assert.All(data.MapByNormalizedName(variant)!.Extracts!.Where(e => keysWithSide.Contains(data.ExtractKeys[e.Id])),
                 e => Assert.False(string.IsNullOrEmpty(e.Faction), $"{variant} {e.Name} has no side"));
         }
-        Assert.NotEmpty(data.MapByNormalizedName("the-lab-dark")!.Extracts!);
+        var labDark = data.MapByNormalizedName("the-lab-dark")!;
+        Assert.NotEmpty(labDark.Extracts!);
         Assert.Equal("pmc", data.MapByNormalizedName("customs")!.Extracts!.Single(e => data.ExtractKeys[e.Id] == "ex_customs_pmc_rail_milbase").Faction);
+        // Ground Zero Tutorial is drawn with Ground Zero's artwork by its name only (maps.json lists it under no map's
+        // altMaps): it borrows nothing (coordinator, 2026-10-17).
+        Assert.DoesNotContain(data.ExtractRepairs, r => r.Map == "ground-zero-tutorial");
+        // Where The Lab (Dark) took The Lab's extracts, its elevators say their chains and carry their badges.
+        if (data.ExtractsFrom.GetValueOrDefault("the-lab-dark") == "the-lab")
+        {
+            foreach (var row in SwitchExits.Table.Where(r => r.Map == "the-lab"))
+            {
+                var exit = labDark.Extracts!.First(e => e.Id == row.ExtractId);
+                Assert.Contains(" first", ExtractRules.Needs(data, labDark, exit).Text);
+                Assert.NotNull(Shturmap.Map.MapContentBuilder.SwitchSteps(data, labDark, exit));
+            }
+        }
         // What the rules did on 2026-10-17: three copies dropped on Ground Zero, fifteen sides taken from a base map (Night
-        // Factory's nine, Ground Zero 21+'s six), The Lab (Dark)'s and Ground Zero Tutorial's extracts, the rail's side.
+        // Factory's nine, Ground Zero 21+'s six), The Lab (Dark)'s extracts and switches, the rail's side.
         var did = data.ExtractRepairs.GroupBy(r => r.Rule).ToDictionary(g => g.Key, g => g.Count());
         foreach (var (rule, then) in new[]
                  {
-                     (ExtractRepairs.Rule.Outside, 3), (ExtractRepairs.Rule.FactionFromBase, 15), (ExtractRepairs.Rule.ExtractsFromBase, 2),
+                     (ExtractRepairs.Rule.Outside, 3), (ExtractRepairs.Rule.FactionFromBase, 15), (ExtractRepairs.Rule.ExtractsFromBase, 1),
                      (ExtractRepairs.Rule.FactionByHand, 1),
                  })
         {

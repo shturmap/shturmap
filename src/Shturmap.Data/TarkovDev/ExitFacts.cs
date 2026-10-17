@@ -134,12 +134,13 @@ public static class ExitFacts
 
     /// <summary>
     /// The table's row for an extract: of its map (any map where <paramref name="map"/> is null, as for the items a quest's
-    /// exit takes), with its internal name, and its id. Null for any other.
+    /// exit takes; its base map where it took that map's extracts, <see cref="GameData.ExtractMapName"/>), with its internal
+    /// name, and its id. Null for any other.
     /// </summary>
     public static Row? RowOf(GameData data, ApiExtract extract, ApiMap? map = null)
     {
         var key = data.ExtractKeys.GetValueOrDefault(extract.Id);
-        return key is null ? null : Table.FirstOrDefault(r => r.Key == key && r.ExtractId == extract.Id && (map is null || r.Map == map.NormalizedName));
+        return key is null ? null : Table.FirstOrDefault(r => r.Key == key && r.ExtractId == extract.Id && (map is null || r.Map == data.ExtractMapName(map)));
     }
 
     /// <summary>

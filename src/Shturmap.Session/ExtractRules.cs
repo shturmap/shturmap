@@ -120,7 +120,7 @@ public static class ExtractRules
 
     /// <summary>
     /// What is so of an extract, said muted under what it takes (owner, 2026-10-17; <see cref="ExitFacts"/>): a time it
-    /// keeps ("Train from 16 min left · stays 7 min", "from 15 min in", "open 4 min after the lever", "~80 s after the
+    /// keeps ("Train from 16 min left · stays 7 min", "from 15 min in", "open for 4 min after the lever", "~80 s after the
     /// pump"), then "may be closed" where the game opens it only in some raids. Empty for an extract with none.
     /// </summary>
     public static IReadOnlyList<ExitNote> Notes(GameData data, ApiMap map, ApiExtract extract)

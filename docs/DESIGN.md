@@ -2615,7 +2615,7 @@ to its door when nothing is), and under that, muted, what is so of it:
 | `ExitFacts`: no backpack (Reserve's Sewer Manhole, The Lab's Ventilation Shaft) | "No backpack" |
 | `ExitFacts`: single use, and how many leave together (the car extracts: up to 4, Shoreline's 5; the Saferoom and The Lab's Cargo Elevator, single use only) | after the rest of the line: "Pay 5,000 ₽ · single use · up to 4 players", "… · single use" |
 | `ExitFacts`: open in some raids only, muted (the 13 the wiki marks "not always available": Customs' Old Gas Station for a PMC and Dorms V-Ex; Woods' Bridge V-Ex, RUAF Gate, ZB-014, ZB-016; Shoreline's Pier Boat; Interchange's Power Station V-Ex; Reserve's Armored Train; The Lab's Hangar Gate and Parking Gate; Streets' Courtyard and Primorsky Ave Taxi V-Ex) | "may be closed", until the game's extract list was read this raid |
-| `ExitFacts`: a time it keeps, muted (Reserve's train comes with 16 to 12 min left and Lighthouse's with 20 to 15, each staying 7; The Labyrinth's The Way Up opens 15 min in; Reserve's Bunker Hermetic Door stays open 4 min after its lever; The Lab's Sewage Conduit's water sinks in about 80 s after its pump) | "Train from 16 min left · stays 7 min", "from 15 min in", "open 4 min after the lever", "~80 s after the pump" |
+| `ExitFacts`: a time it keeps, muted (Reserve's train comes with 16 to 12 min left and Lighthouse's with 20 to 15, each staying 7; The Labyrinth's The Way Up opens 15 min in; Reserve's Bunker Hermetic Door stays open 4 min after its lever; The Lab's Sewage Conduit's water sinks in about 80 s after its pump) | "Train from 16 min left · stays 7 min", "from 15 min in", "open for 4 min after the lever", "~80 s after the pump" |
 | transit `conditions` | "TerraGroup Labs access keycard required (1)" |
 
 **Gold is what to bring or do, muted what is so of the exit** (owner, 2026-10-17). The gold line says what leaving
@@ -2640,8 +2640,9 @@ it: its extracts carry `id`, `name`, `faction`, `switch`, `switches`, `position`
 `transferItem` and `size`, nothing more; the keys at exit doors are only locks near the exit (4.6 to 13 m away), which
 no field ties to it. `ExitFacts` (in `Shturmap.Data`, beside `SwitchExits`) keeps 30 rows the way `SwitchExits` does,
 by the map's `normalizedName` and the extract's internal name, and only for the extract of the id it has (Night
-Factory and Ground Zero 21+ have rows of their own, as their ids are their own); a key's row has its door's lock id
-too. `shturmap-cli bring` (EXIT FACTS) and `ExtractRulesTests` against the cache say where a row no longer finds its
+Factory and Ground Zero 21+ have rows of their own, as their ids are their own; The Lab (Dark)'s borrowed extracts
+keep The Lab's ids and are found under The Lab's rows, *The data's defects* below); a key's row has its door's lock
+id too. `shturmap-cli bring` (EXIT FACTS) and `ExtractRulesTests` against the cache say where a row no longer finds its
 extract, or its lock with its key (STALE: its words go unsaid; the test fails), and where the data starts carrying a
 fact (DATA: a field on the extracts that wasn't there on 2026-10-17, a faction the data now gives itself; the test
 warns): docs/UPDATES.md. Not built: Lighthouse's V-Ex, Interchange's Smugglers' Tunnel and Terminal's boat have no
@@ -2660,14 +2661,20 @@ rule does nothing where the data is right:
   and Night Factory's Courtyard Gate, Customs' Railroad Passage, Woods' RUAF Gate, Interchange's Path to River,
   Icebreaker's helicopter), and no margin tells Pinewood Basement's 15 m from Railroad Passage's 16: those stay, and
   the audit lists them.
-- **A variant's extract with no side takes its base map's**: the base is the map whose artwork the variant is drawn
-  with (Factory for Night Factory, Ground Zero for Ground Zero 21+), its extract of the same internal name, the
-  nearest where it lists two (Factory's Gate 3, a Scav's and a PMC's under one id). Without one there it stays shared,
-  as before. Night Factory's nine and Ground Zero 21+'s six had none, so a Scav got PMC rows and a PMC Scav rows.
-- **A variant with no extracts takes its base map's**, as it takes its artwork (`GameData.DefinitionFor`): The Lab
-  (Dark), where the Factory and Streets transits lead, gets The Lab's seven, and Ground Zero Tutorial Ground Zero's
-  six. The tables (`SwitchExits`, `ExitFacts`) hold for their own map only, so the borrowed extracts carry no switch
-  line, badge or fact.
+- **A variant's base map** is the map whose entry in tarkov.dev's maps.json lists the variant among its `altMaps`, so
+  is drawn with its artwork by tarkov.dev's own word: Factory for Night Factory, Ground Zero for Ground Zero 21+, The
+  Lab for The Lab (Dark) (`ExtractRepairs.BaseOf`). A map the app draws with another's artwork only because its name
+  starts with that map's (`GameData.DefinitionFor`'s fallback: Ground Zero Tutorial, which maps.json lists nowhere) has
+  no base, and borrows nothing (coordinator, 2026-10-17: the rule follows the borrowed artwork, not a name).
+- **A variant's extract with no side takes its base map's**: its extract of the same internal name, the nearest where
+  it lists two (Factory's Gate 3, a Scav's and a PMC's under one id). Without one there it stays shared, as before.
+  Night Factory's nine and Ground Zero 21+'s six had none, so a Scav got PMC rows and a PMC Scav rows.
+- **A variant with no extracts takes its base map's**, and its switches where it has none: The Lab (Dark), where the
+  Factory and Streets transits lead, gets The Lab's seven extracts and fifteen switches; Ground Zero Tutorial, empty
+  too, gets nothing. The borrowed extracts keep The Lab's ids, so `SwitchExits` and `ExitFacts` find them under the
+  base map's `normalizedName` (`GameData.ExtractsFrom`, `ExtractMapName`): The Lab (Dark)'s elevators, gates and
+  conduit carry The Lab's switch lines, badges, lit steps and facts (coordinator, 2026-10-17: the layout is the same
+  with the lights off; if the Dark variant's power turns out to differ, a row can be dropped for it).
 - **One side by hand**: Customs' `ex_customs_pmc_rail_milbase` (Railroad to Reserve) is a PMC's, which the data tags
   Scav, so PMCs got no row; the row is in `ExitFacts` (`Faction`).
 

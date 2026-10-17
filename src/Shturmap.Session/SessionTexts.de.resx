@@ -693,7 +693,7 @@
     <comment>en: may be closed</comment>
   </data>
   <data name="ExtractTrain" xml:space="preserve">
-    <value>Zug ab {minutes} min übrig · bleibt {stays} min</value>
+    <value>Zug bei {minutes} min Restzeit · bleibt {stays} min</value>
     <comment>en: Train from {minutes} min left · stays {stays} min</comment>
   </data>
   <data name="ExtractOpensAt" xml:space="preserve">
@@ -702,7 +702,7 @@
   </data>
   <data name="ExtractOpenAfterLever" xml:space="preserve">
     <value>nach dem Hebel {minutes} min offen</value>
-    <comment>en: open {minutes} min after the lever</comment>
+    <comment>en: open for {minutes} min after the lever</comment>
   </data>
   <data name="ExtractAfterPump" xml:space="preserve">
     <value>~{seconds} s nach der Pumpe</value>

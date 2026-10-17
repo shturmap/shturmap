@@ -118,12 +118,14 @@ muted what is so of the exit*, *The facts are kept by hand*, *The data's defects
   use" for the Saferoom and The Lab's Cargo Elevator.
 - Muted under that: "may be closed" on the 13 exits the wiki marks "not always available", until the game's list was
   read this raid; the times: "Train from 16 min left · stays 7 min" (Reserve; Lighthouse's from 20), "from 15 min in"
-  (The Way Up), "open 4 min after the lever" (Bunker Hermetic Door), "~80 s after the pump" (Sewage Conduit). The
+  (The Way Up), "open for 4 min after the lever" (Bunker Hermetic Door), "~80 s after the pump" (Sewage Conduit). The
   trains' and The Way Up's lines follow the raid card's clock and step back to 45 % once the window has passed; no cue.
 - The rules for the data's defects, in the loader (`Data.TarkovDev.ExtractRepairs`), each a no-op on right data: a copy
   of another map's extract outside the map is dropped (Ground Zero's three); a variant's extract without a side takes
-  its base map's (Night Factory's nine, Ground Zero 21+'s six); a variant without extracts takes its base map's (The
-  Lab (Dark), and Ground Zero Tutorial); the Customs rail is a PMC's by hand (a row of `ExitFacts`).
+  its base map's (Night Factory's nine, Ground Zero 21+'s six); a variant without extracts takes its base map's, with
+  its switches (The Lab (Dark) The Lab's seven and fifteen); the Customs rail is a PMC's by hand (a row of `ExitFacts`).
+  A variant's base is the map maps.json lists it under (`altMaps`), and borrowed extracts keep their ids, so the tables
+  find them under the base's name: The Lab (Dark)'s elevators carry The Lab's switch chains, badges and facts.
 - `shturmap-cli bring` prints EXIT FACTS against the data and a line per rule with what it did; `ExtractRulesTests`
   against the cache fails on a stale row and warns where the data carries a fact or a rule did less (a fix upstream);
   `ExtractRepairsTests` hold the rules on made-up maps.
@@ -132,19 +134,20 @@ muted what is so of the exit*, *The facts are kept by hand*, *The data's defects
 edge (Courtyard Gate on Factory and Night Factory, Railroad Passage, RUAF Gate, Path to River, Icebreaker's
 helicopter), and Ground Zero's Pinewood Basement is only 15 m out, so no margin separates them: a dropped extract must
 also have the internal name of another map's extract. Units on numbers ("stays 7 min", "up to 4 players"; DESIGN.md,
-*Words*). Ground Zero 21+'s Police Cordon V-Ex has a row of its own, as Night Factory's doors do. The rule for a
-variant without extracts is general, so Ground Zero Tutorial, empty in the data too, takes Ground Zero's six. The
-borrowed extracts carry no switch line, badge or fact (the tables hold for their own map). The glance's EXIT keeps its
-gold line only.
+*Words*). Ground Zero 21+'s Police Cordon V-Ex has a row of its own, as Night Factory's doors do. The glance's EXIT
+keeps its gold line only. On the coordinator's follow-up the same day: a variant borrows only from the map tarkov.dev's
+maps.json draws it with (`altMaps`), so Ground Zero Tutorial, empty in the data too, takes nothing (the app draws it
+with Ground Zero's artwork, but only by its name's start, which nothing in the data backs); and The Lab (Dark)'s
+borrowed extracts carry The Lab's switch lines, badges and facts, with The Lab's switches (the same layout with the
+lights off; a row can be dropped for it if its power differs in the game). The texts after the translator's review:
+"Zug bei 16 min Restzeit · bleibt 7 min", "open for 4 min after the lever".
 
 **Deliberately left out.** Lighthouse's V-Ex, Interchange's Smugglers' Tunnel and Terminal's boat: no position in the
 data, and placing them by hand goes against the data-only rule. Where Mira Ave's green flare spawns (a Scav body by
 the yellow bus, the wiki says). Raiders at The Lab's and Reserve's switches and the train. A cue when a train comes
 (principle 11). The per-player fare and the fare's Scav-karma discount.
 
-**Open for the owner.** Whether Ground Zero Tutorial should borrow Ground Zero's extracts (it does now, by the general
-rule; leaving it out takes a name in the rule). Whether The Lab (Dark)'s borrowed exits should carry The Lab's switch
-lines and facts (its data has no switches either; if its power is out, they would be wrong).
+**Open for the owner.** Whether The Lab (Dark)'s power and elevators work as The Lab's: in a raid there, by eye.
 
 ## 2026-10-17: switch-gated exits on the map
 
