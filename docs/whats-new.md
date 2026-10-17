@@ -18,6 +18,13 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
+## 0.6.2 · Okami
+
+- leaders · Bosses, stepped back · Boss zones rest hollow with one name each; they light when pointed at or targeted by a quest.
+- extracts · Exits, with their facts · A badge on an exit that needs a switch; keys, no backpack, single use and timed windows on its row.
+- tour:3 · Plan by trader · A row of trader portraits under the map list: point to light their quests, click to hold.
+- leaders · Lit things breathe · What lights up while you point at a trader, a boss or an item breathes, so it stays easy to find.
+
 ## 0.6.1 · Okami
 
 - extracts · Your extracts, slower · Each icon flies 1.5 s, one after the other, so your eye can follow it to its extract.

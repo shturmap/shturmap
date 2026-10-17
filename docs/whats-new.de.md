@@ -4,6 +4,13 @@ The German lines of the What's New card, a translation of docs/whats-new.md, whi
 written and read. Each section is a version of that file, with its lines in the same order and their previews as they
 are; the release's name stays as it is. Words: docs/glossary-de.md.
 
+## 0.6.2 · Okami
+
+- leaders · Bosse, zurückgenommen · Boss-Zonen ruhen als Umriss, ein Name je Boss; sie leuchten beim Draufzeigen oder für eine Quest.
+- extracts · Extracts, mit ihren Fakten · Badge am Extract mit Schalter; Schlüssel, kein Rucksack, einmalig, Zeitfenster in der Zeile.
+- tour:3 · Planen nach Trader · Trader-Porträts unter der Map-Liste: Draufzeigen lässt ihre Quests leuchten, Klicken hält fest.
+- leaders · Leuchtendes atmet · Was beim Zeigen auf Trader, Boss oder Item leuchtet, atmet sanft und bleibt so leicht zu finden.
+
 ## 0.6.1 · Okami
 
 - extracts · Deine Extracts, langsamer · Jedes Symbol fliegt 1,5 s, eins nach dem anderen: Dein Blick folgt ihm bis zum Extract.
