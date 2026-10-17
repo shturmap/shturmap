@@ -124,11 +124,18 @@ public class ExtractRulesTests
     {
         var row = Assert.Single(SwitchExits.Table, r => r.Key == key);
         var (map, data, gated, plain) = TableMap(row, first);
-        Assert.Equal(line, ExtractRules.Needs(data, map, gated).Text);
+        // The switch line first; what ExitFacts keeps of it (a key at the door, single use) follows.
+        var needs = ExtractRules.Needs(data, map, gated).Text;
+        Assert.StartsWith(line, needs);
+        if (ExitFacts.RowOf(data, gated, map) is { DoorKey: not null } or { SingleUse: true })
+            Assert.NotEqual(line, needs);
+        else
+            Assert.Equal(line, needs);
         // A plain extract of the same map gives none, though the data lists the switch on it too.
         Assert.Equal("", ExtractRules.Needs(data, map, plain).Text);
-        // Switches take no item.
-        Assert.Empty(ExtractRules.Items(data, gated));
+        // Switches take no item; the key to a door does (ZB-1013's, the Saferoom's keycard).
+        IReadOnlyList<(string, int)> items = ExitFacts.RowOf(data, gated)?.DoorKey is { } door ? [(door, 1)] : [];
+        Assert.Equal(items, ExtractRules.Items(data, gated));
     }
 
     [Fact]
@@ -192,6 +199,181 @@ public class ExtractRulesTests
         Assert.Equal("Switch first", ExtractRules.Needs(data, bare, gate).Text);
     }
 
+    // ---- the facts tarkov.dev's data doesn't carry (owner, 2026-10-17: "exit facts" as words on the exit's Raid rail
+    // row, nothing new on the map; ExitFacts) ----
+
+    private const string Roubles = "5449016a4bdc2d6f028b456f";
+
+    // A row of ExitFacts as a map whose data is in a language: its extract under its id and internal name, with the fare a
+    // car extract has and the switches its SwitchExits row has (the first named "First Switch"), its door's lock with its
+    // key, and the key's name in that language ("Key", "Schlüssel").
+    private static (ApiMap Map, GameData Data, ApiExtract Exit) FactsMap(ExitFacts.Row row, string language, int? roubles = null)
+    {
+        var steps = SwitchExits.Table.FirstOrDefault(r => r.ExtractId == row.ExtractId)?.Steps ?? [];
+        var switches = steps.Where(s => !s.Lock).Select((s, i) => new ApiSwitch(s.Id, i == 0 ? "First Switch" : $"Step {i + 1}", new ApiPosition(10 * (i + 1), 0, 0))).ToList();
+        var locks = new List<ApiLock>();
+        if (row.DoorLock is { } door)
+            locks.Add(new ApiLock(door, "door", row.DoorKey, false, new ApiPosition(5, 0, 5)));
+        var exit = new ApiExtract(row.ExtractId, language == "de" ? "Ausgang" : "Exit", "pmc", new ApiPosition(0, 0, 0), null, null, null, null,
+            roubles is { } fare ? new ApiCount(Roubles, fare) : null);
+        var map = new ApiMap("map-1", "Map", row.Map, row.Map, null, null, 40, [exit], [], locks, [], [], Switches: switches);
+        var data = new GameData
+        {
+            Mode = GameMode.Pve,
+            Language = language,
+            Maps = new Dictionary<string, ApiMap> { [map.Id] = map },
+            Tasks = new Dictionary<string, ApiTask>(),
+            Traders = new Dictionary<string, ApiTrader>(),
+            ExtractKeys = new Dictionary<string, string> { [row.ExtractId] = row.Key },
+            EnglishNames = new Dictionary<string, string> { [row.ExtractId] = "Exit" },
+            ItemNames = row.DoorKey is { } key ? new Dictionary<string, string> { [key] = KeyName(language) } : new Dictionary<string, string>(),
+            MapDefinitions = [],
+            CheckedAt = DateTimeOffset.UnixEpoch,
+        };
+        return (map, data, exit);
+    }
+
+    private static string KeyName(string language) => language == "de" ? "Schlüssel" : "Key";
+
+    // Every row of the table, with its gold line and its muted one before the game's list was read (English words; the
+    // key's name is the data's). Where a fare stands, the car extract's.
+    [Theory]
+    [InlineData("customs", "ex_customs_pmc_zb1013", null, "First Switch first · Key for the door", "")]
+    [InlineData("customs", "ex_customs_pmc_auto", 20000, "Pay 20,000 ₽ · single use · up to 4 players", "may be closed")]
+    [InlineData("customs", "ex_customs_pmc_gasstation", null, "", "may be closed")]
+    [InlineData("customs", "ex_customs_pmc_rail_milbase", null, "", "")]
+    [InlineData("factory", "Cellars", null, "Key for the door", "")]
+    [InlineData("factory", "Gate m", null, "Key for the door", "")]
+    [InlineData("night-factory", "Cellars", null, "Key for the door", "")]
+    [InlineData("night-factory", "Gate m", null, "Key for the door", "")]
+    [InlineData("woods", "ZB-014", null, "Key for the door", "may be closed")]
+    [InlineData("woods", "ZB-016", null, "", "may be closed")]
+    [InlineData("woods", "RUAF Gate", null, "", "may be closed")]
+    [InlineData("woods", "South V-Ex", 5000, "Pay 5,000 ₽ · single use · up to 4 players", "may be closed")]
+    [InlineData("shoreline", "Shorl_V-Ex", 5000, "Pay 5,000 ₽ · single use · up to 5 players", "")]
+    [InlineData("shoreline", "Pier Boat", null, "", "may be closed")]
+    [InlineData("interchange", "ex_interchange_pmc_saferoom", null, "First Switch first · 4 steps · Key for the door · single use", "")]
+    [InlineData("interchange", "ex_interchange_pmc_auto", 20000, "Pay 20,000 ₽ · single use · up to 4 players", "may be closed")]
+    [InlineData("reserve", "EXFIL_Train", null, "", "Train from 16 min left · stays 7 min · may be closed")]
+    [InlineData("reserve", "EXFIL_vent", null, "No backpack", "")]
+    [InlineData("reserve", "EXFIL_Bunker", null, "First Switch first", "open 4 min after the lever")]
+    [InlineData("the-lab", "lab_Vent", null, "No backpack", "")]
+    [InlineData("the-lab", "lab_Elevator_Cargo", null, "First Switch first · 3 steps · single use", "")]
+    [InlineData("the-lab", "lab_Hangar_Gate", null, "First Switch first", "may be closed")]
+    [InlineData("the-lab", "lab_Parking_Gate", null, "First Switch first", "may be closed")]
+    [InlineData("the-lab", "lab_Under_Storage_Collector", null, "First Switch first · 2 steps", "~80 s after the pump")]
+    [InlineData("lighthouse", "EXFIL_Train", null, "", "Train from 20 min left · stays 7 min")]
+    [InlineData("streets-of-tarkov", "E8_yard", null, "", "may be closed")]
+    [InlineData("streets-of-tarkov", "E7_car", 5000, "Pay 5,000 ₽ · single use · up to 4 players", "may be closed")]
+    [InlineData("ground-zero", "Sandbox_VExit", 5000, "Pay 5,000 ₽ · single use · up to 4 players", "")]
+    [InlineData("ground-zero-21", "Sandbox_VExit", 5000, "Pay 5,000 ₽ · single use · up to 4 players", "")]
+    [InlineData("the-labyrinth", "labir_exit", null, "", "from 15 min in")]
+    public void Each_exit_fact_is_said_on_its_row_the_same_in_any_language(string mapName, string key, int? roubles, string needs, string notes)
+    {
+        var row = Assert.Single(ExitFacts.Table, r => r.Map == mapName && r.Key == key);
+        foreach (var language in new[] { "en", "de" })
+        {
+            var (map, data, exit) = FactsMap(row, language, roubles);
+            var (text, item) = ExtractRules.Needs(data, map, exit);
+            // The rules' words are the app's; only the key's name is the data's.
+            Assert.Equal(needs.Replace("Key for", KeyName(language) + " for", StringComparison.Ordinal), text);
+            // The key is pictured beside the line where nothing is handed over, and BRING takes it.
+            Assert.Equal(row.DoorKey, item);
+            var items = ExtractRules.Items(data, exit);
+            if (row.DoorKey is { } door)
+                Assert.Contains((door, 1), items);
+            Assert.Equal((row.DoorKey is null ? 0 : 1) + (roubles is null ? 0 : 1), items.Count);
+            Assert.Equal(notes, ExtractRules.NoteLine(ExtractRules.Notes(data, map, exit), listRead: false, minutesIn: null, minutesLeft: null, over: false).Text);
+        }
+    }
+
+    [Fact]
+    public void The_facts_table_has_thirty_rows_one_per_extract()
+    {
+        // The rows above, each once: thirteen exits may be closed, seven take a key, two no backpack.
+        Assert.Equal(30, ExitFacts.Table.Count);
+        Assert.Equal(30, ExitFacts.Table.Select(r => r.ExtractId).Distinct().Count());
+        Assert.Equal(13, ExitFacts.Table.Count(r => r.MayBeClosed));
+        Assert.Equal(7, ExitFacts.Table.Count(r => r.DoorKey is not null));
+        Assert.All(ExitFacts.Table.Where(r => r.DoorKey is not null), r => Assert.NotNull(r.DoorLock));
+        Assert.Equal(2, ExitFacts.Table.Count(r => r.NoBackpack));
+        Assert.Equal(9, ExitFacts.Table.Count(r => r.SingleUse));
+        Assert.Equal(["pmc"], ExitFacts.Table.Where(r => r.Faction is not null).Select(r => r.Faction));
+    }
+
+    [Fact]
+    public void A_fact_holds_only_for_its_map_its_internal_name_and_its_id()
+    {
+        var row = ExitFacts.Table.Single(r => r.Map == "reserve" && r.Key == "EXFIL_vent");
+        var (map, data, exit) = FactsMap(row, "en");
+        Assert.Equal("No backpack", ExtractRules.Needs(data, map, exit).Text);
+        // Another map of that name, another id under the internal name, another internal name under the id.
+        Assert.Equal("", ExtractRules.Needs(data, map with { NormalizedName = "woods" }, exit).Text);
+        var moved = exit with { Id = "new-id" };
+        Assert.Equal("", ExtractRules.Needs(Data(new() { ["new-id"] = row.Key }, []), map, moved).Text);
+        Assert.Equal("", ExtractRules.Needs(Data(new() { [row.ExtractId] = "EXFIL_other" }, []), map, exit).Text);
+        Assert.Empty(ExtractRules.Notes(data, map with { NormalizedName = "woods" }, exit));
+    }
+
+    // The trains' words by the raid card's clock (owner, 2026-10-17: muted, worked out from the raid's length and the
+    // clock, muted further once the window has passed, no cue). Reserve's comes with 16 to 12 min left and stays 7: the
+    // latest has gone with 5 min left.
+    [Theory]
+    [InlineData(39, false)]
+    [InlineData(16, false)]
+    [InlineData(12, false)]
+    [InlineData(6, false)]
+    [InlineData(5, true)]
+    [InlineData(1, true)]
+    public void Reserves_train_steps_back_once_the_latest_has_gone(int left, bool passed)
+    {
+        var (map, data, exit) = FactsMap(ExitFacts.Table.Single(r => r.Map == "reserve" && r.Key == "EXFIL_Train"), "en");
+        var line = ExtractRules.NoteLine(ExtractRules.Notes(data, map, exit), listRead: true, minutesIn: 40 - left, minutesLeft: left, over: false);
+        Assert.Equal("Train from 16 min left · stays 7 min", line.Text);
+        Assert.Equal(passed, line.Passed);
+    }
+
+    [Fact]
+    public void The_timed_words_follow_the_clock_where_it_is_known()
+    {
+        var notes = (ExitFacts.Row row) => { var (map, data, exit) = FactsMap(row, "en"); return ExtractRules.Notes(data, map, exit); };
+        var lighthouse = notes(ExitFacts.Table.Single(r => r.Map == "lighthouse"));
+        var reserve = notes(ExitFacts.Table.Single(r => r.Map == "reserve" && r.Key == "EXFIL_Train"));
+        var wayUp = notes(ExitFacts.Table.Single(r => r.Key == "labir_exit"));
+        // Lighthouse's train: 20 to 15 min left, stays 7; gone with 8 left.
+        Assert.False(ExtractRules.NoteLine(lighthouse, false, 31, 9, false).Passed);
+        Assert.True(ExtractRules.NoteLine(lighthouse, false, 32, 8, false).Passed);
+        // Past the raid's length, the train has gone; where no time left is known (a Scav, outside a raid), it is only said.
+        Assert.True(ExtractRules.NoteLine(reserve, false, 41, null, true).Passed);
+        Assert.False(ExtractRules.NoteLine(reserve, false, null, null, false).Passed);
+        // The Way Up opens 15 min in: from then its words step back.
+        Assert.Equal(("from 15 min in", false), ExtractRules.NoteLine(wayUp, false, 14, 16, false));
+        Assert.Equal(("from 15 min in", true), ExtractRules.NoteLine(wayUp, false, 15, 15, false));
+        Assert.False(ExtractRules.NoteLine(wayUp, false, null, null, false).Passed);
+        // The words after a switch never pass by the clock.
+        foreach (var key in new[] { "EXFIL_Bunker", "lab_Under_Storage_Collector" })
+        {
+            var after = notes(ExitFacts.Table.Single(r => r.Key == key));
+            Assert.All(new[] { (In: 1, Left: 29), (In: 29, Left: 1) }, t => Assert.False(ExtractRules.NoteLine(after, false, t.In, t.Left, false).Passed));
+            Assert.False(ExtractRules.NoteLine(after, false, 41, null, true).Passed);
+        }
+    }
+
+    [Fact]
+    public void May_be_closed_goes_once_the_games_list_was_read()
+    {
+        var (map, data, exit) = FactsMap(ExitFacts.Table.Single(r => r.Key == "ex_customs_pmc_gasstation"), "en");
+        var notes = ExtractRules.Notes(data, map, exit);
+        Assert.Equal("may be closed", ExtractRules.NoteLine(notes, listRead: false, 5, 30, false).Text);
+        // Read: the list's lit, "??:??:??" and struck-out marks say it.
+        Assert.Equal("", ExtractRules.NoteLine(notes, listRead: true, 5, 30, false).Text);
+        // The train keeps its time.
+        var (trainMap, trainData, train) = FactsMap(ExitFacts.Table.Single(r => r.Map == "reserve" && r.Key == "EXFIL_Train"), "en");
+        var trainNotes = ExtractRules.Notes(trainData, trainMap, train);
+        Assert.Equal("Train from 16 min left · stays 7 min · may be closed", ExtractRules.NoteLine(trainNotes, false, 5, 35, false).Text);
+        Assert.Equal("Train from 16 min left · stays 7 min", ExtractRules.NoteLine(trainNotes, true, 5, 35, false).Text);
+    }
+
     private sealed class Offline : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
@@ -231,7 +413,7 @@ public class ExtractRulesTests
             Assert.Skip("The tarkov.dev cache has no complete German texts.");
 
         const string coOp = "Co-op: a PMC and a player Scav leave together";
-        int flares = 0, coOps = 0, exits = 0;
+        int flares = 0, coOps = 0, exits = 0, doors = 0, noted = 0;
         var gated = new HashSet<string>(StringComparer.Ordinal);
         foreach (var map in english!.Maps.Values)
         {
@@ -247,9 +429,15 @@ public class ExtractRulesTests
                 Assert.Equal(en.Contains(coOp, StringComparison.Ordinal), de.Contains(coOp, StringComparison.Ordinal));
                 Assert.Equal(en.Contains(" first", StringComparison.Ordinal), de.Contains(" first", StringComparison.Ordinal));
                 Assert.Equal(ExtractRules.Items(english, exit), ExtractRules.Items(german, exitDe));
+                // The facts the data doesn't carry: the same words in both (they are the app's), the same key pictured.
+                Assert.Equal(ExtractRules.Notes(english, map, exit), ExtractRules.Notes(german, mapDe, exitDe));
+                Assert.Equal(ExtractRules.Needs(english, map, exit).ItemId, ExtractRules.Needs(german, mapDe, exitDe).ItemId);
+                Assert.Equal(en.Contains(" for the door", StringComparison.Ordinal), de.Contains(" for the door", StringComparison.Ordinal));
                 exits++;
                 flares += en.Contains(GreenFlareLine, StringComparison.Ordinal) ? 1 : 0;
                 coOps += en.Contains(coOp, StringComparison.Ordinal) ? 1 : 0;
+                doors += en.Contains(" for the door", StringComparison.Ordinal) ? 1 : 0;
+                noted += ExtractRules.Notes(english, map, exit).Count > 0 ? 1 : 0;
                 if (en.Contains(" first", StringComparison.Ordinal))
                     gated.Add(exit.Id);
                 // An ordinary exit whose name has "sniper" in it fires no flare.
@@ -261,6 +449,9 @@ public class ExtractRulesTests
         // too); the table's ten gated extracts, and no other.
         Assert.True(exits > 100 && flares >= 7 && coOps >= 5, $"{exits} exits, {flares} flare exits, {coOps} co-op exits");
         Assert.Equal(SwitchExits.Table.Select(r => r.ExtractId).Order(StringComparer.Ordinal), gated.Order(StringComparer.Ordinal));
+        // The seven doors with a key, and the exits with something said muted (13 may be closed, the trains, The Way Up,
+        // the bunker's door, the conduit; fewer than the table's rows where an id has changed: the other test says which).
+        Assert.True(doors == 7 && noted >= 15, $"{doors} doors with a key, {noted} exits with a muted line");
     }
 
     // The hand-kept tables against the data, in both modes (docs/UPDATES.md; shturmap-cli bring prints the same). A row
@@ -288,5 +479,57 @@ public class ExtractRulesTests
         }
         var heli = data!.Maps.Values.SelectMany(m => m.Extracts ?? []).First(e => e.Id == "9bf65c4c24d0153f1542a90ddabadb37198ab9ff");
         Assert.Contains((ExtractRules.GreenFlare, 1), ExtractRules.Items(data, heli));
+
+        // The facts kept by hand: a row whose extract or door lock is gone fails (its words would go unsaid); where the
+        // data carries a fact itself, it warns.
+        var facts = ExitFacts.Drift(data);
+        Assert.Empty(facts.Where(d => d.Stale).Select(d => d.Text));
+        foreach (var news in facts.Where(d => !d.Stale))
+            TestContext.Current.AddWarning("Exit facts: " + news.Text);
+        foreach (var row in ExitFacts.Table.Where(r => r.Faction is null))
+        {
+            var map = data.MapByNormalizedName(row.Map)!;
+            var exit = map.Extracts!.First(e => e.Id == row.ExtractId);
+            Assert.True(ExtractRules.Needs(data, map, exit).Text.Length > 0 || ExtractRules.Notes(data, map, exit).Count > 0, $"{row.Map} {row.Key} says nothing");
+        }
+    }
+
+    // The general rules for the data's defects on the real data (the verification of 2026-10-17; docs/UPDATES.md). What
+    // holds whether tarkov.dev has fixed a defect or the rule did: Ground Zero has no copy of another map's extract
+    // outside it, Night Factory's and Ground Zero 21+'s extracts have a side where their base map's do, The Lab (Dark)
+    // has extracts, the PMC's rail to Reserve is a PMC's. Where a rule no longer had anything to do (a fix upstream), it
+    // warns: the rule can stay, and the report to tarkov.dev is done.
+    [Theory]
+    [InlineData(GameMode.Pve)]
+    [InlineData(GameMode.Pvp)]
+    public async Task The_data_rules_leave_every_map_with_its_own_extracts(GameMode mode)
+    {
+        var data = await CachedAsync(mode, "en");
+        if (data is null)
+            Assert.Skip($"No complete tarkov.dev cache for {mode} at {Cache}: run Shturmap once to download it.");
+        var groundZero = data!.MapByNormalizedName("ground-zero")!;
+        var box = data.DefinitionFor("ground-zero")!.SvgBounds ?? data.DefinitionFor("ground-zero")!.Bounds;
+        Assert.DoesNotContain(groundZero.Extracts!, e => e.Position is { } p && !box.Contains(p.X, p.Z));
+        foreach (var (variant, of) in new[] { ("night-factory", "factory"), ("ground-zero-21", "ground-zero") })
+        {
+            var keysWithSide = data.MapByNormalizedName(of)!.Extracts!.Where(e => e.Faction is { Length: > 0 }).Select(e => data.ExtractKeys[e.Id]).ToHashSet();
+            Assert.All(data.MapByNormalizedName(variant)!.Extracts!.Where(e => keysWithSide.Contains(data.ExtractKeys[e.Id])),
+                e => Assert.False(string.IsNullOrEmpty(e.Faction), $"{variant} {e.Name} has no side"));
+        }
+        Assert.NotEmpty(data.MapByNormalizedName("the-lab-dark")!.Extracts!);
+        Assert.Equal("pmc", data.MapByNormalizedName("customs")!.Extracts!.Single(e => data.ExtractKeys[e.Id] == "ex_customs_pmc_rail_milbase").Faction);
+        // What the rules did on 2026-10-17: three copies dropped on Ground Zero, fifteen sides taken from a base map (Night
+        // Factory's nine, Ground Zero 21+'s six), The Lab (Dark)'s and Ground Zero Tutorial's extracts, the rail's side.
+        var did = data.ExtractRepairs.GroupBy(r => r.Rule).ToDictionary(g => g.Key, g => g.Count());
+        foreach (var (rule, then) in new[]
+                 {
+                     (ExtractRepairs.Rule.Outside, 3), (ExtractRepairs.Rule.FactionFromBase, 15), (ExtractRepairs.Rule.ExtractsFromBase, 2),
+                     (ExtractRepairs.Rule.FactionByHand, 1),
+                 })
+        {
+            if (did.GetValueOrDefault(rule) != then)
+                TestContext.Current.AddWarning($"Extract data rules: {rule} did {did.GetValueOrDefault(rule)}, {then} on 2026-10-17 (an upstream fix?): "
+                    + string.Join("; ", data.ExtractRepairs.Where(r => r.Rule == rule).Select(r => r.Text)));
+        }
     }
 }

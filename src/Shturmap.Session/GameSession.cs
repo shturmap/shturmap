@@ -2061,12 +2061,15 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 RelativeDirection? direction = fix?.YawDegrees is { } yaw ? Bearing.Relative(yaw, Bearing.YawTo(fix.Position, m.Position)) : null;
                 // Marker ids are "extract:<id>" and "transit:<id>".
                 var id = m.Id[(m.Id.IndexOf(':') + 1)..];
+                var extract = m.Kind == MarkerKind.Transit ? null : shownMap?.Extracts?.FirstOrDefault(e => e.Id == id);
                 var (needs, item) = m.Kind == MarkerKind.Transit
                     ? (shownMap?.Transits?.FirstOrDefault(t => t.Id == id) is { } transit ? ExtractRules.Needs(transit) : "", (string?)null)
-                    : shownMap?.Extracts?.FirstOrDefault(e => e.Id == id) is { } extract ? ExtractRules.Needs(_data, shownMap, extract) : ("", null);
+                    : extract is not null ? ExtractRules.Needs(_data, shownMap!, extract) : ("", null);
                 extracts.Add(new ExtractView(m.Id, m.Label, m.Kind, distance, direction, MapBearing(m.Position), needs, item)
                 {
                     State = inRaid ? ExitStateOf(m.Id, m.Kind == MarkerKind.Transit) : ExitState.NotChecked,
+                    // What is so of it, muted (owner, 2026-10-17): the window words the clock part at each minute.
+                    Notes = extract is not null ? ExtractRules.Notes(_data, shownMap!, extract) : [],
                 });
             }
         }

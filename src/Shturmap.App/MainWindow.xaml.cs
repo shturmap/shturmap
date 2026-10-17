@@ -199,9 +199,15 @@ public sealed partial class MainWindow : Window
     private static readonly TimeSpan FreshFix = FixAge.Fresh;
     private bool? _fixWasFresh;
 
+    // The raid clock's minute the extract rows' muted lines were worded at (UpdateRaidLists): a train's window passes
+    // with the clock, so a new minute words them again.
+    private int? _noteMinute;
+
     private void OnClockTick()
     {
         UpdateClockTexts();
+        if (_snapshot is { } now && ViewModel.RaidClock?.In != _noteMinute && now.Extracts.Any(e => e.Notes.Count > 0))
+            UpdateRaidLists(now);
         if (_snapshot is not { RaidFix: { } fix } s)
             return;
         var fresh = FixAge.Of(fix.At, DateTime.Now) < FreshFix;
@@ -896,24 +902,35 @@ public sealed partial class MainWindow : Window
         vm.RaidLootMore = "";
         if (vm.ScavRaid)
             ShowScavRaid(s);
-        vm.Extracts = RowLists.Keep(vm.Extracts, s.Extracts.Select(e => new ExtractItem(
-            e.Id,
-            e.Name,
-            e.Kind switch
-            {
-                MarkerKind.ExtractPmc => AppTexts.ExtractKindPmc,
-                MarkerKind.ExtractScav => AppTexts.ExtractKindScav,
-                MarkerKind.Transit => AppTexts.ExtractKindTransit,
-                _ => AppTexts.ExtractKindShared,
-            },
-            Distance(e.Distance),
-            Direction(e.Direction, e.MapBearing),
-            e.Needs,
-            e.NeedItemId,
-            e.Kind)
+        // The muted line of what is so of each exit, as the raid card's clock stands (its MIN IN and MIN LEFT; a Scav's
+        // own minutes aren't the raid's): "may be closed" until the list was read, a train's window stepping back once it
+        // has passed (owner, 2026-10-17). OnClockTick words it again at each new minute.
+        var clock = vm.RaidClock;
+        _noteMinute = clock?.In;
+        vm.Extracts = RowLists.Keep(vm.Extracts, s.Extracts.Select(e =>
         {
-            State = e.State,
-            ListReadable = s.ReadExits && !s.ExitReaderMissing,
+            var note = ExtractRules.NoteLine(e.Notes, e.State != ExitState.NotChecked, clock is { Scav: false } c ? c.In : null, clock?.Left, clock?.Over == true);
+            return new ExtractItem(
+                e.Id,
+                e.Name,
+                e.Kind switch
+                {
+                    MarkerKind.ExtractPmc => AppTexts.ExtractKindPmc,
+                    MarkerKind.ExtractScav => AppTexts.ExtractKindScav,
+                    MarkerKind.Transit => AppTexts.ExtractKindTransit,
+                    _ => AppTexts.ExtractKindShared,
+                },
+                Distance(e.Distance),
+                Direction(e.Direction, e.MapBearing),
+                e.Needs,
+                e.NeedItemId,
+                e.Kind)
+            {
+                State = e.State,
+                ListReadable = s.ReadExits && !s.ExitReaderMissing,
+                Note = note.Text,
+                NotePassed = note.Passed,
+            };
         }).ToList());
         vm.ExitsNote = Rules.ExitsNote.Of(s.Raid.Phase == RaidPhase.InRaid, s.ReadExits, s.ExitReaderMissing, s.ExitsReadAt,
             s.Extracts.Count(e => e.State is ExitState.Listed or ExitState.Unsure), s.Extracts.Count(e => e.Kind != MarkerKind.Transit));

@@ -672,6 +672,42 @@
     <value>Zuerst {switchName} · {steps, plural, one {# Schritt} other {# Schritte}}</value>
     <comment>en: {switchName} first · {steps, plural, one {# step} other {# steps}}</comment>
   </data>
+  <data name="ExtractDoorKey" xml:space="preserve">
+    <value>{key} für die Tür</value>
+    <comment>en: {key} for the door</comment>
+  </data>
+  <data name="ExtractNoBackpack" xml:space="preserve">
+    <value>Kein Rucksack</value>
+    <comment>en: No backpack</comment>
+  </data>
+  <data name="ExtractSingleUse" xml:space="preserve">
+    <value>einmalig</value>
+    <comment>en: single use</comment>
+  </data>
+  <data name="ExtractSingleUseUpTo" xml:space="preserve">
+    <value>einmalig · bis zu {count, plural, one {# Spieler} other {# Spieler}}</value>
+    <comment>en: single use · up to {count, plural, one {# player} other {# players}}</comment>
+  </data>
+  <data name="ExtractMayBeClosed" xml:space="preserve">
+    <value>kann geschlossen sein</value>
+    <comment>en: may be closed</comment>
+  </data>
+  <data name="ExtractTrain" xml:space="preserve">
+    <value>Zug ab {minutes} min übrig · bleibt {stays} min</value>
+    <comment>en: Train from {minutes} min left · stays {stays} min</comment>
+  </data>
+  <data name="ExtractOpensAt" xml:space="preserve">
+    <value>ab {minutes} min im Raid</value>
+    <comment>en: from {minutes} min in</comment>
+  </data>
+  <data name="ExtractOpenAfterLever" xml:space="preserve">
+    <value>nach dem Hebel {minutes} min offen</value>
+    <comment>en: open {minutes} min after the lever</comment>
+  </data>
+  <data name="ExtractAfterPump" xml:space="preserve">
+    <value>~{seconds} s nach der Pumpe</value>
+    <comment>en: ~{seconds} s after the pump</comment>
+  </data>
   <data name="ReportNotConfigured" xml:space="preserve">
     <value>Melden ist in diesem Build nicht eingerichtet.</value>
     <comment>en: Reporting isn't set up in this build.</comment>

@@ -123,7 +123,12 @@ switch (command)
 // LIST (more than three weapons that aren't one class: shown as "X or N others"), and, over all quests, NO EXIT (an
 // extract objective naming an exit no map has). Then the hand-kept tables of what exits take against the data
 // (docs/UPDATES.md): SWITCH EXITS (Data.TarkovDev.SwitchExits: STALE where a row's extract or step is gone or its id
-// changed, DATA where the data now names switches of its own for a table exit) and FLARE EXITS (ExtractRules.FlaresByHand).
+// changed, DATA where the data now names switches of its own for a table exit), FLARE EXITS (ExtractRules.FlaresByHand)
+// and EXIT FACTS (Data.TarkovDev.ExitFacts: STALE where a row's extract or door lock is gone or its id or key changed,
+// DATA where the data now gives a row's faction itself or its extracts carry a field they didn't on 2026-10-17). Last,
+// what the general rules for the data's extract defects did as it loaded (Data.TarkovDev.ExtractRepairs), one line each:
+// OUTSIDE (copies outside their map dropped; those kept near the edge), FACTION FROM BASE, EXTRACTS FROM BASE, FACTION
+// BY HAND; "none" where the data needs it no more.
 static async Task Bring(string mode)
 {
     var cache = Shturmap.Session.AppPaths.Default.DataCache;
@@ -177,6 +182,20 @@ static async Task Bring(string mode)
         : string.Join("; ", drift.Select(d => (d.Stale ? "STALE " : "DATA ") + d.Text))));
     var flares = Shturmap.Session.ExtractRules.FlareDrift(data);
     Console.WriteLine($"FLARE EXITS: {Shturmap.Session.ExtractRules.FlaresByHand.Count} by hand, " + (flares.Count == 0 ? "as the data has them" : "STALE " + string.Join("; ", flares)));
+    var facts = ExitFacts.Drift(data);
+    Console.WriteLine($"EXIT FACTS: {ExitFacts.Table.Count} by hand, " + (facts.Count == 0
+        ? "as the data has them"
+        : string.Join("; ", facts.Select(d => (d.Stale ? "STALE " : "DATA ") + d.Text))));
+    foreach (var (rule, label) in new[]
+             {
+                 (ExtractRepairs.Rule.Outside, "OUTSIDE, dropped"), (ExtractRepairs.Rule.OutsideKept, "OUTSIDE, kept"),
+                 (ExtractRepairs.Rule.FactionFromBase, "FACTION FROM BASE"), (ExtractRepairs.Rule.ExtractsFromBase, "EXTRACTS FROM BASE"),
+                 (ExtractRepairs.Rule.FactionByHand, "FACTION BY HAND"),
+             })
+    {
+        var done = data.ExtractRepairs.Where(r => r.Rule == rule).ToList();
+        Console.WriteLine($"{label}: " + (done.Count == 0 ? "none" : $"{done.Count}: " + string.Join("; ", done.Select(r => r.Text))));
+    }
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's

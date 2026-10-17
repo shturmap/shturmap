@@ -157,12 +157,30 @@ public sealed record LastRaidView(string MapName, TimeSpan Duration, RaidSide Si
 
 /// <param name="MapBearing">Degrees clockwise from map-up, from the last fix; stays true when the facing goes stale.</param>
 /// <param name="Needs">What it takes to leave here ("Pay 5,000 ₽"), or empty.</param>
-/// <param name="NeedItemId">An item to hand over, to picture next to it.</param>
+/// <param name="NeedItemId">An item to hand over, or the key to its door, to picture next to it.</param>
 public sealed record ExtractView(string Id, string Name, MarkerKind Kind, double? Distance, RelativeDirection? Direction, double? MapBearing = null,
     string Needs = "", string? NeedItemId = null)
 {
     /// <summary>Whether the game's own list names it this raid, once a screenshot showed that list (<see cref="ExitState"/>).</summary>
     public ExitState State { get; init; }
+
+    /// <summary>What is so of it, said muted under its needs (<see cref="ExtractRules.Notes"/>; <see cref="ExtractRules.NoteLine"/>
+    /// words them as the raid's clock stands).</summary>
+    public IReadOnlyList<ExitNote> Notes { get; init; } = [];
+}
+
+/// <summary>A fact about an extract's availability or time, said muted (<see cref="ExtractRules.Notes"/>).</summary>
+/// <param name="Text">"may be closed", "Train from 16 min left · stays 7 min", in the language in use.</param>
+public sealed record ExitNote(string Text)
+{
+    /// <summary>Said only until the game's extract list was read this raid ("may be closed"): its marks say it then.</summary>
+    public bool UntilListed { get; init; }
+
+    /// <summary>The raid clock's minutes left from which its window has passed (a train's latest leaving), or null.</summary>
+    public int? PassedAtLeft { get; init; }
+
+    /// <summary>The raid's minutes in from which what it waits for has come (The Way Up open), or null.</summary>
+    public int? PassedAtIn { get; init; }
 }
 
 /// <summary>Everything the UI shows, replaced as a whole whenever something changes.</summary>

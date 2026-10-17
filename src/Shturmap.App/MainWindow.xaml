@@ -1251,6 +1251,10 @@
                                             controls:Linked.Item="{x:Bind NeedItemId}" controls:Linked.Inline="True" />
                           <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" MaxWidth="250" VerticalAlignment="Center" />
                         </StackPanel>
+                        <!-- What is so of it, muted (owner, 2026-10-17): "may be closed" until the list was read, the
+                             times it keeps; stepped back once its window has passed. -->
+                        <TextBlock Text="{x:Bind Note}" FontSize="12.5" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" MaxWidth="250"
+                                   Opacity="{x:Bind NoteStrength}" Visibility="{x:Bind NoteVisibility}" Margin="0,1,0,0" HorizontalAlignment="Left" />
                       </StackPanel>
                       <StackPanel Grid.Column="1">
                         <TextBlock Text="{x:Bind Distance}" Style="{StaticResource FigureText}" Foreground="{x:Bind DistanceBrush}" />

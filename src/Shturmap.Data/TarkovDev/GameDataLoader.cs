@@ -122,6 +122,9 @@ public sealed class GameDataLoader(CachedHttp http)
         // switches: the rules that read a name's words ("(Flare)", "(Co-op)") must find them in every game language.
         var extractKeys = new Dictionary<string, string>(StringComparer.Ordinal);
         var nameKeys = new Dictionary<string, string>(StringComparer.Ordinal);
+        // The fields the extracts carry with a value: one that wasn't there on 2026-10-17 may be a fact kept by hand
+        // (ExitFacts.Drift).
+        var extractFields = new HashSet<string>(StringComparer.Ordinal);
         var mapsData = Translated(maps.Result, mapsLang.Result, mapsEn.Result, raw =>
         {
             if (raw?["maps"] is not JsonObject all)
@@ -134,6 +137,11 @@ public sealed class GameDataLoader(CachedHttp http)
                     {
                         extractKeys.TryAdd(id, key);
                         nameKeys.TryAdd(id, key);
+                    }
+                    foreach (var (field, value) in extract)
+                    {
+                        if (value is not null && value is not JsonArray { Count: 0 })
+                            extractFields.Add(field);
                     }
                 }
                 foreach (var toggle in (map?["switches"] as JsonArray ?? []).OfType<JsonObject>())
@@ -178,13 +186,21 @@ public sealed class GameDataLoader(CachedHttp http)
         foreach (var questItem in Section(tasksData, "questItems", ApiJsonContext.Default.DictionaryStringApiQuestItem).Values)
             itemNames[questItem.Id] = questItem.Name;
 
+        // The defects in tarkov.dev's extracts, by general rules (the verification of 2026-10-17; docs/DESIGN.md,
+        // "Extract requirements", *The data's defects*): everything after this sees the repaired extracts.
+        var definitionList = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct));
+        var (repairedMaps, repairs) = ExtractRepairs.Apply(Section(mapsData, "maps", ApiJsonContext.Default.DictionaryStringApiMap), extractKeys,
+            definitionList, englishNames);
+
         return new GameData
         {
             Mode = mode,
             Language = language,
             MissingLanguage = missing,
             LanguageFailure = failed,
-            Maps = Section(mapsData, "maps", ApiJsonContext.Default.DictionaryStringApiMap),
+            Maps = repairedMaps,
+            ExtractRepairs = repairs,
+            ExtractFields = extractFields,
             Mobs = Section(mapsData, "mobs", ApiJsonContext.Default.DictionaryStringApiMob),
             Tasks = Section(tasksData, "tasks", ApiJsonContext.Default.DictionaryStringApiTask),
             Traders = Section(tradersData, null, ApiJsonContext.Default.DictionaryStringApiTrader),
@@ -195,7 +211,7 @@ public sealed class GameDataLoader(CachedHttp http)
             GameNames = gameNames,
             GameNamesLanguage = gameNamesLanguage,
             ObjectiveFacts = objectiveFacts,
-            MapDefinitions = MapDefinitionReader.Read(await File.ReadAllTextAsync(definitions.Result.FilePath, ct)),
+            MapDefinitions = definitionList,
             CheckedAt = fetches.Min(f => f.Result.FetchedAt),
             Offline = fetches.Any(f => f.Result.Stale),
         };

@@ -35,11 +35,32 @@ public class ExitListSessionTests
     private static ExitListReading List(params (string Text, bool Marked)[] rows) =>
         new(ExitList.EnglishHeader, rows.Select(r => new ExitListRow(r.Text, r.Marked)).ToList());
 
-    private static async Task<SessionRig> RaidOnCustoms(Func<string, ExitListReading?> shows)
+    // The same Customs with its PMC's Old Gas Station under the id and internal name the facts table has: the game opens
+    // it only in some raids (ExitFacts).
+    private static GameData DataWithGasStation(GameMode mode)
+    {
+        var data = Data(mode);
+        var row = ExitFacts.Table.Single(r => r.Key == "ex_customs_pmc_gasstation");
+        var customs = data.Maps["map-customs"];
+        var station = new ApiExtract(row.ExtractId, "Old Gas Station", "pmc", new ApiPosition(50, 0, 0), null, null, null);
+        return new GameData
+        {
+            Mode = data.Mode,
+            Language = data.Language,
+            Maps = new Dictionary<string, ApiMap> { [customs.Id] = customs with { Extracts = [.. customs.Extracts!, station] } },
+            Tasks = data.Tasks,
+            Traders = data.Traders,
+            ExtractKeys = new Dictionary<string, string> { [row.ExtractId] = row.Key },
+            MapDefinitions = data.MapDefinitions,
+            CheckedAt = data.CheckedAt,
+        };
+    }
+
+    private static async Task<SessionRig> RaidOnCustoms(Func<string, ExitListReading?> shows, Func<GameMode, GameData>? data = null)
     {
         var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations)
         {
-            GivenData = Data,
+            GivenData = data ?? Data,
             ExitReader = (path, _) => Task.FromResult(shows(path)),
         });
         rig.RaidUpToItsStart("maps/customs_preset.bundle", "bigmap", DateTime.Now.AddMinutes(-5));
@@ -49,6 +70,27 @@ public class ExitListSessionTests
     }
 
     private static ExitState StateOf(SessionSnapshot s, string name) => s.Extracts.Single(e => e.Name == name).State;
+
+    // "may be closed" (owner, 2026-10-17): said until a screenshot showed the game's list this raid; then the list's marks
+    // say it, whether the list names the exit or not.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task May_be_closed_is_said_until_the_list_was_read(bool named)
+    {
+        await using var rig = await RaidOnCustoms(_ => named
+            ? List(("EXFILØI Old Gas Station", false), ("EXFILØ2 Crossroads", false))
+            : List(("EXFILØI Trailer Park", false), ("EXFILØ2 Crossroads", false)), DataWithGasStation);
+        var before = (await rig.Until(s => s.Extracts.Any(e => e.Name == "Old Gas Station"), "the gas station")).Extracts.Single(e => e.Name == "Old Gas Station");
+        Assert.Equal(ExitState.NotChecked, before.State);
+        Assert.Equal("may be closed", ExtractRules.NoteLine(before.Notes, before.State != ExitState.NotChecked, 5, 30, false).Text);
+        rig.Screenshot(0, 0, 0);
+        var after = (await rig.Until(s => s.ExitsReadAt is not null, "the list read")).Extracts.Single(e => e.Name == "Old Gas Station");
+        Assert.Equal(named ? ExitState.Listed : ExitState.NotListed, after.State);
+        Assert.Equal("", ExtractRules.NoteLine(after.Notes, after.State != ExitState.NotChecked, 5, 30, false).Text);
+        // An exit the facts table doesn't have says nothing muted.
+        Assert.Empty(rig.Snapshot.Extracts.Single(e => e.Name == "Crossroads").Notes);
+    }
 
     [Theory]
     [InlineData(null, true)]
