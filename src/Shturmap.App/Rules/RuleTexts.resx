@@ -164,6 +164,14 @@
     <value>OTHER MAPS</value>
     <comment>The MAP list at the top of the rail: the heading over the maps none of your quests is on. Capitals.</comment>
   </data>
+  <data name="TraderStripTip" xml:space="preserve">
+    <value>{trader} · {count, plural, one {# active quest} other {# active quests}}</value>
+    <comment>Tooltip of a trader's portrait in the strip under the MAP list. {trader}: the trader's name as the game data gives it ("Ragman"); {count}: that trader's active quests, 0 or more.</comment>
+  </data>
+  <data name="PlanRowTrader" xml:space="preserve">
+    <value>{trader} {count}</value>
+    <comment>A map's count in Plan's rows and in the MAP list while a trader's portrait is clicked (held): how many of that trader's active quests are on the map ("Ragman 2"), in place of "Complete 5 · progress 1". {trader}: the trader's name as the game data gives it; {count}: 1 or more. Keep it this short.</comment>
+  </data>
   <data name="TourEyebrow" xml:space="preserve">
     <value>TOUR · {chapter} OF {count}</value>
     <comment>The tour's band, above the chapter's title. {chapter}: the chapter shown, from 1; {count}: how many chapters. Capitals.</comment>

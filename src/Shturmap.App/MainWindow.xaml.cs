@@ -545,6 +545,8 @@ public sealed partial class MainWindow : Window
         NoteFreshMarks(s);
         ShowPicks(s);
         UpdateClockTexts();
+        HoldTraderOnStart(s);
+        UpdateTraders(s);
         UpdatePicker(s);
         UpdatePlan(s);
         UpdateRaidLists(s);
@@ -663,9 +665,11 @@ public sealed partial class MainWindow : Window
         try
         {
             string NameOf(string id) => data.Maps.TryGetValue(id, out var map) ? map.NormalizedName : id;
+            // With a trader's focus held, each map's count is that trader's quests there ("Ragman 2"; PlanList.Count).
+            var trader = HeldTraderName(s);
             var list = MapList.Build(
                 Planning.Maps(data).Select(m => new MapList.Map(NameOf(m.Id), m.Name, m.MapIds.Select(NameOf).ToList())),
-                s.Plan.Select(p => (p.NormalizedName, ShortSummary(p.Finish.Count, p.Progress.Count))));
+                s.Plan.Select(p => (p.NormalizedName, PlanList.Count(ShortSummary(p.Finish.Count, p.Progress.Count), trader, HeldCountOn(p)))));
             if (!MapList.Same(ViewModel.MapChoices, list) && !MapPicker.IsDropDownOpen)
                 ViewModel.MapChoices = list;
             ViewModel.SelectedMap = MapList.For(ViewModel.MapChoices, s.Map?.NormalizedName);
@@ -693,8 +697,16 @@ public sealed partial class MainWindow : Window
         var (openIndex, added) = PlanList.Open(s.Plan.Select(p => p.NormalizedName).ToList(), shownKey, shownPlan is not null);
         IReadOnlyList<MapPlanView> plans = added ? [.. s.Plan, shownPlan!] : s.Plan;
         bool CardOnly(MapPlanView p, int i) => added && i == plans.Count - 1 && p.Finish.Count + p.Progress.Count == 0;
-        QuestLine Line(PlanQuestView q) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "");
-        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q) with { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
+        // A trader's focus held (the strip under the MAP list; owner, 2026-10-17): the other traders' quests step back in
+        // the rows, a pick never; each map counts the trader's quests there (TraderFocus, PlanList.Count).
+        var trader = HeldTraderName(s);
+        var inRaid = s.Raid.Phase != RaidPhase.Menu;
+        QuestLine Line(PlanQuestView q, IReadOnlySet<string> picks) => new(q.QuestId, q.Kind, q.Name, q.TraderId, s.Data?.TraderName(q.TraderId) ?? "")
+        {
+            SteppedBack = TraderFocus.StepsBack(_heldTrader, inRaid, q.TraderId, picks.Contains(q.QuestId)),
+        };
+        QuestLine OnMap(PlanQuestView q, MapPlanView p) => Line(q, s.PicksOn(p.NormalizedName)) with
+            { Needs = Chips(s, p, q.QuestId), Synopsis = q.Synopsis, StartsGroup = q.StartsGroup, Note = q.Note };
         // The picks first, in a group of their own; COMPLETE and PROGRESS without them (Planning.Sections). The cards on
         // screen stay while they say the same (RowLists): a rebuilt row loses the pointer resting on it.
         vm.Plans = RowLists.Keep(vm.Plans, plans.Select((p, i) =>
@@ -710,12 +722,13 @@ public sealed partial class MainWindow : Window
                 i == openIndex,
                 sections.Finish.Select(q => OnMap(q, p)).ToList(),
                 sections.Progress.Select(q => OnMap(q, p)).ToList(),
-                BringLines(s, p.Requirements, s.PicksOn(p.NormalizedName)),
+                BringLines(s, p.Requirements, s.PicksOn(p.NormalizedName), stepBack: !inRaid),
                 (i + 1).ToString(UiLanguage.Culture),
                 p.Requirements.Select(r => Chip(s, r)).ToList(),
                 sections.Picks.Select(q => OnMap(q, p) with { PickSlot = slots.GetValueOrDefault(q.QuestId, -1) }).ToList())
             {
-                ShortSummary = ShortSummary(p.Finish.Count, p.Progress.Count),
+                ShortSummary = PlanList.Count(ShortSummary(p.Finish.Count, p.Progress.Count), trader, HeldCountOn(p)),
+                RowSteppedBack = !inRaid && PlanList.StepsBack(trader, HeldCountOn(p)),
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
                 CardOnly = CardOnly(p, i),
                 StashNote = s.StashNoteShown,
@@ -723,12 +736,17 @@ public sealed partial class MainWindow : Window
         }).ToList(), PlanCard.Same);
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
         vm.PlanListShown = PlanList.Shown(vm.Plans.Where(p => !p.CardOnly).Select(p => p.NormalizedName).ToList(), shownKey);
-        vm.AnyMap = RowLists.Keep(vm.AnyMap, s.AnyMap.Select(Line).ToList(), QuestLine.Same);
+        vm.AnyMap = RowLists.Keep(vm.AnyMap, s.AnyMap.Select(q => Line(q, s.Picks)).ToList(), QuestLine.Same);
     }
 
-    /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder).</summary>
-    private IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks) =>
-        Planning.BringOrder(rows, picks).Select(b => BringLine(s, b.Row) with { StartsOthers = b.StartsOthers }).ToList();
+    /// <summary>BRING: what the picks need first, then a hairline and the rest (Planning.BringOrder). In Plan, with a
+    /// trader's focus held, a row that serves none of that trader's quests nor a pick steps back (TraderFocus).</summary>
+    private IReadOnlyList<RequirementLine> BringLines(SessionSnapshot s, IReadOnlyList<RequirementView> rows, IReadOnlySet<string> picks, bool stepBack = false) =>
+        Planning.BringOrder(rows, picks).Select(b => BringLine(s, b.Row) with
+        {
+            StartsOthers = b.StartsOthers,
+            SteppedBack = stepBack && TraderFocus.StepsBackServing(_heldTrader, false, b.Row.QuestIds.Select(q => (TraderOf(s, q), picks.Contains(q)))),
+        }).ToList();
 
     /// <summary>The easiest way to get the row's item ("Prapor LL1 · 18,936 ₽"), or, for a row any of several items
     /// will do (a weapon class), one of them ("e.g. Mosin rifle (Sniper) · …"); empty if unknown.</summary>
@@ -1042,10 +1060,15 @@ public sealed partial class MainWindow : Window
         }
         scene.Focus = MapFocus();
         scene.FocusObjective = Linked.Current?.Objective;
+        // A trader's held focus: its quests lit while nothing is pointed at, the rest stepped back (TraderFocus.OnMap).
+        scene.Held = HeldOnMap(latest);
         // A replay playing on this map: a scene made anew (the map came back after a preview) takes it up.
         ApplyReplay();
         // The position first (it pings, and with Follow my position on its glide begins), then the list's roll call.
         Map.Refresh();
+        // A held focus that shows on this scene, or no longer does (a new scene, its quests' places come or go): the
+        // stepping back eases in or out as it does for the pointer.
+        Map.Redraw();
         if (exitsArrive)
             ExitListJustRead(scene, latest);
         if (HelpFlyout.IsOpen)
@@ -1211,7 +1234,8 @@ public sealed partial class MainWindow : Window
         var active = s.Quests.Values.Where(q => q.State == QuestState.Active).Select(q => q.QuestId);
         var content = MapContentBuilder.Build(data, map.Id, active, s.Done);
         Map.SetScene(new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
-            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers });
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, Held = HeldOnMap(s) });
+        Map.Redraw();
         _scenes.Forget();
         ShowFloors();
         ViewModel.PreviewText = AppTexts.PreviewMap(map: Caps.Of(map.Name));
@@ -2488,8 +2512,9 @@ public sealed partial class MainWindow : Window
         Add(Windows.System.VirtualKey.Number0, () => OnFitClick(this, new RoutedEventArgs()));
         Add(Windows.System.VirtualKey.NumberPad0, () => OnFitClick(this, new RoutedEventArgs()));
         // Esc closes the cards. It leaves the picks alone: they are the plan for the coming raids, and a key press that
-        // throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way).
-        Add(Windows.System.VirtualKey.Escape, () => _cards.CloseAll());
+        // throws away a plan would be too easy to hit (owner, 2026-10-03; CLEAR PICKS is the deliberate way). With no
+        // card open it lets go of a trader's held focus (TraderFocus.Escape; owner, 2026-10-17).
+        Add(Windows.System.VirtualKey.Escape, OnEscape);
         Add(Windows.System.VirtualKey.PageUp, () => PickFloor(_shownFloor - 1, "key"));
         Add(Windows.System.VirtualKey.PageDown, () => PickFloor(_shownFloor + 1, "key"));
         Add(Windows.System.VirtualKey.F1, () => ShowHelp());

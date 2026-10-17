@@ -43,6 +43,7 @@ public static class DevScript
         ["quest"] = "start | complete | fail <quest id or part of its name>; here [<n>]: starts the first n (8) of the shown map's quests by level",
         ["place"] = "<fx> <fy> [<to fx> <to fy>]: a click (or drag, for the facing) on the map at fractions of its size",
         ["pick"] = "<id or name>: picks (or unpicks) the quest for the coming raid, as its pen does",
+        ["trader"] = "[<trader's name or id>]: holds that trader's focus, as a click on its portrait in the strip under the MAP list does; alone, lets go of it",
         ["tick"] = "<quest id or name> <n>: ticks (or unticks) the quest's n-th objective as done, as the box on its card does; not saved",
         ["show"] = "<part of a quest's name> [at row]: its card held and the first thing it needs beside it, as --show-quest does for snapshots; "
             + "with at row, its card held at the quest's own row in the rail, as a click on the row holds it (a row near the window's foot: where its card opens)",

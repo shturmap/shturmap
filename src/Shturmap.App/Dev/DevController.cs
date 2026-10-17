@@ -470,6 +470,11 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 else
                     Say("No quest " + pickName);
                 break;
+            case "trader":
+                // A trader's focus held, as a click on its portrait in the strip does; alone, let go (owner, 2026-10-17).
+                if (window.DevHoldTrader(step.Args.Count == 0 ? null : string.Join(' ', step.Args)) is { } noTrader)
+                    Say($"trader {string.Join(' ', step.Args)}: {noTrader}");
+                break;
             case "tick":
                 // Ticks (or unticks) an objective as done, as the box on its quest card does: the quest, then which of
                 // its objectives, counted from 1 in the card's order. For this session only: a script leaves no ticks.

@@ -70,6 +70,25 @@ public sealed partial class MainWindow
 
     internal void DevShowReport() => OpenReport(ReportKind.Problem, null, "devview");
 
+    /// <summary>
+    /// Holds a trader's focus as a click on its portrait in the strip does (by its name in the data's language, its
+    /// normalized name or its id); null lets go, as Esc does with no card open. Returns what it couldn't find, or null.
+    /// </summary>
+    internal string? DevHoldTrader(string? name)
+    {
+        if (name is null)
+        {
+            HoldTrader(null, "dev");
+            return null;
+        }
+        if (_snapshot?.Data is not { } data)
+            return "no game data yet";
+        if (TraderNamed(data, name) is not { } trader)
+            return "no trader by that name";
+        HoldTrader(trader.Id, "dev");
+        return null;
+    }
+
     /// <summary>A quest's card held, as "--show-quest" does (for a script's snapshot).</summary>
     internal void DevShowQuest(string name)
     {

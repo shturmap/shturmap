@@ -219,6 +219,7 @@ public sealed class MapScene
         {
             _markers = value;
             _focusShown = null;
+            _heldShown = null;
             LayoutVersion++;
         }
     }
@@ -232,6 +233,7 @@ public sealed class MapScene
         {
             _zones = value;
             _focusShown = null;
+            _heldShown = null;
             // No zone is laid out, but whether the focus shows on this map can turn on one.
             LayoutVersion++;
         }
@@ -312,6 +314,7 @@ public sealed class MapScene
         {
             _questKeys = value;
             _keptKeys = KeysOf(_kept);
+            Held = _heldAsked;
             Focus = _focusAsked;
             LayoutVersion++;
         }
@@ -346,6 +349,7 @@ public sealed class MapScene
         {
             _questBosses = value;
             _keptBosses = BossesOf(_kept);
+            Held = _heldAsked;
             Focus = _focusAsked;
             LayoutVersion++;
         }
@@ -359,8 +363,9 @@ public sealed class MapScene
 
     private IReadOnlySet<string> _keptBosses = Nothing;
 
-    /// <summary>Whether something pointed at is highlighted on this map (picks alone don't count: they dim nothing).</summary>
-    public bool HasHighlight => FocusShown;
+    /// <summary>Whether something pointed at, or a trader's held focus, is highlighted on this map (picks alone don't
+    /// count: they dim nothing).</summary>
+    public bool HasHighlight => FocusShown || HeldShown;
 
     /// <summary>
     /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
@@ -381,15 +386,56 @@ public sealed class MapScene
             LayoutVersion++;
             if (FocusShown && !same)
                 FocusSince = DateTime.Now;
-            if (FocusShown)
-            {
-                LastFocus = shown;
-                _lastFocusObjective = _focusObjective;
-            }
+            KeepLast();
+        }
+    }
+
+    // What the dimming fades out from once nothing is in focus any more: what the pointer is on, else the held focus.
+    private void KeepLast()
+    {
+        if (FocusShown)
+        {
+            LastFocus = _focus;
+            _lastFocusObjective = _focusObjective;
+        }
+        else if (HeldShown)
+        {
+            LastFocus = _held;
+            _lastFocusObjective = null;
         }
     }
 
     private IReadOnlySet<string> _focus = new HashSet<string>();
+
+    /// <summary>
+    /// The quests of a trader whose focus is held (owner, 2026-10-17, the trader strip: a click on a trader's portrait
+    /// under the MAP list). While nothing is pointed at, they are drawn as the focus is, everything else stepping back by
+    /// kind (in a raid too, by the raid's measure), but they hold still: only what the pointer is on pulses, so a focus
+    /// held all raid is no motion at the edge of the player's eye. What the pointer is on goes before it while it lasts.
+    /// A quest brings its doors and the bosses it targets along, as in <see cref="Focus"/>. Empty: none held.
+    /// </summary>
+    public IReadOnlySet<string> Held
+    {
+        get => _held;
+        set
+        {
+            _heldAsked = value;
+            var (keys, bosses) = (KeysOf(value), BossesOf(value));
+            _held = keys.Count + bosses.Count == 0 ? value : value.Concat(keys).Concat(bosses).ToHashSet(StringComparer.Ordinal);
+            _heldShown = null;
+            LayoutVersion++;
+            KeepLast();
+        }
+    }
+
+    private IReadOnlySet<string> _held = new HashSet<string>();
+
+    // The held focus as it was asked for, before its quests' doors and bosses were added.
+    private IReadOnlySet<string> _heldAsked = new HashSet<string>();
+
+    private bool? _heldShown;
+
+    private bool HeldShown => _heldShown ??= Shows(_held);
 
     // The focus as it was asked for, before the locks of its quests' keys and the bosses they target were added.
     private IReadOnlySet<string> _focusAsked = new HashSet<string>();
@@ -425,7 +471,7 @@ public sealed class MapScene
     private string? _lastFocusObjective;
 
     /// <summary>The objective marked within what is drawn emphasised (<see cref="ShownFocus"/>), or null.</summary>
-    public string? ShownFocusObjective => FocusShown ? _focusObjective : Dim > 0 ? _lastFocusObjective : null;
+    public string? ShownFocusObjective => FocusShown ? _focusObjective : HeldShown ? null : Dim > 0 ? _lastFocusObjective : null;
 
     /// <summary>
     /// How far the markers outside the focus have stepped back, 0 to 1. The map view eases it toward 1 while
@@ -441,11 +487,11 @@ public sealed class MapScene
     public bool InRaid { get; set; }
 
     /// <summary>
-    /// What is drawn emphasised: what the pointer is on, else (while the dimming fades out) what was pointed at last.
-    /// Picks (<see cref="Kept"/>) have their own look and are never part of it.
+    /// What is drawn emphasised: what the pointer is on, else a trader's held focus (<see cref="Held"/>), else (while the
+    /// dimming fades out) what was in focus last. Picks (<see cref="Kept"/>) have their own look and are never part of it.
     /// </summary>
     public IReadOnlySet<string> ShownFocus =>
-        FocusShown ? _focus : Dim > 0 ? LastFocus : Nothing;
+        FocusShown ? _focus : HeldShown ? _held : Dim > 0 ? LastFocus : Nothing;
 
     private static readonly IReadOnlySet<string> Nothing = new HashSet<string>();
 

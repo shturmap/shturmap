@@ -13,6 +13,8 @@ param(
   [int] $SnapshotAfter = 16,
   # Part of a quest name: pick and highlight it, and hold its card, before the snapshot (card.png).
   [string] $ShowQuest,
+  # A trader's name (Ragman): their focus held in the strip under the MAP list, as a click on the portrait holds it.
+  [string] $TraderFocus,
   # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
   [int] $Tour,
   # Play the raid as a Scav: the match setup names another profile than the menu's.
@@ -266,6 +268,7 @@ if ($Demo) {
 }
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter, '--culture', $Culture)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
+if ($TraderFocus) { $appArgs += @('--trader-focus', "`"$TraderFocus`"") }
 if ($Tour -gt 0) { $appArgs += @('--tour', $Tour) }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }

@@ -557,12 +557,13 @@ quoting it anywhere new.
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
     at start.
-12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere lights up every other place it
-    appears (rail rows, cards, map markers) and, for a quest, shows its card. Details come to the pointer; there
-    are no detail pages to open. Finished quests appear nowhere. The pointer says as much as it is on: on one
-    objective of a quest (its line in the raid card, its row on the quest's card, one of its places on the map) the
-    quest stays lit and that objective is marked within it; on a need cell beside a quest's name, or on the gold
-    line that names one key, it is that item (the review of 2026-10-04; "Visual language", linked highlight).
+12. **Point, don't navigate.** Pointing at a quest, an item or an extract anywhere (or at a trader in the strip
+    under the MAP list: their quests) lights up every other place it appears (rail rows, cards, map markers) and, for a
+    quest, shows its card. Details come to the pointer; there are no detail pages to open. Finished quests appear
+    nowhere. The pointer says as much as it is on: on one objective of a quest (its line in the raid card, its row on
+    the quest's card, one of its places on the map) the quest stays lit and that objective is marked within it; on a
+    need cell beside a quest's name, or on the gold line that names one key, it is that item (the review of
+    2026-10-04; "Visual language", linked highlight).
 
 ### Design system
 
@@ -745,8 +746,8 @@ same day, by rendering them side by side:
 
 Quest **types are shown by glyph, never by colour**; colour stays free for state (open, done, selected).
 The type glyph is always the first thing on a quest's row and the only thing inside its map marker. **Trader
-portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows and in the card
-header; never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind the rows that show the very thing pointed at (the same quest, item,
+portraits** are secondary: small, at the right end of Plan rows, before the quest line of Raid rows, in the card
+header and in the trader strip under the MAP list (2026-10-17); never in place of the glyph, never on the map. **Linked highlight**: gold at 18 % behind the rows that show the very thing pointed at (the same quest, item,
 objective or way out, here and elsewhere), and at 9 % behind what only belongs to it (the items a pointed-at quest
 needs, the quests a pointed-at item is for); an item that merely shares a quest with the item pointed at is not lit
 (owner, 2026-10-04, from the review: one tint stood for all three, and pointing at an item lit every other item
@@ -805,6 +806,13 @@ raid line and under a map's name in Plan, each fact is a part of its own (`LineP
 line still reads and wraps as one), and a boss's part stands for the groups of its markers on the map shown
 (`GameData.BossMobsOn` gives the id those groups are made of). Pointing at "Kaban 75%" lights Kaban's zones, and
 pointing at one of them tints the name with the weaker tint. While another map is shown the names are plain text.
+**A trader's portrait is their active quests** (owner, 2026-10-17; "Screen anatomy", *The trader strip*): in the strip
+under the MAP list, pointing at a portrait puts every active quest of that trader in the focus, as pointing at one of
+them does for one: their rows and glyphs take the full tint, the BRING rows that serve them the weaker one, and on the
+map their places pulse while the rest steps back. Pointing at one of those quests tints its trader's portrait with the
+weaker tint (`Linked.Quests`, as a boss's name). The portrait opens no card. A click holds it: then the trader's quests
+are the map's focus whenever nothing else is pointed at, held still (`MapScene.Held`). The portraits on the quests'
+rows and cards link nothing, as before.
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a dark disc at their upper right holding a bold up or down caret (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers): a stroked chevron, 2.2 DIP, about 9 × 5 DIP, in a disc
@@ -955,12 +963,44 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     on screen with its counts. It is made anew only when what it says changes, and not while it is open
     (`Rules.MapList`, `SessionSnapshot.AllPlans`). Of the panel's other ways, the other maps by name under Plan's rows
     (B), every map as a folded row (C) and every map by name in place of the list (D) were not taken.
+  - *The trader strip* (owner, 2026-10-17: "some players want to level a specific trader or want to work towards
+    specific unlocks of these traders. Currently there are no good ways in the app to account for that, you can only
+    select by map and not by trader. I at the same time want to keep the UI footprint lean"; from a panel of three: B, a
+    trader strip; `Rules.TraderFocus`, `MainWindow.Traders`). One row under the MAP list, outside what scrolls, in every
+    state: above the update band between raids, and above the raid card's head in a raid, since the head meets its body
+    without a seam and nothing may come between them. For each trader with an active quest, in the game's trader order
+    (tarkov.dev's list, as Plan's order takes it), the trader's portrait in its thin frame (`Controls.Picture`, 20 DIP)
+    and beside it the count of their active quests in the figures' gold (`FigureText`), "4": every quest the log shows
+    active for that trader, with work on a map or not. Cells of at least 43 DIP, so the rail's 351 holds eight, a count
+    of two digits included; a ninth wraps to a second row. No heading and no words: a portrait's tooltip says "Ragman · 4
+    active quests". No active quests, no strip.
+    - **Pointing** at a portrait lights that trader's quests in the rows and on the map, as a boss's name lights its zones
+      (*Visual language*, the linked highlight: a trader's portrait is their active quests); leaving puts it back.
+    - **A click holds the focus**, one trader at a time: the portrait is framed in amber (1.5 DIP over its frame, a held
+      card's border), and until it is let go the MAP list's counts and NEXT RAID's rows' counts are that trader's quests
+      on each map ("STREETS OF TARKOV · Ragman 2", `PlanList.Count`). A row with none of them steps back, its name and
+      cells at 45 % and no count: "Ragman 0" on every other row would be words to read for nothing. In the rows, the map
+      rows' glyphs, the open card's PICKED, COMPLETE and PROGRESS, ANY MAP and BRING, the other traders' quests and the
+      BRING rows that serve none of the trader's quests step back to 45 % (the map's quest labels' measure, "Map
+      drawing", "Stepping back"), never hidden; a pick never steps back, as on the map. On the map the trader's places
+      are lit and the rest steps back by kind, held still: only what the pointer is on pulses, and pointing at anything
+      goes before the focus while it lasts (`MapScene.Held`). The open card's summary keeps its own counts, and the maps
+      keep the planner's order. A click on another portrait moves the focus there; a click on the held one, or Esc with
+      no card open, lets go ("Keyboard").
+    - **In a raid** (and while one loads) the strip shows nothing unless a focus is held; then only the held portrait, so
+      the player sees the focus and can let it go after the raid: no click is needed in a raid. The map lights only that
+      trader's places and steps the others back, by the raid's measure; the raid card is unchanged.
+    - **For the run**: the focus lives in the session and is never saved. It stays through raids, a new quest list and a
+      change of map, until it is let go or the app closes; a trader with no active quest left keeps their portrait, "0",
+      until then.
+    - Of the panel's other ways, pointing at the portrait on a quest's row (A) and planning by trader in place of by map
+      (C) were not taken; the traders' unlocks and rewards were left out.
   - *The update band* (owner, 2026-10-15, from a panel of four: B, "A cue, then the band"; §8, "Updates"): the row
-    under the MAP list, outside what scrolls, holds the band about a new version between raids (UPDATE READY, the
-    version with its release's name, one note line, RESTART NOW as a button), and in a raid and while one loads the
-    raid card's head (*Raid*, below), so the band hides then. It glows in when it shows, at each return to the menus
-    after a raid, and as the UPDATE READY cue fades (principle 11). Until then the update was one quiet line at the
-    top of what scrolls, which a beta tester missed.
+    under the MAP list (and the trader strip), outside what scrolls, holds the band about a new version between raids
+    (UPDATE READY, the version with its release's name, one note line, RESTART NOW as a button), and in a raid and while
+    one loads the raid card's head (*Raid*, below), so the band hides then. It glows in when it shows, at each return to
+    the menus after a raid, and as the UPDATE READY cue fades (principle 11). Until then the update was one quiet line at
+    the top of what scrolls, which a beta tester missed.
   - *What's New* (owner, 2026-10-07: "how to inform the user about news and changes in the app ... ideally accompanied
     with screenshots"; from two panels, "C", then "Whats new: A"). A window was ruled out (principle 3), and so were
     screenshots bundled in a build (§3: map artwork, renders, portraits and icons) and pictures from the website (a new
@@ -1091,8 +1131,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     alone (`Rules.RaidTime`). While the raid loads, "40 min raid" stands with the bosses, as in Plan.)
     **The card's head stays at the top of the rail** (owner, 2026-10-08: "the remaining time is crucial information
     and when scrolling down in the quest window it gets pushed outside of view. It should always stay on top"): THIS
-    RAID, the map's name with the side, and the readout stand under the MAP list, outside what scrolls (the row the
-    update band has between raids), and the rest of the card scrolls under them. The card is drawn in two parts that meet without a seam, the head open at its foot and
+    RAID, the map's name with the side, and the readout stand under the MAP list (and the trader strip's held portrait,
+    when a focus is held), outside what scrolls (the row the update band has between raids), and the rest of the card
+    scrolls under them. The card is drawn in two parts that meet without a seam, the head open at its foot and
     the body open at its top, so unscrolled it looks as before; once anything has scrolled under it, the head closes at
     its foot with the card's edge. The rail's hint stands above THIS RAID in a raid. A copy
     of the readout pinned only once the card has scrolled away was considered and not built: it would cover the top of
@@ -1714,7 +1755,9 @@ spawns below).
 - **Stepping back while a quest is highlighted** (owner, 2026-10-03: at 28 % the other markers "can be barely made
   out anymore, but are still pretty important", "especially relevant in the raid view"; `MapRenderer.StepBackOf`).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
-  in a raid. Picks alone step nothing back (owner, 2026-10-03, "Picks"): only pointing does, for as long as it lasts.
+  in a raid. Picks alone step nothing back (owner, 2026-10-03, "Picks"): only pointing does, for as long as it lasts,
+  and a trader's held focus (owner, 2026-10-17; "Screen anatomy", *The trader strip*), whose quests stand in for what
+  is pointed at while nothing is, by the same table, in a raid too, without the pulse (`MapScene.Held`).
 
   | kind | planning | in a raid |
   | --- | --- | --- |
@@ -2559,7 +2602,7 @@ Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 | + / − | zoom in / out (following, about the player); "+" with or without Shift, and the number pad's keys |
 | 0 | show the whole map (following stays on: the next position centres on you at that zoom) |
 | PgUp / PgDn | show the floor above / below |
-| Esc | close the cards (it never drops picks) |
+| Esc | close the cards (it never drops picks); with no card open, let go of a trader's held focus (*The trader strip*) |
 | F1 or ? | help |
 | Ctrl+, | settings |
 | → or Space, ←, Esc | while the tour is up (*The tour*): the next chapter (Enter too), the one before, end it. Every other key does nothing then; with the tour closed, Enter is the focused button's |
@@ -3143,7 +3186,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   name> [look]` (with look, the map only shown, as a pick in the MAP list shows it: in a raid, a look), `side pmc|scav`,
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
-  `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
+  `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
   [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
@@ -3518,7 +3561,8 @@ status bar's words going or coming back with the bar's width (`statusbar.words`)
 (`replay.play` with how it was asked for, its positions and minutes; `replay.end` with why; `replay.skip` for a raid
 with too few positions) and What's New (`whatsnew.show`, `whatsnew.point` with the line, `whatsnew.close` with how:
 ×, a raid, or the line from help); a quest completed joining the QUEST COMPLETE cue on screen (`cue.join`, with how
-many it says). How a raid ended
+many it says). Added 2026-10-17: a trader's focus held and let go (`trader.hold`, `trader.release`, with the trader's
+id and how: a click, Esc). How a raid ended
 (survived, killed) is in none of the allowed logs. The nearest thing is `raid.outcomeHint` `{ lostInsured: true }`:
 the insurer's "lost" note came during the raid or within 5 minutes after it, on the same location (in the owner's
 logs it came 17–20 s before the raid's end line). It is a hint for later studies of the plan's accuracy, never shown;
