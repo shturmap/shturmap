@@ -57,6 +57,8 @@ public static partial class MapRenderer
         DateTime? now = null, ICollection<SymbolTrace>? trace = null)
     {
         var time = now ?? DateTime.Now;
+        // A linked set shown steps the rest back further than one thing pointed at, by the frame's settle (MeasuresAt).
+        stepBack ??= MeasuresAt(scene, time);
         canvas.Clear(Background);
         // The zoom limit is the map's that is drawn, not the one's fitted last (a preview leaves its own behind).
         camera.LimitTo(scene.Projection.WorldRect, 24 * uiScale, Camera.LabelRoom * uiScale);
@@ -109,7 +111,9 @@ public static partial class MapRenderer
         // What a trace records of a symbol: its place and size from the layout, its animation from the drawing below.
         var traced = trace is null ? null : new Dictionary<ShownMarker, SymbolTrace>(ReferenceEqualityComparer.Instance);
         DrawExitsLit(canvas, scene, layout.Markers, uiScale, time, traced);
-        DrawUnderlay(canvas, scene, layout.Markers, uiScale, time);
+        // A linked set's places: halos that breathe, or in the static look a ring on each collar (SetLookAt).
+        var setLook = SetLookAt(scene, time);
+        DrawUnderlay(canvas, scene, layout.Markers, uiScale, time, setLook, stepBack, traced);
         void Draw(ShownMarker marker) => DrawMarker(canvas, scene, marker, uiScale, time, traced);
 
         // Markers outside the focus step back while something is highlighted (easing with the scene's Dim), each kind
@@ -140,6 +144,8 @@ public static partial class MapRenderer
             foreach (var label in group)
                 DrawLabel(canvas, scene, label, time, traced);
         }
+        // Under the lit symbols, so their badges lie over it: the ring just outside each collar.
+        DrawCollarRings(canvas, layout.Markers, setLook, uiScale, traced);
         foreach (var marker in layout.Markers.Where(m => m.Focused))
             Draw(marker);
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
@@ -152,6 +158,9 @@ public static partial class MapRenderer
             // quest marker is outside of the current viewport, it should probably indicate that").
             if (chevron.Pointed && scene.Pulsing)
                 DrawPulse(canvas, scene, chevron.At, 7 * uiScale, chevron.Color, uiScale, time);
+            // A linked set's place out of view breathes at its chevron, as its places in view do.
+            else if (chevron.Pointed && setLook.Halo > 0)
+                DrawHalo(canvas, chevron.At, 7 * uiScale, chevron.Color, setLook);
             DrawChevron(canvas, chevron, uiScale);
         }
         DrawScaleBar(canvas, layout.Scale, uiScale);
@@ -202,6 +211,37 @@ public static partial class MapRenderer
         _ => inRaid ? new(0.8f, 1f, 0.6f) : new(0.62f, 1f, 0.45f),
     };
 
+    /// <summary>
+    /// How far the rest steps back while a linked set is shown (<see cref="MapScene.ShowsSet"/>; owner, 2026-10-17, from a
+    /// panel of four: "B"): a little further while the set breathes (<paramref name="settle"/> 0), planning 55 % (labels
+    /// 40 %), in a raid 70 % (labels 50 %), and further in its static look (1: a held focus, the pointer still, Windows'
+    /// animation effects off), planning 40 % (labels 30 %), in a raid 60 % (labels 45 %), eased between as the breath
+    /// settles. Never out of sight: the owner found 28 % too dark (2026-10-03). For every kind that steps back at all; the
+    /// ways out and the bosses keep their measure (<see cref="StepBackOf(MarkerKind, bool)"/>), and one thing pointed at
+    /// keeps the plain table.
+    /// </summary>
+    public static StepBack StepBackOf(bool inRaid, float settle)
+    {
+        var (breathing, still) = inRaid
+            ? (new StepBack(0.7f, 1f, 0.5f), new StepBack(0.6f, 1f, 0.45f))
+            : (new StepBack(0.55f, 1f, 0.4f), new StepBack(0.4f, 1f, 0.3f));
+        var s = Math.Clamp(settle, 0, 1);
+        return new(breathing.Alpha + (still.Alpha - breathing.Alpha) * s, 1f, breathing.LabelAlpha + (still.LabelAlpha - breathing.LabelAlpha) * s);
+    }
+
+    /// <summary>
+    /// The measures a frame at <paramref name="now"/> steps the rest back by: the plain table
+    /// (<see cref="StepBackOf(MarkerKind, bool)"/>), or while a linked set is shown its own, from breathing to static as
+    /// the breath settles (<see cref="StepBackOf(bool, float)"/>, <see cref="MapScene.SettleAt"/>).
+    /// </summary>
+    public static Func<MarkerKind, bool, StepBack> MeasuresAt(MapScene scene, DateTime now)
+    {
+        if (!scene.ShowsSet)
+            return StepBackOf;
+        var settle = scene.SettleAt(now);
+        return (kind, inRaid) => StepBackOf(kind, inRaid) is { Alpha: < 1f } ? StepBackOf(inRaid, settle) : StepBackOf(kind, inRaid);
+    }
+
     // A picked quest's marker, or the door of a key a picked quest needs: part of the pick.
     private static bool IsPick(MapScene scene, ShownMarker m) => m.Kept || IsKeptKey(scene, m.Marker);
 
@@ -210,9 +250,10 @@ public static partial class MapRenderer
     /// keys they need, which read as part of the pick (the review of 2026-10-04: the doors stepped back like any
     /// lock), else by its kind.
     /// </summary>
-    /// <param name="byKind"><see cref="StepBackOf(MarkerKind, bool)"/> unless a developer render compares alternatives.</param>
+    /// <param name="byKind">The frame's measures (<see cref="MeasuresAt"/>, now's when null), or a developer render's
+    /// alternatives.</param>
     public static StepBack StepBackOf(MapScene scene, ShownMarker marker, Func<MarkerKind, bool, StepBack>? byKind = null) =>
-        IsPick(scene, marker) ? Full : (byKind ?? StepBackOf)(marker.Marker.Kind, scene.InRaid);
+        IsPick(scene, marker) ? Full : (byKind ?? MeasuresAt(scene, DateTime.Now))(marker.Marker.Kind, scene.InRaid);
 
     /// <summary>
     /// How strongly a zone is drawn while something is pointed at, 1 for full strength: a picked or pointed-at
@@ -225,12 +266,12 @@ public static partial class MapRenderer
             return 1;
         if (zone.Group is not null && (scene.Kept.Contains(zone.Group) || scene.ShownFocus.Contains(zone.Group)))
             return 1;
-        return 1 - (1 - (byKind ?? StepBackOf)(zone.Kind, scene.InRaid).Alpha) * scene.Dim;
+        return 1 - (1 - (byKind ?? MeasuresAt(scene, DateTime.Now))(zone.Kind, scene.InRaid).Alpha) * scene.Dim;
     }
 
     // A hazard area's name steps back as its kind's labels do.
     private static float HazardLabelStrength(MapScene scene, Func<MarkerKind, bool, StepBack>? byKind) =>
-        scene.ShownFocus.Count == 0 ? 1 : 1 - (1 - (byKind ?? StepBackOf)(MarkerKind.Hazard, scene.InRaid).LabelAlpha) * scene.Dim;
+        scene.ShownFocus.Count == 0 ? 1 : 1 - (1 - (byKind ?? MeasuresAt(scene, DateTime.Now))(MarkerKind.Hazard, scene.InRaid).LabelAlpha) * scene.Dim;
 
     // A layer that steps what is drawn into it back by a measure, eased with the dim; no layer when it changes nothing.
     private readonly ref struct StepBackLayer
@@ -2564,16 +2605,85 @@ public static partial class MapRenderer
     // What lies under every symbol (owner, 2026-10-05, from the overlap panel: "Go for F"): a pick's ring and a
     // pointed-at symbol's pulse, around symbols that keep their rest size, so neither covers a neighbour; and the
     // leaders of symbols set off their places (Repel), stepping back with their symbols while something else is
-    // pointed at.
-    private static void DrawUnderlay(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui, DateTime now)
+    // pointed at; under them all, a linked set's breathing halos.
+    private static void DrawUnderlay(SKCanvas canvas, MapScene scene, IReadOnlyList<ShownMarker> markers, float ui, DateTime now, SetLook look,
+        Func<MarkerKind, bool, StepBack>? stepBack, Dictionary<ShownMarker, SymbolTrace>? traced)
     {
         var dim = scene.ShownFocus.Count > 0 ? scene.Dim : 0f;
+        if (look.Halo > 0)
+        {
+            foreach (var m in markers.Where(m => m.Pointed))
+                DrawHalo(canvas, m.At, m.R, m.Color, look, traced is null ? null : Traced(traced, m));
+        }
         foreach (var m in markers.Where(m => m.Leader is not null))
-            DrawLeader(canvas, m.Leader!.Value, m.At, m.Color, ui, m.Focused || IsPick(scene, m) ? 1 : 1 - (1 - StepBackOf(scene, m).Alpha) * dim);
+            DrawLeader(canvas, m.Leader!.Value, m.At, m.Color, ui, m.Focused || IsPick(scene, m) ? 1 : 1 - (1 - StepBackOf(scene, m, stepBack).Alpha) * dim);
         foreach (var m in markers.Where(m => m.Kept))
             DrawPickRing(canvas, m, ui);
         foreach (var m in markers.Where(m => m.Pointed && scene.Pulsing))
             DrawPulse(canvas, scene, m.At, m.R, m.Color, ui, now);
+    }
+
+    /// <summary>
+    /// How a frame draws the lit places of a linked set (owner, 2026-10-17, from a panel of four: "B"; docs/DESIGN.md
+    /// §4, *Motion*): while it breathes, a halo under each (<see cref="Halo"/> its weight, with the breath's
+    /// <see cref="Scale"/> and <see cref="Opacity"/>), and in its static look a ring on each collar (<see cref="Ring"/>
+    /// its weight); the two trade places as the breath settles, and both ease in and out with the scene's Dim. All 0
+    /// when no set is shown.
+    /// </summary>
+    internal readonly record struct SetLook(float Halo, float Scale, float Opacity, float Ring);
+
+    internal static SetLook SetLookAt(MapScene scene, DateTime now)
+    {
+        if (!scene.ShowsSet || scene.ShownFocus.Count == 0)
+            return default;
+        var settle = scene.SettleAt(now);
+        var (scale, opacity) = scene.Breath.Frame(now);
+        return new(scene.Dim * (1 - settle), scale, opacity, scene.Dim * settle);
+    }
+
+    /// <summary>The breath's halo at scale 1, in times the symbol's radius: about three times at its widest (1.08).</summary>
+    public const float HaloReach = 2.8f;
+
+    // The halo's colour in its middle, at the breath's full opacity: a glow, not a disc.
+    private const float HaloPeak = 0.6f;
+
+    // A linked set's lit place while it breathes: a soft radial glow in the symbol's own colour under it, swelling and
+    // fading with the breath (LinkedBreath.At), the same at every place and in phase with the rows' glyphs.
+    private static void DrawHalo(SKCanvas canvas, SKPoint at, float r, SKColor color, SetLook look, SymbolTrace? trace = null)
+    {
+        var radius = HaloReach * r * look.Scale;
+        var alpha = HaloPeak * look.Opacity * look.Halo;
+        if (trace is not null)
+            trace.Halo = (radius, alpha);
+        var a = (byte)Math.Round(255 * Math.Clamp(alpha, 0, 1));
+        using var shader = SKShader.CreateRadialGradient(at, radius, [color.WithAlpha(a), color.WithAlpha((byte)(a * 0.55f)), color.WithAlpha(0)],
+            [0f, 0.45f, 1f], SKShaderTileMode.Clamp);
+        using var paint = new SKPaint { Shader = shader, IsAntialias = true };
+        canvas.DrawCircle(at, radius, paint);
+    }
+
+    /// <summary>The static look's ring on a lit symbol's collar, in DIP.</summary>
+    public const float CollarRingWidth = 1.5f;
+
+    // A linked set's lit places in its static look (held, the pointer still, the animation effects off): a ring of the
+    // symbol's own colour just outside its collar, which takes the halo's place without moving.
+    private static void DrawCollarRings(SKCanvas canvas, IReadOnlyList<ShownMarker> markers, SetLook look, float ui, Dictionary<ShownMarker, SymbolTrace>? traced)
+    {
+        if (look.Ring <= 0)
+            return;
+        foreach (var m in markers.Where(m => m.Pointed))
+        {
+            // Reach is the symbol, its collar and 1 DIP more: the ring lies on the collar's outer edge.
+            var radius = m.Reach - 1 * ui + CollarRingWidth / 2 * ui;
+            using var ring = new SKPaint
+            {
+                Color = m.Color.WithAlpha((byte)Math.Round(255 * Math.Clamp(look.Ring, 0, 1))), IsAntialias = true, Style = SKPaintStyle.Stroke,
+                StrokeWidth = CollarRingWidth * ui,
+            };
+            canvas.DrawCircle(m.At, radius, ring);
+            if (traced is not null)
+                Traced(traced, m).Ring = look.Ring;
+        }
     }
 
     /// <summary>A leader from a symbol's true place to where it is drawn: a hairline in its colour on a dark band, and a

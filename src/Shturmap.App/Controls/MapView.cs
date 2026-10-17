@@ -111,6 +111,29 @@ public sealed partial class MapView : Grid
     /// <summary>Pings and pulses play even with Windows' animation effects off (the website demo's recording).</summary>
     public bool AlwaysAnimate { get; set; }
 
+    /// <summary>
+    /// The linked highlight's breath (owner, 2026-10-17, "B"; docs/DESIGN.md §4, *Motion*): one clock for every scene this
+    /// view shows and for the rail's rows (Linked.Breath), so the halos on the map and the glyphs in the rows breathe in
+    /// phase. It breathes only with Windows' animation effects on (or <see cref="AlwaysAnimate"/>) and never in a
+    /// snapshot run (<see cref="StaticHighlight"/>).
+    /// </summary>
+    public LinkedBreath Breath { get; } = new();
+
+    /// <summary>A snapshot run ("--snapshot"): a linked set stands in its static look, as with the animation effects off.</summary>
+    public bool StaticHighlight
+    {
+        get => _staticHighlight;
+        set
+        {
+            _staticHighlight = value;
+            Breath.Effects = BreathEffects();
+        }
+    }
+
+    private bool _staticHighlight;
+
+    private bool BreathEffects() => !_staticHighlight && (AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled);
+
     /// <summary>Shows a new map, fitted to the window, or at a view saved earlier with <see cref="View"/>.</summary>
     public void SetScene(MapScene? scene, (Shturmap.Core.Maps.MapPoint Center, double Zoom)? view = null)
     {
@@ -136,7 +159,11 @@ public sealed partial class MapView : Grid
         StopGlide();
         _scene = scene;
         if (scene is not null)
+        {
             scene.Pulse = AlwaysAnimate || new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+            Breath.Effects = BreathEffects();
+            scene.Breath = Breath;
+        }
         _fitPending = view is null;
         if (view is { } v)
             _camera.Restore(v.Center, v.Zoom);
@@ -298,7 +325,7 @@ public sealed partial class MapView : Grid
 
     /// <summary>
     /// Redraws without moving, e.g. to let an ageing fix fade. Keeps redrawing while the focus dimming eases in or
-    /// out and while focused markers pulse.
+    /// out, while focused markers pulse and while a linked set breathes or settles.
     /// </summary>
     public void Redraw()
     {
@@ -331,7 +358,7 @@ public sealed partial class MapView : Grid
     private static float DimTarget(MapScene scene) => scene.HasHighlight ? 1f : 0f;
 
     private static bool Animating(MapScene scene) =>
-        scene.Pulsing || scene.Pinging || scene.LeavingNow || scene.ExitsArriving || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
+        scene.Pulsing || scene.BreathingAt(DateTime.Now) || scene.Pinging || scene.LeavingNow || scene.ExitsArriving || Math.Abs(scene.Dim - DimTarget(scene)) > 0.001f;
 
     private void Step()
     {

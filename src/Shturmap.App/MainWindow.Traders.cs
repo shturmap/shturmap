@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Shturmap.App.Controls;
 using Shturmap.App.Rules;
 using Shturmap.Core;
 using Shturmap.Core.Quests;
@@ -42,14 +43,20 @@ public sealed partial class MainWindow
     // What the map draws as the held focus: the trader's active quests (in a raid too).
     private IReadOnlySet<string> HeldOnMap(SessionSnapshot s) => TraderFocus.OnMap(_heldTrader, ActiveByTrader(s));
 
+    private static readonly IReadOnlySet<string> NoQuests = new HashSet<string>();
+
     // The strip: every trader with active quests between raids; in a raid (or while one loads) only the held one.
     private void UpdateTraders(SessionSnapshot s)
     {
         if (s.Data is not { } data)
         {
             ViewModel.Traders = [];
+            Linked.Held = NoQuests;
             return;
         }
+        // Between raids the held trader's own rows wear the static look's bar (a hold never breathes); in a raid the raid
+        // card is unchanged.
+        Linked.Held = s.Raid.Phase == RaidPhase.Menu ? HeldOnMap(s) : NoQuests;
         var strip = TraderFocus.Strip(ActiveByTrader(s), data.Traders.Keys.ToList(), _heldTrader);
         var shown = TraderFocus.Shown(strip, _heldTrader, s.Raid.Phase != RaidPhase.Menu);
         // One row, never two: the cells share the rail's width, the portraits and counts scaling with them (TraderStrip).
@@ -113,13 +120,15 @@ public sealed partial class MainWindow
         UpdateTraders(s);
         UpdatePicker(s);
         UpdatePlan(s);
+        // The click holds what the pointer lights (its portrait): the breath stops, settling to the static look; a click
+        // that lets go under the pointer starts it again (LinkedBreath.Hold).
+        Map.Breath.Hold(Linked.Current is { IsSet: true } && HoldsFocus(s, MapFocus()), DateTime.Now);
+        Linked.BreathChanged();
         // The map on screen, or a map row's preview, takes the focus as it is now; What's New's and the tour's examples
         // aren't the player's and keep none.
         if (Map.Scene is { } scene && (_previewing is null ? _scenes.Holds(s.Definition?.Key) : !_previewing.StartsWith(WhatsNewPreviewPrefix, StringComparison.Ordinal)))
-        {
             scene.Held = HeldOnMap(s);
-            Map.Redraw();
-        }
+        Map.Redraw();
     }
 
     // "--trader-focus <name>": the focus held once the data names the trader.

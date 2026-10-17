@@ -648,7 +648,8 @@ grid with a 72 px reference column, rows 80 px apart (52 px on phones), gaps fro
 
 **Motion.** Slow enough to read, never for show: the big cue takes 5 s (7.5 s when it pictures a kit, about 17 s
 when RAID OVER replays the raid, §1's exception) with its entrance at 1.8 times the original
-pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, and pulses every 1.4 s; a new
+pace; the linked highlight eases over 0.18 s, waits 0.25 s before following a lost focus, pulses every 1.4 s for one
+thing pointed at and breathes over 2 s for a linked set (below); a new
 position pings, and with Follow my position on the view glides to it over 2.4 s, eased in and out; a notch of the
 wheel zooms over 0.15 s, eased in and out, and notches in a row run on into one zoom ("Map drawing", *The wheel zooms
 over 0.15 s*; owner, 2026-10-15); an extract list just
@@ -661,6 +662,26 @@ figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
 the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
 the wheel's zoom to its notch.
+**The linked set breathes** (owner, 2026-10-17: the linked highlight "really helps pre-attentively highlight elements …
+However, the pre-attentiveness goes away directly after the highlight was done … the highlights are a bit too faint").
+While the pointer lights a linked set (a trader's portrait, a boss's name or marker, an item; "Visual language", the
+linked highlight), every lit place on the map wears a halo, a soft radial glow in its own colour under its symbol, 2.8
+times its radius and so about three times at its widest, and every row the set lights with the full tint its type
+glyph; halos and glyphs breathe together, in phase, from one clock (`Shturmap.Map.LinkedBreath`, which the map view
+shares with `Controls.Linked`): a 2 s cycle, an eased sine, scale 0.92 → 1.08 and opacity 0.85 → 1.0 and back, from
+the moment the set has lit (after the 0.18 s ease-in). For a set the breath takes the rings' place: its places don't
+ring, and the thing pointed at itself (the portrait, the name, the cell) doesn't breathe; one thing pointed at (a quest,
+an objective, an extract) keeps its rings. While it breathes the rest steps back a little further ("Map drawing",
+"Stepping back"). **The breath stops**, settling over 0.18 s to the static look, when a click holds the focus
+(`MapScene.Held`: the trader strip's hold, the one hold of the map's focus; a held card keeps none), when the pointer
+has been still for 6 s (a move of the pointer starts it again; leaving ends the highlight as before), and with Windows'
+animation effects off it never starts (`--snapshot` runs draw as with them off). **The static look**: the rest further
+back still ("Stepping back"), every lit symbol with a 1.5 DIP ring of its own colour on its collar, every lit row with
+a 3 DIP bar of the tint's gold at its left; a held trader's focus always stands in it, its quests' own rows with the
+bar between raids. Why it stops: a held focus persists through a raid, and nothing may breathe in a raid but under the
+pointer (the raid card's readout, "a mark that breathes" left out). Chosen from a panel of four: a deeper static
+contrast (A), the lit breathe (B, taken), one pulse at entry and then contrast (C), a static mark at the edge (D); A, C
+and D were not taken.
 The tour (§1's second exception) moves more, in the same vocabulary: the window dims in 0.35 s, its cut-outs glide
 from part to part over 0.65 s eased in and out while the map sheet's corner marks close in on them with a small
 overshoot, the band's gold rule shoots out and its title decodes over 0.7 s at each chapter, a stage's lines rise in
@@ -759,7 +780,14 @@ dark band, where there was one of 2.5 px that travelled 26 px and faded with the
 pointed-at quest's places out of view get the same pulse at their chevron on the edge, drawn half as large
 again, since the small chevron went unseen: "if a quest marker is outside of the current viewport, it should
 probably indicate that") (motion is noticed before anything else; off, with the
-easing, when Windows' animation effects are off, and only while something is in focus). A pulse or a ping draws the
+easing, when Windows' animation effects are off, and only while something is in focus). **Rings for one thing, a
+breath for a set** (owner, 2026-10-17, from a panel of four: "B"; "Design system", *Motion*): the rings are for one
+thing pointed at (a quest, an objective, an extract and its switches); a linked set lit by the pointer (a trader's
+portrait, a boss's name or marker, an item: what a row names as several, `Linked.Quests`, or an item;
+`LinkFocus.IsSet`) breathes instead: a halo under each of its places and the type glyph of each row it lights swell and
+fade together, the rest a little further back; held, with the pointer still 6 s or with the effects off it stands in a
+static look, a ring on each lit collar and a bar at each lit row's left (between two rings the lit and the rest had
+been the same gold, so a set stopped standing out between them). A pulse, a breath or a ping draws the
 map again about 60 times a second and moves nothing, so a frame's layout (which marker, badge and label goes where)
 is kept from frame to frame while what it is made from stands: the view, the display's scale, the scene's data and
 the minute of the player's age tag (`MapRenderer.LayoutOf`, `MapScene.LayoutVersion`; the review of 2026-10-04: every
@@ -809,10 +837,11 @@ pointing at one of them tints the name with the weaker tint. While another map i
 **A trader's portrait is their active quests** (owner, 2026-10-17; "Screen anatomy", *The trader strip*): in the strip
 under the MAP list, pointing at a portrait puts every active quest of that trader in the focus, as pointing at one of
 them does for one: their rows and glyphs take the full tint, the BRING rows that serve them the weaker one, and on the
-map their places pulse while the rest steps back. Pointing at one of those quests tints its trader's portrait with the
-weaker tint (`Linked.Quests`, as a boss's name). The portrait opens no card. A click holds it: then the trader's quests
-are the map's focus whenever nothing else is pointed at, held still (`MapScene.Held`). The portraits on the quests'
-rows and cards link nothing, as before.
+map their places breathe (a set; until 2026-10-17 they pulsed) while the rest steps back. Pointing at one of those
+quests tints its trader's portrait with the weaker tint (`Linked.Quests`, as a boss's name). The portrait opens no card.
+A click holds it: then the trader's quests are the map's focus whenever nothing else is pointed at, held still in the
+static look, a ring on each collar and a bar at their rows' left (`MapScene.Held`, `Linked.Held`). The portraits on
+the quests' rows and cards link nothing, as before.
 Markers on another floor than the one shown are drawn at full strength, highlighted
 like any other, with a dark disc at their upper right holding a bold up or down caret (owner, 2026-10-01: half
 strength read as "unimportant" and hid highlighted markers): a stroked chevron, 2.2 DIP, about 9 × 5 DIP, in a disc
@@ -989,12 +1018,15 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - **A click holds the focus**, one trader at a time: the portrait is framed in amber (1.5 DIP over its frame, a held
       card's border), and until it is let go the MAP list's counts and NEXT RAID's rows' counts are that trader's quests
       on each map ("STREETS OF TARKOV · Ragman 2", `PlanList.Count`). A row with none of them steps back, its name and
-      cells at 45 % and no count: "Ragman 0" on every other row would be words to read for nothing. In the rows, the map
+      cells at 30 % and no count: "Ragman 0" on every other row would be words to read for nothing. In the rows, the map
       rows' glyphs, the open card's PICKED, COMPLETE and PROGRESS, ANY MAP and BRING, the other traders' quests and the
-      BRING rows that serve none of the trader's quests step back to 45 % (the map's quest labels' measure, "Map
-      drawing", "Stepping back"), never hidden; a pick never steps back, as on the map. On the map the trader's places
-      are lit and the rest steps back by kind, held still: only what the pointer is on pulses, and pointing at anything
-      goes before the focus while it lasts (`MapScene.Held`). NEXT RAID's rows go by the trader's quests on each map,
+      BRING rows that serve none of the trader's quests step back to 30 % (the map's labels' measure in a set's static
+      look, "Map drawing", "Stepping back"; 45 % until 2026-10-17, *Motion*, the linked set breathes), never hidden; a
+      pick never steps back, as on the map; the trader's own quests' rows carry the static look's 3 DIP gold bar at
+      their left (`Linked.Held`). On the map the trader's places are lit and the rest steps back by kind, held still in
+      the static look (a ring on each lit collar): only what the pointer is on rings or breathes, and pointing at
+      anything goes before the focus while it lasts (`MapScene.Held`); pointing at the held trader's own portrait
+      doesn't breathe either. NEXT RAID's rows go by the trader's quests on each map,
       most first, a tie keeping the planner's order, so the maps with none of them end the list, stepped back
       (`PlanList.Ranked`; coordinator, 2026-10-17); let go, the planner's order is back. The MAP list keeps its order,
       and the open card's summary its own counts. A click on another portrait moves the focus there; a click on the held
@@ -1164,7 +1196,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     map without a raid length (no rule), and past the raid's length ("PAST THE RAID'S 40 MIN" in red, the rule all
     gone). The tooltip says how the figures are made, as before. **It doesn't move** (principle 2): at a new minute
     the figure and the rule just change, so it never pulls at the eye from the second monitor (a mark that breathes
-    all raid was considered and left out for the reason picks hold still). Until 2026-10-09 the figure decoded at
+    all raid was considered and left out for the reason picks hold still). The linked highlight's breath (*Motion*,
+    owner, 2026-10-17) keeps to this: it runs on hover only, while the pointer is on a linked set, stops after 6 s of a
+    still pointer, and never in a held focus, which lasts through a raid. Until 2026-10-09 the figure decoded at
     each new minute as the big cue's title does and one dark notch ran along what was left of the rule; the owner had
     both removed in the pre-release review. The time left is still the map's raid
     length minus the time since the start line: reading the game's own timer from a screenshot was looked at the
@@ -1772,14 +1806,22 @@ spawns below).
   What is pointed at, and the picks, stay at full strength; the rest steps back by kind, never out of sight, and less
   in a raid. Picks alone step nothing back (owner, 2026-10-03, "Picks"): only pointing does, for as long as it lasts,
   and a trader's held focus (owner, 2026-10-17; "Screen anatomy", *The trader strip*), whose quests stand in for what
-  is pointed at while nothing is, by the same table, in a raid too, without the pulse (`MapScene.Held`).
+  is pointed at while nothing is, in a raid too, without the pulse, in a set's static look (`MapScene.Held`).
+  **A linked set steps the rest back further** (owner, 2026-10-17, from a panel of four: "B"; "Design system",
+  *Motion*): one thing pointed at (a quest, an objective, an extract) keeps the first two columns; a set lit by the
+  pointer (a trader's portrait, a boss's name, an item) takes the breathing measure while it breathes and the static
+  one once it stops (held, the pointer still 6 s, Windows' animation effects off, a snapshot), eased between over
+  0.18 s as the breath settles (`MapRenderer.StepBackOf(inRaid, settle)`, `MeasuresAt`). Every kind that steps back at
+  all takes the same two measures; the ways out and the bosses keep theirs. Never out of sight still holds at 40 %, and
+  the labels' 30 % stays above the 28 % the owner found too dark. The rail's rows step back only under a held focus,
+  by the labels' static measure, 30 % (`TraderFocus.SteppedBack`).
 
-  | kind | planning | in a raid |
-  | --- | --- | --- |
-  | your side's extracts and transits | full strength (labels 70 %) | full strength |
-  | bosses: hollow at 70 % at rest, solid while lit (*Spawns*, below) | no further (labels 70 %) | no further |
-  | other quests' markers and their zones | 62 % (labels 45 %) | 80 % (labels 60 %) |
-  | Scav and sniper zones, locks and switches, hazard areas | 60 % (labels 50 %) | 75 % (labels 60 %) |
+  | kind | planning | in a raid | a set, breathing: planning, raid | a set, static: planning, raid |
+  | --- | --- | --- | --- | --- |
+  | your side's extracts and transits | full strength (labels 70 %) | full strength | as one thing | as one thing |
+  | bosses: hollow at 70 % at rest, solid while lit (*Spawns*, below) | no further (labels 70 %) | no further | as one thing | as one thing |
+  | other quests' markers and their zones | 62 % (labels 45 %) | 80 % (labels 60 %) | 55 % (40 %), 70 % (50 %) | 40 % (30 %), 60 % (45 %) |
+  | Scav and sniper zones, locks and switches, hazard areas | 60 % (labels 50 %) | 75 % (labels 60 %) | 55 % (40 %), 70 % (50 %) | 40 % (30 %), 60 % (45 %) |
 
   A zone steps back as far as its kind's markers, and a picked quest's doors (the locks of the keys it needs) not at
   all, like the pick they belong to (`MapRenderer.ZoneStrength`, `StepBackOf`). A boss rests stepped back already
@@ -3380,8 +3422,9 @@ CPU and everything in it that moves is a function of time, so it can be drawn at
 for the whole frame, so a frame at t0 + 100 ms is the same every run; its `trace`, off in the app, records what the
 frame drew of each symbol (`SymbolTrace`): where, how large, and for an extract its state and the values its ring was
 drawn with (`Arrival`, `Glow`, `Echoes`, `Question`), its icon's flight from the roll call's band (`Flight`,
-`Flying`, `FlightScale`; `InView` false while it flies toward a place out of view) and the face its name was drawn in
-(`Bold`; null where it wasn't drawn), taken from the drawing itself, not worked out beside it.
+`Flying`, `FlightScale`; `InView` false while it flies toward a place out of view), the face its name was drawn in
+(`Bold`; null where it wasn't drawn) and, for a linked set's lit place, its breathing halo (`Halo`: radius and
+opacity) or its static ring (`Ring`; `BreathTests`), taken from the drawing itself, not worked out beside it.
 `shturmap-cli frames <map> <folder>` builds a scene from the data cache as `render` does, reads an extract list at t0
 (`RingExits`) and draws 36 frames 100 ms apart (`--every`, `--count`) in one fitted 1600 × 1000 view (`--viewport
 500x481`: the map at the smallest window, 900 × 560): `frame-000.png`…, `frames.json` (per frame and symbol: its id,

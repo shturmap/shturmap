@@ -87,6 +87,15 @@ public sealed class SymbolTrace
     /// null while it isn't in the air.</summary>
     public float? FlightScale { get; internal set; }
 
+    /// <summary>A linked set's lit place while it breathes (<see cref="LinkedBreath"/>): its halo's radius in pixels and
+    /// its opacity in its middle, as drawn; null while it has none (one thing pointed at rings, the static look rings the
+    /// collar).</summary>
+    public (float Radius, float Alpha)? Halo { get; internal set; }
+
+    /// <summary>A linked set's lit place in its static look: the weight of the ring on its collar, 0 to 1; null while it
+    /// has none.</summary>
+    public float? Ring { get; internal set; }
+
     /// <summary>Whether the symbol was laid out and drawn in this frame. False for a called extract whose place is out of
     /// view while its icon flies there: only the flight is drawn, toward where the place is (<see cref="At"/>).</summary>
     public bool InView { get; internal set; } = true;
