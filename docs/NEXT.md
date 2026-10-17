@@ -2168,6 +2168,18 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   shares a place settle once (or read as one cluster) instead of pushing on; a `frames` run with `--glide` and `--notch`
   over Woods' Outskirts for the test.
 
+- **A required weapon's icon is barely a weapon** (owner, 2026-10-17: "When a weapon is required for a quest, it shows
+  just the icon for the weapon. For example, the Punisher - Part 1. This is technically the correct icon. However, weapons
+  consist of parts and the icon is always missing the other parts, like the stock or scope or grip and is barely
+  recognisable as a weapon using that icon. We need to find the best solution for that."). The BRING cells and the quest
+  card show tarkov.dev's icon of the bare weapon item (`assets.tarkov.dev/<id>.webp`), the receiver without stock, grip
+  or sight. To design on a panel (owner's rule): the likeliest answer is the weapon's default preset, which tarkov.dev
+  carries per weapon (`properties.defaultPreset` with its own id and icon: the assembled gun as the trader's shop shows
+  it); the loader leaves `preset` items out today ("Item sources", DESIGN.md), so the preset's id and picture would be
+  read for weapons only. Other options to draw beside it: the weapon class's glyph (the kind, not the gun) where a quest
+  allows any weapon of a class (`usingWeapon` lists several), and the icon with the class's name under it. Check the
+  terms for preset pictures (DESIGN.md §3: Battlestate art, runtime download only) before building.
+
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an
