@@ -4,6 +4,11 @@ The German lines of the What's New card, a translation of docs/whats-new.md, whi
 written and read. Each section is a version of that file, with its lines in the same order and their previews as they
 are; the release's name stays as it is. Words: docs/glossary-de.md.
 
+## 0.6.1 · Okami
+
+- extracts · Deine Extracts, langsamer · Jedes Symbol fliegt 1,5 s, eins nach dem anderen: Dein Blick folgt ihm bis zum Extract.
+- leaders · Oben oder unten, kräftiger · Der Stockwerk-Pfeil: ein kräftiger Winkel in größerer Scheibe, lesbar auf kleinen Zweitmonitoren.
+
 ## 0.6.0 · Okami
 
 - extracts · Deine Extracts, aufgerufen · Screenshot der Extract-Liste: Deine erscheinen mittig, nächste zuerst, und fliegen an ihren Platz.

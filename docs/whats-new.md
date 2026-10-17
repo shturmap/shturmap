@@ -18,6 +18,11 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
+## 0.6.1 · Okami
+
+- extracts · Your extracts, slower · Each icon flies 1.5 s, one after the other, so your eye can follow it to its extract.
+- leaders · Above or below, bolder · The other-floor arrow is a bold caret in a larger disc, readable on a small second screen.
+
 ## 0.6.0 · Okami
 
 - extracts · Your extracts, called out · Screenshot the extract list: yours line up mid-map, nearest first, then fly to their places.
