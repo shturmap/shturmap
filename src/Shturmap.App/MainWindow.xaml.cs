@@ -1017,8 +1017,10 @@ public sealed partial class MainWindow : Window
         NoteRemoved(before, scene.Markers);
         scene.Zones = latest.Content?.Zones ?? [];
         scene.Containers = latest.Content?.Containers ?? [];
-        // Before the picks and the focus: a quest brings the locks of the keys it needs here along.
+        // Before the picks and the focus: a quest brings the locks of the keys it needs here along, and the bosses its kill
+        // objectives target.
         scene.QuestKeys = latest.Content?.QuestKeys ?? new Dictionary<string, IReadOnlyList<string>>();
+        scene.QuestBosses = latest.Content?.QuestBosses ?? new Dictionary<string, IReadOnlyList<string>>();
         // The picks of the map drawn (picks are kept per map), which in a raid can be another than the raid's.
         scene.PickSlots = latest.PickSlotsOn(latest.Map?.NormalizedName);
         scene.Kept = latest.PicksOn(latest.Map?.NormalizedName);

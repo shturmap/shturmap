@@ -46,7 +46,7 @@ public class LayoutCacheTests
     }
 
     public static TheoryData<string> Changes() =>
-        new("pan", "zoom", "resize", "scale", "markers", "zones", "player", "kept", "quest keys", "focus", "objective", "labels", "floor");
+        new("pan", "zoom", "resize", "scale", "markers", "zones", "player", "kept", "quest keys", "quest bosses", "focus", "objective", "labels", "floor");
 
     [Theory]
     [MemberData(nameof(Changes))]
@@ -67,6 +67,7 @@ public class LayoutCacheTests
             case "player": scene.Player = new PlayerFix(new WorldPoint(40, 0, 40), 0, DateTime.Now); break;
             case "kept": scene.Kept = new HashSet<string> { "quest-b" }; break;
             case "quest keys": scene.QuestKeys = new Dictionary<string, IReadOnlyList<string>> { ["quest-a"] = ["key:one"] }; break;
+            case "quest bosses": scene.QuestBosses = new Dictionary<string, IReadOnlyList<string>> { ["quest-a"] = ["boss:one"] }; break;
             case "focus": scene.Focus = new HashSet<string> { "quest-b" }; break;
             case "objective": scene.FocusObjective = "a"; break;
             case "labels": scene.ShowLabels = false; break;

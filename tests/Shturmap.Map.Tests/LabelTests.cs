@@ -37,25 +37,34 @@ public class LabelTests
         // "Lexos" sits right of the diamond, where Kaban's label goes first.
         var (camera, scene) = View([boss], new MapLabel(40, 0, "Lexos", 0, 70));
         var layout = MapRenderer.Layout(camera, scene, 1);
-        Assert.Equal("Kaban 75%", Assert.Single(layout.Labels).Text);
+        Assert.Equal("KABAN 75%", Assert.Single(layout.Labels).Text);
         Assert.Empty(layout.Names);
     }
 
     // The review of 2026-10-04 (C5): a boss's label was red where every other label is ink. The red octagon is the
     // danger sign; the label reads like the others, and takes its marker's colour only while pointed at, as theirs do.
+    // Since 2026-10-17 a boss rests stepped back until it matters (BossRestTests): its name and chance alone in the map's
+    // muted spaced caps; lit, its full label as before.
     [Fact]
-    public void A_bosss_label_is_ink_like_every_other_at_rest()
+    public void A_bosss_label_is_ink_like_every_other_when_lit_and_muted_at_rest()
     {
-        var boss = new MapMarker("boss:bossBoar:Z", MarkerKind.BossSpawn, new WorldPoint(0, 0, 0), "Kaban 75% · 50% here", "boss:bossBoar");
+        var boss = new MapMarker("boss:bossBoar:Z", MarkerKind.BossSpawn, new WorldPoint(0, 0, 0), "Kaban 75% · 50% here", "boss:bossBoar") { RestLabel = "Kaban 75%" };
         var (camera, scene) = View([boss, Quest("q", 0, 200, "Dandies"), new MapMarker("extract:1", MarkerKind.ExtractPmc, new WorldPoint(0, 0, -200), "Gate")]);
         var labels = MapRenderer.Layout(camera, scene, 1).Labels;
         Assert.Equal(3, labels.Count);
-        Assert.All(labels, l => Assert.Equal(SKColor.Parse(Palette.Ink), l.Color));
-        Assert.Equal("Kaban 75% · 50% here", labels.Single(l => l.Of.Marker.Kind == MarkerKind.BossSpawn).Text);
+        Assert.All(labels.Where(l => l.Of.Marker.Kind != MarkerKind.BossSpawn), l => Assert.Equal(SKColor.Parse(Palette.Ink), l.Color));
+        var resting = labels.Single(l => l.Of.Marker.Kind == MarkerKind.BossSpawn);
+        Assert.Equal(("KABAN 75%", SKColor.Parse(Palette.Muted)), (resting.Text, resting.Color));
+
+        // Lit by a pick that targets him: the full label, in ink.
+        scene.QuestBosses = new Dictionary<string, IReadOnlyList<string>> { ["quest-q"] = ["boss:bossBoar"] };
+        scene.Kept = new HashSet<string> { "quest-q" };
+        var lit = MapRenderer.Layout(camera, scene, 1).Labels.Single(l => l.Of.Marker.Kind == MarkerKind.BossSpawn);
+        Assert.Equal(("Kaban 75% · 50% here", SKColor.Parse(Palette.Ink)), (lit.Text, lit.Color));
 
         scene.Focus = new HashSet<string> { "boss:bossBoar" };
         var pointed = MapRenderer.Layout(camera, scene, 1).Labels.Single(l => l.Of.Marker.Kind == MarkerKind.BossSpawn);
-        Assert.Equal(SKColor.Parse(Palette.Red), pointed.Color);
+        Assert.Equal(("Kaban 75% · 50% here", SKColor.Parse(Palette.Red)), (pointed.Text, pointed.Color));
     }
 
     [Fact]
@@ -75,7 +84,7 @@ public class LabelTests
         };
         var (camera, scene) = View([quest, boss, .. blockers]);
         var layout = MapRenderer.Layout(camera, scene, 1);
-        Assert.Contains(layout.Labels, l => l.Text == "Kaban 75%");
+        Assert.Contains(layout.Labels, l => l.Text == "KABAN 75%");
         Assert.DoesNotContain(layout.Labels, l => l.Text == "Dandies");
     }
 

@@ -326,7 +326,7 @@ public sealed partial class MainWindow
         if (pmc)
             content = content with { Markers = content.Markers.Where(m => m.Kind != MarkerKind.ExtractScav).ToList() };
         var scene = new MapScene(definition, artwork, artwork is null ? TilesFor(definition, map.Name) : null)
-            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, QuestBosses = content.QuestBosses };
         stage?.Invoke(scene, content);
         var points = frame?.Invoke(content);
         Map.SetScene(scene, points is { Count: > 0 } ? Map.FramingAbove(scene, points, padding, foot, minMetres, head) : null);

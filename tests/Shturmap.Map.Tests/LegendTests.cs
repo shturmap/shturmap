@@ -107,6 +107,18 @@ public class LegendTests
         Assert.True(Has(ping, Palette.Sand), "sand rings");
     }
 
+    // The boss row shows a boss as the map has it most of the time, at rest (owner, 2026-10-17, from a panel of four:
+    // "A"): a hollow red octagon, dark in its middle, the whole at 70 %.
+    [Fact]
+    public void The_boss_swatch_is_the_hollow_octagon_at_rest()
+    {
+        using var boss = MapLegend.Draw(LegendSymbol.Boss, 2);
+        static bool Reddish(SKColor p) => p.Alpha > 100 && p.Red > p.Green + 40 && p.Red > p.Blue + 40;
+        Assert.Contains(boss.Pixels, Reddish);
+        Assert.DoesNotContain(boss.Pixels, p => p.Alpha == 255 && Reddish(p));
+        Assert.False(Reddish(boss.GetPixel(boss.Width / 2, boss.Height / 2)), "the octagon's middle is red");
+    }
+
     // Sand is the player's alone (the review of 2026-10-04, B3): a marker's floor arrow wears the marker's colour,
     // like its count and OPT badges, and a loose item's square is ink.
     [Fact]

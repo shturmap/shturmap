@@ -184,7 +184,8 @@ public static partial class MapRenderer
     /// <summary>
     /// How far each kind steps back while something else is highlighted (owner, 2026-10-03: at 28 % the other markers
     /// could barely be made out, "but are still pretty important", above all in a raid). Ways out (your side's
-    /// extracts and transits) and bosses never step back: they matter at a glance whatever is highlighted. Other
+    /// extracts and transits) and bosses never step back: they matter at a glance whatever is highlighted (a boss rests
+    /// stepped back already, hollow at <see cref="BossRestAlpha"/>, until it is lit: <see cref="ShownMarker.Resting"/>). Other
     /// quests' markers fade to about two thirds while planning and much less in a raid, where a quest is often kept
     /// highlighted all raid; spawn rings fade like them, and so do the hazard areas (level 4, with locks and
     /// switches). Labels step back further than symbols, so the highlighted quest's names stand out without hiding
@@ -234,7 +235,8 @@ public static partial class MapRenderer
     {
         private readonly SKCanvas? _canvas;
 
-        public StepBackLayer(SKCanvas canvas, float alpha, float saturation, float dim)
+        /// <param name="bounds">Where what is drawn into it lies, when that is known: a layer that size, not the canvas's.</param>
+        public StepBackLayer(SKCanvas canvas, float alpha, float saturation, float dim, SKRect? bounds = null)
         {
             var a = 1 - (1 - alpha) * dim;
             var s = 1 - (1 - saturation) * dim;
@@ -242,7 +244,10 @@ public static partial class MapRenderer
                 return;
             using var filter = s < 0.999f ? ArtworkColors.Recede(s, 1 - 0.1f * (1 - s)) : null;
             using var paint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(255 * a)), ColorFilter = filter };
-            canvas.SaveLayer(paint);
+            if (bounds is { } limit)
+                canvas.SaveLayer(limit, paint);
+            else
+                canvas.SaveLayer(paint);
             _canvas = canvas;
         }
 
@@ -273,6 +278,11 @@ public static partial class MapRenderer
         /// </summary>
         public bool Pointed { get; init; }
 
+        /// <summary>A boss's zone at rest, neither pointed at nor targeted by a picked, pointed-at or held quest: a hollow
+        /// octagon at <see cref="BossRestAlpha"/>, named only where it is the boss's likeliest (<see cref="MapMarker.RestLabel"/>),
+        /// in the map's own spaced caps in muted ink (owner, 2026-10-17, from a panel of four: "A").</summary>
+        public bool Resting { get; init; }
+
         /// <summary>An extract the game's own list didn't name this raid (<see cref="MapScene.ExitsNotListed"/>): struck out.</summary>
         public bool NotListed { get; init; }
 
@@ -301,6 +311,10 @@ public static partial class MapRenderer
         /// <summary>Which of its places it took (<see cref="LabelCandidates"/>): 0 right of its symbol, 1 left, 2 above, 3
         /// below, 4 a line further down. A picked or pointed-at name keeps it while the view only moves.</summary>
         public int Side { get; init; }
+
+        /// <summary>The extra space between its letters (pixels): a resting boss's name is set in the map's spaced caps
+        /// (<see cref="ShownMarker.Resting"/>); 0 for every other label.</summary>
+        public float Tracking { get; init; }
 
         /// <summary>A listed extract's name as it is drawn until a list just read lights it (<see cref="MapScene.ExitsRinging"/>):
         /// in the regular face, where a regular name would stand on the same side; <see cref="Box"/> is its bold name's,
@@ -440,15 +454,18 @@ public static partial class MapRenderer
         var labels = new List<PlacedLabel>();
         using var regular = new SKFont(Typeface, 11.5f * ui);
         using var bold = new SKFont(TypefaceBold, 13 * ui);
+        // A resting boss's name: the map's own street names' face and size, in spaced caps (BossRestNameSize).
+        using var resting = new SKFont(Typeface, BossRestNameSize * ui);
+        var restTracking = NameTracking * ui;
         var gap = 4 * ui;
         // Where a picked or pointed-at name ends at most, LabelEdge in from the map's right edge, and how wide it moves in
         // from there at most (LitNameMost).
         var litEdge = camera.Viewport.Width - LabelEdge * ui;
         var litMost = Math.Min(LitNameMost * ui, camera.Viewport.Width * LitNameShare);
         // Where a marker's label may go, in order (null where it may not: past the map's left edge, or past right).
-        List<SKRect?> Candidates(ShownMarker m, SKFont font, string text, float right = float.PositiveInfinity)
+        List<SKRect?> Candidates(ShownMarker m, SKFont font, string text, float right = float.PositiveInfinity, float tracking = 0)
         {
-            var width = font.MeasureText(text);
+            var width = NameWidth(font, text, tracking);
             var candidates = LabelCandidates(m.At, m.Reach + gap, width, font.Size).ToList();
             // A marker with a tab says its name after the tab: "◉×2 Gratitude".
             if (HasTab(m))
@@ -470,17 +487,19 @@ public static partial class MapRenderer
             scale.Held && scene.LastLayout?.Layout.Labels.FirstOrDefault(l => l.Of.Selected && l.Of.Marker.Id == m.Marker.Id) is { } before ? before.Side : null;
         // A lock's key and a switch's name are said close up, or for the one pointed at.
         var landmarkLabels = ZoomOverOverview(camera, scene, ui) >= LandmarkLabelFromZoom;
-        foreach (var m in markers.Where(m => m.Marker.Label.Length > 0 && m.Marker.Kind != MarkerKind.ObjectiveDone && (scene.ShowLabels || m.Selected)
+        foreach (var m in markers.Where(m => LabelOf(m).Length > 0 && m.Marker.Kind != MarkerKind.ObjectiveDone && (scene.ShowLabels || m.Selected)
                                              && (m.Selected || landmarkLabels || !IsLandmark(m.Marker.Kind)))
                      .OrderBy(LabelRank).ThenByDescending(m => m.Count))
         {
             // A name is said once per neighbourhood: eight "Abandoned Cargo" labels in one block say no more than one.
-            if (labels.Any(l => l.Of.Marker.Label == m.Marker.Label && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
+            if (labels.Any(l => LabelOf(l.Of) == LabelOf(m) && SKPoint.Distance(l.Of.At, m.At) < LabelRepeat * ui))
                 continue;
-            // An extract on the player's list this raid says its name in bold, as what is picked or pointed at does.
-            var font = m.Selected || m.Listed ? bold : regular;
-            var text = m.Marker.Label;
-            var candidates = Candidates(m, font, text);
+            // An extract on the player's list this raid says its name in bold, as what is picked or pointed at does. A
+            // resting boss says its name and chance in the map's own spaced caps, in muted ink (BossRestNameSize).
+            var font = m.Resting ? resting : m.Selected || m.Listed ? bold : regular;
+            var text = m.Resting ? UiLanguage.Upper(LabelOf(m)) : m.Marker.Label;
+            var tracking = m.Resting ? restTracking : 0;
+            var candidates = Candidates(m, font, text, tracking: tracking);
             // A picked or pointed-at name doesn't run past the map's right edge (LitNameMost): where its right does, it
             // moves in, trimmed with "…" to LitNameMost if longer, to its left or above or below its symbol, slid in.
             if (m.Selected)
@@ -518,12 +537,13 @@ public static partial class MapRenderer
                 placed = SKRect.Create(placed.Left, placed.Top, font.MeasureText(fits), placed.Height);
             }
             taken.Add(placed);
-            // Ink for every label at rest, a boss's too: its red octagon is the danger sign, and red type on the dark
-            // ground read worse than any other label (the review of 2026-10-04). What is picked or pointed at takes its
-            // marker's colour.
-            // An extract that isn't on the player's list this raid steps back, name and symbol (MapScene.ExitsNotListed).
-            var color = m.Selected ? m.Color : m.NotListed ? Muted : Ink;
-            var label = new PlacedLabel(text, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m) { Side = side };
+            // Ink for every label, a lit boss's too: its red octagon is the danger sign, and red type on the dark ground
+            // read worse than any other label (the review of 2026-10-04). What is picked or pointed at takes its marker's
+            // colour.
+            // An extract that isn't on the player's list this raid steps back, name and symbol (MapScene.ExitsNotListed), and
+            // so does a boss at rest.
+            var color = m.Selected ? m.Color : m.NotListed || m.Resting ? Muted : Ink;
+            var label = new PlacedLabel(text, placed, placed.Top + font.Size * 1.1f, font.Size, m.Selected || m.Listed, color, m) { Side = side, Tracking = tracking };
             // Until a list just read lights it, a listed extract's name is in the regular face, as an unlit one's, on the
             // same side (owner, 2026-10-15): the bold name's box is kept from the first frame, so nothing moves as it lights.
             if (m.Listed && !m.Selected && side >= 0 && Candidates(m, regular, text)[side] is { } unlit)
@@ -565,6 +585,22 @@ public static partial class MapRenderer
 
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
     public const float LabelRepeat = 250;
+
+    // ---- bosses at rest (owner, 2026-10-17: "I feel like the red dots for enemy bosses are too distracting when trying to
+    // parse the quest icons"; from a panel of four, "A": stepped back until it matters) ----
+
+    /// <summary>How strongly a resting boss's octagon is drawn, collar, outline and floor badge alike.</summary>
+    public const float BossRestAlpha = 0.7f;
+
+    /// <summary>The width of a resting boss's octagon outline (pixels, before scaling): hollow, no fill.</summary>
+    public const float BossRestStroke = 1.5f;
+
+    /// <summary>The size of a resting boss's name (pixels, before scaling): the map's street names', in spaced caps.</summary>
+    public const float BossRestNameSize = 11;
+
+    // What a marker's label says as it is drawn: a resting boss its rest label (MapMarker.RestLabel), anything else its
+    // label.
+    private static string LabelOf(ShownMarker m) => m.Resting ? m.Marker.RestLabel ?? m.Marker.Label : m.Marker.Label;
 
     // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
     // An extract on the player's list this raid is placed with the bosses, ahead of other ways out and of quests: at
@@ -1449,6 +1485,9 @@ public static partial class MapRenderer
         {
             Reach = reach + 1 * ui,
             Pointed = pointed && !done,
+            // A boss is lit while pointed at (in the lines, on the map) and while a quest that targets it is pointed at or
+            // held (in the focus) or picked; else it rests stepped back.
+            Resting = marker.Kind == MarkerKind.BossSpawn && !selected && !IsKeptBoss(scene, marker),
             NotListed = scene.ExitsNotListed.Contains(marker.Id),
             Listed = scene.ExitsListed.Contains(marker.Id),
             Unsure = scene.ExitsUnsure.Contains(marker.Id),
@@ -1465,9 +1504,24 @@ public static partial class MapRenderer
         if (traced is not null && traced.TryGetValue(label.Of, out var trace))
             trace.Bold = bold;
         using var font = new SKFont(bold ? TypefaceBold : Typeface, size);
-        var ui = size / (bold ? 13 : 11.5f);
+        var ui = size / (label.Tracking > 0 ? BossRestNameSize : bold ? 13 : 11.5f);
         using var shadow = new SKPaint { Color = Background.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * ui };
         using var text = new SKPaint { Color = label.Color, IsAntialias = true };
+        if (label.Tracking > 0)
+        {
+            // Spaced caps, letter by letter, as the map's landmarks are: Skia has no letter spacing.
+            foreach (var paint in new[] { shadow, text })
+            {
+                var x = box.Left;
+                foreach (var c in label.Text)
+                {
+                    var letter = c.ToString();
+                    canvas.DrawText(letter, x, baseline, SKTextAlign.Left, font, paint);
+                    x += font.MeasureText(letter) + label.Tracking;
+                }
+            }
+            return;
+        }
         canvas.DrawText(label.Text, box.Left, baseline, SKTextAlign.Left, font, shadow);
         canvas.DrawText(label.Text, box.Left, baseline, SKTextAlign.Left, font, text);
     }
@@ -1541,6 +1595,10 @@ public static partial class MapRenderer
     // A lock whose key a picked quest needs on this map (MapScene.KeptKeys).
     private static bool IsKeptKey(MapScene scene, MapMarker m) =>
         m.Kind == MarkerKind.Lock && m.Group is not null && scene.KeptKeys.Contains(m.Group);
+
+    // A boss a picked quest targets on this map (MapScene.KeptBosses).
+    private static bool IsKeptBoss(MapScene scene, MapMarker m) =>
+        m.Kind == MarkerKind.BossSpawn && m.Group is not null && scene.KeptBosses.Contains(m.Group);
 
     private static bool IsFocused(MapScene scene, MapMarker m) =>
         scene.ShownFocus.Contains(m.Id) || (m.Group is not null && scene.ShownFocus.Contains(m.Group));
@@ -2444,6 +2502,9 @@ public static partial class MapRenderer
         using var outline = new SKPaint { Color = Background, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 * ui };
         var trace = traced is null ? null : Traced(traced, shown);
         // A pick's ring and a pointed-at symbol's pulse lie under every symbol (DrawUnderlay).
+        // A resting boss is drawn whole at BossRestAlpha, its floor badge too, as one layer the size of the symbol and its
+        // badge.
+        using var rest = new StepBackLayer(canvas, shown.Resting ? BossRestAlpha : 1, 1, 1, Square(at, 40 * ui));
 
         switch (marker.Kind)
         {
@@ -2481,8 +2542,19 @@ public static partial class MapRenderer
                     canvas.DrawCircle(at, 4 * ui, ring);
                 }
                 break;
+            case MarkerKind.BossSpawn when shown.Resting:
+                // At rest a hollow octagon on its dark collar, the whole at 70 % (owner, 2026-10-17: the red dots were
+                // "too distracting when trying to parse the quest icons"; from a panel of four, "A"). Its place and shape
+                // stay, so the eye still finds where the boss spawns; the solid octagon is kept for when it matters.
+                using (var plate = Octagon(at, r * 1.2f))
+                using (var edge = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = BossRestStroke * ui, StrokeJoin = SKStrokeJoin.Round })
+                {
+                    DrawCollar(canvas, plate, ui);
+                    canvas.DrawPath(plate, edge);
+                }
+                break;
             case MarkerKind.BossSpawn:
-                // A solid red octagon: a shape no other marker has, and all red (owner, 2026-10-04, from the review:
+                // Lit, a solid red octagon: a shape no other marker has, and all red (owner, 2026-10-04, from the review:
                 // the red diamond with a dark centre was mostly collar and centre, weaker than a quest's disc, and it
                 // shared its outline with the violet transit diamond).
                 using (var plate = Octagon(at, r * 1.2f))

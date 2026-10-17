@@ -44,6 +44,8 @@ public class RenderTests
     // Where symbols share a place, the one that matters more lies on top (the review of 2026-10-04, C6): a Scav
     // spawn's ring at a boss's spawn zone was drawn over the red octagon, which then read as a red ring. Whichever
     // comes first in the data, the octagon is whole: red at its centre and 3 px out, where the ring's line would run.
+    // The boss is lit here, by a picked quest that targets it (drawn with the rest, not after it as the pointed-at is): at
+    // rest it is hollow (BossRestTests).
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -52,6 +54,8 @@ public class RenderTests
         var boss = new MapMarker("boss:1", MarkerKind.BossSpawn, new WorldPoint(0, 0, 0), "Boss 50%", "boss:one");
         var scavs = new MapMarker("scav:1", MarkerKind.ScavSpawn, new WorldPoint(0, 0, 0), "", "scav:zone");
         var (camera, scene) = Of(bossFirst ? [boss, scavs] : [scavs, boss]);
+        scene.QuestBosses = new Dictionary<string, IReadOnlyList<string>> { ["quest-k"] = ["boss:one"] };
+        scene.Kept = new HashSet<string> { "quest-k" };
         using var bitmap = Render(scene, camera);
         foreach (var (x, y) in new[] { (500, 500), (503, 500), (497, 500), (500, 503), (500, 497), (504, 500) })
             Near(Palette.Red, bitmap.GetPixel(x, y));
