@@ -1975,6 +1975,18 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   a picture, is given with this note. Still to design: what of a daily or weekly the map can use (its map and objective
   kind, from the screen's words), how long it is kept (they expire), and where it shows in Plan.
 
+- **Defects in tarkov.dev's extract data** (the exits verification of 2026-10-17, kept beside the repositories; owner,
+  2026-10-17: "Note this down for later"). Found: Ground Zero carries three exits at Woods' and Streets' exact coordinates
+  (UN Roadblock, Scav Bunker, Pinewood Basement); Night Factory's nine and Ground Zero 21+'s six exits have no faction, so
+  the app treats them as shared and a Scav gets PMC rows; Customs' PMC rail to Reserve (`ex_customs_pmc_rail_milbase`) is
+  tagged Scav, so PMCs get no row; Interchange's Smugglers' Tunnel, Lighthouse's V-Ex and Terminal's boat are missing; The
+  Lab (Dark), where the Factory and Streets transits lead, has no extracts at all. The approach decided: report them to
+  tarkov.dev, and keep the app on general rules rather than hand fixes, so nothing has to be undone when the data is
+  corrected: drop an extract that lies outside its map's bounds; where a variant's exits have no faction, take the base
+  map's exit of the same name; give The Lab (Dark) its parent's extracts, as its artwork is already borrowed; one hand-kept
+  override for the Customs rail; leave the three missing exits out (positions by hand go against the data-only rule); a
+  `bring` audit row for each and the assumptions in UPDATES.md, so an upstream fix is noticed.
+
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an
