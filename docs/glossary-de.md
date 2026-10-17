@@ -55,6 +55,8 @@ gender.
 | step (one of what leaving through an extract takes: a switch, a keycard) | Schritt (der), Schritte | „Zuerst D-2-Stromschalter · 2 Schritte“ (the switch's name is the game's) |
 | gear; kit; climbing gear | Gear (das); Kit (das); Kletter-Gear (Eispickel, Paracord) | The game: Ausrüstung, Kletterausrüstung; the items' names come from the data (items `5c0126f40db834002a125382`) |
 | car extract (V-Ex) | V-Ex (der) | The game: Auto … in extract names (maps `Sandbox_VExit`), kostenpflichtiger Fahrservice |
+| what is so of an exit: for the door (a key); no backpack; single use; up to 4 players; may be closed | für die Tür; kein Rucksack; einmalig; bis zu 4 Spieler; kann geschlossen sein | the raid card's lines under an exit („Factory-Notausgangsschlüssel für die Tür“, „20.000 ₽ zahlen · einmalig · bis zu 4 Spieler“). The game: Rucksack (items `5ab8ee7786f7742d8f33f0b9` „VKBO Armeerucksack“) |
+| the armored train; lever; pump; min left, min in (the raid clock's) | Zug (der); Hebel (der); Pumpe (die); Restzeit, min im Raid | „Zug bei 16 min Restzeit · bleibt 7 min“, „ab 15 min im Raid“, „nach dem Hebel 4 min offen“, „~80 s nach der Pumpe“; the clock's MIN ÜBRIG, MIN IM RAID. The game: Gepanzerter Zug (maps `EXFIL_Train`) |
 | map names | as the data: Customs, Woods, … | maps `<id> Name`: English, except „Factory bei Nacht“ |
 | trader; trader names | Trader (der), Trader; as the data | The game: Händler; traders `<id> Nickname`: Prapor, Therapist …, but Jäger, BTR Fahrer, Radiostation, Überlebender |
 | loyalty level; level; skill | LL (LL2), Loyalty Level; Level; Skill (der), Skills | The game: Ansehensstufe, Level, Fähigkeit (items `Skill`) |

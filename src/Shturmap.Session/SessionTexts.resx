@@ -672,6 +672,42 @@
     <value>{switchName} first · {steps, plural, one {# step} other {# steps}}</value>
     <comment>Raid card, under an extract: leaving there takes several switches (and a keycard) in a row; the map shows them all while the extract is pointed at. {switchName}: the first one's name, 'Mall Main Power Switch'; {steps}: how many there are in all, 4.</comment>
   </data>
+  <data name="ExtractDoorKey" xml:space="preserve">
+    <value>{key} for the door</value>
+    <comment>Raid card, under an extract, in gold: the key that opens the door to it, pictured beside it. {key}: the key's name from the data, 'Factory emergency exit key'.</comment>
+  </data>
+  <data name="ExtractNoBackpack" xml:space="preserve">
+    <value>No backpack</value>
+    <comment>Raid card, under an extract, in gold: leaving there takes taking the backpack off (the way out is too narrow).</comment>
+  </data>
+  <data name="ExtractSingleUse" xml:space="preserve">
+    <value>single use</value>
+    <comment>Raid card, under an extract, in gold, after its other needs and a ' · ': once used, it is closed for the rest of the raid.</comment>
+  </data>
+  <data name="ExtractSingleUseUpTo" xml:space="preserve">
+    <value>single use · up to {count, plural, one {# player} other {# players}}</value>
+    <comment>Raid card, under a car extract, in gold, after its fare and a ' · ': once used it is closed, and so many may leave in it together. {count}: 4 or 5.</comment>
+  </data>
+  <data name="ExtractMayBeClosed" xml:space="preserve">
+    <value>may be closed</value>
+    <comment>Raid card, under an extract, muted: the game opens it only in some raids. Said until the game's extract list was read this raid; then the list's marks say it.</comment>
+  </data>
+  <data name="ExtractTrain" xml:space="preserve">
+    <value>Train from {minutes} min left · stays {stays} min</value>
+    <comment>Raid card, under the armored train's extract, muted: it comes at the earliest with {minutes} min left on the raid card's clock (MIN LEFT), 16, and stays {stays} min, 7.</comment>
+  </data>
+  <data name="ExtractOpensAt" xml:space="preserve">
+    <value>from {minutes} min in</value>
+    <comment>Raid card, under an extract, muted: it opens only {minutes} min after the raid's start (MIN IN on the raid card), 15.</comment>
+  </data>
+  <data name="ExtractOpenAfterLever" xml:space="preserve">
+    <value>open for {minutes} min after the lever</value>
+    <comment>Raid card, under an extract, muted: once its lever is pulled, it stays open {minutes} min, 4.</comment>
+  </data>
+  <data name="ExtractAfterPump" xml:space="preserve">
+    <value>~{seconds} s after the pump</value>
+    <comment>Raid card, under an extract, muted: it can be used about {seconds} s after its pump was started (the water sinks), 80.</comment>
+  </data>
   <data name="ReportNotConfigured" xml:space="preserve">
     <value>Reporting isn't set up in this build.</value>
     <comment>Report dialog and the crash question, after Send, in a build without a place to send reports to.</comment>

@@ -6,10 +6,13 @@ namespace Shturmap.Session;
 /// <summary>
 /// What an extract or transit needs, in a few words: "Pay 5,000 ₽", "Red Rebel ice pick and paracord, no armored
 /// rig", "ZB-013 Power Switch first". From tarkov.dev's fields (transfer items, transit conditions), the hand-kept table
-/// of the extracts a switch gates (<see cref="SwitchExits"/>, 2026-10-17: the data's own switches tell no extract apart)
-/// and, where nothing else says it, from the extract's internal name (the climbing exits, flare exits) and its English
-/// name (flare and co-op exits). Never from the name in the game's language: German has "Mira-Allee" for "Mira Ave
-/// (Flare)", so the rule was lost there (review of 2026-10-04).
+/// of the extracts a switch gates (<see cref="SwitchExits"/>, 2026-10-17: the data's own switches tell no extract apart),
+/// the hand-kept facts the data doesn't carry (<see cref="ExitFacts"/>: a key at the door, no backpack, single use; and,
+/// muted, <see cref="Notes"/>: whether it may be closed, the times it keeps) and, where nothing else says it, from the
+/// extract's internal name (the climbing exits, flare exits) and its English name (flare and co-op exits). Never from the
+/// name in the game's language: German has "Mira-Allee" for "Mira Ave (Flare)", so the rule was lost there (review of
+/// 2026-10-04). Gold is what to bring or do; muted is what is so of the exit, its availability or its time (owner,
+/// 2026-10-17; docs/DESIGN.md, "Extract requirements").
 /// </summary>
 public static class ExtractRules
 {
@@ -96,7 +99,71 @@ public static class ExtractRules
             var first = StepName(data, map, steps[0]);
             parts.Add(steps.Count > 1 ? SessionTexts.ExtractSwitchChain(switchName: first, steps: steps.Count) : SessionTexts.ExtractSwitchFirst(switchName: first));
         }
+
+        // What the data doesn't carry (ExitFacts; owner, 2026-10-17): the key at the door, pictured where nothing is handed
+        // over (the Saferoom's keycard too, though it is a step of the chain above); no backpack; and, last, single use
+        // with how many may leave together ("Pay 5,000 ₽ · single use · up to 4 players").
+        if (ExitFacts.RowOf(data, extract, map) is { } facts)
+        {
+            if (facts.DoorKey is { } doorKey)
+            {
+                parts.Add(SessionTexts.ExtractDoorKey(key: data.ItemName(doorKey)));
+                item ??= doorKey;
+            }
+            if (facts.NoBackpack)
+                parts.Add(SessionTexts.ExtractNoBackpack);
+            if (facts.SingleUse)
+                parts.Add(facts.UpTo is { } upTo ? SessionTexts.ExtractSingleUseUpTo(count: upTo) : SessionTexts.ExtractSingleUse);
+        }
         return (string.Join(" · ", parts.Distinct()), item);
+    }
+
+    /// <summary>
+    /// What is so of an extract, said muted under what it takes (owner, 2026-10-17; <see cref="ExitFacts"/>): a time it
+    /// keeps ("Train from 16 min left · stays 7 min", "from 15 min in", "open for 4 min after the lever", "~80 s after the
+    /// pump"), then "may be closed" where the game opens it only in some raids. Empty for an extract with none.
+    /// </summary>
+    public static IReadOnlyList<ExitNote> Notes(GameData data, ApiMap map, ApiExtract extract)
+    {
+        if (ExitFacts.RowOf(data, extract, map) is not { } facts)
+            return [];
+        var notes = new List<ExitNote>();
+        switch (facts.Time)
+        {
+            case ExitFacts.Train train:
+                notes.Add(new(SessionTexts.ExtractTrain(minutes: train.FromLeft, stays: train.Stays)) { PassedAtLeft = train.GoneAtLeft });
+                break;
+            case ExitFacts.OpensAt opens:
+                notes.Add(new(SessionTexts.ExtractOpensAt(minutes: opens.MinutesIn)) { PassedAtIn = opens.MinutesIn });
+                break;
+            case ExitFacts.OpenAfterLever lever:
+                notes.Add(new(SessionTexts.ExtractOpenAfterLever(minutes: lever.Minutes)));
+                break;
+            case ExitFacts.AfterPump pump:
+                notes.Add(new(SessionTexts.ExtractAfterPump(seconds: pump.Seconds)));
+                break;
+        }
+        if (facts.MayBeClosed)
+            notes.Add(new(SessionTexts.ExtractMayBeClosed) { UntilListed = true });
+        return notes;
+    }
+
+    /// <summary>
+    /// The muted line under an extract's needs as the raid's clock stands, the clock of the raid card's readout (its
+    /// MIN IN and MIN LEFT): its notes joined, without "may be closed" once the game's extract list was read this raid
+    /// (the list's lit, "??:??:??" and struck-out marks say it then), and whether a window on it has passed (a train's
+    /// latest leaving; The Way Up open), when the line steps back further. No cue goes with it (principle 11).
+    /// </summary>
+    /// <param name="listRead">The game's extract list was read this raid.</param>
+    /// <param name="minutesIn">Whole minutes since the raid's start line, or null where the raid's own time isn't known
+    /// (outside a raid, a Scav, who joins one under way).</param>
+    /// <param name="minutesLeft">Whole minutes left on the readout, or null where none is known or the raid's length is over.</param>
+    /// <param name="over">Past the raid's length.</param>
+    public static (string Text, bool Passed) NoteLine(IReadOnlyList<ExitNote> notes, bool listRead, int? minutesIn, int? minutesLeft, bool over)
+    {
+        var shown = notes.Where(n => !(n.UntilListed && listRead)).ToList();
+        var passed = shown.Any(n => (n.PassedAtLeft is { } gone && (over || minutesLeft <= gone)) || (n.PassedAtIn is { } open && minutesIn >= open));
+        return (string.Join(" · ", shown.Select(n => n.Text)), passed);
     }
 
     // A step's name as its marker on the map says it (MapContentBuilder.Landmarks): a switch's name from the data,
@@ -120,8 +187,8 @@ public static class ExtractRules
 
     /// <summary>
     /// The items leaving through an extract takes, by the same rules as <see cref="Needs(GameData, ApiMap, ApiExtract)"/>:
-    /// a green flare at a flare exit, ice pick and paracord at a climbing exit, the money or item a paid exit asks for.
-    /// Empty when it takes none (switches and co-op exits take no item).
+    /// a green flare at a flare exit, ice pick and paracord at a climbing exit, the money or item a paid exit asks for, the
+    /// key to an exit's door (<see cref="ExitFacts"/>). Empty when it takes none (switches and co-op exits take no item).
     /// </summary>
     public static IReadOnlyList<(string ItemId, int Count)> Items(GameData data, ApiExtract extract)
     {
@@ -136,6 +203,8 @@ public static class ExtractRules
             items.Add((GreenFlare, 1));
         if (extract.TransferItem is { Count: > 0 } transfer)
             items.Add((transfer.Item, (int)Math.Ceiling(transfer.Count)));
+        if (ExitFacts.RowOf(data, extract)?.DoorKey is { } doorKey)
+            items.Add((doorKey, 1));
         return items;
     }
 

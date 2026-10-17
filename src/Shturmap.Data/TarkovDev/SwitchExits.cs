@@ -64,11 +64,12 @@ public static class SwitchExits
             [S("a948c3ba250ffcaaa508230d0b3392bf09cb6964"), S("e7096cec97efb58f59f78f048792235f89318a94")]),
     ];
 
-    /// <summary>The table's row for an extract: of its map, with its internal name, and its id. Null for any other.</summary>
+    /// <summary>The table's row for an extract: of its map (its base map's where it took that map's extracts, <see cref="GameData.ExtractMapName"/>:
+    /// The Lab (Dark)'s are The Lab's), with its internal name, and its id. Null for any other.</summary>
     public static Row? RowOf(GameData data, ApiMap map, ApiExtract extract)
     {
         var key = data.ExtractKeys.GetValueOrDefault(extract.Id);
-        return key is null ? null : Table.FirstOrDefault(r => r.Map == map.NormalizedName && r.Key == key && r.ExtractId == extract.Id);
+        return key is null ? null : Table.FirstOrDefault(r => r.Map == data.ExtractMapName(map) && r.Key == key && r.ExtractId == extract.Id);
     }
 
     /// <summary>

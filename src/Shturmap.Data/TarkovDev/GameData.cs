@@ -68,6 +68,31 @@ public sealed class GameData
     /// <summary>tarkov.dev's code for the language of <see cref="GameNames"/> ("de"), or null when there are none.</summary>
     public string? GameNamesLanguage { get; init; }
 
+    /// <summary>
+    /// What the general rules for the defects in tarkov.dev's extracts did as the data loaded (<see cref="TarkovDev.ExtractRepairs"/>:
+    /// a copy outside its map dropped, a variant's factions and extracts from its base map, a faction by hand), for the
+    /// <c>bring</c> audit. Empty for data made by hand.
+    /// </summary>
+    public IReadOnlyList<ExtractRepairs.Done> ExtractRepairs { get; init; } = [];
+
+    private Dictionary<string, string>? _extractsFrom;
+
+    /// <summary>
+    /// The maps whose extracts are their base map's, by normalizedName, to the base's (The Lab (Dark) → The Lab;
+    /// <see cref="TarkovDev.ExtractRepairs"/>). The extracts keep their ids, so the hand-kept tables name them by the base.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ExtractsFrom => LazyInitializer.EnsureInitialized(ref _extractsFrom, () =>
+        ExtractRepairs.Where(r => r is { Rule: global::Shturmap.Data.TarkovDev.ExtractRepairs.Rule.ExtractsFromBase, From: not null })
+            .ToDictionary(r => r.Map, r => r.From!, StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>The map name the hand-kept tables (<see cref="SwitchExits"/>, <see cref="ExitFacts"/>) give a map's
+    /// extracts under: its base map's where it took that map's extracts (<see cref="ExtractsFrom"/>), else its own.</summary>
+    public string ExtractMapName(ApiMap map) => ExtractsFrom.GetValueOrDefault(map.NormalizedName) ?? map.NormalizedName;
+
+    /// <summary>The fields tarkov.dev's extracts carried (with a value) as the data loaded, for <see cref="ExitFacts.Drift"/>:
+    /// a new one may be a fact the table keeps by hand. Empty for data made by hand.</summary>
+    public IReadOnlySet<string> ExtractFields { get; init; } = new HashSet<string>();
+
     /// <summary>Objectives' kill targets, exit statuses and set kill conditions by objective id, from before translation.</summary>
     public IReadOnlyDictionary<string, ObjectiveFacts> ObjectiveFacts { get; init; } = new Dictionary<string, ObjectiveFacts>();
 
@@ -101,9 +126,12 @@ public sealed class GameData
     /// The artwork definition for a map. Variants without their own entry use their base map's
     /// ("ground-zero-tutorial" → "ground-zero").
     /// </summary>
-    public MapDefinition? DefinitionFor(string normalizedName) =>
-        MapDefinitions.FirstOrDefault(d => d.Matches(normalizedName)) ??
-        MapDefinitions.Where(d => normalizedName.StartsWith(d.Key + "-", StringComparison.OrdinalIgnoreCase))
+    public MapDefinition? DefinitionFor(string normalizedName) => DefinitionFor(MapDefinitions, normalizedName);
+
+    /// <summary>The same lookup in a list of definitions (the loader's, before the data is made).</summary>
+    public static MapDefinition? DefinitionFor(IReadOnlyList<MapDefinition> definitions, string normalizedName) =>
+        definitions.FirstOrDefault(d => d.Matches(normalizedName)) ??
+        definitions.Where(d => normalizedName.StartsWith(d.Key + "-", StringComparison.OrdinalIgnoreCase))
             .MaxBy(d => d.Key.Length);
 
     public ApiMap? MapByNormalizedName(string normalizedName) =>

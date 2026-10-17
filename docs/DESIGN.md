@@ -1226,7 +1226,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     as done ("Quest cards", *Ticks*) comes after the quest's open lines, muted, with "DONE" where its distance was
     and without its needs; NEXT and the guide line pass it by, and a quest with nothing open on this map isn't
     listed. Below the card, extracts and
-    transits for your side, each with what it takes to leave there (see "Extract requirements").
+    transits for your side, each with what it takes to leave there and, muted, what is so of it (see "Extract
+    requirements").
     **The extract list** (owner, 2026-10-05). Under the heading one line in the note style says where things stand:
     "Not checked against your list yet. Screenshot the game's extract list (raid start, or O twice) to check.", then
     "Your list this raid: 6 of 12 extracts (screenshot at 16:40)." (or that this Windows has no text recognition
@@ -2609,7 +2610,8 @@ still only keeps its card open (two clicks, two meanings).
 
 ### Extract requirements
 
-Shown under each extract in the Raid rail, short, in gold, with the item's icon when one is handed over:
+Shown under each extract in the Raid rail, short, in gold, with the item's icon when one is handed over (or the key
+to its door when nothing is), and under that, muted, what is so of it:
 
 | from | example |
 | --- | --- |
@@ -2619,7 +2621,75 @@ Shown under each extract in the Raid rail, short, in gold, with the item's icon 
 | "(Flare)" in the English name, `sniper` as a word of the internal name (`E9_sniper`, `customs_sniper_exit`), or a flare exit kept by hand (`ExtractRules.FlaresByHand`: Icebreaker's helicopter, `Heli`, by id) | "Fire a green signal flare there"; the helicopter's says it before its fare ("… · Pay €2,400") |
 | "(Co-op)" in the English name | "Co-op: a PMC and a player Scav leave together" |
 | the hand-kept table of the extracts a switch gates (`SwitchExits`), else the data's `switches` where they tell an extract apart | "ZB-013 Power Switch first"; where it takes several steps, how many: "Mall Main Power Switch first · 4 steps" (Interchange's Saferoom Exfil) |
+| the hand-kept facts (`ExitFacts`): a key at the exit's door, with the door's lock in the data (Factory's and Night Factory's Cellars and Med Tent Gate, Customs' ZB-1013, Woods' ZB-014, Interchange's Saferoom, whose keycard is a step of its chain too) | "Factory emergency exit key for the door", the key's icon beside it and the key in BRING (`ExtractRules.Items`); the key's name is the data's |
+| `ExitFacts`: no backpack (Reserve's Sewer Manhole, The Lab's Ventilation Shaft) | "No backpack" |
+| `ExitFacts`: single use, and how many leave together (the car extracts: up to 4, Shoreline's 5; the Saferoom and The Lab's Cargo Elevator, single use only) | after the rest of the line: "Pay 5,000 ₽ · single use · up to 4 players", "… · single use" |
+| `ExitFacts`: open in some raids only, muted (the 13 the wiki marks "not always available": Customs' Old Gas Station for a PMC and Dorms V-Ex; Woods' Bridge V-Ex, RUAF Gate, ZB-014, ZB-016; Shoreline's Pier Boat; Interchange's Power Station V-Ex; Reserve's Armored Train; The Lab's Hangar Gate and Parking Gate; Streets' Courtyard and Primorsky Ave Taxi V-Ex) | "may be closed", until the game's extract list was read this raid |
+| `ExitFacts`: a time it keeps, muted (Reserve's train comes with 16 to 12 min left and Lighthouse's with 20 to 15, each staying 7; The Labyrinth's The Way Up opens 15 min in; Reserve's Bunker Hermetic Door stays open 4 min after its lever; The Lab's Sewage Conduit's water sinks in about 80 s after its pump) | "Train from 16 min left · stays 7 min", "from 15 min in", "open for 4 min after the lever", "~80 s after the pump" |
 | transit `conditions` | "TerraGroup Labs access keycard required (1)" |
+
+**Gold is what to bring or do, muted what is so of the exit** (owner, 2026-10-17). The gold line says what leaving
+takes: an item, money, a key, a switch, a flare, a partner, the backpack off; single use and how many may leave
+together go on it after the rest, as they qualify what it takes (a car's fare pays for a group). The muted line under
+it says what is so of the exit, its availability and its time: "may be closed", a train's window, The Way Up's hour,
+how long the bunker's door stays open, how long the conduit's water takes. An exit the game's list leaves out shows
+neither (what it would take doesn't matter). **"may be closed" goes once the list was read** this raid: the list's
+lit, "??:??:??" and struck-out marks say it then (`ExtractRules.NoteLine`, `ExitState`). **The trains' and The Way
+Up's words follow the raid card's clock** (its MIN IN and MIN LEFT, the raid's length minus the time since its start
+line, `Rules.RaidTime`): the rail words them again at each new minute, and once a window has passed (the latest
+train has gone, at 5 min left on Reserve and 8 on Lighthouse; The Way Up is open, from 15 min in) the line steps back
+to 45 % (the stepped-back measure, "Map drawing", "Stepping back"). For a Scav, who joins a raid under way, and outside a raid, the
+clock isn't the raid's: the words stand as they are. **No cue for a train's arrival** (deliberately; principle 11): a
+cue is for the view changing by itself, the train's coming is a guess within four minutes that no log line states, and
+the line already says when to look; a cue at the window's opening was weighed and left out.
+
+**The facts are kept by hand** (owner, 2026-10-17: "exit facts" as words on the exit's Raid rail row, nothing new on
+the map). The verification of 2026-10-17 read each map's "Extractions" on the wiki (escapefromtarkov.fandom.com:
+faction, always available, single use, requirements, notes) against tarkov.dev's data, and none of these facts is in
+it: its extracts carry `id`, `name`, `faction`, `switch`, `switches`, `position`, `outline`, `top`, `bottom`,
+`transferItem` and `size`, nothing more; the keys at exit doors are only locks near the exit (4.6 to 13 m away), which
+no field ties to it. `ExitFacts` (in `Shturmap.Data`, beside `SwitchExits`) keeps 30 rows the way `SwitchExits` does,
+by the map's `normalizedName` and the extract's internal name, and only for the extract of the id it has (Night
+Factory and Ground Zero 21+ have rows of their own, as their ids are their own; The Lab (Dark)'s borrowed extracts
+keep The Lab's ids and are found under The Lab's rows, *The data's defects* below); a key's row has its door's lock
+id too. `shturmap-cli bring` (EXIT FACTS) and `ExtractRulesTests` against the cache say where a row no longer finds its
+extract, or its lock with its key (STALE: its words go unsaid; the test fails), and where the data starts carrying a
+fact (DATA: a field on the extracts that wasn't there on 2026-10-17, a faction the data now gives itself; the test
+warns): docs/UPDATES.md. Not built: Lighthouse's V-Ex, Interchange's Smugglers' Tunnel and Terminal's boat have no
+place in the data, and placing them by hand goes against the data-only rule; where the green flare for Mira Ave
+spawns, Raiders at The Lab's and Reserve's switches, and the per-player fare (docs/NEXT.md).
+
+**The data's defects, by general rules** (owner, 2026-10-17: rules rather than hand fixes, so a fix upstream needs no
+undoing; the report to tarkov.dev is still to do, docs/NEXT.md). `ExtractRepairs` runs as the data loads
+(`GameDataLoader`), so the map, the rail, the extract list's matching and the rules see the same extracts, and each
+rule does nothing where the data is right:
+
+- **An extract outside its map that another map has is dropped**: outside the map's bounds (`svgBounds`, else
+  `bounds`) and with the internal name of an extract of a map not drawn with the same artwork, it is a copy left
+  behind. Ground Zero carried three, at Woods' and Streets' places: UN Roadblock (429 m out), Scav Bunker (582 m) and
+  Pinewood Basement (15 m). The bounds alone would drop six real extracts as well, 1.5 to 16 m past the edge (Factory's
+  and Night Factory's Courtyard Gate, Customs' Railroad Passage, Woods' RUAF Gate, Interchange's Path to River,
+  Icebreaker's helicopter), and no margin tells Pinewood Basement's 15 m from Railroad Passage's 16: those stay, and
+  the audit lists them.
+- **A variant's base map** is the map whose entry in tarkov.dev's maps.json lists the variant among its `altMaps`, so
+  is drawn with its artwork by tarkov.dev's own word: Factory for Night Factory, Ground Zero for Ground Zero 21+, The
+  Lab for The Lab (Dark) (`ExtractRepairs.BaseOf`). A map the app draws with another's artwork only because its name
+  starts with that map's (`GameData.DefinitionFor`'s fallback: Ground Zero Tutorial, which maps.json lists nowhere) has
+  no base, and borrows nothing (coordinator, 2026-10-17: the rule follows the borrowed artwork, not a name).
+- **A variant's extract with no side takes its base map's**: its extract of the same internal name, the nearest where
+  it lists two (Factory's Gate 3, a Scav's and a PMC's under one id). Without one there it stays shared, as before.
+  Night Factory's nine and Ground Zero 21+'s six had none, so a Scav got PMC rows and a PMC Scav rows.
+- **A variant with no extracts takes its base map's**, and its switches where it has none: The Lab (Dark), where the
+  Factory and Streets transits lead, gets The Lab's seven extracts and fifteen switches; Ground Zero Tutorial, empty
+  too, gets nothing. The borrowed extracts keep The Lab's ids, so `SwitchExits` and `ExitFacts` find them under the
+  base map's `normalizedName` (`GameData.ExtractsFrom`, `ExtractMapName`): The Lab (Dark)'s elevators, gates and
+  conduit carry The Lab's switch lines, badges, lit steps and facts (coordinator, 2026-10-17: the layout is the same
+  with the lights off; if the Dark variant's power turns out to differ, a row can be dropped for it).
+- **One side by hand**: Customs' `ex_customs_pmc_rail_milbase` (Railroad to Reserve) is a PMC's, which the data tags
+  Scav, so PMCs got no row; the row is in `ExitFacts` (`Faction`).
+
+`shturmap-cli bring` prints what each did (OUTSIDE dropped and kept, FACTION FROM BASE, EXTRACTS FROM BASE, FACTION BY
+HAND), and `ExtractRulesTests` against the cache warns where one had nothing to do (a fix upstream).
 
 **Green, not red** (owner, 2026-10-17: "Fix"). The verification of 2026-10-17 read the wiki's "Extractions" of all
 six flare exits (escapefromtarkov.fandom.com) and its RSP-30 green's "Usage": each takes a green flare fired upward in

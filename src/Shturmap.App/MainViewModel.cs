@@ -63,6 +63,20 @@ public sealed record ExtractItem(string Id, string Name, string Kind, string Dis
 
     public Visibility ItemVisibility => NeedItemId is null ? Visibility.Collapsed : Visibility.Visible;
 
+    /// <summary>
+    /// What is so of it, muted under what it takes (owner, 2026-10-17): "may be closed" until the game's list was read,
+    /// the times it keeps ("Train from 16 min left · stays 7 min"); <see cref="Shturmap.Session.ExtractRules.NoteLine"/>.
+    /// </summary>
+    public string Note { get; init; } = "";
+
+    /// <summary>A window on <see cref="Note"/> has passed by the raid's clock: the line steps back further.</summary>
+    public bool NotePassed { get; init; }
+
+    public Visibility NoteVisibility => Note.Length > 0 && !NotListed ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Muted, and at the stepped-back measure (45 %) once its window has passed.</summary>
+    public double NoteStrength => NotePassed ? Rules.TraderFocus.SteppedBack : 1;
+
     /// <summary>The row's small line: its kind, and once the list was read whether it is on it ("PMC extract · on your list").</summary>
     public string KindLine => Rules.ExitsNote.Row(Listed, Unsure, NotListed) is { Length: > 0 } said ? $"{Kind} · {said}" : Kind;
 

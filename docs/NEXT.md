@@ -107,6 +107,54 @@ table, the levels, the label priority).
 were left as they are; whether a guard's kill objective lights its boss; at rest the name reads like a place name
 ("KABAN 75%" by "CONSTRUCTION" on Streets), told apart by its chance and its octagon.
 
+## 2026-10-17: exit facts and the data rules
+
+**The ask** (owner, 2026-10-17, on the coordinator's recommendation after the exits verification): "exit facts" as
+words on the exit's Raid rail row, nothing new on the map; and general rules for the data's defects, with the report
+to tarkov.dev itself left to do (below, "To do later").
+
+**Built (2026-10-17).** Binding: DESIGN.md, "Extract requirements" (the table's rows, *Gold is what to bring or do,
+muted what is so of the exit*, *The facts are kept by hand*, *The data's defects, by general rules*).
+
+- A hand-kept table beside `SwitchExits`, `Data.TarkovDev.ExitFacts`: 30 rows by map, internal name and id, as none of
+  these facts is in tarkov.dev's data. In gold under the exit: the key at its door with the key's icon, and the key in
+  BRING ("Factory emergency exit key for the door": Factory's and Night Factory's Cellars and Med Tent Gate, Customs'
+  ZB-1013, Woods' ZB-014, Interchange's Saferoom, each with its door's lock id); "No backpack" (Reserve's Sewer
+  Manhole, The Lab's Ventilation Shaft); "· single use · up to 4 players" after a car's fare (Shoreline's 5), "· single
+  use" for the Saferoom and The Lab's Cargo Elevator.
+- Muted under that: "may be closed" on the 13 exits the wiki marks "not always available", until the game's list was
+  read this raid; the times: "Train from 16 min left · stays 7 min" (Reserve; Lighthouse's from 20), "from 15 min in"
+  (The Way Up), "open for 4 min after the lever" (Bunker Hermetic Door), "~80 s after the pump" (Sewage Conduit). The
+  trains' and The Way Up's lines follow the raid card's clock and step back to 45 % once the window has passed; no cue.
+- The rules for the data's defects, in the loader (`Data.TarkovDev.ExtractRepairs`), each a no-op on right data: a copy
+  of another map's extract outside the map is dropped (Ground Zero's three); a variant's extract without a side takes
+  its base map's (Night Factory's nine, Ground Zero 21+'s six); a variant without extracts takes its base map's, with
+  its switches (The Lab (Dark) The Lab's seven and fifteen); the Customs rail is a PMC's by hand (a row of `ExitFacts`).
+  A variant's base is the map maps.json lists it under (`altMaps`), and borrowed extracts keep their ids, so the tables
+  find them under the base's name: The Lab (Dark)'s elevators carry The Lab's switch chains, badges and facts.
+- `shturmap-cli bring` prints EXIT FACTS against the data and a line per rule with what it did; `ExtractRulesTests`
+  against the cache fails on a stale row and warns where the data carries a fact or a rule did less (a fix upstream);
+  `ExtractRepairsTests` hold the rules on made-up maps.
+
+**Chosen where the ask left room.** The bounds alone would have dropped six real extracts 1.5 to 16 m past their map's
+edge (Courtyard Gate on Factory and Night Factory, Railroad Passage, RUAF Gate, Path to River, Icebreaker's
+helicopter), and Ground Zero's Pinewood Basement is only 15 m out, so no margin separates them: a dropped extract must
+also have the internal name of another map's extract. Units on numbers ("stays 7 min", "up to 4 players"; DESIGN.md,
+*Words*). Ground Zero 21+'s Police Cordon V-Ex has a row of its own, as Night Factory's doors do. The glance's EXIT
+keeps its gold line only. On the coordinator's follow-up the same day: a variant borrows only from the map tarkov.dev's
+maps.json draws it with (`altMaps`), so Ground Zero Tutorial, empty in the data too, takes nothing (the app draws it
+with Ground Zero's artwork, but only by its name's start, which nothing in the data backs); and The Lab (Dark)'s
+borrowed extracts carry The Lab's switch lines, badges and facts, with The Lab's switches (the same layout with the
+lights off; a row can be dropped for it if its power differs in the game). The texts after the translator's review:
+"Zug bei 16 min Restzeit · bleibt 7 min", "open for 4 min after the lever".
+
+**Deliberately left out.** Lighthouse's V-Ex, Interchange's Smugglers' Tunnel and Terminal's boat: no position in the
+data, and placing them by hand goes against the data-only rule. Where Mira Ave's green flare spawns (a Scav body by
+the yellow bus, the wiki says). Raiders at The Lab's and Reserve's switches and the train. A cue when a train comes
+(principle 11). The per-player fare and the fare's Scav-karma discount.
+
+**Open for the owner.** Whether The Lab (Dark)'s power and elevators work as The Lab's: in a raid there, by eye.
+
 ## 2026-10-17: switch-gated exits on the map
 
 **The ask** (owner, 2026-10-17): "Some exits still require specific actions, for example one exit in interchange
@@ -154,7 +202,8 @@ to the map, and its rows leave as their icons fly. The steps' names give way in 
 steps, within 5 m of its door, show lit and unnamed, and at the whole map so does D-2's power switch in the bunker.
 Only the Saferoom's keycard is a step; the keys at other exit doors (ZB-1013's, Factory's emergency exit key) are not
 in the table. The verification's other findings (exits not always open, timed windows, no-backpack exits, wrong
-factions in the data) are not built.
+factions in the data) are not built. (Built the same day, keys at the doors too: "Exit facts and the data rules",
+above.)
 
 ## 2026-10-16: the other-floor arrow, bolder
 
@@ -2030,17 +2079,24 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   a picture, is given with this note. Still to design: what of a daily or weekly the map can use (its map and objective
   kind, from the screen's words), how long it is kept (they expire), and where it shows in Plan.
 
-- **Defects in tarkov.dev's extract data** (the exits verification of 2026-10-17, kept beside the repositories; owner,
-  2026-10-17: "Note this down for later"). Found: Ground Zero carries three exits at Woods' and Streets' exact coordinates
-  (UN Roadblock, Scav Bunker, Pinewood Basement); Night Factory's nine and Ground Zero 21+'s six exits have no faction, so
-  the app treats them as shared and a Scav gets PMC rows; Customs' PMC rail to Reserve (`ex_customs_pmc_rail_milbase`) is
-  tagged Scav, so PMCs get no row; Interchange's Smugglers' Tunnel, Lighthouse's V-Ex and Terminal's boat are missing; The
-  Lab (Dark), where the Factory and Streets transits lead, has no extracts at all. The approach decided: report them to
-  tarkov.dev, and keep the app on general rules rather than hand fixes, so nothing has to be undone when the data is
-  corrected: drop an extract that lies outside its map's bounds; where a variant's exits have no faction, take the base
-  map's exit of the same name; give The Lab (Dark) its parent's extracts, as its artwork is already borrowed; one hand-kept
-  override for the Customs rail; leave the three missing exits out (positions by hand go against the data-only rule); a
-  `bring` audit row for each and the assumptions in UPDATES.md, so an upstream fix is noticed.
+- **Report the defects in tarkov.dev's extract data** (the exits verification of 2026-10-17, kept beside the
+  repositories; owner, 2026-10-17: "Note this down for later"). The app's side is built ("2026-10-17: exit facts and the
+  data rules", above; DESIGN.md, "Extract requirements", *The data's defects*): general rules in `ExtractRepairs`, each
+  a no-op once the data is right, so nothing is undone when it is corrected. A copy of another map's extract outside its
+  map is dropped; a variant's extract without a side takes its base map's; a variant without extracts takes its base
+  map's; the Customs rail is a PMC's by hand (`ExitFacts`); the missing exits stay out. `bring` prints what each did,
+  and `ExtractRulesTests` warns where one did less (strike that defect from the report). What remains is the report to
+  tarkov.dev (its data manager, or an issue on the-hideout's repositories), with the six defects:
+  1. Ground Zero carries three extracts of other maps at their places, outside its own bounds: UN Roadblock and Scav
+     Bunker (Woods'), Pinewood Basement (Co-Op) (Streets').
+  2. Night Factory's nine and Ground Zero 21+'s six extracts have no `faction` (Factory's and Ground Zero's have).
+  3. Customs' `ex_customs_pmc_rail_milbase` (Railroad to Reserve) is tagged `scav`; it is the PMC's.
+  4. The Lab (Dark) (`laboratory_dark`), where the Factory and Streets transits lead, has no extracts.
+  5. Three extracts are missing: Interchange's Smugglers' Tunnel, Lighthouse's Road to Military Base V-Ex, Terminal's
+     Zubr boat.
+  6. The extracts' `switches` tell none apart: Customs lists the ZB-013 lever on all 28, The Lab the Med Elevator's
+     three buttons on all 7, and Interchange's Saferoom and Reserve's D-2 and Bunker Hermetic Door list none, though
+     the map places their switches (the ten gated extracts are kept by hand in `SwitchExits`).
 
 ## Not asked for (owner to decide)
 
