@@ -85,6 +85,8 @@ public static class TraderFocus
     public static IReadOnlySet<string> OnMap(string? held, IEnumerable<(string QuestId, string? TraderId)> active) =>
         held is null ? new HashSet<string>() : active.Where(q => q.TraderId == held).Select(q => q.QuestId).ToHashSet(StringComparer.Ordinal);
 
-    /// <summary>A portrait's tooltip: "Ragman · 4 active quests".</summary>
-    public static string Tip(string traderName, int count) => RuleTexts.TraderStripTip(trader: traderName, count: count);
+    /// <summary>A portrait's tooltip, with what a click does: "Ragman · 4 active quests · click to hold", or while its
+    /// focus is held "… · click to let go".</summary>
+    public static string Tip(string traderName, int count, bool held) =>
+        held ? RuleTexts.TraderStripTipHeld(trader: traderName, count: count) : RuleTexts.TraderStripTip(trader: traderName, count: count);
 }

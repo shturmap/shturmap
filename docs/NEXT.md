@@ -27,7 +27,7 @@ back"), "Keyboard" (Esc) and §8's script verbs.
   active quest, in tarkov.dev's trader order, the portrait (`Controls.Picture`, 20 DIP) and the count of their active
   quests in `FigureText` gold; cells of at least 43 DIP, so the rail's 351 holds eight with counts of two digits, and a
   ninth wraps (`Rules.TraderFocus.Strip`, `MainWindow.Traders`). The count is every quest the log shows active for the
-  trader, with work on a map or not. Tooltip "Ragman · 4 active quests".
+  trader, with work on a map or not. Tooltip "Ragman · 4 active quests · click to hold", held "… · click to let go".
 - Pointing at a portrait puts the trader's active quests in the linked focus (`Linked.Quests`, as a boss's name does):
   their rows lit, their places pulsing, the rest of the map stepping back; pointing at one of those quests tints the
   portrait. It opens no card.
@@ -38,14 +38,19 @@ back"), "Keyboard" (Esc) and §8's script verbs.
   ANY MAP) and the BRING rows that serve none of the trader's quests step back to 45 %; a pick never does. On the map
   `MapScene.Held` is drawn as the focus while nothing is pointed at, by the stepping-back table and without the pulse;
   the pointer goes first while it lasts.
+- Held, NEXT RAID's rows go by the trader's quests on each map, most first, a tie keeping the planner's order, the maps
+  with none of them last and stepped back (`PlanList.Ranked`; the coordinator's follow-up, the same day); let go, the
+  planner's order is back. The MAP list keeps its order.
 - In a raid only the held portrait shows, or nothing; the map lights the trader's places by the raid's measure; the raid
   card is unchanged.
 - The focus is the run's and never saved: it stays through raids, a new quest list and a change of map, until let go
   or the app closes. A held trader with no active quest left keeps their portrait with "0".
-- Texts: `TraderStripTip` and `PlanRowTrader` (`RuleTexts`, English and German), for the senior translator's review.
+- Texts: `TraderStripTip`, `TraderStripTipHeld` and `PlanRowTrader` (`RuleTexts`, English and German), for the senior
+  translator's review.
 - Snapshots: `--trader-focus <name>` (`tools\fake-raid.ps1 -TraderFocus Ragman`); the script verb `trader [<name>]`.
-- Tests: `TraderFocusTests` (12: the strip's traders, order and counts, the held trader at 0, the raid's strip, the
-  tooltip's plurals, hold, move, release, Esc, what steps back, the map's quests, `PlanList.ByTrader` and `Count`),
+- Tests: `TraderFocusTests` (13: the strip's traders, order and counts, the held trader at 0, the raid's strip, the
+  tooltip's plurals and its click, hold, move, release, Esc, what steps back, the map's quests, `PlanList.ByTrader`,
+  `Count` and `Ranked`),
   `HeldFocusTests` (lit without a pulse in Plan and in a raid, the pointer first and back, the fade out, nothing on this
   map, picks).
 - The tour: chapter 3 frames NEXT RAID's rows, and the strip lies under the shade; its words still hold.
@@ -54,10 +59,9 @@ back"), "Keyboard" (Esc) and §8's script verbs.
 
 - The count is every active quest of the trader, also those with nothing on a map; counting only those Plan has rows
   for would match the rows' counts.
-- Under a focus the maps keep the planner's order; ranking them by the trader's quests there is a small change.
 - The BRING rows that serve none of the trader's quests step back as well (the ask named the quests), and Esc closes
   the cards before it lets go of the focus.
-- The tooltip says the count only, not that a click holds it.
+- The MAP list keeps the planner's order under a focus, while NEXT RAID's rows re-rank.
 - What's New's line comes with the release.
 
 ## 2026-10-17: boss markers stepped back until they matter

@@ -972,8 +972,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     (tarkov.dev's list, as Plan's order takes it), the trader's portrait in its thin frame (`Controls.Picture`, 20 DIP)
     and beside it the count of their active quests in the figures' gold (`FigureText`), "4": every quest the log shows
     active for that trader, with work on a map or not. Cells of at least 43 DIP, so the rail's 351 holds eight, a count
-    of two digits included; a ninth wraps to a second row. No heading and no words: a portrait's tooltip says "Ragman · 4
-    active quests". No active quests, no strip.
+    of two digits included; a ninth wraps to a second row. No heading and no words: a portrait's tooltip says them. No
+    active quests, no strip.
     - **Pointing** at a portrait lights that trader's quests in the rows and on the map, as a boss's name lights its zones
       (*Visual language*, the linked highlight: a trader's portrait is their active quests); leaving puts it back.
     - **A click holds the focus**, one trader at a time: the portrait is framed in amber (1.5 DIP over its frame, a held
@@ -984,9 +984,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       BRING rows that serve none of the trader's quests step back to 45 % (the map's quest labels' measure, "Map
       drawing", "Stepping back"), never hidden; a pick never steps back, as on the map. On the map the trader's places
       are lit and the rest steps back by kind, held still: only what the pointer is on pulses, and pointing at anything
-      goes before the focus while it lasts (`MapScene.Held`). The open card's summary keeps its own counts, and the maps
-      keep the planner's order. A click on another portrait moves the focus there; a click on the held one, or Esc with
-      no card open, lets go ("Keyboard").
+      goes before the focus while it lasts (`MapScene.Held`). NEXT RAID's rows go by the trader's quests on each map,
+      most first, a tie keeping the planner's order, so the maps with none of them end the list, stepped back
+      (`PlanList.Ranked`; coordinator, 2026-10-17); let go, the planner's order is back. The MAP list keeps its order,
+      and the open card's summary its own counts. A click on another portrait moves the focus there; a click on the held
+      one, or Esc with no card open, lets go ("Keyboard"). The tooltip says what a click does: "Ragman · 4 active
+      quests · click to hold", held "… · click to let go".
     - **In a raid** (and while one loads) the strip shows nothing unless a focus is held; then only the held portrait, so
       the player sees the focus and can let it go after the raid: no click is needed in a raid. The map lights only that
       trader's places and steps the others back, by the raid's measure; the raid card is unchanged.

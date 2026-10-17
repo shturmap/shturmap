@@ -694,8 +694,10 @@ public sealed partial class MainWindow : Window
         // map's card. Until then a map that wasn't suggested left the best suggestion's card open.
         var shownKey = s.Map is null ? null : Planning.PickKey(s.Data, s.Map.NormalizedName);
         var shownPlan = s.MapPlan is { } mapPlan && mapPlan.NormalizedName == shownKey ? mapPlan : null;
-        var (openIndex, added) = PlanList.Open(s.Plan.Select(p => p.NormalizedName).ToList(), shownKey, shownPlan is not null);
-        IReadOnlyList<MapPlanView> plans = added ? [.. s.Plan, shownPlan!] : s.Plan;
+        // A trader's focus held: the rows go by that trader's quests on each map, most first (PlanList.Ranked).
+        var ranked = PlanList.Ranked(s.Plan, HeldCountOn, held: _heldTrader is not null);
+        var (openIndex, added) = PlanList.Open(ranked.Select(p => p.NormalizedName).ToList(), shownKey, shownPlan is not null);
+        IReadOnlyList<MapPlanView> plans = added ? [.. ranked, shownPlan!] : ranked;
         bool CardOnly(MapPlanView p, int i) => added && i == plans.Count - 1 && p.Finish.Count + p.Progress.Count == 0;
         // A trader's focus held (the strip under the MAP list; owner, 2026-10-17): the other traders' quests step back in
         // the rows, a pick never; each map counts the trader's quests there (TraderFocus, PlanList.Count).

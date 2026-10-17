@@ -52,7 +52,8 @@ public sealed partial class MainWindow
         var strip = TraderFocus.Strip(ActiveByTrader(s), data.Traders.Keys.ToList(), _heldTrader);
         var chips = TraderFocus.Shown(strip, _heldTrader, s.Raid.Phase != RaidPhase.Menu)
             .Select(t => new TraderChip(t.TraderId, t.Count.ToString(UiLanguage.Culture), t.Quests,
-                TraderFocus.Tip(data.TraderName(t.TraderId) is { Length: > 0 } name ? name : t.TraderId, t.Count), t.TraderId == _heldTrader))
+                TraderFocus.Tip(data.TraderName(t.TraderId) is { Length: > 0 } name ? name : t.TraderId, t.Count, t.TraderId == _heldTrader),
+                t.TraderId == _heldTrader))
             .ToList();
         ViewModel.Traders = RowLists.Keep(ViewModel.Traders, chips, TraderChip.Same);
     }

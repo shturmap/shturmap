@@ -55,10 +55,11 @@ public class TraderFocusTests
     }
 
     [Fact]
-    public void A_portraits_tooltip_says_the_trader_and_how_many_active_quests()
+    public void A_portraits_tooltip_says_the_trader_how_many_active_quests_and_what_a_click_does()
     {
-        Assert.Equal("Ragman · 4 active quests", TraderFocus.Tip("Ragman", 4));
-        Assert.Equal("Ragman · 1 active quest", TraderFocus.Tip("Ragman", 1));
+        Assert.Equal("Ragman · 4 active quests · click to hold", TraderFocus.Tip("Ragman", 4, held: false));
+        Assert.Equal("Ragman · 1 active quest · click to hold", TraderFocus.Tip("Ragman", 1, held: false));
+        Assert.Equal("Ragman · 4 active quests · click to let go", TraderFocus.Tip("Ragman", 4, held: true));
     }
 
     // ---- holding and letting go ----
@@ -134,5 +135,16 @@ public class TraderFocusTests
         Assert.False(PlanList.StepsBack(null, 0));
         Assert.False(PlanList.StepsBack("Ragman", 2));
         Assert.True(PlanList.StepsBack("Ragman", 0));
+    }
+
+    [Fact]
+    public void Held_the_rows_go_by_the_traders_quests_most_first_ties_in_the_planners_order_and_back_when_let_go()
+    {
+        // The planner's order, with the held trader's quests on each map.
+        (string Map, int Count)[] rows = [("streets", 1), ("customs", 0), ("woods", 3), ("interchange", 1), ("factory", 0), ("lighthouse", 2)];
+        Assert.Equal(["woods", "lighthouse", "streets", "interchange", "customs", "factory"],
+            PlanList.Ranked(rows, r => r.Count, held: true).Select(r => r.Map));
+        Assert.Equal(rows.Select(r => r.Map), PlanList.Ranked(rows, r => r.Count, held: false).Select(r => r.Map));
+        Assert.Empty(PlanList.Ranked(Array.Empty<(string, int)>(), r => r.Item2, held: true));
     }
 }

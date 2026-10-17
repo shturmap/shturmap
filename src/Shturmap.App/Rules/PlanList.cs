@@ -58,4 +58,15 @@ public static class PlanList
 
     /// <summary>Whether a map's row steps back: a trader's focus is held and none of that trader's quests is there.</summary>
     public static bool StepsBack(string? trader, int count) => trader is not null && count == 0;
+
+    /// <summary>
+    /// NEXT RAID's rows in their order: the planner's (picks first, then what can be done), or while a trader's focus is
+    /// held by that trader's quests on each map, most first, a tie keeping the planner's order, so the maps with none of
+    /// them end the list (stepped back). Let go, the planner's order is back (coordinator, 2026-10-17).
+    /// </summary>
+    /// <param name="rows">The maps' rows in the planner's order.</param>
+    /// <param name="count">The held trader's quests on a row's map.</param>
+    /// <param name="held">Whether a trader's focus is held.</param>
+    public static IReadOnlyList<T> Ranked<T>(IReadOnlyList<T> rows, Func<T, int> count, bool held) =>
+        held ? rows.Select((row, i) => (row, i)).OrderByDescending(r => count(r.row)).ThenBy(r => r.i).Select(r => r.row).ToList() : rows;
 }
