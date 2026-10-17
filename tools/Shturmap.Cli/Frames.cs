@@ -289,7 +289,7 @@ internal static class Frames
     {
         var content = MapContentBuilder.Build(data, mapId, [], new HashSet<string>()).InPmcRaid();
         var scene = new MapScene(definition, artwork, tiles)
-            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys };
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, QuestBosses = content.QuestBosses };
         var (listed, unsure, notListed) = ExampleExits(data, content);
         scene.ExitsListed = listed.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
         scene.ExitsUnsure = unsure.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
@@ -325,7 +325,7 @@ internal static class Frames
             content = MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
         var markers = content.InPmcRaid().Markers;
         var scene = new MapScene(definition, artwork, tiles)
-            { Markers = markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, InRaid = true };
+            { Markers = markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, QuestBosses = content.QuestBosses, InRaid = true };
         var exits = markers.Where(m => m.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractShared).ToList();
         var listed = exits.Where((_, i) => i % 2 == 0).ToList();
         var rest = exits.Except(listed).ToList();

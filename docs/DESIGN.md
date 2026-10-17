@@ -1497,7 +1497,7 @@ spawns below).
   | --- | --- | --- |
   | 1 | the player; the picked quests, the guide line and plate; the raid replay's pen while it plays | own hues (sand, the picks' colours), rings, drawn last, never faded |
   | 2 | quest objectives; extracts and transits for your side | amber discs with glyphs (10 px); 15 px triangles and diamonds; labels in ink; the extracts on your list this raid lit, their names in bold |
-  | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled |
+  | 3 | boss, sniper and Scav zones | one marker per zone; Scav zones unlabelled; bosses hollow at 70 % and named once, at their likeliest zone, until they matter (2026-10-17) |
   | 4 | the artwork, its names, the sheet grid; locks, switches, hazards, container dots | receded; names, locks and switches thinned with zoom |
 
   Extracts and transits are as large as the boss marker (15 px across), no longer smaller. A new symbol gets a
@@ -1718,12 +1718,15 @@ spawns below).
 
   | kind | planning | in a raid |
   | --- | --- | --- |
-  | your side's extracts and transits, bosses | full strength (labels 70 %) | full strength |
+  | your side's extracts and transits | full strength (labels 70 %) | full strength |
+  | bosses: hollow at 70 % at rest, solid while lit (*Spawns*, below) | no further (labels 70 %) | no further |
   | other quests' markers and their zones | 62 % (labels 45 %) | 80 % (labels 60 %) |
   | Scav and sniper zones, locks and switches, hazard areas | 60 % (labels 50 %) | 75 % (labels 60 %) |
 
   A zone steps back as far as its kind's markers, and a picked quest's doors (the locks of the keys it needs) not at
-  all, like the pick they belong to (`MapRenderer.ZoneStrength`, `StepBackOf`). Until the review of 2026-10-04 other
+  all, like the pick they belong to (`MapRenderer.ZoneStrength`, `StepBackOf`). A boss rests stepped back already
+  (owner, 2026-10-17): something else pointed at leaves it as it is, and the bosses a pointed-at or picked quest
+  targets are lit with it, at full strength. Until the review of 2026-10-04 other
   quests' zones fell to about 35 % whatever this table said, hazard areas to about 55 % (they weren't in it), and a
   pick's doors stepped back like any lock.
   Labels step back further than symbols, so the highlighted quest's names stand out without hiding where everything
@@ -1819,10 +1822,11 @@ spawns below).
   point. No areas are drawn. AI Scav zones (side "scav", category "bot" or "all", not "sniper") are small quiet rings in
   ink, unlabelled and not hoverable. Sniper zones (side "scav", categories "bot" and "sniper"; Ground Zero's
   player spawns tagged "sniper" don't count) are a hollow ink hexagon labelled "Sniper": a shape no other symbol
-  uses, not a reticle, which is the Elimination glyph. Bosses and AI squads get one solid red octagon per spawn zone:
-  the red octagon means "boss or AI squad spawn" (owner, 2026-10-04, from the review: until then a red diamond with a
-  dark centre, which at its size was mostly collar and centre, weaker than a quest's disc, and shared its outline
-  with the violet transit diamond; the octagon is a shape nothing else uses, and all red). Every mob in the data's bosses list counts except the AI PMCs
+  uses, not a reticle, which is the Elimination glyph. Bosses and AI squads get one red octagon per spawn zone, hollow
+  at rest and solid while lit (below, *Stepped back until it matters*): the red octagon means "boss or AI squad spawn"
+  (owner, 2026-10-04, from the review: until then a red diamond with a dark centre, which at its size was mostly collar
+  and centre, weaker than a quest's disc, and shared its outline with the violet transit diamond; the octagon is a
+  shape nothing else uses, and all red; from then until 2026-10-17 every zone's was solid at full strength). Every mob in the data's bosses list counts except the AI PMCs
   (`pmcUSEC`, `pmcBEAR`, which come everywhere): bosses, and since the map audit (owner, 2026-10-03) Rogues
   (Lighthouse, Icebreaker), Raiders (Reserve, The Lab), cultists (Customs, Woods, Shoreline, Night Factory, Ground Zero
   21+), AF and Black Division (Terminal, Shoreline, Icebreaker), by the data's names. Each is labelled in one format
@@ -1832,15 +1836,37 @@ spawns below).
   likeliest group's chance on the map, as Plan counts a boss's, and a place says its own likeliest group's when that
   is less: The Lab's 2nd floor "Raider 60%" (groups at 60, 45 and 35 %), its basement "Raider 60% · 45% here"
   (2026-10-09, from the pre-release review: such a place listed every chance, "Raider 60%, 45%, 35%", a third
-  format beside Plan's). The label is ink
+  format beside Plan's). That is the label while lit. It is ink
   like every other label (the review of 2026-10-04: it was red, which read worse on the dark ground than any other
   label; the octagon is the danger sign), and red only while the marker is pointed at, as any label takes its
   marker's colour then. A zone split in groups says this once, on its largest group; the others are
   bare octagons that light with it. Markers whose groups have the same centroid share one ("Reshala 75% · 33% here /
   Knight 25%" on Customs' Stronghold), and pointing at one lights all its zones. The Lab gets 8, Terminal 16; Ground
   Zero 21+ gets 9, mostly a 2 % cultist that may spawn at any Scav spawn.
+  **Stepped back until it matters** (owner, 2026-10-17: "I feel like the red dots for enemy bosses are too
+  distracting when trying to parse the quest icons. Come up with a better solution."; from a panel of four, today's
+  look, A stepped back until it matters, B one symbol per boss with rings, C no bosses in Plan, the owner took A; B and
+  C were not taken). Until then every zone was a solid red octagon at full strength, each labelled with its share, as
+  loud as a quest's disc. **At rest**, in Plan and in a raid alike, every zone keeps its place and its octagon, drawn
+  hollow: a 1.5 DIP outline in `Red`, no fill, on its dark collar as before, so it is dark inside, the whole at 70 %
+  with its floor badge (`MapRenderer.BossRestAlpha`, `ShownMarker.Resting`). The player still sees where every boss
+  can spawn; the quests' discs are the loud ones. One label per boss, on its likeliest zone (the largest share: what
+  applies to the place, or the whole chance where nothing less does; the data's first on a tie; that zone's largest
+  group), its name and chance alone in the map's own names' style, caps of the streets' 11 px letter-spaced as the
+  landmarks', in `Muted`: "KILLA 75%" (`MapMarker.RestLabel`, `MapRenderer.BossRestNameSize`). The other zones are
+  bare: Interchange's Killa is named at his 40 % zone, and his three 20 % zones say nothing until lit. **Lit**, every zone of the boss is the solid octagon with its full
+  label ("Killa 75% · 20% here"), as all were until then: while the boss is pointed at (its name in the raid line or
+  under the map's name in Plan, "A boss's name is its spawn zones", or one of its zones on the map), the rest of the map
+  stepping back by kind as for anything pointed at; and while a picked quest, or one pointed at (its row, a marker of
+  it or its card, held or not: the quest's focus, which lights its own places), has a kill objective still open that
+  targets it, on this map or on any (`MapContent.QuestBosses`: the objective's targets, read from
+  before translation, name the boss's id, `bossKilla`, or its name; an objective for any boss lists, and lights, them
+  all; a guard, `followerBully`, is not its boss). A pick lights them as it lights its doors, stepping nothing back,
+  their names in ink; pointed at or held, the quest's focus brings them, and their names take the red. The legend's row
+  shows the resting look.
 - **Labels by priority** (`MapRenderer.Layout`). Every symbol is placed before any text, so no label covers a
-  symbol. Then labels in this order: the kept or pointed-at quest, bosses, quests, extracts and transits,
+  symbol. Then labels in this order: the kept or pointed-at quest, bosses (one label per boss at rest, its likeliest
+  zone's; every zone's while lit: *Stepped back until it matters*, above), quests, extracts and transits,
   snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above
   and below its symbol, in that order, and is dropped when all four are taken (pointing at the marker still names
   it); a selected label that finds no free place goes on the right anyway, trimmed with "…" where it would run past

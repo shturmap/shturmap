@@ -76,7 +76,8 @@ switch (command)
             shturmap-cli render <map> <out.png> [screenshot names...] [--focus-item <item id or name>]
                                             draw a map with the positions from screenshot names; --focus-item
                                             draws it as pointing at that item does (a key lights its locks);
-                                            --pick <quest name> picks that quest (with the locks of its keys)
+                                            --pick <quest name> picks that quest (with the locks of its keys
+                                            and the bosses it targets)
             shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>]
                                 [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]]
                                 [--viewport <W>x<H>]
@@ -581,6 +582,7 @@ static async Task Render(string mapName, string output, List<string> screenshots
     // map's artwork under a quest zone that covers it).
     var pick = !screenshots.Remove("--no-pick");
     scene.QuestKeys = content.QuestKeys;
+    scene.QuestBosses = content.QuestBosses;
     scene.Kept = !pick ? new HashSet<string>()
         : picked is not null ? new HashSet<string> { picked }
         : content.Objectives.FirstOrDefault(o => o.Places.Count > 0)?.Quest.Id is { } first ? new HashSet<string> { first } : new HashSet<string>();

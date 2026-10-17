@@ -60,8 +60,29 @@ public class SpawnZoneTests
         var map = TestMap("woods", bosses: [new("bossKojaniy", 0.75, [new("Lumber Mill", 0.5, [At(0, 0), At(10, 0), At(150, 0)])])]);
         var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("bossKojaniy", "Shturman")), map);
         Assert.Equal(["Shturman 75% · 50% here", ""], markers.Select(m => m.Label));
+        // At rest the largest group of his likeliest zone says his name and chance alone (owner, 2026-10-17).
+        Assert.Equal(["Shturman 75%", ""], markers.Select(m => m.RestLabel));
         Assert.Equal([new WorldPoint(5, 0, 0), new WorldPoint(150, 0, 0)], markers.Select(m => m.Position));
         Assert.All(markers, m => Assert.Equal("boss:bossKojaniy", m.Group));
+    }
+
+    // Owner, 2026-10-17 ("the red dots for enemy bosses are too distracting when trying to parse the quest icons"; from a
+    // panel of four, "A"): at rest only a boss's likeliest zone is named, the one with the largest share, the data's first
+    // on a tie; lit, every zone says its share as before. Interchange's Killa: 40 % at the centre, 20 % at OLI, IDEA and
+    // Goshan.
+    [Fact]
+    public void At_rest_only_a_bosss_likeliest_zone_is_named()
+    {
+        var map = TestMap("interchange", bosses:
+        [
+            new("bossKilla", 0.75, [new("ZoneOLI", 0.2, [At(-100, 0)]), new("ZoneCenterBot", 0.4, [At(0, 0)]), new("ZoneIDEA", 0.2, [At(100, 0)]),
+                new("ZoneGoshan", 0.2, [At(200, 0)])]),
+            new("bossKolontay", 0.75, [new("Klimov", 0.5, [At(0, 300)]), new("Academy", 0.5, [At(300, 300)])]),
+        ]);
+        var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("bossKilla", "Killa"), new ApiMob("bossKolontay", "Kollontay")), map);
+        Assert.Equal(["Killa 75% · 20% here", "Killa 75% · 40% here", "Killa 75% · 20% here", "Killa 75% · 20% here",
+            "Kollontay 75% · 50% here", "Kollontay 75% · 50% here"], markers.Select(m => m.Label));
+        Assert.Equal(["", "Killa 75%", "", "", "Kollontay 75%", ""], markers.Select(m => m.RestLabel));
     }
 
     [Fact]
@@ -93,6 +114,7 @@ public class SpawnZoneTests
         ]);
         var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("bossKolontay", "Kollontay"), new ApiMob("bossBoar", "Kaban")), map);
         Assert.Equal(["Kollontay 75% · 50% here", "Kollontay 75% · 50% here", "Kaban 75%"], markers.Select(m => m.Label));
+        Assert.Equal(["Kollontay 75%", "", "Kaban 75%"], markers.Select(m => m.RestLabel));
         Assert.Equal(new WorldPoint(5, 0, 0), markers[0].Position);
         Assert.Equal(new WorldPoint(-200, 0, 10), markers[2].Position);
         Assert.All(markers, m => Assert.Equal(MarkerKind.BossSpawn, m.Kind));
@@ -115,6 +137,9 @@ public class SpawnZoneTests
         Assert.Equal("Reshala 75% · 33% here / Knight 25%", shared.Label);
         Assert.Equal("boss:bossBully+bossKnight", shared.Group);
         Assert.Equal(["bossBully", "bossKnight"], MapContentBuilder.BossesOf(shared.Group!));
+        // At rest each boss is named once, at his likeliest zone: Reshala's two are a tie, so the data's first, the Dorms.
+        Assert.Equal("Knight 25%", shared.RestLabel);
+        Assert.Equal("Reshala 75%", markers.Single(m => m != shared).RestLabel);
     }
 
     [Fact]
@@ -164,6 +189,7 @@ public class SpawnZoneTests
         ]);
         var markers = MapContentBuilder.SpawnZones(With(map, new ApiMob("pmcBot", "Raider")), map);
         Assert.Equal(["Raider 60%", "Raider 60% · 45% here"], markers.Select(m => m.Label));
+        Assert.Equal(["Raider 60%", ""], markers.Select(m => m.RestLabel));
     }
 
     [Fact]

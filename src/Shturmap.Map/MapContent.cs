@@ -20,6 +20,10 @@ public sealed record MapContent(IReadOnlyList<MapMarker> Markers, IReadOnlyList<
     /// <summary>Per quest, the lock groups of the keys it needs on this map (<see cref="MapContentBuilder.QuestKeys"/>).</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> QuestKeys { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
+    /// <summary>Per quest, the groups of the boss markers its open kill objectives target on this map
+    /// (<see cref="MapContentBuilder.QuestBosses"/>).</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> QuestBosses { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
     /// <summary>
     /// As a PMC raid's map shows it: without the Scav extracts (tarkov.dev's faction "scav"); the PMC's and the shared
     /// ones stay. The app holds the same rule in its own code: GameSession's content in a raid, and
@@ -78,6 +82,7 @@ public static class MapContentBuilder
         // every spawn point).
         markers.AddRange(SpawnZones(data, map));
 
+        var targets = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (var questId in activeQuests)
         {
             if (!data.Tasks.TryGetValue(questId, out var quest))
@@ -128,6 +133,15 @@ public static class MapContentBuilder
                                 ((objective.Maps ?? []).Count == 0 && quest.Map is not null && sameArtwork.Contains(quest.Map));
                 if (onThisMap)
                     objectives.Add(new ObjectiveOnMap(quest, objective, places, done));
+
+                // Whom a kill objective still open asks for here: on this map, or on any (it names none).
+                if (!done && objective.Type == "shoot" && data.ObjectiveFacts.TryGetValue(objective.Id, out var facts) && facts.Targets.Count > 0
+                    && ((objective.Maps ?? []).Count == 0 || objective.Maps!.Any(sameArtwork.Contains)))
+                {
+                    if (!targets.TryGetValue(quest.Id, out var named))
+                        targets[quest.Id] = named = [];
+                    named.AddRange(facts.Targets);
+                }
             }
         }
         return new MapContent(markers, zones, objectives)
@@ -135,7 +149,33 @@ public static class MapContentBuilder
             Containers = Containers(map),
             Links = ExtractSwitchLinks(map),
             QuestKeys = QuestKeys(objectives, sameArtwork),
+            QuestBosses = QuestBosses(data, targets, markers),
         };
+    }
+
+    /// <summary>
+    /// The bosses and AI squads each quest's open kill objectives target on this map, as the groups of their markers
+    /// (<see cref="BossGroup"/>; a zone two bosses share counts for each). A target is a mob's id in the data, as the
+    /// objective's facts give it from before translation ("bossKilla", "ExUsec", "sectantPriest"), or its name; an
+    /// objective for any boss lists them all, and lights them all. A guard ("followerBully") is not its boss. A quest
+    /// picked, pointed at or held lights those zones, which otherwise rest stepped back (owner, 2026-10-17, from a panel
+    /// of four: "A").
+    /// </summary>
+    /// <param name="targets">Per quest, the targets of its kill objectives still open that count on this map.</param>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> QuestBosses(GameData data, IReadOnlyDictionary<string, List<string>> targets,
+        IReadOnlyList<MapMarker> markers)
+    {
+        var groups = markers.Where(m => m.Kind == MarkerKind.BossSpawn).Select(m => m.Group).OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        var bosses = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var (quest, named) in targets)
+        {
+            bool Targeted(string mob) => named.Any(t => t == mob
+                || (data.Mobs.TryGetValue(mob, out var m) && string.Equals(t, m.Name, StringComparison.OrdinalIgnoreCase)));
+            var lit = groups.Where(g => BossesOf(g).Any(Targeted)).ToList();
+            if (lit.Count > 0)
+                bosses[quest] = lit;
+        }
+        return bosses;
     }
 
     /// <summary>
@@ -348,8 +388,10 @@ public static class MapContentBuilder
     /// "sniper") and, per boss, each of its spawn locations. The data gives zones by name; a zone whose points lie
     /// apart is split into its groups (<see cref="Groups"/>), one marker each, so no marker stands where nothing
     /// spawns. A boss marker says the boss's chance on the map, as Plan does, and what applies to this zone when it
-    /// is less ("Kollontay 75% · 50% here"; <see cref="SpawnLabel"/>), on the zone's largest group only. Bosses whose
-    /// groups have the same centroid (Customs' Stronghold lists the same points for Reshala and Knight) share one marker.
+    /// is less ("Kollontay 75% · 50% here"; <see cref="SpawnLabel"/>), on the zone's largest group only; that is its label
+    /// while lit. At rest only each boss's likeliest zone is named, with the chance on the map alone ("Kollontay 75%";
+    /// <see cref="MapMarker.RestLabel"/>). Bosses whose groups have the same centroid (Customs' Stronghold lists the same
+    /// points for Reshala and Knight) share one marker.
     /// </summary>
     public static IReadOnlyList<MapMarker> SpawnZones(GameData data, ApiMap map)
     {
@@ -399,29 +441,39 @@ public static class MapContentBuilder
                 zones[index].Points.AddRange(positions.Select(p => p.ToWorld()));
             }
         }
-        var placed = new List<(WorldPoint At, List<string> Mobs, List<SpawnPart> Parts, string Id)>();
-        foreach (var zone in zones)
+        // Each boss's likeliest zone, the one that names it at rest (owner, 2026-10-17, from a panel of four: "A", stepped
+        // back until it matters): the largest share, the data's first on a tie.
+        var likeliest = zones.Select((zone, z) => (zone.Mob, Share: Share(zone.Parts), z)).GroupBy(x => x.Mob)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.Share).First().z, StringComparer.Ordinal);
+        var placed = new List<(WorldPoint At, List<string> Mobs, List<SpawnPart> Parts, List<SpawnPart> AtRest, string Id)>();
+        foreach (var (zone, z) in zones.Select((zone, z) => (zone, z)))
         {
             foreach (var (group, i) in Groups(Distinct(zone.Points)).Select((g, i) => (g, i)))
             {
                 var at = Centroid(group);
-                // The zone's share is said once, on its largest group.
+                // The zone's share is said once, on its largest group; at rest only the likeliest zone's largest group is
+                // named, with the chance on the map alone ("Killa 75%").
                 List<SpawnPart> parts = i == 0 ? zone.Parts : [];
+                List<SpawnPart> rest = i == 0 && likeliest[zone.Mob] == z ? [.. zone.Parts.Select(p => p with { Here = null }).Distinct()] : [];
                 var same = placed.FindIndex(p => p.At.HorizontalDistanceTo(at) < 3 && Math.Abs(p.At.Y - at.Y) < 3);
                 if (same < 0)
                 {
-                    placed.Add((at, [zone.Mob], [.. parts], GroupId($"boss:{zone.Mob}:{zone.Zone}", i)));
+                    placed.Add((at, [zone.Mob], [.. parts], rest, GroupId($"boss:{zone.Mob}:{zone.Zone}", i)));
                     continue;
                 }
                 if (!placed[same].Mobs.Contains(zone.Mob))
                     placed[same].Mobs.Add(zone.Mob);
                 placed[same].Parts.AddRange(parts.Where(p => !placed[same].Parts.Contains(p)));
+                placed[same].AtRest.AddRange(rest.Where(p => !placed[same].AtRest.Contains(p)));
             }
         }
         foreach (var p in placed)
-            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, SpawnLabel(p.Parts), BossGroup(p.Mobs)));
+            markers.Add(new MapMarker(p.Id, MarkerKind.BossSpawn, p.At, SpawnLabel(p.Parts), BossGroup(p.Mobs)) { RestLabel = SpawnLabel(p.AtRest) });
         return markers;
     }
+
+    // How much of a boss's chance a zone has: all of it where no part says less, else the most a part says ("· 40% here").
+    private static int Share(List<SpawnPart> parts) => parts.Any(p => p.Here is null) ? int.MaxValue : parts.Max(p => p.Here!.Value);
 
     /// <summary>One entry of a boss or AI squad at a place: its name, its chance on the map, and what the data gives
     /// this place when it is less (a zone's share, or a less likely group's own chance), else null.</summary>

@@ -6,6 +6,43 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-17: boss markers stepped back until they matter
+
+**The ask** (owner, 2026-10-17): "I feel like the red dots for enemy bosses are too distracting when trying to parse
+the quest icons. Come up with a better solution." Every boss and AI squad zone was a solid red octagon at full strength,
+each zone's largest group labelled ("Killa 75% · 20% here"): on Interchange 7 octagons, 5 of them labelled, for two
+bosses, Killa's four zones spread through the mall among the quests. A panel of four:
+
+- Today: as it is.
+- A. Stepped back until it matters: hollow and quiet at rest, one label per boss, solid while it matters.
+- B. One symbol per boss, its zones as rings.
+- C. No bosses in Plan.
+
+The owner chose A.
+
+**Built (2026-10-17).** Binding: DESIGN.md, "Map drawing" (*Spawns*, *Stepped back until it matters*; the strength
+table, the levels, the label priority).
+
+- At rest, in Plan and in a raid: every zone keeps its place and octagon, drawn hollow, a 1.5 DIP outline in `Red` on
+  its dark collar as before, the whole at 70 % with its floor badge (`MapRenderer.BossRestAlpha`, `BossRestStroke`,
+  `ShownMarker.Resting`; one small layer per resting octagon).
+- One label per boss, on its likeliest zone (the largest share, the data's first on a tie), its name and chance alone
+  in 11 px letter-spaced caps in `Muted`, the map's own names' style: "KILLA 75%" (`MapMarker.RestLabel`, made in
+  `MapContentBuilder.SpawnZones`). Interchange's boss octagons now carry 2 labels (Killa at his 40 % zone, Tagilla),
+  Streets' 2 (Kollontay at Klimov, his two zones a tie; Kaban), where they carried 5 and 3.
+- Lit, every zone solid with its full label as before: while the boss is pointed at (in the raid line, under the map's
+  name in Plan, or one of its zones on the map), and while a picked, pointed-at or held quest has an open kill
+  objective whose targets name the boss's id or name (`MapContentBuilder.QuestBosses`, `MapScene.QuestBosses`,
+  `KeptBosses`; brought into the focus as a quest's doors are). A pick steps nothing back and leaves the names in ink;
+  pointed at or held, the names take the red. An objective for any boss lights them all; a guard's
+  (`followerBully`) doesn't light its boss.
+- The legend's boss row shows the resting look. `shturmap-cli render <map> <out.png> --pick "<quest>"` draws a pick's
+  bosses lit.
+
+**Open for the owner.** The legend's words ("red octagon, with the chance (and this zone's share)") still hold and
+were left as they are; whether a guard's kill objective lights its boss; at rest the name reads like a place name
+("KABAN 75%" by "CONSTRUCTION" on Streets), told apart by its chance and its octagon.
+
 ## 2026-10-16: the other-floor arrow, bolder
 
 **The ask** (owner, 2026-10-16): "One of the beta testers said that the icon indicator if a location is above or below

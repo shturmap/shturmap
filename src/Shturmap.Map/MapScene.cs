@@ -67,7 +67,15 @@ public readonly record struct ExitFlight(string MarkerId, float FromX, float Fro
 /// <param name="Objective">For quest markers, what the objective asks; drawn as a glyph inside the marker.</param>
 /// <param name="Optional">A quest marker of an objective tarkov.dev marks optional: the quest can be finished without it.</param>
 public sealed record MapMarker(string Id, MarkerKind Kind, WorldPoint Position, string Label, string? Group = null,
-    Shturmap.Core.Quests.ObjectiveKind? Objective = null, bool Optional = false);
+    Shturmap.Core.Quests.ObjectiveKind? Objective = null, bool Optional = false)
+{
+    /// <summary>
+    /// A boss zone's label at rest, where it differs from <see cref="Label"/>, the label it has while lit (owner,
+    /// 2026-10-17, from a panel of four: "A", stepped back until it matters): the boss's likeliest zone says its name
+    /// and chance ("Killa 75%"), its other zones nothing (""). Null: the label is the same at rest.
+    /// </summary>
+    public string? RestLabel { get; init; }
+}
 
 /// <summary>An area drawn as an outline, e.g. a quest zone or an extract's footprint.</summary>
 public sealed record MapZone(string Id, MarkerKind Kind, IReadOnlyList<WorldPoint> Outline, string? Group = null);
@@ -255,6 +263,7 @@ public sealed class MapScene
         {
             _kept = value.Count == 0 ? Nothing : value;
             _keptKeys = KeysOf(_kept);
+            _keptBosses = BossesOf(_kept);
             LayoutVersion++;
         }
     }
@@ -311,13 +320,44 @@ public sealed class MapScene
     private IReadOnlyDictionary<string, IReadOnlyList<string>> _questKeys = new Dictionary<string, IReadOnlyList<string>>();
 
     // The lock groups of the keys the given quests need here.
-    private IReadOnlySet<string> KeysOf(IReadOnlySet<string> quests)
+    private IReadOnlySet<string> KeysOf(IReadOnlySet<string> quests) => Of(quests, _questKeys);
+
+    // The boss groups the given quests' kill objectives target here.
+    private IReadOnlySet<string> BossesOf(IReadOnlySet<string> quests) => Of(quests, _questBosses);
+
+    private static IReadOnlySet<string> Of(IReadOnlySet<string> quests, IReadOnlyDictionary<string, IReadOnlyList<string>> perQuest)
     {
-        if (quests.Count == 0 || _questKeys.Count == 0)
+        if (quests.Count == 0 || perQuest.Count == 0)
             return Nothing;
-        var keys = quests.Where(_questKeys.ContainsKey).SelectMany(q => _questKeys[q]).ToHashSet(StringComparer.Ordinal);
-        return keys.Count == 0 ? Nothing : keys;
+        var groups = quests.Where(perQuest.ContainsKey).SelectMany(q => perQuest[q]).ToHashSet(StringComparer.Ordinal);
+        return groups.Count == 0 ? Nothing : groups;
     }
+
+    /// <summary>
+    /// Per quest, the groups of the boss markers its open kill objectives target on this map
+    /// (<see cref="MapContent.QuestBosses"/>). A quest picked, pointed at or held lights those bosses' zones, which rest
+    /// stepped back otherwise (owner, 2026-10-17: the red dots were "too distracting when trying to parse the quest
+    /// icons"; from a panel of four, "A": stepped back until it matters).
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> QuestBosses
+    {
+        get => _questBosses;
+        set
+        {
+            _questBosses = value;
+            _keptBosses = BossesOf(_kept);
+            Focus = _focusAsked;
+            LayoutVersion++;
+        }
+    }
+
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> _questBosses = new Dictionary<string, IReadOnlyList<string>>();
+
+    /// <summary>The boss groups the picked quests target here (<see cref="QuestBosses"/>): lit for as long as they are
+    /// picked, as the picks' doors are, and like the picks they make nothing else step back.</summary>
+    public IReadOnlySet<string> KeptBosses => _keptBosses;
+
+    private IReadOnlySet<string> _keptBosses = Nothing;
 
     /// <summary>Whether something pointed at is highlighted on this map (picks alone don't count: they dim nothing).</summary>
     public bool HasHighlight => FocusShown;
@@ -325,7 +365,7 @@ public sealed class MapScene
     /// <summary>
     /// Quest groups or marker ids the pointer is on somewhere in the window (linked highlighting). While set, these
     /// are drawn emphasised and everything else steps back. A quest brings the locks of its keys along
-    /// (<see cref="QuestKeys"/>).
+    /// (<see cref="QuestKeys"/>), and the bosses its kill objectives target (<see cref="QuestBosses"/>).
     /// </summary>
     public IReadOnlySet<string> Focus
     {
@@ -333,8 +373,8 @@ public sealed class MapScene
         set
         {
             _focusAsked = value;
-            var keys = KeysOf(value);
-            IReadOnlySet<string> shown = keys.Count == 0 ? value : value.Concat(keys).ToHashSet(StringComparer.Ordinal);
+            var (keys, bosses) = (KeysOf(value), BossesOf(value));
+            IReadOnlySet<string> shown = keys.Count + bosses.Count == 0 ? value : value.Concat(keys).Concat(bosses).ToHashSet(StringComparer.Ordinal);
             var same = shown.SetEquals(_focus);
             _focus = shown;
             _focusShown = null;
@@ -351,7 +391,7 @@ public sealed class MapScene
 
     private IReadOnlySet<string> _focus = new HashSet<string>();
 
-    // The focus as it was asked for, before the locks of its quests' keys were added.
+    // The focus as it was asked for, before the locks of its quests' keys and the bosses they target were added.
     private IReadOnlySet<string> _focusAsked = new HashSet<string>();
 
     /// <summary>The last non-empty focus: still emphasised while the dimming fades out.</summary>
