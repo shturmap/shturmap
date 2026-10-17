@@ -2157,6 +2157,17 @@ Raise these with the owner when the app gets its first public GitHub Release (no
      three buttons on all 7, and Interchange's Saferoom and Reserve's D-2 and Bunker Hermetic Door list none, though
      the map places their switches (the ten gated extracts are kept by hand in `SwitchExits`).
 
+- **Two symbols on one spot drift apart with every pan or zoom** (owner, 2026-10-17, with a screenshot of Woods kept
+  outside the repository: "There is a bug when two items are close to each other and their repel-lines are parallel
+  they get expanded every time when the user pans or zooms the camera"). Seen on Woods' two Outskirts extracts, which
+  share a place: after some moving about, one of them stood at the view's far corner on a leader running across the
+  whole map. Likely cause: since 2026-10-15 a glide or pan continues the repel from the last frame (`MapScene.LastRepel`,
+  `RepelPlacement`, the 2 px push a frame, the free-spot search only for newcomers), so two bodies pushing each other
+  along the same line never settle and gain 2 px with every frame of every camera move, without a bound on the leader's
+  length. To do: cap the leader (a symbol never stands farther than some tens of DIP off its place), and let a pair that
+  shares a place settle once (or read as one cluster) instead of pushing on; a `frames` run with `--glide` and `--notch`
+  over Woods' Outskirts for the test.
+
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an
