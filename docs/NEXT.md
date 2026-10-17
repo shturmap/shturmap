@@ -25,9 +25,15 @@ back"), "Keyboard" (Esc) and §8's script verbs.
 - The strip: one row under the MAP list, outside what scrolls, above the update band between raids and above the raid
   card's head in a raid (the head meets its body without a seam, so nothing may come between them). Per trader with an
   active quest, in tarkov.dev's trader order, the portrait (`Controls.Picture`, 20 DIP) and the count of their active
-  quests in `FigureText` gold; cells of at least 43 DIP, so the rail's 351 holds eight with counts of two digits, and a
-  ninth wraps (`Rules.TraderFocus.Strip`, `MainWindow.Traders`). The count is every quest the log shows active for the
-  trader, with work on a map or not. Tooltip "Ragman · 4 active quests · click to hold", held "… · click to let go".
+  quests in `FigureText` gold (`Rules.TraderFocus.Strip`, `MainWindow.Traders`). The count is every quest the log shows
+  active for the trader, with work on a map or not. Tooltip "Ragman · 4 active quests · click to hold", held "… · click
+  to let go".
+- One row, never two (owner, after trying the dev build: "I like this, but I do not like that the layout has two rows
+  where Ref falls exactly on the last line"; the first build's cells of at least 43 DIP wrapped a ninth trader). The
+  cells share the rail's 351 DIP, (351 − 4 × (n − 1)) / n each; portrait and count scale down with them to 16 DIP and
+  10 px, room kept for two digits, so the layout follows n alone; from ten traders the count stands on the portrait as
+  a badge in the map's count badges' style and the cells are portraits only (`Rules.TraderStrip`, `TraderStripTests`
+  for 1, 6, 8, 9, 10, 12 and 16). Measured with eight traders, Ref the last, and with ten, at 900×560.
 - Pointing at a portrait puts the trader's active quests in the linked focus (`Linked.Quests`, as a boss's name does):
   their rows lit, their places pulsing, the rest of the map stepping back; pointing at one of those quests tints the
   portrait. It opens no card.

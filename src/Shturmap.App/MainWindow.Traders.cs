@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Shturmap.App.Rules;
 using Shturmap.Core;
 using Shturmap.Core.Quests;
@@ -50,13 +51,37 @@ public sealed partial class MainWindow
             return;
         }
         var strip = TraderFocus.Strip(ActiveByTrader(s), data.Traders.Keys.ToList(), _heldTrader);
-        var chips = TraderFocus.Shown(strip, _heldTrader, s.Raid.Phase != RaidPhase.Menu)
-            .Select(t => new TraderChip(t.TraderId, t.Count.ToString(UiLanguage.Culture), t.Quests,
+        var shown = TraderFocus.Shown(strip, _heldTrader, s.Raid.Phase != RaidPhase.Menu);
+        // One row, never two: the cells share the rail's width, the portraits and counts scaling with them (TraderStrip).
+        var cells = TraderStrip.Layout(shown.Count, StripWidth(), TwoDigits());
+        var chips = shown
+            .Select((t, i) => new TraderChip(t.TraderId, t.Count.ToString(UiLanguage.Culture), t.Quests,
                 TraderFocus.Tip(data.TraderName(t.TraderId) is { Length: > 0 } name ? name : t.TraderId, t.Count, t.TraderId == _heldTrader),
-                t.TraderId == _heldTrader))
+                t.TraderId == _heldTrader, cells, i == shown.Count - 1))
             .ToList();
         ViewModel.Traders = RowLists.Keep(ViewModel.Traders, chips, TraderChip.Same);
     }
+
+    // The rail's inner width the strip has: the rail's column less its border and the strip's margins (351 DIP).
+    private double StripWidth()
+    {
+        var rail = Rail.ActualWidth > 0 ? Rail.ActualWidth : ((Grid)Rail.Parent).ColumnDefinitions[0].Width.Value;
+        return rail - Rail.BorderThickness.Left - Rail.BorderThickness.Right - TraderPortraits.Margin.Left - TraderPortraits.Margin.Right;
+    }
+
+    // How wide a count of two digits is at the figures' full size, measured once in their own face.
+    private double TwoDigits()
+    {
+        if (_twoDigits is null)
+        {
+            var figure = new TextBlock { Style = (Style)Application.Current.Resources["FigureText"], FontSize = TraderStrip.FullCount, Text = "88" };
+            figure.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+            _twoDigits = figure.DesiredSize.Width;
+        }
+        return _twoDigits.Value;
+    }
+
+    private double? _twoDigits;
 
     // A click on a portrait holds its trader's focus, or lets go of it on the held one; one trader at a time.
     private void OnTraderClick(object sender, RoutedEventArgs e)

@@ -660,20 +660,33 @@
              what scrolls: a portrait per trader with active quests, in the game's order, and their count in the figures'
              gold. Pointing at one lights that trader's quests in the rows and on the map, as a boss's name lights its zones;
              a click holds the focus (the portrait framed in amber), a click on it again or Esc lets go. In a raid only the
-             held portrait stands here, above the raid card's head, or nothing. Cells of at least 43 DIP: eight in the
-             rail's 351, a count of two digits included; a ninth trader wraps. -->
-        <ItemsControl x:Name="TraderStrip" Grid.Row="1" Margin="16,8,16,0" IsTabStop="False"
+             held portrait stands here, above the raid card's head, or nothing. One row, never two (owner, 2026-10-17: "I do
+             not like that the layout has two rows where Ref falls exactly on the last line"): the cells share the rail's
+             width, the portrait and its count scaling down with them, and from ten traders the count stands on the
+             portrait as a badge (Rules.TraderStrip). -->
+        <ItemsControl x:Name="TraderPortraits" Grid.Row="1" Margin="16,8,16,0" IsTabStop="False"
                       ItemsSource="{x:Bind ViewModel.Traders, Mode=OneWay}" Visibility="{x:Bind ShownIfAny(ViewModel.Traders), Mode=OneWay}">
           <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate><controls:WrapRow /></ItemsPanelTemplate>
+            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="local:TraderChip">
-              <Button MinWidth="43" Height="28" Padding="0" Style="{StaticResource StripButton}" Tag="{x:Bind TraderId}" Click="OnTraderClick"
-                      ToolTipService.ToolTip="{x:Bind Tip}" AutomationProperties.Name="{x:Bind Tip}">
-                <StackPanel Orientation="Horizontal" Spacing="3" Padding="2" VerticalAlignment="Center" controls:Linked.Quests="{x:Bind Quests}">
-                  <controls:Picture TraderId="{x:Bind TraderId}" Size="20" Held="{x:Bind Held}" VerticalAlignment="Center" />
-                  <TextBlock Text="{x:Bind Count}" Style="{StaticResource FigureText}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+              <Button Width="{x:Bind Width}" Height="28" Margin="{x:Bind Gap}" Padding="0" Style="{StaticResource StripButton}" Tag="{x:Bind TraderId}"
+                      Click="OnTraderClick" ToolTipService.ToolTip="{x:Bind Tip}" AutomationProperties.Name="{x:Bind Tip}">
+                <StackPanel Orientation="Horizontal" Padding="2" VerticalAlignment="Center" controls:Linked.Quests="{x:Bind Quests}">
+                  <!-- The portrait, and from ten traders its count on it: a badge at its lower right in the map's count
+                       badges' style (a dark plate, a gold edge and a 10 px gold figure). -->
+                  <Grid>
+                    <controls:Picture TraderId="{x:Bind TraderId}" Size="{x:Bind Portrait}" Held="{x:Bind Held}" Margin="{x:Bind BadgeRoom}"
+                                      HorizontalAlignment="Left" />
+                    <Border Visibility="{x:Bind BadgeVisibility}" HorizontalAlignment="Right" VerticalAlignment="Bottom" MinWidth="11" Padding="2,0"
+                            Background="{StaticResource GroundBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1">
+                      <TextBlock Text="{x:Bind Count}" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AmberBrush}" HorizontalAlignment="Center"
+                                 LineHeight="11" LineStackingStrategy="BlockLineHeight" />
+                    </Border>
+                  </Grid>
+                  <TextBlock Text="{x:Bind Count}" Style="{StaticResource FigureText}" FontSize="{x:Bind CountSize}" Margin="3,0,0,0"
+                             HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="{x:Bind BesideVisibility}" />
                 </StackPanel>
               </Button>
             </DataTemplate>
