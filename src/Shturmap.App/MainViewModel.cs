@@ -297,8 +297,26 @@ public sealed record PlanCard(
 /// <param name="Quests">The trader's active quests, for the linked highlight.</param>
 /// <param name="Tip">"Ragman · 4 active quests" (<see cref="Rules.TraderFocus.Tip"/>).</param>
 /// <param name="Held">Its focus is held: the portrait is framed in amber.</param>
-public sealed record TraderChip(string TraderId, string Count, IReadOnlyList<string> Quests, string Tip, bool Held)
+/// <param name="Cells">The strip's layout, every cell's the same (<see cref="Rules.TraderStrip.Layout"/>).</param>
+/// <param name="Last">The row's last cell: no gap after it.</param>
+public sealed record TraderChip(string TraderId, string Count, IReadOnlyList<string> Quests, string Tip, bool Held, Rules.TraderStrip.Cells Cells, bool Last)
 {
+    public double Width => Cells.Width;
+
+    public double Portrait => Cells.Portrait;
+
+    public double CountSize => Cells.Count;
+
+    /// <summary>The gap to the next cell.</summary>
+    public Thickness Gap => new(0, 0, Last ? 0 : Rules.TraderStrip.Gap, 0);
+
+    /// <summary>With the count on the portrait, room for its badge to stand out at the lower right.</summary>
+    public Thickness BadgeRoom => Cells.Badge ? new Thickness(0, 0, Rules.TraderStrip.BadgeRight, Rules.TraderStrip.BadgeDown) : new Thickness(0);
+
+    public Visibility BadgeVisibility => Cells.Badge ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility BesideVisibility => Cells.Badge ? Visibility.Collapsed : Visibility.Visible;
+
     /// <inheritdoc cref="QuestLine.Same"/>
     public static bool Same(TraderChip a, TraderChip b) => a == b with { Quests = a.Quests } && a.Quests.SequenceEqual(b.Quests);
 }

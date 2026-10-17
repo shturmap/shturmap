@@ -971,9 +971,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     without a seam and nothing may come between them. For each trader with an active quest, in the game's trader order
     (tarkov.dev's list, as Plan's order takes it), the trader's portrait in its thin frame (`Controls.Picture`, 20 DIP)
     and beside it the count of their active quests in the figures' gold (`FigureText`), "4": every quest the log shows
-    active for that trader, with work on a map or not. Cells of at least 43 DIP, so the rail's 351 holds eight, a count
-    of two digits included; a ninth wraps to a second row. No heading and no words: a portrait's tooltip says them. No
+    active for that trader, with work on a map or not. No heading and no words: a portrait's tooltip says them. No
     active quests, no strip.
+    - **One row, never two** (owner, 2026-10-17, after trying it: "I like this, but I do not like that the layout has two
+      rows where Ref falls exactly on the last line"; until then cells of at least 43 DIP wrapped, a ninth trader to a
+      second row; `Rules.TraderStrip`). The cells share the rail's inner width, 351 DIP at every window size: each is
+      (351 − 4 × (n − 1)) / n wide, 4 DIP apart, the portrait and its count left in it with 2 DIP around them and 3
+      between. They stand at 20 DIP and 15 px while that fits and scale down together with the cell; the portrait stops
+      at 16 DIP and the count goes on to 10 px. Where even that doesn't fit, from ten traders, the count stands on the
+      portrait as a small badge at its lower right, standing out 4 DIP right and 3 down, in the map's count badges' style
+      (a dark plate, a gold edge, a 10 px gold figure; the rail has none of its own), and the cells are portraits only,
+      at up to 20 DIP. Room is kept for two digits whatever the counts are, so the layout follows the number of traders
+      alone: six stand at full size, eight at 18 DIP and 13.5 px, nine at 16 DIP and 11 px, ten with badges on 20 DIP
+      portraits. The game has 16 traders; past that the portraits would go on shrinking rather than wrap.
     - **Pointing** at a portrait lights that trader's quests in the rows and on the map, as a boss's name lights its zones
       (*Visual language*, the linked highlight: a trader's portrait is their active quests); leaving puts it back.
     - **A click holds the focus**, one trader at a time: the portrait is framed in amber (1.5 DIP over its frame, a held
