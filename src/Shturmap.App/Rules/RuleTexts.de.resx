@@ -164,6 +164,18 @@
     <value>ANDERE MAPS</value>
     <comment>en: OTHER MAPS</comment>
   </data>
+  <data name="TraderStripTip" xml:space="preserve">
+    <value>{trader} · {count, plural, one {# aktive Quest} other {# aktive Quests}} · Klicken: festhalten</value>
+    <comment>en: {trader} · {count, plural, one {# active quest} other {# active quests}} · click to hold</comment>
+  </data>
+  <data name="TraderStripTipHeld" xml:space="preserve">
+    <value>{trader} · {count, plural, one {# aktive Quest} other {# aktive Quests}} · Klicken: loslassen</value>
+    <comment>en: {trader} · {count, plural, one {# active quest} other {# active quests}} · click to let go</comment>
+  </data>
+  <data name="PlanRowTrader" xml:space="preserve">
+    <value>{trader} {count}</value>
+    <comment>en: {trader} {count}</comment>
+  </data>
   <data name="TourEyebrow" xml:space="preserve">
     <value>TOUR · {chapter} VON {count}</value>
     <comment>en: TOUR · {chapter} OF {count}</comment>

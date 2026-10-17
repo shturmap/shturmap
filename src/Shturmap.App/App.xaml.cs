@@ -191,6 +191,9 @@ public partial class App : Application
             SnapshotMode = cli.Contains("--snapshot"),
             SnapshotScale = int.TryParse(Arg(cli, "--snapshot-scale"), out var snapshotScale) ? Math.Clamp(snapshotScale, 1, 4) : 1,
             ShowQuest = Arg(cli, "--show-quest"),
+            // Developer aid for snapshots: "--trader-focus <name>" holds that trader's focus in the strip under the MAP
+            // list, as a click on the portrait does (tools\fake-raid.ps1 -TraderFocus).
+            TraderFocusOnStart = Arg(cli, "--trader-focus"),
             // Developer aid: "--tour <n>" opens the tour at its n-th chapter (snapshots of each, tools\fake-raid.ps1 -Tour).
             TourOnStart = int.TryParse(Arg(cli, "--tour"), out var tourChapter) ? tourChapter : null,
             // Developer aid: Follow my position on from the start (snapshot runs leave it off otherwise).

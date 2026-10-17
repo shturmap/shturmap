@@ -28,12 +28,26 @@
         </controls:MapChoiceStyles.Header>
       </controls:MapChoiceStyles>
 
+      <!-- A trader's portrait in the strip under the MAP list: a button with no chrome of its own. Its looks are the
+           linked tint under the pointer and the amber frame while its focus is held (Rules.TraderFocus). -->
+      <Style x:Key="StripButton" TargetType="Button">
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" HorizontalContentAlignment="Left"
+                                VerticalContentAlignment="Center" />
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
       <!-- Something to bring, in Plan's cards and the raid card. What the picks need comes first, tinted like the
            picks (linked highlighting), then a hairline and the rest. -->
       <DataTemplate x:Key="RequirementTemplate" x:DataType="local:RequirementLine">
         <Grid ColumnSpacing="12" Padding="6,4" Margin="-6,0"
               controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Items="{x:Bind Alternatives}" controls:Linked.Quests="{x:Bind QuestIds}"
-              BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind OthersLine}">
+              BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind OthersLine}" Opacity="{x:Bind Strength}">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
@@ -607,6 +621,7 @@
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Margin="16,4,16,0">
@@ -639,6 +654,31 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
         </StackPanel>
+        <!-- The trader strip (owner, 2026-10-17: "some players want to level a specific trader or want to work towards
+             specific unlocks of these traders ... you can only select by map and not by trader. I at the same time want to
+             keep the UI footprint lean"; from a panel of three, "B"; Rules.TraderFocus). One row under the MAP list, outside
+             what scrolls: a portrait per trader with active quests, in the game's order, and their count in the figures'
+             gold. Pointing at one lights that trader's quests in the rows and on the map, as a boss's name lights its zones;
+             a click holds the focus (the portrait framed in amber), a click on it again or Esc lets go. In a raid only the
+             held portrait stands here, above the raid card's head, or nothing. Cells of at least 43 DIP: eight in the
+             rail's 351, a count of two digits included; a ninth trader wraps. -->
+        <ItemsControl x:Name="TraderStrip" Grid.Row="1" Margin="16,8,16,0" IsTabStop="False"
+                      ItemsSource="{x:Bind ViewModel.Traders, Mode=OneWay}" Visibility="{x:Bind ShownIfAny(ViewModel.Traders), Mode=OneWay}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><controls:WrapRow /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:TraderChip">
+              <Button MinWidth="43" Height="28" Padding="0" Style="{StaticResource StripButton}" Tag="{x:Bind TraderId}" Click="OnTraderClick"
+                      ToolTipService.ToolTip="{x:Bind Tip}" AutomationProperties.Name="{x:Bind Tip}">
+                <StackPanel Orientation="Horizontal" Spacing="3" Padding="2" VerticalAlignment="Center" controls:Linked.Quests="{x:Bind Quests}">
+                  <controls:Picture TraderId="{x:Bind TraderId}" Size="20" Held="{x:Bind Held}" VerticalAlignment="Center" />
+                  <TextBlock Text="{x:Bind Count}" Style="{StaticResource FigureText}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <!-- A new version: a band pinned under MAP, above what scrolls, so it never scrolls away (owner, 2026-10-15: "A
              Beta-tester did not realize there is an update, which shows me that it is currently too subtle. I, however, do
              not want to have a blocking modal like a pop-up"; from a panel of four: B, "A cue, then the band";
@@ -648,7 +688,7 @@
              (or DOWNLOAD) as a button. It glows in as the stash marks do (Controls.Glow) when it shows and at each return
              to the menus, as the UPDATE READY cue fades where there is one (MainWindow.Updates). No ×: it goes with the
              restart, which comes on a click only, never during a raid (owner, 2026-10-03). -->
-        <Grid x:Name="UpdatePlate" Grid.Row="1" Margin="16,14,16,0" Visibility="{x:Bind ShownIf(ViewModel.UpdateEyebrow), Mode=OneWay}">
+        <Grid x:Name="UpdatePlate" Grid.Row="2" Margin="16,14,16,0" Visibility="{x:Bind ShownIf(ViewModel.UpdateEyebrow), Mode=OneWay}">
           <Border Padding="12,10,12,12" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AmberBrush}" BorderThickness="1">
             <Grid ColumnSpacing="12">
               <Grid.ColumnDefinitions>
@@ -689,7 +729,7 @@
              scrolling down in the quest window it gets pushed outside of view. It should always stay on top"). The
              card is drawn in two parts that meet without a seam: this head, open at its foot, and the body below,
              open at its top. -->
-        <StackPanel Grid.Row="1" Margin="16,0,16,0" Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
+        <StackPanel Grid.Row="2" Margin="16,0,16,0" Visibility="{x:Bind ShownIfTrue(ViewModel.InRaid), Mode=OneWay}">
           <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintInRaid(ViewModel.Hint, ViewModel.InRaid), Mode=OneWay}"
                      Style="{StaticResource NoteText}" Margin="0,16,0,0" TextWrapping="Wrap" />
           <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RaidHeading}" Margin="0,18,0,6" />
@@ -722,7 +762,7 @@
         <!-- The rail's typeface and ink are set here: the app's implicit TextBlock style doesn't reach text inside the
              list templates below, which fell back to Segoe UI and white (the raid card's quest names and objective
              lines, the extract rows, BRING in a raid), while Plan's card had the app's own through its button. -->
-        <ScrollViewer x:Name="RailScroll" Grid.Row="2" Padding="16,0,16,20" ViewChanged="OnRailScrolled"
+        <ScrollViewer x:Name="RailScroll" Grid.Row="3" Padding="16,0,16,20" ViewChanged="OnRailScrolled"
                       FontFamily="{StaticResource UiFont}" Foreground="{StaticResource InkBrush}">
           <StackPanel>
             <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintOutsideRaid(ViewModel.Hint, ViewModel.InRaid), Mode=OneWay}"
@@ -864,8 +904,10 @@
                           <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Rectangle Grid.RowSpan="2" Fill="{StaticResource AmberBrush}" Visibility="{x:Bind ExpandedVisibility}" />
+                        <!-- With a trader's focus held, the count is that trader's quests here ("Ragman 2"), and a map with
+                             none of them steps back: its name and cells, with no count (PlanList.Count). -->
                         <TextBlock Grid.Column="1" Text="{x:Bind MapTitle}" Style="{StaticResource TitleText}" FontSize="14" CharacterSpacing="60"
-                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,7" />
+                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,7" Opacity="{x:Bind RowStrength}" />
                         <TextBlock Grid.Column="2" Text="{x:Bind ShortSummary}" Foreground="{StaticResource AmberBrush}" FontSize="13"
                                    VerticalAlignment="Center" Margin="0,0,12,0" />
                         <!-- Enough to compare without opening it (the study log: ten card clicks in 4.5 minutes to compare
@@ -899,7 +941,7 @@
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
                                   <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}"
-                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" />
+                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" Opacity="{x:Bind Strength}" />
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -914,12 +956,12 @@
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
                                   <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" ToolTipService.ToolTip="{x:Bind Name}"
-                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" />
+                                                      controls:Linked.Quest="{x:Bind QuestId}" controls:Linked.Inline="True" Opacity="{x:Bind Strength}" />
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
                           </StackPanel>
-                          <controls:NeedsStrip Grid.Column="1" Needs="{x:Bind Needs}" Shown="5" />
+                          <controls:NeedsStrip Grid.Column="1" Needs="{x:Bind Needs}" Shown="5" Opacity="{x:Bind RowStrength}" />
                         </Grid>
                       </Grid>
                     </Button>
@@ -956,7 +998,7 @@
                             <ItemsControl ItemsSource="{x:Bind Picked}" Visibility="{x:Bind PicksVisibility}">
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}" Opacity="{x:Bind Strength}">
                                     <Grid.ColumnDefinitions>
                                       <ColumnDefinition Width="Auto" />
                                       <ColumnDefinition Width="*" />
@@ -984,7 +1026,7 @@
                             <ItemsControl ItemsSource="{x:Bind Finish}">
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}"
+                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}" Opacity="{x:Bind Strength}"
                                         BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind GroupLine}">
                                     <Grid.ColumnDefinitions>
                                       <ColumnDefinition Width="Auto" />
@@ -1011,7 +1053,7 @@
                             <ItemsControl ItemsSource="{x:Bind Progress}" Visibility="{x:Bind ProgressVisibility}">
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="local:QuestLine">
-                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}"
+                                  <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}" Opacity="{x:Bind Strength}"
                                         BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind GroupLine}">
                                     <Grid.ColumnDefinitions>
                                       <ColumnDefinition Width="Auto" />
@@ -1227,7 +1269,7 @@
               <ItemsControl ItemsSource="{x:Bind ViewModel.AnyMap, Mode=OneWay}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="local:QuestLine">
-                    <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}">
+                    <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" controls:Linked.Quest="{x:Bind QuestId}" Opacity="{x:Bind Strength}">
                       <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />

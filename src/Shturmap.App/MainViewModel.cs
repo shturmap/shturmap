@@ -118,6 +118,13 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
     /// <summary>The colour the quest has as a pick, for its glyph in a map's row.</summary>
     public Microsoft.UI.Xaml.Media.Brush PickBrush => PickSlot >= 0 ? Controls.Linked.PickBrush(PickSlot) : Controls.Linked.PickBrush(QuestId);
 
+    /// <summary>Another trader's quest while a trader's focus is held: its row and its glyph step back
+    /// (<see cref="Rules.TraderFocus.StepsBack(string?, bool, string?, bool)"/>).</summary>
+    public bool SteppedBack { get; init; }
+
+    /// <summary>How strongly the row is drawn: in full, or stepped back for a trader's focus.</summary>
+    public double Strength => SteppedBack ? Rules.TraderFocus.SteppedBack : 1;
+
     /// <summary>A hairline above the row where a later effort group starts; no heading (owner, 2026-10-03).</summary>
     public Thickness GroupLine => StartsGroup ? new Thickness(0, 1, 0, 0) : new Thickness(0);
 
@@ -152,6 +159,11 @@ public sealed record RequirementLine(string Glyph, string Text, string For, stri
     public Visibility SourceVisibility => Source.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public Thickness OthersLine => StartsOthers ? new Thickness(0, 1, 0, 0) : new Thickness(0);
+
+    /// <summary>While a trader's focus is held, a row that serves none of that trader's quests (nor a pick) steps back.</summary>
+    public bool SteppedBack { get; init; }
+
+    public double Strength => SteppedBack ? Rules.TraderFocus.SteppedBack : 1;
 
     /// <inheritdoc cref="QuestLine.Same"/>
     public static bool Same(RequirementLine a, RequirementLine b) =>
@@ -213,8 +225,15 @@ public sealed record PlanCard(
 {
     public string MapTitle => Caps.Of(MapName);
 
-    /// <summary>The summary's counts for the map's row in Plan's list: "Complete 5 · progress 1".</summary>
+    /// <summary>The summary's counts for the map's row in Plan's list: "Complete 5 · progress 1"; with a trader's focus
+    /// held, that trader's quests there ("Ragman 2"), or nothing (<see cref="Rules.PlanList.Count"/>).</summary>
     public string ShortSummary { get; init; } = "";
+
+    /// <summary>A trader's focus is held and none of that trader's quests is on the map: its row steps back.</summary>
+    public bool RowSteppedBack { get; init; }
+
+    /// <summary>How strongly the row's name and cells are drawn; its glyphs step back each by its own quest.</summary>
+    public double RowStrength => RowSteppedBack ? Rules.TraderFocus.SteppedBack : 1;
 
     /// <summary><see cref="Detail"/> part by part: the raid's length, then each boss, linked to its markers.</summary>
     public IReadOnlyList<LinePart> DetailParts { get; init; } = [];
@@ -269,6 +288,19 @@ public sealed record PlanCard(
         && Rules.RowLists.Same(a.Finish, b.Finish, QuestLine.Same) && Rules.RowLists.Same(a.Progress, b.Progress, QuestLine.Same)
         && Rules.RowLists.Same(a.Picks, b.Picks, QuestLine.Same) && Rules.RowLists.Same(a.Requirements, b.Requirements, RequirementLine.Same)
         && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same) && LinePart.Same(a.DetailParts, b.DetailParts);
+}
+
+/// <summary>
+/// A trader's portrait in the strip under the MAP list (owner, 2026-10-17, from a panel of three: "B"): the portrait and
+/// the count of the trader's active quests beside it. Pointing at it lights those quests; a click holds the focus.
+/// </summary>
+/// <param name="Quests">The trader's active quests, for the linked highlight.</param>
+/// <param name="Tip">"Ragman · 4 active quests" (<see cref="Rules.TraderFocus.Tip"/>).</param>
+/// <param name="Held">Its focus is held: the portrait is framed in amber.</param>
+public sealed record TraderChip(string TraderId, string Count, IReadOnlyList<string> Quests, string Tip, bool Held)
+{
+    /// <inheritdoc cref="QuestLine.Same"/>
+    public static bool Same(TraderChip a, TraderChip b) => a == b with { Quests = a.Quests } && a.Quests.SequenceEqual(b.Quests);
 }
 
 /// <summary>The MAP list's item template: a map's name and count, or the OTHER MAPS heading (<see cref="Rules.MapChoice"/>
@@ -386,6 +418,10 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial IReadOnlyList<Rules.MapChoice> MapChoices { get; set; } = [];
 
     [ObservableProperty] public partial Rules.MapChoice? SelectedMap { get; set; }
+
+    /// <summary>The strip under the MAP list: a portrait per trader with active quests, in the game's order; in a raid
+    /// only the held one (<see cref="Rules.TraderFocus.Shown"/>).</summary>
+    [ObservableProperty] public partial IReadOnlyList<TraderChip> Traders { get; set; } = [];
 
     /// <summary>The raid card's title: the map, in capitals like Plan's cards.</summary>
     [ObservableProperty] public partial string RaidTitle { get; set; } = "";

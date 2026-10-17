@@ -6,6 +6,64 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-17: a trader focus: the strip
+
+**The ask** (owner, 2026-10-17): "some players want to level a specific trader or want to work towards specific
+unlocks of these traders. Currently there are no good ways in the app to account for that, you can only select by map
+and not by trader. I at the same time want to keep the UI footprint lean." A panel of three:
+
+- A. Pointing at the trader's portrait on a quest's row.
+- B. A trader strip under the MAP list.
+- C. Plan by trader in place of by map.
+
+The owner chose B. The traders' unlocks and rewards are not built.
+
+**Built (2026-10-17).** Binding: DESIGN.md, "Screen anatomy" (*The trader strip*, the update band, the raid card's
+head), *Visual language* (the linked highlight: a trader's portrait is their active quests), "Map drawing" ("Stepping
+back"), "Keyboard" (Esc) and §8's script verbs.
+
+- The strip: one row under the MAP list, outside what scrolls, above the update band between raids and above the raid
+  card's head in a raid (the head meets its body without a seam, so nothing may come between them). Per trader with an
+  active quest, in tarkov.dev's trader order, the portrait (`Controls.Picture`, 20 DIP) and the count of their active
+  quests in `FigureText` gold; cells of at least 43 DIP, so the rail's 351 holds eight with counts of two digits, and a
+  ninth wraps (`Rules.TraderFocus.Strip`, `MainWindow.Traders`). The count is every quest the log shows active for the
+  trader, with work on a map or not. Tooltip "Ragman · 4 active quests · click to hold", held "… · click to let go".
+- Pointing at a portrait puts the trader's active quests in the linked focus (`Linked.Quests`, as a boss's name does):
+  their rows lit, their places pulsing, the rest of the map stepping back; pointing at one of those quests tints the
+  portrait. It opens no card.
+- A click holds it: the portrait framed in amber (1.5 DIP, `Picture.Held`); a click on another portrait moves it, one on
+  the held one lets go, and so does Esc with no card open (the cards first: `TraderFocus.Escape`). Held, the MAP list's
+  and NEXT RAID's counts are the trader's ("Ragman 2"; `PlanList.Count`); a row with none of them steps back to 45 %
+  with no count, chosen over "Ragman 0". The other traders' quests (the map rows' glyphs, PICKED, COMPLETE, PROGRESS,
+  ANY MAP) and the BRING rows that serve none of the trader's quests step back to 45 %; a pick never does. On the map
+  `MapScene.Held` is drawn as the focus while nothing is pointed at, by the stepping-back table and without the pulse;
+  the pointer goes first while it lasts.
+- Held, NEXT RAID's rows go by the trader's quests on each map, most first, a tie keeping the planner's order, the maps
+  with none of them last and stepped back (`PlanList.Ranked`; the coordinator's follow-up, the same day); let go, the
+  planner's order is back. The MAP list keeps its order.
+- In a raid only the held portrait shows, or nothing; the map lights the trader's places by the raid's measure; the raid
+  card is unchanged.
+- The focus is the run's and never saved: it stays through raids, a new quest list and a change of map, until let go
+  or the app closes. A held trader with no active quest left keeps their portrait with "0".
+- Texts: `TraderStripTip`, `TraderStripTipHeld` and `PlanRowTrader` (`RuleTexts`, English and German), for the senior
+  translator's review.
+- Snapshots: `--trader-focus <name>` (`tools\fake-raid.ps1 -TraderFocus Ragman`); the script verb `trader [<name>]`.
+- Tests: `TraderFocusTests` (13: the strip's traders, order and counts, the held trader at 0, the raid's strip, the
+  tooltip's plurals and its click, hold, move, release, Esc, what steps back, the map's quests, `PlanList.ByTrader`,
+  `Count` and `Ranked`),
+  `HeldFocusTests` (lit without a pulse in Plan and in a raid, the pointer first and back, the fade out, nothing on this
+  map, picks).
+- The tour: chapter 3 frames NEXT RAID's rows, and the strip lies under the shade; its words still hold.
+
+**Open for the owner.**
+
+- The count is every active quest of the trader, also those with nothing on a map; counting only those Plan has rows
+  for would match the rows' counts.
+- The BRING rows that serve none of the trader's quests step back as well (the ask named the quests), and Esc closes
+  the cards before it lets go of the focus.
+- The MAP list keeps the planner's order under a focus, while NEXT RAID's rows re-rank.
+- What's New's line comes with the release.
+
 ## 2026-10-17: boss markers stepped back until they matter
 
 **The ask** (owner, 2026-10-17): "I feel like the red dots for enemy bosses are too distracting when trying to parse

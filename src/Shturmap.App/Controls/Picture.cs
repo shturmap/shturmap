@@ -27,6 +27,9 @@ public sealed partial class Picture : Grid
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
         nameof(Title), typeof(string), typeof(Picture), new PropertyMetadata(null, (d, e) => ToolTipService.SetToolTip(d, e.NewValue)));
 
+    public static readonly DependencyProperty HeldProperty = DependencyProperty.Register(
+        nameof(Held), typeof(bool), typeof(Picture), new PropertyMetadata(false, (d, _) => ((Picture)d).Frame()));
+
     /// <summary>Where pictures come from; set once by the main window.</summary>
     public static Func<GameArt?> Art { get; set; } = () => null;
 
@@ -81,7 +84,22 @@ public sealed partial class Picture : Grid
         set => SetValue(TitleProperty, value);
     }
 
+    /// <summary>
+    /// Framed in amber, the held look (a held card's border): a trader's portrait in the strip under the MAP list while
+    /// its focus is held (owner, 2026-10-17). The frame lies over the picture, so the portrait keeps its size.
+    /// </summary>
+    public bool Held
+    {
+        get => (bool)GetValue(HeldProperty);
+        set => SetValue(HeldProperty, value);
+    }
+
     private bool IsTrader => TraderId is not null;
+
+    // Over the picture: the cell's frame in the held look, and nothing otherwise (the cell's own frame shows).
+    private readonly Border _held = new() { IsHitTestVisible = false, BorderThickness = new Thickness(1.5) };
+
+    private void Frame() => _held.BorderBrush = Held ? Brush("AmberBrush") : null;
 
     private void Update()
     {
@@ -98,6 +116,9 @@ public sealed partial class Picture : Grid
             BorderBrush = Brush("LineStrongBrush"),
             BorderThickness = new Thickness(1),
         });
+        Children.Add(_held);
+        Canvas.SetZIndex(_held, 2);
+        Frame();
         Children.Add(_tint);
         Canvas.SetZIndex(_tint, 1);
         var fallback = new FontIcon

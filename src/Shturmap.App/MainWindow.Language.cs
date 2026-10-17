@@ -151,6 +151,7 @@ public sealed partial class MainWindow
         var vm = ViewModel;
         vm.Plans = [];
         vm.AnyMap = [];
+        vm.Traders = [];
         vm.RaidPicks = [];
         vm.RaidComplete = [];
         vm.RaidProgress = [];
