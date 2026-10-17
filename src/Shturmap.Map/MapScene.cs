@@ -417,13 +417,52 @@ public sealed class MapScene
         {
             LastFocus = _focus;
             _lastFocusObjective = _focusObjective;
+            _lastLook = LinkedSet ? LastLook.Set : LastLook.One;
         }
         else if (HeldShown)
         {
             LastFocus = _held;
             _lastFocusObjective = null;
+            _lastLook = LastLook.Held;
         }
     }
+
+    // How the last focus shown was drawn, for the dimming's fade out: one thing's rings, a set's breath, a held focus.
+    private enum LastLook { One, Set, Held }
+
+    private LastLook _lastLook;
+
+    /// <summary>
+    /// Whether what the pointer is on (<see cref="Focus"/>) is a linked set: a trader's portrait (their quests), a boss's
+    /// name or marker (its zones), an item (its locks, the quests it is for). Its places then breathe together
+    /// (<see cref="Breath"/>) where one thing pointed at rings (<see cref="Pulsing"/>; owner, 2026-10-17, from a panel of
+    /// four: "B"). The window says it before it sets the focus: the ids alone can't tell a trader with one quest from that
+    /// quest pointed at.
+    /// </summary>
+    public bool LinkedSet { get; set; }
+
+    /// <summary>The linked highlight's breath, which the map view shares with the rows of the rail (one clock, so the two
+    /// are in phase); a scene of its own has one that nothing lights.</summary>
+    public LinkedBreath Breath { get; set; } = new();
+
+    /// <summary>
+    /// Whether what is drawn emphasised is a linked set, in its breathing or its static look (<see cref="SettleAt"/>): a
+    /// set the pointer lights, or a held focus, which always stands still. One thing pointed at rings instead.
+    /// </summary>
+    public bool ShowsSet => FocusShown ? LinkedSet : HeldShown || (Dim > 0 && _lastLook != LastLook.One);
+
+    /// <summary>
+    /// How far a linked set shown (<see cref="ShowsSet"/>) has settled from its breath (0) to its static look (1): the
+    /// breath's own (<see cref="LinkedBreath.Settle"/>) while the pointer lights it; 1 for a held focus, which never
+    /// breathes (it lasts through a raid, and in a raid nothing breathes but under the pointer).
+    /// </summary>
+    public float SettleAt(DateTime now) =>
+        FocusShown ? (LinkedSet && Breath.Lit ? Breath.Settle(now) : 1)
+        : HeldShown || _lastLook == LastLook.Held ? 1 : Breath.Settle(now);
+
+    /// <summary>Whether the breath of a set the pointer lights moves at <paramref name="now"/> (breathing or settling): the
+    /// map view draws frames for it.</summary>
+    public bool BreathingAt(DateTime now) => FocusShown && LinkedSet && Breath.Running(now);
 
     private IReadOnlySet<string> _focus = new HashSet<string>();
 
@@ -522,11 +561,12 @@ public sealed class MapScene
     public bool Pulse { get; set; } = true;
 
     /// <summary>
-    /// Whether the emphasised markers pulse now: all the while the pointer is on something (with an objective pointed
-    /// at, only that objective's places: <see cref="FocusObjective"/>). Picks hold still: a pick pulsing all raid
-    /// would be motion at the edge of the player's eye.
+    /// Whether the emphasised markers pulse now: all the while the pointer is on one thing (with an objective pointed
+    /// at, only that objective's places: <see cref="FocusObjective"/>); a linked set breathes instead
+    /// (<see cref="LinkedSet"/>). Picks hold still: a pick pulsing all raid would be motion at the edge of the player's
+    /// eye.
     /// </summary>
-    public bool Pulsing => Pulse && FocusShown;
+    public bool Pulsing => Pulse && FocusShown && !LinkedSet;
 
     /// <summary>How long a new position pings: rings leave the player marker, or its edge arrow when out of view.</summary>
     public static readonly TimeSpan PingLength = TimeSpan.FromSeconds(2.6);

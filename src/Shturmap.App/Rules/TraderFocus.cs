@@ -21,9 +21,10 @@ public sealed record TraderEntry(string TraderId, int Count, IReadOnlyList<strin
 /// </summary>
 public static class TraderFocus
 {
-    /// <summary>How strongly a row of another trader's quest is drawn while a focus is held: the map's quest labels'
-    /// measure in planning ("Map drawing", "Stepping back").</summary>
-    public const double SteppedBack = 0.45;
+    /// <summary>How strongly a row of another trader's quest is drawn while a focus is held: the map's labels' measure in
+    /// planning in a held focus's static look ("Map drawing", "Stepping back"; owner, 2026-10-17, "B": 45 % until then,
+    /// the measure of one quest pointed at). Above the 28 % the owner found too dark.</summary>
+    public const double SteppedBack = 0.3;
 
     /// <summary>
     /// The strip: each trader with an active quest, in the game's trader order (tarkov.dev's list, as Plan's order

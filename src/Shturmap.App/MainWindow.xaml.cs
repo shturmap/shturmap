@@ -86,6 +86,8 @@ public sealed partial class MainWindow : Window
         // The tick at the end of an objective's row on a quest card: done, the player says (the logs never do).
         TickBox.Requested += objective => _ = _session.ToggleTickAsync(objective, "card");
         Linked.FocusChanged += OnFocusChanged;
+        // The linked highlight's breath: one clock for the map and the rows, so the two breathe in phase.
+        Linked.Breath = Map.Breath;
         // A click on nothing in particular (bare rail, bare map) lets go of held cards. Rows, markers and buttons
         // handle their own clicks.
         root.Tapped += (_, e) =>
@@ -96,6 +98,12 @@ public sealed partial class MainWindow : Window
         root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((_, e) =>
         {
             _cards.PointerAt(e.GetCurrentPoint(root).Position);
+            // The breath stops once the pointer has rested 6 s on a linked set; a move starts it again.
+            if (Map.Breath.Moved(DateTime.Now))
+            {
+                Map.Redraw();
+                Linked.BreathChanged();
+            }
         }), handledEventsToo: true);
         _focusClear = DispatcherQueue.CreateTimer();
         _focusClear.Interval = TimeSpan.FromMilliseconds(250);
@@ -1060,7 +1068,8 @@ public sealed partial class MainWindow : Window
             _exitsReadShown = latest.ExitsReadAt;
             exitsArrive = Shturmap.Core.Logs.WallClock.Elapsed(latest.ExitsReadAt!.Value, DateTime.Now) < MapView.JustTaken;
         }
-        scene.Focus = MapFocus();
+        scene.LinkedSet = Linked.Current is { IsSet: true };
+        scene.Focus = LightBreath(latest);
         scene.FocusObjective = Linked.Current?.Objective;
         // A trader's held focus: its quests lit while nothing is pointed at, the rest stepped back (TraderFocus.OnMap).
         scene.Held = HeldOnMap(latest);
@@ -1464,6 +1473,25 @@ public sealed partial class MainWindow : Window
         return ids;
     }
 
+    /// <summary>
+    /// The linked highlight's breath (owner, 2026-10-17, from a panel of four: "B"; LinkedBreath): lit while the pointer
+    /// lights a linked set (a trader's portrait, a boss's name, an item), held while a click holds just that (the
+    /// trader strip's hold); one thing pointed at rings and lights none. Returns the map's focus.
+    /// </summary>
+    private IReadOnlySet<string> LightBreath(SessionSnapshot? s)
+    {
+        var focus = MapFocus();
+        var now = DateTime.Now;
+        var set = Linked.Current is { IsSet: true };
+        Map.Breath.Light(set ? focus : null, now);
+        Map.Breath.Hold(set && HoldsFocus(s, focus), now);
+        return focus;
+    }
+
+    // Whether the trader's held focus is what the pointer lights (its portrait pointed at): held, it never breathes.
+    private bool HoldsFocus(SessionSnapshot? s, IReadOnlySet<string> focus) =>
+        s is not null && HeldOnMap(s) is { Count: > 0 } held && held.SetEquals(focus);
+
     private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _focusClear;
 
     // Moving from one row to the next passes through "nothing in focus" for a moment; showing that moment would
@@ -1479,9 +1507,12 @@ public sealed partial class MainWindow : Window
 
     private void ApplyMapFocus()
     {
+        // The rows take the breath's look whether or not a map is shown.
+        var focus = LightBreath(Volatile.Read(ref _snapshot));
         if (Map.Scene is not { } scene)
             return;
-        scene.Focus = MapFocus();
+        scene.LinkedSet = Linked.Current is { IsSet: true };
+        scene.Focus = focus;
         // One objective of the quest pointed at: only its places pulse, the quest's others stay lit.
         scene.FocusObjective = Linked.Current?.Objective;
         // Pointing at an item shows where it lies loose on the shown map; a row of several items, where each does.
@@ -1564,7 +1595,8 @@ public sealed partial class MainWindow : Window
                 var groups = (Map.Scene?.Markers ?? []).Select(m => m.Group).OfType<string>()
                     .Where(g => MapContentBuilder.BossesOf(g).Intersect(bosses).Any())
                     .Append(group).ToHashSet();
-                Linked.Set(new Focus(groups));
+                // A set, as the boss's name is: its zones breathe together.
+                Linked.Set(new Focus(groups) { IsSet = true });
                 break;
             default:
                 Linked.Set(new Focus(new HashSet<string>(), Marker: marker.Id));
@@ -2047,8 +2079,19 @@ public sealed partial class MainWindow : Window
         _noticeTimer.Start();
     }
 
-    /// <summary>Set for "--snapshot" runs: the help panel opens to be rendered, and isn't marked as seen.</summary>
-    public bool SnapshotMode { get; set; }
+    /// <summary>Set for "--snapshot" runs: the help panel opens to be rendered, and isn't marked as seen; a linked set
+    /// stands in its static look, as with the animation effects off.</summary>
+    public bool SnapshotMode
+    {
+        get => _snapshotMode;
+        set
+        {
+            _snapshotMode = value;
+            Map.StaticHighlight = value;
+        }
+    }
+
+    private bool _snapshotMode;
 
     /// <summary>Snapshots render at this multiple of the screen's pixel density (2 for sharp website images).</summary>
     public int SnapshotScale { get; set; } = 1;

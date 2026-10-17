@@ -21,6 +21,12 @@ public sealed record Focus(IReadOnlySet<string> Quests, string? Item = null, str
 
     /// <summary>The items in focus: <see cref="Item"/> and its <see cref="Alternatives"/>, each once.</summary>
     public IEnumerable<string> Items => Item is null ? Alternatives : Alternatives.Prepend(Item).Distinct();
+
+    /// <summary>
+    /// A linked set (a trader's quests, a boss's zones, an item), whose places breathe together, rather than one thing,
+    /// whose places ring (<see cref="LinkFocus.IsSet"/>; owner, 2026-10-17, "B"). An item is a set unless said otherwise.
+    /// </summary>
+    public bool IsSet { get; init; } = Item is not null && Objective is null;
 }
 
 /// <summary>
@@ -314,9 +320,139 @@ public static class Linked
         if (focus == Current)
             return;
         Current = focus;
+        // The map's side first: it lights the breath (Breath) the rows take their look from.
+        FocusChanged?.Invoke();
         foreach (var element in Live)
             Paint(element);
-        FocusChanged?.Invoke();
+        Look();
+    }
+
+    // ---- the breath (owner, 2026-10-17, from a panel of four: "B"; docs/DESIGN.md §4, *Motion*) ----
+
+    /// <summary>
+    /// The linked highlight's breath, the map view's (<see cref="Shturmap.Map.LinkedBreath"/>): while a linked set is lit
+    /// by the pointer, the type glyphs of the rows it lights breathe with its places' halos on the map, from this one
+    /// clock, so the two are in phase; once it stops (held, the pointer still, Windows' animation effects off) the glyphs
+    /// settle and each row wears a bar at its left. Null: always the static look.
+    /// </summary>
+    public static Shturmap.Map.LinkedBreath? Breath { get; set; }
+
+    /// <summary>
+    /// The quests of a trader's held focus, between raids (empty otherwise; MainWindow.Traders): their own rows wear the
+    /// static look's bar, as their places on the map wear the ring on their collar. A hold never breathes.
+    /// </summary>
+    public static IReadOnlySet<string> Held
+    {
+        get => _held;
+        set
+        {
+            if (value.SetEquals(_held))
+                return;
+            _held = value;
+            foreach (var element in Live)
+                Paint(element);
+        }
+    }
+
+    private static IReadOnlySet<string> _held = new HashSet<string>();
+
+    /// <summary>The breath started again or was held (<see cref="Shturmap.Map.LinkedBreath.Moved"/>,
+    /// <see cref="Shturmap.Map.LinkedBreath.Hold"/>): the rows take its look.</summary>
+    public static void BreathChanged() => Look();
+
+    // The rows a linked set lights, each with its type glyphs, which breathe while the breath runs.
+    private static readonly Dictionary<FrameworkElement, KindGlyph[]> LitRows = [];
+
+    // Whether the lit rows stand in the static look (their bar shown), not breathing.
+    private static bool _still = true;
+
+    // Whether the rows are drawn on every frame (CompositionTarget.Rendering), while the breath runs.
+    private static bool _ticking;
+
+    // The rows' look from the breath: their glyphs at its scale and opacity, eased to rest as it settles, and the bar once
+    // it stops. After every paint, and on every frame while it runs.
+    private static void Look()
+    {
+        var now = DateTime.Now;
+        var settle = Breath is { Lit: true } lit ? lit.Settle(now) : 1f;
+        var still = settle > 0;
+        if (still != _still)
+        {
+            _still = still;
+            foreach (var row in LitRows.Keys.ToList())
+                Paint(row);
+        }
+        var (scale, opacity) = Breath?.Frame(now) ?? (1f, 1f);
+        var (s, o) = (1 + (scale - 1) * (1 - settle), 1 + (opacity - 1) * (1 - settle));
+        foreach (var glyphs in LitRows.Values)
+        {
+            foreach (var glyph in glyphs)
+                glyph.Breathe(s, o);
+        }
+        var run = LitRows.Count > 0 && Breath is { } breath && breath.Running(now);
+        if (run == _ticking)
+            return;
+        _ticking = run;
+        if (run)
+            CompositionTarget.Rendering += OnFrame;
+        else
+            CompositionTarget.Rendering -= OnFrame;
+    }
+
+    private static void OnFrame(object? sender, object e) => Look();
+
+    private static void Rest(KindGlyph[] glyphs)
+    {
+        foreach (var glyph in glyphs)
+            glyph.Breathe(1, 1);
+    }
+
+    // A row's own type glyphs: the row itself when it is one (a quest's glyph on a folded Plan card), else those inside
+    // it but not inside a linked element of its own (a need cell, an objective's line), which paints itself.
+    private static KindGlyph[] GlyphsOf(FrameworkElement row)
+    {
+        if (row is KindGlyph self)
+            return [self];
+        var found = new List<KindGlyph>();
+        void Walk(DependencyObject node)
+        {
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+            {
+                var child = VisualTreeHelper.GetChild(node, i);
+                if (child is KindGlyph glyph)
+                    found.Add(glyph);
+                else if (child is not FrameworkElement inner || !Hooked.TryGetValue(inner, out _))
+                    Walk(child);
+            }
+        }
+        Walk(row);
+        return [.. found];
+    }
+
+    // The static look's bar: 3 DIP of the tint's gold at a row's left, over the row's own fill (the tint, a pick's, none).
+    private const double BarWidth = 3;
+    private static readonly Dictionary<Windows.UI.Color, Brush> Bars = [];
+
+    private static Brush Bar(Brush fill)
+    {
+        var rest = fill is SolidColorBrush solid ? solid.Color : Microsoft.UI.Colors.Transparent;
+        if (Bars.TryGetValue(rest, out var bar))
+            return bar;
+        var gold = (Windows.UI.Color)Application.Current.Resources["AmberColor"];
+        bar = new LinearGradientBrush
+        {
+            MappingMode = BrushMappingMode.Absolute,
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(BarWidth, 0),
+            GradientStops =
+            {
+                new GradientStop { Color = gold, Offset = 0 },
+                new GradientStop { Color = gold, Offset = 1 },
+                new GradientStop { Color = rest, Offset = 1 },
+            },
+        };
+        Bars[rest] = bar;
+        return bar;
     }
 
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -342,6 +478,8 @@ public static class Linked
             element.Unloaded += (_, _) =>
             {
                 Live.Remove(element);
+                if (LitRows.Remove(element, out var glyphs))
+                    Rest(glyphs);
                 // Rows are rebuilt with every snapshot, and a row that goes while the pointer is on it gets no
                 // PointerExited: its focus would stay (the quest lit, the map pulsing, its hover card open) until
                 // the pointer entered something else. So it lets go as it leaves, and of everything: what lies
@@ -465,7 +603,12 @@ public static class Linked
     {
         var parts = LinkFocus.Of(GetQuest(element), GetQuests(element) as IEnumerable<string>, AlsoOf(element), GetItem(element),
             GetAlsoItem(element), GetItems(element) as IEnumerable<string>, GetMarker(element), GetObjective(element));
-        return new Focus(parts.Quests, parts.Item, parts.Marker, parts.Objective) { Alternatives = parts.Alternatives };
+        return new Focus(parts.Quests, parts.Item, parts.Marker, parts.Objective)
+        {
+            Alternatives = parts.Alternatives,
+            IsSet = LinkFocus.IsSet(GetQuests(element) is not null, GetItem(element), GetAlsoItem(element), GetItems(element) as IEnumerable<string>,
+                GetObjective(element)),
+        };
     }
 
     // The card an element opens: its item if it has one, else its quest; none for rows that only highlight.
@@ -497,16 +640,34 @@ public static class Linked
 
     private static readonly Brush Clear = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
-    private static void Paint(FrameworkElement element) =>
-        SetBackground(element, (Current is { } focus ? LevelOf(element, focus) : Rules.LinkLevel.None) switch
+    private static void Paint(FrameworkElement element)
+    {
+        var level = Current is { } focus ? LevelOf(element, focus) : Rules.LinkLevel.None;
+        // A row a linked set lights, not the thing pointed at itself (a portrait, a name, a cell): its glyph breathes with
+        // the map's halos, and once the breath stops a bar stands at its left (Look). Small things among others take no
+        // bar.
+        var lit = level == Rules.LinkLevel.Same && Current is { IsSet: true } && !ReferenceEquals(element, _source);
+        if (lit)
+            LitRows[element] = GlyphsOf(element);
+        else if (LitRows.Remove(element, out var glyphs))
+            Rest(glyphs);
+        var row = !GetInline(element);
+        SetBackground(element, level switch
         {
+            Rules.LinkLevel.Same when lit && row && _still => Bar((Brush)Application.Current.Resources["LinkBrush"]),
             Rules.LinkLevel.Same => (Brush)Application.Current.Resources["LinkBrush"],
             Rules.LinkLevel.Related => (Brush)Application.Current.Resources["LinkSoftBrush"],
-            // A pick's row, and a row that serves picks, in the pick's colour (the first's, where it serves several).
-            _ => _picks.Count > 0 && QuestsOf(element).Where(_picks.Contains).Select(SlotOf).DefaultIfEmpty(-1).Min() is >= 0 and var slot
-                ? PickTints[slot]
-                : Clear,
+            // A held trader's quest, its own row: the bar of the static look over its fill.
+            _ when row && GetQuest(element) is { } quest && _held.Contains(quest) => Bar(PickTint(element)),
+            _ => PickTint(element),
         });
+    }
+
+    // A pick's row, and a row that serves picks, in the pick's colour (the first's, where it serves several); else none.
+    private static Brush PickTint(FrameworkElement element) =>
+        _picks.Count > 0 && QuestsOf(element).Where(_picks.Contains).Select(SlotOf).DefaultIfEmpty(-1).Min() is >= 0 and var slot
+            ? PickTints[slot]
+            : Clear;
 
     // A need cell is filled by its own dark cell and its picture: its tint lies over both (Picture.Tint).
     private static Brush? Background(FrameworkElement element) => element switch

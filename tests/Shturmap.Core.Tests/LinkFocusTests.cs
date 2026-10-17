@@ -59,4 +59,28 @@ public class LinkFocusTests
         Assert.Equal(("extract:taxi", "mark-stryker"), (focus.Marker, focus.Objective));
         Assert.Equal(new[] { "revision" }, focus.Quests.ToArray());
     }
+
+    // ---- a set breathes, one thing rings (owner, 2026-10-17, from a panel of four: "B") ----
+
+    [Fact]
+    public void A_traders_portrait_a_bosss_name_and_an_item_are_sets()
+    {
+        // The portrait and the name say their quests (or zones) as several, even one.
+        Assert.True(LinkFocus.IsSet(quests: true, null, null, null, null));
+        // A need cell, a BRING row, a key's line; an item card's body.
+        Assert.True(LinkFocus.IsSet(quests: false, "key-a", null, null, null));
+        Assert.True(LinkFocus.IsSet(quests: true, "key-a", null, null, null));
+        Assert.True(LinkFocus.IsSet(quests: false, null, "key-a", null, null));
+        Assert.True(LinkFocus.IsSet(quests: false, null, null, ["key-a", "key-b"], null));
+    }
+
+    [Fact]
+    public void A_quest_an_objective_and_a_marker_are_one_thing()
+    {
+        // A quest's row or card, an extract's row: one thing (Linked.Quest, Linked.Marker name no set).
+        Assert.False(LinkFocus.IsSet(quests: false, null, null, null, null));
+        // An objective's row on a quest's card stays its objective, also where it names an item: only its places ring.
+        Assert.False(LinkFocus.IsSet(quests: false, "dogtag", null, null, "mark-stryker"));
+        Assert.False(LinkFocus.IsSet(quests: false, null, null, null, "mark-stryker"));
+    }
 }

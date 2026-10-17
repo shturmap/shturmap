@@ -6,6 +6,65 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-17: the linked highlight breathes
+
+**The ask** (owner, 2026-10-17): the linked highlight "really helps pre-attentively highlight elements … However, the
+pre-attentiveness goes away directly after the highlight was done … the highlights are a bit too faint". While a set was
+lit (a trader's portrait, a boss's name, an item cell pointed at), its places rang with the pointer's thin rings, one
+every 0.7 s and gone again; between two rings the lit places and the rest were the same gold, the rail's lit rows had
+only the 18 % tint, and a held focus stood still at the same measures. A panel of four:
+
+- A. A deeper static contrast.
+- B. The lit breathe.
+- C. One pulse at entry, then contrast.
+- D. A static mark at the edge.
+
+The owner chose B.
+
+**Built (2026-10-17).** Binding: DESIGN.md, "Design system" (*Motion*), "Visual language" (the linked highlight, a
+trader's portrait), "Screen anatomy" (the raid card's readout, *The trader strip*), "Map drawing" ("Stepping back").
+
+- One clock, `Shturmap.Map.LinkedBreath`, owned by the map view (`MapView.Breath`) and shared with the rows
+  (`Linked.Breath`), so the map and the rail breathe in phase: a 2 s cycle, an eased sine, scale 0.92 → 1.08 and
+  opacity 0.85 → 1.0 and back (`LinkedBreath.At`), from 0.18 s after the set lit.
+- Which focus is a set (`LinkFocus.IsSet`, `Focus.IsSet`, `MapScene.LinkedSet`): what an element names as several
+  (`Linked.Quests`: a trader's portrait, a boss's name, a BRING row's quests) and an item (a need cell, a BRING row, a
+  key's line, an item card's body), a boss's marker or a padlock on the map; never an objective. One quest, an
+  objective, an extract and its switches stay one thing: they ring as before (`MapScene.Pulsing`).
+- On the map every lit place of a set gets a halo under its symbol, a radial glow in its own colour, 2.8 times its
+  radius at scale 1 (about 3 at its widest), 60 % in its middle at full opacity (`MapRenderer.DrawHalo`), and no rings;
+  its chevron out of view breathes too. The rest steps back to 55 % (labels 40 %) while planning, 70 % (50 %) in a raid,
+  every kind that steps back at all; the ways out and the bosses keep their measure (`MapRenderer.StepBackOf(inRaid,
+  settle)`, `MeasuresAt`).
+- In the rail, the rows a set lights with the full tint (not the portrait, the name or the cell pointed at) breathe
+  their type glyph (`KindGlyph.Breathe`, on each frame while it runs, `CompositionTarget.Rendering`); item rows have no
+  type glyph and only take the bar below.
+- The stops, each settling over 0.18 s: a click that holds what is pointed at (the trader strip's portrait:
+  `LinkedBreath.Hold` when the held quests are the pointer's set; a card held is no hold of the map's focus), the
+  pointer still for 6 s (any move in the window counts, measured from the last move or the set's start, whichever is
+  later; a move after the stop starts the breath again from the start of its curve), Windows' animation effects off
+  and `--snapshot` runs (`MapView.StaticHighlight`), where it never starts.
+- The static look: the rest at 40 % (labels 30 %) while planning, 60 % (45 %) in a raid; a 1.5 DIP ring of each lit
+  symbol's own colour on its collar's outer edge (`DrawCollarRings`); a 3 DIP bar of the tint's gold at the left of each
+  lit row (`Linked.Bar`, an absolute gradient over the row's fill). A held trader's focus always has it: their own rows
+  between raids carry the bar (`Linked.Held`), the other rows step back to 30 % (45 % until then;
+  `TraderFocus.SteppedBack`).
+- Tests: `BreathTests` (21: the curve at 0, 0.5, 1, 1.5 and 2 s, the start after the ease, the same set and another, the
+  held stop and its release, held from the start, the 6 s stop and the move after it, a move before it, the effects
+  off, the four measures, the map's measures for one quest and for a set breathing, still and held, one quest ringing
+  without a halo, the halo's frames 1 s apart breathing and the static look's, the held focus without motion);
+  `LinkFocusTests` (a set and one thing).
+
+**Open for the owner.**
+
+- The rows' 40 % "while breathing": rows step back only under a held focus, which never breathes, so no row ever stands
+  at 40 %; stepping the unlit rows back while a set is pointed at would be new behaviour, not built.
+- Pointing at another trader's portrait while one is held breathes (it is the pointer's, not the hold); only the held
+  trader's own portrait stands still.
+- The Scav and sniper zones, locks, switches and hazard areas take the same set measures as other quests' markers
+  (their own table row had 60 / 75 %).
+- No pictures were taken: the dev build is the check.
+
 ## 2026-10-17: a trader focus: the strip
 
 **The ask** (owner, 2026-10-17): "some players want to level a specific trader or want to work towards specific
