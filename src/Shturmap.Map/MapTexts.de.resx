@@ -76,6 +76,10 @@
     <value>Optionales Ziel: OPT oben links.</value>
     <comment>en: Optional objective: OPT at the upper left.</comment>
   </data>
+  <data name="LegendExtractSwitch" xml:space="preserve">
+    <value>Extract, der zuerst einen Schalter braucht: Ein/Aus-Symbol unten links. Zeig darauf: Seine Schalter leuchten, gestrichelte Linie zum ersten.</value>
+    <comment>en: Extract that needs a switch first: power symbol at its lower left. Point at it: its switches light, a dashed line to the first.</comment>
+  </data>
   <data name="LegendDone" xml:space="preserve">
     <value>Erledigtes Ziel: kleine graue Scheibe mit Haken.</value>
     <comment>en: Done objective: small grey disc with a check.</comment>
@@ -175,6 +179,10 @@
   <data name="MarkerSwitch" xml:space="preserve">
     <value>Schalter</value>
     <comment>en: Switch</comment>
+  </data>
+  <data name="MarkerStepOfExit" xml:space="preserve">
+    <value>{step} · {exit}</value>
+    <comment>en: {step} · {exit}</comment>
   </data>
   <data name="MarkerSniper" xml:space="preserve">
     <value>Sniper</value>

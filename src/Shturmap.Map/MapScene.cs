@@ -75,6 +75,15 @@ public sealed record MapMarker(string Id, MarkerKind Kind, WorldPoint Position, 
     /// and chance ("Killa 75%"), its other zones nothing (""). Null: the label is the same at rest.
     /// </summary>
     public string? RestLabel { get; init; }
+
+    /// <summary>
+    /// An extract a switch gates (owner, 2026-10-17; <see cref="Shturmap.Data.TarkovDev.SwitchExits"/>): the markers of
+    /// what leaving there takes, in the order of use ("switch:&lt;id&gt;", "lock:&lt;id&gt;"), those the data places. It
+    /// carries a switch badge at its lower left, and pointing at it lights them in its colour, named for it, with the
+    /// guide line to the first. Null for an extract no switch gates and every other marker; empty for one whose steps
+    /// the data places nowhere.
+    /// </summary>
+    public IReadOnlyList<string>? SwitchSteps { get; init; }
 }
 
 /// <summary>An area drawn as an outline, e.g. a quest zone or an extract's footprint.</summary>
@@ -220,11 +229,22 @@ public sealed class MapScene
             _markers = value;
             _focusShown = null;
             _heldShown = null;
+            _exitsOfSteps = null;
             LayoutVersion++;
         }
     }
 
     private IReadOnlyList<MapMarker> _markers = [];
+
+    /// <summary>The gated extracts each switch or lock is a step of (<see cref="MapMarker.SwitchSteps"/>), by the step's
+    /// marker id: pointing at the extract lights the step in its colour and names it for it.</summary>
+    internal IReadOnlyDictionary<string, IReadOnlyList<MapMarker>> ExitsOfSteps => _exitsOfSteps ??= _markers
+        .Where(m => m.SwitchSteps is { Count: > 0 })
+        .SelectMany(m => m.SwitchSteps!.Select(step => (Step: step, Exit: m)))
+        .GroupBy(s => s.Step, StringComparer.Ordinal)
+        .ToDictionary(g => g.Key, g => (IReadOnlyList<MapMarker>)g.Select(s => s.Exit).ToList(), StringComparer.Ordinal);
+
+    private IReadOnlyDictionary<string, IReadOnlyList<MapMarker>>? _exitsOfSteps;
 
     public IReadOnlyList<MapZone> Zones
     {

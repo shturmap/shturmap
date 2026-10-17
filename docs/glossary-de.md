@@ -50,8 +50,9 @@ gender.
 | extract (verb); survive and extract | extracten (ich extracte, extractet); überleben und extracten | players' verb; „rausgehen“ in speech. The game: entkommen („Überlebe und entkomme“, 49 texts) |
 | transit | Transit (der), Transits | the game too: maps `tr_customs_reserve_DESC` „Transit zu Reserve“ |
 | PMC extract; Scav extract; co-op extract; shared extract, extract for both sides | PMC-Extract; Scav-Extract; Co-Op-Extract; Extract für beide Seiten | maps `tunnel_shared`: German names keep „(Co-Op)“ |
-| flare (signal flare); flare extract | Flare (die), Flares; Flare-Extract | „rote Flare“. The game: Signalpatrone (items `62178c4d4ecf221597654e3d`); German extract names drop „(Flare)“ |
+| flare (signal flare); flare extract | Flare (die), Flares; Flare-Extract | „grüne Flare“ (a flare extract takes a green one; „rote Flare“ until 2026-10-17). The game: Signalpatrone (items `6217726288ed9f0845317459`); German extract names drop „(Flare)“ |
 | power switch; switch; elevator; trap | Power-Switch; Schalter; Aufzug; Falle | The game: Stromschalter (maps `switch_Use_reserve_electric_switcher`), Aufzug (`lab_Elevator_Main`) |
+| step (one of what leaving through an extract takes: a switch, a keycard) | Schritt (der), Schritte | „Zuerst D-2-Stromschalter · 2 Schritte“ (the switch's name is the game's) |
 | gear; kit; climbing gear | Gear (das); Kit (das); Kletter-Gear (Eispickel, Paracord) | The game: Ausrüstung, Kletterausrüstung; the items' names come from the data (items `5c0126f40db834002a125382`) |
 | car extract (V-Ex) | V-Ex (der) | The game: Auto … in extract names (maps `Sandbox_VExit`), kostenpflichtiger Fahrservice |
 | map names | as the data: Customs, Woods, … | maps `<id> Name`: English, except „Factory bei Nacht“ |

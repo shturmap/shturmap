@@ -102,6 +102,7 @@ public static partial class MapRenderer
         }
         DrawTrail(canvas, camera, scene, uiScale);
         DrawGuide(canvas, layout.Guide, uiScale);
+        DrawGuide(canvas, layout.ExitGuide, uiScale);
         DrawSpawns(canvas, camera, scene, uiScale);
         // The extracts on the player's list this raid are lit, under every symbol, so a glow never covers one; a list
         // just read rings them out.
@@ -144,6 +145,7 @@ public static partial class MapRenderer
         foreach (var label in layout.Labels.Where(l => l.Of.Focused))
             DrawLabel(canvas, scene, label, time, traced);
         DrawGuidePlate(canvas, layout.Guide, uiScale);
+        DrawGuidePlate(canvas, layout.ExitGuide, uiScale);
         foreach (var chevron in layout.Chevrons)
         {
             // What is pointed at pulses where it is in view; out of view, its chevron does (owner, 2026-10-04: "if a
@@ -302,6 +304,11 @@ public static partial class MapRenderer
 
         /// <summary>The objectives of its quest on its spot it stands for, itself first (<see cref="JoinSpots"/>); empty for one.</summary>
         public IReadOnlyList<MapMarker> Joined { get; init; } = [];
+
+        /// <summary>A switch or lock lit as a step of the gated extract pointed at (<see cref="MapMarker.SwitchSteps"/>):
+        /// that extract, whose colour it takes and whose name its label adds ("Mall Main Power Switch · Saferoom Exfil";
+        /// owner, 2026-10-17). Null otherwise.</summary>
+        public MapMarker? StepOf { get; init; }
     }
 
     /// <summary>A placed label: the marker's own, or a map name (rotated about its anchor). <see cref="Text"/> is as drawn: a
@@ -341,6 +348,10 @@ public static partial class MapRenderer
 
         /// <summary>How the symbols set apart on leaders were placed (<see cref="RepelRun"/>).</summary>
         public RepelRun Repel { get; init; }
+
+        /// <summary>While a gated extract is pointed at, the guide from it to the first step of what leaving there takes,
+        /// in its colour, with the distance on the plate (<see cref="ExitGuideOf"/>); null otherwise.</summary>
+        public GuideLine? ExitGuide { get; init; }
     }
 
     /// <summary>How a layout placed the symbols set apart on leaders (<see cref="Repel"/>): afresh, as a still view shows
@@ -414,6 +425,8 @@ public static partial class MapRenderer
                 taken.Add(SKRect.Inflate(TabBox(m, ui), MarkerCollar * ui, MarkerCollar * ui));
             if (m.Floor != 0)
                 taken.Add(FloorBadgeKeepOut(m, ui));
+            if (ShowsSwitchBadge(m))
+                taken.Add(SwitchBadgeKeepOut(m, ui));
             // No label covers a leader or the dot at its end (Repel).
             if (m.Leader is { } place)
             {
@@ -441,6 +454,9 @@ public static partial class MapRenderer
         var guide = Guide(camera, scene, ui, taken, drawnAt);
         if (guide?.Plate is not null)
             taken.Add(guide.PlateBox);
+        var exitGuide = ExitGuideOf(camera, scene, ui, taken, drawnAt);
+        if (exitGuide?.Plate is not null)
+            taken.Add(exitGuide.PlateBox);
         var chevrons = Chevrons(camera, scene, ui, drawnAt);
         taken.AddRange(chevrons.Select(c => Square(c.At, 10 * ui)));
         // The scale bar steps aside from the symbols the repel sets apart, the player's ring and the chevrons (not from the
@@ -478,7 +494,7 @@ public static partial class MapRenderer
                 var below = candidates[^1];
                 candidates.Add(SKRect.Create(below.Left, below.Bottom + 3 * ui, below.Width, below.Height));
             }
-            return candidates.Select((c, side) => Inward(OffFloorBadge(m, c, side, ui), m.At, LabelEdge * ui, right)).ToList();
+            return candidates.Select((c, side) => Inward(OffBadges(m, c, side, ui), m.At, LabelEdge * ui, right)).ToList();
         }
         // While the view only moves (the scale bar's rule, Scale), a picked or pointed-at name keeps the side it took in
         // the layout before (the rule Steady while the view moves): on its right it is trimmed at the edge rather than sent
@@ -497,7 +513,7 @@ public static partial class MapRenderer
             // An extract on the player's list this raid says its name in bold, as what is picked or pointed at does. A
             // resting boss says its name and chance in the map's own spaced caps, in muted ink (BossRestNameSize).
             var font = m.Resting ? resting : m.Selected || m.Listed ? bold : regular;
-            var text = m.Resting ? UiLanguage.Upper(LabelOf(m)) : m.Marker.Label;
+            var text = m.Resting ? UiLanguage.Upper(LabelOf(m)) : LabelOf(m);
             var tracking = m.Resting ? restTracking : 0;
             var candidates = Candidates(m, font, text, tracking: tracking);
             // A picked or pointed-at name doesn't run past the map's right edge (LitNameMost): where its right does, it
@@ -520,9 +536,11 @@ public static partial class MapRenderer
                 side = candidates.FindIndex(c => c is { } free && !taken.Any(t => t.IntersectsWith(free)));
                 box = side >= 0 ? candidates[side] : null;
             }
-            if (box is null && m.Selected)
+            // A lit step finding no free place gives way as an unlit name does: at the Saferoom the last two stand at the
+            // extract's door, and on its right they covered one another and the extract's name.
+            if (box is null && m.Selected && m.StepOf is null)
             {
-                box = OffFloorBadge(m, LabelCandidates(m.At, m.Reach + gap, font.MeasureText(text), font.Size).First(), 0, ui);
+                box = OffBadges(m, LabelCandidates(m.At, m.Reach + gap, font.MeasureText(text), font.Size).First(), 0, ui);
                 side = 0;
             }
             if (box is not { } placed)
@@ -580,7 +598,7 @@ public static partial class MapRenderer
                 names.Add(new PlacedName(text, at, (float)label.Rotation, font.Size, box) { Landmark = tier.Landmark });
             }
         }
-        return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons, Repel = repel };
+        return new MapLayout(markers, labels, names, guide, scale) { Chevrons = chevrons, Repel = repel, ExitGuide = exitGuide };
     }
 
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
@@ -598,15 +616,20 @@ public static partial class MapRenderer
     /// <summary>The size of a resting boss's name (pixels, before scaling): the map's street names', in spaced caps.</summary>
     public const float BossRestNameSize = 11;
 
-    // What a marker's label says as it is drawn: a resting boss its rest label (MapMarker.RestLabel), anything else its
-    // label.
-    private static string LabelOf(ShownMarker m) => m.Resting ? m.Marker.RestLabel ?? m.Marker.Label : m.Marker.Label;
+    // What a marker's label says as it is drawn: a resting boss its rest label (MapMarker.RestLabel), a step of the gated
+    // extract pointed at its name and the extract's (ShownMarker.StepOf), anything else its label.
+    private static string LabelOf(ShownMarker m) =>
+        m.Resting ? m.Marker.RestLabel ?? m.Marker.Label
+        : m.StepOf is { } exit ? MapTexts.MarkerStepOfExit(exit: exit.Label, step: m.Marker.Label)
+        : m.Marker.Label;
 
     // Label priority: what the player picked, then bosses, quests, ways out, snipers, locks and switches.
     // An extract on the player's list this raid is placed with the bosses, ahead of other ways out and of quests: at
     // the raid's end it is the name to find. One the list leaves out comes with the Scav and sniper zones', after the
-    // quests' and the other ways out's.
-    private static int LabelRank(ShownMarker m) => m.Selected ? 0 : m.Listed ? 1 : m.NotListed ? 4 : RestRank(m.Marker.Kind);
+    // quests' and the other ways out's. The steps a gated extract pointed at lights come after the extract's own name
+    // (ShownMarker.StepOf): at the Saferoom its last two steps stand within 5 m of the door.
+    private static int LabelRank(ShownMarker m) =>
+        m.Selected ? (m.StepOf is null ? 0 : 1) : m.Listed ? 1 : m.NotListed ? 4 : RestRank(m.Marker.Kind);
 
     /// <summary>A kind's rank at rest, whatever is picked or pointed at: bosses, quests, ways out, Scav and sniper
     /// zones, locks and switches. Where symbols would cover each other, the lesser one yields (<see cref="Repel"/>), and
@@ -999,10 +1022,11 @@ public static partial class MapRenderer
     public static bool Repels(MarkerKind kind) => kind is not (MarkerKind.ScavSpawn or MarkerKind.Lock or MarkerKind.Switch);
 
     /// <summary>Half a symbol's width as the repel sees it: its body at rest, and a little more where a badge stands
-    /// out at a corner (a count, "OPT", "?": <see cref="BadgeRoom"/>; a floor arrow: <see cref="FloorBadgeRoom"/>), so no
-    /// neighbour is pushed under a badge.</summary>
+    /// out at a corner (a count, "OPT", "?": <see cref="BadgeRoom"/>; a floor arrow or a switch badge, the larger discs:
+    /// <see cref="FloorBadgeRoom"/>), so no neighbour is pushed under a badge.</summary>
     public static float RepelHalf(ShownMarker m, float ui) =>
-        RestHalf(m.Marker, ui) + (m.Floor != 0 ? FloorBadgeRoom : m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? BadgeRoom : 0) * ui + JoinedExtra(m, ui);
+        RestHalf(m.Marker, ui) + (m.Floor != 0 || ShowsSwitchBadge(m) ? FloorBadgeRoom : m.Count > 1 || ShowsOptional(m) || ShowsPossible(m) ? BadgeRoom : 0) * ui
+        + JoinedExtra(m, ui);
 
     /// <summary>How much wider a symbol with a corner badge counts for the repel (pixels, before scaling).</summary>
     public const float BadgeRoom = 3;
@@ -1480,9 +1504,17 @@ public static partial class MapRenderer
             MarkerKind.ScavSpawn => 4 * ui,
             _ => r,
         } + MarkerCollar * ui;
+        // A switch or lock that is a step of a gated extract pointed at (its marker, its rows): in the extract's colour,
+        // named for it (owner, 2026-10-17, from a panel of three: "A").
+        var stepOf = focused && IsLandmark(marker.Kind) && scene.ExitsOfSteps.TryGetValue(marker.Id, out var exits)
+            ? exits.FirstOrDefault(e => IsFocused(scene, e))
+            : null;
+        if (stepOf is not null)
+            color = ColorOf(stepOf.Kind);
         var inFocus = scene.ShownFocus.Count == 0 || focused;
         return new ShownMarker(marker, at, r, color, selected, kept, inFocus && scene.ShownFocus.Count > 0, FloorOffset(scene, marker.Position))
         {
+            StepOf = stepOf,
             Reach = reach + 1 * ui,
             Pointed = pointed && !done,
             // A boss is lit while pointed at (in the lines, on the map) and while a quest that targets it is pointed at or
@@ -1686,12 +1718,21 @@ public static partial class MapRenderer
     // its own floor badge but inside its FloorBadgeClear moves out along that side by what it lacks, as a name after a
     // tab does, rather than giving the side up: a name right of a one-floor disc stood 1.5 DIP off its square, and
     // keeping the margin by the taken boxes alone sent every such name to the disc's left. A side over the badge itself
-    // stays where it is, for the taken boxes to rule out.
-    internal static SKRect OffFloorBadge(ShownMarker m, SKRect candidate, int side, float ui)
+    // stays where it is, for the taken boxes to rule out. A side within a switch badge's keep-out moves out past it
+    // whether or not it is over the badge itself: at an extract's lower left the badge reaches into the sides left of
+    // and below it, and in The Lab, where the floor arrow takes the right of every gated extract, its name had no side left.
+    internal static SKRect OffBadges(ShownMarker m, SKRect candidate, int side, float ui)
     {
-        if (m.Floor == 0 || candidate.IntersectsWith(FloorBadgeBox(m, ui)))
-            return candidate;
-        var keep = FloorBadgeKeepOut(m, ui);
+        if (m.Floor != 0 && !candidate.IntersectsWith(FloorBadgeBox(m, ui)))
+            candidate = MovedOut(candidate, side, FloorBadgeKeepOut(m, ui));
+        if (ShowsSwitchBadge(m))
+            candidate = MovedOut(candidate, side, SwitchBadgeKeepOut(m, ui));
+        return candidate;
+    }
+
+    // A name's side moved out along that side past a badge's keep-out, where it reaches into it.
+    private static SKRect MovedOut(SKRect candidate, int side, SKRect keep)
+    {
         if (!candidate.IntersectsWith(keep))
             return candidate;
         return side switch
@@ -1701,6 +1742,49 @@ public static partial class MapRenderer
             2 => SKRect.Create(candidate.Left, keep.Top - candidate.Height, candidate.Width, candidate.Height),
             _ => SKRect.Create(candidate.Left, keep.Bottom, candidate.Width, candidate.Height),
         };
+    }
+
+    // ---- the switch badge (owner, 2026-10-17, from a panel of three: "A", a badge on the extract and the link on pointing) ----
+
+    /// <summary>Whether a marker carries the switch badge: an extract a switch gates (<see cref="MapMarker.SwitchSteps"/>).</summary>
+    internal static bool ShowsSwitchBadge(ShownMarker m) =>
+        m.Marker.SwitchSteps is not null && m.Marker.Kind is MarkerKind.ExtractPmc or MarkerKind.ExtractScav or MarkerKind.ExtractShared;
+
+    /// <summary>The switch badge's disc and rim (DIP): the floor arrow's, ⌀ 14 with a 1.5 rim (the roll call's rows draw it too).</summary>
+    public const float SwitchBadgeDisc = FloorDisc, SwitchBadgeRim = FloorRim;
+
+    /// <summary>The power symbol's size in the switch badge (DIP, the font's size: about 8 DIP of ink in the disc's 12.5).</summary>
+    public const float SwitchGlyph = 9.5f;
+
+    // The switch badge at the symbol's lower left (the floor arrow is at its upper right, a count at its lower right), as
+    // far out as the floor arrow stands, mirrored.
+    internal static SKPoint SwitchBadgeCenter(ShownMarker m, float ui)
+    {
+        var d = (m.R < 8 * ui ? m.R + 3 * ui : m.R * 0.8f) + 1 * ui;
+        return new SKPoint(m.At.X - d, m.At.Y + d);
+    }
+
+    // The disc's square, with half a DIP of its rim.
+    internal static SKRect SwitchBadgeBox(ShownMarker m, float ui) => Square(SwitchBadgeCenter(m, ui), (SwitchBadgeDisc + 0.5f) * ui);
+
+    // Where no name goes for a switch badge: its box and FloorBadgeClear around it, as for the floor arrow.
+    internal static SKRect SwitchBadgeKeepOut(ShownMarker m, float ui) =>
+        SKRect.Inflate(SwitchBadgeBox(m, ui), FloorBadgeClear * ui, FloorBadgeClear * ui);
+
+    /// <summary>
+    /// The switch badge: a dark disc, as large as the floor arrow's and with its rim, in the extract's colour, holding the
+    /// power symbol the switches have on the map (<see cref="Glyphs.Switch"/>) in that colour: leaving there takes a switch
+    /// first. At rest, at every zoom; struck out with its extract where the list leaves it out.
+    /// </summary>
+    internal static void DrawSwitchBadge(SKCanvas canvas, ShownMarker m, float ui)
+    {
+        var c = SwitchBadgeCenter(m, ui);
+        var color = m.NotListed ? m.Color.WithAlpha(ClosedAlpha) : m.Color;
+        using var plate = new SKPaint { Color = Background, IsAntialias = true };
+        using var rim = new SKPaint { Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = SwitchBadgeRim * ui };
+        canvas.DrawCircle(c, SwitchBadgeDisc * ui, plate);
+        canvas.DrawCircle(c, SwitchBadgeDisc * ui, rim);
+        Glyphs.Draw(canvas, Glyphs.Switch, c, SwitchGlyph * ui, color);
     }
 
     // The other-floor arrow: a dark disc with a bold caret pointing up or down; two or more floors away, a plate with
@@ -2097,7 +2181,8 @@ public static partial class MapRenderer
         }
     }
 
-    // A dashed line from the player to the nearest place of the picked quests.
+    // A dashed line from the player to the nearest place of the picked quests, or from a gated extract pointed at to its
+    // first switch (ExitGuideOf).
     private static void DrawGuide(SKCanvas canvas, GuideLine? guide, float ui)
     {
         if (guide is null)
@@ -2110,9 +2195,10 @@ public static partial class MapRenderer
         canvas.DrawLine(guide.From, guide.To, line);
     }
 
-    /// <summary>The guide from the player to the nearest place of the picked quests, and its distance on a plate.</summary>
+    /// <summary>The guide from the player to the nearest place of the picked quests (or from a gated extract pointed at to its
+    /// first switch, <see cref="ExitGuideOf"/>), and its distance on a plate.</summary>
     /// <param name="Plate">"69 m"; null when the line is too short to carry it. The distance alone: the position's age stood beside it until 2026-10-04 ("69 m · 4 MIN") and read as the minutes it takes to get there.</param>
-    /// <param name="Color">The colour of the pick it leads to.</param>
+    /// <param name="Color">The colour of the pick it leads to (of the extract it leads from).</param>
     public sealed record GuideLine(SKPoint From, SKPoint To, double Metres, string? Plate, SKRect PlateBox, SKColor Color);
 
     /// <param name="symbols">The boxes of the symbols placed in this frame: the plate stands on none of them.</param>
@@ -2130,7 +2216,36 @@ public static partial class MapRenderer
         var from = Screen(camera, scene, player.Position);
         var to = drawnAt.TryGetValue(nearest.Id, out var drawn) ? drawn : Screen(camera, scene, nearest.Position);
         // The number the card shows: horizontal metres to the nearest place, as old as the position.
-        var metres = player.Position.HorizontalDistanceTo(nearest.Position);
+        return GuideBetween(camera, from, to, player.Position.HorizontalDistanceTo(nearest.Position), PickColor(scene, nearest.Group), symbols, ui);
+    }
+
+    /// <summary>
+    /// The guide's second use (owner, 2026-10-17, from a panel of three: "A"): while a gated extract is pointed at (its
+    /// symbol, its row in the Raid rail; <see cref="MapMarker.SwitchSteps"/>), the same dashed line from it to the first
+    /// step of what leaving there takes, in the extract's colour, with the horizontal distance between the two on the
+    /// plate. Pointing at that first switch draws it too, since it lights its extract. Null otherwise.
+    /// </summary>
+    /// <param name="symbols">The boxes taken in this frame: the plate stands on none of them.</param>
+    /// <param name="drawnAt">Where this frame's markers are drawn, by id: the line runs between the symbols as drawn.</param>
+    internal static GuideLine? ExitGuideOf(Camera camera, MapScene scene, float ui, IReadOnlyList<SKRect> symbols, IReadOnlyDictionary<string, SKPoint> drawnAt)
+    {
+        if (scene.ShownFocus.Count == 0)
+            return null;
+        foreach (var exit in scene.Markers)
+        {
+            if (exit.SwitchSteps is not [var first, ..] || !scene.ShownFocus.Contains(exit.Id) || !scene.ShownFocus.Contains(first)
+                || scene.Markers.FirstOrDefault(m => m.Id == first) is not { } step)
+                continue;
+            var from = drawnAt.TryGetValue(exit.Id, out var a) ? a : Screen(camera, scene, exit.Position);
+            var to = drawnAt.TryGetValue(step.Id, out var b) ? b : Screen(camera, scene, step.Position);
+            return GuideBetween(camera, from, to, exit.Position.HorizontalDistanceTo(step.Position), ColorOf(exit.Kind), symbols, ui);
+        }
+        return null;
+    }
+
+    // A guide between two points with its distance on a plate where the line is long enough to carry it.
+    private static GuideLine GuideBetween(Camera camera, SKPoint from, SKPoint to, double metres, SKColor color, IReadOnlyList<SKRect> symbols, float ui)
+    {
         // The distance and nothing else (owner, 2026-10-04: "The 'minutes' numbers when showing distances on the map
         // are completely off. Either be precise or scrap them"). The minutes were the position's age; beside a
         // distance they read as the time to get there, which nobody can know. The age is said at the player's marker.
@@ -2142,8 +2257,8 @@ public static partial class MapRenderer
         var width = font.MeasureText(text) + 12 * ui;
         var height = 18 * ui;
         if (Clip(from, to, view) is not var (a, b) || SKPoint.Distance(a, b) < width + 56 * ui)
-            return new GuideLine(from, to, metres, null, SKRect.Empty, PickColor(scene, nearest.Group));
-        return new GuideLine(from, to, metres, text, PlateBox(a, b, width, height, symbols, ui), PickColor(scene, nearest.Group));
+            return new GuideLine(from, to, metres, null, SKRect.Empty, color);
+        return new GuideLine(from, to, metres, text, PlateBox(a, b, width, height, symbols, ui), color);
     }
 
     // Where the plate stands on the line's part in view: at its middle, or, where that would cover a symbol (it stood
@@ -2605,6 +2720,8 @@ public static partial class MapRenderer
 
         if (shown.Floor != 0)
             DrawFloorArrow(canvas, shown, ui);
+        if (ShowsSwitchBadge(shown))
+            DrawSwitchBadge(canvas, shown, ui);
         if (shown.Count > 1)
             DrawCountBadge(canvas, shown, ui);
         if (ShowsOptional(shown))

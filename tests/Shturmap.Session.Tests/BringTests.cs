@@ -21,7 +21,7 @@ public class BringTests
         [Armor] = "Armor", [Headwear] = "Headwear", [Weapon] = "Weapon",
         ["mosin"] = "Mosin rifle", ["sv98"] = "SV-98 rifle", ["m700"] = "M700 rifle", ["mp18"] = "MP-18 rifle",
         ["ak12"] = "AK-12 rifle", ["suppressor"] = "AK-12 suppressor", ["scope"] = "PS-320 scope",
-        [ExtractRules.RedFlare] = "Red flare", [ExtractRules.IcePick] = "Ice pick", [ExtractRules.Paracord] = "Paracord",
+        [ExtractRules.GreenFlare] = "Green flare", [ExtractRules.IcePick] = "Ice pick", [ExtractRules.Paracord] = "Paracord",
         ["5449016a4bdc2d6f028b456f"] = "Roubles", ["paca"] = "PACA armor", ["ssh"] = "SSh-68 helmet",
         ["r1"] = "Rhino revolver", ["r2"] = "RSh-12 revolver", ["r3"] = "MTs-255 revolver",
     };
@@ -128,9 +128,9 @@ public class BringTests
         Assert.Equal("to use, for Wet Job", Planning.RequirementText(data, new Requirement(RequirementKind.Weapon, ["ak12"], 1, ["Wet Job"])).Why);
         Assert.Equal("to fit, for Patriot", Planning.RequirementText(data, new Requirement(RequirementKind.WeaponMods, ["scope", "suppressor"], 1, ["Patriot"])).Why);
         Assert.Equal("PS-320 scope / AK-12 suppressor", Planning.RequirementText(data, new Requirement(RequirementKind.WeaponMods, ["scope", "suppressor"], 1, ["Patriot"])).Text);
-        var exit = Planning.RequirementText(data, new Requirement(RequirementKind.Exit, [ExtractRules.RedFlare], 1, ["Cease Fire"], "Klimov Street (Flare)"));
+        var exit = Planning.RequirementText(data, new Requirement(RequirementKind.Exit, [ExtractRules.GreenFlare], 1, ["Cease Fire"], "Klimov Street (Flare)"));
         Assert.Equal("to leave through Klimov Street (Flare), for Cease Fire", exit.Why);
-        Assert.Equal("Red flare", exit.Text);
+        Assert.Equal("Green flare", exit.Text);
     }
 
     [Fact]
@@ -155,11 +155,11 @@ public class BringTests
         new(id, type, id, false, maps ?? ["streets"], null, null, 1, null, null, null, null, null, false, null, weapons, null, notWearing);
 
     [Fact]
-    public void A_flare_exit_takes_a_red_flare_a_climb_its_gear_and_a_paid_exit_its_price()
+    public void A_flare_exit_takes_a_green_flare_a_climb_its_gear_and_a_paid_exit_its_price()
     {
         var keys = new Dictionary<string, string> { ["e1"] = "E9_sniper", ["e2"] = "Alpinist_exit", ["e3"] = "Taxi" };
         var data = Data(extractKeys: keys);
-        Assert.Equal([(ExtractRules.RedFlare, 1)], ExtractRules.Items(data, Extract("e1", "Klimov Street (Flare)")));
+        Assert.Equal([(ExtractRules.GreenFlare, 1)], ExtractRules.Items(data, Extract("e1", "Klimov Street (Flare)")));
         Assert.Equal([(ExtractRules.IcePick, 1), (ExtractRules.Paracord, 1)], ExtractRules.Items(data, Extract("e2", "Cliff Descent")));
         Assert.Equal([("5449016a4bdc2d6f028b456f", 5000)], ExtractRules.Items(data, Extract("e3", "Taxi V-Ex", new ApiCount("5449016a4bdc2d6f028b456f", 5000))));
         Assert.Empty(ExtractRules.Items(data, Extract("e4", "Gate")));
@@ -177,7 +177,7 @@ public class BringTests
             facts: new Dictionary<string, ObjectiveFacts> { ["o1"] = new([], ["ExpBonusSurvived"], [], "E9_sniper") });
         var plan = Planning.ToPlan(task, data).Objectives.Single();
         Assert.Equal("Klimov Street (Flare)", plan.Exit);
-        Assert.Equal([(ExtractRules.RedFlare, 1)], plan.ExitItems);
+        Assert.Equal([(ExtractRules.GreenFlare, 1)], plan.ExitItems);
         var streets = new PlanMap("streets", "Streets", new HashSet<string> { "streets" }, 50);
         var row = Assert.Single(RaidPlanner.Plan([Planning.ToPlan(task, data)], streets).Requirements);
         Assert.Equal(RequirementKind.Exit, row.Kind);

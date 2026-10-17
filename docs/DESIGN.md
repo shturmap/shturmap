@@ -1688,8 +1688,9 @@ spawns below).
   - **0 s:** the YOUR EXTRACTS THIS RAID cue (principle 11) opens across the middle of the map column, its title
     decoding letter by letter and its gold rule shooting out. **From 0.5 s** the rows of the listed extracts rise in,
     0.1 s apart, nearest you first, lit and "??:??:??" alike (where there is a position, else in the data's order;
-    the ring took the lit ones first). The extracts the list leaves out are struck out at once, get no row and don't
-    move: motion goes to where the player can leave.
+    the ring took the lit ones first). A row of an extract a switch gates carries the map's switch badge before its
+    name, 4 DIP after its triangle (owner, 2026-10-17; *Switches*). The extracts the list leaves out are struck out
+    at once, get no row and don't move: motion goes to where the player can leave.
   - **1.2 s:** the view moves over 1.2 s, eased in and out (`MapView.AnimateView`), to frame every listed extract and
     you, with the label room on the right (*Room for labels on the right*); those that were out of view come into it.
     A Follow glide under way stops for it: the screenshot's own position is in the frame.
@@ -1811,17 +1812,37 @@ spawns below).
     goal: the guide line and NEXT still lead to the quest's own places, never to a door, however near.
   - **Switches**: a power symbol (`E7E8`) with the switch's name ("Med Elevator Power Button", "Alarm Switch",
     "Fire Trap Switch"); a name the data leaves untranslated is "Switch". The Lab has 15, Labyrinth 12. **An extract
-    and its switches light together** (owner, 2026-10-03, from the map audit: you have to find the switch to leave):
-    an extract's `switches` in the data, and a switch that unlocks one of those (a power switch freeing a lever, up to
-    four steps through the data's "activates"; not one that locks it). Pointing at the extract (its marker, its row,
-    its requirement line) lights its switches at any zoom, and pointing at a switch lights the extracts it opens
-    (`MapContent.Links`, added to the focus in `MainWindow.MapFocus`). But a switch the data lists on most of a
-    map's extracts (more than half; the rule of the extract list's requirement line, `MapContent.OnMostExtracts`) tells
-    none of them apart, so it links nothing. "Most", not "every": with one extract put right in the data, a strict
-    "every" would have lit the lever for all the others (the review of 2026-10-04). Today that is all of them: the
-    audit's 34 extracts are Customs' 27, which all list one lever, and The Lab's 7, which all list the Med Elevator's
-    three buttons, though most of them need no switch (PvE and PvP alike, checked 2026-10-03). So no extract links
-    yet, and the legend doesn't mention it; links show by themselves once tarkov.dev tells extracts apart.
+    and its switches light together** (owner, 2026-10-03, from the map audit: you have to find the switch to leave;
+    2026-10-17, from a panel of three: "A", a badge on the exit and the link on pointing). The steps are the hand-kept
+    table's ("Extract requirements": tarkov.dev's own `switches` tell no extract apart, the verification of
+    2026-10-17), else the data's `switches` where they tell an extract apart, with a switch that unlocks one of those
+    (a power switch freeing a lever, up to four steps through the data's "activates"; not one that locks it). A switch
+    the data lists on most of a map's extracts (more than half, `SwitchExits.OnMostExtracts`) tells none of them
+    apart and links nothing; "most", not "every": with one extract put right in the data, a strict "every" would
+    have lit the lever for all the others (the review of 2026-10-04). Until 2026-10-17 that was the only source, and
+    on every map it gave nothing (Customs' 28 extracts all list one lever, The Lab's 7 the Med Elevator's three
+    buttons), so no extract linked.
+    - **The switch badge**: an extract a switch gates carries a small dark disc at its lower left, as large as the
+      floor arrow's and with its rim (⌀ 14 DIP, a 1.5 rim in the extract's colour), holding the power symbol in the
+      extract's colour: leaving there takes a switch first. Drawn at rest, at every zoom; faint with its extract
+      where the list leaves it out (`MapRenderer.DrawSwitchBadge`, `MapMarker.SwitchSteps`). The corners of an
+      extract are then: the floor arrow upper right, the switch badge lower left (a quest marker's lower left is the
+      "?", which an extract never has). The repel counts it as it counts the floor arrow (6 DIP), and names keep
+      3 DIP off it as off the floor arrow, but a side within its margin moves out past it whether or not it reaches
+      over the badge itself: the badge reaches into the sides left of and below the extract, and in The Lab, where the
+      floor arrow takes every gated extract's right, the name would have had no side left (`MapRenderer.OffBadges`).
+    - **Pointing at a gated extract** (its symbol, its row in the Raid rail, its requirement line) lights every step,
+      a switch or the Saferoom's keycard lock, in the extract's colour, at any zoom (below 1.5 times the overview,
+      where switches aren't drawn at rest, too) and on any floor with its floor arrow, each named for it
+      ("Mall Main Power Switch · Saferoom Exfil", `ShownMarker.StepOf`); the picks' dashed guide line, in the
+      extract's colour, runs from it to the first step with their distance on its plate (`MapLayout.ExitGuide`; the
+      picks' own guide stays). The rest steps back by kind, as for any linked highlight, and leaving puts it back.
+      Pointing at a switch lights the extract it opens (and the guide where it is the first step). The steps' names
+      come after the extract's and give way where they find no free place, as an unlit name does: at the Saferoom
+      the last two steps stand within 5 m of the door, and on its right they covered one another and its name. The
+      roll call's rows aren't pointed at: the cue lets the pointer through to the map. Links and badges come from
+      `MapContent` (`MapContentBuilder.ExtractSwitchLinks`, `SwitchSteps`), added to the focus in `MainWindow.MapFocus`.
+      The legend has a row for the badge on a map with a gated extract.
   - **When they show**: on a map with artwork from 1.5 times the overview (as the shops' names; Streets has 63 locks,
     Customs 36, Reserve 34), on a sheet at any zoom; their labels from 2.5 times or when pointed at; only those on
     the floor shown (The Lab's other floors would cover the sheet with floor arrows), except what is pointed at.
@@ -1928,8 +1949,10 @@ spawns below).
   names are placed first. Names out of view aren't placed.
 - **Distances on the map.** The guide line to the nearest pick carries the card's number on a small dark plate with
   a hairline in that pick's colour at the middle of its part in view ("69 m", the same horizontal distance and rounding as the
-  card, `MapRenderer.DistanceText`). **The distance and nothing else** (owner, 2026-10-04: "The 'minutes' numbers
-  when showing distances on the map are completely off. Either be precise or scrap them at all"): until then the
+  card, `MapRenderer.DistanceText`); so does its second use (2026-10-17), from a gated extract pointed at to the
+  first switch it takes, in the extract's colour (*Switches*, above). **The distance and nothing else** (owner,
+  2026-10-04: "The 'minutes' numbers when showing distances on the map are completely off. Either be precise or
+  scrap them at all"): until then the
   plate added the position's age once it was a minute old ("69 m · 4 MIN"), and minutes beside a distance read as
   the time it takes to get there, which Shturmap can't know. The age is said at the player's marker, always with
   "OLD". A line too short to carry it clear of its ends has none. Where the middle would cover a
@@ -2359,8 +2382,9 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
   AK-12 5.45x39 sound suppressor").
 - **"to leave through <exit>"** for what the exit an extract objective names takes: the objective names it by the
   game's internal name (`exitName` before translation, `ObjectiveFacts.Exit`), the same as the map's extract, and
-  `ExtractRules.Items` gives the items by the rules the extract list already uses: a red signal flare at a flare exit
-  (Cease Fire!, Belka and Strelka), ice pick and paracord at a climbing exit (Payback), the roubles or item a paid
+  `ExtractRules.Items` gives the items by the rules the extract list already uses: a green signal flare at a flare exit
+  (Cease Fire!, Belka and Strelka; red until 2026-10-17, "Extract requirements"), ice pick and paracord at a climbing
+  exit (Payback), the roubles or item a paid
   exit asks for ("Roubles ×5,000: to leave through Primorsky Ave Taxi V-Ex"). Transits stay with their own text.
 - **"to enter <map>"** for what the map itself takes to deploy (tarkov.dev's `accessKeys`: The Lab's access keycard,
   Labyrinth's, Icebreaker's marine repair kit; owner, 2026-10-03, from the map audit). It is the first row of the Plan
@@ -2582,10 +2606,40 @@ Shown under each extract in the Raid rail, short, in gold, with the item's icon 
 | `transferItem` in roubles, dollars or euros | "Pay 5,000 ₽" (car V-Ex), "Pay €2,400" (Icebreaker heli) |
 | `transferItem`, any other item | "Hand over Note with code word Onyx" (secret extracts) |
 | internal name `Alpinist*` / `RedRebel*` | "Red Rebel ice pick and paracord, no armored rig" (Cliff Descent, Mountain Pass, Climber's Trail) |
-| "(Flare)" in the English name, or `sniper` as a word of the internal name (`E9_sniper`, `customs_sniper_exit`) | "Fire a red signal flare there" |
+| "(Flare)" in the English name, `sniper` as a word of the internal name (`E9_sniper`, `customs_sniper_exit`), or a flare exit kept by hand (`ExtractRules.FlaresByHand`: Icebreaker's helicopter, `Heli`, by id) | "Fire a green signal flare there"; the helicopter's says it before its fare ("… · Pay €2,400") |
 | "(Co-op)" in the English name | "Co-op: a PMC and a player Scav leave together" |
-| `switches` | "ZB-013 Power Switch first"; a switch tarkov.dev lists on most of a map's extracts is only shown where its English name contains the extract's English name (it lists the ZB-013 switch on every Customs extract) |
+| the hand-kept table of the extracts a switch gates (`SwitchExits`), else the data's `switches` where they tell an extract apart | "ZB-013 Power Switch first"; where it takes several steps, how many: "Mall Main Power Switch first · 4 steps" (Interchange's Saferoom Exfil) |
 | transit `conditions` | "TerraGroup Labs access keycard required (1)" |
+
+**Green, not red** (owner, 2026-10-17: "Fix"). The verification of 2026-10-17 read the wiki's "Extractions" of all
+six flare exits (escapefromtarkov.fandom.com) and its RSP-30 green's "Usage": each takes a green flare fired upward in
+the signal area (the RSP-30 green, `ExtractRules.GreenFlare`, or a 26x75mm green from a signal pistol). Until then the
+line said red, and BRING put the red RSP-30 on a quest's "to leave through" row (Cease Fire!). A quest that itself
+needs a red flare keeps it: that is the quest's item, not the exit's. Icebreaker's helicopter is a flare exit too,
+which its name doesn't say (`Heli`, "Helicopter"): the one row of `ExtractRules.FlaresByHand`, by internal name and id.
+
+**The switches are kept by hand** (owner, 2026-10-17: "Some exits still require specific actions, for example one exit
+in interchange requires the power to be switched on. This is currently not represented in the map at all and should
+be added as information"; from a panel of three: "A", a badge on the exit and the link on pointing; "Map drawing",
+*Switches*). The verification of 2026-10-17 found that tarkov.dev's `switches` never say it: they are listed on
+Customs and The Lab only, and there on every extract alike (all 28 of Customs' the one ZB-013 lever, all 7 of The
+Lab's the Med Elevator's three buttons), so each fell under the rule for a switch on most of a map's extracts and
+showed nowhere; Interchange's Saferoom and Reserve's D-2 and bunker list none. The name check that was to rescue the
+right one never matched ("ZB-013 Power Switch" doesn't hold "ZB-1013", "Med Elevator …" not "Medical Block
+Elevator"), so the example "ZB-013 Power Switch first" above had never shown. Now `SwitchExits` (in `Shturmap.Data`,
+which the map's code and the rules both reach) keeps the ten extracts the verification found, by the map's
+`normalizedName` and the extract's internal name, and only for the extract of the id it has: Customs' ZB-1013;
+Interchange's Saferoom Exfil (the Mall Main Power Switch, the Saferoom Exfil Unlock Switch, the Object #11SR keycard's
+lock, the Saferoom Exfil Switch); Reserve's D-2 (its power switch, then its door switch) and Bunker Hermetic Door; The
+Lab's Cargo, Main and Medical Block Elevators (power, call, extract each), Hangar Gate, Parking Gate and Sewage
+Conduit (the pump button, then the water level switch). Each step is a switch's or a lock's id, in the order of use,
+and every one has a position in the data; the names shown are the data's. The line names the first step, and "· N
+steps" where there are more; the map shows them all while the extract is pointed at. The data's own `switches` still
+count for an extract the table doesn't have, where they tell it apart (none on 2026-10-17; `SwitchExits.FromData`,
+with a switch that unlocks one of them before it). The name check is gone. `shturmap-cli bring` and
+`ExtractRulesTests` against the cache say where a row no longer finds its extract or a step (it would lose its badge
+and line; the test fails) and where the data now names switches of its own for a table extract (a fix upstream to
+compare with the row; the test warns): docs/UPDATES.md.
 
 Internal extract names are kept from the payload before translation (`GameData.ExtractKeys`); transit conditions
 are translated although the payload's translation list misses them. **The rules never read the name in the game's
