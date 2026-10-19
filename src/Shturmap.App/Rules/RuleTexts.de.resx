@@ -266,7 +266,7 @@
   </data>
   <data name="DeskMillions" xml:space="preserve">
     <value>{amount} M</value>
-    <comment>en: {amount} M</comment>
+    <comment>en: {amount} M</comment>
   </data>
   <data name="DeskRange" xml:space="preserve">
     <value>{low}–{high}</value>
@@ -278,11 +278,11 @@
   </data>
   <data name="DeskRangeMillions" xml:space="preserve">
     <value>{low}–{high} M</value>
-    <comment>en: {low}–{high} M</comment>
+    <comment>en: {low}–{high} M</comment>
   </data>
   <data name="DeskRoubles" xml:space="preserve">
     <value>{amount} ₽</value>
-    <comment>en: {amount} ₽</comment>
+    <comment>en: {amount} ₽</comment>
   </data>
   <data name="DeskChange" xml:space="preserve">
     <value>{change} %</value>

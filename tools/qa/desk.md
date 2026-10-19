@@ -49,19 +49,24 @@ $app.WaitForExit()
   SLOTS, BACKPACK, ZHUK · IN THE BACKPACK, POUCH, STASH, then WZ with the muted "Not attached: WZ ×2 on the page, on
   you and in the stash; counted in neither". The head line ends "ON YOU 5.4x M+ ₽ · STASH 6.7x M+ ₽ · KEEP 2 · 7 · 3".
   LOADOUT: slot cells 80×40 (a weapon 164×40) in the game's order, no slot names: the helmet and the armband with the
-  "?" plate, their art at half strength and a range ("~34–52k", "0.2–294k"); the body armour "~67k" over "98/147"; the
+  "?" plate, their art at half strength and a range ("~34–52k", "0.3–294k"); the body armour "~67k" over "98/147"; the
   dog tag's figure after the person glyph; the AK and the Glock "~…k+" (mods unseen), the AK's "30/30". In the grids:
   a dark band across each item's top with its figure at the right after the price tag or the person; "~" before an
   estimate, "+" after the wallet's and the item case's figure; the IFAK's "166/300" without an arrow, the Analgin's
-  "2/4" with "↓"; the keycard and the stash's LEDX with a filled amber notch, the graphics cards an open one, the
+  "2/4" with "↓" (at 1600×900, 56 DIP, the change as a figure: "−12%" beside "2/4", "↓ −10%" on a wider cell); the
+  keycard and the stash's LEDX with a filled amber notch, the graphics cards an open one, the
   moonshine a corner bracket, the bitcoins a filled notch in ink; the roubles, the Gamma and the streamer case with no
-  figure; the cell nothing was said of only its frame; a stem from the Zhuk's cell to its window's head, along the
-  backpack's margin. No red or green anywhere on the page.
+  figure; the cell nothing was said of only its frame; the rig's and the Zhuk window's compartments a few DIP apart, as
+  the game sets them (the Zhuk's ten pockets of one by two, a graphics card turned in one); a stem from the Zhuk's cell,
+  out of its left edge's middle, to its window's head, along the backpack's margin. No grid under the LOADOUT strip; at
+  1600×900 the stash's ten columns whole beside the gear, POCKETS and SPECIAL SLOTS side by side in the gear's column.
+  No red or green anywhere on the page.
 - **window**: the Zhuk's cell gold-tinted with an amber frame, its window's head on gold, the stem in amber; the rail
   says "One of 2 items".
 - **card**: the LEDX's item card in the rail, whole (not see-through), under the MAP list and the trader strip.
 - **fold**: "UNCHANGED · LOADOUT ▸ · TACTICAL RIG ▸ · POCKETS ▸ · SPECIAL SLOTS ▸" over BACKPACK, then "UNCHANGED ·
   ZHUK ▸ · POUCH ▸ · STASH ▸ · WZ ▸" (at 1600×900 the stash's column has its own line, "UNCHANGED · STASH ▸ · WZ ▸");
+  where a fold line wraps, the next line starts with "·", never a line ending in one;
   the backpack has the LEDX at 3,4 with its notch; the head line's totals the new ones.
 - **unfold**: the stash open under its head, its column's fold line gone or WZ alone in it.
 - **same**: as unfold: a reading that changed nothing changed nothing.

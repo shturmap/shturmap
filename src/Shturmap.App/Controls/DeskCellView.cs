@@ -25,16 +25,19 @@ public sealed partial class DeskCellView : Grid
 {
     private readonly DeskBoard _board;
 
-    public DeskCellView(DeskRegion region, DeskCellSheet sheet, double size, DeskBoard board)
+    /// <param name="inset">How far it stands in from its place: a grid of several compartments sets them apart
+    /// (<see cref="DeskPageRules.Inset"/>).</param>
+    public DeskCellView(DeskRegion region, DeskCellSheet sheet, double size, DeskBoard board, Thickness inset = default)
     {
         Region = region;
         Sheet = sheet;
         Size = size;
         _board = board;
         var cell = sheet.Cell;
-        Width = DeskCells.Width(cell, size);
-        Height = DeskCells.Height(cell, size);
-        Marks = DeskCells.Of(sheet, size);
+        Width = DeskCells.Width(cell, size) - inset.Left - inset.Right;
+        Height = DeskCells.Height(cell, size) - inset.Top - inset.Bottom;
+        // The marks' room by the size the window's text size draws them at (QA pass of 2026-10-19, F6).
+        Marks = DeskCells.Of(sheet, size, TextScale.Drawn, inset.Left + inset.Right);
         Background = new SolidColorBrush(Colors.Transparent);
 
         Children.Add(new Border { Background = DeskBoard.Brush("CellBrush"), BorderBrush = DeskBoard.Brush("LineStrongBrush"), BorderThickness = new Thickness(1) });
@@ -83,8 +86,8 @@ public sealed partial class DeskCellView : Grid
     /// <summary>The gold over the cell while its window is pointed at.</summary>
     public Border Light { get; }
 
-    // The band's height: the figure's line.
-    private double Band => Size >= DeskCells.Large ? 16 : 13.5;
+    // The band's height: the figure's line, taller where the window's text size draws the figure larger.
+    private double Band => Math.Max(Size >= DeskCells.Large ? 16 : 13.5, Math.Ceiling(TextScale.Drawn(Marks.FigureSize) + 3));
 
     private FrameworkElement FigureRow(string figure)
     {

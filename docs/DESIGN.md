@@ -260,8 +260,16 @@ day, for the in-raid glance: "Which pictures", below):
   unread, and a cell running under it with it. Where the grid's lines split an item, its label at the top right claims
   the cells its footprint takes from there when no other label fits in them; where a label fits items of two
   footprints and both fit there, the cell is "one of N" over both. A short label (three letters or fewer) is read once
-  more. Measured on the owner's screenshots (`shturmap-cli desk`): the GEAR tab's stash, 37 hand-labelled items, 29
-  right, 2 "one of N", 6 unread, 0 wrong; the three stash truths of 2026-10-11 (148 items: the key container, the
+  more. The loadout is a strip of slots, no grid. A slot's label is matched against the items its slot takes, by the
+  game's categories (headphones, headwear, face cover, armband, armour, eyewear, the dog tags' "Other", weapons, knives,
+  a rig, a backpack, a secure container; the special slots their own items), and a special slot holds its item in one
+  cell whatever its footprint (UI QA pass of 2026-10-19, F4: the AK-12 on the sling was "one of 5" with its magazine,
+  stock, grip and muzzle device; "Surv12" read "SurvL", a lubricant). Where a pocket's or a rig's cell shows a quick
+  slot's number (its light plate, measured), the label is a name's end even where the recognition left the number out
+  ("splint", the Splint or the Alu splint; "ALOK-B", the CALOK-B). A print the band reads nothing of is read again by its
+  brightest channel (the game's red "1/3" of a used-up med) and, on a cell wider than one, in a wider band (the armour
+  slot's "147/147"). Measured on the owner's screenshots (`shturmap-cli desk`): the GEAR tab's stash, 37 hand-labelled
+  items, 29 right, 2 "one of N", 6 unread, 0 wrong; the three stash truths of 2026-10-11 (148 items: the key container, the
   medical case, a stash page) 129 right, 16 "one of N", 3 unread, 0 wrong; regions on the five GEAR pictures: the
   loadout and the stash on each, the middle column's parts in view (4 to 6), the Zhuk window on the two that show it,
   attached to its cell in the backpack across the readings; about 2 s a picture.
@@ -1217,7 +1225,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   96 DIP English had); settings' rows of choices wrap beside their name, and its ticks' names wrap; the map's credit
   wraps before the map buttons; the status bar's raid state trims with "…" as the last resort; Plan's NEXT RAID rows
   wrap a long map name, "STREETS OF / TARKOV" (UI QA pass of 2026-10-19, F3: accepted); and at the smallest window a
-  wide map is narrower, for the label room that grows with the names ("Map drawing", *Room for labels on the right*).
+  wide map is narrower, for the label room that grows with the names ("Map drawing", *Room for labels on the right*);
+  the stash desk's cells, fixed boxes, lay their marks out at the size the text is drawn and never cut a number (UI QA
+  pass of 2026-10-19, F6; *The stash desk*, *As built*, *The cell*): at 125 % a 1×1 cell at 40 DIP gives a long
+  condition ("166/300") to the card and keeps its arrow, and a figure beside the notch is set smaller; at 150 % a
+  four-figure price beside the notch of a 1×1 cell at 40 DIP (the keycard's "352k") and a five-digit count ("50000") move
+  to the card too (open: the owner's call whether a cell's price may leave it at 150 %, or the cell grow).
   200 % is accepted as degraded, not laid out for: Plan's rows squeeze the map's name, the clock's MIN LEFT trims, long German words break,
   the roll call's two-line names touch the next, a heading in help and LICENCES in settings run out of their panel;
   nothing crashes. In the raid card's quest lines long German words break at 150 % (open). Developer builds picture all of it without touching
@@ -1894,8 +1907,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       half the stash and say nothing, while a found-in-raid need sold can't be bought back as one. The card lists every
       need. The notch never greys the price: the price says what selling gives, the notch what keeping is for.
     - **Bottom left**, ↑ or ↓ where the 48 h change is 10 % or more either way; at 56 DIP the change stands there as a
-      figure on every cell ("↓ −10%", "−1%"). At 40 DIP a 1×1 cell with a long condition ("166/400") has no room for
-      the arrow, which gives way; the card keeps the change.
+      figure on every cell ("↓ −10%", "−1%"), and where the count leaves less room the figure without its arrow
+      ("−10%" beside "2/4"), then the arrow alone, as at 40 (UI QA pass of 2026-10-19, F5: the Analgin's "2/4" showed
+      no change at 56 and "↓" at 40). At 40 DIP a 1×1 cell with a long condition ("166/400") has no room for the arrow,
+      which gives way; the card keeps the change.
     - **"~"** before the figure: an estimate from condition (the addendum, Da; until then "a price that assumes full
       condition", the scaling left to step C). Where the cell prints a condition ("46/50", "1469/1800"), the figure is
       scaled by the printed share and keeps the "~" (a Grizzly at 1469/1800, "~31k", not its full 37k); meds, food and
@@ -1968,12 +1983,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       card is step C's). A slot's name on the card ("HEADWEAR · …") is step C's card.
     - *The page*: the head line over the page in the status words' style, muted; then the regions, each under its
       eyebrow. One column as wide as the stash's ten cells (or the widest grid); in two columns the gear's as wide as its
-      widest grid, six cells at the least, 24 DIP apart, the stash and everything after it in reading order (its
-      windows, the windows attached to none) in the right one. A region's own slots (the loadout's, in the game's order;
-      a rig's, backpack's or pouch's own container) stand in a strip over its grid, wrapping at the column's width; a
-      grid's compartments are drawn as the model gives them, its empty cells the panel's ground with hairlines. A fold
-      line, "UNCHANGED · POUCH ▸ · STASH ▸", stands where its regions would, its names amber links; it never runs
-      across the two columns' break. A page first shown without a reading that changed it (read back from its file at
+      widest grid, POCKETS and SPECIAL SLOTS side by side counted together, six cells at the least, 24 DIP apart, the
+      stash and everything after it in reading order (its windows, the windows attached to none) in the right one; two
+      columns only where both fit the desk (UI QA pass of 2026-10-19, F1: at 1600×900 the stash's tenth column ran past
+      the window). LOADOUT draws no grid, whatever a reading's region says (F2: a reading's eleven by one drew a row of
+      empty cells under the strip and set the gear's column 616 DIP wide). A region's own slots (the loadout's, in the
+      game's order; a rig's, backpack's or pouch's own container) stand in a strip over its grid, wrapping at the
+      column's width; a grid's compartments are drawn as the model gives them, its empty cells the panel's ground with
+      hairlines, and where it has several they stand apart as the game sets them, 2 DIP at 40, 4 at 56, each framed in
+      `LineStrong`, a cell in one standing in by half the gap where it runs along its edge (F3: the Zhuk's ten pockets of
+      one by two read as twenty equal cells). A fold line, "UNCHANGED · POUCH ▸ · STASH ▸", stands where its regions
+      would, its names amber links; it never runs across the two columns' break, and where it wraps, each "·" goes with
+      the name after it, so no line ends in one (F8). A page first shown without a reading that changed it (read back from its file at
       start) opens every region.
     - *The cell*: the art of a grid cell is its grid image (its footprint; turned a quarter where the cell stands the
       other way), of a slot the item's icon (a slot shows no footprint, and the grid image prints its short name);
@@ -1982,18 +2003,25 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       across the cell's top carries the figure, so the band is its collar; the count and the change stand on small
       plates of the ground's dark at 70 %. The figure is ink, semibold, 10.5 px (12 at 56 DIP); the count and the
       change 10 px (11.5). "~" is drawn in Segoe UI's bolder wave: Bahnschrift's, at 10.5 px, read as a minus. What
-      gives way where a cell is narrow, by an estimate of the figures' width: the change, beside the count (so at 40 DIP
-      a 1×1 cell with "166/400" loses its arrow, and one with "2/4" keeps it); the source's glyph, beside the notch or
-      the "?" plate (a 1×1 cell at 40 DIP with a notch shows its figure alone); a "?" plate that leaves its range no
-      room moves to the cell's lower left (a "?" cell has no change there); and a figure still wider than its room is
-      set smaller, to 8 px at the least. At 56 DIP a trader's 14 DIP portrait stands for the person.
+      gives way where a cell is narrow, by an estimate of the text's width at the size it is drawn (the window's text
+      size included; a figure about half an em a character, a count's digits 0.45, its slash 0.3, measured on the
+      pass's pictures): a number is never cut (UI QA pass of 2026-10-19, F6: at 125 % "166/300" read "166/30"). First
+      the change, beside the count (so at 40 DIP a 1×1 cell with "166/400" loses its arrow, and one with "2/4" keeps
+      it; at 56 the figure, then the arrow alone, *The cell*); then the source's glyph, beside the notch or the "?"
+      plate (a 1×1 cell at 40 DIP with a notch shows its figure alone); a "?" plate that leaves its range no room moves
+      to the cell's lower left (a "?" cell has no change there); a figure still wider than its room is set smaller,
+      never drawn under 8 px; and a count or a figure that doesn't fit even so moves to the card. At 56 DIP a trader's
+      14 DIP portrait stands for the person.
     - *Numbers*: three figures at most: under 1,000 as they are, under 10k with a tenth ("4.5k"), then whole
       thousands ("902k"), from a million "1.01 M", "12.3 M", "123 M"; a range in its high end's unit ("0.3–294k",
-      "0.45–1.18 M"); halves round up; the language's decimal sign ("1,01 M"); the units are texts.
+      "0.45–1.18 M"); halves round up; the language's decimal sign ("1,01 M"); the units are texts, joined to their
+      numbers by a no-break space in every language ("1.01 M ₽"; the arrow to its change, "↓ −10%"; the senior
+      translator, 2026-10-20; `TranslationTests`).
     - *A window's stem and light*: a hairline (`LineStrong`) from the container's cell to its window's head, along the
-      grid's lines and the page's margin: out of the cell at its left edge (its middle where it stands in the grid's
-      first column, its lower corner elsewhere, so it runs between the rows), left into the margin, down to the head,
-      and into it. Pointing at the cell or anywhere on the window's region lights both: gold at 18 % over the cell with
+      grid's lines and the page's margin: out of the cell at its left edge (its middle, however tall the cell, where it
+      stands in the grid's first column, its lower corner elsewhere, so it runs between the rows), left into the margin,
+      down to the head, and into it (UI QA pass of 2026-10-19, F7: it left a three-row Zhuk 28 DIP below its top, the
+      middle of its first row; now its middle, as written). Pointing at the cell or anywhere on the window's region lights both: gold at 18 % over the cell with
       an amber frame, gold behind the window's head, the stem amber, easing over 0.18 s (at once with the effects off).
       A window whose cell is in a folded region has no stem.
   - **Built: the model the view draws** (step B, 2026-10-19, part 1: reading and data; `Shturmap.Core.Desk`; the view,

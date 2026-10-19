@@ -7,10 +7,11 @@
 # what each still must show: desk.md beside this file. Times are in seconds.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
-# once the data was there. It ends first.
+# once the data was there. It ends first, and its notice ("The tour stays in help", 6 s) is waited out, so the entry
+# still shows the head line counting up, not the notice over it (QA pass of 2026-10-19, F11).
 tour end
 map customs
-wait 3
+wait 7
 
 # The first reading: every region opens, its cells coming in 50 ms apart, the head line counting up.
 desk 1

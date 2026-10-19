@@ -90,13 +90,14 @@ public sealed class DeskReader
                     continue;
                 }
                 var order = DeskSlots.Order(slot.Key);
-                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, ct) is not { } read)
+                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, DeskSlots.KindOf(slot.Key), ct) is not { } read)
                     continue;
                 var cell = read.Cell with { I = order, J = 0, Slot = slot.Key, Holds = DeskSlots.IsWeapon(slot.Key) ? DeskHolds.Mods : read.Cell.Holds };
                 cells.Add(cell);
                 looks.Add(read with { Region = "loadout", Cell = cell });
             }
-            regions.Add(new DeskRegion("loadout", DeskRegionKind.Loadout, DeskSlots.Loadout.Count, 1, cells.OrderBy(c => c.I).ToList()) { CoveredSlots = covered });
+            // A strip of slot cells, no grid (QA pass of 2026-10-19, F2: an eleven by one grid drew empty cells under the strip).
+            regions.Add(new DeskRegion("loadout", DeskRegionKind.Loadout, 0, 0, cells.OrderBy(c => c.I).ToList()) { CoveredSlots = covered });
         }
 
         // The middle column's regions, the windows.
@@ -111,7 +112,7 @@ public sealed class DeskReader
                 var slotKey = DeskRegion.KeyOf(place.Kind);
                 if (Under(box, layout.Over))
                     coveredSlots.Add(slotKey);
-                else if (await SlotAsync(bitmap, box, pitch, catalogue, ct) is { } read)
+                else if (await SlotAsync(bitmap, box, pitch, catalogue, DeskSlots.KindOf(slotKey), ct) is { } read)
                 {
                     var cell = read.Cell with { I = 0, J = 0, Slot = slotKey };
                     cells.Add(cell);
@@ -119,7 +120,11 @@ public sealed class DeskReader
                 }
             }
             var over = place.Area is { } own ? layout.Over.Where(o => o != own).ToList() : layout.Over.ToList();
-            var (grid, parts, covered, gridOdd) = await GridAsync(bitmap, key, place.Parts, over, lines, highPassed, pitch, catalogue, looks, ct);
+            // The special slots take their own items only; a pocket's or a rig's item may be bound to a quick slot, whose
+            // number covers its label's start.
+            var kind = place.Kind == DeskRegionKind.SpecialSlots ? DeskSlotKind.Special : DeskSlotKind.Any;
+            var quickSlots = place.Kind is DeskRegionKind.Pockets or DeskRegionKind.Rig;
+            var (grid, parts, covered, gridOdd) = await GridAsync(bitmap, key, place.Parts, over, lines, highPassed, pitch, catalogue, looks, kind, quickSlots, ct);
             odd += gridOdd;
             cells.AddRange(grid);
             var cols = parts.Count > 0 ? parts.Max(p => p.I + p.W) : 0;
@@ -145,7 +150,8 @@ public sealed class DeskReader
                     hidden[j * stash.Cols + i] = layout.Over.Any(o => o.Contains(cx, cy));
                 }
             }
-            var (grid, covered, gridOdd) = await CellsAsync(bitmap, "stash", stash, hidden, 0, 0, lines, highPassed, pitch, catalogue, looks, ct);
+            var (grid, covered, gridOdd) = await CellsAsync(bitmap, "stash", stash, hidden, 0, 0, lines, highPassed, pitch, catalogue, looks,
+                DeskSlotKind.Any, false, ct);
             odd += gridOdd;
             regions.Add(new DeskRegion("stash", DeskRegionKind.Stash, stash.Cols, stash.Rows, grid) { Covered = covered });
         }
@@ -158,11 +164,12 @@ public sealed class DeskReader
     private static bool Under(SKRectI box, IReadOnlyList<SKRectI> over) =>
         over.Any(o => SKRectI.Intersect(o, box) is { IsEmpty: false } i && (long)i.Width * i.Height * 4 > (long)box.Width * box.Height);
 
-    // A slot: its item's label at the box's top right, its condition at the bottom right; no footprint. Null for an empty
-    // slot (no label read).
-    private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, CancellationToken ct)
+    // A slot: its item's label at the box's top right, matched against the items the slot takes; its condition at the
+    // bottom right; no footprint. Null for an empty slot (no label read).
+    private async Task<DeskCellLook?> SlotAsync(SKBitmap bitmap, SKRectI box, int pitch, DeskCatalogue catalogue, DeskSlotKind kind, CancellationToken ct)
     {
-        var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, box, pitch, text => catalogue.Match.Match(text, (int)Math.Round(box.Width / (double)pitch)), DeskMatch.Enough, ct);
+        var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, box, pitch,
+            text => catalogue.Match.Match(text, (int)Math.Round(box.Width / (double)pitch), kind), DeskMatch.Enough, ct);
         if (label is null || (fit < DeskMatch.Enough && label.Count(char.IsLetterOrDigit) < 3))
             return null;
         var ids = fit >= DeskMatch.Enough && best is not null ? best : [];
@@ -179,7 +186,7 @@ public sealed class DeskReader
     // read; what lies under a window or a toast is covered.
     private async Task<(List<DeskCell> Cells, List<DeskRect> Parts, List<DeskRect> Covered, int Odd)> GridAsync(SKBitmap bitmap, string region,
         IReadOnlyList<SKRectI> compartments, IReadOnlyList<SKRectI> over, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue,
-        List<DeskCellLook> looks, CancellationToken ct)
+        List<DeskCellLook> looks, DeskSlotKind kind, bool quickSlots, CancellationToken ct)
     {
         var cells = new List<DeskCell>();
         var parts = new List<DeskRect>();
@@ -204,7 +211,8 @@ public sealed class DeskReader
                     hidden[j * cols + i] = over.Any(o => o.Contains(cx, cy));
                 }
             }
-            var (read, hiddenRects, gridOdd) = await CellsAsync(bitmap, region, grid, hidden, i0, j0, lines, highPassed, pitch, catalogue, looks, ct);
+            var (read, hiddenRects, gridOdd) = await CellsAsync(bitmap, region, grid, hidden, i0, j0, lines, highPassed, pitch, catalogue, looks, kind,
+                quickSlots, ct);
             cells.AddRange(read);
             covered.AddRange(hiddenRects);
             odd += gridOdd;
@@ -232,9 +240,11 @@ public sealed class DeskReader
     }
 
     // A grid's item rectangles, each read: named, "one of N", or nothing said. A rectangle next to a hidden cell may run
-    // under the window: covered, as the hidden cells are.
+    // under the window: covered, as the hidden cells are. The items are of the kind the grid takes (the special slots');
+    // where quick slots may stand (pockets, a rig), a label whose cell shows a quick slot's number may have lost its start.
     private async Task<(List<DeskCell> Cells, List<DeskRect> Covered, int Odd)> CellsAsync(SKBitmap bitmap, string region, StashGrid grid, bool[] hidden,
-        int i0, int j0, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue, List<DeskCellLook> looks, CancellationToken ct)
+        int i0, int j0, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue, List<DeskCellLook> looks, DeskSlotKind kind,
+        bool quickSlots, CancellationToken ct)
     {
         var cells = new List<DeskCell>();
         var covered = new List<DeskRect>();
@@ -258,11 +268,15 @@ public sealed class DeskReader
                 covered.Add(new DeskRect(i0 + rect.I0, j0 + rect.J0, rect.W, rect.H));
                 continue;
             }
-            var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, Pixels(rect.I0, rect.J0, rect.W, rect.H), pitch,
-                text => catalogue.Match.Match(text, rect.W), DeskMatch.Enough, ct, Confirm);
+            var cell = Pixels(rect.I0, rect.J0, rect.W, rect.H);
+            var cutAtStart = quickSlots && QuickSlotNumber(bitmap, cell, pitch);
+            var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, cell, pitch,
+                text => catalogue.Match.Match(text, rect.W, kind, cutAtStart), DeskMatch.Enough, ct, Confirm);
             rects.Add((rect, label, fit, fit >= DeskMatch.Enough && best is not null ? best : []));
         }
 
+        // A special slot holds its item in one cell whatever its footprint (the Surv12, three by one): no footprint there.
+        var footprints = kind != DeskSlotKind.Special;
         // The item file's footprint, either way round (an item may lie turned), is the tie-break and a check. Where the
         // grid's lines split an item (its art drew a line, or dark art read as empty cells), its label still stands at its
         // top right: the cells its footprint takes from there are its own when no other label fits there.
@@ -271,7 +285,7 @@ public sealed class DeskReader
         for (var n = 0; n < rects.Count; n++)
         {
             var (rect, _, _, fitting) = rects[n];
-            if (consumed.Contains(n) || fitting.Count == 0 || fitting.Any(c => Fits(c, rect.W, rect.H)) || Footprint(fitting) is not { } footprint)
+            if (!footprints || consumed.Contains(n) || fitting.Count == 0 || fitting.Any(c => Fits(c, rect.W, rect.H)) || Footprint(fitting) is not { } footprint)
                 continue;
             // Only ever larger than the rectangle: a footprint smaller than it means several items read as one.
             var found = new[] { footprint, (footprint.H, footprint.W) }.Distinct()
@@ -290,7 +304,7 @@ public sealed class DeskReader
                 continue;
             var (rect, label, fit, fitting) = rects[n];
             var at = areas.TryGetValue(n, out var area) ? area : (I: rect.I0, J: rect.J0, W: rect.W, H: rect.H);
-            var sized = fitting.Where(c => Fits(c, at.W, at.H)).ToList();
+            var sized = footprints ? fitting.Where(c => Fits(c, at.W, at.H)).ToList() : fitting.ToList();
             // A larger footprint the label could also have, taking cells read as empty or unread from its top right (a
             // black rig's dark column reads as empty): the reading can't tell the two, so both are among the candidates.
             if (!areas.ContainsKey(n) && sized.Count > 0 && sized.Count < fitting.Count)
@@ -322,6 +336,29 @@ public sealed class DeskReader
             looks.Add(new DeskCellLook(region, pixels, cell, label, fit, contradicted, countText));
         }
         return (cells.OrderBy(c => c.J).ThenBy(c => c.I).ToList(), covered, odd);
+    }
+
+    /// <summary>Whether a cell shows a quick slot's number at its top left: the game's light plate, about a third of a
+    /// cell square, with the slot's digit on it ("6" over "Alu splint"). Measured on the screenshots of 2026-10-19: the
+    /// plate's inner part 64 to 71 % near-white, a pocket's item without one 0 to 1 %, the stash's cells 45 % at the
+    /// most (a white item's art).</summary>
+    internal static bool QuickSlotNumber(SKBitmap bitmap, SKRectI cell, int pitch)
+    {
+        int x0 = cell.Left + (int)Math.Round(0.10 * pitch), x1 = cell.Left + (int)Math.Round(0.30 * pitch);
+        int y0 = cell.Top + (int)Math.Round(0.12 * pitch), y1 = cell.Top + (int)Math.Round(0.28 * pitch);
+        if (x0 < 0 || y0 < 0 || x1 > bitmap.Width || y1 > bitmap.Height || x1 <= x0 || y1 <= y0)
+            return false;
+        var light = 0;
+        for (var y = y0; y < y1; y++)
+        {
+            for (var x = x0; x < x1; x++)
+            {
+                var c = bitmap.GetPixel(x, y);
+                if (Math.Min(c.Red, Math.Min(c.Green, c.Blue)) >= 170)
+                    light++;
+            }
+        }
+        return light >= 0.55 * (x1 - x0) * (y1 - y0);
     }
 
     // A label of three letters or fewer ("TG" read for "TG arm.") is read once more: a longer reading that fits wins.
@@ -371,10 +408,16 @@ public sealed class DeskReader
 
     // The number at the bottom right, and the condition when it is one: a "current/max" is read once more in a band as
     // wide as the cell allows (the recognition drops a long condition's first digit now and then: "469/1800" for
-    // "1469/1800"), the reading with more digits taken.
+    // "1469/1800"), the reading with more digits taken. Where the band reads nothing, it is read again by its brightest
+    // channel (the game prints a used-up med's "1/3" in red, which the recognition reads dim), and on a cell wider than
+    // one in the wider band (a slot's "147/147" past the one-cell band's reach; QA pass of 2026-10-19, F4).
     private async Task<(string? Text, DeskPrint? Print)> CountAsync(SKBitmap bitmap, SKRectI pixels, int pitch, CancellationToken ct)
     {
-        var text = await _labels.ReadCountAsync(bitmap, pixels, pitch, ct);
+        var text = await _labels.ReadCountAsync(bitmap, pixels, pitch, ct)
+                   ?? await _labels.ReadCountAsync(bitmap, pixels, pitch, ct, lit: true);
+        if (text is null && pixels.Width > pitch)
+            text = await _labels.ReadCountAsync(bitmap, pixels, pitch, ct, cells: 1.5)
+                   ?? await _labels.ReadCountAsync(bitmap, pixels, pitch, ct, cells: 1.5, lit: true);
         if (text is null || !text.Contains('/'))
             return (text, null);
         var print = PrintOf(text);
@@ -396,7 +439,7 @@ public sealed class DeskReader
         if (string.IsNullOrWhiteSpace(text) || !text.Contains('/'))
             return null;
         var t = text.Trim().TrimEnd('\\', '|', '"', '\'', '.', ',', ' ');
-        var start = t.IndexOfAny("0123456789OØSIl".ToCharArray());
+        var start = t.IndexOfAny("0123456789OØSsIl".ToCharArray());
         if (start > 0)
             t = t[start..];
         if (DeskPrint.Parse(t) is not { } print)

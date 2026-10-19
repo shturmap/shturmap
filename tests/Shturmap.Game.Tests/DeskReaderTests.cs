@@ -20,8 +20,9 @@ public sealed class DeskReaderTests : IDisposable
 
     private static string Id(int n) => n.ToString("D24");
 
-    private static DeskCandidate Item(int n, string shortName, int w = 1, int h = 1, DeskHolds holds = DeskHolds.Nothing, string? name = null) =>
-        new(Id(n), shortName, name ?? shortName, w, h, holds);
+    private static DeskCandidate Item(int n, string shortName, int w = 1, int h = 1, DeskHolds holds = DeskHolds.Nothing, string? name = null,
+        DeskSlotKind slots = DeskSlotKind.Any) =>
+        new(Id(n), shortName, name ?? shortName, w, h, holds, slots);
 
     // ---- the label's match ----
 
@@ -78,6 +79,37 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Null(DeskMatch.QuickSlotCut("Alu splint"));
     }
 
+    // The recognition may leave the quick slot's number out ("splint" for "6 | Alu splint"): where the reading saw the
+    // number's plate, the label is a name's end all the same (QA pass of 2026-10-19, F4).
+    [Fact]
+    public void A_label_under_a_quick_slots_plate_is_a_names_end_even_without_its_number()
+    {
+        var match = new DeskMatch([Item(1, "Alu splint"), Item(2, "Splint"), Item(3, "CALOK-B")]);
+        Assert.Equal([Id(2)], match.Match("splint").Best.Select(c => c.ItemId));
+        Assert.Equal([Id(1), Id(2)], match.Match("splint", cutAtStart: true).Best.Select(c => c.ItemId).Order());
+        var (fit, best) = match.Match("ALOK-B", cutAtStart: true);
+        Assert.Equal(1, fit);
+        Assert.Equal(Id(3), Assert.Single(best).ItemId);
+        Assert.True(match.Match("ALOK-B").Fit < DeskMatch.Enough);
+    }
+
+    // A slot takes items of its kind only: the label a gun shares with its magazine, stock and grip names the gun on
+    // the sling (QA pass of 2026-10-19, F4: "one of 5", a magazine's art at ~11–80k).
+    [Fact]
+    public void A_slots_label_names_the_items_of_its_kind_only()
+    {
+        var match = new DeskMatch([
+            Item(1, "Varkel-12", 4, 1, DeskHolds.Mods, slots: DeskSlotKind.Weapon),
+            Item(2, "Varkel-12", 1, 2, slots: DeskSlotKind.None), // its magazine
+            Item(3, "Varkel-12", 2, 1, slots: DeskSlotKind.None), // its stock
+            Item(4, "Varkel-12", 1, 1, slots: DeskSlotKind.Headwear),
+        ]);
+        Assert.Equal(4, match.Match("Varkel-12").Best.Count);
+        Assert.Equal(Id(1), Assert.Single(match.Match("Varkel-12", kind: DeskSlotKind.Weapon).Best).ItemId);
+        Assert.Equal(Id(4), Assert.Single(match.Match("Varkel-12", kind: DeskSlotKind.Headwear).Best).ItemId);
+        Assert.Empty(match.Match("Varkel-12", kind: DeskSlotKind.Knife).Best);
+    }
+
     [Fact]
     public void A_windows_title_names_the_containers_by_short_or_full_name()
     {
@@ -102,6 +134,8 @@ public sealed class DeskReaderTests : IDisposable
     [InlineData("3/31", 3, 3)]
     [InlineData("380/4ØØ\\", 380, 400)]
     [InlineData("-60/60", 60, 60)]
+    // A magazine's "50/50" read with an s for the 5 (QA pass of 2026-10-19).
+    [InlineData("sØ/SØ", 50, 50)]
     public void A_printed_condition_is_read_as_the_game_prints_it(string text, int current, int max) =>
         Assert.Equal(new DeskPrint(current, max), DeskReader.PrintOf(text));
 
@@ -188,7 +222,9 @@ public sealed class DeskReaderTests : IDisposable
 
     private static readonly DeskCandidate[] Catalogue =
     [
-        Item(1, "Zorblat"),
+        Item(1, "Zorblat", slots: DeskSlotKind.Earpiece),
+        // An item of the earpiece's short name that no earpiece slot takes: never the slot's.
+        Item(12, "Zorblat", slots: DeskSlotKind.None),
         Item(2, "Quenvik"),
         Item(3, "Pindrake", 5, 7, DeskHolds.Contents),
         Item(4, "Tessaril", 1, 2),
@@ -200,7 +236,28 @@ public sealed class DeskReaderTests : IDisposable
         // Two items of one short name and size: never told apart.
         Item(10, "Krellnot", 1, 1),
         Item(11, "Krellnot", 1, 1),
+        // A name and the end of another's: under a quick slot's plate, either.
+        Item(13, "Tessmar", 1, 1),
+        Item(14, "Alu Tessmar", 1, 1),
+        // A special slot's item, three by one in the item file, in its slot's one cell; and one of its name no special
+        // slot takes, one by one.
+        Item(15, "Survex", 3, 1, slots: DeskSlotKind.Special),
+        Item(16, "Survex", 1, 1, slots: DeskSlotKind.None),
     ];
+
+    // The game's quick slot plate over a cell's top left: light, about a third of a cell, its digit dark.
+    private static void QuickSlotPlate(StashReaderTests.Page page, int x, int y, string digit)
+    {
+        var p = page.Pitch;
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var plate = new SKPaint { Color = new SKColor(216, 220, 220), IsAntialias = true })
+            canvas.DrawRoundRect(x + 0.06f * p, y + 0.07f * p, 0.31f * p, 0.29f * p, 2, 2, plate);
+        using (var canvas = new SKCanvas(page.Bitmap))
+        using (var face = SKTypeface.FromFamilyName("Bahnschrift", SKFontStyle.Normal) ?? SKTypeface.Default)
+        using (var font = new SKFont(face, 0.25f * p))
+        using (var ink = new SKPaint { Color = new SKColor(40, 44, 46), IsAntialias = true })
+            canvas.DrawText(digit, x + 0.13f * p, y + 0.31f * p, SKTextAlign.Left, font, ink);
+    }
 
     // The GEAR tab at 2560×1440 as the game lays it out (the screenshots of 2026-10-19): the loadout's slots under their
     // headings at the left, POCKETS and BACKPACK in the middle column, the stash at the right under SEARCH and SORT TABLE.
@@ -223,6 +280,13 @@ public sealed class DeskReaderTests : IDisposable
         page.Grid(875, 130, 1, 2, 1);
         page.Grid(875 + p + 8, 130, 1, 2, 1);
         page.Item(875, 130, 1, 0, 0, 1, 1, "Quenvik", "250");
+        // The second pocket: an item bound to a quick slot, its plate over its label's start, its print in the game's red.
+        page.Item(875 + p + 8, 130, 1, 0, 0, 1, 1, "u Tessmar", "1/3", cornerColour: new SKColor(214, 74, 52));
+        QuickSlotPlate(page, 875 + p + 8, 130, "6");
+        // The special slots: one filled.
+        Text(page, "SPECIAL SLOTS", 1235, 106);
+        page.Grid(1262, 130, 1, 1, 1);
+        page.Item(1262, 130, 1, 0, 0, 1, 1, "Survex");
         Text(page, "BACKPACK", 880, 336);
         page.Grid(876, 360, 2, 2, 1);
         page.Item(876, 360, 1, 0, 0, 2, 2, "Pindrake");
@@ -275,9 +339,11 @@ public sealed class DeskReaderTests : IDisposable
         var reading = await Reader().ReadAsync(picture, new DeskCatalogue(Catalogue), new DateTimeOffset(2026, 1, 1, 15, 40, 0, TimeSpan.Zero), Ct);
         Assert.Equal(DeskScreen.Gear, reading.Screen);
         var page = reading.Page!;
-        Assert.Equal(["backpack", "loadout", "pockets", "stash"], page.Regions.Select(r => r.Key).Order());
+        Assert.Equal(["backpack", "loadout", "pockets", "special", "stash"], page.Regions.Select(r => r.Key).Order());
 
-        // The loadout's slots: one cell a slot, no footprint; a short name two items share stays "one of 2".
+        // The loadout's slots: a strip, no grid (QA pass of 2026-10-19, F2); one cell a slot, no footprint, named among
+        // the items its slot takes; a short name two items share stays "one of 2".
+        Assert.Equal((0, 0), (page.Region("loadout")!.Cols, page.Region("loadout")!.Rows));
         Assert.Equal([Id(1)], In(page, "loadout", c => c.Slot == "earpiece").Ids);
         var armour = In(page, "loadout", c => c.Slot == "bodyarmor");
         Assert.Equal([Id(10), Id(11)], armour.Ids.Order());
@@ -288,6 +354,14 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Equal(2, page.Region("pockets")!.Parts.Count);
         var quenvik = In(page, "pockets", c => c.Ids.Contains(Id(2)));
         Assert.Equal((0, 0, 250), (quenvik.I, quenvik.J, quenvik.Count));
+        // Under a quick slot's plate the label may have lost its start: never named by its end alone (QA pass of
+        // 2026-10-19, F4: "splint" named the Splint where the Alu splint lay). Its red print is read.
+        var bound = In(page, "pockets", c => c.I == 1);
+        Assert.Contains(Id(14), bound.Ids);
+        Assert.Equal(new DeskPrint(1, 3), bound.Print);
+
+        // A special slot: its item in one cell whatever its footprint, among the items special slots take.
+        Assert.Equal([Id(15)], In(page, "special", c => !c.IsSlot).Ids);
 
         // The backpack: its own slot (its grid inline, so nothing unseen) and its grid's cells by footprint.
         var backpack = page.Region("backpack")!;

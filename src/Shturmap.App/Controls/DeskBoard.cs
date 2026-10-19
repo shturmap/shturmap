@@ -77,7 +77,7 @@ public sealed partial class DeskBoard : Grid
             Visibility = Visibility.Collapsed,
         };
         Children.Add(_empty);
-        _columns = new Grid { ColumnSpacing = 24, HorizontalAlignment = HorizontalAlignment.Left };
+        _columns = new Grid { ColumnSpacing = DeskPageRules.ColumnGap, HorizontalAlignment = HorizontalAlignment.Left };
         _stems = new Canvas { IsHitTestVisible = false };
         _page = new Grid { Padding = new Thickness(Gap, 0, Gap, 24) };
         _page.Children.Add(_columns);
@@ -109,6 +109,12 @@ public sealed partial class DeskBoard : Grid
         _countUp = DispatcherQueue.CreateTimer();
         _countUp.Interval = TimeSpan.FromMilliseconds(33);
         _countUp.Tick += (_, _) => CountUpTick();
+        // The cells' marks are laid out by the size the text is drawn at: anew when it changes.
+        TextScale.Changed += () =>
+        {
+            if (_view is not null)
+                Build(entering: null);
+        };
     }
 
     /// <summary>The app is ending (MainWindow.StopForExit): the totals' count-up stops, so no tick comes after the window's
@@ -212,8 +218,7 @@ public sealed partial class DeskBoard : Grid
         {
             var range = c == 0 ? regions.Take(columnBreak > 0 ? columnBreak : regions.Count) : regions.Skip(columnBreak);
             // As wide as its widest grid, and never under the stash's ten cells in one column (400 DIP at 40).
-            var widest = range.Select(r => r.Region.Cols).DefaultIfEmpty(0).Max();
-            var columnWidth = Math.Max(widest, columns == 1 || c == 1 ? 10 : 6) * size + 1;
+            var columnWidth = DeskPageRules.ColumnWidth(range.Select(r => r.Region).ToList(), size, columns == 1 || c == 1 ? 10 : 6);
             _columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(columnWidth) });
             panels[c] = new StackPanel();
             SetColumn(panels[c], c);
@@ -247,7 +252,7 @@ public sealed partial class DeskBoard : Grid
                 row.Children.Add(element);
             else
             {
-                row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 24, Margin = new Thickness(0, top, 0, 0) };
+                row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = DeskPageRules.RowGap, Margin = new Thickness(0, top, 0, 0) };
                 row.Children.Add(element);
                 panel.Children.Add(row);
             }
@@ -315,16 +320,19 @@ public sealed partial class DeskBoard : Grid
             }
             block.Children.Add(strip);
         }
-        if (region.Cols > 0 && region.Rows > 0)
+        // LOADOUT draws no grid, whatever a reading says (DeskPageRules.Grid); a grid's compartments stand apart.
+        var (cols, rows) = DeskPageRules.Grid(region);
+        if (cols > 0 && rows > 0)
         {
-            var grid = new Canvas { Width = region.Cols * size + 1, Height = region.Rows * size + 1, HorizontalAlignment = HorizontalAlignment.Left };
-            foreach (var part in region.Parts.Count > 0 ? region.Parts : [new DeskRect(0, 0, region.Cols, region.Rows)])
-                grid.Children.Add(PartOf(part, size));
+            var grid = new Canvas { Width = cols * size + 1, Height = rows * size + 1, HorizontalAlignment = HorizontalAlignment.Left };
+            foreach (var part in region.Parts.Count > 0 ? region.Parts : [new DeskRect(0, 0, cols, rows)])
+                grid.Children.Add(PartOf(part, size, Thickness(DeskPageRules.Inset(region, part, size)), region.Parts.Count > 1));
             foreach (var item in sheet.Cells.Where(c => !c.Cell.IsSlot).OrderBy(c => c.Cell.J).ThenBy(c => c.Cell.I))
             {
-                var cell = new DeskCellView(region, item, size, this);
-                Canvas.SetLeft(cell, item.Cell.I * size);
-                Canvas.SetTop(cell, item.Cell.J * size);
+                var inset = Thickness(DeskPageRules.Inset(region, item.Cell.Rect, size));
+                var cell = new DeskCellView(region, item, size, this, inset);
+                Canvas.SetLeft(cell, item.Cell.I * size + inset.Left);
+                Canvas.SetTop(cell, item.Cell.J * size + inset.Top);
                 grid.Children.Add(cell);
                 _cellViews.Add(cell);
                 if (comes)
@@ -337,23 +345,30 @@ public sealed partial class DeskBoard : Grid
 
     private static int SlotOrder(string? slot) => DeskSlots.Order(slot ?? "") is var order and >= 0 ? order : 100;
 
-    // A compartment's empty cells: the cell's ground, a hairline round it and between its cells.
-    private static FrameworkElement PartOf(DeskRect part, double size)
+    private static Thickness Thickness((double Left, double Top, double Right, double Bottom) inset) =>
+        new(inset.Left, inset.Top, inset.Right, inset.Bottom);
+
+    // A compartment's empty cells: the cell's ground, a hairline round it and between its cells; one of several stands in
+    // by its inset, framed a step stronger, so the compartments read apart as the game draws them.
+    private static FrameworkElement PartOf(DeskRect part, double size, Thickness inset, bool apart)
     {
+        double w = part.W * size + 1 - inset.Left - inset.Right, h = part.H * size + 1 - inset.Top - inset.Bottom;
         var geometry = new GeometryGroup();
         for (var i = 1; i < part.W; i++)
-            geometry.Children.Add(new LineGeometry { StartPoint = new Point(i * size + 0.5, 0), EndPoint = new Point(i * size + 0.5, part.H * size) });
+            geometry.Children.Add(new LineGeometry { StartPoint = new Point(i * size - inset.Left + 0.5, 0), EndPoint = new Point(i * size - inset.Left + 0.5, h) });
         for (var j = 1; j < part.H; j++)
-            geometry.Children.Add(new LineGeometry { StartPoint = new Point(0, j * size + 0.5), EndPoint = new Point(part.W * size, j * size + 0.5) });
-        var frame = new Grid { Width = part.W * size + 1, Height = part.H * size + 1 };
-        frame.Children.Add(new Rectangle { Fill = Brush("CardBrush"), Stroke = Brush("LineBrush"), StrokeThickness = 1 });
+            geometry.Children.Add(new LineGeometry { StartPoint = new Point(0, j * size - inset.Top + 0.5), EndPoint = new Point(w, j * size - inset.Top + 0.5) });
+        var frame = new Grid { Width = w, Height = h };
+        frame.Children.Add(new Rectangle { Fill = Brush("CardBrush"), Stroke = Brush(apart ? "LineStrongBrush" : "LineBrush"), StrokeThickness = 1 });
         frame.Children.Add(new Path { Data = geometry, Stroke = Brush("LineBrush"), StrokeThickness = 1 });
-        Canvas.SetLeft(frame, part.I * size);
-        Canvas.SetTop(frame, part.J * size);
+        Canvas.SetLeft(frame, part.I * size + inset.Left);
+        Canvas.SetTop(frame, part.J * size + inset.Top);
         return frame;
     }
 
-    // "UNCHANGED · LOADOUT ▸ · POCKETS ▸": the folded neighbours' names, each a link that opens its region.
+    // "UNCHANGED · LOADOUT ▸ · POCKETS ▸": the folded neighbours' names, each a link that opens its region. Each "·" goes
+    // with the name after it, so a line that wraps breaks before the separator, never after it (QA pass of 2026-10-19,
+    // F8: "POCKETS ▸ ·" ended a line).
     private FrameworkElement FoldLine(DeskBlock.Fold fold, IReadOnlyList<DeskRegionSheet> regions, double top)
     {
         var line = new WrapRow { HorizontalSpacing = 6, VerticalSpacing = 2, Margin = new Thickness(0, top, 0, 0) };
@@ -362,14 +377,16 @@ public sealed partial class DeskBoard : Grid
         {
             if (regions.FirstOrDefault(r => r.Region.Key == key) is not { } sheet)
                 continue;
-            line.Children.Add(Word("·", "MutedBrush"));
             var link = new HyperlinkButton { Padding = new Thickness(0), Content = Word(DeskPageRules.FoldName(sheet.Region), "AmberBrush"), Tag = key };
             link.Click += (sender, _) =>
             {
                 if (sender is FrameworkElement { Tag: string region })
                     Unfolded?.Invoke(region);
             };
-            line.Children.Add(link);
+            var named = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            named.Children.Add(Word("·", "MutedBrush"));
+            named.Children.Add(link);
+            line.Children.Add(named);
         }
         return line;
     }
@@ -459,8 +476,8 @@ public sealed partial class DeskBoard : Grid
     // ---- the stems ----
 
     // From the container's cell to its window's head, along the grid's lines and the page's margin: out of the cell at
-    // its left edge (its middle in the grid's first column, its lower corner elsewhere, where the line runs between the
-    // rows), left to the margin, down to the head's middle, and into it.
+    // its left edge (its middle in the grid's first column, however tall the cell; its lower corner elsewhere, where the
+    // line runs between the rows), left to the margin, down to the head's middle, and into it.
     private void DrawStems()
     {
         _stemsDue = false;
@@ -474,7 +491,7 @@ public sealed partial class DeskBoard : Grid
             var column = link.Panel.TransformToVisual(_stems).TransformPoint(new Point(0, 0)).X;
             var margin = column - 9.5;
             var atEdge = a.Left <= column + link.Anchor.Size;
-            var start = atEdge ? new Point(a.Left, Math.Round(a.Top + Math.Min(a.Height / 2, link.Anchor.Size / 2)) + 0.5) : new Point(a.Left + 0.5, a.Bottom - 0.5);
+            var start = atEdge ? new Point(a.Left, Math.Round(a.Top + a.Height / 2) + 0.5) : new Point(a.Left + 0.5, a.Bottom - 0.5);
             var y = Math.Round(h.Top + h.Height / 2) + 0.5;
             var figure = new PathFigure { StartPoint = start, IsClosed = false, IsFilled = false };
             figure.Segments.Add(new LineSegment { Point = new Point(margin, start.Y) });

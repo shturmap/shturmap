@@ -363,11 +363,41 @@ the model the view draws*), §8 ("The desk file", "How the parts work", *Menu sc
   the desk comes and goes, the rail, the page's columns, what gives way in a narrow cell, the band under the figure, the
   "?" plate's move, the numbers' form, the stem's route and light).
 - **Open:** the desk's own card and the click (step C); the website on what the desk reads; the tour's pictures of
-  chapters 1 and 2 (the release prep); the desk at 125 and 150 % text (cells are fixed boxes, their figures grow: the
-  figure shrinks only by the width estimate at 100 %); the German gear heads to check in the German game
+  chapters 1 and 2 (the release prep); the German gear heads to check in the German game
   (TASCHEN, SPEZIAL-SLOTS; the desk's German reviewed, senior translator, 2026-10-20); a turned cell's picture turns a
   quarter clockwise, unchecked against the game; the reading counter's start: the view takes a page read back from the
   file for reading 0.
+
+**The UI QA pass of step B (2026-10-19, on c7b3a87) and its fixes.** The pass read a GEAR screenshot dropped into a
+Plan-only fake raid at 1600×900, then the one with the Zhuk window, and the replay `tools\qa\desk` at both sizes and at
+125 % text. Fixed (DESIGN.md §2, *Built*; §4, *The stash desk*, *The cell* and *As built*; "Text size"):
+- F1, F2: the reader gave LOADOUT an eleven by one grid, which the view drew under the strip and counted in the gear's
+  column (616 DIP), so the stash's tenth column ran past the window. LOADOUT is a strip with no grid now, in the reader
+  and in the view whatever a page says; two columns only where both fit, POCKETS and SPECIAL SLOTS side by side counted
+  in the gear's (`DeskPageRules.Grid`, `ColumnWidth`, `ColumnBreak`).
+- F3: a grid's compartments stand apart, 2 DIP at 40, 4 at 56 (`DeskPageRules.Inset`); the made-up Zhuk is the game's
+  ten pockets of one by two.
+- F4: a slot's label against its slot's kind of items (`DeskSlotKind`, by tarkov.dev's categories; the special slots'
+  type), a special slot without footprint, a label under a quick slot's plate a name's end, a print read again by its
+  brightest channel and in the wider band. The pockets were laid out right (1×1, 1×2, 1×2, 1×1, as the game has them);
+  their misses were the reading's. `shturmap-cli desk`, the GEAR picture's loadout, pockets and special slots (16
+  cells), before → after: 5 right, 2 wrong (the Splint for the Alu splint, the lubricant "SurvL" for the Surv12), 7 one
+  of N, 2 unread → 9 right, 0 wrong, 6 one of N, 1 unread (the V40, which the recognition doesn't read); the armour's
+  "147/147" and the meds' red "1/3", "3/3" read, the Surv12's red "8/9" still not (nothing in some 150 tries of band,
+  zoom, sampling and contrast). The stash truths unchanged: GEAR 29 right, 2 one of N, 6 unread, 0 wrong; the stash
+  pages 129, 16, 3, 0; about 2.1 s a GEAR picture (2.0 before).
+- F5: at 56 DIP the change figure where the count leaves room, then the figure without its arrow, then the arrow.
+- F6: the cells' marks laid out at the drawn text size, a number never cut (DESIGN.md "Text size" lists what moves to
+  the card at 125 and 150 %).
+- F7: the stem leaves a cell at its middle, as written. F8: a fold line breaks before its "·". The translator's note:
+  the English units with no-break spaces, held by `TranslationTests`. F11: the replay waits out the tour's notice, and
+  `desk.md` says "0.3–294k".
+- Not done: F9 (the weapon slots' art small and dark) and F10 (the tint's steps barely seen), the owner's calls; F12, a
+  script verb for Esc (it would take the script, the controller and the window, more than a few lines).
+- Open: at 150 % a four-figure price beside the notch of a 1×1 cell at 40 DIP moves to the card (the keycard's "352k"):
+  the owner's call whether it may, or the cell grow; the figures' width is an estimate (half an em a character, a
+  count's digits 0.45), measured on one picture; a slot whose best reading is two characters ("35" of "Trooper 35") is
+  left out as empty.
 
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,

@@ -14,6 +14,25 @@ public static class DeskData
 {
     private const string MagazineCategory = "5448bc234bdc2d3c308b4569";
 
+    // The game's categories its slots take (tarkov.dev's item categories, each item listing its whole chain; read
+    // 2026-10-19): headphones, headwear, face cover, armband, armour, eyewear (glasses and visors), the dog tags' "Other",
+    // weapons, knives, chest rigs, backpacks and secure containers.
+    private static readonly (string Category, DeskSlotKind Kind)[] SlotCategories =
+    [
+        ("5645bcb74bdc2ded0b8b4578", DeskSlotKind.Earpiece),
+        ("5a341c4086f77401f2541505", DeskSlotKind.Headwear),
+        ("5a341c4686f77469e155819e", DeskSlotKind.FaceCover),
+        ("5b3f15d486f77432d0509248", DeskSlotKind.Armband),
+        ("5448e54d4bdc2dcc718b4568", DeskSlotKind.BodyArmor),
+        ("5448e5724bdc2ddf718b4568", DeskSlotKind.Eyewear),
+        ("590c745b86f7743cc433c5f2", DeskSlotKind.Dogtag),
+        ("5422acb9af1c889c16000029", DeskSlotKind.Weapon),
+        ("5447e1d04bdc2dff2f8b4567", DeskSlotKind.Knife),
+        ("5448e5284bdc2dcb718b4567", DeskSlotKind.Rig),
+        ("5448e53e4bdc2d60728b4567", DeskSlotKind.Backpack),
+        ("5448bf274bdc2dfc2f8b456a", DeskSlotKind.SecureContainer),
+    ];
+
     /// <summary>
     /// Every item a cell can be: its short name (and full name, for a window's title), its footprint and what it holds.
     /// Presets are left out: the game draws the gun, never the preset (they share its short name). Without the item
@@ -32,8 +51,26 @@ public static class DeskData
             if (item?.Types?.Contains("preset") == true)
                 continue;
             yield return new DeskCandidate(id, shortName, data.ItemNames.GetValueOrDefault(id) ?? shortName,
-                Math.Max(1, item?.Width ?? 1), Math.Max(1, item?.Height ?? 1), item is null ? DeskHolds.Nothing : HoldsOf(item));
+                Math.Max(1, item?.Width ?? 1), Math.Max(1, item?.Height ?? 1), item is null ? DeskHolds.Nothing : HoldsOf(item),
+                item is null ? DeskSlotKind.Any : SlotsOf(item));
         }
+    }
+
+    /// <summary>The slots an item goes in, by its categories (a gun: on the sling, in the holster, on the back), and a
+    /// special slot by its type <c>specialSlot</c>; none for an item no slot takes.</summary>
+    public static DeskSlotKind SlotsOf(ApiItem item)
+    {
+        var kind = DeskSlotKind.None;
+        foreach (var (category, slot) in SlotCategories)
+        {
+            if (item.Categories?.Contains(category) == true)
+                kind |= slot;
+        }
+        if (item.Types?.Contains("gun") == true)
+            kind |= DeskSlotKind.Weapon;
+        if (item.Types?.Contains("specialSlot") == true)
+            kind |= DeskSlotKind.Special;
+        return kind;
     }
 
     /// <summary>What an item holds out of sight: a grid of its own (tarkov.dev's <c>hasGrid</c>, or a backpack, rig or

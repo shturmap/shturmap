@@ -50,15 +50,19 @@ public static class DeskNumbers
     public static string Total(double value, bool plus) => RuleTexts.DeskRoubles(amount: Short(value) + (plus ? "+" : ""));
 
     /// <summary>The 48 h change as the cell shows it at 56 DIP: the arrow from ±10 % (<see cref="Shturmap.Core.Desk.DeskValues.ArrowFrom"/>),
-    /// then the whole percent with its sign ("↓ −10%", "+3%", "0%").</summary>
-    public static string Change(double percent)
+    /// then the whole percent with its sign ("↓ −10%", "+3%", "0%"); without <paramref name="arrow"/>, the figure alone
+    /// ("−10%"). The arrow is joined to its figure by a no-break space.</summary>
+    public static string Change(double percent, bool arrow = true)
     {
         var whole = Math.Round(percent, MidpointRounding.AwayFromZero);
         var sign = whole > 0 ? "+" : whole < 0 ? "−" : "";
         var text = RuleTexts.DeskChange(change: sign + Math.Abs(whole).ToString("0", UiLanguage.Culture));
-        var arrow = percent >= Shturmap.Core.Desk.DeskValues.ArrowFrom ? "↑ " : percent <= -Shturmap.Core.Desk.DeskValues.ArrowFrom ? "↓ " : "";
-        return arrow + text;
+        return arrow && Arrow(percent) is { } mark ? mark + "\u00A0" + text : text;
     }
+
+    /// <summary>The change's arrow from ±10 % ("↑", "↓"), or null under it.</summary>
+    public static string? Arrow(double percent) =>
+        percent >= Shturmap.Core.Desk.DeskValues.ArrowFrom ? "↑" : percent <= -Shturmap.Core.Desk.DeskValues.ArrowFrom ? "↓" : null;
 
     private static string Whole(double value) => value.ToString("0", UiLanguage.Culture);
 

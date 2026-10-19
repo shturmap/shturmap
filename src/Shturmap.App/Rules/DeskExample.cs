@@ -172,13 +172,16 @@ public static class DeskExample
         if (reading >= 2)
             pack.Add(At(3, 4, Ledx, fir: true));
         var backpack = new DeskRegion("backpack", DeskRegionKind.Backpack, 6, 5, pack);
-        var zhuk = new DeskRegion(DeskRegion.WindowKey("Zhuk"), DeskRegionKind.ContainerWindow, 4, 3,
-            [At(0, 0, AmmoBs, count: 120), At(1, 0, Analgin, print: new DeskPrint(1, 4)), At(2, 0, LabsViolet), At(0, 1, Gpu)])
+        // The Zhuk's window as the game draws it: ten pockets of one by two (QA pass of 2026-10-19, F3); a graphics card
+        // stands turned in one.
+        var zhuk = new DeskRegion(DeskRegion.WindowKey("Zhuk"), DeskRegionKind.ContainerWindow, 5, 4,
+            [At(0, 0, AmmoBs, count: 120), At(1, 0, Analgin, print: new DeskPrint(1, 4)), At(2, 0, LabsViolet),
+                new DeskCell(3, 0, 1, 2, [Gpu]), At(1, 2, Salewa, print: new DeskPrint(400, 400))])
         {
             Title = "Zhuk",
             TitleIds = [ZhukBlack, ZhukSurpat],
             AttachedTo = new DeskAnchor("backpack", 0, 0),
-            Parts = [new(0, 0, 1, 1), new(1, 0, 1, 1), new(2, 0, 1, 1), new(3, 0, 1, 1), new(0, 1, 2, 2), new(2, 1, 2, 2)],
+            Parts = [.. Enumerable.Range(0, 10).Select(k => new DeskRect(k % 5, k / 5 * 2, 1, 2))],
         };
         var pouch = new DeskRegion("pouch", DeskRegionKind.Pouch, 3, 3,
             [Slot("pouch", Gamma) with { Holds = DeskHolds.Contents }, At(0, 0, LabsRed), At(1, 0, Bitcoin), At(0, 1, Salewa, print: new DeskPrint(220, 400))]);

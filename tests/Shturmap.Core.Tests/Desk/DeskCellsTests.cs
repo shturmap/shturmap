@@ -105,13 +105,48 @@ public class DeskCellsTests
         Assert.Null(DeskCells.Of(Cell(2, 1, Flea(1_000, DeskArrow.None, -4)), DeskCells.Small).Change);
     }
 
-    // At 56 DIP the change stands as a figure on every cell, the arrow before it from ±10 %.
+    // At 56 DIP the change stands as a figure on every cell, the arrow before it from ±10 %; where the count leaves less
+    // room, the figure without its arrow, then the arrow alone, as at 40 (QA pass of 2026-10-19, F5: the Analgin's "2/4"
+    // showed no change at 56 and "↓" at 40).
     [Fact]
     public void At_56_the_change_is_a_figure()
     {
-        Assert.Equal("↓ −12%", DeskCells.Of(Cell(2, 1, Flea(13_000, DeskArrow.Down, -12)), DeskCells.Large).Change);
+        Assert.Equal("−12%", DeskCells.Of(Cell(1, 1, Flea(5_000, DeskArrow.Down, -12), print: new DeskPrint(2, 4)), DeskCells.Large).Change);
+        Assert.Equal("−12%", DeskCells.Of(Cell(1, 1, Flea(5_000, DeskArrow.Down, -12), print: new DeskPrint(4, 4)), DeskCells.Large).Change);
+        Assert.Equal("↓", DeskCells.Of(Cell(1, 1, Flea(5_000, DeskArrow.Down, -12), print: new DeskPrint(166, 400)), DeskCells.Large).Change);
+        Assert.Equal("↓", DeskCells.Of(Cell(1, 1, Flea(5_000, DeskArrow.Down, -12), print: new DeskPrint(2, 4)), DeskCells.Small).Change);
+        Assert.Equal("↓\u00A0−12%", DeskCells.Of(Cell(2, 1, Flea(13_000, DeskArrow.Down, -12)), DeskCells.Large).Change);
         Assert.Equal("−1%", DeskCells.Of(Cell(2, 1, Flea(13_000, DeskArrow.None, -1.2)), DeskCells.Large).Change);
         Assert.Null(DeskCells.Of(Cell(2, 1, Flea(13_000)), DeskCells.Large).Change);
+    }
+
+    // At a larger text size the marks are laid out by the size they are drawn at, and a number is never cut: the arrow
+    // gives way first, then the source's glyph; the figure is set smaller, never drawn under 8 px; a count or a figure that
+    // doesn't fit even so moves to the card (QA pass of 2026-10-19, F6: at 125 % "166/300" read "166/30", and a keycard's
+    // notch stood under its figure).
+    [Fact]
+    public void At_a_larger_text_size_no_number_is_cut()
+    {
+        static Func<double, double> At(double factor) => size => TextSize.Scaled(size, factor);
+        const double em = 0.53;
+        var meds = Cell(1, 1, Flea(13_000, DeskArrow.Down, -12), print: new DeskPrint(166, 300));
+        Assert.Equal("166/300", DeskCells.Of(meds, DeskCells.Small).Count);
+        var larger = DeskCells.Of(meds, DeskCells.Small, At(1.25));
+        Assert.Null(larger.Count);
+        Assert.Equal("↓", larger.Change);
+        Assert.Equal("2/4", DeskCells.Of(Cell(1, 1, Flea(5_000), print: new DeskPrint(2, 4)), DeskCells.Small, At(1.5)).Count);
+        // The keycard beside its notch: its figure smaller, so it stays clear of the notch.
+        var key = DeskCells.Of(Cell(1, 1, Flea(433_000), DeskKeepLevel.Now), DeskCells.Small, At(1.25));
+        Assert.Equal("433k", key.Figure);
+        Assert.True(key.FigureSize < 10.5);
+        Assert.True(key.Figure!.Length * TextSize.Scaled(key.FigureSize, 1.25) * em <= DeskCells.Small - 4 - DeskCells.NotchSize - 1);
+        Assert.True(TextSize.Scaled(key.FigureSize, 1.25) >= DeskCells.LeastFigure);
+        // A "?" cell's long range on a 1×1 at 150 %: no size fits, so it moves to the card; its plate stays.
+        var range = DeskCells.Of(Cell(1, 1, new DeskFigure(DeskSource.None, 300, 294_000, null) { Unsure = true }, ids: ["a", "b"]), DeskCells.Small, At(1.5));
+        Assert.Null(range.Figure);
+        Assert.True(range.Plate);
+        // At 100 % nothing changes: the same marks as without the text size.
+        Assert.Equal(DeskCells.Of(meds, DeskCells.Small), DeskCells.Of(meds, DeskCells.Small, At(1)));
     }
 
     [Fact]

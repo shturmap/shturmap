@@ -49,10 +49,10 @@ public readonly record struct DeskPrint(int Current, int Max)
         var slash = text.IndexOf('/');
         if (slash <= 0 || slash == text.Length - 1)
             return null;
-        // The recognition reads the game's slashed 0 as an Ø or an O now and then, a 5 as an S, a 1 as an l: folded before
-        // the digits are taken.
+        // The recognition reads the game's slashed 0 as an Ø or an O now and then, a 5 as an S or an s, a 1 as an l: folded
+        // before the digits are taken.
         static string Digits(string part) => new(part.Replace('O', '0').Replace('o', '0').Replace('Ø', '0').Replace('ø', '0')
-            .Replace('S', '5').Replace('l', '1').Replace('I', '1').Where(c => !char.IsWhiteSpace(c) && c != '-').ToArray());
+            .Replace('S', '5').Replace('s', '5').Replace('l', '1').Replace('I', '1').Where(c => !char.IsWhiteSpace(c) && c != '-').ToArray());
         var current = Digits(text[..slash]);
         var max = Digits(text[(slash + 1)..]);
         if (current.Length is 0 or > 6 || max.Length is 0 or > 6 || !current.All(char.IsAsciiDigit) || !max.All(char.IsAsciiDigit))
@@ -222,6 +222,32 @@ public sealed record DeskPage(DateTimeOffset ReadAt, IReadOnlyList<DeskRegion> R
     }
 }
 
+/// <summary>The kinds of item the game's slots take (its slot filters): a loadout slot's, a middle region's own container's
+/// (a rig, a backpack, a secure container), a special slot's. A slot's label is matched against the items of its kind only
+/// (QA pass of 2026-10-19, F4: the AK-12 on the sling was "one of 5" with the AK-12's magazine, stock, grip and muzzle
+/// device, its range a magazine's to a gun's). An item may fit several (a gun on the sling or on the back).</summary>
+[Flags]
+public enum DeskSlotKind
+{
+    None = 0,
+    Earpiece = 1 << 0,
+    Headwear = 1 << 1,
+    FaceCover = 1 << 2,
+    Armband = 1 << 3,
+    BodyArmor = 1 << 4,
+    Eyewear = 1 << 5,
+    Dogtag = 1 << 6,
+    Weapon = 1 << 7,
+    Knife = 1 << 8,
+    Rig = 1 << 9,
+    Backpack = 1 << 10,
+    SecureContainer = 1 << 11,
+    Special = 1 << 12,
+
+    /// <summary>Every kind: an item whose kind isn't known (no item file), and a grid's cell, which takes any item.</summary>
+    Any = (1 << 13) - 1,
+}
+
 /// <summary>The loadout's slots in the game's order (the GEAR tab's left column, row by row), and the words the English
 /// game heads them with.</summary>
 public static class DeskSlots
@@ -246,4 +272,23 @@ public static class DeskSlots
 
     /// <summary>The slots that hold a weapon: what they print is its rounds, and its mods are unseen.</summary>
     public static bool IsWeapon(string? key) => key is "onsling" or "holster" or "onback";
+
+    /// <summary>The kind of item a slot takes: a loadout slot's by its key, a middle region's own container's ("rig",
+    /// "backpack", "pouch"); <see cref="DeskSlotKind.Any"/> for a key of none of them.</summary>
+    public static DeskSlotKind KindOf(string? key) => key switch
+    {
+        "earpiece" => DeskSlotKind.Earpiece,
+        "headwear" => DeskSlotKind.Headwear,
+        "facecover" => DeskSlotKind.FaceCover,
+        "armband" => DeskSlotKind.Armband,
+        "bodyarmor" => DeskSlotKind.BodyArmor,
+        "eyewear" => DeskSlotKind.Eyewear,
+        "dogtag" => DeskSlotKind.Dogtag,
+        "onsling" or "holster" or "onback" => DeskSlotKind.Weapon,
+        "sheath" => DeskSlotKind.Knife,
+        "rig" => DeskSlotKind.Rig,
+        "backpack" => DeskSlotKind.Backpack,
+        "pouch" => DeskSlotKind.SecureContainer,
+        _ => DeskSlotKind.Any,
+    };
 }

@@ -92,7 +92,8 @@ public sealed class StashReaderTests : IDisposable
         /// at the top right (left-aligned and cut at the edge when it doesn't fit), a count or load at the bottom
         /// right, and the found-in-raid mark when asked for.
         /// </summary>
-        public void Item(int x0, int y0, int lineWidth, int i, int j, int w, int h, string label, string? corner = null, bool mark = false, SKColor? art = null)
+        public void Item(int x0, int y0, int lineWidth, int i, int j, int w, int h, string label, string? corner = null, bool mark = false, SKColor? art = null,
+            SKColor? cornerColour = null)
         {
             using var canvas = new SKCanvas(Bitmap);
             float left = x0 + i * Pitch + lineWidth, top = y0 + j * Pitch + lineWidth;
@@ -116,8 +117,9 @@ public sealed class StashReaderTests : IDisposable
             canvas.DrawText(label, x, top + 13 * K, SKTextAlign.Left, font, text);
             if (corner is not null)
             {
+                using var cornerText = new SKPaint { Color = cornerColour ?? text.Color, IsAntialias = true };
                 canvas.DrawText(corner, right - 3 * K, bottom - 4 * K, SKTextAlign.Right, font, outline);
-                canvas.DrawText(corner, right - 3 * K, bottom - 4 * K, SKTextAlign.Right, font, text);
+                canvas.DrawText(corner, right - 3 * K, bottom - 4 * K, SKTextAlign.Right, font, cornerText);
             }
             canvas.Restore();
             if (mark)

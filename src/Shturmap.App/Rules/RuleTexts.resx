@@ -265,7 +265,7 @@
     <comment>The stash desk: a value in thousands of roubles, short, in a cell's top right and in the head line's totals ("902k", "4.5k"). {amount}: the thousands, with a tenth under 10. No room: a 1×1 cell is 40 DIP wide.</comment>
   </data>
   <data name="DeskMillions" xml:space="preserve">
-    <value>{amount} M</value>
+    <value>{amount} M</value>
     <comment>The stash desk: a value in millions of roubles, short, in a cell and in the head line ("1.01 M", "12.3 M"). {amount}: the millions, three figures.</comment>
   </data>
   <data name="DeskRange" xml:space="preserve">
@@ -277,11 +277,11 @@
     <comment>The stash desk: a cell that fits several items shows their price range in thousands ("63–307k", "0.3–294k"). {low}, {high}: the least and the most, in thousands.</comment>
   </data>
   <data name="DeskRangeMillions" xml:space="preserve">
-    <value>{low}–{high} M</value>
+    <value>{low}–{high} M</value>
     <comment>The stash desk: a cell that fits several items shows their price range in millions ("0.45–1.18 M"). {low}, {high}: the least and the most, in millions.</comment>
   </data>
   <data name="DeskRoubles" xml:space="preserve">
-    <value>{amount} ₽</value>
+    <value>{amount} ₽</value>
     <comment>The stash desk's head line: a total in roubles ("1.01 M ₽", "1.01 M+ ₽" with a container whose contents are unseen in it). {amount}: the short value (DeskThousands, DeskMillions), with its "+".</comment>
   </data>
   <data name="DeskChange" xml:space="preserve">

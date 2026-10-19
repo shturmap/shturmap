@@ -227,6 +227,22 @@ internal static class StashPicture
         return framed;
     }
 
+    /// <summary>The bitmap in grey by each pixel's brightest channel: the game's red print ("8/9", a used-up med's
+    /// count) as bright as its white one, which Windows' recognition, taking the luminance, reads dim.</summary>
+    public static SKBitmap Lit(SKBitmap inner)
+    {
+        var bytes = inner.GetPixelSpan().ToArray();
+        for (var i = 0; i + 3 < bytes.Length; i += 4)
+        {
+            var v = Math.Max(bytes[i], Math.Max(bytes[i + 1], bytes[i + 2]));
+            bytes[i] = bytes[i + 1] = bytes[i + 2] = v;
+            bytes[i + 3] = 255;
+        }
+        var lit = new SKBitmap(new SKImageInfo(inner.Width, inner.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
+        System.Runtime.InteropServices.Marshal.Copy(bytes, 0, lit.GetPixels(), bytes.Length);
+        return lit;
+    }
+
     /// <summary>The bitmap as Windows' recognition takes it.</summary>
     public static SoftwareBitmap ToSoftwareBitmap(SKBitmap bitmap)
     {

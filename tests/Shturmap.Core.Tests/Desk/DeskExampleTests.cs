@@ -75,6 +75,17 @@ public class DeskExampleTests
         Assert.True(view.Sheet.Totals.KeepNow > 0 && view.Sheet.Totals.KeepNext > 0 && view.Sheet.Totals.KeepLater > 0);
     }
 
+    // Each cell of a grid of compartments stands inside one of them, as the game holds them (the Zhuk's window: ten
+    // pockets of one by two, QA pass of 2026-10-19, F3).
+    [Fact]
+    public void Its_cells_stand_inside_their_compartments()
+    {
+        var page = DeskExample.Page(2);
+        Assert.Equal(10, page.Region("window:zhuk")!.Parts.Count);
+        foreach (var region in page.Regions.Where(r => r.Parts.Count > 0))
+            Assert.All(region.Cells.Where(c => !c.IsSlot), c => Assert.Contains(region.Parts, p => p.Contains(c.Rect)));
+    }
+
     // The page's cells don't overlap and stand inside their grids, as a reading's would.
     [Fact]
     public void Its_cells_stand_inside_their_grids_without_overlapping()

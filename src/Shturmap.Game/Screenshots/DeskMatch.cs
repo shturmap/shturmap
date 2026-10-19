@@ -4,8 +4,10 @@ using Shturmap.Core.Screenshots;
 namespace Shturmap.Game.Screenshots;
 
 /// <summary>An item of the catalogue the stash desk may name: its id, the short name the game prints on its cell, its full
-/// name (a container window's title may be either), its footprint in cells, and what it holds out of sight.</summary>
-public sealed record DeskCandidate(string ItemId, string ShortName, string Name, int W, int H, DeskHolds Holds = DeskHolds.Nothing);
+/// name (a container window's title may be either), its footprint in cells, what it holds out of sight, and the slots it
+/// goes in (<see cref="DeskSlotKind.Any"/> when that isn't known).</summary>
+public sealed record DeskCandidate(string ItemId, string ShortName, string Name, int W, int H, DeskHolds Holds = DeskHolds.Nothing,
+    DeskSlotKind Slots = DeskSlotKind.Any);
 
 /// <summary>
 /// A label matched to the whole catalogue (owner, 2026-10-19: the desk reads against every item; docs/DESIGN.md §2, "For
@@ -47,12 +49,14 @@ internal sealed class DeskMatch
     /// this wide can be (<paramref name="cells"/>, the cell's width): "Weapons" on a case five cells wide is the Weapons
     /// case, not one of the 49 sealed weapon cases it starts. A label the game's quick-slot number cuts at its start
     /// ("6 splint" for "Alu splint") is its name's end: the items whose short name ends so are all among them, never named
-    /// by the end alone when another item's name ends alike.
+    /// by the end alone when another item's name ends alike; so is any label of a cell whose quick slot's number the
+    /// reading saw (<paramref name="cutAtStart"/>: the recognition left the number out, "splint" for "Alu splint").
+    /// A slot's label is matched against the items its slot takes (<paramref name="kind"/>; QA pass of 2026-10-19, F4).
     /// </summary>
-    public (double Fit, List<DeskCandidate> Best) Match(string label, int cells = 1)
+    public (double Fit, List<DeskCandidate> Best) Match(string label, int cells = 1, DeskSlotKind kind = DeskSlotKind.Any, bool cutAtStart = false)
     {
         label = label.Replace("!", "").Replace("|", "").Trim();
-        var cut = QuickSlotCut(label);
+        var cut = QuickSlotCut(label) ?? (cutAtStart ? label : null);
         if (cut is not null)
             label = cut;
         var a = ExitList.Fold(label);
@@ -65,6 +69,8 @@ internal sealed class DeskMatch
         var best = new List<DeskCandidate>();
         foreach (var e in _entries)
         {
+            if (kind != DeskSlotKind.Any && (e.Candidate.Slots & kind) == 0)
+                continue;
             var b = e.Folded;
             double fit;
             if (cut is not null && a.Length >= LeastEnd && b.Length > a.Length && b.EndsWith(a, StringComparison.Ordinal))

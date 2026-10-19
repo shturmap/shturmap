@@ -420,21 +420,23 @@ public sealed class StashReader
     /// to the number's own height (at 1440p the digits stand 18 to 4 px over the bottom): the found-in-raid mark
     /// right above it read as a digit before it.</summary>
     /// <param name="cells">How wide the band is, in cells (the stash desk reads a long condition once more, wider).</param>
-    internal async Task<string?> ReadCountAsync(SKBitmap bitmap, SKRectI rect, int pitch, CancellationToken ct, double cells = 0.9)
+    internal async Task<string?> ReadCountAsync(SKBitmap bitmap, SKRectI rect, int pitch, CancellationToken ct, double cells = 0.9, bool lit = false)
     {
         // The number ends a pixel before the cell's line: the band goes up to the line.
         var width = Math.Min(rect.Width - 3, (int)Math.Round(pitch * cells));
         var height = (int)Math.Round(pitch * 0.215);
         var band = SKRectI.Create(rect.Right - 1 - width, rect.Bottom - 2 - height, width, height);
-        var text = await ReadBandAsync(bitmap, band, ZoomFor(pitch), StashPicture.Sampling, ct);
+        var text = await ReadBandAsync(bitmap, band, ZoomFor(pitch), StashPicture.Sampling, ct, lit);
         return text.Length > 0 ? text : null;
     }
 
-    // A band of the picture, enlarged and set in a dark margin, as one line of text.
-    private async Task<string> ReadBandAsync(SKBitmap bitmap, SKRectI band, int zoom, SKSamplingOptions sampling, CancellationToken ct)
+    // A band of the picture, enlarged and set in a dark margin, as one line of text; lit, in grey by its brightest
+    // channel (StashPicture.Lit).
+    private async Task<string> ReadBandAsync(SKBitmap bitmap, SKRectI band, int zoom, SKSamplingOptions sampling, CancellationToken ct, bool lit = false)
     {
-        using var big = StashPicture.Block(bitmap, band, band.Width * zoom, band.Height * zoom, sampling);
-        using var framed = StashPicture.Framed(big, Margin, MarginColour);
+        using var block = StashPicture.Block(bitmap, band, band.Width * zoom, band.Height * zoom, sampling);
+        using var litBlock = lit ? StashPicture.Lit(block) : null;
+        using var framed = StashPicture.Framed(litBlock ?? block, Margin, MarginColour);
         using var soft = StashPicture.ToSoftwareBitmap(framed);
         var result = await _engine.RecognizeAsync(soft).AsTask(ct);
         return string.Join(" ", result.Lines.Select(l => l.Text)).Trim();

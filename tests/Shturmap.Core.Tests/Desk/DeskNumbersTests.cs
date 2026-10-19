@@ -18,11 +18,11 @@ public class DeskNumbersTests
     [InlineData(34_000, "34k")]
     [InlineData(902_345, "902k")]
     [InlineData(999_499, "999k")]
-    [InlineData(999_700, "1.00 M")]
-    [InlineData(1_010_000, "1.01 M")]
-    [InlineData(6_840_000, "6.84 M")]
-    [InlineData(12_345_678, "12.3 M")]
-    [InlineData(123_456_789, "123 M")]
+    [InlineData(999_700, "1.00\u00A0M")]
+    [InlineData(1_010_000, "1.01\u00A0M")]
+    [InlineData(6_840_000, "6.84\u00A0M")]
+    [InlineData(12_345_678, "12.3\u00A0M")]
+    [InlineData(123_456_789, "123\u00A0M")]
     public void A_value_is_short_with_three_figures_at_most(double value, string text)
     {
         Assert.Equal(text, DeskNumbers.Short(value));
@@ -33,7 +33,7 @@ public class DeskNumbersTests
     [InlineData(300, 294_000, "0.3–294k")]
     [InlineData(4_500, 52_000, "4.5–52k")]
     [InlineData(300, 850, "300–850")]
-    [InlineData(450_000, 1_180_000, "0.45–1.18 M")]
+    [InlineData(450_000, 1_180_000, "0.45–1.18\u00A0M")]
     [InlineData(307_000, 63_000, "63–307k")]
     [InlineData(34_200, 34_400, "34k")]
     public void A_range_takes_its_high_ends_unit(double low, double high, string text)
@@ -48,14 +48,14 @@ public class DeskNumbersTests
         Assert.Equal("34k+", DeskNumbers.Figure(34_000, 34_000, unsure: false, estimate: false, plus: true));
         Assert.Equal("~83k+", DeskNumbers.Figure(83_000, 83_000, unsure: false, estimate: true, plus: true));
         Assert.Equal("63–307k", DeskNumbers.Figure(63_000, 307_000, unsure: true, estimate: false, plus: false));
-        Assert.Equal("1.01 M ₽", DeskNumbers.Total(1_010_000, plus: false));
-        Assert.Equal("1.01 M+ ₽", DeskNumbers.Total(1_010_000, plus: true));
-        Assert.Equal("0 ₽", DeskNumbers.Total(0, plus: false));
+        Assert.Equal("1.01\u00A0M\u00A0₽", DeskNumbers.Total(1_010_000, plus: false));
+        Assert.Equal("1.01\u00A0M+\u00A0₽", DeskNumbers.Total(1_010_000, plus: true));
+        Assert.Equal("0\u00A0₽", DeskNumbers.Total(0, plus: false));
     }
 
     [Theory]
-    [InlineData(-10.3, "↓ −10%")]
-    [InlineData(14.2, "↑ +14%")]
+    [InlineData(-10.3, "↓\u00A0−10%")]
+    [InlineData(14.2, "↑\u00A0+14%")]
     [InlineData(-1.2, "−1%")]
     [InlineData(3, "+3%")]
     [InlineData(0.2, "0%")]
@@ -85,7 +85,7 @@ public class DeskNumbersInGermanTests
             Assert.Equal("4,5k", DeskNumbers.Short(4_500));
             Assert.Equal("0,3–294k", DeskNumbers.Range(300, 294_000));
             Assert.Equal("6,84\u00A0M+\u00A0₽", DeskNumbers.Total(6_840_000, plus: true));
-            Assert.Equal("↓ −10\u00A0%", DeskNumbers.Change(-10.3));
+            Assert.Equal("↓\u00A0−10\u00A0%", DeskNumbers.Change(-10.3));
         }
         finally
         {

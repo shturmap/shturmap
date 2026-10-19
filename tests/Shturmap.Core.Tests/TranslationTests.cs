@@ -128,6 +128,20 @@ public partial class TranslationTests
             yield return $"{key} was made from an older English text: translate it again";
     }
 
+    // The stash desk's units stand with their numbers in every language: a no-break space before "M" and "₽", never a
+    // line's break between them (the senior translator, 2026-10-20: the English "1.01 M ₽" had plain spaces).
+    [Fact]
+    public void The_desks_units_stand_with_their_numbers()
+    {
+        string[] units = ["DeskThousands", "DeskMillions", "DeskRange", "DeskRangeThousands", "DeskRangeMillions", "DeskRoubles", "DeskChange"];
+        var problems = Files.Value.Where(f => f.Name == "RuleTexts")
+            .SelectMany(f => f.Entries.Where(e => units.Contains(e.Key) && e.Value.Contains(' '))
+                .Select(e => $"{Relative(f.Path)}: {e.Key} has a plain space: \"{e.Value}\""))
+            .ToList();
+        Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
+        Assert.Contains(Files.Value, f => f.Name == "RuleTexts" && f.Entries.Any(e => e.Key == "DeskRoubles"));
+    }
+
     [GeneratedRegex(@"^(?<name>[A-Za-z]+Texts)(\.(?<lang>[A-Za-z-]+))?\.resx$")]
     private static partial Regex TextFileName();
 }
