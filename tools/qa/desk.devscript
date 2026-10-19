@@ -42,12 +42,25 @@ snapshot %TEMP%\shturmap-qa\desk\rule
 desk rule under:3
 
 # Two cards pinned (right-clicks): the LEDX, then the Grizzly at 1469/1800 on top; the pointer on to the key past the
-# best net, whose card stands under them with the gold light. Each pinned cell carries the pin's tab.
+# best net, whose card stands first in the rail with the gold light, the two pinned as one line each in the rail's foot,
+# in sight under it (UI QA pass of the second round, F1, 2026-10-19). Each pinned cell carries the pin's tab.
 desk pin stash 8 0
 desk pin backpack 4 1
 desk point stash 5 2
 wait 1
 snapshot %TEMP%\shturmap-qa\desk\pinned
+# The foot's second line, the LEDX's, clicked: its card whole in the pointed card's place, the Grizzly's line left in the
+# foot.
+desk show 2
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\pinshown
+# Four pinned (the blue keycard and the 5.45 ammo on top), the key pointed at again: three lines in the foot, the fourth,
+# the LEDX's, reached by the strip's own scroll.
+desk pin pockets 0 0
+desk pin rig 5 1
+desk point stash 5 2
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\pinmore
 desk unpin all
 
 # The guards: the blue keycard Therapist pays more for (a click copies nothing, the notice says why); the 5.45 ammo that

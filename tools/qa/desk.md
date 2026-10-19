@@ -12,7 +12,8 @@ day's bar, the traders), the click that copies a list price (its flash, decode a
 the card's pin, the copy's guards, a "?" cell's pick, and the cells scaling with the desk's width (40 to 80 DIP). After
 the owner's first test (2026-10-19) the cells fill the desk (40 to 128 DIP, the page flowed into columns), the pointed
 card stands first in the rail with the pins as one line each under it, the cell shows the flea's listing price, and the
-card's plate says what a click copies in short lines.
+card's plate says what a click copies in short lines. Since the UI QA pass of that round (F1) those lines stand at the
+rail's foot, always in sight, three at most, and the pointed card scrolls in the room above them.
 
 `desk.devscript` replays it without a screenshot: its `desk <n>` hands the window the made-up desk's reading n
 (`Rules.DeskExample`, built through the model as a reading's page is: real items of the catalogue, so their art and
@@ -21,6 +22,8 @@ states). Reading 1 is the mode's first; reading 2 changed the backpack (a LEDX m
 rules are held by `DeskSwitchTests`, `DeskFoldTests`, `DeskCellsTests`, `DeskNumbersTests`, `DeskPageRulesTests`,
 `DeskExampleTests`, `DeskCardTests`, `DeskCopyTests`, `DeskPinsTests` and `DeskHistoryTests`; the checks below are for
 the stills. The script's clicks (`desk copy`) leave the clipboard alone; the app log says what they would have copied.
+`desk show <n>` clicks the n-th pinned line in the rail's foot, from the top, as the pointer does (`desk show` alone is
+DESK at the rail's head).
 
 ## Run it
 
@@ -36,11 +39,11 @@ $app = Start-Process -FilePath $exe -PassThru -ArgumentList "--dev-view --verbos
 $app.WaitForExit()
 ```
 
-- The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `window`, `card`, `copy`, `rule`, `pinned`, `trader`,
-  `noflea`, `pick`, `picked`, `fold`, `unfold`, `same`, `plan`, `show`, `raid`, `after` and `kept`; then `--culture
-  de-DE`, `--window 900x560` (40 DIP cells, one column, scrolling) and `--window 1600x900` (40 DIP, three columns: the
-  gear's two and the stash's, unscrolled) for the other runs, and `--window 2560x1440` (80 DIP, three columns, as large
-  as the work area allows) (docs/QA.md, "Replay scripts").
+- The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `window`, `card`, `copy`, `rule`, `pinned`, `pinshown`,
+  `pinmore`, `trader`, `noflea`, `pick`, `picked`, `fold`, `unfold`, `same`, `plan`, `show`, `raid`, `after` and
+  `kept`; then `--culture de-DE`, `--window 900x560` (40 DIP cells, one column, scrolling) and `--window 1600x900` (40
+  DIP, three columns: the gear's two and the stash's, unscrolled) for the other runs, and `--window 2560x1440` (80 DIP,
+  three columns, as large as the work area allows) (docs/QA.md, "Replay scripts").
 - `--verbose`: the app log (`$qa\data\logs`) has every step and the lines `Example desk: reading 1 of 3`, `Stash desk
   up (reading)`, `Stash desk left (switch)` or `(dev)`, `Stash desk left (raid)`.
 - Windows' animation effects on: with them off the page stands at once and `entry` shows it whole. Keep the mouse off
@@ -94,16 +97,26 @@ $app.WaitForExit()
 - **rule**: the card's plate says "2% OVER", "Copies 1,020,000 ₽" and "Nets 921k ₽ after the fee"; settings' row
   "Flea price to copy" (open it by hand to check) the same; the −'s tip "Lower: 1% over the last low".
 - **pinned**: the pointed key's card first (UI QA pass of step C, F2), its plate with the 6 px gold square: "Copies
-  1,832,221 ₽", muted "Over the best net: at 1.75 M ₽ it nets 708k ₽, at this 707k ₽"; under it the two pinned cards
-  as one line each, framed in amber, the Grizzly's on top ("Grizzly medical kit ~33,461 ₽") over the LEDX's ("LEDX Skin
-  Transilluminator 1,000,000 ₽"), below the rail's fold at 900×560, in sight at 1600×900. On the page the LEDX's and the
-  Grizzly's cells carry a short amber bar on their top edge.
+  1,832,221 ₽", muted "Over the best net: at 1.75 M ₽ it nets 708k ₽, at this 707k ₽"; the two pinned cards as one line
+  each, framed in amber, at the rail's foot under the rail's hairline, the Grizzly's on top ("Grizzly medical kit
+  ~33,461 ₽") over the LEDX's ("LEDX Skin Transilluminator 1,000,000 ₽"), both whole and in sight at every size, in
+  English and German (UI QA pass of the second round, F1: at 1600×900 the LEDX's line stood cut at the window's bottom,
+  in German below it); the key's card runs on to the hairline and scrolls in the room above it (at 900×560 its figure
+  and the plate's lines in view, in English and German). On the page the LEDX's and the Grizzly's cells carry a short
+  amber bar on their top edge.
+- **pinshown** (`desk show 2`, the foot's second line clicked): the LEDX's card whole first in the rail, framed in
+  amber as pinned, its head at the top of the card's room (a click scrolls the room back to its top); the foot holds
+  the Grizzly's line alone; the key's card gone. At 900×560 KEEP's eyebrow under the
+  flea's net line, its first need at the hairline.
+- **pinmore** (four pinned, the key pointed at again): the key's card first; at the foot three lines, "5.45x39mm BS gs
+  27,000 ₽" on top, then "TerraGroup Labs keycard (Blue) 459,000 ₽" and the Grizzly's; the LEDX's, the fourth, not in
+  sight (the strip's own scroll reaches it; the strip no taller than three lines).
 - **trader**: the blue keycard's card: the plate's line muted, "Therapist pays more · 459,000 ₽. A click copies
   nothing.", only the last low under it; the notice "Nothing copied: Therapist pays more, 459,000 ₽"; no flash.
 - **noflea**: the 5.45 ammunition's card: "NOT ON THE FLEA" under its name, the plate "Can't be listed on the flea. A
   click copies nothing.", no flea net line, Prapor and Fence under TRADERS.
-- **pick**: the keycards' "?" card: "One of 3 items", the note, three rows (icon, name, figure in gold: 459k, 277k,
-  128k); the notice "One of 3 items: pick it on the card first".
+- **pick**: the keycards' "?" card: "One of 3 items", the note, three rows (icon, name, figure in gold: 459k, 330k,
+  160k, the listing prices); the notice "One of 3 items: pick it on the card first".
 - **picked**: the violet keycard's card in the rail; on the page the cell's "?" plate gone, its art at full strength, its
   figure the violet's.
 - **fold**: "UNCHANGED · LOADOUT ▸ · TACTICAL RIG ▸ · POCKETS ▸ · SPECIAL SLOTS ▸" over BACKPACK, then "UNCHANGED ·

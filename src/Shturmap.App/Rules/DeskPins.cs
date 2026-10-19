@@ -36,6 +36,18 @@ public static class DeskPins
 
     public static bool IsPinned(IReadOnlyList<DeskPin> pins, DeskCellKey key) => pins.Any(p => p.Key == key);
 
+    /// <summary>The most pinned lines the rail's foot shows at once while a cell is pointed at (UI QA pass of the desk's
+    /// second round, F1, 2026-10-19); more scroll within it.</summary>
+    public const int FootLines = 3;
+
+    /// <summary>
+    /// The height of the rail's foot strip, from its lines' heights as drawn and the gap between them: no limit while it
+    /// has <see cref="FootLines"/> or fewer, else its first <see cref="FootLines"/> lines and their gaps, so the fourth and
+    /// on scroll within it.
+    /// </summary>
+    public static double FootRoom(IReadOnlyList<double> lines, double gap) =>
+        lines.Count <= FootLines ? double.PositiveInfinity : lines.Take(FootLines).Sum() + (FootLines - 1) * gap;
+
     /// <summary>The pins a new page keeps: those whose cell stands at its place as it was read (place, ids, count,
     /// condition: <see cref="DeskCell.SameAs"/>), each with the page's cell (its pick may be new); null for no page.</summary>
     public static IReadOnlyList<DeskPin> Kept(IReadOnlyList<DeskPin> pins, DeskSheet? sheet)

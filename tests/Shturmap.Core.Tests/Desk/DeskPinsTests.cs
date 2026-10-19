@@ -65,4 +65,17 @@ public class DeskPinsTests
         Assert.Equal([new DeskCellKey("stash", null, 4, 1)], DeskPins.Kept(pins, sheet).Select(p => p.Key));
         Assert.Empty(DeskPins.Kept(pins, null));
     }
+
+    // UI QA pass of the second round (F1, 2026-10-19): while a cell is pointed at, the pinned lines stand in the rail's
+    // foot, always in sight; three at most, the fourth and on scrolling within the strip, by their heights as drawn.
+    [Fact]
+    public void The_foot_shows_three_lines_and_scrolls_the_rest()
+    {
+        Assert.Equal(3, DeskPins.FootLines);
+        Assert.Equal(double.PositiveInfinity, DeskPins.FootRoom([], 8));
+        Assert.Equal(double.PositiveInfinity, DeskPins.FootRoom([39, 39, 39], 8));
+        Assert.Equal(3 * 39 + 2 * 8, DeskPins.FootRoom([39, 39, 39, 39], 8));
+        // A larger text size draws taller lines: the strip keeps three whole.
+        Assert.Equal(44 + 46 + 44 + 2 * 8, DeskPins.FootRoom([44, 46, 44, 44, 44], 8));
+    }
 }
