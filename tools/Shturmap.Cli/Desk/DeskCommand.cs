@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Shturmap.App.Rules;
 using Shturmap.Core.Desk;
 using Shturmap.Core.Logs;
 using Shturmap.Core.Quests;
@@ -38,6 +39,7 @@ internal static class DeskCommand
         var quiet = false;
         bool? raid = null;
         var audit = false;
+        (double Width, double Height)? plate = null;
         var mode = GameMode.Pve;
         var inputs = new List<string>();
         for (var i = 0; i < args.Count; i++)
@@ -51,17 +53,24 @@ internal static class DeskCommand
                 case "--menus": raid = false; break;
                 case "--lattice": Lattice = true; break;
                 case "--audit": audit = true; break;
+                case "--plate" when i + 1 < args.Count && args[i + 1].Split('x') is [var w, var h]
+                                    && double.TryParse(w, CultureInfo.InvariantCulture, out var pw) && double.TryParse(h, CultureInfo.InvariantCulture, out var ph):
+                    plate = (pw, ph);
+                    i++;
+                    break;
                 case "--mode": mode = args[++i] == "pvp" || args[i] == "regular" ? GameMode.Pvp : GameMode.Pve; break;
                 default: inputs.Add(args[i]); break;
             }
         }
         if (inputs.Count == 0 && !audit)
         {
-            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--why] [--lattice]");
+            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--plate <w>x<h>] [--why] [--lattice]");
             Console.WriteLine("  each picture's page: regions, cells (name or \"one of N\", count, condition, figure and source, marks), the head line;");
             Console.WriteLine("  with truth-<picture>.txt beside a picture, the tally against it (and footprints-<picture>.txt, the items' footprints).");
             Console.WriteLine("  --quiet: the tallies only. A raid's inventory screen (by recognition, or --raid: as the in-raid glance reads it,");
             Console.WriteLine("  the world's pictures said none) prints its LOOT regions and is never taken into the page in hand.");
+            Console.WriteLine("  --plate <w>x<h>: a raid's LOOT regions laid out as the in-raid glance's plate lays them out in a room that wide and");
+            Console.WriteLine("  high under its head, in DIP (the app log's \"room\"): the cell size, each region whole or cut short, and the ALSO line.");
             return;
         }
         var files = inputs.SelectMany(p => Directory.Exists(p) ? Directory.GetFiles(p, "*.png").Order(StringComparer.Ordinal).ToArray() : [p]).ToList();
@@ -145,6 +154,8 @@ internal static class DeskCommand
                 }
                 if (look.Layout.Screen == DeskScreen.Raid)
                     Console.WriteLine("   ON YOU: " + string.Join("; ", sheet.Regions.Where(r => r.Region.OnYou).Select(r => RegionTally(r.Region))));
+                if (plate is { } room && look.Layout.Screen == DeskScreen.Raid)
+                    PrintPlate(sheet, data, room.Width, room.Height);
                 foreach (var w in attached.Regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow))
                     Console.WriteLine($"   window \"{w.Title}\": " + (w.AttachedTo is { } a ? $"attached to {a.Region} {a.Slot ?? $"{a.I},{a.J}"}" : $"attached to none ({w.SameName} of its name on the page)") +
                                       $", title names {w.TitleIds.Count} items");
@@ -233,6 +244,35 @@ internal static class DeskCommand
                 best = (median, 100.0 * hs.Count(h => h >= min) / hs.Count);
         }
         return best;
+    }
+
+    // "--plate <w>x<h>": the in-raid glance's plate in a room this wide and high under its head, as the app lays it out
+    // (GlancePlateRules.Layout; the app log's "room"): the cell size, each region's head, whole or cut short, with the items it
+    // draws (its slots, and its grid's cells in the rows drawn), and the ALSO line.
+    private static void PrintPlate(DeskSheet sheet, GameData data, double width, double height)
+    {
+        var regions = sheet.Regions.Where(r => r.Part == DeskPart.Loot).ToList();
+        var laid = GlancePlateRules.Layout(regions, sheet.Page, width, height);
+        Console.WriteLine($"   plate in {width:0}x{height:0} DIP: {laid.Shown.Count} regions at {laid.Cell:0} DIP, {laid.CutShortCount} cut short, " +
+                          $"{laid.Cut.Count} in the ALSO line; it takes {laid.Width:0}x{laid.Height:0} DIP");
+        for (var i = 0; i < laid.Shown.Count; i++)
+        {
+            var region = laid.Shown[i];
+            var all = DeskPageRules.Grid(region.Region).Rows;
+            var drawn = region.Cells.Where(c => c.Cell.IsSlot || c.Cell.J < laid.Rows[i]).Select(c => c.Cell.Ids.Count switch
+            {
+                0 => "?",
+                1 => data.ItemShortName(c.Cell.Ids[0]),
+                _ => "? " + data.ItemShortName(c.Cell.Ids[0]),
+            });
+            Console.WriteLine($"     column {laid.Columns[i] + 1}: {GlancePlateRules.HeadLine(region.Region, sheet.Page, laid.CutShort(i)).Replace('\u00A0', ' ')}" +
+                              (all > 0 ? $" (rows {laid.Rows[i]} of {all})" : "") + ": " + string.Join(", ", drawn));
+        }
+        if (laid.Cut.Count > 0)
+        {
+            var (word, names) = GlancePlateRules.CutLine(laid.Cut, sheet.Page);
+            Console.WriteLine($"     {word} · {string.Join(" · ", names)}");
+        }
     }
 
     // A region's tally: its cells named, one of N, unread, and a LOOT part's search state.

@@ -131,7 +131,8 @@ switch (command)
                                             condition, figure and source, marks), the head line, the page in hand over the
                                             pictures in order, and the tally against truth-<picture>.txt files (footprints-
                                             <picture>.txt: read whole or split); a raid's inventory screen (by recognition, or
-                                            --raid as the in-raid glance reads it) with its LOOT regions, never the page in hand;
+                                            --raid as the in-raid glance reads it) with its LOOT regions, never the page in hand,
+                                            and with --plate <w>x<h> laid out as the glance's plate in that room (the app log's);
                                             the data from the cache (--online to ask, --quiet tallies only, --why labels,
                                             --lattice the stash's lines, --audit the DESK line)
             shturmap-cli ocr-compare <png|folder>  the 2026-10-19 spike: the cells' labels read by Windows' recognition (as the reader

@@ -533,7 +533,7 @@ public sealed partial class MainWindow
     {
         var now = DateTime.Now;
         // A developer's snapshot keeps the band up with its rows, as it keeps every cue up, so it can be looked at.
-        var keep = SnapshotMode;
+        var keep = KeepsCues;
         var busy = false;
         foreach (var row in _rollRows)
         {
@@ -728,7 +728,7 @@ public sealed partial class MainWindow
     // after the list (or the last that joined it) came. A developer's snapshot keeps it up.
     private void HideRollCallAfter()
     {
-        if (SnapshotMode)
+        if (KeepsCues)
             return;
         _rollHide ??= OneShot(FadeRollCallOut);
         _rollHide.Stop();

@@ -31,8 +31,10 @@ param(
   [ValidateRange(1, 3)] [int] $DeskReading = 1,
   # The made-up in-raid glance (docs/DESIGN.md §4, *The in-raid glance*), up as a raid screenshot of an inventory screen
   # brings it once the raid is on: 1, a drawer with three items; 2, a body with its slots, an UNSEARCHED rig, pockets being
-  # searched and a searched backpack (src\Shturmap.App\Rules\GlanceExample.cs). The snapshot keeps the plate up. Not
-  # with -PlanOnly: the glance is a raid's.
+  # searched and a searched backpack (src\Shturmap.App\Rules\GlanceExample.cs). The raid is a Scav's: its start shows
+  # no extract list, so no roll call comes to end the plate; the run's cues go in their time, as live (its SCAV RAID cue
+  # 5 s), the reading waits for them as a live one does, and the snapshot keeps the plate up (UI QA pass of 2026-10-19,
+  # F6). Not with -PlanOnly: the glance is a raid's.
   [ValidateRange(0, 2)] [int] $Glance,
   # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
   [int] $Tour,
@@ -71,6 +73,7 @@ param(
 )
 if ($Demo -and $Map -ne 'streets') { throw 'The demo plays Streets only.' }
 $ErrorActionPreference = 'Stop'
+if ($Glance -gt 0) { $Scav = [switch]::Present }
 $root = Join-Path ([IO.Path]::GetTempPath()) ("shturmap-fake-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
 $start = Get-Date
 $session = 'log_' + $start.ToString('yyyy.MM.dd_HH-mm-ss') + '_1.1.5.1.47510'

@@ -653,6 +653,12 @@ item layout mirrored", in place of the top five per slot. Binding: DESIGN.md §4
   pockets being searched, a searched backpack), the script's `glance [<n>]`, `fake-raid.ps1 -Glance <n>` (`--glance`),
   the replay `tools\qa\glance.devscript` and `glance.md`. Tests: `GlancePlateRulesTests` (what is drawn, the head's
   words, the heads and states, the sizes and the cut, in English and German), `DevToolsTests`.
+- **UI QA pass (2026-10-19):** FAIL 0/5/1 → F1 fixed (the cut rule; `shturmap-cli desk --raid --plate`), F3 the owner's
+  (accepted, DESIGN.md), F6 fixed (`-Glance` a Scav raid; the layout check's `glance` view); F2 the looted body's rig with
+  its head scrolled off is neither drawn nor named (the reader's rule: a region without its head is not read; for the
+  reader's next round: infer the part from its place in the LOOT pane); F4 (a cue ending the plate, QUEST COMPLETE with
+  the plate) and F5 (effects off, a frame-by-frame fade; one still at 6.1 s showed the plate evenly at about 80 %, gone
+  at 7.6 s) not run, for the owner's test. Translator: the German heads' wrap fixed.
 - **Open**: the owner's call on **motion in a raid** (the plate stands at once, as built, or comes in with the panel's
   D: the band's flash, the total counting up, the cells 50 ms apart); at 900×560 a body's regions have no room under the
   48 px title and are named in the ALSO line only (a smaller title there, or a taller plate, would draw its slots); the

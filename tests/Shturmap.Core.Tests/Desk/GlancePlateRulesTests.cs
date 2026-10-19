@@ -25,6 +25,26 @@ public class GlancePlateRulesTests
 
     private static DeskRegionSheet Region(RaidGlance glance, string key) => glance.Sheet.Regions.Single(r => r.Region.Key == key);
 
+    // A head as it reads: its no-break spaces (it wraps only before a "·") as spaces.
+    private static string Words(string head) => head.Replace('\u00A0', ' ');
+
+    // A made-up LOOT region: a grid cols×rows with an item in the first cell of each row, under its own container's slot cell
+    // where it has one (a body's part), searched or not.
+    private static DeskRegionSheet Made(DeskRegionKind kind, int cols, int rows, DeskSearch search = DeskSearch.Searched, bool slot = true)
+    {
+        var cells = new List<DeskCell>();
+        if (slot)
+            cells.Add(new DeskCell(0, 0, 1, 1, ["bag"]) { Slot = "backpack" });
+        for (var j = 0; j < rows && cols > 0; j++)
+            cells.Add(new DeskCell(0, j, 1, 1, [$"item {j}"]));
+        var key = kind switch { DeskRegionKind.LootBackpack => "loot:backpack", DeskRegionKind.LootPockets => "loot:pockets", _ => "loot" };
+        var region = new DeskRegion(key, kind, cols, rows, cells) { Search = search, Title = "LOOT · DRAWER" };
+        return new DeskRegionSheet(region, cells.Select(c => new DeskCellSheet(c, null, DeskKeepLevel.None, false)).ToList(), DeskPart.Loot, 0,
+            search != DeskSearch.Searched);
+    }
+
+    private static DeskPage PageOf(params DeskRegionSheet[] regions) => new(At, regions.Select(r => r.Region).ToList());
+
     // The loot is drawn, never the player's own gear (it is known; the glance is about the loot): the LOOT pane's regions in
     // the game's order, a body's slots first. Without a LOOT pane, nothing.
     [Fact]
@@ -80,14 +100,20 @@ public class GlancePlateRulesTests
         var backpack = Region(Body, "loot:backpack").Region;
         Assert.Equal("UNSEARCHED +", GlancePlateRules.State(rig));
         Assert.False(GlancePlateRules.HasGrid(rig));
-        Assert.Equal("TACTICAL RIG", GlancePlateRules.HeadLine(rig, page));
-        Assert.Equal("POCKETS · SEARCHING +", GlancePlateRules.HeadLine(pockets, page));
+        Assert.Equal("TACTICAL RIG", Words(GlancePlateRules.HeadLine(rig, page)));
+        Assert.Equal("POCKETS · SEARCHING +", Words(GlancePlateRules.HeadLine(pockets, page)));
         Assert.Null(GlancePlateRules.State(backpack));
         Assert.Equal("BACKPACK", GlancePlateRules.HeadLine(backpack, page));
-        Assert.Equal("BACKPACK · MORE BELOW +", GlancePlateRules.HeadLine(backpack with { Cut = true }, page));
+        Assert.Equal("BACKPACK · MORE BELOW +", Words(GlancePlateRules.HeadLine(backpack with { Cut = true }, page)));
+        // Cut short by the plate (its room took its top rows): MORE BELOW, or the search's word where the part is being searched.
+        Assert.Equal("BACKPACK · MORE BELOW +", Words(GlancePlateRules.HeadLine(backpack, page, cutShort: true)));
+        Assert.Equal("POCKETS · SEARCHING +", Words(GlancePlateRules.HeadLine(pockets, page, cutShort: true)));
+        // It wraps only before a "·": the words between them are joined by no-break spaces.
+        Assert.Equal("POCKETS ·\u00A0SEARCHING\u00A0+", GlancePlateRules.HeadLine(pockets, page));
+        Assert.Equal("TACTICAL\u00A0RIG", GlancePlateRules.HeadLine(rig, page));
         // The closed region's room: three quarters of a cell, never under 28 DIP; it counts in the region's height.
         Assert.Equal((30.0, 60.0), (GlancePlateRules.ClosedHeight(40), GlancePlateRules.ClosedHeight(80)));
-        Assert.True(GlancePlateRules.RegionHeight(rig, 40, 400) > GlancePlateRules.RegionHeight(rig with { Search = DeskSearch.Searched }, 40, 400));
+        Assert.True(GlancePlateRules.RegionHeight(rig, page, 40, 400) > GlancePlateRules.RegionHeight(rig with { Search = DeskSearch.Searched }, page, 40, 400));
     }
 
     // The "?" cells counted: a cell that fits several items and wasn't picked (the body's helmet and armband); a pick makes
@@ -123,8 +149,9 @@ public class GlancePlateRulesTests
             var chosen = GlancePlateRules.Layout(body, page, w, h);
             Assert.True(chosen.Fits(w, h), $"{w}×{h} at {chosen.Cell}");
             Assert.Empty(chosen.Cut);
+            Assert.Equal(0, chosen.CutShortCount);
             if (chosen.Cell < GlancePlateRules.LargestCell)
-                Assert.False(GlancePlateRules.Arrange(body, chosen.Cell + 8, h).Fits(w, h), $"{w}×{h} at {chosen.Cell + 8}");
+                Assert.False(GlancePlateRules.Arrange(body, page, chosen.Cell + 8, h).Fits(w, h), $"{w}×{h} at {chosen.Cell + 8}");
             Assert.Equal(chosen.Columns.Order(), chosen.Columns);
         }
         // 1600×900's room (about 1150 by 300 under the head): in columns.
@@ -140,6 +167,79 @@ public class GlancePlateRulesTests
         Assert.True(some.Height <= 260, $"{some.Height}");
         // Nothing to draw takes no room.
         Assert.Equal(0, GlancePlateRules.Layout([], page, 452, 129).Height);
+    }
+
+    // A region that fits no column whole even at 40 is drawn cut short (UI QA pass of 2026-10-19, F1: a looted body's
+    // backpack, a tall grid three cells wide, was named in the ALSO line alone): its head says so, its grid's top rows as many
+    // as the room takes, at least two. Whole wins where it fits: the largest size at which everything stands whole.
+    [Fact]
+    public void A_region_too_tall_for_the_room_is_drawn_cut_short()
+    {
+        // A 3×8 backpack being searched, under its slot cell, in a room 300 high: whole it takes 389 at 40.
+        var backpack = Made(DeskRegionKind.LootBackpack, 3, 8, DeskSearch.Searching);
+        var page = PageOf(backpack);
+        Assert.True(GlancePlateRules.RegionHeight(backpack.Region, page, 40, 161) > 300);
+        var laid = GlancePlateRules.Layout([backpack], page, 600, 300);
+        Assert.Equal((40.0, 1, 0), (laid.Cell, laid.Shown.Count, laid.Cut.Count));
+        Assert.True(laid.CutShort(0));
+        Assert.Equal(1, laid.CutShortCount);
+        Assert.InRange(laid.Rows[0], GlancePlateRules.LeastRows, 7);
+        Assert.True(laid.Fits(600, 300), $"{laid.Width}×{laid.Height}");
+        // As many rows as the room takes: one more wouldn't fit.
+        var column = laid.ColumnWidths[0];
+        Assert.True(GlancePlateRules.RegionHeight(backpack.Region, page, 40, column, rows: laid.Rows[0] + 1) > 300);
+        // Its head: the search's word, which wins; a searched one cut short says MORE BELOW.
+        Assert.Equal("BACKPACK · SEARCHING +", Words(GlancePlateRules.HeadLine(backpack.Region, page, laid.CutShort(0))));
+        Assert.Equal("BACKPACK · MORE BELOW +", Words(GlancePlateRules.HeadLine(backpack.Region with { Search = DeskSearch.Searched }, page, cutShort: true)));
+
+        // The body's shape of that picture: its pockets not searched (a closed region), the backpack beside them in a
+        // column of its own, cut short; without the width for a second column, under them in the rest of the first.
+        var pockets = Made(DeskRegionKind.LootPockets, 0, 0, DeskSearch.Unsearched, slot: false);
+        var body = PageOf(pockets, backpack);
+        var beside = GlancePlateRules.Layout([pockets, backpack], body, 600, 300);
+        Assert.Equal([0, 1], beside.Columns);
+        Assert.Empty(beside.Cut);
+        Assert.Equal((false, true), (beside.CutShort(0), beside.CutShort(1)));
+        Assert.True(beside.Fits(600, 300));
+        var under = GlancePlateRules.Layout([pockets, backpack], body, 200, 300);
+        Assert.Equal([0, 0], under.Columns);
+        Assert.Empty(under.Cut);
+        Assert.True(under.CutShort(1));
+        Assert.True(under.Rows[1] < beside.Rows[1] && under.Rows[1] >= GlancePlateRules.LeastRows);
+        Assert.True(under.Fits(200, 300), $"{under.Width}×{under.Height}");
+    }
+
+    // A drawer that fits stands whole, at the largest size it fits; nothing cut short.
+    [Fact]
+    public void A_region_that_fits_stands_whole()
+    {
+        var drawer = Made(DeskRegionKind.Loot, 4, 2, slot: false);
+        var page = PageOf(drawer);
+        var laid = GlancePlateRules.Layout([drawer], page, 600, 300);
+        Assert.Equal((80.0, 0, 0), (laid.Cell, laid.CutShortCount, laid.Cut.Count));
+        Assert.Equal([2], laid.Rows);
+        Assert.Equal("DRAWER", GlancePlateRules.HeadLine(drawer.Region, page));
+        // Whole at a smaller size wins over cut short at a larger one: the 3×8 backpack in a room it fits whole at 40.
+        var backpack = Made(DeskRegionKind.LootBackpack, 3, 8);
+        var tall = GlancePlateRules.Layout([backpack], PageOf(backpack), 600, 420);
+        Assert.Equal(0, tall.CutShortCount);
+        Assert.True(tall.Fits(600, 420));
+    }
+
+    // Where even its head, its slot and two rows don't fit, a region gives way to the ALSO line, and the regions after it.
+    [Fact]
+    public void A_region_without_room_for_two_rows_is_named_in_the_also_line()
+    {
+        var backpack = Made(DeskRegionKind.LootBackpack, 3, 8, DeskSearch.Searching);
+        var page = PageOf(backpack);
+        Assert.Null(GlancePlateRules.RowsIn(backpack.Region, page, 40, 161, 120));
+        var laid = GlancePlateRules.Layout([backpack], page, 600, 120);
+        Assert.Empty(laid.Shown);
+        Assert.Equal(["loot:backpack"], laid.Cut.Select(r => r.Region.Key));
+        Assert.True(laid.Height <= 120, $"{laid.Height}");
+        // A region with no grid to cut (a closed one) stands whole or not at all.
+        var pockets = Made(DeskRegionKind.LootPockets, 0, 0, DeskSearch.Unsearched, slot: false);
+        Assert.Null(GlancePlateRules.RowsIn(pockets.Region, PageOf(pockets), 40, 161, 1000));
     }
 
     // The cut line in the fold line's words: ALSO, then each region that gave way with what it holds.
@@ -178,12 +278,37 @@ public class GlancePlateRulesInGermanTests
             Assert.Equal(("AUS DEINEM SCREENSHOT", "LOOT", "2 unsicher"), (head.Eyebrow, head.Word, head.Unsure));
             Assert.StartsWith("AN DIR ", head.Line, StringComparison.Ordinal);
             var rig = body.Sheet.Regions.Single(r => r.Region.Key == "loot:rig").Region;
-            Assert.Equal("NICHT DURCHSUCHT +", GlancePlateRules.State(rig));
+            Assert.Equal("NICHT DURCHSUCHT\u00A0+", GlancePlateRules.State(rig));
             Assert.Equal("RIG", GlancePlateRules.Name(rig, body.Sheet.Page));
+            // The heads wider than a four-cell column at 40 DIP (the senior translator, 2026-10-19: they split their phrase):
+            // they wrap only before the "·", and a region's height counts the second line.
+            var page = body.Sheet.Page;
+            var pockets = body.Sheet.Regions.Single(r => r.Region.Key == "loot:pockets").Region;
+            var backpack = body.Sheet.Regions.Single(r => r.Region.Key == "loot:backpack").Region;
+            var searching = GlancePlateRules.HeadLine(pockets, page);
+            var below = GlancePlateRules.HeadLine(backpack, page, cutShort: true);
+            Assert.Equal(("TASCHEN ·\u00A0WIRD\u00A0DURCHSUCHT\u00A0+", "RUCKSACK ·\u00A0MEHR\u00A0DARUNTER\u00A0+"), (searching, below));
+            var px = DeskPageRules.HeadSize(40);
+            Assert.Equal((2, 2), (GlancePlateRules.HeadLines(searching, px, 161), GlancePlateRules.HeadLines(below, px, 161)));
+            Assert.Equal(1, GlancePlateRules.HeadLines(searching, px, 400));
+            Assert.True(GlancePlateRules.RegionHeight(pockets, page, 40, 161) > GlancePlateRules.RegionHeight(pockets, page, 40, 400));
         }
         finally
         {
             UiLanguage.Set(UiLanguage.English);
         }
+    }
+
+    // The English heads at 40 DIP stand on one line in a four-cell column.
+    [Fact]
+    public void The_english_heads_stand_on_one_line_at_40()
+    {
+        var body = GlanceExample.Glance(2, 1, null, DateTimeOffset.UnixEpoch);
+        var page = body.Sheet.Page;
+        var px = DeskPageRules.HeadSize(40);
+        var pockets = body.Sheet.Regions.Single(r => r.Region.Key == "loot:pockets").Region;
+        var backpack = body.Sheet.Regions.Single(r => r.Region.Key == "loot:backpack").Region;
+        Assert.Equal(1, GlancePlateRules.HeadLines(GlancePlateRules.HeadLine(pockets, page), px, 161));
+        Assert.Equal(1, GlancePlateRules.HeadLines(GlancePlateRules.HeadLine(backpack, page, cutShort: true), px, 161));
     }
 }
