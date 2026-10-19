@@ -226,11 +226,21 @@ the parts work", the script verb and the snapshot flags, the diagnostics) and §
 
 **Open.**
 
-- The UI QA pass and the senior translator's review (the coordinator's, after this).
+- **The UI QA pass (2026-10-19, on ea0cb16) and the senior translator's review (2a75488).** The pass found one blocker
+  and four nits; fixed after it: F1, with the app in German the catalogue's German names matched no hand-over item read
+  from the English game (no cells, nothing under a Scav's FIND IN RAID): now matched against the items' English names
+  (`GameData.EnglishItemNames`) whatever the app's language, the cell in the app's language; F2, the raid card's
+  hand-over row said "ANY MAP" beside ANYWHERE and broke "HAND OVER AFTER THE / RAID": no "any map" there, a row's
+  muted line breaks only between its parts, a two-word item stays whole; F3, Plan said 24 and the raid card 25 minutes
+  at the same moment: both round down; F5, the layout check took a glow's gold copy for text over text: named
+  `GlowCopy`, a layer on purpose (the marks' copies too); the translator's date, "18 Okt." for „18. Okt.“:
+  `UiLanguage.DayMonth`. F4 (German synopses keep the game's "PMC operatives") stays: the synopsis keeps a kill's target
+  as read and has no table of targets to translate. The pass's replay is `tools\qa\operational-feedback`. To re-check:
+  a QA pass on the fixes.
 - That a Scav's raid counts no operational kill or survival is the panel's assumption, written into DESIGN.md as one:
   to confirm in the game (a Scav raid with a kill daily open).
 - The German game (its header words and tab names) and other resolutions than 2560×1440 are unread; the reading is
-  English-only, so a German game reads no table. A hand-over's items match the catalogue only in English data.
+  English-only, so a German game reads no table.
 - More rows than fit (scrolling) and a weekly's countdown past a day ("hours as written") are still unverified.
 - The ended line counts the mode's tasks that ran out, whatever their map, and stands in every card's section.
 

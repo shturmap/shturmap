@@ -202,7 +202,7 @@
   </data>
   <data name="OperationalAnyMap" xml:space="preserve">
     <value>any map</value>
-    <comment>An operational task's muted line, first, for a task the game says counts on any location ("ANY MAP · HAND OVER AFTER · 2 D LEFT"). Shown in capitals; the ANY MAP heading's words.</comment>
+    <comment>An operational task's muted line in Plan, first, for a task the game says counts on any location ("ANY MAP · HAND OVER AFTER · 2 D LEFT"; the raid card says ANYWHERE in its distance column instead). Shown in capitals; the ANY MAP heading's words.</comment>
   </data>
   <data name="OperationalHandOverAfter" xml:space="preserve">
     <value>hand over after</value>
@@ -210,7 +210,7 @@
   </data>
   <data name="OperationalHandOverAfterRaid" xml:space="preserve">
     <value>hand over after the raid</value>
-    <comment>As OperationalHandOverAfter, in the raid card ("ANY MAP · HAND OVER AFTER THE RAID"). Shown in capitals.</comment>
+    <comment>As OperationalHandOverAfter, in the raid card ("HAND OVER AFTER THE RAID", with ANYWHERE in the row's distance column). Shown in capitals.</comment>
   </data>
   <data name="OperationalMinutesLeft" xml:space="preserve">
     <value>{count} min left</value>

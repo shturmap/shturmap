@@ -45,6 +45,19 @@ public sealed class GameData
     /// <summary>An item's short name, else its full name.</summary>
     public string ItemShortName(string id) => ItemShortNames.TryGetValue(id, out var name) ? name : ItemName(id);
 
+    /// <summary>
+    /// Items' English names by id, when the data is in another language; empty when it is in English (then
+    /// <see cref="ItemNames"/> are). What a picture of the English game names an item by (an operational hand-over's
+    /// quoted "SSD drive") is matched against these, whatever the app's language (QA, 2026-10-19: a German app found
+    /// none).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> EnglishItemNames { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>Items' names as the English game writes them: <see cref="EnglishItemNames"/>, or the data's own when it
+    /// is in English.</summary>
+    public IReadOnlyDictionary<string, string> ItemNamesInEnglish =>
+        EnglishItemNames.Count > 0 ? EnglishItemNames : ItemNames;
+
     /// <summary>Extracts' internal names by id ("Alpinist" for Cliff Descent), from before translation.</summary>
     public IReadOnlyDictionary<string, string> ExtractKeys { get; init; } = new Dictionary<string, string>();
 

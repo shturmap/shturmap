@@ -1,5 +1,7 @@
 using System.Globalization;
+using Shturmap.Core.Logs;
 using Shturmap.Core.Operational;
+using Shturmap.Data.TarkovDev;
 using Shturmap.Game.Screenshots;
 
 namespace Shturmap.Session.Tests;
@@ -112,6 +114,46 @@ public class OperationalSessionTests
         await Task.Delay(800, TestContext.Current.CancellationToken);
         Assert.Equal(0, asked);
         Assert.Empty(rig.Session.Snapshot.Operational);
+    }
+
+    private static TaskObjective HandOver(string item) => new($"Hand over the found in raid item: \"{item}\"", null, null);
+
+    // Made-up item ids (24 characters, as the game's).
+    private const string Zorb = "000000000000000000000a01", Fan = "000000000000000000000a02";
+
+    // The rig's data in German: the catalogue's names are German, and one German name is another item's English one.
+    private static GameData German(GameMode mode)
+    {
+        var data = SessionRig.Data(mode);
+        return new GameData
+        {
+            Mode = mode, Language = "de", Maps = data.Maps, Tasks = data.Tasks, Traders = data.Traders,
+            MapDefinitions = data.MapDefinitions, CheckedAt = data.CheckedAt,
+            ItemNames = new Dictionary<string, string> { [Zorb] = "Zorblaufwerk", [Fan] = "Zorb drive" },
+            EnglishItemNames = new Dictionary<string, string> { [Zorb] = "Zorb drive", [Fan] = "Zorb fan" },
+        };
+    }
+
+    // The game is read in English: a hand-over's quoted names are matched against the items' English names whatever the
+    // app's language (QA, 2026-10-19: with the app in German the item cells and FIND IN RAID's rows were gone).
+    [Fact]
+    public async Task A_hand_overs_items_are_found_by_their_english_names_in_a_german_catalogue()
+    {
+        await using var rig = new SessionRig(configure: (paths, locations) => new GameSession(paths, locations)
+        {
+            GivenData = German,
+            TasksReader = (_, _) => Task.FromResult<TaskPage?>(Table(Row("Find and transfer", "Any location",
+                TimeSpan.FromDays(2), HandOver("Zorb drive"), HandOver("Zorb fan"), HandOver("Zorblaufwerk")))),
+            StashReader = (_, _, _) => Task.FromResult<StashReading?>(new StashReading(false, [])),
+        });
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+        MenuScreenshot(rig);
+        var s = await rig.Until(s => s.Operational.Count > 0, "the operational tasks");
+        // Each by its English name; a German name read from the English game is no item's.
+        Assert.Equal([("Zorb drive", Zorb), ("Zorb fan", Fan), ("Zorblaufwerk", null)],
+            s.Operational[0].Items.Select(i => (i.Name, i.ItemId)));
     }
 
     [Fact]

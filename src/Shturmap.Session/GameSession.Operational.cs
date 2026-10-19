@@ -125,7 +125,9 @@ public sealed partial class GameSession
     // Under the gate: the mode's tasks as the rail shows them, each with its map's name as Plan counts maps (a
     // variant is its map) and the items its hand-overs name, with the catalogue's id where exactly one item has that
     // full name (the stash's rule, never against the whole catalogue, gives way here: a quoted name has nothing to
-    // narrow it, so only a whole name that matches counts; else the words alone).
+    // narrow it, so only a whole name that matches counts; else the words alone). The names are the English game's, so
+    // they are matched against the items' English names whatever the app's language (QA, 2026-10-19: a German app's
+    // catalogue found none); the cell then shows the item in the app's language, as any item cell does.
     private IReadOnlyList<OperationalShown> OperationalShownNow()
     {
         var tasks = _operational.Tasks(_mode);
@@ -143,7 +145,7 @@ public sealed partial class GameSession
             .Select(name => new OperationalItem(name, byName.GetValueOrDefault(name))).ToList();
     }
 
-    // The catalogue's full names, each to its one id; a name two items share names none.
+    // The catalogue's full English names, each to its one id; a name two items share names none.
     private static Dictionary<string, string?> ItemsByName(GameData data)
     {
         lock (ItemNamesFor)
@@ -151,7 +153,7 @@ public sealed partial class GameSession
             if (ItemNamesFor.TryGetValue(data, out var known))
                 return known;
             var byName = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (id, name) in data.ItemNames)
+            foreach (var (id, name) in data.ItemNamesInEnglish)
                 byName[name] = byName.ContainsKey(name) ? null : id;
             ItemNamesFor.AddOrUpdate(data, byName);
             return byName;

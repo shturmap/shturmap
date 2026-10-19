@@ -11,7 +11,9 @@ namespace Shturmap.App.Rules;
 /// card have an OPERATIONAL section: the map's tasks first, then the any-map tasks after a hairline (in every card, not
 /// listed once: owner, 2026-10-19). Each row is a glyph, a synopsis and a muted line: in Plan its progress and time left
 /// ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; without an expiry "READ 3 H AGO"), in a raid its progress and, only when the
-/// task ends before the raid could, "ENDS IN 25 MIN" in the clock's red. No portrait, no card, no click.
+/// task ends before the raid could, "ENDS IN 24 MIN" in the clock's red. Every time left is rounded down, in both (QA,
+/// 2026-10-19: Plan's 24 and the raid's 25 at the same moment): a time never says more than there is. No portrait, no
+/// card, no click.
 /// </summary>
 public static class OperationalRail
 {
@@ -36,15 +38,17 @@ public static class OperationalRail
             task.Kind == OperationalKind.HandOver ? RuleTexts.OperationalHandOverAfter : "", time);
     }
 
-    /// <summary>What the raid card says of a task in muted capitals: on any map, its progress, a hand-over's "hand over
-    /// after the raid" (its time, when it matters, is <see cref="EndsIn"/>).</summary>
+    /// <summary>What the raid card says of a task in muted capitals: its progress, a hand-over's "hand over after the
+    /// raid" (its time, when it matters, is <see cref="EndsIn"/>). Not "any map": the row's distance column says
+    /// ANYWHERE for it (QA, 2026-10-19: one place says it).</summary>
     public static string RaidLine(OperationalShown shown) =>
-        Join(shown.Task.AnyMap ? RuleTexts.OperationalAnyMap : "", Progress(shown.Task),
+        Join(Progress(shown.Task),
             shown.Task.Kind == OperationalKind.HandOver ? RuleTexts.OperationalHandOverAfterRaid : "");
 
     /// <summary>
-    /// In a raid, the task's time only when it ends before the raid could ("ends in 25 min", in the clock's red): null
-    /// when it ends later, has no expiry, or the raid's time left isn't known (a Scav, a map without a raid length).
+    /// In a raid, the task's time only when it ends before the raid could ("ends in 24 min", in the clock's red;
+    /// rounded down as Plan's, <see cref="Minutes"/>): null when it ends later, has no expiry, or the raid's time left
+    /// isn't known (a Scav, a map without a raid length).
     /// </summary>
     /// <param name="minutesLeftInRaid">The raid's time left in whole minutes (the clock's), or null.</param>
     public static string? EndsIn(OperationalTask task, DateTimeOffset now, int? minutesLeftInRaid)
@@ -54,8 +58,12 @@ public static class OperationalRail
         var until = at - now;
         if (until >= TimeSpan.FromMinutes(left) || until <= TimeSpan.Zero)
             return null;
-        return RuleTexts.OperationalEndsIn(count: Math.Max(1, (int)Math.Ceiling(until.TotalMinutes)).ToString(UiLanguage.Culture));
+        return RuleTexts.OperationalEndsIn(count: Number(Minutes(until)));
     }
+
+    /// <summary>A time left in whole minutes, rounded down (24:59 is 24: a time never says more than there is), and 1
+    /// in its last minute. Plan's "24 min left" and the raid's "ends in 24 min" both count so.</summary>
+    public static int Minutes(TimeSpan left) => Math.Max(1, (int)left.TotalMinutes);
 
     /// <summary>The task's progress as of the screenshot: its one counted objective's "4 of 7", else the game's
     /// percentage "57%", else nothing.</summary>
@@ -69,7 +77,7 @@ public static class OperationalRail
     public static string Left(TimeSpan left)
     {
         if (left < TimeSpan.FromHours(1))
-            return RuleTexts.OperationalMinutesLeft(count: Number(Math.Max(1, (int)left.TotalMinutes)));
+            return RuleTexts.OperationalMinutesLeft(count: Number(Minutes(left)));
         if (left < TimeSpan.FromDays(2))
             return RuleTexts.OperationalHoursLeft(count: Number((int)left.TotalHours));
         return RuleTexts.OperationalDaysLeft(count: (int)left.TotalDays);
@@ -87,14 +95,15 @@ public static class OperationalRail
         return RuleTexts.OperationalReadDaysAgo(count: (int)age.TotalDays);
     }
 
-    /// <summary>The eyebrow's right part: when the tasks were read, "As of 14:02"; on an earlier day with the date.</summary>
+    /// <summary>The eyebrow's right part: when the tasks were read, "As of 14:02"; on an earlier day with the date, as
+    /// the language in use writes a day and month ("18 Oct", German "18. Okt."; UiLanguage.DayMonth).</summary>
     public static string AsOf(DateTimeOffset readAt, DateTimeOffset now)
     {
         var local = readAt.ToLocalTime();
         var time = local.ToString("HH:mm", CultureInfo.InvariantCulture);
         return local.Date == now.ToLocalTime().Date
             ? RuleTexts.OperationalAsOf(time: time)
-            : RuleTexts.OperationalAsOfDay(date: local.ToString("d MMM", UiLanguage.Culture), time: time);
+            : RuleTexts.OperationalAsOfDay(date: UiLanguage.DayMonth(local.DateTime), time: time);
     }
 
     /// <summary>Under the eyebrow, muted, while tasks ran out since the last table screenshot: "1 ended at 22:35.
@@ -106,7 +115,32 @@ public static class OperationalRail
     public static bool Shows(IReadOnlyList<OperationalShown> all, string? mapKey, OperationalEnded? ended) =>
         ended is not null || all.Any(t => t.MapKey is null || t.MapKey == mapKey);
 
-    private static string Join(params string[] parts) => string.Join(" · ", parts.Where(p => p.Length > 0));
+    /// <summary>
+    /// The parts of a muted line, for a row that breaks it only between them (QA, 2026-10-19: "HAND OVER AFTER THE /
+    /// RAID"): "4 of 7 · 8 h left" is "4 of 7" and "8 h left".
+    /// </summary>
+    public static IReadOnlyList<string> Parts(string line) =>
+        line.Split(Dot, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>
+    /// The synopsis as the row shows it: a hand-over's item named in two words is kept on one line ("CPU fan", never
+    /// "CPU" at a line's end and "fan" under it; QA, 2026-10-19). A longer name may still wrap between its words: kept
+    /// whole it could be wider than the line, which then breaks inside a word.
+    /// </summary>
+    public static string Synopsis(string synopsis, IEnumerable<string> items)
+    {
+        foreach (var name in items)
+        {
+            if (name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries) is [var first, var second])
+                synopsis = synopsis.Replace(first + " " + second, first + NoBreak + second, StringComparison.Ordinal);
+        }
+        return synopsis;
+    }
+
+    private const string Dot = " · ";
+    private const char NoBreak = '\u00A0';
+
+    private static string Join(params string[] parts) => string.Join(Dot, parts.Where(p => p.Length > 0));
 
     private static string Number(int n) => n.ToString(UiLanguage.Culture);
 }

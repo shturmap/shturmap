@@ -16,6 +16,12 @@ internal static class Glow
     /// <summary>How long the gold takes to ease to ink.</summary>
     public static readonly TimeSpan Length = TimeSpan.FromSeconds(1.2);
 
+    /// <summary>
+    /// The name of a line's gold copy over its words (x:Name in the templates): the layout check takes it for a layer
+    /// that lies over them on purpose, not for text over text (Dev.LayoutCheck.Layers; QA, 2026-10-19).
+    /// </summary>
+    public const string CopyName = "GlowCopy";
+
     /// <summary>The row's flash: this much gold over it, gone in under a second.</summary>
     public const double FlashOpacity = 0.22;
     public static readonly TimeSpan FlashLength = TimeSpan.FromSeconds(0.9);

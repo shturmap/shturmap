@@ -31,11 +31,16 @@ public class EnglishNamesTests : IDisposable
                 "maps_en" => """{ "data": { "map name": "Test map", "Sniper_exit": "Test Avenue (Flare)", "lever": "Gate Lever" } }""",
                 "maps_de" => """{ "data": { "map name": "Testkarte", "Sniper_exit": "Testallee", "lever": "Torhebel" } }""",
                 "tasks" => """{ "data": { "tasks": {}, "questItems": {} } }""",
+                "items_en" => $$"""{ "data": { "{{Zorb}} Name": "Zorb drive", "{{Zorb}} ShortName": "Zorb" } }""",
+                "items_de" => $$"""{ "data": { "{{Zorb}} Name": "Zorblaufwerk", "{{Zorb}} ShortName": "Zorb" } }""",
                 _ => """{ "data": {} }""",
             };
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) });
         }
     }
+
+    // A made-up item id (24 characters, as the game's).
+    private const string Zorb = "000000000000000000000a01";
 
     private GameDataLoader Loader() => new(new CachedHttp(new HttpClient(new FakeTarkovDev()), _folder));
 
@@ -51,6 +56,21 @@ public class EnglishNamesTests : IDisposable
         Assert.Equal("Sniper_exit", data.ExtractKeys["e1"]);
         // A name with no text in any language stays the key, as the translated name does.
         Assert.Equal("no_text_anywhere", data.EnglishName("e2", map.Extracts[1].Name));
+    }
+
+    // An operational hand-over's quoted names are the English game's words ("SSD drive"): a load in another language
+    // keeps the items' English names beside the translated ones, which it shows (QA, 2026-10-19: a German app matched
+    // none).
+    [Fact]
+    public async Task A_german_load_keeps_the_items_english_names()
+    {
+        var german = await Loader().LoadAsync(GameMode.Pve, "ge", TestContext.Current.CancellationToken);
+        Assert.Equal("Zorblaufwerk", german.ItemName(Zorb));
+        Assert.Equal("Zorb drive", german.EnglishItemNames[Zorb]);
+        Assert.Equal("Zorb drive", german.ItemNamesInEnglish[Zorb]);
+        var english = await Loader().LoadAsync(GameMode.Pve, "en", TestContext.Current.CancellationToken);
+        Assert.Empty(english.EnglishItemNames);
+        Assert.Equal("Zorb drive", english.ItemNamesInEnglish[Zorb]);
     }
 
     [Fact]

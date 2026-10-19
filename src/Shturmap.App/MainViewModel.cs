@@ -192,8 +192,19 @@ public sealed record OperationalLine(string Key, Shturmap.Core.Operational.Opera
 
     public Visibility LineVisibility => Line.Length + Alert.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>The dot between the muted line and the red time, when both are there.</summary>
-    public string AlertDot => Line.Length > 0 && Alert.Length > 0 ? " · " : "";
+    /// <summary>The muted line's parts and then the red time, in capitals, each but the last with its dot: the row
+    /// breaks the line only between them (QA, 2026-10-19: "HAND OVER AFTER THE / RAID"), a part too long for a line
+    /// between its words. Made once with the row: a binding read again finds the same list, so the parts on screen
+    /// stay (a new list each time emptied them until the next layout, and the layout check found none).</summary>
+    public IReadOnlyList<OperationalPart> Parts { get; init; } = PartsOf(Line, Alert);
+
+    private static List<OperationalPart> PartsOf(string line, string alert)
+    {
+        var parts = Rules.OperationalRail.Parts(line).Select(p => (Text: p, Alert: false)).ToList();
+        if (alert.Length > 0)
+            parts.Add((alert, true));
+        return parts.Select((p, i) => new OperationalPart(Caps.Of(p.Text), p.Alert, i == parts.Count - 1)).ToList();
+    }
 
     public Visibility RightVisibility => Right.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -201,7 +212,17 @@ public sealed record OperationalLine(string Key, Shturmap.Core.Operational.Opera
 
     /// <summary>Whether two rows say the same, their cells too: then the one on screen stays (Rules.RowLists).</summary>
     public static bool Same(OperationalLine a, OperationalLine b) =>
-        a == b with { Items = a.Items, Fresh = a.Fresh } && Rules.RowLists.Same(a.Items, b.Items, Controls.NeedChip.Same);
+        a == b with { Items = a.Items, Fresh = a.Fresh, Parts = a.Parts }
+        && Rules.RowLists.Same(a.Items, b.Items, Controls.NeedChip.Same);
+}
+
+/// <summary>One part of an operational row's muted line, in capitals: muted with the dot that follows it, or the red
+/// time ("ENDS IN 24 MIN"), which comes last.</summary>
+public sealed record OperationalPart(string Text, bool Alert, bool Last)
+{
+    public string Muted => Alert ? "" : Last ? Text : Text + " ·";
+
+    public string Red => Alert ? Text : "";
 }
 
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
