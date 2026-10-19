@@ -71,7 +71,7 @@
               <!-- The same in gold over it, fading to let the ink through: a mark just arrived glows in (Controls.Glow). -->
               <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,3,0,0"
                         Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind FreshVisibility}" Loaded="OnGlowLoaded" />
-              <TextBlock Grid.Column="1" Text="{x:Bind Mark}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
+              <TextBlock x:Name="GlowCopy" Grid.Column="1" Text="{x:Bind Mark}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap"
                          Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind FreshVisibility}" Loaded="OnGlowLoaded" />
             </Grid>
             <TextBlock Text="{x:Bind Source}" Style="{StaticResource NoteText}" Foreground="{StaticResource AmberBrush}"
@@ -96,8 +96,19 @@
         </Border>
       </DataTemplate>
 
+      <!-- One part of an operational row's muted line ("4 OF 7 ·"), or its red time ("ENDS IN 24 MIN"), last: the row
+           breaks the line only between its parts (QA, 2026-10-19), a part too long for a line between its words. -->
+      <DataTemplate x:Key="OperationalPartTemplate" x:DataType="local:OperationalPart">
+        <TextBlock Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap">
+          <Run Text="{x:Bind Muted}" /><Run Text="{x:Bind Red}" Foreground="{StaticResource RedBrush}" />
+        </TextBlock>
+      </DataTemplate>
+      <ItemsPanelTemplate x:Key="OperationalPartsPanel">
+        <controls:WrapRow HorizontalSpacing="3" />
+      </ItemsPanelTemplate>
+
       <!-- An operational task's row in a map's card and the raid card (owner, 2026-10-19, B): its glyph, its synopsis,
-           then in muted capitals its progress and time ("4 OF 7 · 8 H LEFT"; in a raid "ENDS IN 25 MIN" in the clock's
+           then in muted capitals its progress and time ("4 OF 7 · 8 H LEFT"; in a raid "ENDS IN 24 MIN" in the clock's
            red, only when it ends before the raid could), a hand-over's item cells, and in a raid ANYWHERE where a quest
            row has its distance. No portrait, no pen, no card: nothing to click. A row a reading just brought glows in
            (Controls.Glow), as a mark does. -->
@@ -120,13 +131,13 @@
           <StackPanel Grid.Column="1" Spacing="1">
             <Grid>
               <TextBlock Text="{x:Bind Synopsis}" TextWrapping="Wrap" />
-              <TextBlock Text="{x:Bind Synopsis}" TextWrapping="Wrap" Foreground="{StaticResource AmberBrush}"
+              <!-- Named for the layout check (Controls.Glow.CopyName): the gold copy lies over the words on purpose. -->
+              <TextBlock x:Name="GlowCopy" Text="{x:Bind Synopsis}" TextWrapping="Wrap" Foreground="{StaticResource AmberBrush}"
                          Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind FreshVisibility}" Loaded="OnGlowLoaded" />
             </Grid>
-            <TextBlock Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left"
-                       Margin="0,2,0,0" TextWrapping="Wrap" Visibility="{x:Bind LineVisibility}">
-              <Run Text="{x:Bind local:Caps.Of(Line)}" /><Run Text="{x:Bind AlertDot}" /><Run Text="{x:Bind local:Caps.Of(Alert)}" Foreground="{StaticResource RedBrush}" />
-            </TextBlock>
+            <ItemsControl ItemsSource="{x:Bind Parts}" ItemTemplate="{StaticResource OperationalPartTemplate}"
+                          ItemsPanel="{StaticResource OperationalPartsPanel}" IsTabStop="False" HorizontalAlignment="Left"
+                          Margin="0,2,0,0" Visibility="{x:Bind LineVisibility}" />
           </StackPanel>
           <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Items}" />
           <TextBlock Grid.Column="3" Text="{x:Bind local:Caps.Of(Right)}" Style="{StaticResource StatusText}" FontSize="11"

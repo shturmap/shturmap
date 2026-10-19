@@ -1233,11 +1233,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       in the eyebrow's style (the date too when read on an earlier day); one row per task: its glyph, its synopsis in
       ink, then in small muted capitals its progress and time left ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; a
       hand-over on any map "ANY MAP · HAND OVER AFTER · 2 D LEFT"; a task whose countdown wasn't taken "READ 3 H AGO").
+      **Every time left is rounded down**, in Plan and in a raid alike, and 1 in its last minute: a time never says
+      more than there is (QA, 2026-10-19: at 24:59 left Plan said "24 MIN LEFT" and the raid card "ENDS IN 25 MIN").
+      The muted line breaks only between its parts (" · "), a part too long for a line between its words.
       The synopsis comes from the objective's words (`OperationalWords`): a kill with its condition kept short ("Kill 3
       Scavs · headshots over 50 m"), "Survive and extract", a hand-over "Find in raid: SSD drive, CPU fan" with item
       cells for the items the catalogue has by exactly that whole name (the words alone otherwise: a quoted name has
-      nothing to narrow it, so the stash's rule against the whole catalogue gives way only to a whole name), a line of
-      no known kind as read with the generic operational glyph, and a row never expanded its name (its kind, for the
+      nothing to narrow it, so the stash's rule against the whole catalogue gives way only to a whole name), the name
+      matched against the items' English names whatever the app's language (the table is the English game's; QA,
+      2026-10-19: a German app's catalogue matched none), the cell and its card in the app's language as any item
+      cell's, an item of two words never broken over two lines ("CPU fan"), a line of no known kind as read with the
+      generic operational glyph, and a row never expanded its name (its kind, for the
       glyph, from the name's words: "Elimination", "Exit the location", "Find and transfer"). The progress is the one
       counted objective's "4 OF 7", else the game's percentage. The map's tasks come first, then the any-map tasks after
       a hairline, in every map's card (§7's exception). No portrait (the trader isn't read), no pen, no card of its own,
@@ -1247,13 +1253,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       Screenshot your tasks for the new one." (in every card's section, until the next table screenshot, a day at
       most; the game gives new ones, which only a screenshot shows). The section shows for that line alone too.
     - **The raid card** has the same section after PROGRESS, for the raid's map's tasks and the any-map ones, without
-      "As of": ANYWHERE stands where a quest row has its distance, for an any-map task; a hand-over says "HAND OVER
-      AFTER THE RAID"; the time only when the task ends before the raid could ("ENDS IN 25 MIN", in the red of the
-      clock's last ten minutes; while the raid loads, against the map's whole raid). Nothing new on the map: the tasks
-      have no places.
+      "As of": ANYWHERE stands where a quest row has its distance, for an any-map task, and its muted line then says no
+      "any map" (one place says it; QA, 2026-10-19); a hand-over says "HAND OVER AFTER THE RAID"; the time only when
+      the task ends before the raid could ("ENDS IN 24 MIN", in the red of the clock's last ten minutes, rounded down
+      as Plan's; while the raid loads, against the map's whole raid). Nothing new on the map: the tasks have no places.
     - **A Scav raid's card** has no OPERATIONAL section: its FIND IN RAID lists the hand-over items the catalogue
-      knows by name after the quests' loot ("for an operational task"). That an operational task's kills and survivals
-      count for a PMC only is the panel's assumption (as a quest's do), not checked in the game: to confirm.
+      knows by their English name (as the item cells above) after the quests' loot ("for an operational task"), in the
+      app's language. That an operational task's kills and survivals count for a PMC only is the panel's assumption (as
+      a quest's do), not checked in the game: to confirm.
     - The rows a reading brought glow in, and a notice says how many were read (principle 11): no cue.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
@@ -2889,8 +2896,10 @@ language** (review of 2026-10-04): they looked for "(Flare)" and "(Co-op)" in th
 "Mira-Allee" for "Mira Ave (Flare)", so the rule was lost there. The loader keeps each extract's and switch's
 English name by id beside the translated one (`GameData.EnglishNames`), and `ExtractRules` reads those and the
 internal names only; a test runs every exit of the cached data through the rules in English and in German and
-expects the same. `sniper` counts as a word of the internal name, between underscores, not anywhere in it:
-Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
+expects the same. Items' English names are kept the same way when the data is in another language
+(`GameData.EnglishItemNames`): an operational hand-over's quoted names are the English game's words, matched against
+them whatever the app's language (QA, 2026-10-19). `sniper` counts as a word of the internal name, between
+underscores, not anywhere in it: Customs' "Sniper Roadblock" is an ordinary exit and was told to fire a flare.
 
 ### Keyboard (window focused only)
 
@@ -3137,8 +3146,10 @@ Rules:
   OPERATIONAL (owner, 2026-10-19, B; the file isn't written);
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
-  is trimmed, text over text, and in the pseudo-language one untranslated) and a copy with them boxed beside it
-  (`<picture>.texts.txt`, `.layout.json`, `.problems.png`: the layout check, `Dev/LayoutCheck.cs`), `--whats-new`
+  is trimmed, text over text, and in the pseudo-language one untranslated; a layer that lies over the window on
+  purpose, a cue's halo or a glowing line's gold copy over its words, `Glow.CopyName`, isn't text over text) and a copy
+  with them boxed beside it (`<picture>.texts.txt`, `.layout.json`, `.problems.png`: the layout check,
+  `Dev/LayoutCheck.cs`), `--whats-new`
   shows the newest What's New card for one, and `--show-update` the update band, the next patch of the running version
   taken for downloaded (`Updater.DevReady`; a snapshot never shows the UPDATE READY cue, a script's `trigger update`
   plays it); `tools\layout-check.ps1` plays every view in each language and window size and sums it up

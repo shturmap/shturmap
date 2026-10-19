@@ -175,10 +175,13 @@ public sealed class GameDataLoader(CachedHttp http)
         var itemTexts = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsLang.Result.FilePath, ct));
         var itemNames = ItemNames(itemTexts);
         var shortNames = ItemNames(itemTexts, ShortNameSuffix);
+        Dictionary<string, string> englishItemNames = [];
         if (!ReferenceEquals(itemsLang.Result, itemsEn.Result))
         {
             var english = JsonTranslator.ReadDictionary(await File.ReadAllTextAsync(itemsEn.Result.FilePath, ct));
-            foreach (var (id, name) in ItemNames(english))
+            // Kept whole beside the translated ones: the English game names items so (GameData.EnglishItemNames).
+            englishItemNames = ItemNames(english);
+            foreach (var (id, name) in englishItemNames)
                 itemNames.TryAdd(id, name);
             foreach (var (id, name) in ItemNames(english, ShortNameSuffix))
                 shortNames.TryAdd(id, name);
@@ -206,6 +209,7 @@ public sealed class GameDataLoader(CachedHttp http)
             Traders = Section(tradersData, null, ApiJsonContext.Default.DictionaryStringApiTrader),
             ItemNames = itemNames,
             ItemShortNames = shortNames,
+            EnglishItemNames = englishItemNames,
             ExtractKeys = extractKeys,
             EnglishNames = englishNames,
             GameNames = gameNames,

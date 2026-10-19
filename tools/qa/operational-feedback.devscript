@@ -1,0 +1,39 @@
+# QA replay of a Tasks screenshot's reading (owner, 2026-10-19: from a panel of four, B, "OPERATIONAL rows where the
+# map's work is"; glow and notice, no cue): the rows a reading brought glow in and a notice says how many were read; a
+# task that runs out leaves the ended line; Shoreline's kill without a countdown says its reading's age; Woods' line of
+# no known kind has the generic glyph; then a Streets raid whose survival ends before the raid could. Drafted by the UI
+# QA pass of 2026-10-19. A developer build plays it with --dev-view --dev-script; how to run it, and what each still
+# must show: operational-feedback.md beside this file. Times are in seconds.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there. It ends first.
+tour end
+map streets-of-tarkov
+wait 3
+
+# The Tasks screen's OPERATIONAL table as a screenshot taken now shows it: five made-up tasks and one that runs out 3 s
+# later (a survival on Streets ending in 25 min, a kill on Customs, a weekly's two hand-overs on any map, a kill on
+# Shoreline without a countdown, a line of no known kind on Woods; the file isn't written this run).
+tasks 5 ended
+snapshot %TEMP%\shturmap-qa\operational-feedback\t0
+# The sixth task has run out by the next still.
+wait 4
+snapshot %TEMP%\shturmap-qa\operational-feedback\t1
+
+# The other maps' cards, looked at without choosing them.
+map shoreline look
+wait 2
+snapshot %TEMP%\shturmap-qa\operational-feedback\shoreline
+map woods look
+wait 2
+snapshot %TEMP%\shturmap-qa\operational-feedback\woods
+
+# A PMC raid on Streets: the raid card's OPERATIONAL, its survival ending before the raid could.
+map streets-of-tarkov
+wait 2
+load
+steps
+start
+wait 3
+snapshot %TEMP%\shturmap-qa\operational-feedback\raid-start
+exit

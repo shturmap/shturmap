@@ -73,15 +73,20 @@ public sealed partial class MainWindow
     {
         var now = DateTimeOffset.Now;
         var key = TaskKey(t);
-        return new OperationalLine(key, t.Task.Kind, OperationalWords.Synopsis(t.Task),
+        var synopsis = OperationalRail.Synopsis(OperationalWords.Synopsis(t.Task), t.Items.Select(i => i.Name));
+        return new OperationalLine(key, t.Task.Kind, synopsis,
             inRaid ? OperationalRail.RaidLine(t) : OperationalRail.PlanLine(t, now),
             inRaid ? OperationalRail.EndsIn(t.Task, now, raidLeft) ?? "" : "",
             inRaid && t.Task.AnyMap ? AppTexts.ObjectiveAnywhere : "",
             startsAnywhere)
         {
-            // A hand-over's items the catalogue knows by their whole name, as cells: pointing at one opens its card.
+            // A hand-over's items the catalogue knows by their whole English name, as cells in the app's language, as
+            // any item cell: pointing at one opens its card.
             Items = t.Items.Where(i => i.ItemId is not null)
-                .Select(i => new NeedChip(i.ItemId!, Glyphs.Bring, i.Name) { Marked = s.Marks.ContainsKey(i.ItemId!) }).ToList(),
+                .Select(i => new NeedChip(i.ItemId!, Glyphs.Bring, s.Data?.ItemName(i.ItemId!) ?? i.Name)
+                {
+                    Marked = s.Marks.ContainsKey(i.ItemId!),
+                }).ToList(),
             Fresh = _freshTasks.ContainsKey(key),
             // A trader's focus held: an operational task is none of that trader's quests, so it steps back with the others.
             SteppedBack = !inRaid && _heldTrader is not null,

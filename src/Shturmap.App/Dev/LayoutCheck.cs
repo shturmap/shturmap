@@ -50,12 +50,13 @@ internal sealed class LayoutCheck
 
     /// <summary>
     /// Elements that lie over the rest of the window on purpose: the tour's dim and band, the Report dialog, a cue's
-    /// band, What's New's plate, and the copies of a cue's words its halo is made of (MainWindow.HaloName: the words again
-    /// in the dark, under them). Their texts are compared with each other, not with what they cover.
+    /// band, What's New's plate, the copies of a cue's words its halo is made of (MainWindow.HaloName: the words again
+    /// in the dark, under them), and a glowing line's gold copy over its words while it fades (Controls.Glow.CopyName).
+    /// Their texts are compared with each other, not with what they cover.
     /// </summary>
     public static readonly IReadOnlySet<string> Layers = new HashSet<string>(StringComparer.Ordinal)
     {
-        "TourLayer", "ReportOverlay", "CuePanel", "WhatsNewPlate", MainWindow.HaloName,
+        "TourLayer", "ReportOverlay", "CuePanel", "WhatsNewPlate", MainWindow.HaloName, Controls.Glow.CopyName,
     };
 
     // How far a box may stick out, in DIP: layout rounding and a hairline's negative margin.

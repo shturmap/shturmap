@@ -133,7 +133,7 @@
                       <!-- The same in gold over it, fading to let the ink through: a mark just arrived glows in (Controls.Glow). -->
                       <FontIcon Glyph="&#xE80A;" FontSize="10" Foreground="{StaticResource AmberBrush}" VerticalAlignment="Top" Margin="0,3,0,0"
                                 Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Fresh)}" Loaded="OnGlowLoaded" />
-                      <TextBlock Grid.Column="1" Text="{x:Bind Mark}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource AmberBrush}"
+                      <TextBlock x:Name="GlowCopy" Grid.Column="1" Text="{x:Bind Mark}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource AmberBrush}"
                                  Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Fresh)}" Loaded="OnGlowLoaded" />
                     </Grid>
                     <TextBlock Text="{x:Bind Source}" Foreground="{StaticResource AmberBrush}" FontSize="12" TextWrapping="Wrap"
