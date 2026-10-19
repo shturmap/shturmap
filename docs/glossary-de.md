@@ -63,6 +63,7 @@ gender.
 | hideout; craft, crafting; barter | Hideout (das); Craft (der), craften; Barter (der) | The game: Versteck (`HideoutManagement` „Versteckverwaltung“), Herstellung (items `Crafting`), Tausch (items `5448eb774bdc2d0a728b4567`) |
 | flea market | Flea (der), auf dem Flea | The game: Flohmarkt (items `FleaMarket`) |
 | item; quest item | Item (das), Items; Quest-Item | The game: Gegenstand (tasks, 71 texts) |
+| receiver (a gun without its parts, as tarkov.dev's icon shows it); assembled | Gehäuse (das); zusammengebaut | the game's: items' category „Receiver“ is „Gehäuse“ (an upper receiver „obere Empfangseinheit“); What's New 0.7.0 „nicht nur als Gehäuse“ |
 | key; keycard | Key (der), Keys; Keycard (die), Keycards | „Labs-Keycard“. The game: Schlüssel, Schlüsselkarte, Zugangskarte (items `543be5e94bdc2df1348b4568`, `5c164d2286f774194c5e69fa`); item names come from the data in German |
 | loot (noun); to loot; pick up | Loot (das); looten (gelootet); looten | |
 | roubles, dollars, euros | Rubel, Dollar, Euro | the game too (items `5449016a4bdc2d6f028b456f`) |
@@ -171,6 +172,7 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | this PC; Documents; user folder | dieser PC; Dokumente; Benutzerordner | Explorer's names; the path stays `Documents` |
 | screenshot; screenshot key; internet address | Screenshot (der); Screenshot-Taste; IP-Adresse | einen Screenshot machen; with a key: „Screenshot mit {keys}“ (Keys) |
 | Zoom in; Zoom out; Show the whole map; status bar | Vergrößern; Verkleinern; Ganze Map zeigen; Statusleiste | also in running text: „Vergrößern trennt sie“, „beim Vergrößern“; not „reinzoomen“ |
+| pan (the map); as you pan or zoom | verschieben, by dragging: ziehen; beim Ziehen oder Zoomen | help: „Ziehen zum Verschieben“; zoomen only where both ways are meant (What's New 0.7.0: „bleiben beim Ziehen oder Zoomen ruhig“) |
 | email; (optional); (Required) | E-Mail; (optional); (Pflichtfeld) | |
 | Language: Automatic · English · Deutsch | Sprache: Automatisch · English · Deutsch | each language in its own name |
 | Windows Settings → Apps | Windows-Einstellungen → Apps → Installierte Apps | Windows 11's German Settings texts (checked 2026-10-11); „Windows-“ because a bare „Einstellungen“ is Shturmap's own |

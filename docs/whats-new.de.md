@@ -7,9 +7,9 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 ## 0.7.0 · NAME
 
 - tour:1 · Dailies und Weeklies · Screenshot vom Aufgaben-Bildschirm (Spiel auf Englisch): Dailies und Weeklies mit Restzeit, je Map.
-- leaders · Text so groß wie nötig · Windows' Textgröße gilt jetzt auch auf der Map; Textgröße in den Einstellungen vergrößert weiter.
-- leaders · Waffen, zusammengebaut · Die Waffe einer Quest erscheint ganz, wie Trader sie verkaufen, nicht als bloßes Gehäuse.
-- leaders · Zwei an einem Spot, ruhig · Zwei Symbole an einem Spot driften beim Zoomen nicht mehr ab, wie zuvor die Außenbezirke in Woods.
+- tour:7 · Text so groß wie nötig · Die Map folgt nun auch der Textgröße von Windows; die Einstellungen bieten GRÖSSER und AM GRÖSSTEN.
+- tour:6 · Waffen, zusammengebaut · Eine Waffe, die eine Quest braucht, erscheint ganz, wie Trader sie verkaufen, nicht nur als Gehäuse.
+- leaders · Zwei an einem Spot, ruhig · Zwei Symbole an einem Spot, wie die Außenbezirke auf Woods, bleiben beim Ziehen oder Zoomen ruhig.
 <!-- desk: the fifth line when step B lands -->
 
 ## 0.6.2 · Okami
