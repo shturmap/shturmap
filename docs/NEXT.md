@@ -6,6 +6,114 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-19: the stash desk, a price view from a screenshot (decided, to design)
+
+**The ask** (owner, 2026-10-19): "If you take a screenshot from items, provides a view in the app that mirrors the grid
+(to keep the mental model of the currently seen items) and augments them with the current price at the auction house
+and the best price at traders. Prices should be gathered via tarkov.dev. When interacting with the item (mouse-over)
+it should get details, such as recent price history and prices in all traders, associated recipies and quests. A
+percentage icon indicating the development in the last x days would also be cool to judge if the price recently went
+up or was volatile. Regarding the visualization we can probably learn a lot from stock visualization systems and take
+the best pieces here. It would be cool if there is a easy way of defining a automatic price for the items, for example
+the same price as the current auction house price or X% above or below so you can just click the icon and then paste
+it into the auction house." It went against DESIGN.md §1 and §2, so before any UI it went to research (a survey of
+the existing tools, and the data facts: tarkov.dev's API, the app's cache, the stash reader) and a discussion page
+with five questions.
+
+**What was found** (2026-10-19):
+
+- **Nobody ships it.** Of sixteen tools surveyed none has more than three of the vision's six parts; only a Discord bot
+  takes a picture of the inventory as its input (to a text list), the desktop tools capture the screen, and none
+  copies a list price.
+- **The nearest, Tarkov Stash Helper** (first release July 2026, no licence), reads the whole stash and says sell to
+  a trader, list on the flea or keep, with a list price it computes; it captures the screen continuously, registers a
+  global hotkey, and has no price history, trend, hover detail or clipboard price.
+- **The prices are already on disk:** tarkov.dev's daily item file (17 MB, about 1.4 MB transferred) carries the last
+  low, the 24 h average, low and high, the 48 h change, the offer count, every trader's price, `noFlea`, the item's
+  flea level and the flea's fee rates; the loader keeps six fields of it. History is free on json.tarkov.dev, a host
+  Shturmap already asks: `/{mode}/prices/{id}` (LEDX: 1,811 points since 2022-03 in PvP, 952 since 2024-07 in PvE,
+  every 2 h over the last 30 days, daily before). The GraphQL API was down all day: the JSON API only.
+- **Naming every cell is the hard part, not the numbers:** 2,289 of the catalogue's 5,480 items (41.8 %) share their
+  short name with another, and of the 3,159 flea-priced items that aren't guns or presets, 672 share short name and
+  footprint. Today's reader, against the quest set (60 candidates): keys 46 of 48, a medical case 43 of 43, a stash
+  page 50 of 57, none wrong; against the whole catalogue it is unmeasured. 1440p only; no price knows durability or
+  uses left.
+- **It went against §1 head-on** ("item prices or a flea-market view" and "a stash register or inventory browser" were
+  not-goals) and against §2's boundary (the grids read "never against the whole catalogue"). The recommendation was a
+  separate app in the same repository, sharing the reader and the cache as libraries.
+
+**Decided** (owner, 2026-10-19, on the page's five questions: Q1 against the recommendation, the others as
+recommended, "the rest"):
+
+- **Q1, the framing: one app, the desk a view of its own.** Against the separate app: "I would like to push-back on
+  this. It makes sense to keep it in one app since shturmap idea is to be mostly as hands off as possible. So when you
+  for example take a screenshot in-game from your stash or when looting something, the app could display the info and
+  a brief overview without having to leave the map you, just by augmenting the info. The map could still be visible,
+  the app just helps with additional information. Then, out of raid, a separate view could be feasible, one raid
+  planning view and one stash desk view or how we might call it. Separate apps would mean less screenspace if you have
+  them open at the same time and one feedback we already got was that readability might be an issue. I still feel we
+  can leverage a lot with the tooltip-modes we already have implemented. I really like the ideas of sparklines, we
+  might borrow other ideas from stock visualization (maybe also look into how Eve online does this). In the end, it's
+  a app made for gamers, so it should also be fun to use."
+- **Q2, the feature set: C "Desk", in two steps, B "Glance" first.** B: a screenshot to a mirrored grid; per cell the
+  better of the flea's net after the fee and the best trader, and which; a value-per-slot tint; the 48 h % from the
+  item file; a keep mark for quest and hideout needs; "?" cells with a range. C adds a hover card (a 7- and 30-day
+  sparkline of the average and the minimum, a 24 h range bar, all traders, quests, hideout, crafts, barters, the fee
+  and the net), a 7-day % badge, and one click to copy a list price. D (watchlists, alerts, stash value over time,
+  automation) stays out.
+- **Q3, unsure cells:** the group's price range and a "?"; the hover card lists the candidates and one click picks
+  (672 flea-priced items share short name and footprint).
+- **Q4, the list-price rule:** "match the last low", or "X % under/over the last low", always guarded: never below the
+  best trader's net after the fee; a warning above the maximum profitable price; no flea price when the item can't be
+  listed (`noFlea`, the item's flea level, the found-in-raid rule).
+- **Q5, 1080p:** before the desk reaches the beta testers. This is the coordinator's assumption: the owner took "the
+  rest" of the recommendations, and the page gave none for Q5.
+- **The page's changes to the vision**, taken with "the rest": the % badge over 7 days with arrow and sign, never
+  colour alone; a "volatile" mark when the 7-day range is large against the price (a mark, not a statistic); the
+  mirror drawn from catalogue art, not the screenshot's pixels; a "~" on armour, meds and weapons (prices assume full
+  condition); the keep mark tied to What You Have; a liquidity dot from the offer count; no hotkeys, capture,
+  overlays, alerts, watchlists, stash value over time or automation.
+- **Keep for later** (owner, 2026-10-19, after the five questions): the desk's keep mark has three levels from the
+  quest dependency tree, NOW (an active quest's BRING needs the item), NEXT (a quest the active ones unlock needs it)
+  and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress (its level
+  isn't in the logs, and hideout tracking stays a not-goal), each with its found-in-raid flag. The cell shows the
+  mark's strength; the hover card lists the needs in progress order. It comes from a concept by a friend of the owner
+  (2026-10-19, an "item planner": rows per story, trader and hideout against the columns Now · Next · Later, each cell
+  a quest or module with its needed items as slot-size tiles, a FIR check, a yellow "keep, don't sell" frame, counts
+  in the headers). The owner: "This uses a different angle along the lines of which item might be useful for later
+  quests. This should be something we can make based on a quest dependency tree. Might be something we can incorporate
+  into the design, but I do not want to complicate the design too much based on this. If there is a easy way to
+  incorporate this into the existing design, do it." Decided: the keep mark's levels, not a planner screen of their
+  own. The data (checked in the code, 2026-10-19): the loader keeps each quest's `taskRequirements`
+  (`ApiTask.TaskRequirements`; the quest card's UNLOCKS and the QUEST COMPLETE cue's unlocks are read backwards from
+  it), so the tree is on hand; objectives carry `foundInRaid` (`ApiObjective.FoundInRaid`); the hideout file is
+  downloaded and its levels list their item needs with a found-in-raid flag, but the loader keeps only the stations'
+  names (`ApiStation`), so a module's needs are new reading of a file already on disk.
+- **Scoping, the coordinator's:** the in-raid glance from a loot screenshot (the owner's "when looting something")
+  is a later step with its own design and its own boundary (a raid screenshot's picture is read for its extract
+  list's corner only; DESIGN.md §2), not part of B or C.
+
+Nothing is built. Binding: DESIGN.md §1 (the third answer beside the two questions; the not-goals amended), §2 ("For
+the stash desk": the grids against the whole catalogue, for the desk alone; the keep mark's levels), §3 (grid images
+for its mirror), §4 ("What you have" points at §1).
+
+**Next.**
+
+- The UI mock-ups panel (CLAUDE.md, "Design panels"): the desk view, the hover card and the price button, three or
+  four layouts at 1:1 in the app's visual language, with their trade-offs and a recommendation; the menu-screenshot
+  tick's new words on it.
+- The measurement run: the stash spike (`shturmap-cli stash`) with `--set all` against the three hand-labelled
+  screenshots (the key container, the medical case, the stash page; `--truth`), for the false-name rate against the
+  whole catalogue.
+- Then step B; C once B's naming has held up.
+- Open: whether the flea's price field takes Ctrl+V (the page's one-minute test for the owner, not reported yet);
+  that `SafetyTests` allows the clipboard.
+
+The research, the data facts and the discussion page stay outside the repository:
+`%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,
+`%USERPROFILE%\source\repos\Shturmap-price-view-data-2026-10-19.md` and
+`%USERPROFILE%\source\repos\Shturmap-price-view-discussion-2026-10-19.html`.
+
 ## 2026-10-19: operational tasks, dailies and weeklies, in the rail
 
 **The ask** (owner, 2026-10-17): "Add dailies and weeklies via screenshot." The game's daily and weekly operational
