@@ -14,4 +14,14 @@
     <ProjectReference Include="..\..\src\Shturmap.Map\Shturmap.Map.csproj" />
     <ProjectReference Include="..\..\src\Shturmap.Session\Shturmap.Session.csproj" />
   </ItemGroup>
+
+  <!-- ocr-compare's second engine (the spike of 2026-10-19): PaddleOCR's recognition models through ONNX Runtime (MIT) on
+       the CPU. Built only with -p:OcrSpike=true, so that every other build and CI don't restore ONNX Runtime's 157 MB
+       package for a measurement; the models are given at run time and never enter the repository. -->
+  <PropertyGroup Condition="'$(OcrSpike)' == 'true'">
+    <DefineConstants>$(DefineConstants);OCR_SPIKE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(OcrSpike)' == 'true'">
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+  </ItemGroup>
 </Project>
