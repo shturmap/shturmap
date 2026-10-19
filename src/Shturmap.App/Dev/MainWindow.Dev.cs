@@ -97,6 +97,16 @@ public sealed partial class MainWindow
         return TextScale.Said("Text size");
     }
 
+    /// <summary>Settings' Language set to a culture's language for this run, as a choice there sets it, not saved; what
+    /// the session chose, for the view's log. The game data comes in it a moment later, when its language changed.</summary>
+    internal async Task<string> DevLanguageAsync(string culture)
+    {
+        if (Shturmap.Core.UiLanguage.CodeOf(culture) is not { } code)
+            return $"language {culture}: not a culture this Windows knows";
+        await SwitchLanguageAsync(code, save: false);
+        return "Language: " + GameSession.Describe(_session.Language);
+    }
+
     /// <summary>A quest's card held, as "--show-quest" does (for a script's snapshot).</summary>
     internal void DevShowQuest(string name)
     {

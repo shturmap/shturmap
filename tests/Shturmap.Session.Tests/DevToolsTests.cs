@@ -433,6 +433,18 @@ public sealed class DevToolsTests : IDisposable
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 
+    // Release QA pass of 2026-10-19 (F1): no step switched the language while the desk's cards were up. "language" takes
+    // one culture's name, as --culture does.
+    [Fact]
+    public void The_language_step_takes_a_culture()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "language de-DE", "LANGUAGE en", "language qps-ploc", "language", "language de-DE en-US", "language ../x"));
+        Assert.Equal(["line 4: 'language' takes a culture (en-US, de-DE, qps-ploc)", "line 5: 'language' takes a culture (en-US, de-DE, qps-ploc)",
+            "line 6: 'language' takes a culture (en-US, de-DE, qps-ploc)"], errors);
+        Assert.Equal(["de-DE", "en", "qps-ploc"], steps.Select(s => DevScript.LanguageOf(s)!));
+        Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
     // tools\qa\extract-roll-call.devscript: a raid on Customs, a position, the list read, the stills, then a second raid
     // that reads it again.
     [Fact]

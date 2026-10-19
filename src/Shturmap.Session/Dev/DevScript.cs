@@ -80,6 +80,8 @@ public static class DevScript
         ["tour"] = "end: ends the tour as Esc does (a --dev-view session starts as a first start, and the tour opens by itself)",
         ["textsize"] = "normal | larger | largest: settings' Text size, chosen as its row chooses it and saved in the session's settings; the window's text, "
             + "the map and the smallest window follow at once (a run with --text-scale draws at that factor whatever the step)",
+        ["language"] = "<culture>: settings' Language for this run, chosen as its row chooses it and not saved (en-US, de-DE, qps-ploc); the window's "
+            + "texts, the desk's among them, follow at once, the game data in the new language a moment later",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs, written over what the folder had; %VARIABLES% in it are expanded",
         ["exit"] = "closes the app",
@@ -203,6 +205,14 @@ public static class DevScript
     public static string? TextSizeOf(DevStep step) =>
         step.Args is [var only] && TextSizes.FirstOrDefault(t => t.Equals(only, StringComparison.OrdinalIgnoreCase)) is { } size ? size : null;
 
+    /// <summary>
+    /// A "language" step's culture, as --culture takes it ("de-DE", "en", "qps-ploc"; release QA pass of 2026-10-19, F1: no
+    /// step switched the language while a desk's cards were up, so the switch couldn't be pictured with them); null for
+    /// anything that isn't one culture's name. Whether Windows knows it, the window says.
+    /// </summary>
+    public static string? LanguageOf(DevStep step) =>
+        step.Args is [var only] && System.Text.RegularExpressions.Regex.IsMatch(only, "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$") ? only : null;
+
     /// <summary>What a "whatsnew" step does with the card: the pointer onto a line (or, with none, off the card), a tap
     /// on a line, or the pointer off the line it is on.</summary>
     public enum WhatsNewAct
@@ -319,6 +329,11 @@ public static class DevScript
             if (verb == "textsize" && TextSizeOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'textsize' takes normal, larger or largest");
+                continue;
+            }
+            if (verb == "language" && LanguageOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'language' takes a culture (en-US, de-DE, qps-ploc)");
                 continue;
             }
             if (verb == "tour" && !step.Arg(0).Equals("end", StringComparison.OrdinalIgnoreCase))

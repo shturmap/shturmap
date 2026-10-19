@@ -136,6 +136,14 @@ public sealed partial class MainWindow
     {
         if (TourChapters.Count == 0 || TourLayer.XamlRoot is null || ReportOpen)
             return;
+        // A run that takes pictures opens it only when asked ("--tour <n>"), or again after a raid closed it: its pictures
+        // are of the view asked for, whatever else asks (release QA pass of 2026-10-19, F3: the quest's and the desk's
+        // pictures showed chapter 1 in one run of the layout check, opened with no one asking for it).
+        if (SnapshotMode && how is not ("snapshot" or "resume"))
+        {
+            AppLog.Info($"Tour not opened ({how}): a snapshot run opens it only with --tour");
+            return;
+        }
         // Never in a raid (review of 2026-10-09: help's links and What's New opened it there): it covers the window. TAKE
         // THE TOUR is hidden then; a SHOW ME in help's text, or a What's New line, says why nothing opens.
         if (ViewModel.RaidHoldsBack)
@@ -163,6 +171,8 @@ public sealed partial class MainWindow
         if (!TourOpen)
         {
             Study.Ui("tour.open", ("how", how), ("chapter", at + 1));
+            // How it opened, in the app log too: the study log is off in the runs that take pictures.
+            AppLog.Info($"Tour opened ({how}) at chapter {at + 1}");
             // Null where no map was drawn yet (a first start): the map then comes back fitted, not at the camera's default.
             _tourRestore = _previewing is not null ? _restoreView : Map.HasView ? Map.View : null;
             TourLayer.Visibility = Visibility.Visible;

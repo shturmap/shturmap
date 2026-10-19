@@ -100,6 +100,13 @@ public sealed partial class MainWindow
                     phrases.Add(LayoutWords.Key(phrase));
             }
         }
+        // The stash desk's window titles, a container's short name as the game prints it ("WZ"): the game's word, as a
+        // name is (release QA pass of 2026-10-19, F6: a window not attached stands under its title alone).
+        foreach (var region in StashDesk.View?.Sheet.Regions ?? [])
+        {
+            if (region.Region.Title is { Length: > 0 } title)
+                phrases.Add(LayoutWords.Key(title));
+        }
         return phrases;
     }
 }

@@ -658,6 +658,12 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 if (DevScript.TextSizeOf(step) is { } size)
                     Say(window.DevTextSize(size));
                 break;
+            case "language":
+                // Settings' Language for this run, chosen as its row chooses it (release QA pass of 2026-10-19, F1): a
+                // snapshot before and after pictures the switch with a desk's cards up, which a fresh start can't.
+                if (DevScript.LanguageOf(step) is { } culture)
+                    Say(await window.DevLanguageAsync(culture));
+                break;
             case "tour":
                 // "tour end": as Esc does. A --dev-view session's settings are new, so the tour opened by itself.
                 Say(window.DevEndTour() ? "tour ended" : "no tour to end");
