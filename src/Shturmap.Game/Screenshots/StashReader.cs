@@ -145,6 +145,17 @@ public sealed class StashReader
         return new StashReading(look.IsTradingScreen, look.IsTradingScreen ? [] : grids);
     }
 
+    /// <summary>What a decoded picture shows (<see cref="MenuScreenshotReader"/> opens the file once for the menus'
+    /// readings): a reading with no grids when the picture shows none.</summary>
+    public async Task<StashReading> ReadAsync(SKBitmap picture, IReadOnlyList<StashCandidate> candidates, CancellationToken ct = default)
+    {
+        var look = await LookAsync(picture, candidates, ct);
+        var grids = look.Grids.Select(g => new StashGridReading(
+            g.Grid.Place == StashGridPlace.Stash ? StashGridKind.Stash : StashGridKind.Window,
+            g.Cells.Where(c => c.ItemId is not null).Select(c => new StashItemSeen(c.ItemId!, c.Count, c.FoundInRaid)).ToList())).ToList();
+        return new StashReading(look.IsTradingScreen, look.IsTradingScreen ? [] : grids);
+    }
+
     /// <summary>The reading with everything it saw on the way (where the grids and cells stand, what each label
     /// read, the art's agreement), for measuring it against a hand-written truth (shturmap-cli stash).</summary>
     internal async Task<StashLook?> LookAsync(string path, IReadOnlyList<StashCandidate> candidates, int tries, TimeSpan? wait, CancellationToken ct)

@@ -363,6 +363,17 @@ public sealed class DevToolsTests : IDisposable
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 
+    // The QA pass pictures the operational tasks without a screenshot of the Tasks screen (owner, 2026-10-19, B): "tasks"
+    // takes how many made-up tasks (3 without a number) and "ended" for one more that runs out at once.
+    [Fact]
+    public void The_tasks_step_reads_how_many_and_ended()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "tasks", "tasks 5", "tasks 2 ended", "Tasks ENDED", "tasks 6", "tasks some"));
+        Assert.Equal(["line 5: 'tasks' takes how many (0 to 5) and 'ended'", "line 6: 'tasks' takes how many (0 to 5) and 'ended'"], errors);
+        Assert.Equal([(3, false), (5, false), (2, true), (3, true)], steps.Select(s => DevScript.TasksOf(s)!.Value));
+        Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
     // tools\qa\extract-roll-call.devscript: a raid on Customs, a position, the list read, the stills, then a second raid
     // that reads it again.
     [Fact]

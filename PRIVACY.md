@@ -7,8 +7,12 @@ corner of the picture: if the game's extract list shows there, it reads which ex
 text recognition built into Windows. Of a screenshot you take in the game's menus it looks at the item cells the
 picture shows, and reads their names the same way, against the items your quests need; what it saw it keeps on your
 PC as item ids with a count and a date (the "stash.json" file in its data folder), so that a quest's row can say
-"Seen in your stash" with the date. Both happen on your PC; nothing of a picture is kept or sent, and unticking
-"Read the extract list from screenshots" or "Read your stash from menu screenshots" in settings stops each. Nothing
+"Seen in your stash" with the date. Of a screenshot of the game's Tasks screen, on its OPERATIONAL tab, it reads the
+table of your daily and weekly tasks in the picture's left two thirds the same way (each task's name, location, time
+left and, for the row you opened, its objectives; never their rewards), and keeps those words with the times on your
+PC (the "operational.json" file) until the tasks run out. All of it happens on your PC; nothing of a picture is kept
+or sent, and unticking "Read the extract list from screenshots" or "Read your stash and tasks from menu screenshots"
+in settings stops each. Nothing
 about you leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself (3) and
 downloads public data and pictures (4).
 
@@ -21,7 +25,7 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
   how many quests are active, whether "Delete screenshots after reading", "Read the extract list from screenshots" and
-  "Read your stash from menu screenshots" are ticked (and the language Windows reads in), and the last 200 lines of
+  "Read your stash and tasks from menu screenshots" are ticked (and the language Windows reads in), and the last 200 lines of
   Shturmap's own log. Never what it saw in your screenshots or logs.
 
 2. A crash report, if you allow it

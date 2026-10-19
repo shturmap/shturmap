@@ -856,4 +856,8 @@
     <value>Forgot {count, plural, one {# mark} other {# marks}}. The next menu screenshot or log message marks again.</value>
     <comment>Notice after FORGET ALL MARKS in settings. {count}: how many marks went.</comment>
   </data>
+  <data name="OperationalRead" xml:space="preserve">
+    <value>{count, plural, one {Operational task read: #.} other {Operational tasks read: #.}}</value>
+    <comment>Notice, once per menu screenshot of the game's Tasks screen (Character › TASKS › OPERATIONAL) whose table was read: the daily and weekly tasks now on the rail. {count}: how many rows it read. "Operational" is the game's name for the tab.</comment>
+  </data>
 </root>

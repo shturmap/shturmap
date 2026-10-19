@@ -371,6 +371,23 @@ public sealed record SessionSnapshot
     /// <summary>Active quests that can be worked on in any raid (kills anywhere, found-in-raid items).</summary>
     public IReadOnlyList<PlanQuestView> AnyMap { get; init; } = [];
 
+    /// <summary>
+    /// The daily and weekly operational tasks of this mode, as the last screenshot of the Tasks screen showed them, in
+    /// its order, less those that ran out (owner, 2026-10-19: from a panel of four, B; GameSession.Operational): Plan's
+    /// list rows and open card and the raid card show them where their map's work is. Empty when none were read.
+    /// </summary>
+    public IReadOnlyList<Shturmap.Core.Operational.OperationalShown> Operational { get; init; } = [];
+
+    /// <summary>When the tasks were read: the last screenshot of the table ("As of 14:02"), or null.</summary>
+    public DateTimeOffset? OperationalReadAt { get; init; }
+
+    /// <summary>Tasks that ran out since that screenshot ("1 ended at 22:35. Screenshot your tasks for the new one."), or null.</summary>
+    public Shturmap.Core.Operational.OperationalEnded? OperationalEnded { get; init; }
+
+    /// <summary>The maps with operational work and none of your quests, by name: they join the end of NEXT RAID's list
+    /// (the planner's order and score unchanged).</summary>
+    public IReadOnlyList<MapPlanView> OperationalPlans { get; init; } = [];
+
     /// <summary>The plan for the raid's map in a raid, else for the map on screen (ranked or not): the raid view is this plan, live.</summary>
     public MapPlanView? MapPlan { get; init; }
 

@@ -71,7 +71,12 @@ Shturmap works only from files the game writes for you and from public community
 - of a screenshot you take in the game's menus (the stash, a case, the key tool), **the item cells its picture
   shows**: their names are read the same way, against the items your quests need, and a row that needs one of them
   says "Seen in your stash" with the date. Nothing of the picture is kept or sent; what was seen stays on your PC as
-  item ids. Untick **Read your stash from menu screenshots** in settings and no menu screenshot is opened;
+  item ids;
+- of a screenshot you take of the game's Tasks screen, on its OPERATIONAL tab, **the table of your daily and weekly
+  tasks** in the picture's left two thirds: each task's name, location and time left and, for the row you opened, its
+  objectives, read the same way, so the tasks show on their maps in Plan and in a raid until they run out. Never their
+  rewards; nothing of the picture is kept or sent; the tasks' words stay on your PC. Untick **Read your stash and
+  tasks from menu screenshots** in settings and no menu screenshot is opened;
 - the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
   quests started, failed and completed, and the items a quest hands you (its start items, its rewards, an insurance
   return), which get the same kind of mark;

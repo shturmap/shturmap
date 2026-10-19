@@ -15,6 +15,12 @@ param(
   [string] $ShowQuest,
   # A trader's name (Ragman): their focus held in the strip under the MAP list, as a click on the portrait holds it.
   [string] $TraderFocus,
+  # Made-up operational tasks (1 to 5), as a screenshot of the Tasks screen would give them once the data is there: a
+  # survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown
+  # on Shoreline, a line of no known kind on Woods (docs/DESIGN.md §4, *Operational tasks*). The file isn't written.
+  [int] $Operational,
+  # With -Operational: one more task that runs out at once, for the "1 ended at …" line.
+  [switch] $OperationalEnded,
   # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
   [int] $Tour,
   # Play the raid as a Scav: the match setup names another profile than the menu's.
@@ -269,6 +275,8 @@ if ($Demo) {
 $appArgs = @('--fake-game', $root, '--snapshot', $Out, $SnapshotAfter, '--culture', $Culture)
 if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 if ($TraderFocus) { $appArgs += @('--trader-focus', "`"$TraderFocus`"") }
+if ($Operational -gt 0) { $appArgs += @('--operational', $Operational) }
+if ($OperationalEnded) { $appArgs += @('--operational-ended') }
 if ($Tour -gt 0) { $appArgs += @('--tour', $Tour) }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }

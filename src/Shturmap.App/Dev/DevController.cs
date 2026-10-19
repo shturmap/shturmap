@@ -637,6 +637,15 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 if (window.DevStashCue() is { } noStash)
                     Say(noStash);
                 break;
+            case "tasks":
+                // The OPERATIONAL table as a screenshot taken now shows it: made-up tasks, from where the reading hands
+                // its rows over on (owner, 2026-10-19, B).
+                var (taskCount, taskEnded) = DevScript.TasksOf(step) ?? (3, false);
+                if (await session.ReadExampleTasksAsync(taskCount, taskEnded) is { } noTasks)
+                    Say(noTasks);
+                else
+                    Say($"operational table: {taskCount} tasks" + (taskEnded ? " and one about to end" : ""));
+                break;
             case "tour":
                 // "tour end": as Esc does. A --dev-view session's settings are new, so the tour opened by itself.
                 Say(window.DevEndTour() ? "tour ended" : "no tour to end");

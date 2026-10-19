@@ -1,11 +1,10 @@
-using Shturmap.Cli.Tasks;
 using Shturmap.Game.Screenshots;
 
 namespace Shturmap.Game.Tests;
 
-// The operational tasks' table read from a menu screenshot's words (the spike of 2026-10-19, `shturmap-cli tasks`;
-// docs/NEXT.md, "Dailies and weeklies from a screenshot"). The parser is the CLI's own (tools\Shturmap.Cli\Tasks,
-// linked into this project: nothing of it is in the app). The first tests lay out words by hand where the game's table
+// The operational tasks' table read from a menu screenshot's words (owner, 2026-10-19: from a panel of four, B;
+// docs/DESIGN.md §2, "Menu screenshots"; TaskTable, TasksReader; `shturmap-cli tasks` measures the same reader). The
+// first tests lay out words by hand where the game's table
 // puts them at 2560×1440, with made-up task names and objectives, so they need no picture and no text recognition.
 // The last one reads the owner's real screenshots against hand-written truths; those stay on the PC that took them
 // (tests\fixtures\ocr\operational, ignored by git) and it is skipped elsewhere.
@@ -154,6 +153,15 @@ public sealed class TaskTableTests
         Assert.Empty(page.Rows);
     }
 
+    // A word of a trader's screen alone tells nothing: a stash page with "Replace" on it stays the stash reader's.
+    [Fact]
+    public void One_word_of_a_traders_screen_is_not_one()
+    {
+        Assert.Equal(TaskScreen.None, TaskTable.Read([W("REPLACE", 499, 335), W("STASH", 1900, 35)], Width, Height).Screen);
+        Assert.Equal(TaskScreen.None, TaskTable.Read([W("TRADING", 78, 35), W("Zorblat", 826, 335)], Width, Height).Screen);
+        Assert.Equal(TaskScreen.TraderScreen, TaskTable.Read([W("TASKS", 252, 35), W("REPLACE", 499, 335)], Width, Height).Screen);
+    }
+
     [Fact]
     public void Another_screen_is_nothing()
     {
@@ -229,7 +237,7 @@ public sealed class TaskTableTests
             : [];
         if (truths.Count == 0)
             Assert.Skip(@"Real screenshots stay out of the repository: none with a truth on this PC (tests\fixtures\ocr\operational).");
-        var ocr = TaskTableOcr.Create();
+        var ocr = TasksReader.Create();
         if (ocr is null)
             Assert.Skip("This Windows has no English text recognition.");
         int times = 0, timesRead = 0, progresses = 0, progressesRead = 0;

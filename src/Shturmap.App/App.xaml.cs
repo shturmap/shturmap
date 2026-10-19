@@ -194,6 +194,11 @@ public partial class App : Application
             // Developer aid for snapshots: "--trader-focus <name>" holds that trader's focus in the strip under the MAP
             // list, as a click on the portrait does (tools\fake-raid.ps1 -TraderFocus).
             TraderFocusOnStart = Arg(cli, "--trader-focus"),
+            // Developer aid for snapshots, with a fake game only: "--operational <n>" shows n made-up operational tasks as
+            // a screenshot of the Tasks screen shows them, "--operational-ended" one more that runs out at once (tools\
+            // fake-raid.ps1 -Operational, -OperationalEnded); the operational tasks' file isn't written that run.
+            ExampleTasksOnStart = cli.Contains("--fake-game") && int.TryParse(Arg(cli, "--operational"), out var exampleTasks)
+                ? (exampleTasks, cli.Contains("--operational-ended")) : null,
             // Developer aid: "--tour <n>" opens the tour at its n-th chapter (snapshots of each, tools\fake-raid.ps1 -Tour).
             TourOnStart = int.TryParse(Arg(cli, "--tour"), out var tourChapter) ? tourChapter : null,
             // Developer aid: Follow my position on from the start (snapshot runs leave it off otherwise).

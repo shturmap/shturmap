@@ -80,7 +80,9 @@ $out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\S
 ```
 
 Other states where a change reaches them: `-Scav`, `-LocalRaid`, `-HoldLoading`, `-GroupPick`, `-Map lab` (a sheet),
-`-MoreArgs '--show-report'` or `'--show-crash'`. `render` also takes made-up screenshot names (dated 2026-01-01) for
+`-MoreArgs '--show-report'` or `'--show-crash'`, `-Operational 5 -OperationalEnded` (made-up daily and weekly tasks: the
+list rows' framed glyphs, the open card's and the raid card's OPERATIONAL, with `-Scav` FIND IN RAID's hand-over
+items). `render` also takes made-up screenshot names (dated 2026-01-01) for
 positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms apart (`--every`, `--count`, `--fix`,
 `--viewport`), `summary.txt` first. What each tool writes: DESIGN.md §8, "Developer aids", and docs/LANGUAGES.md,
 "Layout check".

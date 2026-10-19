@@ -1,38 +1,42 @@
 using System.Globalization;
-using Shturmap.Game.Screenshots;
 using SkiaSharp;
 using Windows.Globalization;
 using Windows.Media.Ocr;
 
-namespace Shturmap.Cli.Tasks;
+namespace Shturmap.Game.Screenshots;
 
 /// <summary>
 /// Reads a Tasks screenshot with Windows' own text recognition (Windows.Media.Ocr, on the PC, nothing sent) for
-/// <see cref="TaskTable"/>: first the words of the picture's left part (<see cref="TaskTable.LeftPart"/>), where the
-/// table stands (the right part carries the task items' grids, the player's name and money on a trader's screen, and
-/// the game's toasts with the screenshot's path, none of which is ever read); then each row's countdown and progress
-/// from their own bands. The recognition reads the table's names and objectives at the picture's own size, but drops
-/// most of the game's small digits whatever is done to them (2026-10-19: enlarged, stretched, cut to black and white,
-/// stacked with the page's other bands, a word set before them, the glyphs set apart), and drops each band in a
-/// different way; so every band is read in all the <see cref="Ways"/> and the value most of them read is taken.
+/// <see cref="TaskTable"/> (owner, 2026-10-19: from a panel of four, B; docs/DESIGN.md §2, "Menu screenshots"): first
+/// the words of the picture's left part (<see cref="TaskTable.LeftPart"/>), where the table stands (the right part
+/// carries the task items' grids, the player's name and money on a trader's screen, and the game's toasts with the
+/// screenshot's path, none of which is ever read); then each row's countdown and progress from their own bands. The
+/// recognition reads the table's names and objectives at the picture's own size, but drops most of the game's small
+/// digits whatever is done to them (the spike of 2026-10-19: enlarged, stretched, cut to black and white, stacked with
+/// the page's other bands, a word set before them, the glyphs set apart), and drops each band in a different way; so
+/// every band is read in all the <see cref="Ways"/> and the value most of them read is taken, with how many did
+/// (<see cref="TaskRow.TimeVotes"/>), for the checks that follow (Shturmap.Core.Operational.OperationalChecks). The
+/// file is opened for reading only, shared with the game that may still be writing it, and nothing of the picture is
+/// kept or written anywhere.
 /// </summary>
-internal sealed class TaskTableOcr
+public sealed class TasksReader
 {
     private readonly OcrEngine _engine;
 
-    private TaskTableOcr(OcrEngine engine) => _engine = engine;
+    private TasksReader(OcrEngine engine) => _engine = engine;
 
+    /// <summary>The language the table is read in ("en-US").</summary>
     public string LanguageTag => _engine.RecognizerLanguage.LanguageTag;
 
-    /// <summary>A reader for English (the spike reads the English game), null when this Windows has no English
-    /// recognition.</summary>
-    public static TaskTableOcr? Create()
+    /// <summary>A reader for English (the table's words are the English game's; the German game's are unknown), null
+    /// when this Windows has no English recognition.</summary>
+    public static TasksReader? Create()
     {
         try
         {
             var english = OcrEngine.AvailableRecognizerLanguages.FirstOrDefault(l => l.LanguageTag.StartsWith("en", StringComparison.OrdinalIgnoreCase));
             var engine = english is null ? null : OcrEngine.TryCreateFromLanguage(new Language(english.LanguageTag));
-            return engine is null ? null : new TaskTableOcr(engine);
+            return engine is null ? null : new TasksReader(engine);
         }
         catch (Exception e) when (e is not OutOfMemoryException)
         {
@@ -45,26 +49,40 @@ internal sealed class TaskTableOcr
     /// light; "binary" that cut at the middle, black on white. Measured on the owner's four tables (2026-10-19): of the
     /// twelve countdowns, binary at 1x reads 7, plain at 1x 6, inverted at 0.75x 5 (and one wrong), the others 0 to 3;
     /// no way reads more than 3 of the twelve progresses. Plain at 3x read nothing and is left out.</summary>
-    public static IReadOnlyList<(string Mode, double Zoom)> Ways { get; set; } =
+    internal static IReadOnlyList<(string Mode, double Zoom)> Ways { get; set; } =
     [
         ("plain", 1), ("binary", 1), ("inverted", 1), ("stretched", 1), ("plain", 2), ("binary", 2), ("inverted", 2),
         ("binary", 0.75), ("inverted", 0.75), ("binary", 1.5), ("inverted", 1.5), ("binary", 3), ("binary", 4), ("plain", 4),
     ];
 
     /// <summary>Ways as the command line writes them: "plain@1,binary@2".</summary>
-    public static IReadOnlyList<(string Mode, double Zoom)> ParseWays(string text) =>
+    internal static IReadOnlyList<(string Mode, double Zoom)> ParseWays(string text) =>
         text.Split(',').Select(w => w.Split('@')).Select(p => (p[0], double.Parse(p[1], CultureInfo.InvariantCulture))).ToList();
 
     /// <summary>A folder to write each band into as it is read, to see what the recognition was given
     /// (--dump).</summary>
-    public static string? Dump { get; set; }
+    internal static string? Dump { get; set; }
+
+    /// <summary>
+    /// What a screenshot shows: null when the file isn't a whole picture after the tries, or is gone; else the page,
+    /// whose <see cref="TaskPage.Screen"/> says whether it is the operational table (its rows read), a trader's tasks
+    /// or another Tasks table (told, not read), or something else.
+    /// </summary>
+    public async Task<TaskPage?> ReadAsync(string path, int tries = 8, TimeSpan? wait = null, CancellationToken ct = default)
+    {
+        using var picture = await MenuPicture.OpenAsync(path, tries, wait, ct);
+        return picture is null ? null : await ReadPageAsync(picture, ct: ct);
+    }
 
     /// <summary>The table read from a picture: the page's words, the rows from them, then each row's countdown and
-    /// progress from their bands, by vote. <paramref name="note"/> hears each band's votes.</summary>
+    /// progress from their bands, by vote (only for the operational table: a page that isn't one asks nothing more of
+    /// the recognition). <paramref name="note"/> hears each band's votes.</summary>
     public async Task<TaskPage> ReadPageAsync(SKBitmap picture, double zoom = 1, Action<string>? note = null, CancellationToken ct = default)
     {
-        var words = await ReadAsync(picture, zoom, ct);
+        var words = await ReadWordsAsync(picture, zoom, ct);
         var page = TaskTable.Read(words, picture.Width, picture.Height);
+        if (page.Screen != TaskScreen.Table)
+            return page;
         foreach (var row in page.Rows)
         {
             if (row.TimeLeft is null)
@@ -87,7 +105,7 @@ internal sealed class TaskTableOcr
 
     /// <summary>The words in the picture's left part, read with the part enlarged by <paramref name="zoom"/>, in the
     /// picture's pixels.</summary>
-    public async Task<List<TaskWord>> ReadAsync(SKBitmap picture, double zoom, CancellationToken ct)
+    internal async Task<List<TaskWord>> ReadWordsAsync(SKBitmap picture, double zoom, CancellationToken ct)
     {
         var part = SKRectI.Create(0, 0, (int)Math.Round(picture.Width * TaskTable.LeftPart), picture.Height);
         using var big = StashPicture.Block(picture, part, (int)Math.Round(part.Width * zoom), (int)Math.Round(part.Height * zoom));
@@ -129,7 +147,7 @@ internal sealed class TaskTableOcr
     private const int Margin = 24;
 
     /// <summary>One band of the picture read as one line of text, the way given.</summary>
-    public async Task<string> ReadBandAsync(SKBitmap picture, TaskBand band, (string Mode, double Zoom) way, CancellationToken ct)
+    internal async Task<string> ReadBandAsync(SKBitmap picture, TaskBand band, (string Mode, double Zoom) way, CancellationToken ct)
     {
         var rect = SKRectI.Intersect(SKRectI.Create(band.X, band.Y, band.W, band.H), SKRectI.Create(0, 0, picture.Width, picture.Height));
         if (rect.Width < 4 || rect.Height < 4)

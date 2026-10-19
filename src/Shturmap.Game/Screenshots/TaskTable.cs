@@ -2,12 +2,12 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Shturmap.Cli.Tasks;
+namespace Shturmap.Game.Screenshots;
 
 /// <summary>One word as the recognition read it, in the picture's pixels; Line is the recognition's own line number
 /// (not used by the reading: the recognition joins words across the table's cells into one line at some
 /// zooms).</summary>
-internal sealed record TaskWord(string Text, double X, double Y, double W, double H, int Line = 0)
+public sealed record TaskWord(string Text, double X, double Y, double W, double H, int Line = 0)
 {
     public double Cx => X + W / 2;
     public double Cy => Y + H / 2;
@@ -26,7 +26,7 @@ internal sealed record TaskChain(IReadOnlyList<TaskWord> Words)
     public string Text => string.Join(" ", Words.Select(w => w.Text));
 }
 
-internal enum TaskScreen
+public enum TaskScreen
 {
     /// <summary>Neither the table nor a trader's tasks: nothing is read.</summary>
     None,
@@ -43,13 +43,13 @@ internal enum TaskScreen
 
 /// <summary>A part of the picture to read on its own (the countdown, the progress), in the picture's
 /// pixels.</summary>
-internal readonly record struct TaskBand(int X, int Y, int W, int H);
+public readonly record struct TaskBand(int X, int Y, int W, int H);
 
-internal sealed record TaskObjective(string Text, int? Done, int? Of);
+public sealed record TaskObjective(string Text, int? Done, int? Of);
 
 /// <summary>One row of the table: the cells read from the page, and the countdown and progress read from their
 /// bands.</summary>
-internal sealed class TaskRow
+public sealed class TaskRow
 {
     public required string Name { get; init; }
     public string? Location { get; set; }
@@ -72,16 +72,17 @@ internal sealed class TaskRow
     public TaskBand ProgressBand { get; init; }
 }
 
-internal sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, double Unit);
+public sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, double Unit);
 
 /// <summary>
-/// The operational tasks' table read from the words of a menu screenshot (docs/NEXT.md, "Dailies and weeklies from a
-/// screenshot"; the spike of 2026-10-19). Pure: the words come from <see cref="TaskTableOcr"/> (or a test), the
-/// countdown's and the progress's own bands are read by the caller and handed back to <see cref="TakeTime"/> and
-/// <see cref="TakeProgress"/>.
+/// The operational tasks' table read from the words of a menu screenshot (owner, 2026-10-19: from a panel of four, B;
+/// docs/DESIGN.md §2, "Menu screenshots"; the spike of the same day, docs/NEXT.md). Pure: the words come from
+/// <see cref="TasksReader"/> (or a test), the countdown's and the progress's own bands are read by the caller and
+/// handed back to <see cref="TakeTime"/> and <see cref="TakeProgress"/>.
 /// <list type="bullet">
 /// <item>The screen: the table's header (Trader, Type, Class, Task, Location, Status, Progress on one line, five of
-/// them at least) is the table; REPLACE, or TRADING with SERVICES, is a trader's screen, told and never read.</item>
+/// them at least) is the table; TRADING with SERVICES (a trader's tabs), or REPLACE with TASKS, is a trader's screen,
+/// told and never read (neither by this reading nor by the stash's: its grids are the task's rewards).</item>
 /// <item>The columns: from the header words' places (Location, Status and Progress stand over their cells' middles;
 /// the task names start just right of Class), with the 1440p fractions where a header word went unread.</item>
 /// <item>The rows: a run of words that starts at the task names' left edge and stays in the Task column, with a
@@ -91,7 +92,7 @@ internal sealed record TaskPage(TaskScreen Screen, IReadOnlyList<TaskRow> Rows, 
 /// with a count n/m at its end where the game shows one; they go to the row above them.</item>
 /// </list>
 /// </summary>
-internal static class TaskTable
+public static class TaskTable
 {
     /// <summary>The part of the picture's width that is read: the table ends at 0.66 of it at 16:9.</summary>
     public const double LeftPart = 0.665;
@@ -228,7 +229,8 @@ internal static class TaskTable
     private static bool IsTraderScreen(IReadOnlyList<TaskWord> words)
     {
         var folded = words.Select(w => Fold(w.Text)).ToHashSet(StringComparer.Ordinal);
-        return folded.Contains("replace") || (folded.Contains("trading") && folded.Contains("services"));
+        // Two words each: a stash page with a lone "replace" on it is no trader's screen.
+        return (folded.Contains("replace") && folded.Contains("tasks")) || (folded.Contains("trading") && folded.Contains("services"));
     }
 
     // ---- words into runs and lines ----

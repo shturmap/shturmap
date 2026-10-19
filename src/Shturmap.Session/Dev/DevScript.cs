@@ -66,6 +66,9 @@ public static class DevScript
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
+        ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 5: "
+            + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
+            + "a line of no known kind on Woods); with ended, one more that runs out 3 s later",
         ["tour"] = "end: ends the tour as Esc does (a --dev-view session starts as a first start, and the tour opens by itself)",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs, written over what the folder had; %VARIABLES% in it are expanded",
@@ -89,6 +92,26 @@ public static class DevScript
         step.Args is [var only] && only.Equals("all", StringComparison.OrdinalIgnoreCase) ? null
             : step.Args.Select(a => a.Trim()).Where(a => a.TrimEnd('?').Length > 0)
                 .Select(a => a.EndsWith('?') ? (a.TrimEnd('?').TrimEnd(), true) : (a, false)).ToList();
+
+    /// <summary>
+    /// A "tasks" step's made-up operational tasks (owner, 2026-10-19, B): how many (3 without a number, at most 5) and
+    /// whether one more runs out at once ("ended"). Null for any other word.
+    /// </summary>
+    public static (int Count, bool Ended)? TasksOf(DevStep step)
+    {
+        var count = 3;
+        var ended = false;
+        foreach (var arg in step.Args)
+        {
+            if (arg.Equals("ended", StringComparison.OrdinalIgnoreCase))
+                ended = true;
+            else if (int.TryParse(arg, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= 5)
+                count = n;
+            else
+                return null;
+        }
+        return (count, ended);
+    }
 
     /// <summary>What a "whatsnew" step does with the card: the pointer onto a line (or, with none, off the card), a tap
     /// on a line, or the pointer off the line it is on.</summary>
@@ -190,6 +213,11 @@ public static class DevScript
             if (verb == "whatsnew" && WhatsNewOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'whatsnew click' needs the line's number, from 1");
+                continue;
+            }
+            if (verb == "tasks" && TasksOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'tasks' takes how many (0 to 5) and 'ended'");
                 continue;
             }
             if (verb == "tour" && !step.Arg(0).Equals("end", StringComparison.OrdinalIgnoreCase))

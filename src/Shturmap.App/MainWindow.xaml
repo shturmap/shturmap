@@ -80,6 +80,60 @@
         </Grid>
       </DataTemplate>
 
+      <!-- A daily or weekly operational task as a glyph on a NEXT RAID row, after the quests' (owner, 2026-10-19: from a
+           panel of four, B): framed, and the frame says "operational" (DESIGN.md, "Visual language"). Its kind's quest-type
+           glyph, or the generic operational one (a stopwatch) for a kind not known. The frame stands out of the glyph's
+           16 DIP without making the row taller. -->
+      <DataTemplate x:Key="OperationalGlyphTemplate" x:DataType="local:OperationalLine">
+        <Border BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Padding="1" Margin="1,-2,1,-2" Opacity="{x:Bind Strength}"
+                VerticalAlignment="Center">
+          <Grid Width="16" Height="16">
+            <controls:KindGlyph Kind="{x:Bind GlyphKind}" Brush="{StaticResource AmberBrush}" Visibility="{x:Bind KnownVisibility}"
+                                ToolTipService.ToolTip="{x:Bind Synopsis}" />
+            <FontIcon Glyph="&#xE916;" FontSize="14" Foreground="{StaticResource AmberBrush}" Visibility="{x:Bind UnknownVisibility}"
+                      ToolTipService.ToolTip="{x:Bind Synopsis}" />
+          </Grid>
+        </Border>
+      </DataTemplate>
+
+      <!-- An operational task's row in a map's card and the raid card (owner, 2026-10-19, B): its glyph, its synopsis,
+           then in muted capitals its progress and time ("4 OF 7 · 8 H LEFT"; in a raid "ENDS IN 25 MIN" in the clock's
+           red, only when it ends before the raid could), a hand-over's item cells, and in a raid ANYWHERE where a quest
+           row has its distance. No portrait, no pen, no card: nothing to click. A row a reading just brought glows in
+           (Controls.Glow), as a mark does. -->
+      <DataTemplate x:Key="OperationalTemplate" x:DataType="local:OperationalLine">
+        <Grid ColumnSpacing="10" Padding="6,4" Margin="-6,0" Opacity="{x:Bind Strength}"
+              BorderBrush="{StaticResource LineBrush}" BorderThickness="{x:Bind AnywhereLine}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <Rectangle Grid.ColumnSpan="4" Margin="-6,-4" Fill="{StaticResource AmberBrush}" Opacity="0" IsHitTestVisible="False"
+                     Visibility="{x:Bind FreshVisibility}" Tag="flash" Loaded="OnGlowLoaded" />
+          <Grid Width="16" Height="16" Margin="0,1,0,0" VerticalAlignment="Top">
+            <controls:KindGlyph Kind="{x:Bind GlyphKind}" Brush="{StaticResource AmberBrush}" Visibility="{x:Bind KnownVisibility}" />
+            <FontIcon Glyph="&#xE916;" FontSize="14" Foreground="{StaticResource AmberBrush}" Visibility="{x:Bind UnknownVisibility}"
+                      ToolTipService.ToolTip="{x:Bind local:ViewTexts.OperationalGlyphTip}" />
+          </Grid>
+          <StackPanel Grid.Column="1" Spacing="1">
+            <Grid>
+              <TextBlock Text="{x:Bind Synopsis}" TextWrapping="Wrap" />
+              <TextBlock Text="{x:Bind Synopsis}" TextWrapping="Wrap" Foreground="{StaticResource AmberBrush}"
+                         Opacity="0" IsHitTestVisible="False" Visibility="{x:Bind FreshVisibility}" Loaded="OnGlowLoaded" />
+            </Grid>
+            <TextBlock Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Left"
+                       Margin="0,2,0,0" TextWrapping="Wrap" Visibility="{x:Bind LineVisibility}">
+              <Run Text="{x:Bind local:Caps.Of(Line)}" /><Run Text="{x:Bind AlertDot}" /><Run Text="{x:Bind local:Caps.Of(Alert)}" Foreground="{StaticResource RedBrush}" />
+            </TextBlock>
+          </StackPanel>
+          <controls:NeedsStrip Grid.Column="2" Needs="{x:Bind Items}" />
+          <TextBlock Grid.Column="3" Text="{x:Bind local:Caps.Of(Right)}" Style="{StaticResource StatusText}" FontSize="11"
+                     Foreground="{StaticResource MutedBrush}" VerticalAlignment="Top" Margin="0,2,0,0" Visibility="{x:Bind RightVisibility}" />
+        </Grid>
+      </DataTemplate>
+
       <!-- One part of a line of facts under a map's name ("40 min raid", "Kaban 75%"), with the dot that follows it.
            A boss's part is linked to its spawn zones on the map: pointing at the name lights them, and pointing at
            one of them tints the name. -->
@@ -973,6 +1027,16 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <!-- Then, behind a hairline, the map's operational tasks, framed (owner, 2026-10-19, B); never
+                                 the any-map ones, which would stand on every row. -->
+                            <Rectangle Width="1" Height="12" Margin="3,0" VerticalAlignment="Center" Fill="{StaticResource LineStrongBrush}"
+                                       Visibility="{x:Bind OperationalDividerVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind OperationalGlyphs}" ItemTemplate="{StaticResource OperationalGlyphTemplate}"
+                                          Visibility="{x:Bind OperationalGlyphsVisibility}" IsTabStop="False">
+                              <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3" /></ItemsPanelTemplate>
+                              </ItemsControl.ItemsPanel>
+                            </ItemsControl>
                           </StackPanel>
                           <controls:NeedsStrip Grid.Column="1" Needs="{x:Bind Needs}" Shown="5" Opacity="{x:Bind RowStrength}" />
                         </Grid>
@@ -1093,6 +1157,17 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <!-- OPERATIONAL: the daily and weekly tasks read from a screenshot of the Tasks screen (owner,
+                                 2026-10-19: from a panel of four, B): the map's, then the any-map ones after a hairline;
+                                 when they were read at the right, and under the eyebrow the tasks that ran out since. -->
+                            <Grid Margin="0,14,0,4" Visibility="{x:Bind OperationalVisibility}">
+                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0" />
+                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(OperationalAsOf)}" Margin="0" HorizontalAlignment="Right" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind OperationalEnded}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
+                                       Visibility="{x:Bind OperationalEndedVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Operational}" Visibility="{x:Bind OperationalVisibility}" IsTabStop="False"
+                                          ItemTemplate="{StaticResource OperationalTemplate}" />
                             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
                                           ItemTemplate="{StaticResource RequirementTemplate}" />
@@ -1230,6 +1305,12 @@
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardProgress}" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidProgress, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
+                  <!-- OPERATIONAL: the raid's map's daily and weekly tasks, then the any-map ones (owner, 2026-10-19, B). -->
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0,14,0,4"
+                             Visibility="{x:Bind ShownIfOperational(ViewModel.RaidOperational, ViewModel.RaidOperationalEnded), Mode=OneWay}" />
+                  <TextBlock Text="{x:Bind ViewModel.RaidOperationalEnded, Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
+                             Visibility="{x:Bind ShownIf(ViewModel.RaidOperationalEnded), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidOperational, Mode=OneWay}" ItemTemplate="{StaticResource OperationalTemplate}" IsTabStop="False" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidBring), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidBring, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- A Scav raid: the loot your quests need found in raid takes the place of their objectives. -->

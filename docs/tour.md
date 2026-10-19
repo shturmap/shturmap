@@ -25,7 +25,7 @@ An unofficial fan project, not made or endorsed by Battlestate Games. Use at you
 - reads · The game's logs
 - reads · Your screenshots' names
 - reads · The extract list in a screenshot
-- reads · Your stash in a menu screenshot, when you take one
+- reads · Your stash and tasks in a menu screenshot, when you take one
 - never · Touches the game
 - never · Sends keys or clicks
 - never · Captures your screen

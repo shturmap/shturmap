@@ -717,7 +717,11 @@
     <comment>en: Automatic: {language}. Neither the game's nor Windows' language is translated yet.</comment>
   </data>
   <data name="SettingsReadStashNote" xml:space="preserve">
-    <value>Liest die Item-Zellen in einem Screenshot, den du in den Menüs des Spiels machst (Stash, Case, Key Tool), mit der Texterkennung von Windows und den Item-Bildern von tarkov.dev, für die Items, die deine Quests brauchen. Nur auf diesem PC; was gesehen wurde, bleibt als Item-IDs im Datenordner von Shturmap, vom Bild wird nichts gespeichert oder gesendet. Ohne Haken wird kein Menü-Screenshot geöffnet.</value>
-    <comment>en: Reads the item cells in a screenshot you take in the game's menus (the stash, a case, the key tool), with Windows' own text recognition and tarkov.dev's item images, for the items your quests need. On this PC only; what was seen is kept in Shturmap's data folder as item ids, nothing of the picture is kept or sent. Unticked, no menu screenshot is opened.</comment>
+    <value>Liest die Item-Zellen in einem Screenshot, den du in den Menüs des Spiels machst (Stash, Case, Key Tool), mit der Texterkennung von Windows und den Item-Bildern von tarkov.dev, für die Items, die deine Quests brauchen; und im Tab OPERATIONAL des Aufgaben-Bildschirms die täglichen und wöchentlichen Aufgaben, nie ihre Belohnungen. Nur auf diesem PC; was gesehen wurde, bleibt im Datenordner von Shturmap (Item-IDs, die Worte der Aufgaben), vom Bild wird nichts gespeichert oder gesendet. Ohne Haken wird kein Menü-Screenshot geöffnet.</value>
+    <comment>en: Reads the item cells in a screenshot you take in the game's menus (the stash, a case, the key tool), with Windows' own text recognition and tarkov.dev's item images, for the items your quests need; and on the Tasks screen's OPERATIONAL tab, the daily and weekly tasks, never their rewards. On this PC only; what was seen is kept in Shturmap's data folder (item ids, the tasks' words), nothing of the picture is kept or sent. Unticked, no menu screenshot is opened.</comment>
+  </data>
+  <data name="ScavLootOperational" xml:space="preserve">
+    <value>für eine operative Aufgabe</value>
+    <comment>en: for an operational task</comment>
   </data>
 </root>

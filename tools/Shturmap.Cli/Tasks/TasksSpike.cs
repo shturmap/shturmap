@@ -10,7 +10,9 @@ namespace Shturmap.Cli.Tasks;
 /// each row's task, location, status, time left and progress, and an expanded row's objectives with their counts),
 /// tells a trader's tasks screen from it, and says when each task expires (the file's time plus the time left). With a
 /// folder, it scores itself per field against hand-written truths beside the pictures (<see cref="TaskTruth"/>).
-/// Nothing of it runs in the app; DESIGN.md §2 is unchanged. The pictures are the owner's own, in the git-ignored
+/// The reading is the app's own since 2026-10-19 (Shturmap.Game.Screenshots.TasksReader; owner, from a panel of four,
+/// B; DESIGN.md §2), and this prints what it read, before the app's checks on the countdowns (Shturmap.Core.Operational,
+/// OperationalChecks), which it says beside each row. The pictures are the owner's own, in the git-ignored
 /// tests\fixtures\ocr\operational; only the table is read (the left two thirds of the picture), and it prints the
 /// table's words and scores, never a path's folder.
 /// </summary>
@@ -53,8 +55,8 @@ internal static class TasksSpike
                 case "--zoom": zoom = double.Parse(args[++i], CultureInfo.InvariantCulture); break;
                 case "--words": printWords = true; break;
                 case "--bands": printBands = true; break;
-                case "--ways": TaskTableOcr.Ways = TaskTableOcr.ParseWays(args[++i]); break;
-                case "--dump": TaskTableOcr.Dump = Directory.CreateDirectory(args[++i]).FullName; break;
+                case "--ways": TasksReader.Ways = TasksReader.ParseWays(args[++i]); break;
+                case "--dump": TasksReader.Dump = Directory.CreateDirectory(args[++i]).FullName; break;
                 default: inputs.Add(args[i]); break;
             }
         }
@@ -63,13 +65,13 @@ internal static class TasksSpike
             Console.WriteLine("Use: shturmap-cli tasks <png or folder>... [--bands] [--words] [--ways plain@1,binary@2,...] [--zoom <page zoom>] [--dump <folder>]");
             return;
         }
-        var ocr = TaskTableOcr.Create();
+        var ocr = TasksReader.Create();
         if (ocr is null)
         {
             Console.WriteLine("This Windows has no English text recognition: no reading.");
             return;
         }
-        Console.WriteLine($"Recognition: {ocr.LanguageTag}; the page at {zoom}x; each band {TaskTableOcr.Ways.Count} ways, by vote");
+        Console.WriteLine($"Recognition: {ocr.LanguageTag}; the page at {zoom}x; each band {TasksReader.Ways.Count} ways, by vote");
         var files = inputs.SelectMany(p => Directory.Exists(p) ? Directory.GetFiles(p, "*.png").Order(StringComparer.Ordinal).ToArray() : [p]).ToList();
         var tally = new Tally();
         var truths = 0;
@@ -84,7 +86,7 @@ internal static class TasksSpike
             }
             if (printWords)
             {
-                foreach (var w in (await ocr.ReadAsync(picture, zoom, CancellationToken.None)).OrderBy(w => w.Y).ThenBy(w => w.X))
+                foreach (var w in (await ocr.ReadWordsAsync(picture, zoom, CancellationToken.None)).OrderBy(w => w.Y).ThenBy(w => w.X))
                     Console.WriteLine($"     word \"{w.Text}\" at {w.X:0},{w.Y:0} {w.W:0}×{w.H:0}");
             }
             var page = await ocr.ReadPageAsync(picture, zoom, printBands ? n => Console.WriteLine("     " + n) : null);
@@ -128,11 +130,15 @@ internal static class TasksSpike
         Console.WriteLine($"== {Path.GetFileName(file)}: {screen}; {ms} ms; file time {taken:yyyy-MM-dd HH:mm:ss}");
         if (page.Screen != TaskScreen.Table)
             return;
-        foreach (var row in page.Rows)
+        // The app's checks on one screenshot's countdowns (OperationalChecks): a countdown that fails them gives no expiry.
+        var kept = Shturmap.Core.Operational.OperationalChecks.Countdowns(page.Rows.Select(r => (r.TimeLeft, r.TimeVotes)).ToList());
+        foreach (var (row, index) in page.Rows.Select((r, i) => (r, i)))
         {
             var left = row.TimeLeft is { } t ? $"{TaskTable.Hms(t)} ({row.TimeVotes} votes)" : "?";
             var progress = row.Progress is { } p ? $"{p}% ({row.ProgressVotes} votes)" : "?";
-            var expiry = row.TimeLeft is { } l ? (taken + l).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "?";
+            var expiry = row.TimeLeft is null ? "?"
+                : kept[index] is { } l ? (taken + l).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+                : "none (fails the checks)";
             Console.WriteLine($"   {row.Name,-20} | {row.Location ?? "?",-12} | {row.Status ?? "?",-6} | left {left,-20} | {progress,-14} | expires {expiry}");
             foreach (var o in row.Objectives)
                 Console.WriteLine($"      objective \"{o.Text}\"" + (o.Of is not null ? $" {o.Done}/{o.Of}" : ""));

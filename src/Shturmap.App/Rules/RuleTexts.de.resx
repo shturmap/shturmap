@@ -184,4 +184,68 @@
     <value>NEU IN {version}</value>
     <comment>en: NEW IN {version}</comment>
   </data>
+  <data name="OperationalAsOf" xml:space="preserve">
+    <value>Stand {time}</value>
+    <comment>en: As of {time}</comment>
+  </data>
+  <data name="OperationalAsOfDay" xml:space="preserve">
+    <value>Stand {date}, {time}</value>
+    <comment>en: As of {date}, {time}</comment>
+  </data>
+  <data name="OperationalCount" xml:space="preserve">
+    <value>{done} von {of}</value>
+    <comment>en: {done} of {of}</comment>
+  </data>
+  <data name="OperationalPercent" xml:space="preserve">
+    <value>{percent} %</value>
+    <comment>en: {percent}%</comment>
+  </data>
+  <data name="OperationalAnyMap" xml:space="preserve">
+    <value>jede Map</value>
+    <comment>en: any map</comment>
+  </data>
+  <data name="OperationalHandOverAfter" xml:space="preserve">
+    <value>danach abgeben</value>
+    <comment>en: hand over after</comment>
+  </data>
+  <data name="OperationalHandOverAfterRaid" xml:space="preserve">
+    <value>nach dem Raid abgeben</value>
+    <comment>en: hand over after the raid</comment>
+  </data>
+  <data name="OperationalMinutesLeft" xml:space="preserve">
+    <value>noch {count} min</value>
+    <comment>en: {count} min left</comment>
+  </data>
+  <data name="OperationalHoursLeft" xml:space="preserve">
+    <value>noch {count} h</value>
+    <comment>en: {count} h left</comment>
+  </data>
+  <data name="OperationalDaysLeft" xml:space="preserve">
+    <value>{count, plural, one {noch # Tag} other {noch # Tage}}</value>
+    <comment>en: {count} d left</comment>
+  </data>
+  <data name="OperationalReadJustNow" xml:space="preserve">
+    <value>gerade gelesen</value>
+    <comment>en: read just now</comment>
+  </data>
+  <data name="OperationalReadMinutesAgo" xml:space="preserve">
+    <value>vor {count} min gelesen</value>
+    <comment>en: read {count} min ago</comment>
+  </data>
+  <data name="OperationalReadHoursAgo" xml:space="preserve">
+    <value>vor {count} h gelesen</value>
+    <comment>en: read {count} h ago</comment>
+  </data>
+  <data name="OperationalReadDaysAgo" xml:space="preserve">
+    <value>{count, plural, one {vor # Tag gelesen} other {vor # Tagen gelesen}}</value>
+    <comment>en: read {count} d ago</comment>
+  </data>
+  <data name="OperationalEndsIn" xml:space="preserve">
+    <value>endet in {count} min</value>
+    <comment>en: ends in {count} min</comment>
+  </data>
+  <data name="OperationalEnded" xml:space="preserve">
+    <value>{count, plural, one {# endete um {time}. Mach einen Screenshot deiner Aufgaben für die neue.} other {# endeten, die letzte um {time}. Mach einen Screenshot deiner Aufgaben für die neuen.}}</value>
+    <comment>en: {count, plural, one {# ended at {time}. Screenshot your tasks for the new one.} other {# ended, the last at {time}. Screenshot your tasks for the new ones.}}</comment>
+  </data>
 </root>
