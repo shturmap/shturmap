@@ -257,12 +257,14 @@ public sealed partial class MainWindow
         StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
     }
 
-    /// <summary>A pinned line in the rail's foot clicked: its card whole in the pointed card's place.</summary>
+    /// <summary>A pinned line in the rail's foot clicked: its card whole in the pointed card's place, the card's room
+    /// back at its top, so the card is seen from its head, not from where the last one was scrolled to.</summary>
     private void ShowDeskPin(DeskCellKey key, string how)
     {
         Study.Ui("desk.pin.show", ("how", how));
         _deskPointed = key;
         RenderDeskRail();
+        RailScroll.ChangeView(null, 0, null, disableAnimation: true);
     }
 
     // The foot's strip: its first three lines in sight, the fourth and on scrolled to within it (Rules.DeskPins.FootRoom),

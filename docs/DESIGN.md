@@ -2098,13 +2098,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       none is the hint, "Point at an item for its card. A click copies its flea price; a right-click pins its card
       here."; then the pinned cards, newest on top: whole under the hint while no cell is pointed at, and while one is,
       one compact line each (the item's icon, its name and the gold figure, framed in amber), a click on one showing it
-      whole in the pointed card's place. **The pins' foot** (UI QA pass of the desk's second round, F1, 2026-10-19: under
-      a key's card the second pinned line stood cut at the window's bottom at 1600×900, in German below it; the
-      coordinator's rule): while a cell is pointed at, the pinned lines stand at the rail's foot under the rail's
-      hairline, always in sight, three at most and more scrolling within that strip, and the pointed card scrolls in the
-      room above them. The rail scrolls: at 900×560 the decision part of the pointed card shows (with two pins at the
-      foot, its figure and plate in English and German, KEEP under the hairline; on the desk the 20 DIP at the foot of
-      what scrolls are the cards' own, so a card runs on to the hairline or the window's edge).
+      whole in the pointed card's place, from its head (the room scrolled back to its top). **The pins' foot** (UI QA
+      pass of the desk's second round, F1, 2026-10-19: under a key's card the second pinned line stood cut at the
+      window's bottom at 1600×900, in German below it; the coordinator's rule): while a cell is pointed at, the pinned
+      lines stand at the rail's foot under the rail's hairline, always in sight, three at most and more scrolling within
+      that strip, and the pointed card scrolls in the room above them. The rail scrolls: at 900×560 the decision part of
+      the pointed card shows (with two pins at the foot, its figure and plate in English and German, KEEP under the
+      hairline; on the desk the 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the hairline
+      or the window's edge).
       Until step C the rail showed the item card the pointer opens anywhere.
     - *The card* (step C, 2026-10-20; `Controls.DeskCardView`, its words `Rules.DeskCards`): 351 DIP, the item card's
       ground and frame, whole (no map under it). Its head: the item's 40 DIP icon, a slot's name in muted capitals over

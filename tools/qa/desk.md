@@ -105,7 +105,8 @@ $app.WaitForExit()
   and the plate's lines in view, in English and German). On the page the LEDX's and the Grizzly's cells carry a short
   amber bar on their top edge.
 - **pinshown** (`desk show 2`, the foot's second line clicked): the LEDX's card whole first in the rail, framed in
-  amber as pinned; the foot holds the Grizzly's line alone; the key's card gone. At 900×560 KEEP's eyebrow under the
+  amber as pinned, its head at the top of the card's room (a click scrolls the room back to its top); the foot holds
+  the Grizzly's line alone; the key's card gone. At 900×560 KEEP's eyebrow under the
   flea's net line, its first need at the hairline.
 - **pinmore** (four pinned, the key pointed at again): the key's card first; at the foot three lines, "5.45x39mm BS gs
   27,000 ₽" on top, then "TerraGroup Labs keycard (Blue) 459,000 ₽" and the Grizzly's; the LEDX's, the fourth, not in
