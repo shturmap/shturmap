@@ -304,7 +304,8 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
   worded for the desk (the panel left it out).
 - Step C, once B's naming has held up: the card, the price history, the click and its setting (the card's lines for a
   "+" and a scaled figure, the click's scaled price). Built 2026-10-19 (below).
-- The in-raid glance: its panel after step B, its build after step C.
+- The in-raid glance: its panel after step B, its build after step C. Both 2026-10-19: Variant 1 with the looted
+  layout mirrored, built (below, *Built (the in-raid glance)*).
 - The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). `SafetyTests` forbids no clipboard
   call (step C, 2026-10-19: checked, and said beside its list).
 
@@ -617,13 +618,47 @@ UPDATES.md's two rows. Measured with `shturmap-cli desk` (now with `footprints-<
   Unsearched) and `Cut`, whose "+" is the region's `Plus`. `Loot` is that title, null for the player's inventory
   alone; `Reading` counts up per raid.
 - **Open:** the tick's words and note gain "and in a raid" with the plate (README, PRIVACY.md, help, and CLAUDE.md's
-  "four things" a screenshot is read for), and until then raid inventories are read under the present words; a
+  "four things" a screenshot is read for), and until then raid inventories are read under the present words (done with
+  the plate, below); a
   backpack whose heading scrolled out of view, its items highlighted after looting, reads as a window of no name
   (counted in neither; one picture), and a body's rig opened in a window ("CR MK2 (R)", read "CR MQ (R)") attaches to
   nothing; the bodies' 2-letter labels ("PM", "PB") and "ScavBP" after a glyph stay unread; a raid screenshot is
   opened twice (its corner, then the glance; the second opening's cost not measured); the 3 s budget of
   `StashReaderTests`' real pictures failed in two of three full parallel runs (3.2 s on a picture read in 2.0 s alone,
   its time unchanged by this round).
+
+**Built (the in-raid glance, 2026-10-19)**: the plate the reader round's reading was for. From its panel the owner took
+Variant 1 (the total large and the desk's cells, at the top of the map's column) "with the looted container's or body's
+item layout mirrored", in place of the top five per slot. Binding: DESIGN.md §4, *The in-raid glance* (*Its look*,
+*Built* and its *As built*), §2 ("In a raid": the tick's words), §8 ("Developer aids": `-Glance`, `glance`).
+
+- **The plate** (`Controls.GlancePlate`, `Rules.GlancePlateRules`, `MainWindow.GlancePlate`): at the top of the map's
+  column, under the notes, the cue's band (the ground at 90 % between amber hairlines); FROM YOUR SCREENSHOT, "LOOT
+  1.87 M+ ₽" at 48 px with the total in amber, "ON YOU 1.01 M+ ₽ · 2 unsure"; then the LOOT pane's regions in reading
+  order, each under its own head (BODY, TACTICAL RIG, POCKETS, BACKPACK; DRAWER), with the desk's own cells, which take
+  no pointer there; a part not searched a closed region, "UNSEARCHED +"; "POCKETS · SEARCHING +", "· MORE BELOW +" for a
+  cut grid. The player's own regions never drawn; with no LOOT pane, the head alone and "Your gear · nothing looted on
+  this screen". Cells 40 to 80 DIP (the desk's sizes, the largest that fits), flowed into columns, about half the map's
+  height at the most; what doesn't fit even at 40 is named in "ALSO · BACKPACK 2.89 M ₽". 6 s, then a 0.4 s fade (at
+  once with the effects off); a newer reading replaces it at once; a reading waits while a cue is up, a cue ends the
+  plate; the raid's end takes it; the floor picker steps aside while it stands.
+- **The tick's words** (en, de): "Read your stash, gear and tasks from menu screenshots, and loot in a raid", "Stash,
+  Gear, Dailies und Weeklies aus Menü-Screenshots lesen, im Raid auch Loot"; its note, help's privacy paragraph, the
+  README, PRIVACY.md and CLAUDE.md's list (five things a picture is read for) say the raid's inventory screen.
+- **Developer aids**: `Rules.GlanceExample` (1, a drawer with three items; 2, a body: slots, an UNSEARCHED rig,
+  pockets being searched, a searched backpack), the script's `glance [<n>]`, `fake-raid.ps1 -Glance <n>` (`--glance`),
+  the replay `tools\qa\glance.devscript` and `glance.md`. Tests: `GlancePlateRulesTests` (what is drawn, the head's
+  words, the heads and states, the sizes and the cut, in English and German), `DevToolsTests`.
+- **Open**: the owner's call on **motion in a raid** (the plate stands at once, as built, or comes in with the panel's
+  D: the band's flash, the total counting up, the cells 50 ms apart); at 900×560 a body's regions have no room under the
+  48 px title and are named in the ALSO line only (a smaller title there, or a taller plate, would draw its slots); the
+  plate not yet pictured with a real raid's reading (the 22 screenshots: `shturmap-cli desk --raid` reads them, nothing
+  renders their plate yet); the panel had the one-line notice while another cue is up, as built a reading waits for the
+  cue (the coordinator's brief); the tour's chapter 1 ("Your stash, gear and tasks in a menu screenshot") doesn't name
+  the raid's inventory screen; the senior translator's review of the new German words; the UI QA pass. The reader
+  round's open points stand: a backpack whose heading scrolled out of view reads as a window of no name, a body's rig
+  opened in a window attaches to nothing, the 2-letter labels ("PM", "PB") stay unread, a raid screenshot is opened
+  twice, and `StashReaderTests`' 3 s budget fails now and then in full parallel runs.
 
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,

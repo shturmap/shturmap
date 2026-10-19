@@ -375,6 +375,17 @@ public sealed class DevToolsTests : IDisposable
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 
+    // The in-raid glance without a screenshot (owner, 2026-10-19): "glance" takes the made-up reading, 1 (a drawer) or 2 (a
+    // body), 1 without a number.
+    [Fact]
+    public void The_glance_step_takes_a_reading_one_or_two()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "glance", "glance 2", "GLANCE 1", "glance 3", "glance body"));
+        Assert.Equal(["line 4: 'glance' takes a reading, 1 or 2", "line 5: 'glance' takes a reading, 1 or 2"], errors);
+        Assert.Equal([1, 2, 1], steps.Select(s => DevScript.GlanceOf(s)!.Value));
+        Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
     // The stash desk's view without a screenshot (step B, 2026-10-19): "desk" takes the made-up desk's reading (1 to 3, 1
     // without a number), "open" a folded region as its name's click does, "point" a cell as the pointer does (its first
     // cell without a place), "plan" and "show" PLAN and DESK at the rail's head.

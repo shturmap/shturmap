@@ -652,4 +652,48 @@
     <value>Kopieren ging nicht: die Zwischenablage ist belegt. Versuch es noch mal.</value>
     <comment>en: Couldn't copy: the clipboard is busy. Try again.</comment>
   </data>
+  <data name="GlanceEyebrow" xml:space="preserve">
+    <value>AUS DEINEM SCREENSHOT</value>
+    <comment>en: FROM YOUR SCREENSHOT</comment>
+  </data>
+  <data name="GlanceLootWord" xml:space="preserve">
+    <value>LOOT</value>
+    <comment>en: LOOT</comment>
+  </data>
+  <data name="GlanceOnYouWord" xml:space="preserve">
+    <value>AN DIR</value>
+    <comment>en: ON YOU</comment>
+  </data>
+  <data name="GlanceOnYou" xml:space="preserve">
+    <value>AN DIR {total}</value>
+    <comment>en: ON YOU {total}</comment>
+  </data>
+  <data name="GlanceUnsure" xml:space="preserve">
+    <value>{count, plural, one {# unsicher} other {# unsicher}}</value>
+    <comment>en: {count, plural, one {# unsure} other {# unsure}}</comment>
+  </data>
+  <data name="GlanceNothingLooted" xml:space="preserve">
+    <value>Dein Gear · auf diesem Screenshot kein Loot</value>
+    <comment>en: Your gear · nothing looted on this screen</comment>
+  </data>
+  <data name="GlanceUnsearched" xml:space="preserve">
+    <value>NICHT DURCHSUCHT</value>
+    <comment>en: UNSEARCHED</comment>
+  </data>
+  <data name="GlanceSearching" xml:space="preserve">
+    <value>WIRD DURCHSUCHT</value>
+    <comment>en: SEARCHING</comment>
+  </data>
+  <data name="GlanceMoreBelow" xml:space="preserve">
+    <value>MEHR DARUNTER</value>
+    <comment>en: MORE BELOW</comment>
+  </data>
+  <data name="GlanceAlso" xml:space="preserve">
+    <value>DAZU</value>
+    <comment>en: ALSO</comment>
+  </data>
+  <data name="GlanceCutRegion" xml:space="preserve">
+    <value>{name} {total}</value>
+    <comment>en: {name} {total}</comment>
+  </data>
 </root>

@@ -652,4 +652,48 @@
     <value>Couldn't copy: the clipboard is busy. Try again.</value>
     <comment>A one-line notice: a click on a stash desk's cell couldn't put its price on the clipboard (another program held it).</comment>
   </data>
+  <data name="GlanceEyebrow" xml:space="preserve">
+    <value>FROM YOUR SCREENSHOT</value>
+    <comment>The in-raid glance's plate over the map, its eyebrow over the title: a screenshot taken in a raid showed an inventory screen (the player's own, or a looted container or body). Capitals.</comment>
+  </data>
+  <data name="GlanceLootWord" xml:space="preserve">
+    <value>LOOT</value>
+    <comment>The in-raid glance's plate: the title's word before the total of what the LOOT pane shows ("LOOT 1.87 M+ ₽"), and the head of a container's grid whose kind the game didn't name. "Loot" is the game's pane heading and the players' word. Capitals.</comment>
+  </data>
+  <data name="GlanceOnYouWord" xml:space="preserve">
+    <value>ON YOU</value>
+    <comment>The in-raid glance's plate: the title's word before the total of the player's own gear, on a screenshot of the player's inventory alone (no LOOT pane): "ON YOU 1.01 M+ ₽". As the stash desk's head line says it (DeskHeadLine). Capitals.</comment>
+  </data>
+  <data name="GlanceOnYou" xml:space="preserve">
+    <value>ON YOU {total}</value>
+    <comment>The in-raid glance's plate, the line under the LOOT total: what the player's own gear is worth. {total}: a total in roubles ("1.01 M+ ₽", the "+" where contents went unseen). As the stash desk's head line says it (DeskHeadLine).</comment>
+  </data>
+  <data name="GlanceUnsure" xml:space="preserve">
+    <value>{count, plural, one {# unsure} other {# unsure}}</value>
+    <comment>The in-raid glance's plate, muted after the ON YOU line: how many of the loot's cells fit several items alike (their "?" plate, a price range), so the total counts them at their least.</comment>
+  </data>
+  <data name="GlanceNothingLooted" xml:space="preserve">
+    <value>Your gear · nothing looted on this screen</value>
+    <comment>The in-raid glance's plate, the line under "ON YOU 1.01 M+ ₽" when the screenshot showed the player's inventory alone, no LOOT pane: the plate draws no cells then (the player's own gear is known).</comment>
+  </data>
+  <data name="GlanceUnsearched" xml:space="preserve">
+    <value>UNSEARCHED</value>
+    <comment>The in-raid glance's plate: a body's part (its rig, pockets or backpack) the game hasn't searched yet, so its contents are unseen; followed by "+". The English game's word on that part. Capitals.</comment>
+  </data>
+  <data name="GlanceSearching" xml:space="preserve">
+    <value>SEARCHING</value>
+    <comment>The in-raid glance's plate: a body's part the game was searching when the screenshot was taken, so more may be in it; followed by "+". The English game's word. Capitals.</comment>
+  </data>
+  <data name="GlanceMoreBelow" xml:space="preserve">
+    <value>MORE BELOW</value>
+    <comment>The in-raid glance's plate: a looted grid the game's LOOT pane had scrolled past its foot, so more of it is unseen; followed by "+". Capitals.</comment>
+  </data>
+  <data name="GlanceAlso" xml:space="preserve">
+    <value>ALSO</value>
+    <comment>The in-raid glance's plate, the first word of the line that names the looted parts it had no room to draw, each with its total: "ALSO · BACKPACK 412k+ ₽ · POCKETS 23k ₽". Capitals.</comment>
+  </data>
+  <data name="GlanceCutRegion" xml:space="preserve">
+    <value>{name} {total}</value>
+    <comment>The in-raid glance's plate, one name in the line after ALSO (GlanceAlso): a looted part it had no room to draw and what it holds. {name}: the part's head ("BACKPACK"); {total}: a total in roubles ("412k+ ₽").</comment>
+  </data>
 </root>

@@ -133,8 +133,8 @@
     <comment>en: NOT ON THIS MAP</comment>
   </data>
   <data name="HelpPrivacy" xml:space="preserve">
-    <value>Liest die Namen der Screenshots, die Logs des Spiels, die öffentlichen Daten von tarkov.dev, die Extract-Liste oben rechts in einem Raid-Screenshot und in einem Menü-Screenshot die Item-Zellen, für das, was deine Quests brauchen, und für die Preise auf dem Desk (mit allen Items abgeglichen; gespeichert wird nur, welche Items, wie viele und wo), und die Dailies und Weeklies im Aufgaben-Bildschirm (in den Einstellungen jeweils abschaltbar). Liest nichts aus dem Spiel und schickt ihm nichts. Gesendet wird nur, wenn du einen Bericht sendest oder Absturzberichte erlaubst; ein installiertes Shturmap fragt GitHub nach Updates. Ändert nichts außerhalb seiner Ordner, außer du hakst „Screenshots nach dem Lesen löschen“ an.</value>
-    <comment>en: Reads screenshot names, the game's logs, tarkov.dev's public data, the extract list in a raid screenshot's top right corner, and in a menu screenshot the item cells, for what your quests need and for the desk's prices (matched against every item; only which items, how many and where are kept), and the Tasks screen's operational tasks (settings turn each off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete screenshots after reading.</comment>
+    <value>Liest die Namen der Screenshots, die Logs des Spiels, die öffentlichen Daten von tarkov.dev, die Extract-Liste oben rechts in einem Raid-Screenshot, in einem Menü-Screenshot die Item-Zellen, für das, was deine Quests brauchen, und für die Preise auf dem Desk (mit allen Items abgeglichen; gespeichert wird nur, welche Items, wie viele und wo), die Item-Zellen eines Raid-Screenshots deines Inventars, für den Wert deines Loots (nichts gespeichert), und die Dailies und Weeklies im Aufgaben-Bildschirm (in den Einstellungen jeweils abschaltbar). Liest nichts aus dem Spiel und schickt ihm nichts. Gesendet wird nur, wenn du einen Bericht sendest oder Absturzberichte erlaubst; ein installiertes Shturmap fragt GitHub nach Updates. Ändert nichts außerhalb seiner Ordner, außer du hakst „Screenshots nach dem Lesen löschen“ an.</value>
+    <comment>en: Reads screenshot names, the game's logs, tarkov.dev's public data, the extract list in a raid screenshot's top right corner, in a menu screenshot the item cells, for what your quests need and for the desk's prices (matched against every item; only which items, how many and where are kept), the item cells of a raid screenshot of your inventory, for what your loot is worth (nothing kept), and the Tasks screen's operational tasks (settings turn each off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete screenshots after reading.</comment>
   </data>
   <data name="HelpCopyDiagnosticsTip" xml:space="preserve">
     <value>Kopiert Version, was gefunden wurde, Stand der Daten und das Log von heute (ohne Namen oder IDs), zum Einfügen, wo du willst</value>
@@ -665,8 +665,8 @@
     <comment>en: LARGEST</comment>
   </data>
   <data name="SettingsReadStash" xml:space="preserve">
-    <value>Stash, Gear, Dailies und Weeklies aus Menü-Screenshots lesen</value>
-    <comment>en: Read your stash, gear and tasks from menu screenshots</comment>
+    <value>Stash, Gear, Dailies und Weeklies aus Menü-Screenshots lesen, im Raid auch Loot</value>
+    <comment>en: Read your stash, gear and tasks from menu screenshots, and loot in a raid</comment>
   </data>
   <data name="SettingsForgetMarks" xml:space="preserve">
     <value>ALLE MARKIERUNGEN VERGESSEN</value>

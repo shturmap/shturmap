@@ -204,6 +204,10 @@ public partial class App : Application
             // first; 2, one that changed the backpack; 3, one that changed nothing) once the data is there, as a reading in the
             // menus brings it (toolsake-raid.ps1 -Desk; Rules.DeskExample).
             DeskOnStart = cli.Contains("--fake-game") && cli.Contains("--desk") ? (int.TryParse(Arg(cli, "--desk"), out var deskReading) ? deskReading : 1) : null,
+            // Developer aid for snapshots, with a fake game only: "--glance <n>" shows the made-up in-raid glance's n-th reading (1,
+            // a drawer; 2, a body) once a raid is on and the data is there, as a raid screenshot's reading brings it (tools\fake-raid.ps1
+            // -Glance; Rules.GlanceExample).
+            GlanceOnStart = cli.Contains("--fake-game") && int.TryParse(Arg(cli, "--glance"), out var glanceReading) ? glanceReading : null,
             // Developer aid: "--tour <n>" opens the tour at its n-th chapter (snapshots of each, tools\fake-raid.ps1 -Tour).
             TourOnStart = int.TryParse(Arg(cli, "--tour"), out var tourChapter) ? tourChapter : null,
             // Developer aid: Follow my position on from the start (snapshot runs leave it off otherwise).

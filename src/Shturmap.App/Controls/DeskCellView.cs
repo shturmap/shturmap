@@ -21,15 +21,18 @@ namespace Shturmap.App.Controls;
 /// the "?" plate at the upper left; the count or condition at the lower right and the change at the lower left, each on
 /// a dark plate. Marks and their room: <see cref="DeskCells.Of"/>. Step C (2026-10-19): a click copies the cell's list
 /// price (its frame flashes gold once and its figure decodes), a right-click pins its card in the rail, and a pinned cell
-/// carries the pin's tab on its top edge.
+/// carries the pin's tab on its top edge. Without a board (the in-raid glance's plate, <see cref="GlancePlate"/>) the cell
+/// is a picture alone: nothing points at it, clicks or pins it (no click in a raid, principle 1).
 /// </summary>
 public sealed partial class DeskCellView : Grid
 {
-    private readonly DeskBoard _board;
+    private readonly DeskBoard? _board;
 
+    /// <param name="board">The desk the cell stands on, which its pointer, click and right-click go to; null for a cell
+    /// nothing operates (the in-raid glance's plate).</param>
     /// <param name="inset">How far it stands in from its place: a grid of several compartments sets them apart
     /// (<see cref="DeskPageRules.Inset"/>).</param>
-    public DeskCellView(DeskRegion region, DeskCellSheet sheet, double size, DeskBoard board, Thickness inset = default)
+    public DeskCellView(DeskRegion region, DeskCellSheet sheet, double size, DeskBoard? board, Thickness inset = default)
     {
         Region = region;
         Sheet = sheet;
@@ -83,16 +86,21 @@ public sealed partial class DeskCellView : Grid
         // The copy's flash: the frame in gold, once (DeskBoard.Flash).
         FlashFrame = new Border { BorderBrush = DeskBoard.Brush("AmberBrush"), BorderThickness = new Thickness(2), Opacity = 0, IsHitTestVisible = false };
         Children.Add(FlashFrame);
-        PointerEntered += (_, _) => _board.OnCellEntered(this);
+        if (_board is not { } desk)
+        {
+            IsHitTestVisible = false;
+            return;
+        }
+        PointerEntered += (_, _) => desk.OnCellEntered(this);
         Tapped += (_, e) =>
         {
             e.Handled = true;
-            _board.OnCellClicked(this);
+            desk.OnCellClicked(this);
         };
         RightTapped += (_, e) =>
         {
             e.Handled = true;
-            _board.OnCellPinned(this);
+            desk.OnCellPinned(this);
         };
     }
 

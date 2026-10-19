@@ -11,7 +11,8 @@ notes). A line about the tour previews nothing and opens it when clicked: `tour`
 chapter (a chapter the release changed; docs/tour.md). A line no preview shows takes, until the card has lines without
 one, the chapter that frames where it is: pointing shows nothing, a click opens the tour there (0.7.0: the text size
 `tour:7`, the settings button; the stash desk `tour:2`, which frames the rail with PLAN | DESK at its head: no preview
-pictures the desk yet, which takes the map's place and Plan's rail with it). Only what is new for the player has a
+pictures the desk yet, which takes the map's place and Plan's rail with it; the in-raid glance `tour:6`, which frames
+the map in a raid, where its plate stands). Only what is new for the player has a
 line (owner, 2026-10-19: "Don't add 'new in' entries for stuff that is not really relevant to the player, only add
 really new things, like the desk."): a fix or a refinement goes in the release notes alone. Words as the design
 system's "Words": short, fragments are fine. Add the next version's section with its release (CLAUDE.md). A release
@@ -29,6 +30,7 @@ translated. A version the translation lacks, or whose lines aren't this section'
 - tour:2 · The stash desk · Screenshot your stash or gear: each item's price, flea or trader, and what to keep. DESK, top left.
 - tour:1 · Dailies and weeklies · Screenshot the Tasks screen (English game): your dailies and weeklies, time left, on their maps.
 - tour:7 · Text as large as you need · Windows' text size now reaches the map too; Text size in settings adds LARGER and LARGEST.
+- tour:6 · Loot at a glance · In a raid, screenshot a body or a container: its items' prices, laid out as the game shows them.
 
 ## 0.6.2 · Okami
 

@@ -74,6 +74,8 @@ public static class DevScript
             + "copy, the cell clicked (its flash, decode and notice; the clipboard left alone in a script); pick, the n-th candidate (from 1) clicked on a \"?\" cell's card; "
             + "rule, the copy's rule as the card's − and + set it; plan and show, PLAN and DESK at the rail's head; "
             + "show n, the n-th pinned line in the rail's foot clicked, from the top (its card whole in the pointed card's place)",
+        ["glance"] = "[<n>]: the made-up in-raid glance's n-th reading (1, a drawer with three items; 2, a body: its slots, an UNSEARCHED rig, "
+            + "pockets being searched and a searched backpack) as a raid screenshot of an inventory screen brings it; in a raid only",
         ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 8: "
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
             + "a line of no known kind on Woods, a survival on Interchange, a kill on Lighthouse, a weekly's kill on Reserve; 7 or 8 bring the cue's +N); "
@@ -197,6 +199,17 @@ public static class DevScript
             _ => null,
         };
     }
+
+    /// <summary>
+    /// A "glance" step's reading of the made-up in-raid glance (owner, 2026-10-19; docs/DESIGN.md §4, *The in-raid glance*):
+    /// 1 without a number, 1 or 2; null for anything else.
+    /// </summary>
+    public static int? GlanceOf(DevStep step) => step.Args switch
+    {
+        [] => 1,
+        [var n] when int.TryParse(n, NumberStyles.None, CultureInfo.InvariantCulture, out var reading) && reading is 1 or 2 => reading,
+        _ => null,
+    };
 
     /// <summary>The most made-up tasks a "tasks" step takes: the session's table has eight (GameSession.ReadExampleTasksAsync).</summary>
     public const int MostExampleTasks = 8;
@@ -330,6 +343,11 @@ public static class DevScript
             {
                 errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'open <region>', 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
                     + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show [<n>]'");
+                continue;
+            }
+            if (verb == "glance" && GlanceOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'glance' takes a reading, 1 or 2");
                 continue;
             }
             if (verb == "textsize" && TextSizeOf(step) is null)

@@ -11,14 +11,18 @@ PC as item ids with a count and a date (the "stash.json" file in its data folder
 it) against every item tarkov.dev lists, for the stash desk: the item grids' printed names, counts and condition
 ("46/50") and their found-in-raid marks, so the desk can show what each item is worth. That page stays on your PC as
 item ids with where each lay, the counts, those marks and the screenshot's time (the "desk.json" file), no pixels,
-until a newer screenshot changes it; a screenshot taken in a raid is never read for the desk. Of a screenshot of the
+until a newer screenshot changes it; a screenshot taken in a raid is never read for the desk. Of a screenshot you take
+in a raid with your inventory open, alone or beside a container or body you loot, it reads the item grids the same way,
+after the extract list's corner (a strip at the picture's top tells an inventory screen from a picture of the world,
+which goes no further), for a plate over the map that says for a few seconds what the loot is worth: nothing of that
+reading is kept, not even an item id, and it goes when the raid ends. Of a screenshot of the
 game's Tasks screen, on its OPERATIONAL tab, it reads the table of your daily and weekly tasks in the picture's left
 two thirds the same way (each task's name, location, time left and, for the row you opened, its objectives; never
 their rewards), and keeps those words with the times on your PC (the "operational.json" file) until the tasks run
 out. All of it happens on your PC; nothing of a picture is kept or sent, and unticking "Read the extract list from
-screenshots" or "Read your stash, gear and tasks from menu screenshots" in settings stops each. Nothing about you
-leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself (3) and
-downloads public data and pictures (4).
+screenshots" or "Read your stash, gear and tasks from menu screenshots, and loot in a raid" in settings stops each.
+Nothing about you leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself
+(3) and downloads public data and pictures (4).
 
 1. A report you send
 --------------------
@@ -29,8 +33,8 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
   how many quests are active, whether "Delete screenshots after reading", "Read the extract list from screenshots" and
-  "Read your stash, gear and tasks from menu screenshots" are ticked (and the language Windows reads in), and the last
-  200 lines of Shturmap's own log. Never what it saw in your screenshots or logs.
+  "Read your stash, gear and tasks from menu screenshots, and loot in a raid" are ticked (and the language Windows
+  reads in), and the last 200 lines of Shturmap's own log. Never what it saw in your screenshots or logs.
 
 2. A crash report, if you allow it
 ----------------------------------

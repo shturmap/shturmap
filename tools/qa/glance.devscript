@@ -1,0 +1,48 @@
+# QA replay of the in-raid glance's plate (owner, 2026-10-19: when, what and what is kept; from its panel, Variant 1, with
+# the looted container's or body's layout mirrored): the made-up readings (Rules.GlanceExample) as raid screenshots of an
+# inventory screen bring them. The plate stands at the top of the map's column for 6 s, the LOOT pane mirrored in the
+# desk's cells; a newer reading replaces it at once; a reading that comes while a cue is up waits for it to go; the raid's
+# end takes it. Nothing on it takes a click. A developer build plays it with --dev-view --dev-script; how to run it, and
+# what each still must show: glance.md beside this file. Times are in seconds.
+
+# A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
+# once the data was there: it ends first.
+tour end
+map customs
+wait 3
+load
+steps
+start
+wait 3
+pos -220.21 1.07 -141.94 90
+wait 6.5
+
+# A drawer looted: its grid of three items under DRAWER, the totals over it.
+glance 1
+wait 1
+snapshot %TEMP%\shturmap-qa\glance\glance-drawer
+
+# A body, a moment later: it replaces the drawer at once, its clock anew.
+glance 2
+wait 1
+snapshot %TEMP%\shturmap-qa\glance\glance-body
+
+# 6 s after it came, the plate fades out over 0.4 s: gone.
+wait 6
+snapshot %TEMP%\shturmap-qa\glance\glance-gone
+
+# The extract list read, and a reading right after it: the roll call plays, the plate waits for it to go, then stands.
+exits Crossroads "Trailer Park" "ZB-1013?" "Railroad Passage (Flare)"
+wait 0.3
+glance 1
+wait 1
+snapshot %TEMP%\shturmap-qa\glance\glance-waits
+wait 8
+snapshot %TEMP%\shturmap-qa\glance\glance-after-cue
+
+# The raid ends: the plate goes with it. The still waits out the RAID OVER cue (a still taken while a cue decodes or
+# fades fails to render it).
+end
+wait 7
+snapshot %TEMP%\shturmap-qa\glance\glance-raid-over
+exit

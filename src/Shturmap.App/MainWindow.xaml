@@ -1578,6 +1578,11 @@
              cues and notices below draw over it, as over the map. -->
         <controls:DeskBoard x:Name="StashDesk" Visibility="{x:Bind ShownIfTrue(ViewModel.DeskUp), Mode=OneWay}" />
 
+        <!-- The in-raid glance's plate (owner, 2026-10-19: from its panel, Variant 1, with the looted container's or body's
+             layout mirrored; docs/DESIGN.md §4, *The in-raid glance*): at the top of the map's column, under the notes, about
+             half the map's height at the most, for about 6 s; nothing on it takes a click (MainWindow.GlancePlate). -->
+        <controls:GlancePlate x:Name="RaidGlancePlate" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" Visibility="Collapsed" />
+
         <!-- A change of view Shturmap made on its own (a raid loading, a transit, a Scav raid, the raid over): big, in
              the middle, for under three seconds, never taking a click. Owner, 2026-10-01. -->
         <Grid x:Name="CuePanel" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" Opacity="0" SizeChanged="OnCuePanelSizeChanged">
