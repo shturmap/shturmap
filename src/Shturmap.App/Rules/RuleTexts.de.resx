@@ -248,4 +248,12 @@
     <value>{count, plural, one {# endete um {time}. Mach einen Screenshot deiner Dailies und Weeklies für die neue.} other {# endeten, die letzte um {time}. Mach einen Screenshot deiner Dailies und Weeklies für die neuen.}}</value>
     <comment>en: {count, plural, one {# ended at {time}. Screenshot your tasks for the new one.} other {# ended, the last at {time}. Screenshot your tasks for the new ones.}}</comment>
   </data>
+  <data name="OperationalCueEyebrow" xml:space="preserve">
+    <value>AUS DEINEM SCREENSHOT</value>
+    <comment>en: FROM YOUR SCREENSHOT</comment>
+  </data>
+  <data name="OperationalCueTitle" xml:space="preserve">
+    <value>{count, plural, one {# DAILY ODER WEEKLY} other {# DAILIES UND WEEKLIES}}</value>
+    <comment>en: {count, plural, one {# DAILY OR WEEKLY} other {# DAILIES AND WEEKLIES}}</comment>
+  </data>
 </root>

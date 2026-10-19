@@ -48,6 +48,13 @@ public enum CueKind
     /// due, not the session: the updater is the window's. <see cref="ViewCue.MapName"/> is the version as the title says
     /// it.</summary>
     UpdateReady,
+
+    /// <summary>A menu screenshot of the Tasks screen's OPERATIONAL table brought daily or weekly tasks the set before
+    /// didn't have: the cue lists every task its run of screenshots read, a row each, one animation for all of them
+    /// (owner, 2026-10-19, after trying the dev build: "the same animation as the other quests"; docs/DESIGN.md §4,
+    /// principle 11; <see cref="Shturmap.Core.Operational.OperationalReadings"/>). <see cref="ViewCue.Tasks"/> holds them;
+    /// <see cref="ViewCue.MapName"/> is empty.</summary>
+    TasksRead,
 }
 
 /// <summary>A quest the log just reported completed, for the QUEST COMPLETE cue.</summary>
@@ -62,8 +69,12 @@ public sealed record CompletedQuest(string QuestId, string Name, string? TraderI
 /// <param name="Replay">At a raid's end, its replay (<see cref="RaidReplay"/>); the cue plays it when it
 /// <see cref="RaidReplay.Plays"/>.</param>
 /// <param name="Completed">For QUEST COMPLETE, the quest (<paramref name="MapName"/> is then its name).</param>
+/// <param name="Tasks">For a Tasks screenshot's reading, every daily and weekly task its run of screenshots read.</param>
+/// <param name="Joins">For a Tasks screenshot's reading, a later one of the run whose cue was called: it joins the cue
+/// while that is up, and calls none after it.</param>
 public sealed record ViewCue(CueKind Kind, string MapName, TimeSpan? RaidLength = null, IReadOnlyList<CueItem>? Kit = null, int KitMore = 0,
-    RaidReplay? Replay = null, CompletedQuest? Completed = null);
+    RaidReplay? Replay = null, CompletedQuest? Completed = null, IReadOnlyList<Shturmap.Core.Operational.OperationalShown>? Tasks = null,
+    bool Joins = false);
 
 /// <summary>An item pictured in the big cue: its picture, or its kind's glyph where there is none.</summary>
 /// <param name="ForPick">Needed by a quest picked for this raid: the cue shows these first, framed in the pick's colour.</param>

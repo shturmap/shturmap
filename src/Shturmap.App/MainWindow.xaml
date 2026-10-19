@@ -1148,6 +1148,19 @@
                           <ItemsControl ItemsSource="{x:Bind DetailParts}" ItemTemplate="{StaticResource LinePartTemplate}"
                                         ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False" AutomationProperties.Name="{x:Bind Detail}" />
                           <StackPanel Visibility="{x:Bind ExpandedVisibility}">
+                            <!-- OPERATIONAL: the daily and weekly tasks read from a screenshot of the Tasks screen (owner,
+                                 2026-10-19: from a panel of four, B): the map's, then the any-map ones after a hairline;
+                                 when they were read at the right, and under the eyebrow the tasks that ran out since. On top
+                                 of the quest list, before PICKED, the one that ends soonest first (owner, 2026-10-19: "sorted
+                                 on top of the list always as they are time-sensitive"). -->
+                            <Grid Margin="0,14,0,4" Visibility="{x:Bind OperationalVisibility}">
+                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0" />
+                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(OperationalAsOf)}" Margin="0" HorizontalAlignment="Right" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind OperationalEnded}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
+                                       Visibility="{x:Bind OperationalEndedVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Operational}" Visibility="{x:Bind OperationalVisibility}" IsTabStop="False"
+                                          ItemTemplate="{StaticResource OperationalTemplate}" />
                             <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
                                  only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
                             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
@@ -1237,17 +1250,6 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <!-- OPERATIONAL: the daily and weekly tasks read from a screenshot of the Tasks screen (owner,
-                                 2026-10-19: from a panel of four, B): the map's, then the any-map ones after a hairline;
-                                 when they were read at the right, and under the eyebrow the tasks that ran out since. -->
-                            <Grid Margin="0,14,0,4" Visibility="{x:Bind OperationalVisibility}">
-                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0" />
-                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(OperationalAsOf)}" Margin="0" HorizontalAlignment="Right" />
-                            </Grid>
-                            <TextBlock Text="{x:Bind OperationalEnded}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
-                                       Visibility="{x:Bind OperationalEndedVisibility}" />
-                            <ItemsControl ItemsSource="{x:Bind Operational}" Visibility="{x:Bind OperationalVisibility}" IsTabStop="False"
-                                          ItemTemplate="{StaticResource OperationalTemplate}" />
                             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind RequirementsVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Requirements}" Visibility="{x:Bind RequirementsVisibility}"
                                           ItemTemplate="{StaticResource RequirementTemplate}" />
@@ -1379,7 +1381,15 @@
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Grid>
-                  <!-- The picks first, nearest first, as in Plan. -->
+                  <!-- OPERATIONAL: the raid's map's daily and weekly tasks, then the any-map ones (owner, 2026-10-19, B); on
+                       top of the quest list, before the picks, the one that ends soonest first (owner, 2026-10-19: "sorted on
+                       top of the list always as they are time-sensitive"). -->
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0,14,0,4"
+                             Visibility="{x:Bind ShownIfOperational(ViewModel.RaidOperational, ViewModel.RaidOperationalEnded), Mode=OneWay}" />
+                  <TextBlock Text="{x:Bind ViewModel.RaidOperationalEnded, Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
+                             Visibility="{x:Bind ShownIf(ViewModel.RaidOperationalEnded), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidOperational, Mode=OneWay}" ItemTemplate="{StaticResource OperationalTemplate}" IsTabStop="False" />
+                  <!-- The picks first of the quests, nearest first, as in Plan. -->
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
                              Visibility="{x:Bind ShownIfAny(ViewModel.RaidPicks), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidPicks, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
@@ -1387,12 +1397,6 @@
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardProgress}" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidProgress, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
-                  <!-- OPERATIONAL: the raid's map's daily and weekly tasks, then the any-map ones (owner, 2026-10-19, B). -->
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0,14,0,4"
-                             Visibility="{x:Bind ShownIfOperational(ViewModel.RaidOperational, ViewModel.RaidOperationalEnded), Mode=OneWay}" />
-                  <TextBlock Text="{x:Bind ViewModel.RaidOperationalEnded, Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
-                             Visibility="{x:Bind ShownIf(ViewModel.RaidOperationalEnded), Mode=OneWay}" />
-                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidOperational, Mode=OneWay}" ItemTemplate="{StaticResource OperationalTemplate}" IsTabStop="False" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardBring}" Margin="0,14,0,6" Visibility="{x:Bind ShownIfAny(ViewModel.RaidBring), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidBring, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- A Scav raid: the loot your quests need found in raid takes the place of their objectives. -->
@@ -1518,7 +1522,8 @@
                   <Ellipse Fill="{StaticResource AmberBrush}" />
                   <Path x:Name="CueStampCheck" Data="M 8.5,15.5 L 13,20 L 21.5,10.5" Stroke="{StaticResource GroundBrush}" StrokeThickness="2.6"
                         StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
-                  <!-- SEEN IN YOUR STASH's stamp: the stash grid glyph the marks carry, in place of the check (MainWindow.StashCue). -->
+                  <!-- SEEN IN YOUR STASH's stamp: the stash grid glyph the marks carry, in place of the check (MainWindow.StashCue);
+                       the operational tasks' cue's: the generic operational glyph, a stopwatch (MainWindow.TasksCue). -->
                   <FontIcon x:Name="CueStampGlyph" Glyph="&#xE80A;" FontSize="14" Foreground="{StaticResource GroundBrush}"
                             HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
                 </Grid>
@@ -1557,6 +1562,13 @@
                    smaller only where the map's column has no room for them, never cut. -->
               <Viewbox x:Name="CueExitsBox" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,6,0,0" Visibility="Collapsed">
                 <Grid x:Name="CueExits" ColumnSpacing="28" RowSpacing="5" />
+              </Viewbox>
+              <!-- The daily and weekly tasks a Tasks screenshot read, a row each in the roll call's row style: the framed
+                   glyph, the synopsis, and in muted capitals the map and the time left; the one that ends soonest first
+                   (owner, 2026-10-19, after trying the dev build: "the same animation as the other quests";
+                   MainWindow.TasksCue). Drawn smaller only where the map's column has no room for them, never cut. -->
+              <Viewbox x:Name="CueTasksBox" HorizontalAlignment="Center" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,6,0,0" Visibility="Collapsed">
+                <StackPanel x:Name="CueTasks" Spacing="9" />
               </Viewbox>
               <!-- A raid loading's or a group pick's kit, pictured (owner, 2026-10-03: "with icon previews"): a reminder
                    to take in at a glance, "did I pack everything?", so pictures and nothing to read (owner, 2026-10-04).

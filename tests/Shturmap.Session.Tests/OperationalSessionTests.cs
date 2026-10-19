@@ -43,7 +43,7 @@ public class OperationalSessionTests
     }
 
     [Fact]
-    public async Task The_table_is_read_onto_its_maps_kept_in_the_file_and_said_in_a_notice()
+    public async Task The_table_is_read_onto_its_maps_kept_in_the_file_and_called_out_in_a_cue()
     {
         var stashAsked = new List<string>();
         await using var rig = Rig(() => Table(
@@ -69,7 +69,12 @@ public class OperationalSessionTests
         Assert.NotNull(s.OperationalReadAt);
         // The stash's reading never saw the picture.
         Assert.Empty(stashAsked);
-        await rig.Until(() => rig.Notices.Any(n => n == "Operational tasks read: 3."), "the notice");
+        // One cue for the three, no notice (owner, 2026-10-19: "the same animation as the other quests").
+        var cue = Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead);
+        Assert.False(cue.Joins);
+        Assert.Equal(["Elimination", "Find and transfer", "Exit the location"], cue.Tasks!.Select(t => t.Task.Name));
+        Assert.Equal("customs", cue.Tasks![0].MapKey);
+        Assert.DoesNotContain(rig.Notices, n => n.StartsWith("Operational task", StringComparison.Ordinal));
         // The maps with operational work and none of your quests join the list's end.
         Assert.Contains(s.OperationalPlans, p => p.NormalizedName == "customs");
 
@@ -81,6 +86,40 @@ public class OperationalSessionTests
         await rig.RestartAsync();
         await rig.StartAsync();
         await rig.Until(s => s.Operational.Count == 3, "the tasks after a restart");
+    }
+
+    // A player takes a few screenshots in a row (the table, then a row expanded, then another page): one reading, one cue
+    // (owner, 2026-10-19: "Be mindful of multiple missions started at the same time, we might want to have them in one
+    // animation included"). The same set again brings no cue.
+    [Fact]
+    public async Task A_run_of_screenshots_calls_one_cue_and_the_same_set_again_none()
+    {
+        var page = Table(Row("Elimination", "Customs", new TimeSpan(10, 14, 11)), Row("Find and transfer", "Any location", TimeSpan.FromDays(2)));
+        await using var rig = Rig(() => page);
+        rig.Log("Session mode: Pve");
+        await rig.StartAsync();
+        await rig.Until(s => s.Data is not null, "the data");
+
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Operational.Count == 2, "the operational tasks");
+        Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead);
+
+        // Seconds later the same table with the kill expanded: its objectives arrive, no second cue.
+        page = Table(Row("Elimination", "Customs", new TimeSpan(10, 14, 11), new TaskObjective("Eliminate Zorbs", 0, 3)),
+            Row("Find and transfer", "Any location", TimeSpan.FromDays(2)));
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Operational.Any(t => t.Task.Objectives.Count > 0), "the expanded row's objectives");
+        Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead);
+
+        // A page with a task the cue hasn't listed: it joins the cue, which lists all three.
+        page = Table(Row("Exit the location", "Customs", new TimeSpan(8, 33, 19)));
+        MenuScreenshot(rig);
+        await rig.Until(s => s.Operational.Any(t => t.Task.Name == "Exit the location"), "the other page");
+        var joins = rig.Cues.Where(c => c.Kind == CueKind.TasksRead).ToList();
+        Assert.Equal(2, joins.Count);
+        Assert.True(joins[1].Joins);
+        Assert.Equal(["Elimination", "Find and transfer", "Exit the location"], joins[1].Tasks!.Select(t => t.Task.Name));
+        Assert.Single(joins[1].Tasks!, t => t.Task.Objectives.Count > 0);
     }
 
     [Fact]
@@ -156,8 +195,10 @@ public class OperationalSessionTests
             s.Operational[0].Items.Select(i => (i.Name, i.ItemId)));
     }
 
+    // Made-up tasks (a script's "tasks", "--operational") go the reading's way from where it hands its rows over, the cue
+    // too, so a snapshot can picture it; the file never has them.
     [Fact]
-    public async Task Made_up_tasks_for_snapshots_never_reach_the_file()
+    public async Task Made_up_tasks_for_snapshots_call_the_cue_and_never_reach_the_file()
     {
         await using var rig = Rig(() => null);
         rig.Log("Session mode: Pve");
@@ -166,6 +207,7 @@ public class OperationalSessionTests
         Assert.Null(await rig.Session.ReadExampleTasksAsync(3, ended: false));
         var s = await rig.Until(s => s.Operational.Count > 0, "the example tasks");
         Assert.Contains(s.Operational, t => t.Task.AnyMap && t.Task.Kind == OperationalKind.HandOver);
+        Assert.Equal(3, Assert.Single(rig.Cues, c => c.Kind == CueKind.TasksRead).Tasks!.Count);
         Assert.False(File.Exists(Path.Combine(rig.AppFolder, OperationalLedger.FileName)));
     }
 }

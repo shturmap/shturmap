@@ -34,6 +34,9 @@ its roll call (owner, 2026-10-15: "When the extraction list is read, I want a ni
 others where a list of the extracts appears in the middle of the screen along with their icons. Then, the icons move
 where extracts are (also outside of the current view pane) so it contextualizes them and the player knows where they
 are"; from a panel of four, 2026-10-15: A; §4, principle 11, and "Map drawing", *The player's extracts this raid*).
+And one for the daily and weekly tasks a Tasks screenshot brought: their cue, one for all of them (owner, 2026-10-19,
+after trying the dev build: "they should get the same animation as the other quests. Be mindful of multiple missions
+started at the same time, we might want to have them in one animation included"; §4, principle 11).
 
 **Not goals** (declined on purpose; don't add them): hideout tracking, loot or container maps beyond what quests
 need, item scanning by hotkey, ammo charts, squad sharing, achievements, overlays on the game window, statistics
@@ -477,8 +480,9 @@ quoting it anywhere new.
    glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
    change, the raid replay at a raid's end (§1's exception), and the tour (§1's second exception, owner, 2026-10-09:
    outside raids only, and still in the cues' own motion), the QUEST COMPLETE cue (§1's third), the extract list's
-   roll call (§1's fourth), and the stash desk's three moves (owner, 2026-10-19: "it should also be fun to use"; from a
-   panel: A1 · B1 · C1 · D2; "Screen anatomy", *The stash desk*). (Until 2026-10-04 this also said "primary text
+   roll call (§1's fourth), the cue of the daily and weekly tasks read (§1's fifth), and the stash desk's three moves
+   (owner, 2026-10-19: "it should also be fun to use"; from a panel: A1 · B1 · C1 · D2; "Screen anatomy", *The stash
+   desk*). (Until 2026-10-04 this also said "primary text
    ≥ 14 px, numbers in a monospaced face"; the app never kept to either, and the owner dropped the rule: "the 14px rule
    is not necessary".)
 3. **One window, three states** (owner, 2026-10-19: "one raid planning view and one stash desk view"; from a panel:
@@ -699,10 +703,33 @@ quoting it anywhere new.
     "DOWNLOAD · TOP LEFT" in "Tell me only"). As the download completes in the menus, then **once per raid while it
     waits**, at the first menu after each raid, after RAID OVER and its replay, QUEST COMPLETE and SEEN IN YOUR STASH;
     as it fades the rail's update band glows. Like QUEST COMPLETE and SEEN IN YOUR STASH it moves no view.
-    **Operational tasks read get no cue** (owner, from a panel of four, 2026-10-19: B, glow and notice as drawn): a
-    screenshot of the daily tasks is a routine, and a cue every day would be noise. The rows a reading brought glow in
-    as the stash's marks do (`Controls.Glow`: a gold copy of the synopsis fading to ink over 1.2 s, the row flashing
-    once), and the one-line notice says it ("Operational tasks read: 3."; *Operational tasks*, "Screen anatomy").
+    **DAILIES AND WEEKLIES**, the tasks a Tasks screenshot brought (owner, 2026-10-19, after trying the dev build,
+    which read their Tasks screenshots: "they should get the same animation as the other quests. Be mindful of
+    multiple missions started at the same time, we might want to have them in one animation included"; §1's fifth
+    exception; until then, from the panel of four of the same morning, B, glow and notice and no cue: "a screenshot
+    of the daily tasks is a routine, and a cue every day would be noise"): when a screenshot of the Tasks screen's
+    OPERATIONAL table brings a task the set before it didn't have (§2), the cue says "FROM YOUR SCREENSHOT" over the
+    count and the kind, "3 DAILIES AND WEEKLIES" ("1 DAILY OR WEEKLY": the reading doesn't tell a daily from a weekly;
+    German „3 DAILIES UND WEEKLIES“, „1 DAILY ODER WEEKLY“), decoding as every title does, under QUEST COMPLETE's stamp
+    with the generic operational glyph (the stopwatch) in place of the check; and under the title **a row for every
+    task read**, rising in one after another as the roll call's rows do: the task's framed glyph as on a NEXT RAID row,
+    its synopsis in the cue's 15 px, and under it in muted capitals its map or ANY MAP and its time left ("CUSTOMS · 8 H
+    LEFT"; the map alone where the countdown wasn't taken), the one that ends soonest first; six rows at most, the last
+    place "+N" past that. Its rows keep clear of the map's buttons and are drawn smaller only where the map's column is
+    too short for them, never cut. **One cue for a run of screenshots** (`OperationalReadings`): the game shows up to
+    three rows a page and a row's objectives only while it is expanded, so a player takes a few screenshots in a row,
+    and the readings of screenshots taken within a minute of the one before are one reading. The first of them that
+    brings a new task calls the cue, which lists every task the run read; a later one joins it while it is up (its
+    tasks not yet listed come in as rows after the others, a listed one's words become what it last read, the title
+    counts them all and decodes again, the stamp pops again) and calls none once it has gone: the table, then a row
+    expanded seconds later, is one cue, the objectives arriving without a second. **A reading that brings no new task
+    calls none**: the same set again, a row's objectives, a task handed in; only "As of" and the rows it changed say it.
+    It stays 5 s after the last reading joined it, 12 s at most, as QUEST COMPLETE does, and moves no view. While a
+    replay plays, QUEST COMPLETE or SEEN IN YOUR STASH is up or the tour shows its own cue, the one-line notice says it
+    instead ("Operational tasks read: 3."): none of those is cut for it, and SEEN IN YOUR STASH, which steps back to its
+    notice while this cue is up, doesn't cut it either. The rows on the rail that the reading brought or changed glow
+    in as it shows, as the stash's marks do (`Controls.Glow`: a gold copy of the synopsis fading to ink over 1.2 s, the
+    row flashing once): its after-effect (*Operational tasks*, "Screen anatomy"; `MainWindow.TasksCue`).
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -807,8 +834,10 @@ read is called out (§1's fourth exception): its rows rise in 0.1 s apart from 0
 from 1.2 s over 1.2 s, eased in and out as the tour's moves, and from 1.6 s each triangle flies to its place over 1.5 s,
 0.4 s after the one before, on an arc, eased in and out, and rings out as it lands (owner, 2026-10-16: "too fast"; until
 then 0.9 s, 0.16 s apart); with six extracts the last lands at 5.1 s, the title goes from 6.6 s and the rings end at
-about 7.2 s ("Map drawing", *The player's extracts this raid*); the raid card's time doesn't move: at a new minute its
-figure and rule just change (owner, 2026-10-09: its
+about 7.2 s ("Map drawing", *The player's extracts this raid*); the daily and weekly tasks read (§1's fifth exception)
+stand as QUEST COMPLETE does, 5 s after the last reading of the run joined, 12 s at most, their rows rising in as the
+roll call's, 0.1 s apart from 0.5 s, each over 0.3 s by 8 DIP, eased out; the raid card's time doesn't move: at a
+new minute its figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
 the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
 the wheel's zoom to its notch.
@@ -1326,7 +1355,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     done there, as a list of rows (owner, 2026-10-09: all of them; until then the planner's best four, so the list
     stayed short above the open card; the rail scrolls, and the card now starts lower with many maps), then the open
     map's card: its line in words ("Complete 7 quests · progress 2 more") with
-    COMPLETE, PROGRESS and BRING (keys, items to bring). A row of the list is the map's name and its counts
+    the daily and weekly tasks' OPERATIONAL on top (2026-10-19, *Operational tasks*), COMPLETE, PROGRESS and BRING (keys,
+    items to bring). A row of the list is the map's name and its counts
     ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map that is
     on screen there is no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps'
     folded cards sat under it, below the fold). **The open card is the map on screen's** (owner, 2026-10-08, with the
@@ -1376,11 +1406,23 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     weekly tasks read from the Tasks screen (§2) show where a map's work already is, never in a block or a card of their
     own (`Rules.OperationalRail`, `MainWindow.Operational`). Of the panel's other ways, one line on the map's card (A),
     a block of its own at the rail's top (C) and tasks counted as work and packed, with a cue (D) were not taken.
+    **Changed the same day, after trying the dev build** (owner, 2026-10-19: "I think they should be sorted on top of
+    the list always as they are time-sensitive. Also they should get the same animation as the other quests. Be
+    mindful of multiple missions started at the same time, we might want to have them in one animation included"):
+    the section stands on top of the cards' quest lists, the task that ends soonest first, and a reading that brings
+    new tasks calls a cue, one for all of them (principle 11, DAILIES AND WEEKLIES). The planner's order and score
+    stay untouched (the panel's B).
     - **A NEXT RAID row** shows its map's tasks as glyphs after its quests' glyphs, behind a hairline, each framed (the
-      frame means "operational", *Visual language*); never the any-map tasks, which would stand on every row. A map
-      with operational work and none of your quests joins the list's end, by name, without counts, and its card says,
-      muted, that none of your quests is on it. The planner's order and score are unchanged (§7).
-    - **The open card** gets OPERATIONAL after PROGRESS (before BRING): the eyebrow, with "As of 14:02" at its right
+      frame means "operational", *Visual language*), the one that ends soonest first, as its card's rows; never the
+      any-map tasks, which would stand on every row. They stay after the quests' glyphs (2026-10-19, with the section
+      moved on top): the row compares the maps' quest work glyph for glyph and its order is the planner's, which the
+      tasks leave alone, and a 16 DIP glyph says no time; the time-sensitive tasks stand first where their time is
+      said, in the card. A map with operational work and none of your quests joins the list's end, by name, without
+      counts, and its card says, muted, that none of your quests is on it. The planner's order and score are unchanged
+      (§7).
+    - **The open card** gets OPERATIONAL first, on top of its quest list, before PICKED and COMPLETE (owner,
+      2026-10-19, after trying the dev build: "sorted on top of the list always as they are time-sensitive"; until then
+      after PROGRESS, before BRING): the eyebrow, with "As of 14:02" at its right
       in the eyebrow's style (the date too when read on an earlier day); one row per task: its glyph, its synopsis in
       ink, then in small muted capitals its progress and time left ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; a
       hand-over on any map "ANY MAP · HAND OVER AFTER · 2 D LEFT"; a task whose countdown wasn't taken "READ 3 H AGO").
@@ -1397,13 +1439,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       generic operational glyph, and a row never expanded its name (its kind, for the
       glyph, from the name's words: "Elimination", "Exit the location", "Find and transfer"). The progress is the one
       counted objective's "4 OF 7", else the game's percentage. The map's tasks come first, then the any-map tasks after
-      a hairline, in every map's card (§7's exception). No portrait (the trader isn't read), no pen, no card of its own,
-      no click: pointing at an item cell opens its card, as anywhere. With a trader's focus held they step back with
+      a hairline, in every map's card (§7's exception), each group **the one that ends soonest first** (owner,
+      2026-10-19: "time-sensitive"; a task whose countdown wasn't taken after the others, tasks that end in the same
+      minute, as the dailies the game gives together do, in the table's order; `OperationalRail.Soonest`). No
+      portrait (the trader isn't read), no pen, no card of its own, no click: pointing at an item cell opens its card,
+      as anywhere. With a trader's focus held they step back with
       the other traders' quests.
     - **Ended:** while tasks ran out since the last table screenshot, under the eyebrow, muted: "1 ended at 22:35.
       Screenshot your tasks for the new one." (in every card's section, until the next table screenshot, a day at
       most; the game gives new ones, which only a screenshot shows). The section shows for that line alone too.
-    - **The raid card** has the same section after PROGRESS, for the raid's map's tasks and the any-map ones, without
+    - **The raid card** has the same section first, before its picks, COMPLETE and PROGRESS (owner, 2026-10-19, as the
+      open card's), the one that ends soonest first, for the raid's map's tasks and the any-map ones, without
       "As of": ANYWHERE stands where a quest row has its distance, for an any-map task, and its muted line then says no
       "any map" (one place says it; QA, 2026-10-19); a hand-over says "HAND OVER AFTER THE RAID"; the time only when
       the task ends before the raid could ("ENDS IN 24 MIN", in the red of the clock's last ten minutes, rounded down
@@ -1412,7 +1458,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       knows by their English name (as the item cells above) after the quests' loot ("for an operational task"), in the
       app's language. That an operational task's kills and survivals count for a PMC only is the panel's assumption (as
       a quest's do), not checked in the game: to confirm.
-    - The rows a reading brought glow in, and a notice says how many were read (principle 11): no cue.
+    - A reading that brings new tasks calls the cue DAILIES AND WEEKLIES, one for a run of screenshots taken within a
+      minute of each other, a row for every task read; the rows it brought or changed glow in on the rail; the same set
+      again calls none and changes only "As of" (principle 11; owner, 2026-10-19, after trying the dev build: "the same
+      animation as the other quests"; until then glow and notice, no cue).
   - *Desk* (owner, 2026-10-19, from a panel: A1; not built): out of a raid, with the stash desk in the map's place,
     the rail is the card of the desk's cell pointed at, under the MAP list and the trader strip, PLAN | DESK at its head
     beside the MAP list (*The stash desk*, below).
@@ -1501,7 +1550,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     takes it too). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
-    glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
+    glances, median 3.9 s in the study log, and these are what a glance is for. Then OPERATIONAL (2026-10-19, on top of
+    the quests, *Operational tasks*), COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint (the words keep at least half of the line:
     where a hand-over's mark and a long direction would take more, the direction wraps under the distance between its
@@ -3023,8 +3073,9 @@ still only keeps its card open (two clicks, two meanings).
 - **Nothing else steps back for picks.** Every other quest marker stays at full strength (the owner's "Still it
   should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
   then picks don't step back either: they are the plan for this raid, as much as the ways out.
-- **The rail.** A map's card shows its picks first, as a group of their own headed PICKED (in the headings' grey), then COMPLETE
-  and PROGRESS without them, with the effort hairlines drawn anew (`Planning.Sections`). A pick that only
+- **The rail.** A map's card shows its picks first of its quests (under the daily and weekly tasks' OPERATIONAL, which
+  stands on top since 2026-10-19, §4, *Operational tasks*), as a group of their own headed PICKED (in the headings'
+  grey), then COMPLETE and PROGRESS without them, with the effort hairlines drawn anew (`Planning.Sections`). A pick that only
   progresses here keeps its note ("2 of 5 objectives here"). Compared on 2026-10-03 with picks sorted first inside
   COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
   a group of their own says "this raid's work" at a glance. BRING lists what the picks need first, then a hairline
@@ -3032,7 +3083,8 @@ still only keeps its card open (two clicks, two meanings).
   before the planner's. That holds whatever the map's rank: the maps with picks all come first, then every other
   map with work on it in the planner's order (`RaidPlanner.Rank`; until 2026-10-09 the planner's best filled up to
   four, and until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
-  shows its picks' glyphs first, each in its pick's colour, then a hairline. The raid card starts with PICKED, nearest first, and
+  shows its picks' glyphs first, each in its pick's colour, then a hairline. The raid card starts its quests with PICKED
+  (under OPERATIONAL, as the open card), nearest first, and
   NEXT is the nearest objective among the picks.
 - **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
 - The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
@@ -3403,7 +3455,8 @@ Rules:
   `-Operational <n>` (the app's `--operational <n>`, with a fake game only) gives the run the `tasks` step's made-up
   operational tasks once the data and the mode are known, and `-OperationalEnded` (`--operational-ended`) the one that
   runs out at once, so a snapshot pictures the list rows' framed glyphs, the open card's and the raid card's
-  OPERATIONAL (owner, 2026-10-19, B; the file isn't written);
+  OPERATIONAL, and the cue of the tasks read over the map, which a snapshot keeps up as it keeps every cue (owner,
+  2026-10-19, B, and after trying the dev build; the file isn't written);
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
   is trimmed, text over text, and in the pseudo-language one untranslated; a layer that lies over the window on
@@ -3778,7 +3831,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 5, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods; with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B), `tour end` (ends the tour as Esc does), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 5, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods; with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
@@ -3913,11 +3966,13 @@ BRING lists (`MenuScreenshotReader`): the picture is opened once, whole and read
 reader reads the words of its left two thirds (`TasksReader`, about 110 ms) and tells the screen by them (`TaskTable`):
 the OPERATIONAL table is read row by row, its bands' digits by vote (about 400 ms more), and goes to the operational
 ledger (`GameSession.Operational`: the location matched to a map of the data, `OperationalLedger.ApplyTable` with
-its checks, the file, the notice); a trader's tasks or another Tasks table goes nowhere; any other picture goes to
-the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue and the marks' glow. A snapshot
-(`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their maps as Plan counts them and
-the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`, `MainWindow.Operational`), glowing in
-the ones that arrived. A watch over the expiries drops a task as it runs out and publishes again each minute while
+its checks, the file; `OperationalReadings`, which tells a run of screenshots and whether the reading brought a new
+task, and the cue `CueKind.TasksRead` with every task the run read); a trader's tasks or another Tasks table goes
+nowhere; any other picture goes to the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue
+and the marks' glow. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
+maps as Plan counts them and the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`,
+`MainWindow.Operational`), glowing in the ones that arrived or changed, and the cue's rows (`Rules.OperationalCueWords`,
+`MainWindow.TasksCue`). A watch over the expiries drops a task as it runs out and publishes again each minute while
 tasks are kept, for the rows' words of the minute. "Delete screenshots after reading" waits for all of it.
 
 **Projection.** tarkov.dev's math: rotate (x, z) by `coordinateRotation`, `X = a·rx + b`, `Y = −c·ry + d`, SVG
@@ -4391,6 +4446,8 @@ every issue goes through it, and the app's report is offered beside it.
   while it waits.
 - The daily and weekly operational tasks, read from a screenshot of the Tasks screen's OPERATIONAL tab (2026-10-19;
   docs/NEXT.md; §2, "Menu screenshots"; §4, *Operational tasks*; from a panel of four: B): framed glyphs on NEXT RAID's
-  rows, an OPERATIONAL section in the open card and the raid card, a Scav's hand-over items under FIND IN RAID.
+  rows, an OPERATIONAL section in the open card and the raid card, a Scav's hand-over items under FIND IN RAID; the
+  same day, after the owner tried the dev build, the section on top of the quest list, the task that ends soonest
+  first, and the cue DAILIES AND WEEKLIES for a reading that brings new tasks, one for a run of screenshots.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).
