@@ -18,7 +18,7 @@ Inoffizielles Fanprojekt, nicht von Battlestate Games gemacht oder gebilligt. Au
 
 ## follows · RaidWord, Rail
 FOLGT DEM SPIEL
-Zieh Shturmap auf deinen zweiten Monitor. In den Menüs plant es oder schätzt deinen Stash.
+Zieh Shturmap auf deinen zweiten Monitor. In den Menüs plant es oder zeigt, was dein Stash wert ist.
 Im Raid folgt es dem Raid. Es wechselt von selbst: nichts zu klicken, während du spielst.
 - NICHT IM RAID · Planung: wohin, was mitnehmen
 - IM RAID · Raid: dieselbe Karte, live, mit der Restzeit

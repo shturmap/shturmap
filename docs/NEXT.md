@@ -364,9 +364,10 @@ the model the view draws*), §8 ("The desk file", "How the parts work", *Menu sc
   "?" plate's move, the numbers' form, the stem's route and light).
 - **Open:** the desk's own card and the click (step C); the website on what the desk reads; the tour's pictures of
   chapters 1 and 2 (the release prep); the desk at 125 and 150 % text (cells are fixed boxes, their figures grow: the
-  figure shrinks only by the width estimate at 100 %); the German words of the heads and the switch (PLANUNG | DESK, AN
-  DIR, BEHALTEN, RIG, POUCH) for the senior translator; a turned cell's picture turns a quarter clockwise, unchecked
-  against the game; the reading counter's start: the view takes a page read back from the file for reading 0.
+  figure shrinks only by the width estimate at 100 %); the German gear heads to check in the German game
+  (TASCHEN, SPEZIAL-SLOTS; the desk's German reviewed, senior translator, 2026-10-20); a turned cell's picture turns a
+  quarter clockwise, unchecked against the game; the reading counter's start: the view takes a page read back from the
+  file for reading 0.
 
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,

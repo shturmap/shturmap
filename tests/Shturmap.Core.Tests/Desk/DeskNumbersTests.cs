@@ -81,11 +81,11 @@ public class DeskNumbersInGermanTests
         try
         {
             UiLanguage.Set(UiLanguage.German);
-            Assert.Equal("1,01 M", DeskNumbers.Short(1_010_000));
+            Assert.Equal("1,01\u00A0M", DeskNumbers.Short(1_010_000));
             Assert.Equal("4,5k", DeskNumbers.Short(4_500));
             Assert.Equal("0,3–294k", DeskNumbers.Range(300, 294_000));
-            Assert.Equal("6,84 M+ ₽", DeskNumbers.Total(6_840_000, plus: true));
-            Assert.Equal("↓ −10 %", DeskNumbers.Change(-10.3));
+            Assert.Equal("6,84\u00A0M+\u00A0₽", DeskNumbers.Total(6_840_000, plus: true));
+            Assert.Equal("↓ −10\u00A0%", DeskNumbers.Change(-10.3));
         }
         finally
         {

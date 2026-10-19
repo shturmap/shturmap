@@ -265,7 +265,7 @@
     <comment>en: {amount}k</comment>
   </data>
   <data name="DeskMillions" xml:space="preserve">
-    <value>{amount} M</value>
+    <value>{amount} M</value>
     <comment>en: {amount} M</comment>
   </data>
   <data name="DeskRange" xml:space="preserve">
@@ -277,15 +277,15 @@
     <comment>en: {low}–{high}k</comment>
   </data>
   <data name="DeskRangeMillions" xml:space="preserve">
-    <value>{low}–{high} M</value>
+    <value>{low}–{high} M</value>
     <comment>en: {low}–{high} M</comment>
   </data>
   <data name="DeskRoubles" xml:space="preserve">
-    <value>{amount} ₽</value>
+    <value>{amount} ₽</value>
     <comment>en: {amount} ₽</comment>
   </data>
   <data name="DeskChange" xml:space="preserve">
-    <value>{change} %</value>
+    <value>{change} %</value>
     <comment>en: {change}%</comment>
   </data>
   <data name="DeskLoadout" xml:space="preserve">
@@ -301,7 +301,7 @@
     <comment>en: POCKETS</comment>
   </data>
   <data name="DeskSpecialSlots" xml:space="preserve">
-    <value>SPEZIALSLOTS</value>
+    <value>SPEZIAL-SLOTS</value>
     <comment>en: SPECIAL SLOTS</comment>
   </data>
   <data name="DeskBackpack" xml:space="preserve">
@@ -329,7 +329,7 @@
     <comment>en: {title} · IN THE POCKETS</comment>
   </data>
   <data name="DeskWindowInSpecialSlots" xml:space="preserve">
-    <value>{title} · IN DEN SPEZIALSLOTS</value>
+    <value>{title} · IN DEN SPEZIAL-SLOTS</value>
     <comment>en: {title} · IN THE SPECIAL SLOTS</comment>
   </data>
   <data name="DeskWindowInBackpack" xml:space="preserve">
@@ -337,7 +337,7 @@
     <comment>en: {title} · IN THE BACKPACK</comment>
   </data>
   <data name="DeskWindowInPouch" xml:space="preserve">
-    <value>{title} · IM POUCH</value>
+    <value>{title} · IN DER POUCH</value>
     <comment>en: {title} · IN THE POUCH</comment>
   </data>
   <data name="DeskWindowInStash" xml:space="preserve">
