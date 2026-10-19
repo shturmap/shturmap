@@ -526,9 +526,13 @@ card*; *The click*; *As built*: the rail, the card, the page, the stems), §8 (h
   "Prices n min old" counts from tarkov.dev's scan of the item (`updated`). The item file is asked for again when a
   reading arrives and the saved copy is over ten minutes old (an hour before; the owner: "Maybe we need to fetch the
   prices more often then?"); README, PRIVACY.md, the setting's note and UPDATES.md say so.
-- **Open:** the senior translator's review of the German (`DeskCardCopies`, `DeskCardNets`, `DeskCardOverBest`,
-  `DeskCardFleaNet`, `DeskCardFee`, `DeskCardWeekMark`, `DeskRuleLowerTip`, `DeskRuleHigherTip`, `DeskCompactTip`, the
-  setting's note); the UI QA pass of these changes; the quest marks' stash reader (`StashReader`) reads windows through
+- **Reviewed** (senior translator, 2026-10-19): the round's German holds but one line, the warning's „bei diesem
+  {net}“ → „bei diesem Preis {net}“ (`DeskCardOverBest`; „diesem“ had nothing to point at); the glossary carries the
+  split plate line, the stepper's tips and the ten minutes. The plate's lines measured in Bahnschrift against the
+  plate's 299 DIP: „Kopiert 970.000 ₽“ 110 (133 at 12.500.000 ₽), „Bringt 873k ₽ nach Gebühr“ 150, both one line; the
+  reasons line „Letzter Tiefstpreis 970.000 ₽ · Therapist zahlt 650.000 ₽“ 311, wraps between its parts (about 16 DIP
+  taller than English; „Letzter Tiefstpreis“ is not shortened, glossary).
+- **Open:** the UI QA pass of these changes; the quest marks' stash reader (`StashReader`) reads windows through
   the same lattice without the alignment: on the two Keys pictures it finds 23 and 28 rectangles of the window's 72 keys
   (`shturmap-cli stash --set all --no-art`), so needed keys in a sorted container go unmarked (not changed: outside the
   brief); the made-up page read whole is smaller at 1600×900 than before (40 for 64), unscrolled; the third-or-unread

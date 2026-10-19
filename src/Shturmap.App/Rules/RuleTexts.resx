@@ -594,7 +594,7 @@
   </data>
   <data name="DeskCardAge" xml:space="preserve">
     <value>{minutes, plural, =0 {Prices just in · tarkov.dev} one {Prices # min old · tarkov.dev} other {Prices # min old · tarkov.dev}}</value>
-    <comment>The stash desk's card, its last line, muted: how old the prices are, from when the item file was last confirmed current with tarkov.dev, and where they come from. {minutes}: whole minutes.</comment>
+    <comment>The stash desk's card, its last line, muted: how old the prices are, from tarkov.dev's last scan of the item (its `updated` time), and where they come from. {minutes}: whole minutes.</comment>
   </data>
   <data name="DeskCardAgeHours" xml:space="preserve">
     <value>{hours, plural, one {Prices # h old · tarkov.dev} other {Prices # h old · tarkov.dev}}</value>
