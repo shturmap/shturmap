@@ -665,8 +665,8 @@
     <comment>Settings, text size: a choice, the text largest (×1.5). Upper case, small, like the other choices.</comment>
   </data>
   <data name="SettingsReadStash" xml:space="preserve">
-    <value>Read your stash and tasks from menu screenshots</value>
-    <comment>Settings: tick box. On, a screenshot taken in the game's menus is read: the item cells (the stash, a case, the key tool) for the items your quests need, and the game's Tasks screen (its OPERATIONAL tab: the daily and weekly tasks). "Stash" is the game's word.</comment>
+    <value>Read your stash, gear and tasks from menu screenshots</value>
+    <comment>Settings: tick box. On, a screenshot taken in the game's menus is read: the item cells (the stash, the GEAR tab's loadout, a case, the key tool) for the items your quests need and, on the stash desk, for what each item is worth; and the game's Tasks screen (its OPERATIONAL tab: the daily and weekly tasks). "Stash" is the game's word; "gear" is the player's loadout, the game's GEAR tab (Character › GEAR). Prices aren't read from the picture (they come from tarkov.dev; the note says so), so the words don't name them. One line of the 480 px panel at the normal text size.</comment>
   </data>
   <data name="SettingsForgetMarks" xml:space="preserve">
     <value>FORGET ALL MARKS</value>
