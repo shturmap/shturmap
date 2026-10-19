@@ -175,6 +175,8 @@ public partial class App : Application
         _session.StudyOverride = GameSession.StudyOverrideFor(cli);
         // A newer game build says the checks after a patch are due (docs/UPDATES.md); a made-up log has no news.
         _session.NoticeGameBuilds = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
+        // "--text-scale <factor>": every text as Windows' text size at that factor would draw it (Dev/TextScale.cs).
+        Dev.TextScale.Read(Arg(cli, "--text-scale"));
 #endif
         ChooseLanguage(cli);
         // A run that only takes pictures opens off every monitor, unactivated and out of the taskbar and Alt+Tab, so it
@@ -212,6 +214,9 @@ public partial class App : Application
             await _session.DisposeAsync();
         };
         _window.Open();
+#if DEVTOOLS
+        Dev.TextScale.Start(_window);
+#endif
         try
         {
             await _session.StartAsync();

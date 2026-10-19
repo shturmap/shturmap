@@ -108,6 +108,14 @@ public sealed partial class MapView : Grid
 
     private float PixelScale => (float)(XamlRoot?.RasterizationScale ?? 1.0);
 
+    // The size of the map's labels and symbols (MapRenderer's uiScale): the screen's pixels per DIP; a developer build's
+    // "--text-scale" multiplies it (Dev/TextScale.cs).
+#if DEVTOOLS
+    private float UiScale => PixelScale * (float)Dev.TextScale.Factor;
+#else
+    private float UiScale => PixelScale;
+#endif
+
     /// <summary>Pings and pulses play even with Windows' animation effects off (the website demo's recording).</summary>
     public bool AlwaysAnimate { get; set; }
 
@@ -316,7 +324,7 @@ public sealed partial class MapView : Grid
                 scene.PingSince = DateTime.Now;
                 // Before the first paint the view isn't fitted yet; the whole map will be in view then. Following, the
                 // view is on its way to the position, so it is never out of view.
-                PlayerPinged?.Invoke(!_follow.On && !_fitPending && MapRenderer.EdgeOf(_camera, scene, PixelScale) is not null);
+                PlayerPinged?.Invoke(!_follow.On && !_fitPending && MapRenderer.EdgeOf(_camera, scene, UiScale) is not null);
                 Redraw();
             }
         }
@@ -447,7 +455,7 @@ public sealed partial class MapView : Grid
     {
         var map = points.Select(p => _scene!.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        return _camera.Framing(rect, (float)(padding * PixelScale), Camera.LabelRoom * PixelScale);
+        return _camera.Framing(rect, (float)(padding * PixelScale), Camera.LabelRoom * UiScale);
     }
 
     /// <summary>
@@ -464,7 +472,7 @@ public sealed partial class MapView : Grid
         var room = points.Append(new(x - minMetres / 2, 0, z - minMetres * 0.3)).Append(new(x + minMetres / 2, 0, z + minMetres * 0.3));
         var map = room.Select(p => scene.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * PixelScale, (float)(head * PixelScale));
+        return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * UiScale, (float)(head * PixelScale));
     }
 
     /// <summary>
@@ -493,7 +501,7 @@ public sealed partial class MapView : Grid
         var inPart = (new Shturmap.Core.Maps.MapPoint(settled.Item1.X, settled.Item1.Y - Shift(settled.Item2)), settled.Item2);
         var points = extracts.Select(e => scene.Projection.ToMap(e)).ToList();
         Shturmap.Core.Maps.MapPoint? you = player is { } at ? scene.Projection.ToMap(at) : null;
-        if (Camera.CallOut(points, you, between, inPart, Camera.LabelRoom * scale, (float)(padding * scale), _camera.MinZoom) is not { } fit)
+        if (Camera.CallOut(points, you, between, inPart, Camera.LabelRoom * UiScale, (float)(padding * scale), _camera.MinZoom) is not { } fit)
             return null;
         if (!fit.Moves)
             return (settled, false);
@@ -561,7 +569,7 @@ public sealed partial class MapView : Grid
         if (_scene is null)
             surface.Canvas.Clear(Palette.Sk(Palette.Ground));
         else
-            MapRenderer.Render(surface.Canvas, _camera, _scene, PixelScale);
+            MapRenderer.Render(surface.Canvas, _camera, _scene, UiScale);
         using var image = surface.Snapshot();
         using var png = image.Encode(SKEncodedImageFormat.Png, 90);
         File.WriteAllBytes(path, png.ToArray());
@@ -583,7 +591,7 @@ public sealed partial class MapView : Grid
         if (_fitPending)
         {
             _fitPending = false;
-            _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale, Camera.LabelRoom * PixelScale);
+            _camera.Fit(_scene.Projection.WorldRect, 24 * PixelScale, Camera.LabelRoom * UiScale);
         }
         // Following: once the view has its size (and a new map is fitted), it starts on the player.
         if (_centerAfterFit && FollowState.Target(_scene, _camera, DateTime.Now) is { } player)
@@ -594,7 +602,7 @@ public sealed partial class MapView : Grid
         }
         GlideStep();
         ZoomStep();
-        MapRenderer.Render(canvas, _camera, _scene, PixelScale);
+        MapRenderer.Render(canvas, _camera, _scene, UiScale);
         // The scale bar keeps its place while the view only moves, and settles in the first frame drawn with the view still
         // (MapRenderer.Scale). The end of a move draws no frame after its last by itself (AnimateView, the roll call's and
         // the tour's; a zoom of the wheel, the keys, the buttons or a double-click; a Follow glide; a drag), so a frame
@@ -685,8 +693,8 @@ public sealed partial class MapView : Grid
 
     // The edge arrow of an out-of-view player is a button: it shows them.
     private bool OverEdge(Windows.Foundation.Point at) =>
-        _scene is not null && MapRenderer.EdgeOf(_camera, _scene, PixelScale) is { } edge
-        && SKPoint.Distance(edge, Pixels(at)) <= MapRenderer.EdgeReach * PixelScale;
+        _scene is not null && MapRenderer.EdgeOf(_camera, _scene, UiScale) is { } edge
+        && SKPoint.Distance(edge, Pixels(at)) <= MapRenderer.EdgeReach * UiScale;
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
@@ -704,7 +712,7 @@ public sealed partial class MapView : Grid
                 ProtectedCursor = overEdge || _hovered is not null ? InputSystemCursor.Create(InputSystemCursorShape.Hand) : null;
                 ToolTipService.SetToolTip(this, overEdge ? AppTexts.MapEdgeTip : null);
             }
-            var hit = _scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), PixelScale);
+            var hit = _scene is null || overEdge ? null : MapRenderer.HitTest(_camera, _scene, Pixels(at), UiScale);
             Hover(hit, at);
             return;
         }

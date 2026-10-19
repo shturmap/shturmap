@@ -32,6 +32,9 @@ public static class Columns
         foreach (var text in texts)
         {
             var probe = new TextBlock { Style = look, Text = text, Margin = new Thickness(0) };
+#if DEVTOOLS
+            Dev.TextScale.Probe(probe);
+#endif
             probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             widest = Math.Max(widest, probe.DesiredSize.Width);
         }
