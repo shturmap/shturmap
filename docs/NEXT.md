@@ -2138,6 +2138,51 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   a picture, is given with this note. Still to design: what of a daily or weekly the map can use (its map and objective
   kind, from the screen's words), how long it is kept (they expire), and where it shows in Plan.
 
+  **The spike of 2026-10-19:** `shturmap-cli tasks <png|folder>` (`tools/Shturmap.Cli/Tasks`; its parser's tests,
+  `TaskTableTests`, compile the CLI's files; nothing of it is in the app, DESIGN.md §2 unchanged). The owner's six
+  screenshots of that day (2560×1440, PvE, game 1.2.5: four of Character › TASKS › OPERATIONAL with three rows, a row
+  expanded in three of them; two of a trader's TASKS tab) and hand-written truths stay in the ignored
+  `tests\fixtures\ocr\operational`. Only the picture's left two thirds are read: the right third carries the player's
+  name and money on a trader's tab and the game's toasts with the screenshot's path.
+  - **Read reliably**, from the page's words at the picture's own size (about 110 ms): the screen (the table by its
+    header words, a trader's tab by REPLACE or TRADING with SERVICES and then left alone) 6 of 6; the rows 12 of 12,
+    task 12/12, location 12/12, status 12/12 ("active!", read as "activel" half the time); an expanded row's objectives
+    4 of 4 with their counts 4 of 4 (an elimination 0/3, a survival 4/7, two hand-overs of found-in-raid items without
+    a count), each on its own row. The expanded row's text and rewards make no row: a row's name starts at the names'
+    left edge and has a location or a status beside it; the row's text runs across the columns.
+  - **The digits are the weak part**, as the raid timer was (DESIGN.md §2): Windows' recognition drops most of the
+    game's small orange countdowns and the percentages, on the page and in their own bands, whatever is done to them
+    (enlarged 1.5 to 4 times, stretched, cut to black and white, stacked into one picture, a word set before them, the
+    glyphs set apart). No one way reads more than 7 of the 12 countdowns or 3 of the 12 percentages, and two ways read
+    a wrong countdown once each. Each band read 14 ways and taken by vote: time left 12 of 12 right (2 to 5 ways agree,
+    a runner-up never more than one), progress 7 of 12, none wrong; the five misses are all a lone slashed "0%". About
+    400 ms a table.
+  - **Expiry** is the file's time plus the time left, and the countdowns tick between shots (10:14:11 to 10:14:07 over
+    four), so it needs the capture time to the second. These six files were copied without their times (all within
+    50 ms, a minute or two after the minute in their names): the expiries the spike prints are that much late. In the
+    app the watcher sees the file as the game writes it.
+  - **From the player:** one screenshot of the table gives every row (collapsed or with one row open, while all rows
+    fit on the screen); a task's objectives only with its row expanded, so one screenshot per task (the game opens one
+    row at a time). A trader's tab shows one task's objective too; it isn't read.
+  - **Not covered:** the STORY and SIDE tabs (a table without any countdown is taken for one of them and not read;
+    unverified), more rows than fit (scrolling), a weekly's countdown past a day (hours as written; unverified),
+    other resolutions, the German game, the trader (a portrait, not read: a task is known by its name and location).
+
+  **Recommendation for the reading's design** (the owner decides on the panel):
+  1. In the menu-screenshot path beside `StashReader`: same watcher, menus-only gate, file opened read-only once
+     whole, deleted after reading when the player chose that; a picture with the table's header goes to the tasks
+     reader instead of the stash reader, a trader's tab to neither.
+  2. Kept per task, in a file of its own in the data folder like `stash.json`: name, location (a map from the data's
+     names, none for "Any location"), objectives (text, n/m), progress and the absolute expiry; no pixel, no other word.
+  3. Expiry: the screenshot's time (the watcher's, to the second) plus the time left; a task is dropped once expired.
+     A task's expiry from two screenshots, and rows that share a countdown (two at 10:14 here), must agree to a second
+     or two, which checks the digits.
+  4. Replacement: a newer table screenshot replaces the set (a task gone from it was replaced, turned in or expired);
+     a newer expanded row replaces that task's objectives; a task's objectives go with it.
+  5. Before building: a digit reader of Shturmap's own for the countdown (ten digits and a colon in one fixed font;
+     the page's readable rows could calibrate it), or the 14-way vote with the expiry checks; the percentage can
+     come from the bar under it (pixels) or from the objectives' counts.
+
 - **Report the defects in tarkov.dev's extract data** (the exits verification of 2026-10-17, kept beside the
   repositories; owner, 2026-10-17: "Note this down for later"). The app's side is built ("2026-10-17: exit facts and the
   data rules", above; DESIGN.md, "Extract requirements", *The data's defects*): general rules in `ExtractRepairs`, each

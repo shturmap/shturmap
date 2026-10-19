@@ -63,6 +63,9 @@ switch (command)
     case "stash":
         await Shturmap.Cli.Stash.StashSpike.RunAsync(args.Skip(1).ToList());
         break;
+    case "tasks":
+        await Shturmap.Cli.Tasks.TasksSpike.RunAsync(args.Skip(1).ToList());
+        break;
 #if DEVTOOLS
     case "study":
         Study(args.ElementAtOrDefault(1));
@@ -109,6 +112,9 @@ switch (command)
             shturmap-cli handovers [mode]    which hand-overs fold into the objective that gets their thing, with near misses flagged
             shturmap-cli stash <png|folder>  the 2026-10-11 spike: read stash screenshots and say which quest items they show
                                             (--set keys|quest|all, --truth <file>, --dump <folder> for pictures of the grids found)
+            shturmap-cli tasks <png|folder>  the 2026-10-19 spike: read the operational tasks' table from Tasks screenshots (rows,
+                                            time left, progress, an expanded row's objectives) and when each expires; a folder
+                                            is scored against its truth-<picture>.txt files (--bands prints each band's votes)
             shturmap-cli study [on|off]      developer builds: show or set the "Keep a study log" switch (Shturmap closed)
 
             --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
