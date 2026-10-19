@@ -58,7 +58,7 @@ out); shoreline and woods 2.4 after their `map … look`; raid-start 3.4 after `
 - **t1**: no glow; under the eyebrow, muted, "1 ended at hh:mm. Screenshot your tasks for the new one." („1 endete um
   hh:mm. Mach einen Screenshot deiner Dailies und Weeklies für die neue.“); WOODS's row with the stopwatch alone.
 - **shoreline**: Shoreline's card (looked at, Streets still chosen): the ended line, the kill "Kill 5 PMC operatives"
-  („5 PMC operatives töten“: the target is the game's words as read) with "1 OF 5 · READ JUST NOW" („1 VON 5 · GERADE
+  („5 PMC operatives killen“: the target is the game's words as read) with "1 OF 5 · READ JUST NOW" („1 VON 5 · GERADE
   GELESEN“: its countdown wasn't taken, so the reading's age), then the any-map hand-over after a hairline.
 - **woods**: Woods' card: the ended line, "Mark the made-up spots" as read with the generic operational glyph (the
   stopwatch; pointing at it says what it is) and "0 OF 2 · 8 H LEFT" („0 VON 2 · NOCH 8 H“), then the hand-over.
