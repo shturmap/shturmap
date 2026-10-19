@@ -399,6 +399,12 @@ public sealed record SessionSnapshot
     /// (the planner's order and score unchanged).</summary>
     public IReadOnlyList<MapPlanView> OperationalPlans { get; init; } = [];
 
+    /// <summary>
+    /// The stash desk's page in hand for this mode, with its values (docs/DESIGN.md §4, "Screen anatomy", *The stash desk*;
+    /// <see cref="Shturmap.Core.Desk.DeskView"/>): null before the mode's first stash or GEAR screenshot was read for it.
+    /// </summary>
+    public Shturmap.Core.Desk.DeskView? Desk { get; init; }
+
     /// <summary>The plan for the raid's map in a raid, else for the map on screen (ranked or not): the raid view is this plan, live.</summary>
     public MapPlanView? MapPlan { get; init; }
 
