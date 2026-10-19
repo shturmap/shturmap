@@ -537,6 +537,11 @@ card*; *The click*; *As built*: the rail, the card, the page, the stems), §8 (h
   (`shturmap-cli stash --set all --no-art`), so needed keys in a sorted container go unmarked (not changed: outside the
   brief); the made-up page read whole is smaller at 1600×900 than before (40 for 64), unscrolled; the third-or-unread
   rule's narrowing; the totals by what the sales bring.
+- **UI QA pass of the second round (2026-10-19):** FAIL 0/4/2 → F1 fixed (the pins' foot: a rail row of its own under
+  the scrolling card, three lines at most, `DeskPins.FootRoom`; the card runs on to it), F3 fixed (`desk.md`'s figures;
+  `desk show <n>`, stills `pinshown`, `pinmore`); F2 (the art's printed name shows through the 88 % band at 80–104
+  DIP) for the owner; F4–F6 (the real Keys reading, the layout check, the pin click, 125 %, settings after a switch)
+  in the re-check.
 
 **The release QA pass of 0.7.0 (2026-10-19, on 63d9c06) and its fixes.** Fixed:
 - F1: a language switch left the desk's page (head line, region heads, "Not attached", "5.45 M", "−3%") and settings' row

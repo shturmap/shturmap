@@ -779,6 +779,7 @@
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Margin="16,4,16,0">
           <!-- PLAN | DESK, the one choice of view (owner, 2026-10-19, from a panel: A1; docs/DESIGN.md §4, principle 3 and
@@ -974,7 +975,7 @@
         <!-- The rail's typeface and ink are set here: the app's implicit TextBlock style doesn't reach text inside the
              list templates below, which fell back to Segoe UI and white (the raid card's quest names and objective
              lines, the extract rows, BRING in a raid), while Plan's card had the app's own through its button. -->
-        <ScrollViewer x:Name="RailScroll" Grid.Row="3" Padding="16,0,16,20" ViewChanged="OnRailScrolled"
+        <ScrollViewer x:Name="RailScroll" Grid.Row="3" Padding="{x:Bind RailPadding(ViewModel.DeskUp), Mode=OneWay}" ViewChanged="OnRailScrolled"
                       FontFamily="{StaticResource UiFont}" Foreground="{StaticResource InkBrush}">
           <StackPanel>
             <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintOutsideRaid(ViewModel.Hint, ViewModel.InRaid, ViewModel.DeskUp), Mode=OneWay}"
@@ -982,9 +983,11 @@
 
             <!-- DESK: the rail is the desk's cards (docs/DESIGN.md §4, *The stash desk*, *Its place*, *The card*, *The click*;
                  step C, 2026-10-20; the order since the QA pass of step C, F2): the card of the cell pointed at, until
-                 another cell is pointed at, or the rail's hint; then the pinned ones, newest on top, one line each while a
-                 pointed card stands above them (MainWindow.Desk, Controls.DeskCardView). -->
-            <StackPanel x:Name="DeskRail" Visibility="{x:Bind ShownIfTrue(ViewModel.DeskUp), Mode=OneWay}" Margin="0,16,0,0" Spacing="8">
+                 another cell is pointed at, or the rail's hint; then the pinned ones, newest on top, whole while no cell is
+                 pointed at; while one is, one line each in the rail's foot, below (MainWindow.Desk, Controls.DeskCardView).
+                 On the desk the rail's 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the
+                 foot's hairline, or to the window's edge, and isn't cut 20 DIP short of it (RailPadding). -->
+            <StackPanel x:Name="DeskRail" Visibility="{x:Bind ShownIfTrue(ViewModel.DeskUp), Mode=OneWay}" Margin="0,16,0,20" Spacing="8">
               <TextBlock x:Name="DeskRailLine" Style="{StaticResource NoteText}" Text="{x:Bind local:ViewTexts.DeskRailHint}" />
               <Border x:Name="DeskCardHost" HorizontalAlignment="Left" />
               <StackPanel x:Name="DeskPinnedHost" Spacing="8" />
@@ -1553,6 +1556,18 @@
             </StackPanel>
           </StackPanel>
         </ScrollViewer>
+        <!-- DESK's foot (UI QA pass of the desk's second round, F1, 2026-10-19: with a key pointed at and two cards pinned,
+             the second pinned line stood cut at the window's bottom at 1600×900, in German below it): while a cell is
+             pointed at, the pinned cards stand here, one line each, newest on top, always in sight, and the pointed card
+             scrolls in the room above them. Three lines at most; more scroll within the strip (Rules.DeskPins.FootRoom).
+             The rail's hairline over it. Out of the desk, and while no line is due, nothing. -->
+        <Grid Grid.Row="4" Visibility="{x:Bind ShownIfTrue(ViewModel.DeskUp), Mode=OneWay}">
+          <Border x:Name="DeskFoot" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,12" Visibility="Collapsed">
+            <ScrollViewer x:Name="DeskFootScroll" Padding="16,0,16,0" FontFamily="{StaticResource UiFont}" Foreground="{StaticResource InkBrush}">
+              <StackPanel x:Name="DeskPinnedFoot" Spacing="8" SizeChanged="OnDeskFootSized" />
+            </ScrollViewer>
+          </Border>
+        </Grid>
       </Grid>
 
       <!-- The map. -->

@@ -67,12 +67,13 @@ public static class DevScript
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
         ["desk"] = "[<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> "
-            + "| rule match|under:<n>|over:<n> | plan | show: the made-up stash desk's n-th reading as a reading in the menus brings it "
+            + "| rule match|under:<n>|over:<n> | plan | show [<n>]: the made-up stash desk's n-th reading as a reading in the menus brings it "
             + "(1, the first, every region open; 2, one that changed the backpack, the rest folded; 3, one that changed nothing); open, a folded region's name clicked; "
             + "point, the pointer on a region's cell at that grid place or slot (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
             + "pin, the cell right-clicked (its card pinned in the rail, or unpinned); unpin, a pinned card's pin clicked, all of them with all or nothing; "
             + "copy, the cell clicked (its flash, decode and notice; the clipboard left alone in a script); pick, the n-th candidate (from 1) clicked on a \"?\" cell's card; "
-            + "rule, the copy's rule as the card's − and + set it; plan and show, PLAN and DESK at the rail's head",
+            + "rule, the copy's rule as the card's − and + set it; plan and show, PLAN and DESK at the rail's head; "
+            + "show n, the n-th pinned line in the rail's foot clicked, from the top (its card whole in the pointed card's place)",
         ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 8: "
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
             + "a line of no known kind on Woods, a survival on Interchange, a kill on Lighthouse, a weekly's kill on Reserve; 7 or 8 bring the cue's +N); "
@@ -127,7 +128,8 @@ public static class DevScript
     }
 
     /// <summary>What a "desk" step does: shows a made-up reading, opens a folded region, points at a cell, pins, unpins,
-    /// clicks (copies) or picks one, sets the copy's rule, or goes back to Plan.</summary>
+    /// clicks (copies) or picks one, sets the copy's rule, goes back to Plan or to the desk, or clicks a pinned line in the
+    /// rail's foot.</summary>
     public enum DeskAct
     {
         Reading,
@@ -135,6 +137,7 @@ public static class DevScript
         Point,
         Plan,
         Show,
+        ShowPin,
         Pin,
         Unpin,
         UnpinAll,
@@ -144,7 +147,7 @@ public static class DevScript
     }
 
     /// <summary>A "desk" step's parts: the act; the reading; the region and the cell's grid place (−1, −1 for its first
-    /// cell) or slot; a pick's candidate (from 1); a rule ("match", "under:3", "over:2").</summary>
+    /// cell) or slot; a pick's candidate or a pinned line (from 1); a rule ("match", "under:3", "over:2").</summary>
     public sealed record DeskStep(DeskAct Act, int Reading = 0, string Region = "", int I = 0, int J = 0)
     {
         public string? Slot { get; init; }
@@ -161,8 +164,10 @@ public static class DevScript
     /// cell), "desk pin …" the cell right-clicked, "desk copy …" the cell clicked, "desk unpin [&lt;region&gt; &lt;i&gt; &lt;j&gt; |
     /// all]" a pin clicked (all, or nothing named: every pin), "desk pick &lt;region&gt; &lt;i&gt; &lt;j&gt; | &lt;slot&gt; &lt;n&gt;" a
     /// "?" cell's n-th candidate clicked on its card, "desk rule match | under:&lt;n&gt; | over:&lt;n&gt;" the copy's rule, "desk
-    /// plan" and "desk show" PLAN and DESK clicked. A region is its key (loadout, rig, pockets, special, backpack, pouch,
-    /// stash) or a window's title (zhuk); a slot its key (headwear, armband). Null for anything else.
+    /// plan" and "desk show" PLAN and DESK clicked, "desk show &lt;n&gt;" the n-th pinned line in the rail's foot clicked, from
+    /// the top (UI QA pass of the second round, F3, 2026-10-19), so its card shows whole. A region is its key (loadout, rig,
+    /// pockets, special, backpack, pouch, stash) or a window's title (zhuk); a slot its key (headwear, armband). Null for
+    /// anything else.
     /// </summary>
     public static DeskStep? DeskOf(DevStep step)
     {
@@ -176,6 +181,7 @@ public static class DevScript
             [var n] when Number(n, out var reading) && reading is >= 1 and <= 3 => new DeskStep(DeskAct.Reading, reading),
             [var plan] when Is(plan, "plan") => new DeskStep(DeskAct.Plan),
             [var show] when Is(show, "show") => new DeskStep(DeskAct.Show),
+            [var show, var n] when Is(show, "show") && Number(n, out var line) && line >= 1 => new DeskStep(DeskAct.ShowPin) { N = line },
             [var unpin] when Is(unpin, "unpin") => new DeskStep(DeskAct.UnpinAll),
             [var unpin, var all] when Is(unpin, "unpin") && Is(all, "all") => new DeskStep(DeskAct.UnpinAll),
             [var open, var region] when Is(open, "open") => new DeskStep(DeskAct.Open, 0, region.ToLowerInvariant()),
@@ -323,7 +329,7 @@ public static class DevScript
             if (verb == "desk" && DeskOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'open <region>', 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show'");
+                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show [<n>]'");
                 continue;
             }
             if (verb == "textsize" && TextSizeOf(step) is null)

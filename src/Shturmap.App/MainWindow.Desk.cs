@@ -33,6 +33,9 @@ public sealed partial class MainWindow
     private (DeskCellKey Key, int Version, bool Pinned)? _deskPointedShown;
     private int _deskVersion;
 
+    // The pinned cells standing as lines in the rail's foot, top first (the developer script's "desk show <n>").
+    private IReadOnlyList<DeskCellKey> _deskFootKeys = [];
+
     // The made-up desk's reading and the picks made on its cards (a developer run's; a real page keeps its picks in desk.json).
     private int _deskExampleReading = 1;
     private readonly Dictionary<DeskCellKey, string> _deskExamplePicks = [];
@@ -201,6 +204,10 @@ public sealed partial class MainWindow
 
     public Visibility DeskSwitchBar(bool deskUp, bool forDesk) => deskUp == forDesk ? Visibility.Visible : Visibility.Collapsed;
 
+    // The rail's scrolling part: 20 DIP under what scrolls in Plan and a raid; on the desk the cards carry them, so the card
+    // in view runs on to the pins' foot (UI QA pass of the second round, F1: at 900×560 the room above the foot is small).
+    public Thickness RailPadding(bool deskUp) => new(16, 0, 16, deskUp ? 0 : 20);
+
     // ---- the rail: the card of the cell pointed at, then the pinned cards ----
 
     // The pointer on a cell: its card in the rail, until another cell is pointed at, so the way from the page to the rail
@@ -215,13 +222,17 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// The rail anew (QA pass of step C, F2: the pointed card first, so pins never push it out of the smallest rail): the
-    /// pointed cell's card, or the rail's hint; under it the pinned cards, newest on top, each one compact line (icon, name,
-    /// gold figure) while a pointed card stands above them, whole while none does. A pinned cell pointed at has its card on
-    /// top, pinned, and not again among the pins.
+    /// pointed cell's card, or the rail's hint; then the pinned cards, newest on top: while a pointed card stands, each one
+    /// compact line (icon, name, gold figure) in the rail's foot, always in sight under the card's room, which scrolls (UI
+    /// QA pass of the second round, F1, 2026-10-19: at 1600×900 the second line stood below the window under a key's
+    /// card); whole under the hint while none does. A pinned cell pointed at has its card on top, pinned, and not again
+    /// among the pins.
     /// </summary>
     private void RenderDeskRail()
     {
         DeskPinnedHost.Children.Clear();
+        DeskPinnedFoot.Children.Clear();
+        var footKeys = new List<DeskCellKey>();
         RenderDeskPointed();
         if (_deskShown is { } view && _deskChosen)
         {
@@ -234,18 +245,33 @@ public sealed partial class MainWindow
                 {
                     var key = pin.Key;
                     var words = DeskCards.Of(found.Region.Region, found.Cell, DeskContext(view));
-                    DeskPinnedHost.Children.Add(DeskCardView.CompactLine(words, () =>
-                    {
-                        Study.Ui("desk.pin.show");
-                        _deskPointed = key;
-                        RenderDeskRail();
-                    }));
+                    DeskPinnedFoot.Children.Add(DeskCardView.CompactLine(words, () => ShowDeskPin(key, "click")));
+                    footKeys.Add(key);
                 }
                 else
                     DeskPinnedHost.Children.Add(DeskCardFor(view, found.Region.Region, found.Cell, pinned: true));
             }
         }
+        _deskFootKeys = footKeys;
+        DeskFoot.Visibility = footKeys.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
+    }
+
+    /// <summary>A pinned line in the rail's foot clicked: its card whole in the pointed card's place.</summary>
+    private void ShowDeskPin(DeskCellKey key, string how)
+    {
+        Study.Ui("desk.pin.show", ("how", how));
+        _deskPointed = key;
+        RenderDeskRail();
+    }
+
+    // The foot's strip: its first three lines in sight, the fourth and on scrolled to within it (Rules.DeskPins.FootRoom),
+    // measured as drawn, so a larger text size keeps three whole lines.
+    private void OnDeskFootSized(object sender, SizeChangedEventArgs e)
+    {
+        var room = DeskPins.FootRoom(DeskPinnedFoot.Children.OfType<FrameworkElement>().Select(l => l.ActualHeight).ToList(), DeskPinnedFoot.Spacing);
+        if (DeskFootScroll.MaxHeight != room)
+            DeskFootScroll.MaxHeight = room;
     }
 
     // The pointed cell's card, made again only when the cell or what the card says changed (a pinned cell's framed as

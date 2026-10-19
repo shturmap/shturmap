@@ -384,7 +384,7 @@ public sealed class DevToolsTests : IDisposable
         var (steps, errors) = DevScript.Parse(string.Join('\n', "desk", "desk 2", "DESK open Stash", "desk point backpack", "desk point stash 4 1", "desk plan",
             "desk show", "desk 4", "desk open", "desk point stash 4", "desk fold"));
         const string said = "'desk' takes a reading (1 to 3), 'open <region>', 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
-                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show'";
+                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show [<n>]'";
         Assert.Equal([$"line 8: {said}", $"line 9: {said}", $"line 10: {said}", $"line 11: {said}"], errors);
         Assert.Equal(
             [
@@ -398,14 +398,15 @@ public sealed class DevToolsTests : IDisposable
     }
 
     // Step C (2026-10-20): "pin" a cell right-clicked, "copy" a cell clicked (the clipboard left alone), "unpin" a pin or
-    // all, "pick" a "?" cell's n-th candidate, "rule" the copy's rule; a cell by its grid place or a slot by its key.
+    // all, "pick" a "?" cell's n-th candidate, "rule" the copy's rule; a cell by its grid place or a slot by its key. UI QA
+    // pass of the second round (F3, 2026-10-19): "show <n>" the n-th pinned line in the rail's foot clicked, from 1.
     [Fact]
     public void The_desk_step_pins_copies_picks_and_sets_the_rule()
     {
         var (steps, errors) = DevScript.Parse(string.Join('\n', "desk pin stash 8 0", "desk pin loadout Headwear", "desk copy backpack 4 1", "desk copy stash",
             "desk unpin stash 8 0", "desk unpin all", "desk unpin", "desk pick stash 4 1 2", "desk pick loadout headwear 3", "desk rule under:5",
-            "desk rule match", "desk rule over:40", "desk rule sideways", "desk pick stash 4 1 0", "desk unpin stash"));
-        Assert.Equal(3, errors.Count);
+            "desk rule match", "desk rule over:40", "desk rule sideways", "desk pick stash 4 1 0", "desk unpin stash", "desk show 2", "desk show 0"));
+        Assert.Equal(4, errors.Count);
         Assert.Equal(
             [
                 new DevScript.DeskStep(DevScript.DeskAct.Pin, 0, "stash", 8, 0), new DevScript.DeskStep(DevScript.DeskAct.Pin, 0, "loadout") { Slot = "headwear" },
@@ -416,6 +417,7 @@ public sealed class DevToolsTests : IDisposable
                 new DevScript.DeskStep(DevScript.DeskAct.Rule) { Rule = "under:5" }, new DevScript.DeskStep(DevScript.DeskAct.Rule) { Rule = "match" },
                 // A rule's amount is kept within 1 to 20.
                 new DevScript.DeskStep(DevScript.DeskAct.Rule) { Rule = "over:20" },
+                new DevScript.DeskStep(DevScript.DeskAct.ShowPin) { N = 2 },
             ],
             steps.Select(s => DevScript.DeskOf(s)!));
     }

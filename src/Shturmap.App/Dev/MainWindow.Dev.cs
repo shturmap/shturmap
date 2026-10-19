@@ -416,6 +416,15 @@ public sealed partial class MainWindow
             case DevScript.DeskAct.Show:
                 SetDesk(true, "dev");
                 return "desk: shown" + (_deskChosen ? "" : " (not: " + State + ")");
+            case DevScript.DeskAct.ShowPin:
+                // The n-th pinned line in the rail's foot clicked, from the top, as the pointer's click does.
+                if (!_deskChosen)
+                    return "desk: the desk isn't up";
+                if (step.N > _deskFootKeys.Count)
+                    return $"desk: no pinned line {step.N} in the rail's foot ({_deskFootKeys.Count} there)";
+                var line = _deskFootKeys[step.N - 1];
+                ShowDeskPin(line, "dev");
+                return $"desk: showed the pinned {line}";
             case DevScript.DeskAct.Rule:
                 SetDeskRule(Core.Desk.DeskCopyRule.Of(step.Rule), "dev");
                 return "desk: rule " + _deskRule.Format();
