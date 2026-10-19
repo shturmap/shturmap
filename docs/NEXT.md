@@ -6,6 +6,65 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-19: two symbols on one spot drift apart
+
+**The ask** (owner, 2026-10-17, with a screenshot of Woods kept outside the repository): "There is a bug when two items
+are close to each other and their repel-lines are parallel they get expanded every time when the user pans or zooms the
+camera." One of Woods' two Outskirts stood at the view's top left corner, outside the map, on a leader running across
+the whole view to its place by the sniper zone, the other's leader under it.
+
+**Built (2026-10-19).** Binding: DESIGN.md, "Map drawing" (*Settled once, and never further than 120 DIP from its
+place*; *Set apart, on leaders*), §8 "Developer aids" (`frames`: `--scene plan`, `--sway`, `--toward`).
+
+- The cause was the continued repel's bookkeeping, not its passes. Since 2026-10-15 a frame of a move goes on from the
+  last placement, each symbol found by its marker's id (`RepelPlacement.From`), and tarkov.dev gives two extracts one
+  id: Woods' Outskirts, a PMC's and a Scav's less than a metre apart (and its two UN Roadblocks). Both went on from the
+  first one's placement at every frame: they started on one spot, pushed each other out along one line (the parallel
+  leaders), and the first kept what it gained, 7.4 px a frame without end. Symbols with ids of their own on one spot
+  settle (a probe of 3,300 frames of glides, notches and pans: two on one spot, two 1.5 m apart, three with quests
+  round them; none grew). The placement now keys each symbol by its marker's id and kind, and by its turn among those
+  where even both are shared (`MapRenderer.RepelKeys`).
+- The bound the to-do asked for, kept as a backstop: no symbol stands further than 120 DIP from its place, centre to
+  place (`MapRenderer.LeaderMost`). In `Repel` the passes hold every symbol within it after each pass, the search for a
+  free spot looks no further, and where it finds no free spot within it, what still covers another is pushed only off
+  its neighbours' bodies, within it, as a move's frames do (left covering, the next frame of a move pushed it up to
+  22 px at once). 120 is twelve times `LeaderLeast`, about five times the least a symbol that leaves its place stands
+  off it (21 to 23 DIP). A fresh layout of the whole of Customs at 1600 × 1000, the busiest view measured, sets none
+  further than 110 px, so it holds nothing back there; it binds where the view packs a crowd tighter than its symbols
+  fit, the whole map at the smallest window, where the search for a free spot sent a symbol coming into view up to
+  360 px across the view. `frames customs --scene plan --sway 2 --viewport 500x481`: symbols further than 120 px off
+  their places in 1,249 symbol-frames before (the farthest 360.8 px), none after; set off their places by more than
+  3 px from one frame to the next 107 times before, 88 after (the largest change 4.3 px before, 5.9 after); no body
+  over another in either. Customs' glide at 1600 × 1000 (none over 3 px, the farthest 110.1 px) and the roll call at
+  the smallest window (359, 116.1 px) are the same as before.
+- The frames tool: `--scene plan` (the map as Plan shows it between raids, every extract, no list), `--sway [n]` (n
+  times back and forth, 4.5 s each: a glide in and out, three notches in and three out), `--toward <name>` (glide and
+  turn the wheel at that symbol's place); every summary names the farthest a symbol stood off its place, and with
+  `--sway` the farthest each time.
+- Tests: `SharedSpotFramesTests` (4). Two extracts with one made-up id on one spot, the same 1.5 m apart, and the two
+  with a transit on the spot, each with six quests round them, through six times back and forth (a glide in and out,
+  three notches in and three out, a pan out and back; 1,657 frames): never more than 2.5 times a leader's least
+  length off their places (53 px), never more than 3 px from one frame to the next, and from the second time on no
+  further than the time before and ending where it left them. Eighty quests on one spot: none further than
+  `LeaderMost` off its place. With the ids alone as keys the first three fail (120 px, held at the bound); without the
+  bound the last (133 px). `GlideFramesTests` unchanged and green.
+- Numbers, `shturmap-cli frames woods <out> --scene plan --sway 4 --toward Outskirts` (1,126 frames 16 ms apart,
+  1600 × 1000): the farther Outskirts stood off its place, time by time back and forth, 1,434, 2,861, 4,272 and 5,699 px
+  before; 21.2 px each time after. Symbols set off their places by more than 3 px from one frame to the next: 1,402 in
+  836 frames before, 3 after (in 3 frames). The farthest any symbol stood off its place after: 32.8 px.
+
+**Open.**
+
+- Two extracts with one id are tarkov.dev's doing; worth adding to the report of its extract defects ("To do later").
+  Elsewhere the app keys extracts by id too (the extract guide's end, `ExitsListed`): there two with one id take the
+  first's place or both; not looked at further.
+- Where the bound binds (the smallest window) a crowd's symbols stand closer: their collars may meet. The roll call at
+  the smallest window has 359 symbols set off their places by more than 3 px from one frame to the next (DESIGN.md's
+  measure of 2026-10-15 says 127): the same before and after this change, so something since then; not looked into.
+- No UI QA pass was run for this change (the coordinator's call); the two frames looked at (Woods, frame 059 of the
+  sway, before and after) show the pair on parallel leaders across the view before and on short leaders either side of
+  their spot after.
+
 ## 2026-10-17: the linked highlight breathes
 
 **The ask** (owner, 2026-10-17): the linked highlight "really helps pre-attentively highlight elements … However, the
@@ -2202,16 +2261,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
      three buttons on all 7, and Interchange's Saferoom and Reserve's D-2 and Bunker Hermetic Door list none, though
      the map places their switches (the ten gated extracts are kept by hand in `SwitchExits`).
 
-- **Two symbols on one spot drift apart with every pan or zoom** (owner, 2026-10-17, with a screenshot of Woods kept
-  outside the repository: "There is a bug when two items are close to each other and their repel-lines are parallel
-  they get expanded every time when the user pans or zooms the camera"). Seen on Woods' two Outskirts extracts, which
-  share a place: after some moving about, one of them stood at the view's far corner on a leader running across the
-  whole map. Likely cause: since 2026-10-15 a glide or pan continues the repel from the last frame (`MapScene.LastRepel`,
-  `RepelPlacement`, the 2 px push a frame, the free-spot search only for newcomers), so two bodies pushing each other
-  along the same line never settle and gain 2 px with every frame of every camera move, without a bound on the leader's
-  length. To do: cap the leader (a symbol never stands farther than some tens of DIP off its place), and let a pair that
-  shares a place settle once (or read as one cluster) instead of pushing on; a `frames` run with `--glide` and `--notch`
-  over Woods' Outskirts for the test.
+- **Two symbols on one spot drift apart with every pan or zoom** (owner, 2026-10-17): built, see "2026-10-19: two symbols
+  on one spot drift apart" at the top.
 
 - **A required weapon's icon is barely a weapon** (owner, 2026-10-17: "When a weapon is required for a quest, it shows
   just the icon for the weapon. For example, the Punisher - Part 1. This is technically the correct icon. However, weapons

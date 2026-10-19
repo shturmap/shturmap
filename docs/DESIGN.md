@@ -1624,7 +1624,8 @@ spawns below).
     yields and the one that matters more keeps its place (bosses, quests, ways out); of one rank, both yield alike.
     No symbol may stand on another's place either (ggrepel's point padding, 7 px beyond its own half width), so where
     two share a spot both step off it. A symbol that has to leave its place stands at least 10 px beyond its edge
-    from it and is joined to it by a **leader**: a hairline in the symbol's colour on a dark band, with a dot on a
+    from it (and never further than 120 DIP: below, *Settled once*) and is joined to it by a **leader**: a hairline in
+    the symbol's colour on a dark band, with a dot on a
     dark rim where it belongs (the opened stack's hairline of 2026-10-05, now always there). One only nudged (by
     less than about half its width) keeps to its place without a leader, and as the view zooms in and the places
     draw apart, each symbol comes back to its own and its leader goes. A corner badge (floor, count, OPT, "?")
@@ -1690,6 +1691,29 @@ spawns below).
     place by the same rule while the view moves, and
     settles once it is still (*Distances on the map*); so does a picked or pointed-at name its side (*Room for labels
     on the right*).
+  - **Settled once, and never further than 120 DIP from its place** (owner, 2026-10-17, with a screenshot of Woods:
+    "There is a bug when two items are close to each other and their repel-lines are parallel they get expanded every
+    time when the user pans or zooms the camera"; `MapRenderer.RepelKeys`, `LeaderMost`). While the view moves, each
+    symbol goes on from its own last placement, found by its marker's id and kind (and, where even both are another's,
+    by its turn among them). tarkov.dev gives two extracts one id (Woods' two Outskirts, a PMC's and a Scav's on one
+    spot; its two UN Roadblocks), and found by the id alone, both went on from the first one's placement at every frame
+    of a move: they pushed each other out along one line, up to 7.4 px a frame, and never settled, and after a few
+    glides one stood across the view on a leader (`shturmap-cli frames woods --scene plan --sway 4 --toward
+    Outskirts`: 1434 px off its place after the first time back and forth, 5699 px after the fourth; now 21 px each
+    time). Symbols on one spot settle once: from the second time on, the same moves draw them at the same offsets,
+    however often they are made (`SharedSpotFramesTests`). And no symbol stands further than 120 DIP from its place,
+    centre to place (`LeaderMost`: twelve times `LeaderLeast`, about five times the least a symbol that leaves its place
+    stands off it, 21 to 23 DIP), afresh or going on, whatever pushed it or wherever the search for a free spot would
+    send it: a fresh layout of the whole of Customs, the busiest map, at 1600 × 1000 sets none further than 110 px, so
+    where the view has room for its crowd the bound holds nothing back; where the view packs a crowd tighter than its
+    symbols fit (the whole map at the smallest window), the search sent a symbol coming into view up to 360 px across
+    it. The passes hold every symbol within the bound after each pass, and the search looks no further; where it finds
+    no free spot within it, what still covers another is pushed only off its neighbours' bodies, within the bound (their
+    collars may meet), as a move's frames do. In `shturmap-cli frames customs --scene plan --sway 2 --viewport 500x481`
+    symbols stood further than 120 px off their places in 1249 symbol-frames before and in none after, the farthest
+    360.8 px; set off their places by more than 3 px from one frame to the next 107 times before, 88 after (the largest
+    4.3 px before, 5.9 after); no body over another in either. Customs' glide at 1600 × 1000 and its roll call at the
+    smallest window (`--scene list-callout --viewport 500x481`) are unchanged.
   - Until 2026-10-06 **a stack opened where the pointer rested** (`MapScene.FanAt`): resting 0.35 s on a symbol
     another lay well over put every symbol touching it on a ring around its place, on a dark plate, each on a
     hairline to its own place. It needed the mouse, so it went with the leaders, which leave nothing stacked.
@@ -3433,7 +3457,7 @@ own place, leader, its ring's values and its name's face; per frame where the sc
 frame what changed: turns, rings over, moves, states, names turning bold; frame 000's bold names; then the checks: the
 largest move, anything off the list that animated, names bold before their extract was lit or struck out, the scale
 bar stepped up from a symbol, how often it changed place and in how many frames it held its place while the view
-moved, the first frame against the last). Three scenes: `list-read`, a list read in a PMC raid
+moved, the first frame against the last). Four scenes: `list-read`, a list read in a PMC raid
 (every other extract lit, two "??:??:??", the rest struck out, Scav extracts left out as a raid leaves them out, the
 position at the map's first PMC spawn or `--fix`, pinging), `whatsnew-extracts`, What's New's `extracts` preview
 as it is staged (a PMC raid's map, so without the Scav extracts, which it kept until 2026-10-15; no quests, no
@@ -3445,8 +3469,10 @@ the view starting at three times the whole map's zoom on the position and zoomin
 ring), so no frame zooms by the tenth past which symbols are laid out afresh. Its `frames.json` adds the flights
 (turn, lift-off, landing, from, where it landed), and `summary.txt` their lift-offs and landings and two checks: every
 landing is its ring's start with nothing lit before, and the view it zoomed out to holds every called extract and the
-player within the padding and the label room. Every scene leaves the Scav extracts out with `MapContent.InPmcRaid`, the
-rule GameSession and the app's PMC scenes hold in their own code. `--glide [ms]` moves the view as `MapView.AnimateView`
+player within the padding and the label room; and `plan`, the map as Plan shows it between raids (render's example
+quests and every extract, a PMC's, a Scav's and shared; no list, a position only with `--fix`). Every other scene leaves
+the Scav extracts out with `MapContent.InPmcRaid`, the rule GameSession and the app's PMC scenes hold in their own code.
+`--glide [ms]` moves the view as `MapView.AnimateView`
 does, from the whole map to three times the zoom on the position in 1.2 s (for `list-callout`, its zoom out), and lists
 the symbols whose offset from their own place changes by more than 3 px from one frame to the next, which the view's
 motion doesn't explain (while it moves a symbol goes a step of 2 px a frame toward its spot; "Map drawing", *Steady
@@ -3459,7 +3485,14 @@ the zoom buttons (1.5, 0.667) or a double-click (2) do (`WheelZoom.Step`; "Map d
 double-click zoom over 0.2 s*), about the position as a double-click there does (+ and − zoom about the view's middle,
 which only moves where the zoom centres), with [ms] the same step again that much later; drawn every 16 ms until it
 has landed, with the same checks (not with `--glide`, `--notch` or `list-callout`); `--every 33` draws it as at 30
-frames a second. With a moving view the checks also name the largest zoom from one frame to the next and count the
+frames a second. `--sway [n]` moves the view back and forth n times (4 by default, 4.5 s each): a glide in as `--glide`'s
+and one back out, then three notches in and three out, 300 ms apart, drawn every 16 ms with the same checks (not with
+`--glide`, `--notch`, `--step` or `list-callout`); `--toward <name>` glides and turns the wheel at the place of the first
+symbol of that name instead of the position. Every run's checks name the farthest a symbol stood off its place
+(`LeaderMost` bounds it), and with `--sway` the farthest each time back and forth, of any symbol and of the one
+`--toward` names (2026-10-19: two symbols on one spot drifted further with every move, "Map drawing", *Set apart, on
+leaders*: `frames woods --scene plan --sway 4 --toward Outskirts`).
+With a moving view the checks also name the largest zoom from one frame to the next and count the
 frames that zoom by a tenth or more, which lay the symbols out afresh. `ExitRingFramesTests` hold the ring to "Map
 drawing" the same way, on a made-up raid, `GlideFramesTests` the symbols on leaders in a glide, in the wheel's notches
 and in a double-click's and +'s steps, `WheelZoomTests` the notches' and the steps' zoom, and `ExitCallOutFramesTests`

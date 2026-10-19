@@ -83,9 +83,9 @@ switch (command)
                                             and the bosses it targets); --point-exit <extract name> draws it as
                                             pointing at that extract does (a gated one lights its switches, with
                                             the guide to the first)
-            shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>]
-                                [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]]
-                                [--viewport <W>x<H>]
+            shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout|plan] [--every <ms>]
+                                [--count <n>] [--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]
+                                | --sway [n]] [--toward <name>] [--viewport <W>x<H>]
                                             draw a map's animations headless, frame by frame: an extract list just
                                             read (list-read: every other extract lit, two "??:??:??", the rest struck
                                             out, at a PMC spawn or --fix; whatsnew-extracts: What's New's preview, no
@@ -99,6 +99,11 @@ switch (command)
                                             buttons and a double-click (2) do, and again [ms] later if given;
                                             list-callout: list-read's list called from the roll call's band, each
                                             extract flown from its row as the view zooms out (every 33 ms, 260 times);
+                                            plan: the map as Plan shows it between raids (every extract, no list, a
+                                            position only with --fix); --sway goes back and forth n times (4): a glide
+                                            in and back out, then 3 notches in and 3 out, 4.5 s each, and the summary
+                                            says how far off its place a symbol stood each time; --toward: glide and
+                                            turn the wheel at that symbol's place instead of the position;
                                             --viewport: the view's size instead of 1600x1000 (500x481: the map at
                                             the smallest window, 900x560)
             shturmap-cli watch [seconds]     run the companion headless and print what it sees
