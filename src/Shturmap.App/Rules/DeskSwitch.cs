@@ -9,6 +9,13 @@ public enum WindowState
     Raid,
 }
 
+/// <summary>How a reading's needed items are said: the one-line notice, or the SEEN IN YOUR STASH cue (an example only).</summary>
+public enum StashSeenSaid
+{
+    Notice,
+    Cue,
+}
+
 /// <summary>
 /// PLAN | DESK, the one choice of view (owner, 2026-10-19, from a panel: A1; docs/DESIGN.md §4, principle 3 and "Screen
 /// anatomy", *The stash desk*, *Its place*): the desk takes the map's place out of a raid; it opens by itself when a
@@ -35,6 +42,15 @@ public static class DeskSwitch
     /// any desk, nothing was seen (0).
     /// </summary>
     public static bool IsNew(int? reading, int seen) => reading is { } r && r > seen;
+
+    /// <summary>
+    /// How the needed items a menu screenshot showed are said (owner, 2026-10-19, after trying the desk: "It now conflicts
+    /// with the 'now seen in stash' animation"; decided: the desk's arrival is the feedback): a reading's by the one-line
+    /// notice ("Seen in your stash: 3 keys your quests need."), with the desk opening and the BRING rows' marks glowing in
+    /// as before; the SEEN IN YOUR STASH cue only as an example, What's New's preview of 0.5.0's line. Until 2026-10-19
+    /// the cue played for every reading, over the desk.
+    /// </summary>
+    public static StashSeenSaid StashSeen(bool example) => example ? StashSeenSaid.Cue : StashSeenSaid.Notice;
 
     /// <summary>What ← or → on the switch picks (owner, 2026-10-20: the switch a primary control, reached by the keyboard):
     /// ← PLAN (false), → DESK (true), any other key nothing; as Windows' virtual-key codes.</summary>

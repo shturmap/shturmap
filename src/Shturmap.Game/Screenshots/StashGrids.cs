@@ -24,7 +24,11 @@ internal sealed record StashGrid(int X0, int Y0, int Cols, int Rows, StashGridPl
 
 /// <summary>A rectangle of cells with one item in it: its cell at the top left and its size in cells. Odd: the cells
 /// joined don't make a rectangle (a hover highlight that merged two items, a wide item cut into cells).</summary>
-internal sealed record StashRect(int I0, int J0, int W, int H, bool Odd);
+internal sealed record StashRect(int I0, int J0, int W, int H, bool Odd)
+{
+    /// <summary>An odd shape's own cells, as (i, j) in the grid (its bounding box may take others' cells).</summary>
+    public IReadOnlyList<(int I, int J)> Cells { get; init; } = [];
+}
 
 /// <summary>
 /// Finds the game's item grids in a menu screenshot by their lines, and the item rectangles in them. The game draws a
@@ -411,7 +415,8 @@ internal static class StashGrids
             {
                 int i0 = g.Min(k => k % grid.Cols), j0 = g.Min(k => k / grid.Cols);
                 int w = g.Max(k => k % grid.Cols) - i0 + 1, h = g.Max(k => k / grid.Cols) - j0 + 1;
-                return new StashRect(i0, j0, w, h, g.Count() != w * h || w > 6 || h > 6);
+                var odd = g.Count() != w * h || w > 6 || h > 6;
+                return new StashRect(i0, j0, w, h, odd) { Cells = odd ? g.Select(k => (k % grid.Cols, k / grid.Cols)).ToList() : [] };
             })
             .OrderBy(r => r.J0).ThenBy(r => r.I0).ToList();
     }

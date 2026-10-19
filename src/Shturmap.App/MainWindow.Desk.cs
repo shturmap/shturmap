@@ -26,11 +26,11 @@ public sealed partial class MainWindow
     private bool _deskBoardDue = true;
     private IReadOnlySet<string> _deskEntering = new HashSet<string>();
 
-    // The rail's cards: the pinned ones, newest first; the cell pointed at; the copy's rule; what each card was made of.
+    // The rail's cards: the cell pointed at; the pinned ones, newest first; the copy's rule; what each card was made of.
     private IReadOnlyList<DeskPin> _deskPins = [];
     private DeskCellKey? _deskPointed;
     private DeskCopyRule _deskRule = DeskCopyRule.Default;
-    private (DeskCellKey Key, int Version)? _deskPointedShown;
+    private (DeskCellKey Key, int Version, bool Pinned)? _deskPointedShown;
     private int _deskVersion;
 
     // The made-up desk's reading and the picks made on its cards (a developer run's; a real page keeps its picks in desk.json).
@@ -181,37 +181,55 @@ public sealed partial class MainWindow
 
     public Visibility DeskSwitchBar(bool deskUp, bool forDesk) => deskUp == forDesk ? Visibility.Visible : Visibility.Collapsed;
 
-    // ---- the rail: the pinned cards, then the card of the cell pointed at ----
+    // ---- the rail: the card of the cell pointed at, then the pinned cards ----
 
     // The pointer on a cell: its card in the rail, until another cell is pointed at, so the way from the page to the rail
     // doesn't lose it.
     private void OnDeskCellPointed(DeskCellView cell)
     {
-        if (!_deskChosen)
+        if (!_deskChosen || _deskPointed == cell.Key)
             return;
         _deskPointed = cell.Key;
-        RenderDeskPointed();
+        RenderDeskRail();
     }
 
-    /// <summary>The rail anew: the pinned cards, newest on top, then the pointed cell's card, or the rail's hint.</summary>
+    /// <summary>
+    /// The rail anew (QA pass of step C, F2: the pointed card first, so pins never push it out of the smallest rail): the
+    /// pointed cell's card, or the rail's hint; under it the pinned cards, newest on top, each one compact line (icon, name,
+    /// gold figure) while a pointed card stands above them, whole while none does. A pinned cell pointed at has its card on
+    /// top, pinned, and not again among the pins.
+    /// </summary>
     private void RenderDeskRail()
     {
         DeskPinnedHost.Children.Clear();
+        RenderDeskPointed();
         if (_deskShown is { } view && _deskChosen)
         {
+            var compact = DeskCardHost.Child is not null;
             foreach (var pin in _deskPins)
             {
-                if (DeskPins.Find(view.Sheet, pin.Key) is { } found)
+                if (pin.Key == _deskPointed && compact || DeskPins.Find(view.Sheet, pin.Key) is not { } found)
+                    continue;
+                if (compact)
+                {
+                    var key = pin.Key;
+                    var words = DeskCards.Of(found.Region.Region, found.Cell, DeskContext(view));
+                    DeskPinnedHost.Children.Add(DeskCardView.CompactLine(words, () =>
+                    {
+                        Study.Ui("desk.pin.show");
+                        _deskPointed = key;
+                        RenderDeskRail();
+                    }));
+                }
+                else
                     DeskPinnedHost.Children.Add(DeskCardFor(view, found.Region.Region, found.Cell, pinned: true));
             }
         }
         StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
-        _deskPointedShown = null;
-        RenderDeskPointed();
     }
 
-    // The pointed cell's card, made again only when the cell or what the card says changed; none for a pinned cell (its
-    // card stands above), the hint while nothing is pointed at.
+    // The pointed cell's card, made again only when the cell or what the card says changed (a pinned cell's framed as
+    // pinned), the hint while nothing is pointed at.
     private void RenderDeskPointed()
     {
         if (_deskShown is not { } view || !_deskChosen || _deskPointed is not { } key || DeskPins.Find(view.Sheet, key) is not { } found)
@@ -223,16 +241,11 @@ public sealed partial class MainWindow
             return;
         }
         DeskRailLine.Visibility = Visibility.Collapsed;
-        if (DeskPins.IsPinned(_deskPins, key))
-        {
-            DeskCardHost.Child = null;
-            _deskPointedShown = (key, _deskVersion);
+        var pinned = DeskPins.IsPinned(_deskPins, key);
+        if (_deskPointedShown == (key, _deskVersion, pinned) && DeskCardHost.Child is not null)
             return;
-        }
-        if (_deskPointedShown == (key, _deskVersion) && DeskCardHost.Child is not null)
-            return;
-        DeskCardHost.Child = DeskCardFor(view, found.Region.Region, found.Cell, pinned: false);
-        _deskPointedShown = (key, _deskVersion);
+        DeskCardHost.Child = DeskCardFor(view, found.Region.Region, found.Cell, pinned);
+        _deskPointedShown = (key, _deskVersion, pinned);
     }
 
     // A cell's card, its history asked for once when it first shows the item.
@@ -346,8 +359,11 @@ public sealed partial class MainWindow
     /// </summary>
     private DeskCopy CopyDeskCell(DeskCellView cell, string how, bool clipboard = true)
     {
-        _deskPointed = cell.Key;
-        RenderDeskPointed();
+        if (_deskPointed != cell.Key)
+        {
+            _deskPointed = cell.Key;
+            RenderDeskRail();
+        }
         var view = _deskShown;
         var item = cell.Sheet.Cell.ItemId;
         var copy = DeskCopies.Of(cell.Sheet.Cell, item is null || view is null ? null : view.FactsOf(item), view?.Flea ?? DeskFleaRules.Default, _deskRule);
@@ -405,7 +421,7 @@ public sealed partial class MainWindow
 
     // Settings' row "Flea price to copy": the same − and + as the card's plate.
     private void ShowCopyRuleSetting() =>
-        SettingsCopyRuleHost.Child = DeskCardView.RuleStepper(DeskCards.RuleWords(_deskRule), step => SetDeskRule(_deskRule.Step(step), "settings"));
+        SettingsCopyRuleHost.Child = DeskCardView.RuleStepper(_deskRule, step => SetDeskRule(_deskRule.Step(step), "settings"));
 
     // ---- a "?" cell's pick ----
 

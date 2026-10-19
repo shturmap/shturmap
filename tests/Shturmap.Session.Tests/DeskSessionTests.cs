@@ -87,15 +87,18 @@ public class DeskSessionTests
         Assert.True(desk.First);
         Assert.Equal(["stash"], desk.Changed);
         var cells = desk.Sheet.Regions.Single().Cells;
-        // Two bottles at the flea's net after the fee, more than the trader's 5,000 each.
+        // Two bottles at the flea's listing price, its net after the fee more than the trader's 5,000 each (owner,
+        // 2026-10-19: the cell shows what the flea lists at; the net is the card's).
         var water = cells.Single(c => c.Cell.ItemId == Water).Figure!;
         Assert.Equal(DeskSource.Flea, water.Source);
-        Assert.Equal(2 * 20_000 - DeskValues.Fee(10_000, 20_000, 2, new DeskFleaRules(0.05, 0.05)), water.Value);
+        Assert.Equal(2 * 20_000, water.Value);
+        Assert.Equal(2 * 20_000 - DeskValues.Fee(10_000, 20_000, 2, new DeskFleaRules(0.05, 0.05)), water.FleaNet);
         // The wallet: no offers, its trader's price, its contents unseen: "+" on it and on the stash's total.
         var wallet = cells.Single(c => c.Cell.ItemId == Wallet);
         Assert.Equal((DeskSource.Trader, true), (wallet.Figure!.Source, wallet.Figure.Plus));
         Assert.True(desk.Sheet.Totals.StashPlus);
-        Assert.Equal(water.Value + 900, desk.Sheet.Totals.Stash);
+        // The total counts what the sales bring: the water's net, the wallet's trader.
+        Assert.Equal(water.FleaNet!.Value + 900, desk.Sheet.Totals.Stash);
         Assert.True(File.Exists(Path.Combine(rig.AppFolder, "desk.json")));
 
         // The same screenshot again changes nothing; a count that changed opens the stash again.

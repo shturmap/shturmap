@@ -86,7 +86,7 @@ Shturmap works only from files the game writes for you and from public community
 - where the game is installed: the Windows uninstall entry, Steam's library list, and the games folder from the
   Battlestate Games launcher's settings (nothing else from that file);
 - quest, map and item data from tarkov.dev (while you use the desk, the item file with its prices again when it is
-  over an hour old: at most once an hour), and the community map artwork.
+  over ten minutes old: at most every ten minutes, when a screenshot is read), and the community map artwork.
 
 It never:
 

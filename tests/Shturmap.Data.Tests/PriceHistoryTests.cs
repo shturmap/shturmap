@@ -72,4 +72,33 @@ public class PriceHistoryTests : IDisposable
         Assert.Equal(2, history.Points.Count);
         Assert.Equal(12, history.Points[1].Offers);
     }
+
+    // The desk's prices (owner, 2026-10-19, after the test: "Maybe we need to fetch the prices more often then?"): when a
+    // reading arrives, the item file is asked for again with its ETag once the saved copy is over ten minutes old (an hour
+    // until then); a younger copy is used as it is. Never on a timer: the age is asked only when a reading arrives.
+    [Fact]
+    public async Task The_desks_item_file_is_asked_for_again_after_ten_minutes()
+    {
+        Assert.Equal(TimeSpan.FromMinutes(10), GameDataLoader.DeskPricesAge);
+        var server = new Server();
+        var http = new CachedHttp(CachedHttp.CreateClient(server), _folder);
+        var ct = TestContext.Current.CancellationToken;
+        var uri = new Uri("https://json.tarkov.dev/pve/items");
+        await http.GetAsync(uri, "pve_items.json", GameDataLoader.DeskPricesAge, ct, json: true);
+        Assert.Single(server.Asked);
+        void FetchedAgo(int minutes)
+        {
+            var meta = Path.Combine(_folder, "pve_items.json.meta.json");
+            var node = JsonNode.Parse(File.ReadAllText(meta))!;
+            node["FetchedAt"] = DateTimeOffset.UtcNow.AddMinutes(-minutes).ToString("o");
+            File.WriteAllText(meta, node.ToJsonString());
+        }
+        FetchedAgo(9);
+        await http.GetAsync(uri, "pve_items.json", GameDataLoader.DeskPricesAge, ct, json: true);
+        Assert.Single(server.Asked);
+        FetchedAgo(11);
+        await http.GetAsync(uri, "pve_items.json", GameDataLoader.DeskPricesAge, ct, json: true);
+        Assert.Equal(2, server.Asked.Count);
+        Assert.Contains("\"h1\"", server.Asked[1].Headers.IfNoneMatch.ToString());
+    }
 }

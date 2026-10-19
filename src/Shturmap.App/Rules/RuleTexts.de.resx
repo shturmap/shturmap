@@ -433,8 +433,28 @@
     <comment>en: {change} · 48 H</comment>
   </data>
   <data name="DeskCardFleaNet" xml:space="preserve">
-    <value>Flea netto {net} · Gebühr {fee}</value>
-    <comment>en: Flea net {net} · fee {fee}</comment>
+    <value>Flea netto {net}</value>
+    <comment>en: Flea net {net}</comment>
+  </data>
+  <data name="DeskCardNets" xml:space="preserve">
+    <value>Bringt {net} nach Gebühr</value>
+    <comment>en: Nets {net} after the fee</comment>
+  </data>
+  <data name="DeskCardFee" xml:space="preserve">
+    <value>Gebühr {fee}</value>
+    <comment>en: fee {fee}</comment>
+  </data>
+  <data name="DeskCardWeekMark" xml:space="preserve">
+    <value>7 T</value>
+    <comment>en: 7 D</comment>
+  </data>
+  <data name="DeskRuleLowerTip" xml:space="preserve">
+    <value>Niedriger: {rule}</value>
+    <comment>en: Lower: {rule}</comment>
+  </data>
+  <data name="DeskRuleHigherTip" xml:space="preserve">
+    <value>Höher: {rule}</value>
+    <comment>en: Higher: {rule}</comment>
   </data>
   <data name="DeskCardCopyHead" xml:space="preserve">
     <value>EIN KLICK KOPIERT</value>
@@ -453,12 +473,12 @@
     <comment>en: {amount}% OVER</comment>
   </data>
   <data name="DeskCardCopies" xml:space="preserve">
-    <value>Kopiert {price} · bringt {net} nach Gebühr</value>
-    <comment>en: Copies {price} · nets {net} after the fee</comment>
+    <value>Kopiert {price}</value>
+    <comment>en: Copies {price}</comment>
   </data>
   <data name="DeskCardOverBest" xml:space="preserve">
-    <value>Kopiert {price}, über dem besten Netto: bei {best} bringt es {bestNet}, bei diesem {net}</value>
-    <comment>en: Copies {price}, over the best net: at {best} it nets {bestNet}, at this {net}</comment>
+    <value>Über dem besten Netto: bei {best} bringt es {bestNet}, bei diesem {net}</value>
+    <comment>en: Over the best net: at {best} it nets {bestNet}, at this {net}</comment>
   </data>
   <data name="DeskCardTraderPaysMore" xml:space="preserve">
     <value>{trader} zahlt mehr · {price}. Ein Klick kopiert nichts.</value>

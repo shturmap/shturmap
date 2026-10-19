@@ -1,6 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
+using Shturmap.App.Rules;
 using Shturmap.Core.Planning;
 using Shturmap.Core.Stash;
 using Shturmap.Data.TarkovDev;
@@ -10,13 +11,12 @@ namespace Shturmap.App;
 
 // SEEN IN YOUR STASH (owner, 2026-10-11: "a little eyecandy animation when the app recognises the player updates the
 // stash to reflect the player's action and give proper feedback and look cool visually"; docs/DESIGN.md §4,
-// principle 11 and "What you have"): a menu screenshot showed items the quests need, and the cue pictures them under
-// its title, each with the count seen, under the stash glyph stamped in as QUEST COMPLETE's check is. A stash is
-// paged through in a run of screenshots, so a reading that comes while the cue is up joins it: its new items come
-// in after the ones there, the stamp pops again, and the cue stays a little longer. Nothing for a reading that
-// showed none (silence stays honest). While a replay plays or QUEST COMPLETE is up, the one-line notice says it
-// instead: neither is cut for it. On the rail and the quest card the marks that just arrived glow in by themselves
-// (Controls.Glow), from the snapshot that brought them.
+// principle 11 and "What you have"): a menu screenshot showed items the quests need. Since 2026-10-19 (owner, after
+// trying the desk: "It now conflicts with the 'now seen in stash' animation"; the desk's arrival is the feedback) a
+// reading says them in the one-line notice, and the cue plays only as What's New's example of 0.5.0's line: it pictures
+// them under its title, each with the count seen, under the stash glyph stamped in as QUEST COMPLETE's check is. On the
+// rail and the quest card the marks that just arrived glow in by themselves (Controls.Glow), from the snapshot that
+// brought them.
 public sealed partial class MainWindow
 {
     // The items the cue on screen pictures, and until when it stays.
@@ -66,16 +66,17 @@ public sealed partial class MainWindow
     private const string OperationalGlyph = "";
 
     /// <summary>
-    /// A SEEN IN YOUR STASH cue arrived. True when ShowCue has nothing more to do: it joined the cue on screen, or
-    /// the notice said it because a replay plays, QUEST COMPLETE or the cue of the tasks read is up, or the tour shows its
-    /// own cue (neither cue of the player's screenshots is cut for the other).
+    /// A SEEN IN YOUR STASH cue arrived. True when ShowCue has nothing more to do: a reading's items are said by the
+    /// notice, the desk opening as the feedback (owner, 2026-10-19: the cue conflicted with the desk's arrival;
+    /// Rules.DeskSwitch.StashSeen); the example (What's New's preview) joined the cue on screen.
     /// </summary>
     private bool StashSeenHandled(ViewCue cue, bool example)
     {
         var items = cue.Kit ?? [];
-        if (!example && (_replay is not null || CompletedShowing || TasksShowing || _tourCue))
+        if (DeskSwitch.StashSeen(example) == StashSeenSaid.Notice)
         {
             ShowNotice(StashCueWords(items, cue.KitMore).Notice);
+            Study.Ui("stash.notice", ("items", items.Count + cue.KitMore));
             return true;
         }
         if (!StashShowing)

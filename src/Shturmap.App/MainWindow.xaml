@@ -981,12 +981,13 @@
                        Style="{StaticResource NoteText}" Margin="0,16,0,0" />
 
             <!-- DESK: the rail is the desk's cards (docs/DESIGN.md §4, *The stash desk*, *Its place*, *The card*, *The click*;
-                 step C, 2026-10-20): the pinned ones, newest on top, then the card of the cell pointed at, until another
-                 cell is pointed at, or the rail's hint (MainWindow.Desk, Controls.DeskCardView). -->
+                 step C, 2026-10-20; the order since the QA pass of step C, F2): the card of the cell pointed at, until
+                 another cell is pointed at, or the rail's hint; then the pinned ones, newest on top, one line each while a
+                 pointed card stands above them (MainWindow.Desk, Controls.DeskCardView). -->
             <StackPanel x:Name="DeskRail" Visibility="{x:Bind ShownIfTrue(ViewModel.DeskUp), Mode=OneWay}" Margin="0,16,0,0" Spacing="8">
-              <StackPanel x:Name="DeskPinnedHost" Spacing="8" />
               <TextBlock x:Name="DeskRailLine" Style="{StaticResource NoteText}" Text="{x:Bind local:ViewTexts.DeskRailHint}" />
               <Border x:Name="DeskCardHost" HorizontalAlignment="Left" />
+              <StackPanel x:Name="DeskPinnedHost" Spacing="8" />
             </StackPanel>
 
             <!-- PLAN -->

@@ -210,8 +210,9 @@ levels from the quest dependency tree, NOW (an active quest's BRING needs the it
 unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
 (the logs don't say its level, and hideout tracking stays a not-goal, §1), each with its found-in-raid flag (owner,
 2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The page in hand is kept in
-`desk.json` and priced from tarkov.dev's item file, asked for again at most once an hour while the desk is used (owner,
-2026-10-19: "Accept, once an hour"; §3). The boundary widens for the desk alone, and no further (and, decided the same
+`desk.json` and priced from tarkov.dev's item file, asked for again at most every ten minutes while the desk is used
+(owner, 2026-10-19: "Accept, once an hour"; then, after trying the desk the same day: "Maybe we need to fetch the prices
+more often then?"; §3). The boundary widens for the desk alone, and no further (and, decided the same
 day, for the in-raid glance: "Which pictures", below):
 
 - **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
@@ -256,7 +257,13 @@ day, for the in-raid glance: "Which pictures", below):
   container's own slot the first under BACKPACK, TACTICAL RIG and POUCH; a compartment the column's scrolling cuts is
   left out (the page keeps what it had); a window by its title bar (the magnifier before the title, sort and close
   after it, or the title's size: 15 px at 1440p, a label 11 to 14) over compartments of its own, or by its grid's
-  two-pixel lines when no title is read (its search field open: "ITEM SEARCH"); what a window or a toast covers is left
+  two-pixel lines when no title is read (its search field open: "ITEM SEARCH"); a window's lattice moved onto the lines
+  between its cells, within a sixth of a cell, and the frame found a few pixels off it taken as the same compartment,
+  never a second (the owner's test of 2026-10-19: the Keys window's lattice stood on the window's outline 6 px left of
+  its cells; after the game's SORT its 71 keys read as one odd shape, and before it the frame beside the lattice read
+  the keys once and a "?" across the other; two compartments of a region never overlap, so one lying over another is
+  read once); a shape whose label fits nothing (a hover highlight or light art hid the lines between its items) is
+  read cell by cell, an item of one cell where its label fits one. What a window or a toast covers is left
   unread, and a cell running under it with it. Where the grid's lines split an item, its label at the top right claims
   the cells its footprint takes from there when no other label fits in them; where a label fits items of two
   footprints and both fit there, the cell is "one of N" over both. A short label (three letters or fewer) is read once
@@ -283,8 +290,8 @@ day, for the in-raid glance: "Which pictures", below):
 - **The player's say:** the menu screenshots' one tick, its words widened for the desk (2026-10-19, after step B part
   1; the desk's panel had left them out): "Read your stash, gear and tasks from menu screenshots" (the GEAR tab is the
   screen the desk adds; its prices aren't read from the picture, so the words don't name them). Its note adds that the
-  desk shows what each item is worth from tarkov.dev's prices, fetched again at most once an hour when a screenshot is
-  read (§3), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
+  desk shows what each item is worth from tarkov.dev's prices, fetched again at most every ten minutes when a screenshot
+  is read (§3; once an hour until 2026-10-19), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
   opened, for the desk either. Its note, the README and PRIVACY.md say what the desk reads, keeps and fetches; help with
   the desk's view, the website when its media are next made.
 
@@ -401,14 +408,18 @@ quoting it anywhere new.
     (those items, never the catalogue; the exception below took its place), and an item's price history
     (json.tarkov.dev's `/{mode}/prices/{id}`) when its card first shows it, each with its ETag, so an unchanged answer
     costs a few hundred bytes. Still never on a timer: a page left open isn't refreshed, and the card says its prices'
-    age ("Prices 4 min old · tarkov.dev"). Everything else keeps the ages above. Its requests and bytes per player are
+    age ("Prices 4 min old · tarkov.dev"), counted from tarkov.dev's scan of the item, the item file's `updated` (owner,
+    2026-10-19: the Dorm 104 key scanned 17:38, the file had at 18:14, the card said "8 min old" at 18:22; until then
+    from when the file was had). Everything else keeps the ages above. Its requests and bytes per player are
     counted and said to the owner before it is built (the rule at the end of this list). **The exception: the item
-    file, hourly while the desk is used** (owner, 2026-10-19: "Accept, once an hour", on the count below; built in step
-    B part 1, `GameSession.RefreshDeskPrices`). json.tarkov.dev has no price file per item (the GraphQL API that
+    file, at most every ten minutes while the desk is used** (owner, 2026-10-19: "Accept, once an hour", on the count
+    below; built in step B part 1, `GameSession.RefreshDeskPrices`; then, after trying the desk the same day: "Maybe we
+    need to fetch the prices more often then?": tarkov.dev scans every 5 minutes and caches 5, so ten minutes). json.tarkov.dev has no price file per item (the GraphQL API that
     answers per item was down all of 2026-10-19), so a desk reading asks for the whole item file again with its ETag
-    when the saved copy is over an hour old (`GameDataLoader.DeskPricesAge`): at most one request an hour of desk use,
-    a few hundred bytes when unchanged, about 1.4 MB compressed when it changed (it changes every few minutes, so in
-    practice once an hour of use). Nothing is asked per item for a reading's prices, and no picture but the page's
+    when the saved copy is over ten minutes old (`GameDataLoader.DeskPricesAge`; an hour until 2026-10-19): at most six
+    requests an hour of desk use, a few hundred bytes when unchanged, about 1.4 MB compressed when it changed (it changes
+    every few minutes, so in practice about 1.4 MB a reading ten minutes after the last, some 8 MB an hour of steady
+    use). Nothing is asked per item for a reading's prices, and no picture but the page's
     cells' grid images, fetched and kept as BRING's are today (*Grid images*, below). **The history is built** (step C,
     2026-10-20; `GameDataLoader.LoadPriceHistoryAsync`, `GameSession.DeskHistoryAsync`): asked for when a card first
     shows the item, one file per item from json.tarkov.dev (`{"data":[{priceMin, price, offerCount, timestamp}, …]}`, a
@@ -701,9 +712,13 @@ quoting it anywhere new.
     it: its new items come in after the ones there, a newer count replaces the shown one, the line counts them all,
     the stamp pops again, 5 s more, 12 s at most (`MainWindow.StashCue`). Nothing for a reading that showed none:
     silence stays honest. While a replay plays, QUEST COMPLETE is up or the tour shows its own cue, the one-line
-    notice says it instead ("Seen in your stash: 3 keys your quests need."): none of those is cut for it. On the rail
-    and the quest card the marks that just arrived glow in by themselves, from the snapshot that brought them: a gold
-    copy of the mark's line over the ink one, fading out over 1.2 s so the gold eases to ink, the need cell's bar the
+    notice says it instead ("Seen in your stash: 3 keys your quests need."): none of those is cut for it. **Since
+    2026-10-19 the desk's arrival is the feedback** (owner, after trying the desk: "It now conflicts with the 'now seen
+    in stash' animation"; decided the same day): a menu screenshot read opens the desk (§4, *The stash desk*), and the
+    needed items it showed are said by that one-line notice, every time; the cue plays only as What's New's example of
+    0.5.0's line (`Rules.DeskSwitch.StashSeen`; the developer script's `stash` gives the notice, as a reading does). On
+    the rail and the quest card the marks that just arrived glow in by themselves, from the snapshot that brought them: a
+    gold copy of the mark's line over the ink one, fading out over 1.2 s so the gold eases to ink, the need cell's bar the
     same, and the row flashes once, faintly (`Controls.Glow`); with animation effects off the mark simply stands.
     **YOUR EXTRACTS THIS RAID**, the extract list's roll call (owner, 2026-10-15, §1's fourth exception; from a panel
     of four, 2026-10-15: A, "Roll call, then fly-out"): when a screenshot taken in the last 30 s showed the game's
@@ -1025,8 +1040,9 @@ same day, by rendering them side by side:
 - **The stash desk's marks** (owner, 2026-10-19, from a panel: B1; "Screen anatomy", *The stash desk*). The **keep
   notch** at a desk cell's upper left is a need to keep the item, in three weights: a filled corner triangle (now), an
   open triangle (next), a corner bracket (later); amber for a quest, the filled triangle in ink for a hideout module;
-  nowhere else. **"~"** before a price: an estimate from condition, scaled to the condition a cell prints or, where it
-  prints none, at full condition (the addendum of 2026-10-19, Da; until then "it assumes full condition"). **"+"** after
+  nowhere else. **"~"** before a price: an estimate from condition, scaled to the condition a cell prints below full or,
+  where it prints none, at full condition (the addendum of 2026-10-19, Da; until then "it assumes full condition"; a
+  full print drops it since the owner's test the same day, armour's aside). **"+"** after
   a figure, a new mark (the addendum, C1a): "at least this, more inside", a container's contents or a weapon's mods
   unseen, and a total with such a cell in it. The sign also starts a change ("+8 %") and BRING's "+N", both "more",
   always before a figure there. Not a dashed frame: dashed stays "old" (a dashed ring is an old position, "Map
@@ -1865,26 +1881,31 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     `Raised` (a primary control across the rail since 2026-10-20, *As built*; until then beside the MAP list, 11 px).
     The desk opens by itself when a stash or inventory screenshot is read in the menus, and is left by the
     switch. A raid loading always takes the window back to the raid view, with RAID LOADING's cue and no click
-    (principles 1 and 3); the desk keeps its page for next time. The MAP list and the trader strip stay. **The cells scale with the desk's width** (owner, 2026-10-20: "We should
-    utilize the whole screen, otherwise it will be hard to read"; the rail stays for the cards; `Rules.DeskPageRules.Layout`):
-    40 to 80 DIP in steps of 8 (each a whole number of pixels at every Windows scale from 100 to 200 %), the largest at
-    which the page's widest row of regions fits the desk: the game's two columns, the gear and the stash side by side,
-    where both fit at 56 DIP or more, else one column. The item cell's 40 DIP at 900×560 (its desk 516 DIP across; a stash
-    page of 10 × 11 fits, the stash alone: with the gear above it, the page scrolls unless the gear is folded; *What it
-    mirrors*, below); one column at 48 from a desk 517 across, up to 80 from 837; two columns at 56 from about 1040 (the
-    made-up desk's, whose gear column holds POCKETS and SPECIAL SLOTS side by side), 64 at 1600×900 (1216), 80 from about
-    1450, a 2560 monitor's. Where the second column comes in the cells step down (a desk 837 to 1037 across stands in one
-    column at 80, one 1038 across in two at 56): the stash beside the gear, unscrolled, is worth more than the size. The
-    loadout's slot cells (two cells a slot, four a weapon) and the regions' heads grow with them (the heads 11 px at 40 and
-    48, 12 at 56 and 64, 13 at 72 and 80), and so do the marks (*The cell*, *As built*): the figure 10.5, 11, 12, 13, 14
-    and 15 px, the count and the change 10, 10.5, 11.5, 12.5, 13.5 and 14.5, the source's glyph 9 to 14 DIP, a trader's
-    portrait 14 at 56 to 20 at 80, the notch and the "?" plate 11 and 12 DIP up to 56 and a DIP more a step; from 56 the
-    change stands as a figure. Until 2026-10-20: 40 DIP, 56 from a desk 600 DIP across, two columns from 980. Over the grids one
+    (principles 1 and 3); the desk keeps its page for next time. The MAP list and the trader strip stay. **The cells fill the desk** (owner, 2026-10-19, after trying step C: "there is a
+    lot of wasted screen space … Find the optimal solution"; the coordinator's rule; the rail stays for the cards;
+    `Rules.DeskPageRules.Layout`, `Arrange`): the cell is the largest size from 40 to 128 DIP (twice the art's own
+    64 px) in steps of 8 (each a whole number of pixels at every Windows scale from 100 to 200 %) at which the page's
+    widest row fits the desk's width and its tallest column the desk's height, the page flowed into columns: the gear's
+    regions in reading order down a column and on into the next where the desk's height ends (a row of POCKETS and
+    SPECIAL SLOTS kept whole), the stash heading a column of its own right of the gear, and what follows the stash (its
+    windows, the windows attached to none) in the shortest column beside it (the gear's last, the stash's, or one after)
+    where it fits; else everything in one column. What is folded counts as its fold line, so a page folded to what a
+    reading changed takes larger cells than one read whole, and a name opened from a fold line may set them smaller. Only
+    where even 40 doesn't fit the height does the page scroll (at 40, the gear's one column left of the stash's where
+    both fit the width). Measured on the layout rule (`DeskPageRulesTests`) and the snapshots of 2026-10-19: the owner's
+    page after the Keys window (the gear folded, the stash of 10 × 13 and the Keys window of 11 × 7 open) at 96 on a
+    2560 monitor's desk (2176 × 1330 DIP), the stash filling the height and the window beside it, at 48 at 1600×900
+    (1216 × 760), at 40 in one column at 900×560 (516 × 440), scrolling; the made-up desk read whole (every region open)
+    at 80 in three columns at 2544×1401 (the gear's two and the stash's), at 40 in three at 1600×900, unscrolled. Until
+    2026-10-19 the width alone (owner, 2026-10-20: "We should utilize the whole screen"): 40 to 80 DIP, the gear and the
+    stash two columns from 56, 64 at 1600×900 and 80 at a 2560 monitor's, scrolling, a third of its desk empty; until
+    2026-10-20: 40 DIP, 56 from a desk 600 DIP across, two columns from 980. Over the grids one
     head line in muted capitals, the totals and the keeps (*The head line and the fold*, below; until the addendum one
     total, "STASH · 6.84 M ₽ · KEEP 3 · 2 · 4"). When it opens by itself, its page coming in says so (*Fun*, below);
     how that meets SEEN IN YOUR STASH, which pictures a reading's quest items over the map (principle 11), was not on
-    the panel and is settled with step B: the cue stays as it is, over the desk's page (*As built*). Built (step B,
-    2026-10-19, part 2: the view).
+    the panel and was settled with step B (the cue over the desk's page), then by the owner after trying it (2026-10-19:
+    "It now conflicts with the 'now seen in stash' animation"): the desk's arrival is the feedback, and a reading's needed
+    items are said by the one-line notice (principle 11). Built (step B, 2026-10-19, part 2: the view).
   - **What it mirrors** (the owner's notes, and five screenshots of 2026-10-19 (GEAR tab), §2; the regions' layout
     from the addendum, A(2)). Every grid of the screenshot, each under its own head, stacked in reading order in one
     column, 400 DIP at the smallest window: LOADOUT, then the middle column's regions in the game's order, TACTICAL RIG
@@ -1916,9 +1937,21 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       line says so. **A weapon's mods** are unseen the same way: its figure is the bare gun's, with the "+".
     The desk never guesses contents, and a total counts only the cells read. The mirror is drawn from catalogue art
     (tarkov.dev's grid images, §3) at the positions and footprints read; no pixel of the screenshot is kept.
+    **A blank reading never replaces a good one** (the owner's test of 2026-10-19: the Keys window, read whole at 20:21,
+    read after the game's SORT as one "?" across six cells, which took the window's place and its keys out of the
+    total; the coordinator's rule; `DeskLedger.Blank`): a window in which no cell was read (no item, no "one of N") keeps
+    the page's version of it, and so does a region that comes out with fewer than a third of the cells read that the page
+    has for it while more of its grid held something unread than was read (shapes no label fit, labels that fit
+    nothing: the lines between its items weren't found). The page's version stays, unchanged (the fold doesn't open
+    it), and the app log says so. A region the player emptied reads its empty cells as empty and still replaces the
+    page's (an unloaded backpack after a raid, a stash paged to an emptier page): the coordinator's rule asked for the
+    third alone; the unread share is mine, for that case.
   - **The head line and the fold** (the addendum, B1). Over the page, in muted capitals, "ON YOU 1.01 M ₽ · STASH
     6.84 M ₽ · KEEP 3 · 2 · 4": what is on the player against what is in the stash (after a raid, what came back
-    against what stayed), then the page's cells with a now, next and later notch. A total with an unseen container
+    against what stayed), then the page's cells with a now, next and later notch. A total counts what each cell would
+    bring, the better of the flea's net after the fee and the best trader's price, not the listing price a cell shows
+    (*The cell*; 2026-10-19: a key listed at 15 M nets 5 M after the fee, so the cells' listing prices would double a
+    stash of rare keys). A total with an unseen container
     in it ends in "+" ("ON YOU 1.01 M+ ₽"). One total (B2) drowned a raid's haul in the stash's millions; keep counts
     per part (B3) took two lines for what the notches already say.
     **The fold**, one rule for all regions: each reading opens the regions it changed and folds the rest into one line
@@ -1931,8 +1964,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     (step B, 2026-10-19, part 2: the view).
   - **The cell** (B1): the game's layout, with the price where the game prints the short name. Built (step B,
     2026-10-19, part 2: the view; what gives way where a cell is narrow, *As built*).
-    - **Top right**, the cell's figure: the better of the flea's net at the last low (after the fee) and the best
-      trader's price ("902k"), in ink, semibold, at the badges' 10.5 px with the map's dark collar (12 px at 56 DIP),
+    - **Top right**, the cell's figure: where the flea is the better sale (its net at the last low after the fee at
+      least the best trader's price), the flea's listing price at the last low as the flea shows it ("1.00 M"); else the
+      best trader's price (owner, 2026-10-19, after the test: the Dorm 104 key showed "~11k", its net, while the flea
+      listed it at 15k; the net is the card's line, "Flea net … · fee …"; until then the net was the figure). In ink,
+      semibold, at the badges' 10.5 px with the map's dark collar (12 px at 56 DIP),
       after its source, the price tag `E8EC` (the flea) or the person `E77B` (a trader), 9 DIP and muted (11 at 56); at
       56 DIP a trader's 14 DIP portrait stands in for the person. A cell with no price (the secure container) shows no
       figure.
@@ -1956,8 +1992,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       which gives way; the card keeps the change.
     - **"~"** before the figure: an estimate from condition (the addendum, Da; until then "a price that assumes full
       condition", the scaling left to step C). Where the cell prints a condition ("46/50", "1469/1800"), the figure is
-      scaled by the printed share and keeps the "~" (a Grizzly at 1469/1800, "~31k", not its full 37k); meds, food and
-      drink at a full print ("3/3", "50/50") drop it; armour keeps it, its printed maximum not being the catalogue's
+      scaled by the printed share and keeps the "~" (a Grizzly at 1469/1800, "~31k", not its full 37k); at a full print
+      ("3/3", "50/50", a key's "40/40") it drops it (owner, 2026-10-19: the Dorm 104 key at 40/40 showed "~11k"; until
+      then only meds, food and drink dropped it); armour keeps it, its printed maximum not being the catalogue's
       (the screenshots' Trooper prints 147/147, the catalogue says 180). Where no condition is printed (armour, meds,
       weapons), "~" alone, on the full-condition figure. The card shows both ("Scaled to 1469/1800 · full 37 386"), and
       the click copies the scaled price (*The click*). A model: a straight share is a guess (traders' pay for meds
@@ -1970,23 +2007,29 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       screenshots: BAC Bastion in three colours, Death Shadow in three, the armband in seven at 0.3–294k, a dog tag by
       level). "Zhuk" names two rigs of one size (Black and SURPAT, 4×3), so its cell is a "?", and its window's grid
       attaches to it either way.
-    - **Behind the art**, ink at 5, 10 or 16 % from 20k, 100k or 300k ₽ per slot.
+    - **Behind the art**, ink at 5, 10 or 16 % from 20k, 100k or 300k ₽ per slot, by what the better sale brings (the
+      flea's net or the trader's), not the listing price.
+    - **A count past what the item stacks to** (tarkov.dev's `stackMaxSize`) is a misread: one, at least (the owner's
+      test of 2026-10-19: a drill, which doesn't stack, read "×310" put 53 M into a Junk window's total).
   - **The card** (C1), in the rail's 351 DIP, decision first. The item's icon and name (a slot's item after its slot,
     "HEADWEAR · BAC Bastion"; the addendum), under it in muted capitals the liquidity dot (full from 50 offers, half
     from 10 to 49, a ring under 10), the offers and the flea level ("40 offers
     · flea from level 35"); the cell's figure in gold at the glance's 22 px, its 7-day change at its right, arrow and
     sign ("↑ +1.7 % · 7 D"); right under it the plate, "A CLICK COPIES" with the rule's control (*The click*) and what a
-    click copies now, "Copies 970,000 ₽ · nets 873,000 ₽ after the fee", over its reason ("Last low 1,000,000 ₽ ·
-    Therapist pays 494,700 ₽"; the owner, 2026-10-20: the rule's control right under the gold figure; until then the
-    plate "Click the cell: copies 970 000 ₽" stood after the flea's net line); the flea's net line with the fee and the
+    click copies now in short lines, "Copies 970,000 ₽", then muted "Nets 873k ₽ after the fee" (thousands from six
+    digits) and its reason, "Last low 1,000,000 ₽ · Therapist pays 494,700 ₽", a line that wraps breaking only at the
+    " · " (UI QA pass of step C, F5: "Kopiert 970.000 ₽ · bringt 873.000 ₽ nach Gebühr" wrapped and pushed KEEP out of
+    the smallest rail; the owner, 2026-10-20: the rule's control right under the gold figure; until then the plate
+    "Click the cell: copies 970 000 ₽" stood after the flea's net line); the flea's net line with the fee and the
     48 h change ("Flea net · fee 97 000", "↓ −10.3 % · 48 H"); KEEP, the needs in progress order (now, next, a hideout
     module's, later), each with its notch, count and FIR ("Private Clinic ×1 · now · FIR", "Medstation 3 ×1 · a hideout
     module"), the quests and stations by name. Then 30 DAYS, a band from the minimum to the average, a point
     every 2 h, with a mark 7 days back and the high and the low in words ("HIGH 1.05 M · LOW 0.82 M (DAY 17)"); 24 H,
     the day's range bar with the average and the last low, a high far past it said in a line, not drawn ("The high,
     9 999 999, is past the bar: one offer, likely an outlier."); TRADERS, each with portrait and price; CRAFTS AND
-    BARTERS; "Prices 4 min old · tarkov.dev". About 640 DIP: the first 200 (the figure, the click, the keep) fit the
-    smallest rail, the rest scrolls. EVE Online's min-max channel became the min-to-average band: the history has no
+    BARTERS; "Prices 4 min old · tarkov.dev" (from tarkov.dev's scan of the item). About 640 DIP: the first 200 (the
+    figure, the click, the keep) fit the smallest rail in English and German, no line of them wider than the rail's
+    351 DIP (at 125 % text they wrap, between their parts), the rest scrolls. EVE Online's min-max channel became the min-to-average band: the history has no
     maximum. A figure with a "+" says "Contents unseen: open it in the game, then a screenshot", a scaled one "Scaled to
     1469/1800 · full 37 386" (the addendum). Built (step C, 2026-10-20; *As built*, *The card*).
   - **The click** (D2; owner, 2026-10-20, after trying step B: "The user interface on how to copy a price is not clear";
@@ -2001,7 +2044,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     rule in amber ("3% UNDER", "THE LAST LOW", "2% OVER"), a percent a step from 20 % under to 20 % over, and under it
     what a click copies now and nets after the fee; the pointed card and the pinned ones alike, and settings' row "Flea
     price to copy" ("Settings", below) is the same control and the same state, kept in shturmap.db (`desk.copyRule`),
-    3 % under unless changed. Chosen over a segmented choice (MATCH · 3 % UNDER · 5 % UNDER · 3 % OVER): one control
+    3 % under unless changed; the − and +'s tips say where a press takes it ("Lower: 4% under the last low", "Lower: 1%
+    over the last low"; UI QA pass of step C, F4: over the last low the − said "1% further under"). Chosen over a
+    segmented choice (MATCH · 3 % UNDER · 5 % UNDER · 3 % OVER): one control
     holds every rule the setting allows, so card and settings never disagree, and it fits the plate beside its eyebrow
     in 351 DIP (the coordinator's choice; the owner's to overrule). **A right-click pins** a cell's card in the rail, and
     the pin at a card's head pins or unpins it (the owner, 2026-10-20: "It is also not possible to 'pin' items to the
@@ -2043,15 +2088,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       and for what needs the map or Plan's rail: a map picked in the MAP list, a trader's portrait clicked, What's New
       shown, the tour opening. A raid loading takes the window (principle 3), and after it Plan; DESK shows the page
       as it was, its fold too. The desk coming closes the cards, ends a map row's preview and a raid's replay (the map is
-      out of sight); SEEN IN YOUR STASH and the other cues and notices draw over the desk as over the map (the question
-      the panel left: the cue stays as it is). While the desk is up the map's keys (F, Shift+F, + and −, 0) leave the
+      out of sight); the cues and notices draw over the desk as over the map. SEEN IN YOUR STASH stood over the desk too
+      until the owner tried it (2026-10-19): a reading's needed items are said by the one-line notice since (principle
+      11). While the desk is up the map's keys (F, Shift+F, + and −, 0) leave the
       map alone, and PgUp and PgDn scroll the page.
-    - *The rail* (step C, 2026-10-20): under the switch, the MAP list and the trader strip, which stay where they are,
-      the pinned cards, newest on top, then the card of the cell pointed at, until another cell is (none while the
-      pointed cell is pinned: its card stands above), or while none is the hint, "Point at an item for its card. A click
-      copies its flea price; a right-click pins its card here." The rail scrolls: at 900×560 the decision part of the top
-      card shows, and the pointed card stands under the pins (the coordinator's order; the owner's to judge). Until step
-      C the rail showed the item card the pointer opens anywhere.
+    - *The rail* (step C, 2026-10-20; the order since the UI QA pass of step C, F2, 2026-10-19: with two pins the pointed
+      card stood under them, out of sight at 900×560): under the switch, the MAP list and the trader strip, which stay
+      where they are, the card of the cell pointed at, until another cell is (a pinned cell's framed as pinned), or while
+      none is the hint, "Point at an item for its card. A click copies its flea price; a right-click pins its card
+      here."; under it the pinned cards, newest on top: one compact line each (the item's icon, its name and the gold
+      figure, framed in amber) while a pointed card stands above them, a click on one showing it whole in the pointed
+      card's place, and whole while none does. The rail scrolls: at 900×560 the decision part of the pointed card shows.
+      Until step C the rail showed the item card the pointer opens anywhere.
     - *The card* (step C, 2026-10-20; `Controls.DeskCardView`, its words `Rules.DeskCards`): 351 DIP, the item card's
       ground and frame, whole (no map under it). Its head: the item's 40 DIP icon, a slot's name in muted capitals over
       the item's ("HEADWEAR" over "BAC Bastion": the addendum's "HEADWEAR · BAC Bastion" as two lines), the title, the
@@ -2060,15 +2108,17 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       the stack, scaled), "~" and "+" as the cell has them; the 7-day change from the history, "…" while it comes. The
       plate on `Raised` with a `LineStrong` frame: the eyebrow and the rule's − and + on its first line, what a click
       copies on its second (semibold ink; muted where it copies nothing; with the status bar's 6 px gold square before it
-      over the best net), the last low and the best trader under it, muted (the trader left out where the line says they
-      pay more). Then the flea's net line, the condition or contents line, KEEP (each need's notch as the cell draws it;
+      over the best net), under it, muted, what that nets after the fee ("Nets 873k ₽ after the fee"; over the best net,
+      "Over the best net: at 1.75 M ₽ it nets 708k ₽, at this 707k ₽"), then the last low and the best trader (the trader
+      left out where the line says they pay more), in parts a line breaks between (QA pass of step C, F5). Then the flea's net line, the condition or contents line, KEEP (each need's notch as the cell draws it;
       a quest's or station's name from the data, "a hideout module" for a station's level); 30 DAYS: the band from the
       lowest offer up to the average in amber at 22 % with the average's line on its top, 64 DIP tall across the card, a
-      dashed hairline 7 days back marked "7 D", the high and the low in words under it ("HIGH 45k · LOW 34k, 14 DAYS
+      dashed hairline 7 days back marked "7 D" (a text, "7 T" in German), the high and the low in words under it ("HIGH 45k · LOW 34k, 14 DAYS
       AGO"), a note on what it shows; 24 H: "LAST LOW … · AVG …" over a 4 DIP track from the day's low to its high, the
       last low's tick in amber, the average's in ink, the ends' figures under it ("›" after the end where an outlier high
       is past it, and the line saying so); TRADERS, every one with a price, the best first, per item; CRAFTS AND BARTERS,
-      as the item card has them (those that give the item); "Prices 4 min old · tarkov.dev" (from two hours, in hours).
+      as the item card has them (those that give the item); "Prices 4 min old · tarkov.dev" (from two hours, in hours),
+      from the item's scan (`updated`; of a "?" card its candidates' newest), the item file's fetch where none says.
       Figures in full with the language's thousands separator ("970,000 ₽", "970.000 ₽"). A "?" cell's card: its slot's
       name, "One of 3 items", "Pick the one it is: …", and a row a candidate (its icon, name and figure), the best first.
     - *Pins* (step C, 2026-10-20; `Rules.DeskPins`): a right-click on a cell or the pin on a card toggles it; pins stack
@@ -2077,11 +2127,12 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       cell, or the mode's page goes. Esc leaves the pins alone (it closes cards, then leaves the desk as before): they
       are cheap to make and dear to lose; the developer script's "desk unpin all" takes them all.
     - *The page*: the head line over the page in the status words' style, muted; then the regions, each under its
-      eyebrow. One column as wide as the stash's ten cells (or the widest grid); in two columns the gear's as wide as its
-      widest grid, POCKETS and SPECIAL SLOTS side by side counted together, six cells at the least, 24 DIP apart, the
-      stash and everything after it in reading order (its windows, the windows attached to none) in the right one; two
-      columns only where both fit the desk (UI QA pass of 2026-10-19, F1: at 1600×900 the stash's tenth column ran past
-      the window). LOADOUT draws no grid, whatever a reading's region says (F2: a reading's eleven by one drew a row of
+      eyebrow. One column as wide as the stash's ten cells (or the widest grid); flowed (*Its place*), each column as
+      wide as its widest open grid, POCKETS and SPECIAL SLOTS side by side counted together, a gear's column six cells at
+      the least and the stash's ten, a column of fold lines alone 240 DIP, 24 DIP apart; columns only where they all fit
+      the desk (UI QA pass of 2026-10-19, F1: at 1600×900 the stash's tenth column ran past the window). A window in a
+      column beside its cell's has its stem down the gap between the two, out of the cell's side that faces it, into the
+      head's near end. The regions' heads grow a pixel every two steps past 80, to 16 px at 120 and 128. LOADOUT draws no grid, whatever a reading's region says (F2: a reading's eleven by one drew a row of
       empty cells under the strip and set the gear's column 616 DIP wide). A region's own slots (the loadout's, in the
       game's order; a rig's, backpack's or pouch's own container) stand in a strip over its grid, wrapping at the
       column's width; a grid's compartments are drawn as the model gives them, its empty cells the panel's ground with
@@ -2128,7 +2179,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     found-in-raid mark, contents unseen, figure and keep notch (`DeskCellSheet`, `DeskFigure`), each region's part (ON YOU,
     STASH or neither) and total, the head line (`DeskTotals`), the regions the last reading changed (the fold's input) and
     the prices' age. A reading is taken into the page in hand (`DeskLedger`): the regions it shows replace the old, the
-    others stay, the cells a window covered keep their last reading. What the rules decided where the panels left it
+    others stay, the cells a window covered keep their last reading; a region read too blank keeps the page's (*What it
+    mirrors*, 2026-10-19). A file written before 2026-10-19 with a cell read twice (a window's compartment found twice)
+    takes each place once when read back. What the rules decided where the panels left it
     open, for the owner to overrule:
     - NOW is an active quest's need: what its hand-overs and finds take as well as BRING's rows (keys, items to plant,
       mark or use, gear to wear, mods), so that "Private Clinic ×1 · now · FIR" holds; NEXT a quest not started whose
@@ -3292,11 +3345,12 @@ Shturmap, and a full pass over the stash is the reset for those. The surface:
 - **The item card:** a STASH section above GET IT with the mark (with the count and the time: "2 seen in your stash,
   found in raid · 5 Oct, 21:40") and NOT ANY MORE, the one click that retracts it, no confirmation. No section when
   nothing is known (nothing to act on; I HAVE IT, the player's word, is not built: "only if gaps remain").
-- **The cue** SEEN IN YOUR STASH after a menu screenshot that showed something a quest needs, the items pictured with
-  their counts (principle 11), and **the glow**: the marks that just arrived (from a screenshot or the log) glow in on
-  the BRING rows, the need cells and the quest card's BRING rows, gold easing to ink over a second, the row flashing
-  once (`Controls.Glow`). The one-line notice ("Seen in your stash: 3 keys your quests need.") only while a replay
-  plays or QUEST COMPLETE is up. Nothing is said for a screenshot that showed none.
+- **The notice** after a menu screenshot that showed something a quest needs, "Seen in your stash: 3 keys your quests
+  need." (owner, 2026-10-19: the desk opening with the reading is the feedback; until then the cue SEEN IN YOUR STASH
+  pictured the items with their counts, and the notice stood in for it only while a replay played or QUEST COMPLETE was
+  up; principle 11), and **the glow**: the marks that just arrived (from a screenshot or the log) glow in on the BRING
+  rows, the need cells and the quest card's BRING rows, gold easing to ink over a second, the row flashing once
+  (`Controls.Glow`). Nothing is said for a screenshot that showed none.
 - **One note** under BRING on the open card, until the first mark from a screenshot: "Screenshot your key tool in the
   game: the keys your quests need get a mark." Then gone.
 - **One setting** (§2) and a line in tour chapter 1's "reads" list; under the setting, **FORGET ALL MARKS** (owner,
@@ -4367,8 +4421,9 @@ on the same picture with a recognition of its own words: the whole picture's wor
 headings, a window's title, a toast), the screen and its regions from them and the compartments' frames (`DeskLayout`,
 `DeskFrames`, `StashGrids` for the stash), then each cell's label enlarged as the stash reader reads it, matched to the
 whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`), about 2 s a 1440p picture in all. The page goes to the desk's
-ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment), and a reading over an hour after
-the item file was fetched asks for it again (`RefreshDeskPrices`). A snapshot carries the mode's page with its values
+ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment; a region read too blank keeps the
+page's, and the app log says so), and a reading over ten minutes after the item file was fetched asks for it again
+(`RefreshDeskPrices`; an hour until 2026-10-19). A snapshot carries the mode's page with its values
 (`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`
 from the quests' states and the hideout), made again only when the page, the prices or the quests change. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
 maps as Plan counts them and the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`,

@@ -201,6 +201,39 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Single(under, f => Math.Abs(f.Width - 5 * pitch) <= 3 && Math.Abs(f.Height - 7 * pitch) <= 3);
     }
 
+    // The owner's Keys window of 2026-10-19 (20:22, after the game's SORT): its lattice was snapped onto the window's thin
+    // bright outline, 6 px left of its first cells; every line between its cells was missed and its keys read as one odd
+    // shape. Aligned moves a lattice onto the lines between its cells; one already on them stays put.
+    [Fact]
+    public void A_windows_lattice_off_its_cells_moves_onto_their_lines()
+    {
+        const int pitch = 84;
+        using var bitmap = new SKBitmap(1400, 900);
+        using (var canvas = new SKCanvas(bitmap))
+        using (var outline = new SKPaint { Color = new SKColor(200, 170, 90), Style = SKPaintStyle.Stroke, StrokeWidth = 1 })
+        using (var field = new SKPaint { Color = Field })
+        using (var line = new SKPaint { Color = Line })
+        {
+            canvas.Clear(new SKColor(18, 20, 22));
+            // The window's outline, one bright pixel, 6 px outside its grid of 11 by 7 with two-pixel lines.
+            canvas.DrawRect(SKRect.Create(110.5f, 94.5f, 11 * pitch + 13, 7 * pitch + 13), outline);
+            canvas.DrawRect(116, 100, 11 * pitch + 2, 7 * pitch + 2, field);
+            for (var i = 0; i <= 11; i++)
+                canvas.DrawRect(116 + i * pitch, 100, 2, 7 * pitch + 2, line);
+            for (var j = 0; j <= 7; j++)
+                canvas.DrawRect(116, 100 + j * pitch, 11 * pitch + 2, 2, line);
+        }
+        var lines = new StashLines(StashGray.Of(bitmap));
+        var off = DeskLayout.Aligned(lines, SKRectI.Create(110, 100, 11 * pitch, 7 * pitch), pitch);
+        Assert.InRange(off.Left, 115, 117);
+        Assert.Equal(100, off.Top);
+        var on = DeskLayout.Aligned(lines, SKRectI.Create(116, 100, 11 * pitch, 7 * pitch), pitch);
+        Assert.Equal(SKRectI.Create(116, 100, 11 * pitch, 7 * pitch), on);
+        // The lattice and the frame found on its lines, a few pixels apart, are one compartment: never read twice.
+        Assert.True(DeskLayout.Overlapping(SKRectI.Create(110, 100, 11 * pitch, 7 * pitch), SKRectI.Create(116, 100, 11 * pitch, 7 * pitch)));
+        Assert.False(DeskLayout.Overlapping(SKRectI.Create(100, 100, pitch, 2 * pitch), SKRectI.Create(100 + pitch + 8, 100, pitch, 2 * pitch)));
+    }
+
     // ---- a whole GEAR tab, drawn ----
 
     private static DeskReader Reader()

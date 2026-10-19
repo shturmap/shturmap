@@ -82,4 +82,15 @@ public class DeskSwitchTests
         Assert.True(DeskSwitch.ByArrow(0x27));
         Assert.All(new[] { 0x26, 0x28, 0x20, 0x0D, 0x09 }, key => Assert.Null(DeskSwitch.ByArrow(key)));
     }
+
+    // The desk's arrival is the feedback (owner, 2026-10-19: "It now conflicts with the 'now seen in stash' animation"): a
+    // reading's needed items are said by the one-line notice while the desk opens; the SEEN IN YOUR STASH cue plays only as
+    // What's New's example. The desk still opens for the reading, as before.
+    [Fact]
+    public void A_readings_needed_items_are_a_notice_and_the_cue_only_an_example()
+    {
+        Assert.Equal(StashSeenSaid.Notice, DeskSwitch.StashSeen(example: false));
+        Assert.Equal(StashSeenSaid.Cue, DeskSwitch.StashSeen(example: true));
+        Assert.True(DeskSwitch.ChosenAfter(false, inRaid: false, newReading: true, tourUp: false));
+    }
 }

@@ -38,6 +38,10 @@ public sealed record DeskItemFacts(string Id)
     public int H { get; init; } = 1;
     public DeskItemKind Kind { get; init; }
 
+    /// <summary>The most of it one cell stacks, or null when the item file doesn't say: a count read past it is a misread
+    /// (<see cref="DeskSheet.CellOf"/> takes it as one).</summary>
+    public int? StackMax { get; init; }
+
     /// <summary>The item can't be listed on the flea (tarkov.dev's type "noFlea").</summary>
     public bool NoFlea { get; init; }
 
@@ -119,11 +123,16 @@ public enum DeskLiquidity
 }
 
 /// <summary>
-/// One item's figure for one cell: the value of the cell's whole stack in roubles (scaled to a printed condition), its
-/// source, what it would be at full condition, and the flea's net beside the best trader's, for the card.
+/// One item's figure for one cell: the price the cell shows for its whole stack in roubles (scaled to a printed
+/// condition): the flea's listing price at the last low where the flea is the better sale, else the best trader's; its
+/// source; what it would be at full condition; and the flea's net beside the best trader's, for the card.
 /// </summary>
 public sealed record DeskItemValue(string ItemId, DeskSource Source, double Value, double Full, string? Trader)
 {
+    /// <summary>What the better sale brings, scaled: the flea's net after the fee, or the best trader's price (the tint's
+    /// value per slot).</summary>
+    public double Worth { get; init; }
+
     /// <summary>The flea's net for the stack at the last low after the fee, or null when there is no flea figure.</summary>
     public double? FleaNet { get; init; }
 
@@ -135,7 +144,8 @@ public sealed record DeskItemValue(string ItemId, DeskSource Source, double Valu
 
     public DeskNoFlea NoFlea { get; init; }
 
-    /// <summary>An estimate ("~"): scaled to a printed condition, or an item whose condition matters and isn't printed.</summary>
+    /// <summary>An estimate ("~"): scaled to a printed condition below full, armour (its print isn't the catalogue's), or
+    /// an item whose condition matters and isn't printed.</summary>
     public bool Estimate { get; init; }
 
     /// <summary>The printed share it was scaled by (1 when not scaled).</summary>
@@ -166,8 +176,13 @@ public sealed record DeskFigure(DeskSource Source, double Value, double High, st
     /// <summary>The figure at full condition, when it was scaled.</summary>
     public double Full { get; init; }
 
-    /// <summary>The value per cell of the item's footprint, for the tint.</summary>
+    /// <summary>What the better sale brings per cell of the item's footprint (the flea's net or the trader's), for the tint.</summary>
     public double PerSlot { get; init; }
+
+    /// <summary>What the better sale brings for the stack (the flea's net after the fee, or the best trader's price),
+    /// scaled; for "one of N" the least of the candidates'. The head line's totals count this, not the listing price the
+    /// cell shows: what the page is worth.</summary>
+    public double Worth { get; init; }
 
     /// <summary>The tint behind the art (*The cell*, "Behind the art"): 0 none, 1 from 20k (ink at 5 %), 2 from 100k (10 %),
     /// 3 from 300k ₽ a slot (16 %).</summary>
@@ -231,13 +246,15 @@ public static class DeskValues
     }
 
     /// <summary>
-    /// One item's value on a cell: the better of the flea's net at the last low (after the fee) and the best trader's
-    /// price, for the stack, scaled to the printed condition (docs/DESIGN.md §4, *The cell*, Da): the share printed
-    /// ("1469/1800") scales the figure and it stays "~"; meds, food and drink at a full print drop the "~"; armour keeps
-    /// it; with no condition printed, armour, meds, food, drink and weapons are "~" at the full figure. A magazine's or a
-    /// weapon's print is its rounds, not a condition. The flea only where it may be listed: not "noFlea", found in raid
-    /// where the game's globals want it, with a last low. The item's flea level is carried, never compared (the player's
-    /// level isn't read).
+    /// One item's value on a cell, for the stack, scaled to the printed condition (docs/DESIGN.md §4, *The cell*, Da):
+    /// where the flea is the better sale (its net at the last low after the fee at least the best trader's price), the
+    /// flea's listing price at the last low as the flea shows it (owner, 2026-10-19: a key showed "~11k" while the flea
+    /// listed 15k; the net is the card's line); else the best trader's price. The share printed ("1469/1800") scales the
+    /// figure and it stays "~"; a full print ("40/40", "3/3") drops the "~" (owner, 2026-10-19: a key at 40/40 showed
+    /// "~11k"), but on armour, whose printed maximum isn't the catalogue's; with no condition printed, armour, meds, food,
+    /// drink and weapons are "~" at the full figure. A magazine's or a weapon's print is its rounds, not a condition. The
+    /// flea only where it may be listed: not "noFlea", found in raid where the game's globals want it, with a last low. The
+    /// item's flea level is carried, never compared (the player's level isn't read).
     /// </summary>
     public static DeskItemValue Of(DeskItemFacts item, int count, DeskPrint? print, bool? foundInRaid, DeskFleaRules flea, DeskFeeLevels levels = default)
     {
@@ -245,7 +262,7 @@ public static class DeskValues
         var condition = print is { } p && (item.Kind & (DeskItemKind.Magazine | DeskItemKind.Gun)) == 0 ? p : (DeskPrint?)null;
         var scale = condition?.Share ?? 1;
         var estimate = condition is { } c
-            ? !(c.Full && (item.Kind & (DeskItemKind.Meds | DeskItemKind.FoodDrink)) != 0 && (item.Kind & DeskItemKind.Armour) == 0)
+            ? !c.Full || (item.Kind & DeskItemKind.Armour) != 0
             : (item.Kind & (DeskItemKind.Armour | DeskItemKind.Meds | DeskItemKind.FoodDrink | DeskItemKind.Gun)) != 0;
 
         var noFlea = !flea.Enabled ? DeskNoFlea.FleaOff
@@ -262,16 +279,18 @@ public static class DeskValues
         var best = item.Traders.Count > 0 ? item.Traders.MaxBy(t => t.Price) : default;
         double? traderPrice = item.Traders.Count > 0 ? best.Price * count : null;
 
-        var (source, full, trader) = (fleaNet, traderPrice) switch
+        var (source, worth, trader) = (fleaNet, traderPrice) switch
         {
             ({ } net, { } paid) when net >= paid => (DeskSource.Flea, net, (string?)null),
             (_, { } paid) => (DeskSource.Trader, paid, best.Trader),
             ({ } net, null) => (DeskSource.Flea, net, null),
             _ => (DeskSource.None, 0d, null),
         };
-        full = Math.Max(0, full);
+        // The cell shows what the flea lists at, not what a sale nets: the listing price at the last low.
+        var full = source == DeskSource.Flea ? item.LastLow!.Value * count : Math.Max(0, worth);
         return new DeskItemValue(item.Id, source, Math.Round(full * scale), full, trader)
         {
+            Worth = Math.Round(Math.Max(0, worth) * scale),
             FleaNet = fleaNet,
             Fee = fee,
             TraderPrice = traderPrice,
@@ -295,7 +314,7 @@ public static class DeskValues
         var unsure = items.Count > 1;
         var low = priced.MinBy(i => i.Value.Value);
         var high = priced.MaxBy(i => i.Value.Value);
-        var perSlot = low.Value.Value / Math.Max(1, cells);
+        var perSlot = low.Value.Worth / Math.Max(1, cells);
         var one = items.Count == 1 ? items[0] : default;
         var change = one.Facts?.Change48hPercent;
         return new DeskFigure(unsure ? DeskSource.None : low.Value.Source, low.Value.Value, high.Value.Value, unsure ? null : low.Value.Trader)
@@ -305,6 +324,7 @@ public static class DeskValues
             Unsure = unsure,
             Full = unsure ? low.Value.Full : one.Value.Full,
             PerSlot = perSlot,
+            Worth = priced.Min(i => i.Value.Worth),
             Tint = Tint(perSlot),
             Arrow = unsure ? DeskArrow.None : Arrow(change),
             Change48h = unsure ? null : change,

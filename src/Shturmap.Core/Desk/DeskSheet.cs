@@ -37,9 +37,10 @@ public sealed record DeskTotals(double OnYou, bool OnYouPlus, double Stash, bool
 
 /// <summary>
 /// The page with its values: each cell's figure and keep notch, each region's part and total, the head line. Totals count
-/// only the cells read (a "one of N" at the least of its candidates); a window counts in the part of the region its
-/// container is in; a window attached to none counts where all the containers of its name are, or in neither when they
-/// are split between ON YOU and the stash (docs/DESIGN.md §4, *What it mirrors*).
+/// what the cells read would bring (each one's better sale: the flea's net after the fee or the best trader's; a "one of
+/// N" at the least of its candidates); a window counts in the part of the region its container is in; a window attached
+/// to none counts where all the containers of its name are, or in neither when they are split between ON YOU and the
+/// stash (docs/DESIGN.md §4, *What it mirrors*).
 /// </summary>
 public sealed class DeskSheet
 {
@@ -70,7 +71,9 @@ public sealed class DeskSheet
                 .Select(c => c.Figure is { Trader: { } trader } f && traderName is not null ? c with { Figure = f with { TraderName = traderName(trader) } } : c)
                 .ToList();
             var part = PartOf(page, region, []);
-            regions.Add(new DeskRegionSheet(region, cells, part, cells.Sum(c => c.Figure?.Value ?? 0), cells.Any(c => c.Unseen)));
+            // What the page is worth: each cell's better sale (the flea's net after the fee or the best trader's), not the
+            // listing price the cell shows (owner, 2026-10-19: the cell shows the flea's price, the net is the card's).
+            regions.Add(new DeskRegionSheet(region, cells, part, cells.Sum(c => c.Figure?.Worth ?? 0), cells.Any(c => c.Unseen)));
         }
         double onYou = regions.Where(r => r.Part == DeskPart.OnYou).Sum(r => r.Total);
         double stash = regions.Where(r => r.Part == DeskPart.Stash).Sum(r => r.Total);
@@ -90,6 +93,10 @@ public sealed class DeskSheet
         var items = ids.Select(facts).OfType<DeskItemFacts>().ToList();
         if (items.Count == 0)
             return new DeskCellSheet(cell, null, DeskKeepLevel.None, unseen);
+        // A count past what the item stacks to is a misread (the owner's test of 2026-10-19: a drill read "×310", 53 M of a
+        // Junk window's 60 M): one, at least, as an unread count is.
+        if (cell.Count > 1 && items.Count == ids.Count && items.All(f => f.StackMax is not null) && cell.Count > items.Max(f => f.StackMax!.Value))
+            cell = cell with { Count = 1 };
         var values = items.Select(f => (f, DeskValues.Of(f, cell.Count, cell.Print, cell.FoundInRaid, flea, levels))).ToList();
         // A slot shows no footprint: its item's own counts for the value per slot.
         var cells = cell.IsSlot ? (items.Count == 1 ? items[0].W * items[0].H : 1) : cell.W * cell.H;

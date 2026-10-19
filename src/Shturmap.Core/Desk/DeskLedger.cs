@@ -6,7 +6,12 @@ namespace Shturmap.Core.Desk;
 
 /// <summary>What a reading did to the page in hand: the page now, the regions it changed (the fold opens these and folds
 /// the rest; docs/DESIGN.md §4, *The head line and the fold*), and whether it was the mode's first.</summary>
-public sealed record DeskChange(DeskPage Page, IReadOnlySet<string> Changed, bool First);
+public sealed record DeskChange(DeskPage Page, IReadOnlySet<string> Changed, bool First)
+{
+    /// <summary>The regions the reading showed but read too little of to replace the page's (<see cref="DeskLedger.Blank"/>):
+    /// kept as they were, unchanged; the session logs them.</summary>
+    public IReadOnlySet<string> Refused { get; init; } = new HashSet<string>();
+}
 
 /// <summary>
 /// The stash desk's page in hand, one per game mode, kept in <c>desk.json</c> in the data folder (docs/DESIGN.md §8, "The
@@ -29,10 +34,10 @@ public sealed class DeskLedger
     public DeskChange Apply(GameMode mode, DeskPage reading)
     {
         var old = Page(mode);
-        var (page, changed) = Merge(old, reading);
+        var (page, changed, refused) = MergeAll(old, reading);
         _pages[mode] = page;
         Dirty = true;
-        return new DeskChange(page, changed, old is null);
+        return new DeskChange(page, changed, old is null) { Refused = refused };
     }
 
     /// <summary>A "?" cell's pick (step C: a candidate clicked on its card): kept with the cell until a reading changes it;
@@ -58,7 +63,37 @@ public sealed class DeskLedger
     /// </summary>
     public static (DeskPage Page, IReadOnlySet<string> Changed) Merge(DeskPage? old, DeskPage reading)
     {
+        var (page, changed, _) = MergeAll(old, reading);
+        return (page, changed);
+    }
+
+    /// <summary>
+    /// Whether a region as read is too blank to replace the page's version of it (owner's test of 2026-10-19: the Keys
+    /// window after the game's SORT read as one "?" and took the place of its 73 keys; docs/DESIGN.md §4, *What it
+    /// mirrors*): a window in which no cell was read (no item, no "one of N"), or a region that comes out with fewer than a
+    /// third of the cells read that the page has for it while more of its grid held something unread than was read (a
+    /// failed reading: the lines between the items not found). A region the player emptied reads its empty cells as
+    /// empty, so it still replaces the page's: an unloaded backpack, a stash page paged to an emptier one.
+    /// </summary>
+    /// <param name="before">The page's version, kept cells and all.</param>
+    /// <param name="reading">The region as this reading showed it.</param>
+    /// <param name="merged">The reading with the cells a window covered kept from the page's.</param>
+    public static bool Blank(DeskRegion before, DeskRegion reading, DeskRegion merged)
+    {
+        var had = before.ReadCells;
+        if (had == 0)
+            return false;
+        var read = reading.ReadCells;
+        if (reading.Kind == DeskRegionKind.ContainerWindow && read == 0)
+            return true;
+        var readArea = reading.Cells.Where(c => c.Ids.Count > 0).Sum(c => c.IsSlot ? 1 : c.W * c.H);
+        return merged.ReadCells * 3 < had && reading.Unread > readArea;
+    }
+
+    private static (DeskPage Page, IReadOnlySet<string> Changed, IReadOnlySet<string> Refused) MergeAll(DeskPage? old, DeskPage reading)
+    {
         var changed = new HashSet<string>(StringComparer.Ordinal);
+        var refused = new HashSet<string>(StringComparer.Ordinal);
         var regions = new List<DeskRegion>();
         foreach (var region in reading.Regions)
         {
@@ -72,7 +107,14 @@ public sealed class DeskLedger
                         : region.Covered.Any(r => r.Overlaps(c.Rect)) && !region.Cells.Any(n => !n.IsSlot && n.Rect.Overlaps(c.Rect)));
                 merged = region with { Cells = region.Cells.Concat(kept).OrderBy(c => c.IsSlot ? 0 : 1).ThenBy(c => c.J).ThenBy(c => c.I).ToList() };
             }
-            merged = merged with { Covered = [], CoveredSlots = [] };
+            merged = merged with { Covered = [], CoveredSlots = [], Unread = 0 };
+            // A reading too blank to stand for the region: the page's version stays, unchanged.
+            if (before is not null && Blank(before, region, merged))
+            {
+                refused.Add(region.Key);
+                regions.Add(before);
+                continue;
+            }
             // A "?" cell read again as it was keeps its pick (step C: the pick stays for that cell).
             if (before is not null && before.Cells.Any(c => c.Pick is not null))
             {
@@ -93,14 +135,14 @@ public sealed class DeskLedger
         }
         var page = Attach(new DeskPage(reading.ReadAt, regions));
         // A window kept from before whose container this reading brought (or took away) changed too.
-        foreach (var window in page.Regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow))
+        foreach (var window in page.Regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow && !refused.Contains(r.Key)))
         {
             if (old?.Region(window.Key) is { } before && (before.AttachedTo != window.AttachedTo || before.SameName != window.SameName))
                 changed.Add(window.Key);
             else if (changed.Contains(window.Key) && old?.Region(window.Key) is { } same && Same(same, window))
                 changed.Remove(window.Key);
         }
-        return (page, changed);
+        return (page, changed, refused);
     }
 
     /// <summary>
@@ -219,7 +261,7 @@ public sealed class DeskLedger
     {
         if (r is null || KindOf(r.Kind) is not { } kind || r.Key.Length == 0)
             return null;
-        return new DeskRegion(r.Key, kind, Math.Max(0, r.Cols), Math.Max(0, r.Rows), (r.Cells ?? []).Where(c => c is not null).Select(c => new DeskCell(c.I, c.J,
+        return new DeskRegion(r.Key, kind, Math.Max(0, r.Cols), Math.Max(0, r.Rows), Once((r.Cells ?? []).Where(c => c is not null).Select(c => new DeskCell(c.I, c.J,
             Math.Max(1, c.W), Math.Max(1, c.H), (c.Ids ?? []).Where(id => id.Length > 0).ToList())
         {
             Slot = c.Slot,
@@ -228,7 +270,7 @@ public sealed class DeskLedger
             FoundInRaid = c.Fir,
             Holds = c.Holds switch { "contents" => DeskHolds.Contents, "mods" => DeskHolds.Mods, _ => DeskHolds.Nothing },
             Pick = c.Pick,
-        }).ToList())
+        })))
         {
             Title = r.Title,
             TitleIds = (r.TitleIds ?? []).Where(id => id.Length > 0).ToList(),
@@ -237,6 +279,20 @@ public sealed class DeskLedger
             SameNameIn = r.SameNameIn ?? [],
             Parts = (r.Parts ?? []).Where(p => p is { Length: 4 }).Select(p => new DeskRect(p[0], p[1], p[2], p[3])).ToList(),
         };
+    }
+
+    // A region's cells with each place taken once: a grid's cell lying over one before it is the same item read twice (a
+    // file written before 2026-10-19's fix kept a window's compartment found twice, its cells counted twice), and so is a
+    // second cell of one slot.
+    private static List<DeskCell> Once(IEnumerable<DeskCell> cells)
+    {
+        var kept = new List<DeskCell>();
+        foreach (var cell in cells)
+        {
+            if (!kept.Any(k => cell.IsSlot ? k.Slot == cell.Slot : !k.IsSlot && k.Rect.Overlaps(cell.Rect)))
+                kept.Add(cell);
+        }
+        return kept;
     }
 
     private static string KindName(DeskRegionKind kind) => kind switch
