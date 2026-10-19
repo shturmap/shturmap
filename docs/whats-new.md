@@ -18,6 +18,14 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
+## 0.7.0 · NAME
+
+- tour:1 · Dailies and weeklies · Screenshot the Tasks screen (English game): your dailies and weeklies, time left, on their maps.
+- leaders · Text as large as you need · Windows' text size now reaches the map too; Text size in settings adds LARGER and LARGEST.
+- leaders · Guns, assembled · A weapon a quest needs is pictured whole, as traders sell it, not as its bare receiver.
+- leaders · Two on one spot, steady · Two symbols on one spot no longer drift apart as you pan or zoom, as Woods' Outskirts did.
+<!-- desk: the fifth line when step B lands -->
+
 ## 0.6.2 · Okami
 
 - leaders · Bosses, stepped back · Boss zones rest hollow with one name each; they light when pointed at or targeted by a quest.
