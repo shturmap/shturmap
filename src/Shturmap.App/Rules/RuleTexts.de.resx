@@ -221,7 +221,7 @@
     <comment>en: {count} h left</comment>
   </data>
   <data name="OperationalDaysLeft" xml:space="preserve">
-    <value>{count, plural, one {noch # Tag} other {noch # Tage}}</value>
+    <value>{count, plural, one {noch # Tag} other {noch # Tage}}</value>
     <comment>en: {count} d left</comment>
   </data>
   <data name="OperationalReadJustNow" xml:space="preserve">
