@@ -55,7 +55,7 @@ for. Portraits, icons and the parts of those three maps are fetched when they ar
 which of them your Shturmap displayed. The stash desk draws the items on its page with their pictures, fetched the
 same way, so the first request for each shows tarkov.dev's image service an item your screenshots held. While you use
 the desk, the item file (every item's prices, about 1.4 MB) is asked for again when a screenshot is read for it and
-the saved copy is over an hour old: at most once an hour, the same file for everyone. No account, profile, quest list
+the saved copy is over ten minutes old: at most every ten minutes, the same file for everyone. No account, profile, quest list
 or position is sent with them. On those
 three maps the part displayed in a raid is usually the part you are in, so the requests for its picture can show
 roughly where on the map that is, to tarkov.dev's image service and to no one else.

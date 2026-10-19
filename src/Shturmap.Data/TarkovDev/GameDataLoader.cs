@@ -302,9 +302,11 @@ public sealed class GameDataLoader(CachedHttp http)
     /// <summary>How old a saved item file may be and still be used without asking: a day, as the item cards need it.</summary>
     public static readonly TimeSpan ItemsAge = TimeSpan.FromHours(24);
 
-    /// <summary>How old the item file may be when the stash desk reads a screenshot (its prices): an hour, then it is
-    /// asked for again with its ETag (docs/DESIGN.md §3, "The stash desk's prices come per reading").</summary>
-    public static readonly TimeSpan DeskPricesAge = TimeSpan.FromHours(1);
+    /// <summary>How old the item file may be when the stash desk reads a screenshot (its prices): ten minutes, then it is
+    /// asked for again with its ETag (docs/DESIGN.md §3, "The stash desk's prices come per reading"; owner, 2026-10-19,
+    /// after the test: "Maybe we need to fetch the prices more often then?": tarkov.dev scans every 5 minutes and caches
+    /// 5; an hour until then).</summary>
+    public static readonly TimeSpan DeskPricesAge = TimeSpan.FromMinutes(10);
 
     /// <summary>How old an item's price history may be and still be shown without asking: an hour (its points come every
     /// 2 h), then it is asked for again with its ETag when a card shows the item (docs/DESIGN.md §3).</summary>

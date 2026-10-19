@@ -88,8 +88,8 @@ public sealed partial class DeskCardView : UserControl
                 body.Children.Add(Pair(new TextBlock { Text = words.Figure, Style = StyleOf("FigureText"), FontSize = 22, HorizontalAlignment = HorizontalAlignment.Left },
                     words.SevenDays));
             body.Children.Add(Plate(words));
-            if (words.FleaNet is not null)
-                body.Children.Add(Pair(Note(words.FleaNet, ink: true), words.TwoDays));
+            if (words.FleaNet.Count > 0)
+                body.Children.Add(Pair(Parts(words.FleaNet, ink: true), words.TwoDays));
             foreach (var note in words.Notes)
                 body.Children.Add(Note(note));
             if (words.Keep.Count > 0)
@@ -237,12 +237,13 @@ public sealed partial class DeskCardView : UserControl
                 Text = RuleTexts.DeskCardCopyHead, Style = StyleOf("StatusText"), FontSize = 11, CharacterSpacing = 140, Foreground = Brush("MutedBrush"),
                 TextWrapping = TextWrapping.Wrap,
             });
-            var stepper = RuleStepper(words.Rule, step => RuleStepped?.Invoke(step));
+            var stepper = RuleStepper(words.CopyRule, step => RuleStepped?.Invoke(step));
             Grid.SetColumn(stepper, 1);
             top.Children.Add(stepper);
             plate.Children.Add(top);
         }
-        var line = new Grid { ColumnSpacing = 6 };
+        // The gold light's room only where it stands: the line's words start where the lines under it do.
+        var line = new Grid { ColumnSpacing = words.Plate == DeskPlate.Warning ? 6 : 0 };
         line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         if (words.Plate == DeskPlate.Warning)
@@ -260,14 +261,16 @@ public sealed partial class DeskCardView : UserControl
         Grid.SetColumn(said, 1);
         line.Children.Add(said);
         plate.Children.Add(line);
-        if (words.PlateReason is { } reason)
-            plate.Children.Add(Note(reason));
+        if (words.PlateNet is { } net)
+            plate.Children.Add(Note(net));
+        if (words.PlateReasons.Count > 0)
+            plate.Children.Add(Parts(words.PlateReasons));
         return plate;
     }
 
     /// <summary>The rule's control: − and + around the rule's words in amber ("3% UNDER"), one percent a step, from 20 %
     /// under to 20 % over (<see cref="DeskCopyRule.Step"/>). The card's plate and settings' row show the same one.</summary>
-    public static FrameworkElement RuleStepper(string rule, Action<int> stepped)
+    public static FrameworkElement RuleStepper(DeskCopyRule rule, Action<int> stepped)
     {
         var stepper = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         Button Step(string glyph, int by, string tip)
@@ -284,13 +287,13 @@ public sealed partial class DeskCardView : UserControl
             button.Click += (_, _) => stepped(by);
             return button;
         }
-        stepper.Children.Add(Step("−", -1, ViewTexts.DeskRuleLower));
+        stepper.Children.Add(Step("−", -1, DeskCards.StepTip(rule, -1)));
         stepper.Children.Add(new TextBlock
         {
-            Text = rule, Style = StyleOf("StatusText"), FontSize = 12, Foreground = Brush("AmberBrush"), MinWidth = 92, TextAlignment = TextAlignment.Center,
+            Text = DeskCards.RuleWords(rule), Style = StyleOf("StatusText"), FontSize = 12, Foreground = Brush("AmberBrush"), MinWidth = 92, TextAlignment = TextAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
         });
-        stepper.Children.Add(Step("+", 1, ViewTexts.DeskRuleHigher));
+        stepper.Children.Add(Step("+", 1, DeskCards.StepTip(rule, 1)));
         return stepper;
     }
 
@@ -377,7 +380,7 @@ public sealed partial class DeskCardView : UserControl
         {
             var x = Math.Round(X(week)) + 0.5;
             canvas.Children.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = BandHeight, Stroke = Brush("LineStrongBrush"), StrokeThickness = 1, StrokeDashArray = new DoubleCollection { 2, 2 } });
-            var mark = new TextBlock { Text = "7 D", Style = StyleOf("StatusText"), FontSize = 9.5, Foreground = Brush("MutedBrush") };
+            var mark = new TextBlock { Text = RuleTexts.DeskCardWeekMark, Style = StyleOf("StatusText"), FontSize = 9.5, Foreground = Brush("MutedBrush") };
             Canvas.SetLeft(mark, x + 3);
             Canvas.SetTop(mark, 1);
             canvas.Children.Add(mark);
@@ -495,8 +498,60 @@ public sealed partial class DeskCardView : UserControl
 
     // ---- parts ----
 
+    // A line of parts joined by " · ", muted (in ink when asked): where it wraps, each "·" goes with the part after it, so a
+    // line breaks between the parts, never inside one or after its "·" (QA pass of step C, F5: the German fee line).
+    private static FrameworkElement Parts(IReadOnlyList<string> parts, bool ink = false)
+    {
+        var row = new WrapRow { HorizontalSpacing = 5, VerticalSpacing = 0 };
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var part = Note(i == 0 ? parts[i] : "· " + parts[i], ink);
+            part.TextWrapping = TextWrapping.NoWrap;
+            row.Children.Add(part);
+        }
+        return row;
+    }
+
+    /// <summary>
+    /// A pinned card as one line, while a pointed cell's card stands above the pins (QA pass of step C, F2: at 900×560 two
+    /// pinned cards pushed the pointed one out of sight): the item's icon, its name and the gold figure, framed in amber as
+    /// a pinned card is. A click shows the card whole, in the pointed card's place.
+    /// </summary>
+    public static Button CompactLine(DeskCardWords words, Action clicked)
+    {
+        var row = new Grid { ColumnSpacing = 10 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.Children.Add(new Picture { ItemId = words.ItemId, Size = 24, Opacity = words.Plate == DeskPlate.Pick ? 0.5 : 1 });
+        var name = new TextBlock { Text = words.Name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        Grid.SetColumn(name, 1);
+        row.Children.Add(name);
+        if (words.Figure is { } figure)
+        {
+            var gold = new TextBlock { Text = figure, Style = StyleOf("FigureText"), FontSize = 15, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(gold, 2);
+            row.Children.Add(gold);
+        }
+        var line = new Button
+        {
+            Content = row,
+            Width = CardWidth,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(10, 6, 10, 6),
+            Background = Brush("CardBrush"),
+            BorderBrush = Brush("AmberBrush"),
+            BorderThickness = new Thickness(1.5),
+        };
+        ToolTipService.SetToolTip(line, ViewTexts.DeskCompactTip);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(line, words.Name);
+        line.Click += (_, _) => clicked();
+        return line;
+    }
+
     // A text with its change at the right, muted ("↑ +1.7% · 7 D").
-    private static FrameworkElement Pair(TextBlock left, string? right)
+    private static FrameworkElement Pair(FrameworkElement left, string? right)
     {
         var row = new Grid { ColumnSpacing = 8 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

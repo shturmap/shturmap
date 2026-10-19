@@ -9,7 +9,10 @@ stacked in reading order with the loadout strip, folded by the reading; each cel
 stemmed to its cell; the page coming in cell by cell and the totals counting up once. Step C (2026-10-20) builds the
 desk's own card in the rail (decision first, the plate with the rule a click copies by, KEEP, the 30 days' band, the
 day's bar, the traders), the click that copies a list price (its flash, decode and notice), pinning by a right-click or
-the card's pin, the copy's guards, a "?" cell's pick, and the cells scaling with the desk's width (40 to 80 DIP).
+the card's pin, the copy's guards, a "?" cell's pick, and the cells scaling with the desk's width (40 to 80 DIP). After
+the owner's first test (2026-10-19) the cells fill the desk (40 to 128 DIP, the page flowed into columns), the pointed
+card stands first in the rail with the pins as one line each under it, the cell shows the flea's listing price, and the
+card's plate says what a click copies in short lines.
 
 `desk.devscript` replays it without a screenshot: its `desk <n>` hands the window the made-up desk's reading n
 (`Rules.DeskExample`, built through the model as a reading's page is: real items of the catalogue, so their art and
@@ -35,9 +38,9 @@ $app.WaitForExit()
 
 - The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `window`, `card`, `copy`, `rule`, `pinned`, `trader`,
   `noflea`, `pick`, `picked`, `fold`, `unfold`, `same`, `plan`, `show`, `raid`, `after` and `kept`; then `--culture
-  de-DE`, `--window 900x560` (40 DIP cells, one column) and `--window 1600x900` (64 DIP cells, the stash in a column of
-  its own beside the gear) for the other runs, and `--window 2560x1440` (80 DIP, as large as the work area allows)
-  (docs/QA.md, "Replay scripts").
+  de-DE`, `--window 900x560` (40 DIP cells, one column, scrolling) and `--window 1600x900` (40 DIP, three columns: the
+  gear's two and the stash's, unscrolled) for the other runs, and `--window 2560x1440` (80 DIP, three columns, as large
+  as the work area allows) (docs/QA.md, "Replay scripts").
 - `--verbose`: the app log (`$qa\data\logs`) has every step and the lines `Example desk: reading 1 of 3`, `Stash desk
   up (reading)`, `Stash desk left (switch)` or `(dev)`, `Stash desk left (raid)`.
 - Windows' animation effects on: with them off the page stands at once and `entry` shows it whole. Keep the mouse off
@@ -54,41 +57,47 @@ $app.WaitForExit()
   coming, 50 ms apart.
 - **first**: every region open, in reading order under its own head: LOADOUT, TACTICAL RIG, POCKETS beside SPECIAL
   SLOTS, BACKPACK, ZHUK · IN THE BACKPACK, POUCH, STASH, then WZ with the muted "Not attached: WZ ×2 on the page, on
-  you and in the stash; counted in neither". The head line ends "ON YOU 5.4x M+ ₽ · STASH 6.7x M+ ₽ · KEEP 2 · 7 · 3".
+  you and in the stash; counted in neither". The head line ends "ON YOU 5.56 M+ ₽ · STASH 7.46 M+ ₽ · KEEP 2 · 7 · 3"
+  (what the sales bring, not the cells' listing prices).
   LOADOUT: slot cells 80×40 (a weapon 164×40) in the game's order, no slot names: the helmet and the armband with the
   "?" plate, their art at half strength and a range ("~34–52k", "0.3–294k"); the body armour "~67k" over "98/147"; the
   dog tag's figure after the person glyph; the AK and the Glock "~…k+" (mods unseen), the AK's "30/30". In the grids:
   a dark band across each item's top with its figure at the right after the price tag or the person; "~" before an
   estimate, "+" after the wallet's and the item case's figure; the IFAK's "166/300" without an arrow, the Analgin's
-  "2/4" with "↓" (at 1600×900, 64 DIP, the change as a figure: "−12%" beside "2/4", "↓ −10%" on a wider cell); the
+  "2/4" with "↓" (at 2560×1440, 80 DIP, the change as a figure: "−12%" beside "2/4", "↓ −10%" on a wider cell); the
   keycard and the stash's LEDX with a filled amber notch, the graphics cards an open one, the
   moonshine a corner bracket, the bitcoins a filled notch in ink; the roubles, the Gamma and the streamer case with no
   figure; the cell nothing was said of only its frame; the rig's and the Zhuk window's compartments a few DIP apart, as
   the game sets them (the Zhuk's ten pockets of one by two, a graphics card turned in one); a stem from the Zhuk's cell,
-  out of its left edge's middle, to its window's head, along the backpack's margin. No grid under the LOADOUT strip; at
-  1600×900 the stash's ten columns whole beside the gear, POCKETS and SPECIAL SLOTS side by side in the gear's column.
-  No red or green anywhere on the page.
+  out of its left edge's middle, to its window's head, along the backpack's margin (at 1600×900, where the Zhuk window
+  heads the gear's second column, out of the cell's lower right corner and down the gap between the columns into the
+  head). No grid under the LOADOUT strip; at 1600×900 and 2560×1440 the page unscrolled, the stash's ten columns whole
+  beside the gear, POCKETS and SPECIAL SLOTS side by side in the gear's column. Keys and meds at a full print ("4/4",
+  "100/100") without "~". No red or green anywhere on the page.
 - **window**: the Zhuk's cell gold-tinted with an amber frame, its window's head on gold, the stem in amber; the rail
   says "One of 2 items".
-- **card**: the LEDX's desk card in the rail, whole, under the MAP list and the trader strip, 351 DIP: its icon, name,
+- **card**: the LEDX's desk card first in the rail, under the MAP list and the trader strip, 351 DIP: its icon, name,
   the full dot with "60 OFFERS · FLEA FROM LEVEL 15" and the pin (a cell's outline with a muted tab) at the right; the
-  figure in gold, "901,728 ₽", with its 7-day change at the right ("↑ +…% · 7 D" or "↓ −…"); right under it the plate on
-  the raised ground: "A CLICK COPIES" with − "3% UNDER" + (the rule in amber), "Copies 970,000 ₽ · nets 873,000 ₽
-  after the fee" semibold, "Last low 1,000,000 ₽ · Therapist pays 650,000 ₽" muted; "Flea net 901,728 ₽ · fee
-  98,272 ₽" with "↓ −10.4% · 48 H"; KEEP: Private Clinic ×1 · now · FIR (a filled amber notch), Medstation 3 ×1 · a
+  figure in gold, "1,000,000 ₽" (the flea's listing price), with its 7-day change at the right ("↑ +…% · 7 D" or "↓
+  −…"); right under it the plate on the raised ground: "A CLICK COPIES" with − "3% UNDER" + (the rule in amber),
+  "Copies 970,000 ₽" semibold, "Nets 873k ₽ after the fee" muted, "Last low 1,000,000 ₽ · Therapist pays 650,000 ₽"
+  muted (in German the trader on a line of its own, "· Therapist zahlt 650.000 ₽", never a line ending in "·"); "Flea
+  net 901,728 ₽ · fee 98,272 ₽" with "↓ −10.4% · 48 H"; KEEP: Private Clinic ×1 · now · FIR (a filled amber notch), Medstation 3 ×1 · a
   hideout module (filled, ink), Crisis ×2 · later · FIR (a bracket); 30 DAYS: the amber band with its average's line, a
   dashed hairline "7 D", "HIGH … · LOW …, n DAYS AGO"; 24 H: "LAST LOW 1,000,000 · AVG 980,000" over the track, the
   ticks, "820,000" and "1,100,000 ›" under it, the outlier's line (9,999,999); TRADERS Therapist then Fence; CRAFTS
-  AND BARTERS where the data has them; "Prices just in · tarkov.dev". At 900×560 the decision part (figure, plate,
-  flea net) shows without scrolling. No red or green.
+  AND BARTERS where the data has them; "Prices just in · tarkov.dev". At 900×560 the figure, the plate, the flea's net
+  and KEEP's first lines show without scrolling, in English and German. The − and +'s tips: "Lower: 4% under the last
+  low", "Higher: 2% under the last low". No red or green.
 - **copy** (right after the click): the LEDX's cell framed in gold, its figure decoding (gold glyphs settling to ink);
   the notice "970,000 ₽ copied · 3% under the last low".
-- **rule**: the card's plate says "2% OVER" and "Copies 1,020,000 ₽ · …"; settings' row "Flea price to copy" (open it
-  by hand to check) the same.
-- **pinned**: two pinned cards, framed in amber, the Grizzly's on top ("~30,511 ₽", "Copies ~32,456 ₽ …", "Scaled to
-  1469/1800 · full 37,386 ₽") over the LEDX's, each pin's tab amber; the key's card under them, below the rail's fold at 900×560 (its plate
-  with the 6 px gold square: "Copies 1,832,221 ₽, over the best net: at 1,751,… it nets …, at this …"). On the page the
-  LEDX's and the Grizzly's cells carry a short amber bar on their top edge.
+- **rule**: the card's plate says "2% OVER", "Copies 1,020,000 ₽" and "Nets 921k ₽ after the fee"; settings' row
+  "Flea price to copy" (open it by hand to check) the same; the −'s tip "Lower: 1% over the last low".
+- **pinned**: the pointed key's card first (UI QA pass of step C, F2), its plate with the 6 px gold square: "Copies
+  1,832,221 ₽", muted "Over the best net: at 1.75 M ₽ it nets 708k ₽, at this 707k ₽"; under it the two pinned cards
+  as one line each, framed in amber, the Grizzly's on top ("Grizzly medical kit ~33,461 ₽") over the LEDX's ("LEDX Skin
+  Transilluminator 1,000,000 ₽"), below the rail's fold at 900×560, in sight at 1600×900. On the page the LEDX's and the
+  Grizzly's cells carry a short amber bar on their top edge.
 - **trader**: the blue keycard's card: the plate's line muted, "Therapist pays more · 459,000 ₽. A click copies
   nothing.", only the last low under it; the notice "Nothing copied: Therapist pays more, 459,000 ₽"; no flash.
 - **noflea**: the 5.45 ammunition's card: "NOT ON THE FLEA" under its name, the plate "Can't be listed on the flea. A
@@ -100,7 +109,8 @@ $app.WaitForExit()
 - **fold**: "UNCHANGED · LOADOUT ▸ · TACTICAL RIG ▸ · POCKETS ▸ · SPECIAL SLOTS ▸" over BACKPACK, then "UNCHANGED ·
   ZHUK ▸ · POUCH ▸ · STASH ▸ · WZ ▸" (at 1600×900 the stash's column has its own line, "UNCHANGED · STASH ▸ · WZ ▸");
   where a fold line wraps, the next line starts with "·", never a line ending in one;
-  the backpack has the LEDX at 3,4 with its notch; the head line's totals the new ones.
+  the backpack has the LEDX at 3,4 with its notch; the head line's totals the new ones. The backpack's cells as large as
+  the desk's height lets them be (104 DIP at 1600×900, its grid filling the height, nothing scrolled).
 - **unfold**: the stash open under its head, its column's fold line gone or WZ alone in it.
 - **same**: as unfold: a reading that changed nothing changed nothing.
 - **plan**: the map and Plan's rail back, PLAN's half raised with the amber bar and PLAN in amber, DESK muted; the

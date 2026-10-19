@@ -46,9 +46,11 @@ public class DeskCardTests
         return DeskCards.Of(r, c, Context(rule), history, loading);
     }
 
-    // The stash's LEDX: its offers and flea level, the figure (the flea's net at the last low), the plate: 3 % under copies
-    // 970,000, which nets 873,000; the last low and the best trader under it; KEEP in progress order (now, a hideout
-    // module's, later) with FIR; the day's bar with its outlier said; every trader, the best first; the prices' age.
+    // The stash's LEDX: its offers and flea level, the figure (the flea's listing price at the last low, the flea being the
+    // better sale: owner, 2026-10-19), the plate in short lines (QA pass of step C, F5): 3 % under copies 970,000, which
+    // nets 873k after the fee; the last low and the best trader under it, in parts; the flea's net and fee in parts; KEEP
+    // in progress order (now, a hideout module's, later) with FIR; the day's bar with its outlier said; every trader, the
+    // best first; the prices' age.
     [Fact]
     public void Decision_first_then_the_history_and_the_traders()
     {
@@ -57,12 +59,13 @@ public class DeskCardTests
         Assert.Equal("item 5c05", ledx.Name);
         Assert.Equal(DeskLiquidity.Full, ledx.Liquidity);
         Assert.Equal("60 OFFERS · FLEA FROM LEVEL 15", ledx.Offers);
-        Assert.Equal($"901,728{Nb}₽", ledx.Figure);
+        Assert.Equal($"1,000,000{Nb}₽", ledx.Figure);
         Assert.Equal(DeskPlate.Copies, ledx.Plate);
         Assert.Equal("3% UNDER", ledx.Rule);
-        Assert.Equal($"Copies 970,000{Nb}₽ · nets 873,000{Nb}₽ after the fee", ledx.PlateLine);
-        Assert.Equal($"Last low 1,000,000{Nb}₽ · Therapist pays 650,000{Nb}₽", ledx.PlateReason);
-        Assert.Equal($"Flea net 901,728{Nb}₽ · fee 98,272{Nb}₽", ledx.FleaNet);
+        Assert.Equal($"Copies 970,000{Nb}₽", ledx.PlateLine);
+        Assert.Equal($"Nets 873k{Nb}₽ after the fee", ledx.PlateNet);
+        Assert.Equal([$"Last low 1,000,000{Nb}₽", $"Therapist pays 650,000{Nb}₽"], ledx.PlateReasons);
+        Assert.Equal([$"Flea net 901,728{Nb}₽", $"fee 98,272{Nb}₽"], ledx.FleaNet);
         Assert.Equal($"↓{Nb}−10.4% · 48{Nb}H", ledx.TwoDays);
         Assert.Equal(["Private Clinic ×1 · now · FIR", "Medstation 3 ×1 · a hideout module", "Crisis ×2 · later · FIR"], ledx.Keep.Select(k => k.Text));
         Assert.Equal([DeskNotch.Now, DeskNotch.Hideout, DeskNotch.Later], ledx.Keep.Select(k => k.Notch));
@@ -95,10 +98,14 @@ public class DeskCardTests
         Assert.Equal("NOT ON THE FLEA", ammo.Offers);
         var key = Card("stash", 5, 2);
         Assert.Equal(DeskPlate.Warning, key.Plate);
-        Assert.StartsWith($"Copies 1,832,221{Nb}₽, over the best net: at ", key.PlateLine);
+        Assert.Equal($"Copies 1,832,221{Nb}₽", key.PlateLine);
+        Assert.StartsWith("Over the best net: at ", key.PlateNet);
+        Assert.Null(keycard.PlateNet);
         var grizzly = Card("backpack", 4, 1);
         Assert.Equal(DeskPlate.Copies, grizzly.Plate);
         Assert.StartsWith("Copies ~", grizzly.PlateLine);
+        // Under six digits the net stays in full.
+        Assert.Matches(@"^Nets \d{1,2},\d{3} ₽ after the fee$", grizzly.PlateNet);
         Assert.Contains("Scaled to 1469/1800 · full ", grizzly.Notes[0]);
         // A container with its contents unseen says so.
         Assert.Contains("Contents unseen: open it in the game, then a screenshot", Card("stash", 0, 0).Notes);
@@ -163,6 +170,36 @@ public class DeskCardTests
     {
         var (_, ledx) = At("stash", 8, 0);
         Assert.Equal("970000", DeskCards.Clipboard(DeskCopies.Of(ledx.Cell, View.FactsOf(ledx.Cell.ItemId!), View.Flea, DeskCopyRule.Default)));
+    }
+
+    // The rule's − and + say where a press takes it, on either side of the last low (QA pass of step C, F4: over it the −
+    // said "1% further under the last low" where it goes to 1 % over).
+    [Fact]
+    public void The_rules_buttons_say_where_a_press_goes()
+    {
+        Assert.Equal("Lower: 4% under the last low", DeskCards.StepTip(DeskCopyRule.Default, -1));
+        Assert.Equal("Higher: 2% under the last low", DeskCards.StepTip(DeskCopyRule.Default, 1));
+        Assert.Equal("Lower: 1% over the last low", DeskCards.StepTip(new DeskCopyRule(2), -1));
+        Assert.Equal("Higher: 3% over the last low", DeskCards.StepTip(new DeskCopyRule(2), 1));
+        Assert.Equal("Lower: the last low", DeskCards.StepTip(new DeskCopyRule(1), -1));
+        Assert.Equal("Higher: the last low", DeskCards.StepTip(new DeskCopyRule(-1), 1));
+        Assert.Equal("Lower: 1% under the last low", DeskCards.StepTip(new DeskCopyRule(0), -1));
+        Assert.Equal("Higher: 1% over the last low", DeskCards.StepTip(new DeskCopyRule(0), 1));
+        // At the end of its range a press leaves it there.
+        Assert.Equal("Lower: 20% under the last low", DeskCards.StepTip(new DeskCopyRule(-20), -1));
+    }
+
+    // The prices' age counts from tarkov.dev's scan of the item, not from when the item file was had (owner, 2026-10-19:
+    // the Dorm 104 key scanned 17:38, the file had at 18:14, the card said "8 min old" at 18:22, not "44").
+    [Fact]
+    public void The_age_counts_from_the_items_scan()
+    {
+        var (region, ledx) = At("stash", 8, 0);
+        DeskItemFacts? Scanned(string id) => View.FactsOf(id) is { } f ? f with { Updated = Now.AddMinutes(-50) } : null;
+        var context = Context() with { Facts = Scanned };
+        Assert.Equal("Prices 50 min old · tarkov.dev", DeskCards.Of(region, ledx, context).Age);
+        DeskItemFacts? Old(string id) => View.FactsOf(id) is { } f ? f with { Updated = Now.AddHours(-3) } : null;
+        Assert.Equal("Prices 3 h old · tarkov.dev", DeskCards.Of(region, ledx, context with { Facts = Old }).Age);
     }
 
     [Fact]

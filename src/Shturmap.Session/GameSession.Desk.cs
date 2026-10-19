@@ -70,7 +70,7 @@ public sealed partial class GameSession
     }
 
     // Under the gate: a desk reading taken into the mode's page (a newer reading replaces the regions it shows and keeps
-    // the others; DeskLedger), and the prices asked for when the item file is over an hour old.
+    // the others; DeskLedger), and the prices asked for when the item file is over ten minutes old.
     private void TakeDesk(DeskReading reading, double ms)
     {
         if (reading.Page is not { } page)
@@ -87,14 +87,24 @@ public sealed partial class GameSession
             ("named", cells.Count(c => c.Ids.Count == 1)), ("unsure", cells.Count(c => c.Ids.Count > 1)), ("changed", change.Changed.Count), ("ms", ms));
         AppLog.Info($"Desk read from a menu screenshot ({reading.Screen}): {page.Regions.Count} regions, {cells.Count} cells, " +
                     $"{cells.Count(c => c.Ids.Count == 1)} named, {cells.Count(c => c.Ids.Count > 1)} one of several, {change.Changed.Count} regions changed ({ms:0} ms)");
+        // A region read too blank to stand for the page's (a window with no cell read, a grid whose items' lines weren't
+        // found) leaves the page's as it was (DeskLedger.Blank).
+        foreach (var key in change.Refused)
+        {
+            var region = page.Region(key);
+            AppLog.Info($"Desk reading kept the page's {(region?.Kind == DeskRegionKind.ContainerWindow ? "window" : key)}: " +
+                        $"{region?.ReadCells ?? 0} cells read, {region?.Unread ?? 0} unread, against {change.Page.Region(key)?.ReadCells ?? 0} on the page");
+            Study.Game("desk.kept", ("kind", region?.Kind.ToString() ?? ""), ("read", region?.ReadCells ?? 0), ("unread", region?.Unread ?? 0));
+        }
         SaveDeskIfDirty();
         RefreshDeskPrices();
     }
 
     // Under the gate. The desk's prices come per reading (docs/DESIGN.md §3, "The stash desk's prices come per reading"):
     // json.tarkov.dev has no price file per item, so the item file (every item's prices, about 1.4 MB compressed) is asked
-    // for again with its ETag when a desk reading arrives and the saved copy is over an hour old; an unchanged one costs a
-    // few hundred bytes. Never on a timer: a page left open isn't refreshed.
+    // for again with its ETag when a desk reading arrives and the saved copy is over ten minutes old (GameDataLoader.
+    // DeskPricesAge; an hour until 2026-10-19); an unchanged one costs a few hundred bytes. Never on a timer: a page left
+    // open isn't refreshed.
     private void RefreshDeskPrices()
     {
         if (_sources is not { } sources || _deskPricesLoading || GivenSources is not null || _loader is null || _data is null)

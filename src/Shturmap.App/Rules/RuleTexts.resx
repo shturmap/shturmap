@@ -433,8 +433,28 @@
     <comment>The stash desk's card, at the right of the flea's net line: the change over 48 hours, from tarkov.dev's item file ("↓ −10.3% · 48 H"). {change}: the arrow and the change with its sign. Capitals, short.</comment>
   </data>
   <data name="DeskCardFleaNet" xml:space="preserve">
-    <value>Flea net {net} · fee {fee}</value>
-    <comment>The stash desk's card, under the gold figure: what selling the stack on the flea at the last low brings after the flea's fee, and the fee. {net}, {fee}: full prices in roubles (DeskCardRoubles).</comment>
+    <value>Flea net {net}</value>
+    <comment>The stash desk's card, under the plate: what selling the stack on the flea at the last low brings after the flea's fee; DeskCardFee follows it after " · " (the line breaks between them where it wraps). {net}: a full price in roubles (DeskCardRoubles).</comment>
+  </data>
+  <data name="DeskCardNets" xml:space="preserve">
+    <value>Nets {net} after the fee</value>
+    <comment>The stash desk's card, the plate's second line under DeskCardCopies, muted: what one sale at the copied price brings after the flea's fee. {net}: roubles, in thousands from six digits ("873k ₽"), in full under ("10,800 ₽").</comment>
+  </data>
+  <data name="DeskCardFee" xml:space="preserve">
+    <value>fee {fee}</value>
+    <comment>The stash desk's card, after DeskCardFleaNet and " · ": the flea's fee for that sale. {fee}: a full price in roubles.</comment>
+  </data>
+  <data name="DeskCardWeekMark" xml:space="preserve">
+    <value>7 D</value>
+    <comment>The stash desk's card, the mark beside the dashed hairline 7 days back in the 30 days' price band: "7 days". Capitals, as short as DeskCardSevenDays' "7 D"; a no-break space.</comment>
+  </data>
+  <data name="DeskRuleLowerTip" xml:space="preserve">
+    <value>Lower: {rule}</value>
+    <comment>Tooltip and name of the − button of the stash desk's copy rule (on the card's plate and in settings): what a click on a cell copies after pressing it. {rule}: DeskCopiedUnder, DeskCopiedMatch or DeskCopiedOver ("4% under the last low", "the last low", "1% over the last low"; QA pass of step C, F4: the button over the last low said "further under" where it goes to 1 % over).</comment>
+  </data>
+  <data name="DeskRuleHigherTip" xml:space="preserve">
+    <value>Higher: {rule}</value>
+    <comment>As DeskRuleLowerTip, the + button.</comment>
   </data>
   <data name="DeskCardCopyHead" xml:space="preserve">
     <value>A CLICK COPIES</value>
@@ -453,12 +473,12 @@
     <comment>The stash desk's copy rule, as DeskRuleMatch: the price a click copies is this much over the flea's last low. {amount}: 1 to 20. Capitals, short.</comment>
   </data>
   <data name="DeskCardCopies" xml:space="preserve">
-    <value>Copies {price} · nets {net} after the fee</value>
-    <comment>The stash desk's card, on the plate under A CLICK COPIES: the list price a click on the cell copies (per item, as the flea's price field takes it) and what one sale at it brings after the flea's fee. {price}, {net}: full prices in roubles (DeskCardRoubles; the price with "~" where it is scaled to a condition).</comment>
+    <value>Copies {price}</value>
+    <comment>The stash desk's card, on the plate under A CLICK COPIES: the list price a click on the cell copies (per item, as the flea's price field takes it). Short: the plate's line is one line in the rail's 351 DIP (QA pass of step C, F5). {price}: a full price in roubles (DeskCardRoubles; with "~" where it is scaled to a condition).</comment>
   </data>
   <data name="DeskCardOverBest" xml:space="preserve">
-    <value>Copies {price}, over the best net: at {best} it nets {bestNet}, at this {net}</value>
-    <comment>The stash desk's card, on the plate, with the status bar's gold light: the price a click copies is above the price that nets the most after the flea's fee (the fee grows faster than the price there). {price}, {best}, {bestNet}, {net}: full prices in roubles.</comment>
+    <value>Over the best net: at {best} it nets {bestNet}, at this {net}</value>
+    <comment>The stash desk's card, the plate's second line under DeskCardCopies (which carries the status bar's gold light), muted: the copied price is above the price that nets the most after the flea's fee (the fee grows faster than the price there). {best}, {bestNet}, {net}: roubles, in thousands from six digits.</comment>
   </data>
   <data name="DeskCardTraderPaysMore" xml:space="preserve">
     <value>{trader} pays more · {price}. A click copies nothing.</value>

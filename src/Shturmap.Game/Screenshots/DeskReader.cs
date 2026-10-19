@@ -124,12 +124,12 @@ public sealed class DeskReader
             // number covers its label's start.
             var kind = place.Kind == DeskRegionKind.SpecialSlots ? DeskSlotKind.Special : DeskSlotKind.Any;
             var quickSlots = place.Kind is DeskRegionKind.Pockets or DeskRegionKind.Rig;
-            var (grid, parts, covered, gridOdd) = await GridAsync(bitmap, key, place.Parts, over, lines, highPassed, pitch, catalogue, looks, kind, quickSlots, ct);
+            var (grid, parts, covered, gridOdd, unread) = await GridAsync(bitmap, key, place.Parts, over, lines, highPassed, pitch, catalogue, looks, kind, quickSlots, ct);
             odd += gridOdd;
             cells.AddRange(grid);
             var cols = parts.Count > 0 ? parts.Max(p => p.I + p.W) : 0;
             var rows = parts.Count > 0 ? parts.Max(p => p.J + p.H) : 0;
-            var region = new DeskRegion(key, place.Kind, cols, rows, cells) { Parts = parts, Covered = covered, CoveredSlots = coveredSlots };
+            var region = new DeskRegion(key, place.Kind, cols, rows, cells) { Parts = parts, Covered = covered, CoveredSlots = coveredSlots, Unread = unread };
             if (place.Kind == DeskRegionKind.ContainerWindow)
                 region = region with { Title = place.Title, TitleIds = catalogue.Match.Titled(place.Title ?? "").Select(c => c.ItemId).ToList() };
             // A container's slot whose grid wasn't found (under a window, out of view): its grid's cells stay as they were.
@@ -150,10 +150,10 @@ public sealed class DeskReader
                     hidden[j * stash.Cols + i] = layout.Over.Any(o => o.Contains(cx, cy));
                 }
             }
-            var (grid, covered, gridOdd) = await CellsAsync(bitmap, "stash", stash, hidden, 0, 0, lines, highPassed, pitch, catalogue, looks,
+            var (grid, covered, gridOdd, unread) = await CellsAsync(bitmap, "stash", stash, hidden, 0, 0, lines, highPassed, pitch, catalogue, looks,
                 DeskSlotKind.Any, false, ct);
             odd += gridOdd;
-            regions.Add(new DeskRegion("stash", DeskRegionKind.Stash, stash.Cols, stash.Rows, grid) { Covered = covered });
+            regions.Add(new DeskRegion("stash", DeskRegionKind.Stash, stash.Cols, stash.Rows, grid) { Covered = covered, Unread = unread });
         }
 
         var page = new DeskPage(at, regions);
@@ -184,7 +184,7 @@ public sealed class DeskReader
 
     // A region's compartments: each a grid of its own, placed side by side in the region's units (gaps closed), its cells
     // read; what lies under a window or a toast is covered.
-    private async Task<(List<DeskCell> Cells, List<DeskRect> Parts, List<DeskRect> Covered, int Odd)> GridAsync(SKBitmap bitmap, string region,
+    private async Task<(List<DeskCell> Cells, List<DeskRect> Parts, List<DeskRect> Covered, int Odd, int Unread)> GridAsync(SKBitmap bitmap, string region,
         IReadOnlyList<SKRectI> compartments, IReadOnlyList<SKRectI> over, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue,
         List<DeskCellLook> looks, DeskSlotKind kind, bool quickSlots, CancellationToken ct)
     {
@@ -192,8 +192,13 @@ public sealed class DeskReader
         var parts = new List<DeskRect>();
         var covered = new List<DeskRect>();
         var odd = 0;
+        var unread = 0;
         if (compartments.Count == 0)
-            return (cells, parts, covered, odd);
+            return (cells, parts, covered, odd, unread);
+        // Two compartments of one region never overlap: one lying over another is the same one found twice, and its cells
+        // would be read and counted twice (a Junk window of 2026-10-19 had its GPUs and hoses twice in the total).
+        var found = compartments;
+        compartments = found.Where((c, n) => !found.Take(n).Any(o => DeskLayout.Overlapping(o, c))).ToList();
         var xs = Units(compartments.Select(c => (c.Left, (int)Math.Round(c.Width / (double)pitch))), pitch);
         var ys = Units(compartments.Select(c => (c.Top, (int)Math.Round(c.Height / (double)pitch))), pitch);
         foreach (var c in compartments)
@@ -211,13 +216,14 @@ public sealed class DeskReader
                     hidden[j * cols + i] = over.Any(o => o.Contains(cx, cy));
                 }
             }
-            var (read, hiddenRects, gridOdd) = await CellsAsync(bitmap, region, grid, hidden, i0, j0, lines, highPassed, pitch, catalogue, looks, kind,
-                quickSlots, ct);
+            var (read, hiddenRects, gridOdd, gridUnread) = await CellsAsync(bitmap, region, grid, hidden, i0, j0, lines, highPassed, pitch, catalogue,
+                looks, kind, quickSlots, ct);
             cells.AddRange(read);
             covered.AddRange(hiddenRects);
             odd += gridOdd;
+            unread += gridUnread;
         }
-        return (cells, parts, covered, odd);
+        return (cells, parts, covered, odd, unread);
     }
 
     // The compartments' places in units: each distinct left edge (or top) a whole number of cells after the one before
@@ -242,13 +248,14 @@ public sealed class DeskReader
     // A grid's item rectangles, each read: named, "one of N", or nothing said. A rectangle next to a hidden cell may run
     // under the window: covered, as the hidden cells are. The items are of the kind the grid takes (the special slots');
     // where quick slots may stand (pockets, a rig), a label whose cell shows a quick slot's number may have lost its start.
-    private async Task<(List<DeskCell> Cells, List<DeskRect> Covered, int Odd)> CellsAsync(SKBitmap bitmap, string region, StashGrid grid, bool[] hidden,
+    private async Task<(List<DeskCell> Cells, List<DeskRect> Covered, int Odd, int Unread)> CellsAsync(SKBitmap bitmap, string region, StashGrid grid, bool[] hidden,
         int i0, int j0, StashLines lines, StashGray highPassed, int pitch, DeskCatalogue catalogue, List<DeskCellLook> looks, DeskSlotKind kind,
         bool quickSlots, CancellationToken ct)
     {
         var cells = new List<DeskCell>();
         var covered = new List<DeskRect>();
         var odd = 0;
+        var unread = 0;
         var empty = StashGrids.Empty(grid, highPassed, pitch);
         for (var k = 0; k < grid.Area; k++)
         {
@@ -272,6 +279,31 @@ public sealed class DeskReader
             var cutAtStart = quickSlots && QuickSlotNumber(bitmap, cell, pitch);
             var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, cell, pitch,
                 text => catalogue.Match.Match(text, rect.W, kind, cutAtStart), DeskMatch.Enough, ct, Confirm);
+            if (rect.Odd && (fit < DeskMatch.Enough || best is null) && rect.Cells.Count is > 1 and <= OddCellsRead)
+            {
+                // An odd shape whose label fits nothing: the lines between its items didn't show (a hover highlight, light
+                // art; the Keys window of 2026-10-19, 20:22, RB-VO, RB-AK and RB-PP with Dorm 103 and Container in one
+                // cross). Each of its cells is read on its own, and stands as an item of one cell where its label fits one.
+                var left = new List<(int I, int J)>();
+                foreach (var (ci, cj) in rect.Cells)
+                {
+                    var one = Pixels(ci, cj, 1, 1);
+                    var cut = quickSlots && QuickSlotNumber(bitmap, one, pitch);
+                    var (l1, f1, b1) = await _labels.ReadLabelAsync(bitmap, one, pitch,
+                        text => catalogue.Match.Match(text, 1, kind, cut), DeskMatch.Enough, ct, Confirm);
+                    var fitting = f1 >= DeskMatch.Enough && b1 is not null ? b1.Where(c => kind == DeskSlotKind.Special || Fits(c, 1, 1)).ToList() : [];
+                    if (fitting.Count == 0)
+                    {
+                        left.Add((ci, cj));
+                        continue;
+                    }
+                    rects.Add((new StashRect(ci, cj, 1, 1, false), l1, f1, fitting));
+                }
+                // What is left of it stays an odd shape: nothing said there.
+                if (left.Count > 0)
+                    rects.Add((rect with { Cells = left }, label, fit, []));
+                continue;
+            }
             rects.Add((rect, label, fit, fit >= DeskMatch.Enough && best is not null ? best : []));
         }
 
@@ -316,6 +348,7 @@ public sealed class DeskReader
             if (rect.Odd && sized.Count == 0)
             {
                 odd++;
+                unread += rect.Cells.Count > 0 ? rect.Cells.Count : rect.W * rect.H;
                 continue;
             }
             var pixels = Pixels(at.I, at.J, at.W, at.H);
@@ -332,11 +365,17 @@ public sealed class DeskReader
                 fir = StashMarks.Seen(bitmap, pixels, pitch);
             }
             var cell = new DeskCell(i0 + at.I, j0 + at.J, at.W, at.H, ids) { Count = count, Print = print, FoundInRaid = fir, Holds = HoldsOf(sized) };
+            if (ids.Count == 0)
+                unread += at.W * at.H;
             cells.Add(cell);
             looks.Add(new DeskCellLook(region, pixels, cell, label, fit, contradicted, countText));
         }
-        return (cells.OrderBy(c => c.J).ThenBy(c => c.I).ToList(), covered, odd);
+        return (cells.OrderBy(c => c.J).ThenBy(c => c.I).ToList(), covered, odd, unread);
     }
+
+    // The most cells of an odd shape read one by one (a cross of five keys under a hover highlight; a bigger shape is
+    // more likely large items cut into cells, whose cells alone fit nothing).
+    private const int OddCellsRead = 12;
 
     /// <summary>Whether a cell shows a quick slot's number at its top left: the game's light plate, about a third of a
     /// cell square, with the slot's digit on it ("6" over "Alu splint"). Measured on the screenshots of 2026-10-19: the

@@ -18,7 +18,7 @@ public class DeskSheetTests
         [Water] = new(Water) { Traders = [("trader-a", 10_000)], Kind = DeskItemKind.FoodDrink, H = 2 },
         [Wallet] = new(Wallet) { Traders = [("trader-a", 1_000)], Kind = DeskItemKind.Container },
         [Gun] = new(Gun) { Traders = [("trader-a", 50_000)], Kind = DeskItemKind.Gun },
-        [Key] = new(Key) { Traders = [("trader-a", 200_000)] },
+        [Key] = new(Key) { Traders = [("trader-a", 200_000)], StackMax = 1 },
         // The secure container: no flea, no trader: no figure.
         [Pouch] = new(Pouch) { NoFlea = true, Kind = DeskItemKind.Container },
     };
@@ -45,6 +45,28 @@ public class DeskSheetTests
         Assert.False(pouch.Cells[0].Unseen);
         Assert.Null(pouch.Cells[0].Figure);
         Assert.Equal(["loadout", "pouch", "stash"], sheet.Regions.Select(r => r.Region.Key));
+    }
+
+    // The owner's test of 2026-10-19: a drill (it doesn't stack) read "×310" put 53 M into a Junk window's total. A count
+    // past what the item stacks to is a misread: one, at least. An item the file gives no stack size keeps its count.
+    [Fact]
+    public void A_count_past_the_items_stack_counts_one()
+    {
+        var page = new DeskPage(DateTimeOffset.MinValue, [
+            new("stash", DeskRegionKind.Stash, 10, 10, [Cell(0, 0, Key) with { Count = 310 }, Cell(1, 0, Water) with { Count = 3 }]),
+        ]);
+        var sheet = DeskSheet.Of(page, Facts, Flea);
+        var cells = sheet.Regions.Single().Cells;
+        Assert.Equal(1, cells[0].Cell.Count);
+        Assert.Equal(200_000, cells[0].Figure!.Value);
+        Assert.Equal(3, cells[1].Cell.Count);
+        Assert.Equal(230_000, sheet.Totals.Stash);
+        // A flea item counts its net in the total, its cell shows the listing price.
+        var flea = new DeskItemFacts("000000000000000000000399") { LastLow = 20_000, BasePrice = 10_000, Traders = [("trader-a", 100)] };
+        var listed = DeskSheet.Of(new DeskPage(DateTimeOffset.MinValue, [new("stash", DeskRegionKind.Stash, 10, 10, [Cell(0, 0, flea.Id)])]),
+            id => id == flea.Id ? flea : null, Flea);
+        Assert.Equal(20_000, listed.Regions.Single().Cells.Single().Figure!.Value);
+        Assert.Equal(20_000 - DeskValues.Fee(10_000, 20_000, 1, Flea), listed.Totals.Stash);
     }
 
     [Fact]

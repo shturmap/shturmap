@@ -105,7 +105,8 @@ internal static class DeskCommand
             if (look.Page is { } read)
             {
                 var change = ledger.Apply(mode, read);
-                Console.WriteLine($"   page in hand: {(change.First ? "first reading" : $"changed {(change.Changed.Count == 0 ? "nothing" : string.Join(", ", change.Changed.Order(StringComparer.Ordinal)))}")}");
+                Console.WriteLine($"   page in hand: {(change.First ? "first reading" : $"changed {(change.Changed.Count == 0 ? "nothing" : string.Join(", ", change.Changed.Order(StringComparer.Ordinal)))}")}" +
+                                  (change.Refused.Count > 0 ? $"; kept the page's {string.Join(", ", change.Refused.Order(StringComparer.Ordinal))} (read too blank)" : ""));
             }
             if (look.Page is { } page)
             {

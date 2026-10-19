@@ -716,6 +716,10 @@
     <value>Point at an item for its card. A click copies its flea price; a right-click pins its card here.</value>
     <comment>The rail while the stash desk is up, before an item on it was pointed at: pointing at an item's cell puts its card here; a click on the cell copies its list price to the clipboard; a right-click pins its card in the rail. Muted.</comment>
   </data>
+  <data name="DeskCompactTip" xml:space="preserve">
+    <value>Show its whole card</value>
+    <comment>Tooltip of a pinned card shown as one line on the stash desk's rail (its icon, name and figure) while another cell's card stands above it: a click shows the pinned card whole.</comment>
+  </data>
   <data name="SettingsCopyRule" xml:space="preserve">
     <value>Flea price to copy</value>
     <comment>Settings: the row's name for the stash desk's copy rule: what a click on a desk cell copies to the clipboard, the flea's last low matched or 1 to 20 % under or over it; the same rule as the control on the desk's card. Bold, beside the control.</comment>
@@ -723,14 +727,6 @@
   <data name="SettingsCopyRuleNote" xml:space="preserve">
     <value>Match, or 1–20% under or over the last low. The desk's card has the same control.</value>
     <comment>Settings: the note under the row SettingsCopyRule, muted: what the rule can be, and that the same control stands on the stash desk's card.</comment>
-  </data>
-  <data name="DeskRuleLower" xml:space="preserve">
-    <value>Lower: 1% further under the last low</value>
-    <comment>Tooltip and name of the − button of the stash desk's copy rule (on the card's plate and in settings): the price a click copies goes 1 % lower.</comment>
-  </data>
-  <data name="DeskRuleHigher" xml:space="preserve">
-    <value>Higher: 1% further over the last low</value>
-    <comment>Tooltip and name of the + button of the stash desk's copy rule: the price a click copies goes 1 % higher.</comment>
   </data>
   <data name="DeskPinTip" xml:space="preserve">
     <value>Pin this card to the rail (or right-click the item)</value>

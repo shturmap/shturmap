@@ -12,41 +12,90 @@ public class DeskPageRulesTests
 
     private static DeskRegionSheet Region(string key) => View.Sheet.Regions.Single(r => r.Region.Key == key);
 
-    // The cells scale with the desk's width (owner, 2026-10-20: "We should utilize the whole screen"): 40 to 80 DIP in steps
-    // of 8, the largest at which the page's widest row fits. One column of ten cells and the margins: 40 at 900×560 (its
-    // desk is 516 across), 48 from 517, 56 from 597, up to 80 from 837. The game's two columns where both fit at 56 or more:
-    // the made-up desk's gear column holds POCKETS and SPECIAL SLOTS side by side (7 cells and a gap), so from a desk 1038
-    // across at 56, 1174 at 64 (1600×900's desk, 1216, stands there), 1446 at 80 (a 2560 monitor's).
+    // The owner's page after the Keys window's reading of 2026-10-19: the gear folded into one line, the stash of ten by
+    // thirteen open and the Keys window of eleven by seven attached to it.
+    private static List<DeskRegion> OwnersPage() =>
+    [
+        new("loadout", DeskRegionKind.Loadout, 0, 0, Enumerable.Range(0, 7).Select(i => new DeskCell(0, 0, 0, 0, ["x"]) { Slot = DeskSlots.Loadout[i].Key }).ToList()),
+        new("rig", DeskRegionKind.Rig, 6, 9, []),
+        new("stash", DeskRegionKind.Stash, 10, 13, []),
+        new("window:keys", DeskRegionKind.ContainerWindow, 11, 7, []) { Title = "Keys", AttachedTo = new DeskAnchor("stash", 7, 9) },
+    ];
+
+    private static readonly IReadOnlySet<string> StashAndKeys = new HashSet<string> { "stash", "window:keys" };
+
+    // The cells fill the desk (owner, 2026-10-19, after trying step C: "there is a lot of wasted screen space … Find the
+    // optimal solution"): the largest size, 40 to 128 DIP in steps of 8, at which the widest row fits the desk's width and
+    // the tallest column its height, the page flowed into columns: the gear down one and on into the next, the stash of its
+    // own, what follows the stash (its windows) in the shortest column beside it. On the owner's page at a 2560 monitor's
+    // desk (2176 × 1330) the stash fills the height at 96, the Keys window beside it; at 1600×900's (1216 × 760) 48; at
+    // 900×560's (516 × 440) 40, one column, and the page scrolls. Until 2026-10-19 the width alone: 80 at the most, the gear
+    // and the stash two columns from 56.
     [Fact]
-    public void The_cell_and_the_columns_follow_the_desks_width()
+    public void The_cells_fill_the_desks_width_and_height()
     {
-        var regions = View.Sheet.Regions.Select(r => r.Region).ToList();
-        var stash = regions.FindIndex(r => r.Kind == DeskRegionKind.Stash);
-        Assert.Equal((40, -1), DeskPageRules.Layout(regions, 516));
-        Assert.Equal((48, -1), DeskPageRules.Layout(regions, 517));
-        Assert.Equal((48, -1), DeskPageRules.Layout(regions, 596));
-        Assert.Equal((56, -1), DeskPageRules.Layout(regions, 597));
-        Assert.Equal((72, -1), DeskPageRules.Layout(regions, 836));
-        Assert.Equal((80, -1), DeskPageRules.Layout(regions, 837));
-        Assert.Equal((80, -1), DeskPageRules.Layout(regions, 1037));
-        Assert.Equal((56, stash), DeskPageRules.Layout(regions, 1038));
-        Assert.Equal((56, stash), DeskPageRules.Layout(regions, 1173));
-        Assert.Equal((64, stash), DeskPageRules.Layout(regions, 1216));
-        Assert.Equal((72, stash), DeskPageRules.Layout(regions, 1310));
-        Assert.Equal((80, stash), DeskPageRules.Layout(regions, 1446));
-        Assert.Equal((80, stash), DeskPageRules.Layout(regions, 2176));
-        Assert.Equal(64, DeskPageRules.Cell(regions, 1216));
-        // Without the special slots the gear's column is six cells: two columns from 958.
-        var gear = regions.Where(r => r.Kind != DeskRegionKind.SpecialSlots).ToList();
-        Assert.Equal(-1, DeskPageRules.ColumnBreak(gear, 957));
-        Assert.Equal(DeskRegionKind.Stash, gear[DeskPageRules.ColumnBreak(gear, 958)].Kind);
-        // The gear stands left of it: everything before the stash in reading order.
-        var at = DeskPageRules.ColumnBreak(regions, 1038);
-        Assert.DoesNotContain(regions.Take(at), r => r.Kind == DeskRegionKind.Stash);
+        var page = OwnersPage();
+        var large = DeskPageRules.Layout(page, 2176, 1330, StashAndKeys);
+        Assert.Equal((96, 2), (large.Cell, large.Break));
+        Assert.Equal([0, 1, 0], large.Columns);
+        var middle = DeskPageRules.Layout(page, 1216, 760, StashAndKeys);
+        Assert.Equal((48, 2), (middle.Cell, middle.Break));
+        var small = DeskPageRules.Layout(page, 516, 440, StashAndKeys);
+        Assert.Equal((40, -1), (small.Cell, small.Break));
+        Assert.False(small.Fits(516, 440));
+        // Each layout chosen fits the desk, and the next size up doesn't, flowed or in one column.
+        foreach (var (w, h) in new[] { (2176.0, 1330.0), (1216, 760), (1600, 1000), (1000, 700) })
+        {
+            var chosen = DeskPageRules.Layout(page, w, h, StashAndKeys);
+            Assert.True(chosen.Fits(w, h), $"{w}×{h} at {chosen.Cell}");
+            Assert.All(new[] { false, true }, one =>
+                Assert.False(DeskPageRules.Arrange(page, StashAndKeys, chosen.Cell + 8, w, h, oneColumn: one).Fits(w, h), $"{w}×{h} at {chosen.Cell + 8}"));
+        }
+        // With every region open the gear flows on into a second column: the made-up desk read whole fills a 2560 monitor's
+        // desk at 80 in three columns (the gear's two and the stash's, the WZ window beside the stash), and 1600×900's at 40,
+        // three columns too, unscrolled (until 2026-10-19 64, two columns, scrolling).
+        var made = View.Sheet.Regions.Select(r => r.Region).ToList();
+        var whole = DeskPageRules.Layout(made, 2176, 1330);
+        Assert.Equal(80, whole.Cell);
+        Assert.Equal(3, whole.ColumnWidths.Count);
+        var mid = DeskPageRules.Layout(made, 1216, 760);
+        Assert.Equal((40, 3), (mid.Cell, mid.ColumnWidths.Count));
+        Assert.True(mid.Fits(1216, 760));
+        // 900×560's: 40, one column, scrolling.
+        var narrow = DeskPageRules.Layout(made, 516, 440);
+        Assert.Equal((40, -1, 1), (narrow.Cell, narrow.Break, narrow.ColumnWidths.Count));
+        // Up to 128, twice the art's own 64 px: a page of one small grid on a large desk.
+        Assert.Equal(128, DeskPageRules.Cell([new DeskRegion("stash", DeskRegionKind.Stash, 10, 3, [])], 2176, 1330));
         // Every size a whole number of pixels at every Windows scale from 100 to 200 % in quarters.
+        Assert.Equal([40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128], DeskPageRules.Sizes);
         Assert.All(DeskPageRules.Sizes, s => Assert.All(new[] { 1, 1.25, 1.5, 1.75, 2 }, f => Assert.Equal(Math.Round(s * f), s * f)));
-        // A page without a stash stands in one column.
-        Assert.Equal((80, -1), DeskPageRules.Layout(gear.Where(r => r.Kind != DeskRegionKind.Stash).ToList(), 2176));
+        // A page without a stash: the gear alone, flowed.
+        Assert.Equal(-1, DeskPageRules.Layout(made.Where(r => r.Kind != DeskRegionKind.Stash).ToList(), 2176, 1330).Break);
+    }
+
+    // The gear flows down a column and on into the next where the desk's height ends, in reading order, a row of POCKETS and
+    // SPECIAL SLOTS kept whole; the stash heads a column of its own; a window of the stash's goes in the shortest column
+    // beside the stash where it fits, else under the stash.
+    [Fact]
+    public void The_page_flows_into_columns_in_reading_order()
+    {
+        var made = View.Sheet.Regions.Select(r => r.Region).ToList();
+        var keys = made.Select(r => r.Key).ToList();
+        var flowed = DeskPageRules.Arrange(made, null, 48, 1216, 760);
+        var columnOf = flowed.Blocks.Select((b, i) => (Key: ((DeskBlock.Region)b).Key, Column: flowed.Columns[i])).ToDictionary(x => x.Key, x => x.Column);
+        // Reading order kept: no region in a column left of one before it, but what follows the stash.
+        var gear = keys.TakeWhile(k => k != "stash").ToList();
+        Assert.True(gear.Zip(gear.Skip(1)).All(p => columnOf[p.First] <= columnOf[p.Second]));
+        Assert.Equal(columnOf["pockets"], columnOf["special"]);
+        Assert.True(columnOf["stash"] > columnOf[gear[^1]]);
+        // Without a height the gear stays one column, the stash beside it.
+        var tall = DeskPageRules.Arrange(made, null, 48);
+        Assert.Equal(2, tall.ColumnWidths.Count);
+        // The owner's page: the Keys window beside the stash, in the gear's column, where it fits; under it on a desk too
+        // narrow for that.
+        var page = OwnersPage();
+        Assert.Equal([0, 1, 0], DeskPageRules.Arrange(page, StashAndKeys, 48, 2176, 760).Columns);
+        Assert.Equal([0, 1, 1], DeskPageRules.Arrange(page, StashAndKeys, 48, 1000, 2000).Columns);
     }
 
     // The marks and the heads grow with the cell: the figure 10.5 px at 40 to 15 at 80, the count 10 to 14.5, the source's
@@ -55,13 +104,17 @@ public class DeskPageRulesTests
     [Fact]
     public void The_marks_and_the_heads_scale_with_the_cell()
     {
-        Assert.Equal([10.5, 11, 12, 13, 14, 15], DeskPageRules.Sizes.Select(DeskCells.FigureSizeAt));
-        Assert.Equal([10, 10.5, 11.5, 12.5, 13.5, 14.5], DeskPageRules.Sizes.Select(DeskCells.SmallSizeAt));
-        Assert.Equal([9, 10, 11, 12, 13, 14], DeskPageRules.Sizes.Select(DeskCells.GlyphAt));
-        Assert.Equal([14, 16, 18, 20], DeskPageRules.Sizes.Skip(2).Select(DeskCells.PortraitAt));
-        Assert.Equal([11, 11, 11, 12, 13, 14], DeskPageRules.Sizes.Select(DeskCells.NotchAt));
-        Assert.Equal([12, 12, 12, 13, 14, 15], DeskPageRules.Sizes.Select(DeskCells.PlateAt));
-        Assert.Equal([11, 11, 12, 12, 13, 13], DeskPageRules.Sizes.Select(DeskPageRules.HeadSize));
+        var sizes = DeskPageRules.Sizes.Take(6).ToList();
+        Assert.Equal([10.5, 11, 12, 13, 14, 15], sizes.Select(DeskCells.FigureSizeAt));
+        Assert.Equal([10, 10.5, 11.5, 12.5, 13.5, 14.5], sizes.Select(DeskCells.SmallSizeAt));
+        Assert.Equal([9, 10, 11, 12, 13, 14], sizes.Select(DeskCells.GlyphAt));
+        Assert.Equal([14, 16, 18, 20], sizes.Skip(2).Select(DeskCells.PortraitAt));
+        Assert.Equal([11, 11, 11, 12, 13, 14], sizes.Select(DeskCells.NotchAt));
+        Assert.Equal([12, 12, 12, 13, 14, 15], sizes.Select(DeskCells.PlateAt));
+        Assert.Equal([11, 11, 12, 12, 13, 13], sizes.Select(DeskPageRules.HeadSize));
+        // On up to 128 a pixel a step (the figure 21 px at 128), the heads a pixel every two steps up to 16.
+        Assert.Equal(21, DeskCells.FigureSizeAt(128));
+        Assert.Equal([14, 14, 15, 15, 16, 16], DeskPageRules.Sizes.Skip(6).Select(DeskPageRules.HeadSize));
         // From 56 up the change stands as a figure, as at 56 (*The cell*).
         var cell = new DeskCellSheet(new DeskCell(0, 0, 2, 1, ["x"]),
             new DeskFigure(DeskSource.Flea, 13_000, 13_000, null) { Arrow = DeskArrow.Down, Change48h = -12 }, DeskKeepLevel.None, false);
@@ -81,8 +134,9 @@ public class DeskPageRulesTests
         var stash = new DeskRegion("stash", DeskRegionKind.Stash, 10, 13, []);
         Assert.Equal(6 * 56 + 1, DeskPageRules.ColumnWidth([read, rig], 56, 6));
         Assert.Equal((5, 2), DeskPageRules.Grid(rig));
-        // The desk of a window 1600 wide (1216 DIP beside the rail): two columns, the gear's six cells and the stash's ten.
-        Assert.Equal(2, DeskPageRules.ColumnBreak([read, rig, stash], 1216));
+        // The desk of a window 1600 by 900 (1216 by 760 DIP beside the rail): two columns, the gear's six cells and the
+        // stash's ten.
+        Assert.Equal(2, DeskPageRules.ColumnBreak([read, rig, stash], 1216, 760));
     }
 
     // POCKETS and SPECIAL SLOTS stand side by side: the gear's column holds both (the pockets' four cells, the special
@@ -102,8 +156,9 @@ public class DeskPageRulesTests
     {
         var wide = new DeskRegion("backpack", DeskRegionKind.Backpack, 12, 4, []);
         var stash = new DeskRegion("stash", DeskRegionKind.Stash, 10, 13, []);
-        Assert.Equal(-1, DeskPageRules.ColumnBreak([wide, stash], 1216));
-        Assert.Equal(1, DeskPageRules.ColumnBreak([wide, stash], 1300));
+        // At 40 DIP side by side they take 12 + 10 cells, the gap and the margins: 942 DIP; the page 13 rows high.
+        Assert.Equal(-1, DeskPageRules.ColumnBreak([wide, stash], 941, 600));
+        Assert.Equal(1, DeskPageRules.ColumnBreak([wide, stash], 942, 600));
     }
 
     // A grid's compartments stand apart as the game draws them (QA pass of 2026-10-19, F3: the Zhuk's ten pockets of one by

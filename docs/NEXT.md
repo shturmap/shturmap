@@ -464,6 +464,76 @@ Plan-only fake raid at 1600×900, then the one with the Zhuk window, and the rep
 PLAN | DESK across the rail's 351 DIP above MAP, 36 DIP tall, its words in the title style, the view on screen raised
 with the open map's row's amber bar; ← and → pick (`DeskSwitch.ByArrow`). DESIGN.md principle 3, *The stash desk*.
 
+**After the owner's first test (2026-10-19)**, on four GEAR-tab screenshots of the Keys container (kept in the ignored
+`tests\fixtures\ocr\desk\keys`), with the UI QA pass of step C (F2 to F5) and the senior translator's items. Binding:
+DESIGN.md §2 ("For the stash desk": a window's lattice, the prices every ten minutes), §3 (ten minutes, the age from the
+scan), §4 principle 11 and "What you have" (the notice), *The stash desk* (*Its place*: the cells fill the desk; *What it
+mirrors*: a blank reading; *The head line*: the totals; *The cell*: the listing price, "~", a count past the stack; *The
+card*; *The click*; *As built*: the rail, the card, the page, the stems), §8 (how the parts work).
+
+- **A sorted container read as one "?"** (owner: the Keys window read right at 20:21 and wrong after the game's SORT at
+  20:22). The stash's grid finding snapped the window's lattice onto the window's thin bright outline, 6 px left of its
+  first cells (811 for 817 at 1440p): every line between the cells was missed, the 71 keys joined into odd shapes, and
+  one 6×1 "?" was left; at 20:21 the frame found on the cells' lines stood beside the lattice as a second compartment
+  (6 px apart, over the old 4 px tolerance), so the keys were read once and a "?" across the other. Fixed in the desk's
+  reader (`DeskLayout.Aligned`, `SameCompartment`, `Overlapping`; `DeskReader`): a window's lattice moved onto the lines
+  between its cells, a frame within a quarter of a cell of it the same compartment, two compartments lying over each
+  other read once; a shape no label fits (the hover highlight over RB-AK joined five keys) read cell by cell.
+  `shturmap-cli desk`, KEYS window, before → after: 20:21 12×7, 2 parts, 73 cells (72 keys and the "?") → 11×7, 1 part,
+  72; 20:22 11×7, 1 cell (the 6×1 "?"), 27 on the page, 11 unread → 11×7, 72 cells, 98 on the page (78 named, 10 one
+  of N, 10 nothing said). The truths unchanged: the GEAR tab's 29 right, 2 one of N, 6 unread, 0 wrong; the stash pages'
+  129, 16, 3, 0. A drawn test (`DeskReaderTests`).
+- **A blank reading never replaces a good one** (`DeskLedger.Blank`, `DeskChange.Refused`, the app log's "Desk reading
+  kept the page's …"): a window with no cell read, or a region with fewer than a third of the page's cells read while
+  more of it held something unread than was read, keeps the page's version, unchanged. The brief asked for the third
+  alone; I added the unread share so an emptied region (a backpack unloaded after a raid, a stash paged to an emptier
+  page) still replaces the page's: the owner's or the coordinator's to overrule. Tests on made-up pages
+  (`DeskLedgerTests`).
+- **"STASH 64.6 M+" while the CLI said 4.40 M**: the page in hand kept a Junk window read at 19:10 (the others stay),
+  counted in STASH (two junk boxes on the stash page), at 60 M: 53 M of it a drill read "×310" (it doesn't stack), and
+  its GPUs, hoses and fuel twice (its compartment found twice, lying over itself). Neither "?" ranges nor the merge
+  summed anything twice. Fixed: the compartments read once (above); a count past the item's `stackMaxSize` counts one
+  (`DeskSheet.CellOf`); a file with a cell read twice takes each place once (`DeskLedger.Load`). The owner's dev
+  desk.json of 20:26 read with the fix: STASH 64.1 M → 8.24 M. Tests (`DeskSheetTests`, `DeskLedgerTests`).
+- **The desk's arrival replaces SEEN IN YOUR STASH** (owner: "It now conflicts with the 'now seen in stash' animation";
+  decided: the desk's arrival is the feedback): a reading's needed items are said by the existing notice ("Seen in your
+  stash: 3 keys your quests need.", its plurals and German as reviewed), the BRING rows' marks glow as before, the cue
+  plays only as What's New's 0.5.0 example; the developer script's `stash` gives the notice (`Rules.DeskSwitch.StashSeen`,
+  `DeskSwitchTests`).
+- **The cells fill the desk** (owner: "there is a lot of wasted screen space … Find the optimal solution"; the
+  coordinator's rule): 40 to 128 DIP in steps of 8, the largest at which the widest row fits the width and the tallest
+  column the height; the page flowed: the gear down a column and on into the next where the height ends, the stash a
+  column of its own, its windows in the shortest column beside it (the rule's two columns alone left a window under the
+  stash twenty rows tall, and the gear read whole one column 1,100 DIP tall at 40); scrolling at 40 only where nothing
+  fits (`DeskPageRules.Layout`, `Arrange`; stems between neighbouring columns down the gap between them). The owner's
+  page after the Keys reading: 96 on a 2560 monitor's desk (2176 × 1330), 48 at 1600×900, 40 at 900×560 (one column,
+  scrolling); the made-up desk read whole: 80 in three columns at 2544×1401 (the largest the tool allows here), 40 in
+  three at 1600×900, unscrolled (64 in two before, scrolling). Tests (`DeskPageRulesTests`).
+- **The pointed card first** (QA F2): the pointed cell's card under the switch, the pinned cards under it, one line each
+  (icon, name, gold figure) while it stands, whole when none does; a click on a line shows that card whole on top.
+- **The card's first lines fit the rail in German** (QA F5): the plate in short lines ("Copies 970,000 ₽", muted "Nets
+  873k ₽ after the fee", the last low and the trader in parts that wrap only between them), the flea's net and fee in
+  parts too; at 900×560 the figure, the plate and KEEP show in English and German; at 125 % text they wrap between
+  their parts.
+- **The stepper's tips** (QA F4) say where a press goes on either side of the last low ("Lower: 1% over the last low");
+  **QA F5's** `tools\qa\desk.md` (the totals 5.56 / 7.46, the `pinned` still); the translator's items: the band's "7 D"
+  a text ("7 T"), `DeskCards.Change` spelling its no-break space.
+- **The owner's additions after the test**: the cell shows the flea's listing price at the last low where the flea is
+  the better sale (the Dorm 104 key "~11k", its net, where the flea listed 15k), the trader's price where a trader pays
+  more; the net is the card's line; the head line's totals and the tint count what the sales bring (net or trader), not
+  the listing prices (a key listed at 15.0 M nets 5.09 M: the listing prices would have doubled the Keys window's
+  total; the owner's to overrule). A full print drops the "~" (keys at 40/40, meds, food; armour keeps it). The card's
+  "Prices n min old" counts from tarkov.dev's scan of the item (`updated`). The item file is asked for again when a
+  reading arrives and the saved copy is over ten minutes old (an hour before; the owner: "Maybe we need to fetch the
+  prices more often then?"); README, PRIVACY.md, the setting's note and UPDATES.md say so.
+- **Open:** the senior translator's review of the German (`DeskCardCopies`, `DeskCardNets`, `DeskCardOverBest`,
+  `DeskCardFleaNet`, `DeskCardFee`, `DeskCardWeekMark`, `DeskRuleLowerTip`, `DeskRuleHigherTip`, `DeskCompactTip`, the
+  setting's note); the UI QA pass of these changes; the quest marks' stash reader (`StashReader`) reads windows through
+  the same lattice without the alignment: on the two Keys pictures it finds 23 and 28 rectangles of the window's 72 keys
+  (`shturmap-cli stash --set all --no-art`), so needed keys in a sorted container go unmarked (not changed: outside the
+  brief); the made-up page read whole is smaller at 1600×900 than before (40 for 64), unscrolled; the third-or-unread
+  rule's narrowing; the totals by what the sales bring.
+
 **The release QA pass of 0.7.0 (2026-10-19, on 63d9c06) and its fixes.** Fixed:
 - F1: a language switch left the desk's page (head line, region heads, "Not attached", "5.45 M", "−3%") and settings' row
   of the copy's rule in the old language: they are built in code, and are built again at a switch now

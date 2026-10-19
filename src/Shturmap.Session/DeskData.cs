@@ -110,6 +110,7 @@ public static class DeskData
             W = Math.Max(1, item.Width ?? 1),
             H = Math.Max(1, item.Height ?? 1),
             Kind = KindOf(item),
+            StackMax = item.StackMaxSize > 0 ? item.StackMaxSize : null,
             NoFlea = item.Types?.Contains("noFlea") == true,
             FleaLevel = item.MinLevelForFlea,
             LastLow = item.LastLowPrice,

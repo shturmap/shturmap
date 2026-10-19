@@ -2,9 +2,10 @@ using Shturmap.Core.Desk;
 
 namespace Shturmap.Core.Tests.Desk;
 
-// The stash desk's figure on a cell (docs/DESIGN.md §4, "Screen anatomy", *The stash desk*, *The cell*): the better of the
-// flea's net at the last low after tarkov.dev's fee and the best trader's price, scaled to a printed condition, "~", "+",
-// the "one of N" range, the tint, the arrow and the liquidity. Made-up items and prices.
+// The stash desk's figure on a cell (docs/DESIGN.md §4, "Screen anatomy", *The stash desk*, *The cell*): where the flea's net
+// at the last low after tarkov.dev's fee beats the best trader's price, the flea's listing price at the last low (owner,
+// 2026-10-19), else the trader's; scaled to a printed condition, "~", "+", the "one of N" range, the tint (by what the sale
+// brings), the arrow and the liquidity. Made-up items and prices.
 public class DeskValuesTests
 {
     private static readonly DeskFleaRules Flea = new(0.05, 0.05);
@@ -27,14 +28,21 @@ public class DeskValuesTests
     public void The_fee_is_tarkov_devs(double basePrice, double price, int count, int intel, int management, double fee) =>
         Assert.Equal(fee, DeskValues.Fee(basePrice, price, count, Flea, new DeskFeeLevels(intel, management)));
 
+    // The owner's test of 2026-10-19: the Dorm 104 key showed "~11k" (its net) while the flea listed 15k. The cell shows the
+    // listing price at the last low where the flea is the better sale; the net is the card's line, and the tint's measure.
     [Fact]
-    public void The_flea_wins_when_its_net_is_more()
+    public void The_flea_wins_when_its_net_is_more_and_shows_its_listing_price()
     {
         var value = DeskValues.Of(Item(traders: [("trader-a", 10_000)]), 1, null, null, Flea);
         Assert.Equal(DeskSource.Flea, value.Source);
-        Assert.Equal(20_000 - 1_790, value.Value);
+        Assert.Equal(20_000, value.Value);
+        Assert.Equal(20_000 - 1_790, value.FleaNet);
+        Assert.Equal(20_000 - 1_790, value.Worth);
         Assert.Equal(1_790, value.Fee);
         Assert.Equal(10_000, value.TraderPrice);
+        // The trader's price where the flea's net is less, though the listing price is more.
+        var trader = DeskValues.Of(Item(traders: [("trader-a", 19_000)]), 1, null, null, Flea);
+        Assert.Equal((DeskSource.Trader, 19_000d, 19_000d), (trader.Source, trader.Value, trader.Worth));
     }
 
     [Fact]
@@ -50,7 +58,8 @@ public class DeskValuesTests
     public void A_stack_is_worth_its_count()
     {
         var value = DeskValues.Of(Item(traders: [("trader-a", 100)]), 3, null, null, Flea);
-        Assert.Equal(3 * 20_000 - 5_371, value.Value);
+        Assert.Equal(3 * 20_000, value.Value);
+        Assert.Equal(3 * 20_000 - 5_371, value.FleaNet);
     }
 
     [Fact]
@@ -101,10 +110,15 @@ public class DeskValuesTests
         Assert.True(value.Value < value.Full);
     }
 
+    // A full print drops the "~" on anything but armour (owner, 2026-10-19: a key at 40/40 showed "~11k"); one below full
+    // keeps it, scaled.
     [Fact]
-    public void Meds_food_and_drink_at_a_full_print_are_no_estimate()
+    public void Meds_food_drink_and_keys_at_a_full_print_are_no_estimate()
     {
-        foreach (var kind in new[] { DeskItemKind.Meds, DeskItemKind.FoodDrink })
+        var key = DeskValues.Of(Item(), 1, new DeskPrint(39, 40), null, Flea);
+        Assert.True(key.Estimate);
+        Assert.Equal(Math.Round(20_000 * 39 / 40.0), key.Value);
+        foreach (var kind in new[] { DeskItemKind.Meds, DeskItemKind.FoodDrink, DeskItemKind.None })
         {
             var value = DeskValues.Of(Item() with { Kind = kind }, 1, new DeskPrint(3, 3), null, Flea);
             Assert.False(value.Estimate);

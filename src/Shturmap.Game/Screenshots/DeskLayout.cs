@@ -132,7 +132,8 @@ internal static class DeskLayout
         bool StashCell(int x, int y) => stash is not null && stashRect.Contains(x + 2, y + 2) && OnLattice(x - stash.X0, pitch) && OnLattice(y - stash.Y0, pitch);
         var frames = Snapped(DeskFrames.Find(lines, pitch, whole, over, skip: StashCell), gray, pitch);
         frames.RemoveAll(f => StashCell(f.Left, f.Top));
-        var lattices = grids.Where(g => g.Place == StashGridPlace.Window).Select(g => SKRectI.Create(g.X0, g.Y0, g.Cols * pitch, g.Rows * pitch)).ToList();
+        var lattices = grids.Where(g => g.Place == StashGridPlace.Window)
+            .Select(g => Aligned(lines, SKRectI.Create(g.X0, g.Y0, g.Cols * pitch, g.Rows * pitch), pitch)).ToList();
         var windows = Windows(words, gray, frames, lattices, headingWords, w, h, pitch);
         var windowAreas = windows.Select(x => x.Area!.Value).ToList();
         over.AddRange(windowAreas);
@@ -209,6 +210,68 @@ internal static class DeskLayout
             return SKRectI.Create(x, y, f.Width, f.Height);
         }).ToList();
 
+    /// <summary>
+    /// A window's lattice moved onto its cells' lines: the offset within a sixth of a cell either way where the lines
+    /// between its cells show most. The stash's grid finding snaps a lattice onto the light line nearest its corner, and a
+    /// window's own outline, a thin bright line a few pixels outside its first cells, can take it there: the Keys window
+    /// of 2026-10-19 (20:22, after the game's SORT) stood 6 px left of its cells, every line between them missed, and its
+    /// 71 keys read as one odd shape. The lines between the cells decide, not the outer ones (the outline is one).
+    /// </summary>
+    internal static SKRectI Aligned(StashLines lines, SKRectI grid, int pitch)
+    {
+        int cols = Math.Max(1, (int)Math.Round(grid.Width / (double)pitch)), rows = Math.Max(1, (int)Math.Round(grid.Height / (double)pitch));
+        if (cols < 2 && rows < 2)
+            return grid;
+        var reach = Math.Max(2, pitch / 6);
+        double Columns(int x0, int y0)
+        {
+            double sum = 0;
+            for (var k = 1; k < cols; k++)
+                sum += lines.Vertical(x0 + k * pitch, y0 + 2, y0 + rows * pitch - 2);
+            return sum;
+        }
+        double Rows(int x0, int y0)
+        {
+            double sum = 0;
+            for (var k = 1; k < rows; k++)
+                sum += lines.Horizontal(y0 + k * pitch, x0 + 2, x0 + cols * pitch - 2);
+            return sum;
+        }
+        // Each way on its own: the columns' lines set the left edge, the rows' the top. A move needs clearly more lines
+        // than where it stands (a lattice already on its lines stays put).
+        int Best(Func<int, double> score)
+        {
+            var scores = Enumerable.Range(-reach, 2 * reach + 1).Select(score).ToArray();
+            var here = scores[reach];
+            var top = scores.Max();
+            if (top <= here * 1.25 + 0.5)
+                return 0;
+            // A line is found a pixel either side of it (StashLines): the middle of the run of offsets that see it best.
+            var start = Array.FindIndex(scores, s => s >= top - 0.01);
+            var end = start;
+            while (end + 1 < scores.Length && scores[end + 1] >= top - 0.01)
+                end++;
+            return (start + end) / 2 - reach;
+        }
+        var dx = cols > 1 ? Best(d => Columns(grid.Left + d, grid.Top)) : 0;
+        var dy = rows > 1 ? Best(d => Rows(grid.Left + dx, grid.Top + d)) : 0;
+        return SKRectI.Create(grid.Left + dx, grid.Top + dy, grid.Width, grid.Height);
+    }
+
+    // Whether two rectangles are one compartment seen twice (a lattice and the frame found on its lines, a few pixels
+    // apart): the same size give or take a cell, their corners within a quarter of a cell.
+    private static bool SameCompartment(SKRectI a, SKRectI b, int pitch) =>
+        Math.Abs(a.Left - b.Left) <= pitch / 4 && Math.Abs(a.Top - b.Top) <= pitch / 4 &&
+        Math.Abs(a.Width - b.Width) <= pitch && Math.Abs(a.Height - b.Height) <= pitch;
+
+    // Whether a rectangle lies over another by more than a quarter of the smaller one: two compartments of one window
+    // never overlap, so such a pair is one compartment found twice, and its cells would be read twice.
+    internal static bool Overlapping(SKRectI a, SKRectI b)
+    {
+        var i = SKRectI.Intersect(a, b);
+        return !i.IsEmpty && (long)i.Width * i.Height * 4 > Math.Min((long)a.Width * a.Height, (long)b.Width * b.Height);
+    }
+
     // Whether a frame is part of a grid seen only in part (the middle column scrolled, a grid running out of view): its top
     // line runs on past its right corner, or its left line past its bottom one, with no gap. A compartment's own frame
     // ends at its corners (a few pixels of nothing to the next compartment).
@@ -252,8 +315,10 @@ internal static class DeskLayout
     {
         var windows = new List<DeskPlace>();
         var used = new HashSet<SKRectI>();
-        // A window the stash's grid finding saw stands on its lines' middle: its lattice rather than the frame found on it.
-        var groups = lattices.Concat(frames.Where(f => !lattices.Any(l => Math.Abs(f.Left - l.Left) <= 4 && Math.Abs(f.Top - l.Top) <= 4))).ToList();
+        // A window the stash's grid finding saw stands on its lines' middle (moved onto its cells' lines, Aligned): its
+        // lattice rather than the frame found on it, a few pixels off (the Keys window of 2026-10-19, 20:21: both, 6 px
+        // apart, read as two compartments one cell apart, its keys once and a "?" across the other).
+        var groups = lattices.Concat(frames.Where(f => !lattices.Any(l => SameCompartment(f, l, pitch)))).ToList();
         bool InFrame(DeskWord x) => groups.Any(g => g.Contains(x.MidX, x.MidY));
         // The recognition reads the bar's glyphs and title as lines of their own: a row is the words level with the title.
         var candidates = words.Where(x => x.Y > h * 0.05 && x.Bottom < h * 0.92 && !headings.Contains(x) && !InFrame(x) &&
@@ -333,6 +398,9 @@ internal static class DeskLayout
             foreach (var f in groups)
             {
                 if (parts.Contains(f) || used.Contains(f) || f.Top < barTop || f.Left < start.Left - reach || (close is { } c && f.Right > c + reach))
+                    continue;
+                // One compartment found twice is taken once (its cells would count twice).
+                if (parts.Any(p => Overlapping(p, f)))
                     continue;
                 if (parts.Any(p => SKRectI.Inflate(p, reach, reach).IntersectsWith(f)))
                 {

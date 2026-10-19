@@ -716,6 +716,10 @@
     <value>Zeig auf ein Item: Hier erscheint seine Karte. Ein Klick kopiert seinen Flea-Preis, ein Rechtsklick heftet seine Karte hier an.</value>
     <comment>en: Point at an item for its card. A click copies its flea price; a right-click pins its card here.</comment>
   </data>
+  <data name="DeskCompactTip" xml:space="preserve">
+    <value>Ganze Karte zeigen</value>
+    <comment>en: Show its whole card</comment>
+  </data>
   <data name="SettingsCopyRule" xml:space="preserve">
     <value>Flea-Preis zum Kopieren</value>
     <comment>en: Flea price to copy</comment>
@@ -723,14 +727,6 @@
   <data name="SettingsCopyRuleNote" xml:space="preserve">
     <value>Der letzte Tiefstpreis oder 1–20 % darunter oder darüber. Die Karte des Desks hat dieselbe Einstellung.</value>
     <comment>en: Match, or 1–20% under or over the last low. The desk's card has the same control.</comment>
-  </data>
-  <data name="DeskRuleLower" xml:space="preserve">
-    <value>Niedriger: 1 % weiter unter dem letzten Tiefstpreis</value>
-    <comment>en: Lower: 1% further under the last low</comment>
-  </data>
-  <data name="DeskRuleHigher" xml:space="preserve">
-    <value>Höher: 1 % weiter über dem letzten Tiefstpreis</value>
-    <comment>en: Higher: 1% further over the last low</comment>
   </data>
   <data name="DeskPinTip" xml:space="preserve">
     <value>Diese Karte hier anheften (oder Rechtsklick aufs Item)</value>

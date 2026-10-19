@@ -102,11 +102,13 @@ public sealed record ApiTraderPrice(string Trader, double Price, string? Currenc
 /// <param name="Width">Its footprint in cells, as it lies unrotated: the desk's tie-break between items of one short name.</param>
 /// <param name="HasGrid">It holds a grid of its own (a backpack, a rig, a case, a wallet): on the desk its contents are
 /// unseen until its window is read.</param>
+/// <param name="StackMaxSize">The most of it one cell stacks (1 for an item that doesn't stack): on the desk a count read
+/// past it is a misread (a drill read "×310" on 2026-10-19).</param>
 public sealed record ApiItem(string Id, List<string>? Types, int? MinLevelForFlea, double? LastLowPrice, List<ApiTraderOffer>? BuyFromTrader,
     List<string>? Categories = null, ApiItemProperties? Properties = null,
     double? Avg24hPrice = null, double? Low24hPrice = null, double? High24hPrice = null, double? ChangeLast48hPercent = null,
     int? LastOfferCount = null, List<ApiTraderPrice>? SellToTrader = null, double? BasePrice = null, string? Updated = null,
-    int? Width = null, int? Height = null, bool? HasGrid = null);
+    int? Width = null, int? Height = null, bool? HasGrid = null, int? StackMaxSize = null);
 
 /// <summary>The flea market's rules in the item file (<c>data.fleaMarket</c>): the fee's two rates, the level it opens
 /// at, and whether an item must be found in raid to be listed (the game's globals; false in PvE on 2026-10-19).</summary>

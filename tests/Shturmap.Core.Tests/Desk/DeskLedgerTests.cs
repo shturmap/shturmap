@@ -191,6 +191,73 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Null(ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
     }
 
+    // The owner's test of 2026-10-19: the Keys window read whole (73 keys), then after the game's SORT as one "?" across six
+    // cells; that reading took the window's place and its keys left the total. A window with no cell read never replaces
+    // the page's: the page's stays, unchanged, and the change says which it kept.
+    [Fact]
+    public void A_window_with_no_cell_read_keeps_the_pages()
+    {
+        var ledger = new DeskLedger();
+        var keys = Enumerable.Range(0, 12).Select(n => Cell(n % 4, n / 4, 1, 1, Water)).ToArray();
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(4, 4, 2, 2, Wallet) with { Holds = DeskHolds.Contents }), Window("Keys", [Wallet], keys)));
+        var change = ledger.Apply(GameMode.Pve, Page(1, Stash(Cell(4, 4, 2, 2, Wallet) with { Holds = DeskHolds.Contents }),
+            Window("Keys", [Wallet], Cell(0, 2, 4, 1)) with { Unread = 8 }));
+        Assert.Equal(["window:keys"], change.Refused);
+        Assert.DoesNotContain("window:keys", change.Changed);
+        var window = ledger.Page(GameMode.Pve)!.Region("window:keys")!;
+        Assert.Equal(12, window.Cells.Count);
+        Assert.Equal(new DeskAnchor("stash", 4, 4), window.AttachedTo);
+        // A first reading of a window keeps what it read, a "?" and all: there is nothing to keep instead.
+        var first = new DeskLedger().Apply(GameMode.Pve, Page(0, Window("Keys", [Wallet], Cell(0, 2, 4, 1))));
+        Assert.Empty(first.Refused);
+        Assert.Single(first.Page.Region("window:keys")!.Cells);
+    }
+
+    // A region read with fewer than a third of the cells the page has for it, while more of it held something unread than
+    // was read, is a failed reading (the lines between the items not found): the page's stays.
+    [Fact]
+    public void A_region_read_mostly_unread_keeps_the_pages()
+    {
+        var ledger = new DeskLedger();
+        var full = Enumerable.Range(0, 30).Select(n => Cell(n % 10, n / 10, 1, 1, Water)).ToArray();
+        ledger.Apply(GameMode.Pve, Page(0, Stash(full)));
+        var change = ledger.Apply(GameMode.Pve, Page(1, Stash(Cell(0, 0, 1, 1, Water), Cell(1, 0, 1, 1, Salewa)) with { Unread = 25 }));
+        Assert.Equal(["stash"], change.Refused);
+        Assert.Empty(change.Changed);
+        Assert.Equal(30, ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Count);
+    }
+
+    // A region the player emptied reads its empty cells as empty: few cells, nothing unread, and it replaces the page's (an
+    // unloaded backpack after a raid, a stash paged to an emptier page). So does a window read whole with fewer items.
+    [Fact]
+    public void A_region_that_emptied_replaces_the_pages()
+    {
+        var ledger = new DeskLedger();
+        var full = Enumerable.Range(0, 30).Select(n => Cell(n % 5, n / 5, 1, 1, Water)).ToArray();
+        ledger.Apply(GameMode.Pve, Page(0, Backpack(full), Window("Keys", [Wallet], full[..12])));
+        var change = ledger.Apply(GameMode.Pve, Page(1, Backpack(Cell(0, 0, 1, 1, Salewa)) with { Unread = 1 }, Window("Keys", [Wallet], Cell(0, 0, 1, 1, Water))));
+        Assert.Empty(change.Refused);
+        Assert.Equal(["backpack", "window:keys"], change.Changed.Order());
+        Assert.Equal(Salewa, Assert.Single(ledger.Page(GameMode.Pve)!.Region("backpack")!.Cells).ItemId);
+        Assert.Single(ledger.Page(GameMode.Pve)!.Region("window:keys")!.Cells);
+        // A backpack taken off (a reading of its region with nothing in it) replaces it too.
+        Assert.Empty(ledger.Apply(GameMode.Pve, Page(2, Backpack())).Refused);
+        Assert.Empty(ledger.Page(GameMode.Pve)!.Region("backpack")!.Cells);
+    }
+
+    // A file written before the fix of 2026-10-19 kept a window's compartment found twice: its cells lay over each other and
+    // counted twice. Read back, each place is taken once.
+    [Fact]
+    public void A_file_with_a_cell_read_twice_takes_it_once()
+    {
+        var path = Path.Combine(_root, "desk.json");
+        var ledger = new DeskLedger();
+        ledger.Apply(GameMode.Pve, Page(0, Window("Junk", [Wallet], Cell(0, 0, 2, 1, Water), Cell(2, 0, 1, 1, Salewa), Cell(0, 0, 2, 1, Water), Cell(1, 0, 1, 1, Zhuk))));
+        ledger.Save(path);
+        var cells = DeskLedger.Load(path).Page(GameMode.Pve)!.Region("window:junk")!.Cells;
+        Assert.Equal([Water, Salewa], cells.Select(c => c.ItemId));
+    }
+
     // A slot's "?" is picked by its key (the helmet in three colours).
     [Fact]
     public void A_slot_is_picked_by_its_key()

@@ -154,6 +154,14 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
     /// <summary>The slots a window covered in the reading: they keep their last reading. Only on a reading.</summary>
     public IReadOnlyList<string> CoveredSlots { get; init; } = [];
 
+    /// <summary>How many of the grid's cells held something the reading couldn't read: shapes no label fit (the lines
+    /// between items unseen) and rectangles whose label fit nothing. Only on a reading, never kept: with few cells read it
+    /// tells a reading that failed from a region that emptied (<see cref="DeskLedger.Merge"/>).</summary>
+    public int Unread { get; init; }
+
+    /// <summary>The cells read as an item or "one of N" (not a cell with nothing said).</summary>
+    public int ReadCells => Cells.Count(c => c.Ids.Count > 0);
+
     /// <summary>Whether the region is on the player (ON YOU): the loadout and the middle column; the stash and the
     /// windows are not by themselves (a window counts where its container is, <see cref="DeskSheet"/>).</summary>
     public bool OnYou => Kind is not (DeskRegionKind.Stash or DeskRegionKind.ContainerWindow);
