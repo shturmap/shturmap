@@ -106,10 +106,9 @@ public sealed partial class MainWindow : Window
                 Linked.BreathChanged();
             }
         }), handledEventsToo: true);
-        _focusClear = DispatcherQueue.CreateTimer();
+        _focusClear = WindowTimer(ApplyMapFocus);
         _focusClear.Interval = TimeSpan.FromMilliseconds(250);
         _focusClear.IsRepeating = false;
-        _focusClear.Tick += (_, _) => ApplyMapFocus();
         Map.MarkerHovered += OnMarkerHovered;
         Map.MarkerClicked += OnMarkerClicked;
         ObserveActivation(this);
@@ -119,19 +118,17 @@ public sealed partial class MainWindow : Window
             SavePlace();
         };
 
-        _clock = DispatcherQueue.CreateTimer();
+        _clock = WindowTimer(OnClockTick);
         _clock.Interval = TimeSpan.FromSeconds(1);
-        _clock.Tick += (_, _) => OnClockTick();
         _clock.Start();
-        _noticeTimer = DispatcherQueue.CreateTimer();
-        _noticeTimer.Interval = TimeSpan.FromSeconds(6);
-        _noticeTimer.IsRepeating = false;
-        _noticeTimer.Tick += (_, _) =>
+        _noticeTimer = WindowTimer(() =>
         {
             if (ViewModel.NoticeOpen)
                 Study.Ui("notice.expire", ("text", ViewModel.NoticeText));
             ViewModel.NoticeOpen = false;
-        };
+        });
+        _noticeTimer.Interval = TimeSpan.FromSeconds(6);
+        _noticeTimer.IsRepeating = false;
 
         // A new position moves the view only while Follow my position is on; otherwise, out of view, the edge arrow
         // points to it and a notice says so.
@@ -174,15 +171,26 @@ public sealed partial class MainWindow : Window
         RaidWord.SizeChanged += (_, _) => FitStatusBar();
         StatusRight.SizeChanged += (_, _) => FitStatusBar();
 
-        // Snapshots arrive on background threads; only the newest one is applied.
+        // Snapshots arrive on background threads; only the newest one is applied. Once the app is ending
+        // (StopForExit), the session, which runs a moment longer, hands the window nothing more (WindowTimer says why).
         session.Changed += s =>
         {
             Volatile.Write(ref _snapshot, s);
-            DispatcherQueue.TryEnqueue(() => Apply(s));
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!_stopped)
+                    Apply(s);
+            });
         };
-        session.Notice += notice => DispatcherQueue.TryEnqueue(() => ShowNotice(notice.Text, notice.Duration, notice.OffersReport));
+        session.Notice += notice => DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!_stopped)
+                ShowNotice(notice.Text, notice.Duration, notice.OffersReport);
+        });
         session.Cue += cue => DispatcherQueue.TryEnqueue(() =>
         {
+            if (_stopped)
+                return;
             ShowCue(cue);
             // What's New goes once the first raid since the update is over; an update waiting is said once more
             // (MainWindow.Updates).
@@ -195,20 +203,52 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The app is ending (the window closes, or the app exits by itself: a snapshot run, RESTART NOW, an uninstall):
-    /// the window's timers stop and the map draws no more. The map's pulse kept asking for frames while the drawing
-    /// surface was taken down, which ended the process with an access violation instead of a clean exit (found
-    /// 2026-10-04). Safe to call twice.
+    /// The app is ending (the window closes, or the app exits by itself: a snapshot run, RESTART NOW, an uninstall, a
+    /// developer script's "exit"): the window's timers do nothing more (WindowTimer), the cards neither show nor
+    /// settle, and the map draws no more. The map's pulse kept asking for frames while the drawing surface was taken
+    /// down, which ended the process with an access violation instead of a clean exit (found 2026-10-04). Safe to call
+    /// twice.
     /// </summary>
     public void StopForExit()
     {
+        _stopped = true;
         _clock.Stop();
         _noticeTimer.Stop();
         _focusClear.Stop();
         _updateTimer?.Stop();
+        _cueTimer?.Stop();
+        _cards.Stop();
         Map.StopDrawing();
         StopTasksCue();
     }
+
+    // The app is ending (StopForExit): nothing of the window's own runs again.
+    private bool _stopped;
+
+    /// <summary>
+    /// A timer of the window: every one is made here, so that once the app is ending (StopForExit) its tick stops it
+    /// and does nothing. Application.Exit takes the window's XAML down while the dispatcher queue still runs; a tick
+    /// that then set a text or an opacity threw E_UNEXPECTED inside the queue, where no handler sees it, and the exit
+    /// ended with 0xC000027B in CoreMessagingXP instead of a clean one (the tasks cue's QA fix round, 2026-10-19: an
+    /// exit within 1.6 s of any cue, its title still decoding, or while the roll call's frames ran; about 3 runs in 4).
+    /// SafetyTests hold the window to it.
+    /// </summary>
+    private DispatcherQueueTimer WindowTimer(Action<DispatcherQueueTimer> tick)
+    {
+        var timer = DispatcherQueue.CreateTimer();
+        timer.Tick += (t, _) =>
+        {
+            if (_stopped)
+            {
+                t.Stop();
+                return;
+            }
+            tick(t);
+        };
+        return timer;
+    }
+
+    private DispatcherQueueTimer WindowTimer(Action tick) => WindowTimer(_ => tick());
 
     // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
     private static readonly TimeSpan FreshFix = FixAge.Fresh;
@@ -1256,9 +1296,7 @@ public sealed partial class MainWindow : Window
         _previewWanted = map;
         if (_previewTimer is null)
         {
-            _previewTimer = DispatcherQueue.CreateTimer();
-            _previewTimer.IsRepeating = false;
-            _previewTimer.Tick += (_, _) =>
+            _previewTimer = WindowTimer(() =>
             {
                 switch (PreviewOwner.After(TourOpen, _previewing, _previewWanted))
                 {
@@ -1269,7 +1307,8 @@ public sealed partial class MainWindow : Window
                         EndPreview(restore: true);
                         break;
                 }
-            };
+            });
+            _previewTimer.IsRepeating = false;
         }
         _previewTimer.Stop();
         // Moving straight from one card to the next switches at once; only the first one waits.
@@ -1589,10 +1628,9 @@ public sealed partial class MainWindow : Window
     {
         if (_nobodyLooking is null)
         {
-            _nobodyLooking = DispatcherQueue.CreateTimer();
+            _nobodyLooking = WindowTimer(DropPointerFocus);
             _nobodyLooking.Interval = TimeSpan.FromMilliseconds(200);
             _nobodyLooking.IsRepeating = false;
-            _nobodyLooking.Tick += (_, _) => DropPointerFocus();
         }
         _nobodyLooking.Stop();
         if (e.WindowActivationState == WindowActivationState.Deactivated)
@@ -1920,10 +1958,9 @@ public sealed partial class MainWindow : Window
             }
             if (SnapshotMode)
                 return;
-            _cueTimer = DispatcherQueue.CreateTimer();
+            _cueTimer = WindowTimer(() => CuePanel.Visibility = Visibility.Collapsed);
             _cueTimer.Interval = CueLength(cue);
             _cueTimer.IsRepeating = false;
-            _cueTimer.Tick += (_, _) => CuePanel.Visibility = Visibility.Collapsed;
             _cueTimer.Start();
             return;
         }
@@ -2098,9 +2135,7 @@ public sealed partial class MainWindow : Window
         var end = Measured(text, "");
         var widest = double.IsNaN(block.Width) ? end.Width + 1 : block.Width;
         var started = DateTime.Now;
-        var timer = DispatcherQueue.CreateTimer();
-        timer.Interval = TimeSpan.FromMilliseconds(35);
-        timer.Tick += (t, _) =>
+        var timer = WindowTimer(t =>
         {
             var p = Math.Min(1, (DateTime.Now - started) / length);
             var resolved = (int)Math.Round(p * text.Length);
@@ -2112,7 +2147,8 @@ public sealed partial class MainWindow : Window
             flicker.Text = scrambled;
             if (p >= 1)
                 t.Stop();
-        };
+        });
+        timer.Interval = TimeSpan.FromMilliseconds(35);
         timer.Start();
         return timer;
     }
@@ -2540,10 +2576,9 @@ public sealed partial class MainWindow : Window
             return;
         if (_placeSettled is null)
         {
-            _placeSettled = DispatcherQueue.CreateTimer();
+            _placeSettled = WindowTimer(SavePlace);
             _placeSettled.Interval = TimeSpan.FromMilliseconds(600);
             _placeSettled.IsRepeating = false;
-            _placeSettled.Tick += (_, _) => SavePlace();
         }
         _placeSettled.Stop();
         _placeSettled.Start();

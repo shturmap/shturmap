@@ -60,9 +60,6 @@ public sealed partial class MainWindow
     // The room the cue was last fitted to: the notes' clearance at the map's top, the foot's, and the map's size.
     private (double Head, double Foot, double Width, double Height) _tasksFitted;
 
-    // The app is closing (StopForExit): the cue's timers have stopped, and nothing fits or words it again.
-    private bool _tasksStopped;
-
     private bool TasksShowing => _tasksCue.Count > 0;
 
     /// <summary>
@@ -205,7 +202,7 @@ public sealed partial class MainWindow
     private void WatchTasksEnds()
     {
         _tasksEnds?.Stop();
-        if (_tasksStopped)
+        if (_stopped)
             return;
         var now = DateTimeOffset.Now;
         DateTimeOffset? next = null;
@@ -308,11 +305,11 @@ public sealed partial class MainWindow
     // fits it again.
     private void RefitTasksCue()
     {
-        if (_tasksStopped || _tasksRows.Count == 0 || CuePanel.Visibility != Visibility.Visible)
+        if (_stopped || _tasksRows.Count == 0 || CuePanel.Visibility != Visibility.Visible)
             return;
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (_tasksStopped || _tasksRows.Count == 0 || CuePanel.Visibility != Visibility.Visible)
+            if (_stopped || _tasksRows.Count == 0 || CuePanel.Visibility != Visibility.Visible)
                 return;
             var (head, foot) = TasksCueBounds();
             var was = _tasksFitted;
@@ -426,9 +423,8 @@ public sealed partial class MainWindow
             return;
         if (_tasksHide is null)
         {
-            _tasksHide = DispatcherQueue.CreateTimer();
+            _tasksHide = WindowTimer(FadeTasksOut);
             _tasksHide.IsRepeating = false;
-            _tasksHide.Tick += (_, _) => FadeTasksOut();
         }
         _tasksHide.Stop();
         var left = TasksAtMost - (DateTime.Now - _tasksSince);
@@ -463,7 +459,6 @@ public sealed partial class MainWindow
     // The app is closing: the cue's timers stop, as the window's do (StopForExit).
     private void StopTasksCue()
     {
-        _tasksStopped = true;
         _tasksHide?.Stop();
         _tasksEnds?.Stop();
     }

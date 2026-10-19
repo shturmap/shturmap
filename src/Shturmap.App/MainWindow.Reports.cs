@@ -377,17 +377,16 @@ public sealed partial class MainWindow
         // The answer goes after a while, unless the player adds a note.
         if (_crashFade is null)
         {
-            _crashFade = DispatcherQueue.CreateTimer();
-            _crashFade.Interval = TimeSpan.FromSeconds(30);
-            _crashFade.IsRepeating = false;
-            _crashFade.Tick += (_, _) =>
+            _crashFade = WindowTimer(() =>
             {
                 if (!ViewModel.CrashAsking)
                 {
                     ViewModel.CrashQuestion = "";
                     ViewModel.CrashSent = false;
                 }
-            };
+            });
+            _crashFade.Interval = TimeSpan.FromSeconds(30);
+            _crashFade.IsRepeating = false;
         }
         _crashFade.Stop();
         _crashFade.Start();

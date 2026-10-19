@@ -78,10 +78,9 @@ public sealed partial class MainWindow
         }
         if (!updater.CanUpdate)
             return;
-        _updateTimer = DispatcherQueue.CreateTimer();
+        _updateTimer = WindowTimer(() => _ = StepUpdatesAsync());
         _updateTimer.Interval = UpdatePolicy.Interval;
         _updateTimer.IsRepeating = true;
-        _updateTimer.Tick += (_, _) => _ = StepUpdatesAsync();
         _updateTimer.Start();
         _ = StepUpdatesAsync();
     }
@@ -160,10 +159,9 @@ public sealed partial class MainWindow
         }
         if (_updateCueWait is null)
         {
-            _updateCueWait = DispatcherQueue.CreateTimer();
+            _updateCueWait = WindowTimer(ConsiderUpdateCue);
             _updateCueWait.Interval = TimeSpan.FromSeconds(0.25);
             _updateCueWait.IsRepeating = true;
-            _updateCueWait.Tick += (_, _) => ConsiderUpdateCue();
         }
         var now = DateTime.Now;
         if (MapMiddleTaken)
@@ -226,9 +224,8 @@ public sealed partial class MainWindow
         }
         if (_updateGlow is null)
         {
-            _updateGlow = DispatcherQueue.CreateTimer();
+            _updateGlow = WindowTimer(() => GlowUpdateBand());
             _updateGlow.IsRepeating = false;
-            _updateGlow.Tick += (_, _) => GlowUpdateBand();
         }
         _updateGlow.Stop();
         _updateGlow.Interval = delay;

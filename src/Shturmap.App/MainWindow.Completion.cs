@@ -81,9 +81,8 @@ public sealed partial class MainWindow
             return;
         if (_completedHide is null)
         {
-            _completedHide = DispatcherQueue.CreateTimer();
+            _completedHide = WindowTimer(FadeCompletedOut);
             _completedHide.IsRepeating = false;
-            _completedHide.Tick += (_, _) => FadeCompletedOut();
         }
         _completedHide.Stop();
         var left = CompletedAtMost - (DateTime.Now - _completedSince);

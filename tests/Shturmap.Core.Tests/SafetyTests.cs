@@ -91,6 +91,34 @@ public class SafetyTests
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
 
+    // Every timer of the main window is made by MainWindow.WindowTimer, whose tick does nothing once the app is
+    // ending, and the few others stop as it ends: a tick after Application.Exit had taken the window's XAML down threw
+    // inside the dispatcher queue and ended the exit with 0xC000027B (the tasks cue's QA fix round, 2026-10-19: a
+    // cue's title still decoding). A new timer is made with WindowTimer, or stopped by MainWindow.StopForExit and
+    // counted here.
+    private static readonly Dictionary<string, int> Timers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [Path.Combine("Shturmap.App", "MainWindow.xaml.cs")] = 1, // WindowTimer itself
+        [Path.Combine("Shturmap.App", "Controls", "CardStack.cs")] = 2, // Stop, from StopForExit
+        [Path.Combine("Shturmap.App", "Controls", "MapView.cs")] = 4, // StopDrawing, from StopForExit
+        [Path.Combine("Shturmap.App", "Controls", "TextScale.cs")] = 1, // stopped as the window closes
+        [Path.Combine("Shturmap.App", "Dev", "DevView.cs")] = 1, // stopped as the developer view closes, before the app exits
+    };
+
+    [Fact]
+    public void Every_timer_of_the_window_stops_as_the_app_ends()
+    {
+        var src = Path.Combine(RepositoryRoot(), "src");
+        var violations = Lines(src)
+            .Where(l => l.Text.Contains("CreateTimer(", StringComparison.Ordinal))
+            .GroupBy(l => Path.GetRelativePath(src, l.File), StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > Timers.GetValueOrDefault(g.Key))
+            .Select(g => $"{g.Key}:{g.First().Line} makes a timer that may tick after the app's exit began: use MainWindow.WindowTimer, "
+                         + "or stop it in MainWindow.StopForExit and count it in SafetyTests.Timers")
+            .ToList();
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
     // The shipped code's lines, comments left out.
     private static IEnumerable<(string File, int Line, string Text)> Lines(string src) =>
         Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories)

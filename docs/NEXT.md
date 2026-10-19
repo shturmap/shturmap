@@ -488,10 +488,9 @@ COMPLETE in the open card and the raid card; the build put it above PICKED; the 
   sections begin at the window's foot either way. Under PICKED it moves down by the picks' rows only.
 - To re-check: a QA pass on F1, F2, F3, F5 and the order; the senior translator's look at `OperationalCueEnded`
   („abgelaufen“) and the English no-break spaces.
-- Found on the way, not from this change (b549b08's build does it too, 3 of 4 runs): a `--dev-view` run whose `exit`
-  comes while a later reading's tasks cue is up (`tasks 3`, a minute, `tasks 5`, `exit`) ends with 0xC000027B in
-  CoreMessagingXP instead of exit code 0. Whether closing the window in that moment does it outside a script is not
-  checked.
+- Found on the way, fixed (2026-10-19): an exit within 1.6 s of any cue (this one, the roll call, QUEST COMPLETE) ended
+  with 0xC000027B in CoreMessagingXP in about 3 runs of 4: a timer of the window (the title's decode, the roll call's
+  frames) ticked after the exit had taken the XAML down. Each now does nothing once `StopForExit` ran (`WindowTimer`).
 
 - **The UI QA pass (2026-10-19, on ea0cb16) and the senior translator's review (2a75488).** The pass found one blocker
   and four nits; fixed after it: F1, with the app in German the catalogue's German names matched no hand-over item read

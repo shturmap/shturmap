@@ -522,9 +522,8 @@ public sealed partial class MainWindow
     {
         if (_rollFrames is null)
         {
-            _rollFrames = DispatcherQueue.CreateTimer();
+            _rollFrames = WindowTimer(RollFrame);
             _rollFrames.Interval = TimeSpan.FromMilliseconds(15);
-            _rollFrames.Tick += (_, _) => RollFrame();
         }
         RollFrame();
         _rollFrames.Start();
@@ -807,9 +806,8 @@ public sealed partial class MainWindow
 
     private DispatcherQueueTimer OneShot(Action tick)
     {
-        var timer = DispatcherQueue.CreateTimer();
+        var timer = WindowTimer(tick);
         timer.IsRepeating = false;
-        timer.Tick += (_, _) => tick();
         return timer;
     }
 
