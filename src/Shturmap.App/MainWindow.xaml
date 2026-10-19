@@ -269,7 +269,8 @@
         </DropDownButton>
         <!-- Only what the log shows: "NOT IN A RAID" outside a raid, never "in the menus" (RaidStatus; owner, 2026-10-03). -->
         <TextBlock x:Name="RaidWord" Grid.Column="3" Text="{x:Bind local:Caps.Of(ViewModel.RaidText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Padding="0,10"
-                   Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}" />
+                   Foreground="{x:Bind RaidBrush(ViewModel.InRaid), Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.RaidDetail, Mode=OneWay}"
+                   TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True" />
         <TextBlock Grid.Column="4" Text="{x:Bind local:Caps.Of(ViewModel.FixText), Mode=OneWay}" Style="{StaticResource StatusBarText}" Foreground="{StaticResource MutedBrush}"
                    HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" controls:Fit.MayTrim="True" />
       </Grid>
@@ -383,7 +384,7 @@
                       <Grid ColumnSpacing="10" Margin="0,2">
                         <Grid.ColumnDefinitions>
                           <ColumnDefinition Width="Auto" />
-                          <ColumnDefinition Width="96" />
+                          <ColumnDefinition Width="{x:Bind controls:Columns.HelpKinds}" />
                           <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <controls:KindGlyph Kind="{x:Bind Kind}" Brush="{StaticResource AmberBrush}" Margin="0,2,0,0" />
@@ -478,19 +479,59 @@
                   </ItemsControl>
                 </Grid>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Text="{x:Bind ViewModel.LanguageNote, Mode=OneWay}" />
+                <!-- The text size (owner, 2026-10-19: "The text-size should still be set by an option, not only through the
+                     windows settings"; docs/DESIGN.md §4, "Screen anatomy", *Text size*): three steps on top of Windows' own
+                     text size; a choice applies at once (MainWindow.TextSize). -->
+                <Grid ColumnSpacing="14" Margin="0,6,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsTextSize}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <controls:WrapRow Grid.Column="1" HorizontalSpacing="14" VerticalSpacing="4" VerticalAlignment="Center">
+                    <HyperlinkButton Padding="0" Tag="Normal" Click="OnTextSizeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsTextSizeTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfMode(ViewModel.TextSizeStep, 'Normal'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsTextSizeNormal}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind ChosenBrush(ViewModel.TextSizeStep, 'Normal'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Tag="Larger" Click="OnTextSizeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsTextSizeTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfMode(ViewModel.TextSizeStep, 'Larger'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsTextSizeLarger}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind ChosenBrush(ViewModel.TextSizeStep, 'Larger'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Tag="Largest" Click="OnTextSizeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsTextSizeTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfMode(ViewModel.TextSizeStep, 'Largest'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsTextSizeLargest}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind ChosenBrush(ViewModel.TextSizeStep, 'Largest'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                  </controls:WrapRow>
+                </Grid>
                 <!-- Screenshots deleted once read (owner, 2026-10-04: "a mode that auto-deletes screenshots after a couple
                      of seconds grace period"; menu screenshots too since 2026-10-14). Off unless ticked: it is the one
                      thing Shturmap changes outside its own folders (docs/DESIGN.md §2). -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.DeleteScreenshots, Mode=OneWay}" Click="OnDeleteScreenshotsClick" Margin="0,6,0,0"
                               Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsDeleteScreenshots}">
-                  <StackPanel Orientation="Horizontal" Spacing="9">
+                  <Grid ColumnSpacing="9">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                             Background="{x:Bind StudyBoxBrush(ViewModel.DeleteScreenshots), Mode=OneWay}">
                       <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                 Visibility="{x:Bind ShownIfTrue(ViewModel.DeleteScreenshots), Mode=OneWay}" />
                     </Border>
-                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsDeleteScreenshots}" FontWeight="SemiBold" />
-                  </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{x:Bind local:ViewTexts.SettingsDeleteScreenshots}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  </Grid>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind DeleteScreenshotsNote}" />
                 <!-- The game's extract list read from a screenshot that shows it (owner, 2026-10-05). The one case where
@@ -498,14 +539,18 @@
                      (docs/DESIGN.md §2). -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.ReadExits, Mode=OneWay}" Click="OnReadExitsClick" Margin="0,8,0,0"
                               Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsReadExits}">
-                  <StackPanel Orientation="Horizontal" Spacing="9">
+                  <Grid ColumnSpacing="9">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                             Background="{x:Bind StudyBoxBrush(ViewModel.ReadExits), Mode=OneWay}">
                       <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                 Visibility="{x:Bind ShownIfTrue(ViewModel.ReadExits), Mode=OneWay}" />
                     </Border>
-                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsReadExits}" FontWeight="SemiBold" />
-                  </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{x:Bind local:ViewTexts.SettingsReadExits}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  </Grid>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind ReadExitsNote}" />
                 <!-- The item grids in a menu screenshot, read for what the quests need (owner, 2026-10-11): the second
@@ -513,14 +558,18 @@
                      looked at and what is kept (docs/DESIGN.md §2). -->
                 <ToggleButton IsChecked="{x:Bind ViewModel.ReadStash, Mode=OneWay}" Click="OnReadStashClick" Margin="0,8,0,0"
                               Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsReadStash}">
-                  <StackPanel Orientation="Horizontal" Spacing="9">
+                  <Grid ColumnSpacing="9">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                             Background="{x:Bind StudyBoxBrush(ViewModel.ReadStash), Mode=OneWay}">
                       <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                 Visibility="{x:Bind ShownIfTrue(ViewModel.ReadStash), Mode=OneWay}" />
                     </Border>
-                    <TextBlock Text="{x:Bind local:ViewTexts.SettingsReadStash}" FontWeight="SemiBold" />
-                  </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{x:Bind local:ViewTexts.SettingsReadStash}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  </Grid>
                 </ToggleButton>
                 <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind ReadStashNote}" />
                 <!-- FORGET ALL MARKS (owner, 2026-10-11: "a reset"): every mark goes at once, as NOT ANY MORE on an item's
@@ -532,64 +581,76 @@
                 </HyperlinkButton>
                 <!-- Crash reports go only as the player says here (owner, 2026-10-03: default "Ask after a crash";
                      docs/DESIGN.md §8, "Reports"). -->
-                <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0">
+                <Grid ColumnSpacing="14" Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
                   <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashReports}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <HyperlinkButton Padding="0" Tag="Ask" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashAskTip}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                                 Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashAsk}" Style="{StaticResource StatusText}" FontSize="11"
-                                 Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
-                    </StackPanel>
-                  </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Always" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashAlwaysTip}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                                 Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashAlways}" Style="{StaticResource StatusText}" FontSize="11"
-                                 Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
-                    </StackPanel>
-                  </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Never" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashNeverTip}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                                 Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashNever}" Style="{StaticResource StatusText}" FontSize="11"
-                                 Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
-                    </StackPanel>
-                  </HyperlinkButton>
-                </StackPanel>
+                  <controls:WrapRow Grid.Column="1" HorizontalSpacing="14" VerticalSpacing="4" VerticalAlignment="Center">
+                    <HyperlinkButton Padding="0" Tag="Ask" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashAskTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashAsk}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Ask'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Tag="Always" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashAlwaysTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashAlways}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Always'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Tag="Never" Click="OnCrashModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsCrashNeverTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfMode(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsCrashNever}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind CrashModeBrush(ViewModel.CrashMode, 'Never'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                  </controls:WrapRow>
+                </Grid>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap"
                            Text="{x:Bind local:ViewTexts.SettingsCrashNote}" />
                 <!-- New versions from GitHub Releases, as the player says here (owner, 2026-10-03: default Automatic;
                      docs/DESIGN.md §8, "Distribution"). -->
-                <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,8,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}">
+                <Grid ColumnSpacing="14" Margin="0,8,0,0" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
                   <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdates}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <HyperlinkButton Padding="0" Tag="Automatic" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesAutomaticTip}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                                 Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesAutomatic}" Style="{StaticResource StatusText}" FontSize="11"
-                                 Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
-                    </StackPanel>
-                  </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="TellOnly" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesTellOnlyTip}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                                 Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesTellOnly}" Style="{StaticResource StatusText}" FontSize="11"
-                                 Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
-                    </StackPanel>
-                  </HyperlinkButton>
-                  <HyperlinkButton Padding="0" Tag="Off" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesOffTip}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
-                                 Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesOff}" Style="{StaticResource StatusText}" FontSize="11"
-                                 Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
-                    </StackPanel>
-                  </HyperlinkButton>
-                </StackPanel>
+                  <controls:WrapRow Grid.Column="1" HorizontalSpacing="14" VerticalSpacing="4" VerticalAlignment="Center">
+                    <HyperlinkButton Padding="0" Tag="Automatic" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesAutomaticTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesAutomatic}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Automatic'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Tag="TellOnly" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesTellOnlyTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesTellOnly}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'TellOnly'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                    <HyperlinkButton Padding="0" Tag="Off" Click="OnUpdateModeClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.SettingsUpdatesOffTip}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Rectangle Width="6" Height="6" Fill="{StaticResource AmberBrush}" VerticalAlignment="Center"
+                                   Visibility="{x:Bind ShownIfUpdateMode(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind local:ViewTexts.SettingsUpdatesOff}" Style="{StaticResource StatusText}" FontSize="11"
+                                   Foreground="{x:Bind UpdateModeBrush(ViewModel.UpdateMode, 'Off'), Mode=OneWay}" />
+                      </StackPanel>
+                    </HyperlinkButton>
+                  </controls:WrapRow>
+                </Grid>
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Visibility="{x:Bind ShownIfTrue(ViewModel.UpdatesAvailable), Mode=OneWay}"
                            Text="{x:Bind local:ViewTexts.SettingsUpdatesNote}" />
                 <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{x:Bind ShownIfNot(ViewModel.UpdatesAvailable), Mode=OneWay}"
@@ -637,14 +698,18 @@
                   <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstallQuestion}" FontWeight="SemiBold" />
                   <ToggleButton IsChecked="{x:Bind ViewModel.UninstallDeleteData, Mode=OneWay}" Click="OnUninstallDataClick"
                                 Style="{StaticResource TickToggle}" AutomationProperties.Name="{x:Bind local:ViewTexts.SettingsUninstallDeleteData}">
-                    <StackPanel Orientation="Horizontal" Spacing="9">
+                    <Grid ColumnSpacing="9">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
                       <Border Width="13" Height="13" BorderThickness="1" BorderBrush="{StaticResource AmberBrush}" VerticalAlignment="Center"
                               Background="{x:Bind StudyBoxBrush(ViewModel.UninstallDeleteData), Mode=OneWay}">
                         <FontIcon Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource GroundBrush}"
                                   Visibility="{x:Bind ShownIfTrue(ViewModel.UninstallDeleteData), Mode=OneWay}" />
                       </Border>
-                      <TextBlock Text="{x:Bind local:ViewTexts.SettingsUninstallDeleteData}" />
-                    </StackPanel>
+                      <TextBlock Grid.Column="1" Text="{x:Bind local:ViewTexts.SettingsUninstallDeleteData}" TextWrapping="Wrap" />
+                    </Grid>
                   </ToggleButton>
                   <TextBlock Style="{StaticResource NoteText}" Margin="22,0,0,0" TextWrapping="Wrap" Text="{x:Bind UninstallDataText}" />
                   <StackPanel Orientation="Horizontal" Spacing="18" Margin="0,4,0,0">
@@ -694,10 +759,14 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                   </Grid.ColumnDefinitions>
+                  <!-- The name whole: it wraps where the counts leave it too little room, and the counts wrap past 160 DIP,
+                       so at a large text size neither is squeezed to a few letters a line (2026-10-19: at 150 % the closed
+                       list showed "Streets of Ta…"). -->
                   <TextBlock Text="{x:Bind Name}" FontFamily="{StaticResource UiFont}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="14"
-                             TextTrimming="CharacterEllipsis" Visibility="{x:Bind local:MapChoiceView.ForMap(IsHeader)}" />
+                             TextWrapping="Wrap" VerticalAlignment="Center" Visibility="{x:Bind local:MapChoiceView.ForMap(IsHeader)}" />
                   <TextBlock Grid.Column="1" Text="{x:Bind Count}" FontFamily="{StaticResource UiFont}" FontStretch="SemiCondensed" FontWeight="SemiBold" FontSize="12.5"
-                             Foreground="{StaticResource AmberBrush}" VerticalAlignment="Center" Visibility="{x:Bind local:MapChoiceView.ForMap(IsHeader)}" />
+                             Foreground="{StaticResource AmberBrush}" VerticalAlignment="Center" Visibility="{x:Bind local:MapChoiceView.ForMap(IsHeader)}"
+                             MaxWidth="160" TextWrapping="Wrap" TextAlignment="Right" />
                   <!-- OTHER MAPS: a hairline, then the heading in the eyebrow style. -->
                   <StackPanel Grid.ColumnSpan="2" Visibility="{x:Bind local:MapChoiceView.ForHeader(IsHeader)}">
                     <Rectangle Height="1" Fill="{StaticResource LineBrush}" Margin="0,2,0,8" />
@@ -1212,10 +1281,11 @@
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidKitMore, Mode=OneWay}" ItemTemplate="{StaticResource RequirementTemplate}" />
                   <!-- The glance: the nearest objective and the nearest way out, big, before anything else. Its labels share
                        one column, as wide as the longest of them in the language in use (Controls.Columns.Glance), so the
-                       names line up. -->
-                  <Grid Margin="-6,12,-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
+                       names line up. At a larger text size, where that column and the figures would leave the names a
+                       word or two a line, each label stands above its name instead (Rules.GlanceFold, FitGlance). -->
+                  <Grid x:Name="GlanceNext" Margin="-6,12,-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
                         Visibility="{x:Bind ShownIfSet(ViewModel.RaidNext), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Quest="{x:Bind ViewModel.RaidNext.QuestId, Mode=OneWay}"
-                        controls:Linked.Objective="{x:Bind ViewModel.RaidNext.ObjectiveId, Mode=OneWay}">
+                        controls:Linked.Objective="{x:Bind ViewModel.RaidNext.ObjectiveId, Mode=OneWay}" SizeChanged="OnGlanceSizeChanged">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="{x:Bind controls:Columns.Glance}" />
                       <ColumnDefinition Width="*" />
@@ -1232,8 +1302,9 @@
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Grid>
-                  <Grid Margin="-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,1"
-                        Visibility="{x:Bind ShownIfSet(ViewModel.RaidExit), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Marker="{x:Bind ViewModel.RaidExit.Id, Mode=OneWay}">
+                  <Grid x:Name="GlanceExit" Margin="-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,1"
+                        Visibility="{x:Bind ShownIfSet(ViewModel.RaidExit), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Marker="{x:Bind ViewModel.RaidExit.Id, Mode=OneWay}"
+                        SizeChanged="OnGlanceSizeChanged">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="{x:Bind controls:Columns.Glance}" />
                       <ColumnDefinition Width="*" />
@@ -1275,9 +1346,9 @@
                   <!-- OR: where EXIT takes something or isn't sure, the nearest extract on the list that takes nothing
                        (owner, 2026-10-05: "where you can simply exfil"; Rules.ExitsNote.Plain). Smaller than EXIT: the
                        second answer to the same question. -->
-                  <Grid Margin="-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
+                  <Grid x:Name="GlanceOr" Margin="-6,0" Padding="6,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
                         Visibility="{x:Bind ShownIfSet(ViewModel.RaidPlainExit), Mode=OneWay, FallbackValue=Collapsed}" controls:Linked.Marker="{x:Bind ViewModel.RaidPlainExit.Id, Mode=OneWay}"
-                        ToolTipService.ToolTip="{x:Bind PlainExitTip}">
+                        ToolTipService.ToolTip="{x:Bind PlainExitTip}" SizeChanged="OnGlanceSizeChanged">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="{x:Bind controls:Columns.Glance}" />
                       <ColumnDefinition Width="*" />
@@ -1337,14 +1408,21 @@
                       <StackPanel Spacing="1">
                         <!-- Once the game's list was read: an exit on it says so in its kind's colour; one it leaves
                              out is muted and comes last. -->
-                        <TextBlock Text="{x:Bind Name}" Foreground="{x:Bind NameBrush}" />
-                        <TextBlock Text="{x:Bind local:Caps.Of(KindLine)}" Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{x:Bind KindLineBrush}" HorizontalAlignment="Left" />
+                        <!-- The name and its kind line wrap rather than run out of the row at a larger text size
+                             (2026-10-19: at 150 % "PMC EXTRACT · NOT ON YOUR LIST" was cut off). -->
+                        <TextBlock Text="{x:Bind Name}" Foreground="{x:Bind NameBrush}" TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind local:Caps.Of(KindLine)}" Style="{StaticResource StatusText}" FontSize="10.5" Foreground="{x:Bind KindLineBrush}" HorizontalAlignment="Left"
+                                   TextWrapping="Wrap" />
                         <!-- What it takes to leave here: money, an item, a switch, climbing gear, a flare, a partner. -->
-                        <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind NeedsVisibility}" Margin="0,2,0,0">
+                        <Grid ColumnSpacing="6" Visibility="{x:Bind NeedsVisibility}" Margin="0,2,0,0" HorizontalAlignment="Left">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
                           <controls:Picture ItemId="{x:Bind NeedItemId}" Size="20" Visibility="{x:Bind ItemVisibility}"
                                             controls:Linked.Item="{x:Bind NeedItemId}" controls:Linked.Inline="True" />
-                          <TextBlock Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" MaxWidth="250" VerticalAlignment="Center" />
-                        </StackPanel>
+                          <TextBlock Grid.Column="1" Text="{x:Bind Needs}" FontSize="12.5" Foreground="{StaticResource AmberBrush}" TextWrapping="Wrap" MaxWidth="250" VerticalAlignment="Center" />
+                        </Grid>
                         <!-- What is so of it, muted (owner, 2026-10-17): "may be closed" until the list was read, the
                              times it keeps; stepped back once its window has passed. -->
                         <TextBlock Text="{x:Bind Note}" FontSize="12.5" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" MaxWidth="250"
@@ -1640,7 +1718,9 @@
           <Button Style="{StaticResource MapButton}" Click="OnZoomInClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapZoomInTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapZoomInName}"><FontIcon Glyph="&#xE710;" FontSize="15" /></Button>
           <Button Style="{StaticResource MapButton}" Click="OnZoomOutClick" ToolTipService.ToolTip="{x:Bind local:ViewTexts.MapZoomOutTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.MapZoomOutName}"><FontIcon Glyph="&#xE738;" FontSize="15" /></Button>
         </StackPanel>
-        <StackPanel x:Name="MapFoot" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,10" Spacing="2">
+        <!-- Clear of the map buttons' column (16 + 36, and a gap): at a larger text size the credit wraps before it
+             rather than running under the buttons (2026-10-19). -->
+        <StackPanel x:Name="MapFoot" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,64,10" Spacing="2">
           <!-- The wiki's interactive map, for what Shturmap doesn't draw (loot, containers, stashes). -->
           <HyperlinkButton Padding="0" NavigateUri="{x:Bind ViewModel.WikiMap, Mode=OneWay}" Click="OnWikiMapClick"
                            Visibility="{x:Bind ShownIfLink(ViewModel.WikiMap), Mode=OneWay}"

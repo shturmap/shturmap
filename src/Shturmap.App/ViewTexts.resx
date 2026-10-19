@@ -644,6 +644,26 @@
     <value>Language</value>
     <comment>Settings: the name of the row with AUTOMATIC and the languages, each in its own name. Short: it stands beside them on one line.</comment>
   </data>
+  <data name="SettingsTextSize" xml:space="preserve">
+    <value>Text size</value>
+    <comment>Settings: the name of the row with the text size's three steps (NORMAL, LARGER, LARGEST). Short: it stands beside them on one line.</comment>
+  </data>
+  <data name="SettingsTextSizeTip" xml:space="preserve">
+    <value>On top of Windows' text size (Settings › Accessibility › Text size)</value>
+    <comment>Settings: tooltip of each text size step. Windows' own setting and where it is, as Windows names it in the player's language.</comment>
+  </data>
+  <data name="SettingsTextSizeNormal" xml:space="preserve">
+    <value>NORMAL</value>
+    <comment>Settings, text size: a choice, the text as it is (with Windows' text size). Upper case, small, like the other choices.</comment>
+  </data>
+  <data name="SettingsTextSizeLarger" xml:space="preserve">
+    <value>LARGER</value>
+    <comment>Settings, text size: a choice, the text a step larger (×1.25). Upper case, small, like the other choices.</comment>
+  </data>
+  <data name="SettingsTextSizeLargest" xml:space="preserve">
+    <value>LARGEST</value>
+    <comment>Settings, text size: a choice, the text largest (×1.5). Upper case, small, like the other choices.</comment>
+  </data>
   <data name="SettingsReadStash" xml:space="preserve">
     <value>Read your stash and tasks from menu screenshots</value>
     <comment>Settings: tick box. On, a screenshot taken in the game's menus is read: the item cells (the stash, a case, the key tool) for the items your quests need, and the game's Tasks screen (its OPERATIONAL tab: the daily and weekly tasks). "Stash" is the game's word.</comment>

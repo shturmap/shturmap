@@ -6,6 +6,69 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-19: text size: Windows' own, honoured everywhere
+
+**The ask** (beta feedback, relayed by the owner 2026-10-18): "on some setups the text can be hard to read. We should
+support different text-rendering sizes, which should probably translate into an overall UI scale setting. Explore the
+feasibility of this, we don't want to create a huge overhead because of this while still providing this feature".
+
+**Found** (an exploration on 2026-10-19, its notes and pictures kept outside the repository; the window pictured at
+Windows' text sizes with the developer aid `--text-scale`):
+
+- WinUI already draws every XAML text of Shturmap at Windows' text size (Settings › Accessibility › Text size); the map
+  (Skia, a swap chain) stayed at 100 %.
+- 125 %: one extract-list line cut without "…"; in German NEXT took four lines and pushed EXIT below the 900×560 fold.
+- 150 %: NEXT a word or two a line; the closed MAP list "Streets of Ta…"; the extract list's kind lines cut; help's
+  96 DIP quest types cut "Elimination"; settings' reports row out of the panel ("NIE" by 40 DIP).
+- 200 %: Plan's rows squeezed, the raid state cut without "…", the roll call's lines overlapping: layout work of its own.
+- Routes by overhead: 1, Windows' own (the map and these fixes); 2, a setting of the app's own (some 180 sizes); 3, a
+  whole UI scale (no LayoutTransform in WinUI; popups, map input). Windows' display scale of the second monitor works
+  today.
+
+**Decided** (owner, 2026-10-19): route 1, plus an option of the app's own, three steps ("The text-size should still be
+set by an option, not only through the windows settings"). The map follows the text size; the smallest window grows
+with it, so the raid card's EXIT stays in view; what clips at 125 and 150 % takes the larger text (wraps, grows, trims
+with "…"), never smaller text; 200 % is accepted as degraded. Questions for the tester: (1) the monitor Shturmap runs on,
+its size, resolution and Windows' display scale, the game's or a second one; (2) Windows' text size, left at 100 % or
+raised, and did Shturmap clip; (3) Shturmap's window, maximised, half the screen or the smallest, and how far away;
+(4) which text was hard to read: the rail, the cards, the status bar or the map's labels; (5) would a larger display
+scale on that monitor do, or does it make their other windows there too large.
+
+**Built (2026-10-19).** Binding: DESIGN.md §4, "Screen anatomy" (*The window*, *Text size*, "Status bar", the raid card's
+glance, "Settings"), "Map drawing" (*The text size*), §8 "Developer aids" (*A larger text size in a run*).
+
+- `Rules.TextSize`: settings' step (NORMAL ×1, LARGER ×1.25, LARGEST ×1.5; `ui.textSize` in shturmap.db), the whole
+  factor (Windows' × the step, at most 2.25), the window's share of it, WinUI's curve. `Controls.TextScale` (the
+  developer aid's pass, now in every build): reads Windows' text size and follows its change, gives every text of the
+  window and its popups the step's share after a layout (at most every 100 ms, nothing at NORMAL), and the fits' probes
+  too. Settings' row "Text size" (`MainWindow.TextSize`), live; its four words and tooltip in `ViewTexts`, en and de.
+- The map's `uiScale` is the pixels per DIP times the whole factor (`MapView.UiScale`).
+- The smallest window: 900 × (560 + 410 × (factor − 1)) DIP, 663 high at 125 %, 765 at 150 % (`WindowPlace.Smallest`),
+  never past the work area; a smaller window grows to it. Measured in German, the fake raid: EXIT's foot at 497, 584
+  and 702 DIP at 100, 125 and 150 %.
+- What clipped: the glance's labels stand above their names where beside them a name keeps fewer than eight ems
+  (`Rules.GlanceFold`, `MainWindow.FitGlance`); the extract list's names, kind lines and needs wrap; the MAP list's name
+  wraps, its counts past 160 DIP; help's quest types get a measured column (`Columns.HelpKinds`); settings' rows of
+  choices wrap (`WrapRow`), and its ticks' names; the map's credit keeps clear of the map buttons; the status bar's raid
+  state trims with "…" as the last resort.
+- Developer aids: `--text-scale <factor>` stands in for the whole factor; `--text-step <larger|largest>` takes a step
+  for the run.
+- Tests: `TextSizeTests` (the setting read back, the whole factor and the window's share with their bounds, WinUI's
+  curve, the smallest window, the glance's fold).
+- Checked on the developer build, English and German, Plan and the fake raid, at 125 and 150 % (`--text-scale` and
+  `--text-step`) at 900×560 and the grown minimum (900×663, 900×765), and at 200 %: the layout check finds nothing at
+  125 %, and at 150 % only the quest lines below; EXIT in view at 900×663 and 900×765 in German. In a fake raid at
+  LARGEST the pass ran 115 times a minute, 0.5 s in all.
+
+**Open.**
+
+- The raid card's quest lines (`ObjectiveLine`, `Rules.LineRoom`): at 150 % German, "Informationen" and
+  "Finanzunterlagen" break inside the word (lines of 113 and 119 DIP beside a hand-over and a direction).
+- 200 %, degraded as decided: Plan's rows squeeze the map's name, MIN LEFT trims, the roll call's two-line names touch
+  the next, help's keys heading and settings' LICENCES run out of their panel.
+- To check: Windows' own text size on a PC (the pictures simulate it), with a step on top, and a change of either while
+  Shturmap runs; the UI QA pass; the senior translator's review of the five texts.
+
 ## 2026-10-19: the stash desk, a price view from a screenshot (decided, to design)
 
 **The ask** (owner, 2026-10-19): "If you take a screenshot from items, provides a view in the app that mirrors the grid
@@ -2413,32 +2476,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   allows any weapon of a class (`usingWeapon` lists several), and the icon with the class's name under it. Check the
   terms for preset pictures (DESIGN.md §3: Battlestate art, runtime download only) before building.
 
-- **Text hard to read on some setups: a text size, or a UI scale** (beta feedback, relayed by the owner 2026-10-18: "on
-  some setups the text can be hard to read. We should support different text-rendering sizes, which should probably
-  translate into an overall UI scale setting. Explore the feasibility of this, we don't want to create a huge overhead
-  because of this while still providing this feature"). To explore first, not to build: the cheapest route that answers
-  the feedback wins, and a setting of the app's own goes on a panel for the owner (CLAUDE.md, "Design panels"). Where
-  sizes live today: the app follows the monitor's scale, every measure a DIP (`XamlRoot.RasterizationScale` where pixels
-  count: `MapView.PixelScale`, `Picture`, the window's minimum). The rail's, the cards' and the status bar's text is set
-  in five TextBlock styles (`App.xaml`: Eyebrow, Title, Note, Figure, Status) and some 180 inline `FontSize` values in
-  the XAML; the map draws its text and symbols with Skia through one factor, `MapRenderer.Render(…, uiScale)`, which
-  the labels' room and the repel share ("Map drawing"); the trader strip already fits its cells to the rail
-  (`Rules.TraderStrip`); the window is never smaller than 900×560 and the rail's inner width is 351 DIP at every window
-  size ("Screen anatomy"). Three routes, by overhead:
-  1. Honour Windows' own text size (Settings › Accessibility › Text size; `UISettings.TextScaleFactor`). WinUI's
-     TextBlocks are meant to follow it by themselves (`IsTextScaleFactorEnabled`): check what the rail, the cards, the
-     status bar and the notes do at 125–200 % today (the layout check per step), fix what clips or wraps, and carry
-     the factor into the map's `uiScale` for its labels. No setting and no UI of the app's own; the player's Windows
-     setting, which such a setup may already have on.
-  2. A text size setting of the app's own (two or three steps) that multiplies the five styles' sizes (the inline
-     values routed through the styles or one resource first) and the map's `uiScale`. More work: the text grows, the
-     spacing and the symbols don't, so the cards and the rail have to take the larger text, and the layout check and
-     the snapshots run per step.
-  3. A whole UI scale. WinUI has no per-window scale override and no LayoutTransform, so every DIP measure (the styles,
-     margins, the rail's 351, the window's minimum, the map's) would route through the factor. The biggest overhead;
-     weigh it only if 1 and 2 don't satisfy the feedback.
-  Ask the tester what the setup was (monitor size and scale, window size, distance) before choosing: the 900×560
-  minimum is for a laptop beside the game, not for reading from a metre away ("Screen anatomy", owner, 2026-10-09).
+- **Text hard to read on some setups: a text size, or a UI scale** (beta feedback, relayed by the owner 2026-10-18):
+  decided and built, see "2026-10-19: text size: Windows' own, honoured everywhere" at the top.
 
 ## Not asked for (owner to decide)
 

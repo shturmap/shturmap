@@ -83,7 +83,9 @@ Other states where a change reaches them: `-Scav`, `-LocalRaid`, `-HoldLoading`,
 `-MoreArgs '--show-report'` or `'--show-crash'`, `-Operational 5 -OperationalEnded` (made-up daily and weekly tasks: the
 list rows' framed glyphs, the open card's and the raid card's OPERATIONAL, with `-Scav` FIND IN RAID's hand-over
 items), and on a developer build `-MoreArgs '--text-scale', '1.5'` (every text as
-Windows' text size at 150 % draws it; DESIGN.md §8, "Developer aids"). `render` also takes made-up screenshot names (dated 2026-01-01) for
+Windows' text size at 150 % draws it) or `'--text-step', 'largest'` (settings' LARGEST for the run; DESIGN.md §8,
+"Developer aids"); at a larger text size the smallest window is taller (`-Window 900x663` at 125 %, `900x765` at 150 %;
+DESIGN.md §4, "Screen anatomy", *Text size*). `render` also takes made-up screenshot names (dated 2026-01-01) for
 positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms apart (`--every`, `--count`, `--fix`,
 `--viewport`), `summary.txt` first. What each tool writes: DESIGN.md §8, "Developer aids", and docs/LANGUAGES.md,
 "Layout check".

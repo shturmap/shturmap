@@ -82,9 +82,7 @@ public sealed partial class MainWindow
         if (_twoDigits is null)
         {
             var figure = new TextBlock { Style = (Style)Application.Current.Resources["FigureText"], FontSize = TraderStrip.FullCount, Text = "88" };
-#if DEVTOOLS
-            Dev.TextScale.Probe(figure);
-#endif
+            Controls.TextScale.Probe(figure);
             figure.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
             _twoDigits = figure.DesiredSize.Width;
         }
