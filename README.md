@@ -66,8 +66,8 @@ Shturmap works only from files the game writes for you and from public community
   that is where they come from, not an endorsement of Shturmap;
 - of a screenshot you take in a raid, **the top right corner of its picture**: if the game's extract list shows
   there, Shturmap reads which extracts are yours this raid, with the text recognition built into Windows. It happens
-  on your PC, nothing of the picture is kept or sent, and no other part of any picture is looked at. Untick **Read
-  the extract list from screenshots** in settings and no raid screenshot is opened;
+  on your PC, nothing of the picture is kept or sent, and no other part of it is looked at but an inventory screen
+  (below). Untick **Read the extract list from screenshots** in settings and its corner isn't read;
 - of a screenshot you take in the game's menus (the stash, your gear, a case, the key tool), **the item cells its
   picture shows**: their names are read the same way, against the items your quests need, and a row that needs one of
   them says "Seen in your stash" with the date. A screenshot of your stash or your gear is also read against every
@@ -78,7 +78,13 @@ Shturmap works only from files the game writes for you and from public community
   tasks** in the picture's left two thirds: each task's name, location and time left and, for the row you opened, its
   objectives, read the same way, so the tasks show on their maps in Plan and in a raid until they run out. Never their
   rewards; nothing of the picture is kept or sent; the tasks' words stay on your PC. Untick **Read your stash, gear
-  and tasks from menu screenshots** in settings and no menu screenshot is opened;
+  and tasks from menu screenshots, and loot in a raid** in settings and no menu screenshot is opened;
+- of a screenshot you take in a raid with your inventory open, alone or beside a container or body you loot, **the
+  item cells of its grids**, read as the desk reads them, after the extract list's corner (a strip at the picture's
+  top tells an inventory screen from the world; a picture of the world goes no further): a plate over the map, for
+  about six seconds, mirrors the container's or body's layout with what each item is worth. Nothing of it is kept,
+  not even an item id, and it goes when the raid ends. The same setting covers it: unticked, no raid screenshot is
+  read for its items;
 - the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
   quests started, failed and completed, and the items a quest hands you (its start items, its rewards, an insurance
   return), which get the same kind of mark;

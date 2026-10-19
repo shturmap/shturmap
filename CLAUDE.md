@@ -59,11 +59,12 @@ Essentials:
 
 - Never touch the game process, send input, hook, register global hotkeys or capture the screen. `SafetyTests`
   enforces this.
-- A screenshot's picture is read for four things, each by the owner's decision: the game's extract list in its top
+- A screenshot's picture is read for five things, each by the owner's decision: the game's extract list in its top
   right corner (`ExitListReader`; owner, 2026-10-05), the stash's item grids (`StashReader`; owner, 2026-10-11), the
-  Tasks screen's OPERATIONAL table (the tasks reader; owner, 2026-10-17) and the stash's or gear's item grids for the
-  desk, against the whole catalogue (`DeskReader`; owner, 2026-10-19), all on the PC with Windows' own text
-  recognition (DESIGN.md §2). Reading anything else from a picture is the owner's decision anew, never a side effect
+  Tasks screen's OPERATIONAL table (the tasks reader; owner, 2026-10-17), the stash's or gear's item grids for the
+  desk, against the whole catalogue (`DeskReader`; owner, 2026-10-19), and the raid's inventory screen and its LOOT
+  pane for the in-raid glance (`DeskReader`; owner, 2026-10-19), all on the PC with Windows' own text recognition
+  (DESIGN.md §2). Reading anything else from a picture is the owner's decision anew, never a side effect
   of a change. Real screenshots never go into the repository: the readers' tests draw their own pictures, and read
   the ones in the git-ignored `tests\fixtures\ocr` where they exist.
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
