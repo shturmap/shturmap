@@ -20,6 +20,10 @@ public sealed record ObjectiveItem(string QuestId, string Text, string Quest, st
 
     public Visibility ItemVisibility => ItemId is not null ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>The item whose icon pictures <see cref="ItemId"/>: a gun's default preset, else the item itself
+    /// (Data.TarkovDev.ItemSources.PictureId).</summary>
+    public string? PictureId { get; init; } = ItemId;
+
     public string HandoverTip => Handover.Length > 0 ? AppTexts.HandoverAfterRaid(handover: Handover) : "";
 
     // An objective ticked as done needs nothing any more.
@@ -210,6 +214,10 @@ public sealed record RequirementLine(string Glyph, string Text, string For, stri
     /// <summary>Every item the row stands for when it stands for several ("A or B", gear worn together, a weapon
     /// class): the row is each of them for the linked highlight.</summary>
     public IReadOnlyList<string>? Alternatives { get; init; }
+
+    /// <summary>The item whose icon pictures <see cref="ItemId"/>: a gun's default preset, the assembled gun, else the
+    /// item itself (Data.TarkovDev.ItemSources.PictureId; owner, 2026-10-19). The row is still the gun's.</summary>
+    public string PictureId { get; init; } = ItemId;
 
     /// <summary>What Shturmap learned of having the item ("Seen in your stash · 5 Oct"), in ink under the row; empty
     /// when nothing is known. <see cref="Source"/> then says where to get the rest, if any (Session.StashMarks).</summary>

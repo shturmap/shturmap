@@ -31,6 +31,10 @@ public sealed record ItemCardView(string ItemId, string Name, bool IsKey, IReadO
     /// <summary>What Shturmap learned of having the item ("Seen in your stash · 5 Oct, 21:40"; <see cref="StashMarks.ForCard"/>),
     /// or null when nothing is known: then the card has no STASH section.</summary>
     public string? Stash { get; init; }
+
+    /// <summary>The item whose icon pictures it: a gun's default preset, as in the cell the card was opened from
+    /// (<see cref="ItemSources.PictureId"/>); the card is still the gun's.</summary>
+    public string PictureId { get; init; } = ItemId;
 }
 
 public static class ItemCards
@@ -206,7 +210,10 @@ public static class ItemCards
         }
         return new ItemCardView(itemId, data.ItemName(itemId), isKey,
             Sources(data, sources, itemId, quests),
-            uses.OrderBy(u => u.QuestName, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList());
+            uses.OrderBy(u => u.QuestName, StringComparer.Create(UiLanguage.Culture, ignoreCase: false)).ToList())
+        {
+            PictureId = ItemSources.PictureOf(sources, itemId),
+        };
     }
 
     /// <summary>

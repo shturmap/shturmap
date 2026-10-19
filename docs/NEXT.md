@@ -114,6 +114,55 @@ The research, the data facts and the discussion page stay outside the repository
 `%USERPROFILE%\source\repos\Shturmap-price-view-data-2026-10-19.md` and
 `%USERPROFILE%\source\repos\Shturmap-price-view-discussion-2026-10-19.html`.
 
+## 2026-10-19: a required weapon pictured as the assembled gun
+
+**The ask** (owner, 2026-10-17): "When a weapon is required for a quest, it shows just the icon for the weapon. For
+example, the Punisher - Part 1. This is technically the correct icon. However, weapons consist of parts and the icon is
+always missing the other parts, like the stock or scope or grip and is barely recognisable as a weapon using that icon.
+We need to find the best solution for that." tarkov.dev's icon of a gun's item is its receiver alone. Checked for the
+panel (the app's PvE cache, six requests to tarkov.dev): presets are in the items file the app already downloads (497
+of 5,480 items; 164 of 172 guns carry `properties.defaultPreset`), their icons follow every item's pattern (64×64, 0.9
+to 1.7 KB); quests' kills name 198 weapons, 37 without a preset (knives, grenades, under-barrel launchers, already
+whole); 40 are pictured, 35 with a preset. A panel of five, drawn 1:1 in the rail and the quest card:
+
+- A. The default preset's icon, the gun as the traders sell it, in the same square cell (recommended).
+- B. A drawn glyph per weapon class and the short name in the cell's corner (a glyph per class; DESIGN.md §3, "Icons").
+- C. The bare icon with the class's name under it (the receiver stays).
+- D. Today's cells, the preset only on the item card, at 60 DIP.
+- E. A in a wider cell, 72×40 with the 512 px picture.
+
+The owner chose A ("Your recommendation", 2026-10-19). The terms the to-do asked to check: a preset's icon is an item
+icon from the same service, fetched at runtime and kept like every other (DESIGN.md §3's accepted terms), so no new
+conflict, as the panel read it.
+
+**Built (2026-10-19).** Binding: DESIGN.md §3 ("Trader portraits and item icons": a gun is pictured by its default
+preset), §4 ("What kills and exits take", "to use": its cell) and §8 ("Item sources": what is read).
+
+- Data: `ApiItem.Properties` (`ApiItemProperties.DefaultPreset`, from the items payload the item sources already
+  download; presets stay out of the class counts) and `ItemSources.PictureId`: a gun's preset, else the item itself
+  (`ItemSources.PictureOf`: the item itself while the sources haven't loaded). It lives on the item sources, not on
+  `GameData`: the items payload (17 MB) loads after the rest, so a gun shows its own icon for the second or two before
+  (from the cache), as a class row says its weapons as a list until then.
+- The cell: `Picture.PictureId` tries the preset's icon, then the gun's own, then the glyph; `GameArt` unchanged. Set
+  on BRING's rows (`RequirementLine`) and need cells (`NeedChip`, the operational hand-over cells too), the kit cue, the
+  rail's hand-over cell (`ObjectiveItem`), the quest card's objective and BRING cells (`CardObjective`, `CardNeed`) and
+  the item card (`ItemCardView`); links, cards and texts keep the gun's id. No new text.
+- The `bring` audit's PRESETS line and two flags, GUN WITHOUT PRESET and PRESET NOT AN ITEM (PvE today: 34 weapons
+  pictured in BRING, 31 by a preset; bare: a bayonet and two under-barrel launchers; both flags none); UPDATES.md: the
+  assumption's row and the audit's.
+- Tests: `WeaponPictureTests` in Data.Tests (3: the parse, the mapping, presets out of the classes) and Session.Tests
+  (3: the quest card's cells, a cell before the sources load and a knife's and a medkit's, the item card).
+- Seen (a developer script: The Punisher - Part 1 started and picked, Customs in Plan, its card held): BRING's 40 DIP
+  cell and the quest card's 34 and 30 DIP cells show the assembled AKS-74UN, stock and magazine; the PICKED row's 18
+  DIP need cell is a small dark shape, as the panel drew it.
+
+**Open.**
+
+- The UI QA pass (the coordinator's, after this).
+- `shturmap-cli render` draws the map only, no cells, so it had nothing to change.
+- A long rifle letterboxes to a line in the 18 DIP cell; E is the step if that bothers.
+
+
 ## 2026-10-19: operational tasks, dailies and weeklies, in the rail
 
 **The ask** (owner, 2026-10-17): "Add dailies and weeklies via screenshot." The game's daily and weekly operational
@@ -2401,17 +2450,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 - **Two symbols on one spot drift apart with every pan or zoom** (owner, 2026-10-17): built, see "2026-10-19: two symbols
   on one spot drift apart" at the top.
 
-- **A required weapon's icon is barely a weapon** (owner, 2026-10-17: "When a weapon is required for a quest, it shows
-  just the icon for the weapon. For example, the Punisher - Part 1. This is technically the correct icon. However, weapons
-  consist of parts and the icon is always missing the other parts, like the stock or scope or grip and is barely
-  recognisable as a weapon using that icon. We need to find the best solution for that."). The BRING cells and the quest
-  card show tarkov.dev's icon of the bare weapon item (`assets.tarkov.dev/<id>.webp`), the receiver without stock, grip
-  or sight. To design on a panel (owner's rule): the likeliest answer is the weapon's default preset, which tarkov.dev
-  carries per weapon (`properties.defaultPreset` with its own id and icon: the assembled gun as the trader's shop shows
-  it); the loader leaves `preset` items out today ("Item sources", DESIGN.md), so the preset's id and picture would be
-  read for weapons only. Other options to draw beside it: the weapon class's glyph (the kind, not the gun) where a quest
-  allows any weapon of a class (`usingWeapon` lists several), and the icon with the class's name under it. Check the
-  terms for preset pictures (DESIGN.md §3: Battlestate art, runtime download only) before building.
+- **A required weapon's icon is barely a weapon** (owner, 2026-10-17): built, see "2026-10-19: a required weapon pictured
+  as the assembled gun" at the top.
 
 - **Text hard to read on some setups: a text size, or a UI scale** (beta feedback, relayed by the owner 2026-10-18: "on
   some setups the text can be hard to read. We should support different text-rendering sizes, which should probably

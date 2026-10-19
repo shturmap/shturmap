@@ -392,6 +392,20 @@ quoting it anywhere new.
   display for personal use, the way every Tarkov tool and tarkov.dev itself show them. Screenshots of Shturmap
   on the website and in the README may show them, as the wiki and other community sites do (owner, 2026-10-02,
   accepting that BSG's licence 4.2.2, read literally, doesn't allow it); they are never published on their own.
+  **A gun is pictured by its default preset** (owner, 2026-10-19, from a panel of five, 2026-10-19: A): the gun's own
+  item is its receiver alone, without stock, grip, magazine or sight, and its icon was barely a weapon ("When a weapon
+  is required for a quest … barely recognisable as a weapon using that icon"). Every cell that pictures a gun (BRING's
+  rows and cells, the quest card's objective and BRING cells, the item card, the kit cue, a hand-over's cell) shows the
+  icon of the gun's default preset instead (tarkov.dev's `properties.defaultPreset`: an item of its own, the gun
+  assembled as the traders sell it, its icon at the same `assets.tarkov.dev/<id>-icon.webp`, 64×64, about 1.7 KB: an
+  item icon like any other, fetched and kept under the terms above), in the same square cell. Links, the item card
+  and every word stay the gun's; only the picture changes (`ItemSources.PictureId`, `Picture.PictureId`). A weapon
+  without a preset (knives, grenades, under-barrel launchers: 37 of the 198 weapons the quests' kills named on
+  2026-10-19, their icons already whole) keeps its own; a preset's icon that can't be had falls back to the gun's own,
+  then the glyph. The presets come with the item sources, so until
+  they load (a second or two after the rest, from the cache) a gun shows its own icon. A wide gun letterboxes: a 5×2
+  gun is about 31×12 DIP in a 40 DIP cell, 14×6 in an 18 DIP one, a 6×1 rifle a thin line; the panel's E (a wider
+  cell with the 512 px picture) is the step if that bothers.
   **Grid images** (tarkov.dev's drawing of an item's inventory cell, `assets.tarkov.dev/<id>-grid-image.webp`, a few
   kilobytes each) are fetched the same way, but only for the items BRING lists when a menu screenshot is read (§2),
   as the reading's check; never the whole catalogue (the spike of 2026-10-11 fetched 3,905 of them once, 42 MB as
@@ -2598,7 +2612,9 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
   name. "Any" only for the whole category; a count says how many kinds will do. Whole categories come first, then
   parts of one, then single weapons ("Any sniper rifle or MP-18 7.62x54R single-shot rifle"). The categories load
   with the item sources, after the rest; until then the list form. A class row's source line names one of them ("e.g.
-  Mosin rifle · Prapor LL1 · …").
+  Mosin rifle · Prapor LL1 · …"). Its cell pictures the first weapon as the assembled gun, its default preset's icon
+  (owner, 2026-10-19, from a panel of five, 2026-10-19: A; §3, "Trader portraits and item icons"): the bare item is a
+  receiver alone. The row, its link and its card stay the weapon's.
 - **"to fit"** for the mods the weapon must carry (`usingWeaponMods`), shown like gear ("Valday PS-320 1/6x scope /
   AK-12 5.45x39 sound suppressor").
 - **"to leave through <exit>"** for what the exit an extract objective names takes: the objective names it by the
@@ -3786,7 +3802,8 @@ On the maps without SVG artwork the floors are tarkov.dev's tile layers: the sho
 layer's, which dims as under an SVG floor (the sheet stands in with the same floors). Map labels with heights
 (tarkov.dev's bottom/top) show only on their floor, as on tarkov.dev; labels without heights show on every floor.
 
-**Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level and a last price are read),
+**Item sources.** json.tarkov.dev `items` (17 MB; only trader offers, flea level, a last price, the categories and a
+gun's default preset are read: the preset pictures the gun, §3, "Trader portraits and item icons"; 2026-10-19),
 `barters`, `crafts`, `hideout` (+ translations), fetched after the main data and refreshed daily; loose spawns come
 from the maps payload's `lootLoose`. A download that fails for a reason that may pass (no connection, a timeout, a
 server error, a page in place of the data) is asked for again by itself, after the waits of "Asking again" below,

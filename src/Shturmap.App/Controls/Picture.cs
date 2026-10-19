@@ -8,7 +8,8 @@ namespace Shturmap.App.Controls;
 
 /// <summary>
 /// A trader portrait or an item icon, square in a dark cell like the game's inventory. Shows a glyph until the
-/// picture has been fetched, and keeps the glyph if it can't be (offline, unknown id). Set either TraderId or ItemId.
+/// picture has been fetched, and keeps the glyph if it can't be (offline, unknown id). Set either TraderId or ItemId;
+/// with ItemId, PictureId may name the item whose icon pictures it (a gun's default preset).
 /// </summary>
 public sealed partial class Picture : Grid
 {
@@ -17,6 +18,9 @@ public sealed partial class Picture : Grid
 
     public static readonly DependencyProperty ItemIdProperty = DependencyProperty.Register(
         nameof(ItemId), typeof(string), typeof(Picture), new PropertyMetadata(null, (d, _) => ((Picture)d).Update()));
+
+    public static readonly DependencyProperty PictureIdProperty = DependencyProperty.Register(
+        nameof(PictureId), typeof(string), typeof(Picture), new PropertyMetadata(null, (d, _) => ((Picture)d).Update()));
 
     public static readonly DependencyProperty SizeProperty = DependencyProperty.Register(
         nameof(Size), typeof(double), typeof(Picture), new PropertyMetadata(20.0, (d, _) => ((Picture)d).Update()));
@@ -64,6 +68,17 @@ public sealed partial class Picture : Grid
         set => SetValue(ItemIdProperty, value);
     }
 
+    /// <summary>
+    /// The item whose icon pictures <see cref="ItemId"/> when it isn't its own: a gun's default preset, the assembled
+    /// gun (owner, 2026-10-19; Data.TarkovDev.ItemSources.PictureId). Tried first; if it can't be had, the item's own
+    /// icon, then the glyph. Null or the item's own id: the item's icon.
+    /// </summary>
+    public string? PictureId
+    {
+        get => (string?)GetValue(PictureIdProperty);
+        set => SetValue(PictureIdProperty, value);
+    }
+
     public double Size
     {
         get => (double)GetValue(SizeProperty);
@@ -105,8 +120,12 @@ public sealed partial class Picture : Grid
     {
         Width = Height = Size;
         var kind = IsTrader ? ArtKind.Trader : ArtKind.Item;
-        var id = TraderId ?? ItemId;
-        _shown = id;
+        // The pictures to try in turn: a gun's preset, then the gun's own (never for a trader).
+        string[] ids = IsTrader ? [TraderId!]
+            : ItemId is null ? []
+            : PictureId is { Length: > 0 } picture && picture != ItemId ? [picture, ItemId] : [ItemId];
+        var shown = string.Join("/", ids);
+        _shown = shown;
         Children.Clear();
 
         // Square like the game's trader portraits and inventory cells.
@@ -130,19 +149,27 @@ public sealed partial class Picture : Grid
         };
         Children.Add(fallback);
 
-        if (id is null || Art() is not { } art)
+        if (ids.Length == 0 || Art() is not { } art)
             return;
-        if (art.Cached(kind, id) is { } path)
+        if (art.Cached(kind, ids[0]) is { } path)
             Show(path, fallback);
         else
-            _ = LoadAsync(art, kind, id, fallback);
+            _ = LoadAsync(art, kind, ids, shown, fallback);
     }
 
-    private async Task LoadAsync(GameArt art, ArtKind kind, string id, FontIcon fallback)
+    private async Task LoadAsync(GameArt art, ArtKind kind, string[] ids, string shown, FontIcon fallback)
     {
-        var path = await art.GetAsync(kind, id);
-        if (path is not null && _shown == id)
-            Show(path, fallback);
+        foreach (var id in ids)
+        {
+            var path = await art.GetAsync(kind, id);
+            if (_shown != shown)
+                return;
+            if (path is not null)
+            {
+                Show(path, fallback);
+                return;
+            }
+        }
     }
 
     private void Show(string path, FontIcon fallback)

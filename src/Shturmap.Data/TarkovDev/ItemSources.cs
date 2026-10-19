@@ -23,4 +23,16 @@ public sealed class ItemSources
     public ILookup<string, string> Members =>
         _members ??= Items.Values.Where(i => i.Types?.Contains("preset") != true)
             .SelectMany(i => (i.Categories ?? []).Select(c => (Category: c, i.Id))).ToLookup(x => x.Category, x => x.Id);
+
+    /// <summary>
+    /// The item whose picture shows <paramref name="itemId"/>: a gun's default preset, the gun assembled as the traders
+    /// sell it (its own item, <see cref="ApiItemProperties.DefaultPreset"/>), else the item itself. The bare gun's icon
+    /// is its receiver alone, without stock, grip or sight (owner, 2026-10-19: from a panel of five, A; docs/DESIGN.md
+    /// §3, "Trader portraits and item icons"). Only the picture: links, cards and names stay the item's.
+    /// </summary>
+    public string PictureId(string itemId) =>
+        Items.TryGetValue(itemId, out var item) && item.Properties?.DefaultPreset is { Length: > 0 } preset ? preset : itemId;
+
+    /// <summary><see cref="PictureId"/>, or the item itself while the sources haven't loaded.</summary>
+    public static string PictureOf(ItemSources? sources, string itemId) => sources?.PictureId(itemId) ?? itemId;
 }

@@ -113,7 +113,8 @@ switch (command)
             shturmap-cli synopses [mode]     every Plan row's synopsis, with fallbacks, lines over two and rule breaks flagged
             shturmap-cli effort [mode]       every Plan row's effort group and complexity, with unknown targets and types flagged
             shturmap-cli bring [mode]        every map's BRING rows (keys, items, weapons, mods, gear, exit items), with gaps flagged,
-                                            and the hand-kept switch exits and flare exits against the data
+                                            and the hand-kept switch exits and flare exits against the data, and the
+                                            weapons pictured by a default preset (guns without one flagged)
             shturmap-cli handovers [mode]    which hand-overs fold into the objective that gets their thing, with near misses flagged
             shturmap-cli stash <png|folder>  the 2026-10-11 spike: read stash screenshots and say which quest items they show
                                             (--set keys|quest|all, --truth <file>, --dump <folder> for pictures of the grids found)
@@ -139,7 +140,9 @@ switch (command)
 // DATA where the data now gives a row's faction itself or its extracts carry a field they didn't on 2026-10-17). Last,
 // what the general rules for the data's extract defects did as it loaded (Data.TarkovDev.ExtractRepairs), one line each:
 // OUTSIDE (copies outside their map dropped; those kept near the edge), FACTION FROM BASE, EXTRACTS FROM BASE, FACTION
-// BY HAND; "none" where the data needs it no more.
+// BY HAND; "none" where the data needs it no more. And PRESETS: the weapons BRING pictures (a weapon row's first), how
+// many by their default preset (ItemSources.PictureId), with GUN WITHOUT PRESET (a gun pictured by its bare receiver)
+// and PRESET NOT AN ITEM (a preset id the items lack, or not of type "preset").
 static async Task Bring(string mode)
 {
     var cache = Shturmap.Session.AppPaths.Default.DataCache;
@@ -150,6 +153,7 @@ static async Task Bring(string mode)
     var quests = data.Tasks.Values.Select(t => Shturmap.Session.Planning.ToPlan(t, data)).ToList();
     var kinds = new Dictionary<Shturmap.Core.Planning.RequirementKind, int>();
     var flagged = 0;
+    var pictured = new SortedSet<string>(StringComparer.Ordinal);
     foreach (var map in Shturmap.Session.Planning.Maps(data).OrderBy(m => m.Name))
     {
         var plan = Shturmap.Core.Planning.RaidPlanner.Plan(quests, map);
@@ -158,6 +162,8 @@ static async Task Bring(string mode)
         {
             var view = Shturmap.Session.Planning.RequirementText(data, r, sources);
             kinds[r.Kind] = kinds.GetValueOrDefault(r.Kind) + 1;
+            if (r.Kind == Shturmap.Core.Planning.RequirementKind.Weapon)
+                pictured.Add(view.ItemId);
             var flags = new List<string>();
             if (r.Alternatives.Any(id => data.ItemName(id) == "Unknown item"))
                 flags.Add("UNKNOWN ITEM");
@@ -187,6 +193,13 @@ static async Task Bring(string mode)
     Console.WriteLine();
     Console.WriteLine("Rows: " + string.Join(", ", kinds.OrderBy(k => k.Key).Select(k => $"{k.Key} {k.Value}")) + $"; flagged {flagged}");
     Console.WriteLine($"NO EXIT: {(noExit.Count == 0 ? "none" : string.Join("; ", noExit))}");
+    string Named(IEnumerable<string> ids) => ids.Any() ? string.Join("; ", ids.Select(data.ItemName).Order(StringComparer.Ordinal)) : "none";
+    var byPreset = pictured.Where(id => sources.PictureId(id) != id).ToList();
+    var bare = pictured.Except(byPreset).ToList();
+    var gunsBare = bare.Where(id => sources.Items.GetValueOrDefault(id)?.Types?.Contains("gun") == true).ToList();
+    var notPresets = byPreset.Where(id => sources.Items.GetValueOrDefault(sources.PictureId(id))?.Types?.Contains("preset") != true).ToList();
+    Console.WriteLine($"PRESETS: {pictured.Count} weapons pictured, {byPreset.Count} by their default preset; bare: {Named(bare.Except(gunsBare))}");
+    Console.WriteLine($"GUN WITHOUT PRESET: {Named(gunsBare)}; PRESET NOT AN ITEM: {Named(notPresets)}");
     var drift = SwitchExits.Drift(data);
     Console.WriteLine($"SWITCH EXITS: {SwitchExits.Table.Count} by hand, " + (drift.Count == 0
         ? "as the data has them"

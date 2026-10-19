@@ -55,7 +55,7 @@
           <!-- A mark just arrived: the row flashes gold once (Controls.Glow). -->
           <Rectangle Grid.ColumnSpan="2" Margin="-6,-4" Fill="{StaticResource AmberBrush}" Opacity="0" IsHitTestVisible="False"
                      Visibility="{x:Bind FreshVisibility}" Tag="flash" Loaded="OnGlowLoaded" />
-          <controls:Picture ItemId="{x:Bind ItemId}" Glyph="{x:Bind Glyph}" Size="40" />
+          <controls:Picture ItemId="{x:Bind ItemId}" PictureId="{x:Bind PictureId}" Glyph="{x:Bind Glyph}" Size="40" />
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
             <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
             <TextBlock Text="{x:Bind For}" Style="{StaticResource NoteText}" />
@@ -201,7 +201,7 @@
                          trader's portrait, before the distance, in the place of the hand-over's own line (owner,
                          2026-10-06, "Hand-over: E"; Handovers). The cell is that item, as a need cell is. -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Visibility="{x:Bind HandoverVisibility}">
-                      <controls:Picture ItemId="{x:Bind ItemId}" Size="20" Visibility="{x:Bind ItemVisibility}"
+                      <controls:Picture ItemId="{x:Bind ItemId}" PictureId="{x:Bind PictureId}" Size="20" Visibility="{x:Bind ItemVisibility}"
                                         controls:Linked.Item="{x:Bind ItemId}" controls:Linked.Inline="True" />
                       <controls:HandoverMark TraderId="{x:Bind TraderId}" Count="{x:Bind HandoverCount}" PortraitSize="20" Tip="{x:Bind HandoverTip}" />
                     </StackPanel>
