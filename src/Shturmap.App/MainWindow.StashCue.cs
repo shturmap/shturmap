@@ -149,7 +149,7 @@ public sealed partial class MainWindow
     // with its preview.
     private void HideStashAfter()
     {
-        if (SnapshotMode || _stashExample)
+        if (KeepsCues || _stashExample)
             return;
         if (_stashHide is null)
         {

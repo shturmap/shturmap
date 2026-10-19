@@ -77,7 +77,7 @@ public sealed partial class MainWindow
     // The cue goes CompletedStays after the last quest joined it, CompletedAtMost after it came at most.
     private void HideCompletedAfter()
     {
-        if (SnapshotMode)
+        if (KeepsCues)
             return;
         if (_completedHide is null)
         {

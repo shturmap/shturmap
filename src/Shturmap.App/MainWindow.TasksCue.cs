@@ -419,7 +419,7 @@ public sealed partial class MainWindow
     // keeps it up.
     private void HideTasksAfter()
     {
-        if (SnapshotMode)
+        if (KeepsCues)
             return;
         if (_tasksHide is null)
         {

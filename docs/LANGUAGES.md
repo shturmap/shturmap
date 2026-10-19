@@ -110,7 +110,8 @@ they are scaled to the monitor the app would open on. Its windows open off every
 (DESIGN.md §8, "Developer aids", *Quiet runs*), so the check can run beside a game. The views, `-States` to pick some:
 `plan`, `raid` (the fake raid on Streets; both with the update band, `--show-update`, which a raid hides), `report` (the Report dialog with what's sent shown, `--show-report`),
 `crash` (the question after a crash, `--show-crash`), `whatsnew` (the newest What's New card, `--whats-new`), `quest`
-(a quest's card and an item's, `--show-quest`) and `tour1` to `tour7` (`--tour <n>`); settings is in each, as every
+(a quest's card and an item's, `--show-quest`), `glance` (the in-raid glance's plate, the made-up body, in a fake Scav
+raid: `tools\fake-raid.ps1 -Glance 2`, no cue with it; 2026-10-19) and `tour1` to `tour7` (`--tour <n>`); settings is in each, as every
 snapshot opens it, and help in all but the tour's, where it opens by itself. A view takes about 20 seconds: all of them
 in three languages at two sizes take about 25 minutes.
 

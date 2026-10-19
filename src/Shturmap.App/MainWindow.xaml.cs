@@ -1975,7 +1975,7 @@ public sealed partial class MainWindow : Window
                 HideAfter(cue);
                 return;
             }
-            if (SnapshotMode)
+            if (KeepsCues)
                 return;
             _cueTimer = WindowTimer(() => CuePanel.Visibility = Visibility.Collapsed);
             _cueTimer.Interval = CueLength(cue);
@@ -2003,9 +2003,9 @@ public sealed partial class MainWindow : Window
         }
         var end = CueLength(cue).TotalSeconds;
         const double k = CuePace;
-        // Developer snapshots keep the last cue up, so it can be looked at. QUEST COMPLETE and SEEN IN YOUR STASH stay
-        // as long as their kind keeps coming, and fade by themselves (HideAfter).
-        if (SnapshotMode || Stays(cue))
+        // Developer snapshots keep the last cue up, so it can be looked at (but for the glance's plate, KeepsCues). QUEST
+        // COMPLETE and SEEN IN YOUR STASH stay as long as their kind keeps coming, and fade by themselves (HideAfter).
+        if (KeepsCues || Stays(cue))
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1));
         else
             Animate(CuePanel, "Opacity", easeOut, (0, 0), (0.12 * k, 1), (end - 0.6, 1), (end, 0));
@@ -2035,7 +2035,7 @@ public sealed partial class MainWindow : Window
         }
         story.Completed += (_, _) =>
         {
-            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing && !StashShowing && !TasksShowing && _rollRows.Count == 0)
+            if (ReferenceEquals(story, _cueStory) && !KeepsCues && !CompletedShowing && !StashShowing && !TasksShowing && _rollRows.Count == 0)
                 CuePanel.Visibility = Visibility.Collapsed;
         };
         _cueStory = story;

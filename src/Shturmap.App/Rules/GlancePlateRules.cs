@@ -14,7 +14,9 @@ namespace Shturmap.App.Rules;
 /// total and a line saying nothing was looted on the screen. The cells take the desk's sizes (<see cref="DeskPageRules.Sizes"/>)
 /// up to <see cref="LargestCell"/>, the largest at which the regions fit the plate's room, flowed into columns where one
 /// is too short; the plate's height is about half the map's, and where even the desk's least size doesn't fit the room,
-/// the last regions give way to one line in the fold line's words, "ALSO · BACKPACK 412k+ ₽": nothing scrolls in a raid.
+/// a region is drawn cut short, its grid's top rows under "BACKPACK · MORE BELOW +", and only one that can't show even
+/// two rows gives way, with the regions after it, to one line in the fold line's words, "ALSO · BACKPACK 412k+ ₽": nothing
+/// scrolls in a raid.
 /// Nothing on it is operated (no click, pointer or tip in a raid; principle 1).
 /// </summary>
 public static class GlancePlateRules
@@ -133,12 +135,14 @@ public static class GlancePlateRules
 
     /// <summary>
     /// Where a LOOT region's contents went unseen, its word and "+" (the desk's "at least this, more inside"): a part not
-    /// searched yet "UNSEARCHED +", one the game is searching "SEARCHING +", a grid the pane's scrolling cut at its foot
-    /// "MORE BELOW +"; null where all of it was seen. The "+" is joined to its word by a no-break space.
+    /// searched yet "UNSEARCHED +", one the game is searching "SEARCHING +", a grid the pane's scrolling cut at its foot or
+    /// one the plate drew cut short (<paramref name="cutShort"/>: its room took only its top rows) "MORE BELOW +", the
+    /// search's word winning where the part is being searched; null where all of it was seen and drawn. The "+" is joined to
+    /// its word by a no-break space.
     /// </summary>
-    public static string? State(DeskRegion region)
+    public static string? State(DeskRegion region, bool cutShort = false)
     {
-        if (!region.ContentsUnseen)
+        if (!region.ContentsUnseen && !cutShort)
             return null;
         var word = region.Search switch
         {
@@ -146,67 +150,114 @@ public static class GlancePlateRules
             DeskSearch.Searching => RuleTexts.GlanceSearching,
             _ => RuleTexts.GlanceMoreBelow,
         };
-        return word + " +";
+        return word + NoBreak + "+";
     }
+
+    private const string NoBreak = "\u00A0";
 
     /// <summary>Whether a region draws its grid (a part not searched has none to draw: its closed region stands there).</summary>
     public static bool HasGrid(DeskRegion region) => DeskPageRules.Grid(region) is { Cols: > 0, Rows: > 0 };
 
-    /// <summary>A region's head as the plate writes it: its name, and where its grid is drawn but not all of it was seen,
-    /// its state after a " · " ("POCKETS · SEARCHING +"); a region without a grid says its state in its closed region.</summary>
-    public static string HeadLine(DeskRegion region, DeskPage page) =>
-        HasGrid(region) && State(region) is { } state ? Name(region, page) + " · " + state : Name(region, page);
+    /// <summary>
+    /// A region's head as the plate writes it: its name, and where its grid is drawn but not all of it was seen or drawn
+    /// (<paramref name="cutShort"/>), its state after a " · " ("POCKETS · SEARCHING +", "BACKPACK · MORE BELOW +"); a region
+    /// without a grid says its state in its closed region. It wraps only before a "·": the words between them are joined by
+    /// no-break spaces (the senior translator, 2026-10-19: "TASCHEN · WIRD DURCHSUCHT +" split its phrase at 40 DIP).
+    /// </summary>
+    public static string HeadLine(DeskRegion region, DeskPage page, bool cutShort = false)
+    {
+        var head = HasGrid(region) && State(region, cutShort) is { } state ? Name(region, page) + " · " + state : Name(region, page);
+        return string.Join(" ·" + NoBreak, head.Split(" · ").Select(part => part.Replace(" ", NoBreak, StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// The lines a head takes at a type size in a column this wide: it breaks only before a "·" (<see cref="HeadLine"/>), a
+    /// part going on to the next line where it doesn't fit the one it would end, and one wider than the column wrapping within
+    /// it. An estimate of the drawn text, a little over (about 0.62 of the size a character, as the cut line's).
+    /// </summary>
+    public static int HeadLines(string head, double px, double column)
+    {
+        var (lines, x) = (0, 0.0);
+        foreach (var part in head.Split(' '))
+        {
+            var w = part.Length * px * CharWidth;
+            if (lines == 0 || x + px * CharWidth + w > column)
+                (lines, x) = (lines + 1, w);
+            else
+                x += px * CharWidth + w;
+            if (w > column)
+                lines += (int)Math.Ceiling(w / column) - 1;
+        }
+        return Math.Max(1, lines);
+    }
+
+    private const double CharWidth = 0.62;
 
     /// <summary>The closed region's height at a cell size: three quarters of a cell, never under 28 DIP.</summary>
     public static double ClosedHeight(double cell) => Math.Max(28, Math.Round(cell * 0.75));
+
+    /// <summary>A region drawn cut short shows at least this many rows of its grid (with its head and slots); where even these
+    /// don't fit, it is named in the cut line.</summary>
+    public const int LeastRows = 2;
 
     /// <summary>The cut line's words: "ALSO" and each region that gave way, its name and total ("BACKPACK 412k+ ₽").</summary>
     public static (string Word, IReadOnlyList<string> Regions) CutLine(IEnumerable<DeskRegionSheet> cut, DeskPage page) =>
         (RuleTexts.GlanceAlso, cut.Select(r => RuleTexts.GlanceCutRegion(name: Name(r.Region, page), total: DeskNumbers.Total(r.Total, r.Plus))).ToList());
 
     /// <summary>
-    /// The plate's regions laid out: the cell's size, the regions shown and the column each stands in, each column's width,
-    /// the regions that gave way to the cut line, and the room they take, the cut line included.
+    /// The plate's regions laid out: the cell's size, the regions shown and the column each stands in, the rows of its grid
+    /// each draws (all of them, or where it was cut short, its top rows), each column's width, the regions that gave way to
+    /// the cut line, and the room they take, the cut line included.
     /// </summary>
-    public sealed record Arrangement(double Cell, IReadOnlyList<DeskRegionSheet> Shown, IReadOnlyList<int> Columns, IReadOnlyList<double> ColumnWidths,
-        IReadOnlyList<DeskRegionSheet> Cut, double Width, double Height)
+    public sealed record Arrangement(double Cell, IReadOnlyList<DeskRegionSheet> Shown, IReadOnlyList<int> Columns, IReadOnlyList<int> Rows,
+        IReadOnlyList<double> ColumnWidths, IReadOnlyList<DeskRegionSheet> Cut, double Width, double Height)
     {
         public bool Fits(double width, double height) => Width <= width && Height <= height;
+
+        /// <summary>Whether the i-th region shown draws only the top rows of its grid ("BACKPACK · MORE BELOW +").</summary>
+        public bool CutShort(int i) => Rows[i] < DeskPageRules.Grid(Shown[i].Region).Rows;
+
+        /// <summary>How many regions shown are cut short.</summary>
+        public int CutShortCount => Enumerable.Range(0, Shown.Count).Count(CutShort);
     }
 
     /// <summary>
     /// The regions in a room this wide and this high: the largest of the desk's sizes, from <see cref="LargestCell"/> down to
-    /// 40, at which they fit, each column filled in reading order down to the room's foot and the next one started beside
-    /// it, as the desk's gear flows (<see cref="DeskPageRules.Arrange"/>). Where even 40 doesn't fit, the regions at the end
-    /// give way to the cut line, as many as must: the first ones stand, the rest are named in one line. None to draw, no
-    /// room taken.
+    /// 40, at which they all fit whole, each column filled in reading order down to the room's foot and the next one started
+    /// beside it, as the desk's gear flows (<see cref="DeskPageRules.Arrange"/>). Where even 40 doesn't fit them whole (UI QA
+    /// pass of 2026-10-19, F1: a looted body's backpack, a tall grid three cells wide, fitted no column and was named in the
+    /// cut line alone), a region is drawn cut short at 40: its head with its state ("BACKPACK · SEARCHING +", "BACKPACK · MORE
+    /// BELOW +"), its slots and as many of its grid's top rows as the room takes, at least <see cref="LeastRows"/>. Only where
+    /// even that doesn't fit does a region give way to the cut line, and the regions after it with it: the first ones stand,
+    /// the rest are named in one line. None to draw, no room taken.
     /// </summary>
     /// <param name="textScale">The size text is drawn at against the size written (the heads' and the cut line's height).</param>
     public static Arrangement Layout(IReadOnlyList<DeskRegionSheet> regions, DeskPage page, double width, double height, double textScale = 1)
     {
         if (regions.Count == 0)
-            return new Arrangement(DeskPageRules.Sizes[0], [], [], [], [], 0, 0);
+            return new Arrangement(DeskPageRules.Sizes[0], [], [], [], [], [], 0, 0);
         foreach (var size in DeskPageRules.Sizes.Where(s => s <= LargestCell).Reverse())
         {
-            if (Arrange(regions, size, height, textScale) is var all && all.Fits(width, height))
+            if (Arrange(regions, page, size, height, textScale) is var all && all.Fits(width, height))
                 return all;
         }
         var least = DeskPageRules.Sizes[0];
-        for (var shown = regions.Count - 1; shown >= 0; shown--)
+        var lineWidth = Math.Min(width, LeastCells * least + 1);
+        for (var shown = regions.Count; shown > 0; shown--)
         {
             var cut = regions.Skip(shown).ToList();
             var line = CutHeight(cut, page, least, width, textScale);
-            var room = height - line - (shown > 0 ? BlockGap : 0);
-            var some = Arrange(regions.Take(shown).ToList(), least, room, textScale);
-            if (some.Fits(width, room) || shown == 0)
-                return some with { Cut = cut, Height = some.Height + (shown > 0 ? BlockGap : 0) + line, Width = Math.Max(some.Width, Math.Min(width, LeastCells * least + 1)) };
+            var room = height - line - (cut.Count > 0 ? BlockGap : 0);
+            if (Flow(regions.Take(shown).ToList(), page, least, width, room, textScale) is not { } some)
+                continue;
+            return cut.Count == 0 ? some : some with { Cut = cut, Height = some.Height + BlockGap + line, Width = Math.Max(some.Width, lineWidth) };
         }
-        return Arrange(regions, least, height, textScale);
+        return new Arrangement(least, [], [], [], [], regions, lineWidth, CutHeight(regions, page, least, width, textScale));
     }
 
-    /// <summary>The regions at a cell size, each column down to the room's foot: a region that would pass it starts the next
-    /// column, unless it is the column's first.</summary>
-    public static Arrangement Arrange(IReadOnlyList<DeskRegionSheet> regions, double size, double room, double textScale = 1)
+    /// <summary>The regions at a cell size, each column down to the room's foot, whole: a region that would pass it starts the
+    /// next column, unless it is the column's first.</summary>
+    public static Arrangement Arrange(IReadOnlyList<DeskRegionSheet> regions, DeskPage page, double size, double room, double textScale = 1)
     {
         var widths = new List<double>();
         var heights = new List<double>();
@@ -215,7 +266,7 @@ public static class GlancePlateRules
         foreach (var sheet in regions)
         {
             var width = RegionWidth(sheet.Region, size);
-            var height = RegionHeight(sheet.Region, size, width, textScale);
+            var height = RegionHeight(sheet.Region, page, size, width, textScale);
             if (widths.Count == 0 || counts[^1] > 0 && heights[^1] + BlockGap + height > room)
             {
                 widths.Add(0);
@@ -228,8 +279,74 @@ public static class GlancePlateRules
             counts[c]++;
             placed.Add(c);
         }
-        return new Arrangement(size, regions, placed, widths, [], widths.Sum() + Math.Max(0, widths.Count - 1) * ColumnGap,
-            heights.Count == 0 ? 0 : heights.Max());
+        return new Arrangement(size, regions, placed, regions.Select(r => DeskPageRules.Grid(r.Region).Rows).ToList(), widths, [],
+            widths.Sum() + Math.Max(0, widths.Count - 1) * ColumnGap, heights.Count == 0 ? 0 : heights.Max());
+    }
+
+    // The regions at a cell size in a room this wide and high, cut short where they must: each in the column it would join
+    // where it fits there whole; else in a new column beside it where the width takes one, whole or, taller than the room,
+    // cut short to the rows the room takes; else, no width left for a column, in the rest of the last one, cut short. Null
+    // where a region can't stand even with its least rows (or has no grid to cut), so it and the rest give way.
+    private static Arrangement? Flow(IReadOnlyList<DeskRegionSheet> regions, DeskPage page, double size, double width, double room, double textScale)
+    {
+        var widths = new List<double>();
+        var heights = new List<double>();
+        var placed = new List<int>();
+        var rows = new List<int>();
+        double Total() => widths.Sum() + Math.Max(0, widths.Count - 1) * ColumnGap;
+        void Place(int column, double regionWidth, double height, int drawn)
+        {
+            if (column == widths.Count)
+            {
+                widths.Add(regionWidth);
+                heights.Add(height);
+            }
+            else
+            {
+                widths[column] = Math.Max(widths[column], regionWidth);
+                heights[column] += BlockGap + height;
+            }
+            placed.Add(column);
+            rows.Add(drawn);
+        }
+        foreach (var sheet in regions)
+        {
+            var region = sheet.Region;
+            var own = RegionWidth(region, size);
+            var all = DeskPageRules.Grid(region).Rows;
+            var last = widths.Count - 1;
+            // The last column, as wide as this region where it is wider: still within the plate's width?
+            var joined = last < 0 ? 0 : Math.Max(widths[last], own);
+            var joins = last >= 0 && Total() - widths[last] + joined <= width;
+            if (joins && heights[last] + BlockGap + RegionHeight(region, page, size, joined, textScale) <= room)
+            {
+                Place(last, own, RegionHeight(region, page, size, joined, textScale), all);
+                continue;
+            }
+            if (Total() + (last >= 0 ? ColumnGap : 0) + own <= width)
+            {
+                var drawn = RegionHeight(region, page, size, own, textScale) <= room ? all : RowsIn(region, page, size, own, room, textScale);
+                if (drawn is null)
+                    return null;
+                Place(last + 1, own, RegionHeight(region, page, size, own, textScale, drawn), drawn.Value);
+                continue;
+            }
+            if (!joins || RowsIn(region, page, size, joined, room - heights[last] - BlockGap, textScale) is not { } rest)
+                return null;
+            Place(last, own, RegionHeight(region, page, size, joined, textScale, rest), rest);
+        }
+        return new Arrangement(size, regions, placed, rows, widths, [], Total(), heights.Count == 0 ? 0 : heights.Max());
+    }
+
+    /// <summary>The rows of a region's grid a space this high takes, the region cut short (its head with its state, its slots
+    /// and its grid's top rows): as many as fit, at least <see cref="LeastRows"/> and at most all; null where it has no grid
+    /// or even its least rows don't fit.</summary>
+    public static int? RowsIn(DeskRegion region, DeskPage page, double size, double column, double space, double textScale = 1)
+    {
+        if (!HasGrid(region))
+            return null;
+        var rows = (int)Math.Floor((space - RegionHeight(region, page, size, column, textScale, rows: 0)) / size);
+        return rows < LeastRows ? null : Math.Min(rows, DeskPageRules.Grid(region).Rows);
     }
 
     /// <summary>A region's width at a cell size: its grid's, never under <see cref="LeastCells"/> cells (a weapon's slot fits).</summary>
@@ -243,12 +360,18 @@ public static class GlancePlateRules
         return widest + 1;
     }
 
-    /// <summary>A region's height at a cell size in a column this wide: its head, its strip of slots (wrapping at the
-    /// column's width, 4 DIP apart), its grid, or where it has none and contents went unseen, its closed region; 6 DIP
-    /// between them. The head's height is an estimate of the drawn text (an eyebrow about 1.4 of its size), a little over.</summary>
-    public static double RegionHeight(DeskRegion region, double size, double column, double textScale = 1)
+    /// <summary>
+    /// A region's height at a cell size in a column this wide: its head (its lines, <see cref="HeadLines"/>), its strip of
+    /// slots (wrapping at the column's width, 4 DIP apart), its grid (all its rows, or <paramref name="rows"/> of them, cut
+    /// short, its head then saying so), or where it has none and contents went unseen, its closed region; 6 DIP between them.
+    /// The head's height is an estimate of the drawn text (a line about 1.4 of its size), a little over.
+    /// </summary>
+    public static double RegionHeight(DeskRegion region, DeskPage page, double size, double column, double textScale = 1, int? rows = null)
     {
-        var height = Math.Ceiling(DeskPageRules.HeadSize(size) * textScale * 1.4);
+        var px = DeskPageRules.HeadSize(size) * textScale;
+        var all = HasGrid(region) ? DeskPageRules.Grid(region).Rows : 0;
+        var drawn = Math.Min(all, rows ?? all);
+        var height = HeadLines(HeadLine(region, page, cutShort: drawn < all), px, column) * Math.Ceiling(px * 1.4);
         var slots = region.Cells.Where(c => c.IsSlot).ToList();
         if (slots.Count > 0)
         {
@@ -263,8 +386,8 @@ public static class GlancePlateRules
             }
             height += 6 + lines * size + (lines - 1) * 4;
         }
-        if (HasGrid(region))
-            height += 6 + DeskPageRules.Grid(region).Rows * size + 1;
+        if (all > 0)
+            height += 6 + drawn * size + 1;
         else if (State(region) is not null)
             height += 6 + ClosedHeight(size);
         return height;
@@ -278,10 +401,10 @@ public static class GlancePlateRules
             return 0;
         var px = DeskPageRules.HeadSize(size) * textScale;
         var (word, names) = CutLine(cut, page);
-        var (lines, x) = (1, word.Length * px * 0.62);
+        var (lines, x) = (1, word.Length * px * CharWidth);
         foreach (var name in names)
         {
-            var w = (name.Length + 2) * px * 0.62 + 6;
+            var w = (name.Length + 2) * px * CharWidth + 6;
             if (x + 6 + w > width)
                 (lines, x) = (lines + 1, w);
             else

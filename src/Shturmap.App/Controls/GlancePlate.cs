@@ -45,6 +45,10 @@ public sealed partial class GlancePlate : Grid
     /// <summary>How its regions were laid out (the cell's size, the regions cut), for the app log and the developer view.</summary>
     public GlancePlateRules.Arrangement? Arrangement { get; private set; }
 
+    /// <summary>The room its regions had under its head, in DIP, for the app log (and "shturmap-cli desk --raid --plate", which
+    /// lays a real screenshot's regions out in it).</summary>
+    public Windows.Foundation.Size Room { get; private set; }
+
     /// <summary>
     /// Builds the plate for a reading in a room this wide and high, in DIP (the map column's width less its margins, about
     /// half its height): the head, then the regions at the largest cell size that fits the room left under it.
@@ -106,6 +110,7 @@ public sealed partial class GlancePlate : Grid
         var scale = TextScale.Drawn(12) / 12;
         var arrangement = GlancePlateRules.Layout(regions, glance.Sheet.Page, inner, room, scale);
         Arrangement = arrangement;
+        Room = new Windows.Foundation.Size(inner, Math.Max(0, room));
         var size = arrangement.Cell;
         var columns = new Grid { ColumnSpacing = GlancePlateRules.ColumnGap, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, GlancePlateRules.HeadGap, 0, 0) };
         var panels = new List<StackPanel>();
@@ -120,7 +125,7 @@ public sealed partial class GlancePlate : Grid
         for (var i = 0; i < arrangement.Shown.Count; i++)
         {
             var c = arrangement.Columns[i];
-            panels[c].Children.Add(Region(arrangement.Shown[i], glance.Sheet.Page, size, arrangement.ColumnWidths[c]));
+            panels[c].Children.Add(Region(arrangement.Shown[i], glance.Sheet.Page, size, arrangement.ColumnWidths[c], arrangement.Rows[i]));
         }
         if (arrangement.Shown.Count > 0)
             _stack.Children.Add(columns);
@@ -130,7 +135,9 @@ public sealed partial class GlancePlate : Grid
 
     // A region under its head: its slots in a strip (the body's, in the game's order; a part's own container), its grid with
     // the desk's compartments and cells, or where it has no grid and its contents went unseen, a closed region with its word.
-    private static FrameworkElement Region(DeskRegionSheet sheet, DeskPage page, double size, double column)
+    // A grid cut short draws its top rows (an item reaching below them cut at the last row's foot) under a head that says
+    // so, "BACKPACK · MORE BELOW +"; the head wraps only before a "·" (GlancePlateRules.HeadLine).
+    private static FrameworkElement Region(DeskRegionSheet sheet, DeskPage page, double size, double column, int rows)
     {
         var region = sheet.Region;
         var block = new StackPanel { Spacing = 6 };
@@ -138,7 +145,7 @@ public sealed partial class GlancePlate : Grid
         {
             Style = (Style)Application.Current.Resources["EyebrowText"],
             Margin = new Thickness(0),
-            Text = GlancePlateRules.HeadLine(region, page),
+            Text = GlancePlateRules.HeadLine(region, page, cutShort: rows < DeskPageRules.Grid(region).Rows),
             FontSize = DeskPageRules.HeadSize(size),
             TextWrapping = TextWrapping.Wrap,
             MaxWidth = column,
@@ -153,11 +160,18 @@ public sealed partial class GlancePlate : Grid
         }
         if (GlancePlateRules.HasGrid(region))
         {
-            var (cols, rows) = DeskPageRules.Grid(region);
-            var grid = new Canvas { Width = cols * size + 1, Height = rows * size + 1, HorizontalAlignment = HorizontalAlignment.Left };
-            foreach (var part in region.Parts.Count > 0 ? region.Parts : [new DeskRect(0, 0, cols, rows)])
+            var (cols, all) = DeskPageRules.Grid(region);
+            var height = Math.Min(rows, all) * size + 1;
+            var grid = new Canvas
+            {
+                Width = cols * size + 1,
+                Height = height,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, cols * size + 1, height) },
+            };
+            foreach (var part in (region.Parts.Count > 0 ? region.Parts : [new DeskRect(0, 0, cols, all)]).Where(p => p.J < rows))
                 grid.Children.Add(DeskBoard.PartOf(part, size, DeskBoard.Thickness(DeskPageRules.Inset(region, part, size)), region.Parts.Count > 1));
-            foreach (var item in sheet.Cells.Where(c => !c.Cell.IsSlot).OrderBy(c => c.Cell.J).ThenBy(c => c.Cell.I))
+            foreach (var item in sheet.Cells.Where(c => !c.Cell.IsSlot && c.Cell.J < rows).OrderBy(c => c.Cell.J).ThenBy(c => c.Cell.I))
             {
                 var inset = DeskBoard.Thickness(DeskPageRules.Inset(region, item.Cell.Rect, size));
                 var cell = new DeskCellView(region, item, size, null, inset);

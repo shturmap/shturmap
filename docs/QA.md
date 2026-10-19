@@ -63,7 +63,8 @@ Within the time the checks the change is judged by come first; what didn't fit i
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
 .\tools\fake-raid.ps1 -Exe artifacts\Shturmap\Shturmap.exe -Out $out -PlanOnly -ShowQuest Dandies -Culture de-DE -Window <px> -MoreArgs '--data', "$out\data"
-# The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, tour1 … tour7
+# The layout check (developer build); -States: plan, raid, report, crash, whatsnew, quest, glance, tour1 … tour7
+# (glance: the in-raid glance's plate over the map in a fake Scav raid, no cue with it; UI QA pass of 2026-10-19, F6)
 .\tools\layout-check.ps1 -Out "$pass\layout" -Exe artifacts\layout-check\app\Shturmap.exe -Languages en-US,de-DE,qps-ploc -Sizes 900x560,1600x900 -States plan,raid,quest -MoreArgs '--data', "$pass\layout\data"
 # Map drawing; each frames run again with --glide, and list-read with --notch and with --step 2, into a folder of its own
 .\eng\dotnet.ps1 run --project tools\Shturmap.Cli -- render streets-of-tarkov "$pass\render\streets.png" --data "$pass\render\data"

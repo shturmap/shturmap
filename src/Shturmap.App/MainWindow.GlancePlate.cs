@@ -31,13 +31,31 @@ public sealed partial class MainWindow
 
     /// <summary>"--glance &lt;n&gt;" (a fake game's runs: tools\fake-raid.ps1 -Glance): the made-up glance's reading n
     /// (<see cref="GlanceExample"/>) once a raid is on and the data is there, as a raid screenshot's reading brings it.</summary>
-    public int? GlanceOnStart { get; set; }
+    public int? GlanceOnStart
+    {
+        get => _glanceOnStart;
+        set
+        {
+            _glanceOnStart = value;
+            _glanceRun |= value is not null;
+        }
+    }
+
+    private int? _glanceOnStart;
+
+    // A run started with "--glance": its picture is the plate's.
+    private bool _glanceRun;
+
+    /// <summary>A snapshot run keeps its last cue up for its picture, but not one whose picture is the glance's plate
+    /// ("--glance"): there the cues go in their time, as live, and the reading, waiting for them as a live one does, comes
+    /// after them (UI QA pass of 2026-10-19, F6: the plate and the roll call stood together in a still, a state the player
+    /// never sees).</summary>
+    private bool KeepsCues => SnapshotMode && !_glanceRun;
 
     private bool GlanceUp => RaidGlancePlate.Visibility == Visibility.Visible;
 
-    // A cue holds the map's middle (or QUEST COMPLETE waits to show): a reading waits for it to go. A snapshot run keeps its
-    // last cue up for its picture, so there a reading doesn't wait.
-    private bool GlanceWaits => !SnapshotMode && (CuePanel.Visibility == Visibility.Visible || _completedWaiting.Count > 0);
+    // A cue holds the map's middle (or QUEST COMPLETE waits to show): a reading waits for it to go, in a snapshot run too.
+    private bool GlanceWaits => CuePanel.Visibility == Visibility.Visible || _completedWaiting.Count > 0;
 
     private void InstallGlance()
     {
@@ -108,10 +126,13 @@ public sealed partial class MainWindow
         RaidGlancePlate.Opacity = 1;
         RaidGlancePlate.Visibility = Visibility.Visible;
         var laid = RaidGlancePlate.Arrangement;
-        Study.Ui("glance.show", ("reading", glance.Reading), ("loot", glance.Loot is not null), ("cell", laid?.Cell ?? 0), ("cut", laid?.Cut.Count ?? 0));
+        Study.Ui("glance.show", ("reading", glance.Reading), ("loot", glance.Loot is not null), ("cell", laid?.Cell ?? 0), ("short", laid?.CutShortCount ?? 0),
+            ("cut", laid?.Cut.Count ?? 0));
+        var room = RaidGlancePlate.Room;
         AppLog.Info($"In-raid glance: reading {glance.Reading}, {(glance.Loot is not null ? "a LOOT pane" : "no LOOT pane")}" +
-                    (laid is null ? "" : $", {laid.Shown.Count} regions at {laid.Cell:0} DIP, {laid.Cut.Count} cut"));
-        // A snapshot run keeps the plate for its picture, as it keeps a cue.
+                    (laid is null ? "" : $", room {room.Width:0}x{room.Height:0} DIP: {laid.Shown.Count} regions at {laid.Cell:0} DIP, {laid.CutShortCount} cut short, " +
+                                         $"{laid.Cut.Count} in the ALSO line"));
+        // A snapshot run keeps the plate for its picture.
         _glanceHide?.Stop();
         if (SnapshotMode)
             return;

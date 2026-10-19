@@ -16,8 +16,8 @@ and needs): 1, a drawer with three items (a graphics card, a wallet whose conten
 three); 2, a body (its slots: a helmet and an armband that are "?", body armour at 98/147, a dog tag, an AK and a Glock
 with their mods unseen; its rig UNSEARCHED; its pockets SEARCHING with an Analgin found; its backpack searched: a
 Grizzly at 1469/1800, a graphics card, a LEDX, a moonshine, a bitcoin, roubles). The rules are held by
-`GlancePlateRulesTests` (what is drawn, the head's words, the regions' heads and states, the sizes and the cut) and
-`DevToolsTests`; the checks below are for the stills.
+`GlancePlateRulesTests` (what is drawn, the head's words, the regions' heads and states and where they wrap, the sizes,
+a region cut short and the ALSO line) and `DevToolsTests`; the checks below are for the stills.
 
 ## Run it
 
@@ -37,9 +37,18 @@ $app.WaitForExit()
   `glance-after-cue` and `glance-raid-over`; then `--culture de-DE`, `--window 900x560` and `--window 1600x900` for the
   other runs (docs/QA.md, "Replay scripts").
 - `--verbose`: the app log (`$qa\data\logs`) has the lines `Example glance: reading n of 2` and `In-raid glance:
-  reading n, a LOOT pane, 4 regions at 80 DIP, 0 cut` (how many regions stand, at which cell size, how many gave way to
-  the line under them).
-- `tools\fake-raid.ps1 -Glance 1` (or `2`) puts the same plate up in a fake raid's snapshot, which keeps it up.
+  reading n, a LOOT pane, room 1136x276 DIP: 4 regions at 48 DIP, 0 cut short, 0 in the ALSO line` (the room under the
+  head; how many regions stand, at which cell size, how many draw only their grid's top rows, how many gave way to the
+  line under them).
+- `tools\fake-raid.ps1 -Glance 1` (or `2`) puts the same plate up in a fake raid's snapshot, which keeps it up. The raid
+  is a Scav's, so no roll call comes to end the plate; the run's cues go in their time, as live (its SCAV RAID cue 5 s),
+  and the reading waits for them as a live one does, so the still never shows the plate and a cue together (UI QA pass
+  of 2026-10-19, F6; with `-MoreArgs '--glance', '2'` on the default raid, the roll call ends the plate and the still
+  has none). The layout check's `glance` view is this run with reading 2: `tools\layout-check.ps1 -States glance`.
+- A real raid screenshot's plate, headless: `shturmap-cli desk --raid --plate <w>x<h> <picture>` (the room from the app
+  log's line at that window size, 1136x276 at a window of 1600×900 DIP) prints the cell size, each region's head,
+  whole or cut short with the rows drawn and the items in them, and the ALSO line. The pictures stay in the ignored
+  `tests\fixtures\ocr\raid-loot`; never write a picture's name into a tracked file.
 - Windows' animation effects on: with them off the plate goes at once at 6 s instead of fading.
 
 ## What each still must show
@@ -62,6 +71,11 @@ $app.WaitForExit()
   "50000"). In reading order, flowed into columns where one would pass the plate's height; the plate no taller than
   about half the map's column; no region cut at the large window and at 1600×900 (48 DIP cells there). None of the
   player's own gear (LOADOUT, the rig with the Black Rock, the stash's items) on the plate.
+- **A region cut short** (a real body's tall backpack at 1600×900, through the CLI above or a developer view): at 40
+  DIP its grid's top rows, as many as the room takes and at least two, under "BACKPACK · SEARCHING +" (or "· MORE BELOW
+  +" for a searched one), an item reaching below the last row cut at its foot; in a column of its own beside the regions
+  before it; the plate's foot within about half the map's height. Only a region that can't show its head, slots and two
+  rows is named in the ALSO line.
 - **glance-gone** (6 s after glance-body): no plate; the floor picker back.
 - **glance-waits** (1 s after the extract list was read and a reading came): YOUR EXTRACTS THIS RAID's roll call in the
   map's middle, as ever, and no plate: the reading waits for the cue to go. The app log says "glance: reading 1 (waiting
@@ -74,4 +88,6 @@ $app.WaitForExit()
   above the map's buttons, no taller than about half the map.
 - **German**: AUS DEINEM SCREENSHOT, "LOOT 734k+ ₽" (the decimal comma, "3,06 M+ ₽"), "AN DIR 4,63 M+ ₽ · 1 unsicher";
   RIG, TASCHEN · WIRD DURCHSUCHT +, RUCKSACK, NICHT DURCHSUCHT +; BODY and DRAWER as the English game prints them;
-  "DAZU · …" at 900×560.
+  "DAZU · …" at 900×560. A head wider than its column (at 40 DIP, "RUCKSACK · WIRD DURCHSUCHT +") wraps before its
+  "·", "RUCKSACK" over "· WIRD DURCHSUCHT +", never inside the phrase, and nothing stands past the plate's foot (the
+  senior translator, 2026-10-19).

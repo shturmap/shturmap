@@ -2296,7 +2296,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       clicked or pinned. A part not searched yet has no grid to draw: a closed region stands there, the cells' ground in a
       strong frame, three quarters of a cell tall and as wide as its column, "UNSEARCHED +" in its middle; a part being
       searched, or a grid the pane's scrolling cut at its foot, draws what was read and says it after its head, "POCKETS ·
-      SEARCHING +", "BACKPACK · MORE BELOW +". No stem from a window to its cell.
+      SEARCHING +", "BACKPACK · MORE BELOW +". No stem from a window to its cell. A head wraps only before a "·", the words
+      after it kept together, and the region's height counts its lines (the senior translator, 2026-10-19: "TASCHEN · WIRD
+      DURCHSUCHT +" split its phrase in a four-cell column at 40 DIP and passed the plate's foot).
     - *What it doesn't draw*: the player's own regions (the loadout, the middle column, their windows): the gear is
       known, the glance is about the loot; ON YOU's total stands on the head's line. A screenshot of the player's
       inventory alone (no LOOT pane) puts up the head only: "ON YOU 4.63 M+ ₽" as the title and the muted line "Your gear ·
@@ -2305,23 +2307,34 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - *Sizes*: the desk's cell sizes (*Its place*) from 80 DIP, the desk's largest until its cells filled the screen,
       down to 40: the largest at which the regions fit the plate's room under its head, each column filled in reading
       order down to the room's foot and the next started beside it, as the desk's gear flows; a column four cells wide
-      at the least (a weapon's slot widens it a little), not the desk's six. Where even 40 doesn't fit, the last regions
-      give way to one line in the fold line's words, "ALSO · POCKETS 2.3k+ ₽ · BACKPACK 2.89 M ₽", each with its total,
-      every "·" with the name after it: nothing scrolls in a raid. On the made-up body at a 2560 monitor's window: 80
-      DIP in three columns; at 1600×900, 48 DIP, three columns, nothing cut; at 900×560 the drawer at 40 whole, the
-      body's regions no room under the 48 px title, so its plate is the head and that line.
+      at the least (a weapon's slot widens it a little), not the desk's six. Where even 40 doesn't fit them whole, a
+      region is drawn cut short at 40 (UI QA pass of 2026-10-19, F1: a body's backpack, a tall grid three cells wide, fitted
+      no column and stood in the ALSO line alone, the plate a quarter of the map's height): its grid's top rows, as many as
+      the room takes and at least two, under its head and state, "BACKPACK · SEARCHING +" (the search's word wins) or
+      "BACKPACK · MORE BELOW +", in a column of its own beside the last where the width takes one, else in the rest of the
+      last. Only a region whose head, slots and two rows don't fit gives way, with the regions after it, to one line in the
+      fold line's words, "ALSO · POCKETS 2.3k+ ₽ · BACKPACK 2.89 M ₽", each with its total, every "·" with the name after
+      it: nothing scrolls in a raid. On the made-up body at a 2560 monitor's window: 80 DIP in three columns; at 1600×900,
+      48 DIP, three columns, nothing cut; at 900×560 the drawer at 40 whole, the body's regions no room under the 48 px
+      title, so its plate is the head and that line. A real body's 3×8 backpack being searched, at 1600×900: 40 DIP, its
+      top five rows beside the closed pockets (four in German, its head on two lines).
     - *Timing*: a new reading (`RaidGlance.Reading`) puts the plate up at once, without an entrance (the owner's motion
       call, below), for 6 s from its own arrival; then it fades out over 0.4 s, or goes at once with the animation
       effects off. A newer reading replaces it at once and its 6 s start again. While a cue is up (QUEST COMPLETE, the
       extract list's roll call, any other) a reading waits for the cue to go, then stands its 6 s (the coordinator's rule;
       the panel had the one-line notice in its place); a cue that comes while it stands ends it, as any cue ends another.
-      The raid's end takes it, and a reading waiting with it. A snapshot run keeps it up for its picture, as it keeps a cue.
+      The raid's end takes it, and a reading waiting with it. A snapshot run keeps it up for its picture; a reading there
+      waits for a cue as a live one does, and a run with `--glance` lets its cues go in their time, so its still shows the
+      plate after them, never the two together (UI QA pass of 2026-10-19, F6).
     - *Nothing kept*: it draws from the snapshot's `Glance` alone; no file, no page in hand, gone with the raid.
     - *Developer aids*: the developer script's `glance [<n>]` and `tools\fake-raid.ps1 -Glance <n>` (the app's
       `--glance <n>`, with a fake game) put up the made-up readings (`Rules.GlanceExample`: 1, a drawer with three items;
       2, a body with its slots, an UNSEARCHED rig, pockets being searched and a searched backpack); the replay
       `tools\qa\glance.devscript` with its stills and their checks in `glance.md` (drawer, body, gone, a reading waiting
-      for the roll call, after it, the raid's end).
+      for the roll call, after it, the raid's end). `-Glance` plays a Scav raid, whose start reads no extract list, so no
+      roll call comes to end the plate; the layout check's `glance` view is it with reading 2 (UI QA pass of 2026-10-19,
+      F6). `shturmap-cli desk --raid --plate <w>x<h> <picture>` lays a real screenshot's LOOT regions out as the plate
+      does in that room (the app log's "room"), so a real reading's plate is checked headless (F1).
     - *Decided* (owner, 2026-10-19, on the session's report page): **motion in a raid**: the plate stands at once, as
       built (principle 2 lets the desk's moves in out of a raid only); the panel's D (the band's short gold flash, the
       total counting up over 0.9 s, the cells 50 ms apart) is not built. The 48 px title leaving a body no room at
@@ -4009,7 +4022,8 @@ Rules:
   (the app's `--glance <n>`, with a fake game; not with `-PlanOnly`) puts up the made-up in-raid glance's reading n once
   the raid is on, as a raid screenshot of an inventory screen brings it (`Rules.GlanceExample`: 1, a drawer with three
   items; 2, a body with its slots, an UNSEARCHED rig, pockets being searched and a searched backpack), the snapshot
-  keeping its plate up (2026-10-19; §4, *The in-raid glance*);
+  keeping its plate up, the raid a Scav's so no roll call ends it, its cues going in their time (2026-10-19; §4, *The
+  in-raid glance*; the layout check's `glance` view);
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
   is trimmed, text over text, and in the pseudo-language one untranslated; a layer that lies over the window on
