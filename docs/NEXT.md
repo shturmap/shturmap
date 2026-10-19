@@ -216,8 +216,8 @@ stash desk": the GEAR tab, nested containers, what a reading keeps), §3 (the de
   the hideout levels' item needs, which the loader drops today); the desk view with its cells and head; the PLAN |
   DESK switch; the menu screenshots' tick worded for the desk (the panel left it out).
 - Step C, once B's naming has held up: the card, the price history, the click and its setting.
-- Open: whether the flea's price field takes Ctrl+V (the page's one-minute test for the owner, not reported yet);
-  that `SafetyTests` allows the clipboard.
+- The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). Open: that `SafetyTests` allows
+  the clipboard.
 
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,

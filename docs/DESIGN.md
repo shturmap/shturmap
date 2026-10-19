@@ -1751,8 +1751,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     rates) the plate carries the status bar's gold light and says so ("over the best net: …"); no flea price for what
     can't be listed, "Can't be listed on the flea" with the best trader's price (`noFlea`, the item's flea level, the
     found-in-raid rule; Shturmap doesn't read the player's level, so the card says the item's and compares nothing);
-    "~" for condition. Open: whether the flea's price field takes Ctrl+V (if not, the copied figure is there to read),
-    and that `SafetyTests` allows the clipboard.
+    "~" for condition. The flea's price field takes Ctrl+V (owner, 2026-10-19, tried in the game). Open: that
+    `SafetyTests` allows the clipboard.
   - **Fun, in the app's own motion** (the owner: "it should also be fun to use"; principle 2; "Design system",
     *Motion*): a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do; its total counts up once;
     a copy flashes and decodes. Nothing else moves. Colours keep their meanings ("Visual language"): no red or green
