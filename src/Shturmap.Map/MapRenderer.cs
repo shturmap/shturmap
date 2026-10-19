@@ -515,6 +515,10 @@ public static partial class MapRenderer
         using var resting = new SKFont(Typeface, BossRestNameSize * ui);
         var restTracking = NameTracking * ui;
         var gap = 4 * ui;
+        // A side beside a label placed before it on its line keeps LabelGap from it, so two names there read as two.
+        var labelGap = LabelGap * ui;
+        bool Free(SKRect box) =>
+            !taken.Any(t => t.IntersectsWith(box)) && !labels.Any(l => OnOneLine(l.Box, box) && SKRect.Inflate(l.Box, labelGap, 0).IntersectsWith(box));
         // Where a picked or pointed-at name ends at most, LabelEdge in from the map's right edge, and how wide it moves in
         // from there at most (LitNameMost).
         var litEdge = camera.Viewport.Width - LabelEdge * ui;
@@ -574,7 +578,7 @@ public static partial class MapRenderer
             }
             if (box is null)
             {
-                side = candidates.FindIndex(c => c is { } free && !taken.Any(t => t.IntersectsWith(free)));
+                side = candidates.FindIndex(c => c is { } free && Free(free));
                 box = side >= 0 ? candidates[side] : null;
             }
             // A lit step finding no free place gives way as an unlit name does: at the Saferoom the last two stand at the
@@ -644,6 +648,24 @@ public static partial class MapRenderer
 
     /// <summary>How near (pixels, before scaling) two markers with the same label may be before only one is labelled.</summary>
     public const float LabelRepeat = 250;
+
+    /// <summary>
+    /// The room a marker label keeps on its left and right from a label placed before it on its line (pixels, before
+    /// scaling; QA pass of 2026-10-19, F1): a side closer to one is not free, and the next is tried. Until then only an
+    /// overlap took a side, so two names could stand end to end and read as one: at 150 % German, "Transit zu
+    /// Interchange" and "Taxi in der Primorsky-Straße" on one line, about 2 px apart. 8 is more than twice a word space
+    /// of the labels' 11.5 px face (3 px), so the gap reads as one between names, not between words. Names on lines of
+    /// their own (<see cref="OnOneLine"/>) read as two however close they end.
+    /// </summary>
+    public const float LabelGap = 8;
+
+    /// <summary>
+    /// Whether two labels' boxes stand on one line: they share more than half the shorter one's height. A box is 1.3 times
+    /// its text's size, so two names a line apart may share its leading and still read as two lines (Customs at 100 %:
+    /// "Rite of Passage" under its symbol, 14 px below "Capturing Outposts" and ending 2 px before it).
+    /// </summary>
+    public static bool OnOneLine(SKRect a, SKRect b) =>
+        Math.Min(a.Bottom, b.Bottom) - Math.Max(a.Top, b.Top) > Math.Min(a.Height, b.Height) / 2;
 
     // ---- bosses at rest (owner, 2026-10-17: "I feel like the red dots for enemy bosses are too distracting when trying to
     // parse the quest icons"; from a panel of four, "A": stepped back until it matters) ----

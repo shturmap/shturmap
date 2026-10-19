@@ -884,7 +884,7 @@ internal static class Frames
         checks.Add(Fmt($"every landing is a ring start, nothing lit before it lands: {(off.Count == 0 ? Fmt($"yes, {flights.Count} flights") : string.Join("; ", off))}"));
 
         // At the last frame's view: each called extract's place and its symbol as drawn, and the player.
-        var right = Width - Math.Max(Camera.CallOutPadding, Math.Min(Camera.LabelRoom, Width * Camera.LabelRoomShare));
+        var right = Width - Camera.RoomRight(Width, Camera.CallOutPadding, Camera.LabelRoom);
         var room = SKRect.Create(Camera.CallOutPadding - 0.5f, Camera.CallOutPadding - 0.5f, right - Camera.CallOutPadding + 1, Height - 2 * Camera.CallOutPadding + 1);
         var outside = new List<string>();
         var last = frames[^1];

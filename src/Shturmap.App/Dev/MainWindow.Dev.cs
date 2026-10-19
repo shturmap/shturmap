@@ -89,6 +89,14 @@ public sealed partial class MainWindow
         return null;
     }
 
+    /// <summary>Settings' Text size set to a step ("normal", "larger", "largest"), as its row sets it; what the factor
+    /// comes to, for the view's log ("Text size: ×1.5 (Windows 1, settings largest)").</summary>
+    internal string DevTextSize(string step)
+    {
+        ChooseTextSize(Rules.TextSize.Parse(step));
+        return TextScale.Said("Text size");
+    }
+
     /// <summary>A quest's card held, as "--show-quest" does (for a script's snapshot).</summary>
     internal void DevShowQuest(string name)
     {

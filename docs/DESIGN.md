@@ -1125,8 +1125,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   below); the extract list's names and kind lines wrap; the MAP list's name wraps instead of trimming, and its counts
   past 160 DIP; help's quest types take a column as wide as their longest name (`Columns.HelpKinds`, never under the
   96 DIP English had); settings' rows of choices wrap beside their name, and its ticks' names wrap; the map's credit
-  wraps before the map buttons; the status bar's raid state trims with "…" as the last resort. 200 % is accepted as
-  degraded, not laid out for: Plan's rows squeeze the map's name, the clock's MIN LEFT trims, long German words break,
+  wraps before the map buttons; the status bar's raid state trims with "…" as the last resort; Plan's NEXT RAID rows
+  wrap a long map name, "STREETS OF / TARKOV" (UI QA pass of 2026-10-19, F3: accepted); and at the smallest window a
+  wide map is narrower, for the label room that grows with the names ("Map drawing", *Room for labels on the right*).
+  200 % is accepted as degraded, not laid out for: Plan's rows squeeze the map's name, the clock's MIN LEFT trims, long German words break,
   the roll call's two-line names touch the next, a heading in help and LICENCES in settings run out of their panel;
   nothing crashes. In the raid card's quest lines long German words break at 150 % (open). Developer builds picture all of it without touching
   Windows (§8, *A larger text size in a run*).
@@ -1935,8 +1937,10 @@ spawns below).
   one factor, `MapRenderer.Render(…, uiScale)`: the screen's pixels per DIP times the text size, Windows' text size
   times settings' step (`TextScale.Effective`; `MapView.UiScale`), so its names, distances, symbols and scale bar grow
   as the window's text does, by the factor (not WinUI's curve). WinUI's own text scaling doesn't reach a swap chain:
-  until then the map stayed at 100 %. The labels' room, the repel, the hit test and a framing's label room share the
-  factor; a change redraws at once. At 150 % the symbols keep their places, a little more crowded.
+  until then the map stayed at 100 %. The labels' room, the repel, the hit test, the gap between two labels
+  (*Labels by priority*) and a framing's label room share the factor, and so does the label room's cap, a fifth of the
+  view (*Room for labels on the right*); a change redraws at once. At 150 % the symbols keep their places, a little
+  more crowded.
 
 - **Four levels, the rule for every symbol.** A reader takes in the map in order of importance; each level differs
   from the next in size, contrast or colour, and there are few things at the top.
@@ -2372,8 +2376,14 @@ spawns below).
   zone's; every zone's while lit: *Stepped back until it matters*, above), quests, extracts and transits,
   snipers, and the map's own names last, largest tarkov.dev size first. A marker label tries right, left, above
   and below its symbol, in that order, and is dropped when all four are taken (pointing at the marker still names
-  it); a selected label that finds no free place goes on the right anyway, trimmed with "…" where it would run past
-  the map's right edge. A side that would start past the map's left edge isn't free, nor, for a picked or pointed-at
+  it). A side is taken where it would cover a symbol or a label, or stand closer than 8 px to a label on its line, one
+  whose box shares more than half its height (`MapRenderer.LabelGap`, `OnOneLine`; more than twice a word space, at the
+  text size's factor; UI QA pass of 2026-10-19, F1: at 150 % German "Transit zu Interchange" and "Taxi in der
+  Primorsky-Straße" stood end to end on one line, about 2 px apart, and read as one name; only an overlap took a side
+  until then, and at 100 % too "Pier Boat" and "Viewer" on Shoreline, "Fuel Crisis" and "Saferoom Exfil" on
+  Interchange at the smallest window, "A Fuel Matter" and "The Bunker" on Reserve read as one). A name a line above or
+  below another may end just short of it: the two read as two lines. A selected label that finds no free place goes on
+  the right anyway, trimmed with "…" where it would run past the map's right edge. A side that would start past the map's left edge isn't free, nor, for a picked or pointed-at
   name, one that would end past its right edge (*Room for labels on the right*). A name is said once per neighbourhood
   (250 px): eight "Abandoned Cargo" places in one block carry one label. Map names are boxed by their rotated
   extent and drawn on the marker labels' halo (the ground at 86 %, 3 px): without it Ink at 59 % measured 1.4:1 on
@@ -2468,8 +2478,12 @@ spawns below).
   only the padding, and on a wide map the rightmost names ran off the window (Customs: "Transit to I…", "Crossr…"; the
   tour's picked quest past its 90 DIP). The room is at most a fifth of the view's width (`Camera.LabelRoomShare`): at
   the smallest window, the map about 500 DIP wide, 150 would shrink a wide map by more than a quarter; 100 shrink it by
-  a sixth, and a long name there may still lose its last letters (not a picked or pointed-at one, below). What fits
-  with room to spare stays in the middle (a tall map such as Streets in a wide view); otherwise it moves left only as
+  a sixth, and a long name there may still lose its last letters (not a picked or pointed-at one, below). Room and cap
+  grow with the text size, as the names do (`Camera.TextScale`, `Camera.RoomRight`; UI QA pass of 2026-10-19, F2: at
+  150 % the names are half as wide again, and in 100 %'s room German names at the smallest window's right edge lost
+  whole words, "Beschädigte", "Abwasserk", "Klimov-St"): at 150 % 225 DIP, at most three tenths of the view, so a long
+  name there loses the letters it loses at 100 %, and a wide map at the smallest window is 13 % narrower than in 100 %'s
+  room. What fits with room to spare stays in the middle (a tall map such as Streets in a wide view); otherwise it moves left only as
   far as the room needs (`Camera.FramingAbove`, the one place a view is worked out). "The zoom that shows the whole
   map" (the zoom limit, when the map's smaller names show) is this view's.
   **The left edge cuts no name** (owner, 2026-10-15: at the smallest window Streets' "Transit to Interchange", its
@@ -3778,7 +3792,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 5, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods; with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B), `tour end` (ends the tour as Esc does), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 5, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods; with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
@@ -3814,7 +3828,8 @@ of the window and its popups is drawn at the size Windows' text size (Settings �
 factor would give it, by WinUI's own curve (smaller text grows more), and the map's labels and symbols at the factor,
 without touching Windows' setting, so snapshots and their layout files show what clips (the same pass as settings'
 step, `Controls.TextScale`). `--text-step <larger|largest>` takes that step of settings' "Text size" for the run, as a
-choice there does, without saving it. Simulations for checks; the folder build has neither.
+choice there does, without saving it. A developer script's `textsize` step chooses a step while the app runs, as
+settings' row does (*The developer view*, above). Simulations for checks; the folder build has neither.
 
 **Quiet runs** (owner, 2026-10-15: checking the UI while playing). A run that only takes pictures, `--snapshot`,
 `--demo` (so every run `tools\fake-raid.ps1` starts, and the layout check's) or a developer script's

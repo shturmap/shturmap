@@ -285,6 +285,57 @@ public class LabelTests
         Assert.Equal(2, MapRenderer.Layout(camera, scene, 1).Labels.Count(l => l.Text == "Abandoned Cargo"));
     }
 
+    // QA pass of 2026-10-19 (F1): at 150 % German "Transit zu Interchange" and "Taxi in der Primorsky-Straße" stood end to
+    // end on one line and read as one name. A side within LabelGap of a label placed before it, on its line, isn't free.
+    [Theory]
+    [InlineData(1)]
+    [InlineData(1.5f)]
+    public void Two_names_on_one_line_keep_a_gap_and_read_as_two(float ui)
+    {
+        // A quest's name, on the right of its symbol, is placed first; the extract further right has its own right taken
+        // and goes on its left, toward the quest's name, unless that would leave less than the gap between the two.
+        var quest = Quest("q", 0, 0, "Ballet Lover");
+        MapMarker Exit(double x) => new("extract:g", MarkerKind.ExtractPmc, new WorldPoint(x, 0, 0), "Gate");
+        MapMarker Blocker(double x) => new("extract:b", MarkerKind.ExtractPmc, new WorldPoint(x + 30 * ui, 0, 0), "");
+        var (questCamera, questAlone) = View([quest]);
+        var questEnd = Assert.Single(MapRenderer.Layout(questCamera, questAlone, ui).Labels).Box.Right;
+        var (exitCamera, exitAlone) = View([Exit(300), Blocker(300)]);
+        var alone = Assert.Single(MapRenderer.Layout(exitCamera, exitAlone, ui).Labels);
+        Assert.Equal(1, alone.Side);
+        // How far the extract's name, on its left, starts from the extract (screen x 500 is world x 0).
+        var lead = 800 - alone.Box.Left;
+
+        PlacedOf(MapRenderer.LabelGap * ui + 2, out var apart);
+        Assert.Equal(1, apart.Side);
+        PlacedOf(2, out var close);
+        Assert.NotEqual(1, close.Side);
+        Assert.True(close.Box.Left - questEnd >= MapRenderer.LabelGap * ui || close.Box.Bottom <= alone.Box.Top || close.Box.Top >= alone.Box.Bottom,
+            $"{close.Box} beside the quest's name ending at {questEnd}");
+
+        // The extract placed so its name on its left would start `gap` px after the quest's name ends.
+        void PlacedOf(float gap, out MapRenderer.PlacedLabel exit)
+        {
+            var x = questEnd + gap + lead - 500;
+            var (camera, scene) = View([quest, Exit(x), Blocker(x)]);
+            var labels = MapRenderer.Layout(camera, scene, ui).Labels;
+            Assert.Equal(questEnd, labels.Single(l => l.Text == "Ballet Lover").Box.Right, 2);
+            exit = labels.Single(l => l.Text == "Gate");
+        }
+    }
+
+    // The gap is kept on a line only: a box is 1.3 times its text's size, and a name a line lower may share its leading
+    // and end just before another, as "Rite of Passage" under its symbol on Customs, 14 px below "Capturing Outposts".
+    [Fact]
+    public void Names_a_line_apart_are_not_on_one_line()
+    {
+        var height = 11.5f * 1.3f;
+        var name = SKRect.Create(0, 100, 100, height);
+        Assert.True(MapRenderer.OnOneLine(name, SKRect.Create(102, 100, 60, height)));
+        Assert.True(MapRenderer.OnOneLine(name, SKRect.Create(102, 106, 60, height)));
+        Assert.False(MapRenderer.OnOneLine(name, SKRect.Create(102, 114, 60, height)));
+        Assert.False(MapRenderer.OnOneLine(name, SKRect.Create(102, 86, 60, height)));
+    }
+
     [Fact]
     public void No_label_covers_a_symbol()
     {

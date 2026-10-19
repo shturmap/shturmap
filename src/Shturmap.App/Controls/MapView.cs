@@ -113,6 +113,14 @@ public sealed partial class MapView : Grid
     // text scaling doesn't reach in a swap chain.
     private float UiScale => PixelScale * (float)TextScale.Effective;
 
+    // The camera told the text size before it works out a view: the label room's share of the view grows with it
+    // (Camera.TextScale; QA pass of 2026-10-19, F2).
+    private Camera Sized()
+    {
+        _camera.TextScale = (float)TextScale.Effective;
+        return _camera;
+    }
+
     /// <summary>Pings and pulses play even with Windows' animation effects off (the website demo's recording).</summary>
     public bool AlwaysAnimate { get; set; }
 
@@ -452,7 +460,7 @@ public sealed partial class MapView : Grid
     {
         var map = points.Select(p => _scene!.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        return _camera.Framing(rect, (float)(padding * PixelScale), Camera.LabelRoom * UiScale);
+        return Sized().Framing(rect, (float)(padding * PixelScale), Camera.LabelRoom * UiScale);
     }
 
     /// <summary>
@@ -469,7 +477,7 @@ public sealed partial class MapView : Grid
         var room = points.Append(new(x - minMetres / 2, 0, z - minMetres * 0.3)).Append(new(x + minMetres / 2, 0, z + minMetres * 0.3));
         var map = room.Select(p => scene.Projection.ToMap(p)).ToList();
         var rect = new Shturmap.Core.Maps.MapRect(map.Min(p => p.X), map.Min(p => p.Y), map.Max(p => p.X), map.Max(p => p.Y));
-        return _camera.FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * UiScale, (float)(head * PixelScale));
+        return Sized().FramingAbove(rect, (float)(padding * PixelScale), (float)(foot * PixelScale), Camera.LabelRoom * UiScale, (float)(head * PixelScale));
     }
 
     /// <summary>
@@ -498,7 +506,7 @@ public sealed partial class MapView : Grid
         var inPart = (new Shturmap.Core.Maps.MapPoint(settled.Item1.X, settled.Item1.Y - Shift(settled.Item2)), settled.Item2);
         var points = extracts.Select(e => scene.Projection.ToMap(e)).ToList();
         Shturmap.Core.Maps.MapPoint? you = player is { } at ? scene.Projection.ToMap(at) : null;
-        if (Camera.CallOut(points, you, between, inPart, Camera.LabelRoom * UiScale, (float)(padding * scale), _camera.MinZoom) is not { } fit)
+        if (Camera.CallOut(points, you, between, inPart, Camera.LabelRoom * UiScale, (float)(padding * scale), _camera.MinZoom, (float)TextScale.Effective) is not { } fit)
             return null;
         if (!fit.Moves)
             return (settled, false);
@@ -566,7 +574,7 @@ public sealed partial class MapView : Grid
         if (_scene is null)
             surface.Canvas.Clear(Palette.Sk(Palette.Ground));
         else
-            MapRenderer.Render(surface.Canvas, _camera, _scene, UiScale);
+            MapRenderer.Render(surface.Canvas, Sized(), _scene, UiScale);
         using var image = surface.Snapshot();
         using var png = image.Encode(SKEncodedImageFormat.Png, 90);
         File.WriteAllBytes(path, png.ToArray());
@@ -579,7 +587,7 @@ public sealed partial class MapView : Grid
         var canvas = e.Surface.Canvas;
         if (_paints++ == 0)
             Shturmap.Session.AppLog.Debug($"Map surface first paint: {e.BackendRenderTarget.Width}x{e.BackendRenderTarget.Height} px, GPU context {(e.Surface.Context is null ? "none" : "ok")}");
-        _camera.Resize(new SKSize(e.BackendRenderTarget.Width, e.BackendRenderTarget.Height));
+        Sized().Resize(new SKSize(e.BackendRenderTarget.Width, e.BackendRenderTarget.Height));
         if (_scene is null)
         {
             canvas.Clear(Palette.Sk(Palette.Ground));

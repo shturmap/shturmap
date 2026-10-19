@@ -646,6 +646,12 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 else
                     Say($"operational table: {taskCount} tasks" + (taskEnded ? " and one about to end" : ""));
                 break;
+            case "textsize":
+                // Settings' Text size, chosen as its row chooses it (QA pass of 2026-10-19, F4): a snapshot before and after
+                // pictures the change while Shturmap runs.
+                if (DevScript.TextSizeOf(step) is { } size)
+                    Say(window.DevTextSize(size));
+                break;
             case "tour":
                 // "tour end": as Esc does. A --dev-view session's settings are new, so the tour opened by itself.
                 Say(window.DevEndTour() ? "tour ended" : "no tour to end");
