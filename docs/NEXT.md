@@ -320,7 +320,7 @@ the parts work", the script verb and the snapshot flags, the diagnostics) and §
   hairline, the raid card's (ANYWHERE, "ENDS IN 25 MIN" in red only before the raid's end), a Scav's hand-over items
   under FIND IN RAID; the rows a reading brought glow (`Controls.Glow`). Texts: RuleTexts `Operational*`, ViewTexts
   `CardOperational`, `OperationalGlyphTip`, AppTexts `ScavLootOperational`, SessionTexts `OperationalRead`; the tick's
-  words widened, "Read your stash and tasks from menu screenshots" (German „Deinen Stash und deine Aufgaben aus
+  words widened, "Read your stash and tasks from menu screenshots" (German „Stash, Dailies und Weeklies aus
   Menü-Screenshots lesen“), its note and help's HelpPrivacy; tour chapter 1's line; README, PRIVACY.md, UPDATES.md (two
   rows of what the reading assumes), the German glossary (proposed terms). English and German, for the senior
   translator's review.
