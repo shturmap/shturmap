@@ -367,6 +367,7 @@
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{x:Bind local:ViewTexts.HelpNextRaid}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="next" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.HelpDesk}" />
                 <TextBlock TextWrapping="Wrap">
                   <Run Text="{x:Bind local:ViewTexts.HelpExit}" /><Hyperlink Click="OnTourShowMeClick" AutomationProperties.AutomationId="raid" UnderlineStyle="None" Foreground="{StaticResource AmberBrush}"><Run Text="{x:Bind local:ViewTexts.HelpShowMe}" FontSize="11" FontWeight="SemiBold" CharacterSpacing="80" /></Hyperlink>
                 </TextBlock>
@@ -602,6 +603,19 @@
                   <TextBlock Text="{x:Bind local:ViewTexts.SettingsForgetMarks}" Style="{StaticResource StatusText}" FontSize="11"
                              Foreground="{x:Bind MarksLinkBrush(ViewModel.HasMarks), Mode=OneWay}" />
                 </HyperlinkButton>
+                <!-- The stash desk's copy rule (owner, 2026-10-19, from a panel: D2; owner, 2026-10-20: "UI elements for setting
+                     what is copied clearly visible"; docs/DESIGN.md §4, *The stash desk*, *The click*): the last low matched,
+                     or 1–20 % under or over it, 3 % under unless changed; the same − and + as on the desk's card, one
+                     state (MainWindow.Desk, ShowCopyRuleSetting). -->
+                <Grid ColumnSpacing="14" Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{x:Bind local:ViewTexts.SettingsCopyRule}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="200" />
+                  <Border x:Name="SettingsCopyRuleHost" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock Style="{StaticResource NoteText}" TextWrapping="Wrap" Text="{x:Bind local:ViewTexts.SettingsCopyRuleNote}" />
                 <!-- Crash reports go only as the player says here (owner, 2026-10-03: default "Ask after a crash";
                      docs/DESIGN.md §8, "Reports"). -->
                 <Grid ColumnSpacing="14" Margin="0,8,0,0">
@@ -966,9 +980,11 @@
             <TextBlock Text="{x:Bind ViewModel.Hint, Mode=OneWay}" Visibility="{x:Bind HintOutsideRaid(ViewModel.Hint, ViewModel.InRaid, ViewModel.DeskUp), Mode=OneWay}"
                        Style="{StaticResource NoteText}" Margin="0,16,0,0" />
 
-            <!-- DESK: the rail is the card of the desk's cell pointed at (docs/DESIGN.md §4, *The stash desk*, *Its place*); for
-                 step B the item card the pointer opens anywhere, until another cell is pointed at. -->
+            <!-- DESK: the rail is the desk's cards (docs/DESIGN.md §4, *The stash desk*, *Its place*, *The card*, *The click*;
+                 step C, 2026-10-20): the pinned ones, newest on top, then the card of the cell pointed at, until another
+                 cell is pointed at, or the rail's hint (MainWindow.Desk, Controls.DeskCardView). -->
             <StackPanel x:Name="DeskRail" Visibility="{x:Bind ShownIfTrue(ViewModel.DeskUp), Mode=OneWay}" Margin="0,16,0,0" Spacing="8">
+              <StackPanel x:Name="DeskPinnedHost" Spacing="8" />
               <TextBlock x:Name="DeskRailLine" Style="{StaticResource NoteText}" Text="{x:Bind local:ViewTexts.DeskRailHint}" />
               <Border x:Name="DeskCardHost" HorizontalAlignment="Left" />
             </StackPanel>

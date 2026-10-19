@@ -6,14 +6,18 @@ from its addendum A(2) · B1 · C1a · Da (docs/DESIGN.md §4, principle 3, "Scr
 language", *The stash desk's marks*; "Design system", *Motion*). Step B builds the view: PLAN | DESK at the rail's head;
 the desk in the map's place out of a raid, opening by itself with a reading in the menus; the head line; the regions
 stacked in reading order with the loadout strip, folded by the reading; each cell's marks; a container's window
-stemmed to its cell; the page coming in cell by cell and the totals counting up once. The desk's own card and the
-click are step C: for step B the rail shows the item card the pointer opens anywhere.
+stemmed to its cell; the page coming in cell by cell and the totals counting up once. Step C (2026-10-20) builds the
+desk's own card in the rail (decision first, the plate with the rule a click copies by, KEEP, the 30 days' band, the
+day's bar, the traders), the click that copies a list price (its flash, decode and notice), pinning by a right-click or
+the card's pin, the copy's guards, a "?" cell's pick, and the cells scaling with the desk's width (40 to 80 DIP).
 
 `desk.devscript` replays it without a screenshot: its `desk <n>` hands the window the made-up desk's reading n
 (`Rules.DeskExample`, built through the model as a reading's page is: real items of the catalogue, so their art and
-cards are there, with made-up prices, counts, conditions and needs). Reading 1 is the mode's first; reading 2 changed
-the backpack (a LEDX more); reading 3 changed nothing. The rules are held by `DeskSwitchTests`, `DeskFoldTests`,
-`DeskCellsTests`, `DeskNumbersTests`, `DeskPageRulesTests` and `DeskExampleTests`; the checks below are for the stills.
+cards are there, with made-up prices, counts, conditions, needs and price histories, and a cell in each of the copy's
+states). Reading 1 is the mode's first; reading 2 changed the backpack (a LEDX more); reading 3 changed nothing. The
+rules are held by `DeskSwitchTests`, `DeskFoldTests`, `DeskCellsTests`, `DeskNumbersTests`, `DeskPageRulesTests`,
+`DeskExampleTests`, `DeskCardTests`, `DeskCopyTests`, `DeskPinsTests` and `DeskHistoryTests`; the checks below are for
+the stills. The script's clicks (`desk copy`) leave the clipboard alone; the app log says what they would have copied.
 
 ## Run it
 
@@ -29,9 +33,10 @@ $app = Start-Process -FilePath $exe -PassThru -ArgumentList "--dev-view --verbos
 $app.WaitForExit()
 ```
 
-- The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `window`, `card`, `fold`, `unfold`, `same`, `plan`,
-  `show`, `raid`, `after` and `kept`; then `--culture de-DE`, `--window 900x560` (40 DIP cells, one column) and
-  `--window 1600x900` (56 DIP cells, the stash in a column of its own from a desk 980 DIP across) for the other runs
+- The stills go to `%TEMP%\shturmap-qa\desk\entry`, `first`, `window`, `card`, `copy`, `rule`, `pinned`, `trader`,
+  `noflea`, `pick`, `picked`, `fold`, `unfold`, `same`, `plan`, `show`, `raid`, `after` and `kept`; then `--culture
+  de-DE`, `--window 900x560` (40 DIP cells, one column) and `--window 1600x900` (64 DIP cells, the stash in a column of
+  its own beside the gear) for the other runs, and `--window 2560x1440` (80 DIP, as large as the work area allows)
   (docs/QA.md, "Replay scripts").
 - `--verbose`: the app log (`$qa\data\logs`) has every step and the lines `Example desk: reading 1 of 3`, `Stash desk
   up (reading)`, `Stash desk left (switch)` or `(dev)`, `Stash desk left (raid)`.
@@ -55,7 +60,7 @@ $app.WaitForExit()
   dog tag's figure after the person glyph; the AK and the Glock "~…k+" (mods unseen), the AK's "30/30". In the grids:
   a dark band across each item's top with its figure at the right after the price tag or the person; "~" before an
   estimate, "+" after the wallet's and the item case's figure; the IFAK's "166/300" without an arrow, the Analgin's
-  "2/4" with "↓" (at 1600×900, 56 DIP, the change as a figure: "−12%" beside "2/4", "↓ −10%" on a wider cell); the
+  "2/4" with "↓" (at 1600×900, 64 DIP, the change as a figure: "−12%" beside "2/4", "↓ −10%" on a wider cell); the
   keycard and the stash's LEDX with a filled amber notch, the graphics cards an open one, the
   moonshine a corner bracket, the bitcoins a filled notch in ink; the roubles, the Gamma and the streamer case with no
   figure; the cell nothing was said of only its frame; the rig's and the Zhuk window's compartments a few DIP apart, as
@@ -65,7 +70,33 @@ $app.WaitForExit()
   No red or green anywhere on the page.
 - **window**: the Zhuk's cell gold-tinted with an amber frame, its window's head on gold, the stem in amber; the rail
   says "One of 2 items".
-- **card**: the LEDX's item card in the rail, whole (not see-through), under the MAP list and the trader strip.
+- **card**: the LEDX's desk card in the rail, whole, under the MAP list and the trader strip, 351 DIP: its icon, name,
+  the full dot with "60 OFFERS · FLEA FROM LEVEL 15" and the pin (a cell's outline with a muted tab) at the right; the
+  figure in gold, "901,728 ₽", with its 7-day change at the right ("↑ +…% · 7 D" or "↓ −…"); right under it the plate on
+  the raised ground: "A CLICK COPIES" with − "3% UNDER" + (the rule in amber), "Copies 970,000 ₽ · nets 873,000 ₽
+  after the fee" semibold, "Last low 1,000,000 ₽ · Therapist pays 650,000 ₽" muted; "Flea net 901,728 ₽ · fee
+  98,272 ₽" with "↓ −10.4% · 48 H"; KEEP: Private Clinic ×1 · now · FIR (a filled amber notch), Medstation 3 ×1 · a
+  hideout module (filled, ink), Crisis ×2 · later · FIR (a bracket); 30 DAYS: the amber band with its average's line, a
+  dashed hairline "7 D", "HIGH … · LOW …, n DAYS AGO"; 24 H: "LAST LOW 1,000,000 · AVG 980,000" over the track, the
+  ticks, "820,000" and "1,100,000 ›" under it, the outlier's line (9,999,999); TRADERS Therapist then Fence; CRAFTS
+  AND BARTERS where the data has them; "Prices just in · tarkov.dev". At 900×560 the decision part (figure, plate,
+  flea net) shows without scrolling. No red or green.
+- **copy** (right after the click): the LEDX's cell framed in gold, its figure decoding (gold glyphs settling to ink);
+  the notice "970,000 ₽ copied · 3% under the last low".
+- **rule**: the card's plate says "2% OVER" and "Copies 1,020,000 ₽ · …"; settings' row "Flea price to copy" (open it
+  by hand to check) the same.
+- **pinned**: two pinned cards, framed in amber, the Grizzly's on top ("~30,511 ₽", "Copies ~32,456 ₽ …", "Scaled to
+  1469/1800 · full 37,386 ₽") over the LEDX's, each pin's tab amber; the key's card under them, below the rail's fold at 900×560 (its plate
+  with the 6 px gold square: "Copies 1,832,221 ₽, over the best net: at 1,751,… it nets …, at this …"). On the page the
+  LEDX's and the Grizzly's cells carry a short amber bar on their top edge.
+- **trader**: the blue keycard's card: the plate's line muted, "Therapist pays more · 459,000 ₽. A click copies
+  nothing.", only the last low under it; the notice "Nothing copied: Therapist pays more, 459,000 ₽"; no flash.
+- **noflea**: the 5.45 ammunition's card: "NOT ON THE FLEA" under its name, the plate "Can't be listed on the flea. A
+  click copies nothing.", no flea net line, Prapor and Fence under TRADERS.
+- **pick**: the keycards' "?" card: "One of 3 items", the note, three rows (icon, name, figure in gold: 459k, 277k,
+  128k); the notice "One of 3 items: pick it on the card first".
+- **picked**: the violet keycard's card in the rail; on the page the cell's "?" plate gone, its art at full strength, its
+  figure the violet's.
 - **fold**: "UNCHANGED · LOADOUT ▸ · TACTICAL RIG ▸ · POCKETS ▸ · SPECIAL SLOTS ▸" over BACKPACK, then "UNCHANGED ·
   ZHUK ▸ · POUCH ▸ · STASH ▸ · WZ ▸" (at 1600×900 the stash's column has its own line, "UNCHANGED · STASH ▸ · WZ ▸");
   where a fold line wraps, the next line starts with "·", never a line ending in one;

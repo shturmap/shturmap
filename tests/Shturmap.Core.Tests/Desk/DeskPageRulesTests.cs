@@ -12,24 +12,61 @@ public class DeskPageRulesTests
 
     private static DeskRegionSheet Region(string key) => View.Sheet.Regions.Single(r => r.Region.Key == key);
 
-    // 40 DIP cells at 900×560 (a desk about 500 across), 56 from a desk 600 across; the game's two columns from 980, where
-    // both fit: the made-up desk's gear column holds POCKETS and SPECIAL SLOTS side by side (417 DIP), so its columns
-    // break from a desk 1038 across.
+    // The cells scale with the desk's width (owner, 2026-10-20: "We should utilize the whole screen"): 40 to 80 DIP in steps
+    // of 8, the largest at which the page's widest row fits. One column of ten cells and the margins: 40 at 900×560 (its
+    // desk is 516 across), 48 from 517, 56 from 597, up to 80 from 837. The game's two columns where both fit at 56 or more:
+    // the made-up desk's gear column holds POCKETS and SPECIAL SLOTS side by side (7 cells and a gap), so from a desk 1038
+    // across at 56, 1174 at 64 (1600×900's desk, 1216, stands there), 1446 at 80 (a 2560 monitor's).
     [Fact]
     public void The_cell_and_the_columns_follow_the_desks_width()
     {
-        Assert.Equal(40, DeskPageRules.Cell(500));
-        Assert.Equal(40, DeskPageRules.Cell(599));
-        Assert.Equal(56, DeskPageRules.Cell(600));
         var regions = View.Sheet.Regions.Select(r => r.Region).ToList();
-        Assert.Equal(-1, DeskPageRules.ColumnBreak(regions, 979));
+        var stash = regions.FindIndex(r => r.Kind == DeskRegionKind.Stash);
+        Assert.Equal((40, -1), DeskPageRules.Layout(regions, 516));
+        Assert.Equal((48, -1), DeskPageRules.Layout(regions, 517));
+        Assert.Equal((48, -1), DeskPageRules.Layout(regions, 596));
+        Assert.Equal((56, -1), DeskPageRules.Layout(regions, 597));
+        Assert.Equal((72, -1), DeskPageRules.Layout(regions, 836));
+        Assert.Equal((80, -1), DeskPageRules.Layout(regions, 837));
+        Assert.Equal((80, -1), DeskPageRules.Layout(regions, 1037));
+        Assert.Equal((56, stash), DeskPageRules.Layout(regions, 1038));
+        Assert.Equal((56, stash), DeskPageRules.Layout(regions, 1173));
+        Assert.Equal((64, stash), DeskPageRules.Layout(regions, 1216));
+        Assert.Equal((72, stash), DeskPageRules.Layout(regions, 1310));
+        Assert.Equal((80, stash), DeskPageRules.Layout(regions, 1446));
+        Assert.Equal((80, stash), DeskPageRules.Layout(regions, 2176));
+        Assert.Equal(64, DeskPageRules.Cell(regions, 1216));
+        // Without the special slots the gear's column is six cells: two columns from 958.
         var gear = regions.Where(r => r.Kind != DeskRegionKind.SpecialSlots).ToList();
-        Assert.Equal(DeskRegionKind.Stash, gear[DeskPageRules.ColumnBreak(gear, 980)].Kind);
-        Assert.Equal(-1, DeskPageRules.ColumnBreak(regions, 1037));
-        var at = DeskPageRules.ColumnBreak(regions, 1038);
-        Assert.Equal(DeskRegionKind.Stash, regions[at].Kind);
+        Assert.Equal(-1, DeskPageRules.ColumnBreak(gear, 957));
+        Assert.Equal(DeskRegionKind.Stash, gear[DeskPageRules.ColumnBreak(gear, 958)].Kind);
         // The gear stands left of it: everything before the stash in reading order.
+        var at = DeskPageRules.ColumnBreak(regions, 1038);
         Assert.DoesNotContain(regions.Take(at), r => r.Kind == DeskRegionKind.Stash);
+        // Every size a whole number of pixels at every Windows scale from 100 to 200 % in quarters.
+        Assert.All(DeskPageRules.Sizes, s => Assert.All(new[] { 1, 1.25, 1.5, 1.75, 2 }, f => Assert.Equal(Math.Round(s * f), s * f)));
+        // A page without a stash stands in one column.
+        Assert.Equal((80, -1), DeskPageRules.Layout(gear.Where(r => r.Kind != DeskRegionKind.Stash).ToList(), 2176));
+    }
+
+    // The marks and the heads grow with the cell: the figure 10.5 px at 40 to 15 at 80, the count 10 to 14.5, the source's
+    // glyph 9 to 14, a trader's portrait 14 at 56 to 20 at 80, the notch and the "?" plate a DIP a step from 56; the
+    // regions' heads 11, 12 and 13 px.
+    [Fact]
+    public void The_marks_and_the_heads_scale_with_the_cell()
+    {
+        Assert.Equal([10.5, 11, 12, 13, 14, 15], DeskPageRules.Sizes.Select(DeskCells.FigureSizeAt));
+        Assert.Equal([10, 10.5, 11.5, 12.5, 13.5, 14.5], DeskPageRules.Sizes.Select(DeskCells.SmallSizeAt));
+        Assert.Equal([9, 10, 11, 12, 13, 14], DeskPageRules.Sizes.Select(DeskCells.GlyphAt));
+        Assert.Equal([14, 16, 18, 20], DeskPageRules.Sizes.Skip(2).Select(DeskCells.PortraitAt));
+        Assert.Equal([11, 11, 11, 12, 13, 14], DeskPageRules.Sizes.Select(DeskCells.NotchAt));
+        Assert.Equal([12, 12, 12, 13, 14, 15], DeskPageRules.Sizes.Select(DeskCells.PlateAt));
+        Assert.Equal([11, 11, 12, 12, 13, 13], DeskPageRules.Sizes.Select(DeskPageRules.HeadSize));
+        // From 56 up the change stands as a figure, as at 56 (*The cell*).
+        var cell = new DeskCellSheet(new DeskCell(0, 0, 2, 1, ["x"]),
+            new DeskFigure(DeskSource.Flea, 13_000, 13_000, null) { Arrow = DeskArrow.Down, Change48h = -12 }, DeskKeepLevel.None, false);
+        Assert.All(DeskPageRules.Sizes.Skip(2), s => Assert.Equal("↓\u00A0−12%", DeskCells.Of(cell, s).Change));
+        Assert.Equal("↓", DeskCells.Of(cell, 48).Change);
     }
 
     // LOADOUT is a strip of slot cells: no grid under it, whatever a reading says, and its slots don't widen the gear's

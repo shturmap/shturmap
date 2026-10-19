@@ -389,41 +389,72 @@ public sealed partial class MainWindow
     }
 
     /// <summary>The developer script's "desk" (DevScript.DeskOf): what was done, or why not.</summary>
-    internal string DevDesk(DevScript.DeskAct act, int reading, string region, int i, int j)
+    internal string DevDesk(DevScript.DeskStep step)
     {
         if (_snapshot is not { } s)
             return "desk: no snapshot yet";
-        switch (act)
+        switch (step.Act)
         {
             case DevScript.DeskAct.Reading:
                 if (s.Data is null)
                     return "desk: no data yet";
-                ShowDeskExample(reading, s);
-                return $"desk: reading {reading}" + (_deskChosen ? "" : " (not shown: " + State + ")");
+                ShowDeskExample(step.Reading, s);
+                return $"desk: reading {step.Reading}" + (_deskChosen ? "" : " (not shown: " + State + ")");
             case DevScript.DeskAct.Plan:
                 LeaveDesk("dev");
                 return "desk: plan";
             case DevScript.DeskAct.Show:
                 SetDesk(true, "dev");
                 return "desk: shown" + (_deskChosen ? "" : " (not: " + State + ")");
+            case DevScript.DeskAct.Rule:
+                SetDeskRule(Core.Desk.DeskCopyRule.Of(step.Rule), "dev");
+                return "desk: rule " + _deskRule.Format();
+            case DevScript.DeskAct.UnpinAll:
+                UnpinAllDesk();
+                return "desk: every pin taken";
         }
         if (_deskShown is not { } view || !_deskChosen)
             return "desk: the desk isn't up";
         var key = view.Sheet.Regions.Select(r => r.Region.Key)
-            .FirstOrDefault(k => k == region || k == Core.Desk.DeskRegion.WindowKey(region));
+            .FirstOrDefault(k => k == step.Region || k == Core.Desk.DeskRegion.WindowKey(step.Region));
         if (key is null)
-            return "desk: no region " + region;
-        if (act == DevScript.DeskAct.Open)
+            return "desk: no region " + step.Region;
+        if (step.Act == DevScript.DeskAct.Open)
         {
             _deskOpen = DeskFold.Unfold(_deskOpen ?? new HashSet<string>(), key);
             ShowDeskPage(motion: false);
             return "desk: opened " + key;
         }
-        var cell = i < 0 ? StashDesk.FirstCellOf(key) : StashDesk.CellAt(key, i, j);
+        var cell = step.Slot is { } named ? StashDesk.CellOf(new DeskCellKey(key, named, 0, 0))
+            : step.I < 0 ? StashDesk.FirstCellOf(key) : StashDesk.CellAt(key, step.I, step.J);
         if (cell is null)
-            return $"desk: no cell of {key} at {i},{j} on the page";
+            return $"desk: no cell of {key} at {step.Slot ?? $"{step.I},{step.J}"} on the page";
+        var at = cell.Key.ToString();
+        switch (step.Act)
+        {
+            case DevScript.DeskAct.Pin:
+                StashDesk.Point(cell);
+                return $"desk: {ToggleDeskPin(cell.Key, "dev")} {at}";
+            case DevScript.DeskAct.Unpin:
+                if (!DeskPins.IsPinned(_deskPins, cell.Key))
+                    return $"desk: {at} isn't pinned";
+                return $"desk: {ToggleDeskPin(cell.Key, "dev")} {at}";
+            case DevScript.DeskAct.Copy:
+                StashDesk.Point(cell);
+                var copy = CopyDeskCell(cell, "dev", clipboard: false);
+                return $"desk: clicked {at}: {copy.State}" + (copy.Copies ? " " + DeskCards.Clipboard(copy) : "");
+            case DevScript.DeskAct.Pick:
+                var ids = cell.Sheet.Cell.Ids;
+                if (ids.Count < 2 || step.N > ids.Count)
+                    return $"desk: {at} has no candidate {step.N}";
+                // The candidates as its card lists them.
+                if (DeskCards.Of(cell.Region, cell.Sheet, DeskContext(view)).Candidates is not { Count: > 0 } candidates || step.N > candidates.Count)
+                    return $"desk: {at}'s card lists no candidate {step.N}";
+                PickDeskCell(cell.Key, candidates[step.N - 1].ItemId, "dev");
+                return $"desk: picked {candidates[step.N - 1].Name} for {at}";
+        }
         StashDesk.Point(cell);
-        return $"desk: pointed at {key} {cell.Sheet.Cell.I},{cell.Sheet.Cell.J}" + (cell.Sheet.Cell.Slot is { } slot ? " (" + slot + ")" : "");
+        return $"desk: pointed at {at}";
     }
 
     internal void DevExit()

@@ -383,16 +383,41 @@ public sealed class DevToolsTests : IDisposable
     {
         var (steps, errors) = DevScript.Parse(string.Join('\n', "desk", "desk 2", "DESK open Stash", "desk point backpack", "desk point stash 4 1", "desk plan",
             "desk show", "desk 4", "desk open", "desk point stash 4", "desk fold"));
-        const string said = "'desk' takes a reading (1 to 3), 'open <region>', 'point <region> [<i> <j>]', 'plan' or 'show'";
+        const string said = "'desk' takes a reading (1 to 3), 'open <region>', 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
+                            + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show'";
         Assert.Equal([$"line 8: {said}", $"line 9: {said}", $"line 10: {said}", $"line 11: {said}"], errors);
         Assert.Equal(
             [
-                (DevScript.DeskAct.Reading, 1, "", 0, 0), (DevScript.DeskAct.Reading, 2, "", 0, 0), (DevScript.DeskAct.Open, 0, "stash", 0, 0),
-                (DevScript.DeskAct.Point, 0, "backpack", -1, -1), (DevScript.DeskAct.Point, 0, "stash", 4, 1), (DevScript.DeskAct.Plan, 0, "", 0, 0),
-                (DevScript.DeskAct.Show, 0, "", 0, 0),
+                new DevScript.DeskStep(DevScript.DeskAct.Reading, 1), new DevScript.DeskStep(DevScript.DeskAct.Reading, 2),
+                new DevScript.DeskStep(DevScript.DeskAct.Open, 0, "stash"), new DevScript.DeskStep(DevScript.DeskAct.Point, 0, "backpack", -1, -1),
+                new DevScript.DeskStep(DevScript.DeskAct.Point, 0, "stash", 4, 1), new DevScript.DeskStep(DevScript.DeskAct.Plan),
+                new DevScript.DeskStep(DevScript.DeskAct.Show),
             ],
-            steps.Select(s => DevScript.DeskOf(s)!.Value));
+            steps.Select(s => DevScript.DeskOf(s)!));
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
+    // Step C (2026-10-20): "pin" a cell right-clicked, "copy" a cell clicked (the clipboard left alone), "unpin" a pin or
+    // all, "pick" a "?" cell's n-th candidate, "rule" the copy's rule; a cell by its grid place or a slot by its key.
+    [Fact]
+    public void The_desk_step_pins_copies_picks_and_sets_the_rule()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "desk pin stash 8 0", "desk pin loadout Headwear", "desk copy backpack 4 1", "desk copy stash",
+            "desk unpin stash 8 0", "desk unpin all", "desk unpin", "desk pick stash 4 1 2", "desk pick loadout headwear 3", "desk rule under:5",
+            "desk rule match", "desk rule over:40", "desk rule sideways", "desk pick stash 4 1 0", "desk unpin stash"));
+        Assert.Equal(3, errors.Count);
+        Assert.Equal(
+            [
+                new DevScript.DeskStep(DevScript.DeskAct.Pin, 0, "stash", 8, 0), new DevScript.DeskStep(DevScript.DeskAct.Pin, 0, "loadout") { Slot = "headwear" },
+                new DevScript.DeskStep(DevScript.DeskAct.Copy, 0, "backpack", 4, 1), new DevScript.DeskStep(DevScript.DeskAct.Copy, 0, "stash", -1, -1),
+                new DevScript.DeskStep(DevScript.DeskAct.Unpin, 0, "stash", 8, 0), new DevScript.DeskStep(DevScript.DeskAct.UnpinAll),
+                new DevScript.DeskStep(DevScript.DeskAct.UnpinAll), new DevScript.DeskStep(DevScript.DeskAct.Pick, 0, "stash", 4, 1) { N = 2 },
+                new DevScript.DeskStep(DevScript.DeskAct.Pick, 0, "loadout") { Slot = "headwear", N = 3 },
+                new DevScript.DeskStep(DevScript.DeskAct.Rule) { Rule = "under:5" }, new DevScript.DeskStep(DevScript.DeskAct.Rule) { Rule = "match" },
+                // A rule's amount is kept within 1 to 20.
+                new DevScript.DeskStep(DevScript.DeskAct.Rule) { Rule = "over:20" },
+            ],
+            steps.Select(s => DevScript.DeskOf(s)!));
     }
 
     // QA pass of 2026-10-19 (F4): no step chose a text size while Shturmap runs, so its change couldn't be pictured.

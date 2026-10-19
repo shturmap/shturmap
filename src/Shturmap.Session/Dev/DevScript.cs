@@ -66,10 +66,13 @@ public static class DevScript
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
-        ["desk"] = "[<n>] | open <region> | point <region> [<i> <j>] | plan | show: the made-up stash desk's n-th reading as a reading in the menus brings it "
+        ["desk"] = "[<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> "
+            + "| rule match|under:<n>|over:<n> | plan | show: the made-up stash desk's n-th reading as a reading in the menus brings it "
             + "(1, the first, every region open; 2, one that changed the backpack, the rest folded; 3, one that changed nothing); open, a folded region's name clicked; "
-            + "point, the pointer on a region's cell at that grid place (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
-            + "plan and show, PLAN and DESK at the rail's head",
+            + "point, the pointer on a region's cell at that grid place or slot (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
+            + "pin, the cell right-clicked (its card pinned in the rail, or unpinned); unpin, a pinned card's pin clicked, all of them with all or nothing; "
+            + "copy, the cell clicked (its flash, decode and notice; the clipboard left alone in a script); pick, the n-th candidate (from 1) clicked on a \"?\" cell's card; "
+            + "rule, the copy's rule as the card's − and + set it; plan and show, PLAN and DESK at the rail's head",
         ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 8: "
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
             + "a line of no known kind on Woods, a survival on Interchange, a kill on Lighthouse, a weekly's kill on Reserve; 7 or 8 bring the cue's +N); "
@@ -121,7 +124,8 @@ public static class DevScript
         return (count, ended);
     }
 
-    /// <summary>What a "desk" step does: shows a made-up reading, opens a folded region, points at a cell, or goes back to Plan.</summary>
+    /// <summary>What a "desk" step does: shows a made-up reading, opens a folded region, points at a cell, pins, unpins,
+    /// clicks (copies) or picks one, sets the copy's rule, or goes back to Plan.</summary>
     public enum DeskAct
     {
         Reading,
@@ -129,27 +133,59 @@ public static class DevScript
         Point,
         Plan,
         Show,
+        Pin,
+        Unpin,
+        UnpinAll,
+        Copy,
+        Pick,
+        Rule,
+    }
+
+    /// <summary>A "desk" step's parts: the act; the reading; the region and the cell's grid place (−1, −1 for its first
+    /// cell) or slot; a pick's candidate (from 1); a rule ("match", "under:3", "over:2").</summary>
+    public sealed record DeskStep(DeskAct Act, int Reading = 0, string Region = "", int I = 0, int J = 0)
+    {
+        public string? Slot { get; init; }
+
+        public int N { get; init; }
+
+        public string? Rule { get; init; }
     }
 
     /// <summary>
-    /// A "desk" step (step B of the stash desk, 2026-10-19): "desk [&lt;n&gt;]" the made-up desk's reading n (1 without a
-    /// number, at most 3), "desk open &lt;region&gt;" a folded region's name clicked, "desk point &lt;region&gt; [&lt;i&gt; &lt;j&gt;]"
-    /// the pointer on its cell at that grid place (−1 for its first cell), "desk plan" and "desk show" PLAN and DESK clicked. A region is its
-    /// key (loadout, rig, pockets, special, backpack, pouch, stash) or a window's title (zhuk). Null for anything else.
+    /// A "desk" step (step B of the stash desk, 2026-10-19; step C, 2026-10-20): "desk [&lt;n&gt;]" the made-up desk's
+    /// reading n (1 without a number, at most 3), "desk open &lt;region&gt;" a folded region's name clicked, "desk point
+    /// &lt;region&gt; [&lt;i&gt; &lt;j&gt; | &lt;slot&gt;]" the pointer on its cell at that grid place or slot (alone, its first
+    /// cell), "desk pin …" the cell right-clicked, "desk copy …" the cell clicked, "desk unpin [&lt;region&gt; &lt;i&gt; &lt;j&gt; |
+    /// all]" a pin clicked (all, or nothing named: every pin), "desk pick &lt;region&gt; &lt;i&gt; &lt;j&gt; | &lt;slot&gt; &lt;n&gt;" a
+    /// "?" cell's n-th candidate clicked on its card, "desk rule match | under:&lt;n&gt; | over:&lt;n&gt;" the copy's rule, "desk
+    /// plan" and "desk show" PLAN and DESK clicked. A region is its key (loadout, rig, pockets, special, backpack, pouch,
+    /// stash) or a window's title (zhuk); a slot its key (headwear, armband). Null for anything else.
     /// </summary>
-    public static (DeskAct Act, int Reading, string Region, int I, int J)? DeskOf(DevStep step)
+    public static DeskStep? DeskOf(DevStep step)
     {
         static bool Number(string text, out int n) => int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out n);
+        static bool Is(string text, string word) => text.Equals(word, StringComparison.OrdinalIgnoreCase);
+        static DeskAct? CellAct(string verb) => Is(verb, "point") ? DeskAct.Point : Is(verb, "pin") ? DeskAct.Pin : Is(verb, "copy") ? DeskAct.Copy
+            : Is(verb, "unpin") ? DeskAct.Unpin : null;
         return step.Args switch
         {
-            [] => (DeskAct.Reading, 1, "", 0, 0),
-            [var n] when Number(n, out var reading) && reading is >= 1 and <= 3 => (DeskAct.Reading, reading, "", 0, 0),
-            [var plan] when plan.Equals("plan", StringComparison.OrdinalIgnoreCase) => (DeskAct.Plan, 0, "", 0, 0),
-            [var show] when show.Equals("show", StringComparison.OrdinalIgnoreCase) => (DeskAct.Show, 0, "", 0, 0),
-            [var open, var region] when open.Equals("open", StringComparison.OrdinalIgnoreCase) => (DeskAct.Open, 0, region.ToLowerInvariant(), 0, 0),
-            [var point, var region] when point.Equals("point", StringComparison.OrdinalIgnoreCase) => (DeskAct.Point, 0, region.ToLowerInvariant(), -1, -1),
-            [var point, var region, var i, var j] when point.Equals("point", StringComparison.OrdinalIgnoreCase) && Number(i, out var x) && Number(j, out var y)
-                => (DeskAct.Point, 0, region.ToLowerInvariant(), x, y),
+            [] => new DeskStep(DeskAct.Reading, 1),
+            [var n] when Number(n, out var reading) && reading is >= 1 and <= 3 => new DeskStep(DeskAct.Reading, reading),
+            [var plan] when Is(plan, "plan") => new DeskStep(DeskAct.Plan),
+            [var show] when Is(show, "show") => new DeskStep(DeskAct.Show),
+            [var unpin] when Is(unpin, "unpin") => new DeskStep(DeskAct.UnpinAll),
+            [var unpin, var all] when Is(unpin, "unpin") && Is(all, "all") => new DeskStep(DeskAct.UnpinAll),
+            [var open, var region] when Is(open, "open") => new DeskStep(DeskAct.Open, 0, region.ToLowerInvariant()),
+            [var rule, var said] when Is(rule, "rule") && Core.Desk.DeskCopyRule.Parse(said) is { } parsed => new DeskStep(DeskAct.Rule) { Rule = parsed.Format() },
+            [var verb, var region] when CellAct(verb) is { } act && act != DeskAct.Unpin => new DeskStep(act, 0, region.ToLowerInvariant(), -1, -1),
+            [var verb, var region, var slot] when CellAct(verb) is { } act && !Number(slot, out _) => new DeskStep(act, 0, region.ToLowerInvariant()) { Slot = slot.ToLowerInvariant() },
+            [var verb, var region, var i, var j] when CellAct(verb) is { } act && Number(i, out var x) && Number(j, out var y)
+                => new DeskStep(act, 0, region.ToLowerInvariant(), x, y),
+            [var pick, var region, var slot, var n] when Is(pick, "pick") && !Number(slot, out _) && Number(n, out var nth) && nth >= 1
+                => new DeskStep(DeskAct.Pick, 0, region.ToLowerInvariant()) { Slot = slot.ToLowerInvariant(), N = nth },
+            [var pick, var region, var i, var j, var n] when Is(pick, "pick") && Number(i, out var x) && Number(j, out var y) && Number(n, out var nth) && nth >= 1
+                => new DeskStep(DeskAct.Pick, 0, region.ToLowerInvariant(), x, y) { N = nth },
             _ => null,
         };
     }
@@ -276,7 +312,8 @@ public static class DevScript
             }
             if (verb == "desk" && DeskOf(step) is null)
             {
-                errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'open <region>', 'point <region> [<i> <j>]', 'plan' or 'show'");
+                errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'open <region>', 'point|pin|copy <region> [<i> <j> | <slot>]', 'unpin [<region> <i> <j> | all]', "
+                    + "'pick <region> <i> <j> | <slot> <n>', 'rule match|under:<n>|over:<n>', 'plan' or 'show'");
                 continue;
             }
             if (verb == "textsize" && TextSizeOf(step) is null)

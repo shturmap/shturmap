@@ -70,7 +70,7 @@ internal static class DeskCommand
         Console.WriteLine($"Catalogue: {catalogue.Count} items; prices of {sources.PricesAt.ToLocalTime():yyyy-MM-dd HH:mm}; flea fee {flea.OfferFeeRate:0.###}/{flea.RequirementFeeRate:0.###}, " +
                           $"found in raid {(flea.FoundInRaidRequired ? "required" : "not required")}; {(online ? "online" : $"cache only, {refused} requests refused")}");
         if (audit)
-            Console.WriteLine(AuditLine(data, sources));
+            Console.WriteLine(AuditLine(data, sources, paths.DataCache));
         if (inputs.Count == 0)
             return;
 
@@ -193,9 +193,12 @@ internal static class DeskCommand
     /// price (the cell shows no figure: the secure containers, quest keys and the like); NO FOOTPRINT, items without width
     /// and height (the tie-break can't run: a cell of theirs says nothing); ONE OF N, the flea-priced items that aren't
     /// guns sharing their short name and footprint with another (the "?" cells the art might one day tell apart); the
-    /// flea's rules (a fee rate, the found-in-raid rule or the level changed: the figures move); the hideout's needs.
+    /// flea's rules (a fee rate, the found-in-raid rule or the level changed: the figures move); the hideout's needs; and
+    /// the price histories the cards fetched into the cache (step C), read as the card reads them: UNREAD is a file whose
+    /// points' shape changed (the card's band says "No price history at hand"), FEW one with under a day's points in its
+    /// last 30 days (no 2 h points: the band would be days). Cache only, nothing asked.
     /// </summary>
-    public static string AuditLine(GameData data, ItemSources sources)
+    public static string AuditLine(GameData data, ItemSources sources, string? cacheFolder = null)
     {
         var candidates = DeskData.Candidates(data, sources).ToList();
         var facts = candidates.Select(c => (Candidate: c, Facts: DeskData.Facts(sources, c.ItemId))).ToList();
@@ -209,7 +212,23 @@ internal static class DeskCommand
                $"ONE OF N {shared} of {priced.Count} flea-priced (not guns) share short name and footprint; " +
                $"flea fee {flea.OfferFeeRate:0.###}/{flea.RequirementFeeRate:0.###}, found in raid {(flea.FoundInRaidRequired ? "required" : "not required")}, " +
                $"from level {flea.MinPlayerLevel}{(sources.FleaMarket is null ? " (NO FLEA RULES in the file: the rates of 2026-10-19)" : "")}; " +
-               $"hideout needs {sources.HideoutNeeds.Count} ({sources.HideoutNeeds.Select(n => n.ItemId).Distinct().Count()} items)";
+               $"hideout needs {sources.HideoutNeeds.Count} ({sources.HideoutNeeds.Select(n => n.ItemId).Distinct().Count()} items)" +
+               (cacheFolder is null ? "" : "; " + HistoryAudit(cacheFolder, data.Mode));
+    }
+
+    // The price histories in the cache for the mode: how many, how many read, how many with too few recent points.
+    private static string HistoryAudit(string cacheFolder, Core.Logs.GameMode mode)
+    {
+        var files = Directory.Exists(cacheFolder)
+            ? Directory.GetFiles(cacheFolder, $"{GameData.Slug(mode)}_prices_*.json").Where(f => !f.EndsWith(".meta.json", StringComparison.Ordinal)).ToList()
+            : [];
+        if (files.Count == 0)
+            return "HISTORY none cached (a card fetches one when it first shows an item)";
+        var read = files.Select(f => DeskHistory.Parse(File.ReadAllText(f))).ToList();
+        var unread = read.Count(h => h is null || h.Points.Count == 0);
+        var few = read.Count(h => h is { Points.Count: > 0 } x && x.Recent(DeskHistory.Band).Count < 12);
+        var points = read.OfType<DeskHistory>().Where(h => h.Points.Count > 0).Select(h => h.Recent(DeskHistory.Band).Count).DefaultIfEmpty(0).Average();
+        return $"HISTORY {files.Count} cached, {points:0} points in their last 30 days on average; UNREAD {unread}; FEW {few}";
     }
 
     private static string Money(double value) => value switch

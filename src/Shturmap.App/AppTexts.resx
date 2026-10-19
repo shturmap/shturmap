@@ -728,8 +728,4 @@
     <value>Screenshot your stash in the game's menus.</value>
     <comment>The stash desk with nothing read yet: one muted line where the page would be.</comment>
   </data>
-  <data name="DeskRailOneOf" xml:space="preserve">
-    <value>{count, plural, one {One of # item} other {One of # items}}</value>
-    <comment>The rail while the stash desk is up, when the item pointed at is a cell that fits several items alike (its "?"): which it is isn't known. {count}: how many it may be.</comment>
-  </data>
 </root>

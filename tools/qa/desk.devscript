@@ -1,10 +1,12 @@
 # QA replay of the stash desk's view (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2, and the addendum: A(2) · B1 ·
-# C1a · Da; step B part 2, the view): the made-up desk (Rules.DeskExample) as readings in the menus bring it. The desk
-# takes the map's place by itself, its page comes in cell by cell and its totals count up; a window's cell and head
-# light each other; a cell's card stands in the rail; a reading that changed the backpack folds the rest, a name opens
-# its region, a reading that changed nothing changes nothing; PLAN and DESK switch; a raid takes the window and gives it
-# back to Plan, the desk keeping its page. A developer build plays it with --dev-view --dev-script; how to run it, and
-# what each still must show: desk.md beside this file. Times are in seconds.
+# C1a · Da; step B part 2, the view; step C, 2026-10-20: the card, pinning, the click's copy): the made-up desk
+# (Rules.DeskExample) as readings in the menus bring it. The desk takes the map's place by itself, its page comes in cell
+# by cell and its totals count up; a window's cell and head light each other; a cell's card stands in the rail, with the
+# rule a click copies by; a click copies (its flash, decode and notice; the script leaves the clipboard alone); a
+# right-click pins a card; each guard of the copy; a "?" cell's candidates and a pick; a reading that changed the
+# backpack folds the rest, a name opens its region, a reading that changed nothing changes nothing; PLAN and DESK switch;
+# a raid takes the window and gives it back to Plan, the desk keeping its page. A developer build plays it with
+# --dev-view --dev-script; how to run it, and what each still must show: desk.md beside this file. Times are in seconds.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
 # once the data was there. It ends first, and its notice ("The tour stays in help", 6 s) is waited out, so the entry
@@ -24,10 +26,47 @@ desk point backpack 0 0
 wait 1
 snapshot %TEMP%\shturmap-qa\desk\window
 
-# The LEDX in the stash: its item card in the rail.
+# The LEDX in the stash: the desk's card in the rail, decision first; its history is the made-up desk's own.
 desk point stash 8 0
 wait 1
 snapshot %TEMP%\shturmap-qa\desk\card
+
+# A click on it: its frame flashes gold, its figure decodes, the notice says what was copied and by which rule.
+desk copy stash 8 0
+snapshot %TEMP%\shturmap-qa\desk\copy
+
+# The rule on the card, 2 % over: its words and the plate's figure follow, and settings' row with them.
+desk rule over:2
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\rule
+desk rule under:3
+
+# Two cards pinned (right-clicks): the LEDX, then the Grizzly at 1469/1800 on top; the pointer on to the key past the
+# best net, whose card stands under them with the gold light. Each pinned cell carries the pin's tab.
+desk pin stash 8 0
+desk pin backpack 4 1
+desk point stash 5 2
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\pinned
+desk unpin all
+
+# The guards: the blue keycard Therapist pays more for (a click copies nothing, the notice says why); the 5.45 ammo that
+# can't be listed.
+desk copy pockets 0 0
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\trader
+desk point rig 5 1
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\noflea
+
+# A "?" cell: its card lists the candidates; a click copies nothing and says to pick; the second candidate picked, the
+# cell is that item and its card the item's.
+desk copy stash 4 1
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\pick
+desk pick stash 4 1 2
+wait 1
+snapshot %TEMP%\shturmap-qa\desk\picked
 
 # A reading that changed the backpack (a LEDX more): the backpack opens and comes in, the rest folds.
 desk 2

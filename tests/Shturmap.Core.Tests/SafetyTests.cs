@@ -11,7 +11,9 @@ public class SafetyTests
         // other processes
         "OpenProcess", "ReadProcessMemory", "WriteProcessMemory", "VirtualAllocEx", "CreateRemoteThread",
         "NtReadVirtualMemory", "GetProcessesByName", "Process.GetProcesses", "MainModule", "EnumProcessModules",
-        // input
+        // input (the Windows clipboard isn't: the stash desk's click puts a list price there for the player to paste into the
+        // flea's price field, as COPY DIAGNOSTICS puts its text; nothing reaches the game; owner, 2026-10-19: "Copy and paste
+        // worked")
         "SendInput", "keybd_event", "mouse_event", "PostMessage", "SendMessage",
         // hooks
         "SetWindowsHookEx", "RegisterHotKey",
