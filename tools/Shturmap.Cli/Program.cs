@@ -69,6 +69,9 @@ switch (command)
     case "desk":
         await Shturmap.Cli.Desk.DeskCommand.RunAsync(args.Skip(1).ToList());
         break;
+    case "ocr-compare":
+        await Shturmap.Cli.Ocr.OcrSpike.RunAsync(args.Skip(1).ToList());
+        break;
 #if DEVTOOLS
     case "study":
         Study(args.ElementAtOrDefault(1));
@@ -128,6 +131,10 @@ switch (command)
                                             condition, figure and source, marks), the head line, the page in hand over the
                                             pictures in order, and the tally against truth-<picture>.txt files; the data from
                                             the cache (--online to ask, --quiet tallies only, --why labels, --audit the DESK line)
+            shturmap-cli ocr-compare <png|folder>  the 2026-10-19 spike: the cells' labels read by Windows' recognition (as the reader
+                                            reads them, and on its crops enlarged otherwise) and by PaddleOCR's recognition models
+                                            (--paddle <onnx> <dict>, built with -p:OcrSpike=true), scored against truth-<picture>.txt
+                                            files (--truths <folder>) and the whole catalogue, with times and confusions
             shturmap-cli study [on|off]      developer builds: show or set the "Keep a study log" switch (Shturmap closed)
 
             --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
