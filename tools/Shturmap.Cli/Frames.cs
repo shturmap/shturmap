@@ -35,6 +35,12 @@ internal static class Frames
     // --notch turns the wheel this many notches in, each as MapView turns one (WheelZoom: 1.197 over 0.15 s).
     private const int Notches = 3;
 
+    // --sway: each time back and forth, a glide in over 1.2 s (the tour's) and one back out, then the notches in and as many
+    // out, 0.3 s apart, the last landing 0.15 s before the next time starts.
+    private const double SwayGlide = 1200;
+    private const double SwayNotch = 300;
+    private const double SwayRound = 2 * SwayGlide + (2 * Notches + 1) * SwayNotch;
+
     // A symbol set off its place by more than this between two frames while the view glides has jumped: the view's own
     // motion moves its place, not its offset from it, and while it moves a symbol goes toward where the repel puts it a
     // step a frame (MapRenderer.RepelStep, 2 px), a neighbour's push on top.
@@ -51,9 +57,28 @@ internal static class Frames
     {
         var options = new List<string>(args);
         var scene = Take(options, "--scene") ?? "list-read";
-        if (scene is not ("list-read" or "whatsnew-extracts" or "list-callout"))
-            throw new ArgumentException($"Unknown scene {scene}: list-read, whatsnew-extracts or list-callout");
+        if (scene is not ("list-read" or "whatsnew-extracts" or "list-callout" or "plan"))
+            throw new ArgumentException($"Unknown scene {scene}: list-read, whatsnew-extracts, list-callout or plan");
         var callOut = scene == "list-callout";
+        // --sway [n]: the view goes back and forth n times (owner, 2026-10-17: two symbols on one spot "get expanded every
+        // time when the user pans or zooms the camera"), each a SwayRound: a glide in and one back out, then the wheel's
+        // notches in and as many out.
+        int? sway = null;
+        if (options.IndexOf("--sway") is var sw and >= 0)
+        {
+            sway = 4;
+            if (sw + 1 < options.Count && int.TryParse(options[sw + 1], NumberStyles.None, CultureInfo.InvariantCulture, out var rounds))
+            {
+                sway = rounds;
+                options.RemoveAt(sw + 1);
+            }
+            options.RemoveAt(sw);
+            if (sway is < 1 or > 7)
+                throw new ArgumentException("--sway takes how many times the view goes back and forth, 1 to 7");
+        }
+        // --toward <name>: where the view glides and the wheel turns, the place of the first symbol of that name, instead
+        // of the position (the plan scene has none).
+        var toward = Take(options, "--toward");
         double? notchMs = null;
         if (options.IndexOf("--notch") is var n and >= 0)
         {
@@ -87,10 +112,11 @@ internal static class Frames
         // tenth in a frame 100 ms apart, where the window's frames hold symbols steady (MapRenderer.SetApart): 30 frames a
         // second by default. The wheel's notches take 0.15 s each, a step 0.2 s: 60 frames a second, until the last has
         // landed.
-        var zooms = notchMs is not null || stepFactor is not null;
+        var zooms = notchMs is not null || stepFactor is not null || sway is not null;
         var every = int.Parse(Take(options, "--every") ?? (callOut ? "33" : zooms ? "16" : "100"), CultureInfo.InvariantCulture);
         var count = int.Parse(Take(options, "--count")
             ?? (callOut ? "260"
+                : sway is { } swayRounds ? ((int)(swayRounds * SwayRound / every) + 1).ToString(CultureInfo.InvariantCulture)
                 : notchMs is { } apartMs ? ((int)((Notches - 1) * apartMs / every) + 160 / every + 6).ToString(CultureInfo.InvariantCulture)
                 : stepFactor is not null ? ((int)((stepAgainMs ?? 0) / every) + 210 / every + 6).ToString(CultureInfo.InvariantCulture)
                 : "36"),
@@ -129,13 +155,15 @@ internal static class Frames
             throw new ArgumentException("--notch turns the wheel at the map's whole view: not with --glide or list-callout, which move the view themselves");
         if (stepFactor is not null && (glideMs is not null || callOut || notchMs is not null))
             throw new ArgumentException("--step zooms at the map's whole view: not with --glide, --notch or list-callout, which move the view themselves");
+        if (sway is not null && (glideMs is not null || callOut || notchMs is not null || stepFactor is not null))
+            throw new ArgumentException("--sway moves the view itself: not with --glide, --notch, --step or list-callout");
         // The roll call moves the view as the window will, --glide or not: its length is the glide's.
         if (callOut)
             glideMs ??= MapScene.CallOutFitLength.TotalMilliseconds;
         if (options.Count != 2)
         {
-            throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout] [--every <ms>] [--count <n>] " +
-                                        "[--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms]] [--viewport <W>x<H>]");
+            throw new ArgumentException("Use: shturmap-cli frames <map> <out folder> [--scene list-read|whatsnew-extracts|list-callout|plan] [--every <ms>] [--count <n>] " +
+                                        "[--fix <x> <y> <z>] [--glide [ms] | --notch [ms] | --step <factor> [ms] | --sway [n]] [--toward <name>] [--viewport <W>x<H>]");
         }
         var (mapName, output) = (options[0], Path.GetFullPath(options[1]));
 
@@ -160,7 +188,12 @@ internal static class Frames
         }
         using var tilesScope = tiles;
 
-        var (shown, about) = scene == "whatsnew-extracts" ? WhatsNewExtracts(data, map.Id, definition, artwork, tiles) : ListRead(data, map, definition, artwork, tiles, fixAt);
+        var (shown, about) = scene switch
+        {
+            "whatsnew-extracts" => WhatsNewExtracts(data, map.Id, definition, artwork, tiles),
+            "plan" => Plan(data, map, definition, artwork, tiles, fixAt),
+            _ => ListRead(data, map, definition, artwork, tiles, fixAt),
+        };
         if (scene == "whatsnew-extracts" && fixAt is { } given)
         {
             shown.Player = new PlayerFix(given, null, Start);
@@ -199,10 +232,36 @@ internal static class Frames
         }
         else
         {
-            shown.RingExits(Start);
+            if (scene != "plan")
+                shown.RingExits(Start);
+            // Where the view goes: the place of the symbol --toward names, or the position, or the middle of the extracts.
+            MapPoint? towardAt = null;
+            if (toward is not null)
+            {
+                var named = shown.Markers.FirstOrDefault(m => string.Equals(m.Label, toward, StringComparison.OrdinalIgnoreCase))
+                            ?? throw new ArgumentException($"--toward: no symbol named {toward} on {map.Name} in this scene");
+                towardAt = shown.Projection.ToMap(named.Position);
+            }
+            var where = toward is not null ? toward : shown.Player is null ? "the middle of the extracts on the list" : "the position";
+            if (sway is { } rounds)
+            {
+                var target = towardAt ?? (shown.Player is { } p ? shown.Projection.ToMap(p.Position) : Middle(shown));
+                to = (target, from.Zoom * GlideZoom);
+                pointer = camera.ToScreen(target);
+                for (var r = 0; r < rounds; r++)
+                {
+                    for (var k = 0; k < Notches; k++)
+                    {
+                        turns.Add((r * SwayRound + 2 * SwayGlide + k * SwayNotch, WheelZoom.FactorOf(120), WheelZoom.Notch));
+                        turns.Add((r * SwayRound + 2 * SwayGlide + Notches * SwayNotch + SwayNotch + k * SwayNotch, WheelZoom.FactorOf(-120), WheelZoom.Notch));
+                    }
+                }
+                turns.Sort((a, b) => a.Ms.CompareTo(b.Ms));
+                about.Add(FormattableString.Invariant($"View: goes back and forth {rounds} times, {SwayRound} ms each: glides from the whole map to {GlideZoom}x on {where} over {SwayGlide} ms and back over as long, eased in and out as MapView.AnimateView, then the wheel turned {Notches} notches in and {Notches} out at it ({pointer.X:0}, {pointer.Y:0} px), {SwayNotch} ms apart, each over {WheelZoom.Notch.TotalMilliseconds} ms (WheelZoom)"));
+            }
             if (glideMs is not null)
             {
-                var target = shown.Player is { } p ? shown.Projection.ToMap(p.Position) : Middle(shown);
+                var target = towardAt ?? (shown.Player is { } p ? shown.Projection.ToMap(p.Position) : Middle(shown));
                 to = (target, from.Zoom * GlideZoom);
                 about.Add(FormattableString.Invariant($"View: glides from the whole map to {GlideZoom}x on {(shown.Player is null ? "the middle of the extracts on the list" : "the position")} over {glideMs} ms, eased in and out as MapView.AnimateView"));
             }
@@ -233,6 +292,13 @@ internal static class Frames
             if (glideMs is { } length)
             {
                 var (center, zoom) = Glide(from, to, (ms - glideAt) / length);
+                camera.Restore(center, zoom);
+            }
+            // A sway's glides, in and back out; its notches are turns, below.
+            if (sway is not null && ms % SwayRound is var inRound and <= 2 * SwayGlide && ms < sway * SwayRound)
+            {
+                wheel.Stop();
+                var (center, zoom) = inRound <= SwayGlide ? Glide(from, to, inRound / SwayGlide) : Glide(to, from, (inRound - SwayGlide) / SwayGlide);
                 camera.Restore(center, zoom);
             }
             // Each notch or step at its own time, between frames as a hand turns or presses it; each frame draws the zoom at
@@ -271,10 +337,12 @@ internal static class Frames
             NotchMs = notchMs,
             StepFactor = stepFactor,
             StepAgainMs = stepAgainMs,
+            Sway = sway,
+            Toward = toward,
             Flights = callOut ? flown : null,
         };
         await File.WriteAllTextAsync(Path.Combine(output, "frames.json"), JsonSerializer.Serialize(json, Json));
-        var summary = Summary(map.Name, scene, every, glideMs is not null || zooms, about, shown, rings, frames, flown, checks);
+        var summary = Summary(map.Name, scene, every, glideMs is not null || zooms, about, shown, rings, frames, flown, checks, sway, toward);
         await File.WriteAllTextAsync(Path.Combine(output, "summary.txt"), summary);
         Console.WriteLine(summary);
         Console.WriteLine($"{count} frames, frames.json and summary.txt in {output}");
@@ -318,11 +386,7 @@ internal static class Frames
     private static (MapScene Scene, List<string> About) ListRead(GameData data, ApiMap map, MapDefinition definition, MapArtwork? artwork, MapTiles? tiles,
         WorldPoint? fix)
     {
-        var active = data.Tasks.Values.Where(t => new[] { "audit", "dandies", "secret-message", "road-closed", "ballet-lover", "glory-to-cpsu", "revision-streets-of-tarkov" }
-            .Contains(t.NormalizedName)).Select(t => t.Id).ToList();
-        var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
-        if (content.Objectives.All(o => o.Places.Count == 0))
-            content = MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>());
+        var content = ExampleContent(data, map);
         var markers = content.InPmcRaid().Markers;
         var scene = new MapScene(definition, artwork, tiles)
             { Markers = markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, QuestBosses = content.QuestBosses, InRaid = true };
@@ -344,6 +408,33 @@ internal static class Frames
         scene.PingSince = Start;
         var where = fix is not null ? "--fix" : spawn is not null ? "the map's first PMC spawn" : "the middle of the extracts";
         about.Add(FormattableString.Invariant($"Player: {where} ({at.X:0.#}, {at.Y:0.#}, {at.Z:0.#}), its fix taken at t0 and pinging"));
+        return (scene, about);
+    }
+
+    // The map's content with render's example quests active, or every quest where none of those has a place on it.
+    private static MapContent ExampleContent(GameData data, ApiMap map)
+    {
+        var active = data.Tasks.Values.Where(t => new[] { "audit", "dandies", "secret-message", "road-closed", "ballet-lover", "glory-to-cpsu", "revision-streets-of-tarkov" }
+            .Contains(t.NormalizedName)).Select(t => t.Id).ToList();
+        var content = MapContentBuilder.Build(data, map.Id, active, new HashSet<string>());
+        return content.Objectives.All(o => o.Places.Count == 0) ? MapContentBuilder.Build(data, map.Id, data.Tasks.Keys.ToList(), new HashSet<string>()) : content;
+    }
+
+    // The map as Plan shows it between raids: render's example quests and every extract (a PMC's, a Scav's, shared), no
+    // list and no raid; a position only with --fix.
+    private static (MapScene Scene, List<string> About) Plan(GameData data, ApiMap map, MapDefinition definition, MapArtwork? artwork, MapTiles? tiles,
+        WorldPoint? fix)
+    {
+        var content = ExampleContent(data, map);
+        var scene = new MapScene(definition, artwork, tiles)
+            { Markers = content.Markers, Zones = content.Zones, Containers = content.Containers, QuestKeys = content.QuestKeys, QuestBosses = content.QuestBosses };
+        var about = new List<string> { "Scene: the map as Plan shows it between raids (render's example quests, every extract: a PMC's, a Scav's, shared), no list" };
+        if (fix is { } at)
+        {
+            scene.Player = new PlayerFix(at, null, Start);
+            scene.Floor = FloorResolver.LayerFor(definition, at);
+            about.Add(FormattableString.Invariant($"Player: --fix ({at.X:0.#}, {at.Y:0.#}, {at.Z:0.#}), its fix taken at t0"));
+        }
         return (scene, about);
     }
 
@@ -396,6 +487,12 @@ internal static class Frames
 
         /// <summary>--step's [ms]: when the step is pressed again, from t0.</summary>
         public double? StepAgainMs { get; init; }
+
+        /// <summary>--sway: how many times the view went back and forth, 4.5 s each (Frames.SwayRound).</summary>
+        public int? Sway { get; init; }
+
+        /// <summary>--toward: the symbol whose place the view glided to and the wheel turned at.</summary>
+        public string? Toward { get; init; }
 
         /// <summary>The roll call's flights (list-callout), in their turns' order.</summary>
         public IReadOnlyList<FlightRecord>? Flights { get; init; }
@@ -512,7 +609,7 @@ internal static class Frames
     // ---- summary.txt ----
 
     private static string Summary(string mapName, string sceneName, int every, bool moves, List<string> about, MapScene scene,
-        List<RingRecord> rings, List<FrameRecord> frames, List<FlightRecord> flights, List<string> callOutChecks)
+        List<RingRecord> rings, List<FrameRecord> frames, List<FlightRecord> flights, List<string> callOutChecks, int? sway, string? toward)
     {
         var s = new StringBuilder();
         var first = frames[0];
@@ -704,6 +801,24 @@ internal static class Frames
             + Fmt($"going on from the frame before in {frames.Count(f => f.Repel == MapRenderer.RepelRun.Continued)}, as the frame before in {frames.Count(f => f.Repel == MapRenderer.RepelRun.Held)}"));
         var twice = leaders.Where(l => l.Value > 1).Select(l => NameOf(scene, l.Key)).ToList();
         s.AppendLine(Fmt($"  leaders that came or went: {(leaders.Count == 0 ? "none" : Fmt($"{leaders.Values.Sum()}, {(twice.Count == 0 ? "none" : string.Join(", ", twice))} more than once"))}"));
+        // How far off its place a symbol stood (MapRenderer.LeaderMost bounds it); with --sway, time by time back and forth
+        // (owner, 2026-10-17: two symbols on one spot "get expanded every time when the user pans or zooms the camera").
+        static IEnumerable<(string Name, double Px, int Frame)> Offsets(FrameRecord f) =>
+            f.Exits.Select(e => (e.Name, e.OffX, e.OffY)).Concat(f.Others.Select(o => (o.Name, o.OffX, o.OffY)))
+                .Select(o => (o.Name, Math.Sqrt(o.OffX * o.OffX + o.OffY * o.OffY), f.Index));
+        var farthest = frames.SelectMany(Offsets).DefaultIfEmpty().MaxBy(o => o.Px);
+        s.AppendLine(Fmt($"  the farthest a symbol stood off its place: {farthest.Px:0.#} px ({farthest.Name}, frame {farthest.Frame:000})"));
+        if (sway is { } rounds)
+        {
+            string Farthest(Func<string, bool> which) => string.Join(", ", frames.GroupBy(f => Math.Min((int)(f.Ms / SwayRound), rounds - 1)).Select(g =>
+            {
+                var far = g.SelectMany(Offsets).Where(o => which(o.Name)).DefaultIfEmpty().MaxBy(o => o.Px);
+                return Fmt($"{g.Key + 1}: {far.Px:0.#} px ({far.Name}, frame {far.Frame:000})");
+            }));
+            s.AppendLine("  the same, time by time back and forth: " + Farthest(_ => true));
+            if (toward is not null)
+                s.AppendLine($"  the farthest one named {toward} stood off its place, time by time: " + Farthest(n => string.Equals(n, toward, StringComparison.OrdinalIgnoreCase)));
+        }
         s.AppendLine($"  struck out, plain and transit symbols whose glow, echoes or \"?\" changed: {(still.Count == 0 ? "none" : string.Join("; ", still))}");
         // The bold comes with the lighting (owner, 2026-10-15): no name bold before its extract's turn, a struck-out one's never.
         var early = frames.SelectMany(f => f.Exits.Where(e => e.InView && e.Bold == true && (e.Arrival is < 0 || e.State == ExitLook.NotListed))

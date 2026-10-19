@@ -758,6 +758,17 @@ public static partial class MapRenderer
     /// scaling), so its leader is long enough to follow.</summary>
     public const float LeaderLeast = 10;
 
+    /// <summary>
+    /// How far from its place a symbol stands at most, centre to place (pixels, before scaling; owner, 2026-10-17: one of
+    /// Woods' two Outskirts stood across the view on a leader). Twelve times <see cref="LeaderLeast"/>, about five times
+    /// the least a symbol that leaves its place stands off it (21 to 23 px): a fresh layout of the whole of Customs, the
+    /// busiest map, at 1600 × 1000 sets none further than 110 px, so in a view that has room for its crowd it holds
+    /// nothing back. Where the view packs a crowd tighter than its symbols fit (the whole map at the smallest window), the
+    /// search for a free spot sent one up to 360 px across the view; within the bound it is pushed only off its
+    /// neighbours' bodies, their collars may meet.
+    /// </summary>
+    public const float LeaderMost = 120;
+
     // A symbol pushed off its place by up to this share of its half width is only nudged: it keeps to its place, without
     // a leader. Further, it has to leave it and stands a leader off it.
     private const float NudgedMost = 0.6f;
@@ -795,9 +806,10 @@ public static partial class MapRenderer
     /// <param name="minLine">Above 0: how far beyond its own edge a symbol that has left its place stands from it.</param>
     /// <param name="fixedAround">What no symbol may cover and that never moves itself: the player's marker and its age tag,
     /// as circles (centre, half width).</param>
+    /// <param name="maxLine">Above 0: how far from its place a symbol stands at most, centre to place (<see cref="LeaderMost"/>).</param>
     public static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear = 0, float minLine = 0,
-        IReadOnlyList<(SKPoint At, float Half)>? fixedAround = null) =>
-        Repel(symbols, gap, placeClear, minLine, fixedAround, null, 0, out _);
+        IReadOnlyList<(SKPoint At, float Half)>? fixedAround = null, float maxLine = 0) =>
+        Repel(symbols, gap, placeClear, minLine, maxLine, fixedAround, null, 0, out _);
 
     /// <summary>A symbol as a placement left it (<see cref="Repel"/>): how far off its place the passes had settled it before
     /// any was set a leader off its place (<paramref name="Settled"/>), how far off it it was drawn
@@ -826,7 +838,7 @@ public static partial class MapRenderer
     /// <param name="step">How far a symbol the last placement had is drawn from where it was, at most (pixels).</param>
     /// <param name="stood">Each symbol as this placement leaves it, for the next.</param>
     internal static SKPoint[] Repel(IReadOnlyList<(SKPoint At, float Half, int Rank, bool Moves)> symbols, float gap, float placeClear, float minLine,
-        IReadOnlyList<(SKPoint At, float Half)>? fixedAround, IReadOnlyList<Stood?>? last, float step, out Stood[] stood)
+        float maxLine, IReadOnlyList<(SKPoint At, float Half)>? fixedAround, IReadOnlyList<Stood?>? last, float step, out Stood[] stood)
     {
         var n = symbols.Count;
         var at = symbols.Select(s => s.At).ToArray();
@@ -874,6 +886,8 @@ public static partial class MapRenderer
         var follows = last is not null;
         bool New(int i) => follows && last![i] is null;
         (float, float) Yields(int i, int j) => New(i) == New(j) ? (0.5f, 0.5f) : New(i) ? (1f, 0f) : (0f, 1f);
+        // Where ranks differ, the lesser symbol takes the whole step; of one rank, each half.
+        (float, float) Ranks(int i, int j) => symbols[i].Rank == symbols[j].Rank ? (0.5f, 0.5f) : symbols[i].Rank < symbols[j].Rank ? (0f, 1f) : (1f, 0f);
         // Every two symbols closer than their halves and room together pushed apart along the line between them, by what
         // is missing, each by its share; a sweep along x, as only symbols closer than the two widest together can overlap.
         bool PushApart(float room, Func<int, int, (float, float)> shares)
@@ -925,6 +939,15 @@ public static partial class MapRenderer
             }
             return moved;
         }
+        // No further from its place than the most (LeaderMost), whatever pushed it; after each pass, so the passes after it
+        // open the crowd within it.
+        void HoldIn()
+        {
+            if (maxLine <= 0)
+                return;
+            foreach (var i in order)
+                at[i] = Within(at[i], symbols[i].At, maxLine);
+        }
         var off = new bool[n];
         for (var pass = 0; pass < passes + RepelSettlePasses; pass++)
         {
@@ -947,8 +970,7 @@ public static partial class MapRenderer
                         at[i] = symbols[i].At + Within(at[i] - symbols[i].At, was.Shown, step);
                 }
             }
-            var moved = PushApart(gap, follows && pass >= passes ? Yields : (i, j) =>
-                symbols[i].Rank == symbols[j].Rank ? (0.5f, 0.5f) : symbols[i].Rank < symbols[j].Rank ? (0f, 1f) : (1f, 0f));
+            var moved = PushApart(gap, follows && pass >= passes ? Yields : Ranks);
             // Off the others' places, by the whole step: a place doesn't move.
             if (places.Length > 0 && !(follows && pass >= passes))
             {
@@ -973,6 +995,7 @@ public static partial class MapRenderer
                 }
             }
             moved |= OffWhatStays(gap);
+            HoldIn();
             if (pass < passes)
             {
                 foreach (var i in order)
@@ -1000,6 +1023,7 @@ public static partial class MapRenderer
             {
                 var moved = PushApart(0, Yields);
                 moved |= OffWhatStays(0);
+                HoldIn();
                 if (!moved)
                     break;
             }
@@ -1020,7 +1044,9 @@ public static partial class MapRenderer
                 continue;
             searched[i] = true;
             var from = at[i];
-            for (var radius = 1f; radius < 40 * (symbols[i].Half + gap) && !Clear(i, at[i]); radius += 1)
+            // Never further from its place than the most (LeaderMost): past it, no spot on the ring is near enough.
+            var within = maxLine > 0 ? maxLine + SKPoint.Distance(from, symbols[i].At) : float.MaxValue;
+            for (var radius = 1f; radius < 40 * (symbols[i].Half + gap) && radius <= within && !Clear(i, at[i]); radius += 1)
             {
                 // Round the ring from the side its own place lies on, so it stays as near to it as it can.
                 var toward = MathF.Atan2(symbols[i].At.Y - from.Y, symbols[i].At.X - from.X);
@@ -1028,6 +1054,8 @@ public static partial class MapRenderer
                 {
                     var angle = toward + (k % 2 == 0 ? 1 : -1) * ((k + 1) / 2) * MathF.PI / 12;
                     var p = new SKPoint(from.X + radius * MathF.Cos(angle), from.Y + radius * MathF.Sin(angle));
+                    if (maxLine > 0 && SKPoint.Distance(p, symbols[i].At) > maxLine)
+                        continue;
                     if (Clear(i, p))
                     {
                         at[i] = p;
@@ -1036,6 +1064,21 @@ public static partial class MapRenderer
                 }
             }
         }
+        // Where the search found no spot within the most for one (a crowd the view packs tighter than its symbols fit), what
+        // still covers another is pushed only so far as keeps their bodies apart, within the most, as a move's frames do:
+        // left covering, the next frame of a move pushed it at once (up to 22 px in the whole of Customs at the smallest
+        // window).
+        var wedged = maxLine > 0 && order.Any(i => searched[i] && !Clear(i, at[i]));
+        for (var pass = 0; wedged && pass < RepelSettlePasses; pass++)
+        {
+            var moved = PushApart(0, follows ? Yields : Ranks);
+            moved |= OffWhatStays(0);
+            HoldIn();
+            if (!moved)
+                break;
+        }
+        // Afresh or going on, whatever pushed it: over a neighbour rather than on a leader across the view.
+        HoldIn();
         foreach (var i in order)
         {
             // From the last placement, one whose place is free again is drawn back to within a hair of it (12 % a frame):
@@ -1051,6 +1094,8 @@ public static partial class MapRenderer
                 settled = shown;
             else if (shown.X * settled.X + shown.Y * settled.Y < 0)
                 settled = new SKPoint(shown.X / shown.Length * settled.Length, shown.Y / shown.Length * settled.Length);
+            if (maxLine > 0)
+                settled = Within(settled, new SKPoint(0, 0), maxLine);
             stood[i] = new Stood(settled, shown, off[i]);
         }
         return at;
@@ -1261,14 +1306,14 @@ public static partial class MapRenderer
         var places = SideBySide(markers.Select(m => (m.At, RestHalf(m.Marker, ui), RestRank(m.Marker.Kind))).ToList(), MarkerCollar * ui);
         var (player, ageTag) = PlayerObstacles(camera, scene, ui, now);
         var symbols = markers.Select(m => (m.At, RepelHalf(m, ui), RestRank(m.Marker.Kind), Repels(m.Marker.Kind))).ToArray();
-        var ids = markers.Select(m => m.Marker.Id).ToArray();
+        var ids = RepelKeys(markers);
         if (scene.LastRepel is not { } last || !last.Holds(ids, symbols, player))
         {
             var view = new RepelView(camera.Zoom, camera.Center, ui, scene.Player, ageTag);
             var from = scene.LastRepel is { } before && before.View.GlidesTo(view) ? before.From(ids) : null;
             // Zooming out, the view packs the crowd tighter.
             var packs = from is not null && camera.Zoom < scene.LastRepel!.View.Zoom;
-            var repelled = Repel(symbols, MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui, player, from, RepelStep * ui, out var stood);
+            var repelled = Repel(symbols, MarkerCollar * ui, PlaceClear * ui, LeaderLeast * ui, LeaderMost * ui, player, from, RepelStep * ui, out var stood);
             var offsets = repelled.Select((p, i) => p - markers[i].At).ToArray();
             // A leader joins one that stands clear of its place's dot. While the view moves, one drawn a step at a time
             // passes that distance, and may stay near it: its leader comes once it is clearly past, and goes once it is
@@ -1302,6 +1347,22 @@ public static partial class MapRenderer
             led[i] = last.Led(i);
         }
         return (places, led);
+    }
+
+    // Each symbol's key from one placement to the next: its marker's id and kind, and, where even both are another's too,
+    // how many such came before it. tarkov.dev gives two extracts one id (Woods' two Outskirts, a PMC's and a Scav's, less
+    // than a metre apart; its two UN Roadblocks): keyed by the id alone, both went on from the first's placement at every
+    // frame of a move, pushed each other out along one line by 7.4 px a frame and never settled, so a few glides sent one
+    // across the view on a leader (owner, 2026-10-17: "they get expanded every time when the user pans or zooms the camera").
+    private static string[] RepelKeys(List<ShownMarker> markers)
+    {
+        var seen = new Dictionary<string, int>(markers.Count, StringComparer.Ordinal);
+        return [.. markers.Select(m =>
+        {
+            var key = m.Marker.Id + "|" + m.Marker.Kind;
+            var n = seen[key] = seen.GetValueOrDefault(key) + 1;
+            return n == 1 ? key : key + "#" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        })];
     }
 
     // How much further than it takes for a leader one drawn a step at a time while the view moves must go before its
