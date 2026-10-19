@@ -83,16 +83,10 @@ public sealed partial class MainWindow
             // A hand-over's items the catalogue knows by their whole English name, as cells in the app's language, as
             // any item cell: pointing at one opens its card.
             Items = t.Items.Where(i => i.ItemId is not null)
-<<<<<<< HEAD
-                .Select(i => new NeedChip(i.ItemId!, Glyphs.Bring, i.Name)
-                {
-                    Marked = s.Marks.ContainsKey(i.ItemId!),
-                    PictureId = Shturmap.Data.TarkovDev.ItemSources.PictureOf(s.Sources, i.ItemId!),
-=======
                 .Select(i => new NeedChip(i.ItemId!, Glyphs.Bring, s.Data?.ItemName(i.ItemId!) ?? i.Name)
                 {
                     Marked = s.Marks.ContainsKey(i.ItemId!),
->>>>>>> worktree-agent-ops-fixes
+                    PictureId = Shturmap.Data.TarkovDev.ItemSources.PictureOf(s.Sources, i.ItemId!),
                 }).ToList(),
             Fresh = _freshTasks.ContainsKey(key),
             // A trader's focus held: an operational task is none of that trader's quests, so it steps back with the others.
