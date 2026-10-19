@@ -29,9 +29,17 @@ public sealed partial class MainWindow
     {
         if (sender is not FrameworkElement { Tag: string tag } || !Enum.TryParse<TextStep>(tag, out var step) || step == TextScale.Step)
             return;
+        Study.Ui("settings.textSize", ("step", TextSize.Format(step)));
+        ChooseTextSize(step);
+    }
+
+    // A step chosen, by the row or a developer script's "textsize": saved, shown as chosen, and taken at once.
+    private void ChooseTextSize(TextStep step)
+    {
+        if (step == TextScale.Step)
+            return;
         _session.SetSetting(TextSize.Setting, TextSize.Format(step));
         ViewModel.TextSizeStep = step.ToString();
-        Study.Ui("settings.textSize", ("step", TextSize.Format(step)));
         TextScale.SetStep(step);
     }
 

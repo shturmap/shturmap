@@ -84,6 +84,30 @@ public class CameraTests
         Assert.Equal(24 * scale, camera.ToScreen(new MapPoint(0, 400)).X, 2);
     }
 
+    // QA pass of 2026-10-19 (F2): at 150 % text the names are half as wide again, and with the room of 100 % a name at the
+    // smallest window's right edge lost whole words ("Beschädigte", "Abwasserk"). The room's share of the view grows with
+    // the text size, so it holds as many letters as at 100 %; at 100 % it is as before.
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(1, 1.25f)]
+    [InlineData(1, 1.5f)]
+    [InlineData(1.5f, 1.5f)]
+    [InlineData(1, 2.25f)]
+    public void The_capped_label_room_grows_with_the_text_size(float scale, float text)
+    {
+        var camera = new Camera { TextScale = text };
+        camera.Resize(new SKSize(500 * scale, 480 * scale));
+        camera.Fit(new MapRect(0, 0, 2000, 800), 24 * scale, Camera.LabelRoom * scale * text);
+        Assert.Equal((500 - 100 * text) * scale, camera.ToScreen(new MapPoint(2000, 400)).X, 2);
+        Assert.Equal(24 * scale, camera.ToScreen(new MapPoint(0, 400)).X, 2);
+        Assert.Equal(100 * scale * text, Camera.RoomRight(500 * scale, 24 * scale, Camera.LabelRoom * scale * text, text), 3);
+
+        // In a wide view the room is the label room itself, grown with the text as the names are.
+        camera.Resize(new SKSize(1200 * scale, 820 * scale));
+        camera.Fit(new MapRect(0, 0, 2000, 800), 24 * scale, Camera.LabelRoom * scale * text);
+        Assert.Equal((1200 - Camera.LabelRoom * text) * scale, camera.ToScreen(new MapPoint(2000, 400)).X, 2);
+    }
+
     [Fact]
     public void A_map_with_room_beside_it_moves_only_as_far_as_the_labels_need()
     {

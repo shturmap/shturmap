@@ -70,6 +70,8 @@ public static class DevScript
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
             + "a line of no known kind on Woods); with ended, one more that runs out 3 s later",
         ["tour"] = "end: ends the tour as Esc does (a --dev-view session starts as a first start, and the tour opens by itself)",
+        ["textsize"] = "normal | larger | largest: settings' Text size, chosen as its row chooses it and saved in the session's settings; the window's text, "
+            + "the map and the smallest window follow at once (a run with --text-scale draws at that factor whatever the step)",
         ["wait"] = "<seconds>",
         ["snapshot"] = "<folder>: the window and the map as PNGs, written over what the folder had; %VARIABLES% in it are expanded",
         ["exit"] = "closes the app",
@@ -112,6 +114,16 @@ public static class DevScript
         }
         return (count, ended);
     }
+
+    /// <summary>The steps of settings' Text size a "textsize" step takes, as shturmap.db keeps them (Rules.TextSize).</summary>
+    public static IReadOnlyList<string> TextSizes { get; } = ["normal", "larger", "largest"];
+
+    /// <summary>
+    /// A "textsize" step's step of settings' Text size (QA pass of 2026-10-19, F4: no step chose one live, so the
+    /// setting's change while Shturmap runs couldn't be pictured), lower case; null for anything else.
+    /// </summary>
+    public static string? TextSizeOf(DevStep step) =>
+        step.Args is [var only] && TextSizes.FirstOrDefault(t => t.Equals(only, StringComparison.OrdinalIgnoreCase)) is { } size ? size : null;
 
     /// <summary>What a "whatsnew" step does with the card: the pointer onto a line (or, with none, off the card), a tap
     /// on a line, or the pointer off the line it is on.</summary>
@@ -218,6 +230,11 @@ public static class DevScript
             if (verb == "tasks" && TasksOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'tasks' takes how many (0 to 5) and 'ended'");
+                continue;
+            }
+            if (verb == "textsize" && TextSizeOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'textsize' takes normal, larger or largest");
                 continue;
             }
             if (verb == "tour" && !step.Arg(0).Equals("end", StringComparison.OrdinalIgnoreCase))

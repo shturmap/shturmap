@@ -374,6 +374,19 @@ public sealed class DevToolsTests : IDisposable
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 
+    // QA pass of 2026-10-19 (F4): no step chose a text size while Shturmap runs, so its change couldn't be pictured.
+    // "textsize" takes settings' three steps, as shturmap.db keeps them.
+    [Fact]
+    public void The_textsize_step_takes_settings_three_steps()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "textsize normal", "textsize Larger", "TEXTSIZE largest", "textsize", "textsize huge", "textsize larger largest"));
+        Assert.Equal(["line 4: 'textsize' takes normal, larger or largest", "line 5: 'textsize' takes normal, larger or largest",
+            "line 6: 'textsize' takes normal, larger or largest"], errors);
+        Assert.Equal(["normal", "larger", "largest"], steps.Select(s => DevScript.TextSizeOf(s)!));
+        // The window takes it at once, but what follows (the text's pass, the map, the smallest window) is given its 0.3 s.
+        Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
     // tools\qa\extract-roll-call.devscript: a raid on Customs, a position, the list read, the stills, then a second raid
     // that reads it again.
     [Fact]

@@ -67,8 +67,17 @@ glance, "Settings"), "Map drawing" (*The text size*), §8 "Developer aids" (*A l
 - 200 %, degraded as decided: Plan's rows squeeze the map's name, MIN LEFT trims, the roll call's two-line names touch
   the next, help's keys heading and settings' LICENCES run out of their panel.
 - To check: Windows' own text size on a PC (the pictures simulate it), with a step on top, and a change of either while
-  Shturmap runs; the UI QA pass. The senior translator reviewed the five texts (2026-10-19): the tooltip now names
-  Windows-Einstellungen; the rest held.
+  Shturmap runs; the UI QA pass's re-check of the fixes below. The senior translator reviewed the five texts
+  (2026-10-19): the tooltip now names Windows-Einstellungen; the rest held.
+- **UI QA pass of 2026-10-19** (on 7431ddd; 125 and 150 %, English and German, Plan and the fake raid) and its fixes.
+  F1, two labels end to end on one line read as one (150 % German: "Transit zu Interchange" and "Taxi in der
+  Primorsky-Straße"; not the factor: at 100 % too, on Reserve, The Lab, Shoreline and Interchange): a side within 8 px
+  (× the factor) of a label on its line isn't free (`MapRenderer.LabelGap`); four of 40 `frames` pictures at 100 %
+  change, each such a pair parted (Shoreline's Pier Boat unlabelled at the smallest window), and the layout check's
+  eight map pictures at 100 % are as before. F2, names at the right edge lost whole words at 150 % (900×765): the
+  label room's cap, a fifth of the view, grows with the text size (`Camera.TextScale`), so they are cut where 100 %
+  cuts them, and a wide map there is 13 % narrower. F3, Plan's NEXT RAID row wraps "STREETS OF / TARKOV": accepted.
+  F4, the developer script's `textsize normal|larger|largest` pictures the setting's change while Shturmap runs.
 
 ## 2026-10-19: the stash desk, a price view from a screenshot (designed, to build)
 

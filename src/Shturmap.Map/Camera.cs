@@ -30,10 +30,28 @@ public sealed class Camera
     public const float LabelRoom = 150;
 
     /// <summary>
-    /// The share of the view's width the label room takes at most: at the smallest window the map is about 500 DIP
-    /// wide, and 150 of them would shrink a wide map by more than a quarter (the 100 it keeps: a sixth).
+    /// The share of the view's width the label room takes at most, at 100 % text: at the smallest window the map is about
+    /// 500 DIP wide, and 150 of them would shrink a wide map by more than a quarter (the 100 it keeps: a sixth). It grows
+    /// with the text size (<see cref="TextScale"/>), as the names do.
     /// </summary>
     public const float LabelRoomShare = 0.2f;
+
+    /// <summary>
+    /// The text size beyond the screen's scale: Windows' text size times settings' step (docs/DESIGN.md §4, "Screen
+    /// anatomy", *Text size*), 1 in the CLI and the tests. The label room's share of the view grows with it
+    /// (<see cref="RoomRight"/>): at 150 % the names are half as wide again, and with the room of 100 % a name at the right
+    /// edge of the smallest window lost whole words, "Beschädigte", "Abwasserk" (QA pass of 2026-10-19, F2). The window
+    /// sets it (MapView).
+    /// </summary>
+    public float TextScale { get; set; } = 1;
+
+    /// <summary>
+    /// The pixels a view of <paramref name="width"/> keeps right of what it fits or frames: the label room
+    /// (<paramref name="labelRoom"/>, pixels), at most <see cref="LabelRoomShare"/> of the width times the text size
+    /// (<paramref name="text"/>, <see cref="TextScale"/>), never less than the padding.
+    /// </summary>
+    public static float RoomRight(float width, float padding, float labelRoom, float text = 1) =>
+        Math.Max(padding, Math.Min(labelRoom, width * LabelRoomShare * Math.Max(1, text)));
 
     // A fit asked for while the view had no room for it: done once it has.
     private (MapRect Rect, float Padding, float LabelRoom)? _fitWhenRoom;
@@ -129,7 +147,7 @@ public sealed class Camera
     /// <param name="head">Pixels at the view's top that what is framed stays under (the preview label the map's top holds
     /// in the tour; QA pass, 2026-10-15).</param>
     public (MapPoint Center, double Zoom) FramingAbove(MapRect rect, float padding, float foot, float labelRoom = 0, float head = 0) =>
-        Place(Viewport, rect, padding, labelRoom, foot, 1e-6, MaxZoom, head);
+        Place(Viewport, rect, padding, labelRoom, foot, 1e-6, MaxZoom, TextScale, head);
 
     /// <summary>
     /// The padding (DIPs) the roll call's framing keeps around the listed extracts and the player
@@ -151,19 +169,19 @@ public sealed class Camera
     /// laid out). Pure: the window moves the view to it with MapView.AnimateView.
     /// </summary>
     public static (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport, float labelRoom,
-        float padding, double minZoom, double maxZoom)
+        float padding, double minZoom, double maxZoom, float text = 1)
     {
         var all = player is { } you ? points.Append(you).ToList() : points.ToList();
         if (all.Count == 0 || viewport.Width <= 2 * padding || viewport.Height <= 2 * padding)
             return null;
         var rect = new MapRect(all.Min(p => p.X), all.Min(p => p.Y), all.Max(p => p.X), all.Max(p => p.Y));
-        return Place(viewport, rect, padding, labelRoom, 0, minZoom, Math.Max(minZoom, maxZoom));
+        return Place(viewport, rect, padding, labelRoom, 0, minZoom, Math.Max(minZoom, maxZoom), text);
     }
 
     /// <summary>The roll call's view (<see cref="FittingAll(IReadOnlyCollection{MapPoint}, MapPoint?, SKSize, float, float, double, double)"/>)
     /// in this camera's viewport, within the zoom limits of the map shown.</summary>
     public (MapPoint Center, double Zoom)? FittingAll(IReadOnlyCollection<MapPoint> points, MapPoint? player, float labelRoom, float padding) =>
-        FittingAll(points, player, Viewport, labelRoom, padding, MinZoom, MaxZoom);
+        FittingAll(points, player, Viewport, labelRoom, padding, MinZoom, MaxZoom, TextScale);
 
     /// <summary>
     /// The roll call's move (owner, 2026-10-15, from the design panel: option A, "Roll call, then fly-out"; docs/DESIGN.md,
@@ -175,13 +193,13 @@ public sealed class Camera
     /// the top). Null with nothing to frame or no room for the padding.
     /// </summary>
     public static ((MapPoint Center, double Zoom) View, bool Moves)? CallOut(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport,
-        (MapPoint Center, double Zoom) view, float labelRoom, float padding, double minZoom)
+        (MapPoint Center, double Zoom) view, float labelRoom, float padding, double minZoom, float text = 1)
     {
         if (points.Count == 0 && player is null)
             return null;
-        if (Holds(points, player, viewport, view, labelRoom, padding))
+        if (Holds(points, player, viewport, view, labelRoom, padding, text))
             return (view, false);
-        return FittingAll(points, player, viewport, labelRoom, padding, minZoom, view.Zoom) is { } fit ? (fit, true) : null;
+        return FittingAll(points, player, viewport, labelRoom, padding, minZoom, view.Zoom, text) is { } fit ? (fit, true) : null;
     }
 
     /// <summary>
@@ -191,9 +209,9 @@ public sealed class Camera
     /// reads too.
     /// </summary>
     public static bool Holds(IReadOnlyCollection<MapPoint> points, MapPoint? player, SKSize viewport, (MapPoint Center, double Zoom) view,
-        float labelRoom, float padding)
+        float labelRoom, float padding, float text = 1)
     {
-        var right = Math.Max(padding, Math.Min(labelRoom, viewport.Width * LabelRoomShare));
+        var right = RoomRight(viewport.Width, padding, labelRoom, text);
         foreach (var p in player is { } you ? points.Append(you) : points)
         {
             var x = (p.X - view.Center.X) * view.Zoom + viewport.Width / 2;
@@ -205,13 +223,13 @@ public sealed class Camera
     }
 
     private (MapPoint Center, double Zoom) Place(MapRect rect, float padding, float labelRoom, float foot, double minZoom) =>
-        Place(Viewport, rect, padding, labelRoom, foot, minZoom, MaxZoom);
+        Place(Viewport, rect, padding, labelRoom, foot, minZoom, MaxZoom, TextScale);
 
     private static (MapPoint Center, double Zoom) Place(SKSize viewport, MapRect rect, float padding, float labelRoom, float foot, double minZoom, double maxZoom,
-        float head = 0)
+        float text, float head = 0)
     {
         var width = viewport.Width;
-        var right = Math.Max(padding, Math.Min(labelRoom, width * LabelRoomShare));
+        var right = RoomRight(width, padding, labelRoom, text);
         var zx = (width - padding - right) / Math.Max(rect.Width, 1e-6);
         var zy = (viewport.Height - foot - head - 2 * padding) / Math.Max(rect.Height, 1e-6);
         var zoom = Math.Clamp(Math.Min(zx, zy), minZoom, maxZoom);
