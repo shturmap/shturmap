@@ -2129,15 +2129,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       where they are, the card of the cell pointed at, until another cell is (a pinned cell's framed as pinned), or while
       none is the hint, "Point at an item for its card. A click copies its flea price; a right-click pins its card
       here."; then the pinned cards, newest on top: whole under the hint while no cell is pointed at, and while one is,
-      one compact line each (the item's icon, its name and the gold figure, framed in amber), a click on one showing it
-      whole in the pointed card's place, from its head (the room scrolled back to its top). **The pins' foot** (UI QA
-      pass of the desk's second round, F1, 2026-10-19: under a key's card the second pinned line stood cut at the
-      window's bottom at 1600×900, in German below it; the coordinator's rule): while a cell is pointed at, the pinned
-      lines stand at the rail's foot under the rail's hairline, always in sight, three at most and more scrolling within
-      that strip, and the pointed card scrolls in the room above them. The rail scrolls: at 900×560 the decision part of
-      the pointed card shows (with two pins at the foot, its figure and plate in English and German, KEEP under the
-      hairline; on the desk the 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the hairline
-      or the window's edge).
+      one compact line each (the item's icon, its name and the gold figure, framed in amber; a long name is trimmed with
+      an ellipsis at its end; the whole name stands on its card, a click away, UI QA re-check, 2026-10-19), a click on
+      one showing it whole in the pointed card's place, from its head (the room scrolled back to its top). **The pins'
+      foot** (UI QA pass of the desk's second round, F1, 2026-10-19: under a key's card the second pinned line stood cut
+      at the window's bottom at 1600×900, in German below it; the coordinator's rule): while a cell is pointed at, the
+      pinned lines stand at the rail's foot under the rail's hairline, always in sight, three at most and more scrolling
+      within that strip, and the pointed card scrolls in the room above them. The rail scrolls: at 900×560 the decision
+      part of the pointed card shows (with two pins at the foot, its figure and plate in English and German, KEEP under
+      the hairline; on the desk the 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the
+      hairline or the window's edge).
       Until step C the rail showed the item card the pointer opens anywhere.
     - *The card* (step C, 2026-10-19; `Controls.DeskCardView`, its words `Rules.DeskCards`): 351 DIP, the item card's
       ground and frame, whole (no map under it). Its head: the item's 40 DIP icon, a slot's name in muted capitals over
@@ -2203,12 +2204,19 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       numbers by a no-break space in every language ("1.01 M ₽"; the arrow to its change, "↓ −10%"; the senior
       translator, 2026-10-19; `TranslationTests`).
     - *A window's stem and light*: a hairline (`LineStrong`) from the container's cell to its window's head, along the
-      grid's lines and the page's margin: out of the cell at its left edge (its middle, however tall the cell, where it
-      stands in the grid's first column, its lower corner elsewhere, so it runs between the rows), left into the margin,
-      down to the head, and into it (UI QA pass of 2026-10-19, F7: it left a three-row Zhuk 28 DIP below its top, the
-      middle of its first row; now its middle, as written). Pointing at the cell or anywhere on the window's region lights both: gold at 18 % over the cell with
-      an amber frame, gold behind the window's head, the stem amber, easing over 0.18 s (at once with the effects off).
-      A window whose cell is in a folded region has no stem.
+      grid's lines and the page's margin: out of the cell at its side toward the margin (its middle, however tall the
+      cell, where it stands at the grid's edge on that side, its lower corner elsewhere, so it runs between the rows),
+      into the margin, up or down to the head, and into it (UI QA pass of 2026-10-19, F7: it left a three-row Zhuk 28 DIP
+      below its top, the middle of its first row; now its middle, as written). **It never crosses a cell an item covers**
+      (UI QA re-check, 2026-10-19, F2: on the owner's Keys reading it ran from the box's lower corner along a row line
+      straight across a 3×3 case's picture; `DeskPageRules.StemRoute`): it runs along the gaps and over empty cells only,
+      an item larger than one cell covering its inner lines (an item's edges stay free, a 1×1's all four). It takes the
+      nearest row line free to the grid's edge: one along the cell's own side, its lower corner first, else one reached
+      down or up the column line beside the cell, below before above at an equal distance; the fewest turns first, then
+      the shortest way; where every such line is blocked, along the free lines to the region's outside edge, which no
+      item covers, and round it. Pointing at the cell or anywhere on the window's region lights both: gold at 18 % over
+      the cell with an amber frame, gold behind the window's head, the stem amber, easing over 0.18 s (at once with the
+      effects off). A window whose cell is in a folded region has no stem.
   - **Built: the model the view draws** (step B, 2026-10-19, part 1: reading and data; `Shturmap.Core.Desk`; the view,
     its texts and the tick's words are part 2). The session publishes the mode's page with its values
     (`SessionSnapshot.Desk`, a `DeskView`): the regions in reading order (`DeskSheet.Regions`: LOADOUT's slots, one cell

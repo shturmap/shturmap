@@ -299,6 +299,144 @@ public static class DeskPageRules
             rect.J + rect.H == part.J + part.H ? half : 0);
     }
 
+    /// <summary>
+    /// A window's stem through its cell's grid (docs/DESIGN.md §4, *A window's stem and light*): the corners of its way, in
+    /// grid units, from the cell's edge to the grid's edge on the window's side (the left, or the right where the window
+    /// stands in the column right of the cell's), where the page's margin takes it on. It never crosses a cell an item
+    /// covers (UI QA re-check, 2026-10-19, F2: on the owner's Keys reading it ran along a row line straight across a 3×3
+    /// case's picture): it runs along the lattice's lines, of which an item larger than one cell covers its inner ones;
+    /// an item's edges and an empty cell's lines are free, and so is the region's outside edge. A cell at the grid's edge
+    /// on that side leaves from the middle of its side, as before. Else the way with the fewest turns, then the shortest:
+    /// straight out along a free row line of its side, its lower corner first (as before); else along the column line
+    /// beside it to the nearest free row line, below before above; else, where every such line is blocked, along the free
+    /// lines to the region's outside edge and round it.
+    /// </summary>
+    /// <param name="toLeft">The window's margin is left of the cell's grid.</param>
+    /// <returns>The corners, a lattice line's i and j (the middle of a side a half): the first on the cell's edge, the last
+    /// on the grid's edge on the window's side; one alone for a cell at that edge. Null where the grid gives no way (a
+    /// reading whose items overlap or run past the grid).</returns>
+    public static IReadOnlyList<(double I, double J)>? StemRoute(DeskRegion region, DeskRect cell, bool toLeft)
+    {
+        var (cols, rows) = Grid(region);
+        if (cols <= 0 || rows <= 0 || cell.W <= 0 || cell.H <= 0 || cell.I < 0 || cell.J < 0 || cell.I + cell.W > cols || cell.J + cell.H > rows)
+            return null;
+        var side = toLeft ? cell.I : cell.I + cell.W;
+        var edge = toLeft ? 0 : cols;
+        if (side == edge)
+            return [(side, cell.J + cell.H / 2.0)];
+
+        // The lines the items cover: across, the step from (i, j) to (i + 1, j) on a row line inside an item taller than one
+        // cell; down, the step from (i, j) to (i, j + 1) on a column line inside one wider.
+        var across = new bool[cols, rows + 1];
+        var down = new bool[cols + 1, rows];
+        foreach (var item in region.Cells)
+        {
+            if (item.IsSlot)
+                continue;
+            for (var i = Math.Max(0, item.I); i < Math.Min(cols, item.I + item.W); i++)
+            {
+                for (var j = Math.Max(0, item.J + 1); j < Math.Min(rows + 1, item.J + item.H); j++)
+                    across[i, j] = true;
+            }
+            for (var i = Math.Max(0, item.I + 1); i < Math.Min(cols + 1, item.I + item.W); i++)
+            {
+                for (var j = Math.Max(0, item.J); j < Math.Min(rows, item.J + item.H); j++)
+                    down[i, j] = true;
+            }
+        }
+
+        // The search over the lattice's points, each with the way it came in (left, right, up, down, or none at the start),
+        // by the fewest turns, then the shortest way, then where it leaves the cell: its side from the lower corner up, its
+        // bottom edge, its top edge, its far side, each from the side's end on.
+        const int None = 4;
+        int[] di = [-1, 1, 0, 0], dj = [0, 0, -1, 1];
+        var outward = toLeft ? 0 : 1;
+        int Node(int i, int j, int way) => (i * (rows + 1) + j) * 5 + way;
+        static long Cost(long turns, long length, long rank) => (turns << 42) | (length << 21) | rank;
+        var best = new long[(cols + 1) * (rows + 1) * 5];
+        Array.Fill(best, long.MaxValue);
+        var cameFrom = new int[best.Length];
+        Array.Fill(cameFrom, -1);
+        var queue = new PriorityQueue<int, long>();
+        void Start(int i, int j, int rank)
+        {
+            var node = Node(i, j, None);
+            if (Cost(0, 0, rank) < best[node])
+            {
+                best[node] = Cost(0, 0, rank);
+                queue.Enqueue(node, best[node]);
+            }
+        }
+        var toFar = toLeft ? 1 : -1;
+        var far = toLeft ? cell.I + cell.W : cell.I;
+        for (var k = 0; k <= cell.H; k++)
+            Start(side, cell.J + cell.H - k, k);
+        for (var k = 1; k <= cell.W; k++)
+        {
+            Start(side + toFar * k, cell.J + cell.H, cell.H + k);
+            Start(side + toFar * k, cell.J, cell.H + cell.W + k);
+        }
+        for (var k = 1; k < cell.H; k++)
+            Start(far, cell.J + cell.H - k, cell.H + 2 * cell.W + k);
+
+        var end = -1;
+        var endCost = long.MaxValue;
+        while (queue.TryDequeue(out var node, out var cost))
+        {
+            if (cost != best[node])
+                continue;
+            if (cost >= endCost)
+                break;
+            var way = node % 5;
+            var i = node / 5 / (rows + 1);
+            var j = node / 5 % (rows + 1);
+            if (i == edge)
+            {
+                // Out of the grid toward the margin: a turn more where it came along the grid's edge.
+                var leaving = cost + (way == None || way == outward ? 0 : Cost(1, 0, 0));
+                if (leaving < endCost)
+                {
+                    endCost = leaving;
+                    end = node;
+                }
+                continue;
+            }
+            for (var m = 0; m < 4; m++)
+            {
+                int ni = i + di[m], nj = j + dj[m];
+                if (ni < 0 || ni > cols || nj < 0 || nj > rows)
+                    continue;
+                if (m < 2 ? across[Math.Min(i, ni), j] : down[i, Math.Min(j, nj)])
+                    continue;
+                var next = cost + Cost(way == None || way == m ? 0 : 1, 1, 0);
+                var to = Node(ni, nj, m);
+                if (next < best[to])
+                {
+                    best[to] = next;
+                    cameFrom[to] = node;
+                    queue.Enqueue(to, next);
+                }
+            }
+        }
+        if (end < 0)
+            return null;
+
+        // The way back to the cell, its corners only.
+        var points = new List<(int I, int J, int Way)>();
+        for (var at = end; at >= 0; at = cameFrom[at])
+            points.Add((at / 5 / (rows + 1), at / 5 % (rows + 1), at % 5));
+        points.Reverse();
+        var corners = new List<(double I, double J)> { (points[0].I, points[0].J) };
+        for (var k = 1; k < points.Count - 1; k++)
+        {
+            if (points[k].Way != points[k + 1].Way)
+                corners.Add((points[k].I, points[k].J));
+        }
+        if (points.Count > 1)
+            corners.Add((points[^1].I, points[^1].J));
+        return corners;
+    }
+
     /// <summary>POCKETS and SPECIAL SLOTS stand on one row, as the game has them, each under its own head.</summary>
     public static bool SameRow(DeskRegionKind first, DeskRegionKind second) =>
         first == DeskRegionKind.Pockets && second == DeskRegionKind.SpecialSlots;

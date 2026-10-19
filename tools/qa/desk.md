@@ -20,10 +20,10 @@ rail's foot, always in sight, three at most, and the pointed card scrolls in the
 cards are there, with made-up prices, counts, conditions, needs and price histories, and a cell in each of the copy's
 states). Reading 1 is the mode's first; reading 2 changed the backpack (a LEDX more); reading 3 changed nothing. The
 rules are held by `DeskSwitchTests`, `DeskFoldTests`, `DeskCellsTests`, `DeskNumbersTests`, `DeskPageRulesTests`,
-`DeskExampleTests`, `DeskCardTests`, `DeskCopyTests`, `DeskPinsTests` and `DeskHistoryTests`; the checks below are for
-the stills. The script's clicks (`desk copy`) leave the clipboard alone; the app log says what they would have copied.
-`desk show <n>` clicks the n-th pinned line in the rail's foot, from the top, as the pointer does (`desk show` alone is
-DESK at the rail's head).
+`DeskExampleTests`, `DeskCardTests`, `DeskCopyTests`, `DeskPinsTests`, `DeskHistoryTests` and `DeskStemTests`; the
+checks below are for the stills. The script's clicks (`desk copy`) leave the clipboard alone; the app log says what they
+would have copied. `desk show <n>` clicks the n-th pinned line in the rail's foot, from the top, as the pointer does
+(`desk show` alone is DESK at the rail's head).
 
 ## Run it
 
@@ -74,7 +74,8 @@ $app.WaitForExit()
   the game sets them (the Zhuk's ten pockets of one by two, a graphics card turned in one); a stem from the Zhuk's cell,
   out of its left edge's middle, to its window's head, along the backpack's margin (at 1600×900, where the Zhuk window
   heads the gear's second column, out of the cell's lower right corner and down the gap between the columns into the
-  head). No grid under the LOADOUT strip; at 1600×900 and 2560×1440 the page unscrolled, the stash's ten columns whole
+  head, along the Grizzly's bottom edge); never across an item's picture (UI QA re-check, 2026-10-19, F2). No grid
+  under the LOADOUT strip; at 1600×900 and 2560×1440 the page unscrolled, the stash's ten columns whole
   beside the gear, POCKETS and SPECIAL SLOTS side by side in the gear's column. Keys and meds at a full print ("4/4",
   "100/100") without "~". No red or green anywhere on the page.
 - **window**: the Zhuk's cell gold-tinted with an amber frame, its window's head on gold, the stem in amber; the rail
@@ -110,7 +111,9 @@ $app.WaitForExit()
   flea's net line, its first need at the hairline.
 - **pinmore** (four pinned, the key pointed at again): the key's card first; at the foot three lines, "5.45x39mm BS gs
   27,000 ₽" on top, then "TerraGroup Labs keycard (Blue) 459,000 ₽" and the Grizzly's; the LEDX's, the fourth, not in
-  sight (the strip's own scroll reaches it; the strip no taller than three lines).
+  sight (the strip's own scroll reaches it; the strip no taller than three lines). In German the keycard's line, the
+  second, is trimmed with an ellipsis at its end ("Blaue TerraGroup Labs Schlüsselk…"), its figure whole: the rule
+  (DESIGN.md §4, *The rail*; UI QA re-check, 2026-10-19, F1).
 - **trader**: the blue keycard's card: the plate's line muted, "Therapist pays more · 459,000 ₽. A click copies
   nothing.", only the last low under it; the notice "Nothing copied: Therapist pays more, 459,000 ₽"; no flash.
 - **noflea**: the 5.45 ammunition's card: "NOT ON THE FLEA" under its name, the plate "Can't be listed on the flea. A

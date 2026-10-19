@@ -505,9 +505,10 @@ public sealed partial class DeskBoard : Grid
 
     // ---- the stems ----
 
-    // From the container's cell to its window's head, along the grid's lines and the page's margin: out of the cell at
-    // its left edge (its middle in the grid's first column, however tall the cell; its lower corner elsewhere, where the
-    // line runs between the rows), left to the margin, down to the head's middle, and into it.
+    // From the container's cell to its window's head, along the grid's lines and the page's margin: out of a grid's cell by
+    // its way through the grid (DeskPageRules.StemRoute: the middle of its side at the grid's edge, else along the lines
+    // no item covers, its lower corner first), out of a slot at its side (its middle at the column's edge, else its lower
+    // corner), to the margin, up or down to the head's middle, and into it.
     private void DrawStems()
     {
         _stemsDue = false;
@@ -531,22 +532,49 @@ public sealed partial class DeskBoard : Grid
             var margin = left ? Math.Round(cellLeft - DeskPageRules.ColumnGap / 2) + 0.5
                 : right ? Math.Round(column - DeskPageRules.ColumnGap / 2) + 0.5
                 : column - 9.5;
-            Point start;
-            if (right)
-                start = a.Right >= cellRight - link.Anchor.Size ? new Point(a.Right, Math.Round(a.Top + a.Height / 2) + 0.5) : new Point(a.Right - 0.5, a.Bottom - 0.5);
-            else
-                start = a.Left <= cellLeft + link.Anchor.Size ? new Point(a.Left, Math.Round(a.Top + a.Height / 2) + 0.5) : new Point(a.Left + 0.5, a.Bottom - 0.5);
+            var way = GridWay(link.Anchor, a, toLeft: !right);
+            if (way is null)
+            {
+                if (right)
+                    way = [a.Right >= cellRight - link.Anchor.Size ? new Point(a.Right, Math.Round(a.Top + a.Height / 2) + 0.5) : new Point(a.Right - 0.5, a.Bottom - 0.5)];
+                else
+                    way = [a.Left <= cellLeft + link.Anchor.Size ? new Point(a.Left, Math.Round(a.Top + a.Height / 2) + 0.5) : new Point(a.Left + 0.5, a.Bottom - 0.5)];
+            }
             var y = Math.Round(h.Top + h.Height / 2) + 0.5;
-            var figure = new PathFigure { StartPoint = start, IsClosed = false, IsFilled = false };
-            figure.Segments.Add(new LineSegment { Point = new Point(margin, start.Y) });
+            var into = left ? h.Right + 4 : h.Left - 4;
+            var figure = new PathFigure { StartPoint = way[0], IsClosed = false, IsFilled = false };
+            foreach (var point in way.Skip(1))
+                figure.Segments.Add(new LineSegment { Point = point });
+            figure.Segments.Add(new LineSegment { Point = new Point(margin, way[^1].Y) });
             figure.Segments.Add(new LineSegment { Point = new Point(margin, y) });
-            figure.Segments.Add(new LineSegment { Point = new Point(left ? h.Right + 4 : h.Left - 4, y) });
+            figure.Segments.Add(new LineSegment { Point = new Point(into, y) });
             var geometry = new PathGeometry();
             geometry.Figures.Add(figure);
             link.Stem.Data = geometry;
             Shturmap.Session.AppLog.Debug(FormattableString.Invariant(
-                $"Desk stem: cell {a.Left:0},{a.Top:0} {a.Width:0}×{a.Height:0}, from {start.X:0.#},{start.Y:0.#} by the margin at {margin:0.#} to {h.Left - 4:0.#},{y:0.#}"));
+                $"Desk stem: cell {a.Left:0},{a.Top:0} {a.Width:0}×{a.Height:0}, from {string.Join(" via ", way.Select(p => FormattableString.Invariant($"{p.X:0.#},{p.Y:0.#}")))} by the margin at {margin:0.#} to {into:0.#},{y:0.#}"));
         }
+    }
+
+    // A grid cell's way through its grid to the grid's edge on the window's side (DeskPageRules.StemRoute), in the stems'
+    // room: the lattice's lines on the grid's hairlines, the first point on the cell's own frame along the first leg (a
+    // cell in a compartment stands in by its inset); a cell at that edge from the middle of its side. Null for a slot,
+    // which stands in no grid, and where the grid gives no way.
+    private List<Point>? GridWay(DeskCellView anchor, Rect a, bool toLeft)
+    {
+        var cell = anchor.Sheet.Cell;
+        if (cell.IsSlot || anchor.Parent is not Canvas grid || DeskPageRules.StemRoute(anchor.Region, cell.Rect, toLeft) is not { } route)
+            return null;
+        if (route.Count == 1)
+            return [new Point(toLeft ? a.Left : a.Right, Math.Round(a.Top + a.Height / 2) + 0.5)];
+        var origin = grid.TransformToVisual(_stems).TransformPoint(new Point(0, 0));
+        var size = anchor.Size;
+        var way = route.Select(p => new Point(origin.X + p.I * size + 0.5, origin.Y + p.J * size + 0.5)).ToList();
+        var (first, second) = (route[0], route[1]);
+        way[0] = first.J == second.J
+            ? new Point(first.I == cell.I ? a.Left + 0.5 : first.I == cell.I + cell.W ? a.Right - 0.5 : way[0].X, way[0].Y)
+            : new Point(way[0].X, first.J == cell.J ? a.Top + 0.5 : first.J == cell.J + cell.H ? a.Bottom - 0.5 : way[0].Y);
+        return way;
     }
 
     // The column of the page an element stands in (one of _columns' panels), or null.
