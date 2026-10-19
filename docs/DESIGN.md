@@ -10,7 +10,20 @@ Shturmap answers two questions for an Escape from Tarkov player, on a second mon
 1. **Before a raid: where should I go, and what do I need to bring?**
 2. **During a raid: where am I, and where is my next objective?**
 
-That is the whole product. A feature belongs in Shturmap only if it helps one of these two questions and works
+Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; decided, to design; docs/NEXT.md):
+**what is this worth, and what should I ask for it?**, for the items on a screenshot the player took of their own
+stash. That view is the stash desk; the raid planner stays the other view. The recommendation was a separate app; the
+owner kept it in one: "It makes sense to keep it in one app since shturmap idea is to be mostly as hands off as
+possible", "The map could still be visible, the app just helps with additional information", "one raid planning view
+and one stash desk view", "Separate apps would mean less screenspace if you have them open at the same time and one
+feedback we already got was that readability might be an issue. I still feel we can leverage a lot with the
+tooltip-modes we already have implemented" (the cards: hover, held, nested; §4, "Quest cards"), and "In the end, it's
+a app made for gamers, so it should also be fun to use." The desk alone reads a stash's item grids against the whole
+catalogue (§2, "For the stash desk"). An answer from a loot screenshot in a raid, beside the map, which the owner
+described too, is a later step with its own design and its own reading boundary, not part of the desk (the
+coordinator's scoping, 2026-10-19).
+
+That is the whole product. A feature belongs in Shturmap only if it helps one of these three questions and works
 without the player having to click during a raid. When in doubt, leave it out. One exception, the owner's, for
 eye candy at a raid's end: the raid replay (owner, 2026-10-07: "more on the eye-candy side of things like the loading
 animations"; "Map drawing", *The raid replay*). And one for learning the app: the tour at a first start (owner,
@@ -22,11 +35,14 @@ others where a list of the extracts appears in the middle of the screen along wi
 where extracts are (also outside of the current view pane) so it contextualizes them and the player knows where they
 are"; from a panel of four, 2026-10-15: A; §4, principle 11, and "Map drawing", *The player's extracts this raid*).
 
-**Not goals** (declined on purpose; don't add them): item prices or a flea-market view (a price appears only as
-part of "where to get" an item a quest needs), hideout tracking, loot or container maps beyond what quests need,
-item scanning by hotkey, a stash register or inventory browser (what Shturmap learned of having an item shows only
-on the rows that need it; §4, "What you have"), ammo charts, squad sharing, achievements, overlays on the game
-window, statistics dashboards, a settings maze.
+**Not goals** (declined on purpose; don't add them): hideout tracking, loot or container maps beyond what quests
+need, item scanning by hotkey, ammo charts, squad sharing, achievements, overlays on the game window, statistics
+dashboards, a settings maze. Of the market, the stash desk's one view and nothing more: no register of the stash over
+time (the desk mirrors the screenshot in hand; outside it, what Shturmap learned of having an item shows only on the
+rows that need it, §4, "What you have"), no watchlists or alerts, no stash value over time, no buying or selling
+automation, no flip or arbitrage finders; outside the desk a price appears only as part of "where to get" an item a
+quest needs. Struck on 2026-10-19 for the desk (owner, above): "item prices or a flea-market view" and "a stash
+register or inventory browser". For the desk as for everything else: when in doubt, leave it out.
 
 ## 2. Ground rules (game terms of service)
 
@@ -117,8 +133,9 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
   with the text recognition built into Windows (`Windows.Media.Ocr`, on the PC, nothing sent), their stack counts
   (a count of one digit reads as one: "at least" holds) and the found-in-raid mark (a drawn shape of Shturmap's own
   is correlated at the mark's place, never the game's icon); against the short names of the items BRING lists for any map (keys, items to bring, gear, mods; not
-  weapons), never against the whole catalogue. A cell whose label fits none of them says nothing; a name is never
-  taken from the picture alone (tarkov.dev's grid image of a needed item, when the cache has it, can only veto a
+  weapons), never against the whole catalogue (for these marks; the stash desk's reading, below, is for its own
+  view). A cell whose label fits none of them says nothing; a name is never taken from the picture alone
+  (tarkov.dev's grid image of a needed item, when the cache has it, can only veto a
   label whose art plainly disagrees). The spike of 2026-10-11 measured this on the owner's screenshots: 46 of 48
   keys, 43 of 43 medical items and 51 of 55 items of a stash page right, none wrong.
 - **What is kept:** per item id, the count seen (at least), how many of those carried the found-in-raid mark, when,
@@ -177,6 +194,35 @@ table is read as the stash's is, in the same path, and its tasks show where the 
   and weekly tasks are read, never their rewards. Unticked, no menu screenshot is opened; the tasks kept stay until
   they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter say it.
 
+**For the stash desk, the item grids are read against the whole catalogue** (owner, 2026-10-19, keeping the price view
+in Shturmap as a view of its own, §1; decided, to design: nothing of it is built, and until it is, the grids are read
+for What You Have only, above; docs/NEXT.md). The desk mirrors a screenshot's grids with each item's prices, so it has
+to name every cell, not only the ones BRING lists. Its keep mark has three levels from the quest dependency tree, NOW
+(an active quest's BRING needs the item), NEXT (a quest the active ones unlock needs it) and LATER (further down the
+tree), plus a hideout module's need, regardless of the hideout's progress (the logs don't say its level, and hideout
+tracking stays a not-goal, §1), each with its found-in-raid flag (owner, 2026-10-19: the keep mark's levels, not a
+planner screen of their own; docs/NEXT.md). The boundary widens for the desk alone, and no further:
+
+- **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
+  without a position, while the log shows the menus. Never a raid screenshot, for the desk either: those keep their
+  one corner (an answer from a loot screenshot in a raid is a later step, with its own design and a boundary for the
+  owner to decide). Never a trader's grid, a message's attachments or another player's inventory.
+- **How much of it:** the item grids' cells, their labels, counts and found-in-raid mark as above, and their positions
+  and footprints, for the mirror; matched against every item of tarkov.dev's catalogue, for the desk alone (What You
+  Have's marks still come from the items BRING lists only). A cell that fits more than one item is said honestly,
+  never guessed: "one of N", with the group's price range and a "?", and its hover card lists the candidates for the
+  player to pick with one click (of the 3,159 flea-priced items that aren't guns or presets, 672 share their short
+  name and footprint with another; a silent guess prices the wrong item). A name is never taken from the picture
+  alone. Before it is built, the stash spike measures the false-name rate against the whole catalogue.
+- **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
+  the item icons are, §3) at the positions read, never from the screenshot. What else a reading keeps is for the
+  design, and never a register of the stash over time (§1).
+- **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
+  screen captured; a screenshot the player took with their own key press, never one taken for them.
+- **The player's say:** the menu screenshots' one tick ("Read your stash and tasks from menu screenshots"), its words
+  and note widened for the desk, to be worded on the desk's panel. Unticked, no menu screenshot is opened, for the
+  desk either. Once built, its note, help, the README, PRIVACY.md and the website say what the desk reads.
+
 Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
 (Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
 screen's other tabs, a trader's tasks or a task's rewards, not the hideout, not another player's inventory in a group
@@ -222,8 +268,9 @@ BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text
 software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game
 Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
 been permitted. The owner accepted that residual risk. Do not widen the boundary: only the owner does, as with the
-extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11) and the
-operational tasks' table (2026-10-19).
+extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11), the
+operational tasks' table (2026-10-19) and those grids against the whole catalogue for the stash desk (2026-10-19,
+decided, not built).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -348,7 +395,8 @@ quoting it anywhere new.
   **Grid images** (tarkov.dev's drawing of an item's inventory cell, `assets.tarkov.dev/<id>-grid-image.webp`, a few
   kilobytes each) are fetched the same way, but only for the items BRING lists when a menu screenshot is read (§2),
   as the reading's check; never the whole catalogue (the spike of 2026-10-11 fetched 3,905 of them once, 42 MB as
-  PNG, which is what this rule avoids per player). Kept in `cache\game-art` as `grid-<id>.png`.
+  PNG, which is what this rule avoids per player). Kept in `cache\game-art` as `grid-<id>.png`. The stash desk
+  (§1, §2; decided 2026-10-19, not built) draws its mirror from them too, for the items a screenshot showed.
 - **Not used**: other Battlestate artwork (quest images, game UI art, and map art except tarkov.dev's renders of the
   three maps without SVG artwork, above), text from the EFT wiki or guide
   sites (the quest card links to the wiki page instead), and code from other community tools: TarkovMonitor,
@@ -2576,8 +2624,9 @@ keeps one row shape (icon, what, what for and for which quests, where to get it)
 
 **What you have** (owner, 2026-10-07: "I don't know if I already have items that are required for quests";
 2026-10-11: the second design, all twelve decisions as recommended, built after a spike; docs/NEXT.md, both entries).
-Marks on what the quests need, nowhere else: no stash screen, no list to browse, no value (§1's not-goals). Three
-sources, one mark, and every mark is an observation with its source and date, never "you have it", "in your stash" or
+Marks on what the quests need, nowhere else: no stash screen, no list to browse, no value (§1: the stash desk is
+a view of its own between raids, its keep mark tied to What You Have). Three sources, one mark, and every mark is
+an observation with its source and date, never "you have it", "in your stash" or
 "missing":
 
 | from | says | taken away when |
