@@ -158,6 +158,7 @@ public sealed partial class MainWindow
         vm.RaidKit = [];
         vm.RaidKitMore = [];
         vm.RaidBring = [];
+        vm.RaidOperational = [];
         vm.Extracts = [];
         vm.RaidLineParts = [];
         vm.LanguageOptions = [];

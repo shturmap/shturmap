@@ -856,4 +856,8 @@
     <value>{count, plural, one {# Markierung} other {# Markierungen}} vergessen. Der nächste Menü-Screenshot oder die nächste Log-Nachricht markiert wieder.</value>
     <comment>en: Forgot {count, plural, one {# mark} other {# marks}}. The next menu screenshot or log message marks again.</comment>
   </data>
+  <data name="OperationalRead" xml:space="preserve">
+    <value>{count, plural, one {Operative Aufgabe gelesen: #.} other {Operative Aufgaben gelesen: #.}}</value>
+    <comment>en: {count, plural, one {Operational task read: #.} other {Operational tasks read: #.}}</comment>
+  </data>
 </root>

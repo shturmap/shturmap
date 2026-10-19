@@ -17,7 +17,7 @@ namespace Shturmap.Session;
 // "What you have".
 public sealed partial class GameSession
 {
-    /// <summary>The key of "Read your stash from menu screenshots" in the app's settings ("on" or "off"; absent is on).</summary>
+    /// <summary>The key of "Read your stash and tasks from menu screenshots" in the app's settings ("on" or "off"; absent is on).</summary>
     public const string ReadStashSetting = "screenshots.readStash";
 
     private volatile bool _readStash = true;
@@ -31,8 +31,11 @@ public sealed partial class GameSession
     /// </summary>
     public Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<StashReading?>>? StashReader { get; init; }
 
-    private Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<StashReading?>>? _stashReader;
+    // The menus' reader, made at the first menu screenshot: the tasks' table first, then the item grids, the picture
+    // opened once (MenuScreenshotReader). Null when this Windows has no text recognition at all.
+    private Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<MenuReading?>>? _menuReader;
     private bool _stashReaderLooked;
+    private bool _stashReaderMissing;
     private string? _stashReaderLanguage;
 
     private StashLedger _ledger = new();
@@ -58,7 +61,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// The "Read your stash from menu screenshots" tick, saved with the app's settings. Off: no menu screenshot's
+    /// The "Read your stash and tasks from menu screenshots" tick, saved with the app's settings. Off: no menu screenshot's
     /// picture is opened from now on; the marks already learned stay (the player retracts them one by one if wanted).
     /// </summary>
     public async Task SetReadStashAsync(bool on)
@@ -68,7 +71,7 @@ public sealed partial class GameSession
         {
             _store?.SetSetting(ReadStashSetting, on ? "on" : "off");
             _readStash = on;
-            AppLog.Info("Read your stash from menu screenshots: " + (on ? "on" : "off"));
+            AppLog.Info("Read your stash and tasks from menu screenshots: " + (on ? "on" : "off"));
             Publish();
         }
         finally
@@ -115,25 +118,46 @@ public sealed partial class GameSession
         }
     }
 
-    // Under the gate. Made at the first menu screenshot, not at start: most runs never need it.
-    private Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<StashReading?>>? ReaderForStash()
+    // Under the gate. Made at the first menu screenshot, not at start: most runs never need it. A test gives its own
+    // readers (StashReader, TasksReader): a picture that shows the Tasks screen goes to the tasks' reader alone, as the
+    // app's own does; without one of them, that reading has nothing to say.
+    private Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<MenuReading?>>? ReaderForMenu()
     {
-        if (StashReader is not null)
-            return StashReader;
-        if (_stashReaderLooked)
-            return _stashReader;
-        _stashReaderLooked = true;
-        if (Shturmap.Game.Screenshots.StashReader.Create(_settings.Language) is { } reader)
+        if (StashReader is not null || TasksReader is not null)
         {
-            _stashReaderLanguage = reader.LanguageTag;
-            _stashReader = (path, candidates, ct) => reader.ReadAsync(path, candidates, ct: ct);
-            AppLog.Info($"Stash: read with Windows' text recognition for {reader.LanguageTag}");
+            var stash = StashReader;
+            var tasks = TasksReader;
+            return async (path, candidates, ct) =>
+            {
+                if (tasks is not null && await tasks(path, ct) is { Screen: not TaskScreen.None } page)
+                    return new MenuReading(page, null);
+                if (stash is null || candidates.Count == 0)
+                    return null;
+                return await stash(path, candidates, ct) is { } reading ? new MenuReading(null, reading) : null;
+            };
+        }
+        if (_stashReaderLooked)
+            return _menuReader;
+        _stashReaderLooked = true;
+        var stashReader = Shturmap.Game.Screenshots.StashReader.Create(_settings.Language);
+        var tasksReader = Shturmap.Game.Screenshots.TasksReader.Create();
+        _stashReaderMissing = stashReader is null;
+        if (stashReader is not null)
+        {
+            _stashReaderLanguage = stashReader.LanguageTag;
+            AppLog.Info($"Stash: read with Windows' text recognition for {stashReader.LanguageTag}");
         }
         else
         {
             AppLog.Warn("Stash: this Windows has no text recognition language, so menu screenshots can't be read");
         }
-        return _stashReader;
+        if (tasksReader is null)
+            AppLog.Warn("Operational tasks: this Windows has no English text recognition, so the Tasks screen can't be read");
+        if (stashReader is null && tasksReader is null)
+            return null;
+        var menu = new MenuScreenshotReader(tasksReader, stashReader);
+        _menuReader = menu.ReadAsync;
+        return _menuReader;
     }
 
     // Under the gate: the items the active quests need brought, on any map (BRING's rows: keys, items, gear, mods;
@@ -191,11 +215,13 @@ public sealed partial class GameSession
     // the rest is "+N".
     private const int StashCueShown = 24;
 
-    // A screenshot without a position, taken in the menus: its item grids, read against what the quests need.
-    // Reading takes a moment (decoding, the recognition per cell), so it runs outside the gate.
+    // A screenshot without a position, taken in the menus: the Tasks screen's OPERATIONAL table (owner, 2026-10-19:
+    // from a panel of four, B; GameSession.Operational), else its item grids, read against what the quests need. One
+    // tick says yes to both ("Read your stash and tasks from menu screenshots"). Reading takes a moment (decoding, the
+    // recognition), so it runs outside the gate.
     private async Task ReadStashAsync(ScreenshotSeen seen)
     {
-        Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<StashReading?>>? read;
+        Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<MenuReading?>>? read;
         IReadOnlyList<StashCandidate> candidates;
         await _gate.WaitAsync();
         try
@@ -204,18 +230,18 @@ public sealed partial class GameSession
             // keep their one corner (the extract list).
             if (!_readStash || _tracker.State.Phase != RaidPhase.Menu || _data is null)
                 return;
-            read = ReaderForStash();
+            read = ReaderForMenu();
             candidates = StashCandidates();
         }
         finally
         {
             _gate.Release();
         }
-        if (read is null || candidates.Count == 0)
+        if (read is null)
             return;
         var started = Stopwatch.GetTimestamp();
-        var reading = await read(seen.Path, candidates, _stop.Token);
-        if (reading is null)
+        var menu = await read(seen.Path, candidates, _stop.Token);
+        if (menu is null)
             return;
         await _gate.WaitAsync();
         try
@@ -223,6 +249,13 @@ public sealed partial class GameSession
             if (!_readStash || _data is null)
                 return;
             var ms = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            if (menu.Tasks is { } page)
+            {
+                TakeTasks(page, seen.CreatedAt, ms);
+                return;
+            }
+            if (menu.Stash is not { } reading)
+                return;
             if (reading.IsTradingScreen)
             {
                 // The trading screen writes prices on the stash's cells, not names: nothing to read.

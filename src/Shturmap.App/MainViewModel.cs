@@ -147,6 +147,59 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
         a == b with { Needs = a.Needs } && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same);
 }
 
+/// <summary>
+/// One daily or weekly operational task in a map's card or the raid card, or as a framed glyph on a NEXT RAID row (owner,
+/// 2026-10-19: from a panel of four, B; Rules.OperationalRail): its kind's glyph (the generic operational one for a kind
+/// not known), its synopsis, and its muted line; no portrait, no click.
+/// </summary>
+/// <param name="Key">Which task and which reading: a row rebuilt by a newer screenshot glows in again.</param>
+/// <param name="Line">Its progress and time in muted capitals ("4 of 7 · 8 h left"), or empty.</param>
+/// <param name="Alert">In a raid, the time when the task ends before the raid could ("ends in 25 min"), in the clock's red; else empty.</param>
+/// <param name="Right">In a raid, "anywhere" where a quest row has its distance, for a task on any map; else empty.</param>
+/// <param name="StartsAnywhere">The first any-map task after the map's own: a hairline above it.</param>
+public sealed record OperationalLine(string Key, Shturmap.Core.Operational.OperationalKind Kind, string Synopsis, string Line,
+    string Alert = "", string Right = "", bool StartsAnywhere = false)
+{
+    /// <summary>The items a hand-over names that the catalogue knows by their whole name, as cells.</summary>
+    public IReadOnlyList<Controls.NeedChip>? Items { get; init; }
+
+    /// <summary>It arrived this moment (a screenshot of the Tasks screen was read): the row glows in once, as a mark does
+    /// (Controls.Glow). Left out of <see cref="Same"/>: a row on screen keeps its glow.</summary>
+    public bool Fresh { get; init; }
+
+    public Visibility FreshVisibility => Fresh ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>While a trader's focus is held, in Plan: not that trader's quest, so it steps back as the others do.</summary>
+    public bool SteppedBack { get; init; }
+
+    public double Strength => SteppedBack ? Rules.TraderFocus.SteppedBack : 1;
+
+    /// <summary>The quest type's glyph its kind is drawn with: a kill's, a survival's, a find-in-raid's.</summary>
+    public ObjectiveKind GlyphKind => Kind switch
+    {
+        Shturmap.Core.Operational.OperationalKind.Kill => ObjectiveKind.Elimination,
+        Shturmap.Core.Operational.OperationalKind.Survive => ObjectiveKind.Survive,
+        _ => ObjectiveKind.FindInRaid,
+    };
+
+    public Visibility KnownVisibility => Kind == Shturmap.Core.Operational.OperationalKind.Unknown ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility UnknownVisibility => Kind == Shturmap.Core.Operational.OperationalKind.Unknown ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility LineVisibility => Line.Length + Alert.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>The dot between the muted line and the red time, when both are there.</summary>
+    public string AlertDot => Line.Length > 0 && Alert.Length > 0 ? " · " : "";
+
+    public Visibility RightVisibility => Right.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Thickness AnywhereLine => StartsAnywhere ? new Thickness(0, 1, 0, 0) : new Thickness(0);
+
+    /// <summary>Whether two rows say the same, their cells too: then the one on screen stays (Rules.RowLists).</summary>
+    public static bool Same(OperationalLine a, OperationalLine b) =>
+        a == b with { Items = a.Items, Fresh = a.Fresh } && Rules.RowLists.Same(a.Items, b.Items, Controls.NeedChip.Same);
+}
+
 /// <param name="Glyph">Segoe Fluent Icons character: key or briefcase, shown until the item's icon arrives.</param>
 /// <param name="QuestIds">The quests it is for, for linked highlighting.</param>
 /// <param name="Source">The easiest way to get it ("Prapor LL1 · 18,936 ₽"), or empty.</param>
@@ -293,15 +346,42 @@ public sealed record PlanCard(
 
     public Visibility RowVisibility => CardOnly ? Visibility.Collapsed : Visibility.Visible;
 
+    /// <summary>A map in the list for its operational tasks alone (owner, 2026-10-19, B): its row has no counts, and its
+    /// card says, muted, that none of your quests is on it.</summary>
+    public bool NoQuests { get; init; }
+
     public Microsoft.UI.Xaml.Media.Brush SummaryBrush =>
-        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[CardOnly ? "MutedBrush" : "AmberBrush"];
+        (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[CardOnly || NoQuests ? "MutedBrush" : "AmberBrush"];
+
+    /// <summary>The map's operational tasks as framed glyphs on its row, after its quests' (owner, 2026-10-19, B).</summary>
+    public IReadOnlyList<OperationalLine> OperationalGlyphs { get; init; } = [];
+
+    public Visibility OperationalGlyphsVisibility => OperationalGlyphs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>A hairline between the quests' glyphs and the operational ones, when both are there.</summary>
+    public Visibility OperationalDividerVisibility => OperationalGlyphs.Count > 0 && Picked.Count + Finish.Count + Progress.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>The open card's OPERATIONAL rows: the map's tasks, then the any-map tasks after a hairline.</summary>
+    public IReadOnlyList<OperationalLine> Operational { get; init; } = [];
+
+    /// <summary>The eyebrow's right part, "As of 14:02".</summary>
+    public string OperationalAsOf { get; init; } = "";
+
+    /// <summary>Under the eyebrow, muted: "1 ended at 22:35. Screenshot your tasks for the new one."; empty without.</summary>
+    public string OperationalEnded { get; init; } = "";
+
+    public Visibility OperationalVisibility => Expanded && Operational.Count + OperationalEnded.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility OperationalEndedVisibility => OperationalEnded.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>Whether two cards say the same, row by row: then the one on screen stays (Rules.RowLists).</summary>
     public static bool Same(PlanCard a, PlanCard b) =>
-        a == b with { Finish = a.Finish, Progress = a.Progress, Requirements = a.Requirements, Needs = a.Needs, Picks = a.Picks, DetailParts = a.DetailParts }
+        a == b with { Finish = a.Finish, Progress = a.Progress, Requirements = a.Requirements, Needs = a.Needs, Picks = a.Picks, DetailParts = a.DetailParts,
+            OperationalGlyphs = a.OperationalGlyphs, Operational = a.Operational }
         && Rules.RowLists.Same(a.Finish, b.Finish, QuestLine.Same) && Rules.RowLists.Same(a.Progress, b.Progress, QuestLine.Same)
         && Rules.RowLists.Same(a.Picks, b.Picks, QuestLine.Same) && Rules.RowLists.Same(a.Requirements, b.Requirements, RequirementLine.Same)
-        && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same) && LinePart.Same(a.DetailParts, b.DetailParts);
+        && Rules.RowLists.Same(a.Needs, b.Needs, Controls.NeedChip.Same) && LinePart.Same(a.DetailParts, b.DetailParts)
+        && Rules.RowLists.Same(a.OperationalGlyphs, b.OperationalGlyphs, OperationalLine.Same) && Rules.RowLists.Same(a.Operational, b.Operational, OperationalLine.Same);
 }
 
 /// <summary>
@@ -434,7 +514,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>"Read the extract list from screenshots" in settings: on unless the player unticked it.</summary>
     [ObservableProperty] public partial bool ReadExits { get; set; } = true;
 
-    /// <summary>"Read your stash from menu screenshots" in settings: on unless the player unticked it.</summary>
+    /// <summary>"Read your stash and tasks from menu screenshots" in settings: on unless the player unticked it.</summary>
     [ObservableProperty] public partial bool ReadStash { get; set; } = true;
 
     /// <summary>Whether anything is known of the stash: FORGET ALL MARKS in settings is live then.</summary>
@@ -506,6 +586,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>In a Scav raid: items your quests need found in raid, the ones loose here first.</summary>
     [ObservableProperty] public partial IReadOnlyList<RequirementLine> RaidLoot { get; set; } = [];
+
+    /// <summary>The raid card's OPERATIONAL rows: the raid's map's tasks, then the any-map ones (owner, 2026-10-19, B).</summary>
+    [ObservableProperty] public partial IReadOnlyList<OperationalLine> RaidOperational { get; set; } = [];
+
+    /// <summary>Under the raid card's OPERATIONAL eyebrow: tasks that ran out since the last screenshot of them.</summary>
+    [ObservableProperty] public partial string RaidOperationalEnded { get; set; } = "";
 
     /// <summary>"And 14 more items …" when the loot list is cut short, or empty.</summary>
     [ObservableProperty] public partial string RaidLootMore { get; set; } = "";

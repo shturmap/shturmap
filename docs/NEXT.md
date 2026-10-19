@@ -6,6 +6,77 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
+## 2026-10-19: operational tasks, dailies and weeklies, in the rail
+
+**The ask** (owner, 2026-10-17): "Add dailies and weeklies via screenshot." The game's daily and weekly operational
+tasks are in neither its logs nor tarkov.dev's data; the game lists them on Character › TASKS › OPERATIONAL. The spike
+of 2026-10-19 (`shturmap-cli tasks`, on the owner's six screenshots of that day, 2560×1440, PvE, kept in the ignored
+`tests\fixtures\ocr\operational` with hand-written truths) read that table from the picture's left two thirds: the
+screen 6 of 6, rows, names, locations and statuses 12 of 12, an expanded row's objectives and counts 4 of 4; the digits
+(Windows' recognition drops most of the game's small orange countdowns and percentages, whatever is done to them) by a
+14-way vote per band: the countdowns 12 of 12, the percentages 7 of 12, none wrong. The expiry is the file's time plus
+the time left, so it needs the capture time to the second. A panel of four (rows drawn at the rail's 351 DIP):
+
+- A. One line on the map's card, in the PROGRESS note's muted capitals.
+- B. OPERATIONAL rows where the map's work is: framed glyphs on NEXT RAID's rows, a section in the open card and the
+  raid card (recommended).
+- C. A block of its own at the rail's top, every task at once.
+- D. B, counted as work by the planner, the hand-over items in BRING and the kit, and a cue for a reading.
+
+The owner chose B as drawn ("Use B, the recommended one"), which settled its three questions as drawn: any-map tasks in
+every open card (after a hairline), the planner's order untouched, a reading's feedback by glow and notice, no cue.
+
+**Built (2026-10-19).** Binding: DESIGN.md §2 ("Menu screenshots": the OPERATIONAL table's paragraph and the player's
+say), §4 (principle 7, principle 11: no cue; "Screen anatomy", *Operational tasks*; *Visual language*, the framed
+glyph; "Quest cards": no card), §7 (the any-map exception), §8 ("The operational tasks file", "Menu screenshots" in "How
+the parts work", the script verb and the snapshot flags, the diagnostics) and §9.
+
+- The reading moved out of the CLI into the library beside the stash's (`Shturmap.Game.Screenshots`: `TaskTable`,
+  `TasksReader`, `TaskTruth` for measuring); `shturmap-cli tasks` reads with it and prints whether each countdown
+  passes the app's checks. One menu screenshot's picture is opened once for both readings (`MenuPicture`,
+  `MenuScreenshotReader`): the tasks reader first, and a picture of the Tasks screen goes to it alone (a trader's tab,
+  now told by two words, TRADING with SERVICES or REPLACE with TASKS, to neither); every other one to `StashReader` as
+  before. The session's path is the stash's (`GameSession.ReadStashAsync`, the menus only, the one tick), its taking
+  `GameSession.Operational`: the location matched to a map of the data (a variant's base map; "Any location" none; an
+  unknown location left out, counted in the app log), the notice "Operational tasks read: 3.", the file, a watch that
+  drops a task as it runs out and publishes each minute while tasks are kept.
+- The checks and the set (`Shturmap.Core.Operational`): `OperationalChecks` (a countdown within 0 and 7 days; rows
+  within a minute of each other agree to 2 s, else the one more ways read keeps its own, a tie neither; one task's expiry
+  from two screenshots within 5 s, else none; progress: the percentage when it passes, else the counts), the ledger
+  `OperationalLedger` (per mode; a newer table replaces the set, a folded row keeps the objectives read before, a
+  failing countdown keeps an earlier screenshot's expiry; ended tasks said until the next table, a day at most;
+  `operational.json`), the words `OperationalWords` (kinds from the objective's words, or a folded row's name; the
+  synopses, CoreTexts `Operational*`).
+- The rail (`Rules.OperationalRail`, `MainWindow.Operational`, the templates `OperationalGlyphTemplate` and
+  `OperationalTemplate`): a row's framed glyphs after its quests', a map with only operational work at the list's end
+  without counts, the open card's OPERATIONAL with "As of", the ended line, the rows and the any-map ones after a
+  hairline, the raid card's (ANYWHERE, "ENDS IN 25 MIN" in red only before the raid's end), a Scav's hand-over items
+  under FIND IN RAID; the rows a reading brought glow (`Controls.Glow`). Texts: RuleTexts `Operational*`, ViewTexts
+  `CardOperational`, `OperationalGlyphTip`, AppTexts `ScavLootOperational`, SessionTexts `OperationalRead`; the tick's
+  words widened, "Read your stash and tasks from menu screenshots" (German „Deinen Stash und deine Aufgaben aus
+  Menü-Screenshots lesen“), its note and help's HelpPrivacy; tour chapter 1's line; README, PRIVACY.md, UPDATES.md (two
+  rows of what the reading assumes), the German glossary (proposed terms). English and German, for the senior
+  translator's review.
+- For the QA pass: the script verb `tasks [<n>] [ended]` and, with a fake game, `--operational <n>`
+  (`tools\fake-raid.ps1 -Operational 5 -OperationalEnded`): made-up tasks from where the reading hands its rows over
+  on; the file isn't written that run.
+- Tests: `OperationalTasksTests` (31 cases: the checks, the set, the objectives, the expiries, the ended line, the
+  file, kinds and synopses), `OperationalRailTests` (11: the row's glyphs, the section, Plan's and the raid's lines,
+  the time-left steps, "As of" and the ended line), `OperationalSessionTests` (4: the table onto its maps, the file,
+  the notice and a restart; a trader's tab to neither reading; unticked; made-up tasks never in the file),
+  `TaskTableTests` (moved; one more: a lone trader's word is no trader's screen; the real-picture test passes on the
+  owner's six screenshots), `DevToolsTests` (the `tasks` step).
+
+**Open.**
+
+- The UI QA pass and the senior translator's review (the coordinator's, after this).
+- That a Scav's raid counts no operational kill or survival is the panel's assumption, written into DESIGN.md as one:
+  to confirm in the game (a Scav raid with a kill daily open).
+- The German game (its header words and tab names) and other resolutions than 2560×1440 are unread; the reading is
+  English-only, so a German game reads no table. A hand-over's items match the catalogue only in English data.
+- More rows than fit (scrolling) and a weekly's countdown past a day ("hours as written") are still unverified.
+- The ended line counts the mode's tasks that ran out, whatever their map, and stands in every card's section.
+
 ## 2026-10-17: the linked highlight breathes
 
 **The ask** (owner, 2026-10-17): the linked highlight "really helps pre-attentively highlight elements … However, the
@@ -2131,57 +2202,7 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 
 ## To do later (owner, 2026-10-17)
 
-- **Dailies and weeklies from a screenshot** (owner, 2026-10-17: "Add dailies and weeklies via screenshot"). The game's
-  daily and weekly operational tasks aren't in tarkov.dev's data, so the app can't show them today. The way in is a
-  menu screenshot of the Tasks screen read on the PC, as the stash is read from a menu screenshot (DESIGN.md §2,
-  *Menu screenshots*; `StashReader`): the owner's decision, which CLAUDE.md asks for before anything else is read from
-  a picture, is given with this note. Still to design: what of a daily or weekly the map can use (its map and objective
-  kind, from the screen's words), how long it is kept (they expire), and where it shows in Plan.
-
-  **The spike of 2026-10-19:** `shturmap-cli tasks <png|folder>` (`tools/Shturmap.Cli/Tasks`; its parser's tests,
-  `TaskTableTests`, compile the CLI's files; nothing of it is in the app, DESIGN.md §2 unchanged). The owner's six
-  screenshots of that day (2560×1440, PvE, game 1.2.5: four of Character › TASKS › OPERATIONAL with three rows, a row
-  expanded in three of them; two of a trader's TASKS tab) and hand-written truths stay in the ignored
-  `tests\fixtures\ocr\operational`. Only the picture's left two thirds are read: the right third carries the player's
-  name and money on a trader's tab and the game's toasts with the screenshot's path.
-  - **Read reliably**, from the page's words at the picture's own size (about 110 ms): the screen (the table by its
-    header words, a trader's tab by REPLACE or TRADING with SERVICES and then left alone) 6 of 6; the rows 12 of 12,
-    task 12/12, location 12/12, status 12/12 ("active!", read as "activel" half the time); an expanded row's objectives
-    4 of 4 with their counts 4 of 4 (an elimination 0/3, a survival 4/7, two hand-overs of found-in-raid items without
-    a count), each on its own row. The expanded row's text and rewards make no row: a row's name starts at the names'
-    left edge and has a location or a status beside it; the row's text runs across the columns.
-  - **The digits are the weak part**, as the raid timer was (DESIGN.md §2): Windows' recognition drops most of the
-    game's small orange countdowns and the percentages, on the page and in their own bands, whatever is done to them
-    (enlarged 1.5 to 4 times, stretched, cut to black and white, stacked into one picture, a word set before them, the
-    glyphs set apart). No one way reads more than 7 of the 12 countdowns or 3 of the 12 percentages, and two ways read
-    a wrong countdown once each. Each band read 14 ways and taken by vote: time left 12 of 12 right (2 to 5 ways agree,
-    a runner-up never more than one), progress 7 of 12, none wrong; the five misses are all a lone slashed "0%". About
-    400 ms a table.
-  - **Expiry** is the file's time plus the time left, and the countdowns tick between shots (10:14:11 to 10:14:07 over
-    four), so it needs the capture time to the second. These six files were copied without their times (all within
-    50 ms, a minute or two after the minute in their names): the expiries the spike prints are that much late. In the
-    app the watcher sees the file as the game writes it.
-  - **From the player:** one screenshot of the table gives every row (collapsed or with one row open, while all rows
-    fit on the screen); a task's objectives only with its row expanded, so one screenshot per task (the game opens one
-    row at a time). A trader's tab shows one task's objective too; it isn't read.
-  - **Not covered:** the STORY and SIDE tabs (a table without any countdown is taken for one of them and not read;
-    unverified), more rows than fit (scrolling), a weekly's countdown past a day (hours as written; unverified),
-    other resolutions, the German game, the trader (a portrait, not read: a task is known by its name and location).
-
-  **Recommendation for the reading's design** (the owner decides on the panel):
-  1. In the menu-screenshot path beside `StashReader`: same watcher, menus-only gate, file opened read-only once
-     whole, deleted after reading when the player chose that; a picture with the table's header goes to the tasks
-     reader instead of the stash reader, a trader's tab to neither.
-  2. Kept per task, in a file of its own in the data folder like `stash.json`: name, location (a map from the data's
-     names, none for "Any location"), objectives (text, n/m), progress and the absolute expiry; no pixel, no other word.
-  3. Expiry: the screenshot's time (the watcher's, to the second) plus the time left; a task is dropped once expired.
-     A task's expiry from two screenshots, and rows that share a countdown (two at 10:14 here), must agree to a second
-     or two, which checks the digits.
-  4. Replacement: a newer table screenshot replaces the set (a task gone from it was replaced, turned in or expired);
-     a newer expanded row replaces that task's objectives; a task's objectives go with it.
-  5. Before building: a digit reader of Shturmap's own for the countdown (ten digits and a colon in one fixed font;
-     the page's readable rows could calibrate it), or the 14-way vote with the expiry checks; the percentage can
-     come from the bar under it (pixels) or from the objectives' counts.
+- **Dailies and weeklies from a screenshot**: built 2026-10-19, see "2026-10-19: operational tasks, dailies and weeklies, in the rail" at the top.
 
 - **Report the defects in tarkov.dev's extract data** (the exits verification of 2026-10-17, kept beside the
   repositories; owner, 2026-10-17: "Note this down for later"). The app's side is built ("2026-10-17: exit facts and the

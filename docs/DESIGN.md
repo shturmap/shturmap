@@ -127,27 +127,73 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
 - **How:** as the list's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them. With "Delete
   screenshots after reading" ticked it goes once read, as a raid screenshot does (below).
-- **The player's say:** "Read your stash from menu screenshots" in settings, on unless unticked, beside the list's
+- **The player's say:** "Read your stash and tasks from menu screenshots" in settings ("Read your stash from menu
+  screenshots" until 2026-10-19, when the tasks below joined it), on unless unticked, beside the list's
   tick and with a note that says what is looked at and what is kept. Unticked, no menu screenshot is opened; the
   marks learned stay until the player retracts them. Its note, help, the README, PRIVACY.md, the tour's first chapter
   and the website say it; the diagnostics carry the setting's state and the recognition's language.
 
+**The OPERATIONAL table of a menu screenshot is read, for the daily and weekly tasks** (owner, 2026-10-17: "Add
+dailies and weeklies via screenshot"; from a panel of four, 2026-10-19: B, "Use B, the recommended one"; the spike of
+the same day, docs/NEXT.md). The game's operational tasks (dailies and weeklies) are in neither its logs nor
+tarkov.dev's data; the game lists them on Character › TASKS › OPERATIONAL. So a screenshot the player takes of that
+table is read as the stash's is, in the same path, and its tasks show where the map's work is (§4, "Screen anatomy",
+*Operational tasks*; `TasksReader`, `TaskTable`, `GameSession.Operational`):
+
+- **Which pictures:** the stash's (above): a screenshot the watcher reported as new, named without a position, while
+  the log shows the menus. Its picture is opened once for both readings (`MenuScreenshotReader`): the tasks reader
+  looks first, and a picture with the table's header (Trader, Type, Class, Task, Location, Status, Progress) goes to
+  it alone; the stash reader never sees it, and sees every other picture as before. A trader's TASKS tab (TRADING with
+  SERVICES, or REPLACE with TASKS) goes to neither: its grid is the task's rewards. A Tasks table without any countdown
+  (STORY or SIDE, presumably) is told and not read.
+- **How much of it:** the picture's left two thirds (0.665 of its width: the right third carries the player's name
+  and money on a trader's tab and the game's toasts with the screenshot's path), read with Windows' text recognition
+  in English (the table's words are the English game's; the German game's aren't known): per row the task's name,
+  location, status and time left; an expanded row's objective lines with their counts n/m. **Rewards are never read
+  or kept**: the expanded row's rewards make no row. The digits (the countdown, the percentage) are what Windows'
+  recognition drops, as the raid timer's (below): each row's own bands are read 14 ways and the value most of them
+  read is taken (the spike: the countdowns 12 of 12, the percentages 7 of 12, none wrong). The countdowns must then
+  pass checks (`OperationalChecks`): within 0 and 7 days; rows that share a countdown (within a minute of each other)
+  agree to 2 s, else the one more of the ways agreed on keeps its own and on a tie neither does; the same task's expiry
+  from two screenshots agrees within 5 s, else it has none (which is wrong can't be told). A countdown that fails
+  leaves the task the expiry an earlier screenshot gave it, else none: then it is kept until a newer screenshot
+  replaces the set, and the rail says the reading's age instead of its time left. The expiry is the screenshot's time
+  (the watcher's, the file's creation, to the second; never the minute in its name) plus the time left. Progress: the
+  percentage read when it passes (with one counted objective on the same screenshot, at most a point off its count),
+  else from the objectives' counts, else none.
+- **What is kept:** per game mode, per task its name, its map (a tarkov.dev map id, from the data's map names as the
+  English game writes them; a variant's base map; none for "Any location"; a task whose location names no map of the
+  data is left out), its objectives' words with their counts, its kind, its progress, its expiry or none, and when it
+  and its objectives were read, in `operational.json` in the data folder (§8, "The operational tasks file"). A newer
+  table screenshot replaces the mode's set (a task gone from it was handed in, replaced or ran out); a row expanded on
+  it brings that task's objectives, a folded row keeps the ones read before. A task goes at its expiry. No pixel, no
+  other word, nothing of the picture's right third; the study log counts rows, never names; the file never goes into a
+  report.
+- **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
+  screen captured; a screenshot the player took with their own key press, never one taken for them; deleted after
+  reading when "Delete screenshots after reading" is ticked.
+- **The player's say:** the stash's one tick, its words widened to cover the Tasks screen (owner, 2026-10-19, B: one
+  tick, no new setting): "Read your stash and tasks from menu screenshots"; its note says the OPERATIONAL tab's daily
+  and weekly tasks are read, never their rewards. Unticked, no menu screenshot is opened; the tasks kept stay until
+  they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter say it.
+
 Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
 (Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
-screen, not the hideout, not another player's inventory in a group screen.
+screen's other tabs, a trader's tasks or a task's rewards, not the hideout, not another player's inventory in a group
+screen.
 
 **It changes nothing outside its own folders, with one exception the player turns on** (owner, 2026-10-04: "a mode
 that auto-deletes screenshots after a couple of seconds grace period"). "Delete screenshots after reading" in
 settings, off unless ticked: a new screenshot, from a raid or the menus, is deleted once Shturmap is done with it (its
-name's position, and the extract list or the stash its picture shows) and at least 5 seconds after it was seen
+name's position, and the extract list, the stash or the tasks its picture shows) and at least 5 seconds after it was seen
 (`ScreenshotCleaner`), for good, not to the Recycle Bin. The 5 seconds leave the game time to finish writing the
 file and any other tool the player runs time to read its name; the wait for the reading (at most 2 minutes) keeps a
 slow one, such as a stash reading that first fetches the needed items' pictures, from losing its file. Until
 2026-10-14 it was "Delete position screenshots": only a screenshot with a position went, 5 seconds after it was
 seen whatever its picture's reading was doing, and menu screenshots stayed as "taken for their picture". Since the
 stash is read from them they are taken for Shturmap too, and the owner asked for them to go ("otherwise the folder is
-littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash from menu
-screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two. What may
+littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash and tasks from
+menu screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two. What may
 go is narrow, and checked when the file is seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a
 file the watcher reported as new in this run, directly in the screenshots folder, named as the game names a
 screenshot (with a position or without). What was in the folder before Shturmap looked and every other file stay.
@@ -176,7 +222,8 @@ BSG's licence agreement, read literally, covers all companion tools: 4.3.4 (text
 software that captures, collects, counts or otherwise 'retrieves' information reproduced or stored by the Game
 Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
 been permitted. The owner accepted that residual risk. Do not widen the boundary: only the owner does, as with the
-extract list's corner of a screenshot (above, 2026-10-05) and the item grids of a menu screenshot (2026-10-11).
+extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11) and the
+operational tasks' table (2026-10-19).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -357,6 +404,9 @@ quoting it anywhere new.
    quest). So can an objective shown as done: "Done · ticked by you, 4 Oct" (below, and "Quest cards", *Ticks*).
 7. **Never ask.** No confirmations, no prompts. Quest states come from the game's logs alone (owner, 2026-10-01:
    players don't screenshot their Tasks screen, so Tasks-screen reading and the TarkovEyes import were removed).
+   The daily and weekly operational tasks, which neither the logs nor the data carry, are read from a screenshot of
+   the Tasks screen's OPERATIONAL tab when the player takes one (owner, 2026-10-19; §2): never asked for, and every
+   quest's state still comes from the logs alone.
    The exceptions, each named where it is described (review of 2026-10-04: the principle didn't name them): the
    one question after a crash (send a report?), the question before an uninstall the player started, and the
    PMC ⇄ SCAV tag of a raid whose side the logs can't tell, which is a switch the player may use, never a prompt.
@@ -553,6 +603,10 @@ quoting it anywhere new.
     "DOWNLOAD · TOP LEFT" in "Tell me only"). As the download completes in the menus, then **once per raid while it
     waits**, at the first menu after each raid, after RAID OVER and its replay, QUEST COMPLETE and SEEN IN YOUR STASH;
     as it fades the rail's update band glows. Like QUEST COMPLETE and SEEN IN YOUR STASH it moves no view.
+    **Operational tasks read get no cue** (owner, from a panel of four, 2026-10-19: B, glow and notice as drawn): a
+    screenshot of the daily tasks is a routine, and a cue every day would be noise. The rows a reading brought glow in
+    as the stash's marks do (`Controls.Glow`: a gold copy of the synopsis fading to ink over 1.2 s, the row flashing
+    once), and the one-line notice says it ("Operational tasks read: 3."; *Operational tasks*, "Screen anatomy").
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -755,6 +809,11 @@ button that kept it as a window became a box with an arrow out, `E8A7`, that day
 2026-10-09). Text links that open something outside
 Shturmap (LOG FOLDER, PRIVACY, LICENCES, WIKI MAP, a quest card's WIKI PAGE) end in "↗". A check of all symbols the
 same day, by rendering them side by side:
+- **A framed glyph is an operational task** (owner, 2026-10-19, from a panel of four: B): on a NEXT RAID row a quest
+  type's glyph in a 1 DIP frame (`LineStrong`) is a daily or weekly task of the map, after the quests' glyphs and a
+  hairline, never a quest. The generic operational glyph, Segoe Fluent's stopwatch `E916`, stands for an operational
+  task whose kind isn't known (a kill, a survival and a hand-over take the Elimination, Survive and Find-in-raid
+  glyphs), nowhere else ("Screen anatomy", *Operational tasks*).
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
   item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market
   became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
@@ -1160,6 +1219,42 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     on a quest's row or its pen inside the card also switched the map. The card is no button now; a click in it is
     a click on what is under the pointer. Resting on it still previews its map while another is on screen. So that
     there is always a row to click, the list is also there for one suggested map while another map is on screen.
+  - *Operational tasks* (owner, 2026-10-17: "Add dailies and weeklies via screenshot"; from a panel of four,
+    2026-10-19: B, "OPERATIONAL rows where the map's work is", which settled three things as drawn: any-map tasks in
+    every open card, the planner's order untouched, a reading's feedback by glow and notice, no cue). The daily and
+    weekly tasks read from the Tasks screen (§2) show where a map's work already is, never in a block or a card of their
+    own (`Rules.OperationalRail`, `MainWindow.Operational`). Of the panel's other ways, one line on the map's card (A),
+    a block of its own at the rail's top (C) and tasks counted as work and packed, with a cue (D) were not taken.
+    - **A NEXT RAID row** shows its map's tasks as glyphs after its quests' glyphs, behind a hairline, each framed (the
+      frame means "operational", *Visual language*); never the any-map tasks, which would stand on every row. A map
+      with operational work and none of your quests joins the list's end, by name, without counts, and its card says,
+      muted, that none of your quests is on it. The planner's order and score are unchanged (§7).
+    - **The open card** gets OPERATIONAL after PROGRESS (before BRING): the eyebrow, with "As of 14:02" at its right
+      in the eyebrow's style (the date too when read on an earlier day); one row per task: its glyph, its synopsis in
+      ink, then in small muted capitals its progress and time left ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; a
+      hand-over on any map "ANY MAP · HAND OVER AFTER · 2 D LEFT"; a task whose countdown wasn't taken "READ 3 H AGO").
+      The synopsis comes from the objective's words (`OperationalWords`): a kill with its condition kept short ("Kill 3
+      Scavs · headshots over 50 m"), "Survive and extract", a hand-over "Find in raid: SSD drive, CPU fan" with item
+      cells for the items the catalogue has by exactly that whole name (the words alone otherwise: a quoted name has
+      nothing to narrow it, so the stash's rule against the whole catalogue gives way only to a whole name), a line of
+      no known kind as read with the generic operational glyph, and a row never expanded its name (its kind, for the
+      glyph, from the name's words: "Elimination", "Exit the location", "Find and transfer"). The progress is the one
+      counted objective's "4 OF 7", else the game's percentage. The map's tasks come first, then the any-map tasks after
+      a hairline, in every map's card (§7's exception). No portrait (the trader isn't read), no pen, no card of its own,
+      no click: pointing at an item cell opens its card, as anywhere. With a trader's focus held they step back with
+      the other traders' quests.
+    - **Ended:** while tasks ran out since the last table screenshot, under the eyebrow, muted: "1 ended at 22:35.
+      Screenshot your tasks for the new one." (in every card's section, until the next table screenshot, a day at
+      most; the game gives new ones, which only a screenshot shows). The section shows for that line alone too.
+    - **The raid card** has the same section after PROGRESS, for the raid's map's tasks and the any-map ones, without
+      "As of": ANYWHERE stands where a quest row has its distance, for an any-map task; a hand-over says "HAND OVER
+      AFTER THE RAID"; the time only when the task ends before the raid could ("ENDS IN 25 MIN", in the red of the
+      clock's last ten minutes; while the raid loads, against the map's whole raid). Nothing new on the map: the tasks
+      have no places.
+    - **A Scav raid's card** has no OPERATIONAL section: its FIND IN RAID lists the hand-over items the catalogue
+      knows by name after the quests' loot ("for an operational task"). That an operational task's kills and survivals
+      count for a PMC only is the panel's assumption (as a quest's do), not checked in the game: to confirm.
+    - The rows a reading brought glow in, and a notice says how many were read (principle 11): no cue.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
     line ("Complete 5 quests · progress 1 more"), the bosses with their spawn chances, and, right under the map's name,
@@ -2264,7 +2359,8 @@ glyph, where it is, the item it is about and, in a raid on its map, how far and 
 ("69 m · AHEAD-LEFT · 8 M UP": the raid card's style, the figure as it is and the direction and height in capitals;
 until 2026-10-09 in small letters, beside the raid card's capitals); BRING (keys and items, with icons and maps);
 UNLOCKS (the quests it opens); a link to the wiki page; NOTES, the player's own words (*Notes*, below). Nothing else:
-no rewards, no guides.
+no rewards, no guides. An operational task (a daily or weekly) gets no card: the data has nothing of it, its trader
+isn't read, and its rewards are never read (owner, 2026-10-19; "Screen anatomy", *Operational tasks*).
 The state line is in the accent while the quest is active ("on") and muted for every other state. It was green,
 which on the map and in the rail is a PMC extract (one colour, one meaning; the review of 2026-10-04, B2).
 An objective says where it is once (the review, C2): the line of map names under its text is left out when the
@@ -2923,7 +3019,10 @@ those the player ticked as done (`Planning.Open`; §4, "Quest cards", *Ticks*):
   2026-10-09 only the top four were shown, plus every map with a pick (decided 2026-10-04, from the review); the
   owner then had every map with quests listed, as the planner's cut left maps out without a word on screen. MAP's
   list holds the same maps with the same counts.
-- Quests whose in-raid work fits any map are listed once under **Any map**.
+- Quests whose in-raid work fits any map are listed once under **Any map**. The operational tasks for any map are
+  the exception (owner, from a panel of four, 2026-10-19: B, as drawn): they stand in every map's open card and the
+  raid card, after the map's own tasks and a hairline (§4, *Operational tasks*). Operational tasks add nothing to a
+  map's score or counts; a map with only operational work joins NEXT RAID's list at its end.
 - No walking time (owner, 2026-10-03: "~17 min walking" didn't say which quests it was for, players rarely just
   walk, and it was an estimate shown as a figure). A map card's line under the name holds facts only: the raid's
   length and its bosses with their chances ("40 min raid · Kaban 75% · Kollontay 75%"). The planner still measures
@@ -2980,7 +3079,7 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
 | project | role |
 | --- | --- |
 | `Shturmap.Core` | no Windows dependencies: screenshots, projection, floors, bearings, logs, raid tracker, quest progress, taxonomy, planner, quest synopsis. Rules without side effects, with one exception: `UnpackedCopies` deletes the 0.1.0 builds' leftover folders under %TEMP% ("Distribution") |
-| `Shturmap.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher, game settings |
+| `Shturmap.Game` | install discovery (BSG launcher and Steam are equal), log tailer, screenshot watcher and the screenshots' readers, game settings |
 | `Shturmap.Data` | json.tarkov.dev loader (ETag cache, translations), SQLite progress store, game art cache (portraits, icons) |
 | `Shturmap.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
 | `Shturmap.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
@@ -3008,6 +3107,10 @@ Rules:
   (`--culture <culture>`: that run's language for everything, as if chosen in settings, without saving it; `de-DE` also
   for a language still being translated, `qps-ploc` the pseudo-language; `--switch-language <culture>` switches it while running, §8 "Developer aids") and at twice the pixel density (`--snapshot-scale`, sharp on high-DPI screens). `-GroupPick`
   plays a group's map pick in the menus (with `-PlanOnly`); `-HoldLoading` stops the raid halfway through loading;
+  `-Operational <n>` (the app's `--operational <n>`, with a fake game only) gives the run the `tasks` step's made-up
+  operational tasks once the data and the mode are known, and `-OperationalEnded` (`--operational-ended`) the one that
+  runs out at once, so a snapshot pictures the list rows' framed glyphs, the open card's and the raid card's
+  OPERATIONAL (owner, 2026-10-19, B; the file isn't written);
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
   is trimmed, text over text, and in the pseudo-language one untranslated) and a copy with them boxed beside it
@@ -3246,6 +3349,20 @@ stands. Written as a temporary file and one move, after each change; one that ca
 aside as `stash.json.unreadable` and the marks start over (the next screenshot or log message brings them back). It
 is never in the shared cache, a report or the diagnostics. Deleted with the data folder.
 
+**The operational tasks file** (`operational.json` in the data folder; owner, from a panel of four, 2026-10-19: B; §2,
+"Menu screenshots"; `OperationalLedger`): the daily and weekly tasks the last screenshot of the Tasks screen's
+OPERATIONAL table showed, one set per game mode (PvE and PvP apart). Its shape: `version` 1; `modes` by the mode's name
+(`pve`, `pvp`), each with `readAt` (the table screenshot's time), `tasks` in the table's order and `ended` (when tasks
+that ran out since did, for "1 ended at 22:35"; kept a day at most). A task: `name` and its objectives' words as the
+game writes them (`objectives`, each `text` with `done` and `of` where the game shows a count), `map` (tarkov.dev's map
+id; none for any location), `kind` (`kill`, `survive`, `handOver`, `unknown`), `progress` (0 to 100, when known),
+`expiresAt` (none when the countdown failed its checks), `readAt` and `objectivesAt` (a folded row keeps objectives
+read before). Dates to the second with the PC's offset. No reward, no pixel, no path, no other word. Written as a
+temporary file and one move, after each change; a task past its expiry is dropped at load and as it runs out. One that
+can't be read is set aside as `operational.json.unreadable` and the tasks start over (the next screenshot brings them
+back). Never in a report or the diagnostics. A snapshot's made-up tasks (`--operational`) are never written. Deleted
+with the data folder.
+
 **The notes file** (`notes.json` in the data folder; owner, 2026-10-15; `QuestNotes`): the notes the player writes on
 a quest's card, one set per quest and game mode (PvE and PvP apart, as ticks and picks are), each with when it was
 written. Add and delete only, no editing: the time always says when the words were written. A note is trimmed, keeps
@@ -3366,7 +3483,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tour end` (ends the tour as Esc does), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 5, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods; with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B), `tour end` (ends the tour as Esc does), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
@@ -3476,6 +3593,20 @@ game", *It keeps looking*); all valid installs feed the quest backfill.
 
 **Screenshot names.** `yyyy-MM-dd[HH-mm]_x, y, z_qx, qy, qz, qw_clock (n).png`; the trailing number is the in-raid
 time of day when a position is present. Facing: `yaw = atan2(2(qx·qz + qw·qy), 1 − 2(qx² + qy²))`.
+
+**Menu screenshots** (§2). The watcher reports a new screenshot (`ScreenshotWatcher`, with the file's creation time to
+the second); one without a position, while the log shows the menus and "Read your stash and tasks from menu
+screenshots" is ticked, goes to `GameSession.ReadStashAsync`, which hands it to the menus' reader with the items
+BRING lists (`MenuScreenshotReader`): the picture is opened once, whole and read-only (`MenuPicture`); the tasks
+reader reads the words of its left two thirds (`TasksReader`, about 110 ms) and tells the screen by them (`TaskTable`):
+the OPERATIONAL table is read row by row, its bands' digits by vote (about 400 ms more), and goes to the operational
+ledger (`GameSession.Operational`: the location matched to a map of the data, `OperationalLedger.ApplyTable` with
+its checks, the file, the notice); a trader's tasks or another Tasks table goes nowhere; any other picture goes to
+the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue and the marks' glow. A snapshot
+(`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their maps as Plan counts them and
+the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`, `MainWindow.Operational`), glowing in
+the ones that arrived. A watch over the expiries drops a task as it runs out and publishes again each minute while
+tasks are kept, for the rows' words of the minute. "Delete screenshots after reading" waits for all of it.
 
 **Projection.** tarkov.dev's math: rotate (x, z) by `coordinateRotation`, `X = a·rx + b`, `Y = −c·ry + d`, SVG
 fitted into the projected `svgBounds ?? bounds`. Golden test: a made-up Streets position, x 40 and z 120, lands at
@@ -3818,10 +3949,11 @@ it came from (the setting, the game, Windows, the default; "this run only" for "
 tarkov.dev's as loaded (with "extract names also in de" when the game's own names were loaded beside it); the data's
 state (loaded, offline copy
 or failed with the kind, status and plain reason, and when it was checked); the active quest count; whether "Delete
-screenshots after reading", "Read the extract list from screenshots" and "Read your stash from menu screenshots" are on
-(§2; the two readings with the recognition's language); the study log
+screenshots after reading", "Read the extract list from screenshots" and "Read your stash and tasks from menu
+screenshots" are on (§2; the two readings with the recognition's language); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
-cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file or the notes file.
+cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file, the operational tasks
+file or the notes file.
 Copying sends nothing; a report carries the same text when the player keeps "Include diagnostics", shown first.
 
 **Reports** (owner, 2026-10-03: "as easy as possible … one coherent easy to use thing, otherwise people won't
@@ -3944,5 +4076,8 @@ every issue goes through it, and the app's report is offered beside it.
 - A new version said louder, without a pop-up (2026-10-15; docs/NEXT.md; §8, "Updates"; from a panel of four: B): the
   update band pinned under MAP between raids, and the UPDATE READY cue as the download completes and once per raid
   while it waits.
+- The daily and weekly operational tasks, read from a screenshot of the Tasks screen's OPERATIONAL tab (2026-10-19;
+  docs/NEXT.md; §2, "Menu screenshots"; §4, *Operational tasks*; from a panel of four: B): framed glyphs on NEXT RAID's
+  rows, an OPERATIONAL section in the open card and the raid card, a Scav's hand-over items under FIND IN RAID.
 - Removed (owner, 2026-10-09, the pre-release review): popped-out quest cards (§4, "Quest cards"); the keyboard's
   steps through the rail (§4, "Keyboard"); the raid clock's decode at each minute ("Screen anatomy", *The readout*).

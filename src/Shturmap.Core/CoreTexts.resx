@@ -160,4 +160,32 @@
     <value>ahead-left</value>
     <comment>Where an objective lies from the way the player faces, beside its distance in the raid card and the quest cards while the facing is fresh: "294 m · LEFT · 8 M UP" (shown in capitals). One or two short words.</comment>
   </data>
+  <data name="OperationalKill" xml:space="preserve">
+    <value>Kill {count} {target}</value>
+    <comment>An operational task's synopsis in Plan's and the raid card's OPERATIONAL rows: a kill objective in a few words, as the player reads it at a glance. {count}: how many; {target}: who, as the game's English screen writes it ("Scavs", "PMC operatives"). A short condition may follow after " · " (OperationalHeadshots, OperationalOver).</comment>
+  </data>
+  <data name="OperationalKillUncounted" xml:space="preserve">
+    <value>Kill {target}</value>
+    <comment>As OperationalKill, for a kill objective whose count wasn't read. {target}: who, as the game's English screen writes it.</comment>
+  </data>
+  <data name="OperationalHeadshots" xml:space="preserve">
+    <value>headshots</value>
+    <comment>A kill's condition in an operational task's synopsis, after " · ": the kills must be headshots ("Kill 3 Scavs · headshots over 50 m"). One word, lower case.</comment>
+  </data>
+  <data name="OperationalOver" xml:space="preserve">
+    <value>over {metres} m</value>
+    <comment>A kill's condition in an operational task's synopsis: from a distance of more than {metres} metres ("Kill 3 Scavs · headshots over 50 m"). Short, lower case.</comment>
+  </data>
+  <data name="OperationalUnder" xml:space="preserve">
+    <value>under {metres} m</value>
+    <comment>A kill's condition in an operational task's synopsis: from a distance of less than {metres} metres ("Kill 5 PMC operatives · under 25 m"). Short, lower case.</comment>
+  </data>
+  <data name="OperationalSurvive" xml:space="preserve">
+    <value>Survive and extract</value>
+    <comment>An operational task's synopsis for a survival objective ("Survive and extract from the location"), in Plan's and the raid card's OPERATIONAL rows.</comment>
+  </data>
+  <data name="OperationalFindInRaid" xml:space="preserve">
+    <value>Find in raid: {items}</value>
+    <comment>An operational task's synopsis for hand-overs of items found in raid, in Plan's and the raid card's OPERATIONAL rows. {items}: the items' names as the game's English screen writes them, comma-separated ("SSD drive, CPU fan").</comment>
+  </data>
 </root>

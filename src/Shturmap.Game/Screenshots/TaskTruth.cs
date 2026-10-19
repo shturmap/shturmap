@@ -1,7 +1,8 @@
-namespace Shturmap.Cli.Tasks;
+namespace Shturmap.Game.Screenshots;
 
 /// <summary>
-/// A hand-written truth for one picture (truth-&lt;picture&gt;.txt beside it), one line each:
+/// For measuring <see cref="TasksReader"/> (shturmap-cli tasks, TaskTableTests' real pictures): a hand-written truth for
+/// one picture (truth-&lt;picture&gt;.txt beside it), one line each:
 /// "screen table|trader|none"; "row name | location | status | hh:mm:ss | progress" per row, top to bottom;
 /// "objective row name | text | n/m" per objective of the expanded row, "-" for an objective without a count. Lines
 /// starting with # are notes.

@@ -273,8 +273,9 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 AppLog.Info("Read the extract list from screenshots: off");
             _readStash = ReadStashOn(_store.GetSetting(ReadStashSetting));
             if (!_readStash)
-                AppLog.Info("Read your stash from menu screenshots: off");
+                AppLog.Info("Read your stash and tasks from menu screenshots: off");
             OpenStash();
+            OpenOperational();
             OpenNotes();
             if (_deleteScreenshots)
                 AppLog.Info("Delete screenshots after reading: on");
@@ -317,6 +318,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         if (_locate is not null)
             _ = Task.Run(LookAgainAsync);
         _ = Task.Run(WatchOpenRaidAsync);
+        _ = Task.Run(WatchOperationalAsync);
     }
 
     // A new screenshot: its name's position, then its picture's extract list (in a raid) or item grids (in the menus).
@@ -2075,8 +2077,10 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         }
 
         // The stash file first: a snapshot that shows a mark is never ahead of the file that keeps it (CI, 2026-10-14: a
-        // test read stash.json between the two).
+        // test read stash.json between the two). The operational tasks' file likewise.
         SaveStashIfDirty();
+        SaveOperationalIfDirty();
+        var operational = OperationalShownNow();
         Snapshot = new SessionSnapshot
         {
             Raid = raid,
@@ -2114,7 +2118,11 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             ReadStash = _readStash,
             StashNoteShown = _readStash && !_ledger.Marks.Values.Any(m => m.Source == Shturmap.Core.Stash.MarkSource.Screenshot),
             StashReaderLanguage = _stashReaderLanguage,
-            StashReaderMissing = _stashReaderLooked && _stashReader is null && StashReader is null,
+            StashReaderMissing = _stashReaderLooked && _stashReaderMissing && StashReader is null,
+            Operational = operational,
+            OperationalReadAt = _operational.ReadAt(_mode),
+            OperationalEnded = _operational.Ended(_mode),
+            OperationalPlans = OperationalPlans(operational),
             Locations = _locations,
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,
@@ -2258,6 +2266,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         // The pass over the stash, if one was under way, ends with the session; the file says what it showed.
         _ledger.EndPass();
         SaveStashIfDirty();
+        SaveOperationalIfDirty();
         _store?.Dispose();
         Study.Game("app.exit");
         if (Study.Enabled)

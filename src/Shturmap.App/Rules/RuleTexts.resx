@@ -184,4 +184,68 @@
     <value>NEW IN {version}</value>
     <comment>The What's New card's heading over a version's lines. {version}: the version with its release's name, "0.4.0 · PRAETORIAN". Capitals.</comment>
   </data>
+  <data name="OperationalAsOf" xml:space="preserve">
+    <value>As of {time}</value>
+    <comment>The right part of the OPERATIONAL eyebrow on a map's card in Plan: when the daily and weekly tasks were read from a screenshot of the game's Tasks screen. {time}: "14:02". Shown in capitals.</comment>
+  </data>
+  <data name="OperationalAsOfDay" xml:space="preserve">
+    <value>As of {date}, {time}</value>
+    <comment>As OperationalAsOf, when the tasks were read on an earlier day. {date}: "18 Oct"; {time}: "14:02". Shown in capitals.</comment>
+  </data>
+  <data name="OperationalCount" xml:space="preserve">
+    <value>{done} of {of}</value>
+    <comment>An operational task's progress in its row's muted line: its objective's count as the screenshot showed it ("4 OF 7 · 8 H LEFT"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalPercent" xml:space="preserve">
+    <value>{percent}%</value>
+    <comment>An operational task's progress in its row's muted line when it has no single count: the game's percentage ("57% · 8 H LEFT").</comment>
+  </data>
+  <data name="OperationalAnyMap" xml:space="preserve">
+    <value>any map</value>
+    <comment>An operational task's muted line, first, for a task the game says counts on any location ("ANY MAP · HAND OVER AFTER · 2 D LEFT"). Shown in capitals; the ANY MAP heading's words.</comment>
+  </data>
+  <data name="OperationalHandOverAfter" xml:space="preserve">
+    <value>hand over after</value>
+    <comment>An operational task's muted line in Plan, for items found in raid that are handed over to the trader after the raid ("ANY MAP · HAND OVER AFTER · 2 D LEFT"). Shown in capitals; short.</comment>
+  </data>
+  <data name="OperationalHandOverAfterRaid" xml:space="preserve">
+    <value>hand over after the raid</value>
+    <comment>As OperationalHandOverAfter, in the raid card ("ANY MAP · HAND OVER AFTER THE RAID"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalMinutesLeft" xml:space="preserve">
+    <value>{count} min left</value>
+    <comment>An operational task's time left in its row's muted line in Plan, under an hour ("4 OF 7 · 25 MIN LEFT"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalHoursLeft" xml:space="preserve">
+    <value>{count} h left</value>
+    <comment>An operational task's time left in its row's muted line in Plan, under two days, rounded down ("4 OF 7 · 8 H LEFT"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalDaysLeft" xml:space="preserve">
+    <value>{count} d left</value>
+    <comment>An operational task's time left in its row's muted line in Plan, from two days on, rounded down (a weekly: "2 D LEFT"). {count}: the days. Shown in capitals.</comment>
+  </data>
+  <data name="OperationalReadJustNow" xml:space="preserve">
+    <value>read just now</value>
+    <comment>An operational task's muted line in Plan in place of its time left, when its countdown couldn't be read for sure: how old the screenshot is, under a minute. Shown in capitals.</comment>
+  </data>
+  <data name="OperationalReadMinutesAgo" xml:space="preserve">
+    <value>read {count} min ago</value>
+    <comment>As OperationalReadJustNow, under an hour ("READ 25 MIN AGO"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalReadHoursAgo" xml:space="preserve">
+    <value>read {count} h ago</value>
+    <comment>As OperationalReadJustNow, under two days, rounded down ("READ 3 H AGO"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalReadDaysAgo" xml:space="preserve">
+    <value>read {count} d ago</value>
+    <comment>As OperationalReadJustNow, from two days on, rounded down ("READ 3 D AGO"). {count}: the days. Shown in capitals.</comment>
+  </data>
+  <data name="OperationalEndsIn" xml:space="preserve">
+    <value>ends in {count} min</value>
+    <comment>An operational task's time in the raid card, only when it ends before the raid could, in red ("4 OF 7 · ENDS IN 25 MIN"). Shown in capitals.</comment>
+  </data>
+  <data name="OperationalEnded" xml:space="preserve">
+    <value>{count, plural, one {# ended at {time}. Screenshot your tasks for the new one.} other {# ended, the last at {time}. Screenshot your tasks for the new ones.}}</value>
+    <comment>Under the OPERATIONAL eyebrow, muted, when daily or weekly tasks ran out since the last screenshot of the game's Tasks screen: the game gives new ones, which only a new screenshot shows. {count}: how many ended; {time}: when the last did, "22:35".</comment>
+  </data>
 </root>

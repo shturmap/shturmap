@@ -133,8 +133,8 @@
     <comment>Help: heading over the map symbols that aren't on the map on screen. Upper case.</comment>
   </data>
   <data name="HelpPrivacy" xml:space="preserve">
-    <value>Reads screenshot names, the game's logs, tarkov.dev's public data, the extract list in a raid screenshot's top right corner and the item cells in a menu screenshot, for what your quests need (settings turn each off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete screenshots after reading.</value>
-    <comment>Help: note on what Shturmap reads, sends and changes. "Delete screenshots after reading" is the setting's name (SettingsDeleteScreenshots).</comment>
+    <value>Reads screenshot names, the game's logs, tarkov.dev's public data, the extract list in a raid screenshot's top right corner, and in a menu screenshot the item cells, for what your quests need, and the Tasks screen's operational tasks (settings turn each off). Reads nothing from the game, sends it nothing. Nothing is sent unless you send a report or allow crash reports; an installed Shturmap asks GitHub for updates. Changes nothing outside its folders unless you tick Delete screenshots after reading.</value>
+    <comment>Help: note on what Shturmap reads, sends and changes. "Delete screenshots after reading" is the setting's name (SettingsDeleteScreenshots). "Operational tasks": the daily and weekly tasks on the game's Tasks screen, its OPERATIONAL tab.</comment>
   </data>
   <data name="HelpCopyDiagnosticsTip" xml:space="preserve">
     <value>Copies version, what was found, data state and today's log (no names or ids), to paste anywhere</value>
@@ -645,8 +645,8 @@
     <comment>Settings: the name of the row with AUTOMATIC and the languages, each in its own name. Short: it stands beside them on one line.</comment>
   </data>
   <data name="SettingsReadStash" xml:space="preserve">
-    <value>Read your stash from menu screenshots</value>
-    <comment>Settings: a tick box's words, and its name for screen readers: read the item grids in a screenshot taken in the game's menus, for the items the quests need.</comment>
+    <value>Read your stash and tasks from menu screenshots</value>
+    <comment>Settings: tick box. On, a screenshot taken in the game's menus is read: the item cells (the stash, a case, the key tool) for the items your quests need, and the game's Tasks screen (its OPERATIONAL tab: the daily and weekly tasks). "Stash" is the game's word.</comment>
   </data>
   <data name="SettingsForgetMarks" xml:space="preserve">
     <value>FORGET ALL MARKS</value>
@@ -667,5 +667,13 @@
   <data name="BringStashNote" xml:space="preserve">
     <value>Screenshot your key tool in the game: the keys your quests need get a mark.</value>
     <comment>Under BRING on a map's card, until the first menu screenshot gave a mark: teaches the one thing to do, once. "Key tool" is the game's container for keys.</comment>
+  </data>
+  <data name="CardOperational" xml:space="preserve">
+    <value>OPERATIONAL</value>
+    <comment>Heading in a map's card in Plan and in the raid card, over the daily and weekly tasks read from a screenshot of the game's Tasks screen; the game's own name for that tab. Upper case.</comment>
+  </data>
+  <data name="OperationalGlyphTip" xml:space="preserve">
+    <value>Operational task: a daily or weekly task from your screenshot of the Tasks screen</value>
+    <comment>Tooltip of the generic symbol beside an operational task whose kind Shturmap doesn't know (a kill, a survival and a hand-over have the quest types' symbols).</comment>
   </data>
 </root>

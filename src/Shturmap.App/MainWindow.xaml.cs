@@ -460,8 +460,9 @@ public sealed partial class MainWindow : Window
         Study.Ui("settings.readExits", ("on", on));
     }
 
-    // "Read your stash from menu screenshots" in settings (owner, 2026-10-11): the second case where Shturmap opens a
-    // screenshot's picture; its note says what is looked at and what is kept, and unticking it stops it.
+    // "Read your stash and tasks from menu screenshots" in settings (owner, 2026-10-11; the Tasks screen's operational
+    // tasks since 2026-10-19): the second case where Shturmap opens a screenshot's picture; its note says what is looked
+    // at and what is kept, and unticking it stops it.
     public string ReadStashNote =>
         AppTexts.SettingsReadStashNote;
 
@@ -557,9 +558,11 @@ public sealed partial class MainWindow : Window
         }
         _phase = s.Raid.Phase;
         NoteFreshMarks(s);
+        NoteFreshTasks(s);
         ShowPicks(s);
         UpdateClockTexts();
         HoldTraderOnStart(s);
+        ReadExampleTasksOnStart(s);
         UpdateTraders(s);
         UpdatePicker(s);
         UpdatePlan(s);
@@ -709,10 +712,13 @@ public sealed partial class MainWindow : Window
         var shownKey = s.Map is null ? null : Planning.PickKey(s.Data, s.Map.NormalizedName);
         var shownPlan = s.MapPlan is { } mapPlan && mapPlan.NormalizedName == shownKey ? mapPlan : null;
         // A trader's focus held: the rows go by that trader's quests on each map, most first (PlanList.Ranked).
-        var ranked = PlanList.Ranked(s.Plan, HeldCountOn, held: _heldTrader is not null);
+        // The maps with operational work and none of your quests join the list's end, by name (owner, 2026-10-19, B: the
+        // planner's order and score unchanged).
+        var ranked = PlanList.Ranked(s.Plan, HeldCountOn, held: _heldTrader is not null).Concat(s.OperationalPlans).ToList();
         var (openIndex, added) = PlanList.Open(ranked.Select(p => p.NormalizedName).ToList(), shownKey, shownPlan is not null);
         IReadOnlyList<MapPlanView> plans = added ? [.. ranked, shownPlan!] : ranked;
         bool CardOnly(MapPlanView p, int i) => added && i == plans.Count - 1 && p.Finish.Count + p.Progress.Count == 0;
+        bool NoQuests(MapPlanView p) => p.Finish.Count + p.Progress.Count == 0;
         // A trader's focus held (the strip under the MAP list; owner, 2026-10-17): the other traders' quests step back in
         // the rows, a pick never; each map counts the trader's quests there (TraderFocus, PlanList.Count).
         var trader = HeldTraderName(s);
@@ -733,7 +739,7 @@ public sealed partial class MainWindow : Window
             return new PlanCard(
                 p.NormalizedName,
                 p.MapName,
-                CardOnly(p, i) ? AppTexts.PlanNoneOfYourQuests(map: p.MapName) : Summary(p.Finish.Count, p.Progress.Count),
+                CardOnly(p, i) || NoQuests(p) ? AppTexts.PlanNoneOfYourQuests(map: p.MapName) : Summary(p.Finish.Count, p.Progress.Count),
                 Planning.FactsLine(p),
                 i == openIndex,
                 sections.Finish.Select(q => OnMap(q, p)).ToList(),
@@ -743,11 +749,17 @@ public sealed partial class MainWindow : Window
                 p.Requirements.Select(r => Chip(s, r)).ToList(),
                 sections.Picks.Select(q => OnMap(q, p) with { PickSlot = slots.GetValueOrDefault(q.QuestId, -1) }).ToList())
             {
-                ShortSummary = PlanList.Count(ShortSummary(p.Finish.Count, p.Progress.Count), trader, HeldCountOn(p)),
+                ShortSummary = NoQuests(p) ? "" : PlanList.Count(ShortSummary(p.Finish.Count, p.Progress.Count), trader, HeldCountOn(p)),
                 RowSteppedBack = !inRaid && PlanList.StepsBack(trader, HeldCountOn(p)),
                 DetailParts = LinePart.Line(new[] { new LinePart(Planning.LengthText(p)) }.Concat(BossParts(s, p.NormalizedName, p.Bosses))),
                 CardOnly = CardOnly(p, i),
+                NoQuests = NoQuests(p),
                 StashNote = s.StashNoteShown,
+                // The daily and weekly operational tasks (owner, 2026-10-19, B): the row's framed glyphs, the card's section.
+                OperationalGlyphs = TaskGlyphs(s, p.NormalizedName),
+                Operational = i == openIndex ? TaskLines(s, p.NormalizedName, inRaid: false) : [],
+                OperationalAsOf = s.OperationalReadAt is { } readAt ? OperationalRail.AsOf(readAt, DateTimeOffset.Now) : "",
+                OperationalEnded = i == openIndex ? OperationalRail.Ended(s.OperationalEnded) : "",
             };
         }).ToList(), PlanCard.Same);
         // The rows are what shows a map (PlanList): one suggested map gets its row only while another map is on screen.
@@ -905,6 +917,9 @@ public sealed partial class MainWindow : Window
         vm.RaidKitMore = RowLists.Keep(vm.RaidKitMore, kit.More.Select(r => BringLine(s, r)).ToList(), RequirementLine.Same);
         vm.RaidBring = RowLists.Keep(vm.RaidBring, s.Raid.Phase == RaidPhase.Loading ? [] : BringLines(s, s.MapPlan?.Requirements ?? [], s.Picks),
             RequirementLine.Same);
+        // The raid's map's operational tasks and the any-map ones (owner, 2026-10-19, B); a Scav's are its FIND IN RAID's.
+        vm.RaidOperational = RowLists.Keep(vm.RaidOperational, vm.ScavRaid ? [] : TaskLines(s, s.MapPlan?.NormalizedName, inRaid: true), OperationalLine.Same);
+        vm.RaidOperationalEnded = vm.ScavRaid ? "" : OperationalRail.Ended(s.OperationalEnded);
         vm.RaidNote = "";
         vm.RaidLoot = [];
         vm.RaidLootMore = "";
@@ -991,8 +1006,10 @@ public sealed partial class MainWindow : Window
         vm.RaidComplete = [];
         vm.RaidProgress = [];
         vm.RaidBring = [];
+        // After the quests' loot, the operational tasks' hand-over items (owner, 2026-10-19, B): found in raid by a Scav
+        // as by a PMC.
         vm.RaidLoot = loot.Take(LootShown).Select(l => new RequirementLine(Glyphs.Bring, l.Text, AppTexts.ScavLootFor(quests: l.ForQuests), l.ItemId, l.QuestIds,
-            l.SpotsHere switch { 0 => "", var n => AppTexts.ScavLooseHere(count: n) })).ToList();
+            l.SpotsHere switch { 0 => "", var n => AppTexts.ScavLooseHere(count: n) })).Concat(TaskLoot(s)).ToList();
         vm.RaidLootMore = loot.Count > LootShown ? AppTexts.ScavLootMore(count: loot.Count - LootShown) : "";
     }
 

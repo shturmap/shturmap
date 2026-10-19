@@ -23,11 +23,9 @@
     <None Include="..\fixtures\ocr\stash\*.png;..\fixtures\ocr\stash\*.txt" LinkBase="fixtures\ocr\stash" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- The operational tasks' spike of 2026-10-19 (shturmap-cli tasks; docs/NEXT.md, "Dailies and weeklies from a
-       screenshot"): its parser and reader live in the CLI, not the app, and are compiled in here for their tests.
-       Its pictures and their hand-written truths stay in the ignored tests\fixtures\ocr\operational. -->
+  <!-- The operational tasks' table (TasksReader; owner, 2026-10-19: from a panel of four, B): the owner's pictures and
+       their hand-written truths stay in the ignored tests\fixtures\ocr\operational. -->
   <ItemGroup>
-    <Compile Include="..\..\tools\Shturmap.Cli\Tasks\TaskTable.cs;..\..\tools\Shturmap.Cli\Tasks\TaskTableOcr.cs;..\..\tools\Shturmap.Cli\Tasks\TaskTruth.cs" LinkBase="Tasks" />
     <None Include="..\fixtures\ocr\operational\*.png;..\fixtures\ocr\operational\*.txt" LinkBase="fixtures\ocr\operational" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
