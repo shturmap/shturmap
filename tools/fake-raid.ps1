@@ -29,6 +29,11 @@ param(
   # With -Desk: the made-up desk's reading (1 the first, every region open; 2 one that changed the backpack, the rest
   # folded; 3 one that changed nothing).
   [ValidateRange(1, 3)] [int] $DeskReading = 1,
+  # The made-up in-raid glance (docs/DESIGN.md §4, *The in-raid glance*), up as a raid screenshot of an inventory screen
+  # brings it once the raid is on: 1, a drawer with three items; 2, a body with its slots, an UNSEARCHED rig, pockets being
+  # searched and a searched backpack (src\Shturmap.App\Rules\GlanceExample.cs). The snapshot keeps the plate up. Not
+  # with -PlanOnly: the glance is a raid's.
+  [ValidateRange(0, 2)] [int] $Glance,
   # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
   [int] $Tour,
   # Play the raid as a Scav: the match setup names another profile than the menu's.
@@ -286,6 +291,7 @@ if ($TraderFocus) { $appArgs += @('--trader-focus', "`"$TraderFocus`"") }
 if ($Operational -gt 0) { $appArgs += @('--operational', $Operational) }
 if ($OperationalEnded) { $appArgs += @('--operational-ended') }
 if ($Desk) { $appArgs += @('--desk', $DeskReading) }
+if ($Glance -gt 0) { $appArgs += @('--glance', $Glance) }
 if ($Tour -gt 0) { $appArgs += @('--tour', $Tour) }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }

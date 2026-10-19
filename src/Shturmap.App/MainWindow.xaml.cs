@@ -78,6 +78,7 @@ public sealed partial class MainWindow : Window
         StudyAttention(root);
         _cards = new CardStack(root, CreateCard, CardRoom);
         InstallDesk();
+        InstallGlance();
         // Rows open their cards in their window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
@@ -148,6 +149,9 @@ public sealed partial class MainWindow : Window
         // so the band keeps its spacing without one.
         CueDetail.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => CueDetailBox.Visibility = CueDetail.Visibility);
         WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
+        // And while the in-raid glance's plate stands (the panel's C: "the floor picker steps aside as for any cue"; at
+        // 900×560 the plate's right end lay over it).
+        RaidGlancePlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => ShowFloors());
         // What's New's plate keeps clear of the notes at the map's top and of its foot (PlaceWhatsNewPlate), from the moment
         // it shows: a plate of the size it last had changes no size as it comes back.
         WhatsNewPlate.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) =>
@@ -218,6 +222,8 @@ public sealed partial class MainWindow : Window
         _focusClear.Stop();
         _updateTimer?.Stop();
         _cueTimer?.Stop();
+        _glanceHide?.Stop();
+        _glanceWait?.Stop();
         _cards.Stop();
         Map.StopDrawing();
         StopTasksCue();
@@ -617,6 +623,8 @@ public sealed partial class MainWindow : Window
         ReadExampleTasksOnStart(s);
         UpdateDesk(s);
         ShowDeskExampleOnStart(s);
+        UpdateGlance(s);
+        ShowGlanceExampleOnStart(s);
         UpdateTraders(s);
         UpdatePicker(s);
         UpdatePlan(s);
@@ -1361,6 +1369,7 @@ public sealed partial class MainWindow : Window
     // edge of the item card on the plate).
     private void ShowFloors() =>
         ViewModel.Floors = _previewing is not null || CuePanel.Visibility == Visibility.Visible || WhatsNewPlate.Visibility == Visibility.Visible
+            || RaidGlancePlate.Visibility == Visibility.Visible
             ? [] : _floorChoices;
 
     private void EndPreview(bool restore)
@@ -1892,6 +1901,9 @@ public sealed partial class MainWindow : Window
         // (MainWindow.RollCall).
         if (cue.Kind != CueKind.ExitsListed && _rollRows.Count > 0)
             EndRollCall();
+        // The in-raid glance's plate gives way to any cue, as any cue ends another; a reading waiting keeps waiting for it to
+        // go (MainWindow.GlancePlate).
+        GlanceGivesWay();
         // A new cue ends a replay still playing; RAID OVER with a raid to replay plays it (MainWindow.Replay).
         StopReplay("cue");
         if (cue is { Kind: CueKind.RaidOver, Replay: { Plays: false } skipped })

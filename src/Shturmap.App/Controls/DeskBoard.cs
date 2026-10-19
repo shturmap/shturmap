@@ -372,14 +372,14 @@ public sealed partial class DeskBoard : Grid
         return (block, head, light);
     }
 
-    private static int SlotOrder(string? slot) => DeskSlots.Order(slot ?? "") is var order and >= 0 ? order : 100;
+    internal static int SlotOrder(string? slot) => DeskSlots.Order(slot ?? "") is var order and >= 0 ? order : 100;
 
-    private static Thickness Thickness((double Left, double Top, double Right, double Bottom) inset) =>
+    internal static Thickness Thickness((double Left, double Top, double Right, double Bottom) inset) =>
         new(inset.Left, inset.Top, inset.Right, inset.Bottom);
 
     // A compartment's empty cells: the cell's ground, a hairline round it and between its cells; one of several stands in
     // by its inset, framed a step stronger, so the compartments read apart as the game draws them.
-    private static FrameworkElement PartOf(DeskRect part, double size, Thickness inset, bool apart)
+    internal static FrameworkElement PartOf(DeskRect part, double size, Thickness inset, bool apart)
     {
         double w = part.W * size + 1 - inset.Left - inset.Right, h = part.H * size + 1 - inset.Top - inset.Bottom;
         var geometry = new GeometryGroup();

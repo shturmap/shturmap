@@ -22,8 +22,9 @@ tooltip-modes we already have implemented" (the cards: hover, held, nested; §4,
 a app made for gamers, so it should also be fun to use." The desk alone reads a stash's item grids against the whole
 catalogue (§2, "For the stash desk"). An answer from a loot screenshot in a raid, beside the map, which the owner
 described too, is not part of the desk (the coordinator's scoping, 2026-10-19) but a step of its own, the in-raid
-glance: its when, what and what is kept decided by the owner the same day, its look to design with its own panel, built
-after the desk (§2, "For the stash desk"; §4, "Screen anatomy", *The in-raid glance*).
+glance: its when, what and what is kept decided by the owner the same day, its look chosen from its own panel the same
+day (Variant 1, with the looted container's or body's layout mirrored), its reading and its plate built the same day
+(§2, "For the stash desk"; §4, "Screen anatomy", *The in-raid glance*).
 
 That is the whole product. A feature belongs in Shturmap only if it helps one of these three questions and works
 without the player having to click during a raid. When in doubt, leave it out. One exception, the owner's, for
@@ -221,13 +222,14 @@ day, for the in-raid glance: "Which pictures", below):
   stash also has the player loadout in view and when a raid ends the player might want just take a screenshot of the
   items they have and get an overview of what to do with that"). Never a raid screenshot for the desk, the menus'
   view. **In a raid, for the in-raid glance alone** (owner, 2026-10-19, three choices; its reading built the same day,
-  the reader round, its plate to come; until then a raid screenshot kept its one corner; the coordinator's scoping of
+  the reader round, and its plate; until then a raid screenshot kept its one corner; the coordinator's scoping of
   the same day had left the glance a later step with a boundary for the owner to decide): every in-raid screenshot that
   shows an inventory screen (the player's own loadout, or a looted container or body) is read as it arrives, as the
   extract list is and after its corner, for its grids, as the desk reads them (below; the nested windows open there too
   when looting, owner, 2026-10-19: "This will also happen in-game btw"); nothing of it is kept, and the menu
-  screenshots' tick, its words widened by "and in a raid" (with the plate; until then its present words), says yes or
-  no (§4, "Screen anatomy", *The in-raid glance*). Never a trader's grid, a message's attachments or another player's
+  screenshots' tick, its words widened by "and in a raid" (with the plate, 2026-10-19: "Read your stash, gear and tasks
+  from menu screenshots, and loot in a raid"; its note, help, the README and PRIVACY.md say it), says yes or no (§4,
+  "Screen anatomy", *The in-raid glance*). Never a trader's grid, a message's attachments or another player's
   inventory in a group screen. **Built** (the reader round, 2026-10-19; `DeskReader.ReadRaidAsync`, `DeskLoot`,
   `GameSession.Glance`): the raid's inventory screen is told by the character screen's tabs at its top (OVERALL, GEAR,
   HEALTH, SKILLS, read first in a strip of the picture, about 30 ms: a picture of the world goes no further), the
@@ -375,7 +377,7 @@ been permitted. The owner accepted that residual risk. Do not widen the boundary
 extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11), the
 operational tasks' table (2026-10-19), those grids against the whole catalogue for the stash desk (2026-10-19; its
 reading and view built, step B) and the item grids of an in-raid screenshot that shows an inventory screen, for the
-in-raid glance (2026-10-19; its reading built the same day, its plate to come).
+in-raid glance (2026-10-19; its reading and its plate built the same day).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -2235,18 +2237,21 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       the Zhuk body armour).
     - The flea figure carries the item's flea level and compares nothing (the player's level isn't read); the fee's
       hideout levels are 0, no setting yet; tarkov.dev's sell prices include Fence's.
-- **The in-raid glance** (owner, 2026-10-19, three choices: when, what and what is kept; to design with its own panel,
-  then build after step C; its reading built the same day, the reader round, §2; the plate not built). Every
+- **The in-raid glance** (owner, 2026-10-19, three choices: when, what and what is kept; its look from its own panel the
+  same day, Variant 1 "with the looted container's or body's item layout mirrored"; its reading built the same day, the
+  reader round, §2, and its plate, *Built*, below). Every
   screenshot taken in a raid that shows an inventory screen, the player's
   own loadout or a looted container or body, is read as it arrives, as the extract list is, and a plate over the map
   says what its items are worth, at a glance: the answer from a loot screenshot the owner described with the desk (§1).
   - **When:** as the screenshot arrives, the extract list's reading first (§2), then its grids, read as the desk's are
-    (§2, "For the stash desk"). The menu screenshots' tick gains the words "and in a raid" (its words and note worded
-    then); unticked, no inventory in a raid is read.
+    (§2, "For the stash desk"). The menu screenshots' tick gains the words "and in a raid" (worded with the plate: "Read
+    your stash, gear and tasks from menu screenshots, and loot in a raid"); unticked, no inventory in a raid is read.
   - **What:** a plate over the map in the cue pattern (principle 11): FROM YOUR SCREENSHOT, the total, the top five by
     value per slot with their keep marks, and "n unsure" (the "?" cells), for about 6 seconds. No click; the map stays
-    beside it. The raid's rules are unchanged: glanceable, nothing to do (principles 1 and 2). Its look and motion come
-    with its panel, after the desk's step B.
+    beside it. The raid's rules are unchanged: glanceable, nothing to do (principles 1 and 2). **Its look** (owner,
+    2026-10-19, from its panel of three: Variant 1, the total large and the desk's cells, at the top of the map's
+    column, "with the looted container's or body's item layout mirrored"): in place of the top five, the LOOT pane as
+    the game shows it, a container's grid or a body's slots and parts, so the player sees where everything is.
   - **Kept:** nothing. No in-raid pixel, position or item is stored for it. The desk's rules on nested containers
     apply (*The stash desk*, *What it mirrors*): in a looted backpack with a rig inside, the rig's contents count only
     from its open window.
@@ -2257,8 +2262,61 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     NEITHER for a window attached to none; each cell's figure and keep notch; `Totals.OnYou` and `OnYouPlus`,
     `Totals.Loot` and `LootPlus`), `Loot` (the pane's title in the game's words, "LOOT · BODY", or null for the player's
     inventory alone), `TakenAt` and `Reading` (a new reading is a higher number). A LOOT region's `Search` (searched,
-    searching, unsearched) and `Cut` say where contents went unseen; its region's figure ends in "+". Not yet: the
-    tick's words "and in a raid", and the top five per slot, which the plate takes from the sheet.
+    searching, unsearched) and `Cut` say where contents went unseen; its region's figure ends in "+". The tick's words
+    came with the plate (*Built*, below); the top five per slot gave way to the mirrored layout (*Its look*, above).
+  - **Built** (2026-10-19; `Controls.GlancePlate`, `Rules.GlancePlateRules`, `MainWindow.GlancePlate`; Variant 1's
+    drawing and words where the panel gave them, the coordinator's rules where it left a choice, for the owner to judge
+    with the dev build). *As built*:
+    - *Its place*: at the top of the map's column, centred, 16 DIP under its top, or 8 under the notes where one
+      stands; in the map's column only, so the rail (the raid card, NEXT, EXIT) is never covered; as wide as it needs,
+      the column's width less 16 DIP a side at the most; about half the map's height at the most. The cue's band: the
+      ground at 90 % between two amber hairlines, 16 DIP of padding (12 over the eyebrow). The map's floor picker steps
+      aside while it stands, as for a cue (the panel's C; at 900×560 the plate's end lay over it).
+    - *Its head*, Variant 1's: FROM YOUR SCREENSHOT (13 px, muted capitals); "LOOT" in ink and the total in amber at
+      the title's 48 px ("LOOT 1.87 M+ ₽"), one line, drawn smaller only where the plate is too narrow; under it, 15 px,
+      "ON YOU 1.01 M+ ₽" and, muted, "· 2 unsure", the drawn "?" cells counted. The totals are the sheet's, as the
+      desk's head line counts them; "+" where contents went unseen.
+    - *What it draws*: the LOOT pane's regions in reading order (a body's slots, its TACTICAL RIG, POCKETS and BACKPACK;
+      or a container's one grid; a window attached in the pane after its part), each under its own head in the desk's
+      head style: a body's slots under the container's kind as the game prints it ("BODY"), as a strip of the desk's slot
+      cells, two to a row in the least column; a part's own container as its slot cell, then its grid with its
+      compartments; a container's grid under its kind ("DRAWER"; LOOT where none was read). Every cell is the desk's
+      (*The cell*: art, figure after the flea's tag or a trader's sign, "~", "+", the "?" plate and range, the notch, the
+      count, the change, the tint), drawn by the desk's own cell without its board, so nothing on it is pointed at,
+      clicked or pinned. A part not searched yet has no grid to draw: a closed region stands there, the cells' ground in a
+      strong frame, three quarters of a cell tall and as wide as its column, "UNSEARCHED +" in its middle; a part being
+      searched, or a grid the pane's scrolling cut at its foot, draws what was read and says it after its head, "POCKETS ·
+      SEARCHING +", "BACKPACK · MORE BELOW +". No stem from a window to its cell.
+    - *What it doesn't draw*: the player's own regions (the loadout, the middle column, their windows): the gear is
+      known, the glance is about the loot; ON YOU's total stands on the head's line. A screenshot of the player's
+      inventory alone (no LOOT pane) puts up the head only: "ON YOU 4.63 M+ ₽" as the title and the muted line "Your gear ·
+      nothing looted on this screen" (the coordinator's choice of the brief's two: it says the screenshot was read and
+      what the gear is worth, in one line; drawing nothing would leave a reading unanswered).
+    - *Sizes*: the desk's cell sizes (*Its place*) from 80 DIP, the desk's largest until its cells filled the screen,
+      down to 40: the largest at which the regions fit the plate's room under its head, each column filled in reading
+      order down to the room's foot and the next started beside it, as the desk's gear flows; a column four cells wide
+      at the least (a weapon's slot widens it a little), not the desk's six. Where even 40 doesn't fit, the last regions
+      give way to one line in the fold line's words, "ALSO · POCKETS 2.3k+ ₽ · BACKPACK 2.89 M ₽", each with its total,
+      every "·" with the name after it: nothing scrolls in a raid. On the made-up body at a 2560 monitor's window: 80
+      DIP in three columns; at 1600×900, 48 DIP, three columns, nothing cut; at 900×560 the drawer at 40 whole, the
+      body's regions no room under the 48 px title, so its plate is the head and that line.
+    - *Timing*: a new reading (`RaidGlance.Reading`) puts the plate up at once, without an entrance (the owner's motion
+      call, below), for 6 s from its own arrival; then it fades out over 0.4 s, or goes at once with the animation
+      effects off. A newer reading replaces it at once and its 6 s start again. While a cue is up (QUEST COMPLETE, the
+      extract list's roll call, any other) a reading waits for the cue to go, then stands its 6 s (the coordinator's rule;
+      the panel had the one-line notice in its place); a cue that comes while it stands ends it, as any cue ends another.
+      The raid's end takes it, and a reading waiting with it. A snapshot run keeps it up for its picture, as it keeps a cue.
+    - *Nothing kept*: it draws from the snapshot's `Glance` alone; no file, no page in hand, gone with the raid.
+    - *Developer aids*: the developer script's `glance [<n>]` and `tools\fake-raid.ps1 -Glance <n>` (the app's
+      `--glance <n>`, with a fake game) put up the made-up readings (`Rules.GlanceExample`: 1, a drawer with three items;
+      2, a body with its slots, an UNSEARCHED rig, pockets being searched and a searched backpack); the replay
+      `tools\qa\glance.devscript` with its stills and their checks in `glance.md` (drawer, body, gone, a reading waiting
+      for the roll call, after it, the raid's end).
+    - *Open, the owner's call*: **motion in a raid**: the plate stands at once (as built; principle 2 lets the desk's moves
+      in out of a raid only), or comes in with the panel's D (the band's short gold flash, the total counting up over
+      0.9 s, the cells 50 ms apart). Also open: the 48 px title leaves a body no room at 900×560 (a smaller title there,
+      or a taller plate, would draw its slots); the plate is pictured with the made-up readings only, not yet with a real
+      raid's.
 - **Help** (F1 or `?`): one panel with TAKE THE TOUR and WHAT'S NEW IN 0.4.0 under its title (the tour from its start; the What's New card again), how it works with SHOW ME after the paragraphs a chapter of the tour shows (it opens the tour there; owner, 2026-10-09, T11), the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
@@ -3936,7 +3994,11 @@ Rules:
   keycard Therapist pays more for, ammunition that can't be listed, the Grizzly at 1469/1800, the keycards' "?", real
   quests and hideout stations for the keep lines, and a made-up price history for every item, so the card's band shows
   without a request, `DeskExample.History`), `-DeskReading 2` the reading that changed the backpack, so the rest is
-  folded, `3` one that changed nothing (step B, 2026-10-19); the layout check's `desk` view is reading 1;
+  folded, `3` one that changed nothing (step B, 2026-10-19); the layout check's `desk` view is reading 1; `-Glance <n>`
+  (the app's `--glance <n>`, with a fake game; not with `-PlanOnly`) puts up the made-up in-raid glance's reading n once
+  the raid is on, as a raid screenshot of an inventory screen brings it (`Rules.GlanceExample`: 1, a drawer with three
+  items; 2, a body with its slots, an UNSEARCHED rig, pockets being searched and a searched backpack), the snapshot
+  keeping its plate up (2026-10-19; §4, *The in-raid glance*);
   `-MoreArgs` passes more of the app's flags on. In developer builds every picture a snapshot saves of the window or a
   popup also gets its texts, its layout problems (a text missing that the picture always shows, one that overflows or
   is trimmed, text over text, and in the pseudo-language one untranslated; a layer that lies over the window on
@@ -4325,7 +4387,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 8, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's kill on Reserve (seven or eight reach the cue's "+N"; QA pass of 2026-10-19, F3); with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `desk [<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> | rule match|under:<n>|over:<n> | plan | show [<n>]` (step C, 2026-10-19: `pin` a cell right-clicked, its card pinned in the rail or unpinned; `copy` a cell clicked, its flash, decode and notice, the clipboard left alone in a script, the app log saying what would have been copied; `unpin` a pinned card's pin clicked, `all` or nothing named every pin; `pick` a "?" cell's n-th candidate, from 1, clicked on its card; `rule` the copy's rule as the card's − and + set it, saved in the session's settings; a slot by its key, "desk pin loadout headwear"; the made-up stash desk of `-Desk`, its reading n as a reading in the menus brings it, 1 to 3; `open` a folded region's name clicked; `point` the pointer on a region's cell at that grid place, or its first cell, as the pointer's events do, so a still shows a window's light and the rail's card; `plan` and `show` PLAN and DESK at the rail's head, `show <n>` the n-th pinned line in the rail's foot clicked, from the top (UI QA pass of the desk's second round, F3, 2026-10-19); step B, 2026-10-19; the replay `tools\qa\desk.devscript`), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `language <culture>` (settings' Language for the run, chosen as its row chooses it and not saved: `en-US`, `de-DE`, `qps-ploc`; the window's texts, the desk's page and cards among them, follow at once and the game data in the new language a moment later, so a `snapshot` before and after pictures a switch with the desk's cards up, which the layout check's `-SwitchCheck` can't; release QA pass of 2026-10-19, F1), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 8, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's kill on Reserve (seven or eight reach the cue's "+N"; QA pass of 2026-10-19, F3); with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `desk [<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> | rule match|under:<n>|over:<n> | plan | show [<n>]` (step C, 2026-10-19: `pin` a cell right-clicked, its card pinned in the rail or unpinned; `copy` a cell clicked, its flash, decode and notice, the clipboard left alone in a script, the app log saying what would have been copied; `unpin` a pinned card's pin clicked, `all` or nothing named every pin; `pick` a "?" cell's n-th candidate, from 1, clicked on its card; `rule` the copy's rule as the card's − and + set it, saved in the session's settings; a slot by its key, "desk pin loadout headwear"; the made-up stash desk of `-Desk`, its reading n as a reading in the menus brings it, 1 to 3; `open` a folded region's name clicked; `point` the pointer on a region's cell at that grid place, or its first cell, as the pointer's events do, so a still shows a window's light and the rail's card; `plan` and `show` PLAN and DESK at the rail's head, `show <n>` the n-th pinned line in the rail's foot clicked, from the top (UI QA pass of the desk's second round, F3, 2026-10-19); step B, 2026-10-19; the replay `tools\qa\desk.devscript`), `glance [<n>]` (the made-up in-raid glance's reading n, 1 a drawer, 2 a body, as a raid screenshot of an inventory screen brings it, in a raid only: its plate at the top of the map's column for 6 s, or waiting while a cue is up; 2026-10-19; the replay `tools\qa\glance.devscript`), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `language <culture>` (settings' Language for the run, chosen as its row chooses it and not saved: `en-US`, `de-DE`, `qps-ploc`; the window's texts, the desk's page and cards among them, follow at once and the game data in the new language a moment later, so a `snapshot` before and after pictures a switch with the desk's cards up, which the layout check's `-SwitchCheck` can't; release QA pass of 2026-10-19, F1), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list

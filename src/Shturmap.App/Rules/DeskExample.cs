@@ -28,20 +28,20 @@ public static class DeskExample
     private const string Prapor = "54cb50c76803fa8b248b4571";
     private const string Ragman = "5ac3b934156ae10c4430e83c";
 
-    // The items, by their catalogue ids.
-    private const string BastionBlack = "66b5f65ca7f72d197e70bcd6", BastionGreen = "66b5f661af44ca0014063c05", BastionMulticam = "66b5f666cad6f002ab7214c2";
-    private const string ArmbandRed = "5b3f3ade86f7746b6b790d8e", ArmbandWhite = "5b3f16c486f7747c327f55f7", ArmbandBlue = "5b3f3af486f774679e752c1f",
+    // The items, by their catalogue ids (the in-raid glance's made-up readings take theirs from here too: GlanceExample).
+    internal const string BastionBlack = "66b5f65ca7f72d197e70bcd6", BastionGreen = "66b5f661af44ca0014063c05", BastionMulticam = "66b5f666cad6f002ab7214c2";
+    internal const string ArmbandRed = "5b3f3ade86f7746b6b790d8e", ArmbandWhite = "5b3f16c486f7747c327f55f7", ArmbandBlue = "5b3f3af486f774679e752c1f",
         ArmbandUsec = "619bdfd4c9546643a67df6fa";
-    private const string Trooper = "5c0e655586f774045612eeb2", DogtagBear = "59f32bb586f774757e1e8442", Ak74n = "5644bd2b4bdc2d3b4c8b4572",
+    internal const string Trooper = "5c0e655586f774045612eeb2", DogtagBear = "59f32bb586f774757e1e8442", Ak74n = "5644bd2b4bdc2d3b4c8b4572",
         Glock17 = "5a7ae0c351dfba0017554310";
-    private const string BlackRock = "5648a69d4bdc2ded0b8b457b", Analgin = "544fb37f4bdc2dee738b4567", Ifak = "590c678286f77426c9660122",
+    internal const string BlackRock = "5648a69d4bdc2ded0b8b457b", Analgin = "544fb37f4bdc2dee738b4567", Ifak = "590c678286f77426c9660122",
         Ai2 = "5755356824597772cb798962";
-    private const string LabsBlue = "5c1d0c5f86f7744bb2683cf0", LabsViolet = "5c1e495a86f7743109743dfb", LabsYellow = "5c1d0d6d86f7744bb2683e1f",
+    internal const string LabsBlue = "5c1d0c5f86f7744bb2683cf0", LabsViolet = "5c1e495a86f7743109743dfb", LabsYellow = "5c1d0d6d86f7744bb2683e1f",
         LabsRed = "5c1d0efb86f7744baf2e7b7b", Wallet = "60b0f6c058e0b0481a09ad11";
-    private const string Blackjack = "5c0e774286f77468413cc5b2", ZhukBlack = "603648ff5a45383c122086ac", ZhukSurpat = "6040dd4ddcf9592f401632d2",
+    internal const string Blackjack = "5c0e774286f77468413cc5b2", ZhukBlack = "603648ff5a45383c122086ac", ZhukSurpat = "6040dd4ddcf9592f401632d2",
         Gpu = "57347ca924597744596b4e71", Grizzly = "590c657e86f77412b013051d", Salewa = "544fb45d4bdc2dee738b4568",
         Moonshine = "5d1b376e86f774252519444e", Roubles = "5449016a4bdc2d6f028b456f", Bitcoin = "59faff1d86f7746c51718c9c";
-    private const string Gamma = "5857a8bc2459772bad15db29", Ledx = "5c0530ee86f774697952d952", ItemCase = "59fb042886f7746c5005a7b2",
+    internal const string Gamma = "5857a8bc2459772bad15db29", Ledx = "5c0530ee86f774697952d952", ItemCase = "59fb042886f7746c5005a7b2",
         StreamerCase = "66bc98a01a47be227a5e956e", AmmoBs = "56dff026d2720bb8668b4567", PumpingKey = "593858c486f774253a24cb52";
 
     /// <summary>The made-up facts of each item: footprint, kind, flea, what traders pay, the 48 h change, the offers.</summary>

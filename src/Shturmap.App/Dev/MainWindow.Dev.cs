@@ -398,6 +398,20 @@ public sealed partial class MainWindow
         return null;
     }
 
+    /// <summary>The developer script's "glance" (DevScript.GlanceOf): the made-up in-raid glance's reading n, in a raid; what
+    /// was done, or why not.</summary>
+    internal string DevGlance(int reading)
+    {
+        if (_snapshot is not { } s)
+            return "glance: no snapshot yet";
+        if (s.Data is null)
+            return "glance: no data yet";
+        if (!ViewModel.InRaid)
+            return "glance: not in a raid";
+        ShowGlanceExample(reading, s);
+        return $"glance: reading {reading}" + (GlanceUp ? "" : _glanceWaiting is not null ? " (waiting for the cue to go)" : " (not shown)");
+    }
+
     /// <summary>The developer script's "desk" (DevScript.DeskOf): what was done, or why not.</summary>
     internal string DevDesk(DevScript.DeskStep step)
     {
