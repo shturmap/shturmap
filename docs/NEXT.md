@@ -269,6 +269,13 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
 
 **Next.**
 
+- **Decided after the owner tried the dev build (2026-10-20):** the desk's cells scale with the desk's width (40 DIP at
+  900, up to about 80 on a 2560 monitor, the game's grid proportions kept), the rail stays for the cards; a click on a cell
+  PINS its card in the rail (several stack, × unpins), the card carries a large COPY button with the rule and the four
+  guard states (so the click no longer copies: a change to D2); the sparkline, the 24 h bar, every trader, the keep
+  lines (which quests and hideout modules want the item) and the copy are step C, which the owner wants before 0.7.0
+  ships ("Wait for C"). No tooltips, by design.
+
 - **Measured (2026-10-19): the label alone against the whole catalogue** (`shturmap-cli stash --set all --no-art`: 5,480
   items, 3,872 short names; no image fetched, no request). On four hand-labelled pages (the key container, the medical
   case, a stash page, a GEAR-tab stash page; 183 items): at the fit 0.8 125 right, 1 wrong, 10 unread, 47 "one of N"; at
