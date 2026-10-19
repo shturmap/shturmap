@@ -3420,6 +3420,12 @@ ends in the other. The layout check compares such a run with a fresh one in the 
 same (docs/LANGUAGES.md, "Layout check"). The folder build (`eng\publish.ps1`, a release configuration) hasn't got it;
 a Debug build and the dev build have.
 
+**A larger text size in a run** (developer builds only; 2026-10-19, the beta's "text hard to read on some setups").
+`--text-scale <factor>` (1 to 2.25) draws every text of the window and its popups at the size Windows' text size
+(Settings › Accessibility › Text size) at that factor would give it, by WinUI's own curve (smaller text grows more), and
+the map's labels and symbols at the factor, without touching Windows' setting, so snapshots and their layout files show
+what clips (`Dev/TextScale.cs`). A simulation for checks, never a setting.
+
 **Quiet runs** (owner, 2026-10-15: checking the UI while playing). A run that only takes pictures, `--snapshot`,
 `--demo` (so every run `tools\fake-raid.ps1` starts, and the layout check's) or a developer script's
 (`--dev-view --dev-script <file>`, which the QA pass replays flows with), opens its window off every monitor, never

@@ -27,7 +27,7 @@ PASS.
 - **The folder build** (Release, what players run, no developer tools): `.\eng\publish.ps1` →
   `artifacts\Shturmap\Shturmap.exe`.
 - **Developer builds** (the layout files beside each picture, `--whats-new`, `--dev-view --dev-script`,
-  `--switch-language`, `qps-ploc`): for the layout check and `--whats-new`, `.\eng\dotnet.ps1 publish
+  `--switch-language`, `--text-scale`, `qps-ploc`): for the layout check and `--whats-new`, `.\eng\dotnet.ps1 publish
   src\Shturmap.App\Shturmap.App.csproj -c Release -o artifacts\layout-check\app '-p:ShturmapDev=true'`, what
   `tools\layout-check.ps1` builds when given no `-Exe`; for the replay scripts, the Debug build of `.\eng\dotnet.ps1
   build Shturmap.slnx`, as their `.md` says. Not `eng\dev.ps1`: it also packs into the dev feed, and the owner's
@@ -80,7 +80,8 @@ $out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\S
 ```
 
 Other states where a change reaches them: `-Scav`, `-LocalRaid`, `-HoldLoading`, `-GroupPick`, `-Map lab` (a sheet),
-`-MoreArgs '--show-report'` or `'--show-crash'`. `render` also takes made-up screenshot names (dated 2026-01-01) for
+`-MoreArgs '--show-report'` or `'--show-crash'`, and on a developer build `-MoreArgs '--text-scale', '1.5'` (every text as
+Windows' text size at 150 % draws it; DESIGN.md §8, "Developer aids"). `render` also takes made-up screenshot names (dated 2026-01-01) for
 positions, `--focus-item <item>` and `--pick <quest>`; `frames` 36 frames 100 ms apart (`--every`, `--count`, `--fix`,
 `--viewport`), `summary.txt` first. What each tool writes: DESIGN.md §8, "Developer aids", and docs/LANGUAGES.md,
 "Layout check".

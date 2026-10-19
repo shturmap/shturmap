@@ -629,6 +629,9 @@ public sealed partial class MainWindow : Window
             return 0;
         _statusMeasure ??= new TextBlock { Style = (Style)StatusBar.Resources["StatusBarText"] };
         _statusMeasure.Text = Caps.Of(text);
+#if DEVTOOLS
+        Dev.TextScale.Probe(_statusMeasure);
+#endif
         _statusMeasure.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
         return _statusMeasure.DesiredSize.Width;
     }
@@ -2804,6 +2807,16 @@ public sealed partial class MainWindow : Window
 
     private async Task RenderToPngAsync(UIElement element, string path)
     {
+#if DEVTOOLS
+        // "--text-scale": a popup opened just for its picture takes the factor too, and the fits settle (Dev/TextScale.cs).
+        if (Dev.TextScale.On)
+        {
+            Dev.TextScale.ApplyTo(this);
+            Dev.TextScale.Probe((FrameworkElement)element);
+            element.UpdateLayout();
+            await Task.Delay(300);
+        }
+#endif
         var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
         var scale = Content.XamlRoot?.RasterizationScale ?? 1;
         if (SnapshotScale == 1)
