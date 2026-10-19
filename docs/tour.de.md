@@ -11,7 +11,7 @@ Inoffizielles Fanprojekt, nicht von Battlestate Games gemacht oder gebilligt. Au
 - reads · Die Logs des Spiels
 - reads · Die Namen deiner Screenshots
 - reads · Die Extract-Liste in einem Screenshot
-- reads · Stash und Aufgaben in einem Menü-Screenshot, wenn du einen machst
+- reads · Stash, Dailies und Weeklies in einem Menü-Screenshot, wenn du einen machst
 - never · Fasst das Spiel an
 - never · Sendet Tastendrücke oder Klicks
 - never · Nimmt deinen Bildschirm auf

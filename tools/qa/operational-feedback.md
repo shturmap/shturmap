@@ -46,7 +46,7 @@ out); shoreline and woods 2.4 after their `map … look`; raid-start 3.4 after `
 
 ## What each still must show
 
-- **t0**: the notice "Operational tasks read: 6." („Operative Aufgaben gelesen: 6.“) at the map's top; no cue, no view
+- **t0**: the notice "Operational tasks read: 6." („Dailies und Weeklies gelesen: 6.“) at the map's top; no cue, no view
   moved. NEXT RAID lists the maps with operational work and none of your quests at its end, by name, without counts:
   CUSTOMS and SHORELINE each with a framed kill glyph, STREETS OF TARKOV with a framed survival glyph, WOODS with the
   framed stopwatch and a survival glyph (the task about to run out). The open Streets card says, muted, that none of
@@ -56,7 +56,7 @@ out); shoreline and woods 2.4 after their `map … look`; raid-start 3.4 after `
   OVER AFTER · 2 D LEFT" („JEDE MAP · DANACH ABGEBEN · NOCH 2 TAGE“). Both rows glowing: gold words easing to ink
   over the row's faint gold.
 - **t1**: no glow; under the eyebrow, muted, "1 ended at hh:mm. Screenshot your tasks for the new one." („1 endete um
-  hh:mm. Mach einen Screenshot deiner Aufgaben für die neue.“); WOODS's row with the stopwatch alone.
+  hh:mm. Mach einen Screenshot deiner Dailies und Weeklies für die neue.“); WOODS's row with the stopwatch alone.
 - **shoreline**: Shoreline's card (looked at, Streets still chosen): the ended line, the kill "Kill 5 PMC operatives"
   („5 PMC operatives töten“: the target is the game's words as read) with "1 OF 5 · READ JUST NOW" („1 VON 5 · GERADE
   GELESEN“: its countdown wasn't taken, so the reading's age), then the any-map hand-over after a hairline.

@@ -245,7 +245,7 @@
     <comment>en: ends in {count} min</comment>
   </data>
   <data name="OperationalEnded" xml:space="preserve">
-    <value>{count, plural, one {# endete um {time}. Mach einen Screenshot deiner Aufgaben für die neue.} other {# endeten, die letzte um {time}. Mach einen Screenshot deiner Aufgaben für die neuen.}}</value>
+    <value>{count, plural, one {# endete um {time}. Mach einen Screenshot deiner Dailies und Weeklies für die neue.} other {# endeten, die letzte um {time}. Mach einen Screenshot deiner Dailies und Weeklies für die neuen.}}</value>
     <comment>en: {count, plural, one {# ended at {time}. Screenshot your tasks for the new one.} other {# ended, the last at {time}. Screenshot your tasks for the new ones.}}</comment>
   </data>
 </root>
