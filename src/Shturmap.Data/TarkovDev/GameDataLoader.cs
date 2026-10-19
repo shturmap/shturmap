@@ -296,12 +296,24 @@ public sealed class GameDataLoader(CachedHttp http)
     /// Where items come from: trader offers, barters, crafts and hideout station names. Loaded after the rest, in
     /// the background: the item payload is large (17 MB) and only the item cards need it. Refreshed once a day.
     /// </summary>
-    public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, CancellationToken ct = default)
+    public Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, CancellationToken ct = default) =>
+        LoadSourcesAsync(mode, language, ItemsAge, ct);
+
+    /// <summary>How old a saved item file may be and still be used without asking: a day, as the item cards need it.</summary>
+    public static readonly TimeSpan ItemsAge = TimeSpan.FromHours(24);
+
+    /// <summary>How old the item file may be when the stash desk reads a screenshot (its prices): an hour, then it is
+    /// asked for again with its ETag (docs/DESIGN.md §3, "The stash desk's prices come per reading").</summary>
+    public static readonly TimeSpan DeskPricesAge = TimeSpan.FromHours(1);
+
+    /// <summary>The item sources, the item file (its prices) asked for again when older than <paramref name="itemsAge"/>;
+    /// the barters, crafts and hideout keep their day.</summary>
+    public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, TimeSpan itemsAge, CancellationToken ct = default)
     {
         var fetched = new List<Task<CachedResponse>>();
         try
         {
-            return await LoadSourcesAsync(mode, language, fetched, ct);
+            return await LoadSourcesAsync(mode, language, itemsAge, fetched, ct);
         }
         catch (Exception e) when (LoadProblem.Explain(e).Kind == LoadFailure.Unreadable)
         {
@@ -311,19 +323,19 @@ public sealed class GameDataLoader(CachedHttp http)
         }
     }
 
-    private async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, List<Task<CachedResponse>> fetched, CancellationToken ct)
+    private async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, TimeSpan itemsAge, List<Task<CachedResponse>> fetched, CancellationToken ct)
     {
         var slug = GameData.Slug(mode);
         language = ApiLanguage(language);
         var day = TimeSpan.FromHours(24);
-        Task<CachedResponse> Fetch(string endpoint)
+        Task<CachedResponse> Fetch(string endpoint, TimeSpan? age = null)
         {
-            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", day, ct, json: true);
+            var task = http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", age ?? day, ct, json: true);
             fetched.Add(task);
             return task;
         }
 
-        var items = Fetch($"{slug}/items");
+        var items = Fetch($"{slug}/items", itemsAge);
         var barters = Fetch($"{slug}/barters");
         var crafts = Fetch($"{slug}/crafts");
         var hideout = Fetch($"{slug}/hideout");
@@ -358,8 +370,19 @@ public sealed class GameDataLoader(CachedHttp http)
             Barters = (bartersData?.Data ?? []).Where(b => b.OfferedItem is not null).ToLookup(b => b.OfferedItem!.Item),
             Crafts = (craftsData?.Data ?? []).Where(c => c.ProductItem is not null).ToLookup(c => c.ProductItem!.Item),
             Stations = stations.Values.ToDictionary(s => s.Id, s => s.Name),
+            HideoutNeeds = HideoutNeeds(stations.Values),
+            FleaMarket = itemsData?.Data?.FleaMarket,
+            PricesAt = items.Result.FetchedAt,
         };
     }
+
+    /// <summary>What every hideout level takes, station by station, level by level (money among it: roubles are an
+    /// item too).</summary>
+    internal static List<HideoutNeed> HideoutNeeds(IEnumerable<ApiStation> stations) =>
+        stations.SelectMany(s => (s.Levels ?? []).SelectMany(l => (l.ItemRequirements ?? [])
+                .Where(r => r.Item.Length > 0 && r.Count > 0)
+                .Select(r => new HideoutNeed(s.Id, s.Name, l.Level, r.Item, (int)Math.Ceiling(r.Count), r.Attributes?.FoundInRaid == true))))
+            .ToList();
 
     /// <summary>
     /// tarkov.dev's code for the game's language (<see cref="GameLanguage"/>), English when the game names none. The

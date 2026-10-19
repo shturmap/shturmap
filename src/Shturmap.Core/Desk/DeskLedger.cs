@@ -67,7 +67,7 @@ public sealed class DeskLedger
                 var kept = before.Cells.Where(c =>
                     c.IsSlot
                         ? region.CoveredSlots.Contains(c.Slot!) && !region.Cells.Any(n => n.Slot == c.Slot)
-                        : region.Covered.Any(r => r.Contains(c.Rect)) && !region.Cells.Any(n => !n.IsSlot && n.Rect.Overlaps(c.Rect)));
+                        : region.Covered.Any(r => r.Overlaps(c.Rect)) && !region.Cells.Any(n => !n.IsSlot && n.Rect.Overlaps(c.Rect)));
                 merged = region with { Cells = region.Cells.Concat(kept).OrderBy(c => c.IsSlot ? 0 : 1).ThenBy(c => c.J).ThenBy(c => c.I).ToList() };
             }
             merged = merged with { Covered = [], CoveredSlots = [] };
@@ -107,13 +107,24 @@ public sealed class DeskLedger
             if (window.Kind != DeskRegionKind.ContainerWindow || window.TitleIds.Count == 0)
                 continue;
             var holders = regions.Where(r => r.Key != window.Key)
-                .SelectMany(r => r.Cells.Where(c => c.Holds == DeskHolds.Contents && c.Ids.Count > 0 && c.Ids.All(window.TitleIds.Contains)
+                .SelectMany(r => r.Cells.Where(c => c.Holds == DeskHolds.Contents && c.Ids.Any(window.TitleIds.Contains)
                                                     && !(c.IsSlot && r.Kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch))
                     .Select(c => (Region: r, Cell: c)))
                 .ToList();
-            regions[w] = holders.Count == 1
-                ? window with { AttachedTo = new DeskAnchor(holders[0].Region.Key, holders[0].Cell.I, holders[0].Cell.J, holders[0].Cell.Slot), SameName = 0, SameNameIn = [] }
-                : window with { AttachedTo = null, SameName = holders.Count, SameNameIn = holders.Select(h => h.Region.Key).Distinct().ToList() };
+            if (holders.Count == 1)
+            {
+                // The window's grid says its cell is a container of the window's name: a "?" cell narrows to those.
+                var (holder, cell) = holders[0];
+                var narrowed = cell.Ids.Where(window.TitleIds.Contains).ToList();
+                if (narrowed.Count < cell.Ids.Count)
+                {
+                    var at = regions.IndexOf(holder);
+                    regions[at] = holder with { Cells = holder.Cells.Select(c => ReferenceEquals(c, cell) ? c with { Ids = narrowed } : c).ToList() };
+                }
+                regions[w] = window with { AttachedTo = new DeskAnchor(holder.Key, cell.I, cell.J, cell.Slot), SameName = 0, SameNameIn = [] };
+            }
+            else
+                regions[w] = window with { AttachedTo = null, SameName = holders.Count, SameNameIn = holders.Select(h => h.Region.Key).Distinct().ToList() };
         }
         return page with { Regions = regions };
     }
