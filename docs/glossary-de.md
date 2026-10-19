@@ -177,6 +177,7 @@ Microsoft's German terms; Windows says "Sie", Shturmap "du".
 | Windows Settings → Time & language → Language | Windows-Einstellungen → Zeit und Sprache → Sprache und Region | Windows 11 (checked 2026-10-11): „und“, never „&“; Windows' own help names „Zeit und Sprache“, then „Sprache und Region“. Windows 10: Sprache (**check**) |
 | text recognition (language feature) | Texterkennung; „Optische Zeichenerkennung“ | Shturmap's sentences say Texterkennung; Windows 11 names the feature „Optische Zeichenerkennung“ among a language's features in „Sprachoptionen“ (checked 2026-10-11) |
 | animation effects | Animationseffekte | Einstellungen → Barrierefreiheit → Visuelle Effekte → Animationseffekte (Windows 11, checked 2026-10-11) |
+| text size (Windows' setting, and the settings row on top of it); Settings › Accessibility › Text size; NORMAL · LARGER · LARGEST | Textgröße; Windows-Einstellungen › Barrierefreiheit › Textgröße; NORMAL · GRÖSSER · AM GRÖSSTEN | Windows 11 names the page „Textgröße“ under „Barrierefreiheit“ (checked 2026-10-19), and the row takes its word; „Windows-“ because the tooltip stands in Shturmap's own EINSTELLUNGEN; AM GRÖSSTEN a superlative as LARGEST is, and it fits beside the other two in the 480 px panel |
 
 ## Keys
 

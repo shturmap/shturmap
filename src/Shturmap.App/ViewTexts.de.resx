@@ -649,7 +649,7 @@
     <comment>en: Text size</comment>
   </data>
   <data name="SettingsTextSizeTip" xml:space="preserve">
-    <value>Zusätzlich zur Textgröße von Windows (Einstellungen › Barrierefreiheit › Textgröße)</value>
+    <value>Zusätzlich zur Textgröße von Windows (Windows-Einstellungen › Barrierefreiheit › Textgröße)</value>
     <comment>en: On top of Windows' text size (Settings › Accessibility › Text size)</comment>
   </data>
   <data name="SettingsTextSizeNormal" xml:space="preserve">
