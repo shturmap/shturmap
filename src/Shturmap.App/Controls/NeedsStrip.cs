@@ -16,6 +16,10 @@ public sealed record NeedChip(string ItemId, string Glyph, string Title)
     /// <summary>How many of it: from two up, "×3" beside the cell.</summary>
     public int Count { get; init; } = 1;
 
+    /// <summary>The item whose icon pictures <see cref="ItemId"/>: a gun's default preset, else the item itself
+    /// (Data.TarkovDev.ItemSources.PictureId).</summary>
+    public string PictureId { get; init; } = ItemId;
+
     /// <summary>Something is known of having it (a mark; docs/DESIGN.md §4, "What you have"): a thin ink bar under the cell.</summary>
     public bool Marked { get; init; }
 
@@ -80,7 +84,7 @@ public sealed partial class NeedsStrip : StackPanel
         }
         foreach (var need in Needs.Take(Shown))
         {
-            var cell = new Picture { ItemId = need.ItemId, Glyph = need.Glyph, Title = need.Title, Size = Cell };
+            var cell = new Picture { ItemId = need.ItemId, PictureId = need.PictureId, Glyph = need.Glyph, Title = need.Title, Size = Cell };
             Linked.SetInline(cell, true);
             Linked.SetItem(cell, need.ItemId);
             if (need.Alternatives is { Count: > 1 } several)

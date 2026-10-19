@@ -89,7 +89,7 @@
                      trader's portrait, in the place of the hand-over's own row (owner, 2026-10-06, "Hand-over: E";
                      Handovers). It stays on a ticked row: what was got still goes. -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
-                  <controls:Picture ItemId="{x:Bind ItemId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}" />
+                  <controls:Picture ItemId="{x:Bind ItemId}" PictureId="{x:Bind PictureId}" Size="30" Visibility="{x:Bind controls:QuestCard.ShownIf(ItemId)}" />
                   <controls:HandoverMark TraderId="{x:Bind HandoverTraderId}" Count="{x:Bind HandoverCount}" PortraitSize="22"
                                          Tip="{x:Bind controls:QuestCard.HandoverTip(Handover)}" />
                 </StackPanel>
@@ -117,7 +117,7 @@
                   <!-- A mark just arrived: the row flashes gold once (Controls.Glow). -->
                   <Rectangle Grid.ColumnSpan="2" Margin="-4,-3" Fill="{StaticResource AmberBrush}" Opacity="0" IsHitTestVisible="False"
                              Visibility="{x:Bind controls:QuestCard.ShownIfTrue(Fresh)}" Tag="flash" Loaded="OnGlowLoaded" />
-                  <controls:Picture ItemId="{x:Bind ItemId}" Size="34" Glyph="{x:Bind controls:QuestCard.NeedGlyph(Kind)}" />
+                  <controls:Picture ItemId="{x:Bind ItemId}" PictureId="{x:Bind PictureId}" Size="34" Glyph="{x:Bind controls:QuestCard.NeedGlyph(Kind)}" />
                   <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
                     <TextBlock Text="{x:Bind Where}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"

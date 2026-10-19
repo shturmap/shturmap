@@ -20,6 +20,10 @@ public sealed record CardObjective(string QuestId, string ObjectiveId, Objective
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
 
+    /// <summary>The item whose icon pictures <see cref="ItemId"/>: a gun's default preset, else the item itself
+    /// (<see cref="ItemSources.PictureId"/>).</summary>
+    public string? PictureId { get; init; } = ItemId;
+
     /// <summary>How many of what it gets go to the trader after the raid; 0 without a hand-over.</summary>
     public int HandoverCount { get; init; }
 
@@ -40,6 +44,10 @@ public sealed record CardObjective(string QuestId, string ObjectiveId, Objective
 public sealed record CardNeed(string QuestId, RequirementKind Kind, string ItemId, string Text, string Where, string Source = "")
 {
     public IReadOnlyList<string> QuestIds => [QuestId];
+
+    /// <summary>The item whose icon pictures <see cref="ItemId"/>: a gun's default preset, the assembled gun, else the
+    /// item itself (<see cref="ItemSources.PictureId"/>; owner, 2026-10-19).</summary>
+    public string PictureId { get; init; } = ItemId;
 
     /// <summary>How many of it the quest needs (the "×3" in <see cref="Text"/>).</summary>
     public int Count { get; init; } = 1;
@@ -129,7 +137,7 @@ public static class QuestCards
             status?.State ?? QuestState.NotStarted,
             // A hand-over of what another objective gets is that objective's mark, not a row of its own.
             objectives.Where(o => !Handovers.Folds(task, o.Id))
-                .Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "", status?.State == QuestState.Active, ticks)).ToList(),
+                .Select(o => Objective(data, task, o, live?.Invoke(o.Id) ?? "", status?.State == QuestState.Active, ticks, sources)).ToList(),
             Needs(data, task, sources, quests, ticks),
             unlocks.Take(ShownUnlocks).ToList(),
             unlocks.Count > ShownUnlocks ? SessionTexts.QuestUnlocksMore(count: unlocks.Count - ShownUnlocks) : "",
@@ -176,7 +184,8 @@ public static class QuestCards
     /// </summary>
     public static string NoteStamp(DateTimeOffset at) => UiLanguage.DayMonthTime(at.LocalDateTime);
 
-    private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live, bool active, IReadOnlyDictionary<string, DateOnly>? ticks)
+    private static CardObjective Objective(GameData data, ApiTask task, ApiObjective o, string live, bool active, IReadOnlyDictionary<string, DateOnly>? ticks,
+        ItemSources? sources)
     {
         var kind = QuestTaxonomy.Classify(o.Type);
         var where = MapNames(data, MapIds(o));
@@ -206,6 +215,7 @@ public static class QuestCards
             HandoverTraderId = count > 0 ? task.Trader : null,
             Possible = places > 1 && !row.Done ? SessionTexts.QuestPossiblePlaces(count: places) : "",
             With = with,
+            PictureId = item is null ? null : ItemSources.PictureOf(sources, item),
         };
     }
 
@@ -372,6 +382,7 @@ public static class QuestCards
                 {
                     Alternatives = need.Alternatives.Distinct(StringComparer.Ordinal).ToList(),
                     Count = Math.Max(1, need.Count),
+                    PictureId = ItemSources.PictureOf(sources, need.Alternatives[0]),
                 });
             }
         }

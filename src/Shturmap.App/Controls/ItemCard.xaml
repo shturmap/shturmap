@@ -25,7 +25,7 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <controls:Picture ItemId="{x:Bind View.ItemId}" Glyph="{x:Bind Glyph(View.IsKey)}" Size="60" />
+          <controls:Picture ItemId="{x:Bind View.ItemId}" PictureId="{x:Bind View.PictureId}" Glyph="{x:Bind Glyph(View.IsKey)}" Size="60" />
           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
             <TextBlock Text="{x:Bind View.Name}" Style="{StaticResource TitleText}" />
             <TextBlock Text="{x:Bind KindText(View.IsKey)}" Style="{StaticResource StatusText}" FontSize="11" Foreground="{StaticResource MutedBrush}" />

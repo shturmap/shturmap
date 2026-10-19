@@ -803,6 +803,7 @@ public sealed partial class MainWindow : Window
         return new RequirementLine(GlyphOf(r.Kind), RowText(s, r), r.Why, r.ItemId, r.QuestIds, source)
         {
             Alternatives = r.Alternatives,
+            PictureId = ItemSources.PictureOf(s.Sources, r.ItemId),
             Mark = mark?.Text ?? "",
             Fresh = mark is not null && FreshMark(r),
         };
@@ -816,6 +817,7 @@ public sealed partial class MainWindow : Window
         return new NeedChip(r.ItemId, GlyphOf(r.Kind), string.Join("\n", new[] { RowText(s, r), r.Why, mark?.Text ?? "", BestSource(s, r) }.Where(t => t.Length > 0)))
         {
             Alternatives = r.Alternatives,
+            PictureId = ItemSources.PictureOf(s.Sources, r.ItemId),
             Count = count ?? r.Count,
             Marked = mark is not null,
             Fresh = mark is not null && FreshMark(r),
@@ -895,7 +897,7 @@ public sealed partial class MainWindow : Window
             {
                 var first = g.First();
                 var objectives = g.OrderBy(o => o.Done ? 1 : 0).ThenBy(o => o.HasPlace ? 0 : 1).ThenBy(o => o.Distance ?? double.MaxValue)
-                    .Select(o => ToItem(o, o.Done ? AppTexts.RaidObjectiveDone : o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name))
+                    .Select(o => ToItem(o, o.Done ? AppTexts.RaidObjectiveDone : o.HasPlace ? Direction(o.Direction, o.MapBearing) : Unplaced(o.Kind), s.RaidMap?.Name, s.Sources))
                     .ToList();
                 return (Nearest: g.Min(o => o.Distance ?? double.MaxValue), Quest: new RaidQuest(g.Key,
                     kinds.TryGetValue(g.Key, out var kind) ? kind : QuestTaxonomy.QuestKind(g.Select(o => o.Kind)),
@@ -963,7 +965,7 @@ public sealed partial class MainWindow : Window
         // With picks, NEXT is the nearest objective among them (the guide line leads there too); else the nearest of all.
         var placed = s.Objectives.Where(o => o.HasPlace && o.Distance is not null && !o.Done).ToList();
         var next = placed.Where(o => s.Picks.Contains(o.QuestId)).MinBy(o => o.Distance) ?? placed.MinBy(o => o.Distance);
-        vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name);
+        vm.RaidNext = vm.ScavRaid || next is null ? null : ToItem(next, Direction(next.Direction, next.MapBearing), s.RaidMap?.Name, s.Sources);
         // The nearest extract, never a transit (Rules.ExitsNote.Exit).
         var exit = Rules.ExitsNote.Exit(vm.Extracts.Select(e => (e.Distance.Length > 0, e.State == ExitState.NotListed, e.Marker == MarkerKind.Transit)).ToList());
         vm.RaidExit = exit is { } at ? vm.Extracts[at] : null;
@@ -1021,7 +1023,10 @@ public sealed partial class MainWindow : Window
         _ => AppTexts.ObjectiveAnywhere,
     };
 
-    private static ObjectiveItem ToItem(ObjectiveView o, string direction, string? mapName)
+    private static ObjectiveItem ToItem(ObjectiveView o, string direction, string? mapName, ItemSources? sources) =>
+        ToItemOf(o, direction, mapName) with { PictureId = o.ItemId is { } item ? ItemSources.PictureOf(sources, item) : null };
+
+    private static ObjectiveItem ToItemOf(ObjectiveView o, string direction, string? mapName)
     {
         if (o.HeightDifference is { } h)
             direction += (direction.Length > 0 ? " · " : "") + (h > 0 ? AppTexts.HeightUp(metres: Math.Abs(h).ToString("0", UiLanguage.Culture)) : AppTexts.HeightDown(metres: Math.Abs(h).ToString("0", UiLanguage.Culture)));
@@ -1720,7 +1725,7 @@ public sealed partial class MainWindow : Window
         {
             var item = kit[i];
             var cell = new Grid();
-            cell.Children.Add(new Picture { ItemId = item.ItemId, Glyph = GlyphOf(item.Kind), Size = 52 });
+            cell.Children.Add(new Picture { ItemId = item.ItemId, PictureId = ItemSources.PictureOf(_snapshot?.Sources, item.ItemId), Glyph = GlyphOf(item.Kind), Size = 52 });
             if (item.Count > 1)
             {
                 cell.Children.Add(new Border

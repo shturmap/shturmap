@@ -86,8 +86,15 @@ public sealed record ApiTraderOffer(string Trader, double Price, string? Currenc
 /// <param name="Types">Includes "noFlea" for items that can't be sold on the flea market.</param>
 /// <param name="Categories">The game's item categories, most specific first ("Sniper rifle", then "Weapon", then
 /// "Item"), as ids; their names are item-name entries (<see cref="GameData.ItemName"/>).</param>
+/// <param name="Properties">Of a gun, its default preset (<see cref="ApiItemProperties"/>); null for most items.</param>
 public sealed record ApiItem(string Id, List<string>? Types, int? MinLevelForFlea, double? LastLowPrice, List<ApiTraderOffer>? BuyFromTrader,
-    List<string>? Categories = null);
+    List<string>? Categories = null, ApiItemProperties? Properties = null);
+
+/// <summary>An item's properties, of which only a gun's default preset is read.</summary>
+/// <param name="DefaultPreset">A gun's default preset: an item of its own (type "preset"), the gun assembled as the
+/// traders sell it, whose icon pictures the gun (<see cref="ItemSources.PictureId"/>; owner, 2026-10-19). Null for
+/// every other item, and for a weapon without one (a knife, a grenade, a launcher).</param>
+public sealed record ApiItemProperties(string? DefaultPreset = null);
 
 public sealed record ApiCount(string Item, double Count);
 
