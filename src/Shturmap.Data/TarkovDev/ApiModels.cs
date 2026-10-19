@@ -78,17 +78,40 @@ public sealed record ApiMap(
     List<ApiContainerSpot>? LootContainers = null,
     List<string>? AccessKeys = null);
 
-// Where items come from (json.tarkov.dev items, barters, crafts, hideout). Prices are only used to say which trader
-// offer is the cheap one; Shturmap has no price views (docs/DESIGN.md §1).
+// Where items come from (json.tarkov.dev items, barters, crafts, hideout). Outside the stash desk prices are only used to
+// say which trader offer is the cheap one; the desk (docs/DESIGN.md §1, the third answer) reads the item file's price
+// fields, its footprints and the flea market's rules (Shturmap.Core.Desk).
 
 public sealed record ApiTraderOffer(string Trader, double Price, string? Currency, double? PriceRUB, int MinTraderLevel, string? TaskUnlock);
+
+/// <summary>What a trader pays for an item (the item file's <c>sellToTrader</c>), in its currency and in roubles.</summary>
+public sealed record ApiTraderPrice(string Trader, double Price, string? Currency, double? PriceRUB);
 
 /// <param name="Types">Includes "noFlea" for items that can't be sold on the flea market.</param>
 /// <param name="Categories">The game's item categories, most specific first ("Sniper rifle", then "Weapon", then
 /// "Item"), as ids; their names are item-name entries (<see cref="GameData.ItemName"/>).</param>
 /// <param name="Properties">Of a gun, its default preset (<see cref="ApiItemProperties"/>); null for most items.</param>
+/// <param name="Avg24hPrice">The flea's average over the last 24 hours (the stash desk's card; null without offers).</param>
+/// <param name="Low24hPrice">The day's lowest offer.</param>
+/// <param name="High24hPrice">The day's highest offer: one outlier offer can set it (9,999,999 seen), never a ceiling.</param>
+/// <param name="ChangeLast48hPercent">The last low's change over 48 hours, in percent (−10.33).</param>
+/// <param name="LastOfferCount">How many offers the last scan saw: the desk's liquidity.</param>
+/// <param name="SellToTrader">What each trader pays for it, Fence among them.</param>
+/// <param name="BasePrice">The game's base price, the flea fee's other input.</param>
+/// <param name="Updated">When tarkov.dev's prices for it were last scanned (ISO 8601, UTC).</param>
+/// <param name="Width">Its footprint in cells, as it lies unrotated: the desk's tie-break between items of one short name.</param>
+/// <param name="HasGrid">It holds a grid of its own (a backpack, a rig, a case, a wallet): on the desk its contents are
+/// unseen until its window is read.</param>
 public sealed record ApiItem(string Id, List<string>? Types, int? MinLevelForFlea, double? LastLowPrice, List<ApiTraderOffer>? BuyFromTrader,
-    List<string>? Categories = null, ApiItemProperties? Properties = null);
+    List<string>? Categories = null, ApiItemProperties? Properties = null,
+    double? Avg24hPrice = null, double? Low24hPrice = null, double? High24hPrice = null, double? ChangeLast48hPercent = null,
+    int? LastOfferCount = null, List<ApiTraderPrice>? SellToTrader = null, double? BasePrice = null, string? Updated = null,
+    int? Width = null, int? Height = null, bool? HasGrid = null);
+
+/// <summary>The flea market's rules in the item file (<c>data.fleaMarket</c>): the fee's two rates, the level it opens
+/// at, and whether an item must be found in raid to be listed (the game's globals; false in PvE on 2026-10-19).</summary>
+public sealed record ApiFleaMarket(int? MinPlayerLevel = null, bool? Enabled = null, double? SellOfferFeeRate = null,
+    double? SellRequirementFeeRate = null, bool? FoundInRaidRequired = null);
 
 /// <summary>An item's properties, of which only a gun's default preset is read.</summary>
 /// <param name="DefaultPreset">A gun's default preset: an item of its own (type "preset"), the gun assembled as the
@@ -102,9 +125,17 @@ public sealed record ApiBarter(string Trader, int MinTraderLevel, string? TaskUn
 
 public sealed record ApiCraft(string Station, int Level, List<ApiCount>? RequiredItems, ApiCount? ProductItem);
 
-public sealed record ApiStation(string Id, string Name);
+/// <param name="Levels">Its levels with what each takes to build (the stash desk's hideout need); null when not read.</param>
+public sealed record ApiStation(string Id, string Name, List<ApiStationLevel>? Levels = null);
 
-internal sealed record ApiItemsData(Dictionary<string, ApiItem>? Items);
+public sealed record ApiStationLevel(int Level, List<ApiItemRequirement>? ItemRequirements = null);
+
+/// <summary>An item a hideout level takes, with whether it must be found in raid (<c>attributes.foundInRaid</c>).</summary>
+public sealed record ApiItemRequirement(string Item, double Count, ApiRequirementAttributes? Attributes = null);
+
+public sealed record ApiRequirementAttributes(bool? FoundInRaid = null);
+
+internal sealed record ApiItemsData(Dictionary<string, ApiItem>? Items, ApiFleaMarket? FleaMarket = null);
 
 internal sealed record ApiItemsEnvelope(ApiItemsData? Data);
 

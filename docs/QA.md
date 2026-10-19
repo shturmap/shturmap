@@ -82,7 +82,8 @@ $out = "$pass\whatsnew"; .\tools\fake-raid.ps1 -Exe artifacts\layout-check\app\S
 Other states where a change reaches them: `-Scav`, `-LocalRaid`, `-HoldLoading`, `-GroupPick`, `-Map lab` (a sheet),
 `-MoreArgs '--show-report'` or `'--show-crash'`, `-Operational 5 -OperationalEnded` (made-up daily and weekly tasks: the
 list rows' framed glyphs, the open card's and the raid card's OPERATIONAL, with `-Scav` FIND IN RAID's hand-over
-items), and on a developer build `-MoreArgs '--text-scale', '1.5'` (every text as
+items; the snapshot keeps the cue of the tasks read up, its sixth row ENDED by then), `-Operational 8` (eight tasks: the
+cue's five rows and "+3" in its sixth place; QA pass of 2026-10-19, F3), and on a developer build `-MoreArgs '--text-scale', '1.5'` (every text as
 Windows' text size at 150 % draws it) or `'--text-step', 'largest'` (settings' LARGEST for the run; DESIGN.md §8,
 "Developer aids"); at a larger text size the smallest window is taller (`-Window 900x663` at 125 %, `900x765` at 150 %;
 DESIGN.md §4, "Screen anatomy", *Text size*). The setting's change while Shturmap runs is one moment more: a developer
@@ -197,6 +198,9 @@ window's pictures with their layout files and the developer view's tabs (`devvie
 lines, newest first); with `--verbose` the app log (`$qa\data\logs`) has every step, what it said and when each still
 was taken. A step that found no quest or failed leaves its moments unchecked. A snapshot takes a second or two, so a
 moment inside a motion shows where the motion was by then; the map's own motion frame by frame is `shturmap-cli frames`.
+A cue's own motion (its entrance, the rows rising in 0.1 s apart from 0.5 s, 0.3 s each, in the roll call's and the
+tasks' cues) can't be checked frame by frame: the stills are a second or more apart and `frames` draws the map, not the
+cues; accepted as unchecked for now (QA pass of 2026-10-19, F4).
 A flow a change reaches without a script gets one, added here with the change.
 
 ## Rules

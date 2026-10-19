@@ -109,15 +109,15 @@
     <comment>A list of names cut short: "A, B, C and 2 more". {list}: the names shown, with ListSeparator between them; {count}: how many more there are.</comment>
   </data>
   <data name="AgeSeconds" xml:space="preserve">
-    <value>{seconds} s</value>
+    <value>{seconds} s</value>
     <comment>How old the last position is, under a minute: status bar ("Fix 12 s ago") and raid card. {seconds}: whole seconds.</comment>
   </data>
   <data name="AgeMinutes" xml:space="preserve">
-    <value>{minutes} min</value>
+    <value>{minutes} min</value>
     <comment>How old the last position is, under an hour: "Fix 4 min ago". {minutes}: whole minutes.</comment>
   </data>
   <data name="AgeHours" xml:space="preserve">
-    <value>{hours} h</value>
+    <value>{hours} h</value>
     <comment>How old the last position is, an hour or more: "Fix 2 h ago". {hours}: whole hours.</comment>
   </data>
   <data name="FixNoneYet" xml:space="preserve">
@@ -141,19 +141,19 @@
     <comment>Tooltip of the raid card's clock on a map whose raid length tarkov.dev doesn't give.</comment>
   </data>
   <data name="RaidTimeScav" xml:space="preserve">
-    <value>{gone} min in · time left not known</value>
+    <value>{gone} min in · time left not known</value>
     <comment>The raid's time in words, a Scav raid. {gone}: whole minutes since the raid started.</comment>
   </data>
   <data name="RaidTimeNoLength" xml:space="preserve">
-    <value>{gone} min in</value>
+    <value>{gone} min in</value>
     <comment>The raid's time in words, on a map without a raid length. {gone}: whole minutes since the raid started.</comment>
   </data>
   <data name="RaidTimeLeft" xml:space="preserve">
-    <value>{gone} min in · {left} min left</value>
+    <value>{gone} min in · {left} min left</value>
     <comment>The raid's time in words. {gone}: whole minutes since the raid started; {left}: whole minutes left.</comment>
   </data>
   <data name="RaidTimeOver" xml:space="preserve">
-    <value>{gone} min in · past the raid's {length} min</value>
+    <value>{gone} min in · past the raid's {length} min</value>
     <comment>The raid's time in words, past the map's raid length. {gone}: whole minutes since the raid started; {length}: the map's raid length in minutes.</comment>
   </data>
   <data name="StatusNoPosition" xml:space="preserve">
@@ -213,15 +213,15 @@
     <comment>As OperationalHandOverAfter, in the raid card ("HAND OVER AFTER THE RAID", with ANYWHERE in the row's distance column). Shown in capitals.</comment>
   </data>
   <data name="OperationalMinutesLeft" xml:space="preserve">
-    <value>{count} min left</value>
+    <value>{count} min left</value>
     <comment>An operational task's time left in its row's muted line in Plan, under an hour ("4 OF 7 · 25 MIN LEFT"). Shown in capitals.</comment>
   </data>
   <data name="OperationalHoursLeft" xml:space="preserve">
-    <value>{count} h left</value>
+    <value>{count} h left</value>
     <comment>An operational task's time left in its row's muted line in Plan, under two days, rounded down ("4 OF 7 · 8 H LEFT"). Shown in capitals.</comment>
   </data>
   <data name="OperationalDaysLeft" xml:space="preserve">
-    <value>{count} d left</value>
+    <value>{count} d left</value>
     <comment>An operational task's time left in its row's muted line in Plan, from two days on, rounded down (a weekly: "2 D LEFT"). {count}: the days. Shown in capitals.</comment>
   </data>
   <data name="OperationalReadJustNow" xml:space="preserve">
@@ -229,19 +229,19 @@
     <comment>An operational task's muted line in Plan in place of its time left, when its countdown couldn't be read for sure: how old the screenshot is, under a minute. Shown in capitals.</comment>
   </data>
   <data name="OperationalReadMinutesAgo" xml:space="preserve">
-    <value>read {count} min ago</value>
+    <value>read {count} min ago</value>
     <comment>As OperationalReadJustNow, under an hour ("READ 25 MIN AGO"). Shown in capitals.</comment>
   </data>
   <data name="OperationalReadHoursAgo" xml:space="preserve">
-    <value>read {count} h ago</value>
+    <value>read {count} h ago</value>
     <comment>As OperationalReadJustNow, under two days, rounded down ("READ 3 H AGO"). Shown in capitals.</comment>
   </data>
   <data name="OperationalReadDaysAgo" xml:space="preserve">
-    <value>read {count} d ago</value>
+    <value>read {count} d ago</value>
     <comment>As OperationalReadJustNow, from two days on, rounded down ("READ 3 D AGO"). {count}: the days. Shown in capitals.</comment>
   </data>
   <data name="OperationalEndsIn" xml:space="preserve">
-    <value>ends in {count} min</value>
+    <value>ends in {count} min</value>
     <comment>An operational task's time in the raid card, only when it ends before the raid could, in red ("4 OF 7 · ENDS IN 25 MIN"). Shown in capitals.</comment>
   </data>
   <data name="OperationalEnded" xml:space="preserve">
@@ -251,6 +251,10 @@
   <data name="OperationalCueEyebrow" xml:space="preserve">
     <value>FROM YOUR SCREENSHOT</value>
     <comment>The eyebrow of the cue for a screenshot of the game's Tasks screen (its OPERATIONAL tab) that brought new daily or weekly tasks, over its title. Capitals.</comment>
+  </data>
+  <data name="OperationalCueEnded" xml:space="preserve">
+    <value>ended</value>
+    <comment>In a row of the cue of the daily and weekly tasks read, in place of the task's time left, when the task runs out while the cue is up ("WOODS · ENDED"; the other rows keep the time left as read). Shown in capitals; short.</comment>
   </data>
   <data name="OperationalCueTitle" xml:space="preserve">
     <value>{count, plural, one {# DAILY OR WEEKLY} other {# DAILIES AND WEEKLIES}}</value>

@@ -199,9 +199,11 @@ public sealed partial class GameSession
     /// screenshot's (the checks, the cue, the rows' glow), except that the operational tasks' file isn't written
     /// from then on in this run: made-up tasks never reach a player's file. In order, up to <paramref name="count"/>
     /// of: a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two
-    /// hand-overs on any map, a kill on Shoreline whose countdown went unread, a line of no known kind on Woods. With
-    /// <paramref name="ended"/>, one more on Woods that runs out three seconds later ("1 ended at …"). Says why not when
-    /// nothing is read: no data, or reading menu screenshots turned off.
+    /// hand-overs on any map, a kill on Shoreline whose countdown went unread, a line of no known kind on Woods, and,
+    /// repeating kinds on other maps so the cue's last place says "+N" (QA pass of 2026-10-19, F3), a survival on
+    /// Interchange, a kill on Lighthouse and a weekly's kill on Reserve. With <paramref name="ended"/>, one more on Woods
+    /// that runs out three seconds later ("1 ended at …"). Says why not when nothing is read: no data, or reading menu
+    /// screenshots turned off.
     /// </summary>
     public async Task<string?> ReadExampleTasksAsync(int count, bool ended)
     {
@@ -233,6 +235,10 @@ public sealed partial class GameSession
                     [new OperationalObjective("Hand over the found in raid item: \"SSD drive\""), new OperationalObjective("Hand over the found in raid item: \"CPU fan\"")]),
                 new("Elimination", Map("shoreline"), null, 0, 20, [new OperationalObjective("Eliminate PMC operatives", 1, 5)]),
                 new("Assignment", Map("woods"), Left(new TimeSpan(8, 14, 11)), 3, 0, [new OperationalObjective("Mark the made-up spots", 0, 2)]),
+                new("Exit the location", Map("interchange"), Left(new TimeSpan(14, 30, 0)), 4, 0,
+                    [new OperationalObjective("Survive and extract from the location", 0, 2)]),
+                new("Elimination", Map("lighthouse"), Left(new TimeSpan(20, 5, 0)), 4, 0, [new OperationalObjective("Eliminate Scavs", 0, 8)]),
+                new("Elimination", Map("reserve"), Left(new TimeSpan(3, 20, 0, 0)), 3, 0, [new OperationalObjective("Eliminate PMC operatives", 0, 10)]),
             ];
             rows = rows.Take(Math.Clamp(count, 0, rows.Count)).ToList();
             if (ended)

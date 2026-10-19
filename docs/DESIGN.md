@@ -10,7 +10,8 @@ Shturmap answers two questions for an Escape from Tarkov player, on a second mon
 1. **Before a raid: where should I go, and what do I need to bring?**
 2. **During a raid: where am I, and where is my next objective?**
 
-Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; designed, not built; docs/NEXT.md):
+Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; designed; its reading and data built the
+same day, step B part 1, its view the same day, part 2, the card and the click to come with step C; docs/NEXT.md):
 **what is this worth, and what should I ask for it?**, for the items on a screenshot the player took of their own
 stash. That view is the stash desk; the raid planner stays the other view. The recommendation was a separate app; the
 owner kept it in one: "It makes sense to keep it in one app since shturmap idea is to be mostly as hands off as
@@ -148,11 +149,12 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
 - **How:** as the list's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them. With "Delete
   screenshots after reading" ticked it goes once read, as a raid screenshot does (below).
-- **The player's say:** "Read your stash and tasks from menu screenshots" in settings ("Read your stash from menu
-  screenshots" until 2026-10-19, when the tasks below joined it), on unless unticked, beside the list's
-  tick and with a note that says what is looked at and what is kept. Unticked, no menu screenshot is opened; the
-  marks learned stay until the player retracts them. Its note, help, the README, PRIVACY.md, the tour's first chapter
-  and the website say it; the diagnostics carry the setting's state and the recognition's language.
+- **The player's say:** "Read your stash, gear and tasks from menu screenshots" in settings ("Read your stash from menu
+  screenshots" until 2026-10-19, when the tasks below joined it, then "Read your stash and tasks …" until the desk's
+  words the same day, below), on unless unticked, beside the list's tick and with a note that says what is looked at
+  and what is kept. Unticked, no menu screenshot is opened; the marks learned stay until the player retracts them. Its
+  note, help, the README, PRIVACY.md, the tour's first chapter and the website say it; the diagnostics carry the
+  setting's state and the recognition's language.
 
 **The OPERATIONAL table of a menu screenshot is read, for the daily and weekly tasks** (owner, 2026-10-17: "Add
 dailies and weeklies via screenshot"; from a panel of four, 2026-10-19: B, "Use B, the recommended one"; the spike of
@@ -194,19 +196,23 @@ table is read as the stash's is, in the same path, and its tasks show where the 
   screen captured; a screenshot the player took with their own key press, never one taken for them; deleted after
   reading when "Delete screenshots after reading" is ticked.
 - **The player's say:** the stash's one tick, its words widened to cover the Tasks screen (owner, 2026-10-19, B: one
-  tick, no new setting): "Read your stash and tasks from menu screenshots"; its note says the OPERATIONAL tab's daily
-  and weekly tasks are read, never their rewards. Unticked, no menu screenshot is opened; the tasks kept stay until
-  they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter say it.
+  tick, no new setting): "Read your stash and tasks from menu screenshots" (widened again for the desk, below); its
+  note says the OPERATIONAL tab's daily and weekly tasks are read, never their rewards. Unticked, no menu screenshot is
+  opened; the tasks kept stay until they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter
+  say it.
 
 **For the stash desk, the item grids are read against the whole catalogue** (owner, 2026-10-19, keeping the price view
-in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*: nothing of it is
-built, and until it is, the grids are read for What You Have only, above; docs/NEXT.md). The desk mirrors a screenshot's
+in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*; its reading and
+page built the same day, step B part 1: `DeskReader`, `DeskLedger`, `GameSession.Desk`; the view, part 2; docs/NEXT.md).
+The desk mirrors a screenshot's
 grids with each item's prices, so it has to name every cell, not only the ones BRING lists. Its keep mark has three
 levels from the quest dependency tree, NOW (an active quest's BRING needs the item), NEXT (a quest the active ones
 unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
 (the logs don't say its level, and hideout tracking stays a not-goal, §1), each with its found-in-raid flag (owner,
-2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The boundary widens for the desk
-alone, and no further (and, decided the same day, for the in-raid glance: "Which pictures", below):
+2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The page in hand is kept in
+`desk.json` and priced from tarkov.dev's item file, asked for again at most once an hour while the desk is used (owner,
+2026-10-19: "Accept, once an hour"; §3). The boundary widens for the desk alone, and no further (and, decided the same
+day, for the in-raid glance: "Which pictures", below):
 
 - **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
   without a position, while the log shows the menus. The inventory is the GEAR tab (Character › GEAR), the player's
@@ -239,18 +245,40 @@ alone, and no further (and, decided the same day, for the in-raid glance: "Which
   (they carry the screenshot's path). A cell that fits more than one item is said honestly, never guessed: "one of N",
   with the group's price range and a "?", and its hover card lists the candidates for the player to pick with one click
   (of the 3,159 flea-priced items that aren't guns or presets, 672 share their short name and footprint with another; a
-  silent guess prices the wrong item). A name is never taken from the picture alone. Before it is built, the stash spike
-  measures the false-name rate against the whole catalogue.
+  silent guess prices the wrong item). A name is never taken from the picture alone. The stash spike measured the false
+  names against the whole catalogue (2026-10-19, docs/NEXT.md): the label alone is safe at a fit of 0.9, not at the
+  quest path's 0.8, so the desk names a cell at 0.9, the item file's footprint (either way round) the tie-break; a slot
+  has no footprint. **Built** (step B part 1, 2026-10-19; `DeskReader`, `DeskLayout`, `DeskFrames`, `DeskMatch`): the
+  screen told by its headings, read once over the whole picture (the loadout's EARPIECE … SHEATH, the middle column's
+  TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK, POUCH, the stash pane's SEARCH and SORT TABLE; the English game's
+  words); a slot's box under its heading; the middle column's compartments as rectangles of whole cells framed on all
+  four sides (a rig's pockets stand a few pixels apart, no lattice), each under the lowest heading above it, a
+  container's own slot the first under BACKPACK, TACTICAL RIG and POUCH; a compartment the column's scrolling cuts is
+  left out (the page keeps what it had); a window by its title bar (the magnifier before the title, sort and close
+  after it, or the title's size: 15 px at 1440p, a label 11 to 14) over compartments of its own, or by its grid's
+  two-pixel lines when no title is read (its search field open: "ITEM SEARCH"); what a window or a toast covers is left
+  unread, and a cell running under it with it. Where the grid's lines split an item, its label at the top right claims
+  the cells its footprint takes from there when no other label fits in them; where a label fits items of two
+  footprints and both fit there, the cell is "one of N" over both. A short label (three letters or fewer) is read once
+  more. Measured on the owner's screenshots (`shturmap-cli desk`): the GEAR tab's stash, 37 hand-labelled items, 29
+  right, 2 "one of N", 6 unread, 0 wrong; the three stash truths of 2026-10-11 (148 items: the key container, the
+  medical case, a stash page) 129 right, 16 "one of N", 3 unread, 0 wrong; regions on the five GEAR pictures: the
+  loadout and the stash on each, the middle column's parts in view (4 to 6), the Zhuk window on the two that show it,
+  attached to its cell in the backpack across the readings; about 2 s a picture.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
   a newer reading changes it (§4, "Screen anatomy", *The stash desk*); never a register of the stash over time (§1).
+  Per game mode, in `desk.json` in the data folder (§8, "The desk file").
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them.
-- **The player's say:** the menu screenshots' one tick ("Read your stash and tasks from menu screenshots"), its words
-  and note widened for the desk, to be worded with step B (the desk's panel of 2026-10-19 left them out). Unticked, no
-  menu screenshot is opened, for the desk either. Once built, its note, help, the README, PRIVACY.md and the website say
-  what the desk reads.
+- **The player's say:** the menu screenshots' one tick, its words widened for the desk (2026-10-19, after step B part
+  1; the desk's panel had left them out): "Read your stash, gear and tasks from menu screenshots" (the GEAR tab is the
+  screen the desk adds; its prices aren't read from the picture, so the words don't name them). Its note adds that the
+  desk shows what each item is worth from tarkov.dev's prices, fetched again at most once an hour when a screenshot is
+  read (§3), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
+  opened, for the desk either. Its note, the README and PRIVACY.md say what the desk reads, keeps and fetches; help with
+  the desk's view, the website when its media are next made.
 
 Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
 (Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
@@ -267,10 +295,10 @@ slow one, such as a stash reading that first fetches the needed items' pictures,
 2026-10-14 it was "Delete position screenshots": only a screenshot with a position went, 5 seconds after it was
 seen whatever its picture's reading was doing, and menu screenshots stayed as "taken for their picture". Since the
 stash is read from them they are taken for Shturmap too, and the owner asked for them to go ("otherwise the folder is
-littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash and tasks from
-menu screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two. What may
-go is narrow, and checked when the file is seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a
-file the watcher reported as new in this run, directly in the screenshots folder, named as the game names a
+littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash, gear and tasks
+from menu screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two.
+What may go is narrow, and checked when the file is seen and again before it goes (`ScreenshotCleaner.MayDelete`):
+only a file the watcher reported as new in this run, directly in the screenshots folder, named as the game names a
 screenshot (with a position or without). What was in the folder before Shturmap looked and every other file stay.
 Nor is a screenshot that comes back new: a file last written before Shturmap started watching, or before a screenshot of
 its name was deleted, is old (`ScreenshotWatcher`; review of 2026-10-09: a Screenshots folder a sync tool or the
@@ -298,9 +326,9 @@ software that captures, collects, counts or otherwise 'retrieves' information re
 Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
 been permitted. The owner accepted that residual risk. Do not widen the boundary: only the owner does, as with the
 extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11), the
-operational tasks' table (2026-10-19), those grids against the whole catalogue for the stash desk (2026-10-19,
-decided, not built) and the item grids of an in-raid screenshot that shows an inventory screen, for the in-raid glance
-(2026-10-19, decided, not built).
+operational tasks' table (2026-10-19), those grids against the whole catalogue for the stash desk (2026-10-19; its
+reading and view built, step B) and the item grids of an in-raid screenshot that shows an inventory screen, for the
+in-raid glance (2026-10-19, decided, not built).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -359,14 +387,21 @@ quoting it anywhere new.
     every few minutes with the flea market's prices, hence once a day). A start a day after the last one is 13
     requests (18 in another game language) and about 3 MB if every file changed; a second start within the hour
     asks nothing.
-  - **The stash desk's prices come per reading** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; not built; §4,
+  - **The stash desk's prices come per reading** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; §4,
     "Screen anatomy", *The stash desk*): a list price to copy needs prices minutes old, and the item sources' may be a
-    day old. So, for the desk alone, the prices of the items a screenshot showed are asked for when it is read (those
-    items, never the catalogue), and an item's price history (json.tarkov.dev's `/{mode}/prices/{id}`) when its card
-    first shows it, each with its ETag, so an unchanged answer costs a few hundred bytes. Still never on a timer: a page
-    left open isn't refreshed, and the card says its prices' age ("Prices 4 min old · tarkov.dev"). Everything else
-    keeps the ages above. Its requests and bytes per player are counted and said to the owner before it is built (the
-    rule at the end of this list).
+    day old. So, for the desk alone, the prices of the items a screenshot showed were to be asked for when it is read
+    (those items, never the catalogue; the exception below took its place), and an item's price history
+    (json.tarkov.dev's `/{mode}/prices/{id}`) when its card first shows it, each with its ETag, so an unchanged answer
+    costs a few hundred bytes. Still never on a timer: a page left open isn't refreshed, and the card says its prices'
+    age ("Prices 4 min old · tarkov.dev"). Everything else keeps the ages above. Its requests and bytes per player are
+    counted and said to the owner before it is built (the rule at the end of this list). **The exception: the item
+    file, hourly while the desk is used** (owner, 2026-10-19: "Accept, once an hour", on the count below; built in step
+    B part 1, `GameSession.RefreshDeskPrices`). json.tarkov.dev has no price file per item (the GraphQL API that
+    answers per item was down all of 2026-10-19), so a desk reading asks for the whole item file again with its ETag
+    when the saved copy is over an hour old (`GameDataLoader.DeskPricesAge`): at most one request an hour of desk use,
+    a few hundred bytes when unchanged, about 1.4 MB compressed when it changed (it changes every few minutes, so in
+    practice once an hour of use). Nothing is asked per item for a reading's prices, and no picture but the page's
+    cells' grid images, fetched and kept as BRING's are today (*Grid images*, below). The history is step C's.
   - What the server doesn't have is remembered for a week, the time its own Cache-Control gives its answers
     (`CachedHttp.MissingAge`): a tile or a picture that answered "not found" was asked for again in every session
     before. A refusal (403) is not remembered: it can be a block that passes.
@@ -721,22 +756,32 @@ quoting it anywhere new.
     with the generic operational glyph (the stopwatch) in place of the check; and under the title **a row for every
     task read**, rising in one after another as the roll call's rows do: the task's framed glyph as on a NEXT RAID row,
     its synopsis in the cue's 15 px, and under it in muted capitals its map or ANY MAP and its time left ("CUSTOMS · 8 H
-    LEFT"; the map alone where the countdown wasn't taken), the one that ends soonest first; six rows at most, the last
-    place "+N" past that. Its rows keep clear of the map's buttons and are drawn smaller only where the map's column is
-    too short for them, never cut. **One cue for a run of screenshots** (`OperationalReadings`): the game shows up to
-    three rows a page and a row's objectives only while it is expanded, so a player takes a few screenshots in a row,
-    and the readings of screenshots taken within a minute of the one before are one reading. The first of them that
-    brings a new task calls the cue, which lists every task the run read; a later one joins it while it is up (its
-    tasks not yet listed come in as rows after the others, a listed one's words become what it last read, the title
-    counts them all and decodes again, the stamp pops again) and calls none once it has gone: the table, then a row
-    expanded seconds later, is one cue, the objectives arriving without a second. **A reading that brings no new task
-    calls none**: the same set again, a row's objectives, a task handed in; only "As of" and the rows it changed say it.
-    It stays 5 s after the last reading joined it, 12 s at most, as QUEST COMPLETE does, and moves no view. While a
-    replay plays, QUEST COMPLETE or SEEN IN YOUR STASH is up or the tour shows its own cue, the one-line notice says it
-    instead ("Operational tasks read: 3."): none of those is cut for it, and SEEN IN YOUR STASH, which steps back to its
-    notice while this cue is up, doesn't cut it either. The rows on the rail that the reading brought or changed glow
-    in as it shows, as the stash's marks do (`Controls.Glow`: a gold copy of the synopsis fading to ink over 1.2 s, the
-    row flashing once): its after-effect (*Operational tasks*, "Screen anatomy"; `MainWindow.TasksCue`).
+    LEFT"; the map alone where the countdown wasn't taken; the time as read, and ENDED once the task runs out while the
+    cue is up: *Operational tasks*), the one that ends soonest first; six places at most, the last "+N" past that
+    (seven tasks: five rows and "+2"). Its rows and its gold rules keep clear of the map's buttons (the rules narrower
+    than their 460 DIP where the column is: at 900×560 the bottom rule ran under the "−" button), and **the whole cue
+    keeps to its room** as the roll call's (above; QA pass of 2026-10-19, F1 and F2: at 900×560 under a notice its title
+    stood whole on two lines while its six rows shrank to about 36 %, unreadable, and without one its bottom rule ran
+    through WIKI MAP; `MainWindow.FitTasksCue`): 8 DIP under the notes at the map's top (a notice), 8 above the map's
+    foot (WIKI MAP and the credit), in the middle of the map and moved only as far as those need; where that room is
+    too short its rows are drawn smaller, down to 60 % of the size the column's width leaves them, and past that the
+    whole cue, title included, is drawn smaller to the room, never cut (at 900×560 under the tour's notice the whole cue
+    at about 71 %, in English and German alike; without a notice the title at its size and the six rows at about 68 %).
+    A notice that comes while it is up (SEEN IN YOUR STASH's) has it fitted to the smaller room; one that goes leaves it
+    where it stands, so it doesn't jump while it is read. **One cue for a run of screenshots** (`OperationalReadings`):
+    the game shows up to three rows a page and a row's objectives only while it is expanded, so a player takes a few
+    screenshots in a row, and the readings of screenshots taken within a minute of the one before are one reading. The
+    first of them that brings a new task calls the cue, which lists every task the run read; a later one joins it while
+    it is up (its tasks not yet listed come in as rows after the others, a listed one's words become what it last read,
+    the title counts them all and decodes again, the stamp pops again) and calls none once it has gone: the table, then
+    a row expanded seconds later, is one cue, the objectives arriving without a second. **A reading that brings no new
+    task calls none**: the same set again, a row's objectives, a task handed in; only "As of" and the rows it changed
+    say it. It stays 5 s after the last reading joined it, 12 s at most, as QUEST COMPLETE does, and moves no view.
+    While a replay plays, QUEST COMPLETE or SEEN IN YOUR STASH is up or the tour shows its own cue, the one-line notice
+    says it instead ("Operational tasks read: 3."): none of those is cut for it, and SEEN IN YOUR STASH, which steps
+    back to its notice while this cue is up, doesn't cut it either. The rows on the rail that the reading brought or
+    changed glow in as it shows, as the stash's marks do (`Controls.Glow`: a gold copy of the synopsis fading to ink
+    over 1.2 s, the row flashing once): its after-effect (*Operational tasks*, "Screen anatomy"; `MainWindow.TasksCue`).
     Picks the player makes (a Plan card, the map
     list) show no cue, and neither does Follow my position's glide: the player turned it on, and the toggle and the
     ping say it. With animation effects off it shows and goes without motion. Never during the log replay
@@ -1373,8 +1418,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     done there, as a list of rows (owner, 2026-10-09: all of them; until then the planner's best four, so the list
     stayed short above the open card; the rail scrolls, and the card now starts lower with many maps), then the open
     map's card: its line in words ("Complete 7 quests · progress 2 more") with
-    the daily and weekly tasks' OPERATIONAL under the picks (2026-10-19, *Operational tasks*), COMPLETE, PROGRESS
-    and BRING (keys, items to bring). A row of the list is the map's name and its counts
+    PICKED, the daily and weekly tasks' OPERATIONAL (2026-10-19, *Operational tasks*), COMPLETE, PROGRESS and BRING (keys,
+    items to bring). A row of the list is the map's name and its counts
     ("Complete 5 · progress 1"); the open map's row is marked with a gold bar, and with one suggested map that is
     on screen there is no list (review of 2026-10-04, H4: the open card is some 840 px tall, and the other maps'
     folded cards sat under it, below the fold). **The open card is the map on screen's** (owner, 2026-10-08, with the
@@ -1429,9 +1474,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     mindful of multiple missions started at the same time, we might want to have them in one animation included"):
     the section stands on top of the cards' quest lists, the task that ends soonest first, and a reading that brings
     new tasks calls a cue, one for all of them (principle 11, DAILIES AND WEEKLIES). The planner's order and score
-    stay untouched (the panel's B). **Under the picks** (owner, 2026-10-19, on the build: "Ordering - under picked."):
-    in the open card and the raid card the section stands under PICKED and above COMPLETE, no longer above PICKED as
-    built (the code follows).
+    stay untouched (the panel's B). **Under PICKED, above COMPLETE** (owner, 2026-10-19, later the same day:
+    "Ordering - under picked."): in the open card and the raid card the section stands under the picks and above the
+    planner's COMPLETE and PROGRESS, no longer above the picks.
     - **A NEXT RAID row** shows its map's tasks as glyphs after its quests' glyphs, behind a hairline, each framed (the
       frame means "operational", *Visual language*), the one that ends soonest first, as its card's rows; never the
       any-map tasks, which would stand on every row. They stay after the quests' glyphs (2026-10-19, with the section
@@ -1440,10 +1485,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       said, in the card. A map with operational work and none of your quests joins the list's end, by name, without
       counts, and its card says, muted, that none of your quests is on it. The planner's order and score are unchanged
       (§7).
-    - **The open card** gets OPERATIONAL under PICKED, before COMPLETE (owner, 2026-10-19: "Ordering - under
-      picked."; built first on top of its quest list, before PICKED, after the owner's "sorted on top of the list
-      always as they are time-sensitive"; until then after PROGRESS, before BRING): the eyebrow, with "As of 14:02" at
-      its right
+    - **The open card** gets OPERATIONAL under PICKED, above COMPLETE (owner, 2026-10-19: "Ordering - under picked.";
+      that morning, after trying the dev build, first, above PICKED: "sorted on top of the list always as they are
+      time-sensitive"; until then after PROGRESS, before BRING): the eyebrow, with "As of 14:02" at its right
       in the eyebrow's style (the date too when read on an earlier day); one row per task: its glyph, its synopsis in
       ink, then in small muted capitals its progress and time left ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; a
       hand-over on any map "ANY MAP · HAND OVER AFTER · 2 D LEFT"; a task whose countdown wasn't taken "READ 3 H AGO").
@@ -1468,14 +1512,18 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       the other traders' quests.
     - **Ended:** while tasks ran out since the last table screenshot, under the eyebrow, muted: "1 ended at 22:35.
       Screenshot your tasks for the new one." (in every card's section, until the next table screenshot, a day at
-      most; the game gives new ones, which only a screenshot shows). The section shows for that line alone too.
-    - **The raid card** has the same section under its picks, before COMPLETE and PROGRESS (owner, 2026-10-19, as the
-      open card's: "Ordering - under picked."; built first, before its picks), the one that ends soonest first, for the
-      raid's map's tasks and the any-map ones, without
-      "As of": ANYWHERE stands where a quest row has its distance, for an any-map task, and its muted line then says no
-      "any map" (one place says it; QA, 2026-10-19); a hand-over says "HAND OVER AFTER THE RAID"; the time only when
-      the task ends before the raid could ("ENDS IN 24 MIN", in the red of the clock's last ten minutes, rounded down
-      as Plan's; while the raid loads, against the map's whole raid). Nothing new on the map: the tasks have no places.
+      most; the game gives new ones, which only a screenshot shows). The section shows for that line alone too. **The
+      cue's rows are a reading, not a clock** (the coordinator's rule after the QA pass of 2026-10-19, F5: a task that
+      ran out while the cue was up still said "WOODS · 1 MIN LEFT" while the rail said "1 ended at …"): a row's time
+      left stays as read, and a row whose task runs out while the cue is up says ENDED (German ABGELAUFEN) in muted
+      capitals in place of it, at that moment ("WOODS · ENDED"; `OperationalCueWords.Line`, `MainWindow.WatchTasksEnds`).
+    - **The raid card** has the same section under its picks, above COMPLETE and PROGRESS (owner, 2026-10-19, as the
+      open card's; that morning first, before its picks), the one that ends soonest first, for the raid's map's tasks
+      and the any-map ones, without "As of": ANYWHERE stands where a quest row has its distance, for an any-map task,
+      and its muted line then says no "any map" (one place says it; QA, 2026-10-19); a hand-over says "HAND OVER AFTER
+      THE RAID"; the time only when the task ends before the raid could ("ENDS IN 24 MIN", in the red of the clock's
+      last ten minutes, rounded down as Plan's; while the raid loads, against the map's whole raid). Nothing new on the
+      map: the tasks have no places.
     - **A Scav raid's card** has no OPERATIONAL section: its FIND IN RAID lists the hand-over items the catalogue
       knows by their English name (as the item cells above) after the quests' loot ("for an operational task"), in the
       app's language. That an operational task's kills and survivals count for a PMC only is the panel's assumption (as
@@ -1573,8 +1621,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     takes it too). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
-    glances, median 3.9 s in the study log, and these are what a glance is for. Then OPERATIONAL (2026-10-19, under the
-    picks, *Operational tasks*), COMPLETE, PROGRESS and BRING
+    glances, median 3.9 s in the study log, and these are what a glance is for. Then PICKED, OPERATIONAL (2026-10-19,
+    under the picks, *Operational tasks*), COMPLETE, PROGRESS and BRING
     as in Plan, except that each quest line carries its objectives on this map under it: text, the key or item it
     needs (gold), and on the right the distance, direction and floor hint (the words keep at least half of the line:
     where a hand-over's mark and a long direction would take more, the direction wraps under the distance between its
@@ -1746,8 +1794,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **The stash desk** (owner, 2026-10-19: "Stash Desk Panel: A, but keep in mind that the stash also has the player
   loadout in view and when a raid ends the player might want just take a screenshot of the items they have and get an
   overview of what to do with that. Also keep in mind of stackable things, like a bag stashed in a bag that contains
-  additional items. A1 · B1 · C1 · D2. Update the Design.md accordingly."; from a panel: A1 · B1 · C1 · D2; not
-  built). §1's third answer: between raids, the items of a screenshot the player took of their own stash or loadout,
+  additional items. A1 · B1 · C1 · D2. Update the Design.md accordingly."; from a panel: A1 · B1 · C1 · D2; built
+  (step B, 2026-10-19, part 1: reading and data; the view to come) as *Built: the model the view draws*, below, says).
+  §1's third answer: between raids, the items of a screenshot the player took of their own stash or loadout,
   mirrored cell for cell, each with what it is worth, what it is kept for, and a list price one click away; read as §2
   says ("For the stash desk"), its prices fetched as §3 says. The panel's two questions on the cell went unanswered and
   take its drawn defaults: "later" marks a cell only for a found-in-raid need or an item that can't be bought (the card
@@ -1946,7 +1995,32 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       first column, its lower corner elsewhere, so it runs between the rows), left into the margin, down to the head,
       and into it. Pointing at the cell or anywhere on the window's region lights both: gold at 18 % over the cell with
       an amber frame, gold behind the window's head, the stem amber, easing over 0.18 s (at once with the effects off).
-      A window whose cell is in a folded region has no stem. (owner, 2026-10-19, three choices: when, what and what is kept; to design with its own panel,
+      A window whose cell is in a folded region has no stem.
+  - **Built: the model the view draws** (step B, 2026-10-19, part 1: reading and data; `Shturmap.Core.Desk`; the view,
+    its texts and the tick's words are part 2). The session publishes the mode's page with its values
+    (`SessionSnapshot.Desk`, a `DeskView`): the regions in reading order (`DeskSheet.Regions`: LOADOUT's slots, one cell
+    each without a footprint; TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK and POUCH, each with its own container's slot
+    and its grid's compartments side by side; STASH; each window right after the region its container is in, one attached
+    to none at the end), each cell with its item or candidates, place and footprint, count, printed condition,
+    found-in-raid mark, contents unseen, figure and keep notch (`DeskCellSheet`, `DeskFigure`), each region's part (ON YOU,
+    STASH or neither) and total, the head line (`DeskTotals`), the regions the last reading changed (the fold's input) and
+    the prices' age. A reading is taken into the page in hand (`DeskLedger`): the regions it shows replace the old, the
+    others stay, the cells a window covered keep their last reading. What the rules decided where the panels left it
+    open, for the owner to overrule:
+    - NOW is an active quest's need: what its hand-overs and finds take as well as BRING's rows (keys, items to plant,
+      mark or use, gear to wear, mods), so that "Private Clinic ×1 · now · FIR" holds; NEXT a quest not started whose
+      quests before are all done or active (the active ones unlock it, or it is open to start); LATER every other quest
+      not done. The player's faction isn't known: both factions' quests count.
+    - The notch's order: now, next, a hideout module's need, later (a module's need is wanted at some level for certain,
+      a later quest's is far off); KEEP n · n · n counts now, next and later only.
+    - A "?" cell's figure is its candidates' range and counts in a total at its least; its notch is the weakest all its
+      candidates have, none when one has none.
+    - "Unchanged" compares place, ids or candidates, count and condition, not the found-in-raid mark.
+    - A window's grid attaching to a "?" cell narrows it to the candidates of the window's name (the Zhuk harnesses, not
+      the Zhuk body armour).
+    - The flea figure carries the item's flea level and compares nothing (the player's level isn't read); the fee's
+      hideout levels are 0, no setting yet; tarkov.dev's sell prices include Fence's.
+- **The in-raid glance** (owner, 2026-10-19, three choices: when, what and what is kept; to design with its own panel,
   then build after step C; not built). Every screenshot taken in a raid that shows an inventory screen, the player's
   own loadout or a looted container or body, is read as it arrives, as the extract list is, and a plate over the map
   says what its items are worth, at a glance: the answer from a loot screenshot the owner described with the desk (§1).
@@ -3240,8 +3314,7 @@ still only keeps its card open (two clicks, two meanings).
   should show all other quest markers"); only pointing at something steps the rest back ("Stepping back"), and
   then picks don't step back either: they are the plan for this raid, as much as the ways out.
 - **The rail.** A map's card shows its picks first of its quests (the daily and weekly tasks' OPERATIONAL under them,
-  owner, 2026-10-19: "Ordering - under picked."; built above them first; §4, *Operational tasks*), as a group of their
-  own headed PICKED (in the headings'
+  above COMPLETE, since 2026-10-19, §4, *Operational tasks*), as a group of their own headed PICKED (in the headings'
   grey), then COMPLETE and PROGRESS without them, with the effort hairlines drawn anew (`Planning.Sections`). A pick that only
   progresses here keeps its note ("2 of 5 objectives here"). Compared on 2026-10-03 with picks sorted first inside
   COMPLETE and PROGRESS: there they scattered over two sections (a progress-only pick ended up at the bottom), while
@@ -3251,7 +3324,7 @@ still only keeps its card open (two clicks, two meanings).
   map with work on it in the planner's order (`RaidPlanner.Rank`; until 2026-10-09 the planner's best filled up to
   four, and until 2026-10-04 the list was cut to four first, so a pick on the map ranked fifth never showed). A folded card
   shows its picks' glyphs first, each in its pick's colour, then a hairline. The raid card starts its quests with PICKED
-  (under OPERATIONAL, as the open card), nearest first, and
+  (OPERATIONAL under it, as in the open card), nearest first, and
   NEXT is the nearest objective among the picks.
 - **Zero picks is the app as it was:** no PICKED group, no reordering, no line on the map.
 - The study log records `pick` and `unpick` (with how: pen, done, …) and `picks.clear`, when it is on.
@@ -3598,7 +3671,7 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
 | `Shturmap.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
 | `Shturmap.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
 | `Shturmap.App` | WinUI 3 window; reads snapshots, never game files |
-| `tools/Shturmap.Cli` | headless runner: locate, replay, data, render, watch, simulate, quests; the audits after an update: synopses, effort, bring, handovers, spawns (docs/UPDATES.md) |
+| `tools/Shturmap.Cli` | headless runner: locate, replay, data, render, watch, simulate, quests; the readers' measurements: stash, tasks, desk; the audits after an update: synopses, effort, bring, handovers, spawns (docs/UPDATES.md) |
 
 Rules:
 
@@ -3624,8 +3697,9 @@ Rules:
   `-Operational <n>` (the app's `--operational <n>`, with a fake game only) gives the run the `tasks` step's made-up
   operational tasks once the data and the mode are known, and `-OperationalEnded` (`--operational-ended`) the one that
   runs out at once, so a snapshot pictures the list rows' framed glyphs, the open card's and the raid card's
-  OPERATIONAL, and the cue of the tasks read over the map, which a snapshot keeps up as it keeps every cue (owner,
-  2026-10-19, B, and after trying the dev build; the file isn't written); `-Desk` (the app's `--desk [<n>]`, with a fake
+  OPERATIONAL, and the cue of the tasks read over the map, which a snapshot keeps up as it keeps every cue, its row of
+  the task that ran out ENDED (owner, 2026-10-19, B, and after trying the dev build; the file isn't written;
+  `-Operational 8`: the cue's "+3"); `-Desk` (the app's `--desk [<n>]`, with a fake
   game only; with `-PlanOnly`) puts up the made-up stash desk as a reading in the menus brings it once the data is there
   (`Rules.DeskExample`: real items of the catalogue, so their art and cards are there, with made-up prices, counts,
   conditions and needs, built through the model as a reading's page is; a LOADOUT strip with "?" slots, a scaled
@@ -3887,6 +3961,19 @@ can't be read is set aside as `operational.json.unreadable` and the tasks start 
 back). Never in a report or the diagnostics. A snapshot's made-up tasks (`--operational`) are never written. Deleted
 with the data folder.
 
+**The desk file** (`desk.json` in the data folder; owner, 2026-10-19; §2, "For the stash desk"; `DeskLedger`): the
+stash desk's page in hand, one per game mode (PvE and PvP apart): the regions the last screenshots showed, each as its
+last reading had it. Its shape: `version` 1; `modes` by the mode's name (`pve`, `pvp`), each with `readAt` (the last
+reading's screenshot time) and `regions` in the order taken; a region: `key` (`loadout`, `rig`, `pockets`, `special`,
+`backpack`, `pouch`, `stash`, `window:<its folded title>`), `kind`, `cols` and `rows`, its compartments (`parts`, each
+`[i, j, w, h]`), a window's `title` (the container's name as printed), `titleIds` (the items its title may name),
+`attachedTo` (`region`, `i`, `j`, or a `slot`) or, attached to none, `sameName` and `sameNameIn`; and `cells`, each with
+`i`, `j`, `w`, `h`, `ids` (one item, several for "one of N", none for unread), a slot's `slot`, `count` when more than
+one, `print` ("46/50"), `fir`, `holds` (`contents`, `mods`) and a "?" cell's `pick`. Item ids and the containers' names
+only: no pixel, no path, no other word. Written as a temporary file and one move, after each change; one that can't be
+read is set aside as `desk.json.unreadable` and the pages start over (the next screenshot brings them back). Never in a
+report or the diagnostics. Deleted with the data folder.
+
 **The notes file** (`notes.json` in the data folder; owner, 2026-10-15; `QuestNotes`): the notes the player writes on
 a quest's card, one set per quest and game mode (PvE and PvP apart, as ticks and picks are), each with when it was
 written. Add and delete only, no editing: the time always says when the words were written. A note is trimmed, keeps
@@ -4007,7 +4094,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 5, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods; with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `desk [<n>] | open <region> | point <region> [<i> <j>] | plan | show` (the made-up stash desk of `-Desk`, its reading n as a reading in the menus brings it, 1 to 3; `open` a folded region's name clicked; `point` the pointer on a region's cell at that grid place, or its first cell, as the pointer's events do, so a still shows a window's light and the rail's card; `plan` and `show` PLAN and DESK at the rail's head; step B, 2026-10-19; the replay `tools\qa\desk.devscript`), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 8, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's kill on Reserve (seven or eight reach the cue's "+N"; QA pass of 2026-10-19, F3); with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `desk [<n>] | open <region> | point <region> [<i> <j>] | plan | show` (the made-up stash desk of `-Desk`, its reading n as a reading in the menus brings it, 1 to 3; `open` a folded region's name clicked; `point` the pointer on a region's cell at that grid place, or its first cell, as the pointer's events do, so a still shows a window's light and the rail's card; `plan` and `show` PLAN and DESK at the rail's head; step B, 2026-10-19; the replay `tools\qa\desk.devscript`), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list
@@ -4146,7 +4233,15 @@ ledger (`GameSession.Operational`: the location matched to a map of the data, `O
 its checks, the file; `OperationalReadings`, which tells a run of screenshots and whether the reading brought a new
 task, and the cue `CueKind.TasksRead` with every task the run read); a trader's tasks or another Tasks table goes
 nowhere; any other picture goes to the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue
-and the marks' glow. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
+and the marks' glow; and, once the item file is in, to the stash desk's reader as well (`DeskReader`, step B part 1),
+on the same picture with a recognition of its own words: the whole picture's words once at its size (about 150 ms: the
+headings, a window's title, a toast), the screen and its regions from them and the compartments' frames (`DeskLayout`,
+`DeskFrames`, `StashGrids` for the stash), then each cell's label enlarged as the stash reader reads it, matched to the
+whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`), about 2 s a 1440p picture in all. The page goes to the desk's
+ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment), and a reading over an hour after
+the item file was fetched asks for it again (`RefreshDeskPrices`). A snapshot carries the mode's page with its values
+(`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`
+from the quests' states and the hideout), made again only when the page, the prices or the quests change. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
 maps as Plan counts them and the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`,
 `MainWindow.Operational`), glowing in the ones that arrived or changed, and the cue's rows (`Rules.OperationalCueWords`,
 `MainWindow.TasksCue`). A watch over the expiries drops a task as it runs out and publishes again each minute while

@@ -665,8 +665,8 @@
     <comment>en: LARGEST</comment>
   </data>
   <data name="SettingsReadStash" xml:space="preserve">
-    <value>Stash, Dailies und Weeklies aus Menü-Screenshots lesen</value>
-    <comment>en: Read your stash and tasks from menu screenshots</comment>
+    <value>Stash, Gear, Dailies und Weeklies aus Menü-Screenshots lesen</value>
+    <comment>en: Read your stash, gear and tasks from menu screenshots</comment>
   </data>
   <data name="SettingsForgetMarks" xml:space="preserve">
     <value>ALLE MARKIERUNGEN VERGESSEN</value>

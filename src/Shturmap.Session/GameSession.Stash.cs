@@ -31,9 +31,10 @@ public sealed partial class GameSession
     /// </summary>
     public Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<StashReading?>>? StashReader { get; init; }
 
-    // The menus' reader, made at the first menu screenshot: the tasks' table first, then the item grids, the picture
-    // opened once (MenuScreenshotReader). Null when this Windows has no text recognition at all.
-    private Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<MenuReading?>>? _menuReader;
+    // The menus' reader, made at the first menu screenshot: the tasks' table first, then the item grids (What You Have's,
+    // then the stash desk's), the picture opened once (MenuScreenshotReader). Null when this Windows has no text
+    // recognition at all.
+    private Func<string, IReadOnlyList<StashCandidate>, DeskCatalogue?, DateTimeOffset, CancellationToken, Task<MenuReading?>>? _menuReader;
     private bool _stashReaderLooked;
     private bool _stashReaderMissing;
     private string? _stashReaderLanguage;
@@ -119,21 +120,22 @@ public sealed partial class GameSession
     }
 
     // Under the gate. Made at the first menu screenshot, not at start: most runs never need it. A test gives its own
-    // readers (StashReader, TasksReader): a picture that shows the Tasks screen goes to the tasks' reader alone, as the
-    // app's own does; without one of them, that reading has nothing to say.
-    private Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<MenuReading?>>? ReaderForMenu()
+    // readers (StashReader, TasksReader, DeskReader): a picture that shows the Tasks screen goes to the tasks' reader
+    // alone, as the app's own does; without one of them, that reading has nothing to say.
+    private Func<string, IReadOnlyList<StashCandidate>, DeskCatalogue?, DateTimeOffset, CancellationToken, Task<MenuReading?>>? ReaderForMenu()
     {
-        if (StashReader is not null || TasksReader is not null)
+        if (StashReader is not null || TasksReader is not null || DeskReader is not null)
         {
             var stash = StashReader;
             var tasks = TasksReader;
-            return async (path, candidates, ct) =>
+            var desk = DeskReader;
+            return async (path, candidates, catalogue, at, ct) =>
             {
                 if (tasks is not null && await tasks(path, ct) is { Screen: not TaskScreen.None } page)
                     return new MenuReading(page, null);
-                if (stash is null || candidates.Count == 0)
-                    return null;
-                return await stash(path, candidates, ct) is { } reading ? new MenuReading(null, reading) : null;
+                var reading = stash is not null && candidates.Count > 0 ? await stash(path, candidates, ct) : null;
+                var deskReading = desk is not null && catalogue is not null && reading?.IsTradingScreen != true ? await desk(path, catalogue, at, ct) : null;
+                return reading is null && deskReading is null ? null : new MenuReading(null, reading, deskReading);
             };
         }
         if (_stashReaderLooked)
@@ -141,6 +143,8 @@ public sealed partial class GameSession
         _stashReaderLooked = true;
         var stashReader = Shturmap.Game.Screenshots.StashReader.Create(_settings.Language);
         var tasksReader = Shturmap.Game.Screenshots.TasksReader.Create();
+        // The desk reads the labels as the stash's reader does, in the game's language.
+        var deskReader = stashReader is null ? null : new Shturmap.Game.Screenshots.DeskReader(stashReader);
         _stashReaderMissing = stashReader is null;
         if (stashReader is not null)
         {
@@ -155,7 +159,7 @@ public sealed partial class GameSession
             AppLog.Warn("Operational tasks: this Windows has no English text recognition, so the Tasks screen can't be read");
         if (stashReader is null && tasksReader is null)
             return null;
-        var menu = new MenuScreenshotReader(tasksReader, stashReader);
+        var menu = new MenuScreenshotReader(tasksReader, stashReader, deskReader);
         _menuReader = menu.ReadAsync;
         return _menuReader;
     }
@@ -221,8 +225,9 @@ public sealed partial class GameSession
     // recognition), so it runs outside the gate.
     private async Task ReadStashAsync(ScreenshotSeen seen)
     {
-        Func<string, IReadOnlyList<StashCandidate>, CancellationToken, Task<MenuReading?>>? read;
+        Func<string, IReadOnlyList<StashCandidate>, DeskCatalogue?, DateTimeOffset, CancellationToken, Task<MenuReading?>>? read;
         IReadOnlyList<StashCandidate> candidates;
+        DeskCatalogue? catalogue;
         await _gate.WaitAsync();
         try
         {
@@ -232,6 +237,7 @@ public sealed partial class GameSession
                 return;
             read = ReaderForMenu();
             candidates = StashCandidates();
+            catalogue = DeskCatalogueNow();
         }
         finally
         {
@@ -240,7 +246,7 @@ public sealed partial class GameSession
         if (read is null)
             return;
         var started = Stopwatch.GetTimestamp();
-        var menu = await read(seen.Path, candidates, _stop.Token);
+        var menu = await read(seen.Path, candidates, catalogue, new DateTimeOffset(seen.CreatedAt), _stop.Token);
         if (menu is null)
             return;
         await _gate.WaitAsync();
@@ -253,6 +259,12 @@ public sealed partial class GameSession
             {
                 TakeTasks(page, seen.CreatedAt, ms);
                 return;
+            }
+            if (menu.Desk is { } desk)
+            {
+                TakeDesk(desk, desk.Ms);
+                if (menu.Stash is null)
+                    Publish();
             }
             if (menu.Stash is not { } reading)
                 return;

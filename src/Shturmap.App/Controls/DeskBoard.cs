@@ -111,6 +111,10 @@ public sealed partial class DeskBoard : Grid
         _countUp.Tick += (_, _) => CountUpTick();
     }
 
+    /// <summary>The app is ending (MainWindow.StopForExit): the totals' count-up stops, so no tick comes after the window's
+    /// XAML is down (SafetyTests.Timers).</summary>
+    public void Stop() => _countUp.Stop();
+
     /// <summary>The page on screen and its fold, for the layout check and the developer view.</summary>
     public DeskView? View => _view;
 

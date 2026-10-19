@@ -364,13 +364,14 @@ public sealed class DevToolsTests : IDisposable
     }
 
     // The QA pass pictures the operational tasks without a screenshot of the Tasks screen (owner, 2026-10-19, B): "tasks"
-    // takes how many made-up tasks (3 without a number) and "ended" for one more that runs out at once.
+    // takes how many made-up tasks (3 without a number, up to 8 so the cue's "+N" can be reached: QA pass of 2026-10-19,
+    // F3) and "ended" for one more that runs out at once.
     [Fact]
     public void The_tasks_step_reads_how_many_and_ended()
     {
-        var (steps, errors) = DevScript.Parse(string.Join('\n', "tasks", "tasks 5", "tasks 2 ended", "Tasks ENDED", "tasks 6", "tasks some"));
-        Assert.Equal(["line 5: 'tasks' takes how many (0 to 5) and 'ended'", "line 6: 'tasks' takes how many (0 to 5) and 'ended'"], errors);
-        Assert.Equal([(3, false), (5, false), (2, true), (3, true)], steps.Select(s => DevScript.TasksOf(s)!.Value));
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "tasks", "tasks 5", "tasks 2 ended", "Tasks ENDED", "tasks 8", "tasks 9", "tasks some"));
+        Assert.Equal(["line 6: 'tasks' takes how many (0 to 8) and 'ended'", "line 7: 'tasks' takes how many (0 to 8) and 'ended'"], errors);
+        Assert.Equal([(3, false), (5, false), (2, true), (3, true), (8, false)], steps.Select(s => DevScript.TasksOf(s)!.Value));
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 

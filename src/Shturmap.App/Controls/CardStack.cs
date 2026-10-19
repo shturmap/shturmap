@@ -72,11 +72,19 @@ public sealed class CardStack
         _space = space;
         _show = root.DispatcherQueue.CreateTimer();
         _show.IsRepeating = false;
-        _show.Tick += (_, _) => ShowUnlessPassing();
+        _show.Tick += (_, _) =>
+        {
+            if (!_stopped)
+                ShowUnlessPassing();
+        };
         _settle = root.DispatcherQueue.CreateTimer();
         _settle.IsRepeating = false;
         _settle.Interval = SettleAfter;
-        _settle.Tick += (_, _) => Settle();
+        _settle.Tick += (_, _) =>
+        {
+            if (!_stopped)
+                Settle();
+        };
         if (root.XamlRoot is { } xamlRoot)
             Stacks[xamlRoot] = this;
         root.Loaded += (_, _) => Stacks[root.XamlRoot] = this;
@@ -85,6 +93,18 @@ public sealed class CardStack
             if (root.XamlRoot is { } r)
                 Stacks.Remove(r);
         };
+    }
+
+    // The app is ending (Stop).
+    private bool _stopped;
+
+    /// <summary>The app is ending (MainWindow.StopForExit): no card shows or settles any more, as no timer of the
+    /// window ticks (MainWindow.WindowTimer).</summary>
+    public void Stop()
+    {
+        _stopped = true;
+        _show.Stop();
+        _settle.Stop();
     }
 
     public static CardStack? For(XamlRoot? root) => root is not null && Stacks.TryGetValue(root, out var stack) ? stack : null;

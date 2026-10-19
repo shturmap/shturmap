@@ -70,9 +70,10 @@ public static class DevScript
             + "(1, the first, every region open; 2, one that changed the backpack, the rest folded; 3, one that changed nothing); open, a folded region's name clicked; "
             + "point, the pointer on a region's cell at that grid place (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
             + "plan and show, PLAN and DESK at the rail's head",
-        ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 5: "
+        ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 8: "
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
-            + "a line of no known kind on Woods); with ended, one more that runs out 3 s later",
+            + "a line of no known kind on Woods, a survival on Interchange, a kill on Lighthouse, a weekly's kill on Reserve; 7 or 8 bring the cue's +N); "
+            + "with ended, one more that runs out 3 s later",
         ["tour"] = "end: ends the tour as Esc does (a --dev-view session starts as a first start, and the tour opens by itself)",
         ["textsize"] = "normal | larger | largest: settings' Text size, chosen as its row chooses it and saved in the session's settings; the window's text, "
             + "the map and the smallest window follow at once (a run with --text-scale draws at that factor whatever the step)",
@@ -100,8 +101,9 @@ public static class DevScript
                 .Select(a => a.EndsWith('?') ? (a.TrimEnd('?').TrimEnd(), true) : (a, false)).ToList();
 
     /// <summary>
-    /// A "tasks" step's made-up operational tasks (owner, 2026-10-19, B): how many (3 without a number, at most 5) and
-    /// whether one more runs out at once ("ended"). Null for any other word.
+    /// A "tasks" step's made-up operational tasks (owner, 2026-10-19, B): how many (3 without a number, at most 8, so the
+    /// cue's last place can say "+N": QA pass of 2026-10-19, F3) and whether one more runs out at once ("ended"). Null for
+    /// any other word.
     /// </summary>
     public static (int Count, bool Ended)? TasksOf(DevStep step)
     {
@@ -111,7 +113,7 @@ public static class DevScript
         {
             if (arg.Equals("ended", StringComparison.OrdinalIgnoreCase))
                 ended = true;
-            else if (int.TryParse(arg, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= 5)
+            else if (int.TryParse(arg, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n <= MostExampleTasks)
                 count = n;
             else
                 return null;
@@ -151,6 +153,9 @@ public static class DevScript
             _ => null,
         };
     }
+
+    /// <summary>The most made-up tasks a "tasks" step takes: the session's table has eight (GameSession.ReadExampleTasksAsync).</summary>
+    public const int MostExampleTasks = 8;
 
     /// <summary>The steps of settings' Text size a "textsize" step takes, as shturmap.db keeps them (Rules.TextSize).</summary>
     public static IReadOnlyList<string> TextSizes { get; } = ["normal", "larger", "largest"];
@@ -266,7 +271,7 @@ public static class DevScript
             }
             if (verb == "tasks" && TasksOf(step) is null)
             {
-                errors.Add($"line {i + 1}: 'tasks' takes how many (0 to 5) and 'ended'");
+                errors.Add($"line {i + 1}: 'tasks' takes how many (0 to {MostExampleTasks}) and 'ended'");
                 continue;
             }
             if (verb == "desk" && DeskOf(step) is null)

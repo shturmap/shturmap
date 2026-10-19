@@ -64,9 +64,8 @@ public sealed partial class MainWindow
     {
         if (_replayFrames is null)
         {
-            _replayFrames = DispatcherQueue.CreateTimer();
+            _replayFrames = WindowTimer(ReplayFrame);
             _replayFrames.Interval = TimeSpan.FromMilliseconds(15);
-            _replayFrames.Tick += (_, _) => ReplayFrame();
         }
         _replayFrames.Start();
     }

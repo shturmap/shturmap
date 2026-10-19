@@ -13,9 +13,10 @@ namespace Shturmap.App.Rules;
 /// ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; without an expiry "READ 3 H AGO"), in a raid its progress and, only when the
 /// task ends before the raid could, "ENDS IN 24 MIN" in the clock's red. Every time left is rounded down, in both (QA,
 /// 2026-10-19: Plan's 24 and the raid's 25 at the same moment): a time never says more than there is. No portrait, no
-/// card, no click. The section stands first in the card's quest list, before PICKED and COMPLETE, and within it the task
-/// that ends soonest comes first (owner, 2026-10-19, after trying the dev build: "I think they should be sorted on top of
-/// the list always as they are time-sensitive"); the planner's order and score stay as they were.
+/// card, no click. The section stands under PICKED, above COMPLETE (owner, 2026-10-19: "Ordering - under picked."; that
+/// morning on top of the quest list), and within it the task that ends soonest comes first (owner, 2026-10-19, after
+/// trying the dev build: "they should be sorted on top of the list always as they are time-sensitive"); the planner's order
+/// and score stay as they were.
 /// </summary>
 public static class OperationalRail
 {

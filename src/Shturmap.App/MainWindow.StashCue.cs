@@ -152,9 +152,8 @@ public sealed partial class MainWindow
             return;
         if (_stashHide is null)
         {
-            _stashHide = DispatcherQueue.CreateTimer();
+            _stashHide = WindowTimer(FadeStashOut);
             _stashHide.IsRepeating = false;
-            _stashHide.Tick += (_, _) => FadeStashOut();
         }
         _stashHide.Stop();
         var left = StashAtMost - (DateTime.Now - _stashSince);

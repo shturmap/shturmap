@@ -1184,19 +1184,6 @@
                           <ItemsControl ItemsSource="{x:Bind DetailParts}" ItemTemplate="{StaticResource LinePartTemplate}"
                                         ItemsPanel="{StaticResource LinePartsPanel}" IsTabStop="False" AutomationProperties.Name="{x:Bind Detail}" />
                           <StackPanel Visibility="{x:Bind ExpandedVisibility}">
-                            <!-- OPERATIONAL: the daily and weekly tasks read from a screenshot of the Tasks screen (owner,
-                                 2026-10-19: from a panel of four, B): the map's, then the any-map ones after a hairline;
-                                 when they were read at the right, and under the eyebrow the tasks that ran out since. On top
-                                 of the quest list, before PICKED, the one that ends soonest first (owner, 2026-10-19: "sorted
-                                 on top of the list always as they are time-sensitive"). -->
-                            <Grid Margin="0,14,0,4" Visibility="{x:Bind OperationalVisibility}">
-                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0" />
-                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(OperationalAsOf)}" Margin="0" HorizontalAlignment="Right" />
-                            </Grid>
-                            <TextBlock Text="{x:Bind OperationalEnded}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
-                                       Visibility="{x:Bind OperationalEndedVisibility}" />
-                            <ItemsControl ItemsSource="{x:Bind Operational}" Visibility="{x:Bind OperationalVisibility}" IsTabStop="False"
-                                          ItemTemplate="{StaticResource OperationalTemplate}" />
                             <!-- PICKED: the quests picked for the coming raid, first, in a group of their own; a pick that
                                  only progresses here says why, as in PROGRESS (owner, 2026-10-03). -->
                             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
@@ -1228,6 +1215,19 @@
                                 </DataTemplate>
                               </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <!-- OPERATIONAL: the daily and weekly tasks read from a screenshot of the Tasks screen (owner,
+                                 2026-10-19: from a panel of four, B): the map's, then the any-map ones after a hairline;
+                                 when they were read at the right, and under the eyebrow the tasks that ran out since. Under
+                                 PICKED, above COMPLETE (owner, 2026-10-19: "Ordering - under picked."; that morning on top of
+                                 the quest list), the one that ends soonest first ("time-sensitive"). -->
+                            <Grid Margin="0,14,0,4" Visibility="{x:Bind OperationalVisibility}">
+                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0" />
+                              <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:Caps.Of(OperationalAsOf)}" Margin="0" HorizontalAlignment="Right" />
+                            </Grid>
+                            <TextBlock Text="{x:Bind OperationalEnded}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
+                                       Visibility="{x:Bind OperationalEndedVisibility}" />
+                            <ItemsControl ItemsSource="{x:Bind Operational}" Visibility="{x:Bind OperationalVisibility}" IsTabStop="False"
+                                          ItemTemplate="{StaticResource OperationalTemplate}" />
                             <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardComplete}" Margin="0,14,0,4" Visibility="{x:Bind FinishVisibility}" />
                             <ItemsControl ItemsSource="{x:Bind Finish}">
                               <ItemsControl.ItemTemplate>
@@ -1417,18 +1417,18 @@
                                  Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Grid>
-                  <!-- OPERATIONAL: the raid's map's daily and weekly tasks, then the any-map ones (owner, 2026-10-19, B); on
-                       top of the quest list, before the picks, the one that ends soonest first (owner, 2026-10-19: "sorted on
-                       top of the list always as they are time-sensitive"). -->
+                  <!-- The picks first of the quests, nearest first, as in Plan. -->
+                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
+                             Visibility="{x:Bind ShownIfAny(ViewModel.RaidPicks), Mode=OneWay}" />
+                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidPicks, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
+                  <!-- OPERATIONAL: the raid's map's daily and weekly tasks, then the any-map ones (owner, 2026-10-19, B); under
+                       the picks, above COMPLETE, as in Plan (owner, 2026-10-19: "Ordering - under picked."), the one that ends
+                       soonest first. -->
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardOperational}" Margin="0,14,0,4"
                              Visibility="{x:Bind ShownIfOperational(ViewModel.RaidOperational, ViewModel.RaidOperationalEnded), Mode=OneWay}" />
                   <TextBlock Text="{x:Bind ViewModel.RaidOperationalEnded, Mode=OneWay}" Style="{StaticResource NoteText}" TextWrapping="Wrap" Margin="0,0,0,4"
                              Visibility="{x:Bind ShownIf(ViewModel.RaidOperationalEnded), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidOperational, Mode=OneWay}" ItemTemplate="{StaticResource OperationalTemplate}" IsTabStop="False" />
-                  <!-- The picks first of the quests, nearest first, as in Plan. -->
-                  <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardPicked}" Margin="0,14,0,4"
-                             Visibility="{x:Bind ShownIfAny(ViewModel.RaidPicks), Mode=OneWay}" />
-                  <ItemsControl ItemsSource="{x:Bind ViewModel.RaidPicks, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardComplete}" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidComplete), Mode=OneWay}" />
                   <ItemsControl ItemsSource="{x:Bind ViewModel.RaidComplete, Mode=OneWay}" ItemTemplate="{StaticResource RaidQuestTemplate}" />
                   <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.CardProgress}" Margin="0,14,0,4" Visibility="{x:Bind ShownIfAny(ViewModel.RaidProgress), Mode=OneWay}" />

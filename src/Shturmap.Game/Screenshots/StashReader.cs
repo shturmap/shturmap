@@ -100,6 +100,9 @@ public sealed class StashReader
 
     private StashReader(OcrEngine engine) => _engine = engine;
 
+    /// <summary>The recognition the labels are read with, for the stash desk's reading of the same picture (its words).</summary>
+    internal OcrEngine Engine => _engine;
+
     /// <summary>The language the labels are read in ("en-US").</summary>
     public string LanguageTag => _engine.RecognizerLanguage.LanguageTag;
 
@@ -316,6 +319,50 @@ public sealed class StashReader
         return new StashCellLook(rect, pixels, label, itemId, fit, agreement, vetoed, countText, count, foundInRaid);
     }
 
+    /// <summary>
+    /// A cell's label read in the ways below until one fits a name well enough (the stash desk's reading, against the
+    /// whole catalogue at its own fit): the best reading, how well it fit and what it fit, by <paramref name="match"/>.
+    /// The first readings that read a label clearly another item's (half its letters off every name) end it, as above.
+    /// </summary>
+    /// <param name="confirm">A label that fits but must be read once more (a short one): a later reading that fits as
+    /// well and is longer wins, and the reading ends after it.</param>
+    internal async Task<(string? Label, double Fit, T? Best)> ReadLabelAsync<T>(SKBitmap bitmap, SKRectI pixels, int pitch,
+        Func<string, (double Fit, T Best)> match, double enough, CancellationToken ct, Func<string, bool>? confirm = null)
+    {
+        string? label = null;
+        double fit = 0;
+        T? best = default;
+        var confirming = false;
+        for (var step = 0; step < LabelReadings.Length; step++)
+        {
+            if (step == FirstReadings && label is not null && fit < AnotherName)
+                break;
+            var reading = await ReadLabelAsync(bitmap, pixels, pitch, LabelReadings[step], ct);
+            if (reading.Length == 0)
+                continue;
+            var (top, what) = match(reading);
+            if (confirming)
+            {
+                if (top >= enough && reading.Length > label!.Length)
+                    (label, fit, best) = (reading, top, what);
+                break;
+            }
+            if (label is null || top > fit)
+            {
+                label = reading;
+                fit = top;
+                best = what;
+            }
+            if (fit >= enough)
+            {
+                if (confirm?.Invoke(label) != true)
+                    break;
+                confirming = true;
+            }
+        }
+        return (label, fit, best);
+    }
+
     // The ways a label is read, in order, until one fits a name: the cell's upper part below the line, enlarged,
     // with the words of the label's band kept, and the band alone, set in a dark margin; then both again enlarged
     // without smoothing (and the part larger still), then softly, then from the line's own row a step smaller. The
@@ -372,10 +419,11 @@ public sealed class StashReader
     /// <summary>The number at the item's bottom right as read: a stack's count, or a magazine's load. The band is cut
     /// to the number's own height (at 1440p the digits stand 18 to 4 px over the bottom): the found-in-raid mark
     /// right above it read as a digit before it.</summary>
-    internal async Task<string?> ReadCountAsync(SKBitmap bitmap, SKRectI rect, int pitch, CancellationToken ct)
+    /// <param name="cells">How wide the band is, in cells (the stash desk reads a long condition once more, wider).</param>
+    internal async Task<string?> ReadCountAsync(SKBitmap bitmap, SKRectI rect, int pitch, CancellationToken ct, double cells = 0.9)
     {
         // The number ends a pixel before the cell's line: the band goes up to the line.
-        var width = Math.Min(rect.Width - 3, (int)Math.Round(pitch * 0.9));
+        var width = Math.Min(rect.Width - 3, (int)Math.Round(pitch * cells));
         var height = (int)Math.Round(pitch * 0.215);
         var band = SKRectI.Create(rect.Right - 1 - width, rect.Bottom - 2 - height, width, height);
         var text = await ReadBandAsync(bitmap, band, ZoomFor(pitch), StashPicture.Sampling, ct);

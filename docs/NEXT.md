@@ -79,7 +79,7 @@ glance, "Settings"), "Map drawing" (*The text size*), §8 "Developer aids" (*A l
   cuts them, and a wide map there is 13 % narrower. F3, Plan's NEXT RAID row wraps "STREETS OF / TARKOV": accepted.
   F4, the developer script's `textsize normal|larger|largest` pictures the setting's change while Shturmap runs.
 
-## 2026-10-19: the stash desk, a price view from a screenshot (designed, to build)
+## 2026-10-19: the stash desk, a price view from a screenshot (designed; reading and data built, the view to build)
 
 **The ask** (owner, 2026-10-19): "If you take a screenshot from items, provides a view in the app that mirrors the grid
 (to keep the mental model of the currently seen items) and augments them with the current price at the auction house
@@ -299,6 +299,55 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
 - The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). Open: that `SafetyTests` allows
   the clipboard.
 
+**Built (step B part 1, 2026-10-19: the reading and the data; no view, no texts, no setting changed).** Binding:
+DESIGN.md §2 ("For the stash desk", *Built*), §3 (the desk's prices, *Built otherwise*), §4 (*The stash desk*, *Built:
+the model the view draws*), §8 ("The desk file", "How the parts work", *Menu screenshots*).
+
+- **Where it lives.** The model and its rules in `Shturmap.Core.Desk`: `DeskPage`, `DeskRegion`, `DeskCell` (the page),
+  `DeskLedger` (desk.json, the merge, the fold's changed regions, a window's attachment), `DeskValues` (the fee by
+  tarkov-api's `fleaMarketFee`, read 2026-10-19; the figure; condition scaling; tint, arrow, liquidity), `DeskKeep` (the
+  levels), `DeskSheet` (the values over a page, the head line), `DeskView` (what is published). The reading in
+  `Shturmap.Game.Screenshots`: `DeskReader`, `DeskLayout` (the screen and its regions), `DeskFrames` (compartments),
+  `DeskMatch` (the label against the catalogue), `DeskWords`; `MenuScreenshotReader` runs it after the stash reader on the
+  same picture. The data: `ApiItem`'s price fields, footprint and `hasGrid`, `ApiFleaMarket`, `ItemSources.HideoutNeeds`,
+  `PricesAt`, `GameDataLoader.DeskPricesAge`; `Shturmap.Session.DeskData` (catalogue, facts, flea rules, keep levels);
+  `GameSession.Desk` (the reading taken, the file, the prices refreshed, `SessionSnapshot.Desk`). The CLI: `shturmap-cli
+  desk <png|folder>` (page, values, page in hand over the pictures, truths; `--audit` the DESK line, which `bring` prints
+  too). Tests: `DeskValuesTests`, `DeskKeepTests`, `DeskLedgerTests`, `DeskSheetTests` (made-up ids), `DeskReaderTests`
+  (drawn GEAR tab, window, frames, match), `DeskSessionTests`, `DeskRealPictureTests` (skip without the ignored
+  pictures and the cache).
+- **Measured** (`shturmap-cli desk`, cache only, no request): the GEAR tab's truth (its stash, 37 items) 29 right, 2 "one
+  of N" (the truth among them), 6 unread, 0 wrong (the spike's reading at 0.8 against the whole catalogue, without the
+  footprint: 23 named); the three
+  stash truths of 2026-10-11 (148 items) 129 right, 16 "one of N", 3 unread, 0 wrong. Over the five GEAR pictures: 60 to
+  129 cells a picture, about three in five named, a fifth "one of N" (the slots' variants: the armband one of 11, the dog tag one
+  of 32, BAC Bastion one of 3; the two bandages; the Hot Rod can and bag), a sixth unread (labels the art hides, a label
+  read a letter short: "Appl", "ALOK-B", "TC-200"); regions: the loadout (7 slots filled) and the stash on each, the middle
+  column's parts in view (POCKETS, SPECIAL SLOTS, BACKPACK, POUCH; TACTICAL RIG where scrolled up; a grid the scrolling
+  cuts left out); the Zhuk window found on both pictures that show it, attached to its cell in the backpack across the
+  three readings; 1.9 to 2.4 s a picture. The DESK audit line (PvE): 5,006 items with a short name, 608 with no price at
+  all, 24 without a footprint, 759 of 3,344 flea-priced (not guns) sharing short name and footprint; PvP 690 of 3,159.
+- **For the view** (part 2): bind `SessionSnapshot.Desk` (`DeskView`: `Mode`, `Sheet`, `Changed`, `First`, `Reading`,
+  `PricesAt`). `Sheet.Regions` are in reading order, each a `DeskRegionSheet` (`Region` with `Key`, `Kind`, `Cols` ×
+  `Rows`, `Parts`, a window's `Title`, `AttachedTo` or `SameName`; `Part` ON YOU, STASH or neither; `Total`, `Plus`).
+  Each `DeskCellSheet`: `Cell` (`I`, `J`, `W`, `H` in grid units; `Slot` for a slot, no footprint; `Ids`: one named, more
+  "one of N", none unread; `Count`, `Print`, `FoundInRaid`), `Figure` (`Value`, `High` for the range, `Source` Flea,
+  Trader with `TraderName`, None for a range; `Estimate` "~", `Plus` "+", `Unsure`, `Full`, `Tint` 0 to 3, `Arrow`,
+  `Liquidity`, `FleaLevel`, `FleaNet`, `Fee`, `TraderPrice`), `Keep` (Now, Next, Hideout, Later, None) with `Needs` (the
+  card's KEEP lines), `Unseen`. `Sheet.Totals` is the head line. A view can make a page of made-up cells with
+  `DeskSheet.Of`.
+- **Open.** The tick's words, note, help, README and PRIVACY.md don't say the desk yet, while the reading runs under the
+  tick in a developer build (part 2's texts; before any release). The prices per reading are the item file again, not
+  the items a screenshot showed (json.tarkov.dev has no price per item; DESIGN.md §3): at most one request an hour of
+  desk use, about 1.4 MB when it changed: the owner's word on it. The GEAR tab's words are the English game's; other
+  languages, 1080p and other aspect ratios unmeasured (the slot boxes' sizes are the 1440p screenshots' in cells). The
+  rules' choices listed in DESIGN.md (*Built: the model the view draws*: NOW with hand-overs, the notch's order, a "?"
+  cell's keep and total, the fold ignoring the found-in-raid mark) are mine, for the owner to overrule. Not read: a
+  container slot's own label when the art covers it (the backpack's "Trooper 35" read "ATcoop,er 35"), the quick-use
+  bar (never: its slots repeat what is on the player). The cyan outline, a hover highlight across items, and the art's
+  tie-break for the same-name, same-footprint "?" (judged by the "?" count after part 2) stay as the measurement left
+  them.
+
 **Built (step B part 2, 2026-10-19: the view)**, over part 1's model (`SessionSnapshot.Desk`, `Shturmap.Core.Desk`):
 
 - **Where it lives:** `MainWindow.Desk` (the state: PLAN | DESK, a reading opening the desk, a raid taking the window,
@@ -478,9 +527,39 @@ COMPLETE in the open card and the raid card; the build put it above PICKED; the 
 
 **Open.**
 
-- **The changes after the dev build** (above): the UI QA pass on the cue (`tools\qa\operational-feedback`, its `cue`
-  still; 900×560 and German too: the title in two lines, six rows in a short column) and the section on top, and the
-  senior translator's review of `OperationalCueEyebrow` and `OperationalCueTitle`.
+- **The UI QA pass on the cue (2026-10-19, on b549b08) and its fixes.** One blocker: F1, at 900×560 under a notice
+  (the tour's, the stash's) the title stood whole on two lines while the six rows shrank to about 36 % (synopses some
+  5 px), unreadable. Four more: F2, without a notice the cue wasn't fitted above the map's foot, its bottom rule through
+  WIKI MAP and under the "−" button; F3, `tasks 5 ended` and `-Operational 5 -OperationalEnded` gave six tasks at most,
+  so "+N" couldn't be reached; F4, the rows' rise can't be checked frame by frame; F5, a task that ran out while the cue
+  was up still said "WOODS · 1 MIN LEFT" beside the rail's "1 ended at …". Fixed:
+  - F1, F2: the whole cue keeps to its room as the roll call's (`MainWindow.FitTasksCue`): 8 DIP under a notice, 8
+    above WIKI MAP and the credit, its rows smaller down to 60 %, past that the whole cue, title included; its gold
+    rules clear of the map's buttons, as its rows. At 900×560 under the tour's notice it stands at about 71 % in English
+    and German, title and rows alike; without a notice the title at its size and the rows at about 68 %. A notice
+    that comes while it is up has it fitted again; one that goes leaves it where it stands.
+  - F3: `tasks <n>` and `-Operational <n>` take up to 8 (a survival on Interchange, a kill on Lighthouse, a weekly's
+    kill on Reserve after the five). Eight give five rows and "+3", seven "+2": six places, the last "+N", as DESIGN.md
+    has it (the pass's wish, six rows and "+2" for eight, would be a seventh place). `OperationalCueTests` hold the
+    places and the "+N" words; `tools\qa\operational-feedback.md` names the snapshot that pictures it.
+  - F4: accepted as unchecked, one line in docs/QA.md ("Replay scripts").
+  - F5, the coordinator's rule: the rows are a reading, not a clock; a row whose task runs out while the cue is up says
+    ENDED („ABGELAUFEN“) in place of its time left, the others keep the time read (`OperationalCueWords.Line`,
+    `MainWindow.WatchTasksEnds`; tested, and pictured by `-Operational 5 -OperationalEnded`, whose snapshot keeps the
+    cue up past the task's end).
+  - With them: OPERATIONAL under PICKED, above COMPLETE, in the open card and the raid card (owner, 2026-10-19:
+    "Ordering - under picked."; `OperationalSectionOrderTests`); and a number never parted from its unit: the English
+    rule texts keep a no-break space between them as the German do ("8 H LEFT", "24 MIN LEFT", "2 D LEFT", "READ 3 H
+    AGO", "ENDS IN 25 MIN", the raid time's and the position's age), German „vor 3 Tagen gelesen“ too (translator,
+    2026-10-19).
+- **For the owner: the fold.** At 900×560 the OPERATIONAL section is below the fold whether it stands first in the card
+  or under PICKED: the rail scrolls, and the open card starts under NEXT RAID's rows (four in the replay), so its
+  sections begin at the window's foot either way. Under PICKED it moves down by the picks' rows only.
+- To re-check: a QA pass on F1, F2, F3, F5 and the order; the senior translator's look at `OperationalCueEnded`
+  („abgelaufen“) and the English no-break spaces.
+- Found on the way, fixed (2026-10-19): an exit within 1.6 s of any cue (this one, the roll call, QUEST COMPLETE) ended
+  with 0xC000027B in CoreMessagingXP in about 3 runs of 4: a timer of the window (the title's decode, the roll call's
+  frames) ticked after the exit had taken the XAML down. Each now does nothing once `StopForExit` ran (`WindowTimer`).
 
 - **The UI QA pass (2026-10-19, on ea0cb16) and the senior translator's review (2a75488).** The pass found one blocker
   and four nits; fixed after it: F1, with the app in German the catalogue's German names matched no hand-over item read
