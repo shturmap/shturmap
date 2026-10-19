@@ -21,6 +21,13 @@ param(
   [int] $Operational,
   # With -Operational: one more task that runs out at once, for the "1 ended at …" line.
   [switch] $OperationalEnded,
+  # The made-up stash desk (docs/DESIGN.md §4, *The stash desk*), up as a reading in the menus brings it: a LOADOUT strip
+  # with "?" slots, TACTICAL RIG, POCKETS, a BACKPACK with its Zhuk's window attached, the POUCH and a STASH page, every
+  # mark of a cell (src\Shturmap.App\Rules\DeskExample.cs). Use with -PlanOnly: a raid takes the window back.
+  [switch] $Desk,
+  # With -Desk: the made-up desk's reading (1 the first, every region open; 2 one that changed the backpack, the rest
+  # folded; 3 one that changed nothing).
+  [ValidateRange(1, 3)] [int] $DeskReading = 1,
   # The tour's chapter to snapshot (1 to 7; docs/tour.md), at its end; use with -PlanOnly, since the tour waits out raids.
   [int] $Tour,
   # Play the raid as a Scav: the match setup names another profile than the menu's.
@@ -277,6 +284,7 @@ if ($ShowQuest) { $appArgs += @('--show-quest', "`"$ShowQuest`"") }
 if ($TraderFocus) { $appArgs += @('--trader-focus', "`"$TraderFocus`"") }
 if ($Operational -gt 0) { $appArgs += @('--operational', $Operational) }
 if ($OperationalEnded) { $appArgs += @('--operational-ended') }
+if ($Desk) { $appArgs += @('--desk', $DeskReading) }
 if ($Tour -gt 0) { $appArgs += @('--tour', $Tour) }
 if ($Window) { $appArgs += @('--window', $Window) }
 if ($Scale -gt 1) { $appArgs += @('--snapshot-scale', $Scale) }

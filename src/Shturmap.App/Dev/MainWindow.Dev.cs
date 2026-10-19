@@ -388,6 +388,44 @@ public sealed partial class MainWindow
         return null;
     }
 
+    /// <summary>The developer script's "desk" (DevScript.DeskOf): what was done, or why not.</summary>
+    internal string DevDesk(DevScript.DeskAct act, int reading, string region, int i, int j)
+    {
+        if (_snapshot is not { } s)
+            return "desk: no snapshot yet";
+        switch (act)
+        {
+            case DevScript.DeskAct.Reading:
+                if (s.Data is null)
+                    return "desk: no data yet";
+                ShowDeskExample(reading, s);
+                return $"desk: reading {reading}" + (_deskChosen ? "" : " (not shown: " + State + ")");
+            case DevScript.DeskAct.Plan:
+                LeaveDesk("dev");
+                return "desk: plan";
+            case DevScript.DeskAct.Show:
+                SetDesk(true, "dev");
+                return "desk: shown" + (_deskChosen ? "" : " (not: " + State + ")");
+        }
+        if (_deskShown is not { } view || !_deskChosen)
+            return "desk: the desk isn't up";
+        var key = view.Sheet.Regions.Select(r => r.Region.Key)
+            .FirstOrDefault(k => k == region || k == Core.Desk.DeskRegion.WindowKey(region));
+        if (key is null)
+            return "desk: no region " + region;
+        if (act == DevScript.DeskAct.Open)
+        {
+            _deskOpen = DeskFold.Unfold(_deskOpen ?? new HashSet<string>(), key);
+            ShowDeskPage(motion: false);
+            return "desk: opened " + key;
+        }
+        var cell = i < 0 ? StashDesk.FirstCellOf(key) : StashDesk.CellAt(key, i, j);
+        if (cell is null)
+            return $"desk: no cell of {key} at {i},{j} on the page";
+        StashDesk.Point(cell);
+        return $"desk: pointed at {key} {cell.Sheet.Cell.I},{cell.Sheet.Cell.J}" + (cell.Sheet.Cell.Slot is { } slot ? " (" + slot + ")" : "");
+    }
+
     internal void DevExit()
     {
         _devView?.Close();

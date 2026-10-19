@@ -42,11 +42,16 @@ public sealed partial class MainWindow
     // What each picture always shows, as its texts file writes it, in the language in use (LayoutWords.Missing): texts
     // its XAML binds, which went missing all together when the window's bindings were never set (QA pass of 2026-10-15),
     // in every state the picture is taken in. The window: the rail's MAP and the status bar's help and settings buttons
-    // (their words, LOGS and the rest, change with the state and give way in a narrow window). The tour: its band's
+    // (their words, LOGS and the rest, change with the state and give way in a narrow window); out of a raid PLAN | DESK
+    // at the rail's head. The tour: its band's
     // ← BACK (from the second chapter), NEXT → (DONE at the last) and ESC ENDS THE TOUR. Help and settings: their titles.
     private IReadOnlyList<string> LayoutExpected(string picture) => picture switch
     {
-        "window" => [ViewTexts.RailMapHeading, "name: " + ViewTexts.HelpButtonName, "name: " + ViewTexts.SettingsButtonName],
+        "window" =>
+        [
+            ViewTexts.RailMapHeading, "name: " + ViewTexts.HelpButtonName, "name: " + ViewTexts.SettingsButtonName,
+            .. ViewModel.InRaid ? Array.Empty<string>() : [ViewTexts.DeskSwitchPlan, ViewTexts.DeskSwitchDesk],
+        ],
         "tour" when TourOpen =>
         [
             .. _tourAt > 0 ? [ViewTexts.TourBack] : Array.Empty<string>(),

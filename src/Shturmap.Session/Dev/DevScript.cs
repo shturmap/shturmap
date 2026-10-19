@@ -66,6 +66,10 @@ public static class DevScript
             + "leave, the pointer off the line it is on, as leaving the card does",
         ["replay"] = "the made-up raid of What's New's preview replayed on Customs, as at a raid's end",
         ["stash"] = "the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it",
+        ["desk"] = "[<n>] | open <region> | point <region> [<i> <j>] | plan | show: the made-up stash desk's n-th reading as a reading in the menus brings it "
+            + "(1, the first, every region open; 2, one that changed the backpack, the rest folded; 3, one that changed nothing); open, a folded region's name clicked; "
+            + "point, the pointer on a region's cell at that grid place (alone, its first cell: a slot, else its top left item), as the pointer's events do; "
+            + "plan and show, PLAN and DESK at the rail's head",
         ["tasks"] = "[<n>] [ended]: the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, n made-up tasks (3; at most 5: "
             + "a survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown on Shoreline, "
             + "a line of no known kind on Woods); with ended, one more that runs out 3 s later",
@@ -113,6 +117,39 @@ public static class DevScript
                 return null;
         }
         return (count, ended);
+    }
+
+    /// <summary>What a "desk" step does: shows a made-up reading, opens a folded region, points at a cell, or goes back to Plan.</summary>
+    public enum DeskAct
+    {
+        Reading,
+        Open,
+        Point,
+        Plan,
+        Show,
+    }
+
+    /// <summary>
+    /// A "desk" step (step B of the stash desk, 2026-10-19): "desk [&lt;n&gt;]" the made-up desk's reading n (1 without a
+    /// number, at most 3), "desk open &lt;region&gt;" a folded region's name clicked, "desk point &lt;region&gt; [&lt;i&gt; &lt;j&gt;]"
+    /// the pointer on its cell at that grid place (−1 for its first cell), "desk plan" and "desk show" PLAN and DESK clicked. A region is its
+    /// key (loadout, rig, pockets, special, backpack, pouch, stash) or a window's title (zhuk). Null for anything else.
+    /// </summary>
+    public static (DeskAct Act, int Reading, string Region, int I, int J)? DeskOf(DevStep step)
+    {
+        static bool Number(string text, out int n) => int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out n);
+        return step.Args switch
+        {
+            [] => (DeskAct.Reading, 1, "", 0, 0),
+            [var n] when Number(n, out var reading) && reading is >= 1 and <= 3 => (DeskAct.Reading, reading, "", 0, 0),
+            [var plan] when plan.Equals("plan", StringComparison.OrdinalIgnoreCase) => (DeskAct.Plan, 0, "", 0, 0),
+            [var show] when show.Equals("show", StringComparison.OrdinalIgnoreCase) => (DeskAct.Show, 0, "", 0, 0),
+            [var open, var region] when open.Equals("open", StringComparison.OrdinalIgnoreCase) => (DeskAct.Open, 0, region.ToLowerInvariant(), 0, 0),
+            [var point, var region] when point.Equals("point", StringComparison.OrdinalIgnoreCase) => (DeskAct.Point, 0, region.ToLowerInvariant(), -1, -1),
+            [var point, var region, var i, var j] when point.Equals("point", StringComparison.OrdinalIgnoreCase) && Number(i, out var x) && Number(j, out var y)
+                => (DeskAct.Point, 0, region.ToLowerInvariant(), x, y),
+            _ => null,
+        };
     }
 
     /// <summary>The steps of settings' Text size a "textsize" step takes, as shturmap.db keeps them (Rules.TextSize).</summary>
@@ -230,6 +267,11 @@ public static class DevScript
             if (verb == "tasks" && TasksOf(step) is null)
             {
                 errors.Add($"line {i + 1}: 'tasks' takes how many (0 to 5) and 'ended'");
+                continue;
+            }
+            if (verb == "desk" && DeskOf(step) is null)
+            {
+                errors.Add($"line {i + 1}: 'desk' takes a reading (1 to 3), 'open <region>', 'point <region> [<i> <j>]', 'plan' or 'show'");
                 continue;
             }
             if (verb == "textsize" && TextSizeOf(step) is null)

@@ -374,6 +374,26 @@ public sealed class DevToolsTests : IDisposable
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 
+    // The stash desk's view without a screenshot (step B, 2026-10-19): "desk" takes the made-up desk's reading (1 to 3, 1
+    // without a number), "open" a folded region as its name's click does, "point" a cell as the pointer does (its first
+    // cell without a place), "plan" and "show" PLAN and DESK at the rail's head.
+    [Fact]
+    public void The_desk_step_reads_a_reading_a_region_a_cell_or_the_switch()
+    {
+        var (steps, errors) = DevScript.Parse(string.Join('\n', "desk", "desk 2", "DESK open Stash", "desk point backpack", "desk point stash 4 1", "desk plan",
+            "desk show", "desk 4", "desk open", "desk point stash 4", "desk fold"));
+        const string said = "'desk' takes a reading (1 to 3), 'open <region>', 'point <region> [<i> <j>]', 'plan' or 'show'";
+        Assert.Equal([$"line 8: {said}", $"line 9: {said}", $"line 10: {said}", $"line 11: {said}"], errors);
+        Assert.Equal(
+            [
+                (DevScript.DeskAct.Reading, 1, "", 0, 0), (DevScript.DeskAct.Reading, 2, "", 0, 0), (DevScript.DeskAct.Open, 0, "stash", 0, 0),
+                (DevScript.DeskAct.Point, 0, "backpack", -1, -1), (DevScript.DeskAct.Point, 0, "stash", 4, 1), (DevScript.DeskAct.Plan, 0, "", 0, 0),
+                (DevScript.DeskAct.Show, 0, "", 0, 0),
+            ],
+            steps.Select(s => DevScript.DeskOf(s)!.Value));
+        Assert.False(DevScript.FollowsAtOnce(steps[0]));
+    }
+
     // QA pass of 2026-10-19 (F4): no step chose a text size while Shturmap runs, so its change couldn't be pictured.
     // "textsize" takes settings' three steps, as shturmap.db keeps them.
     [Fact]

@@ -200,6 +200,10 @@ public partial class App : Application
             // fake-raid.ps1 -Operational, -OperationalEnded); the operational tasks' file isn't written that run.
             ExampleTasksOnStart = cli.Contains("--fake-game") && int.TryParse(Arg(cli, "--operational"), out var exampleTasks)
                 ? (exampleTasks, cli.Contains("--operational-ended")) : null,
+            // Developer aid for snapshots, with a fake game only: "--desk [<n>]" shows the made-up stash desk's n-th reading (1, the
+            // first; 2, one that changed the backpack; 3, one that changed nothing) once the data is there, as a reading in the
+            // menus brings it (toolsake-raid.ps1 -Desk; Rules.DeskExample).
+            DeskOnStart = cli.Contains("--fake-game") && cli.Contains("--desk") ? (int.TryParse(Arg(cli, "--desk"), out var deskReading) ? deskReading : 1) : null,
             // Developer aid: "--tour <n>" opens the tour at its n-th chapter (snapshots of each, tools\fake-raid.ps1 -Tour).
             TourOnStart = int.TryParse(Arg(cli, "--tour"), out var tourChapter) ? tourChapter : null,
             // Developer aid: Follow my position on from the start (snapshot runs leave it off otherwise).

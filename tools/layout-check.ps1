@@ -19,7 +19,7 @@ param(
   # Window sizes in DIP, as Windows counts a window (title bar and frame included): 900x560 is the smallest Shturmap
   # allows (docs/DESIGN.md §4, "The window"). Scaled to the pixels of the monitor the app opens on.
   [string[]] $Sizes = @('900x560', '1600x900'),
-  # Which views (all when empty): plan, raid, report, crash, whatsnew, quest, tour1 … tour7. Settings (settings.png) is
+  # Which views (all when empty): plan, raid, report, crash, whatsnew, quest, desk, tour1 … tour7. Settings (settings.png) is
   # in every one, as each snapshot opens it; help (help.png) in those where it opens by itself, all but the tour's.
   [string[]] $States,
   # Also start in English, switch to each other language once the data is there (--switch-language), and compare every
@@ -49,6 +49,8 @@ $views = [ordered]@{
   whatsnew = @{ PlanOnly = $true; AppArgs = @('--whats-new') }
   # A quest's card and its first need's item card (card.png, card-2.png).
   quest    = @{ PlanOnly = $true; ShowQuest = 'Dandies' }
+  # The stash desk in the map's place, the made-up page's first reading (toolsake-raid.ps1 -Desk).
+  desk     = @{ PlanOnly = $true; AppArgs = @('--desk', '1') }
 }
 foreach ($n in 1..7) { $views["tour$n"] = @{ PlanOnly = $true; Tour = $n } }
 if ($States) {
