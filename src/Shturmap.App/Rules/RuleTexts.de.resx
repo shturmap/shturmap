@@ -365,7 +365,7 @@
     <comment>en: UNCHANGED</comment>
   </data>
   <data name="DeskSlotEarpiece" xml:space="preserve">
-    <value>OHRHÖRER</value>
+    <value>HEADSET</value>
     <comment>en: EARPIECE</comment>
   </data>
   <data name="DeskSlotHeadwear" xml:space="preserve">
@@ -377,11 +377,11 @@
     <comment>en: FACE COVER</comment>
   </data>
   <data name="DeskSlotArmband" xml:space="preserve">
-    <value>ARMBINDE</value>
+    <value>ARMBAND</value>
     <comment>en: ARMBAND</comment>
   </data>
   <data name="DeskSlotBodyArmor" xml:space="preserve">
-    <value>KÖRPERPANZERUNG</value>
+    <value>SCHUTZWESTE</value>
     <comment>en: BODY ARMOR</comment>
   </data>
   <data name="DeskSlotEyewear" xml:space="preserve">
@@ -389,7 +389,7 @@
     <comment>en: EYEWEAR</comment>
   </data>
   <data name="DeskSlotDogtag" xml:space="preserve">
-    <value>HUNDEMARKE</value>
+    <value>DOGTAG</value>
     <comment>en: DOGTAG</comment>
   </data>
   <data name="DeskSlotOnSling" xml:space="preserve">
@@ -405,7 +405,7 @@
     <comment>en: ON BACK</comment>
   </data>
   <data name="DeskSlotSheath" xml:space="preserve">
-    <value>SCHEIDE</value>
+    <value>MESSERSCHEIDE</value>
     <comment>en: SHEATH</comment>
   </data>
   <data name="DeskCardOffers" xml:space="preserve">
@@ -413,11 +413,11 @@
     <comment>en: {count, plural, one {# OFFER} other {# OFFERS}}</comment>
   </data>
   <data name="DeskCardFleaLevel" xml:space="preserve">
-    <value>FLOHMARKT AB LEVEL {level}</value>
+    <value>FLEA AB LEVEL {level}</value>
     <comment>en: FLEA FROM LEVEL {level}</comment>
   </data>
   <data name="DeskCardNotOnFlea" xml:space="preserve">
-    <value>NICHT AUF DEM FLOHMARKT</value>
+    <value>NICHT AUF DEM FLEA</value>
     <comment>en: NOT ON THE FLEA</comment>
   </data>
   <data name="DeskCardRoubles" xml:space="preserve">
@@ -433,7 +433,7 @@
     <comment>en: {change} · 48 H</comment>
   </data>
   <data name="DeskCardFleaNet" xml:space="preserve">
-    <value>Flohmarkt netto {net} · Gebühr {fee}</value>
+    <value>Flea netto {net} · Gebühr {fee}</value>
     <comment>en: Flea net {net} · fee {fee}</comment>
   </data>
   <data name="DeskCardCopyHead" xml:space="preserve">
@@ -465,23 +465,23 @@
     <comment>en: {trader} pays more · {price}. A click copies nothing.</comment>
   </data>
   <data name="DeskCardNoFlea" xml:space="preserve">
-    <value>Kann nicht auf dem Flohmarkt angeboten werden. Ein Klick kopiert nichts.</value>
+    <value>Kann nicht auf dem Flea angeboten werden. Ein Klick kopiert nichts.</value>
     <comment>en: Can't be listed on the flea. A click copies nothing.</comment>
   </data>
   <data name="DeskCardNoFleaFir" xml:space="preserve">
-    <value>Der Flohmarkt nimmt es nur Found in Raid. Ein Klick kopiert nichts.</value>
+    <value>Der Flea nimmt es nur FiR. Ein Klick kopiert nichts.</value>
     <comment>en: The flea takes it found in raid only. A click copies nothing.</comment>
   </data>
   <data name="DeskCardNoOffers" xml:space="preserve">
-    <value>Keine Angebote auf dem Flohmarkt. Ein Klick kopiert nichts.</value>
+    <value>Keine Angebote auf dem Flea. Ein Klick kopiert nichts.</value>
     <comment>en: No offers on the flea. A click copies nothing.</comment>
   </data>
   <data name="DeskCardFleaOff" xml:space="preserve">
-    <value>Der Flohmarkt ist aus. Ein Klick kopiert nichts.</value>
+    <value>Der Flea ist aus. Ein Klick kopiert nichts.</value>
     <comment>en: The flea is off. A click copies nothing.</comment>
   </data>
   <data name="DeskCardNoPrice" xml:space="preserve">
-    <value>Kein Preis für dieses Feld. Ein Klick kopiert nichts.</value>
+    <value>Kein Preis für diese Zelle. Ein Klick kopiert nichts.</value>
     <comment>en: No price for this cell. A click copies nothing.</comment>
   </data>
   <data name="DeskCardLastLow" xml:space="preserve">
@@ -501,7 +501,7 @@
     <comment>en: ~ an estimate: the condition is not printed</comment>
   </data>
   <data name="DeskCardUnseen" xml:space="preserve">
-    <value>Inhalt nicht gesehen: im Spiel öffnen, dann ein Screenshot</value>
+    <value>Inhalt nicht gesehen: öffne es im Spiel, dann ein Screenshot</value>
     <comment>en: Contents unseen: open it in the game, then a screenshot</comment>
   </data>
   <data name="DeskCardKeep" xml:space="preserve">
@@ -525,11 +525,11 @@
     <comment>en: later</comment>
   </data>
   <data name="DeskCardKeepStation" xml:space="preserve">
-    <value>{station} {level} ×{count} · ein Versteckmodul</value>
+    <value>{station} {level} ×{count} · ein Hideout-Modul</value>
     <comment>en: {station} {level} ×{count} · a hideout module</comment>
   </data>
   <data name="DeskCardFir" xml:space="preserve">
-    <value>{line} · FIR</value>
+    <value>{line} · FiR</value>
     <comment>en: {line} · FIR</comment>
   </data>
   <data name="DeskCardThirtyDays" xml:space="preserve">
@@ -553,31 +553,31 @@
     <comment>en: No price history at hand.</comment>
   </data>
   <data name="DeskCardDay" xml:space="preserve">
-    <value>24 H</value>
+    <value>24 H</value>
     <comment>en: 24 H</comment>
   </data>
   <data name="DeskCardDayMarks" xml:space="preserve">
-    <value>TIEFST {last} · SCHNITT {avg}</value>
+    <value>LETZTER TIEFSTPREIS {last} · SCHNITT {avg}</value>
     <comment>en: LAST LOW {last} · AVG {avg}</comment>
   </data>
   <data name="DeskCardOutlier" xml:space="preserve">
-    <value>Das Hoch, {high}, liegt jenseits des Balkens: ein Angebot, wohl ein Ausreißer.</value>
+    <value>Das Hoch, {high}, liegt außerhalb des Balkens: ein einzelnes Angebot, wohl ein Ausreißer.</value>
     <comment>en: The high, {high}, is past the bar: one offer, likely an outlier.</comment>
   </data>
   <data name="DeskCardTraders" xml:space="preserve">
-    <value>HÄNDLER</value>
+    <value>TRADER</value>
     <comment>en: TRADERS</comment>
   </data>
   <data name="DeskCardCraftsBarters" xml:space="preserve">
-    <value>HERSTELLUNG UND TAUSCH</value>
+    <value>CRAFTS UND BARTER</value>
     <comment>en: CRAFTS AND BARTERS</comment>
   </data>
   <data name="DeskCardAge" xml:space="preserve">
-    <value>{minutes, plural, =0 {Preise gerade geholt · tarkov.dev} one {Preise # Min. alt · tarkov.dev} other {Preise # Min. alt · tarkov.dev}}</value>
+    <value>{minutes, plural, =0 {Preise gerade geholt · tarkov.dev} one {Preise # min alt · tarkov.dev} other {Preise # min alt · tarkov.dev}}</value>
     <comment>en: {minutes, plural, =0 {Prices just in · tarkov.dev} one {Prices # min old · tarkov.dev} other {Prices # min old · tarkov.dev}}</comment>
   </data>
   <data name="DeskCardAgeHours" xml:space="preserve">
-    <value>{hours, plural, one {Preise # Std. alt · tarkov.dev} other {Preise # Std. alt · tarkov.dev}}</value>
+    <value>{hours, plural, one {Preise # h alt · tarkov.dev} other {Preise # h alt · tarkov.dev}}</value>
     <comment>en: {hours, plural, one {Prices # h old · tarkov.dev} other {Prices # h old · tarkov.dev}}</comment>
   </data>
   <data name="DeskCardOneOf" xml:space="preserve">
@@ -585,7 +585,7 @@
     <comment>en: {count, plural, one {One of # item} other {One of # items}}</comment>
   </data>
   <data name="DeskCardPickNote" xml:space="preserve">
-    <value>Wähle das richtige: die Wahl bleibt für dieses Feld, und ein Klick kopiert seinen Preis.</value>
+    <value>Wähl das richtige: die Wahl bleibt für diese Zelle, und ein Klick kopiert seinen Preis.</value>
     <comment>en: Pick the one it is: the pick stays for this cell, and a click copies its price.</comment>
   </data>
   <data name="DeskCopied" xml:space="preserve">
@@ -617,19 +617,19 @@
     <comment>en: Nothing copied: {trader} pays more, {price}</comment>
   </data>
   <data name="DeskNothingNoFlea" xml:space="preserve">
-    <value>Nichts kopiert: es kann nicht auf dem Flohmarkt angeboten werden</value>
+    <value>Nichts kopiert: es kann nicht auf dem Flea angeboten werden</value>
     <comment>en: Nothing copied: it can't be listed on the flea</comment>
   </data>
   <data name="DeskNothingPick" xml:space="preserve">
-    <value>{count, plural, one {Eins von # Item: wähle es zuerst auf der Karte} other {Eins von # Items: wähle es zuerst auf der Karte}}</value>
+    <value>{count, plural, one {Eins von # Item: wähl es zuerst auf der Karte} other {Eins von # Items: wähl es zuerst auf der Karte}}</value>
     <comment>en: {count, plural, one {One of # item: pick it on the card first} other {One of # items: pick it on the card first}}</comment>
   </data>
   <data name="DeskNothingPrice" xml:space="preserve">
-    <value>Nichts kopiert: kein Preis für dieses Feld</value>
+    <value>Nichts kopiert: kein Preis für diese Zelle</value>
     <comment>en: Nothing copied: no price for this cell</comment>
   </data>
   <data name="DeskCopyFailed" xml:space="preserve">
-    <value>Kopieren ging nicht: die Zwischenablage ist belegt. Nochmal versuchen.</value>
+    <value>Kopieren ging nicht: die Zwischenablage ist belegt. Versuch es noch mal.</value>
     <comment>en: Couldn't copy: the clipboard is busy. Try again.</comment>
   </data>
 </root>
