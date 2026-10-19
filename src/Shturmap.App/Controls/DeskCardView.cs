@@ -11,7 +11,7 @@ using Path = Microsoft.UI.Xaml.Shapes.Path;
 namespace Shturmap.App.Controls;
 
 /// <summary>
-/// The stash desk's card in the rail's 351 DIP (owner, 2026-10-19, from a panel: C1; owner, 2026-10-20: the sparkline,
+/// The stash desk's card in the rail's 351 DIP (owner, 2026-10-19, from a panel: C1; owner, 2026-10-19: the sparkline,
 /// every trader, the keep lines, pinning, and "UI elements for setting what is copied clearly visible"; docs/DESIGN.md
 /// §4, *The stash desk*, *The card* and *The click*), decision first: the item with its offers' dot and flea level and the
 /// pin at its head; the gold figure with its 7-day change; the plate "A CLICK COPIES" with the rule's − and + and what a

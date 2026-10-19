@@ -12,7 +12,7 @@ chapter (a chapter the release changed; docs/tour.md). A line no preview shows t
 one, the chapter that frames where it is: pointing shows nothing, a click opens the tour there (0.7.0: the text size
 `tour:7`, the settings button; the stash desk `tour:2`, which frames the rail with PLAN | DESK at its head: no preview
 pictures the desk yet, which takes the map's place and Plan's rail with it). Only what is new for the player has a
-line (owner, 2026-10-20: "Don't add 'new in' entries for stuff that is not really relevant to the player, only add
+line (owner, 2026-10-19: "Don't add 'new in' entries for stuff that is not really relevant to the player, only add
 really new things, like the desk."): a fix or a refinement goes in the release notes alone. Words as the design
 system's "Words": short, fragments are fine. Add the next version's section with its release (CLAUDE.md). A release
 that raises the minor or major number has a name, the owner's, after its version (`## 0.4.0 · Praetorian`); a patch

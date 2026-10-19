@@ -1,6 +1,6 @@
 namespace Shturmap.Core.Desk;
 
-// The list price a click on a desk cell copies (owner, 2026-10-19, from a panel: D2; owner, 2026-10-20: "I don't think we
+// The list price a click on a desk cell copies (owner, 2026-10-19, from a panel: D2; owner, 2026-10-19: "I don't think we
 // need a visible copy button, clicking on the item suffices. But there should be a visual feedback and UI elements for
 // setting what is copied clearly visible."; docs/DESIGN.md §4, "Screen anatomy", *The stash desk*, *The click*): the last
 // low matched, or 1–20 % under or over it, scaled to a printed condition, and the guards that say when a click copies

@@ -42,7 +42,7 @@
         </Setter>
       </Style>
 
-      <!-- A half of PLAN | DESK at the rail's head (owner, 2026-10-20): a button as wide and tall as its half, its ground
+      <!-- A half of PLAN | DESK at the rail's head (owner, 2026-10-19): a button as wide and tall as its half, its ground
            the view's (Raised for the one on screen), Raised under the pointer and Line pressed as Plan's rows are; no
            frame of its own: the switch's frame and its hairline are the halves'. -->
       <Style x:Key="ViewSwitchButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
@@ -603,7 +603,7 @@
                   <TextBlock Text="{x:Bind local:ViewTexts.SettingsForgetMarks}" Style="{StaticResource StatusText}" FontSize="11"
                              Foreground="{x:Bind MarksLinkBrush(ViewModel.HasMarks), Mode=OneWay}" />
                 </HyperlinkButton>
-                <!-- The stash desk's copy rule (owner, 2026-10-19, from a panel: D2; owner, 2026-10-20: "UI elements for setting
+                <!-- The stash desk's copy rule (owner, 2026-10-19, from a panel: D2; owner, 2026-10-19: "UI elements for setting
                      what is copied clearly visible"; docs/DESIGN.md §4, *The stash desk*, *The click*): the last low matched,
                      or 1–20 % under or over it, 3 % under unless changed; the same − and + as on the desk's card, one
                      state (MainWindow.Desk, ShowCopyRuleSetting). -->
@@ -783,7 +783,7 @@
         </Grid.RowDefinitions>
         <StackPanel Margin="16,4,16,0">
           <!-- PLAN | DESK, the one choice of view (owner, 2026-10-19, from a panel: A1; docs/DESIGN.md §4, principle 3 and
-               *The stash desk*), a primary control at the rail's head (owner, 2026-10-20: "The Plan/Desk switch is way to
+               *The stash desk*), a primary control at the rail's head (owner, 2026-10-19: "The Plan/Desk switch is way to
                small, needs much bigger."; until then two 11 px words in a frame at the right of MAP): two halves across the
                rail's inner width, 36 DIP tall as the map's buttons, each word in the title style letter-spaced as the
                eyebrows and centred in its half; the view on screen on Raised with the open map's row's amber bar and its
@@ -982,7 +982,7 @@
                        Style="{StaticResource NoteText}" Margin="0,16,0,0" />
 
             <!-- DESK: the rail is the desk's cards (docs/DESIGN.md §4, *The stash desk*, *Its place*, *The card*, *The click*;
-                 step C, 2026-10-20; the order since the QA pass of step C, F2): the card of the cell pointed at, until
+                 step C, 2026-10-19; the order since the QA pass of step C, F2): the card of the cell pointed at, until
                  another cell is pointed at, or the rail's hint; then the pinned ones, newest on top, whole while no cell is
                  pointed at; while one is, one line each in the rail's foot, below (MainWindow.Desk, Controls.DeskCardView).
                  On the desk the rail's 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the

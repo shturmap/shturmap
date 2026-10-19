@@ -639,7 +639,7 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                 break;
             case "desk":
                 // The made-up stash desk: a reading, a folded region opened, a cell pointed at, pinned, clicked or picked, the
-                // copy's rule, or PLAN (step B, 2026-10-19; step C, 2026-10-20).
+                // copy's rule, or PLAN (step B, 2026-10-19; step C, 2026-10-19).
                 if (DevScript.DeskOf(step) is { } desk)
                     Say(window.DevDesk(desk));
                 break;

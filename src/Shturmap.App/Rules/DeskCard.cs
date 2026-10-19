@@ -38,7 +38,7 @@ public sealed record DeskCardContext(Func<string, DeskItemFacts?> Facts, DeskFle
     Func<string, string> TraderName, Func<string, string> QuestName, Func<string, string> StationName, DateTimeOffset? PricesAt, DateTimeOffset Now);
 
 /// <summary>
-/// Everything the stash desk's card says, in its order (owner, 2026-10-19, from a panel: C1; owner, 2026-10-20: the
+/// Everything the stash desk's card says, in its order (owner, 2026-10-19, from a panel: C1; owner, 2026-10-19: the
 /// sparkline, the 24 h bar, every trader, the keep lines and the copy; docs/DESIGN.md §4, *The stash desk*, *The card*):
 /// decision first (the item, its offers and flea level, the gold figure with its 7-day change, the flea's net with the fee
 /// and the 48 h change, the plate with what a click copies by the rule, the condition, KEEP), then the 30 days' band, the
@@ -317,7 +317,7 @@ public static class DeskCards
         var tenth = Math.Round(percent, 1, MidpointRounding.AwayFromZero);
         var sign = tenth > 0 ? "+" : tenth < 0 ? "−" : "";
         var text = RuleTexts.DeskChange(change: sign + Math.Abs(tenth).ToString("0.#", UiLanguage.Culture));
-        // The arrow joined to its change by a no-break space, so a line never ends in it (the senior translator, 2026-10-20).
+        // The arrow joined to its change by a no-break space, so a line never ends in it (the senior translator, 2026-10-19).
         return tenth > 0 ? "↑\u00A0" + text : tenth < 0 ? "↓\u00A0" + text : text;
     }
 

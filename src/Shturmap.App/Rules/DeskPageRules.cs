@@ -6,7 +6,7 @@ namespace Shturmap.App.Rules;
 /// <summary>
 /// The desk page's layout and words (owner, 2026-10-19, the addendum's A(2) and B1; docs/DESIGN.md §4, *Its place*,
 /// *What it mirrors*, *The head line and the fold*): the cell's size and the columns by the desk's width (owner,
-/// 2026-10-20: "We should utilize the whole screen"), the regions' heads, the fold line's names, the "Not attached" line
+/// 2026-10-19: "We should utilize the whole screen"), the regions' heads, the fold line's names, the "Not attached" line
 /// and the head line.
 /// </summary>
 public static class DeskPageRules

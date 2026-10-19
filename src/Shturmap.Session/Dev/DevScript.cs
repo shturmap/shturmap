@@ -158,7 +158,7 @@ public static class DevScript
     }
 
     /// <summary>
-    /// A "desk" step (step B of the stash desk, 2026-10-19; step C, 2026-10-20): "desk [&lt;n&gt;]" the made-up desk's
+    /// A "desk" step (step B of the stash desk, 2026-10-19; step C, 2026-10-19): "desk [&lt;n&gt;]" the made-up desk's
     /// reading n (1 without a number, at most 3), "desk open &lt;region&gt;" a folded region's name clicked, "desk point
     /// &lt;region&gt; [&lt;i&gt; &lt;j&gt; | &lt;slot&gt;]" the pointer on its cell at that grid place or slot (alone, its first
     /// cell), "desk pin …" the cell right-clicked, "desk copy …" the cell clicked, "desk unpin [&lt;region&gt; &lt;i&gt; &lt;j&gt; |

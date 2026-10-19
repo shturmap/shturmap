@@ -12,7 +12,7 @@ namespace Shturmap.App.Rules;
 /// wallet whose contents are unseen; a BACKPACK whose "?" Zhuk has its window attached ("ZHUK · IN THE BACKPACK"); the
 /// POUCH's secure container, which has no price; a STASH page with "?" cells, keep notches of each weight, arrows, a
 /// case with its contents unseen and a cell with no price; and a wallets' window attached to none, split between ON YOU
-/// and the stash. For the card and the click (step C, 2026-10-20), a cell of each of the copy's states: the stash's LEDX
+/// and the stash. For the card and the click (step C, 2026-10-19), a cell of each of the copy's states: the stash's LEDX
 /// copies, the pumping station's back door key copies over the best net, the pockets' blue keycard is one Therapist pays
 /// more for, the 5.45 BS ammo can't be listed, the backpack's Grizzly at 1469/1800 copies a scaled price, and the stash's
 /// keycards' "?" waits for a pick; and every item a made-up price history (<see cref="History"/>), so the card's band

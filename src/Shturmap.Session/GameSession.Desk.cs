@@ -173,7 +173,7 @@ public sealed partial class GameSession
     }
 
     /// <summary>
-    /// A "?" cell's pick on the desk's card (step C, 2026-10-20; docs/DESIGN.md §4, *The click*): the item it is, kept with
+    /// A "?" cell's pick on the desk's card (step C, 2026-10-19; docs/DESIGN.md §4, *The click*): the item it is, kept with
     /// the cell in desk.json until a reading changes the cell; null takes the pick back. A slot by its key, a grid's cell
     /// by its place. False when the page has no such cell or the item isn't one of its candidates.
     /// </summary>

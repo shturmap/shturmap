@@ -52,7 +52,7 @@ public static class DeskSwitch
     /// </summary>
     public static StashSeenSaid StashSeen(bool example) => example ? StashSeenSaid.Cue : StashSeenSaid.Notice;
 
-    /// <summary>What ← or → on the switch picks (owner, 2026-10-20: the switch a primary control, reached by the keyboard):
+    /// <summary>What ← or → on the switch picks (owner, 2026-10-19: the switch a primary control, reached by the keyboard):
     /// ← PLAN (false), → DESK (true), any other key nothing; as Windows' virtual-key codes.</summary>
     public static bool? ByArrow(int virtualKey) => virtualKey switch
     {

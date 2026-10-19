@@ -13,7 +13,7 @@ namespace Shturmap.App;
 // The stash desk's state and page (owner, 2026-10-19, from a panel: A1, and the addendum: A(2) · B1 · C1a · Da;
 // docs/DESIGN.md §4, principle 3 and "Screen anatomy", *The stash desk*; step B part 2, the view): PLAN | DESK at the
 // rail's head; the desk in the map's place out of a raid, the rail its cards; it opens by itself with a reading in the
-// menus, a raid loading takes the window back, and it keeps its page. Step C (owner, 2026-10-20): the desk's own card for
+// menus, a raid loading takes the window back, and it keeps its page. Step C (owner, 2026-10-19): the desk's own card for
 // the cell pointed at and for the pinned ones, a click on a cell copying its list price by the rule on the card, a
 // right-click or the card's pin pinning it.
 public sealed partial class MainWindow
@@ -176,7 +176,7 @@ public sealed partial class MainWindow
 
     private void OnDeskSwitchDeskClick(object sender, RoutedEventArgs e) => SetDesk(true, "switch");
 
-    // ← and → on the switch pick PLAN or DESK, and the focus goes with the pick (owner, 2026-10-20: a primary control).
+    // ← and → on the switch pick PLAN or DESK, and the focus goes with the pick (owner, 2026-10-19: a primary control).
     // While the tour is up its own keys step through it.
     private void OnDeskSwitchKeyDown(object sender, KeyRoutedEventArgs e)
     {

@@ -6,7 +6,7 @@ from its addendum A(2) · B1 · C1a · Da (docs/DESIGN.md §4, principle 3, "Scr
 language", *The stash desk's marks*; "Design system", *Motion*). Step B builds the view: PLAN | DESK at the rail's head;
 the desk in the map's place out of a raid, opening by itself with a reading in the menus; the head line; the regions
 stacked in reading order with the loadout strip, folded by the reading; each cell's marks; a container's window
-stemmed to its cell; the page coming in cell by cell and the totals counting up once. Step C (2026-10-20) builds the
+stemmed to its cell; the page coming in cell by cell and the totals counting up once. Step C (2026-10-19) builds the
 desk's own card in the rail (decision first, the plate with the rule a click copies by, KEEP, the 30 days' band, the
 day's bar, the traders), the click that copies a list price (its flash, decode and notice), pinning by a right-click or
 the card's pin, the copy's guards, a "?" cell's pick, and the cells scaling with the desk's width (40 to 80 DIP). After
@@ -54,7 +54,7 @@ $app.WaitForExit()
 - **entry** (about 0.3 s after `desk 1`): the desk in the map's place, the map's buttons and credit gone; at the rail's
   head, above MAP, PLAN | DESK across the rail's width in one frame, 36 DIP tall, the words in the title's size and
   centred in their halves, DESK's half on the raised ground with an amber bar at its left and DESK in amber, PLAN
-  muted (owner, 2026-10-20: the switch a primary control); the rail under the MAP list and the trader strip
+  muted (owner, 2026-10-19: the switch a primary control); the rail under the MAP list and the trader strip
   says "Point at an item for its card." and nothing of Plan's (no NEXT RAID, no ANY MAP). The head line in muted
   capitals counting up ("ON YOU … ₽ · STASH … ₽ · KEEP n · n · n"); the first cells of LOADOUT in, the rest still
   coming, 50 ms apart.

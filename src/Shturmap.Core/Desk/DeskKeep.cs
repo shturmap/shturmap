@@ -64,7 +64,7 @@ public sealed class DeskKeep
         list.Add(need);
     }
 
-    /// <summary>The item's needs in progress order for the card's KEEP (step C, 2026-10-20): now, next, a hideout module's,
+    /// <summary>The item's needs in progress order for the card's KEEP (step C, 2026-10-19): now, next, a hideout module's,
     /// later (the notch's order: a module's need is wanted at some level for certain, a later quest's is far off).</summary>
     public IReadOnlyList<DeskNeed> NeedsOf(string itemId) =>
         _needs.TryGetValue(itemId, out var list)

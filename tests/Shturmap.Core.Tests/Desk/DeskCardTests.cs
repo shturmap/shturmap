@@ -4,7 +4,7 @@ using Shturmap.Core.Logs;
 
 namespace Shturmap.Core.Tests.Desk;
 
-// The stash desk's card (owner, 2026-10-19, from a panel: C1; owner, 2026-10-20; docs/DESIGN.md §4, *The stash desk*, *The
+// The stash desk's card (owner, 2026-10-19, from a panel: C1; owner, 2026-10-19; docs/DESIGN.md §4, *The stash desk*, *The
 // card* and *The click*; Rules.DeskCards), its words and figures from the made-up desk (Rules.DeskExample): decision first,
 // the plate in each of the copy's states, KEEP in progress order, the band, the day's bar, the traders, the age; the
 // notice a click gives. English.

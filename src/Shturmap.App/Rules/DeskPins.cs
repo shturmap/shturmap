@@ -16,7 +16,7 @@ public readonly record struct DeskCellKey(string Region, string? Slot, int I, in
 public sealed record DeskPin(DeskCellKey Key, DeskCell Cell);
 
 /// <summary>
-/// The cards pinned in the rail (owner, 2026-10-20: "It is also not possible to 'pin' items to the side view"; then a
+/// The cards pinned in the rail (owner, 2026-10-19: "It is also not possible to 'pin' items to the side view"; then a
 /// right-click on a cell or the pin on a card's head, the click itself copying; docs/DESIGN.md §4, *The stash desk*, *The
 /// click*): several stack, newest on top; the same again unpins. A pin stays with its cell on the page and goes when a
 /// reading changes or takes away that cell (a reading that shows the cell as it was keeps it, a pick too); Esc leaves the

@@ -8,7 +8,7 @@ using Shturmap.Data.TarkovDev;
 namespace Shturmap.Data.Tests;
 
 // The stash desk's card asks for an item's price history when it first shows the item (docs/DESIGN.md §3, "The stash
-// desk's prices come per reading"; step C, 2026-10-20): json.tarkov.dev's "/{mode}/prices/{id}", one file per item, kept in
+// desk's prices come per reading"; step C, 2026-10-19): json.tarkov.dev's "/{mode}/prices/{id}", one file per item, kept in
 // the download cache and asked for again with its ETag after an hour; never on a timer, never in bulk. Made-up ids and
 // points.
 public class PriceHistoryTests : IDisposable

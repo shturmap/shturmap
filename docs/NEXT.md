@@ -269,9 +269,9 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
 
 **Next.**
 
-- **Decided after the owner tried the dev build (2026-10-20):** the desk's cells scale with the desk's width (40 DIP at
+- **Decided after the owner tried the dev build (2026-10-19):** the desk's cells scale with the desk's width (40 DIP at
   900, up to about 80 on a 2560 monitor, the game's grid proportions kept), the rail stays for the cards; a click on a cell
-  COPIES the price as D2 drew it (the flash, the decoding figure, the notice as the feedback; owner, 2026-10-20, later:
+  COPIES the price as D2 drew it (the flash, the decoding figure, the notice as the feedback; owner, 2026-10-19, later:
   "clicking on the item suffices"), the rule for what a click copies is a visible control on the card (match / under /
   over the last low, mirrored in settings), and a pin glyph on the card or a right-click on the cell PINS the card in
   the rail (several stack, × unpins); the sparkline, the 24 h bar, every trader, the keep
@@ -303,10 +303,10 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
   YOU · STASH · KEEP, the fold, the "+" and the condition scaling; the PLAN | DESK switch; the menu screenshots' tick
   worded for the desk (the panel left it out).
 - Step C, once B's naming has held up: the card, the price history, the click and its setting (the card's lines for a
-  "+" and a scaled figure, the click's scaled price). Built 2026-10-20 (below).
+  "+" and a scaled figure, the click's scaled price). Built 2026-10-19 (below).
 - The in-raid glance: its panel after step B, its build after step C.
 - The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). `SafetyTests` forbids no clipboard
-  call (step C, 2026-10-20: checked, and said beside its list).
+  call (step C, 2026-10-19: checked, and said beside its list).
 
 **Built (step B part 1, 2026-10-19: the reading and the data; no view, no texts, no setting changed).** Binding:
 DESIGN.md §2 ("For the stash desk", *Built*), §3 (the desk's prices, *Built otherwise*), §4 (*The stash desk*, *Built:
@@ -373,11 +373,11 @@ the model the view draws*), §8 ("The desk file", "How the parts work", *Menu sc
   "?" plate's move, the numbers' form, the stem's route and light).
 - **Open:** the desk's own card and the click (step C); the website on what the desk reads; the tour's pictures of
   chapters 1 and 2 (the release prep); the German gear heads to check in the German game
-  (TASCHEN, SPEZIAL-SLOTS; the desk's German reviewed, senior translator, 2026-10-20); a turned cell's picture turns a
+  (TASCHEN, SPEZIAL-SLOTS; the desk's German reviewed, senior translator, 2026-10-19); a turned cell's picture turns a
   quarter clockwise, unchecked against the game; the reading counter's start: the view takes a page read back from the
   file for reading 0.
 
-**Built (step C, 2026-10-20: the card, pinning, the click's copy, the cells scaling)**, as the owner asked after trying step
+**Built (step C, 2026-10-19: the card, pinning, the click's copy, the cells scaling)**, as the owner asked after trying step
 B (the bullet under *Next* above; then "I don't think we need a visible copy button, clicking on the item suffices. But
 there should be a visual feedback and UI elements for setting what is copied clearly visible."). Binding: DESIGN.md §3
 (the history built), §4 (*The stash desk*: *Its place*, *The card*, *The click*, *Fun*, *As built*: *The rail*, *The
@@ -415,7 +415,7 @@ desk file's pick, the script's `desk` verbs, `-Desk`).
   last low; the history is had again after an hour, a failure after two minutes, at a card's showing only; traders' prices
   per item at full condition.
 - **Measured** (`shturmap-cli desk --audit`, cache only): HISTORY none cached here (a card fetches one
-  when it first shows an item; the made-up desk asks nothing). One history fetched by hand for the shape, 2026-10-20:
+  when it first shows an item; the made-up desk asks nothing). One history fetched by hand for the shape, 2026-10-19:
   the LEDX's PvE file, 85 KB, `{"data":[{priceMin, price, offerCount, timestamp}], "translations":[]}`, a weak ETag,
   `Cache-Control: max-age=691200`.
 - **Pictures** (`fake-raid -Desk -PlanOnly`, the folder build; the replay at 1600×900 in English and 900×560 in German):
@@ -460,7 +460,7 @@ Plan-only fake raid at 1600×900, then the one with the Zhuk window, and the rep
   count's digits 0.45), measured on one picture; a slot whose best reading is two characters ("35" of "Trooper 35") is
   left out as empty.
 
-**The switch, a primary control** (owner, 2026-10-20: "The Plan/Desk switch is way to small, needs much bigger."):
+**The switch, a primary control** (owner, 2026-10-19: "The Plan/Desk switch is way to small, needs much bigger."):
 PLAN | DESK across the rail's 351 DIP above MAP, 36 DIP tall, its words in the title style, the view on screen raised
 with the open map's row's amber bar; ← and → pick (`DeskSwitch.ByArrow`). DESIGN.md principle 3, *The stash desk*.
 

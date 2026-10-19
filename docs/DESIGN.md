@@ -453,7 +453,7 @@ quoting it anywhere new.
     every few minutes, so in practice about 1.4 MB a reading ten minutes after the last, some 8 MB an hour of steady
     use). Nothing is asked per item for a reading's prices, and no picture but the page's
     cells' grid images, fetched and kept as BRING's are today (*Grid images*, below). **The history is built** (step C,
-    2026-10-20; `GameDataLoader.LoadPriceHistoryAsync`, `GameSession.DeskHistoryAsync`): asked for when a card first
+    2026-10-19; `GameDataLoader.LoadPriceHistoryAsync`, `GameSession.DeskHistoryAsync`): asked for when a card first
     shows the item, one file per item from json.tarkov.dev (`{"data":[{priceMin, price, offerCount, timestamp}, …]}`, a
     point a day, every 2 h over the last 30 days; about 20 to 130 KB, the LEDX's PvE file 85 KB), kept in the download
     cache with its ETag and given again without a request within the hour (`GameDataLoader.DeskHistoryAge`), then asked
@@ -590,7 +590,7 @@ quoting it anywhere new.
    loading or in a raid. The switch to *Raid* and back to *Plan* is automatic, from the desk too: a raid loading always
    takes the window, with no click. Out of a raid *Desk* opens by itself when a stash or inventory screenshot is read,
    and PLAN | DESK at the rail's head is the one choice of view, two words, not a tab row ("Screen anatomy", *The stash
-   desk*): a primary control across the rail's width, above the MAP list (owner, 2026-10-20: "The Plan/Desk switch is
+   desk*): a primary control across the rail's width, above the MAP list (owner, 2026-10-19: "The Plan/Desk switch is
    way to small, needs much bigger."; until then two 11 px words at the right of MAP). No tabs, no other modes to pick,
    no modal dialogs. Shturmap has one window, never topmost, so it can't cover
    the game (popped-out quest cards, the only other windows, were removed on 2026-10-09). One thing does
@@ -964,7 +964,7 @@ page stands at once. The first two are built (step B, 2026-10-19, part 2: the vi
 0.2 s, eased out, 50 ms after the one before in reading order (a region's cells row by row), only the regions the
 reading opened (all on a first reading); the head line's two totals from what it said (nothing on the page's first
 showing) over 0.9 s, eased out; and a `--snapshot` run stands the page at once, as the effects off do. The copy's flash
-is built too (step C, 2026-10-20; `DeskBoard.Flash`): the clicked cell's frame, a 2 DIP amber border, in over 0.08 s and
+is built too (step C, 2026-10-19; `DeskBoard.Flash`): the clicked cell's frame, a 2 DIP amber border, in over 0.08 s and
 out over 0.6 s, eased in; its figure decodes over 0.6 s as a cue's title does; with the effects off, and in a snapshot
 run, neither moves, and the notice says it all the same.
 **The linked set breathes** (owner, 2026-10-17: the linked highlight "really helps pre-attentively highlight elements …
@@ -1082,7 +1082,7 @@ same day, by rendering them side by side:
   its disc. The **"?" plate** (the small dark plate with a gold hairline, "maybe here" on the map and "One of 4 places
   it can be" on a card) widens to "one of N items": a desk cell whose label fits several. The **person** `E77B`, a
   portrait's fallback, is a trader in a desk cell too (the trader pays the cell's price); the **price tag** `E8EC` is
-  the flea market there, as on item cards. **The pin's tab** (step C, 2026-10-20; owner: "It is also not possible to
+  the flea market there, as on item cards. **The pin's tab** (step C, 2026-10-19; owner: "It is also not possible to
   'pin' items to the side view"): a short amber bar on a desk cell's top edge says its card is pinned in the rail; the
   pin at a desk card's head is the same tab over a cell's outline, amber while pinned, muted while not. Not the pushpin:
   `E840` stays the Place quest type, the reason the quest card's pin went on 2026-10-03. A pinned card is framed in amber,
@@ -1359,7 +1359,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   with "…" too, the last fix gone before it (2026-10-19: at 200 % it was cut off without one; `FitStatusBar`). At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
   one trims), three squares and the buttons; outside a raid the words fit.
 - **Rail** (left, 384 px), content by state:
-  - *The MAP list* at the top, in every state, out of a raid under PLAN | DESK (2026-10-20; *The stash desk*, *As
+  - *The MAP list* at the top, in every state, out of a raid under PLAN | DESK (2026-10-19; *The stash desk*, *As
     built*; owner, 2026-10-08: "there is no way of selecting maps at the moment
     where you do not have quests"; from the maps panel, "A"). The list held every map already, but in the usage log
     (a week) all map picks (dozens) went through Plan's rows and none through it, and after a pick of a map without
@@ -1482,7 +1482,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     preview 0.3 s later, which put the player's map back under YOUR SCREENSHOT KEY while the chapter went on staging on
     Customs, so its view moved and its cut-outs sat by a map no longer shown; `Rules.PreviewOwner`).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
-    **Only what is new for the player** (owner, 2026-10-20: "Don't add 'new in' entries for stuff that is not really
+    **Only what is new for the player** (owner, 2026-10-19: "Don't add 'new in' entries for stuff that is not really
     relevant to the player, only add really new things, like the desk."): a line names a thing the player can now do
     or see; a fix or a refinement goes in the release notes alone, which list everything. 0.7.0's card took out "Guns,
     assembled" and "Two on one spot, steady" for the desk.
@@ -1616,7 +1616,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - *Desk* (owner, 2026-10-19, from a panel: A1; built, step B, 2026-10-19, part 2: the view): out of a raid, with the
     stash desk in the map's place, the rail is the desk's cards under the MAP list and the trader strip, the card of the
     cell pointed at, then the pinned ones newest on top, at the rail's foot while a cell is pointed at (step C,
-    2026-10-20; the UI QA passes of 2026-10-19), PLAN | DESK at its head above the MAP list (*The stash desk*, below).
+    2026-10-19; the UI QA passes of 2026-10-19), PLAN | DESK at its head above the MAP list (*The stash desk*, below).
     Plan's rows, its hint and ANY MAP stand aside meanwhile; the update band pinned under MAP stays.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
@@ -1898,7 +1898,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   window's stem and light, the page's entry and the totals' count-up, over the model the session publishes
   (`SessionSnapshot.Desk`; part 1). The card and the click were step C; until then the rail showed the item card the
   pointer opens anywhere. Where the panels left a choice, the rules taken are under *As built*, below.
-  **Step C is built** (2026-10-20; the owner, after trying step B: "We should utilize the whole screen, otherwise it will
+  **Step C is built** (2026-10-19; the owner, after trying step B: "We should utilize the whole screen, otherwise it will
   be hard to read. Also, there are no sparklines of the price history. The user interface on how to copy a price is not
   clear. Also I'm not clear how to get the info in which quests or hideout projects a item is used. It is also not
   possible to 'pin' items to the side view and there are no tooltip windows (which we might not need, just saying)."; then,
@@ -1910,7 +1910,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - **Its place** (A1). Out of a raid the desk takes the map's place, and the rail becomes its card, where the item
     card's words would be: pointing at a cell puts its card there (below). PLAN | DESK at the rail's head, above the
     MAP list, switches between the two views: two words in one `LineStrong` frame, the one on screen in amber on
-    `Raised` (a primary control across the rail since 2026-10-20, *As built*; until then beside the MAP list, 11 px).
+    `Raised` (a primary control across the rail since 2026-10-19, *As built*; until then beside the MAP list, 11 px).
     The desk opens by itself when a stash or inventory screenshot is read in the menus, and is left by the
     switch. A raid loading always takes the window back to the raid view, with RAID LOADING's cue and no click
     (principles 1 and 3); the desk keeps its page for next time. The MAP list and the trader strip stay. **The cells fill the desk** (owner, 2026-10-19, after trying step C: "there is a
@@ -1929,9 +1929,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     2560 monitor's desk (2176 × 1330 DIP), the stash filling the height and the window beside it, at 48 at 1600×900
     (1216 × 760), at 40 in one column at 900×560 (516 × 440), scrolling; the made-up desk read whole (every region open)
     at 80 in three columns at 2544×1401 (the gear's two and the stash's), at 40 in three at 1600×900, unscrolled. Until
-    2026-10-19 the width alone (owner, 2026-10-20: "We should utilize the whole screen"): 40 to 80 DIP, the gear and the
+    2026-10-19 the width alone (owner, 2026-10-19: "We should utilize the whole screen"): 40 to 80 DIP, the gear and the
     stash two columns from 56, 64 at 1600×900 and 80 at a 2560 monitor's, scrolling, a third of its desk empty; until
-    2026-10-20: 40 DIP, 56 from a desk 600 DIP across, two columns from 980. Over the grids one
+    2026-10-19: 40 DIP, 56 from a desk 600 DIP across, two columns from 980. Over the grids one
     head line in muted capitals, the totals and the keeps (*The head line and the fold*, below; until the addendum one
     total, "STASH · 6.84 M ₽ · KEEP 3 · 2 · 4"). When it opens by itself, its page coming in says so (*Fun*, below);
     how that meets SEEN IN YOUR STASH, which pictures a reading's quest items over the map (principle 11), was not on
@@ -2051,7 +2051,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     click copies now in short lines, "Copies 970,000 ₽", then muted "Nets 873k ₽ after the fee" (thousands from six
     digits) and its reason, "Last low 1,000,000 ₽ · Therapist pays 494,700 ₽", a line that wraps breaking only at the
     " · " (UI QA pass of step C, F5: "Kopiert 970.000 ₽ · bringt 873.000 ₽ nach Gebühr" wrapped and pushed KEEP out of
-    the smallest rail; the owner, 2026-10-20: the rule's control right under the gold figure; until then the plate
+    the smallest rail; the owner, 2026-10-19: the rule's control right under the gold figure; until then the plate
     "Click the cell: copies 970 000 ₽" stood after the flea's net line); the flea's net line with the fee and the
     48 h change ("Flea net · fee 97 000", "↓ −10.3 % · 48 H"); KEEP, the needs in progress order (now, next, a hideout
     module's, later), each with its notch, count and FIR ("Private Clinic ×1 · now · FIR", "Medstation 3 ×1 · a hideout
@@ -2063,8 +2063,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     figure, the click, the keep) fit the smallest rail in English and German, no line of them wider than the rail's
     351 DIP (at 125 % text they wrap, between their parts), the rest scrolls. EVE Online's min-max channel became the min-to-average band: the history has no
     maximum. A figure with a "+" says "Contents unseen: open it in the game, then a screenshot", a scaled one "Scaled to
-    1469/1800 · full 37 386" (the addendum). Built (step C, 2026-10-20; *As built*, *The card*).
-  - **The click** (D2; owner, 2026-10-20, after trying step B: "The user interface on how to copy a price is not clear";
+    1469/1800 · full 37 386" (the addendum). Built (step C, 2026-10-19; *As built*, *The card*).
+  - **The click** (D2; owner, 2026-10-19, after trying step B: "The user interface on how to copy a price is not clear";
     then, on a COPY button on the card: "I don't think we need a visible copy button, clicking on the item suffices. But
     there should be a visual feedback and UI elements for setting what is copied clearly visible."): the cell is the
     button. Point at a cell to read its card; click it to copy its list price to the clipboard, and only there: nothing
@@ -2072,7 +2072,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     and why, "611,100 ₽ copied · 3% under the last low", and dismisses itself after 4 s (principle 4); the player pastes
     it into the flea's price field (the clipboard gets the digits alone). Of a figure scaled to a printed condition, the
     click copies the scaled price (the addendum, Da), and the notice says ", scaled to 1469/1800". **The rule is on the
-    card**, visible (the owner, 2026-10-20): the plate under the gold figure, "A CLICK COPIES", with − and + around the
+    card**, visible (the owner, 2026-10-19): the plate under the gold figure, "A CLICK COPIES", with − and + around the
     rule in amber ("3% UNDER", "THE LAST LOW", "2% OVER"), a percent a step from 20 % under to 20 % over, and under it
     what a click copies now and nets after the fee; the pointed card and the pinned ones alike, and settings' row "Flea
     price to copy" ("Settings", below) is the same control and the same state, kept in shturmap.db (`desk.copyRule`),
@@ -2081,13 +2081,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     segmented choice (MATCH · 3 % UNDER · 5 % UNDER · 3 % OVER): one control
     holds every rule the setting allows, so card and settings never disagree, and it fits the plate beside its eyebrow
     in 351 DIP (the coordinator's choice; the owner's to overrule). **A right-click pins** a cell's card in the rail, and
-    the pin at a card's head pins or unpins it (the owner, 2026-10-20: "It is also not possible to 'pin' items to the
+    the pin at a card's head pins or unpins it (the owner, 2026-10-19: "It is also not possible to 'pin' items to the
     side view"; a right-click is no input to the game either): several stack, newest on top; a pinned cell carries the
     pin's tab ("Visual language"). A "?" cell's card lists its candidates, each with its art and figure, the best first;
     one click on one picks it, and the pick stays for that cell (in desk.json, and over a reading that shows the cell as
     it was); a click on the "?" cell itself copies nothing and the notice says "One of 3 items: pick it on the card
     first". The rule is one setting, "Flea price to copy": the last low matched, or 1–20 % under or over it, 3 % under
-    unless changed. Built (step C, 2026-10-20). **Guards**, said on the
+    unless changed. Built (step C, 2026-10-19). **Guards**, said on the
     card's plate: never a net under the best trader's (the plate says "Therapist pays more: 459 000 ₽" and why, and a
     click copies nothing); above the most a sale can net (the fee's curve: about 51 times the base price at PvE's
     rates) the plate carries the status bar's gold light and says so ("over the best net: …"); no flea price for what
@@ -2099,11 +2099,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   - **Fun, in the app's own motion** (the owner: "it should also be fun to use"; principle 2; "Design system",
     *Motion*): a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do (the regions it opened:
     only what changed; *The head line and the fold*); its totals count up once (both built, step B, 2026-10-19, part 2:
-    "Design system", *Motion*); a copy flashes and decodes (built, step C, 2026-10-20). Nothing else
+    "Design system", *Motion*); a copy flashes and decodes (built, step C, 2026-10-19). Nothing else
     moves. Colours keep their meanings ("Visual language"): no red or green for down and up, only arrows and signs.
   - **As built** (step B, 2026-10-19, part 2: the view; the coordinator's rules where the panels left a choice, for the
     owner to judge with the dev build):
-    - *The switch*, a primary control (owner, 2026-10-20: "The Plan/Desk switch is way to small, needs much bigger.";
+    - *The switch*, a primary control (owner, 2026-10-19: "The Plan/Desk switch is way to small, needs much bigger.";
       until then PLAN | DESK at the right of the MAP heading, two words in the status words' 11 px in a frame about
       110 DIP wide): two halves across the rail's inner width, 351 DIP (174 each inside one `LineStrong` frame, a
       `LineStrong` hairline between them), 36 DIP tall as the map's buttons, at the rail's head above the
@@ -2124,7 +2124,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       until the owner tried it (2026-10-19): a reading's needed items are said by the one-line notice since (principle
       11). While the desk is up the map's keys (F, Shift+F, + and −, 0) leave the
       map alone, and PgUp and PgDn scroll the page.
-    - *The rail* (step C, 2026-10-20; the order since the UI QA pass of step C, F2, 2026-10-19: with two pins the pointed
+    - *The rail* (step C, 2026-10-19; the order since the UI QA pass of step C, F2, 2026-10-19: with two pins the pointed
       card stood under them, out of sight at 900×560): under the switch, the MAP list and the trader strip, which stay
       where they are, the card of the cell pointed at, until another cell is (a pinned cell's framed as pinned), or while
       none is the hint, "Point at an item for its card. A click copies its flea price; a right-click pins its card
@@ -2139,7 +2139,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       hairline; on the desk the 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the hairline
       or the window's edge).
       Until step C the rail showed the item card the pointer opens anywhere.
-    - *The card* (step C, 2026-10-20; `Controls.DeskCardView`, its words `Rules.DeskCards`): 351 DIP, the item card's
+    - *The card* (step C, 2026-10-19; `Controls.DeskCardView`, its words `Rules.DeskCards`): 351 DIP, the item card's
       ground and frame, whole (no map under it). Its head: the item's 40 DIP icon, a slot's name in muted capitals over
       the item's ("HEADWEAR" over "BAC Bastion": the addendum's "HEADWEAR · BAC Bastion" as two lines), the title, the
       liquidity dot with the offers and the flea level ("60 OFFERS · FLEA FROM LEVEL 15", or "NOT ON THE FLEA"), the pin
@@ -2160,7 +2160,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       from the item's scan (`updated`; of a "?" card its candidates' newest), the item file's fetch where none says.
       Figures in full with the language's thousands separator ("970,000 ₽", "970.000 ₽"). A "?" cell's card: its slot's
       name, "One of 3 items", "Pick the one it is: …", and a row a candidate (its icon, name and figure), the best first.
-    - *Pins* (step C, 2026-10-20; `Rules.DeskPins`): a right-click on a cell or the pin on a card toggles it; pins stack
+    - *Pins* (step C, 2026-10-19; `Rules.DeskPins`): a right-click on a cell or the pin on a card toggles it; pins stack
       newest on top, without a limit; a pin stays with its cell while the page holds it as read (place, items, count,
       condition: a reading that shows it as it was keeps it, a pick too) and goes when a reading changes or takes the
       cell, or the mode's page goes. Esc leaves the pins alone (it closes cards, then leaves the desk as before): they
@@ -2201,7 +2201,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       thousands ("902k"), from a million "1.01 M", "12.3 M", "123 M"; a range in its high end's unit ("0.3–294k",
       "0.45–1.18 M"); halves round up; the language's decimal sign ("1,01 M"); the units are texts, joined to their
       numbers by a no-break space in every language ("1.01 M ₽"; the arrow to its change, "↓ −10%"; the senior
-      translator, 2026-10-20; `TranslationTests`).
+      translator, 2026-10-19; `TranslationTests`).
     - *A window's stem and light*: a hairline (`LineStrong`) from the container's cell to its window's head, along the
       grid's lines and the page's margin: out of the cell at its left edge (its middle, however tall the cell, where it
       stands in the grid's first column, its lower corner elsewhere, so it runs between the rows), left into the margin,
@@ -2409,8 +2409,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   screenshots after reading" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
   §2), "Flea price to copy" (the stash desk's list price: the last low matched, or 1–20 % under or over it, 3 % under
-  unless changed; owner, 2026-10-19, from a panel: D2; built in step C, 2026-10-20, as the desk card's control, − and +
-  around the rule in amber, "3% UNDER", one state with the card's (owner, 2026-10-20: "UI elements for setting what is
+  unless changed; owner, 2026-10-19, from a panel: D2; built in step C, 2026-10-19, as the desk card's control, − and +
+  around the rule in amber, "3% UNDER", one state with the card's (owner, 2026-10-19: "UI elements for setting what is
   copied clearly visible"), with the note "Match, or 1–20% under or over the last low. The desk's card has the same
   control."; until then drawn "3 % ▾ · under ▾ · the last low"; *The stash desk*, *The click*), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
@@ -3932,7 +3932,7 @@ Rules:
   conditions and needs, built through the model as a reading's page is; a LOADOUT strip with "?" slots, a scaled
   condition and weapons, TACTICAL RIG, POCKETS beside SPECIAL SLOTS, a BACKPACK with the Zhuk's window attached, the
   POUCH, a STASH page with every mark of a cell, and a wallets' window attached to none; for the card and the click,
-  step C, 2026-10-20: a cell in each of the copy's states, the LEDX that copies, a key past the best net, the blue
+  step C, 2026-10-19: a cell in each of the copy's states, the LEDX that copies, a key past the best net, the blue
   keycard Therapist pays more for, ammunition that can't be listed, the Grizzly at 1469/1800, the keycards' "?", real
   quests and hideout stations for the keep lines, and a made-up price history for every item, so the card's band shows
   without a request, `DeskExample.History`), `-DeskReading 2` the reading that changed the backpack, so the rest is
@@ -4200,7 +4200,7 @@ reading's screenshot time) and `regions` in the order taken; a region: `key` (`l
 `attachedTo` (`region`, `i`, `j`, or a `slot`) or, attached to none, `sameName` and `sameNameIn`; and `cells`, each with
 `i`, `j`, `w`, `h`, `ids` (one item, several for "one of N", none for unread), a slot's `slot`, `count` when more than
 one, `print` ("46/50"), `fir`, `holds` (`contents`, `mods`) and a "?" cell's `pick` (a candidate clicked on its card,
-step C, 2026-10-20; carried over a reading that shows the cell as it was, gone with one that changes it). Item ids and the containers' names
+step C, 2026-10-19; carried over a reading that shows the cell as it was, gone with one that changes it). Item ids and the containers' names
 only: no pixel, no path, no other word. Written as a temporary file and one move, after each change; one that can't be
 read is set aside as `desk.json.unreadable` and the pages start over (the next screenshot brings them back). Never in a
 report or the diagnostics. Deleted with the data folder.
@@ -4325,7 +4325,7 @@ defines `DEVTOOLS` on its own, and that a Release build on the PC holds no devel
   `hosting server|local`, `group` (the group's leader picks the current map), `load`, `steps`,
   `start`, `end`, `cancel` (matching cancelled), `transit <normalized name>`, `quest start|complete|fail <id or name>`,
   `quest here [<n>]` (starts the first n, 8 without one, of the shown map's quests by level), `pick <id or name>` (picks or unpicks a quest, as its pen does), `trader [<name or id>]` (holds that trader's focus, as a click on its portrait in the strip under the MAP list does, and as `--trader-focus <name>` does for a snapshot, `tools\fake-raid.ps1 -TraderFocus`; alone, lets go of it; owner, 2026-10-17), `tick <id or name> <n>` (ticks or unticks its n-th objective as done, for the session only), `show <name> [at row]` (its card held, for a snapshot; with `at row`, held at the quest's own row in the rail as a click on the row holds it, the row scrolled into view first, so a card from a row near the window's foot can be pictured; owner, 2026-10-15, D10), `focus help|feedback|settings|map|rail|<x:Name>` (the keyboard focus on that control, or on the first control inside it that takes it, as Tab moves it there, so a `snapshot` after it shows the focus ring; QA pass, 2026-10-15), `point [<id or name> [<n>] | item <id or name>]` (points at the quest, at its n-th objective or at an item as the pointer on its line would, and holds it for a snapshot; alone, at nothing again), `hover [<id or name> [<n> | cell | key]]` (the pointer on the quest's block in the lists and, inside it, on its n-th objective's line, its first need cell or a gold line that is a key, through the code the pointer's own events call; alone, it leaves the innermost of them, so a script can check what a mouse does with things that lie inside one another), `place <fx> <fy>
-  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 8, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's kill on Reserve (seven or eight reach the cue's "+N"; QA pass of 2026-10-19, F3); with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `desk [<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> | rule match|under:<n>|over:<n> | plan | show [<n>]` (step C, 2026-10-20: `pin` a cell right-clicked, its card pinned in the rail or unpinned; `copy` a cell clicked, its flash, decode and notice, the clipboard left alone in a script, the app log saying what would have been copied; `unpin` a pinned card's pin clicked, `all` or nothing named every pin; `pick` a "?" cell's n-th candidate, from 1, clicked on its card; `rule` the copy's rule as the card's − and + set it, saved in the session's settings; a slot by its key, "desk pin loadout headwear"; the made-up stash desk of `-Desk`, its reading n as a reading in the menus brings it, 1 to 3; `open` a folded region's name clicked; `point` the pointer on a region's cell at that grid place, or its first cell, as the pointer's events do, so a still shows a window's light and the rail's card; `plan` and `show` PLAN and DESK at the rail's head, `show <n>` the n-th pinned line in the rail's foot clicked, from the top (UI QA pass of the desk's second round, F3, 2026-10-19); step B, 2026-10-19; the replay `tools\qa\desk.devscript`), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `language <culture>` (settings' Language for the run, chosen as its row chooses it and not saved: `en-US`, `de-DE`, `qps-ploc`; the window's texts, the desk's page and cards among them, follow at once and the game data in the new language a moment later, so a `snapshot` before and after pictures a switch with the desk's cards up, which the layout check's `-SwitchCheck` can't; release QA pass of 2026-10-19, F1), `wait <s>`,
+  [<fx> <fy>]`, `trail <x> <y> [<x> <y> ...]` (where the pointer has been in the main window, for the cards to tell where it is heading), `cards` (the open cards' titles into the app log, with its time), `pos <x> <y> <z> [yaw]`, `exits <name> [<name> ...] | all` (the game's extract list as a screenshot taken now shows it, taken by the session from where text recognition hands its reading over, so the window calls it out as a real one; names with spaces "quoted", a name ending in `?` marked "??:??:??", `all` every extract of the raid's map for the side; 2026-10-15, for the roll call's replay), `repeat`, `age <min>`, `walk <s>`, `trigger report|crash|update|offline|404|503|nogame|reload`, `choose <folder> | game | auto` ("Choose game folder…" with that folder, with the view's fake game, or FIND AUTOMATICALLY), `whatsnew [<version>] [<n>]` (the newest version's What's New card, as help's link shows it, or with a version, `0.4.0`, that version's card alone, so a script reaches an older version's lines, 0.4.0's `extracts` preview among them; owner, 2026-10-15, D10; with n, the pointer on its n-th line, so its preview starts; alone, off it), `whatsnew [<version>] click <n>` (the pointer onto its n-th line and a tap there, through the code the pointer's own events call, so a line about the tour opens it there), `whatsnew leave` (the pointer off the line it is on, as leaving the card does, or the tour's layer coming over it), `replay` (the made-up raid of What's New's preview replayed on Customs, as at a raid's end), `stash` (the SEEN IN YOUR STASH cue with the example items of What's New's preview, as a reading shows it), `tasks [<n>] [ended]` (the Tasks screen's OPERATIONAL table as a screenshot taken now shows it, from where the reading hands its rows over on: n made-up tasks, 3 without a number and at most 8, a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two hand-overs on any map, a kill without a countdown on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's kill on Reserve (seven or eight reach the cue's "+N"; QA pass of 2026-10-19, F3); with `ended` one more that runs out 3 s later; the operational tasks' file isn't written that run; owner, 2026-10-19, B; it calls the cue of the tasks read as a real reading does, and a second `tasks` in the run counts its countdowns down from the first, so the same table again is the same tasks and calls none), `desk [<n>] | open <region> | point|pin|copy <region> [<i> <j> | <slot>] | unpin [<region> <i> <j> | all] | pick <region> <i> <j> | <slot> <n> | rule match|under:<n>|over:<n> | plan | show [<n>]` (step C, 2026-10-19: `pin` a cell right-clicked, its card pinned in the rail or unpinned; `copy` a cell clicked, its flash, decode and notice, the clipboard left alone in a script, the app log saying what would have been copied; `unpin` a pinned card's pin clicked, `all` or nothing named every pin; `pick` a "?" cell's n-th candidate, from 1, clicked on its card; `rule` the copy's rule as the card's − and + set it, saved in the session's settings; a slot by its key, "desk pin loadout headwear"; the made-up stash desk of `-Desk`, its reading n as a reading in the menus brings it, 1 to 3; `open` a folded region's name clicked; `point` the pointer on a region's cell at that grid place, or its first cell, as the pointer's events do, so a still shows a window's light and the rail's card; `plan` and `show` PLAN and DESK at the rail's head, `show <n>` the n-th pinned line in the rail's foot clicked, from the top (UI QA pass of the desk's second round, F3, 2026-10-19); step B, 2026-10-19; the replay `tools\qa\desk.devscript`), `tour end` (ends the tour as Esc does), `textsize normal|larger|largest` (settings' Text size chosen as its row chooses it and saved in the session's settings; the window's text, the map and the smallest window follow at once, so a `snapshot` before and after pictures the change while Shturmap runs; under `--text-scale` the run's factor stands whatever the step; UI QA pass of 2026-10-19, F4), `language <culture>` (settings' Language for the run, chosen as its row chooses it and not saved: `en-US`, `de-DE`, `qps-ploc`; the window's texts, the desk's page and cards among them, follow at once and the game data in the new language a moment later, so a `snapshot` before and after pictures a switch with the desk's cards up, which the layout check's `-SwitchCheck` can't; release QA pass of 2026-10-19, F1), `wait <s>`,
   `snapshot <folder>`, `exit`, `note <id or name> <text>` (adds a note to the quest as the field on its card does, for
   the session only; the quest one word or quoted, `\n` in the text a line break)), for checks without clicking.
   `DevScript.Verbs` is the one source of truth for the verbs and what each takes (the parser knows no other); this list

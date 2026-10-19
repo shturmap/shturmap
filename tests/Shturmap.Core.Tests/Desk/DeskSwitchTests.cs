@@ -74,7 +74,7 @@ public class DeskSwitchTests
         Assert.False(DeskSwitch.MapKey(0x70));
     }
 
-    // The switch, a primary control (owner, 2026-10-20): ← picks PLAN, → DESK; Up, Down, Space and the rest pick nothing.
+    // The switch, a primary control (owner, 2026-10-19): ← picks PLAN, → DESK; Up, Down, Space and the rest pick nothing.
     [Fact]
     public void Left_picks_plan_and_right_the_desk()
     {

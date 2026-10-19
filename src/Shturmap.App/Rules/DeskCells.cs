@@ -53,7 +53,7 @@ public static class DeskCells
     public const double Small = 40;
 
     /// <summary>From this size up a cell shows the change as a figure and a trader's portrait (*The cell*): 56 DIP, and the
-    /// larger sizes the desk's width gives (<see cref="DeskPageRules.Sizes"/>, owner, 2026-10-20).</summary>
+    /// larger sizes the desk's width gives (<see cref="DeskPageRules.Sizes"/>, owner, 2026-10-19).</summary>
     public const double Large = 56;
 
     /// <summary>The keep notch's size at 40 to 56 DIP, 11 DIP; it grows by 1 a step above (<see cref="NotchAt"/>).</summary>

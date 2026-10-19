@@ -4,7 +4,7 @@ using Shturmap.Core.Logs;
 
 namespace Shturmap.Core.Tests.Desk;
 
-// The list price a click on a desk cell copies (owner, 2026-10-19, from a panel: D2; owner, 2026-10-20: the click copies,
+// The list price a click on a desk cell copies (owner, 2026-10-19, from a panel: D2; owner, 2026-10-19: the click copies,
 // the rule's control on the card; docs/DESIGN.md §4, *The stash desk*, *The click*; Core.Desk.DeskCopies): the last low
 // matched, or 1–20 % under or over it, rounded so it stays under or over, scaled to a printed condition; and the guards.
 // Made-up items.

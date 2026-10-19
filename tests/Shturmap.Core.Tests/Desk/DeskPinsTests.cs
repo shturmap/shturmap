@@ -4,7 +4,7 @@ using Shturmap.Core.Logs;
 
 namespace Shturmap.Core.Tests.Desk;
 
-// The cards pinned in the desk's rail (owner, 2026-10-20: pinning, by a right-click on a cell or the pin on a card;
+// The cards pinned in the desk's rail (owner, 2026-10-19: pinning, by a right-click on a cell or the pin on a card;
 // docs/DESIGN.md §4, *The stash desk*, *The click*; Rules.DeskPins): newest on top, the same again unpins; a pin stays
 // with its cell as read and goes when a reading changes or takes the cell.
 public class DeskPinsTests

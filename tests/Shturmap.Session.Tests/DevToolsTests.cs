@@ -397,7 +397,7 @@ public sealed class DevToolsTests : IDisposable
         Assert.False(DevScript.FollowsAtOnce(steps[0]));
     }
 
-    // Step C (2026-10-20): "pin" a cell right-clicked, "copy" a cell clicked (the clipboard left alone), "unpin" a pin or
+    // Step C (2026-10-19): "pin" a cell right-clicked, "copy" a cell clicked (the clipboard left alone), "unpin" a pin or
     // all, "pick" a "?" cell's n-th candidate, "rule" the copy's rule; a cell by its grid place or a slot by its key. UI QA
     // pass of the second round (F3, 2026-10-19): "show <n>" the n-th pinned line in the rail's foot clicked, from 1.
     [Fact]

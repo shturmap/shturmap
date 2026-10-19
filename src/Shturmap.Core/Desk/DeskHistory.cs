@@ -33,7 +33,7 @@ public sealed class DeskHistory
 
     /// <summary>
     /// The history in tarkov.dev's file: <c>{"data":[{"priceMin":…,"price":…,"offerCount":…,"timestamp":ms}, …]}</c> (the
-    /// points' shape read 2026-10-19 and 2026-10-20; docs/UPDATES.md), or a bare array of such points. A point without a
+    /// points' shape read 2026-10-19 and 2026-10-19; docs/UPDATES.md), or a bare array of such points. A point without a
     /// time or a price is left out; null when the text isn't such a file.
     /// </summary>
     public static DeskHistory? Parse(string json)

@@ -19,7 +19,7 @@ namespace Shturmap.App.Controls;
 /// per slot (the grid images bring the game's own ground, so the tint can't lie behind the art); a dark band across the
 /// top where the grid image prints the short name, the figure on it at the right after its source; the keep notch and
 /// the "?" plate at the upper left; the count or condition at the lower right and the change at the lower left, each on
-/// a dark plate. Marks and their room: <see cref="DeskCells.Of"/>. Step C (2026-10-20): a click copies the cell's list
+/// a dark plate. Marks and their room: <see cref="DeskCells.Of"/>. Step C (2026-10-19): a click copies the cell's list
 /// price (its frame flashes gold once and its figure decodes), a right-click pins its card in the rail, and a pinned cell
 /// carries the pin's tab on its top edge.
 /// </summary>
