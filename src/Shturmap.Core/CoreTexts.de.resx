@@ -161,23 +161,23 @@
     <comment>en: ahead-left</comment>
   </data>
   <data name="OperationalKill" xml:space="preserve">
-    <value>{count} {target} töten</value>
+    <value>{count} {target} killen</value>
     <comment>en: Kill {count} {target}</comment>
   </data>
   <data name="OperationalKillUncounted" xml:space="preserve">
-    <value>{target} töten</value>
+    <value>{target} killen</value>
     <comment>en: Kill {target}</comment>
   </data>
   <data name="OperationalHeadshots" xml:space="preserve">
-    <value>Kopfschüsse</value>
+    <value>Headshots</value>
     <comment>en: headshots</comment>
   </data>
   <data name="OperationalOver" xml:space="preserve">
-    <value>über {metres} m</value>
+    <value>über {metres} m</value>
     <comment>en: over {metres} m</comment>
   </data>
   <data name="OperationalUnder" xml:space="preserve">
-    <value>unter {metres} m</value>
+    <value>unter {metres} m</value>
     <comment>en: under {metres} m</comment>
   </data>
   <data name="OperationalSurvive" xml:space="preserve">

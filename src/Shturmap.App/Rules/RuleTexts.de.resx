@@ -197,7 +197,7 @@
     <comment>en: {done} of {of}</comment>
   </data>
   <data name="OperationalPercent" xml:space="preserve">
-    <value>{percent} %</value>
+    <value>{percent} %</value>
     <comment>en: {percent}%</comment>
   </data>
   <data name="OperationalAnyMap" xml:space="preserve">
@@ -213,11 +213,11 @@
     <comment>en: hand over after the raid</comment>
   </data>
   <data name="OperationalMinutesLeft" xml:space="preserve">
-    <value>noch {count} min</value>
+    <value>noch {count} min</value>
     <comment>en: {count} min left</comment>
   </data>
   <data name="OperationalHoursLeft" xml:space="preserve">
-    <value>noch {count} h</value>
+    <value>noch {count} h</value>
     <comment>en: {count} h left</comment>
   </data>
   <data name="OperationalDaysLeft" xml:space="preserve">
@@ -229,11 +229,11 @@
     <comment>en: read just now</comment>
   </data>
   <data name="OperationalReadMinutesAgo" xml:space="preserve">
-    <value>vor {count} min gelesen</value>
+    <value>vor {count} min gelesen</value>
     <comment>en: read {count} min ago</comment>
   </data>
   <data name="OperationalReadHoursAgo" xml:space="preserve">
-    <value>vor {count} h gelesen</value>
+    <value>vor {count} h gelesen</value>
     <comment>en: read {count} h ago</comment>
   </data>
   <data name="OperationalReadDaysAgo" xml:space="preserve">
@@ -241,7 +241,7 @@
     <comment>en: read {count} d ago</comment>
   </data>
   <data name="OperationalEndsIn" xml:space="preserve">
-    <value>endet in {count} min</value>
+    <value>endet in {count} min</value>
     <comment>en: ends in {count} min</comment>
   </data>
   <data name="OperationalEnded" xml:space="preserve">
