@@ -4,7 +4,7 @@ The German lines of the What's New card, a translation of docs/whats-new.md, whi
 written and read. Each section is a version of that file, with its lines in the same order and their previews as they
 are; the release's name stays as it is. Words: docs/glossary-de.md.
 
-## 0.7.0 · NAME
+## 0.7.0 · Kaomoji
 
 - tour:2 · Der Desk · Stash- oder Gear-Screenshot: Preis je Item, Flea oder Trader, und was du behältst. DESK, oben links.
 - tour:1 · Dailies und Weeklies · Screenshot vom Aufgaben-Bildschirm (Spiel auf Englisch): Dailies und Weeklies mit Restzeit, je Map.

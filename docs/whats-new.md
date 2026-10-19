@@ -25,7 +25,7 @@ that language (docs/DESIGN.md §8, "Texts"): a section per version this file has
 with on, each with this section's lines in the same order and their previews as they are, the names and words
 translated. A version the translation lacks, or whose lines aren't this section's, shows from this file.
 
-## 0.7.0 · NAME
+## 0.7.0 · Kaomoji
 
 - tour:2 · The stash desk · Screenshot your stash or gear: each item's price, flea or trader, and what to keep. DESK, top left.
 - tour:1 · Dailies and weeklies · Screenshot the Tasks screen (English game): your dailies and weeklies, time left, on their maps.

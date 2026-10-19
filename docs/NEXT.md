@@ -548,6 +548,10 @@ card*; *The click*; *As built*: the rail, the card, the page, the stems), §8 (h
   pass; F1 the compact line's trim recorded as the rule; F2 the stem across a 3×3 item's picture fixed (the route over
   empty cells only); F3 the version line's "NAME" is the release name, the owner's.
 
+**0.7.0 is named Kaomoji** (owner, 2026-10-19, on the session's report page) and waits for the owner's further
+testing (owner, 2026-10-19: "Do not release, will run further testing later"); the release QA pass reruns on the final
+tree before the go.
+
 **The release QA pass of 0.7.0 (2026-10-19, on 63d9c06) and its fixes.** Fixed:
 - F1: a language switch left the desk's page (head line, region heads, "Not attached", "5.45 M", "−3%") and settings' row
   of the copy's rule in the old language: they are built in code, and are built again at a switch now
@@ -3058,7 +3062,8 @@ Raise these with the owner when the app gets its first public GitHub Release (no
 - **Dailies and weeklies from a screenshot**: built 2026-10-19, see "2026-10-19: operational tasks, dailies and weeklies, in the rail" at the top.
 
 - **Report the defects in tarkov.dev's extract data** (the exits verification of 2026-10-17, kept beside the
-  repositories; owner, 2026-10-17: "Note this down for later"). The app's side is built ("2026-10-17: exit facts and the
+  repositories; owner, 2026-10-17: "Note this down for later"; owner, 2026-10-19, on the session's report page: later
+  still, the draft stands). The app's side is built ("2026-10-17: exit facts and the
   data rules", above; DESIGN.md, "Extract requirements", *The data's defects*): general rules in `ExtractRepairs`, each
   a no-op once the data is right, so nothing is undone when it is corrected. A copy of another map's extract outside its
   map is dropped; a variant's extract without a side takes its base map's; a variant without extracts takes its base

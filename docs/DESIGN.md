@@ -2137,7 +2137,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       foot** (UI QA pass of the desk's second round, F1, 2026-10-19: under a key's card the second pinned line stood cut
       at the window's bottom at 1600×900, in German below it; the coordinator's rule): while a cell is pointed at, the
       pinned lines stand at the rail's foot under the rail's hairline, always in sight, three at most and more scrolling
-      within that strip, and the pointed card scrolls in the room above them. The rail scrolls: at 900×560 the decision
+      within that strip, and the pointed card scrolls in the room above them (with three pins at 900×560 a German key
+      card shows its figure and the plate's head before the scroll; the owner, 2026-10-19: accepted). The rail scrolls: at 900×560 the decision
       part of the pointed card shows (with two pins at the foot, its figure and plate in English and German, KEEP under
       the hairline; on the desk the 20 DIP at the foot of what scrolls are the cards' own, so a card runs on to the
       hairline or the window's edge).
@@ -2188,7 +2189,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       other way), of a slot the item's icon (a slot shows no footprint, and the grid image prints its short name);
       a "?" cell's first candidate's, at half strength. The grid images bring the game's own ground, so the tint lies
       over the art, not behind it. Where the grid image prints the short name, a band of the ground's dark at 88 %
-      across the cell's top carries the figure, so the band is its collar; the count and the change stand on small
+      across the cell's top carries the figure, so the band is its collar (at 80 to 104 DIP the art's printed name shows
+      faintly through it; the owner, 2026-10-19: left so, the figure reads); the count and the change stand on small
       plates of the ground's dark at 70 %. The figure is ink, semibold, 10.5 px (12 at 56 DIP); the count and the
       change 10 px (11.5). "~" is drawn in Segoe UI's bolder wave: Bahnschrift's, at 10.5 px, read as a minus. What
       gives way where a cell is narrow, by an estimate of the text's width at the size it is drawn (the window's text
@@ -2320,10 +2322,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       2, a body with its slots, an UNSEARCHED rig, pockets being searched and a searched backpack); the replay
       `tools\qa\glance.devscript` with its stills and their checks in `glance.md` (drawer, body, gone, a reading waiting
       for the roll call, after it, the raid's end).
-    - *Open, the owner's call*: **motion in a raid**: the plate stands at once (as built; principle 2 lets the desk's moves
-      in out of a raid only), or comes in with the panel's D (the band's short gold flash, the total counting up over
-      0.9 s, the cells 50 ms apart). Also open: the 48 px title leaves a body no room at 900×560 (a smaller title there,
-      or a taller plate, would draw its slots); the plate is pictured with the made-up readings only, not yet with a real
+    - *Decided* (owner, 2026-10-19, on the session's report page): **motion in a raid**: the plate stands at once, as
+      built (principle 2 lets the desk's moves in out of a raid only); the panel's D (the band's short gold flash, the
+      total counting up over 0.9 s, the cells 50 ms apart) is not built. The 48 px title leaving a body no room at
+      900×560, its plate the head and the ALSO line, is accepted (owner, 2026-10-19). Still open: the plate is pictured with the made-up readings only, not yet with a real
       raid's.
 - **Help** (F1 or `?`): one panel with TAKE THE TOUR and WHAT'S NEW IN 0.4.0 under its title (the tour from its start; the What's New card again), how it works with SHOW ME after the paragraphs a chapter of the tour shows (it opens the tour there; owner, 2026-10-09, T11), the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
@@ -3359,7 +3361,8 @@ each on Shoreline): ×2 on the card, the plan's row and need cell, the kit and t
 modes (`BringCountTests`, also against the local cache).
 
 **A quest item is never brought** (owner, 2026-10-06: "In mission one less loose end, the lab journal is marked as a item
-to bring, but it is one you actually have to collect first as part of the mission"). A quest item an objective stashes
+to bring, but it is one you actually have to collect first as part of the mission"; asked about again and confirmed,
+2026-10-19). A quest item an objective stashes
 (`plantQuestItem`) is got by a "locate and obtain" of the same quest (14 of the 15 such objectives on 2026-10-06) or of
 one before (Hobby Club's handguard, from Fair Price - Part 2). On pickup it goes to the quest items, and from there into
 every raid by itself (the game asks "You have quest items in your inventory! Proceed?"; it is lost only with a death, or
