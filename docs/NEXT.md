@@ -542,6 +542,10 @@ card*; *The click*; *As built*: the rail, the card, the page, the stems), §8 (h
   `pinshown`, `pinmore`); F2 (the art's printed name shows through the 88 % band at 80–104 DIP) for the owner; F4–F6
   (the real Keys reading, the layout check, the pin click, 125 %, settings after a switch) in the re-check. Open: at
   900×560 three pins leave the card its figure and copy line; a fourth line has no hint but the scroll bar.
+- **Re-check (2026-10-19):** the pins' foot, the real Keys reading in the fake game (90 and 93 cells, the KEYS window
+  both times, STASH 14.7 M+), the layout check at 900×560 en+de, 125 % text and the settings after a language switch
+  pass; F1 the compact line's trim recorded as the rule; F2 the stem across a 3×3 item's picture fixed (the route over
+  empty cells only); F3 the version line's "NAME" is the release name, the owner's.
 
 **The release QA pass of 0.7.0 (2026-10-19, on 63d9c06) and its fixes.** Fixed:
 - F1: a language switch left the desk's page (head line, region heads, "Not attached", "5.45 M", "−3%") and settings' row
