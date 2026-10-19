@@ -19,6 +19,31 @@ public enum DeskRegionKind
     Pouch,
     Stash,
     ContainerWindow,
+
+    /// <summary>In a raid's inventory screen, the LOOT pane of a body: the dead player's slots, a strip as the loadout
+    /// (the in-raid glance, docs/DESIGN.md §2 and §4, *The in-raid glance*; never on the desk).</summary>
+    LootSlots,
+
+    /// <summary>A body's TACTICAL RIG in the LOOT pane: its own slot and, once searched, its grid.</summary>
+    LootRig,
+
+    /// <summary>A body's POCKETS in the LOOT pane.</summary>
+    LootPockets,
+
+    /// <summary>A body's BACKPACK in the LOOT pane: its own slot and, once searched, its grid.</summary>
+    LootBackpack,
+
+    /// <summary>The LOOT pane's grid of a container (a drawer, a safe, a jacket).</summary>
+    Loot,
+}
+
+/// <summary>How much of a looted part's contents the screenshot showed: all of it, part of it while the game searches
+/// ("SEARCHING ✕ 0:00"), or none ("UNSEARCHED", with its SEARCH link). Contents not shown are unseen ("+"), never zero.</summary>
+public enum DeskSearch
+{
+    Searched,
+    Searching,
+    Unsearched,
 }
 
 /// <summary>What a cell's item holds out of sight: a container's contents (until its window is read), a weapon's mods.</summary>
@@ -162,9 +187,24 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
     /// <summary>The cells read as an item or "one of N" (not a cell with nothing said).</summary>
     public int ReadCells => Cells.Count(c => c.Ids.Count > 0);
 
-    /// <summary>Whether the region is on the player (ON YOU): the loadout and the middle column; the stash and the
-    /// windows are not by themselves (a window counts where its container is, <see cref="DeskSheet"/>).</summary>
-    public bool OnYou => Kind is not (DeskRegionKind.Stash or DeskRegionKind.ContainerWindow);
+    /// <summary>For a LOOT region, how much of its contents the screenshot showed (a body's rig, pockets and backpack until
+    /// searched); <see cref="DeskSearch.Searched"/> for every other region.</summary>
+    public DeskSearch Search { get; init; }
+
+    /// <summary>For a LOOT region, whether the pane's scrolling cut its grid at the pane's foot: what lies past it is unseen.</summary>
+    public bool Cut { get; init; }
+
+    /// <summary>Whether contents of the region itself went unseen (a looted part not searched yet, or cut by the pane's
+    /// scrolling): its total is at least what was read, "+".</summary>
+    public bool ContentsUnseen => Search != DeskSearch.Searched || Cut;
+
+    /// <summary>Whether the region is the LOOT pane's (a body's or a container's, in a raid).</summary>
+    public bool IsLoot => Kind is DeskRegionKind.LootSlots or DeskRegionKind.LootRig or DeskRegionKind.LootPockets or DeskRegionKind.LootBackpack
+        or DeskRegionKind.Loot;
+
+    /// <summary>Whether the region is on the player (ON YOU): the loadout and the middle column; the stash, the windows
+    /// and the LOOT pane are not by themselves (a window counts where its container is, <see cref="DeskSheet"/>).</summary>
+    public bool OnYou => Kind is not (DeskRegionKind.Stash or DeskRegionKind.ContainerWindow) && !IsLoot;
 
     /// <summary>The key of a fixed region.</summary>
     public static string KeyOf(DeskRegionKind kind) => kind switch
@@ -176,6 +216,11 @@ public sealed record DeskRegion(string Key, DeskRegionKind Kind, int Cols, int R
         DeskRegionKind.Backpack => "backpack",
         DeskRegionKind.Pouch => "pouch",
         DeskRegionKind.Stash => "stash",
+        DeskRegionKind.LootSlots => "loot:slots",
+        DeskRegionKind.LootRig => "loot:rig",
+        DeskRegionKind.LootPockets => "loot:pockets",
+        DeskRegionKind.LootBackpack => "loot:backpack",
+        DeskRegionKind.Loot => "loot",
         _ => "window",
     };
 
@@ -203,7 +248,8 @@ public sealed record DeskPage(DateTimeOffset ReadAt, IReadOnlyList<DeskRegion> R
     public bool Unseen(DeskRegion region, DeskCell cell) => cell.Holds switch
     {
         DeskHolds.Mods => true,
-        DeskHolds.Contents when cell.IsSlot && region.Kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch => false,
+        DeskHolds.Contents when cell.IsSlot && region.Kind is DeskRegionKind.Rig or DeskRegionKind.Backpack or DeskRegionKind.Pouch
+            or DeskRegionKind.LootRig or DeskRegionKind.LootBackpack => false,
         DeskHolds.Contents => WindowOf(region, cell) is null,
         _ => false,
     };

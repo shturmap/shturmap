@@ -229,21 +229,62 @@ public sealed class StashReader
             var hidden = StashGrids.Hidden(grid, grids, pitch);
             var empty = StashGrids.Empty(grid, highPassed, pitch);
             var cells = new List<StashCellLook>();
+            SKRectI Pixels(StashRect r) => SKRectI.Create(grid.X0 + r.I0 * pitch, grid.Y0 + r.J0 * pitch, r.W * pitch, r.H * pitch);
+            async Task<List<StashCellLook>> Look(StashRect r)
+            {
+                if (!r.Odd)
+                    return [await LookAtCellAsync(bitmap, r, Pixels(r), pitch, entries, ct)];
+                // An odd shape: the lines between its items didn't show (a hover highlight over a sorted container's keys,
+                // the Keys window of 2026-10-19, 20:22). As the stash desk reads it (DeskReader), each of its cells on its
+                // own where it is small enough to be items of one cell; what names nothing stays the odd shape.
+                var looks = new List<StashCellLook>();
+                var left = new List<(int I, int J)>();
+                if (r.Cells.Count is > 1 and <= OddCellsRead)
+                {
+                    foreach (var (i, j) in r.Cells)
+                    {
+                        var one = new StashRect(i, j, 1, 1, false);
+                        var look = await LookAtCellAsync(bitmap, one, Pixels(one), pitch, entries, ct);
+                        if (look.ItemId is not null)
+                            looks.Add(look);
+                        else
+                            left.Add((i, j));
+                    }
+                }
+                if (looks.Count == 0 || left.Count > 0)
+                    looks.Add(new StashCellLook(looks.Count == 0 ? r : r with { Cells = left }, Pixels(r), null, null, 0, null, false, null, 1, null));
+                return looks;
+            }
             foreach (var rect in StashGrids.Items(grid, lines, hidden, empty, pitch))
             {
                 ct.ThrowIfCancellationRequested();
-                var pixels = SKRectI.Create(grid.X0 + rect.I0 * pitch, grid.Y0 + rect.J0 * pitch, rect.W * pitch, rect.H * pitch);
-                if (rect.Odd)
+                var look = await Look(rect);
+                if (rect.Pieces.Count > 0 && look is [{ ItemId: null, Label: { Length: > 0 } label }] &&
+                    entries.Any(e => StashLabels.Fit(label, e.Candidate.ShortName) >= StashLabels.Enough))
                 {
-                    cells.Add(new StashCellLook(rect, pixels, null, null, 0, null, false, null, 1, null));
-                    continue;
+                    // Joined across faint lines, its label a candidate's whose art is of another size: perhaps items whose
+                    // frames between them stood out faintly (two keys, one over the other), read as the lines that show give
+                    // them when one of them names an item. A label of no candidate is another item's (a gun's, read whole),
+                    // and an unread one would be read again in every piece for nothing.
+                    var pieces = new List<StashCellLook>();
+                    foreach (var piece in rect.Pieces)
+                        pieces.AddRange(await Look(piece));
+                    if (pieces.Any(p => p.ItemId is not null))
+                    {
+                        cells.AddRange(pieces);
+                        continue;
+                    }
                 }
-                cells.Add(await LookAtCellAsync(bitmap, rect, pixels, pitch, entries, ct));
+                cells.AddRange(look);
             }
             looks.Add(new StashGridLook(grid, hidden, empty, cells));
         }
         return new StashLook(w, h, pitch, false, looks, gridMs, sw.ElapsedMilliseconds);
     }
+
+    // The most cells of an odd shape read one by one, as the stash desk's (DeskReader): a bigger shape is more likely
+    // large items cut into cells, whose cells alone fit nothing.
+    private const int OddCellsRead = 12;
 
     private async Task<StashCellLook> LookAtCellAsync(SKBitmap bitmap, StashRect rect, SKRectI pixels, int pitch, List<Entry> candidates, CancellationToken ct)
     {

@@ -48,14 +48,48 @@ public sealed class DeskReader
 
     public string LanguageTag => _labels.LanguageTag;
 
-    /// <summary>What a decoded picture shows for the desk, its page taken at <paramref name="at"/> (the screenshot's time).</summary>
+    /// <summary>What a decoded picture shows for the desk, its page taken at <paramref name="at"/> (the screenshot's time): a
+    /// menu screenshot's stash or GEAR tab; the raid's inventory screen is none of the desk's (<see cref="ReadRaidAsync"/>).</summary>
     public async Task<DeskReading> ReadAsync(SKBitmap picture, DeskCatalogue catalogue, DateTimeOffset at, CancellationToken ct = default)
     {
-        var look = await LookAsync(picture, catalogue, at, ct);
+        var look = await LookAsync(picture, catalogue, at, ct, raid: false);
         return new DeskReading(look.Layout.Screen, look.Page, look.TotalMs);
     }
 
-    internal async Task<DeskLook> LookAsync(SKBitmap bitmap, DeskCatalogue catalogue, DateTimeOffset at, CancellationToken ct)
+    /// <summary>
+    /// What a raid's screenshot shows for the in-raid glance (owner, 2026-10-19; docs/DESIGN.md §2, "For the stash desk", "In
+    /// a raid"; §4, *The in-raid glance*): on the raid's inventory screen, the player's own regions (ON YOU: the loadout,
+    /// the rig, the pockets, the special slots, the backpack, the pouch, an open window) and the LOOT pane's (a body's slots
+    /// and parts, a container's grid; <see cref="DeskLoot"/>), read as the desk reads its grids; a page of no screen (Screen
+    /// None, no page) for any other picture: the world, a map. Nothing of it is kept: the caller publishes it for the glance
+    /// and lets it go.
+    /// </summary>
+    public async Task<DeskReading> ReadRaidAsync(SKBitmap picture, DeskCatalogue catalogue, DateTimeOffset at, CancellationToken ct = default)
+    {
+        if (!await ShowsTabsAsync(picture, ct))
+            return new DeskReading(DeskScreen.None, null, 0);
+        var look = await LookAsync(picture, catalogue, at, ct, raid: true);
+        return new DeskReading(look.Layout.Screen, look.Page, look.TotalMs);
+    }
+
+    /// <summary>Whether the picture shows the character screen's tabs at its top (OVERALL, GEAR, HEALTH, SKILLS): a raid's
+    /// screenshots are mostly the world, read here in a strip of the picture's top (about 30 ms) before the whole picture
+    /// is (about a second).</summary>
+    internal async Task<bool> ShowsTabsAsync(SKBitmap picture, CancellationToken ct)
+    {
+        var strip = SKRectI.Create(0, 0, (int)(picture.Width * 0.75), Math.Max(1, (int)(picture.Height * 0.04)));
+        using var part = new SKBitmap(strip.Width, strip.Height, picture.ColorType, picture.AlphaType);
+        if (!picture.ExtractSubset(part, strip))
+            return false;
+        using var copy = part.Copy();
+        var words = await DeskWords.ReadAsync(_labels.Engine, copy, ct);
+        var tabs = new[] { "OVERALL", "GEAR", "HEALTH", "SKILLS" }.Select(Core.Screenshots.ExitList.Fold).ToHashSet(StringComparer.Ordinal);
+        return words.Count(x => tabs.Contains(Core.Screenshots.ExitList.Fold(x.Text))) >= 2;
+    }
+
+    /// <param name="raid">True: the raid's inventory screen only (the in-raid glance); false: the menus' screens only (the
+    /// desk); null: whichever the picture shows (the CLI).</param>
+    internal async Task<DeskLook> LookAsync(SKBitmap bitmap, DeskCatalogue catalogue, DateTimeOffset at, CancellationToken ct, bool? raid = null)
     {
         var sw = Stopwatch.StartNew();
         int w = bitmap.Width, h = bitmap.Height;
@@ -69,8 +103,16 @@ public sealed class DeskReader
         var words = await DeskWords.ReadAsync(_labels.Engine, bitmap, ct);
         var layout = DeskLayout.Find(words, lines, gray, w, h, pitch);
         var layoutMs = sw.ElapsedMilliseconds;
-        if (layout.Screen is DeskScreen.None or DeskScreen.Trading)
-            return new DeskLook(w, h, pitch, layout, [], null, 0, layoutMs, sw.ElapsedMilliseconds);
+        // The desk reads the menus' screens, the glance the raid's inventory (the CLI either); to the desk, the raid's is none.
+        var wanted = raid switch
+        {
+            true => layout.Screen == DeskScreen.Raid,
+            false => layout.Screen != DeskScreen.Raid,
+            null => true,
+        };
+        if (layout.Screen is DeskScreen.None or DeskScreen.Trading || !wanted)
+            return new DeskLook(w, h, pitch, raid is false && layout.Screen == DeskScreen.Raid ? layout with { Screen = DeskScreen.None } : layout, [], null, 0,
+                layoutMs, sw.ElapsedMilliseconds);
 
         var highPassed = gray.HighPass((int)Math.Round(4 * scale));
         var looks = new List<DeskCellLook>();
@@ -138,6 +180,10 @@ public sealed class DeskReader
             regions.Add(region);
         }
 
+        // The LOOT pane of a raid's inventory screen (the in-raid glance): a body's slots and parts, or a container's grid.
+        if (layout.Loot is { } loot)
+            odd += await LootAsync(bitmap, layout, loot, lines, highPassed, pitch, catalogue, looks, regions, ct);
+
         // The stash: the page in view, less what a window or a toast covers.
         if (layout.Stash is { } stash)
         {
@@ -158,6 +204,82 @@ public sealed class DeskReader
 
         var page = new DeskPage(at, regions);
         return new DeskLook(w, h, pitch, layout, looks, page, odd, layoutMs, sw.ElapsedMilliseconds);
+    }
+
+    // The LOOT pane's regions, each titled with the game's words ("LOOT · BODY"): a body's slots as a strip, its TACTICAL RIG
+    // and BACKPACK each with its own slot and grid, its POCKETS, each with its search state (a part not searched, or being
+    // searched, has contents unseen); a container's grid. A part whose slot holds nothing (the body's rig taken) is left
+    // out. The odd shapes found.
+    private async Task<int> LootAsync(SKBitmap bitmap, DeskLayoutFound layout, DeskLootFound loot, StashLines lines, StashGray highPassed, int pitch,
+        DeskCatalogue catalogue, List<DeskCellLook> looks, List<DeskRegion> regions, CancellationToken ct)
+    {
+        var odd = 0;
+        if (loot.Slots.Count > 0)
+        {
+            var cells = new List<DeskCell>();
+            var covered = new List<string>();
+            foreach (var slot in loot.Slots)
+            {
+                if (Under(slot.Box, layout.Over))
+                {
+                    covered.Add(slot.Key);
+                    continue;
+                }
+                if (await SlotAsync(bitmap, slot.Box, pitch, catalogue, DeskSlots.KindOf(slot.Key), ct) is not { } read)
+                    continue;
+                var cell = read.Cell with { I = DeskSlots.Order(slot.Key), J = 0, Slot = slot.Key, Holds = DeskSlots.IsWeapon(slot.Key) ? DeskHolds.Mods : read.Cell.Holds };
+                cells.Add(cell);
+                looks.Add(read with { Region = DeskRegion.KeyOf(DeskRegionKind.LootSlots), Cell = cell });
+            }
+            regions.Add(new DeskRegion(DeskRegion.KeyOf(DeskRegionKind.LootSlots), DeskRegionKind.LootSlots, 0, 0, cells.OrderBy(c => c.I).ToList())
+            {
+                CoveredSlots = covered,
+                Title = loot.Title,
+            });
+        }
+        foreach (var place in loot.Parts)
+        {
+            var key = DeskRegion.KeyOf(place.Kind);
+            var cells = new List<DeskCell>();
+            var coveredSlots = new List<string>();
+            var slotKey = place.Kind switch
+            {
+                DeskRegionKind.LootRig => "rig",
+                DeskRegionKind.LootBackpack => "backpack",
+                _ => null,
+            };
+            if (place.SlotBox is { } box && slotKey is not null)
+            {
+                if (Under(box, layout.Over))
+                    coveredSlots.Add(slotKey);
+                else if (await SlotAsync(bitmap, box, pitch, catalogue, DeskSlots.KindOf(slotKey), ct) is { } read)
+                {
+                    var cell = read.Cell with { I = 0, J = 0, Slot = slotKey };
+                    cells.Add(cell);
+                    looks.Add(read with { Region = key, Cell = cell });
+                }
+                // An empty slot: no container, nothing beside it.
+                if (cells.Count == 0 && coveredSlots.Count == 0 && place.Parts.Count == 0 && place.Search == DeskSearch.Searched)
+                    continue;
+            }
+            var (grid, parts, covered, gridOdd, unread) = await GridAsync(bitmap, key, place.Parts, layout.Over, lines, highPassed, pitch, catalogue, looks,
+                DeskSlotKind.Any, false, ct);
+            odd += gridOdd;
+            cells.AddRange(grid);
+            var cols = parts.Count > 0 ? parts.Max(p => p.I + p.W) : 0;
+            var rows = parts.Count > 0 ? parts.Max(p => p.J + p.H) : 0;
+            regions.Add(new DeskRegion(key, place.Kind, cols, rows, cells)
+            {
+                Parts = parts,
+                Covered = covered,
+                CoveredSlots = coveredSlots,
+                Unread = unread,
+                Search = place.Search,
+                Cut = place.Cut,
+                Title = loot.Title,
+            });
+        }
+        return odd;
     }
 
     // Whether a box lies under a window or a toast by more than a quarter.
@@ -264,21 +386,51 @@ public sealed class DeskReader
         }
         SKRectI Pixels(int i, int j, int w, int h) => SKRectI.Create(grid.X0 + i * pitch, grid.Y0 + j * pitch, w * pitch, h * pitch);
 
+        // A special slot holds its item in one cell whatever its footprint (the Surv12, three by one): no footprint there.
+        var footprints = kind != DeskSlotKind.Special;
+
         // First every rectangle's label, then the cells: a label may claim its neighbours (below). An odd shape (dark art
         // read as empty cells, a hover highlight) is read over its bounding box.
         var rects = new List<(StashRect Rect, string? Label, double Fit, List<DeskCandidate> Fitting)>();
-        foreach (var rect in StashGrids.Items(grid, lines, hidden, empty, pitch))
+        var labels = new Dictionary<(int, int, int, int), (string? Label, double Fit, List<DeskCandidate>? Best)>();
+        async Task<(string? Label, double Fit, List<DeskCandidate>? Best)> LabelOf(StashRect r)
         {
+            if (labels.TryGetValue((r.I0, r.J0, r.W, r.H), out var known))
+                return known;
+            var at = Pixels(r.I0, r.J0, r.W, r.H);
+            var cutAtStart = quickSlots && QuickSlotNumber(bitmap, at, pitch);
+            var read = await _labels.ReadLabelAsync(bitmap, at, pitch, text => catalogue.Match.Match(text, r.W, kind, cutAtStart), DeskMatch.Enough, ct, Confirm);
+            labels[(r.I0, r.J0, r.W, r.H)] = read;
+            return read;
+        }
+        List<DeskCandidate> Named((string? Label, double Fit, List<DeskCandidate>? Best) read) =>
+            read.Fit >= DeskMatch.Enough && read.Best is not null ? read.Best : [];
+        var queue = new Queue<StashRect>(StashGrids.Items(grid, lines, hidden, empty, pitch));
+        while (queue.Count > 0)
+        {
+            var rect = queue.Dequeue();
             ct.ThrowIfCancellationRequested();
             if (Touches(grid, rect, hidden))
             {
                 covered.Add(new DeskRect(i0 + rect.I0, j0 + rect.J0, rect.W, rect.H));
                 continue;
             }
-            var cell = Pixels(rect.I0, rect.J0, rect.W, rect.H);
-            var cutAtStart = quickSlots && QuickSlotNumber(bitmap, cell, pitch);
-            var (label, fit, best) = await _labels.ReadLabelAsync(bitmap, cell, pitch,
-                text => catalogue.Match.Match(text, rect.W, kind, cutAtStart), DeskMatch.Enough, ct, Confirm);
+            var (label, fit, best) = await LabelOf(rect);
+            if (rect.Pieces.Count > 0 && footprints && Sized(Named((label, fit, best)), rect.W, rect.H).Count == 0)
+            {
+                // Joined across faint lines, and its label names no item of its size: two items whose frame between them
+                // stood out faintly (a keys case over a vest, 2026-10-19, 20:22) are read as the lines that show give them
+                // when one of those pieces names an item of its own size; else the rectangle stands.
+                var named = false;
+                foreach (var piece in rect.Pieces.Where(p => !p.Odd))
+                    named |= Sized(Named(await LabelOf(piece)), piece.W, piece.H).Count > 0;
+                if (named)
+                {
+                    foreach (var piece in rect.Pieces)
+                        queue.Enqueue(piece);
+                    continue;
+                }
+            }
             if (rect.Odd && (fit < DeskMatch.Enough || best is null) && rect.Cells.Count is > 1 and <= OddCellsRead)
             {
                 // An odd shape whose label fits nothing: the lines between its items didn't show (a hover highlight, light
@@ -307,8 +459,6 @@ public sealed class DeskReader
             rects.Add((rect, label, fit, fit >= DeskMatch.Enough && best is not null ? best : []));
         }
 
-        // A special slot holds its item in one cell whatever its footprint (the Surv12, three by one): no footprint there.
-        var footprints = kind != DeskSlotKind.Special;
         // The item file's footprint, either way round (an item may lie turned), is the tie-break and a check. Where the
         // grid's lines split an item (its art drew a line, or dark art read as empty cells), its label still stands at its
         // top right: the cells its footprint takes from there are its own when no other label fits there.
@@ -317,7 +467,7 @@ public sealed class DeskReader
         for (var n = 0; n < rects.Count; n++)
         {
             var (rect, _, _, fitting) = rects[n];
-            if (!footprints || consumed.Contains(n) || fitting.Count == 0 || fitting.Any(c => Fits(c, rect.W, rect.H)) || Footprint(fitting) is not { } footprint)
+            if (!footprints || consumed.Contains(n) || fitting.Count == 0 || Sized(fitting, rect.W, rect.H).Count > 0 || Footprint(fitting) is not { } footprint)
                 continue;
             // Only ever larger than the rectangle: a footprint smaller than it means several items read as one.
             var found = new[] { footprint, (footprint.H, footprint.W) }.Distinct()
@@ -336,7 +486,7 @@ public sealed class DeskReader
                 continue;
             var (rect, label, fit, fitting) = rects[n];
             var at = areas.TryGetValue(n, out var area) ? area : (I: rect.I0, J: rect.J0, W: rect.W, H: rect.H);
-            var sized = footprints ? fitting.Where(c => Fits(c, at.W, at.H)).ToList() : fitting.ToList();
+            var sized = footprints ? Sized(fitting, at.W, at.H) : fitting.ToList();
             // A larger footprint the label could also have, taking cells read as empty or unread from its top right (a
             // black rig's dark column reads as empty): the reading can't tell the two, so both are among the candidates.
             if (!areas.ContainsKey(n) && sized.Count > 0 && sized.Count < fitting.Count)
@@ -404,6 +554,16 @@ public sealed class DeskReader
     private static bool Confirm(string label) => Core.Screenshots.ExitList.Fold(label).Length <= 3;
 
     private static bool Fits(DeskCandidate c, int w, int h) => (c.W == w && c.H == h) || (c.W == h && c.H == w);
+
+    /// <summary>The candidates whose footprint is the cell's (either way round), or where none is, the guns the cell can
+    /// hold: a gun's footprint in the item file is its bare receiver's (the M4A1 one by one, the AKS-74U three by one), and
+    /// the game draws it with its mods, larger (the 20:38 page of 2026-10-19: the M4A1 six by two, the AKMN five by two).</summary>
+    private static List<DeskCandidate> Sized(IReadOnlyList<DeskCandidate> candidates, int w, int h)
+    {
+        var exact = candidates.Where(c => Fits(c, w, h)).ToList();
+        return exact.Count > 0 ? exact
+            : candidates.Where(c => c.Holds == DeskHolds.Mods && ((c.W <= w && c.H <= h) || (c.W <= h && c.H <= w))).ToList();
+    }
 
     // The one footprint all the candidates share (either way round), or null.
     private static (int W, int H)? Footprint(IReadOnlyList<DeskCandidate> candidates)

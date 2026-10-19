@@ -405,6 +405,13 @@ public sealed record SessionSnapshot
     /// </summary>
     public Shturmap.Core.Desk.DeskView? Desk { get; init; }
 
+    /// <summary>
+    /// The in-raid glance's reading: the last raid screenshot of an inventory screen this raid, its page with its values
+    /// and totals (ON YOU, LOOT; <see cref="Shturmap.Core.Desk.RaidGlance"/>), for the plate; null out of a raid and
+    /// before one was read. Never kept: it goes with the raid.
+    /// </summary>
+    public Shturmap.Core.Desk.RaidGlance? Glance { get; init; }
+
     /// <summary>The plan for the raid's map in a raid, else for the map on screen (ranked or not): the raid view is this plan, live.</summary>
     public MapPlanView? MapPlan { get; init; }
 

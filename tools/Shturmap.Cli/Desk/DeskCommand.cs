@@ -24,6 +24,9 @@ internal static class DeskCommand
     // "--why": each cell's label as read, its fit, and a footprint's contradiction.
     private static bool Why;
 
+    // "--lattice": the stash grid's lines between its cells as the item finder sees them (a measuring aid).
+    private static bool Lattice;
+
     private sealed class Tally
     {
         public int Truths, Right, Wrong, OneOf, OneOfOther, Silent, Missing, Pictures;
@@ -33,6 +36,7 @@ internal static class DeskCommand
     {
         var online = false;
         var quiet = false;
+        bool? raid = null;
         var audit = false;
         var mode = GameMode.Pve;
         var inputs = new List<string>();
@@ -43,6 +47,9 @@ internal static class DeskCommand
                 case "--online": online = true; break;
                 case "--quiet": quiet = true; break;
                 case "--why": Why = true; break;
+                case "--raid": raid = true; break;
+                case "--menus": raid = false; break;
+                case "--lattice": Lattice = true; break;
                 case "--audit": audit = true; break;
                 case "--mode": mode = args[++i] == "pvp" || args[i] == "regular" ? GameMode.Pvp : GameMode.Pve; break;
                 default: inputs.Add(args[i]); break;
@@ -50,9 +57,11 @@ internal static class DeskCommand
         }
         if (inputs.Count == 0 && !audit)
         {
-            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp]");
+            Console.WriteLine("Use: shturmap-cli desk <png or folder>... [--quiet] [--online] [--mode pve|pvp] [--raid | --menus] [--why] [--lattice]");
             Console.WriteLine("  each picture's page: regions, cells (name or \"one of N\", count, condition, figure and source, marks), the head line;");
-            Console.WriteLine("  with truth-<picture>.txt beside a picture, the tally against it. --quiet: the tallies only.");
+            Console.WriteLine("  with truth-<picture>.txt beside a picture, the tally against it (and footprints-<picture>.txt, the items' footprints).");
+            Console.WriteLine("  --quiet: the tallies only. A raid's inventory screen (by recognition, or --raid: as the in-raid glance reads it,");
+            Console.WriteLine("  the world's pictures said none) prints its LOOT regions and is never taken into the page in hand.");
             return;
         }
         var files = inputs.SelectMany(p => Directory.Exists(p) ? Directory.GetFiles(p, "*.png").Order(StringComparer.Ordinal).ToArray() : [p]).ToList();
@@ -93,8 +102,13 @@ internal static class DeskCommand
                 Console.WriteLine($"== {Path.GetFileName(file)}: not a picture");
                 continue;
             }
-            var look = await reader.LookAsync(picture, catalogue, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), CancellationToken.None);
+            var at = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var look = raid == true && !await reader.ShowsTabsAsync(picture, CancellationToken.None)
+                ? new DeskLook(picture.Width, picture.Height, 0, new DeskLayoutFound(DeskScreen.None, [], [], null, [], 0, []), [], null, 0, 0, 0)
+                : await reader.LookAsync(picture, catalogue, at, CancellationToken.None, raid);
             totalMs += look.TotalMs;
+            if (Lattice && look.Layout.Stash is { } latticeGrid)
+                PrintLattice(picture, latticeGrid, look.Pitch);
             var named = look.Cells.Count(c => c.Cell.Ids.Count == 1);
             var unsure = look.Cells.Count(c => c.Cell.Ids.Count > 1);
             var silent = look.Cells.Count(c => c.Cell.Ids.Count == 0);
@@ -102,7 +116,8 @@ internal static class DeskCommand
             Console.WriteLine($"== {Path.GetFileName(file)}: {look.Layout.Screen}, {look.Page?.Regions.Count ?? 0} regions ({string.Join(", ", look.Page?.Regions.Select(r => r.Key) ?? [])}); " +
                               $"{look.Cells.Count} cells: named {named}, one of N {unsure}, nothing said {silent} ({look.Cells.Count(c => c.Contradicted)} by the footprint), odd {look.Odd}; " +
                               $"windows {windows.Count} ({windows.Count(x => x.AttachedTo is not null)} attached); frames unplaced {look.Layout.Unplaced}; layout {look.LayoutMs} ms, all {look.TotalMs} ms");
-            if (look.Page is { } read)
+            // A raid's reading is published for the glance and let go: never the page in hand.
+            if (look.Page is { } read && look.Layout.Screen != DeskScreen.Raid)
             {
                 var change = ledger.Apply(mode, read);
                 Console.WriteLine($"   page in hand: {(change.First ? "first reading" : $"changed {(change.Changed.Count == 0 ? "nothing" : string.Join(", ", change.Changed.Order(StringComparer.Ordinal)))}")}" +
@@ -115,7 +130,21 @@ internal static class DeskCommand
                 if (!quiet)
                     Print(sheet, data, sources, look);
                 var t = sheet.Totals;
-                Console.WriteLine($"   ON YOU {Money(t.OnYou)}{(t.OnYouPlus ? "+" : "")} ₽ · STASH {Money(t.Stash)}{(t.StashPlus ? "+" : "")} ₽ · KEEP {t.KeepNow} · {t.KeepNext} · {t.KeepLater}");
+                Console.WriteLine($"   ON YOU {Money(t.OnYou)}{(t.OnYouPlus ? "+" : "")} ₽ · STASH {Money(t.Stash)}{(t.StashPlus ? "+" : "")} ₽" +
+                                  (look.Layout.Screen == DeskScreen.Raid ? $" · LOOT {Money(t.Loot)}{(t.LootPlus ? "+" : "")} ₽" : "") +
+                                  $" · KEEP {t.KeepNow} · {t.KeepNext} · {t.KeepLater}");
+                if (look.Layout.Loot is { } loot)
+                {
+                    Console.WriteLine($"   {loot.Title}: " + string.Join("; ", sheet.Regions.Where(r => r.Region.IsLoot).Select(r => RegionTally(r.Region))));
+                    if (Why)
+                    {
+                        Console.WriteLine($"   pane {loot.Pane}; slots {string.Join(", ", loot.Slots.Select(x => $"{x.Key} {x.Box}"))}");
+                        foreach (var part in loot.Parts)
+                            Console.WriteLine($"   part {part.Kind} slot {part.SlotBox} {part.Search}{(part.Cut ? " cut" : "")}: {string.Join(", ", part.Parts.Select(x => x.ToString()))}");
+                    }
+                }
+                if (look.Layout.Screen == DeskScreen.Raid)
+                    Console.WriteLine("   ON YOU: " + string.Join("; ", sheet.Regions.Where(r => r.Region.OnYou).Select(r => RegionTally(r.Region))));
                 foreach (var w in attached.Regions.Where(r => r.Kind == DeskRegionKind.ContainerWindow))
                     Console.WriteLine($"   window \"{w.Title}\": " + (w.AttachedTo is { } a ? $"attached to {a.Region} {a.Slot ?? $"{a.I},{a.J}"}" : $"attached to none ({w.SameName} of its name on the page)") +
                                       $", title names {w.TitleIds.Count} items");
@@ -143,12 +172,83 @@ internal static class DeskCommand
         Console.WriteLine($"{files.Count} pictures, {(files.Count > 0 ? totalMs / files.Count : 0)} ms a picture" + (online ? "" : $"; requests refused: {refused}"));
     }
 
+    // Per row: each cell's spread once the gradient is out (E: read as empty), and for the line at its right and below: the
+    // median height it stands out by, and the share (%) of its rows standing out by half the grid's frames' level or more.
+    private static void PrintLattice(SKBitmap picture, StashGrid grid, int pitch)
+    {
+        var gray = StashGray.Of(picture);
+        var lines = new StashLines(gray);
+        var scale = Math.Min(picture.Width / 1920.0, picture.Height / 1080.0);
+        var high = gray.HighPass((int)Math.Round(4 * scale));
+        var m = pitch / 8;
+        var all = new List<double>();
+        for (var j = 0; j < grid.Rows; j++)
+        {
+            for (var i = 0; i < grid.Cols; i++)
+            {
+                int x = grid.X0 + i * pitch, y = grid.Y0 + j * pitch;
+                if (i + 1 < grid.Cols && lines.Vertical(x + pitch, y + 4, y + pitch - 4) >= 0.9)
+                    all.Add(Strong(gray, x + pitch, y + 4, y + pitch - 4, true, 0).Median);
+                if (j + 1 < grid.Rows && lines.Horizontal(y + pitch, x + 4, x + pitch - 4) >= 0.9)
+                    all.Add(Strong(gray, y + pitch, x + 4, x + pitch - 4, false, 0).Median);
+            }
+        }
+        all.Sort();
+        var level = all.Count > 0 ? all[all.Count / 2] : 0;
+        Console.WriteLine($"   lattice of the stash at ({grid.X0},{grid.Y0}), {grid.Cols}x{grid.Rows}, frames' level {level:0}: per cell spread | right median,strong% / below median,strong%");
+        for (var j = 0; j < grid.Rows; j++)
+        {
+            var row = new StringBuilder($"   r{j,2}:");
+            for (var i = 0; i < grid.Cols; i++)
+            {
+                int x = grid.X0 + i * pitch, y = grid.Y0 + j * pitch;
+                var spread = high.Spread(x + m, y + m, x + pitch - m, y + pitch - m);
+                var (rm, rs) = Strong(gray, x + pitch, y + 4, y + pitch - 4, true, level / 2);
+                var (bm, bs) = Strong(gray, y + pitch, x + 4, x + pitch - 4, false, level / 2);
+                row.Append(CultureInfo.InvariantCulture, $" {spread,4:0.0}{(spread < 3.5 ? "E" : " ")}|{rm,3:0},{rs,3:0}/{bm,3:0},{bs,3:0}");
+            }
+            Console.WriteLine(row);
+        }
+    }
+
+    // A line's median height and the share of its rows at least min high, at the column (row) of the best median.
+    private static (double Median, double Strong) Strong(StashGray g, int at, int from, int to, bool vertical, double min)
+    {
+        var best = (Median: double.MinValue, Strong: 0.0);
+        for (var c = at - 2; c <= at + 2; c++)
+        {
+            var hs = new List<double>();
+            for (var t = from; t < to; t++)
+            {
+                if (vertical && c >= 3 && c + 4 < g.W && t >= 0 && t < g.H)
+                    hs.Add(Math.Max(Math.Max(g[c - 1, t], g[c, t]), Math.Max(g[c + 1, t], g[c + 2, t])) - Math.Max(g[c - 3, t], g[c + 4, t]));
+                else if (!vertical && c >= 3 && c + 4 < g.H && t >= 0 && t < g.W)
+                    hs.Add(Math.Max(Math.Max(g[t, c - 1], g[t, c]), Math.Max(g[t, c + 1], g[t, c + 2])) - Math.Max(g[t, c - 3], g[t, c + 4]));
+            }
+            if (hs.Count == 0)
+                continue;
+            hs.Sort();
+            var median = hs[hs.Count / 2];
+            if (median > best.Median)
+                best = (median, 100.0 * hs.Count(h => h >= min) / hs.Count);
+        }
+        return best;
+    }
+
+    // A region's tally: its cells named, one of N, unread, and a LOOT part's search state.
+    private static string RegionTally(DeskRegion r) =>
+        $"{r.Key} {r.Cells.Count(c => c.Ids.Count == 1)}/{r.Cells.Count(c => c.Ids.Count > 1)}/{r.Cells.Count(c => c.Ids.Count == 0)}" +
+        (r.Search != DeskSearch.Searched ? $" {r.Search.ToString().ToUpperInvariant()}" : "") + (r.Cut ? " cut" : "") +
+        (r.CoveredSlots.Count > 0 || r.Covered.Count > 0 ? " covered" : "");
+
     private static void Print(DeskSheet sheet, GameData data, ItemSources sources, DeskLook look)
     {
         foreach (var region in sheet.Regions)
         {
             var r = region.Region;
-            var head = r.Kind == DeskRegionKind.ContainerWindow ? $"{r.Title?.ToUpperInvariant()} (window" + (r.AttachedTo is { } a ? $" in {a.Region})" : ", attached to none)") : r.Key.ToUpperInvariant();
+            var head = r.Kind == DeskRegionKind.ContainerWindow ? $"{r.Title?.ToUpperInvariant()} (window" + (r.AttachedTo is { } a ? $" in {a.Region})" : ", attached to none)")
+                : r.IsLoot ? $"{r.Title} {r.Key.ToUpperInvariant()}" + (r.Search != DeskSearch.Searched ? $" ({r.Search.ToString().ToUpperInvariant()})" : "") + (r.Cut ? " (cut)" : "")
+                : r.Key.ToUpperInvariant();
             Console.WriteLine($"   {head}: {r.Cols}×{r.Rows}, {r.Parts.Count} parts, {r.Cells.Count} cells, {region.Part}, total {Money(region.Total)}{(region.Plus ? "+" : "")}");
             foreach (var c in region.Cells)
             {
@@ -296,6 +396,9 @@ internal static class DeskCommand
             }
         }
         Console.WriteLine($"   truth: {truth.Count} items: right {right}, wrong {wrong}, one of N {oneOf} + {other} not among them, nothing said {silent}, no cell read {missing}");
+        var footprintPath = Path.Combine(Path.GetDirectoryName(truthPath)!, "footprints-" + Path.GetFileName(truthPath)["truth-".Length..]);
+        if (File.Exists(footprintPath))
+            ScoreFootprints(look, truth, grids, footprintPath, data);
         tally.Pictures++;
         tally.Truths += truth.Count;
         tally.Right += right;
@@ -304,6 +407,64 @@ internal static class DeskCommand
         tally.OneOfOther += other;
         tally.Silent += silent;
         tally.Missing += missing;
+    }
+
+    // Against the items' footprints as the picture shows them (footprints-<picture>.txt beside the truth, "A 0,7 2x1"; one by
+    // one where not listed): an item is read whole when one cell stands on its footprint, else it is split (cut into pieces,
+    // or joined with another); a whole cell names it right, as one of N, wrongly, or says nothing.
+    private static void ScoreFootprints(DeskLook look, List<(char Grid, int I, int J, string Name)> truth, List<StashGrid> grids, string path, GameData data)
+    {
+        var footprints = new Dictionary<(char, int, int), (int W, int H)>();
+        foreach (var line in File.ReadAllLines(path).Where(l => l.Trim().Length > 0))
+        {
+            var parts = line.Split(' ');
+            var cell = parts[1].Split(',');
+            var size = parts[2].Split('x');
+            footprints[(parts[0][0], int.Parse(cell[0], CultureInfo.InvariantCulture), int.Parse(cell[1], CultureInfo.InvariantCulture))] =
+                (int.Parse(size[0], CultureInfo.InvariantCulture), int.Parse(size[1], CultureInfo.InvariantCulture));
+        }
+        int right = 0, oneOf = 0, wrong = 0, silent = 0, split = 0, pieces = 0;
+        var splits = new List<string>();
+        foreach (var group in truth.GroupBy(t => t.Grid))
+        {
+            var index = group.Key - 'A';
+            if (index < 0 || index >= grids.Count)
+                continue;
+            var grid = grids[index];
+            var p = look.Pitch;
+            SKRectI Rect(int i, int j, int w, int h) => SKRectI.Create(grid.X0 + i * p, grid.Y0 + j * p, w * p, h * p);
+            bool Near(SKRectI a, SKRectI b) => Math.Abs(a.Left - b.Left) <= p / 4 && Math.Abs(a.Top - b.Top) <= p / 4 && Math.Abs(a.Right - b.Right) <= p / 4 && Math.Abs(a.Bottom - b.Bottom) <= p / 4;
+            var stashCells = look.Cells.Where(c => !c.Cell.IsSlot).ToList();
+            (int W, int H) Size((char Grid, int I, int J, string Name) t) => footprints.TryGetValue((t.Grid, t.I, t.J), out var f) ? f : (1, 1);
+            var offset = Enumerable.Range(0, Math.Max(1, grid.Rows))
+                .Select(d => (d, Hits: group.Count(t => stashCells.Any(c => Near(c.Pixels, Rect(t.I, t.J + d, Size(t).W, Size(t).H))))))
+                .OrderByDescending(x => x.Hits).ThenBy(x => x.d).First().d;
+            foreach (var t in group)
+            {
+                var (fw, fh) = Size(t);
+                var area = Rect(t.I, t.J + offset, fw, fh);
+                var whole = stashCells.FirstOrDefault(c => Near(c.Pixels, area));
+                if (whole is null)
+                {
+                    split++;
+                    var inside = stashCells.Where(c => SKRectI.Intersect(c.Pixels, area) is { IsEmpty: false } x && x.Width * x.Height * 2 > p * p).ToList();
+                    pieces += inside.Count(c => c.Cell.Ids.Count == 0);
+                    splits.Add($"{t.Name} {fw}x{fh} in {inside.Count} cells");
+                    continue;
+                }
+                var names = whole.Cell.Ids.Select(data.ItemShortName).ToList();
+                if (names.Count == 0)
+                    silent++;
+                else if (names.Count == 1 && names[0] == t.Name)
+                    right++;
+                else if (names.Count > 1 && names.Contains(t.Name))
+                    oneOf++;
+                else
+                    wrong++;
+            }
+        }
+        Console.WriteLine($"   footprints: {truth.Count} items: read whole {truth.Count - split} (right {right}, one of N {oneOf}, wrong {wrong}, nothing said {silent}), " +
+                          $"split {split} ({pieces} \"?\" pieces)" + (splits.Count > 0 ? $": {string.Join(", ", splits)}" : ""));
     }
 
     // The transport of a cache-only run: every request refused, so the data comes from the cache (CachedHttp's offline path).

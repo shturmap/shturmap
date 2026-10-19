@@ -129,8 +129,11 @@ switch (command)
                                             is scored against its truth-<picture>.txt files (--bands prints each band's votes)
             shturmap-cli desk <png|folder>   the stash desk's reading: each page's regions and cells (name or "one of N", count,
                                             condition, figure and source, marks), the head line, the page in hand over the
-                                            pictures in order, and the tally against truth-<picture>.txt files; the data from
-                                            the cache (--online to ask, --quiet tallies only, --why labels, --audit the DESK line)
+                                            pictures in order, and the tally against truth-<picture>.txt files (footprints-
+                                            <picture>.txt: read whole or split); a raid's inventory screen (by recognition, or
+                                            --raid as the in-raid glance reads it) with its LOOT regions, never the page in hand;
+                                            the data from the cache (--online to ask, --quiet tallies only, --why labels,
+                                            --lattice the stash's lines, --audit the DESK line)
             shturmap-cli ocr-compare <png|folder>  the 2026-10-19 spike: the cells' labels read by Windows' recognition (as the reader
                                             reads them, and on its crops enlarged otherwise) and by PaddleOCR's recognition models
                                             (--paddle <onnx> <dict>, built with -p:OcrSpike=true), scored against truth-<picture>.txt

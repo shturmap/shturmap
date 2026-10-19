@@ -6,13 +6,15 @@ namespace Shturmap.Game.Screenshots;
 
 /// <summary>Which screen a picture shows, for the stash desk: the GEAR tab (the loadout beside the stash), the stash alone
 /// (the existing stash pages, a container's window over it), the trading screen (its cells print prices: nothing read), or
-/// none of them.</summary>
+/// none of them; for the in-raid glance, the raid's inventory screen (the GEAR tab without the stash, a LOOT pane at its
+/// right when looting; <see cref="DeskLoot"/>).</summary>
 public enum DeskScreen
 {
     None,
     Gear,
     Stash,
     Trading,
+    Raid,
 }
 
 /// <summary>A loadout slot's box on the GEAR tab, under its heading.</summary>
@@ -26,12 +28,22 @@ internal sealed record DeskPlace(DeskRegionKind Kind, SKRectI? SlotBox, IReadOnl
 {
     public string? Title { get; init; }
     public SKRectI? Area { get; init; }
+
+    /// <summary>A LOOT part's search state (<see cref="DeskLoot"/>).</summary>
+    public DeskSearch Search { get; init; }
+
+    /// <summary>A LOOT part whose grid the pane's scrolling cut at its foot.</summary>
+    public bool Cut { get; init; }
 }
 
 /// <summary>What the layout found on a picture: the screen, the loadout's slot boxes, the regions, the stash's grid, the
-/// windows' and toasts' areas (what lies under them isn't read), and the frames no region took.</summary>
+/// windows' and toasts' areas (what lies under them isn't read), and the frames no region took; on the raid's inventory
+/// screen, the LOOT pane when it shows.</summary>
 internal sealed record DeskLayoutFound(DeskScreen Screen, IReadOnlyList<DeskSlotBox> Slots, IReadOnlyList<DeskPlace> Regions, StashGrid? Stash,
-    IReadOnlyList<SKRectI> Over, int Unplaced, IReadOnlyList<SKRectI> Frames);
+    IReadOnlyList<SKRectI> Over, int Unplaced, IReadOnlyList<SKRectI> Frames)
+{
+    public DeskLootFound? Loot { get; init; }
+}
 
 /// <summary>
 /// Where the GEAR tab's regions stand (five screenshots of 2026-10-19 at 2560×1440, docs/DESIGN.md §2, "For the stash
@@ -54,7 +66,7 @@ internal static class DeskLayout
     // A loadout slot's box under its heading, in cells: most are two by two; the armband and the dog tag a strip; the
     // weapons on the sling and on the back five wide. Measured on the screenshots of 2026-10-19 (1440p: the heading's
     // word starts 5 px in from the box, which starts 4 px under the word).
-    private static (double W, double H) SlotSize(string key) => key switch
+    internal static (double W, double H) SlotSize(string key) => key switch
     {
         "armband" or "dogtag" => (2, 0.76),
         "onsling" or "onback" => (4.95, 2.05),
@@ -108,9 +120,12 @@ internal static class DeskLayout
             .GroupBy(x => x.Heading).Select(g => g.OrderBy(x => x.Word.X).First()).ToList();
         var middle = Headings(words, Middle.Select(m => m.Heading), headingWords).Where(x => x.Word.X > w * 0.25 && x.Word.X < w * 0.66).ToList();
         var gear = loadout.Count >= 4;
-        var screen = gear ? DeskScreen.Gear : stash is not null ? DeskScreen.Stash : DeskScreen.None;
+        // In a raid the GEAR tab has no stash pane and no menus' bar at its foot (DeskLoot).
+        var raid = gear && stash is null && !DeskLoot.MenuBar(words, h);
+        var screen = raid ? DeskScreen.Raid : gear ? DeskScreen.Gear : stash is not null ? DeskScreen.Stash : DeskScreen.None;
         if (screen == DeskScreen.None)
             return new DeskLayoutFound(DeskScreen.None, [], [], null, [], 0, []);
+        var lootHead = raid ? DeskLoot.Head(words, w, h) : null;
 
         // The game's toasts at the lower right carry the screenshot's path: never read, nor what they cover (to the
         // screen's right edge, where the path runs on).
@@ -132,9 +147,13 @@ internal static class DeskLayout
         bool StashCell(int x, int y) => stash is not null && stashRect.Contains(x + 2, y + 2) && OnLattice(x - stash.X0, pitch) && OnLattice(y - stash.Y0, pitch);
         var frames = Snapped(DeskFrames.Find(lines, pitch, whole, over, skip: StashCell), gray, pitch);
         frames.RemoveAll(f => StashCell(f.Left, f.Top));
-        var lattices = grids.Where(g => g.Place == StashGridPlace.Window)
-            .Select(g => Aligned(lines, SKRectI.Create(g.X0, g.Y0, g.Cols * pitch, g.Rows * pitch), pitch)).ToList();
+        // The windows' lattices stand on their cells' lines (StashGrids.Aligned).
+        var lattices = grids.Where(g => g.Place == StashGridPlace.Window).Select(g => SKRectI.Create(g.X0, g.Y0, g.Cols * pitch, g.Rows * pitch)).ToList();
         var windows = Windows(words, gray, frames, lattices, headingWords, w, h, pitch);
+        // The LOOT pane's grids have a window's two-pixel lines and no title, or a part's "SEARCHING ✕" over them: the
+        // pane's, not windows.
+        if (lootHead is not null)
+            windows.RemoveAll(x => (x.Title is null || DeskLoot.PaneWord(x.Title)) && x.Area is { } a && a.MidX > lootHead.X - pitch && a.MidY > lootHead.Bottom);
         var windowAreas = windows.Select(x => x.Area!.Value).ToList();
         over.AddRange(windowAreas);
         if (windows.Count > 0)
@@ -199,7 +218,10 @@ internal static class DeskLayout
                 regions.Add(new DeskPlace(kind, slot, parts));
             }
         }
-        return new DeskLayoutFound(screen, slots, regions, stash, over, unplaced, frames);
+        var loot = lootHead is null ? null
+            : DeskLoot.Find(words, lootHead, frames.Where(f => !taken.Contains(f)).ToList(),
+                lattices.Where(l => !taken.Contains(l)).ToList(), w, quickUse is not null ? quickUse.Y + (int)(0.25 * pitch) : (int)(h * 0.885), pitch);
+        return new DeskLayoutFound(screen, slots, regions, stash, over, unplaced, frames) { Loot = loot };
     }
 
     // The frames moved onto their lines' middle, as the stash's grid is (a cell cut two pixels early reads worse).
@@ -209,54 +231,6 @@ internal static class DeskLayout
             var (x, y) = StashGrids.Snap(gray, f.Left, f.Top, Math.Max(1, (int)Math.Round(f.Width / (double)pitch)), Math.Max(1, (int)Math.Round(f.Height / (double)pitch)), pitch);
             return SKRectI.Create(x, y, f.Width, f.Height);
         }).ToList();
-
-    /// <summary>
-    /// A window's lattice moved onto its cells' lines: the offset within a sixth of a cell either way where the lines
-    /// between its cells show most. The stash's grid finding snaps a lattice onto the light line nearest its corner, and a
-    /// window's own outline, a thin bright line a few pixels outside its first cells, can take it there: the Keys window
-    /// of 2026-10-19 (20:22, after the game's SORT) stood 6 px left of its cells, every line between them missed, and its
-    /// 71 keys read as one odd shape. The lines between the cells decide, not the outer ones (the outline is one).
-    /// </summary>
-    internal static SKRectI Aligned(StashLines lines, SKRectI grid, int pitch)
-    {
-        int cols = Math.Max(1, (int)Math.Round(grid.Width / (double)pitch)), rows = Math.Max(1, (int)Math.Round(grid.Height / (double)pitch));
-        if (cols < 2 && rows < 2)
-            return grid;
-        var reach = Math.Max(2, pitch / 6);
-        double Columns(int x0, int y0)
-        {
-            double sum = 0;
-            for (var k = 1; k < cols; k++)
-                sum += lines.Vertical(x0 + k * pitch, y0 + 2, y0 + rows * pitch - 2);
-            return sum;
-        }
-        double Rows(int x0, int y0)
-        {
-            double sum = 0;
-            for (var k = 1; k < rows; k++)
-                sum += lines.Horizontal(y0 + k * pitch, x0 + 2, x0 + cols * pitch - 2);
-            return sum;
-        }
-        // Each way on its own: the columns' lines set the left edge, the rows' the top. A move needs clearly more lines
-        // than where it stands (a lattice already on its lines stays put).
-        int Best(Func<int, double> score)
-        {
-            var scores = Enumerable.Range(-reach, 2 * reach + 1).Select(score).ToArray();
-            var here = scores[reach];
-            var top = scores.Max();
-            if (top <= here * 1.25 + 0.5)
-                return 0;
-            // A line is found a pixel either side of it (StashLines): the middle of the run of offsets that see it best.
-            var start = Array.FindIndex(scores, s => s >= top - 0.01);
-            var end = start;
-            while (end + 1 < scores.Length && scores[end + 1] >= top - 0.01)
-                end++;
-            return (start + end) / 2 - reach;
-        }
-        var dx = cols > 1 ? Best(d => Columns(grid.Left + d, grid.Top)) : 0;
-        var dy = rows > 1 ? Best(d => Rows(grid.Left + dx, grid.Top + d)) : 0;
-        return SKRectI.Create(grid.Left + dx, grid.Top + dy, grid.Width, grid.Height);
-    }
 
     // Whether two rectangles are one compartment seen twice (a lattice and the frame found on its lines, a few pixels
     // apart): the same size give or take a cell, their corners within a quarter of a cell.
@@ -282,10 +256,11 @@ internal static class DeskLayout
                lines.Vertical(frame.Left, frame.Bottom + 2, frame.Bottom + 2 + reach) >= 0.8;
     }
 
-    // Whether a word is a toast's: the screenshot's path or its words.
+    // Whether a word is a toast's: the screenshot's path or its words; in a raid the game's "Searching experience – Items
+    // (50)", "Looting experience" (the 22 raid screenshots of 2026-10-19), which may cover the LOOT pane's foot.
     private static bool Toast(string text) =>
         text.Contains('\\') || text.Contains(":/", StringComparison.Ordinal) || text.Contains(".png", StringComparison.OrdinalIgnoreCase) ||
-        text.Contains("screenshot", StringComparison.OrdinalIgnoreCase);
+        text.Contains("screenshot", StringComparison.OrdinalIgnoreCase) || text.Contains("experience", StringComparison.OrdinalIgnoreCase);
 
     private static bool OnLattice(int offset, int pitch)
     {
@@ -315,7 +290,7 @@ internal static class DeskLayout
     {
         var windows = new List<DeskPlace>();
         var used = new HashSet<SKRectI>();
-        // A window the stash's grid finding saw stands on its lines' middle (moved onto its cells' lines, Aligned): its
+        // A window the stash's grid finding saw stands on its lines' middle (moved onto its cells' lines, StashGrids.Aligned): its
         // lattice rather than the frame found on it, a few pixels off (the Keys window of 2026-10-19, 20:21: both, 6 px
         // apart, read as two compartments one cell apart, its keys once and a "?" across the other).
         var groups = lattices.Concat(frames.Where(f => !lattices.Any(l => SameCompartment(f, l, pitch)))).ToList();
@@ -354,14 +329,21 @@ internal static class DeskLayout
             windows.Add(Window(groups, used, start, NoTitle(text) ? null : text, word.Y, close?.Right, pitch));
         }
         // A window's grid has two-pixel lines (the stash's and the GEAR tab's grids one): a grid the stash's finding saw
-        // that has them and no title read is a window of no name.
+        // that has them and no title read is a window of no name. Not one inside a larger compartment on its lattice: the
+        // game's highlight round items just looted thickens their lines (the raid screenshots of 2026-10-19: two columns of
+        // the backpack read as a window of no name, its items counted in neither total).
         foreach (var lattice in lattices)
         {
-            if (!used.Any(u => u.IntersectsWith(lattice)) && LineWidth(gray, lattice, pitch) >= 2)
+            if (!used.Any(u => u.IntersectsWith(lattice)) && LineWidth(gray, lattice, pitch) >= 2 && !InsideCompartment(lattice, frames, pitch))
                 windows.Add(Window(groups, used, lattice, null, lattice.Top - (int)(1.1 * pitch), null, pitch));
         }
         return windows;
     }
+
+    // Whether a lattice lies inside a larger compartment and on its lattice: some of its cells seen as a grid of their own.
+    private static bool InsideCompartment(SKRectI lattice, IReadOnlyList<SKRectI> frames, int pitch) =>
+        frames.Any(f => SKRectI.Inflate(f, pitch / 4, pitch / 4).Contains(lattice) && (long)f.Width * f.Height >= (long)lattice.Width * lattice.Height + pitch * pitch &&
+                        OnLattice(f.Left - lattice.Left, pitch) && OnLattice(f.Top - lattice.Top, pitch));
 
     // How many pixels wide the line along a grid's left edge is: the columns around it, each averaged down the grid,
     // that stand out more than halfway from the field to the line's brightest.

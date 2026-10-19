@@ -19,8 +19,9 @@ internal static class StashLabels
     /// How well a read label fits a short name, 0 to 1: the same folded letters (<see cref="ExitList.Fold"/>), or
     /// the name's beginning when the game cut the label at the cell's edge (six folded letters or more that start
     /// the name; the cut letter itself may read as anything, "Pindrak4" for "Pindrake"). A name with digits must
-    /// agree in them, since lookalike keys differ by one digit alone. A cell's edge reads as "!" or "|" now and
-    /// then: no label has them.
+    /// agree in them, since lookalike keys differ by one digit alone, a cut label too: a cut before a digit leaves
+    /// the digits disagreeing ("Dorm 10" is no beginning of "Dorm 104"; the OCR comparison of 2026-10-19 found "LAS/TAC"
+    /// fitting "LAS/TAC 2" at 1). A cell's edge reads as "!" or "|" now and then: no label has them.
     /// </summary>
     public static double Fit(string text, string shortName)
     {
@@ -29,9 +30,7 @@ internal static class StashLabels
         var b = ExitList.Fold(shortName);
         if (a.Length == 0 || b.Length == 0)
             return 0;
-        if (a.Length >= 6 && b.Length > a.Length && b.StartsWith(a, StringComparison.Ordinal))
-            return 1;
-        var fit = Similarity(a, b);
+        var fit = a.Length >= 6 && b.Length > a.Length && b.StartsWith(a, StringComparison.Ordinal) ? 1 : Similarity(a, b);
         if (a.Length >= 6 && a.Length <= b.Length)
         {
             var same = 0;
