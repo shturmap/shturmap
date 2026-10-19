@@ -540,7 +540,9 @@ quoting it anywhere new.
    loading or in a raid. The switch to *Raid* and back to *Plan* is automatic, from the desk too: a raid loading always
    takes the window, with no click. Out of a raid *Desk* opens by itself when a stash or inventory screenshot is read,
    and PLAN | DESK at the rail's head is the one choice of view, two words, not a tab row ("Screen anatomy", *The stash
-   desk*). No tabs, no other modes to pick, no modal dialogs. Shturmap has one window, never topmost, so it can't cover
+   desk*): a primary control across the rail's width, above the MAP list (owner, 2026-10-20: "The Plan/Desk switch is
+   way to small, needs much bigger."; until then two 11 px words at the right of MAP). No tabs, no other modes to pick,
+   no modal dialogs. Shturmap has one window, never topmost, so it can't cover
    the game (popped-out quest cards, the only other windows, were removed on 2026-10-09). One thing does
    cover the window, and only because the player opened it: the Report dialog (review of 2026-10-04: the
    principle didn't name it). And the tour, which dims the window around the parts it is about (owner, 2026-10-09,
@@ -1296,7 +1298,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   with "…" too, the last fix gone before it (2026-10-19: at 200 % it was cut off without one; `FitStatusBar`). At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
   one trims), three squares and the buttons; outside a raid the words fit.
 - **Rail** (left, 384 px), content by state:
-  - *The MAP list* at the top, in every state (owner, 2026-10-08: "there is no way of selecting maps at the moment
+  - *The MAP list* at the top, in every state, out of a raid under PLAN | DESK (2026-10-20; *The stash desk*, *As
+    built*; owner, 2026-10-08: "there is no way of selecting maps at the moment
     where you do not have quests"; from the maps panel, "A"). The list held every map already, but in the usage log
     (a week) all map picks (dozens) went through Plan's rows and none through it, and after a pick of a map without
     quests the rail stayed on the best suggestion, so nothing in it was about the map on screen. Now, open, it says what
@@ -1418,6 +1421,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     preview 0.3 s later, which put the player's map back under YOUR SCREENSHOT KEY while the chapter went on staging on
     Customs, so its view moved and its cut-outs sat by a map no longer shown; `Rules.PreviewOwner`).
     0.4.0's card names the tour in place of "Symbols stand apart", which was the least a player acts on.
+    **Only what is new for the player** (owner, 2026-10-20: "Don't add 'new in' entries for stuff that is not really
+    relevant to the player, only add really new things, like the desk."): a line names a thing the player can now do
+    or see; a fix or a refinement goes in the release notes alone, which list everything. 0.7.0's card took out "Guns,
+    assembled" and "Two on one spot, steady" for the desk.
     **Release names** (owner, 2026-10-09: "I would like to have names major releases. The first one would be
     praetorian"). A release that raises the minor or major number gets a name, the owner's, written after its version
     in docs/whats-new.md (`## 0.4.0 · Praetorian`); a patch release keeps its line's name (`Rules.WhatsNew.NameOf`).
@@ -1547,7 +1554,7 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       animation as the other quests"; until then glow and notice, no cue).
   - *Desk* (owner, 2026-10-19, from a panel: A1; built, step B, 2026-10-19, part 2: the view): out of a raid, with the
     stash desk in the map's place, the rail is the card of the desk's cell pointed at, under the MAP list and the trader
-    strip, PLAN | DESK at its head beside the MAP list (*The stash desk*, below). Plan's rows, its hint and ANY MAP
+    strip, PLAN | DESK at its head above the MAP list (*The stash desk*, below). Plan's rows, its hint and ANY MAP
     stand aside meanwhile; the update band pinned under MAP stays.
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
@@ -1830,9 +1837,10 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   (`SessionSnapshot.Desk`; part 1). The card and the click are step C: until then the rail shows the item card the
   pointer opens anywhere. Where the panels left a choice, the rules taken are under *As built*, below.
   - **Its place** (A1). Out of a raid the desk takes the map's place, and the rail becomes its card, where the item
-    card's words would be: pointing at a cell puts its card there (below). PLAN | DESK at the rail's head, beside the
+    card's words would be: pointing at a cell puts its card there (below). PLAN | DESK at the rail's head, above the
     MAP list, switches between the two views: two words in one `LineStrong` frame, the one on screen in amber on
-    `Raised`. The desk opens by itself when a stash or inventory screenshot is read in the menus, and is left by the
+    `Raised` (a primary control across the rail since 2026-10-20, *As built*; until then beside the MAP list, 11 px).
+    The desk opens by itself when a stash or inventory screenshot is read in the menus, and is left by the
     switch. A raid loading always takes the window back to the raid view, with RAID LOADING's cue and no click
     (principles 1 and 3); the desk keeps its page for next time. The MAP list and the trader strip stay. The cells are
     the item cell's 40 DIP at 900×560 (a stash page of 10 × 11 fits, the stash alone: with the gear above it, the page
@@ -1965,9 +1973,16 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     moves. Colours keep their meanings ("Visual language"): no red or green for down and up, only arrows and signs.
   - **As built** (step B, 2026-10-19, part 2: the view; the coordinator's rules where the panels left a choice, for the
     owner to judge with the dev build):
-    - *The switch*: PLAN | DESK at the right of the MAP heading, in the status words' 11 px, PLAN muted and DESK in
-      amber on `Raised` while the desk is up (and the other way round in Plan); in a raid it is gone. Its words' tips
-      say what each view is.
+    - *The switch*, a primary control (owner, 2026-10-20: "The Plan/Desk switch is way to small, needs much bigger.";
+      until then PLAN | DESK at the right of the MAP heading, two words in the status words' 11 px in a frame about
+      110 DIP wide): two halves across the rail's inner width, 351 DIP (174 each inside one `LineStrong` frame, a
+      `LineStrong` hairline between them), 36 DIP tall as the map's buttons, at the rail's head above the
+      MAP eyebrow, 16 DIP from the rail's top as from its sides and 14 above MAP. Each word in the title style, 17 px
+      semi-condensed semibold, letter-spaced as the eyebrows (0.14 em), centred in its half. The view on screen: its half
+      on `Raised` with the open map's row's 3 DIP amber bar at its left, its word in amber; the other half on the rail's
+      ground, its word muted, `Raised` under the pointer as Plan's rows. Tab reaches each half, Space or Enter picks it,
+      ← and → pick PLAN or DESK and take the focus there (`Rules.DeskSwitch.ByArrow`); the tips say what each view
+      is. In Plan and on the desk alike; in a raid it is gone and MAP stands at the rail's head as before.
     - *When the desk comes and goes*: it opens by itself for a reading the window hasn't seen (the model's reading
       counter above the last one seen; a page read back from its file at start is reading 0 and opens nothing), in the
       menus and not while the tour is up (the tour owns the window; the switch shows the reading after). It goes back to

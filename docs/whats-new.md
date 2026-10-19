@@ -10,11 +10,14 @@ MORE), `stash-given` (one with an example mark from the game's log) or `notes` (
 notes). A line about the tour previews nothing and opens it when clicked: `tour` at its start, `tour:5` at its fifth
 chapter (a chapter the release changed; docs/tour.md). A line no preview shows takes, until the card has lines without
 one, the chapter that frames where it is: pointing shows nothing, a click opens the tour there (0.7.0: the text size
-`tour:7`, the settings button; the assembled gun `tour:6`, the kit cue). Words as the design system's "Words": short,
-fragments are fine. Add the next version's section with its release (CLAUDE.md). A release that raises the minor or
-major number has a name, the owner's, after its version (`## 0.4.0 · Praetorian`); a patch release keeps its line's
-name without repeating it. The name shows in the card's heading, help's link to it, the version line in settings and
-the release's title on GitHub.
+`tour:7`, the settings button; the stash desk `tour:2`, which frames the rail with PLAN | DESK at its head: no preview
+pictures the desk yet, which takes the map's place and Plan's rail with it). Only what is new for the player has a
+line (owner, 2026-10-20: "Don't add 'new in' entries for stuff that is not really relevant to the player, only add
+really new things, like the desk."): a fix or a refinement goes in the release notes alone. Words as the design
+system's "Words": short, fragments are fine. Add the next version's section with its release (CLAUDE.md). A release
+that raises the minor or major number has a name, the owner's, after its version (`## 0.4.0 · Praetorian`); a patch
+release keeps its line's name without repeating it. The name shows in the card's heading, help's link to it, the
+version line in settings and the release's title on GitHub.
 
 A translation is `docs/whats-new.<code>.md` beside this file (`whats-new.de.md`), built in the same way and shown in
 that language (docs/DESIGN.md §8, "Texts"): a section per version this file has, from the release the language came
@@ -23,11 +26,9 @@ translated. A version the translation lacks, or whose lines aren't this section'
 
 ## 0.7.0 · NAME
 
+- tour:2 · The stash desk · Screenshot your stash or gear: each item's flea and trader price, and what to keep. DESK, top left.
 - tour:1 · Dailies and weeklies · Screenshot the Tasks screen (English game): your dailies and weeklies, time left, on their maps.
 - tour:7 · Text as large as you need · Windows' text size now reaches the map too; Text size in settings adds LARGER and LARGEST.
-- tour:6 · Guns, assembled · A weapon a quest needs is pictured whole, as traders sell it, not as its bare receiver.
-- leaders · Two on one spot, steady · Two symbols on one spot no longer drift apart as you pan or zoom, as Woods' Outskirts did.
-<!-- desk: the fifth line when step B lands -->
 
 ## 0.6.2 · Okami
 

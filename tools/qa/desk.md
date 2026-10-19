@@ -41,7 +41,9 @@ $app.WaitForExit()
 ## What each still must show
 
 - **entry** (about 0.3 s after `desk 1`): the desk in the map's place, the map's buttons and credit gone; at the rail's
-  head PLAN | DESK in one frame, DESK in amber on the raised ground; the rail under the MAP list and the trader strip
+  head, above MAP, PLAN | DESK across the rail's width in one frame, 36 DIP tall, the words in the title's size and
+  centred in their halves, DESK's half on the raised ground with an amber bar at its left and DESK in amber, PLAN
+  muted (owner, 2026-10-20: the switch a primary control); the rail under the MAP list and the trader strip
   says "Point at an item for its card." and nothing of Plan's (no NEXT RAID, no ANY MAP). The head line in muted
   capitals counting up ("ON YOU … ₽ · STASH … ₽ · KEEP n · n · n"); the first cells of LOADOUT in, the rest still
   coming, 50 ms apart.
@@ -70,8 +72,10 @@ $app.WaitForExit()
   the backpack has the LEDX at 3,4 with its notch; the head line's totals the new ones.
 - **unfold**: the stash open under its head, its column's fold line gone or WZ alone in it.
 - **same**: as unfold: a reading that changed nothing changed nothing.
-- **plan**: the map and Plan's rail back, PLAN in amber; the map's buttons and credit back.
+- **plan**: the map and Plan's rail back, PLAN's half raised with the amber bar and PLAN in amber, DESK muted; the
+  map's buttons and credit back.
 - **show**: the desk as in same, the page and its fold kept.
-- **raid**: the raid view (RAID LOADING), the switch gone from the rail's head, no desk.
-- **after** (7 s after `end`, the RAID OVER cue gone): Plan, the switch back with PLAN in amber; no desk.
+- **raid**: the raid view (RAID LOADING), the switch gone from the rail's head, MAP at its top as before, no desk.
+- **after** (7 s after `end`, the RAID OVER cue gone): Plan, the switch back above MAP with PLAN's half raised and in
+  amber; no desk.
 - **kept**: the desk with the page and fold of same.

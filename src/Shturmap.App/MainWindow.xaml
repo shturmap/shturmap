@@ -42,6 +42,18 @@
         </Setter>
       </Style>
 
+      <!-- A half of PLAN | DESK at the rail's head (owner, 2026-10-20): a button as wide and tall as its half, its ground
+           the view's (Raised for the one on screen), Raised under the pointer and Line pressed as Plan's rows are; no
+           frame of its own: the switch's frame and its hairline are the halves'. -->
+      <Style x:Key="ViewSwitchButton" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      </Style>
+
       <!-- Something to bring, in Plan's cards and the raid card. What the picks need comes first, tinted like the
            picks (linked highlighting), then a hairline and the rest. -->
       <DataTemplate x:Key="RequirementTemplate" x:DataType="local:RequirementLine">
@@ -755,36 +767,46 @@
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Margin="16,4,16,0">
-          <!-- MAP, and at its right PLAN | DESK, the one choice of view (owner, 2026-10-19, from a panel: A1; docs/DESIGN.md
-               §4, principle 3 and *The stash desk*): two words in one frame, the one on screen in amber on Raised. Out of a
-               raid only: a raid takes the window by itself. -->
-          <Grid Margin="0,14,0,6">
+          <!-- PLAN | DESK, the one choice of view (owner, 2026-10-19, from a panel: A1; docs/DESIGN.md §4, principle 3 and
+               *The stash desk*), a primary control at the rail's head (owner, 2026-10-20: "The Plan/Desk switch is way to
+               small, needs much bigger."; until then two 11 px words in a frame at the right of MAP): two halves across the
+               rail's inner width, 36 DIP tall as the map's buttons, each word in the title style letter-spaced as the
+               eyebrows and centred in its half; the view on screen on Raised with the open map's row's amber bar and its
+               word in amber, the other muted. Tab reaches each half, Space or Enter picks it, ← and → pick PLAN or DESK
+               (Rules.DeskSwitch.ByArrow). Above MAP, 16 DIP from the rail's top as from its sides. Out of a raid only: a
+               raid takes the window by itself. -->
+          <Grid x:Name="ViewSwitch" Margin="0,12,0,0" MinHeight="36" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1"
+                KeyDown="OnDeskSwitchKeyDown" Visibility="{x:Bind ShownIfNot(ViewModel.InRaid), Mode=OneWay}">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="1" />
+              <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RailMapHeading}" Margin="0" VerticalAlignment="Bottom" />
-            <Border x:Name="ViewSwitch" Grid.Column="1" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" VerticalAlignment="Bottom"
-                    Margin="0,-6,0,-2" Visibility="{x:Bind ShownIfNot(ViewModel.InRaid), Mode=OneWay}">
-              <StackPanel Orientation="Horizontal">
-                <Button x:Name="DeskSwitchPlan" Style="{StaticResource StripButton}" Padding="0" Click="OnDeskSwitchPlanClick"
-                        ToolTipService.ToolTip="{x:Bind local:ViewTexts.DeskSwitchPlanTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.DeskSwitchPlan}">
-                  <Border Padding="8,3" Background="{x:Bind DeskSwitchGround(ViewModel.DeskUp, x:False), Mode=OneWay}">
-                    <TextBlock Text="{x:Bind local:ViewTexts.DeskSwitchPlan}" Style="{StaticResource StatusText}" FontSize="11"
-                               Foreground="{x:Bind DeskSwitchInk(ViewModel.DeskUp, x:False), Mode=OneWay}" />
-                  </Border>
-                </Button>
-                <Rectangle Width="1" Fill="{StaticResource LineStrongBrush}" />
-                <Button x:Name="DeskSwitchDesk" Style="{StaticResource StripButton}" Padding="0" Click="OnDeskSwitchDeskClick"
-                        ToolTipService.ToolTip="{x:Bind local:ViewTexts.DeskSwitchDeskTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.DeskSwitchDesk}">
-                  <Border Padding="8,3" Background="{x:Bind DeskSwitchGround(ViewModel.DeskUp, x:True), Mode=OneWay}">
-                    <TextBlock Text="{x:Bind local:ViewTexts.DeskSwitchDesk}" Style="{StaticResource StatusText}" FontSize="11"
-                               Foreground="{x:Bind DeskSwitchInk(ViewModel.DeskUp, x:True), Mode=OneWay}" />
-                  </Border>
-                </Button>
-              </StackPanel>
-            </Border>
+            <Button x:Name="DeskSwitchPlan" Style="{StaticResource ViewSwitchButton}" Click="OnDeskSwitchPlanClick"
+                    Background="{x:Bind DeskSwitchGround(ViewModel.DeskUp, x:False), Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind local:ViewTexts.DeskSwitchPlanTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.DeskSwitchPlan}">
+              <Grid>
+                <Rectangle Width="3" HorizontalAlignment="Left" Fill="{StaticResource AmberBrush}"
+                           Visibility="{x:Bind DeskSwitchBar(ViewModel.DeskUp, x:False), Mode=OneWay}" />
+                <TextBlock Text="{x:Bind local:ViewTexts.DeskSwitchPlan}" Style="{StaticResource TitleText}" CharacterSpacing="140" TextWrapping="NoWrap"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,0"
+                           Foreground="{x:Bind DeskSwitchInk(ViewModel.DeskUp, x:False), Mode=OneWay}" />
+              </Grid>
+            </Button>
+            <Rectangle Grid.Column="1" Fill="{StaticResource LineStrongBrush}" />
+            <Button x:Name="DeskSwitchDesk" Grid.Column="2" Style="{StaticResource ViewSwitchButton}" Click="OnDeskSwitchDeskClick"
+                    Background="{x:Bind DeskSwitchGround(ViewModel.DeskUp, x:True), Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind local:ViewTexts.DeskSwitchDeskTip}" AutomationProperties.Name="{x:Bind local:ViewTexts.DeskSwitchDesk}">
+              <Grid>
+                <Rectangle Width="3" HorizontalAlignment="Left" Fill="{StaticResource AmberBrush}"
+                           Visibility="{x:Bind DeskSwitchBar(ViewModel.DeskUp, x:True), Mode=OneWay}" />
+                <TextBlock Text="{x:Bind local:ViewTexts.DeskSwitchDesk}" Style="{StaticResource TitleText}" CharacterSpacing="140" TextWrapping="NoWrap"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,0"
+                           Foreground="{x:Bind DeskSwitchInk(ViewModel.DeskUp, x:True), Mode=OneWay}" />
+              </Grid>
+            </Button>
           </Grid>
+          <TextBlock Style="{StaticResource EyebrowText}" Text="{x:Bind local:ViewTexts.RailMapHeading}" Margin="0,14,0,6" />
           <!-- The maps with your quests first, in Plan's order with what each holds, then OTHER MAPS (owner, 2026-10-08:
                "A"; Rules.MapList). The closed list shows the map on screen with its counts too. -->
           <ComboBox x:Name="MapPicker" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" FontStretch="SemiCondensed" FontWeight="SemiBold"

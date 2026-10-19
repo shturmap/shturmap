@@ -73,4 +73,13 @@ public class DeskSwitchTests
         Assert.False(DeskSwitch.MapKey(0x1B));
         Assert.False(DeskSwitch.MapKey(0x70));
     }
+
+    // The switch, a primary control (owner, 2026-10-20): ← picks PLAN, → DESK; Up, Down, Space and the rest pick nothing.
+    [Fact]
+    public void Left_picks_plan_and_right_the_desk()
+    {
+        Assert.False(DeskSwitch.ByArrow(0x25));
+        Assert.True(DeskSwitch.ByArrow(0x27));
+        Assert.All(new[] { 0x26, 0x28, 0x20, 0x0D, 0x09 }, key => Assert.Null(DeskSwitch.ByArrow(key)));
+    }
 }

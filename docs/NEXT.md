@@ -399,6 +399,10 @@ Plan-only fake raid at 1600×900, then the one with the Zhuk window, and the rep
   count's digits 0.45), measured on one picture; a slot whose best reading is two characters ("35" of "Trooper 35") is
   left out as empty.
 
+**The switch, a primary control** (owner, 2026-10-20: "The Plan/Desk switch is way to small, needs much bigger."):
+PLAN | DESK across the rail's 351 DIP above MAP, 36 DIP tall, its words in the title style, the view on screen raised
+with the open map's row's amber bar; ← and → pick (`DeskSwitch.ByArrow`). DESIGN.md principle 3, *The stash desk*.
+
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,
 `%USERPROFILE%\source\repos\Shturmap-price-view-data-2026-10-19.md` and

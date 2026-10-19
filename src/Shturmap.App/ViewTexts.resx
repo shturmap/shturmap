@@ -698,11 +698,11 @@
   </data>
   <data name="DeskSwitchPlan" xml:space="preserve">
     <value>PLAN</value>
-    <comment>The rail's head, beside the MAP heading: the first of the two words that switch the window's view between the raid planner (this) and the stash desk; the one on screen in amber. Capitals; keep it short.</comment>
+    <comment>The rail's head, above the MAP heading: the first of the two words that switch the window's view between the raid planner (this) and the stash desk, each in the title style across half the rail (174 DIP); the one on screen in amber. Capitals; keep it short.</comment>
   </data>
   <data name="DeskSwitchDesk" xml:space="preserve">
     <value>DESK</value>
-    <comment>The rail's head, beside the MAP heading: the second of the two words that switch the window's view, to the stash desk (your stash and gear from a screenshot, each item with its price); the one on screen in amber. Capitals; keep it short.</comment>
+    <comment>The rail's head, above the MAP heading: the second of the two words that switch the window's view, to the stash desk (your stash and gear from a screenshot, each item with its price), each in the title style across half the rail (174 DIP); the one on screen in amber. Capitals; keep it short.</comment>
   </data>
   <data name="DeskSwitchPlanTip" xml:space="preserve">
     <value>The raid planner: your maps, quests and what to bring</value>

@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Shturmap.App.Controls;
 using Shturmap.App.Rules;
@@ -107,10 +108,21 @@ public sealed partial class MainWindow
         StashDesk.Show(_deskShown, _deskOpen ?? new HashSet<string>(), entering, motion);
     }
 
-    // PLAN and DESK at the rail's head.
+    // PLAN and DESK at the rail's head: a click, or Space or Enter on the half with the focus.
     private void OnDeskSwitchPlanClick(object sender, RoutedEventArgs e) => SetDesk(false, "switch");
 
     private void OnDeskSwitchDeskClick(object sender, RoutedEventArgs e) => SetDesk(true, "switch");
+
+    // ← and → on the switch pick PLAN or DESK, and the focus goes with the pick (owner, 2026-10-20: a primary control).
+    // While the tour is up its own keys step through it.
+    private void OnDeskSwitchKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (TourOpen || DeskSwitch.ByArrow((int)e.Key) is not { } desk)
+            return;
+        SetDesk(desk, "key");
+        (desk ? DeskSwitchDesk : DeskSwitchPlan).Focus(FocusState.Keyboard);
+        e.Handled = true;
+    }
 
     /// <summary>Leaves the desk for Plan, where a choice needs the map or Plan's rail: a map picked in the MAP list, a
     /// trader's focus held, What's New, the tour.</summary>
@@ -120,11 +132,14 @@ public sealed partial class MainWindow
             SetDesk(false, how);
     }
 
-    // The switch's look: the view on screen in amber on Raised, the other muted.
+    // The switch's look: the view on screen in amber on Raised with the open map's row's amber bar, the other muted on
+    // the rail's ground.
     public Brush DeskSwitchInk(bool deskUp, bool forDesk) => Resource(deskUp == forDesk ? "AmberBrush" : "MutedBrush");
 
     public Brush DeskSwitchGround(bool deskUp, bool forDesk) =>
         deskUp == forDesk ? Resource("RaisedBrush") : new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+    public Visibility DeskSwitchBar(bool deskUp, bool forDesk) => deskUp == forDesk ? Visibility.Visible : Visibility.Collapsed;
 
     // ---- the rail: the card of the cell pointed at ----
 

@@ -6,11 +6,9 @@ are; the release's name stays as it is. Words: docs/glossary-de.md.
 
 ## 0.7.0 · NAME
 
+- tour:2 · Der Desk · Stash- oder Gear-Screenshot: Flea- und Trader-Preis je Item und was du behältst. DESK, oben links.
 - tour:1 · Dailies und Weeklies · Screenshot vom Aufgaben-Bildschirm (Spiel auf Englisch): Dailies und Weeklies mit Restzeit, je Map.
 - tour:7 · Text so groß wie nötig · Die Map folgt nun auch der Textgröße von Windows; die Einstellungen bieten GRÖSSER und AM GRÖSSTEN.
-- tour:6 · Waffen, zusammengebaut · Eine Waffe, die eine Quest braucht, erscheint ganz, wie Trader sie verkaufen, nicht nur als Gehäuse.
-- leaders · Zwei an einem Spot, ruhig · Zwei Symbole an einem Spot, wie die Außenbezirke auf Woods, bleiben beim Ziehen oder Zoomen ruhig.
-<!-- desk: the fifth line when step B lands -->
 
 ## 0.6.2 · Okami
 

@@ -36,6 +36,15 @@ public static class DeskSwitch
     /// </summary>
     public static bool IsNew(int? reading, int seen) => reading is { } r && r > seen;
 
+    /// <summary>What ← or → on the switch picks (owner, 2026-10-20: the switch a primary control, reached by the keyboard):
+    /// ← PLAN (false), → DESK (true), any other key nothing; as Windows' virtual-key codes.</summary>
+    public static bool? ByArrow(int virtualKey) => virtualKey switch
+    {
+        0x25 => false,
+        0x27 => true,
+        _ => null,
+    };
+
     /// <summary>The map's keys (docs/DESIGN.md §4, "Keyboard": F, + and −, 0, PgUp and PgDn), as Windows' virtual-key codes:
     /// while the desk is up they leave the map, out of sight, alone, and PgUp and PgDn scroll the desk's page.</summary>
     public static bool MapKey(int virtualKey) =>
