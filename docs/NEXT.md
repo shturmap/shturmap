@@ -399,9 +399,40 @@ anatomy", *Operational tasks*, the picks' rail), §8 (the script verb, `-Operati
 
 **Open.**
 
-- **The changes after the dev build** (above): the UI QA pass on the cue (`tools\qa\operational-feedback`, its `cue`
-  still; 900×560 and German too: the title in two lines, six rows in a short column) and the section on top, and the
-  senior translator's review of `OperationalCueEyebrow` and `OperationalCueTitle`.
+- **The UI QA pass on the cue (2026-10-19, on b549b08) and its fixes.** One blocker: F1, at 900×560 under a notice
+  (the tour's, the stash's) the title stood whole on two lines while the six rows shrank to about 36 % (synopses some
+  5 px), unreadable. Four more: F2, without a notice the cue wasn't fitted above the map's foot, its bottom rule through
+  WIKI MAP and under the "−" button; F3, `tasks 5 ended` and `-Operational 5 -OperationalEnded` gave six tasks at most,
+  so "+N" couldn't be reached; F4, the rows' rise can't be checked frame by frame; F5, a task that ran out while the cue
+  was up still said "WOODS · 1 MIN LEFT" beside the rail's "1 ended at …". Fixed:
+  - F1, F2: the whole cue keeps to its room as the roll call's (`MainWindow.FitTasksCue`): 8 DIP under a notice, 8
+    above WIKI MAP and the credit, its rows smaller down to 60 %, past that the whole cue, title included; its gold
+    rules clear of the map's buttons, as its rows. At 900×560 under the tour's notice it stands at about 71 % in English
+    and German, title and rows alike; without a notice the title at its size and the rows at about 68 %. A notice
+    that comes while it is up has it fitted again; one that goes leaves it where it stands.
+  - F3: `tasks <n>` and `-Operational <n>` take up to 8 (a survival on Interchange, a kill on Lighthouse, a weekly's
+    kill on Reserve after the five). Eight give five rows and "+3", seven "+2": six places, the last "+N", as DESIGN.md
+    has it (the pass's wish, six rows and "+2" for eight, would be a seventh place). `OperationalCueTests` hold the
+    places and the "+N" words; `tools\qa\operational-feedback.md` names the snapshot that pictures it.
+  - F4: accepted as unchecked, one line in docs/QA.md ("Replay scripts").
+  - F5, the coordinator's rule: the rows are a reading, not a clock; a row whose task runs out while the cue is up says
+    ENDED („ABGELAUFEN“) in place of its time left, the others keep the time read (`OperationalCueWords.Line`,
+    `MainWindow.WatchTasksEnds`; tested, and pictured by `-Operational 5 -OperationalEnded`, whose snapshot keeps the
+    cue up past the task's end).
+  - With them: OPERATIONAL under PICKED, above COMPLETE, in the open card and the raid card (owner, 2026-10-19:
+    "Ordering - under picked."; `OperationalSectionOrderTests`); and a number never parted from its unit: the English
+    rule texts keep a no-break space between them as the German do ("8 H LEFT", "24 MIN LEFT", "2 D LEFT", "READ 3 H
+    AGO", "ENDS IN 25 MIN", the raid time's and the position's age), German „vor 3 Tagen gelesen“ too (translator,
+    2026-10-19).
+- **For the owner: the fold.** At 900×560 the OPERATIONAL section is below the fold whether it stands first in the card
+  or under PICKED: the rail scrolls, and the open card starts under NEXT RAID's rows (four in the replay), so its
+  sections begin at the window's foot either way. Under PICKED it moves down by the picks' rows only.
+- To re-check: a QA pass on F1, F2, F3, F5 and the order; the senior translator's look at `OperationalCueEnded`
+  („abgelaufen“) and the English no-break spaces.
+- Found on the way, not from this change (b549b08's build does it too, 3 of 4 runs): a `--dev-view` run whose `exit`
+  comes while a later reading's tasks cue is up (`tasks 3`, a minute, `tasks 5`, `exit`) ends with 0xC000027B in
+  CoreMessagingXP instead of exit code 0. Whether closing the window in that moment does it outside a script is not
+  checked.
 
 - **The UI QA pass (2026-10-19, on ea0cb16) and the senior translator's review (2a75488).** The pass found one blocker
   and four nits; fixed after it: F1, with the app in German the catalogue's German names matched no hand-over item read

@@ -105,12 +105,45 @@ public class OperationalCueTests
     public void A_row_says_its_map_or_any_map_and_its_time_left()
     {
         var survive = new OperationalShown(Survive, "zorbs", []);
-        Assert.Equal("Zorbs · 8 h left", OperationalCueWords.Line(survive, "Zorbs", Now));
-        Assert.Equal("any map · 10 h left", OperationalCueWords.Line(new OperationalShown(Transfer, null, []), null, Now));
+        Assert.Equal("Zorbs · 8\u00A0h left", OperationalCueWords.Line(survive, "Zorbs", Now, Now));
+        Assert.Equal("any map · 10\u00A0h left", OperationalCueWords.Line(new OperationalShown(Transfer, null, []), null, Now, Now));
         // A countdown not taken: the map alone.
-        Assert.Equal("Zorbs", OperationalCueWords.Line(new OperationalShown(Survive with { ExpiresAt = null }, "zorbs", []), "Zorbs", Now));
-        Assert.Equal("25 min left", OperationalCueWords.Line(new OperationalShown(Survive with { ExpiresAt = Now.AddMinutes(25.5) }, "zorbs", []), null, Now));
+        Assert.Equal("Zorbs", OperationalCueWords.Line(new OperationalShown(Survive with { ExpiresAt = null }, "zorbs", []), "Zorbs", Now, Now));
+        Assert.Equal("25\u00A0min left", OperationalCueWords.Line(new OperationalShown(Survive with { ExpiresAt = Now.AddMinutes(25.5) }, "zorbs", []), null, Now, Now));
     }
+
+    // The rows are a reading, not a clock (the coordinator's rule after the QA pass of 2026-10-19, F5: a task that ran out
+    // while the cue was up still said "WOODS · 1 MIN LEFT" beside the rail's "1 ended at …"): the time stays as read, and
+    // once the task has run out the row says "ended" in its place.
+    [Fact]
+    public void A_row_keeps_its_time_as_read_and_says_ended_once_its_task_ran_out()
+    {
+        var soon = new OperationalShown(Survive with { ExpiresAt = Now.AddMinutes(25.5) }, "zorbs", []);
+        // Four seconds on, still the time read, not a clock's.
+        Assert.Equal("Zorbs · 25\u00A0min left", OperationalCueWords.Line(soon, "Zorbs", Now, Now.AddSeconds(4)));
+        Assert.Equal("Zorbs · 25\u00A0min left", OperationalCueWords.Line(soon, "Zorbs", Now, Now.AddMinutes(25)));
+        // Run out while the cue is up: "ended" in place of the time left, the map kept.
+        Assert.Equal("Zorbs · ended", OperationalCueWords.Line(soon, "Zorbs", Now, Now.AddMinutes(25.5)));
+        Assert.Equal("any map · ended", OperationalCueWords.Line(new OperationalShown(Transfer, null, []), null, Now, Now.AddHours(11)));
+        // A countdown not taken never ends here: the map alone, as read.
+        Assert.Equal("Zorbs", OperationalCueWords.Line(new OperationalShown(Survive with { ExpiresAt = null }, "zorbs", []), "Zorbs", Now, Now.AddDays(1)));
+    }
+
+    // Six places under the title, the last "+N" past that, as the roll call's twelfth (QA pass of 2026-10-19, F3: the
+    // "+N" place couldn't be reached by the script's made-up tasks; "tasks 7" and "tasks 8" reach it now).
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(3, 3, 0)]
+    [InlineData(6, 6, 0)]
+    [InlineData(7, 5, 2)]
+    [InlineData(8, 5, 3)]
+    [InlineData(9, 5, 4)]
+    public void Six_places_the_last_saying_how_many_more_past_that(int count, int rows, int more) =>
+        Assert.Equal((rows, more), OperationalCueWords.Places(count));
+
+    [Fact]
+    public void The_last_place_says_plus_the_rest() =>
+        Assert.Equal("+3", OperationalCueWords.More(3));
 
     [Fact]
     public void The_rows_come_the_one_that_ends_soonest_first()
@@ -127,13 +160,18 @@ public class OperationalCueTests
 public class OperationalCueGermanTests
 {
     [Fact]
-    public void The_title_says_dailies_and_weeklies_in_german_too()
+    public void The_title_says_dailies_and_weeklies_in_german_too_and_a_row_that_ran_out_abgelaufen()
     {
         try
         {
             UiLanguage.Set(UiLanguage.German);
             Assert.Equal(("AUS DEINEM SCREENSHOT", "1 DAILY ODER WEEKLY"), OperationalCueWords.Of(1));
             Assert.Equal("3 DAILIES UND WEEKLIES", OperationalCueWords.Of(3).Title);
+            // A row whose task ran out while the cue was up.
+            var now = new DateTimeOffset(2026, 1, 1, 14, 2, 0, TimeSpan.FromHours(1));
+            var task = new OperationalTask("Exit the location", "map-zorbs", [], OperationalKind.Survive, null, now.AddMinutes(1), now, null);
+            Assert.Equal("Zorbs · noch 1\u00A0min", OperationalCueWords.Line(new OperationalShown(task, "zorbs", []), "Zorbs", now, now));
+            Assert.Equal("Zorbs · abgelaufen", OperationalCueWords.Line(new OperationalShown(task, "zorbs", []), "Zorbs", now, now.AddMinutes(2)));
         }
         finally
         {
@@ -142,13 +180,13 @@ public class OperationalCueGermanTests
     }
 }
 
-// Where the OPERATIONAL section stands: on top of the quest list, before PICKED, COMPLETE and PROGRESS, in the open map's
-// card and in the raid card (owner, 2026-10-19: "sorted on top of the list always as they are time-sensitive"). Read from
-// MainWindow.xaml, which the app compiles.
+// Where the OPERATIONAL section stands: under PICKED, above COMPLETE and PROGRESS, in the open map's card and in the raid
+// card (owner, 2026-10-19: "Ordering - under picked."; that morning on top of the quest list, above PICKED: "sorted on top
+// of the list always as they are time-sensitive"). Read from MainWindow.xaml, which the app compiles.
 public class OperationalSectionOrderTests
 {
     [Fact]
-    public void Operational_comes_first_in_both_cards()
+    public void Operational_comes_under_picked_in_both_cards()
     {
         var root = RepositoryRoot();
         var doc = XDocument.Load(Path.Combine(root, "src", "Shturmap.App", "MainWindow.xaml"));
@@ -163,7 +201,7 @@ public class OperationalSectionOrderTests
                 _ => null,
             }).OfType<string>().ToList();
         // The open map's card, then the raid card.
-        Assert.Equal(["OPERATIONAL", "PICKED", "COMPLETE", "PROGRESS", "BRING", "OPERATIONAL", "PICKED", "COMPLETE", "PROGRESS", "BRING"], eyebrows);
+        Assert.Equal(["PICKED", "OPERATIONAL", "COMPLETE", "PROGRESS", "BRING", "PICKED", "OPERATIONAL", "COMPLETE", "PROGRESS", "BRING"], eyebrows);
     }
 
     private static string RepositoryRoot()

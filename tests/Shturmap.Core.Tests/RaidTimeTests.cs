@@ -11,25 +11,25 @@ public class RaidTimeTests
     private static readonly DateTime Start = new(2026, 10, 4, 21, 2, 0);
 
     [Theory]
-    [InlineData(0, "0 min in · 40 min left")]
-    [InlineData(59, "0 min in · 40 min left")]
-    [InlineData(12 * 60 + 30, "12 min in · 28 min left")]
-    [InlineData(39 * 60 + 59, "39 min in · 1 min left")]
+    [InlineData(0, "0\u00A0min in · 40\u00A0min left")]
+    [InlineData(59, "0\u00A0min in · 40\u00A0min left")]
+    [InlineData(12 * 60 + 30, "12\u00A0min in · 28\u00A0min left")]
+    [InlineData(39 * 60 + 59, "39\u00A0min in · 1\u00A0min left")]
     public void A_pmc_raid_says_how_long_it_has_run_and_how_long_it_still_runs(int seconds, string expected) =>
         Assert.Equal(expected, RaidTime.Of(true, false, Start, 40, Start.AddSeconds(seconds))!.Text);
 
     [Fact]
     public void Past_its_length_it_says_so_and_never_a_time_left_below_one()
     {
-        Assert.Equal("40 min in · past the raid's 40 min", RaidTime.Of(true, false, Start, 40, Start.AddMinutes(40))!.Text);
-        Assert.Equal("47 min in · past the raid's 40 min", RaidTime.Of(true, false, Start, 40, Start.AddMinutes(47))!.Text);
+        Assert.Equal("40\u00A0min in · past the raid's 40\u00A0min", RaidTime.Of(true, false, Start, 40, Start.AddMinutes(40))!.Text);
+        Assert.Equal("47\u00A0min in · past the raid's 40\u00A0min", RaidTime.Of(true, false, Start, 40, Start.AddMinutes(47))!.Text);
     }
 
     [Fact]
     public void A_scav_gets_no_time_left() // it joins a raid under way; the log doesn't say how long that still runs
     {
         var reading = RaidTime.Of(true, true, Start, 40, Start.AddMinutes(7))!;
-        Assert.Equal("7 min in · time left not known", reading.Text);
+        Assert.Equal("7\u00A0min in · time left not known", reading.Text);
         Assert.Equal(RaidTime.ScavTip, reading.Tip);
     }
 
@@ -37,7 +37,7 @@ public class RaidTimeTests
     public void Without_a_raid_length_in_the_data_only_the_time_in()
     {
         var reading = RaidTime.Of(true, false, Start, 0, Start.AddMinutes(7))!;
-        Assert.Equal("7 min in", reading.Text);
+        Assert.Equal("7\u00A0min in", reading.Text);
         Assert.Equal(RaidTime.NoLengthTip, reading.Tip);
     }
 
@@ -93,6 +93,6 @@ public class RaidTimeTests
     [Fact]
     public void A_clock_set_back_never_gives_a_time_below_zero()
     {
-        Assert.Equal("0 min in · 40 min left", RaidTime.Of(true, false, Start, 40, Start.AddMinutes(-3))!.Text);
+        Assert.Equal("0\u00A0min in · 40\u00A0min left", RaidTime.Of(true, false, Start, 40, Start.AddMinutes(-3))!.Text);
     }
 }
