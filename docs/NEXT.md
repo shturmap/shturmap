@@ -6,7 +6,7 @@ Item 5 (one design system) was added on 2026-10-02, item 6 (no game installed) o
 (2026-10-02), item 5 on 2026-10-03, item 6 the same day (`9ff9268`, merged in `d8b1bb0`); 2 is open.
 `docs/DESIGN.md` stays the binding spec: update it in the same change as each item.
 
-## 2026-10-19: the stash desk, a price view from a screenshot (decided, to design)
+## 2026-10-19: the stash desk, a price view from a screenshot (designed, to build)
 
 **The ask** (owner, 2026-10-19): "If you take a screenshot from items, provides a view in the app that mirrors the grid
 (to keep the mental model of the currently seen items) and augments them with the current price at the auction house
@@ -91,21 +91,67 @@ recommended, "the rest"):
   names (`ApiStation`), so a module's needs are new reading of a file already on disk.
 - **Scoping, the coordinator's:** the in-raid glance from a loot screenshot (the owner's "when looting something")
   is a later step with its own design and its own boundary (a raid screenshot's picture is read for its extract
-  list's corner only; DESIGN.md §2), not part of B or C.
+  list's corner only; DESIGN.md §2), not part of B or C. For its design (owner, 2026-10-19, on the GEAR tab's nested
+  containers below): "This will also happen in-game btw": looting a body's backpack with a rig inside opens the same
+  floating windows in a raid.
 
 Nothing is built. Binding: DESIGN.md §1 (the third answer beside the two questions; the not-goals amended), §2 ("For
 the stash desk": the grids against the whole catalogue, for the desk alone; the keep mark's levels), §3 (grid images
 for its mirror), §4 ("What you have" points at §1).
 
+**Decided (UI, 2026-10-19)**, on a panel of the desk's place, cell, card and click, each part's options drawn 1:1 in
+the app's visual language (the page stays outside the repository): "Stash Desk Panel: A, but keep in mind that the
+stash also has the player loadout in view and when a raid ends the player might want just take a screenshot of the
+items they have and get an overview of what to do with that. Also keep in mind of stackable things, like a bag stashed
+in a bag that contains additional items. A1 · B1 · C1 · D2. Update the Design.md accordingly."
+
+- **A1, the place:** out of raid the desk takes the map's place and the rail becomes its card; PLAN | DESK at the
+  rail's head; it opens by itself when a stash or inventory screenshot is read in the menus, and a raid loading always
+  takes the window back (RAID LOADING's cue, no click), the desk keeping its page; the MAP list and the trader strip
+  stay; cells 40 DIP at 900×560, 56 from a 600 DIP area; the head line "STASH · <total> ₽ · KEEP n · n · n".
+- **B1, the cell:** the price top right, where the game prints the short name, after the flea's tag or a trader's
+  person (a 14 DIP portrait at 56); the count bottom right; the keep notch top left in three weights (now, next,
+  later) in amber, in ink for a hideout module; ↑ ↓ from ±10 % in 48 h; "~" for full condition; the "?" plate with the
+  candidates' range; ink behind the art at 5, 10, 16 % from 20k, 100k, 300k ₽ per slot.
+- **C1, the card:** decision first (the net figure with its 7-day change, the flea's net with the fee and the 48 h
+  change, what a click copies and why, KEEP in progress order with FIR), then the 30-day band from minimum to average,
+  the 24 h range bar, the traders, crafts and barters, the prices' age; about 640 DIP, the first 200 in the smallest
+  rail.
+- **D2, the click:** the cell is the button; a click copies to the clipboard only, its frame flashes gold and its
+  figure decodes, a one-line notice says what and why; a "?" cell's click opens its candidates and the pick stays; the
+  rule is one setting, "Flea price to copy" (match, or 1–20 % under or over the last low; 3 % under by default); the
+  guards as Q4.
+- **B's two questions**, unanswered, take the drawn defaults: "later" marks a cell only when the need is found-in-raid
+  or the item can't be bought (the card lists every line); the head line counts the keeps.
+- **The owner's two notes, as rules:** the inventory screen's loadout is mirrored too (the slots, the pockets, the
+  equipped backpack, rig and pouch, each under its own head beside the stash), so a screenshot right after a raid is
+  an overview of what came back and what to do with it; a container in a grid (a bag in a bag) is a cell with its own
+  price and a "contents unseen" mark until a screenshot with its window open adds its grid to the page under its own
+  head, attached to its cell. The desk never guesses contents, and in-raid screenshots stay unread.
+- **Seen on the GEAR tab** (five screenshots of 2026-10-19 (GEAR tab), 2560×1440, PvE, kept in the ignored
+  `tests\fixtures\ocr\desk`): three regions, the loadout's slots (each with its item's short name and, where it has
+  one, its condition), a middle column (POCKETS, SPECIAL SLOTS and the equipped BACKPACK, TACTICAL RIG and POUCH, each
+  a slot with its grid inline) and the stash, the middle column and the stash scrolling each on its own; a nested
+  container's contents only in a floating window titled with its name, which the player places anywhere, over what lies
+  under it (attached to its cell under "ZHUK · in the backpack"; the cells under it keep their last reading; of several
+  containers of one name, shown under its name, unattached); a condition ("46/50", "1469/1800") printed where a stack's
+  count is; the stash pane's head prints the player's money and the game's toasts the screenshot's path, both skipped.
+  To design with step C: a price that follows a printed condition (a scaled estimate, still "~").
+
+Binding: DESIGN.md §4, "Screen anatomy", *The stash desk* (and the rail's *Desk*, "Settings"), principles 2 and 3,
+"Design system" (*Motion*, Amber's role), "Visual language" (the colours, "One symbol, one meaning"), §2 ("For the
+stash desk": the GEAR tab, nested containers, what a reading keeps), §3 (the desk's prices per reading).
+
 **Next.**
 
-- The UI mock-ups panel (CLAUDE.md, "Design panels"): the desk view, the hover card and the price button, three or
-  four layouts at 1:1 in the app's visual language, with their trade-offs and a recommendation; the menu-screenshot
-  tick's new words on it.
 - The measurement run: the stash spike (`shturmap-cli stash`) with `--set all` against the three hand-labelled
   screenshots (the key container, the medical case, the stash page; `--truth`), for the false-name rate against the
   whole catalogue.
-- Then step B; C once B's naming has held up.
+- Step B, "Glance": the reader generalised (the whole catalogue; positions and footprints; the GEAR tab's loadout
+  slots and grids; container windows, attached to their cells); the data fields kept (the item file's price fields and
+  the hideout levels' item needs, which the loader drops today); the desk view with its cells and head; the PLAN |
+  DESK switch; the menu screenshots' tick worded for the desk (the panel left it out).
+- Step C, once B's naming has held up: the card, the price history, the click and its setting.
 - Open: whether the flea's price field takes Ctrl+V (the page's one-minute test for the owner, not reported yet);
   that `SafetyTests` allows the clipboard.
 

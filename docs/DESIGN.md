@@ -10,7 +10,7 @@ Shturmap answers two questions for an Escape from Tarkov player, on a second mon
 1. **Before a raid: where should I go, and what do I need to bring?**
 2. **During a raid: where am I, and where is my next objective?**
 
-Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; decided, to design; docs/NEXT.md):
+Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; designed, not built; docs/NEXT.md):
 **what is this worth, and what should I ask for it?**, for the items on a screenshot the player took of their own
 stash. That view is the stash desk; the raid planner stays the other view. The recommendation was a separate app; the
 owner kept it in one: "It makes sense to keep it in one app since shturmap idea is to be mostly as hands off as
@@ -195,33 +195,53 @@ table is read as the stash's is, in the same path, and its tasks show where the 
   they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter say it.
 
 **For the stash desk, the item grids are read against the whole catalogue** (owner, 2026-10-19, keeping the price view
-in Shturmap as a view of its own, §1; decided, to design: nothing of it is built, and until it is, the grids are read
-for What You Have only, above; docs/NEXT.md). The desk mirrors a screenshot's grids with each item's prices, so it has
-to name every cell, not only the ones BRING lists. Its keep mark has three levels from the quest dependency tree, NOW
-(an active quest's BRING needs the item), NEXT (a quest the active ones unlock needs it) and LATER (further down the
-tree), plus a hideout module's need, regardless of the hideout's progress (the logs don't say its level, and hideout
-tracking stays a not-goal, §1), each with its found-in-raid flag (owner, 2026-10-19: the keep mark's levels, not a
-planner screen of their own; docs/NEXT.md). The boundary widens for the desk alone, and no further:
+in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*: nothing of it is
+built, and until it is, the grids are read for What You Have only, above; docs/NEXT.md). The desk mirrors a screenshot's
+grids with each item's prices, so it has to name every cell, not only the ones BRING lists. Its keep mark has three
+levels from the quest dependency tree, NOW (an active quest's BRING needs the item), NEXT (a quest the active ones
+unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
+(the logs don't say its level, and hideout tracking stays a not-goal, §1), each with its found-in-raid flag (owner,
+2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The boundary widens for the desk
+alone, and no further:
 
 - **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
-  without a position, while the log shows the menus. Never a raid screenshot, for the desk either: those keep their
-  one corner (an answer from a loot screenshot in a raid is a later step, with its own design and a boundary for the
-  owner to decide). Never a trader's grid, a message's attachments or another player's inventory.
+  without a position, while the log shows the menus. The inventory is the GEAR tab (Character › GEAR), the player's
+  loadout beside the stash, so a screenshot taken right after a raid shows what came back (owner, 2026-10-19: "the
+  stash also has the player loadout in view and when a raid ends the player might want just take a screenshot of the
+  items they have and get an overview of what to do with that"). Never a raid screenshot, for the desk either: those
+  keep their one corner (an answer from a loot screenshot in a raid is a later step, with its own design and a boundary
+  for the owner to decide; the nested windows below open there too when looting, owner, 2026-10-19: "This will also
+  happen in-game btw"). Never a trader's grid, a message's attachments or another player's inventory.
 - **How much of it:** the item grids' cells, their labels, counts and found-in-raid mark as above, and their positions
   and footprints, for the mirror; matched against every item of tarkov.dev's catalogue, for the desk alone (What You
-  Have's marks still come from the items BRING lists only). A cell that fits more than one item is said honestly,
-  never guessed: "one of N", with the group's price range and a "?", and its hover card lists the candidates for the
-  player to pick with one click (of the 3,159 flea-priced items that aren't guns or presets, 672 share their short
-  name and footprint with another; a silent guess prices the wrong item). A name is never taken from the picture
-  alone. Before it is built, the stash spike measures the false-name rate against the whole catalogue.
+  Have's marks still come from the items BRING lists only). On the GEAR tab that is three regions (five screenshots of
+  2026-10-19 (GEAR tab), 2560×1440, PvE), all read, for the desk alone: the loadout's slots at the left (earpiece,
+  headwear, face cover, armband, body armour, eyewear, dogtag, on sling, holster, on back, sheath), each printing its
+  item's short name and, where it has one, its condition ("46/50"); a middle column, POCKETS, SPECIAL SLOTS and the
+  equipped BACKPACK, TACTICAL RIG and POUCH, each a slot's item with its grid inline; and the stash's grid at the right.
+  The middle column and the stash scroll each on its own, so a screenshot holds one page of each. In a grid a condition
+  ("147/147", "1469/1800") stands where a stack's count does, and is read as the count is. **Nested containers** (owner,
+  2026-10-19: "keep in mind of stackable things, like a bag stashed in a bag that contains additional items"): a
+  container in a grid (a Zhuk rig in the backpack) hides its contents, which the game shows only in a floating window
+  titled with its name (with search, sort and close buttons) that the player places anywhere, over what lies under it.
+  Such a window is read as that container's grid (the stash reader already tells a container's window apart); the cells
+  it covers aren't read from that picture; contents no window showed are never guessed. Skipped, as the operational
+  table's right third is: the stash pane's head (it prints the player's money) and the game's toasts at the lower right
+  (they carry the screenshot's path). A cell that fits more than one item is said honestly, never guessed: "one of N",
+  with the group's price range and a "?", and its hover card lists the candidates for the player to pick with one click
+  (of the 3,159 flea-priced items that aren't guns or presets, 672 share their short name and footprint with another; a
+  silent guess prices the wrong item). A name is never taken from the picture alone. Before it is built, the stash spike
+  measures the false-name rate against the whole catalogue.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
-  the item icons are, §3) at the positions read, never from the screenshot. What else a reading keeps is for the
-  design, and never a register of the stash over time (§1).
+  the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
+  cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
+  a newer reading changes it (§4, "Screen anatomy", *The stash desk*); never a register of the stash over time (§1).
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them.
 - **The player's say:** the menu screenshots' one tick ("Read your stash and tasks from menu screenshots"), its words
-  and note widened for the desk, to be worded on the desk's panel. Unticked, no menu screenshot is opened, for the
-  desk either. Once built, its note, help, the README, PRIVACY.md and the website say what the desk reads.
+  and note widened for the desk, to be worded with step B (the desk's panel of 2026-10-19 left them out). Unticked, no
+  menu screenshot is opened, for the desk either. Once built, its note, help, the README, PRIVACY.md and the website say
+  what the desk reads.
 
 Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
 (Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
@@ -320,15 +340,23 @@ quoting it anywhere new.
   never bundled in the repository or a build.
 - **No unnecessary load on tarkov.dev** (owner, 2026-10-04: "Check if we properly cache the maps so we don't put
   unneccessary load on tarkov.dev"; checked the same day against the servers). What Shturmap asks, and when:
-  - Only at a start and when the mode changes, never on a timer while it runs. A saved copy younger than its age
-    is used without a request: quests, maps and traders 1 hour; item names, item sources and `maps.json` 1 day; a
-    map's SVG 7 days; a map tile 30 days. Portraits and icons are downloaded once and kept.
+  - Only at a start and when the mode changes (the stash desk's prices aside, below), never on a timer while it runs. A
+    saved copy younger than its age is used without a request: quests, maps and traders 1 hour; item names, item sources
+    and `maps.json` 1 day; a map's SVG 7 days; a map tile 30 days. Portraits and icons are downloaded once and kept.
   - An older copy is asked for with its ETag. All three hosts (`json.tarkov.dev`, `assets.tarkov.dev`,
     `raw.githubusercontent.com`) answer "not modified" to that, which costs a few hundred bytes. A file that did
     change comes compressed: the maps file about 0.8 MB, the quests 0.4 MB, the item sources 1.9 MB (they change
     every few minutes with the flea market's prices, hence once a day). A start a day after the last one is 13
     requests (18 in another game language) and about 3 MB if every file changed; a second start within the hour
     asks nothing.
+  - **The stash desk's prices come per reading** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; not built; §4,
+    "Screen anatomy", *The stash desk*): a list price to copy needs prices minutes old, and the item sources' may be a
+    day old. So, for the desk alone, the prices of the items a screenshot showed are asked for when it is read (those
+    items, never the catalogue), and an item's price history (json.tarkov.dev's `/{mode}/prices/{id}`) when its card
+    first shows it, each with its ETag, so an unchanged answer costs a few hundred bytes. Still never on a timer: a page
+    left open isn't refreshed, and the card says its prices' age ("Prices 4 min old · tarkov.dev"). Everything else
+    keeps the ages above. Its requests and bytes per player are counted and said to the owner before it is built (the
+    rule at the end of this list).
   - What the server doesn't have is remembered for a week, the time its own Cache-Control gives its answers
     (`CachedHttp.MissingAge`): a tile or a picture that answered "not found" was asked for again in every session
     before. A refusal (403) is not remembered: it can be a block that passes.
@@ -448,11 +476,17 @@ quoting it anywhere new.
 2. **Glanceable from a second monitor.** High contrast on a dark ground, the important line first and largest (the
    glance's distances), sizes by the type roles ("Design system"). No animation beyond what helps the eye follow a
    change, the raid replay at a raid's end (§1's exception), and the tour (§1's second exception, owner, 2026-10-09:
-   outside raids only, and still in the cues' own motion), the QUEST COMPLETE cue (§1's third), and the extract list's
-   roll call (§1's fourth). (Until 2026-10-04 this also said "primary text ≥ 14 px, numbers in a monospaced face"; the
-   app never kept to either, and the owner dropped the rule: "the 14px rule is not necessary".)
-3. **One window, two states.** *Plan* while in the menus, *Raid* while loading or in a raid. The switch is
-   automatic. No tabs, no modes to pick, no modal dialogs. Shturmap has one window, never topmost, so it can't cover
+   outside raids only, and still in the cues' own motion), the QUEST COMPLETE cue (§1's third), the extract list's
+   roll call (§1's fourth), and the stash desk's three moves (owner, 2026-10-19: "it should also be fun to use"; from a
+   panel: A1 · B1 · C1 · D2; "Screen anatomy", *The stash desk*). (Until 2026-10-04 this also said "primary text
+   ≥ 14 px, numbers in a monospaced face"; the app never kept to either, and the owner dropped the rule: "the 14px rule
+   is not necessary".)
+3. **One window, three states** (owner, 2026-10-19: "one raid planning view and one stash desk view"; from a panel:
+   A1; until then "One window, two states", *Plan* and *Raid*). *Plan* or *Desk* while in the menus, *Raid* while
+   loading or in a raid. The switch to *Raid* and back to *Plan* is automatic, from the desk too: a raid loading always
+   takes the window, with no click. Out of a raid *Desk* opens by itself when a stash or inventory screenshot is read,
+   and PLAN | DESK at the rail's head is the one choice of view, two words, not a tab row ("Screen anatomy", *The stash
+   desk*). No tabs, no other modes to pick, no modal dialogs. Shturmap has one window, never topmost, so it can't cover
    the game (popped-out quest cards, the only other windows, were removed on 2026-10-09). One thing does
    cover the window, and only because the player opened it: the Report dialog (review of 2026-10-04: the
    principle didn't name it). And the tour, which dims the window around the parts it is about (owner, 2026-10-09,
@@ -704,7 +738,7 @@ a new hue may not. Each kind colour has one meaning (owner, 2026-10-03: one symb
 | `Cell` | `#1A1B18` | the inventory cell behind item icons | CellColor · — · — |
 | `Ink` | `#D9D5C4` | text; on the map every label, and the symbols that are neither a quest's nor the player's (spawn rings, padlocks, switches, an item's loose spots) | InkColor · labels, Ink · `--ink` |
 | `Muted` | `#8A8778` | secondary text; what happens after the raid or at a trader; done objectives | MutedColor · Muted · `--muted` |
-| `Amber` | `#C9AD62` | the one accent: quests, objectives, distances, "on" | AmberColor, SystemAccentColor · Amber · `--amber` |
+| `Amber` | `#C9AD62` | the one accent: quests, objectives, distances, "on"; on the stash desk, keep for a quest (2026-10-19) | AmberColor, SystemAccentColor · Amber · `--amber` |
 | `AmberHover` | `#D6BE7E` | the accent under the pointer | SystemAccentColorLight1 · — · `--amber-hover` |
 | `AmberHi` | `#E2CF9C` | focus rings (a `Ground` line inside), link hover on the web | SystemAccentColorLight2, SystemControlFocusVisualPrimaryBrush (QA pass, 2026-10-15; WinUI's white ring until then) · — · `--amber-hi` |
 | `AmberDeep` | `#A88F4E` | the accent pressed | SystemAccentColorDark1 · — · — |
@@ -778,6 +812,10 @@ figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
 the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
 the wheel's zoom to its notch.
+**The stash desk** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; not built; "Screen anatomy", *The stash desk*)
+moves three ways and no more: a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do; its total
+counts up once; a copied cell's frame flashes gold once and its figure decodes, as a cue's title does. With the effects
+off the page stands at once.
 **The linked set breathes** (owner, 2026-10-17: the linked highlight "really helps pre-attentively highlight elements …
 However, the pre-attentiveness goes away directly after the highlight was done … the highlights are a bit too faint").
 While the pointer lights a linked set (a trader's portrait, a boss's name or marker, an item; "Visual language", the
@@ -863,6 +901,10 @@ Colours and their one meaning each: the token table in "Design system" above (go
 khaki for extracts by side, violet for transits, red for bosses, sand for the player, `Pick1` to `Pick8` for the
 picked quests, one each ("Picks", *A colour per pick*), muted for what happens after the raid). Cyan (`Kept`) is
 the dev build's icon only: it was every pick's colour until 2026-10-04.
+On the stash desk (owner, 2026-10-19, from a panel: B1 · C1 · D2; "Screen anatomy", *The stash desk*) amber also says
+"keep for a quest" (the keep notch) and stays the figures' gold; ink is a hideout module's need; a price's rise or fall
+is never green or red (PMC extracts and success, danger), only an arrow and a sign; and the status bar's gold light
+("needs attention") is a warning on the desk's card.
 
 **One symbol, one meaning** (owner, 2026-10-03: the quest card's pin button and the Place quest type were the same
 pushpin, so the type beside the trader portrait read as a useless second pin). A symbol stands for one thing
@@ -876,6 +918,14 @@ same day, by rendering them side by side:
   hairline, never a quest. The generic operational glyph, Segoe Fluent's stopwatch `E916`, stands for an operational
   task whose kind isn't known (a kill, a survival and a hand-over take the Elimination, Survive and Find-in-raid
   glyphs), nowhere else ("Screen anatomy", *Operational tasks*).
+- **The stash desk's marks** (owner, 2026-10-19, from a panel: B1; "Screen anatomy", *The stash desk*). The **keep
+  notch** at a desk cell's upper left is a need to keep the item, in three weights: a filled corner triangle (now), an
+  open triangle (next), a corner bracket (later); amber for a quest, the filled triangle in ink for a hideout module;
+  nowhere else. **"~"** before a price: it assumes full condition. **↑ ↓**, text arrows, are a price's change, never a
+  floor: the floor's caret stays the stroked chevron in its disc. The **"?" plate** (the small dark plate with a gold
+  hairline, "maybe here" on the map and "One of 4 places it can be" on a card) widens to "one of N items": a desk cell
+  whose label fits several. The **person** `E77B`, a portrait's fallback, is a trader in a desk cell too (the trader
+  pays the cell's price); the **price tag** `E8EC` is the flea market there, as on item cards.
 - **Two meanings, resolved:** `E719` (a shopping bag) was both the Find-in-raid quest type and the flea market as an
   item source on item cards. The quest type keeps the bag (it is on rows, map markers and the legend); the flea market
   became a price tag, `E8EC` (owner, 2026-10-03, taking the recommendation).
@@ -1317,6 +1367,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       knows by name after the quests' loot ("for an operational task"). That an operational task's kills and survivals
       count for a PMC only is the panel's assumption (as a quest's do), not checked in the game: to confirm.
     - The rows a reading brought glow in, and a notice says how many were read (principle 11): no cue.
+  - *Desk* (owner, 2026-10-19, from a panel: A1; not built): out of a raid, with the stash desk in the map's place,
+    the rail is the card of the desk's cell pointed at, under the MAP list and the trader strip, PLAN | DESK at its head
+    beside the MAP list (*The stash desk*, below).
   - *Raid*: **the map's Plan card, live** (owner, 2026-10-01: the raid view must not be a different screen with a
     different logic). THIS RAID holds one card in the expanded Plan card's look: the map's name, the same summary
     line ("Complete 5 quests · progress 1 more"), the bosses with their spawn chances, and, right under the map's name,
@@ -1567,6 +1620,93 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     point on the glide as it is drawn. Only while it glides, a frame timer asks for frames at the system timer's pace
     (about 64 a second): the map's 16 ms animation timer and the Rendering event each gave only about 30 a second
     (measured with the dev view, 2026-10-03).
+- **The stash desk** (owner, 2026-10-19: "Stash Desk Panel: A, but keep in mind that the stash also has the player
+  loadout in view and when a raid ends the player might want just take a screenshot of the items they have and get an
+  overview of what to do with that. Also keep in mind of stackable things, like a bag stashed in a bag that contains
+  additional items. A1 · B1 · C1 · D2. Update the Design.md accordingly."; from a panel: A1 · B1 · C1 · D2; not
+  built). §1's third answer: between raids, the items of a screenshot the player took of their own stash or loadout,
+  mirrored cell for cell, each with what it is worth, what it is kept for, and a list price one click away; read as §2
+  says ("For the stash desk"), its prices fetched as §3 says. The panel's two questions on the cell went unanswered and
+  take its drawn defaults: "later" marks a cell only for a found-in-raid need or an item that can't be bought (the card
+  lists every need), and the head line counts the keeps. Not taken: the grid in the rail beside the map (A2), a
+  full-window desk with a tab row (A3), a plate over the map (A4); a price strip (B2), a heat map (B3); a quote sheet
+  without scrolling (C2); a COPY button on the card (D1), MATCH and UNDERCUT buttons on it (D3).
+  - **Its place** (A1). Out of a raid the desk takes the map's place, and the rail becomes its card, where the item
+    card's words would be: pointing at a cell puts its card there (below). PLAN | DESK at the rail's head, beside the
+    MAP list, switches between the two views: two words in one `LineStrong` frame, the one on screen in amber on
+    `Raised`. The desk opens by itself when a stash or inventory screenshot is read in the menus, and is left by the
+    switch. A raid loading always takes the window back to the raid view, with RAID LOADING's cue and no click
+    (principles 1 and 3); the desk keeps its page for next time. The MAP list and the trader strip stay. The cells are
+    the item cell's 40 DIP at 900×560 (a stash page of 10 × 11 fits), 56 DIP from a desk 600 DIP across. Over the grids
+    one head line in muted capitals, "STASH · 6.84 M ₽ · KEEP 3 · 2 · 4": the page's total, then the cells with a now,
+    next and later notch. When it opens by itself, its page coming in says so (*Fun*, below); how that meets SEEN IN
+    YOUR STASH, which pictures a reading's quest items over the map (principle 11), was not on the panel and is settled
+    with step B.
+  - **What it mirrors** (the owner's notes, and five screenshots of 2026-10-19 (GEAR tab), §2). Every region the
+    screenshot shows, each under its own head as the screenshot shows them: LOADOUT · POCKETS · BACKPACK · RIG · POUCH ·
+    STASH. On the GEAR tab that is the loadout's slots, the middle column's pockets and the equipped backpack, rig and
+    pouch (each its slot's item over its grid), and the stash; the game scrolls the middle column and the stash each on
+    its own, so a screenshot is one page of each. So a screenshot taken right after a raid is an overview of what came
+    back and what to do with each thing. **A container in a grid** (a bag in a bag, a Zhuk rig in the backpack) is a
+    cell with its own price and a "contents unseen" mark (its look is drawn with step B), until its floating window,
+    open on the same screenshot or a later one, adds its grid to the page under a head of its own, "ZHUK · in the
+    backpack", attached to its cell; the cells the window covers keep their last reading; of several containers of one
+    name, the window's grid stands under its name, attached to none. The desk never guesses contents, and the head's
+    total counts only the cells read. The mirror is drawn from catalogue art (tarkov.dev's grid images, §3) at the
+    positions and footprints read; no pixel of the screenshot is kept. The panel drew the stash alone: how the
+    loadout's slots stand on the page is drawn with step B.
+  - **The cell** (B1): the game's layout, with the price where the game prints the short name.
+    - **Top right**, the cell's figure: the better of the flea's net at the last low (after the fee) and the best
+      trader's price ("902k"), in ink, semibold, at the badges' 10.5 px with the map's dark collar (12 px at 56 DIP),
+      after its source, the price tag `E8EC` (the flea) or the person `E77B` (a trader), 9 DIP and muted (11 at 56); at
+      56 DIP a trader's 14 DIP portrait stands in for the person.
+    - **Bottom right**, the count, as the game prints it.
+    - **Top left**, the keep notch, 11 DIP, from the quest tree (§2): a filled corner triangle for **now** (an active
+      quest's BRING needs the item), an open triangle for **next** (a quest the active ones unlock), a corner bracket
+      for **later** (further down), in amber; a hideout module's need, its progress unknown (§1), the filled triangle
+      in ink. The strongest need sets it. A cell takes "later" only when that need is found-in-raid or the item can't
+      be bought (no flea, no trader): quests far down the tree want common things, so "later" everywhere would mark
+      half the stash and say nothing, while a found-in-raid need sold can't be bought back as one. The card lists every
+      need. The notch never greys the price: the price says what selling gives, the notch what keeping is for.
+    - **Bottom left**, ↑ or ↓ where the 48 h change is 10 % or more either way; at 56 DIP the change stands there as a
+      figure on every cell ("↓ −10%", "−1%").
+    - **"~"** before a price that assumes full condition (armour, meds, weapons). To design with step C: where the cell
+      prints a condition ("46/50", "1469/1800"), the price follows it, a scaled estimate still marked "~"; where it
+      doesn't, "~" alone.
+    - **A cell that fits several items**: the "?" plate at its upper left, as the map draws it, the art at half
+      strength, and the candidates' price range as its figure ("63–307k"); its card says "One of 3".
+    - **Behind the art**, ink at 5, 10 or 16 % from 20k, 100k or 300k ₽ per slot.
+  - **The card** (C1), in the rail's 351 DIP, decision first. The item's icon and name, under it in muted capitals the
+    liquidity dot (full from 50 offers, half from 10 to 49, a ring under 10), the offers and the flea level ("40 offers
+    · flea from level 35"); the cell's figure in gold at the glance's 22 px, its 7-day change at its right, arrow and
+    sign ("↑ +1.7 % · 7 D"); the flea's net line with the fee and the 48 h change ("Flea net · fee 97 000", "↓ −10.3 %
+    · 48 H"); the plate "Click the cell: copies 970 000 ₽" over its reason ("3 % under the last low, 1 000 000 ·
+    Therapist pays 494 700"); KEEP, the needs in progress order, each with its notch, count and FIR ("Private Clinic ×1
+    · now · FIR", "Medstation 3 ×1 · a hideout module"). Then 30 DAYS, a band from the minimum to the average, a point
+    every 2 h, with a mark 7 days back and the high and the low in words ("HIGH 1.05 M · LOW 0.82 M (DAY 17)"); 24 H,
+    the day's range bar with the average and the last low, a high far past it said in a line, not drawn ("The high,
+    9 999 999, is past the bar: one offer, likely an outlier."); TRADERS, each with portrait and price; CRAFTS AND
+    BARTERS; "Prices 4 min old · tarkov.dev". About 640 DIP: the first 200 (the figure, the click, the keep) fit the
+    smallest rail, the rest scrolls. EVE Online's min-max channel became the min-to-average band: the history has no
+    maximum.
+  - **The click** (D2): the cell is the button. Point at a cell to read its card; click it to copy its list price to
+    the clipboard, and only there: nothing is ever typed into the game (§2). Its frame flashes gold once and its
+    figure decodes, and a one-line notice says what and why, "611 100 ₽ copied · 3 % under the last low", and
+    dismisses itself (principle 4); the player pastes it into the flea's price field. A click holds no card here: the
+    rail is the card. A "?" cell's click opens its candidates beside it ("One of 3 · "Poster"", each with its art and
+    figure); one click picks, and the pick stays for that cell. The rule is one setting, "Flea price to copy": the last
+    low matched, or 1–20 % under or over it, 3 % under unless changed ("Settings", below). **Guards**, said on the
+    card's plate: never a net under the best trader's (the plate says "Therapist pays more: 459 000 ₽" and why, and a
+    click copies nothing); above the most a sale can net (the fee's curve: about 51 times the base price at PvE's
+    rates) the plate carries the status bar's gold light and says so ("over the best net: …"); no flea price for what
+    can't be listed, "Can't be listed on the flea" with the best trader's price (`noFlea`, the item's flea level, the
+    found-in-raid rule; Shturmap doesn't read the player's level, so the card says the item's and compares nothing);
+    "~" for condition. Open: whether the flea's price field takes Ctrl+V (if not, the copied figure is there to read),
+    and that `SafetyTests` allows the clipboard.
+  - **Fun, in the app's own motion** (the owner: "it should also be fun to use"; principle 2; "Design system",
+    *Motion*): a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do; its total counts up once;
+    a copy flashes and decodes. Nothing else moves. Colours keep their meanings ("Visual language"): no red or green
+    for down and up, only arrows and signs.
 - **Help** (F1 or `?`): one panel with TAKE THE TOUR and WHAT'S NEW IN 0.4.0 under its title (the tour from its start; the What's New card again), how it works with SHOW ME after the paragraphs a chapter of the tour shows (it opens the tour there; owner, 2026-10-09, T11), the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,
@@ -1714,7 +1854,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Delete
   screenshots after reading" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
-  §2), "Crash reports" (ASK AFTER A
+  §2), "Flea price to copy" (the stash desk's list price: the last low matched, or 1–20 % under or over it, drawn
+  "3 % ▾ · under ▾ · the last low", 3 % under unless changed, with the note "Match, or 1–20 % under or over"; owner,
+  2026-10-19, from a panel: D2; not built; *The stash desk*), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
   available in this build"; an installed Shturmap whose updater couldn't start says that instead, with where the
   reason is and that the Setup repairs it, `Distribution.NoUpdatesText`); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
