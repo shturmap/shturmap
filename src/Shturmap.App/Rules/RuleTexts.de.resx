@@ -477,7 +477,7 @@
     <comment>en: Copies {price}</comment>
   </data>
   <data name="DeskCardOverBest" xml:space="preserve">
-    <value>Über dem besten Netto: bei {best} bringt es {bestNet}, bei diesem {net}</value>
+    <value>Über dem besten Netto: bei {best} bringt es {bestNet}, bei diesem Preis {net}</value>
     <comment>en: Over the best net: at {best} it nets {bestNet}, at this {net}</comment>
   </data>
   <data name="DeskCardTraderPaysMore" xml:space="preserve">
