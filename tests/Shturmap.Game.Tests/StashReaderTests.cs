@@ -46,7 +46,7 @@ public sealed class StashReaderTests : IDisposable
     // ---- drawing pages as the game lays them out ----
 
     /// <summary>A page of the given size, drawn as the game draws its gear screen at that size.</summary>
-    private sealed class Page(int width, int height)
+    internal sealed class Page(int width, int height)
     {
         public int Width { get; } = width;
         public int Height { get; } = height;

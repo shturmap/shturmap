@@ -66,6 +66,9 @@ switch (command)
     case "tasks":
         await Shturmap.Cli.Tasks.TasksSpike.RunAsync(args.Skip(1).ToList());
         break;
+    case "desk":
+        await Shturmap.Cli.Desk.DeskCommand.RunAsync(args.Skip(1).ToList());
+        break;
 #if DEVTOOLS
     case "study":
         Study(args.ElementAtOrDefault(1));
@@ -121,6 +124,10 @@ switch (command)
             shturmap-cli tasks <png|folder>  the 2026-10-19 spike: read the operational tasks' table from Tasks screenshots (rows,
                                             time left, progress, an expanded row's objectives) and when each expires; a folder
                                             is scored against its truth-<picture>.txt files (--bands prints each band's votes)
+            shturmap-cli desk <png|folder>   the stash desk's reading: each page's regions and cells (name or "one of N", count,
+                                            condition, figure and source, marks), the head line, the page in hand over the
+                                            pictures in order, and the tally against truth-<picture>.txt files; the data from
+                                            the cache (--online to ask, --quiet tallies only, --why labels, --audit the DESK line)
             shturmap-cli study [on|off]      developer builds: show or set the "Keep a study log" switch (Shturmap closed)
 
             --data <folder>                  any command: that data folder instead of %LOCALAPPDATA%\Shturmap-dev;
@@ -220,6 +227,8 @@ static async Task Bring(string mode)
         var done = data.ExtractRepairs.Where(r => r.Rule == rule).ToList();
         Console.WriteLine($"{label}: " + (done.Count == 0 ? "none" : $"{done.Count}: " + string.Join("; ", done.Select(r => r.Text))));
     }
+    // The stash desk's values over the item file (docs/UPDATES.md, "What the rules assume").
+    Console.WriteLine(Shturmap.Cli.Desk.DeskCommand.AuditLine(data, sources));
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's
