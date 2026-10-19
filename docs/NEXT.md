@@ -215,6 +215,58 @@ Binding: DESIGN.md §4, "Screen anatomy", *The stash desk* (and the rail's *Desk
 "Design system" (*Motion*, Amber's role), "Visual language" (the colours, "One symbol, one meaning"), §2 ("For the
 stash desk": the GEAR tab, nested containers, what a reading keeps), §3 (the desk's prices per reading).
 
+**Decided (addendum, 2026-10-19)**, on a second panel, drawn 1:1 from the five GEAR-tab screenshots: the regions'
+layout, the page after a raid, a container in a grid, condition on the cell (the page stays outside the repository).
+The owner: "Stash desk addendum I go with your recommendation": A(2) · B1 with the fold · C1a · Da.
+
+- **A(2), the regions:** every grid under its own head, stacked in reading order in one 400 DIP column at the
+  smallest window: LOADOUT (a strip of 80×40 slot cells in the game's slot order, a weapon 164×40, no slot names, the
+  card names the slot, empty slots left out), then TACTICAL RIG · POCKETS and SPECIAL SLOTS on one row · BACKPACK ·
+  POUCH, then STASH; from a desk 980 DIP across the column breaks before STASH into the game's two columns. "A stash
+  page of 10 × 11 fits at 40 DIP" holds for the stash alone: with the gear above, the page scrolls unless it is folded.
+- **B1, the head line, with the fold:** "ON YOU <total> ₽ · STASH <total> ₽ · KEEP n · n · n", a "+" on a total with an
+  unseen container in it. Each reading opens the regions it changed and folds the rest into one line, "UNCHANGED ·
+  POUCH ▸ · STASH ▸", each name opening its region until the next reading; the first reading opens all, one that
+  changed nothing changes nothing; "unchanged" against the page in hand only, never a register (§1).
+- **C1a, contents unseen:** a container cell's figure ends in "+" ("34k+": at least this, more inside) until a
+  screenshot with its window open is read; then its grid stands under "<NAME> · IN THE <REGION>" right after its
+  region, stemmed to its cell, each lighting the other; the "+" drops, the cell's figure stays the container's own, the
+  contents count in the region's total; covered cells keep their last reading, empty on a first reading. Several of one
+  name: after the region that holds them all, unattached, "Not attached: 3 wallets on the page"; split between ON YOU
+  and the stash, at the page's end, counted in neither. A weapon's mods are unseen the same way. The card: "Contents
+  unseen: open it in the game, then a screenshot". No dashed frame: dashed means old.
+- **Da, condition:** a printed condition (46/50, 1469/1800) scales the figure by its share, still "~", which now means
+  "an estimate from condition"; meds, food and drink at a full print drop the "~", armour keeps it (its printed maximum
+  isn't the catalogue's); the card shows both ("Scaled to 1469/1800 · full 37 386"); D2's click copies the scaled
+  price. A model: a straight share, and whether tarkov.dev's last low is for full condition only is unchecked.
+- **Found on the screenshots, now rules:** a slot cell carries no footprint, so a short name shared by variants stays
+  a "?" (4 of the 7 filled slots); "Zhuk" names two rigs of one size, so its cell is a "?" whose window's grid attaches
+  either way; a magazine's 60/60 is not a condition; at 40 DIP a 1×1 cell with a long condition loses its arrow (the
+  card keeps the change); a cell with no price (the secure container) shows no figure; the game's middle column starts
+  with the TACTICAL RIG, so the heads take the game's order. The "+" after a figure is a new mark (the sign also starts
+  "+8 %" and BRING's "+N").
+
+Binding: DESIGN.md §4, "Screen anatomy", *The stash desk* (*Its place*, *What it mirrors*, *The head line and the
+fold*, *The cell*, *The card*, *The click*, *Fun*), "Design system" (*Motion*), "Visual language" ("One symbol, one
+meaning": the "+", the "~").
+
+**Decided (in-raid glance, 2026-10-19)**, the owner's three choices on the answer from a loot screenshot in a raid
+(until then the coordinator's scoping above: a later step, its boundary for the owner to decide):
+
+- **When:** every in-raid screenshot that shows an inventory screen (the player's own loadout, or a looted container
+  or body) is read as it arrives, like the extract list, whose reading comes first; the menu screenshots' tick gains
+  the words "and in a raid" (texts to be worded then).
+- **What:** a plate over the map in the cue pattern: FROM YOUR SCREENSHOT, the total, the top five by value per slot
+  with their keep marks, "n unsure", for about 6 seconds; no click; the map stays beside it; the raid's rules
+  unchanged (glanceable, nothing to do).
+- **Kept:** nothing; no in-raid pixels, positions or items are stored. The desk's nested-container rules apply (a
+  looted backpack with a rig inside: the rig's contents only from its open window).
+- Fixtures: 22 in-raid screenshots of 2026-10-19 (one raid) in the ignored `tests\fixtures\ocr\raid-loot`.
+- Its look on a panel of its own after step B; built after step C.
+
+Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk": "Which pictures"; the boundary's list),
+§4, "Screen anatomy", *The in-raid glance*.
+
 **Next.**
 
 - **Measured (2026-10-19): the label alone against the whole catalogue** (`shturmap-cli stash --set all --no-art`: 5,480
@@ -237,9 +289,13 @@ stash desk": the GEAR tab, nested containers, what a reading keeps), §3 (the de
   `%USERPROFILE%\source\repos\Shturmap-catalogue-measurement-2026-10-19.md`.
 - Step B, "Glance": the reader generalised (the whole catalogue; positions and footprints; the GEAR tab's loadout
   slots and grids; container windows, attached to their cells); the data fields kept (the item file's price fields and
-  the hideout levels' item needs, which the loader drops today); the desk view with its cells and head; the PLAN |
-  DESK switch; the menu screenshots' tick worded for the desk (the panel left it out).
-- Step C, once B's naming has held up: the card, the price history, the click and its setting.
+  the hideout levels' item needs, which the loader drops today); the desk view with its cells and head, as the
+  addendum has them: the loadout strip, the region heads (a container window's stemmed to its cell), the head line ON
+  YOU · STASH · KEEP, the fold, the "+" and the condition scaling; the PLAN | DESK switch; the menu screenshots' tick
+  worded for the desk (the panel left it out).
+- Step C, once B's naming has held up: the card, the price history, the click and its setting (the card's lines for a
+  "+" and a scaled figure, the click's scaled price).
+- The in-raid glance: its panel after step B, its build after step C.
 - The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). Open: that `SafetyTests` allows
   the clipboard.
 
@@ -396,6 +452,9 @@ anatomy", *Operational tasks*, the picks' rail), §8 (the script verb, `-Operati
   and map, the title's plural forms in English and German, a row's line, the rows' order, the sections' order in
   MainWindow.xaml), `OperationalRailTests` (one more: soonest first), `OperationalSessionTests` (the cue in place of
   the notice; a run of three screenshots, one cue and one join; made-up tasks call it).
+
+**Changed (owner, 2026-10-19, on the build: "Ordering - under picked."):** OPERATIONAL stands under PICKED and above
+COMPLETE in the open card and the raid card; the build put it above PICKED; the code change follows in the fix round.
 
 **Open.**
 
