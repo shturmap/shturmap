@@ -208,9 +208,24 @@ stash desk": the GEAR tab, nested containers, what a reading keeps), §3 (the de
 
 **Next.**
 
-- The measurement run: the stash spike (`shturmap-cli stash`) with `--set all` against the three hand-labelled
-  screenshots (the key container, the medical case, the stash page; `--truth`), for the false-name rate against the
-  whole catalogue.
+- **Measured (2026-10-19): the label alone against the whole catalogue** (`shturmap-cli stash --set all --no-art`: 5,480
+  items, 3,872 short names; no image fetched, no request). On four hand-labelled pages (the key container, the medical
+  case, a stash page, a GEAR-tab stash page; 183 items): at the fit 0.8 125 right, 1 wrong, 10 unread, 47 "one of N"; at
+  0.9 125, 0, 12, 46; the spike's quest set (3,921 items) 136, 1, 10, 36; each page's own names alone 171, 0, 12, 0.
+- Over the 39 pictures read (1,908 rectangles, 46 a picture, 69 on the GEAR tab): named 51 %, "one of N" 23 %, nothing
+  said 20 %, odd shapes 6 %; 1.1 s a picture (1.6 s on the GEAR tab), 0.08 s more at 0.9. Of the ties 86 % are items
+  sharing one short name (magazines by capacity and colour, the two bandages, two cabin keys, the Hot Rod can and bag),
+  14 % the cut-label rule ("Weapons" fits 49 sealed weapon cases); the item file's footprint leaves one for 38 %; where
+  it leaves several, they span a median 1.6× in price, 30 % over 2×.
+- At 0.8 four labels read a letter off named another item (a dog tag's nickname as a pistol slide, a TC-2002 helmet as
+  the TP-200 brick, the slim diary as the diary, the dog tag case as a dog tag: up to 500× off in price), found where
+  the footprint contradicted the cell or the run at 0.9 named it otherwise; at 0.9 all four go (the reader reads again
+  until a label fits closely), for 1 % fewer names.
+- **Conclusion:** the label alone is safe for a price at a fit of 0.9, not at 0.8; it names half the cells and leaves a
+  quarter "one of N" with wide ranges, so the "?" will be common. Step B takes 0.9 and the item file's footprint (no
+  download) as the tie-break; the art isn't needed for safety, only for the same-name, same-footprint variants left,
+  judged by the "?" count after B. The report stays outside the repository:
+  `%USERPROFILE%\source\repos\Shturmap-catalogue-measurement-2026-10-19.md`.
 - Step B, "Glance": the reader generalised (the whole catalogue; positions and footprints; the GEAR tab's loadout
   slots and grids; container windows, attached to their cells); the data fields kept (the item file's price fields and
   the hideout levels' item needs, which the loader drops today); the desk view with its cells and head; the PLAN |

@@ -35,9 +35,26 @@ internal static class StashSpike
     // "--names a,b,c": the candidates are these short names (made-up ids, no grid images), not the data's set.
     private static string[]? Names;
 
+    // "--no-art": the label alone names a cell, as the stash desk's reading (owner, 2026-10-19: "label only, no
+    // downloads"): the candidates carry no grid image, none is fetched or read from the cache, and no request goes out
+    // at all (the data comes from the cache, as when offline). A cell whose label fits several items alike is "one of
+    // N", with the groups hit and what the item file's footprints would leave of them.
+    private static bool NoArt;
+
+    // The requests a "--no-art" run refused: it should make none.
+    private static int Refused;
+
+    // Each item's footprint in cells (the cached item file's width × height), for "--no-art"'s groups.
+    private static Dictionary<string, (int W, int H)> Footprints = new(StringComparer.Ordinal);
+
     private sealed class Tally
     {
-        public int Items, Known, Outside, Unlisted, Right, Wrong, None, Vetoed;
+        public int Items, Known, Outside, Unlisted, Right, Wrong, None, Vetoed, Several, SeveralOther;
+
+        // Over every screenshot read, truth or not.
+        public int Files, Trading, Rects, Named, Odd, Silent, Tied, TiedByFootprint, TiedByFootprintRight;
+        public long Ms;
+        public readonly Dictionary<string, (int Items, int Hits)> Groups = new(StringComparer.Ordinal);
     }
 
     public static async Task RunAsync(IReadOnlyList<string> args)
@@ -57,13 +74,16 @@ internal static class StashSpike
                 case "--art-others": ArtOthers = int.Parse(args[++i]); break;
                 case "--marks": PrintMarks = true; break;
                 case "--names": Names = args[++i].Split(',').Select(n => n.Trim()).Where(n => n.Length > 0).ToArray(); break;
+                case "--no-art": NoArt = true; break;
                 default: inputs.Add(args[i]); break;
             }
         }
         if (inputs.Count == 0)
         {
-            Console.WriteLine("Use: shturmap-cli stash <png or folder>... [--set keys|quest|all | --names a,b,c] [--truth <file>] [--dump <folder>] " +
+            Console.WriteLine("Use: shturmap-cli stash <png or folder>... [--set keys|quest|all | --names a,b,c] [--no-art] [--truth <file>] [--dump <folder>] " +
                               "[--grids] [--counts] [--marks] [--art-others <n>]");
+            Console.WriteLine("  --no-art: the label alone names a cell (no grid images, none fetched; no request at all, the data from the cache);");
+            Console.WriteLine("            a label that fits several items alike is \"one of N\", listed by group at the end");
             return;
         }
         var files = inputs.SelectMany(p => Directory.Exists(p) ? Directory.GetFiles(p, "*.png").OrderBy(File.GetLastWriteTime).ToArray() : [p]).ToList();
@@ -90,14 +110,24 @@ internal static class StashSpike
         else
         {
             var paths = Shturmap.Session.AppPaths.Default;
-            var http = CachedHttp.CreateClient();
+            var http = NoArt ? CachedHttp.CreateClient(new NoRequests()) : CachedHttp.CreateClient();
             var loader = new GameDataLoader(new CachedHttp(http, paths.DataCache));
             var data = await loader.LoadAsync(GameMode.Pve, "en");
             var sources = await loader.LoadSourcesAsync(GameMode.Pve, "en");
             var ids = ItemSet(set, data, sources);
             var sw = Stopwatch.StartNew();
-            candidates = await CandidatesAsync(http, paths.GameArtCache, ids, data);
-            Console.WriteLine($"Set \"{set}\": {candidates.Count} candidates, {candidates.Count(c => c.GridImage is not null)} with a grid image, in {sw.ElapsedMilliseconds} ms");
+            if (NoArt)
+            {
+                candidates = ids.Select(id => new StashCandidate(id, data.ItemShortName(id), null)).ToList();
+                Footprints = ReadFootprints(Path.Combine(paths.DataCache, GameData.Slug(GameMode.Pve) + "_items.json"));
+                Console.WriteLine($"Set \"{set}\": {candidates.Count} candidates, {candidates.Select(c => c.ShortName).Distinct(StringComparer.Ordinal).Count()} short names, " +
+                                  $"label only; {Refused} requests refused, the data from the cache (checked {data.CheckedAt.ToLocalTime():yyyy-MM-dd HH:mm})");
+            }
+            else
+            {
+                candidates = await CandidatesAsync(http, paths.GameArtCache, ids, data);
+                Console.WriteLine($"Set \"{set}\": {candidates.Count} candidates, {candidates.Count(c => c.GridImage is not null)} with a grid image, in {sw.ElapsedMilliseconds} ms");
+            }
         }
 
         var reader = StashReader.Create("en");
@@ -119,7 +149,71 @@ internal static class StashSpike
             Console.WriteLine($"Against the truth ({tally.Known} of {tally.Items} rectangles in it, {tally.Outside} of them outside the set; " +
                               $"{tally.Unlisted} rectangles the truth doesn't list; {truth.Count} items in the truth):");
             Console.WriteLine("  (an item outside the set counts as right when nothing is said, as wrong when a name is)");
-            Console.WriteLine($"  right {tally.Right}, wrong {tally.Wrong}, says nothing {tally.None} ({tally.Vetoed} of them vetoed by the art)");
+            Console.WriteLine($"  right {tally.Right}, wrong {tally.Wrong}, says nothing {tally.None} ({tally.Vetoed} of them vetoed by the art)" +
+                              (NoImages(candidates) ? $", one of several {tally.Several} (the truth among them) + {tally.SeveralOther} (not among them)" : ""));
+        }
+        if (tally.Files > 1 || NoImages(candidates))
+        {
+            var reading = tally.Files - tally.Trading;
+            Console.WriteLine();
+            Console.WriteLine($"Over {tally.Files} screenshots ({tally.Trading} trading screens, not read): {tally.Rects} rectangles, " +
+                              $"{(reading > 0 ? (double)tally.Rects / reading : 0):0.0} a screenshot read; named {tally.Named} ({Share(tally.Named, tally.Rects)}), " +
+                              $"one of several {tally.Tied} ({Share(tally.Tied, tally.Rects)}), nothing said {tally.Silent} ({Share(tally.Silent, tally.Rects)}), " +
+                              $"odd shapes {tally.Odd}; {(tally.Files > 0 ? tally.Ms / tally.Files : 0)} ms a screenshot");
+            if (tally.Tied > 0)
+            {
+                Console.WriteLine($"  of the {tally.Tied} one of several, the footprint (the item file's width × height, either way round) leaves one for " +
+                                  $"{tally.TiedByFootprint} ({tally.TiedByFootprintRight} of them the truth's)");
+                Console.WriteLine("  groups hit (hits × the items whose names fit alike):");
+                foreach (var (names, (items, hits)) in tally.Groups.OrderByDescending(g => g.Value.Hits).ThenBy(g => g.Key, StringComparer.Ordinal).Take(30))
+                    Console.WriteLine($"    {hits,3} × one of {items}: {names}");
+            }
+        }
+        if (NoArt)
+            Console.WriteLine($"Requests refused: {Refused}");
+    }
+
+    private static string Share(int part, int whole) => whole > 0 ? $"{100.0 * part / whole:0.0} %" : "-";
+
+    // Whether no candidate has a grid image: then the reader's choice among the names is the label's alone, and a cell
+    // left unnamed with a fitting label is one of several, told again here.
+    private static bool NoImages(List<StashCandidate> candidates) => candidates.All(c => c.GridImage is null);
+
+    // The candidates a label fits best when that is enough to name an item: several items here is "one of N".
+    private static List<StashCandidate> Tied(string label, List<StashCandidate> candidates)
+    {
+        var fits = candidates.Select(c => (c, Fit: StashLabels.Fit(label, c.ShortName))).ToList();
+        var top = fits.Count > 0 ? fits.Max(f => f.Fit) : 0;
+        return top < StashLabels.Enough ? [] : fits.Where(f => f.Fit == top).Select(f => f.c).ToList();
+    }
+
+    // The items' footprints from the cached item file: read from disk, never asked for.
+    private static Dictionary<string, (int W, int H)> ReadFootprints(string path)
+    {
+        var footprints = new Dictionary<string, (int W, int H)>(StringComparer.Ordinal);
+        if (!File.Exists(path))
+            return footprints;
+        using var stream = File.OpenRead(path);
+        using var json = System.Text.Json.JsonDocument.Parse(stream);
+        if (json.RootElement.TryGetProperty("data", out var d) && d.TryGetProperty("items", out var items))
+        {
+            foreach (var item in items.EnumerateObject())
+            {
+                if (item.Value.TryGetProperty("width", out var w) && item.Value.TryGetProperty("height", out var h) &&
+                    w.TryGetInt32(out var width) && h.TryGetInt32(out var height))
+                    footprints[item.Name] = (width, height);
+            }
+        }
+        return footprints;
+    }
+
+    // "--no-art"'s transport: every request refused, so the data comes from the cache (CachedHttp's offline path).
+    private sealed class NoRequests : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Interlocked.Increment(ref Refused);
+            return Task.FromException<HttpResponseMessage>(new HttpRequestException("--no-art: no requests"));
         }
     }
 
@@ -209,6 +303,11 @@ internal static class StashSpike
         var names = candidates.ToDictionary(c => c.ItemId, c => c.ShortName, StringComparer.Ordinal);
         Console.WriteLine($"== {Path.GetFileName(file)}: {look.Width}×{look.Height}, pitch {look.Pitch}, {look.Grids.Count} grids" +
                           (look.IsTradingScreen ? ", the trading screen" : "") + $", grids in {look.GridMs} ms, all in {look.TotalMs} ms");
+        tally.Files++;
+        tally.Ms += look.TotalMs;
+        if (look.IsTradingScreen)
+            tally.Trading++;
+        var noImages = NoImages(candidates);
         if (PrintGrids || look.Grids.Count > 0)
         {
             foreach (var g in look.Grids)
@@ -223,7 +322,7 @@ internal static class StashSpike
             overlay = new SKCanvas(overlayBitmap);
         }
 
-        int occupied = 0, named = 0, oddShapes = 0;
+        int occupied = 0, named = 0, oddShapes = 0, tiedHere = 0;
         var seen = new Dictionary<string, int>(StringComparer.Ordinal);
         var corners = new List<(string Key, SKRectI Rect)>();
         for (var gi = 0; gi < look.Grids.Count; gi++)
@@ -246,12 +345,14 @@ internal static class StashSpike
             foreach (var cell in g.Cells)
             {
                 occupied++;
+                tally.Rects++;
                 var rect = cell.Pixels;
                 var where = $"[{letter} {cell.Rect.I0},{cell.Rect.J0}] {cell.Rect.W}×{cell.Rect.H}";
                 truth.TryGetValue((letter, cell.Rect.I0, cell.Rect.J0 - offset), out var expected);
                 if (cell.Rect.Odd)
                 {
                     oddShapes++;
+                    tally.Odd++;
                     Console.WriteLine($"   {where} not a rectangle: skipped");
                     overlay?.DrawRect(rect, new SKPaint { Color = SKColors.Red, Style = SKPaintStyle.Stroke, StrokeWidth = 2 });
                     continue;
@@ -262,6 +363,30 @@ internal static class StashSpike
                     line.Append($" label \"{cell.Label}\" fit {cell.Fit:0.00}");
                 else
                     line.Append(" no label");
+                // Without grid images the reader's choice is the label's alone: an unnamed cell whose label fits is one of several.
+                var tied = said is null && noImages && cell.Label is not null ? Tied(cell.Label, candidates) : [];
+                var several = tied.Count > 1;
+                if (several)
+                {
+                    var group = string.Join(", ", tied.GroupBy(c => c.ShortName, StringComparer.Ordinal).OrderBy(n => n.Key, StringComparer.Ordinal)
+                        .Select(n => n.Count() > 1 ? $"{n.Key} ×{n.Count()}" : n.Key));
+                    var left = tied.Where(c => Footprints.TryGetValue(c.ItemId, out var f) &&
+                                               (f == (cell.Rect.W, cell.Rect.H) || f == (cell.Rect.H, cell.Rect.W))).ToList();
+                    line.Append($"; one of {tied.Count}: {group}; the footprint leaves {left.Count}");
+                    tally.Tied++;
+                    tiedHere++;
+                    tally.Groups[group] = (tied.Count, tally.Groups.GetValueOrDefault(group).Hits + 1);
+                    if (left.Count == 1)
+                    {
+                        tally.TiedByFootprint++;
+                        if (expected is not null && left[0].ShortName == expected)
+                            tally.TiedByFootprintRight++;
+                    }
+                }
+                else if (said is null)
+                    tally.Silent++;
+                else
+                    tally.Named++;
                 if (cell.Agreement is { } agreement)
                     line.Append($"; art {agreement:0.00}" + (cell.Vetoed ? " VETO" : ""));
                 if (cell.CountText is not null)
@@ -309,7 +434,17 @@ internal static class StashSpike
                     else
                     {
                         line.Append($"; truth {expected}");
-                        if (said is null)
+                        if (several)
+                        {
+                            if (tied.Any(c => c.ShortName == expected))
+                                tally.Several++;
+                            else
+                            {
+                                tally.SeveralOther++;
+                                line.Append(" NOT AMONG THEM");
+                            }
+                        }
+                        else if (said is null)
                         {
                             tally.None++;
                             if (cell.Vetoed)
@@ -353,7 +488,8 @@ internal static class StashSpike
                 }
             }
         }
-        Console.WriteLine($"   -- {occupied} items: named {named}, nothing said {occupied - named - oddShapes}, odd shapes {oddShapes}; {look.TotalMs} ms");
+        Console.WriteLine($"   -- {occupied} items: named {named}, " + (noImages ? $"one of several {tiedHere}, " : "") +
+                          $"nothing said {occupied - named - oddShapes - tiedHere}, odd shapes {oddShapes}; {look.TotalMs} ms");
         if (seen.Count > 0)
             Console.WriteLine("   -- seen: " + string.Join(", ", seen.OrderBy(s => s.Key).Select(s => s.Value > 1 ? $"{s.Key} ×{s.Value}" : s.Key)));
         if (overlayBitmap is not null)
