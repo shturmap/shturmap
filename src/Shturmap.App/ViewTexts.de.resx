@@ -644,6 +644,26 @@
     <value>Sprache</value>
     <comment>en: Language</comment>
   </data>
+  <data name="SettingsTextSize" xml:space="preserve">
+    <value>Textgröße</value>
+    <comment>en: Text size</comment>
+  </data>
+  <data name="SettingsTextSizeTip" xml:space="preserve">
+    <value>Zusätzlich zur Textgröße von Windows (Einstellungen › Barrierefreiheit › Textgröße)</value>
+    <comment>en: On top of Windows' text size (Settings › Accessibility › Text size)</comment>
+  </data>
+  <data name="SettingsTextSizeNormal" xml:space="preserve">
+    <value>NORMAL</value>
+    <comment>en: NORMAL</comment>
+  </data>
+  <data name="SettingsTextSizeLarger" xml:space="preserve">
+    <value>GRÖSSER</value>
+    <comment>en: LARGER</comment>
+  </data>
+  <data name="SettingsTextSizeLargest" xml:space="preserve">
+    <value>AM GRÖSSTEN</value>
+    <comment>en: LARGEST</comment>
+  </data>
   <data name="SettingsReadStash" xml:space="preserve">
     <value>Deinen Stash und deine Aufgaben aus Menü-Screenshots lesen</value>
     <comment>en: Read your stash and tasks from menu screenshots</comment>

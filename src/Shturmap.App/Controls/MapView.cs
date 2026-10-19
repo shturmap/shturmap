@@ -108,13 +108,10 @@ public sealed partial class MapView : Grid
 
     private float PixelScale => (float)(XamlRoot?.RasterizationScale ?? 1.0);
 
-    // The size of the map's labels and symbols (MapRenderer's uiScale): the screen's pixels per DIP; a developer build's
-    // "--text-scale" multiplies it (Dev/TextScale.cs).
-#if DEVTOOLS
-    private float UiScale => PixelScale * (float)Dev.TextScale.Factor;
-#else
-    private float UiScale => PixelScale;
-#endif
+    // The size of the map's labels and symbols (MapRenderer's uiScale): the screen's pixels per DIP, times the text size
+    // (Windows' text size and settings' step, TextScale.Effective; docs/DESIGN.md §4, "Map drawing"), which WinUI's own
+    // text scaling doesn't reach in a swap chain.
+    private float UiScale => PixelScale * (float)TextScale.Effective;
 
     /// <summary>Pings and pulses play even with Windows' animation effects off (the website demo's recording).</summary>
     public bool AlwaysAnimate { get; set; }

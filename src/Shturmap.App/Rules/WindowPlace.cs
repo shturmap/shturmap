@@ -21,6 +21,27 @@ public static class WindowPlace
     /// <inheritdoc cref="MinWidth"/>
     public const int MinHeight = 560;
 
+    /// <summary>
+    /// How much taller the smallest window grows per 1 of the text size's factor above 1. Measured (2026-10-19, German,
+    /// the fake raid's Streets in a 900 DIP wide window): EXIT's foot stood at 497, 584 and 702 DIP in the window's
+    /// content at 100, 125 and 150 %, 24 DIP above the foot of a 900×560 window at 100 %; 410 keeps those 24 DIP at 150 %
+    /// (765), 40 at 125 % (663).
+    /// </summary>
+    public const int HeightPerText = 410;
+
+    /// <summary>
+    /// The smallest window at a text size (owner, 2026-10-19: the minimum grows with the text size, so the raid card's
+    /// head, NEXT and EXIT stay in view as at 100 %): 900×560 at 100 %, taller by <see cref="HeightPerText"/> DIP per 1
+    /// of the factor above 1 (663 at 125 %, 765 at 150 %, 970 at 200 %), the width as it is (the rail's is fixed, and the
+    /// status bar gives way by its own rules).
+    /// </summary>
+    /// <param name="textFactor">The whole text size, Windows' times settings' step (TextSize.Effective).</param>
+    public static (int Width, int Height) Smallest(double textFactor)
+    {
+        var factor = double.IsFinite(textFactor) ? Math.Clamp(textFactor, 1, TextSize.Most) : 1;
+        return (MinWidth, (int)Math.Ceiling(MinHeight + HeightPerText * (factor - 1) - 1e-9));
+    }
+
     /// <summary>A window's size when nothing better is known (one monitor, a first start).</summary>
     public const int DefaultWidth = 1600;
 

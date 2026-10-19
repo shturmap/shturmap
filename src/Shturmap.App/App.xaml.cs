@@ -175,10 +175,9 @@ public partial class App : Application
         _session.StudyOverride = GameSession.StudyOverrideFor(cli);
         // A newer game build says the checks after a patch are due (docs/UPDATES.md); a made-up log has no news.
         _session.NoticeGameBuilds = !cli.Contains("--snapshot") && !cli.Contains("--fake-game");
-        // "--text-scale <factor>": every text as Windows' text size at that factor would draw it (Dev/TextScale.cs).
-        Dev.TextScale.Read(Arg(cli, "--text-scale"));
 #endif
         ChooseLanguage(cli);
+        PrepareTextSize(cli);
         // A run that only takes pictures opens off every monitor, unactivated and out of the taskbar and Alt+Tab, so it
         // never interrupts a game on the other monitor (owner, 2026-10-15: checking the UI while playing): a snapshot,
         // the demo, and a developer script's run (its "snapshot" steps; developer builds only, where it plays).
@@ -213,10 +212,8 @@ public partial class App : Application
             _marker?.Dispose();
             await _session.DisposeAsync();
         };
+        Controls.TextScale.Start(_window);
         _window.Open();
-#if DEVTOOLS
-        Dev.TextScale.Start(_window);
-#endif
         try
         {
             await _session.StartAsync();
@@ -392,6 +389,33 @@ public partial class App : Application
     {
         var at = Array.IndexOf(cli, flag);
         return at >= 0 && at + 1 < cli.Length ? cli[at + 1] : null;
+    }
+
+    /// <summary>
+    /// The text size (docs/DESIGN.md §4, "Screen anatomy", *Text size*): settings' step, read once the session's settings
+    /// are open and before the window builds its text, on top of Windows' own text size. Developer builds:
+    /// "--text-scale &lt;factor&gt;" draws everything at that whole factor, as Windows' text size at it would, and
+    /// "--text-step &lt;larger|largest&gt;" takes that step for the run, as a choice in settings does, without saving it.
+    /// </summary>
+    private void PrepareTextSize(string[] cli)
+    {
+        var step = Rules.TextStep.Normal;
+        double? simulated = null;
+        try
+        {
+            step = Rules.TextSize.Parse(_session?.GetSetting(Rules.TextSize.Setting));
+        }
+        catch (Exception e) when (e is System.Data.Common.DbException or IOException or InvalidOperationException)
+        {
+            AppLog.Warn("Reading the text size failed", e);
+        }
+#if DEVTOOLS
+        if (double.TryParse(Arg(cli, "--text-scale"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var factor))
+            simulated = factor;
+        if (Arg(cli, "--text-step") is { } given)
+            step = Rules.TextSize.Parse(given);
+#endif
+        Controls.TextScale.Prepare(step, simulated);
     }
 
     // The session opens its settings only as it starts, when the window is already up. The window's place is read

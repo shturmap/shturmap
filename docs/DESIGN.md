@@ -1078,6 +1078,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   narrow window the lights' words go first, then its last word, the last fix, trims (see "Status bar"). The minimum is
   for what must stay readable, the status bar and the rail's glance (the raid card's head, NEXT, EXIT); at that size the
   map is for a laptop beside the game, not for reading from a metre away on a second monitor (owner, 2026-10-09).
+  At a larger text size the smallest window is taller, so that glance stays in view (owner, 2026-10-19; *Text size*,
+  below).
   Snapshot and demo runs and a given size (`--window`) place the window themselves and remember nothing. Runs that only
   take pictures (`--snapshot`, `--demo`: every run of `tools\fake-raid.ps1` and the layout check; a developer script's,
   §8, "Developer aids", *Quiet runs*) open it off every monitor, past the right edge of the right-most one and level
@@ -1092,6 +1094,42 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   …", "Window off every monitor, …: 2560×1392 at …").
   A saved place is checked at its monitor's scale, the smallest window and the inset from the corner too (review of
   2026-10-09: they were taken at 100 %, so at 150 % or 200 % a window under the smallest came back as it was).
+- **Text size** (beta feedback via the owner, 2026-10-18: "on some setups the text can be hard to read"; owner,
+  2026-10-19: route 1, Windows' own text size honoured everywhere, and the same day "The text-size should still be set
+  by an option, not only through the windows settings"). Two sizes multiply. Windows' text size (Settings ›
+  Accessibility › Text size, `UISettings.TextScaleFactor`, 100 to 225 %), which WinUI applies to every text of the
+  window by itself; and settings' **Text size**, NORMAL · LARGER · LARGEST (×1, ×1.25, ×1.5; `ui.textSize` in
+  shturmap.db, NORMAL unless chosen), on top of it. The text is drawn at Windows' size times the step, never larger
+  than Windows' largest, 225 % (`Rules.TextSize`: Windows at 125 % and LARGEST make 187.5 %; at 200 %, LARGEST adds
+  12.5 %). No setting of Shturmap's own size beyond these three steps, and no other sizes routed by hand: the step
+  reaches every text as Windows' setting does, by one pass over the window and its open popups (`Controls.TextScale`)
+  that gives each text (TextBlocks and their runs, rich text, text boxes, icon glyphs) the size WinUI's own curve gives
+  at the step, smaller text growing more (11 DIP to 16.7 at ×1.5, 44 to 47.9), so the five text styles and the some
+  170 sizes written beside them all follow. It runs after a layout that may have brought new text (a row, a card, an
+  open flyout), at most every 100 ms, and not at all while the step adds nothing; it knows a text by its size, so a text
+  already at its size costs one read (in a fake raid at LARGEST: 30 ms for the pass that sizes the rail's 1,100
+  elements, then 115 passes a minute, 0.5 s in all; the app log says the first, each slower one, and the minute's sum). What measures text off the window (the status bar's fit, the trader strip's
+  cells, help's columns, the glance, a card's place) measures it at that size. The map, which WinUI doesn't reach,
+  takes the whole factor ("Map drawing"). A change, in settings or in Windows, applies at once: the window's text, the
+  measured columns, the map and the smallest window follow. What grows is text and icon glyphs; spacing, frames and
+  boxes don't (the status bar's 40 px row and its 28 px buttons, the map buttons, the rail's 384 px, the cards'
+  widths), and hold the text up to 150 %.
+  **The smallest window grows with it**: 900 wide as at 100 %, and 560 + 410 × (factor − 1) high: 663 at 125 %, 765 at
+  150 %, 970 at 200 % (`WindowPlace.Smallest`), at the monitor's scale and never more than its work area; a window
+  smaller than that grows to it where it stands. The rule is measured: in German, the fake raid's Streets, EXIT's foot
+  stood at 497, 584 and 702 DIP in a 900 DIP wide window's content at 100, 125 and 150 %, 24 DIP above the foot of the
+  900×560 window at 100 %; 410 keeps those 24 DIP at 150 % and 40 at 125 % (before, at 125 % German the EXIT row was
+  below the fold at 900×560). The width stays: the rail's is fixed, and the status bar gives way by its own rules.
+  **What gives way at 125 and 150 %** (the exploration of 2026-10-19 found these cut or squeezed; the layout check at
+  both, English and German, Plan and a raid, finds nothing else): the glance's labels stand above their names (*Raid*,
+  below); the extract list's names and kind lines wrap; the MAP list's name wraps instead of trimming, and its counts
+  past 160 DIP; help's quest types take a column as wide as their longest name (`Columns.HelpKinds`, never under the
+  96 DIP English had); settings' rows of choices wrap beside their name, and its ticks' names wrap; the map's credit
+  wraps before the map buttons; the status bar's raid state trims with "…" as the last resort. 200 % is accepted as
+  degraded, not laid out for: Plan's rows squeeze the map's name, the clock's MIN LEFT trims, long German words break,
+  the roll call's two-line names touch the next, a heading in help and LICENCES in settings run out of their panel;
+  nothing crashes. In the raid card's quest lines long German words break at 150 % (open). Developer builds picture all of it without touching
+  Windows (§8, *A larger text size in a run*).
 - **The map on screen** (owner, 2026-10-06: "remember the last played and selected map and return to that one a) when
   a raid ends and b) remember the last open map when the app closes and re-open it"). The map last on screen is kept
   (`lastMap` in shturmap.db, `GameSession.LastMapSetting`): one picked in the MAP list or Plan's list, a raid's own map
@@ -1149,7 +1187,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   it says (the raid state, the whole last fix, the lights with their words, the three buttons), the lights' words
   go first: the three squares stay, and each says its word and what is behind it in its tooltip. They come back
   once there is 40 px to spare, so a figure more in the last fix doesn't switch them on and off. Only then does the
-  last fix trim. At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
+  last fix trim. Past that, where even the raid state has no room (a large text size in the smallest window), it trims
+  with "…" too, the last fix gone before it (2026-10-19: at 200 % it was cut off without one; `FitStatusBar`). At 900 px a raid's bar is the raid state, the last fix (whole in the fake raid's snapshot; a long
   one trims), three squares and the buttons; outside a raid the words fit.
 - **Rail** (left, 384 px), content by state:
   - *The MAP list* at the top, in every state (owner, 2026-10-08: "there is no way of selecting maps at the moment
@@ -1455,7 +1494,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     "BEHIND-LEFT" cut EXIT's note off mid-word, without an ellipsis). The labels NEXT, EXIT and OR share one column,
     as wide as the longest of them in the language in use and the 10 px after it, never under 48 px, so the names
     beside them line up (review of 2026-10-10: German "EXTRACT" filled the fixed 48 px and ran into the extract's name;
-    `Controls.Columns.Glance`, which the tour's example card takes too). The glance's rows hide with
+    `Controls.Columns.Glance`, which the tour's example card takes too). At a larger text size, where that column and
+    the figures would leave a name fewer than eight of its own ems (German at 150 %: about 130 DIP, "Markiere den /
+    Stryker mit / einem / MS2000 …"), each label stands above its name, which then runs under it as well, the figures
+    still at the right, the three rows alike (`Rules.GlanceFold`, `MainWindow.FitGlance`; 2026-10-19; German at 125 %
+    takes it too). The glance's rows hide with
     `FallbackValue=Collapsed`: x:Bind didn't call `ShownIfSet` again when its value went to null, and an emptied row
     stood on with what it said before. In a raid the app gets
     glances, median 3.9 s in the study log, and these are what a glance is for. Then COMPLETE, PROGRESS and BRING
@@ -1858,7 +1901,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   (AUTOMATIC, then each language Shturmap is translated into, in its own name: ENGLISH, DEUTSCH; developer builds also
   list the ones still in translation, "FRANÇAIS · IN TRANSLATION", to try them; a choice applies at once, and under it
   one line says what Automatic comes to and why: "Automatic: English, from the game.", "…, from Windows.", or that
-  neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Delete
+  neither the game's nor Windows' language is translated yet; §8, "The app's own language"), "Text size" (NORMAL ·
+  LARGER · LARGEST, on top of Windows' text size, which each choice's tooltip names; a choice applies at once; *Text
+  size* above), "Delete
   screenshots after reading" (a tick, off unless ticked, with what goes and what stays; §2), "Read the extract list from
   screenshots" (a tick, on unless unticked, with what is looked at and that nothing of the picture is kept or sent;
   §2), "Flea price to copy" (the stash desk's list price: the last low matched, or 1–20 % under or over it, drawn
@@ -1866,7 +1911,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
   2026-10-19, from a panel: D2; not built; *The stash desk*), "Crash reports" (ASK AFTER A
   CRASH · ALWAYS SEND · NEVER) with what a crash report holds, "Updates" (AUTOMATIC · TELL ME ONLY · OFF, or "not
   available in this build"; an installed Shturmap whose updater couldn't start says that instead, with where the
-  reason is and that the Setup repairs it, `Distribution.NoUpdatesText`); then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
+  reason is and that the Setup repairs it, `Distribution.NoUpdatesText`); a row's choices wrap under each other beside
+  its name where the panel is too narrow for them, and a tick's name wraps; then APP AND DATA: LOG FOLDER, PRIVACY and LICENCES, in an installed build a muted
   UNINSTALL SHTURMAP… with its question; at the foot the version and the kind of build (§8, "Study log",
   "Reports", "Distribution"). It never opens by itself; closing it drops an unanswered uninstall question.
   Split from help on 2026-10-03 (see "Status bar"); the blocks moved as they were.
@@ -1884,6 +1930,13 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 
 Rules from a cartography review of the map (2026-10-02; the owner approved its twelve changes, with the change to
 spawns below).
+
+- **The text size** (owner, 2026-10-19; "Screen anatomy", *Text size*). The map draws its labels and symbols through
+  one factor, `MapRenderer.Render(…, uiScale)`: the screen's pixels per DIP times the text size, Windows' text size
+  times settings' step (`TextScale.Effective`; `MapView.UiScale`), so its names, distances, symbols and scale bar grow
+  as the window's text does, by the factor (not WinUI's curve). WinUI's own text scaling doesn't reach a swap chain:
+  until then the map stayed at 100 %. The labels' room, the repel, the hit test and a framing's label room share the
+  factor; a change redraws at once. At 150 % the symbols keep their places, a little more crowded.
 
 - **Four levels, the rule for every symbol.** A reader takes in the map in order of importance; each level differs
   from the next in size, contrast or colour, and there are few things at the top.
@@ -3756,10 +3809,12 @@ same (docs/LANGUAGES.md, "Layout check"). The folder build (`eng\publish.ps1`, a
 a Debug build and the dev build have.
 
 **A larger text size in a run** (developer builds only; 2026-10-19, the beta's "text hard to read on some setups").
-`--text-scale <factor>` (1 to 2.25) draws every text of the window and its popups at the size Windows' text size
-(Settings › Accessibility › Text size) at that factor would give it, by WinUI's own curve (smaller text grows more), and
-the map's labels and symbols at the factor, without touching Windows' setting, so snapshots and their layout files show
-what clips (`Dev/TextScale.cs`). A simulation for checks, never a setting.
+`--text-scale <factor>` (1 to 2.25) stands in for the whole text size (§4, "Screen anatomy", *Text size*): every text
+of the window and its popups is drawn at the size Windows' text size (Settings › Accessibility › Text size) at that
+factor would give it, by WinUI's own curve (smaller text grows more), and the map's labels and symbols at the factor,
+without touching Windows' setting, so snapshots and their layout files show what clips (the same pass as settings'
+step, `Controls.TextScale`). `--text-step <larger|largest>` takes that step of settings' "Text size" for the run, as a
+choice there does, without saving it. Simulations for checks; the folder build has neither.
 
 **Quiet runs** (owner, 2026-10-15: checking the UI while playing). A run that only takes pictures, `--snapshot`,
 `--demo` (so every run `tools\fake-raid.ps1` starts, and the layout check's) or a developer script's

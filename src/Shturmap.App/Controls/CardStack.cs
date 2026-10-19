@@ -347,9 +347,7 @@ public sealed class CardStack
 
         // No taller than the room there is: a long quest's card scrolls inside instead of running off the window.
         card.MaxHeight = CardPlace.MaxHeight(Room());
-#if DEVTOOLS
-        Dev.TextScale.Probe(card);
-#endif
+        TextScale.Probe(card);
         card.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Place(popup, card.DesiredSize, level);
         // A card that grows while it is open (a held quest card's NOTES field, a note added, a tick's line) moves up as

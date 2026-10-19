@@ -692,6 +692,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The "Crash reports" setting in settings: "Ask", "Always" or "Never".</summary>
     [ObservableProperty] public partial string CrashMode { get; set; } = "Ask";
 
+    /// <summary>The "Text size" setting in settings: "Normal", "Larger" or "Largest" (Rules.TextStep).</summary>
+    [ObservableProperty] public partial string TextSizeStep { get; set; } = "Normal";
+
     /// <summary>What settings say under "Updates" when this run can't update, and why (Distribution.NoUpdatesText).</summary>
     [ObservableProperty] public partial string UpdatesNote { get; set; } = Shturmap.Session.Distribution.NoUpdatesText(false, false);
 

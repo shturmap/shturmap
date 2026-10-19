@@ -90,6 +90,8 @@ public sealed partial class MainWindow
         }
         AppLog.Info($"Shturmap's texts: {UiLanguage.Code}");
         Bindings.Update();
+        // The glance's labels, measured again in the new language, may now stand beside their names or above them.
+        FitGlance();
         // Help: the legend's rows, drawn in code, and its heading; the rest of the legend's state as the player left it.
         _legendRows = LegendRows();
         if (HelpFlyout.IsOpen)

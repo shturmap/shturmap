@@ -70,6 +70,7 @@ public sealed partial class MainWindow : Window
         AddStudySwitch();
 #endif
         WatchLanguage();
+        WatchTextSize();
 
         Picture.Art = () => _session.Art;
         Study.Log = session.Study;
@@ -632,9 +633,7 @@ public sealed partial class MainWindow : Window
             return 0;
         _statusMeasure ??= new TextBlock { Style = (Style)StatusBar.Resources["StatusBarText"] };
         _statusMeasure.Text = Caps.Of(text);
-#if DEVTOOLS
-        Dev.TextScale.Probe(_statusMeasure);
-#endif
+        Controls.TextScale.Probe(_statusMeasure);
         _statusMeasure.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
         return _statusMeasure.DesiredSize.Width;
     }
@@ -647,9 +646,10 @@ public sealed partial class MainWindow : Window
     {
         if (StatusBar.ActualWidth <= 0)
             return;
-        // Side by side: everything up to the raid state as it is laid out, the whole last fix, the lights with their
-        // words, and the three buttons (the right half less its lights, whatever they show at the moment).
-        var left = RaidWord.TransformToVisual(StatusBar).TransformPoint(new Windows.Foundation.Point(RaidWord.ActualWidth, 0)).X;
+        // Side by side: everything up to the raid state as it is laid out, the whole raid state and last fix, the lights
+        // with their words, and the three buttons (the right half less its lights, whatever they show at the moment).
+        var raidAt = RaidWord.TransformToVisual(StatusBar).TransformPoint(default).X;
+        var left = raidAt + StatusWidth(ViewModel.RaidText);
         var fix = StatusWidth(ViewModel.FixText);
         var lights = new[] { ViewModel.LogsText, ViewModel.ScreenshotsText, ViewModel.DataText }
             .Sum(word => LightSquare + (StatusWidth(word) is > 0 and var width ? LightGap + width : 0)) + 2 * StatusSpacing;
@@ -661,6 +661,13 @@ public sealed partial class MainWindow : Window
             ViewModel.LightWords = words;
             Study.Ui("statusbar.words", ("shown", words), ("width", StatusBar.ActualWidth));
         }
+        // The last resort, where even the raid state hasn't room (a large text size in the smallest window; 2026-10-19:
+        // at 200 % it was cut off without "…"): it trims, the last fix gone before it.
+        // Its room: up to the left half's slot, which ends before the right half and the gap between them.
+        var halfEnd = StatusBar.ActualWidth - StatusBar.Padding.Right - StatusRight.ActualWidth - StatusBar.ColumnSpacing;
+        var room = Math.Max(0, halfEnd - raidAt);
+        if (Math.Abs(RaidWord.MaxWidth - room) >= 0.5)
+            RaidWord.MaxWidth = room;
     }
 
     /// <summary>A light's tooltip: what is behind it, and its word first when the bar is too narrow to show it.</summary>
@@ -2521,14 +2528,27 @@ public sealed partial class MainWindow : Window
         _session.SetSetting(WindowPlace.Setting, WindowPlace.Format(new WindowPlace.Saved(bounds, maximised, monitor)));
     }
 
-    // No smaller than the status bar needs to keep its three buttons in view, with the last fix trimmed, at this
-    // monitor's scale (the presenter counts in pixels). A size given by a developer run is left as it is.
+    // No smaller than the status bar needs to keep its three buttons in view, with the last fix trimmed, and the rail
+    // its glance, at this monitor's scale (the presenter counts in pixels) and the text size (WindowPlace.Smallest; owner,
+    // 2026-10-19: the minimum grows with the text size), never more than the monitor's work area holds. A window
+    // smaller than that (a larger text size just chosen, a place saved before) grows to it where it stands. A size
+    // given by a developer run is left as it is.
     private void ApplySmallestSize()
     {
         if (_sizeGiven || AppWindow.Presenter is not OverlappedPresenter presenter || Content.XamlRoot is not { } xaml)
             return;
-        presenter.PreferredMinimumWidth = (int)Math.Ceiling(WindowPlace.MinWidth * xaml.RasterizationScale);
-        presenter.PreferredMinimumHeight = (int)Math.Ceiling(WindowPlace.MinHeight * xaml.RasterizationScale);
+        var (width, height) = WindowPlace.Smallest(Controls.TextScale.Effective);
+        var work = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
+        var least = new SizeInt32(
+            Math.Min((int)Math.Ceiling(width * xaml.RasterizationScale), Math.Max(1, work.Width)),
+            Math.Min((int)Math.Ceiling(height * xaml.RasterizationScale), Math.Max(1, work.Height)));
+        if (presenter.PreferredMinimumWidth != least.Width || presenter.PreferredMinimumHeight != least.Height)
+            AppLog.Info(string.Create(CultureInfo.InvariantCulture,
+                $"Smallest window: {width}×{height} at text ×{Controls.TextScale.Effective:0.###}, {least.Width}×{least.Height} px"));
+        presenter.PreferredMinimumWidth = least.Width;
+        presenter.PreferredMinimumHeight = least.Height;
+        if (presenter.State == OverlappedPresenterState.Restored && (AppWindow.Size.Width < least.Width || AppWindow.Size.Height < least.Height))
+            AppWindow.Resize(new SizeInt32(Math.Max(AppWindow.Size.Width, least.Width), Math.Max(AppWindow.Size.Height, least.Height)));
     }
 
     // ---- keyboard (only while this window has focus; Shturmap registers no global hotkeys) ----
@@ -2829,16 +2849,14 @@ public sealed partial class MainWindow : Window
 
     private async Task RenderToPngAsync(UIElement element, string path)
     {
-#if DEVTOOLS
-        // "--text-scale": a popup opened just for its picture takes the factor too, and the fits settle (Dev/TextScale.cs).
-        if (Dev.TextScale.On)
+        // A larger text size: a popup opened just for its picture takes it too, and the fits settle (Controls.TextScale).
+        if (Controls.TextScale.Own != 1)
         {
-            Dev.TextScale.ApplyTo(this);
-            Dev.TextScale.Probe((FrameworkElement)element);
+            Controls.TextScale.Now();
+            Controls.TextScale.Probe((FrameworkElement)element);
             element.UpdateLayout();
             await Task.Delay(300);
         }
-#endif
         var rtb = new Microsoft.UI.Xaml.Media.Imaging.RenderTargetBitmap();
         var scale = Content.XamlRoot?.RasterizationScale ?? 1;
         if (SnapshotScale == 1)
