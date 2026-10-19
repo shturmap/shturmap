@@ -1,9 +1,11 @@
 # QA replay of a Tasks screenshot's reading (owner, 2026-10-19: from a panel of four, B, "OPERATIONAL rows where the
-# map's work is"; glow and notice, no cue): the rows a reading brought glow in and a notice says how many were read; a
-# task that runs out leaves the ended line; Shoreline's kill without a countdown says its reading's age; Woods' line of
-# no known kind has the generic glyph; then a Streets raid whose survival ends before the raid could. Drafted by the UI
-# QA pass of 2026-10-19. A developer build plays it with --dev-view --dev-script; how to run it, and what each still
-# must show: operational-feedback.md beside this file. Times are in seconds.
+# map's work is"; after trying the dev build the same day, "sorted on top of the list always as they are time-sensitive"
+# and "the same animation as the other quests"): the reading's cue lists every task read, one animation for all of them,
+# and the rows it brought glow in on the rail; a task that runs out leaves the ended line; Shoreline's kill without a
+# countdown says its reading's age; Woods' line of no known kind has the generic glyph; then a Streets raid whose
+# survival ends before the raid could. Drafted by the UI QA pass of 2026-10-19. A developer build plays it with
+# --dev-view --dev-script; how to run it, and what each still must show: operational-feedback.md beside this file.
+# Times are in seconds.
 
 # A --dev-view session starts on settings of its own, as at a first start, so the tour opened by itself at chapter 1
 # once the data was there. It ends first.
@@ -16,7 +18,9 @@ wait 3
 # Shoreline without a countdown, a line of no known kind on Woods; the file isn't written this run).
 tasks 5 ended
 snapshot %TEMP%\shturmap-qa\operational-feedback\t0
-# The sixth task has run out by the next still.
+# The cue whole: its title decoded, its six rows risen in, the one that ends soonest first.
+snapshot %TEMP%\shturmap-qa\operational-feedback\cue
+# The sixth task has run out by the next still, and the cue has gone.
 wait 4
 snapshot %TEMP%\shturmap-qa\operational-feedback\t1
 

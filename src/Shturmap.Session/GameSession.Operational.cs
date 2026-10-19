@@ -25,6 +25,12 @@ public sealed partial class GameSession
     // Made-up tasks were taken this run (ReadExampleTasksAsync): the file isn't written over with them.
     private bool _operationalUnsaved;
 
+    // When the run's first made-up table was read: the later ones' countdowns run from it (ReadExampleTasksAsync).
+    private DateTimeOffset? _exampleTasksSince;
+
+    // Which readings call the cue: one for a run of screenshots (OperationalReadings).
+    private readonly OperationalReadings _operationalReadings = new();
+
     // Wakes the watch over the tasks' expiries when a new table brings an earlier one than it waits for.
     private readonly SemaphoreSlim _operationalWake = new(0, 1);
 
@@ -81,21 +87,28 @@ public sealed partial class GameSession
     // Under the gate: a table's rows, from a screenshot taken at that moment (or a developer script's).
     private void TakeOperational(IReadOnlyList<OperationalRead> rows, DateTimeOffset at, double ms, int unplaced = 0)
     {
+        // The set as it stood, less what ran out by now: what the reading's tasks are new against.
+        var now = DateTimeOffset.Now;
+        var before = _operational.Tasks(_mode).Where(t => t.ExpiresAt is not { } end || end > now).ToList();
         if (_operational.ApplyTable(_mode, at, rows) is not { } dropped)
         {
             AppLog.Info("Operational tasks: a screenshot older than the tasks kept, left");
             return;
         }
-        _operational.Expire(DateTimeOffset.Now);
+        _operational.Expire(now);
         var tasks = _operational.Tasks(_mode);
+        var call = _operationalReadings.Read(at, before, tasks);
         Study.Game("operational.read", ("rows", rows.Count), ("unplaced", unplaced), ("expiries", tasks.Count(t => t.ExpiresAt is not null)),
-            ("dropped", dropped), ("objectives", rows.Count(r => r.Objectives.Count > 0)), ("ms", ms));
+            ("dropped", dropped), ("objectives", rows.Count(r => r.Objectives.Count > 0)), ("cue", call is null ? "none" : call.Joins ? "join" : "new"), ("ms", ms));
         AppLog.Info($"Operational tasks read from a menu screenshot: {rows.Count} rows, {unplaced} on no known map, {dropped} countdowns not taken ({ms:0} ms)");
         SaveOperationalIfDirty();
         if (_operationalWake.CurrentCount == 0)
             _operationalWake.Release();
-        // Feedback: the rows that arrived glow in on the rail, and this notice (owner, 2026-10-19, B: no cue).
-        Say(SessionTexts.OperationalRead(count: rows.Count));
+        // Feedback (owner, 2026-10-19, after trying the dev build: "the same animation as the other quests"; docs/DESIGN.md
+        // §4, principle 11): the cue lists every task a run of screenshots read, one animation for all of them, and the
+        // rows that arrived glow in on the rail; a reading that brings no new task calls none (OperationalReadings).
+        if (call is not null && _data is { } data)
+            Announce(new ViewCue(CueKind.TasksRead, "", Tasks: call.Tasks.Select(t => ShownOf(data, t)).ToList(), Joins: call.Joins));
         Publish();
     }
 
@@ -133,10 +146,12 @@ public sealed partial class GameSession
         var tasks = _operational.Tasks(_mode);
         if (tasks.Count == 0 || _data is not { } data)
             return [];
-        return tasks.Select(t => new OperationalShown(t,
-            t.MapId is { } id && data.Maps.GetValueOrDefault(id) is { } map ? Planning.PickKey(data, map.NormalizedName) : null,
-            t.Kind == OperationalKind.HandOver ? HandOverItems(data, t) : [])).ToList();
+        return tasks.Select(t => ShownOf(data, t)).ToList();
     }
+
+    private static OperationalShown ShownOf(GameData data, OperationalTask t) =>
+        new(t, t.MapId is { } id && data.Maps.GetValueOrDefault(id) is { } map ? Planning.PickKey(data, map.NormalizedName) : null,
+            t.Kind == OperationalKind.HandOver ? HandOverItems(data, t) : []);
 
     private static IReadOnlyList<OperationalItem> HandOverItems(GameData data, OperationalTask task)
     {
@@ -181,7 +196,7 @@ public sealed partial class GameSession
     /// For snapshots and the developer view: as if a screenshot of the Tasks screen's OPERATIONAL table taken now had shown
     /// made-up tasks (a script's "tasks", "--operational" with a fake game; owner, 2026-10-19, B, so the QA pass can
     /// picture the rows without a picture): from where the reading hands its rows over on, every step is a real
-    /// screenshot's (the checks, the notice, the rows' glow), except that the operational tasks' file isn't written
+    /// screenshot's (the checks, the cue, the rows' glow), except that the operational tasks' file isn't written
     /// from then on in this run: made-up tasks never reach a player's file. In order, up to <paramref name="count"/>
     /// of: a survival on Streets of Tarkov ending in 25 minutes, a kill with its condition on Customs, a weekly's two
     /// hand-overs on any map, a kill on Shoreline whose countdown went unread, a line of no known kind on Woods. With
@@ -202,23 +217,29 @@ public sealed partial class GameSession
             // taken for an any-map one.
             var spare = new Queue<string>(data.Maps.Values.OrderBy(m => m.NormalizedName, StringComparer.Ordinal).Select(m => m.Id));
             string? Map(string name) => data.MapByNormalizedName(name)?.Id ?? (spare.Count > 0 ? spare.Dequeue() : null);
+            // The countdowns run from the run's first made-up table on, as the game's do: the same table again (a script's
+            // second "tasks") is the same tasks with the same ends, as a real screenshot taken later shows them.
+            var now = DateTimeOffset.Now;
+            _exampleTasksSince ??= now;
+            var gone = now - _exampleTasksSince.Value;
+            TimeSpan Left(TimeSpan left) => left - gone > TimeSpan.Zero ? left - gone : TimeSpan.FromSeconds(1);
             List<OperationalRead> rows =
             [
-                new("Exit the location", Map("streets-of-tarkov"), TimeSpan.FromMinutes(25), 5, 57,
+                new("Exit the location", Map("streets-of-tarkov"), Left(TimeSpan.FromMinutes(25)), 5, 57,
                     [new OperationalObjective("Survive and extract from the location", 4, 7)]),
-                new("Elimination", Map("customs"), new TimeSpan(8, 14, 11), 4, 0,
+                new("Elimination", Map("customs"), Left(new TimeSpan(8, 14, 11)), 4, 0,
                     [new OperationalObjective("Eliminate Scavs with a headshot from a distance of more than 50m", 0, 3)]),
-                new("Find and transfer", null, new TimeSpan(2, 3, 0, 0), 3, null,
+                new("Find and transfer", null, Left(new TimeSpan(2, 3, 0, 0)), 3, null,
                     [new OperationalObjective("Hand over the found in raid item: \"SSD drive\""), new OperationalObjective("Hand over the found in raid item: \"CPU fan\"")]),
                 new("Elimination", Map("shoreline"), null, 0, 20, [new OperationalObjective("Eliminate PMC operatives", 1, 5)]),
-                new("Assignment", Map("woods"), new TimeSpan(8, 14, 11), 3, 0, [new OperationalObjective("Mark the made-up spots", 0, 2)]),
+                new("Assignment", Map("woods"), Left(new TimeSpan(8, 14, 11)), 3, 0, [new OperationalObjective("Mark the made-up spots", 0, 2)]),
             ];
             rows = rows.Take(Math.Clamp(count, 0, rows.Count)).ToList();
             if (ended)
                 rows.Add(new("Exit the location", Map("woods"), TimeSpan.FromSeconds(3), 5, null, []));
             AppLog.Info($"Example operational tasks: a table of {rows.Count} rows, as a screenshot taken now would show it; the file isn't written this run");
             _operationalUnsaved = true;
-            TakeOperational(rows, DateTimeOffset.Now, 0);
+            TakeOperational(rows, now, 0);
             return null;
         }
         finally

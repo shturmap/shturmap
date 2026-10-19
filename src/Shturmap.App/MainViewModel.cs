@@ -156,7 +156,7 @@ public sealed record QuestLine(string QuestId, ObjectiveKind Kind, string Name, 
 /// 2026-10-19: from a panel of four, B; Rules.OperationalRail): its kind's glyph (the generic operational one for a kind
 /// not known), its synopsis, and its muted line; no portrait, no click.
 /// </summary>
-/// <param name="Key">Which task and which reading: a row rebuilt by a newer screenshot glows in again.</param>
+/// <param name="Key">Which task and what the readings said of it: a row a newer screenshot brought or changed glows in.</param>
 /// <param name="Line">Its progress and time in muted capitals ("4 of 7 · 8 h left"), or empty.</param>
 /// <param name="Alert">In a raid, the time when the task ends before the raid could ("ends in 25 min"), in the clock's red; else empty.</param>
 /// <param name="Right">In a raid, "anywhere" where a quest row has its distance, for a task on any map; else empty.</param>
@@ -179,7 +179,10 @@ public sealed record OperationalLine(string Key, Shturmap.Core.Operational.Opera
     public double Strength => SteppedBack ? Rules.TraderFocus.SteppedBack : 1;
 
     /// <summary>The quest type's glyph its kind is drawn with: a kill's, a survival's, a find-in-raid's.</summary>
-    public ObjectiveKind GlyphKind => Kind switch
+    public ObjectiveKind GlyphKind => GlyphOf(Kind);
+
+    /// <summary>The quest type's glyph an operational task's kind is drawn with, here and in the cue of the tasks read.</summary>
+    public static ObjectiveKind GlyphOf(Shturmap.Core.Operational.OperationalKind kind) => kind switch
     {
         Shturmap.Core.Operational.OperationalKind.Kill => ObjectiveKind.Elimination,
         Shturmap.Core.Operational.OperationalKind.Survive => ObjectiveKind.Survive,

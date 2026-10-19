@@ -349,7 +349,50 @@ the parts work", the script verb and the snapshot flags, the diagnostics) and §
   `TaskTableTests` (moved; one more: a lone trader's word is no trader's screen; the real-picture test passes on the
   owner's six screenshots), `DevToolsTests` (the `tasks` step).
 
+**Changed (2026-10-19, after the dev build)**, which read the owner's Tasks screenshots: "I think they should be sorted
+on top of the list always as they are time-sensitive. Also they should get the same animation as the other quests. Be
+mindful of multiple missions started at the same time, we might want to have them in one animation included."
+Binding: DESIGN.md §1 (the fifth exception), §4 (principle 2, principle 11's DAILIES AND WEEKLIES, "Motion", "Screen
+anatomy", *Operational tasks*, the picks' rail), §8 (the script verb, `-Operational`, how the parts work) and §9.
+
+1. **On top.** OPERATIONAL is the first section of the open map's card and of the raid card, before PICKED,
+   COMPLETE and PROGRESS (the owner's "always": above the picks too); within it, and on a NEXT RAID row, the task
+   that ends soonest first (one without a countdown last, the ones ending in the same minute in the table's order;
+   `OperationalRail.Soonest`). A NEXT RAID row's framed glyphs stay after its quests' glyphs: the row compares the
+   maps' quest work glyph for glyph in the planner's order, and a glyph says no time. The planner's order and score
+   are untouched (the panel's B).
+2. **A cue, like the quests'.** DAILIES AND WEEKLIES (`MainWindow.TasksCue`, `Rules.OperationalCueWords`; the
+   session's `CueKind.TasksRead`): "FROM YOUR SCREENSHOT" over "3 DAILIES AND WEEKLIES" („3 DAILIES UND WEEKLIES“;
+   one: "1 DAILY OR WEEKLY", „1 DAILY ODER WEEKLY“), QUEST COMPLETE's stamp with the stopwatch, and a row per task
+   in the roll call's row style, rising in as its rows do: the framed glyph, the synopsis, the map or ANY MAP and
+   the time left in muted capitals, soonest first, six at most. It stays 5 s after the last reading joined, 12 s at
+   most, and steps back to the old notice while a replay, QUEST COMPLETE, SEEN IN YOUR STASH or the tour's cue is up
+   (SEEN IN YOUR STASH now steps back to its notice while this cue is up). The rail's glow is its after-effect, now
+   only for the rows a reading brought or changed (a row's key is the task and what was read of it, no longer the
+   reading's time). Texts: RuleTexts `OperationalCueEyebrow`, `OperationalCueTitle` (en and de, for the senior
+   translator's review); SessionTexts `OperationalRead` is the stand-in notice now.
+3. **Several at once** (`OperationalReadings`): screenshots taken within a minute of the one before are one reading;
+   its first that brings a new task calls the cue with every task the run read, a later one joins the cue while it
+   is up and calls none after it (the table, then a row expanded: its objectives, no second cue). A reading that brings
+   no new task calls none: the same set again, a row's objectives, a task handed in; "As of" says it.
+
+- Dev aids: `tasks` and `--operational` call the cue (a snapshot keeps it up); a second `tasks` in a run counts its
+  countdowns down from the first, so it is the same table again. `tools\qa\operational-feedback` has the still `cue`
+  (the cue whole), between t0 and t1.
+- Real pictures: three more of the owner's (the same table seconds apart, each with another row expanded) with
+  hand-written truths in the ignored `tests\fixtures\ocr\operational`: read 9 of 9 rows, names, locations, statuses
+  and countdowns, 4 of 4 objectives and counts, progresses 5 of 9 read and none wrong; the real-picture test passes on
+  nine.
+- Tests: `OperationalCueTests` (13: the run of screenshots, the same set, a new run after a minute, two tasks of one name
+  and map, the title's plural forms in English and German, a row's line, the rows' order, the sections' order in
+  MainWindow.xaml), `OperationalRailTests` (one more: soonest first), `OperationalSessionTests` (the cue in place of
+  the notice; a run of three screenshots, one cue and one join; made-up tasks call it).
+
 **Open.**
+
+- **The changes after the dev build** (above): the UI QA pass on the cue (`tools\qa\operational-feedback`, its `cue`
+  still; 900×560 and German too: the title in two lines, six rows in a short column) and the section on top, and the
+  senior translator's review of `OperationalCueEyebrow` and `OperationalCueTitle`.
 
 - **The UI QA pass (2026-10-19, on ea0cb16) and the senior translator's review (2a75488).** The pass found one blocker
   and four nits; fixed after it: F1, with the app in German the catalogue's German names matched no hand-over item read

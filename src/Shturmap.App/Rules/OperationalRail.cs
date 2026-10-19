@@ -13,17 +13,29 @@ namespace Shturmap.App.Rules;
 /// ("4 OF 7 · 8 H LEFT"; a weekly "2 D LEFT"; without an expiry "READ 3 H AGO"), in a raid its progress and, only when the
 /// task ends before the raid could, "ENDS IN 24 MIN" in the clock's red. Every time left is rounded down, in both (QA,
 /// 2026-10-19: Plan's 24 and the raid's 25 at the same moment): a time never says more than there is. No portrait, no
-/// card, no click.
+/// card, no click. The section stands first in the card's quest list, before PICKED and COMPLETE, and within it the task
+/// that ends soonest comes first (owner, 2026-10-19, after trying the dev build: "I think they should be sorted on top of
+/// the list always as they are time-sensitive"); the planner's order and score stay as they were.
 /// </summary>
 public static class OperationalRail
 {
-    /// <summary>The map's own tasks, in the table's order: a list row's framed glyphs.</summary>
+    /// <summary>The map's own tasks, the one that ends soonest first: a list row's framed glyphs, in the order its card's
+    /// rows have them.</summary>
     public static IReadOnlyList<OperationalShown> OnRow(IReadOnlyList<OperationalShown> all, string? mapKey) =>
-        mapKey is null ? [] : all.Where(t => t.MapKey == mapKey).ToList();
+        mapKey is null ? [] : Soonest(all.Where(t => t.MapKey == mapKey));
 
-    /// <summary>The OPERATIONAL section of a map's card: the map's tasks, then the any-map tasks (after a hairline).</summary>
+    /// <summary>The OPERATIONAL section of a map's card: the map's tasks, then the any-map tasks (after a hairline), each
+    /// group the task that ends soonest first.</summary>
     public static (IReadOnlyList<OperationalShown> Here, IReadOnlyList<OperationalShown> Anywhere) Section(IReadOnlyList<OperationalShown> all, string? mapKey) =>
-        (OnRow(all, mapKey), all.Where(t => t.MapKey is null).ToList());
+        (OnRow(all, mapKey), Soonest(all.Where(t => t.MapKey is null)));
+
+    /// <summary>
+    /// The tasks that end soonest first (owner, 2026-10-19: "time-sensitive"); a task whose countdown wasn't taken after
+    /// the ones with an end, and tasks that end in the same minute (the dailies the game gives together, whose countdowns
+    /// are read a second or two apart) in the table's order.
+    /// </summary>
+    public static IReadOnlyList<OperationalShown> Soonest(IEnumerable<OperationalShown> tasks) =>
+        tasks.OrderBy(t => t.Task.ExpiresAt is { } end ? end.UtcTicks / TimeSpan.TicksPerMinute : long.MaxValue).ToList();
 
     /// <summary>
     /// What Plan says of a task in muted capitals: on any map, its progress, a hand-over's "hand over after", and its time

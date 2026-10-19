@@ -37,7 +37,7 @@ public sealed partial class MainWindow
 
     // The cues that stay as long as their kind keeps coming and fade by themselves (HideAfter), not after CueLength:
     // YOUR EXTRACTS THIS RAID until 1.5 s after its last icon landed (MainWindow.RollCall).
-    private static bool Stays(ViewCue cue) => cue.Kind is CueKind.QuestComplete or CueKind.StashSeen or CueKind.ExitsListed;
+    private static bool Stays(ViewCue cue) => cue.Kind is CueKind.QuestComplete or CueKind.StashSeen or CueKind.ExitsListed or CueKind.TasksRead;
 
     private void HideAfter(ViewCue cue)
     {
@@ -45,25 +45,35 @@ public sealed partial class MainWindow
             HideCompletedAfter();
         else if (cue.Kind == CueKind.ExitsListed)
             HideRollCallAfter();
+        else if (cue.Kind == CueKind.TasksRead)
+            HideTasksAfter();
         else
             HideStashAfter();
     }
 
-    // The stamp's shape: the check for a quest completed, the stash glyph for SEEN IN YOUR STASH.
+    // The stamp's shape: the check for a quest completed, the stash glyph for SEEN IN YOUR STASH, the generic operational
+    // glyph (a stopwatch) for the tasks read from the Tasks screen.
     private void StampShape(CueKind kind)
     {
-        CueStampCheck.Visibility = kind == CueKind.StashSeen ? Visibility.Collapsed : Visibility.Visible;
-        CueStampGlyph.Visibility = kind == CueKind.StashSeen ? Visibility.Visible : Visibility.Collapsed;
+        var glyph = kind is CueKind.StashSeen or CueKind.TasksRead;
+        CueStampCheck.Visibility = glyph ? Visibility.Collapsed : Visibility.Visible;
+        CueStampGlyph.Visibility = glyph ? Visibility.Visible : Visibility.Collapsed;
+        CueStampGlyph.Glyph = kind == CueKind.TasksRead ? OperationalGlyph : StashGlyph;
     }
+
+    // Segoe Fluent Icons: the stash grid the marks carry, and the stopwatch that stands for an operational task.
+    private const string StashGlyph = "";
+    private const string OperationalGlyph = "";
 
     /// <summary>
     /// A SEEN IN YOUR STASH cue arrived. True when ShowCue has nothing more to do: it joined the cue on screen, or
-    /// the notice said it because a replay plays, QUEST COMPLETE is up or the tour shows its own cue.
+    /// the notice said it because a replay plays, QUEST COMPLETE or the cue of the tasks read is up, or the tour shows its
+    /// own cue (neither cue of the player's screenshots is cut for the other).
     /// </summary>
     private bool StashSeenHandled(ViewCue cue, bool example)
     {
         var items = cue.Kit ?? [];
-        if (!example && (_replay is not null || CompletedShowing || _tourCue))
+        if (!example && (_replay is not null || CompletedShowing || TasksShowing || _tourCue))
         {
             ShowNotice(StashCueWords(items, cue.KitMore).Notice);
             return true;

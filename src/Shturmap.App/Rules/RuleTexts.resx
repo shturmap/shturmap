@@ -248,4 +248,12 @@
     <value>{count, plural, one {# ended at {time}. Screenshot your tasks for the new one.} other {# ended, the last at {time}. Screenshot your tasks for the new ones.}}</value>
     <comment>Under the OPERATIONAL eyebrow, muted, when daily or weekly tasks ran out since the last screenshot of the game's Tasks screen: the game gives new ones, which only a new screenshot shows. {count}: how many ended; {time}: when the last did, "22:35".</comment>
   </data>
+  <data name="OperationalCueEyebrow" xml:space="preserve">
+    <value>FROM YOUR SCREENSHOT</value>
+    <comment>The eyebrow of the cue for a screenshot of the game's Tasks screen (its OPERATIONAL tab) that brought new daily or weekly tasks, over its title. Capitals.</comment>
+  </data>
+  <data name="OperationalCueTitle" xml:space="preserve">
+    <value>{count, plural, one {# DAILY OR WEEKLY} other {# DAILIES AND WEEKLIES}}</value>
+    <comment>The cue's title when a screenshot of the game's Tasks screen (its OPERATIONAL tab) brought new daily or weekly tasks; under it a row for each task read. {count}: how many tasks it lists, 1 to 5 as a rule. The reading doesn't tell a daily from a weekly, so the words never say which. In the 48 px title type: keep it short. Capitals.</comment>
+  </data>
 </root>

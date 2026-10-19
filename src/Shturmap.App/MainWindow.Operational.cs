@@ -12,7 +12,9 @@ namespace Shturmap.App;
 // The daily and weekly operational tasks where the map's work is (owner, 2026-10-19: from a panel of four, "Use B, the
 // recommended one"; docs/DESIGN.md §4, "Screen anatomy", *Operational tasks*; Rules.OperationalRail): framed glyphs on
 // NEXT RAID's rows, an OPERATIONAL section in the open card and the raid card, a Scav's hand-over items under FIND IN
-// RAID. The rows a reading brought glow in (Controls.Glow) and the session says it in a notice; no cue.
+// RAID. A reading that brought new tasks calls the cue of the tasks read (owner, 2026-10-19, after trying the dev build:
+// "the same animation as the other quests"; MainWindow.TasksCue), and the rows it brought or changed glow in
+// (Controls.Glow), its after-effect; the same set again changes no row, and only "As of" says it.
 public sealed partial class MainWindow
 {
     /// <summary>"--operational &lt;n&gt;" with a fake game (snapshots): n made-up operational tasks once the data and the
@@ -52,9 +54,14 @@ public sealed partial class MainWindow
             _freshTasks.Remove(key);
     }
 
-    // A task as one reading showed it: a newer screenshot of the same task is a new row, which glows in again.
+    // A task and what the readings said of it: a newer screenshot that brings it, or changes its progress or objectives,
+    // makes a new row, which glows in; one that shows it as it was keeps the row as it stands (owner, 2026-10-19: a reading
+    // that changes nothing says nothing but "As of").
     private static string TaskKey(OperationalShown t) =>
-        string.Join("\n", t.Task.Name, t.Task.MapId ?? "", t.Task.ReadAt.UtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        string.Join("\n", [t.Task.Name, t.Task.MapId ?? "", t.Task.Kind.ToString(), TaskNumber(t.Task.Progress),
+            .. t.Task.Objectives.Select(o => o.Text + " " + TaskNumber(o.Done) + "/" + TaskNumber(o.Of))]);
+
+    private static string TaskNumber(int? n) => n?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "-";
 
     /// <summary>A map's OPERATIONAL rows: its own tasks, then the any-map ones after a hairline (in every card, owner,
     /// 2026-10-19). In a raid each says its time only when it ends before the raid could, and "anywhere" stands where a

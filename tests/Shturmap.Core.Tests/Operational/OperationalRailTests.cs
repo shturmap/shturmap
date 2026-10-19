@@ -37,6 +37,26 @@ public class OperationalRailTests
         Assert.Empty(OperationalRail.OnRow(All, null));
     }
 
+    // Time-sensitive (owner, 2026-10-19: "sorted on top of the list always as they are time-sensitive"): in each group of
+    // the section, and on a list row, the task that ends soonest first; one without a countdown last; the dailies the game
+    // gives together, which end in the same minute, in the table's order.
+    [Fact]
+    public void Within_the_section_the_task_that_ends_soonest_comes_first()
+    {
+        var weekly = Shown("Elimination", "customs", OperationalKind.Kill, TimeSpan.FromDays(4));
+        var unsure = Shown("Elimination", "customs", OperationalKind.Kill, null, 20);
+        var daily = Shown("Exit the location", "customs", OperationalKind.Survive, new TimeSpan(8, 14, 12));
+        var together = Shown("Find and transfer", "customs", OperationalKind.HandOver, new TimeSpan(8, 14, 10));
+        var soon = Shown("Exit the location", "customs", OperationalKind.Survive, TimeSpan.FromMinutes(25));
+        var anyWeekly = Shown("Find and transfer", null, OperationalKind.HandOver, TimeSpan.FromDays(5));
+        var anyDaily = Shown("Find and transfer", null, OperationalKind.HandOver, TimeSpan.FromHours(3));
+        IReadOnlyList<OperationalShown> all = [weekly, unsure, anyWeekly, daily, together, soon, anyDaily];
+        var (here, anywhere) = OperationalRail.Section(all, "customs");
+        Assert.Equal([soon, daily, together, weekly, unsure], here);
+        Assert.Equal([anyDaily, anyWeekly], anywhere);
+        Assert.Equal(here, OperationalRail.OnRow(all, "customs"));
+    }
+
     [Fact]
     public void A_cards_section_has_the_maps_tasks_then_the_any_map_ones_in_every_card()
     {

@@ -1799,6 +1799,7 @@ public sealed partial class MainWindow : Window
             CueKind.StashSeen => StashCueText(cue),
             CueKind.ExitsListed => RollCallText(),
             CueKind.UpdateReady => UpdateCueText(cue),
+            CueKind.TasksRead => TasksCueText(),
             _ => (cue.RaidLength is { } length ? AppTexts.CueMapAndLength(map: map, minutes: (int)length.TotalMinutes) : map, AppTexts.CueRaidOver,
                 _snapshot?.Plan.FirstOrDefault() is { } next
                     ? AppTexts.CueNextRaid(map: next.MapName, summary: Summary(next.Finish.Count, next.Progress.Count))
@@ -1814,6 +1815,12 @@ public sealed partial class MainWindow : Window
     /// <param name="example">The tour's example (MainWindow.Tour): its line says so, in place of the player's own plan.</param>
     private void ShowCue(ViewCue cue, string how = "end", bool example = false)
     {
+        // The tasks a Tasks screenshot read: a later reading of the same run of screenshots joins the cue on screen or
+        // calls none, and the cue steps back to a notice while a replay plays or QUEST COMPLETE or SEEN IN YOUR STASH is
+        // up (MainWindow.TasksCue); any other cue ends it (below, once SEEN IN YOUR STASH has had its say: it steps back
+        // to its notice while this cue is up).
+        if (cue.Kind == CueKind.TasksRead && TasksReadHandled(cue))
+            return;
         // QUEST COMPLETE joins one on screen, or waits for a replay to end (MainWindow.Completion); any other cue ends it.
         if (cue is { Kind: CueKind.QuestComplete, Completed: { } quest } && CompletionHandled(quest))
             return;
@@ -1828,6 +1835,8 @@ public sealed partial class MainWindow : Window
             return;
         if (cue.Kind != CueKind.StashSeen && StashShowing)
             EndStashSeen();
+        if (cue.Kind != CueKind.TasksRead && TasksShowing)
+            EndTasksRead();
         // YOUR EXTRACTS THIS RAID gives way to any other cue as they do; its icons flying carry on, on the map
         // (MainWindow.RollCall).
         if (cue.Kind != CueKind.ExitsListed && _rollRows.Count > 0)
@@ -1859,6 +1868,8 @@ public sealed partial class MainWindow : Window
         // The roll call's rows stand where the kit would (MainWindow.RollCall).
         if (cue.Kind == CueKind.ExitsListed)
             ShowRollRows();
+        // The rows of the tasks read stand there too (MainWindow.TasksCue); any other cue has none.
+        var taskRows = cue.Kind == CueKind.TasksRead ? ShowTasksRows() : ClearTasksRows();
         CueStamp.Visibility = Visibility.Collapsed;
         StampShape(cue.Kind);
         // The words as wide as the map's column, the title in two lines at most (FitCueTitle).
@@ -1870,6 +1881,12 @@ public sealed partial class MainWindow : Window
         _cueTimer?.Stop();
         if (Replays(cue))
             PlayReplay(cue.Replay!, how);
+        // Laid out with its title as it ends, the rows of the tasks read take the room the map's column leaves them.
+        if (cue.Kind == CueKind.TasksRead)
+        {
+            CueTitle.Text = title;
+            FitTasksRows();
+        }
         // Laid out with its title as it ends, each row's triangle is handed to the map where it stands. An example list
         // may name fewer extracts to fit its room (MainWindow.RollCall, FitRollCue): the title counts what it names.
         if (cue.Kind == CueKind.ExitsListed)
@@ -1942,9 +1959,20 @@ public sealed partial class MainWindow : Window
             kitCells[i].Opacity = 0;
             Animate(kitCells[i], "Opacity", easeOut, (0, 0), (at, 0), (at + 0.2, 1));
         }
+        // The rows of the tasks read rise in one after another, as the roll call's rows do (MainWindow.TasksCue).
+        for (var i = 0; i < taskRows.Count; i++)
+        {
+            var (row, shift) = taskRows[i];
+            var at = (RollRiseFrom + RollRiseApart * i).TotalSeconds;
+            var rise = RollRise.TotalSeconds;
+            row.Opacity = 0;
+            shift.Y = TasksRiseBy;
+            Animate(row, "Opacity", easeOut, (0, 0), (at, 0), (at + rise, 1));
+            Animate(shift, "Y", easeOut, (0, TasksRiseBy), (at, TasksRiseBy), (at + rise, 0));
+        }
         story.Completed += (_, _) =>
         {
-            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing && !StashShowing && _rollRows.Count == 0)
+            if (ReferenceEquals(story, _cueStory) && !SnapshotMode && !CompletedShowing && !StashShowing && !TasksShowing && _rollRows.Count == 0)
                 CuePanel.Visibility = Visibility.Collapsed;
         };
         _cueStory = story;
