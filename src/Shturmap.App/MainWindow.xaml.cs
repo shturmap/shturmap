@@ -77,6 +77,7 @@ public sealed partial class MainWindow : Window
         var root = (FrameworkElement)Content;
         StudyAttention(root);
         _cards = new CardStack(root, CreateCard, CardRoom);
+        InstallDesk();
         // Rows open their cards in their window's stack.
         Linked.Hovered += (element, key) => CardStack.For(element.XamlRoot)?.Enter(element, key);
         // A row unloaded under the pointer can't say which window it was in: every stack hears it, its own takes it.
@@ -333,7 +334,10 @@ public sealed partial class MainWindow : Window
     /// the rest of the card scrolls under it), and at the top of what scrolls otherwise.</summary>
     public Visibility HintInRaid(string? hint, bool inRaid) => inRaid && !string.IsNullOrEmpty(hint) ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility HintOutsideRaid(string? hint, bool inRaid) => !inRaid && !string.IsNullOrEmpty(hint) ? Visibility.Visible : Visibility.Collapsed;
+    // ANY MAP: in Plan and a PMC raid; not in a Scav's (its kills don't count), nor while the stash desk is up.
+    public Visibility AnyMapShown(bool scavRaid, bool deskUp) => scavRaid || deskUp ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility HintOutsideRaid(string? hint, bool inRaid, bool deskUp) => !inRaid && !deskUp && !string.IsNullOrEmpty(hint) ? Visibility.Visible : Visibility.Collapsed;
 
     private void OnWikiMapClick(object sender, RoutedEventArgs e) => Study.Ui("wiki.map", ("url", ViewModel.WikiMap?.ToString()));
 
@@ -564,6 +568,8 @@ public sealed partial class MainWindow : Window
         UpdateClockTexts();
         HoldTraderOnStart(s);
         ReadExampleTasksOnStart(s);
+        UpdateDesk(s);
+        ShowDeskExampleOnStart(s);
         UpdateTraders(s);
         UpdatePicker(s);
         UpdatePlan(s);
@@ -2616,6 +2622,14 @@ public sealed partial class MainWindow : Window
                     e.Handled = TourKey(key);
                     return;
                 }
+                // While the stash desk is up the map, out of sight, takes no keys; PgUp and PgDn scroll the desk's page.
+                if (_deskChosen && DeskSwitch.MapKey((int)key))
+                {
+                    if (key is Windows.System.VirtualKey.PageUp or Windows.System.VirtualKey.PageDown)
+                        StashDesk.PageBy(key == Windows.System.VirtualKey.PageDown ? 1 : -1);
+                    e.Handled = true;
+                    return;
+                }
                 Study.Ui("key", ("key", shift ? "Shift+" + key : key.ToString()));
                 action();
                 e.Handled = true;
@@ -2668,7 +2682,7 @@ public sealed partial class MainWindow : Window
         var followKey = new KeyboardAccelerator { Key = Windows.System.VirtualKey.F, Modifiers = Windows.System.VirtualKeyModifiers.Shift };
         followKey.Invoked += (_, e) =>
         {
-            if (ReportOpen || TourOpen || TypingText)
+            if (ReportOpen || TourOpen || TypingText || _deskChosen)
                 return;
             Study.Ui("key", ("key", "Shift+F"));
             SetFollow(!Map.Follow, "key");
@@ -2707,6 +2721,8 @@ public sealed partial class MainWindow : Window
         if (ViewModel.SelectedMap is not { } choice || choice.Stands(_snapshot?.Map?.NormalizedName))
             return;
         Study.Ui("map.pick", ("to", choice.NormalizedName), ("how", "picker"));
+        // A map picked is a map to look at: the desk gives Plan its place back.
+        LeaveDesk("map");
         await _session.SelectMapAsync(choice.NormalizedName);
     }
 

@@ -299,6 +299,26 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
 - The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). Open: that `SafetyTests` allows
   the clipboard.
 
+**Built (step B part 2, 2026-10-19: the view)**, over part 1's model (`SessionSnapshot.Desk`, `Shturmap.Core.Desk`):
+
+- **Where it lives:** `MainWindow.Desk` (the state: PLAN | DESK, a reading opening the desk, a raid taking the window,
+  the fold kept, the rail's card), `Controls.DeskBoard` (the page: head line, regions, fold lines, stems, entry and
+  count-up), `Controls.DeskCellView` (a cell and its marks), `Rules.DeskSwitch`, `Rules.DeskFold`, `Rules.DeskCells`,
+  `Rules.DeskNumbers`, `Rules.DeskPageRules` (each tested in `tests\Shturmap.Core.Tests\Desk`), `Rules.DeskExample`
+  (the made-up desk); the switch and the rail's desk part in `MainWindow.xaml`; texts in `RuleTexts`, `ViewTexts`,
+  `AppTexts` (en, de; the German for the senior translator's review); help's privacy paragraph widened for the desk
+  (the tick's words and note are the texts agent's, merged in main).
+- **Dev aids:** `--desk [<n>]` and `tools\fake-raid.ps1 -Desk [-DeskReading n]`; the script's `desk [<n>] | open
+  <region> | point <region> [<i> <j>] | plan | show`; the layout check's `desk` view; the replay `tools\qa\desk`.
+- **Rules taken where the panels left a choice:** DESIGN.md §4, *The stash desk*, *As built* (the switch's look, when
+  the desk comes and goes, the rail, the page's columns, what gives way in a narrow cell, the band under the figure, the
+  "?" plate's move, the numbers' form, the stem's route and light).
+- **Open:** the desk's own card and the click (step C); the website on what the desk reads; the tour's pictures of
+  chapters 1 and 2 (the release prep); the desk at 125 and 150 % text (cells are fixed boxes, their figures grow: the
+  figure shrinks only by the width estimate at 100 %); the German words of the heads and the switch (PLANUNG | DESK, AN
+  DIR, BEHALTEN, RIG, POUCH) for the senior translator; a turned cell's picture turns a quarter clockwise, unchecked
+  against the game; the reading counter's start: the view takes a page read back from the file for reading 0.
+
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,
 `%USERPROFILE%\source\repos\Shturmap-price-view-data-2026-10-19.md` and

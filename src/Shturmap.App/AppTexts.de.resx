@@ -724,4 +724,12 @@
     <value>für eine Daily oder Weekly</value>
     <comment>en: for an operational task</comment>
   </data>
+  <data name="DeskEmpty" xml:space="preserve">
+    <value>Mach in den Menüs des Spiels einen Screenshot von deinem Stash.</value>
+    <comment>en: Screenshot your stash in the game's menus.</comment>
+  </data>
+  <data name="DeskRailOneOf" xml:space="preserve">
+    <value>{count, plural, one {Eins von # Item} other {Eins von # Items}}</value>
+    <comment>en: {count, plural, one {One of # item} other {One of # items}}</comment>
+  </data>
 </root>

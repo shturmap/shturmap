@@ -11,15 +11,15 @@ Inoffizielles Fanprojekt, nicht von Battlestate Games gemacht oder gebilligt. Au
 - reads · Die Logs des Spiels
 - reads · Die Namen deiner Screenshots
 - reads · Die Extract-Liste in einem Screenshot
-- reads · Stash, Dailies und Weeklies in einem Menü-Screenshot, wenn du einen machst
+- reads · Stash, Gear, Dailies und Weeklies in einem Menü-Screenshot, wenn du einen machst
 - never · Fasst das Spiel an
 - never · Sendet Tastendrücke oder Klicks
 - never · Nimmt deinen Bildschirm auf
 
 ## follows · RaidWord, Rail
 FOLGT DEM SPIEL
-Zieh Shturmap auf deinen zweiten Monitor. In den Menüs plant es, im Raid folgt es dem Raid.
-Es wechselt von selbst: nichts zu klicken, während du spielst.
+Zieh Shturmap auf deinen zweiten Monitor. In den Menüs plant es oder schätzt deinen Stash.
+Im Raid folgt es dem Raid. Es wechselt von selbst: nichts zu klicken, während du spielst.
 - NICHT IM RAID · Planung: wohin, was mitnehmen
 - IM RAID · Raid: dieselbe Karte, live, mit der Restzeit
 

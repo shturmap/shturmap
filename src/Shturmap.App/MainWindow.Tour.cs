@@ -145,6 +145,8 @@ public sealed partial class MainWindow
             return;
         }
         at = Math.Clamp(at, 0, TourChapters.Count - 1);
+        // The tour stages its chapters on the map and Plan's rail: the desk gives them their place back.
+        LeaveDesk("tour");
         if (HelpFlyout.IsOpen)
             HelpFlyout.Hide();
         if (SettingsFlyout.IsOpen)

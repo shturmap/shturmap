@@ -93,6 +93,9 @@ public sealed partial class MainWindow
 
     private void ShowWhatsNew(IReadOnlyList<WhatsNew.Section> sections, string how)
     {
+        // The card stands in Plan's rail and previews on the map: the desk gives them their place back.
+        if (sections.Count > 0)
+            LeaveDesk("whatsnew");
         RenderWhatsNew(sections);
         if (sections.Count > 0)
             Study.Ui("whatsnew.show", ("how", how), ("versions", string.Join(",", sections.Select(x => x.Label))));

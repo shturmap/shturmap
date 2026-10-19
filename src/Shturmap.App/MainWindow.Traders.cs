@@ -95,15 +95,21 @@ public sealed partial class MainWindow
     private void OnTraderClick(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { Tag: string trader })
+        {
+            // A trader's quests light on the map and in Plan's rows: the desk gives Plan its place back.
+            LeaveDesk("trader");
             HoldTrader(TraderFocus.Click(_heldTrader, trader), "click");
+        }
     }
 
-    // Esc: the cards first, as before; with none open, the trader's held focus.
+    // Esc: the cards first, as before; with none open, the stash desk goes back to Plan; then the trader's held focus.
     private void OnEscape()
     {
         var (held, closeCards) = TraderFocus.Escape(_heldTrader, _cards.Cards.Count > 0);
         if (closeCards)
             _cards.CloseAll();
+        else if (_deskChosen)
+            LeaveDesk("esc");
         else if (held != _heldTrader)
             HoldTrader(held, "esc");
     }

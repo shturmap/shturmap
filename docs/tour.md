@@ -25,15 +25,15 @@ An unofficial fan project, not made or endorsed by Battlestate Games. Use at you
 - reads · The game's logs
 - reads · Your screenshots' names
 - reads · The extract list in a screenshot
-- reads · Your stash and tasks in a menu screenshot, when you take one
+- reads · Your stash, gear and tasks in a menu screenshot, when you take one
 - never · Touches the game
 - never · Sends keys or clicks
 - never · Captures your screen
 
 ## follows · RaidWord, Rail
 IT FOLLOWS THE GAME
-Put it on your second monitor. In the menus it plans; in a raid it follows the raid.
-It switches by itself: nothing to click while you play.
+Put it on your second monitor. In the menus it plans, or prices your stash from a screenshot.
+In a raid it follows the raid. It switches by itself: nothing to click while you play.
 - NOT IN A RAID · Plan: where to go, what to bring
 - IN RAID · Raid: the same card, live, with the time left
 

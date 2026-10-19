@@ -508,6 +508,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial bool InRaid { get; set; }
 
+    /// <summary>The stash desk is in the map's place (out of a raid; docs/DESIGN.md §4, principle 3, *Desk*).</summary>
+    [ObservableProperty] public partial bool DeskUp { get; set; }
+
+    /// <summary>Plan is on screen: out of a raid, the desk not up.</summary>
+    [ObservableProperty] public partial bool PlanUp { get; set; } = true;
+
     /// <summary>A raid is loading or running: what comes up by itself and waits for a click stays away until it is
     /// over (<see cref="Rules.WhileInRaid.Waits"/>).</summary>
     [ObservableProperty] public partial bool RaidHoldsBack { get; set; }

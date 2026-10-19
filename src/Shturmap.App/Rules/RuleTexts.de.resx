@@ -256,4 +256,108 @@
     <value>{count, plural, one {# DAILY ODER WEEKLY} other {# DAILIES UND WEEKLIES}}</value>
     <comment>en: {count, plural, one {# DAILY OR WEEKLY} other {# DAILIES AND WEEKLIES}}</comment>
   </data>
+  <data name="DeskThousands" xml:space="preserve">
+    <value>{amount}k</value>
+    <comment>en: {amount}k</comment>
+  </data>
+  <data name="DeskMillions" xml:space="preserve">
+    <value>{amount} M</value>
+    <comment>en: {amount} M</comment>
+  </data>
+  <data name="DeskRange" xml:space="preserve">
+    <value>{low}–{high}</value>
+    <comment>en: {low}–{high}</comment>
+  </data>
+  <data name="DeskRangeThousands" xml:space="preserve">
+    <value>{low}–{high}k</value>
+    <comment>en: {low}–{high}k</comment>
+  </data>
+  <data name="DeskRangeMillions" xml:space="preserve">
+    <value>{low}–{high} M</value>
+    <comment>en: {low}–{high} M</comment>
+  </data>
+  <data name="DeskRoubles" xml:space="preserve">
+    <value>{amount} ₽</value>
+    <comment>en: {amount} ₽</comment>
+  </data>
+  <data name="DeskChange" xml:space="preserve">
+    <value>{change} %</value>
+    <comment>en: {change}%</comment>
+  </data>
+  <data name="DeskLoadout" xml:space="preserve">
+    <value>LOADOUT</value>
+    <comment>en: LOADOUT</comment>
+  </data>
+  <data name="DeskRig" xml:space="preserve">
+    <value>RIG</value>
+    <comment>en: TACTICAL RIG</comment>
+  </data>
+  <data name="DeskPockets" xml:space="preserve">
+    <value>TASCHEN</value>
+    <comment>en: POCKETS</comment>
+  </data>
+  <data name="DeskSpecialSlots" xml:space="preserve">
+    <value>SPEZIALSLOTS</value>
+    <comment>en: SPECIAL SLOTS</comment>
+  </data>
+  <data name="DeskBackpack" xml:space="preserve">
+    <value>RUCKSACK</value>
+    <comment>en: BACKPACK</comment>
+  </data>
+  <data name="DeskPouch" xml:space="preserve">
+    <value>POUCH</value>
+    <comment>en: POUCH</comment>
+  </data>
+  <data name="DeskStash" xml:space="preserve">
+    <value>STASH</value>
+    <comment>en: STASH</comment>
+  </data>
+  <data name="DeskWindowInLoadout" xml:space="preserve">
+    <value>{title} · IM LOADOUT</value>
+    <comment>en: {title} · IN THE LOADOUT</comment>
+  </data>
+  <data name="DeskWindowInRig" xml:space="preserve">
+    <value>{title} · IM RIG</value>
+    <comment>en: {title} · IN THE RIG</comment>
+  </data>
+  <data name="DeskWindowInPockets" xml:space="preserve">
+    <value>{title} · IN DEN TASCHEN</value>
+    <comment>en: {title} · IN THE POCKETS</comment>
+  </data>
+  <data name="DeskWindowInSpecialSlots" xml:space="preserve">
+    <value>{title} · IN DEN SPEZIALSLOTS</value>
+    <comment>en: {title} · IN THE SPECIAL SLOTS</comment>
+  </data>
+  <data name="DeskWindowInBackpack" xml:space="preserve">
+    <value>{title} · IM RUCKSACK</value>
+    <comment>en: {title} · IN THE BACKPACK</comment>
+  </data>
+  <data name="DeskWindowInPouch" xml:space="preserve">
+    <value>{title} · IM POUCH</value>
+    <comment>en: {title} · IN THE POUCH</comment>
+  </data>
+  <data name="DeskWindowInStash" xml:space="preserve">
+    <value>{title} · IM STASH</value>
+    <comment>en: {title} · IN THE STASH</comment>
+  </data>
+  <data name="DeskWindowInWindow" xml:space="preserve">
+    <value>{title} · IN {container}</value>
+    <comment>en: {title} · IN {container}</comment>
+  </data>
+  <data name="DeskNotAttached" xml:space="preserve">
+    <value>{count, plural, =0 {Nicht zugeordnet: {name} nicht auf der Seite} one {Nicht zugeordnet: {name} ×# auf der Seite} other {Nicht zugeordnet: {name} ×# auf der Seite}}</value>
+    <comment>en: {count, plural, =0 {Not attached: no {name} on the page} one {Not attached: {name} ×# on the page} other {Not attached: {name} ×# on the page}}</comment>
+  </data>
+  <data name="DeskNotAttachedSplit" xml:space="preserve">
+    <value>{count, plural, one {Nicht zugeordnet: {name} ×# auf der Seite, an dir und im Stash; in keiner Summe} other {Nicht zugeordnet: {name} ×# auf der Seite, an dir und im Stash; in keiner Summe}}</value>
+    <comment>en: {count, plural, one {Not attached: {name} ×# on the page, on you and in the stash; counted in neither} other {Not attached: {name} ×# on the page, on you and in the stash; counted in neither}}</comment>
+  </data>
+  <data name="DeskHeadLine" xml:space="preserve">
+    <value>AN DIR {onYou} · STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
+    <comment>en: ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</comment>
+  </data>
+  <data name="DeskUnchanged" xml:space="preserve">
+    <value>UNVERÄNDERT</value>
+    <comment>en: UNCHANGED</comment>
+  </data>
 </root>

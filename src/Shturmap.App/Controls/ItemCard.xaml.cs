@@ -38,6 +38,14 @@ public sealed partial class ItemCard : UserControl, ICard
         Frame.BorderBrush = (Brush)Application.Current.Resources[mode == CardMode.Held ? "AmberBrush" : "LineStrongBrush"];
     }
 
+    /// <summary>The card stands in the rail while the stash desk is up (docs/DESIGN.md §4, *The stash desk*, *Its place*):
+    /// whole, in the stack's frame, not see-through, as no map lies under it.</summary>
+    public void InRail()
+    {
+        Opacity = 1;
+        Frame.BorderBrush = (Brush)Application.Current.Resources["LineStrongBrush"];
+    }
+
     // ---- x:Bind helpers ----
 
     public string Glyph(bool isKey) => isKey ? Glyphs.Key : Glyphs.Bring;

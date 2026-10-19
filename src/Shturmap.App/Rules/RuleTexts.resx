@@ -256,4 +256,108 @@
     <value>{count, plural, one {# DAILY OR WEEKLY} other {# DAILIES AND WEEKLIES}}</value>
     <comment>The cue's title when a screenshot of the game's Tasks screen (its OPERATIONAL tab) brought new daily or weekly tasks; under it a row for each task read. {count}: how many tasks it lists, 1 to 5 as a rule. The reading doesn't tell a daily from a weekly, so the words never say which. In the 48 px title type: keep it short. Capitals.</comment>
   </data>
+  <data name="DeskThousands" xml:space="preserve">
+    <value>{amount}k</value>
+    <comment>The stash desk: a value in thousands of roubles, short, in a cell's top right and in the head line's totals ("902k", "4.5k"). {amount}: the thousands, with a tenth under 10. No room: a 1×1 cell is 40 DIP wide.</comment>
+  </data>
+  <data name="DeskMillions" xml:space="preserve">
+    <value>{amount} M</value>
+    <comment>The stash desk: a value in millions of roubles, short, in a cell and in the head line ("1.01 M", "12.3 M"). {amount}: the millions, three figures.</comment>
+  </data>
+  <data name="DeskRange" xml:space="preserve">
+    <value>{low}–{high}</value>
+    <comment>The stash desk: a cell that fits several items shows their price range, both under a thousand roubles ("300–850"). {low}, {high}: the least and the most.</comment>
+  </data>
+  <data name="DeskRangeThousands" xml:space="preserve">
+    <value>{low}–{high}k</value>
+    <comment>The stash desk: a cell that fits several items shows their price range in thousands ("63–307k", "0.3–294k"). {low}, {high}: the least and the most, in thousands.</comment>
+  </data>
+  <data name="DeskRangeMillions" xml:space="preserve">
+    <value>{low}–{high} M</value>
+    <comment>The stash desk: a cell that fits several items shows their price range in millions ("0.45–1.18 M"). {low}, {high}: the least and the most, in millions.</comment>
+  </data>
+  <data name="DeskRoubles" xml:space="preserve">
+    <value>{amount} ₽</value>
+    <comment>The stash desk's head line: a total in roubles ("1.01 M ₽", "1.01 M+ ₽" with a container whose contents are unseen in it). {amount}: the short value (DeskThousands, DeskMillions), with its "+".</comment>
+  </data>
+  <data name="DeskChange" xml:space="preserve">
+    <value>{change}%</value>
+    <comment>The stash desk at 56 DIP cells: the price's change over 48 hours in a cell's bottom left, after an arrow from 10 % ("↓ −10%", "+3%"). {change}: the whole percent with its sign.</comment>
+  </data>
+  <data name="DeskLoadout" xml:space="preserve">
+    <value>LOADOUT</value>
+    <comment>The stash desk: the head over the slots the player wears and carries (the game's GEAR tab, its left column). Capitals.</comment>
+  </data>
+  <data name="DeskRig" xml:space="preserve">
+    <value>TACTICAL RIG</value>
+    <comment>The stash desk: the head over the tactical rig and its grid, as the game heads it. Capitals.</comment>
+  </data>
+  <data name="DeskPockets" xml:space="preserve">
+    <value>POCKETS</value>
+    <comment>The stash desk: the head over the pockets' four cells, as the game heads them. Capitals.</comment>
+  </data>
+  <data name="DeskSpecialSlots" xml:space="preserve">
+    <value>SPECIAL SLOTS</value>
+    <comment>The stash desk: the head over the three special slots (marker, compass), as the game heads them; beside POCKETS on one row. Capitals.</comment>
+  </data>
+  <data name="DeskBackpack" xml:space="preserve">
+    <value>BACKPACK</value>
+    <comment>The stash desk: the head over the backpack and its grid, as the game heads it. Capitals.</comment>
+  </data>
+  <data name="DeskPouch" xml:space="preserve">
+    <value>POUCH</value>
+    <comment>The stash desk: the head over the secure container and its grid, as the game heads it. Capitals.</comment>
+  </data>
+  <data name="DeskStash" xml:space="preserve">
+    <value>STASH</value>
+    <comment>The stash desk: the head over the stash's page, as the game heads it. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInLoadout" xml:space="preserve">
+    <value>{title} · IN THE LOADOUT</value>
+    <comment>The stash desk: the head over a container's open window, read from the screenshot, whose container is in the loadout ("ZHUK · IN THE LOADOUT"). {title}: the container's name as the game titles the window, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInRig" xml:space="preserve">
+    <value>{title} · IN THE RIG</value>
+    <comment>The stash desk: the head over a container's open window whose container is in the tactical rig ("WZ · IN THE RIG"). {title}: the window's title, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInPockets" xml:space="preserve">
+    <value>{title} · IN THE POCKETS</value>
+    <comment>The stash desk: the head over a container's open window whose container is in the pockets ("WZ · IN THE POCKETS"). {title}: the window's title, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInSpecialSlots" xml:space="preserve">
+    <value>{title} · IN THE SPECIAL SLOTS</value>
+    <comment>The stash desk: the head over a container's open window whose container is in the special slots. {title}: the window's title, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInBackpack" xml:space="preserve">
+    <value>{title} · IN THE BACKPACK</value>
+    <comment>The stash desk: the head over a container's open window whose container is in the backpack ("ZHUK · IN THE BACKPACK"); a line runs from it to the container's cell. {title}: the window's title, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInPouch" xml:space="preserve">
+    <value>{title} · IN THE POUCH</value>
+    <comment>The stash desk: the head over a container's open window whose container is in the secure container ("WZ · IN THE POUCH"). {title}: the window's title, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInStash" xml:space="preserve">
+    <value>{title} · IN THE STASH</value>
+    <comment>The stash desk: the head over a container's open window whose container is in the stash ("T H I C C · IN THE STASH"). {title}: the window's title, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskWindowInWindow" xml:space="preserve">
+    <value>{title} · IN {container}</value>
+    <comment>The stash desk: the head over a container's open window whose container stands in another open window ("WZ · IN ZHUK"). {title}, {container}: the two windows' titles, game names, in capitals. Capitals.</comment>
+  </data>
+  <data name="DeskNotAttached" xml:space="preserve">
+    <value>{count, plural, =0 {Not attached: no {name} on the page} one {Not attached: {name} ×# on the page} other {Not attached: {name} ×# on the page}}</value>
+    <comment>The stash desk, muted under the head of a container's open window that can't be tied to one cell: several containers of its name are on the page, or none. {count}: how many; {name}: the window's title, a game name ("WZ").</comment>
+  </data>
+  <data name="DeskNotAttachedSplit" xml:space="preserve">
+    <value>{count, plural, one {Not attached: {name} ×# on the page, on you and in the stash; counted in neither} other {Not attached: {name} ×# on the page, on you and in the stash; counted in neither}}</value>
+    <comment>The stash desk, muted under the head of a container's open window that can't be tied to one cell, when the containers of its name are some on the player and some in the stash: its items count in neither total of the head line (ON YOU, STASH). {count}: how many containers; {name}: the window's title, a game name ("WZ").</comment>
+  </data>
+  <data name="DeskHeadLine" xml:space="preserve">
+    <value>ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</value>
+    <comment>The stash desk's head line, in muted capitals over the page: what the items on the player are worth, what the stash's are worth ("1.01 M ₽", "6.84 M+ ₽"), then how many cells are kept for an active quest (now), a quest the active ones unlock (next) and one further down (later), as the cells' notches say. Capitals.</comment>
+  </data>
+  <data name="DeskUnchanged" xml:space="preserve">
+    <value>UNCHANGED</value>
+    <comment>The stash desk: the words before the names of the regions a screenshot didn't change, folded into one line ("UNCHANGED · POUCH ▸ · STASH ▸"); a click on a name opens its region. Capitals.</comment>
+  </data>
 </root>
