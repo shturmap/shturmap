@@ -2260,6 +2260,14 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   6. The extracts' `switches` tell none apart: Customs lists the ZB-013 lever on all 28, The Lab the Med Elevator's
      three buttons on all 7, and Interchange's Saferoom and Reserve's D-2 and Bunker Hermetic Door list none, though
      the map places their switches (the ten gated extracts are kept by hand in `SwitchExits`).
+  7. Four extract ids are each shared by two entries of one map: Woods' Outskirts (PMC and Scav), Woods' UN
+     Roadblock (PMC and Scav), Factory's Gate 3 (Scav and PMC), Night Factory's Gate 3 (two entries without a
+     faction). Found 2026-10-19 by the repel fix ("2026-10-19: two symbols on one spot drift apart", above), which now
+     keys a symbol by id and kind; other places still key an extract by id alone.
+
+  Drafted 2026-10-19, outside the repository (`%USERPROFILE%\source\repos\Shturmap-tarkov-dev-report-2026-10-19.md`):
+  where to file (the-hideout/tarkov-data-manager, no template, no existing issue covers any of the seven), the
+  duplicate-id check, and six ready issue texts. The owner files them.
 
 - **Two symbols on one spot drift apart with every pan or zoom** (owner, 2026-10-17): built, see "2026-10-19: two symbols
   on one spot drift apart" at the top.
