@@ -67,7 +67,8 @@ glance, "Settings"), "Map drawing" (*The text size*), §8 "Developer aids" (*A l
 - 200 %, degraded as decided: Plan's rows squeeze the map's name, MIN LEFT trims, the roll call's two-line names touch
   the next, help's keys heading and settings' LICENCES run out of their panel.
 - To check: Windows' own text size on a PC (the pictures simulate it), with a step on top, and a change of either while
-  Shturmap runs; the UI QA pass; the senior translator's review of the five texts.
+  Shturmap runs; the UI QA pass. The senior translator reviewed the five texts (2026-10-19): the tooltip now names
+  Windows-Einstellungen; the rest held.
 
 ## 2026-10-19: the stash desk, a price view from a screenshot (designed, to build)
 

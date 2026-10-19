@@ -59,10 +59,12 @@ Essentials:
 
 - Never touch the game process, send input, hook, register global hotkeys or capture the screen. `SafetyTests`
   enforces this.
-- A screenshot's picture is opened for one thing only: the game's extract list in its top right corner, read on the PC
-  with Windows' own text recognition (`ExitListReader`; owner, 2026-10-05; DESIGN.md §2). Reading anything else from
-  a picture is the owner's decision, never a side effect of a change. Real screenshots never go into the repository:
-  the reader's tests draw their own list, and read the ones in the git-ignored `tests\fixtures\ocr` where they exist.
+- A screenshot's picture is read for three things, each by the owner's decision: the game's extract list in its top
+  right corner (`ExitListReader`; owner, 2026-10-05), the stash's item grids (`StashReader`; owner, 2026-10-11) and
+  the Tasks screen's OPERATIONAL table (the tasks reader; owner, 2026-10-17), all on the PC with Windows' own text
+  recognition (DESIGN.md §2). Reading anything else from a picture is the owner's decision anew, never a side effect
+  of a change. Real screenshots never go into the repository: the readers' tests draw their own pictures, and read
+  the ones in the git-ignored `tests\fixtures\ocr` where they exist.
 - Never bundle tarkov.dev data, map artwork or Battlestate art; download at runtime, credit, personal use only.
 - Never capture the user's monitors to check UI; use `Shturmap.exe --snapshot <folder>` or `shturmap-cli render`.
 - **A change to what the user sees is reviewed by the UI QA role before it is reported done** (owner, 2026-10-15;
