@@ -181,8 +181,25 @@ public sealed class DeskLedgerTests : IDisposable
     {
         var ledger = new DeskLedger();
         ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
-        Assert.True(ledger.Pick(GameMode.Pve, "stash", new DeskRect(0, 0, 1, 1), ZhukOther));
+        Assert.True(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, ZhukOther));
         Assert.Equal(ZhukOther, ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
-        Assert.False(ledger.Pick(GameMode.Pve, "stash", new DeskRect(0, 0, 1, 1), Water));
+        Assert.False(ledger.Pick(GameMode.Pve, "stash", null, 0, 0, Water));
+        // The same cell read again keeps its pick; a reading that changes it drops it.
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther))));
+        Assert.Equal(ZhukOther, ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
+        ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(0, 0, 1, 1, Zhuk, ZhukOther) with { Count = 2 })));
+        Assert.Null(ledger.Page(GameMode.Pve)!.Region("stash")!.Cells.Single().ItemId);
+    }
+
+    // A slot's "?" is picked by its key (the helmet in three colours).
+    [Fact]
+    public void A_slot_is_picked_by_its_key()
+    {
+        var ledger = new DeskLedger();
+        var loadout = new DeskRegion("loadout", DeskRegionKind.Loadout, 0, 0, [new DeskCell(0, 0, 0, 0, [Zhuk, ZhukOther]) { Slot = "headwear" }]);
+        ledger.Apply(GameMode.Pve, new DeskPage(DateTimeOffset.UnixEpoch, [loadout]));
+        Assert.False(ledger.Pick(GameMode.Pve, "loadout", "earpiece", 0, 0, Zhuk));
+        Assert.True(ledger.Pick(GameMode.Pve, "loadout", "headwear", 0, 0, Zhuk));
+        Assert.Equal(Zhuk, ledger.Page(GameMode.Pve)!.Region("loadout")!.Cells.Single().ItemId);
     }
 }

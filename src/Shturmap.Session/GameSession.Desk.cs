@@ -149,12 +149,85 @@ public sealed partial class GameSession
             return _deskView;
         var sources = _sources;
         var data = _data;
-        var sheet = DeskSheet.Of(page, id => DeskData.Facts(sources, id), DeskData.Flea(sources), keep,
-            traderName: id => data?.TraderName(id) ?? "");
+        var flea = DeskData.Flea(sources);
+        Func<string, DeskItemFacts?> facts = id => DeskData.Facts(sources, id);
+        var sheet = DeskSheet.Of(page, facts, flea, keep, traderName: id => data?.TraderName(id) ?? "");
         _deskView = new DeskView(_mode, sheet, change?.Changed ?? new HashSet<string>(), change?.First ?? false, _deskReadings,
-            sources?.PricesAt);
+            sources?.PricesAt)
+        {
+            FactsOf = facts,
+            Flea = flea,
+        };
         _deskViewOf = (page, sources, keep, change);
         return _deskView;
+    }
+
+    /// <summary>
+    /// A "?" cell's pick on the desk's card (step C, 2026-10-20; docs/DESIGN.md §4, *The click*): the item it is, kept with
+    /// the cell in desk.json until a reading changes the cell; null takes the pick back. A slot by its key, a grid's cell
+    /// by its place. False when the page has no such cell or the item isn't one of its candidates.
+    /// </summary>
+    public async Task<bool> PickDeskAsync(string region, string? slot, int i, int j, string? itemId)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            if (!_desk.Pick(_mode, region, slot, i, j, itemId))
+                return false;
+            Study.Ui("desk.pick", ("region", region));
+            SaveDeskIfDirty();
+            Publish();
+            return true;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    // The price histories asked for this run, by mode and item: the parsed history and when it was had.
+    private readonly Dictionary<(GameMode Mode, string Id), (DeskHistory? History, DateTimeOffset At)> _deskHistories = [];
+    private readonly Lock _deskHistoriesLock = new();
+
+    /// <summary>
+    /// An item's price history for the desk's card (docs/DESIGN.md §3, "The stash desk's prices come per reading"):
+    /// json.tarkov.dev's "/{mode}/prices/{id}", asked for when a card first shows the item and kept in the download cache
+    /// with its ETag (one file per item, about 20 to 130 KB; an unchanged one costs a few hundred bytes). Never on a timer:
+    /// within the hour the copy in hand is given again without a request. Null when it can't be had (no data yet, offline
+    /// without a saved copy, a file that isn't a history).
+    /// </summary>
+    public async Task<DeskHistory?> DeskHistoryAsync(string itemId)
+    {
+        var mode = _mode;
+        if (_loader is not { } loader || mode == GameMode.Unknown || string.IsNullOrEmpty(itemId))
+            return null;
+        lock (_deskHistoriesLock)
+        {
+            if (_deskHistories.TryGetValue((mode, itemId), out var had) && DateTimeOffset.Now - had.At < GameDataLoader.DeskHistoryAge)
+                return had.History;
+        }
+        DeskHistory? history = null;
+        try
+        {
+            var json = await loader.LoadPriceHistoryAsync(mode, itemId, _stop.Token);
+            history = json is null ? null : DeskHistory.Parse(json);
+            Study.Game("desk.history", ("points", history?.Points.Count ?? 0));
+        }
+        catch (Exception e) when (!_stop.IsCancellationRequested)
+        {
+            AppLog.Warn($"Price history not had ({LoadProblem.Explain(e).Kind}): {e.GetType().Name}");
+            // Asked again when a card shows the item after two minutes, not at every pointing meanwhile.
+            lock (_deskHistoriesLock)
+                _deskHistories[(mode, itemId)] = (null, DateTimeOffset.Now - GameDataLoader.DeskHistoryAge + TimeSpan.FromMinutes(2));
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        lock (_deskHistoriesLock)
+            _deskHistories[(mode, itemId)] = (history, DateTimeOffset.Now);
+        return history;
     }
 
     // Under the gate: the keep levels for the quests as the logs have them now.

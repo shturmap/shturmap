@@ -364,4 +364,272 @@
     <value>UNCHANGED</value>
     <comment>The stash desk: the words before the names of the regions a screenshot didn't change, folded into one line ("UNCHANGED · POUCH ▸ · STASH ▸"); a click on a name opens its region. Capitals.</comment>
   </data>
+  <data name="DeskSlotEarpiece" xml:space="preserve">
+    <value>EARPIECE</value>
+    <comment>The stash desk's card: the loadout slot an item is in, as the GEAR tab heads it, in muted capitals over the item's name ("HEADWEAR" over "BAC Bastion"). The game's own word where the game has one.</comment>
+  </data>
+  <data name="DeskSlotHeadwear" xml:space="preserve">
+    <value>HEADWEAR</value>
+    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotFaceCover" xml:space="preserve">
+    <value>FACE COVER</value>
+    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotArmband" xml:space="preserve">
+    <value>ARMBAND</value>
+    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotBodyArmor" xml:space="preserve">
+    <value>BODY ARMOR</value>
+    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotEyewear" xml:space="preserve">
+    <value>EYEWEAR</value>
+    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotDogtag" xml:space="preserve">
+    <value>DOGTAG</value>
+    <comment>The stash desk's card: a loadout slot (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotOnSling" xml:space="preserve">
+    <value>ON SLING</value>
+    <comment>The stash desk's card: a loadout slot, the primary weapon's (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotHolster" xml:space="preserve">
+    <value>HOLSTER</value>
+    <comment>The stash desk's card: a loadout slot, the pistol's (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotOnBack" xml:space="preserve">
+    <value>ON BACK</value>
+    <comment>The stash desk's card: a loadout slot, the second long weapon's (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskSlotSheath" xml:space="preserve">
+    <value>SHEATH</value>
+    <comment>The stash desk's card: a loadout slot, the knife's (DeskSlotEarpiece).</comment>
+  </data>
+  <data name="DeskCardOffers" xml:space="preserve">
+    <value>{count, plural, one {# OFFER} other {# OFFERS}}</value>
+    <comment>The stash desk's card, under the item's name in muted capitals after the liquidity dot: how many offers the flea had at its last scan. {count}: the offers.</comment>
+  </data>
+  <data name="DeskCardFleaLevel" xml:space="preserve">
+    <value>FLEA FROM LEVEL {level}</value>
+    <comment>The stash desk's card, after the offers (DeskCardOffers), joined by " · ": the player level the flea lists the item from. The player's own level isn't read, so nothing is compared. Capitals.</comment>
+  </data>
+  <data name="DeskCardNotOnFlea" xml:space="preserve">
+    <value>NOT ON THE FLEA</value>
+    <comment>The stash desk's card, under the item's name in place of the offers: the item can't be listed on the flea market. Capitals.</comment>
+  </data>
+  <data name="DeskCardRoubles" xml:space="preserve">
+    <value>{amount} ₽</value>
+    <comment>The stash desk's card: a full price in roubles, "970,000 ₽", the gold figure's and the plate's. {amount}: the number with the language's thousands separator. A no-break space before ₽.</comment>
+  </data>
+  <data name="DeskCardSevenDays" xml:space="preserve">
+    <value>{change} · 7 D</value>
+    <comment>The stash desk's card, at the right of the gold figure: the change of the item's average flea price over the last 7 days, from its price history ("↑ +1.7% · 7 D"). {change}: the arrow and the change with its sign. Capitals, short.</comment>
+  </data>
+  <data name="DeskCardTwoDays" xml:space="preserve">
+    <value>{change} · 48 H</value>
+    <comment>The stash desk's card, at the right of the flea's net line: the change over 48 hours, from tarkov.dev's item file ("↓ −10.3% · 48 H"). {change}: the arrow and the change with its sign. Capitals, short.</comment>
+  </data>
+  <data name="DeskCardFleaNet" xml:space="preserve">
+    <value>Flea net {net} · fee {fee}</value>
+    <comment>The stash desk's card, under the gold figure: what selling the stack on the flea at the last low brings after the flea's fee, and the fee. {net}, {fee}: full prices in roubles (DeskCardRoubles).</comment>
+  </data>
+  <data name="DeskCardCopyHead" xml:space="preserve">
+    <value>A CLICK COPIES</value>
+    <comment>The stash desk's card: the plate's eyebrow over what a click on the item's cell copies to the clipboard (its flea list price, for the flea's price field); beside it the rule's control, − and + around DeskRuleMatch, DeskRuleUnder or DeskRuleOver. Capitals.</comment>
+  </data>
+  <data name="DeskRuleMatch" xml:space="preserve">
+    <value>THE LAST LOW</value>
+    <comment>The stash desk's copy rule, in its control on the card's plate and in settings' row, between − and +: the price a click copies is the flea's last low price, matched. Capitals, short (the control is about 150 DIP).</comment>
+  </data>
+  <data name="DeskRuleUnder" xml:space="preserve">
+    <value>{amount}% UNDER</value>
+    <comment>The stash desk's copy rule, as DeskRuleMatch: the price a click copies is this much under the flea's last low. {amount}: 1 to 20. Capitals, short.</comment>
+  </data>
+  <data name="DeskRuleOver" xml:space="preserve">
+    <value>{amount}% OVER</value>
+    <comment>The stash desk's copy rule, as DeskRuleMatch: the price a click copies is this much over the flea's last low. {amount}: 1 to 20. Capitals, short.</comment>
+  </data>
+  <data name="DeskCardCopies" xml:space="preserve">
+    <value>Copies {price} · nets {net} after the fee</value>
+    <comment>The stash desk's card, on the plate under A CLICK COPIES: the list price a click on the cell copies (per item, as the flea's price field takes it) and what one sale at it brings after the flea's fee. {price}, {net}: full prices in roubles (DeskCardRoubles; the price with "~" where it is scaled to a condition).</comment>
+  </data>
+  <data name="DeskCardOverBest" xml:space="preserve">
+    <value>Copies {price}, over the best net: at {best} it nets {bestNet}, at this {net}</value>
+    <comment>The stash desk's card, on the plate, with the status bar's gold light: the price a click copies is above the price that nets the most after the flea's fee (the fee grows faster than the price there). {price}, {best}, {bestNet}, {net}: full prices in roubles.</comment>
+  </data>
+  <data name="DeskCardTraderPaysMore" xml:space="preserve">
+    <value>{trader} pays more · {price}. A click copies nothing.</value>
+    <comment>The stash desk's card, on the plate: at the rule's price the flea nets less after its fee than the best trader pays, so a click on the cell copies nothing. {trader}: the trader's name; {price}: what the trader pays for one (DeskCardRoubles).</comment>
+  </data>
+  <data name="DeskCardNoFlea" xml:space="preserve">
+    <value>Can't be listed on the flea. A click copies nothing.</value>
+    <comment>The stash desk's card, on the plate: the game doesn't let the item be listed on the flea market (tarkov.dev's noFlea), so a click copies nothing; the traders' prices stand below.</comment>
+  </data>
+  <data name="DeskCardNoFleaFir" xml:space="preserve">
+    <value>The flea takes it found in raid only. A click copies nothing.</value>
+    <comment>The stash desk's card, on the plate: the flea wants the item found in raid and the cell's found-in-raid mark wasn't seen, so a click copies nothing.</comment>
+  </data>
+  <data name="DeskCardNoOffers" xml:space="preserve">
+    <value>No offers on the flea. A click copies nothing.</value>
+    <comment>The stash desk's card, on the plate: tarkov.dev saw no flea offer for the item (no last low), so a click copies nothing.</comment>
+  </data>
+  <data name="DeskCardFleaOff" xml:space="preserve">
+    <value>The flea is off. A click copies nothing.</value>
+    <comment>The stash desk's card, on the plate: the flea market is off in the game's settings (tarkov.dev's fleaMarket.enabled), so a click copies nothing.</comment>
+  </data>
+  <data name="DeskCardNoPrice" xml:space="preserve">
+    <value>No price for this cell. A click copies nothing.</value>
+    <comment>The stash desk's card, on the plate: nothing was read of the cell, or the item file has no price for it.</comment>
+  </data>
+  <data name="DeskCardLastLow" xml:space="preserve">
+    <value>Last low {price}</value>
+    <comment>The stash desk's card, the plate's second line, muted: the flea's last low price per item, which the rule moves. {price}: a full price in roubles.</comment>
+  </data>
+  <data name="DeskCardTraderPays" xml:space="preserve">
+    <value>{trader} pays {price}</value>
+    <comment>The stash desk's card, the plate's second line after the last low (" · "), muted: what the best trader pays for one. {trader}: the trader's name; {price}: a full price in roubles.</comment>
+  </data>
+  <data name="DeskCardScaled" xml:space="preserve">
+    <value>Scaled to {print} · full {full}</value>
+    <comment>The stash desk's card, under the plate: the figure is scaled to the condition the cell prints ("1469/1800"), and what it is at full condition. {print}: the printed condition as the game prints it; {full}: a full price in roubles.</comment>
+  </data>
+  <data name="DeskCardEstimate" xml:space="preserve">
+    <value>~ an estimate: the condition is not printed</value>
+    <comment>The stash desk's card, under the plate: the item's condition matters to its price (armour, meds, weapons) but the cell prints none, so the figure is the full condition's, marked "~".</comment>
+  </data>
+  <data name="DeskCardUnseen" xml:space="preserve">
+    <value>Contents unseen: open it in the game, then a screenshot</value>
+    <comment>The stash desk's card, under the plate, for a container whose window no screenshot showed, or a weapon (its mods): its figure ends in "+", at least this, more inside.</comment>
+  </data>
+  <data name="DeskCardKeep" xml:space="preserve">
+    <value>KEEP</value>
+    <comment>The stash desk's card: the heading over what the item is kept for, the quests and hideout modules that need it. Capitals.</comment>
+  </data>
+  <data name="DeskCardKeepQuest" xml:space="preserve">
+    <value>{quest} ×{count} · {when}</value>
+    <comment>The stash desk's card, a KEEP line: a quest that needs the item, how many, and when (DeskCardNow, DeskCardNext, DeskCardLater). {quest}: the quest's name; {count}: how many it wants.</comment>
+  </data>
+  <data name="DeskCardNow" xml:space="preserve">
+    <value>now</value>
+    <comment>The stash desk's card, a KEEP line's when (DeskCardKeepQuest): an active quest needs it.</comment>
+  </data>
+  <data name="DeskCardNext" xml:space="preserve">
+    <value>next</value>
+    <comment>The stash desk's card, a KEEP line's when (DeskCardKeepQuest): a quest the active ones unlock, or one open to start, needs it.</comment>
+  </data>
+  <data name="DeskCardLater" xml:space="preserve">
+    <value>later</value>
+    <comment>The stash desk's card, a KEEP line's when (DeskCardKeepQuest): a quest further down the quest tree needs it.</comment>
+  </data>
+  <data name="DeskCardKeepStation" xml:space="preserve">
+    <value>{station} {level} ×{count} · a hideout module</value>
+    <comment>The stash desk's card, a KEEP line: a hideout module's level that takes the item, how many. {station}: the station's name ("Medstation"); {level}: its level; {count}: how many.</comment>
+  </data>
+  <data name="DeskCardFir" xml:space="preserve">
+    <value>{line} · FIR</value>
+    <comment>The stash desk's card: a KEEP line whose need wants the item found in raid. {line}: the line (DeskCardKeepQuest, DeskCardKeepStation). FIR: found in raid, the players' word.</comment>
+  </data>
+  <data name="DeskCardThirtyDays" xml:space="preserve">
+    <value>30 DAYS</value>
+    <comment>The stash desk's card: the heading over the item's flea price band of the last 30 days. Capitals.</comment>
+  </data>
+  <data name="DeskCardBandNote" xml:space="preserve">
+    <value>average to lowest offer, every 2 h</value>
+    <comment>The stash desk's card, under the 30 days' band, muted: what the band shows, from the average down to the lowest offer, a point every 2 hours.</comment>
+  </data>
+  <data name="DeskCardHighLow" xml:space="preserve">
+    <value>{days, plural, =0 {HIGH {high} · LOW {low} TODAY} one {HIGH {high} · LOW {low}, # DAY AGO} other {HIGH {high} · LOW {low}, # DAYS AGO}}</value>
+    <comment>The stash desk's card, under the 30 days' band, muted capitals: the highest average and the lowest offer of the 30 days, and how long ago the low was. {high}, {low}: short values ("1.05 M"); {days}: whole days.</comment>
+  </data>
+  <data name="DeskCardHistoryLoading" xml:space="preserve">
+    <value>…</value>
+    <comment>The stash desk's card, where the price band will stand while its history is being fetched: a quiet ellipsis.</comment>
+  </data>
+  <data name="DeskCardNoHistory" xml:space="preserve">
+    <value>No price history at hand.</value>
+    <comment>The stash desk's card, under 30 DAYS: the item's price history couldn't be had (offline without a saved copy, or tarkov.dev has none).</comment>
+  </data>
+  <data name="DeskCardDay" xml:space="preserve">
+    <value>24 H</value>
+    <comment>The stash desk's card: the heading over the day's price range bar. Capitals.</comment>
+  </data>
+  <data name="DeskCardDayMarks" xml:space="preserve">
+    <value>LAST LOW {last} · AVG {avg}</value>
+    <comment>The stash desk's card, over the day's range bar, muted capitals: the flea's last low (the amber tick on the bar) and the day's average (the ink tick). {last}, {avg}: full prices.</comment>
+  </data>
+  <data name="DeskCardOutlier" xml:space="preserve">
+    <value>The high, {high}, is past the bar: one offer, likely an outlier.</value>
+    <comment>The stash desk's card, under the day's range bar: the day's highest offer is far above the rest, so the bar isn't drawn to it. {high}: a full price.</comment>
+  </data>
+  <data name="DeskCardTraders" xml:space="preserve">
+    <value>TRADERS</value>
+    <comment>The stash desk's card: the heading over what each trader pays for one, the best first. Capitals.</comment>
+  </data>
+  <data name="DeskCardCraftsBarters" xml:space="preserve">
+    <value>CRAFTS AND BARTERS</value>
+    <comment>The stash desk's card: the heading over the hideout crafts and the traders' barters that give the item. Capitals.</comment>
+  </data>
+  <data name="DeskCardAge" xml:space="preserve">
+    <value>{minutes, plural, =0 {Prices just in · tarkov.dev} one {Prices # min old · tarkov.dev} other {Prices # min old · tarkov.dev}}</value>
+    <comment>The stash desk's card, its last line, muted: how old the prices are, from when the item file was last confirmed current with tarkov.dev, and where they come from. {minutes}: whole minutes.</comment>
+  </data>
+  <data name="DeskCardAgeHours" xml:space="preserve">
+    <value>{hours, plural, one {Prices # h old · tarkov.dev} other {Prices # h old · tarkov.dev}}</value>
+    <comment>The stash desk's card, its last line, as DeskCardAge, from two hours on. {hours}: whole hours.</comment>
+  </data>
+  <data name="DeskCardOneOf" xml:space="preserve">
+    <value>{count, plural, one {One of # item} other {One of # items}}</value>
+    <comment>The stash desk's card of a cell that fits several items alike (its "?"): the title. {count}: how many it may be.</comment>
+  </data>
+  <data name="DeskCardPickNote" xml:space="preserve">
+    <value>Pick the one it is: the pick stays for this cell, and a click copies its price.</value>
+    <comment>The stash desk's card of a "?" cell, under its title, muted: a click on one of the candidates below picks it for the cell.</comment>
+  </data>
+  <data name="DeskCopied" xml:space="preserve">
+    <value>{price} copied · {rule}</value>
+    <comment>A one-line notice after a click on a stash desk's cell: the list price now on the clipboard, and the rule it was made by (DeskCopiedUnder, DeskCopiedOver, DeskCopiedMatch). {price}: a full price in roubles (DeskCardRoubles).</comment>
+  </data>
+  <data name="DeskCopiedUnder" xml:space="preserve">
+    <value>{amount}% under the last low</value>
+    <comment>The rule in the notice DeskCopied: the price is this much under the flea's last low. {amount}: 1 to 20.</comment>
+  </data>
+  <data name="DeskCopiedOver" xml:space="preserve">
+    <value>{amount}% over the last low</value>
+    <comment>The rule in the notice DeskCopied: the price is this much over the flea's last low. {amount}: 1 to 20.</comment>
+  </data>
+  <data name="DeskCopiedMatch" xml:space="preserve">
+    <value>the last low</value>
+    <comment>The rule in the notice DeskCopied: the price is the flea's last low, matched.</comment>
+  </data>
+  <data name="DeskCopiedScaled" xml:space="preserve">
+    <value>{rule}, scaled to {print}</value>
+    <comment>The rule in the notice DeskCopied for a price scaled to the condition the cell prints. {rule}: DeskCopiedUnder, DeskCopiedOver or DeskCopiedMatch; {print}: the condition as printed ("1469/1800").</comment>
+  </data>
+  <data name="DeskCopiedOverBest" xml:space="preserve">
+    <value>{rule}, over the best net</value>
+    <comment>The rule in the notice DeskCopied when the price is above the price that nets the most after the fee (the card's plate says more). {rule}: as in DeskCopiedScaled.</comment>
+  </data>
+  <data name="DeskNothingTrader" xml:space="preserve">
+    <value>Nothing copied: {trader} pays more, {price}</value>
+    <comment>A one-line notice after a click on a stash desk's cell that copies nothing: the best trader pays more than the flea nets at the rule's price. {trader}: the trader's name; {price}: a full price in roubles.</comment>
+  </data>
+  <data name="DeskNothingNoFlea" xml:space="preserve">
+    <value>Nothing copied: it can't be listed on the flea</value>
+    <comment>A one-line notice after a click on a stash desk's cell that copies nothing: the item can't be listed on the flea (noFlea, not found in raid where the flea wants it, no offers, or the flea is off).</comment>
+  </data>
+  <data name="DeskNothingPick" xml:space="preserve">
+    <value>{count, plural, one {One of # item: pick it on the card first} other {One of # items: pick it on the card first}}</value>
+    <comment>A one-line notice after a click on a stash desk's cell that fits several items alike (its "?"): nothing copied until the player picks which it is on its card. {count}: how many it may be.</comment>
+  </data>
+  <data name="DeskNothingPrice" xml:space="preserve">
+    <value>Nothing copied: no price for this cell</value>
+    <comment>A one-line notice after a click on a stash desk's cell with no price (nothing read, or no such item in the data).</comment>
+  </data>
+  <data name="DeskCopyFailed" xml:space="preserve">
+    <value>Couldn't copy: the clipboard is busy. Try again.</value>
+    <comment>A one-line notice: a click on a stash desk's cell couldn't put its price on the clipboard (another program held it).</comment>
+  </data>
 </root>

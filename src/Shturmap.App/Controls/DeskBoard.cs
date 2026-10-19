@@ -14,9 +14,10 @@ namespace Shturmap.App.Controls;
 /// <summary>
 /// The stash desk's page, in the map's place out of a raid (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2, and the
 /// addendum: A(2) · B1 · C1a · Da; docs/DESIGN.md §4, "Screen anatomy", *The stash desk*): the head line over the page,
-/// then every region of the page in hand under its own head, in reading order, in one column, or from a desk 980 DIP
-/// across in the game's two (the stash right); regions a reading didn't change folded into one line ("UNCHANGED · POUCH
-/// ▸ · STASH ▸"). Each cell mirrors the screenshot's, drawn from the catalogue's art with its figure, count, keep notch,
+/// then every region of the page in hand under its own head, in reading order, in one column, or where both fit at 56 DIP
+/// or more in the game's two (the stash right), the cells as large as the desk's width lets them be, 40 to 80 DIP
+/// (<see cref="DeskPageRules.Layout"/>; owner, 2026-10-20); regions a reading didn't change folded into one line
+/// ("UNCHANGED · POUCH ▸ · STASH ▸"). A click on a cell copies its list price, a right-click pins its card. Each cell mirrors the screenshot's, drawn from the catalogue's art with its figure, count, keep notch,
 /// change and tint (<see cref="DeskCells"/>); a container's open window stands under "ZHUK · IN THE BACKPACK", stemmed to
 /// its cell, and pointing at either lights the other. A reading's page comes in cell by cell, 50 ms apart, as the kit's
 /// pictures do, and its totals count up once; nothing else moves. Built in code, as the map's panels are: the page is
@@ -25,10 +26,19 @@ namespace Shturmap.App.Controls;
 public sealed partial class DeskBoard : Grid
 {
     /// <summary>The pointer came onto a cell: the rail shows its card.</summary>
-    public event Action<DeskCellSheet>? CellPointed;
+    public event Action<DeskCellView>? CellPointed;
 
     /// <summary>A name in a fold line was clicked: its region's key, to open until the next reading.</summary>
     public event Action<string>? Unfolded;
+
+    /// <summary>A cell was clicked: the rail copies its list price (*The click*).</summary>
+    public event Action<DeskCellView>? CellClicked;
+
+    /// <summary>A cell was right-clicked: its card is pinned in the rail, or unpinned.</summary>
+    public event Action<DeskCellView>? CellPinToggled;
+
+    // The cells whose cards are pinned in the rail: their tab on the page.
+    private IReadOnlySet<DeskCellKey> _pinned = new HashSet<DeskCellKey>();
 
     private static readonly TimeSpan Ease = TimeSpan.FromSeconds(0.18);
     private static readonly TimeSpan CountUpLength = TimeSpan.FromSeconds(0.9);
@@ -96,8 +106,7 @@ public sealed partial class DeskBoard : Grid
         SizeChanged += (_, _) =>
         {
             // The cell's size and the columns follow the desk's width (DeskPageRules): a new layout only when they change.
-            if (_view is { } view && (DeskPageRules.Cell(DeskWidth()) != _builtCell
-                || DeskPageRules.ColumnBreak(view.Sheet.Regions.Select(r => r.Region).ToList(), DeskWidth()) != _builtBreak))
+            if (_view is { } view && DeskPageRules.Layout(view.Sheet.Regions.Select(r => r.Region).ToList(), DeskWidth()) != (_builtCell, _builtBreak))
                 Build(entering: null);
             _stemsDue = true;
         };
@@ -169,7 +178,7 @@ public sealed partial class DeskBoard : Grid
         foreach (var link in _links)
             Light(link, cell is not null && (ReferenceEquals(link.Anchor, cell) || link.Panel == PanelOf(cell)));
         if (cell is not null)
-            CellPointed?.Invoke(cell.Sheet);
+            CellPointed?.Invoke(cell);
     }
 
     /// <summary>PgUp and PgDn: the page up or down by most of what shows.</summary>
@@ -208,10 +217,11 @@ public sealed partial class DeskBoard : Grid
         _empty.Visibility = Visibility.Collapsed;
 
         var width = DeskWidth();
-        var size = _builtCell = DeskPageRules.Cell(width);
         var regions = view.Sheet.Regions;
         var keys = regions.Select(r => r.Region.Key).ToList();
-        var columnBreak = _builtBreak = DeskPageRules.ColumnBreak(regions.Select(r => r.Region).ToList(), width);
+        var (size, columnBreak) = DeskPageRules.Layout(regions.Select(r => r.Region).ToList(), width);
+        _builtCell = size;
+        _builtBreak = columnBreak;
         var columns = columnBreak > 0 ? 2 : 1;
         var panels = new StackPanel[columns];
         for (var c = 0; c < columns; c++)
@@ -242,7 +252,7 @@ public sealed partial class DeskBoard : Grid
             {
                 row = null;
                 before = null;
-                panel.Children.Add(FoldLine(fold, regions, top));
+                panel.Children.Add(FoldLine(fold, regions, top, size));
                 continue;
             }
             var sheet = regions[first];
@@ -277,6 +287,8 @@ public sealed partial class DeskBoard : Grid
             panel.PointerExited += (_, _) => Light(link, false);
         }
         _stemsDue = true;
+        foreach (var cell in _cellViews)
+            cell.Pinned = _pinned.Contains(cell.Key);
         return entered;
     }
 
@@ -292,6 +304,7 @@ public sealed partial class DeskBoard : Grid
             Style = (Style)Application.Current.Resources["EyebrowText"],
             Margin = new Thickness(0),
             Text = DeskPageRules.Head(region, page),
+            FontSize = DeskPageRules.HeadSize(size),
             HorizontalAlignment = HorizontalAlignment.Left,
             TextWrapping = TextWrapping.Wrap,
         };
@@ -369,32 +382,33 @@ public sealed partial class DeskBoard : Grid
     // "UNCHANGED · LOADOUT ▸ · POCKETS ▸": the folded neighbours' names, each a link that opens its region. Each "·" goes
     // with the name after it, so a line that wraps breaks before the separator, never after it (QA pass of 2026-10-19,
     // F8: "POCKETS ▸ ·" ended a line).
-    private FrameworkElement FoldLine(DeskBlock.Fold fold, IReadOnlyList<DeskRegionSheet> regions, double top)
+    private FrameworkElement FoldLine(DeskBlock.Fold fold, IReadOnlyList<DeskRegionSheet> regions, double top, double size)
     {
         var line = new WrapRow { HorizontalSpacing = 6, VerticalSpacing = 2, Margin = new Thickness(0, top, 0, 0) };
-        line.Children.Add(Word(DeskPageRules.Unchanged, "MutedBrush"));
+        var words = DeskPageRules.HeadSize(size);
+        line.Children.Add(Word(DeskPageRules.Unchanged, "MutedBrush", words));
         foreach (var key in fold.Keys)
         {
             if (regions.FirstOrDefault(r => r.Region.Key == key) is not { } sheet)
                 continue;
-            var link = new HyperlinkButton { Padding = new Thickness(0), Content = Word(DeskPageRules.FoldName(sheet.Region), "AmberBrush"), Tag = key };
+            var link = new HyperlinkButton { Padding = new Thickness(0), Content = Word(DeskPageRules.FoldName(sheet.Region), "AmberBrush", words), Tag = key };
             link.Click += (sender, _) =>
             {
                 if (sender is FrameworkElement { Tag: string region })
                     Unfolded?.Invoke(region);
             };
             var named = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            named.Children.Add(Word("·", "MutedBrush"));
+            named.Children.Add(Word("·", "MutedBrush", words));
             named.Children.Add(link);
             line.Children.Add(named);
         }
         return line;
     }
 
-    private static TextBlock Word(string text, string brush) => new()
+    private static TextBlock Word(string text, string brush, double size) => new()
     {
         Style = (Style)Application.Current.Resources["StatusText"],
-        FontSize = 11,
+        FontSize = size,
         Text = text,
         Foreground = Brush(brush),
     };
@@ -507,5 +521,37 @@ public sealed partial class DeskBoard : Grid
 
     internal static Brush Brush(string key) => (Brush)Application.Current.Resources[key];
 
-    internal void OnCellEntered(DeskCellView cell) => CellPointed?.Invoke(cell.Sheet);
+    internal void OnCellEntered(DeskCellView cell) => CellPointed?.Invoke(cell);
+
+    internal void OnCellClicked(DeskCellView cell) => CellClicked?.Invoke(cell);
+
+    internal void OnCellPinned(DeskCellView cell) => CellPinToggled?.Invoke(cell);
+
+    /// <summary>The cell of a place on the page, or null.</summary>
+    public DeskCellView? CellOf(DeskCellKey key) => _cellViews.FirstOrDefault(c => key.Is(c.Region, c.Sheet.Cell));
+
+    /// <summary>The cells whose cards are pinned: each carries the pin's tab on its top edge.</summary>
+    public void ShowPinned(IReadOnlySet<DeskCellKey> pinned)
+    {
+        _pinned = pinned;
+        foreach (var cell in _cellViews)
+            cell.Pinned = pinned.Contains(cell.Key);
+    }
+
+    /// <summary>
+    /// A copy's fun (*Fun*; "Design system", *Motion*): the cell's frame flashes gold once, in over 0.08 s and out over
+    /// 0.6 s; the figure's decode is the window's (<c>MainWindow.Decode</c>). With the effects off nothing moves.
+    /// </summary>
+    public static void Flash(DeskCellView cell)
+    {
+        if (!Settings.AnimationsEnabled)
+            return;
+        var frames = new DoubleAnimationUsingKeyFrames();
+        frames.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.Zero, Value = 0 });
+        frames.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromSeconds(0.08), Value = 1 });
+        frames.KeyFrames.Add(new EasingDoubleKeyFrame { KeyTime = TimeSpan.FromSeconds(0.68), Value = 0, EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } });
+        Storyboard.SetTarget(frames, cell.FlashFrame);
+        Storyboard.SetTargetProperty(frames, "Opacity");
+        new Storyboard { Children = { frames } }.Begin();
+    }
 }

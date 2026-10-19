@@ -228,7 +228,7 @@ static async Task Bring(string mode)
         Console.WriteLine($"{label}: " + (done.Count == 0 ? "none" : $"{done.Count}: " + string.Join("; ", done.Select(r => r.Text))));
     }
     // The stash desk's values over the item file (docs/UPDATES.md, "What the rules assume").
-    Console.WriteLine(Shturmap.Cli.Desk.DeskCommand.AuditLine(data, sources));
+    Console.WriteLine(Shturmap.Cli.Desk.DeskCommand.AuditLine(data, sources, Shturmap.Session.AppPaths.Default.DataCache));
 }
 
 // The audit to run after a tarkov.dev or game update: every quest row Plan can show (all quests active), in the plan's

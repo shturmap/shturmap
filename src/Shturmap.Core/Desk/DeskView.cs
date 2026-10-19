@@ -26,4 +26,11 @@ public sealed record DeskView(GameMode Mode, DeskSheet Sheet, IReadOnlySet<strin
     /// <summary>The player's flea level isn't read from anywhere (docs/DESIGN.md §4, *The click*'s guards): a figure says
     /// the item's flea level and compares nothing.</summary>
     public bool PlayerLevelKnown => false;
+
+    /// <summary>An item's price facts, for the card (the day's range, the traders, the offers) and a click's copy (step C);
+    /// null for an item the item file doesn't have.</summary>
+    public Func<string, DeskItemFacts?> FactsOf { get; init; } = _ => null;
+
+    /// <summary>The flea's rules the figures were made with, for a click's copy.</summary>
+    public DeskFleaRules Flea { get; init; } = DeskFleaRules.Default;
 }

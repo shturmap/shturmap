@@ -12,8 +12,10 @@ namespace Shturmap.App;
 
 // The stash desk's state and page (owner, 2026-10-19, from a panel: A1, and the addendum: A(2) · B1 · C1a · Da;
 // docs/DESIGN.md §4, principle 3 and "Screen anatomy", *The stash desk*; step B part 2, the view): PLAN | DESK at the
-// rail's head; the desk in the map's place out of a raid, the rail its card (for step B the item card the pointer asks
-// for); it opens by itself with a reading in the menus, a raid loading takes the window back, and it keeps its page.
+// rail's head; the desk in the map's place out of a raid, the rail its cards; it opens by itself with a reading in the
+// menus, a raid loading takes the window back, and it keeps its page. Step C (owner, 2026-10-20): the desk's own card for
+// the cell pointed at and for the pinned ones, a click on a cell copying its list price by the rule on the card, a
+// right-click or the card's pin pinning it.
 public sealed partial class MainWindow
 {
     private bool _deskChosen;
@@ -23,6 +25,26 @@ public sealed partial class MainWindow
     private DeskView? _deskExample;
     private bool _deskBoardDue = true;
     private IReadOnlySet<string> _deskEntering = new HashSet<string>();
+
+    // The rail's cards: the pinned ones, newest first; the cell pointed at; the copy's rule; what each card was made of.
+    private IReadOnlyList<DeskPin> _deskPins = [];
+    private DeskCellKey? _deskPointed;
+    private DeskCopyRule _deskRule = DeskCopyRule.Default;
+    private (DeskCellKey Key, int Version)? _deskPointedShown;
+    private int _deskVersion;
+
+    // The made-up desk's reading and the picks made on its cards (a developer run's; a real page keeps its picks in desk.json).
+    private int _deskExampleReading = 1;
+    private readonly Dictionary<DeskCellKey, string> _deskExamplePicks = [];
+
+    // The price histories the cards asked for, by item, for the mode in hand; those on their way.
+    private readonly Dictionary<string, DeskHistory?> _deskHistories = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _deskHistoriesLoading = new(StringComparer.Ordinal);
+    private GameMode _deskHistoriesMode;
+
+    // The crafts and barters of each item, as the item card has them, made once per data and item file.
+    private readonly Dictionary<string, IReadOnlyList<DeskCardSource>> _deskSources = new(StringComparer.Ordinal);
+    private object? _deskSourcesOf;
 
     /// <summary>"--desk [&lt;n&gt;]" (a fake game's runs: tools\fake-raid.ps1 -Desk): the made-up desk's reading n
     /// (<see cref="DeskExample"/>) once the data is there, as a reading in the menus brings it.</summary>
@@ -37,6 +59,8 @@ public sealed partial class MainWindow
     private void InstallDesk()
     {
         StashDesk.CellPointed += OnDeskCellPointed;
+        StashDesk.CellClicked += cell => CopyDeskCell(cell, "click");
+        StashDesk.CellPinToggled += cell => ToggleDeskPin(cell.Key, "right-click");
         StashDesk.Unfolded += key =>
         {
             if (_deskOpen is null)
@@ -45,6 +69,8 @@ public sealed partial class MainWindow
             _deskOpen = DeskFold.Unfold(_deskOpen, key);
             ShowDeskPage(motion: false);
         };
+        _deskRule = DeskCopyRule.Of(_session.GetSetting(DeskCopyRule.Setting));
+        ShowCopyRuleSetting();
     }
 
     // Each snapshot: a new reading in the menus opens the desk, a raid takes the window, the fold follows the reading.
@@ -60,15 +86,26 @@ public sealed partial class MainWindow
             var keys = view.Sheet.Regions.Select(r => r.Region.Key).ToList();
             _deskOpen = DeskFold.Open(_deskOpen, keys, view.Changed, view.First, fresh);
             _deskEntering = DeskFold.Entering(_deskOpen, view.Changed, view.First, fresh);
+            if (view.Mode != _deskHistoriesMode)
+            {
+                _deskHistories.Clear();
+                _deskHistoriesMode = view.Mode;
+            }
+            // The pins stay with their cells; a reading that changed a pinned cell takes its pin.
+            _deskPins = DeskPins.Kept(_deskPins, view.Sheet);
             _deskShown = view;
             _deskBoardDue = true;
+            _deskVersion++;
         }
         else if (view is null && _deskShown is not null)
         {
             // The mode changed to one without a page: the desk says so, and the next page opens whole.
             _deskShown = null;
             _deskOpen = null;
+            _deskPins = [];
+            _deskPointed = null;
             _deskBoardDue = true;
+            _deskVersion++;
         }
         SetDesk(chosen, fresh ? "reading" : ViewModel.InRaid ? "raid" : "snapshot");
     }
@@ -96,7 +133,9 @@ public sealed partial class MainWindow
         if (_deskChosen && _deskBoardDue)
             ShowDeskPage(motion: !SnapshotMode && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled);
         if (!_deskChosen)
-            DeskCard(null);
+            _deskPointed = null;
+        if (_deskChosen || !was)
+            RenderDeskRail();
     }
 
     // The page as it is: the desk's view and fold; the cells of a new reading's opened regions come in, once.
@@ -106,6 +145,7 @@ public sealed partial class MainWindow
         var entering = _deskEntering;
         _deskEntering = new HashSet<string>();
         StashDesk.Show(_deskShown, _deskOpen ?? new HashSet<string>(), entering, motion);
+        StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
     }
 
     // PLAN and DESK at the rail's head: a click, or Space or Enter on the half with the focus.
@@ -141,40 +181,246 @@ public sealed partial class MainWindow
 
     public Visibility DeskSwitchBar(bool deskUp, bool forDesk) => deskUp == forDesk ? Visibility.Visible : Visibility.Collapsed;
 
-    // ---- the rail: the card of the cell pointed at ----
+    // ---- the rail: the pinned cards, then the card of the cell pointed at ----
 
-    private void OnDeskCellPointed(DeskCellSheet cell)
+    // The pointer on a cell: its card in the rail, until another cell is pointed at, so the way from the page to the rail
+    // doesn't lose it.
+    private void OnDeskCellPointed(DeskCellView cell)
     {
         if (!_deskChosen)
             return;
-        if (cell.Cell.ItemId is { } item)
-            DeskCard(item);
-        else if (cell.Cell.Ids.Count > 1)
-        {
-            DeskCardHost.Child = null;
-            DeskRailLine.Text = AppTexts.DeskRailOneOf(count: cell.Cell.Ids.Count);
-            DeskRailLine.Visibility = Visibility.Visible;
-        }
+        _deskPointed = cell.Key;
+        RenderDeskPointed();
     }
 
-    // For step B the rail shows the item card the pointer opens anywhere (the desk's own card is step C), one at a time:
-    // it stays until another cell is pointed at, so the way from the page to the rail doesn't lose it.
-    private void DeskCard(string? itemId)
+    /// <summary>The rail anew: the pinned cards, newest on top, then the pointed cell's card, or the rail's hint.</summary>
+    private void RenderDeskRail()
     {
-        if (itemId is null)
+        DeskPinnedHost.Children.Clear();
+        if (_deskShown is { } view && _deskChosen)
+        {
+            foreach (var pin in _deskPins)
+            {
+                if (DeskPins.Find(view.Sheet, pin.Key) is { } found)
+                    DeskPinnedHost.Children.Add(DeskCardFor(view, found.Region.Region, found.Cell, pinned: true));
+            }
+        }
+        StashDesk.ShowPinned(_deskPins.Select(p => p.Key).ToHashSet());
+        _deskPointedShown = null;
+        RenderDeskPointed();
+    }
+
+    // The pointed cell's card, made again only when the cell or what the card says changed; none for a pinned cell (its
+    // card stands above), the hint while nothing is pointed at.
+    private void RenderDeskPointed()
+    {
+        if (_deskShown is not { } view || !_deskChosen || _deskPointed is not { } key || DeskPins.Find(view.Sheet, key) is not { } found)
         {
             DeskCardHost.Child = null;
+            _deskPointedShown = null;
             DeskRailLine.Text = ViewTexts.DeskRailHint;
             DeskRailLine.Visibility = Visibility.Visible;
             return;
         }
-        if (DeskCardHost.Child is ItemCard { View.ItemId: var shown } && shown == itemId)
-            return;
-        if (CreateCard(new CardKey.Item(itemId)) is not ItemCard card)
-            return;
-        card.InRail();
-        DeskCardHost.Child = card;
         DeskRailLine.Visibility = Visibility.Collapsed;
+        if (DeskPins.IsPinned(_deskPins, key))
+        {
+            DeskCardHost.Child = null;
+            _deskPointedShown = (key, _deskVersion);
+            return;
+        }
+        if (_deskPointedShown == (key, _deskVersion) && DeskCardHost.Child is not null)
+            return;
+        DeskCardHost.Child = DeskCardFor(view, found.Region.Region, found.Cell, pinned: false);
+        _deskPointedShown = (key, _deskVersion);
+    }
+
+    // A cell's card, its history asked for once when it first shows the item.
+    private DeskCardView DeskCardFor(DeskView view, DeskRegion region, DeskCellSheet sheet, bool pinned)
+    {
+        var id = sheet.Cell.ItemId;
+        var loading = false;
+        var history = id is null ? null : DeskHistoryOf(id, out loading);
+        var words = DeskCards.Of(region, sheet, DeskContext(view), history, loading, id is null ? null : DeskSourcesOf(id));
+        var card = new DeskCardView(DeskCellKey.Of(region, sheet.Cell), words, pinned);
+        card.PinToggled += c => ToggleDeskPin(c.Key, "card");
+        card.RuleStepped += step => SetDeskRule(_deskRule.Step(step), "card");
+        card.Picked += (c, item) => PickDeskCell(c.Key, item, "card");
+        return card;
+    }
+
+    private DeskCardContext DeskContext(DeskView view)
+    {
+        var s = Volatile.Read(ref _snapshot);
+        var data = s?.Data;
+        var sources = s?.Sources;
+        return new DeskCardContext(view.FactsOf, view.Flea, _deskRule,
+            id => data?.ItemName(id) is { Length: > 0 } name ? name : id,
+            id => data?.TraderName(id) is { Length: > 0 } name ? name : id,
+            id => data?.Tasks.GetValueOrDefault(id)?.Name ?? id,
+            id => sources?.Stations.GetValueOrDefault(id) ?? id,
+            view.PricesAt, DateTimeOffset.Now);
+    }
+
+    // The item's price history: the made-up desk's own; else the one had, or asked for now (the card shows "…" until it
+    // comes, then is made again).
+    private DeskHistory? DeskHistoryOf(string itemId, out bool loading)
+    {
+        loading = false;
+        if (_deskExample is not null)
+            return DeskExample.History(itemId, _deskExample.PricesAt ?? DateTimeOffset.Now);
+        if (_deskHistories.TryGetValue(itemId, out var had))
+            return had;
+        loading = true;
+        if (_deskHistoriesLoading.Add(itemId))
+            _ = LoadDeskHistoryAsync(itemId, _deskHistoriesMode);
+        return null;
+    }
+
+    private async Task LoadDeskHistoryAsync(string itemId, GameMode mode)
+    {
+        DeskHistory? history = null;
+        try
+        {
+            history = await _session.DeskHistoryAsync(itemId);
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Desk history failed", e);
+        }
+        _deskHistoriesLoading.Remove(itemId);
+        if (mode != _deskHistoriesMode)
+            return;
+        _deskHistories[itemId] = history;
+        _deskVersion++;
+        RenderDeskRail();
+    }
+
+    // The crafts and barters that give the item, as the item card words them.
+    private IReadOnlyList<DeskCardSource> DeskSourcesOf(string itemId)
+    {
+        var s = Volatile.Read(ref _snapshot);
+        if (s?.Data is not { } data)
+            return [];
+        if (!ReferenceEquals(_deskSourcesOf, s.Sources))
+        {
+            _deskSources.Clear();
+            _deskSourcesOf = s.Sources;
+        }
+        if (_deskSources.TryGetValue(itemId, out var known))
+            return known;
+        var made = ItemCards.Build(data, s.Sources, s.Quests, itemId, s.Done).Get
+            .Where(g => g.Kind is SourceKind.Barter or SourceKind.Craft)
+            .Select(g => new DeskCardSource(g.TraderId, g.Text, g.Kind == SourceKind.Craft)).ToList();
+        _deskSources[itemId] = made;
+        return made;
+    }
+
+    // ---- pins ----
+
+    /// <summary>Pins a cell's card in the rail on top, or unpins it (a right-click on the cell, the pin on its card).</summary>
+    private string ToggleDeskPin(DeskCellKey key, string how)
+    {
+        if (_deskShown is not { } view || DeskPins.Find(view.Sheet, key) is not { } found)
+            return "no such cell";
+        _deskPins = DeskPins.Toggle(_deskPins, found.Region.Region, found.Cell.Cell);
+        var pinned = DeskPins.IsPinned(_deskPins, key);
+        Study.Ui(pinned ? "desk.pin" : "desk.unpin", ("how", how), ("pins", _deskPins.Count));
+        RenderDeskRail();
+        return pinned ? "pinned" : "unpinned";
+    }
+
+    /// <summary>Unpins every card (the developer script's "desk unpin all").</summary>
+    private void UnpinAllDesk()
+    {
+        _deskPins = [];
+        RenderDeskRail();
+    }
+
+    // ---- the click: the list price on the clipboard ----
+
+    /// <summary>
+    /// A click on a cell (*The click*): its list price by the rule to the clipboard, and only there (nothing is ever typed
+    /// into the game; DESIGN.md §2); its frame flashes gold once and its figure decodes; a one-line notice says what and
+    /// why, or why nothing was copied (the guards). A developer script's click leaves the clipboard alone.
+    /// </summary>
+    private DeskCopy CopyDeskCell(DeskCellView cell, string how, bool clipboard = true)
+    {
+        _deskPointed = cell.Key;
+        RenderDeskPointed();
+        var view = _deskShown;
+        var item = cell.Sheet.Cell.ItemId;
+        var copy = DeskCopies.Of(cell.Sheet.Cell, item is null || view is null ? null : view.FactsOf(item), view?.Flea ?? DeskFleaRules.Default, _deskRule);
+        var context = view is null ? null : DeskContext(view);
+        if (copy.Copies)
+        {
+            if (clipboard && !TryCopy(DeskCards.Clipboard(copy)))
+            {
+                ShowNotice(RuleTexts.DeskCopyFailed);
+                return copy;
+            }
+            DeskBoard.Flash(cell);
+            if (!SnapshotMode && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled && cell.FigureBlock is { } block && cell.FigureNumber is { } number)
+                Decode(block, number, TimeSpan.FromMilliseconds(600));
+        }
+        ShowNotice(DeskCards.Notice(copy, _deskRule, context?.TraderName ?? (id => id)), TimeSpan.FromSeconds(4));
+        Study.Ui("desk.copy", ("state", copy.State.ToString()), ("how", how), ("rule", _deskRule.Format()));
+        AppLog.Info($"Desk click on {cell.Key}: {copy.State}" + (copy.Copies ? $" {DeskCards.Clipboard(copy)}" + (clipboard ? "" : " (clipboard left alone)") : ""));
+        return copy;
+    }
+
+    // The price's digits on the clipboard, kept there after Shturmap closes.
+    private static bool TryCopy(string text)
+    {
+        try
+        {
+            var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            package.SetText(text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+            Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+            return true;
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Copying a desk price failed", e);
+            return false;
+        }
+    }
+
+    // ---- the rule: on the card and in settings, one state ----
+
+    /// <summary>The copy's rule set (the card's − and +, settings' row, the developer script's "desk rule"): kept in
+    /// shturmap.db, and every card and settings' row say it at once.</summary>
+    private void SetDeskRule(DeskCopyRule rule, string how)
+    {
+        if (rule == _deskRule)
+            return;
+        _deskRule = rule;
+        _session.SetSetting(DeskCopyRule.Setting, rule.Format());
+        Study.Ui("desk.rule", ("rule", rule.Format()), ("how", how));
+        _deskVersion++;
+        RenderDeskRail();
+        ShowCopyRuleSetting();
+    }
+
+    // Settings' row "Flea price to copy": the same − and + as the card's plate.
+    private void ShowCopyRuleSetting() =>
+        SettingsCopyRuleHost.Child = DeskCardView.RuleStepper(DeskCards.RuleWords(_deskRule), step => SetDeskRule(_deskRule.Step(step), "settings"));
+
+    // ---- a "?" cell's pick ----
+
+    /// <summary>A candidate clicked on a "?" cell's card: the cell is that item from now on, its card and price follow.</summary>
+    private async void PickDeskCell(DeskCellKey key, string itemId, string how)
+    {
+        Study.Ui("desk.pick", ("how", how));
+        if (_deskExample is not null)
+        {
+            _deskExamplePicks[key] = itemId;
+            if (Volatile.Read(ref _snapshot) is { } s)
+                RemakeDeskExample(s);
+            return;
+        }
+        await _session.PickDeskAsync(key.Region, key.Slot, key.I, key.J, itemId);
     }
 
     // ---- the made-up desk ----
@@ -191,10 +437,25 @@ public sealed partial class MainWindow
     /// <summary>The made-up desk's reading n as a reading brings it (<see cref="DeskExample"/>).</summary>
     private void ShowDeskExample(int reading, SessionSnapshot s)
     {
-        var data = s.Data;
-        _deskExample = DeskExample.View(reading, s.Mode, _deskReadingSeen + 1,
-            data is null ? null : id => data.TraderName(id) is { Length: > 0 } name ? name : id, DateTimeOffset.Now);
-        AppLog.Info($"Example desk: reading {Math.Clamp(reading, 1, DeskExample.Readings)} of {DeskExample.Readings}");
+        _deskExampleReading = Math.Clamp(reading, 1, DeskExample.Readings);
+        _deskExample = MadeUpDesk(s, _deskReadingSeen + 1);
+        AppLog.Info($"Example desk: reading {_deskExampleReading} of {DeskExample.Readings}");
         UpdateDesk(s);
+    }
+
+    // The same reading again with the picks made since: not a new reading, so the page keeps its fold and nothing comes in.
+    private void RemakeDeskExample(SessionSnapshot s)
+    {
+        if (_deskExample is not { } shown)
+            return;
+        _deskExample = MadeUpDesk(s, shown.Reading) with { Changed = shown.Changed, First = shown.First, PricesAt = shown.PricesAt };
+        UpdateDesk(s);
+    }
+
+    private DeskView MadeUpDesk(SessionSnapshot s, int counter)
+    {
+        var data = s.Data;
+        return DeskExample.View(_deskExampleReading, s.Mode, counter,
+            data is null ? null : id => data.TraderName(id) is { Length: > 0 } name ? name : id, DateTimeOffset.Now, _deskExamplePicks);
     }
 }

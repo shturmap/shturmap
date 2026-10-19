@@ -19,7 +19,9 @@ namespace Shturmap.App.Controls;
 /// per slot (the grid images bring the game's own ground, so the tint can't lie behind the art); a dark band across the
 /// top where the grid image prints the short name, the figure on it at the right after its source; the keep notch and
 /// the "?" plate at the upper left; the count or condition at the lower right and the change at the lower left, each on
-/// a dark plate. Marks and their room: <see cref="DeskCells.Of"/>.
+/// a dark plate. Marks and their room: <see cref="DeskCells.Of"/>. Step C (2026-10-20): a click copies the cell's list
+/// price (its frame flashes gold once and its figure decodes), a right-click pins its card in the rail, and a pinned cell
+/// carries the pin's tab on its top edge.
 /// </summary>
 public sealed partial class DeskCellView : Grid
 {
@@ -59,9 +61,9 @@ public sealed partial class DeskCellView : Grid
             });
         }
         if (Marks.Notch != DeskNotch.None)
-            Children.Add(Notch(Marks.Notch));
+            Children.Add(Notch(Marks.Notch, DeskCells.NotchAt(size)));
         if (Marks.Plate)
-            Children.Add(Plate(Marks.PlateLow ? 2 : Marks.Notch != DeskNotch.None ? DeskCells.NotchSize + 2 : 2, Marks.PlateLow));
+            Children.Add(Plate(Marks.PlateLow ? 2 : Marks.Notch != DeskNotch.None ? DeskCells.NotchAt(size) + 2 : 2, Marks.PlateLow, size));
         if (Marks.Figure is { } figure)
             Children.Add(FigureRow(figure));
         if (Marks.Count is { } count)
@@ -71,14 +73,56 @@ public sealed partial class DeskCellView : Grid
         // The linked highlight: gold at 18 % over the cell while its window's head is pointed at (DeskBoard).
         Light = new Border { Background = DeskBoard.Brush("LinkBrush"), BorderBrush = DeskBoard.Brush("AmberBrush"), BorderThickness = new Thickness(1), Opacity = 0, IsHitTestVisible = false };
         Children.Add(Light);
+        // A pinned cell: the pin's tab, a short amber bar on its top edge ("Visual language", *One symbol, one meaning*).
+        PinMark = new Rectangle
+        {
+            Fill = DeskBoard.Brush("AmberBrush"), Height = 3, Width = Math.Min(16, Math.Max(8, Width * 0.4)), HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top, IsHitTestVisible = false, Visibility = Visibility.Collapsed,
+        };
+        Children.Add(PinMark);
+        // The copy's flash: the frame in gold, once (DeskBoard.Flash).
+        FlashFrame = new Border { BorderBrush = DeskBoard.Brush("AmberBrush"), BorderThickness = new Thickness(2), Opacity = 0, IsHitTestVisible = false };
+        Children.Add(FlashFrame);
         PointerEntered += (_, _) => _board.OnCellEntered(this);
+        Tapped += (_, e) =>
+        {
+            e.Handled = true;
+            _board.OnCellClicked(this);
+        };
+        RightTapped += (_, e) =>
+        {
+            e.Handled = true;
+            _board.OnCellPinned(this);
+        };
+    }
+
+    /// <summary>The pin's tab on the cell's top edge: its card is pinned in the rail.</summary>
+    public Rectangle PinMark { get; }
+
+    /// <summary>The gold frame a copy flashes once.</summary>
+    public Border FlashFrame { get; }
+
+    /// <summary>The figure's number, for the copy's decode; null where the cell shows no figure.</summary>
+    public TextBlock? FigureBlock { get; private set; }
+
+    /// <summary>The figure's number as shown, without its "~".</summary>
+    public string? FigureNumber { get; private set; }
+
+    /// <summary>Marks the cell as pinned or not.</summary>
+    public bool Pinned
+    {
+        get => PinMark.Visibility == Visibility.Visible;
+        set => PinMark.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public DeskRegion Region { get; }
 
     public DeskCellSheet Sheet { get; }
 
-    /// <summary>The page's cell size, 40 or 56 DIP.</summary>
+    /// <summary>The cell's place on the page.</summary>
+    public DeskCellKey Key => DeskCellKey.Of(Region, Sheet.Cell);
+
+    /// <summary>The page's cell size, 40 to 80 DIP (<see cref="DeskPageRules.Sizes"/>).</summary>
     public double Size { get; }
 
     public DeskCellMarks Marks { get; }
@@ -101,11 +145,10 @@ public sealed partial class DeskCellView : Grid
             Height = Band,
             IsHitTestVisible = false,
         };
-        var large = Size >= DeskCells.Large;
         switch (Marks.Source)
         {
             case DeskSourceMark.Portrait:
-                row.Children.Add(new Picture { TraderId = Marks.TraderId, Size = 14, VerticalAlignment = VerticalAlignment.Center });
+                row.Children.Add(new Picture { TraderId = Marks.TraderId, Size = DeskCells.PortraitAt(Size), VerticalAlignment = VerticalAlignment.Center });
                 break;
             case DeskSourceMark.Flea or DeskSourceMark.Trader:
                 row.Children.Add(new FontIcon
@@ -113,13 +156,13 @@ public sealed partial class DeskCellView : Grid
                     // The flea's price tag, a trader's person ("Visual language", "One symbol, one meaning").
                     Glyph = char.ConvertFromUtf32(Marks.Source == DeskSourceMark.Flea ? 0xE8EC : 0xE77B),
                     FontFamily = new FontFamily("Segoe Fluent Icons"),
-                    FontSize = large ? 11 : 9,
+                    FontSize = DeskCells.GlyphAt(Size),
                     Foreground = DeskBoard.Brush("MutedBrush"),
                     VerticalAlignment = VerticalAlignment.Center,
                 });
                 break;
         }
-        var words = new TextBlock
+        TextBlock Words() => new()
         {
             FontSize = Marks.FigureSize,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
@@ -130,15 +173,24 @@ public sealed partial class DeskCellView : Grid
             LineHeight = Band - 1,
             LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
         };
-        // "~" in Segoe UI's fuller wave: Bahnschrift's, at the figure's 10.5 px, reads as a minus.
+        // "~" in Segoe UI's fuller wave: Bahnschrift's, at the figure's 10.5 px, reads as a minus. The number stands apart,
+        // so a copy's decode runs through it alone.
+        var group = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         if (figure.StartsWith('~'))
         {
-            words.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = "~", FontFamily = new FontFamily("Segoe UI"), FontWeight = Microsoft.UI.Text.FontWeights.Bold });
-            words.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = figure[1..] });
+            var wave = Words();
+            wave.FontFamily = new FontFamily("Segoe UI");
+            wave.FontWeight = Microsoft.UI.Text.FontWeights.Bold;
+            wave.Text = "~";
+            group.Children.Add(wave);
+            figure = figure[1..];
         }
-        else
-            words.Text = figure;
-        row.Children.Add(words);
+        var words = Words();
+        words.Text = figure;
+        group.Children.Add(words);
+        row.Children.Add(group);
+        FigureBlock = words;
+        FigureNumber = figure;
         return row;
     }
 
@@ -163,9 +215,8 @@ public sealed partial class DeskCellView : Grid
 
     // The keep notch, 11 DIP at the upper left: a filled corner triangle (now; in ink for a hideout module), an open
     // one (next), a corner bracket (later).
-    private static FrameworkElement Notch(DeskNotch notch)
+    private static FrameworkElement Notch(DeskNotch notch, double s)
     {
-        const double s = DeskCells.NotchSize;
         var figure = new PathFigure { StartPoint = notch == DeskNotch.Later ? new Point(0.75, s) : new Point(0.75, 0.75) };
         if (notch == DeskNotch.Later)
         {
@@ -196,10 +247,10 @@ public sealed partial class DeskCellView : Grid
     }
 
     // The "?" plate: the small dark plate with a gold hairline, "one of N items" (as the map's "maybe here").
-    private static FrameworkElement Plate(double left, bool low) => new Border
+    private static FrameworkElement Plate(double left, bool low, double cell) => new Border
     {
-        Width = DeskCells.PlateWidth,
-        Height = DeskCells.PlateWidth,
+        Width = DeskCells.PlateAt(cell),
+        Height = DeskCells.PlateAt(cell),
         Margin = low ? new Thickness(left, 0, 0, 2) : new Thickness(left, 2, 0, 0),
         HorizontalAlignment = HorizontalAlignment.Left,
         VerticalAlignment = low ? VerticalAlignment.Bottom : VerticalAlignment.Top,
@@ -210,7 +261,7 @@ public sealed partial class DeskCellView : Grid
         Child = new TextBlock
         {
             Text = "?",
-            FontSize = 9,
+            FontSize = 9 + (DeskCells.PlateAt(cell) - DeskCells.PlateWidth) * 0.75,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
             Foreground = DeskBoard.Brush("AmberBrush"),
             HorizontalAlignment = HorizontalAlignment.Center,

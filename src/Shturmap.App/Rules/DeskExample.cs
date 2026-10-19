@@ -12,7 +12,11 @@ namespace Shturmap.App.Rules;
 /// wallet whose contents are unseen; a BACKPACK whose "?" Zhuk has its window attached ("ZHUK · IN THE BACKPACK"); the
 /// POUCH's secure container, which has no price; a STASH page with "?" cells, keep notches of each weight, arrows, a
 /// case with its contents unseen and a cell with no price; and a wallets' window attached to none, split between ON YOU
-/// and the stash.
+/// and the stash. For the card and the click (step C, 2026-10-20), a cell of each of the copy's states: the stash's LEDX
+/// copies, the pumping station's back door key copies over the best net, the pockets' blue keycard is one Therapist pays
+/// more for, the 5.45 BS ammo can't be listed, the backpack's Grizzly at 1469/1800 copies a scaled price, and the stash's
+/// keycards' "?" waits for a pick; and every item a made-up price history (<see cref="History"/>), so the card's band
+/// shows without a request.
 /// </summary>
 public static class DeskExample
 {
@@ -38,7 +42,7 @@ public static class DeskExample
         Gpu = "57347ca924597744596b4e71", Grizzly = "590c657e86f77412b013051d", Salewa = "544fb45d4bdc2dee738b4568",
         Moonshine = "5d1b376e86f774252519444e", Roubles = "5449016a4bdc2d6f028b456f", Bitcoin = "59faff1d86f7746c51718c9c";
     private const string Gamma = "5857a8bc2459772bad15db29", Ledx = "5c0530ee86f774697952d952", ItemCase = "59fb042886f7746c5005a7b2",
-        StreamerCase = "66bc98a01a47be227a5e956e", AmmoBs = "56dff026d2720bb8668b4567";
+        StreamerCase = "66bc98a01a47be227a5e956e", AmmoBs = "56dff026d2720bb8668b4567", PumpingKey = "593858c486f774253a24cb52";
 
     /// <summary>The made-up facts of each item: footprint, kind, flea, what traders pay, the 48 h change, the offers.</summary>
     public static IReadOnlyDictionary<string, DeskItemFacts> Facts { get; } = new[]
@@ -58,7 +62,8 @@ public static class DeskExample
         Item(Analgin, 1, 1, 5_000, 4_560, Therapist, 2_400, DeskItemKind.Meds, -12),
         Item(Ifak, 1, 1, 25_000, 19_011, Therapist, 10_000, DeskItemKind.Meds, -11),
         Item(Ai2, 1, 1, 7_000, 4_160, Therapist, 2_000, DeskItemKind.Meds),
-        Item(LabsBlue, 1, 1, 433_000, 900_000, Therapist, 300_000, change: 4),
+        // Therapist pays more than the flea nets at 3 % under its last low (the panel's D: "Therapist pays more: 459 000 ₽").
+        Item(LabsBlue, 1, 1, 433_000, 900_000, Therapist, 459_000, change: 4),
         Item(LabsViolet, 1, 1, 330_000, 600_000, Therapist, 200_000),
         Item(LabsYellow, 1, 1, 160_000, 350_000, Therapist, 120_000),
         Item(LabsRed, 1, 1, 1_000_000, 1_650_000, Therapist, 550_000, change: 6),
@@ -77,10 +82,12 @@ public static class DeskExample
         Item(ItemCase, 4, 4, 1_333_333, 1_229_994, Therapist, 800_000, DeskItemKind.Container),
         Item(StreamerCase, 3, 3, null, 1, null, 0, DeskItemKind.Container, noFlea: true),
         Item(AmmoBs, 1, 1, null, 780, Prapor, 450, noFlea: true),
+        // A rare key listed far above its base price: 3 % under its last low is past the price that nets the most.
+        Item(PumpingKey, 1, 1, 1_888_888, 34_000, Therapist, 1_200, change: 22, offers: 4, fleaLevel: 25),
     }.ToDictionary(f => f.Id, StringComparer.Ordinal);
 
     private static DeskItemFacts Item(string id, int w, int h, double? low, double basePrice, string? trader, double paid,
-        DeskItemKind kind = DeskItemKind.None, double? change = null, bool noFlea = false) => new(id)
+        DeskItemKind kind = DeskItemKind.None, double? change = null, bool noFlea = false, int offers = 60, int? fleaLevel = null) => new(id)
         {
             W = w,
             H = h,
@@ -89,22 +96,37 @@ public static class DeskExample
             LastLow = low,
             BasePrice = basePrice,
             Change48hPercent = change,
-            Offers = low is null ? null : 60,
-            Traders = trader is null ? [] : [(trader, paid)],
+            Offers = low is null ? null : offers,
+            FleaLevel = noFlea ? null : fleaLevel ?? 15,
+            // The day's range: from a little under the last low to a little over it, the LEDX's high an outlier offer (as
+            // the item file had it on 2026-10-19: 9,999,999).
+            Low24h = low * 0.82,
+            High24h = id == Ledx ? 9_999_999 : low * 1.12,
+            Avg24h = low * 0.98,
+            // What each trader pays: the best one given, Fence's less (tarkov.dev's sell prices include Fence's).
+            Traders = trader is null ? [] : [(trader, paid), (Fence, Math.Round(paid * 0.4))],
             TraderSells = trader is not null && !noFlea,
         };
 
-    /// <summary>The made-up needs: an active quest's LEDX and blue keycard (now), the quest it unlocks a red keycard and
-    /// two graphics cards (next), one further down a moonshine found in raid (later, marked) and a Salewa (later, not
-    /// marked: it can be bought), a hideout module's bitcoin.</summary>
+    private const string Fence = "579dc571d53a0658a154fbec";
+
+    // Real quests and hideout stations, so the card names them from the data; the needs and the tree between them are
+    // made up.
+    private const string PrivateClinic = "5c0be5fc86f774467a116593", HealthCarePrivacy = "5a68661a86f774500f48afb0", Crisis = "60e71c48c1bfa3050473b8e5";
+    private const string Medstation = "5d484fcd654e7668ec2ec322", IntelCenter = "5d484fdf654e7600691aadf8";
+
+    /// <summary>The made-up needs: an active quest's LEDX and blue keycard (now; Private Clinic), the quest it unlocks a red
+    /// keycard and two graphics cards (next), one further down a moonshine found in raid (later, marked) and a Salewa
+    /// (later, not marked: it can be bought), and the hideout's: the LEDX for the Medstation, the bitcoin for the
+    /// Intelligence Center.</summary>
     public static DeskKeep Keep { get; } = DeskKeep.Of(
         [
-            new DeskQuestNeeds("example-now", [], [(Ledx, 1, true), (LabsBlue, 1, false)]),
-            new DeskQuestNeeds("example-next", ["example-now"], [(Gpu, 2, false), (LabsRed, 1, false)]),
-            new DeskQuestNeeds("example-later", ["example-next"], [(Moonshine, 1, true), (Salewa, 1, false)]),
+            new DeskQuestNeeds(PrivateClinic, [], [(Ledx, 1, true), (LabsBlue, 1, false)]),
+            new DeskQuestNeeds(HealthCarePrivacy, [PrivateClinic], [(Gpu, 2, false), (LabsRed, 1, false)]),
+            new DeskQuestNeeds(Crisis, [HealthCarePrivacy], [(Moonshine, 1, true), (Salewa, 1, false), (Ledx, 2, true)]),
         ],
-        new HashSet<string> { "example-now" }, new HashSet<string>(),
-        [new DeskHideoutNeed("example-station", 2, Bitcoin, 1, false)]);
+        new HashSet<string> { PrivateClinic }, new HashSet<string>(),
+        [new DeskHideoutNeed(Medstation, 3, Ledx, 1, false), new DeskHideoutNeed(IntelCenter, 3, Bitcoin, 1, false)]);
 
     private static DeskCell Slot(string slot, params string[] ids) => new(0, 0, 0, 0, ids) { Slot = slot };
 
@@ -199,6 +221,7 @@ public static class DeskExample
             At(9, 1, Wallet),
             At(0, 4, Ak74n),
             At(4, 3, StreamerCase),
+            At(5, 2, PumpingKey),
             At(7, 3, Trooper, print: new DeskPrint(147, 147)),
             At(0, 5, Salewa, print: new DeskPrint(166, 400)),
             At(1, 5, Ifak, print: new DeskPrint(300, 300)),
@@ -224,10 +247,22 @@ public static class DeskExample
     /// would publish it, with the window's reading counter.</summary>
     /// <param name="counter">The reading counter to give it (<see cref="DeskView.Reading"/>): one past the last the window saw.</param>
     /// <param name="traderName">A trader's name by id, from the data.</param>
-    public static DeskView View(int reading, GameMode mode, int counter, Func<string, string>? traderName, DateTimeOffset now)
+    /// <param name="picks">The "?" cells picked on their cards (the developer script's "desk pick", a candidate clicked).</param>
+    public static DeskView View(int reading, GameMode mode, int counter, Func<string, string>? traderName, DateTimeOffset now,
+        IReadOnlyDictionary<DeskCellKey, string>? picks = null)
     {
         reading = Math.Clamp(reading, 1, Readings);
         var page = Page(reading);
+        if (picks is { Count: > 0 })
+        {
+            page = page with
+            {
+                Regions = page.Regions.Select(r => r with
+                {
+                    Cells = r.Cells.Select(c => picks.TryGetValue(DeskCellKey.Of(r, c), out var pick) && c.Ids.Contains(pick) ? c with { Pick = pick } : c).ToList(),
+                }).ToList(),
+            };
+        }
         var sheet = DeskSheet.Of(page, id => Facts.GetValueOrDefault(id), DeskFleaRules.Default, Keep, default, traderName);
         IReadOnlySet<string> changed = reading switch
         {
@@ -235,6 +270,40 @@ public static class DeskExample
             2 => new HashSet<string>(StringComparer.Ordinal) { "backpack" },
             _ => new HashSet<string>(StringComparer.Ordinal),
         };
-        return new DeskView(mode, sheet, changed, reading == 1, counter, now);
+        return new DeskView(mode, sheet, changed, reading == 1, counter, now)
+        {
+            FactsOf = id => Facts.GetValueOrDefault(id),
+            Flea = DeskFleaRules.Default,
+        };
+    }
+
+    /// <summary>
+    /// A made-up price history of an item of the made-up desk, so the card's band shows without a request: a point every
+    /// 2 h over the last 30 days (a point a day before), the average wandering around the item's last low by a slow wave
+    /// and a quicker ripple of its own, the lowest offer under it; the same for the same item and time. Null for an item
+    /// without a flea price.
+    /// </summary>
+    public static DeskHistory? History(string itemId, DateTimeOffset now)
+    {
+        if (Facts.GetValueOrDefault(itemId) is not { LastLow: > 0 } facts)
+            return null;
+        var seed = itemId.Aggregate(17, (h, c) => unchecked(h * 31 + c));
+        var phase = (seed & 0xFFFF) / 65536.0 * Math.PI * 2;
+        var last = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour / 2 * 2, 8, 0, now.Offset);
+        var points = new List<DeskPricePoint>();
+        for (var day = 60; day > 30; day--)
+            points.Add(Point(last.AddDays(-day), day * 12));
+        for (var step = 30 * 12 - 1; step >= 0; step--)
+            points.Add(Point(last.AddHours(-2 * step), step));
+        return new DeskHistory(points);
+
+        DeskPricePoint Point(DateTimeOffset at, int stepsBack)
+        {
+            var t = stepsBack / 12.0;
+            var wave = Math.Sin(t / 30 * Math.PI * 2 + phase) * 0.08 + Math.Sin(t * 1.7 + phase * 3) * 0.025 - (facts.Change48hPercent ?? 0) / 100 * Math.Min(1, t / 2);
+            var avg = facts.LastLow!.Value * (1.02 + wave);
+            var spread = 0.06 + 0.03 * Math.Abs(Math.Sin(t * 0.9 + phase));
+            return new DeskPricePoint(at, Math.Round(avg), Math.Round(avg * (1 - spread)), 40);
+        }
     }
 }

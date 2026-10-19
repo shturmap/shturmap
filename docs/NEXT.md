@@ -301,10 +301,10 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
   YOU · STASH · KEEP, the fold, the "+" and the condition scaling; the PLAN | DESK switch; the menu screenshots' tick
   worded for the desk (the panel left it out).
 - Step C, once B's naming has held up: the card, the price history, the click and its setting (the card's lines for a
-  "+" and a scaled figure, the click's scaled price).
+  "+" and a scaled figure, the click's scaled price). Built 2026-10-20 (below).
 - The in-raid glance: its panel after step B, its build after step C.
-- The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). Open: that `SafetyTests` allows
-  the clipboard.
+- The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). `SafetyTests` forbids no clipboard
+  call (step C, 2026-10-20: checked, and said beside its list).
 
 **Built (step B part 1, 2026-10-19: the reading and the data; no view, no texts, no setting changed).** Binding:
 DESIGN.md §2 ("For the stash desk", *Built*), §3 (the desk's prices, *Built otherwise*), §4 (*The stash desk*, *Built:
@@ -374,6 +374,58 @@ the model the view draws*), §8 ("The desk file", "How the parts work", *Menu sc
   (TASCHEN, SPEZIAL-SLOTS; the desk's German reviewed, senior translator, 2026-10-20); a turned cell's picture turns a
   quarter clockwise, unchecked against the game; the reading counter's start: the view takes a page read back from the
   file for reading 0.
+
+**Built (step C, 2026-10-20: the card, pinning, the click's copy, the cells scaling)**, as the owner asked after trying step
+B (the bullet under *Next* above; then "I don't think we need a visible copy button, clicking on the item suffices. But
+there should be a visual feedback and UI elements for setting what is copied clearly visible."). Binding: DESIGN.md §3
+(the history built), §4 (*The stash desk*: *Its place*, *The card*, *The click*, *Fun*, *As built*: *The rail*, *The
+card*, *Pins*; "Visual language", the pin's tab; *Motion*; "Settings", "Flea price to copy"; the keys' Esc), §8 (the
+desk file's pick, the script's `desk` verbs, `-Desk`).
+- **Where it lives:** the scale rule `Rules.DeskPageRules.Layout` (40 to 80 DIP in steps of 8; two columns where both fit
+  at 56 or more) with the marks' sizes in `Rules.DeskCells` (`FigureSizeAt`, `SmallSizeAt`, `GlyphAt`, `PortraitAt`,
+  `NotchAt`, `PlateAt`) and the heads' `DeskPageRules.HeadSize`; the copy `Core.Desk.DeskCopies` and its rule
+  `DeskCopyRule` (`desk.copyRule` in shturmap.db: `match`, `under:3`, `over:2`); the history `Core.Desk.DeskHistory`
+  (the points, the band, the 7-day change, the high and low) and the day's bar `DeskDayRange`; the fetch
+  `GameDataLoader.LoadPriceHistoryAsync` and `GameSession.DeskHistoryAsync`; the pick `GameSession.PickDeskAsync` over
+  `DeskLedger.Pick` (slots too; carried over a reading that shows the cell as it was); the card's words `Rules.DeskCards`,
+  the pins `Rules.DeskPins`, the card `Controls.DeskCardView` (with the rule's stepper, which settings' row shows too), the
+  cell's click, right-click, pin tab and flash in `Controls.DeskCellView` and `DeskBoard`; the rail, the copy, the rule,
+  the picks and the histories in `MainWindow.Desk`; texts in `RuleTexts` (the card, the plate, the notices, the slots'
+  names) and `ViewTexts` (settings' row, the pin's and the stepper's tips, help's desk paragraph, the rail's hint), en and
+  de; the made-up desk's states and histories in `Rules.DeskExample`. The DESK audit line gains HISTORY (the cached
+  histories read as the card reads them: UNREAD, FEW).
+- **Tests:** `DeskCopyTests` (the rule, rounding, scaling, every guard, the best net), `DeskHistoryTests` (the file, the
+  7-day change, the band, the day's bar), `DeskCardTests` (the card's words from the made-up desk, the plate's states, the
+  "?" card, the notices, the clipboard's digits, the age), `DeskPinsTests`, `DeskPageRulesTests` (the scale rule's
+  numbers, the marks' sizes), `DeskLedgerTests` (the pick kept and dropped, a slot's pick), `PriceHistoryTests` (one file
+  per item, its ETag, PvP's own file), `DevToolsTests` (the new `desk` steps).
+- **Dev aids:** the script's `desk pin|copy|point <region> <i> <j> | <slot>`, `desk unpin [<region> <i> <j> | all]`,
+  `desk pick <region> <i> <j> | <slot> <n>`, `desk rule match|under:<n>|over:<n>`; a script's click leaves the clipboard
+  alone (the app log says what it would have copied); the replay `tools\qa\desk` gained the card, the copy, the rule, two
+  pins, the guards and a pick.
+- **Rules taken where the brief left a choice** (DESIGN.md *As built*; the owner's to overrule): the rule's control is a
+  stepper, − and + around "3% UNDER", not four fixed choices (one control holds every rule the setting allows, so card and
+  settings never disagree); the pin's symbol is a tab, a short amber bar on a cell's top edge and the same tab over a
+  cell's outline on the card's head, not the pushpin (the Place quest type's); a pinned card is framed in amber as a held
+  card is; Esc leaves the pins alone; a right-click on a pinned cell unpins it; the pins have no limit; the slot's name
+  stands over the item's name, not before it; KEEP's order is now, next, a hideout module's, later; the 7-day change is
+  the last day's averages against the day a week before's; an outlier high is one more than twice the average and the
+  last low; the history is had again after an hour, a failure after two minutes, at a card's showing only; traders' prices
+  per item at full condition.
+- **Measured** (`shturmap-cli desk --audit`, cache only): HISTORY none cached here (a card fetches one
+  when it first shows an item; the made-up desk asks nothing). One history fetched by hand for the shape, 2026-10-20:
+  the LEDX's PvE file, 85 KB, `{"data":[{priceMin, price, offerCount, timestamp}], "translations":[]}`, a weak ETag,
+  `Cache-Control: max-age=691200`.
+- **Pictures** (`fake-raid -Desk -PlanOnly`, the folder build; the replay at 1600×900 in English and 900×560 in German):
+  900×560 one column at 40, 1600×900 two at 64, 2560×1440 (the window 2544×1401 inside) two at 80; the card, a copy's
+  flash and decode with its notice, two pins, each guard, a "?" card and its pick. The layout check of the desk at
+  900×560, English and German: PASSED.
+- **Open:** the pointed card stands under the pins (the brief's order): with two pins at 900×560 it is out of sight until
+  the rail is scrolled; at 2560×1440 the desk at 80 DIP leaves about a third of its width empty (the cap of 80); the cells
+  step down from 80 to 56 where the second column comes in; the German slot names (OHRHÖRER … SCHEIDE) to check in the
+  German game; the texts for the senior translator; the UI QA pass of step C; the layout check's `desk` view shows no
+  card (no pointed cell in a snapshot run); whether the game's fee for a damaged item scales its base price as the copy
+  assumes; the website, the tour's pictures and What's New for 0.7.0.
 
 **The UI QA pass of step B (2026-10-19, on c7b3a87) and its fixes.** The pass read a GEAR screenshot dropped into a
 Plan-only fake raid at 1600×900, then the one with the Zhuk window, and the replay `tools\qa\desk` at both sizes and at

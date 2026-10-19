@@ -21,8 +21,8 @@ public enum DeskPart
 /// to, or a weapon's mods; its figure ends in "+".</param>
 public sealed record DeskCellSheet(DeskCell Cell, DeskFigure? Figure, DeskKeepLevel Keep, bool Unseen)
 {
-    /// <summary>The card's KEEP lines (*The card*): every need of the cell's item in progress order (now, next, later, the
-    /// hideout's), each with its level, its quest or station, count and found-in-raid flag; of a "?" cell's candidates,
+    /// <summary>The card's KEEP lines (*The card*): every need of the cell's item in progress order (now, next, a hideout
+    /// module's, later), each with its level, its quest or station, count and found-in-raid flag; of a "?" cell's candidates,
     /// those all of them share are not told apart: empty.</summary>
     public IReadOnlyList<DeskNeed> Needs { get; init; } = [];
 }

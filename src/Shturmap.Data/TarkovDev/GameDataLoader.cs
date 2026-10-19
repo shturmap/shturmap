@@ -306,6 +306,26 @@ public sealed class GameDataLoader(CachedHttp http)
     /// asked for again with its ETag (docs/DESIGN.md §3, "The stash desk's prices come per reading").</summary>
     public static readonly TimeSpan DeskPricesAge = TimeSpan.FromHours(1);
 
+    /// <summary>How old an item's price history may be and still be shown without asking: an hour (its points come every
+    /// 2 h), then it is asked for again with its ETag when a card shows the item (docs/DESIGN.md §3).</summary>
+    public static readonly TimeSpan DeskHistoryAge = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// An item's flea price history for the stash desk's card, as json.tarkov.dev's <c>/{mode}/prices/{id}</c> has it (a
+    /// point a day for its whole history, every 2 h over the last 30 days; about 20 to 130 KB), from the download cache
+    /// when younger than <see cref="DeskHistoryAge"/>, else asked for with its ETag; the same host as the rest. Asked only
+    /// when a card shows the item (docs/DESIGN.md §3, "The stash desk's prices come per reading"), one file per item, never
+    /// in bulk. The file's text, or null for an id that isn't one.
+    /// </summary>
+    public async Task<string?> LoadPriceHistoryAsync(GameMode mode, string itemId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(itemId) || !itemId.All(char.IsAsciiLetterOrDigit))
+            return null;
+        var endpoint = $"{GameData.Slug(mode)}/prices/{itemId}";
+        var cached = await http.GetAsync(new Uri(JsonApi, endpoint), endpoint.Replace('/', '_') + ".json", DeskHistoryAge, ct, json: true);
+        return await File.ReadAllTextAsync(cached.FilePath, ct);
+    }
+
     /// <summary>The item sources, the item file (its prices) asked for again when older than <paramref name="itemsAge"/>;
     /// the barters, crafts and hideout keep their day.</summary>
     public async Task<ItemSources> LoadSourcesAsync(GameMode mode, string language, TimeSpan itemsAge, CancellationToken ct = default)

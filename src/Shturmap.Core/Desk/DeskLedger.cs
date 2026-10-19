@@ -35,12 +35,14 @@ public sealed class DeskLedger
         return new DeskChange(page, changed, old is null);
     }
 
-    /// <summary>A "?" cell's pick (step C's click): kept with the cell until a reading changes it. False when no such cell.</summary>
-    public bool Pick(GameMode mode, string region, DeskRect at, string? itemId)
+    /// <summary>A "?" cell's pick (step C: a candidate clicked on its card): kept with the cell until a reading changes it;
+    /// null takes it back. A slot by its key, a grid's cell by its top left. False when no such cell, or the item isn't one
+    /// of its candidates.</summary>
+    public bool Pick(GameMode mode, string region, string? slot, int i, int j, string? itemId)
     {
         if (Page(mode) is not { } page || page.Region(region) is not { } r)
             return false;
-        var cell = r.Cells.FirstOrDefault(c => !c.IsSlot && c.Rect == at);
+        var cell = r.Cells.FirstOrDefault(c => slot is not null ? c.Slot == slot : !c.IsSlot && c.I == i && c.J == j);
         if (cell is null || (itemId is not null && !cell.Ids.Contains(itemId)))
             return false;
         var cells = r.Cells.Select(c => ReferenceEquals(c, cell) ? c with { Pick = itemId } : c).ToList();
@@ -71,6 +73,15 @@ public sealed class DeskLedger
                 merged = region with { Cells = region.Cells.Concat(kept).OrderBy(c => c.IsSlot ? 0 : 1).ThenBy(c => c.J).ThenBy(c => c.I).ToList() };
             }
             merged = merged with { Covered = [], CoveredSlots = [] };
+            // A "?" cell read again as it was keeps its pick (step C: the pick stays for that cell).
+            if (before is not null && before.Cells.Any(c => c.Pick is not null))
+            {
+                merged = merged with
+                {
+                    Cells = merged.Cells.Select(c => c.Pick is null && before.Cells.FirstOrDefault(o => o.Pick is not null && o.SameAs(c)) is { } old
+                        ? c with { Pick = old.Pick } : c).ToList(),
+                };
+            }
             if (before is null || !Same(before, merged))
                 changed.Add(region.Key);
             regions.Add(merged);

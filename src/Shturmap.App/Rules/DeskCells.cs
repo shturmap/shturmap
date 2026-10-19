@@ -52,17 +52,32 @@ public static class DeskCells
     /// <summary>The item cell's 40 DIP, the desk's cell at the smallest window.</summary>
     public const double Small = 40;
 
-    /// <summary>The cell from a desk 600 DIP across.</summary>
+    /// <summary>From this size up a cell shows the change as a figure and a trader's portrait (*The cell*): 56 DIP, and the
+    /// larger sizes the desk's width gives (<see cref="DeskPageRules.Sizes"/>, owner, 2026-10-20).</summary>
     public const double Large = 56;
 
-    /// <summary>The keep notch's size, 11 DIP.</summary>
+    /// <summary>The keep notch's size at 40 to 56 DIP, 11 DIP; it grows by 1 a step above (<see cref="NotchAt"/>).</summary>
     public const double NotchSize = 11;
 
-    /// <summary>The figure's size at 40 DIP: the badges' 10.5 px; 12 at 56.</summary>
-    public static double FigureSizeAt(double cell) => cell >= Large ? 12 : 10.5;
+    /// <summary>The keep notch at a cell size: 11 DIP up to 56, then 12, 13 and 14 at 64, 72 and 80.</summary>
+    public static double NotchAt(double cell) => cell <= Large ? NotchSize : NotchSize + (cell - Large) / 8;
 
-    /// <summary>The count's and the change's size: 10 px at 40 DIP, 11.5 at 56.</summary>
-    public static double SmallSizeAt(double cell) => cell >= Large ? 11.5 : 10;
+    /// <summary>The figure's size: the badges' 10.5 px at 40 DIP, 11 at 48, 12 at 56, then a pixel a step: 13, 14 and 15 at
+    /// 64, 72 and 80.</summary>
+    public static double FigureSizeAt(double cell) => cell >= Large ? 12 + (cell - Large) / 8 : 10.5 + Math.Max(0, cell - Small) / 16;
+
+    /// <summary>The count's and the change's size: 10 px at 40 DIP, 10.5 at 48, 11.5 at 56, then a pixel a step: 12.5, 13.5
+    /// and 14.5 at 64, 72 and 80.</summary>
+    public static double SmallSizeAt(double cell) => cell >= Large ? 11.5 + (cell - Large) / 8 : 10 + Math.Max(0, cell - Small) / 16;
+
+    /// <summary>The source's glyph before the figure (the price tag, the person): 9 DIP at 40, a DIP more a step, 14 at 80.</summary>
+    public static double GlyphAt(double cell) => 9 + Math.Max(0, cell - Small) / 8;
+
+    /// <summary>A trader's portrait before the figure from 56 DIP: 14 DIP, 16, 18 and 20 at 64, 72 and 80.</summary>
+    public static double PortraitAt(double cell) => 14 + Math.Max(0, cell - Large) / 4;
+
+    /// <summary>The "?" plate's side: 12 DIP up to 56, then a DIP a step, 15 at 80.</summary>
+    public static double PlateAt(double cell) => cell <= Large ? PlateWidth : PlateWidth + (cell - Large) / 8;
 
     /// <summary>The least size a figure is drawn at: past it, it moves to the card.</summary>
     public const double LeastFigure = 8;
@@ -112,7 +127,7 @@ public static class DeskCells
         cell.Print is { } print ? print.ToString() : cell.Count > 1 ? DeskNumbers.Count(cell.Count) : null;
 
     /// <summary>
-    /// The marks of one cell at a cell size of 40 or 56 DIP, by the size its text is drawn at (<paramref name="drawn"/>:
+    /// The marks of one cell at a cell size of 40 to 80 DIP, by the size its text is drawn at (<paramref name="drawn"/>:
     /// a size as written to the size the window's text size draws it; the same without one). A number is never cut
     /// (QA pass of 2026-10-19, F6: at 125 % "166/300" read "166/30"): what gives way first is the change, beside the count
     /// (a 1×1 cell at 40 DIP with "166/400" has no room for its arrow; at 56 the change stands as a figure, "↓ −10%",
@@ -162,9 +177,9 @@ public static class DeskCells
         var plateLow = false;
         if (text is not null)
         {
-            var notchRoom = notch != DeskNotch.None ? NotchSize + 1 : 0;
-            var plateRoom = plate ? PlateWidth + 2 : 0;
-            var glyph = source == DeskSourceMark.Portrait ? 14 + 2 : source != DeskSourceMark.None ? drawn(large ? 11 : 9) + 2 : 0;
+            var notchRoom = notch != DeskNotch.None ? NotchAt(size) + 1 : 0;
+            var plateRoom = plate ? PlateAt(size) + 2 : 0;
+            var glyph = source == DeskSourceMark.Portrait ? PortraitAt(size) + 2 : source != DeskSourceMark.None ? drawn(GlyphAt(size)) + 2 : 0;
             var room = width - 4;
             double Words(double at) => text.Length * drawn(at) * Em;
             if (source != DeskSourceMark.None && notchRoom + plateRoom + glyph + Words(figureSize) > room)

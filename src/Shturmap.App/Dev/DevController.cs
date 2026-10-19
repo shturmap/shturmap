@@ -638,9 +638,10 @@ internal sealed class DevController(MainWindow window, GameSession session, Fake
                     Say(noStash);
                 break;
             case "desk":
-                // The made-up stash desk: a reading, a folded region opened, a cell pointed at, or PLAN (step B, 2026-10-19).
+                // The made-up stash desk: a reading, a folded region opened, a cell pointed at, pinned, clicked or picked, the
+                // copy's rule, or PLAN (step B, 2026-10-19; step C, 2026-10-20).
                 if (DevScript.DeskOf(step) is { } desk)
-                    Say(window.DevDesk(desk.Act, desk.Reading, desk.Region, desk.I, desk.J));
+                    Say(window.DevDesk(desk));
                 break;
             case "tasks":
                 // The OPERATIONAL table as a screenshot taken now shows it: made-up tasks, from where the reading hands

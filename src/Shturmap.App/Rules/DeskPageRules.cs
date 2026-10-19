@@ -5,16 +5,18 @@ namespace Shturmap.App.Rules;
 
 /// <summary>
 /// The desk page's layout and words (owner, 2026-10-19, the addendum's A(2) and B1; docs/DESIGN.md §4, *Its place*,
-/// *What it mirrors*, *The head line and the fold*): the cell's size and the columns by the desk's width, the regions'
-/// heads, the fold line's names, the "Not attached" line and the head line.
+/// *What it mirrors*, *The head line and the fold*): the cell's size and the columns by the desk's width (owner,
+/// 2026-10-20: "We should utilize the whole screen"), the regions' heads, the fold line's names, the "Not attached" line
+/// and the head line.
 /// </summary>
 public static class DeskPageRules
 {
-    /// <summary>From a desk this wide the cells are 56 DIP, under it the item cell's 40.</summary>
-    public const double LargeFrom = 600;
+    /// <summary>The cell's sizes, in DIP, smallest first: the item cell's 40 up to 80, in steps of 8, each a whole number of
+    /// pixels at every Windows scale from 100 to 200 % in quarters, so the grid's hairlines and the art stay crisp.</summary>
+    public static readonly IReadOnlyList<double> Sizes = [40, 48, 56, 64, 72, 80];
 
-    /// <summary>From a desk this wide the column breaks before STASH into the game's two columns.</summary>
-    public const double TwoColumnsFrom = 980;
+    /// <summary>The least cell the game's two columns take: under it one column keeps the cells larger.</summary>
+    public const double TwoColumnsLeast = 56;
 
     /// <summary>The space between the two columns, between regions side by side in a row, and the page's margin on
     /// either side, in DIP.</summary>
@@ -24,8 +26,47 @@ public static class DeskPageRules
 
     public const double Margin = 18;
 
-    /// <summary>The cell's size for a desk this wide.</summary>
-    public static double Cell(double deskWidth) => deskWidth >= LargeFrom ? DeskCells.Large : DeskCells.Small;
+    /// <summary>
+    /// The page's cell size and columns for a desk this wide (owner, 2026-10-20: the cells scale with the desk's width,
+    /// the rail stays for the cards): the game's two columns, the gear left and the stash right, at the largest size of
+    /// <see cref="Sizes"/> from 56 where both fit the desk; else one column at the largest size where its widest row fits;
+    /// 40 at the least. A 900×560 window's desk (516 DIP) stands at 40, one column; 1600×900's (1216) at 64 in two; a
+    /// 2560 monitor's at 80. The break is the stash's place in reading order, −1 for one column.
+    /// </summary>
+    public static (double Cell, int Break) Layout(IReadOnlyList<DeskRegion> regions, double deskWidth)
+    {
+        var stash = -1;
+        for (var i = 0; i < regions.Count && stash < 0; i++)
+        {
+            if (regions[i].Kind == DeskRegionKind.Stash)
+                stash = i;
+        }
+        if (stash > 0)
+        {
+            foreach (var size in Sizes.Where(s => s >= TwoColumnsLeast).Reverse())
+            {
+                if (TwoColumnsWidth(regions, stash, size) + 2 * Margin <= deskWidth)
+                    return (size, stash);
+            }
+        }
+        foreach (var size in Sizes.Reverse())
+        {
+            if (ColumnWidth(regions, size, 10) + 2 * Margin <= deskWidth)
+                return (size, -1);
+        }
+        return (Sizes[0], -1);
+    }
+
+    /// <summary>The cell's size for these regions on a desk this wide (<see cref="Layout"/>).</summary>
+    public static double Cell(IReadOnlyList<DeskRegion> regions, double deskWidth) => Layout(regions, deskWidth).Cell;
+
+    // Both columns side by side: the gear's (six cells at the least) and the stash's (ten), the gap between.
+    private static double TwoColumnsWidth(IReadOnlyList<DeskRegion> regions, int at, double size) =>
+        ColumnWidth(regions.Take(at).ToList(), size, 6) + ColumnGap + ColumnWidth(regions.Skip(at).ToList(), size, 10);
+
+    /// <summary>The regions' heads and the fold lines at a cell size: the eyebrows' 11 px at 40 and 48, 12 at 56 and 64,
+    /// 13 at 72 and 80, so a head stays in scale with its grid.</summary>
+    public static double HeadSize(double cell) => 11 + Math.Floor((cell - Sizes[0]) / 16);
 
     /// <summary>A region's grid as the page draws it, in cells: none for LOADOUT, a strip of slot cells whatever a reading
     /// says (QA pass of 2026-10-19, F1 and F2: a reading's loadout of eleven by one drew a row of empty cells under the
@@ -49,25 +90,10 @@ public static class DeskPageRules
         return widest + 1;
     }
 
-    /// <summary>Where the second column starts in reading order: the stash, from a desk 980 DIP across where both columns
-    /// fit it (what follows the stash, its windows and the windows attached to none, stands under it); −1 for one
-    /// column.</summary>
-    public static int ColumnBreak(IReadOnlyList<DeskRegion> regions, double deskWidth)
-    {
-        if (deskWidth < TwoColumnsFrom)
-            return -1;
-        var at = -1;
-        for (var i = 0; i < regions.Count && at < 0; i++)
-        {
-            if (regions[i].Kind == DeskRegionKind.Stash)
-                at = i;
-        }
-        if (at <= 0)
-            return -1;
-        var size = Cell(deskWidth);
-        var both = ColumnWidth(regions.Take(at).ToList(), size, 6) + ColumnGap + ColumnWidth(regions.Skip(at).ToList(), size, 10);
-        return both + 2 * Margin <= deskWidth ? at : -1;
-    }
+    /// <summary>Where the second column starts in reading order: the stash, where both columns fit the desk at 56 DIP or
+    /// more (what follows the stash, its windows and the windows attached to none, stands under it); −1 for one column
+    /// (<see cref="Layout"/>).</summary>
+    public static int ColumnBreak(IReadOnlyList<DeskRegion> regions, double deskWidth) => Layout(regions, deskWidth).Break;
 
     /// <summary>The space between a grid's compartments, in DIP, as the game sets a rig's pockets a few pixels apart: 2 at
     /// 40 DIP, 4 at 56.</summary>
