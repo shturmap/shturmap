@@ -149,11 +149,12 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
 - **How:** as the list's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them. With "Delete
   screenshots after reading" ticked it goes once read, as a raid screenshot does (below).
-- **The player's say:** "Read your stash and tasks from menu screenshots" in settings ("Read your stash from menu
-  screenshots" until 2026-10-19, when the tasks below joined it), on unless unticked, beside the list's
-  tick and with a note that says what is looked at and what is kept. Unticked, no menu screenshot is opened; the
-  marks learned stay until the player retracts them. Its note, help, the README, PRIVACY.md, the tour's first chapter
-  and the website say it; the diagnostics carry the setting's state and the recognition's language.
+- **The player's say:** "Read your stash, gear and tasks from menu screenshots" in settings ("Read your stash from menu
+  screenshots" until 2026-10-19, when the tasks below joined it, then "Read your stash and tasks …" until the desk's
+  words the same day, below), on unless unticked, beside the list's tick and with a note that says what is looked at
+  and what is kept. Unticked, no menu screenshot is opened; the marks learned stay until the player retracts them. Its
+  note, help, the README, PRIVACY.md, the tour's first chapter and the website say it; the diagnostics carry the
+  setting's state and the recognition's language.
 
 **The OPERATIONAL table of a menu screenshot is read, for the daily and weekly tasks** (owner, 2026-10-17: "Add
 dailies and weeklies via screenshot"; from a panel of four, 2026-10-19: B, "Use B, the recommended one"; the spike of
@@ -195,9 +196,10 @@ table is read as the stash's is, in the same path, and its tasks show where the 
   screen captured; a screenshot the player took with their own key press, never one taken for them; deleted after
   reading when "Delete screenshots after reading" is ticked.
 - **The player's say:** the stash's one tick, its words widened to cover the Tasks screen (owner, 2026-10-19, B: one
-  tick, no new setting): "Read your stash and tasks from menu screenshots"; its note says the OPERATIONAL tab's daily
-  and weekly tasks are read, never their rewards. Unticked, no menu screenshot is opened; the tasks kept stay until
-  they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter say it.
+  tick, no new setting): "Read your stash and tasks from menu screenshots" (widened again for the desk, below); its
+  note says the OPERATIONAL tab's daily and weekly tasks are read, never their rewards. Unticked, no menu screenshot is
+  opened; the tasks kept stay until they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter
+  say it.
 
 **For the stash desk, the item grids are read against the whole catalogue** (owner, 2026-10-19, keeping the price view
 in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*; its reading and
@@ -207,8 +209,10 @@ grids with each item's prices, so it has to name every cell, not only the ones B
 levels from the quest dependency tree, NOW (an active quest's BRING needs the item), NEXT (a quest the active ones
 unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
 (the logs don't say its level, and hideout tracking stays a not-goal, §1), each with its found-in-raid flag (owner,
-2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The boundary widens for the desk
-alone, and no further (and, decided the same day, for the in-raid glance: "Which pictures", below):
+2026-10-19: the keep mark's levels, not a planner screen of their own; docs/NEXT.md). The page in hand is kept in
+`desk.json` and priced from tarkov.dev's item file, asked for again at most once an hour while the desk is used (owner,
+2026-10-19: "Accept, once an hour"; §3). The boundary widens for the desk alone, and no further (and, decided the same
+day, for the in-raid glance: "Which pictures", below):
 
 - **Which pictures:** the stash's (above): a menu screenshot of the player's own stash or inventory, new, named
   without a position, while the log shows the menus. The inventory is the GEAR tab (Character › GEAR), the player's
@@ -268,11 +272,13 @@ alone, and no further (and, decided the same day, for the in-raid glance: "Which
   Per game mode, in `desk.json` in the data folder (§8, "The desk file").
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them.
-- **The player's say:** the menu screenshots' one tick ("Read your stash and tasks from menu screenshots"), its words
-  and note widened for the desk, to be worded with step B (the desk's panel of 2026-10-19 left them out; the reading
-  runs under the tick since step B part 1, its words not yet: open, before any release). Unticked, no
-  menu screenshot is opened, for the desk either. Once built, its note, help, the README, PRIVACY.md and the website say
-  what the desk reads.
+- **The player's say:** the menu screenshots' one tick, its words widened for the desk (2026-10-19, after step B part
+  1; the desk's panel had left them out): "Read your stash, gear and tasks from menu screenshots" (the GEAR tab is the
+  screen the desk adds; its prices aren't read from the picture, so the words don't name them). Its note adds that the
+  desk shows what each item is worth from tarkov.dev's prices, fetched again at most once an hour when a screenshot is
+  read (§3), and that item ids, counts and places are kept, nothing of the picture. Unticked, no menu screenshot is
+  opened, for the desk either. Its note, the README and PRIVACY.md say what the desk reads, keeps and fetches; help with
+  the desk's view, the website when its media are next made.
 
 Nothing else of a picture may be read without the owner deciding it anew: not the raid timer beside the list
 (Windows' recognition doesn't read the game's digits, and a reader of Shturmap's own was not built), not the Tasks
@@ -289,10 +295,10 @@ slow one, such as a stash reading that first fetches the needed items' pictures,
 2026-10-14 it was "Delete position screenshots": only a screenshot with a position went, 5 seconds after it was
 seen whatever its picture's reading was doing, and menu screenshots stayed as "taken for their picture". Since the
 stash is read from them they are taken for Shturmap too, and the owner asked for them to go ("otherwise the folder is
-littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash and tasks from
-menu screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two. What may
-go is narrow, and checked when the file is seen and again before it goes (`ScreenshotCleaner.MayDelete`): only a
-file the watcher reported as new in this run, directly in the screenshots folder, named as the game names a
+littered with screenshots from the menu"). Every new one the game names goes, whether "Read your stash, gear and tasks
+from menu screenshots" is ticked or not: the tick says delete screenshots, and one rule is easier to trust than two.
+What may go is narrow, and checked when the file is seen and again before it goes (`ScreenshotCleaner.MayDelete`):
+only a file the watcher reported as new in this run, directly in the screenshots folder, named as the game names a
 screenshot (with a position or without). What was in the folder before Shturmap looked and every other file stay.
 Nor is a screenshot that comes back new: a file last written before Shturmap started watching, or before a screenshot of
 its name was deleted, is old (`ScreenshotWatcher`; review of 2026-10-09: a Screenshots folder a sync tool or the
@@ -320,9 +326,9 @@ software that captures, collects, counts or otherwise 'retrieves' information re
 Launcher Application or the Game", unless BSG permits it "at its own exclusive and absolute discretion"; no tool has
 been permitted. The owner accepted that residual risk. Do not widen the boundary: only the owner does, as with the
 extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11), the
-operational tasks' table (2026-10-19), those grids against the whole catalogue for the stash desk (2026-10-19,
-decided, not built) and the item grids of an in-raid screenshot that shows an inventory screen, for the in-raid glance
-(2026-10-19, decided, not built).
+operational tasks' table (2026-10-19), those grids against the whole catalogue for the stash desk (2026-10-19; its
+reading built, its view not yet) and the item grids of an in-raid screenshot that shows an inventory screen, for the
+in-raid glance (2026-10-19, decided, not built).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -383,17 +389,19 @@ quoting it anywhere new.
     asks nothing.
   - **The stash desk's prices come per reading** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; §4,
     "Screen anatomy", *The stash desk*): a list price to copy needs prices minutes old, and the item sources' may be a
-    day old. So, for the desk alone, the prices of the items a screenshot showed are asked for when it is read (those
-    items, never the catalogue), and an item's price history (json.tarkov.dev's `/{mode}/prices/{id}`) when its card
-    first shows it, each with its ETag, so an unchanged answer costs a few hundred bytes. Still never on a timer: a page
-    left open isn't refreshed, and the card says its prices' age ("Prices 4 min old · tarkov.dev"). Everything else
-    keeps the ages above. Its requests and bytes per player are counted and said to the owner before it is built (the
-    rule at the end of this list). **Built otherwise** (step B part 1, 2026-10-19; `GameSession.RefreshDeskPrices`;
-    the owner's word on it open): json.tarkov.dev has no price file per item (the GraphQL API that answers per item was
-    down all of 2026-10-19), so a desk reading asks for the item file again with its ETag when the saved copy is over an
-    hour old (`GameDataLoader.DeskPricesAge`): at most one request an hour of desk use, a few hundred bytes when
-    unchanged, about 1.4 MB compressed when it changed (it changes every few minutes, so in practice once an hour of
-    use). The history is step C's.
+    day old. So, for the desk alone, the prices of the items a screenshot showed were to be asked for when it is read
+    (those items, never the catalogue; the exception below took its place), and an item's price history
+    (json.tarkov.dev's `/{mode}/prices/{id}`) when its card first shows it, each with its ETag, so an unchanged answer
+    costs a few hundred bytes. Still never on a timer: a page left open isn't refreshed, and the card says its prices'
+    age ("Prices 4 min old · tarkov.dev"). Everything else keeps the ages above. Its requests and bytes per player are
+    counted and said to the owner before it is built (the rule at the end of this list). **The exception: the item
+    file, hourly while the desk is used** (owner, 2026-10-19: "Accept, once an hour", on the count below; built in step
+    B part 1, `GameSession.RefreshDeskPrices`). json.tarkov.dev has no price file per item (the GraphQL API that
+    answers per item was down all of 2026-10-19), so a desk reading asks for the whole item file again with its ETag
+    when the saved copy is over an hour old (`GameDataLoader.DeskPricesAge`): at most one request an hour of desk use,
+    a few hundred bytes when unchanged, about 1.4 MB compressed when it changed (it changes every few minutes, so in
+    practice once an hour of use). Nothing is asked per item for a reading's prices, and no picture but the page's
+    cells' grid images, fetched and kept as BRING's are today (*Grid images*, below). The history is step C's.
   - What the server doesn't have is remembered for a week, the time its own Cache-Control gives its answers
     (`CachedHttp.MissingAge`): a tile or a picture that answered "not found" was asked for again in every session
     before. A refusal (403) is not remembered: it can be a block that passes.

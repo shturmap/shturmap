@@ -68,22 +68,25 @@ Shturmap works only from files the game writes for you and from public community
   there, Shturmap reads which extracts are yours this raid, with the text recognition built into Windows. It happens
   on your PC, nothing of the picture is kept or sent, and no other part of any picture is looked at. Untick **Read
   the extract list from screenshots** in settings and no raid screenshot is opened;
-- of a screenshot you take in the game's menus (the stash, a case, the key tool), **the item cells its picture
-  shows**: their names are read the same way, against the items your quests need, and a row that needs one of them
-  says "Seen in your stash" with the date. Nothing of the picture is kept or sent; what was seen stays on your PC as
-  item ids;
+- of a screenshot you take in the game's menus (the stash, your gear, a case, the key tool), **the item cells its
+  picture shows**: their names are read the same way, against the items your quests need, and a row that needs one of
+  them says "Seen in your stash" with the date. A screenshot of your stash or your gear is also read against every
+  item, for the stash desk: a view beside the plan that mirrors it with what each item is worth on the flea and at
+  traders, from tarkov.dev's prices. Nothing of the picture is kept or sent; what was seen stays on your PC as item
+  ids, with their counts and, for the desk, where each lay;
 - of a screenshot you take of the game's Tasks screen, on its OPERATIONAL tab, **the table of your daily and weekly
   tasks** in the picture's left two thirds: each task's name, location and time left and, for the row you opened, its
   objectives, read the same way, so the tasks show on their maps in Plan and in a raid until they run out. Never their
-  rewards; nothing of the picture is kept or sent; the tasks' words stay on your PC. Untick **Read your stash and
-  tasks from menu screenshots** in settings and no menu screenshot is opened;
+  rewards; nothing of the picture is kept or sent; the tasks' words stay on your PC. Untick **Read your stash, gear
+  and tasks from menu screenshots** in settings and no menu screenshot is opened;
 - the game's `application` and `push-notifications` logs, read-only: the map you load into, raid start and end,
   quests started, failed and completed, and the items a quest hands you (its start items, its rewards, an insurance
   return), which get the same kind of mark;
 - `Control.ini` and `Game.ini`, read-only: your screenshot key and the game language;
 - where the game is installed: the Windows uninstall entry, Steam's library list, and the games folder from the
   Battlestate Games launcher's settings (nothing else from that file);
-- quest, map and item data from tarkov.dev, and the community map artwork.
+- quest, map and item data from tarkov.dev (while you use the desk, the item file with its prices again when it is
+  over an hour old: at most once an hour), and the community map artwork.
 
 It never:
 
@@ -99,7 +102,8 @@ It never:
 - sends anything about you or your game, unless you send a report or allow crash reports (below). Otherwise its
   only network traffic downloads the public data above and asks GitHub for a newer version of Shturmap at start
   (turn that off in settings, under Updates), and what it records stays in `%LOCALAPPDATA%\Shturmap`: a short app log,
-  and the items it saw in your screenshots and logs, as ids with a count and a date.
+  and the items it saw in your screenshots and logs, as ids with a count and a date (for the desk, with where each
+  lay).
   (The Microsoft runtime it is built on has its own terms; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).)
 
 To report a problem or suggest an idea, use the **feedback** button at the top right: write what happened, keep

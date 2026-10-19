@@ -7,13 +7,17 @@ corner of the picture: if the game's extract list shows there, it reads which ex
 text recognition built into Windows. Of a screenshot you take in the game's menus it looks at the item cells the
 picture shows, and reads their names the same way, against the items your quests need; what it saw it keeps on your
 PC as item ids with a count and a date (the "stash.json" file in its data folder), so that a quest's row can say
-"Seen in your stash" with the date. Of a screenshot of the game's Tasks screen, on its OPERATIONAL tab, it reads the
-table of your daily and weekly tasks in the picture's left two thirds the same way (each task's name, location, time
-left and, for the row you opened, its objectives; never their rewards), and keeps those words with the times on your
-PC (the "operational.json" file) until the tasks run out. All of it happens on your PC; nothing of a picture is kept
-or sent, and unticking "Read the extract list from screenshots" or "Read your stash and tasks from menu screenshots"
-in settings stops each. Nothing
-about you leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself (3) and
+"Seen in your stash" with the date. It also reads a screenshot of your stash or of the GEAR tab (your loadout beside
+it) against every item tarkov.dev lists, for the stash desk: the item grids' printed names, counts and condition
+("46/50") and their found-in-raid marks, so the desk can show what each item is worth. That page stays on your PC as
+item ids with where each lay, the counts, those marks and the screenshot's time (the "desk.json" file), no pixels,
+until a newer screenshot changes it; a screenshot taken in a raid is never read for the desk. Of a screenshot of the
+game's Tasks screen, on its OPERATIONAL tab, it reads the table of your daily and weekly tasks in the picture's left
+two thirds the same way (each task's name, location, time left and, for the row you opened, its objectives; never
+their rewards), and keeps those words with the times on your PC (the "operational.json" file) until the tasks run
+out. All of it happens on your PC; nothing of a picture is kept or sent, and unticking "Read the extract list from
+screenshots" or "Read your stash, gear and tasks from menu screenshots" in settings stops each. Nothing about you
+leaves your PC, with two exceptions that you control; and it asks GitHub for new versions of itself (3) and
 downloads public data and pictures (4).
 
 1. A report you send
@@ -25,8 +29,8 @@ When you press Send in "Report a problem or idea" (the feedback button at the to
 - if "Include diagnostics" is ticked: the diagnostics that "Show what's sent" displays first. They say whether the
   game, its logs and its screenshots folder were found, the game mode and language, the state of tarkov.dev's data,
   how many quests are active, whether "Delete screenshots after reading", "Read the extract list from screenshots" and
-  "Read your stash and tasks from menu screenshots" are ticked (and the language Windows reads in), and the last 200 lines of
-  Shturmap's own log. Never what it saw in your screenshots or logs.
+  "Read your stash, gear and tasks from menu screenshots" are ticked (and the language Windows reads in), and the last
+  200 lines of Shturmap's own log. Never what it saw in your screenshots or logs.
 
 2. A crash report, if you allow it
 ----------------------------------
@@ -48,7 +52,11 @@ Quest, map and item data, map artwork, trader portraits, item icons and the pict
 Labyrinth, Icebreaker) are downloaded from tarkov.dev's services and from GitHub's file hosting, and kept in the
 download cache on your PC. Those servers see your internet address, as with any download, and which files are asked
 for. Portraits, icons and the parts of those three maps are fetched when they are first shown, so the requests show
-which of them your Shturmap displayed. No account, profile, quest list or position is sent with them. On those
+which of them your Shturmap displayed. The stash desk draws the items on its page with their pictures, fetched the
+same way, so the first request for each shows tarkov.dev's image service an item your screenshots held. While you use
+the desk, the item file (every item's prices, about 1.4 MB) is asked for again when a screenshot is read for it and
+the saved copy is over an hour old: at most once an hour, the same file for everyone. No account, profile, quest list
+or position is sent with them. On those
 three maps the part displayed in a raid is usually the part you are in, so the requests for its picture can show
 roughly where on the map that is, to tarkov.dev's image service and to no one else.
 
@@ -76,10 +84,12 @@ What stays on your PC
 Everything Shturmap keeps on your PC (settings, quest history, the items it saw in your screenshots and logs, logs,
 reports waiting to be sent, crash records and the download cache) is in %LOCALAPPDATA%\Shturmap. The items it saw are
 in "stash.json" there, as item ids with a count and a date: no names, no pictures. "Not any more" on an item's card
-takes one out. The notes you write on quest cards are in "notes.json" there, in your words, and are never sent, not
-even with a report; the × beside a note deletes it. Crash records are kept for 30 days (in its crashes folder), and a
-report that couldn't be sent waits in its outbox folder until it has gone. A report the service refused stays there
-as a ".refused.txt" file, with its text and contact, and isn't sent again: delete it yourself, or with the rest of
-the data. Shturmap keeps no study log of how you use it: only developer builds of Shturmap have one. To delete all of
-it, use settings (the gear) → "Uninstall Shturmap…" and tick "Also delete my Shturmap data"; or delete that folder
-yourself after uninstalling.
+takes one out. The stash desk's page is in "desk.json" there: item ids with where each lay, the counts, condition and
+found-in-raid marks, the titles of open container windows as the game printed them, and the screenshot's time; no
+pictures, and a newer screenshot replaces what it shows. The notes you write on quest cards are in "notes.json" there,
+in your words, and are never sent, not even with a report; the × beside a note deletes it. Crash records are kept
+for 30 days (in its crashes folder), and a report that couldn't be sent waits in its outbox folder until it has gone.
+A report the service refused stays there as a ".refused.txt" file, with its text and contact, and isn't sent again:
+delete it yourself, or with the rest of the data. Shturmap keeps no study log of how you use it: only developer builds
+of Shturmap have one. To delete all of it, use settings (the gear) → "Uninstall Shturmap…" and tick "Also delete my
+Shturmap data"; or delete that folder yourself after uninstalling.
