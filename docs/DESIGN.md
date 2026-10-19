@@ -220,14 +220,31 @@ day, for the in-raid glance: "Which pictures", below):
   loadout beside the stash, so a screenshot taken right after a raid shows what came back (owner, 2026-10-19: "the
   stash also has the player loadout in view and when a raid ends the player might want just take a screenshot of the
   items they have and get an overview of what to do with that"). Never a raid screenshot for the desk, the menus'
-  view. **In a raid, for the in-raid glance alone** (owner, 2026-10-19, three choices; decided, not built, and until
-  it is a raid screenshot keeps its one corner; the coordinator's scoping of the same day had left the glance a later
-  step with a boundary for the owner to decide): every in-raid screenshot that shows an inventory screen (the player's
-  own loadout, or a looted container or body) is read as it arrives, as the extract list is and after its corner, for
-  its grids, as the desk reads them (below; the nested windows open there too when looting, owner, 2026-10-19: "This
-  will also happen in-game btw"); nothing of it is kept, and the menu screenshots' tick, its words widened by "and in a
-  raid", says yes or no (§4, "Screen anatomy", *The in-raid glance*). Never a trader's grid, a message's attachments
-  or another player's inventory in a group screen.
+  view. **In a raid, for the in-raid glance alone** (owner, 2026-10-19, three choices; its reading built the same day,
+  the reader round, its plate to come; until then a raid screenshot kept its one corner; the coordinator's scoping of
+  the same day had left the glance a later step with a boundary for the owner to decide): every in-raid screenshot that
+  shows an inventory screen (the player's own loadout, or a looted container or body) is read as it arrives, as the
+  extract list is and after its corner, for its grids, as the desk reads them (below; the nested windows open there too
+  when looting, owner, 2026-10-19: "This will also happen in-game btw"); nothing of it is kept, and the menu
+  screenshots' tick, its words widened by "and in a raid" (with the plate; until then its present words), says yes or
+  no (§4, "Screen anatomy", *The in-raid glance*). Never a trader's grid, a message's attachments or another player's
+  inventory in a group screen. **Built** (the reader round, 2026-10-19; `DeskReader.ReadRaidAsync`, `DeskLoot`,
+  `GameSession.Glance`): the raid's inventory screen is told by the character screen's tabs at its top (OVERALL, GEAR,
+  HEALTH, SKILLS, read first in a strip of the picture, about 30 ms: a picture of the world goes no further), the
+  loadout's headings, and neither the stash pane nor the menus' bar at its foot (BUILDS, HANDBOOK, MESSENGER); QUICK
+  USE stays. Looting, the LOOT pane fills the right third: "LOOT" at its head, the container's kind in the game's words
+  at the screen's right edge ("BODY", "SAFE", "DRAWER", "WEAPON BOX"). A container's pane is one grid (its frames on
+  one lattice one grid, starting under the head). A body's is its slots under the loadout's headings (a weapon's
+  "?/30" says nothing) and its TACTICAL RIG and BACKPACK (each a slot and a grid beside it) and POCKETS, each with the
+  game's search state: "UNSEARCHED" where its grid stands, "SEARCHING ✕ 0:00" at its heading and the items found so
+  far; contents not shown are unseen ("+"), never zero, and so is what the pane's scrolling cut at its foot. A part
+  whose heading scrolled away above is not read; a slot with nothing in it (the rig taken) has no part. The game's
+  experience toasts ("Searching experience", "Looting experience") are left out with what they cover, as the path's
+  are. The page holds the player's regions (ON YOU) and the pane's (LOOT, titled "LOOT · BODY"); it is published for
+  the glance (`SessionSnapshot.Glance`) and goes with the raid: no file, never the desk's page in hand. Measured on the
+  22 screenshots of one raid (`shturmap-cli desk --raid`): the 9 that show an inventory told, the 12 of the world and
+  the menus' one not; the LOOT panes' cells 16 named, 12 "one of N", 11 unread (no truth written; the four panes looked
+  at read as they show); about 1 s an inventory picture, 30 ms one of the world.
 - **How much of it:** the item grids' cells, their labels, counts and found-in-raid mark as above, and their positions
   and footprints, for the mirror; matched against every item of tarkov.dev's catalogue, for the desk alone (What You
   Have's marks still come from the items BRING lists only). On the GEAR tab that is three regions (five screenshots of
@@ -279,7 +296,22 @@ day, for the in-raid glance: "Which pictures", below):
   items, 29 right, 2 "one of N", 6 unread, 0 wrong; the three stash truths of 2026-10-11 (148 items: the key container, the
   medical case, a stash page) 129 right, 16 "one of N", 3 unread, 0 wrong; regions on the five GEAR pictures: the
   loadout and the stash on each, the middle column's parts in view (4 to 6), the Zhuk window on the two that show it,
-  attached to its cell in the backpack across the readings; about 2 s a picture.
+  attached to its cell in the backpack across the readings; about 2 s a picture. **The reader round** (2026-10-19;
+  `StashGrids`, docs/NEXT.md): an item's footprint is its frame's, not the lines that show. The grid's own line shows
+  through a wide item's background, faintly (18 grey levels at most on the owner's pictures, the items' frames 25 to
+  130), so a line between two cells that stands out by less than 0.45 of the grid's frames (their median, per grid) is
+  no frame, and a cell read as empty beside such a line is the item's dark art (a gun's receiver); the cells joined so
+  are one item where they make a whole rectangle, and stay as the lines that show give them where they make none (a
+  frame beside bright art stands out as faintly: a junk box's top under a case). Where such a rectangle's label names
+  no item of its size, its pieces are read instead (two items of one width, one over the other: a keys case over a
+  vest). A gun's footprint in the item file is its bare receiver's (the M4A1 one by one), so a gun takes a larger cell
+  where no item fits it exactly. The windows' lattices are moved onto their cells' lines in the grid finding itself, so
+  the quest marks' reader (`StashReader`) reads the one lattice the desk does, and reads an odd shape cell by cell as the
+  desk does. Measured: the 20:38 page's 72 items, hand-labelled with their footprints, read whole 61 → 72 (right 51 →
+  61, one of N 10 → 11, 0 wrong; its 34 "?" pieces of 11 rifles, silencers and scopes gone); the GEAR truth 30 right,
+  2 one of N, 2 unread, 0 wrong (34 items: three bottles whose labels lie above the visible grid left it); the stash
+  truths unchanged; the quest marks' reader finds the Keys window's 72 keys on both pictures (23 and 28 rectangles of
+  the window before).
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
@@ -343,7 +375,7 @@ been permitted. The owner accepted that residual risk. Do not widen the boundary
 extract list's corner of a screenshot (above, 2026-10-05), the item grids of a menu screenshot (2026-10-11), the
 operational tasks' table (2026-10-19), those grids against the whole catalogue for the stash desk (2026-10-19; its
 reading and view built, step B) and the item grids of an in-raid screenshot that shows an inventory screen, for the
-in-raid glance (2026-10-19, decided, not built).
+in-raid glance (2026-10-19; its reading built the same day, its plate to come).
 
 What players accept and what they don't (web research of 2026-10-03: a dozen screenshot-position tools, BSG's
 pages and licence, about a dozen Reddit threads). BSG documents the coordinates in screenshot names itself (support
@@ -2197,7 +2229,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     - The flea figure carries the item's flea level and compares nothing (the player's level isn't read); the fee's
       hideout levels are 0, no setting yet; tarkov.dev's sell prices include Fence's.
 - **The in-raid glance** (owner, 2026-10-19, three choices: when, what and what is kept; to design with its own panel,
-  then build after step C; not built). Every screenshot taken in a raid that shows an inventory screen, the player's
+  then build after step C; its reading built the same day, the reader round, §2; the plate not built). Every
+  screenshot taken in a raid that shows an inventory screen, the player's
   own loadout or a looted container or body, is read as it arrives, as the extract list is, and a plate over the map
   says what its items are worth, at a glance: the answer from a loot screenshot the owner described with the desk (§1).
   - **When:** as the screenshot arrives, the extract list's reading first (§2), then its grids, read as the desk's are
@@ -2211,6 +2244,14 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     apply (*The stash desk*, *What it mirrors*): in a looted backpack with a rig inside, the rig's contents count only
     from its open window.
   - **Fixtures:** 22 in-raid screenshots of 2026-10-19 (one raid) in the ignored `tests\fixtures\ocr\raid-loot`.
+  - **Reader built** (the reader round, 2026-10-19; §2, "In a raid"): what the plate gets is `SessionSnapshot.Glance`, a
+    `RaidGlance` for the raid's last inventory screenshot, null out of a raid and until one is read: its `Sheet` (the
+    page with its values, as the desk's: each region's part, ON YOU for the player's own regions, LOOT for the pane's,
+    NEITHER for a window attached to none; each cell's figure and keep notch; `Totals.OnYou` and `OnYouPlus`,
+    `Totals.Loot` and `LootPlus`), `Loot` (the pane's title in the game's words, "LOOT · BODY", or null for the player's
+    inventory alone), `TakenAt` and `Reading` (a new reading is a higher number). A LOOT region's `Search` (searched,
+    searching, unsearched) and `Cut` say where contents went unseen; its region's figure ends in "+". Not yet: the
+    tick's words "and in a raid", and the top five per slot, which the plate takes from the sheet.
 - **Help** (F1 or `?`): one panel with TAKE THE TOUR and WHAT'S NEW IN 0.4.0 under its title (the tour from its start; the What's New card again), how it works with SHOW ME after the paragraphs a chapter of the tour shows (it opens the tour there; owner, 2026-10-09, T11), the shortcuts, the quest-type legend and the symbols on the map
   shown, the others behind a link (see "Map drawing", "Legend"), what Shturmap reads and that nothing is sent unless the player sends a report or allows
   crash reports, and HELP AND FEEDBACK: a line pointing to the feedback button, and COPY DIAGNOSTICS (§8,

@@ -1,12 +1,13 @@
 namespace Shturmap.Core.Desk;
 
 /// <summary>Which total of the head line a region counts in: ON YOU, STASH, or neither (a window whose containers of its
-/// name are split between the two).</summary>
+/// name are split between the two); in a raid's reading, LOOT (the LOOT pane, a window attached in it).</summary>
 public enum DeskPart
 {
     OnYou,
     Stash,
     Neither,
+    Loot,
 }
 
 /// <summary>One cell with what the desk draws on it (docs/DESIGN.md §4, *The cell*).</summary>
@@ -33,7 +34,14 @@ public sealed record DeskRegionSheet(DeskRegion Region, IReadOnlyList<DeskCellSh
 /// <summary>The head line (docs/DESIGN.md §4, *The head line and the fold*, B1): "ON YOU 1.01 M ₽ · STASH 6.84 M ₽ · KEEP 3 ·
 /// 2 · 4", a "+" on a total with an unseen container (or a weapon's mods) in it, and the page's cells with a now, next
 /// and later notch.</summary>
-public sealed record DeskTotals(double OnYou, bool OnYouPlus, double Stash, bool StashPlus, int KeepNow, int KeepNext, int KeepLater);
+public sealed record DeskTotals(double OnYou, bool OnYouPlus, double Stash, bool StashPlus, int KeepNow, int KeepNext, int KeepLater)
+{
+    /// <summary>In a raid's reading, what the LOOT pane shows (the in-raid glance), and whether contents of it went unseen
+    /// (a part not searched, a container without its window, a weapon's mods): "+".</summary>
+    public double Loot { get; init; }
+
+    public bool LootPlus { get; init; }
+}
 
 /// <summary>
 /// The page with its values: each cell's figure and keep notch, each region's part and total, the head line. Totals count
@@ -73,13 +81,17 @@ public sealed class DeskSheet
             var part = PartOf(page, region, []);
             // What the page is worth: each cell's better sale (the flea's net after the fee or the best trader's), not the
             // listing price the cell shows (owner, 2026-10-19: the cell shows the flea's price, the net is the card's).
-            regions.Add(new DeskRegionSheet(region, cells, part, cells.Sum(c => c.Figure?.Worth ?? 0), cells.Any(c => c.Unseen)));
+            regions.Add(new DeskRegionSheet(region, cells, part, cells.Sum(c => c.Figure?.Worth ?? 0), cells.Any(c => c.Unseen) || region.ContentsUnseen));
         }
         double onYou = regions.Where(r => r.Part == DeskPart.OnYou).Sum(r => r.Total);
         double stash = regions.Where(r => r.Part == DeskPart.Stash).Sum(r => r.Total);
         var all = regions.SelectMany(r => r.Cells).ToList();
         var totals = new DeskTotals(onYou, regions.Any(r => r.Part == DeskPart.OnYou && r.Plus), stash, regions.Any(r => r.Part == DeskPart.Stash && r.Plus),
-            all.Count(c => c.Keep == DeskKeepLevel.Now), all.Count(c => c.Keep == DeskKeepLevel.Next), all.Count(c => c.Keep == DeskKeepLevel.Later));
+            all.Count(c => c.Keep == DeskKeepLevel.Now), all.Count(c => c.Keep == DeskKeepLevel.Next), all.Count(c => c.Keep == DeskKeepLevel.Later))
+        {
+            Loot = regions.Where(r => r.Part == DeskPart.Loot).Sum(r => r.Total),
+            LootPlus = regions.Any(r => r.Part == DeskPart.Loot && r.Plus),
+        };
         return new DeskSheet { Page = page, Regions = regions, Totals = totals };
     }
 
@@ -106,12 +118,12 @@ public sealed class DeskSheet
         return new DeskCellSheet(cell, figure, mark, unseen) { Needs = items.Count == 1 ? keep.NeedsOf(items[0].Id) : [] };
     }
 
-    // The part a region counts in: the loadout and the middle column ON YOU, the stash STASH; an attached window its
+    // The part a region counts in: the loadout and the middle column ON YOU, the stash STASH, the LOOT pane LOOT; an attached window its
     // container's region's; one attached to none where all containers of its name are, else neither.
     private static DeskPart PartOf(DeskPage page, DeskRegion region, HashSet<string> seen)
     {
         if (region.Kind != DeskRegionKind.ContainerWindow)
-            return region.OnYou ? DeskPart.OnYou : DeskPart.Stash;
+            return region.IsLoot ? DeskPart.Loot : region.OnYou ? DeskPart.OnYou : DeskPart.Stash;
         if (!seen.Add(region.Key))
             return DeskPart.Neither;
         if (region.AttachedTo is { } anchor)

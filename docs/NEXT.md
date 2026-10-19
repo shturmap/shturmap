@@ -553,6 +553,65 @@ card*; *The click*; *As built*: the rail, the card, the page, the stems), §8 (h
   plan and desk: PASSED, no warnings.
 - Open: F5 (tour chapter 2's staging), the owner's call.
 
+**Built (the reader round, 2026-10-19)**: the grid finder's splits of wide items, the quest marks' lattice, a label
+rule, a truth put right, and the reading half of the in-raid glance (the plate is another step). Binding: DESIGN.md §2
+("For the stash desk": *The reader round*, "In a raid" and its *Built*), §4 (*The in-raid glance*, *Reader built*);
+UPDATES.md's two rows. Measured with `shturmap-cli desk` (now with `footprints-<picture>.txt` beside a truth, `--raid`,
+`--lattice`) and `shturmap-cli stash --set all --no-art`, before → after:
+
+- **A wide item read whole** (`StashGrids.Items`, `StashLines.VerticalHeight`): the 34 "?" cells of the 20:38 page
+  were pieces of 11 items the grid's own line cut, because that line shows through an item's background (median 18
+  grey levels at most against the frames' 25 to 130; `--lattice` prints both). A line under 0.45 of the grid's frames
+  is no frame; a dark cell beside one (a receiver read as empty) is the item's; such joins stand only as a whole
+  rectangle, and where the rectangle's label names nothing of its size its pieces are read (the keys case over the AVS
+  at 20:22 made a 3×4 rectangle). Guns fit cells larger than the item file's bare receiver (the M4A1 is 1×1 there).
+  The 20:38 page against its footprints (72 items): read whole 61 → 72, right 51 → 61, one of N 10 → 11, wrong 0 → 0,
+  split 11 (34 "?" pieces) → 0. The truths: GEAR 29 / 2 / 6 unread / 0 wrong → 30 / 2 / 5 / 0 (37 items), 30 / 2 / 2 /
+  0 on the corrected 34; the stash pages 129 / 16 / 3 / 0 unchanged. The Keys pictures 20:21 and 20:22: 72 cells each,
+  attached to its cell in the stash, as before; the other GEAR pictures of that folder say nothing on 22 cells for 30
+  and 3 for 23. About 2 s a picture, as before. `StashGridsTests` (drawn).
+- **One lattice for both readers** (`StashGrids.Aligned`, moved from `DeskLayout`): the grid finding moves every
+  window's lattice onto its cells' lines, and the quest marks' reader reads an odd shape cell by cell as the desk does
+  and a joined rectangle's pieces where a candidate's art says another size. `stash --set all --no-art` on the Keys
+  pictures: the window's 72 keys on both (the pictures' items 23 → 89 and 28 → 89); the three stash truths (all, no
+  art) right / says nothing / one of several: 26 / 2 / 27 → 27 / 1 / 27, 36 / 0 / 7 → 37 / 0 / 6, 45 / 0 / 3
+  unchanged, 0 wrong; with the truths' names, named 55 / 43 / 48 → 55 / 44 / 48, about 2 s a picture (the odd shapes
+  read cost 0.3 s on one).
+- **A cut label's digits** (`StashLabels.Fit`): a label cut before a digit no longer fits as the name's beginning
+  ("Marl 21" for "Marl 214", made-up names in `StashReaderTests`); the desk's matcher had it already. No tally moved
+  by it alone that could be told apart; 0 wrong stays 0.
+- **The 13:49 truth** (ignored, put right in place): the three Water bottles at A 4,0, 5,0 and 6,0 went: their labels
+  lie above the visible grid (the stash scrolled), so no reading can name them.
+- **The raid's inventory screen** (`DeskReader.ReadRaidAsync`, `DeskLoot`, `GameSession.Glance`, `RaidGlance`): a
+  position screenshot in a raid, after its extract list, under the menu screenshots' tick; the character screen's tabs
+  read first in a strip (about 30 ms), so the world's pictures go no further. On the 22 raid screenshots: 9
+  inventories told (a drawer, a safe, a weapon box, six bodies), 13 not (the world, and the menus' picture after the
+  raid). LOOT regions named / one of N / unread: the drawer 1/0/0; the safe 3/0/0 (USD ×70, the clock, the horse); the
+  weapon box 2/0/1; the bodies' slots 0/1/0, 1/1/0, 2/0/1, 1/0/1, 1/0/1 (a slot whose heading scrolled away isn't
+  read), rigs UNSEARCHED (2) and 0/4/1, pockets SEARCHING, UNSEARCHED (2), 0/0/0 and 0/0/2 twice (two "PM" magazines,
+  two letters the recognition doesn't read), backpacks UNSEARCHED, 1/0/1 and SEARCHING 4/4/0: 16 named, 12 one of N,
+  11 unread in all, no truth written. What the pane needed: its head word and the kind at the screen's edge (a
+  weapon's label stood level with the head); its untitled grids and a part's "SEARCHING ✕" bar are no windows; a
+  container's frames on one lattice are one grid starting under the head (the safe's frame round all didn't show, a
+  rifle's red ground hid the weapon box's top line); a body's parts from heading to heading, a slot box under each as
+  in the loadout; the experience toasts are toasts. Not kept: `GlanceSessionTests` hold that no desk.json is written
+  and the glance goes with the raid.
+- **For the plate** (the raid page's shape): `SessionSnapshot.Glance` is a `RaidGlance(Sheet, Loot, TakenAt,
+  Reading)`, null out of a raid; `Sheet` is a `DeskSheet` as the desk's: regions with `Part` OnYou (loadout, rig,
+  pockets, special, backpack, pouch), Loot (`loot:slots`, `loot:rig`, `loot:pockets`, `loot:backpack`, or one `loot`
+  grid) or Neither (a window attached to none); `Totals.OnYou`/`OnYouPlus`, `Totals.Loot`/`LootPlus`; each cell's
+  figure and keep notch. A LOOT region has `Title` "LOOT · BODY" (the game's words), `Search` (Searched, Searching,
+  Unsearched) and `Cut`, whose "+" is the region's `Plus`. `Loot` is that title, null for the player's inventory
+  alone; `Reading` counts up per raid.
+- **Open:** the tick's words and note gain "and in a raid" with the plate (README, PRIVACY.md, help, and CLAUDE.md's
+  "four things" a screenshot is read for), and until then raid inventories are read under the present words; a
+  backpack whose heading scrolled out of view, its items highlighted after looting, reads as a window of no name
+  (counted in neither; one picture), and a body's rig opened in a window ("CR MK2 (R)", read "CR MQ (R)") attaches to
+  nothing; the bodies' 2-letter labels ("PM", "PB") and "ScavBP" after a glyph stay unread; a raid screenshot is
+  opened twice (its corner, then the glance; the second opening's cost not measured); the 3 s budget of
+  `StashReaderTests`' real pictures failed in two of three full parallel runs (3.2 s on a picture read in 2.0 s alone,
+  its time unchanged by this round).
+
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,
 `%USERPROFILE%\source\repos\Shturmap-price-view-data-2026-10-19.md` and

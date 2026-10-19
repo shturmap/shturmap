@@ -130,9 +130,11 @@ internal sealed class StashLines
     private readonly int _w, _h;
     private readonly int[] _v; // per column, the cumulative count of vertical-line pixels down the column
     private readonly int[] _hh; // per row, the cumulative count of horizontal-line pixels along the row
+    private readonly StashGray _g;
 
     public StashLines(StashGray g)
     {
+        _g = g;
         _w = g.W;
         _h = g.H;
         _v = new int[g.W * (g.H + 1)];
@@ -194,6 +196,58 @@ internal sealed class StashLines
         return best;
     }
 
+    /// <summary>
+    /// How strongly a vertical line stands out between y0 and y1: the median over the rows of the line's brighter pixel
+    /// over the brighter field two pixels off on either side, at the best of the columns within two pixels of x (in grey
+    /// levels; less than nothing where the field is lighter). An item's frame stands out by 25 to 130 levels on the
+    /// owner's screenshots of 2026-10-11 and 2026-10-19, the grid's line seen through an item's background (between the
+    /// cells of one wide item) by 18 at most: the share of rows <see cref="Vertical"/> counts sees both as a line.
+    /// </summary>
+    public double VerticalHeight(int x, int y0, int y1)
+    {
+        y0 = Math.Clamp(y0, 0, _h);
+        y1 = Math.Clamp(y1, y0, _h);
+        if (y1 == y0)
+            return 0;
+        var heights = new float[y1 - y0];
+        var best = double.MinValue;
+        for (var c = x - 2; c <= x + 2; c++)
+        {
+            if (c < 2 || c + 3 >= _w)
+                continue;
+            for (var y = y0; y < y1; y++)
+                heights[y - y0] = Math.Max(_g[c, y], _g[c + 1, y]) - Math.Max(_g[c - 2, y], _g[c + 3, y]);
+            best = Math.Max(best, Median(heights));
+        }
+        return best == double.MinValue ? 0 : best;
+    }
+
+    /// <summary>How strongly a horizontal line stands out between x0 and x1 (<see cref="VerticalHeight"/>, along a row).</summary>
+    public double HorizontalHeight(int y, int x0, int x1)
+    {
+        x0 = Math.Clamp(x0, 0, _w);
+        x1 = Math.Clamp(x1, x0, _w);
+        if (x1 == x0)
+            return 0;
+        var heights = new float[x1 - x0];
+        var best = double.MinValue;
+        for (var r = y - 2; r <= y + 2; r++)
+        {
+            if (r < 2 || r + 3 >= _h)
+                continue;
+            for (var x = x0; x < x1; x++)
+                heights[x - x0] = Math.Max(_g[x, r], _g[x, r + 1]) - Math.Max(_g[x, r - 2], _g[x, r + 3]);
+            best = Math.Max(best, Median(heights));
+        }
+        return best == double.MinValue ? 0 : best;
+    }
+
+    private static double Median(float[] values)
+    {
+        var sorted = (float[])values.Clone();
+        Array.Sort(sorted);
+        return sorted[sorted.Length / 2];
+    }
 }
 
 /// <summary>Cutting and resizing parts of the picture, and handing them to Windows' recognition.</summary>

@@ -322,7 +322,8 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _ = Task.Run(WatchOperationalAsync);
     }
 
-    // A new screenshot: its name's position, then its picture's extract list (in a raid) or item grids (in the menus).
+    // A new screenshot: its name's position, then its picture's extract list and inventory (in a raid) or item grids (in
+    // the menus).
     private async Task ReadScreenshotAsync(ScreenshotSeen s)
     {
         try
@@ -346,6 +347,18 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         catch (Exception e) when (e is not OperationCanceledException)
         {
             Failed(s.Info.HasPosition ? "Reading the extract list from a screenshot" : "Reading the stash from a menu screenshot", e);
+        }
+        // Then, in a raid, an inventory screen in the picture, for the in-raid glance (the menu screenshots' tick; after the
+        // extract list, which never waits for it). Nothing of it is kept.
+        if (!s.Info.HasPosition)
+            return;
+        try
+        {
+            await ReadRaidInventoryAsync(s);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Failed("Reading the inventory from a raid screenshot", e);
         }
     }
 
@@ -1368,6 +1381,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 _lastClock = null;
                 _trail.Clear();
                 ForgetExits();
+                ForgetGlance();
                 ForgetReplay();
                 _lastReplay = null;
                 _fix = null;
@@ -1436,6 +1450,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _fixMapId = null;
         _trail.Clear();
         ForgetExits();
+        ForgetGlance();
         ForgetReplay();
         if (ended.Previous.RaidStartedAt is not null)
             _lastRaidState = (ended.Previous, ended.At, ended.EndInLog);
@@ -2126,6 +2141,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             OperationalEnded = _operational.Ended(_mode),
             OperationalPlans = OperationalPlans(operational),
             Desk = DeskViewNow(),
+            Glance = _glance,
             Locations = _locations,
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,

@@ -28,6 +28,11 @@ internal sealed record StashRect(int I0, int J0, int W, int H, bool Odd)
 {
     /// <summary>An odd shape's own cells, as (i, j) in the grid (its bounding box may take others' cells).</summary>
     public IReadOnlyList<(int I, int J)> Cells { get; init; } = [];
+
+    /// <summary>Where the rectangle was joined across faint lines (<see cref="StashGrids.Items"/>): the pieces the lines
+    /// that show give, for a reader whose label names no item of the rectangle's size (two items whose frame between them
+    /// stood out faintly, a case over a vest); else none.</summary>
+    public IReadOnlyList<StashRect> Pieces { get; init; } = [];
 }
 
 /// <summary>
@@ -72,7 +77,58 @@ internal static class StashGrids
                                  g.X0 >= stash.X0 - 2 && g.Y0 >= stash.Y0 - 2 && g.X0 + g.Cols * pitch <= stash.X0 + stash.Cols * pitch + 2 &&
                                  g.Y0 + g.Rows * pitch <= stash.Y0 + stash.Rows * pitch + 2);
         }
-        return found.OrderByDescending(g => g.Area).ToList();
+        // A window's lattice on its cells' lines, not on its outline.
+        return found.Select(g => g.Place == StashGridPlace.Window ? Aligned(lines, g, pitch) : g).OrderByDescending(g => g.Area).ToList();
+    }
+
+    /// <summary>
+    /// A window's lattice moved onto its cells' lines: the offset within a sixth of a cell either way where the lines
+    /// between its cells show most. The grid finding snaps a lattice onto the light line nearest its corner, and a window's
+    /// own outline, a thin bright line a few pixels outside its first cells, can take it there: the Keys window of
+    /// 2026-10-19 (20:22, after the game's SORT) stood 6 px left of its cells, every line between them missed, and its 71
+    /// keys read as one odd shape. The lines between the cells decide, not the outer ones (the outline is one). Done for
+    /// every window <see cref="Find"/> gives, so the stash desk and the quest marks read one lattice (the reader round of
+    /// 2026-10-19: the quest marks found 23 and 28 of the window's 72 keys before).
+    /// </summary>
+    internal static StashGrid Aligned(StashLines lines, StashGrid grid, int pitch)
+    {
+        int cols = grid.Cols, rows = grid.Rows;
+        if (cols < 2 && rows < 2)
+            return grid;
+        var reach = Math.Max(2, pitch / 6);
+        double Columns(int x0, int y0)
+        {
+            double sum = 0;
+            for (var k = 1; k < cols; k++)
+                sum += lines.Vertical(x0 + k * pitch, y0 + 2, y0 + rows * pitch - 2);
+            return sum;
+        }
+        double Rows(int x0, int y0)
+        {
+            double sum = 0;
+            for (var k = 1; k < rows; k++)
+                sum += lines.Horizontal(y0 + k * pitch, x0 + 2, x0 + cols * pitch - 2);
+            return sum;
+        }
+        // Each way on its own: the columns' lines set the left edge, the rows' the top. A move needs clearly more lines
+        // than where it stands (a lattice already on its lines stays put).
+        int Best(Func<int, double> score)
+        {
+            var scores = Enumerable.Range(-reach, 2 * reach + 1).Select(score).ToArray();
+            var here = scores[reach];
+            var top = scores.Max();
+            if (top <= here * 1.25 + 0.5)
+                return 0;
+            // A line is found a pixel either side of it (StashLines): the middle of the run of offsets that see it best.
+            var start = Array.FindIndex(scores, s => s >= top - 0.01);
+            var end = start;
+            while (end + 1 < scores.Length && scores[end + 1] >= top - 0.01)
+                end++;
+            return (start + end) / 2 - reach;
+        }
+        var dx = cols > 1 ? Best(d => Columns(grid.X0 + d, grid.Y0)) : 0;
+        var dy = rows > 1 ? Best(d => Rows(grid.X0 + dx, grid.Y0 + d)) : 0;
+        return grid with { X0 = grid.X0 + dx, Y0 = grid.Y0 + dy };
     }
 
     // The stash is ten wide at the right. The trader's grid on the trading screen hangs on the screen's left edge
@@ -388,36 +444,156 @@ internal static class StashGrids
         return empty;
     }
 
-    /// <summary>The items in the grid as rectangles of cells: cells with something in them, joined across a missing
-    /// line (a wide or tall item covers the lines between its cells), top row first. An item whose art fills its
-    /// cell up to the line hides the line on its side, and two such neighbours are joined (a one-sided line rule
-    /// was tried on 2026-10-11 and split magazines on their own art's edges instead).</summary>
+    /// <summary>
+    /// The items in the grid as rectangles of cells: cells with something in them, joined across a missing line (a wide or
+    /// tall item covers the lines between its cells), top row first. An item whose art fills its cell up to the line hides
+    /// the line on its side, and two such neighbours are joined (a one-sided line rule was tried on 2026-10-11 and split
+    /// magazines on their own art's edges instead). A line that shows but stands out faintly is the grid's own seen through
+    /// an item's background, not an item's frame (<see cref="Faint"/>), and a cell read as empty inside an item is its dark
+    /// art (a gun's receiver, a scope's tube): the cells joined across such lines, with the empty ones they meet across
+    /// them, are one item where they make a whole rectangle (the 20:38 page of 2026-10-19: 34 "?" cells were the pieces of
+    /// 11 rifles, silencers and scopes cut where the grid's line showed through them). Where they make none, a frame next
+    /// to bright art stood out as faintly (the top of a junk box under a case: two items are never one shape), and the
+    /// cells stay as the lines that show join them. A rectangle made so carries those pieces (<see cref="StashRect.Pieces"/>):
+    /// two items of one width, one over the other, make a rectangle too (a keys case over a vest, 2026-10-19, 20:22), and a
+    /// reader whose label names nothing of the rectangle's size reads the pieces instead.
+    /// </summary>
     public static List<StashRect> Items(StashGrid grid, StashLines lines, bool[] hidden, bool[] empty, int pitch)
     {
-        var parent = Enumerable.Range(0, grid.Area).ToArray();
-        int Find(int i) => parent[i] == i ? i : parent[i] = Find(parent[i]);
-        for (var j = 0; j < grid.Rows; j++)
+        int cols = grid.Cols, area = grid.Area;
+        // Each line between two cells not hidden: right of k, and below k.
+        var right = new (double Share, double Height)?[area];
+        var below = new (double Share, double Height)?[area];
+        for (var k = 0; k < area; k++)
         {
-            for (var i = 0; i < grid.Cols; i++)
+            if (hidden[k])
+                continue;
+            int i = k % cols, j = k / cols;
+            int cx = grid.X0 + i * pitch, cy = grid.Y0 + j * pitch;
+            if (i + 1 < cols && !hidden[k + 1])
+                right[k] = (lines.Vertical(cx + pitch, cy + 4, cy + pitch - 4), lines.VerticalHeight(cx + pitch, cy + 4, cy + pitch - 4));
+            if (j + 1 < grid.Rows && !hidden[k + cols])
+                below[k] = (lines.Horizontal(cy + pitch, cx + 4, cx + pitch - 4), lines.HorizontalHeight(cy + pitch, cx + 4, cx + pitch - 4));
+        }
+        var faint = Faint(right, below, empty, cols);
+
+        // The cells the lines that show join (no line along most of the side).
+        var shown = Enumerable.Range(0, area).ToArray();
+        var whole = Enumerable.Range(0, area).ToArray();
+        static int Find(int[] parent, int i) => parent[i] == i ? i : parent[i] = Find(parent, parent[i]);
+        static void Join(int[] parent, int a, int b) => parent[Find(parent, a)] = Find(parent, b);
+        bool Weak((double Share, double Height)? line) => line is { } l && l.Height < faint;
+        for (var k = 0; k < area; k++)
+        {
+            if (hidden[k] || empty[k])
+                continue;
+            foreach (var (other, line) in new[] { (k + 1, right[k]), (k + cols, below[k]) })
             {
-                var k = j * grid.Cols + i;
-                if (hidden[k] || empty[k])
+                if (line is not { } l || empty[other])
                     continue;
-                int cx = grid.X0 + i * pitch, cy = grid.Y0 + j * pitch;
-                if (i + 1 < grid.Cols && !hidden[k + 1] && !empty[k + 1] && lines.Vertical(cx + pitch, cy + 4, cy + pitch - 4) < 0.4)
-                    parent[Find(k)] = Find(k + 1);
-                if (j + 1 < grid.Rows && !hidden[k + grid.Cols] && !empty[k + grid.Cols] && lines.Horizontal(cy + pitch, cx + 4, cx + pitch - 4) < 0.4)
-                    parent[Find(k)] = Find(k + grid.Cols);
+                if (l.Share < 0.4)
+                {
+                    Join(shown, k, other);
+                    Join(whole, k, other);
+                }
+                else if (Weak(line))
+                    Join(whole, k, other);
             }
         }
-        return Enumerable.Range(0, grid.Area).Where(k => !hidden[k] && !empty[k]).GroupBy(Find)
-            .Select(g =>
+
+        // The same, across faint lines too, with the cells read as empty that meet such a group across them.
+        var taken = new bool[area];
+        if (faint > 0)
+        {
+            var changed = true;
+            while (changed)
             {
-                int i0 = g.Min(k => k % grid.Cols), j0 = g.Min(k => k / grid.Cols);
-                int w = g.Max(k => k % grid.Cols) - i0 + 1, h = g.Max(k => k / grid.Cols) - j0 + 1;
-                var odd = g.Count() != w * h || w > 6 || h > 6;
-                return new StashRect(i0, j0, w, h, odd) { Cells = odd ? g.Select(k => (k % grid.Cols, k / grid.Cols)).ToList() : [] };
-            })
-            .OrderBy(r => r.J0).ThenBy(r => r.I0).ToList();
+                changed = false;
+                for (var k = 0; k < area; k++)
+                {
+                    if (hidden[k] || !empty[k] || taken[k])
+                        continue;
+                    int i = k % cols, j = k / cols;
+                    var owners = new HashSet<int>();
+                    void Meet(int other, (double Share, double Height)? line)
+                    {
+                        if ((!empty[other] || taken[other]) && Weak(line))
+                            owners.Add(Find(whole, other));
+                    }
+                    if (i > 0)
+                        Meet(k - 1, right[k - 1]);
+                    if (i + 1 < cols)
+                        Meet(k + 1, right[k]);
+                    if (j > 0)
+                        Meet(k - cols, below[k - cols]);
+                    if (k + cols < area)
+                        Meet(k + cols, below[k]);
+                    if (owners.Count == 0)
+                        continue;
+                    // Between two pieces of one item (a rifle's dark receiver between its stock and its barrel) it joins
+                    // them; between two items it makes no rectangle, and they stay as the lines that show give them.
+                    taken[k] = true;
+                    foreach (var owner in owners)
+                        Join(whole, k, owner);
+                    changed = true;
+                }
+            }
+        }
+
+        static (int I0, int J0, int W, int H) Box(IEnumerable<int> cells, int cols)
+        {
+            var list = cells as IList<int> ?? cells.ToList();
+            int i0 = list.Min(k => k % cols), j0 = list.Min(k => k / cols);
+            return (i0, j0, list.Max(k => k % cols) - i0 + 1, list.Max(k => k / cols) - j0 + 1);
+        }
+        StashRect Rect(IReadOnlyCollection<int> cells)
+        {
+            var (i0, j0, w, h) = Box(cells, cols);
+            var odd = cells.Count != w * h || w > 6 || h > 6;
+            return new StashRect(i0, j0, w, h, odd) { Cells = odd ? cells.Select(k => (k % cols, k / cols)).ToList() : [] };
+        }
+
+        var items = new List<StashRect>();
+        foreach (var group in Enumerable.Range(0, area).Where(k => !hidden[k] && (!empty[k] || taken[k])).GroupBy(k => Find(whole, k)))
+        {
+            var cells = group.ToList();
+            var (_, _, w, h) = Box(cells, cols);
+            // As the lines that show join them, the empty ones left out.
+            var pieces = cells.Where(k => !empty[k]).GroupBy(k => Find(shown, k)).Select(g => Rect(g.ToList())).ToList();
+            if (cells.Count == w * h && w <= 6 && h <= 6)
+                items.Add(pieces.Count == 1 && cells.All(k => !empty[k]) ? pieces[0] : Rect(cells) with { Pieces = pieces });
+            else
+                items.AddRange(pieces);
+        }
+        return items.OrderBy(r => r.J0).ThenBy(r => r.I0).ToList();
+    }
+
+    // A line between two cells that stands out by less than this share of the grid's frames is the grid's own line seen
+    // through an item's background: the frames stood out by 45 to 70 levels on the 20:38 page of 2026-10-19 and the lines
+    // inside its wide items by 18 at most; on the GEAR page of 13:49 by 26 and 18 at most (a junk box's frame beside its
+    // bright art 18 too, so the share is the frames', per grid, not a fixed level).
+    private const double FaintShare = 0.45;
+
+    // The fewest whole lines between items a grid must have for its frames' level to be taken (a compartment of one item
+    // has none: there the shares alone decide, as before 2026-10-19).
+    private const int LeastFrames = 4;
+
+    /// <summary>How faintly a line between cells may stand out and still be no item's frame: <see cref="FaintShare"/> of the
+    /// grid's frames (the median of the lines that show along their whole side, by a cell with something in it), or 0 where
+    /// the grid has too few of them to tell.</summary>
+    private static double Faint((double Share, double Height)?[] right, (double Share, double Height)?[] below, bool[] empty, int cols)
+    {
+        var heights = new List<double>();
+        for (var k = 0; k < right.Length; k++)
+        {
+            if (right[k] is { Share: >= 0.9 } r && (!empty[k] || !empty[k + 1]))
+                heights.Add(r.Height);
+            if (below[k] is { Share: >= 0.9 } b && (!empty[k] || !empty[k + cols]))
+                heights.Add(b.Height);
+        }
+        if (heights.Count < LeastFrames)
+            return 0;
+        heights.Sort();
+        return FaintShare * heights[heights.Count / 2];
     }
 }

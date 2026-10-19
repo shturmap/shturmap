@@ -332,6 +332,9 @@ public sealed class StashReaderTests : IDisposable
     [InlineData("Mar1 214", "Marl 214", 1.0)]
     [InlineData("Zorblat!", "Zorblat", 1.0)] // the cell's edge read as a stroke
     [InlineData("Tessa", "Tessaril", 0.625)]
+    [InlineData("Marl 21", "Marl 214", 0.5)] // cut before a digit: the digits disagree (the reader round of 2026-10-19)
+    [InlineData("Vexmoor 3", "Vexmoor 3 Beta", 1.0)] // cut after the digits: a beginning
+    [InlineData("Vexmoor", "Vexmoor 3 Beta", 0.5)]
     public void A_label_fits_a_name_by_its_folded_letters(string label, string name, double fit) =>
         Assert.Equal(fit, StashLabels.Fit(label, name), 3);
 

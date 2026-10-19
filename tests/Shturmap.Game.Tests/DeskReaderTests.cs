@@ -203,7 +203,8 @@ public sealed class DeskReaderTests : IDisposable
 
     // The owner's Keys window of 2026-10-19 (20:22, after the game's SORT): its lattice was snapped onto the window's thin
     // bright outline, 6 px left of its first cells; every line between its cells was missed and its keys read as one odd
-    // shape. Aligned moves a lattice onto the lines between its cells; one already on them stays put.
+    // shape. Aligned moves a lattice onto the lines between its cells; one already on them stays put. The grid finding does
+    // it for every window, so the quest marks' reader and the desk read one lattice.
     [Fact]
     public void A_windows_lattice_off_its_cells_moves_onto_their_lines()
     {
@@ -224,11 +225,11 @@ public sealed class DeskReaderTests : IDisposable
                 canvas.DrawRect(116, 100 + j * pitch, 11 * pitch + 2, 2, line);
         }
         var lines = new StashLines(StashGray.Of(bitmap));
-        var off = DeskLayout.Aligned(lines, SKRectI.Create(110, 100, 11 * pitch, 7 * pitch), pitch);
-        Assert.InRange(off.Left, 115, 117);
-        Assert.Equal(100, off.Top);
-        var on = DeskLayout.Aligned(lines, SKRectI.Create(116, 100, 11 * pitch, 7 * pitch), pitch);
-        Assert.Equal(SKRectI.Create(116, 100, 11 * pitch, 7 * pitch), on);
+        var off = StashGrids.Aligned(lines, new StashGrid(110, 100, 11, 7, StashGridPlace.Window), pitch);
+        Assert.InRange(off.X0, 115, 117);
+        Assert.Equal(100, off.Y0);
+        var on = StashGrids.Aligned(lines, new StashGrid(116, 100, 11, 7, StashGridPlace.Window), pitch);
+        Assert.Equal(new StashGrid(116, 100, 11, 7, StashGridPlace.Window), on);
         // The lattice and the frame found on its lines, a few pixels apart, are one compartment: never read twice.
         Assert.True(DeskLayout.Overlapping(SKRectI.Create(110, 100, 11 * pitch, 7 * pitch), SKRectI.Create(116, 100, 11 * pitch, 7 * pitch)));
         Assert.False(DeskLayout.Overlapping(SKRectI.Create(100, 100, pitch, 2 * pitch), SKRectI.Create(100 + pitch + 8, 100, pitch, 2 * pitch)));
@@ -446,6 +447,123 @@ public sealed class DeskReaderTests : IDisposable
         Assert.Equal(DeskScreen.Stash, reading.Screen);
         Assert.Equal(["stash"], reading.Page!.Regions.Select(r => r.Key));
         Assert.Equal([Id(5)], reading.Page.Region("stash")!.Cells.Single().Ids);
+    }
+
+    // ---- the raid's inventory screen, drawn (the in-raid glance) ----
+
+    // The GEAR tab in a raid (22 screenshots of 2026-10-19): the character screen's tabs at the top, the loadout and the
+    // pockets as in the menus, no stash pane and no menus' bar; QUICK USE at the foot; at the right, looting, the LOOT pane:
+    // "LOOT" at its head and the container's kind at the screen's right edge. A body: its slots under the loadout's
+    // headings, its TACTICAL RIG (a slot, "UNSEARCHED" where its grid stands), its POCKETS (searched) and its BACKPACK (a
+    // slot, "SEARCHING" at its heading, what was found so far in its grid). A drawer: one grid.
+    private static StashReaderTests.Page Raid(string? loot)
+    {
+        var page = new StashReaderTests.Page(2560, 1440).Start();
+        var p = page.Pitch;
+        Text(page, "OVERALL", 80, 20, 16);
+        Text(page, "GEAR", 330, 20, 16);
+        Text(page, "HEALTH", 530, 20, 16);
+        Text(page, "SKILLS", 760, 20, 16);
+        Text(page, "EARPIECE", 92, 199);
+        Text(page, "HEADWEAR", 337, 199);
+        Text(page, "ARMBAND", 91, 420);
+        Text(page, "BODY ARMOR", 338, 420);
+        Text(page, "EYEWEAR", 583, 420);
+        page.Grid(87, 220, 2, 2, 1);
+        page.Item(87, 220, 1, 0, 0, 2, 2, "Zorblat");
+        Text(page, "POCKETS", 880, 106);
+        page.Grid(875, 130, 1, 2, 1);
+        page.Item(875, 130, 1, 0, 0, 1, 1, "Quenvik", "250");
+        Text(page, "QUICK USE", 760, 1262, 15);
+        if (loot is null)
+            return page;
+        Text(page, "LOOT", 1690, 80, 15);
+        Text(page, loot, 2440, 76);
+        if (loot == "DRAWER")
+        {
+            page.Grid(1686, 106, 4, 3, 2);
+            page.Item(1686, 106, 2, 0, 0, 1, 1, "Hollin");
+            page.Item(1686, 106, 2, 1, 0, 2, 1, "Drevak", "330");
+            return page;
+        }
+        Text(page, "ON SLING", 1767, 150);
+        page.Grid(1762, 171, 5, 2, 1);
+        page.Item(1762, 171, 1, 0, 0, 5, 2, "Hollin");
+        Text(page, "TACTICAL RIG", 1767, 420);
+        page.Grid(1762, 441, 2, 2, 1);
+        page.Item(1762, 441, 1, 0, 0, 2, 2, "Ostrel");
+        Text(page, "UNSEARCHED", 2010, 480, 30);
+        Text(page, "POCKETS", 1767, 640);
+        page.Grid(1762, 664, 1, 2, 1);
+        page.Grid(1762 + p + 8, 664, 1, 2, 1);
+        page.Item(1762 + p + 8, 664, 1, 0, 0, 1, 1, "Marl 214");
+        Text(page, "BACKPACK", 1767, 880);
+        Text(page, "SEARCHING", 1995, 880, 15);
+        page.Grid(1762, 901, 2, 2, 1);
+        page.Item(1762, 901, 1, 0, 0, 2, 2, "Pindrake");
+        page.Grid(1951, 901, 4, 3, 1);
+        page.Item(1951, 901, 1, 0, 0, 1, 2, "Tessaril");
+        return page;
+    }
+
+    [Fact]
+    public async Task A_raids_inventory_screen_is_read_with_a_bodys_loot_and_each_parts_search()
+    {
+        var raid = Raid("BODY");
+        Dump(raid, "raid-body.png");
+        using var picture = raid.Bitmap.Copy();
+        var reader = Reader();
+        var reading = await reader.ReadRaidAsync(picture, new DeskCatalogue(Catalogue), new DateTimeOffset(2026, 1, 1, 15, 42, 0, TimeSpan.Zero), Ct);
+        Assert.Equal(DeskScreen.Raid, reading.Screen);
+        var page = reading.Page!;
+        // ON YOU: the player's own regions, as in the menus.
+        Assert.Equal([Id(1)], In(page, "loadout", c => c.Slot == "earpiece").Ids);
+        Assert.Contains(page.Region("pockets")!.Cells, c => c.Ids.Contains(Id(2)));
+        Assert.All(page.Regions.Where(r => !r.IsLoot), r => Assert.True(r.OnYou));
+        // LOOT: the body's slots as a strip, its parts each with its search state; the game's words for their title.
+        Assert.All(page.Regions.Where(r => r.IsLoot), r => Assert.Equal("LOOT · BODY", r.Title));
+        Assert.Equal([Id(5)], In(page, "loot:slots", c => c.Slot == "onsling").Ids);
+        var rig = page.Region("loot:rig")!;
+        Assert.Equal(Core.Desk.DeskSearch.Unsearched, rig.Search);
+        Assert.Equal([Id(7)], In(page, "loot:rig", c => c.Slot == "rig").Ids);
+        Assert.DoesNotContain(rig.Cells, c => !c.IsSlot);
+        Assert.Equal(Core.Desk.DeskSearch.Searched, page.Region("loot:pockets")!.Search);
+        Assert.Equal([Id(8)], In(page, "loot:pockets", c => !c.IsSlot).Ids);
+        var backpack = page.Region("loot:backpack")!;
+        Assert.Equal(Core.Desk.DeskSearch.Searching, backpack.Search);
+        Assert.True(backpack.ContentsUnseen);
+        Assert.Contains(backpack.Cells, c => c.Ids.Contains(Id(4)));
+        // Never the desk's: the menus' reading of the same picture says no screen of its own.
+        var desk = await reader.ReadAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+        Assert.Null(desk.Page);
+    }
+
+    [Fact]
+    public async Task A_drawers_loot_is_one_grid_and_the_world_and_the_inventory_alone_are_told()
+    {
+        var reader = Reader();
+        var drawer = Raid("DRAWER");
+        using (var picture = drawer.Bitmap.Copy())
+        {
+            var page = (await reader.ReadRaidAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct)).Page!;
+            var loot = Assert.Single(page.Regions, r => r.IsLoot);
+            Assert.Equal((DeskRegionKind.Loot, "LOOT · DRAWER"), (loot.Kind, loot.Title));
+            Assert.Equal([Id(5), Id(6)], loot.Cells.SelectMany(c => c.Ids).Order());
+        }
+        // The player's inventory alone: ON YOU, no LOOT.
+        using (var picture = Raid(null).Bitmap.Copy())
+        {
+            var reading = await reader.ReadRaidAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+            Assert.Equal(DeskScreen.Raid, reading.Screen);
+            Assert.DoesNotContain(reading.Page!.Regions, r => r.IsLoot);
+        }
+        // The world: no tabs at the top, nothing read past them.
+        var world = new StashReaderTests.Page(2560, 1440).Start();
+        using (var picture = world.Bitmap.Copy())
+        {
+            var reading = await reader.ReadRaidAsync(picture, new DeskCatalogue(Catalogue), DateTimeOffset.MinValue, Ct);
+            Assert.Equal((DeskScreen.None, null), (reading.Screen, reading.Page));
+        }
     }
 
     [Fact]
