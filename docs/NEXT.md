@@ -2180,6 +2180,33 @@ Raise these with the owner when the app gets its first public GitHub Release (no
   allows any weapon of a class (`usingWeapon` lists several), and the icon with the class's name under it. Check the
   terms for preset pictures (DESIGN.md §3: Battlestate art, runtime download only) before building.
 
+- **Text hard to read on some setups: a text size, or a UI scale** (beta feedback, relayed by the owner 2026-10-18: "on
+  some setups the text can be hard to read. We should support different text-rendering sizes, which should probably
+  translate into an overall UI scale setting. Explore the feasibility of this, we don't want to create a huge overhead
+  because of this while still providing this feature"). To explore first, not to build: the cheapest route that answers
+  the feedback wins, and a setting of the app's own goes on a panel for the owner (CLAUDE.md, "Design panels"). Where
+  sizes live today: the app follows the monitor's scale, every measure a DIP (`XamlRoot.RasterizationScale` where pixels
+  count: `MapView.PixelScale`, `Picture`, the window's minimum). The rail's, the cards' and the status bar's text is set
+  in five TextBlock styles (`App.xaml`: Eyebrow, Title, Note, Figure, Status) and some 180 inline `FontSize` values in
+  the XAML; the map draws its text and symbols with Skia through one factor, `MapRenderer.Render(…, uiScale)`, which
+  the labels' room and the repel share ("Map drawing"); the trader strip already fits its cells to the rail
+  (`Rules.TraderStrip`); the window is never smaller than 900×560 and the rail's inner width is 351 DIP at every window
+  size ("Screen anatomy"). Three routes, by overhead:
+  1. Honour Windows' own text size (Settings › Accessibility › Text size; `UISettings.TextScaleFactor`). WinUI's
+     TextBlocks are meant to follow it by themselves (`IsTextScaleFactorEnabled`): check what the rail, the cards, the
+     status bar and the notes do at 125–200 % today (the layout check per step), fix what clips or wraps, and carry
+     the factor into the map's `uiScale` for its labels. No setting and no UI of the app's own; the player's Windows
+     setting, which such a setup may already have on.
+  2. A text size setting of the app's own (two or three steps) that multiplies the five styles' sizes (the inline
+     values routed through the styles or one resource first) and the map's `uiScale`. More work: the text grows, the
+     spacing and the symbols don't, so the cards and the rail have to take the larger text, and the layout check and
+     the snapshots run per step.
+  3. A whole UI scale. WinUI has no per-window scale override and no LayoutTransform, so every DIP measure (the styles,
+     margins, the rail's 351, the window's minimum, the map's) would route through the factor. The biggest overhead;
+     weigh it only if 1 and 2 don't satisfy the feedback.
+  Ask the tester what the setup was (monitor size and scale, window size, distance) before choosing: the 900×560
+  minimum is for a laptop beside the game, not for reading from a metre away ("Screen anatomy", owner, 2026-10-09).
+
 ## Not asked for (owner to decide)
 
 - Lines like `Reason:Lift, Position:(x, y, z), SpeedLimit:…, CurrentState:Run…` carry a world position (after an
