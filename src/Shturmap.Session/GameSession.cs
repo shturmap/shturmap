@@ -273,7 +273,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 AppLog.Info("Read the extract list from screenshots: off");
             _readStash = ReadStashOn(_store.GetSetting(ReadStashSetting));
             if (!_readStash)
-                AppLog.Info("Read your stash and tasks from menu screenshots: off");
+                AppLog.Info("Read your stash, gear and tasks from menu screenshots: off");
             OpenStash();
             OpenOperational();
             OpenDesk();

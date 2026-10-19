@@ -2289,7 +2289,10 @@ public sealed partial class MainWindow : Window
     {
         if (HelpButton.XamlRoot is null)
             return false;
-        HelpFlyout.ShowAt(HelpButton);
+        if (Quiet)
+            ShowWithoutFocus(HelpFlyout, HelpButton);
+        else
+            HelpFlyout.ShowAt(HelpButton);
         return true;
     }
 
@@ -2337,7 +2340,7 @@ public sealed partial class MainWindow : Window
         flyout.Opened += Done;
         try
         {
-            flyout.ShowAt(button);
+            ShowWithoutFocus(flyout, button);
             if (await Task.WhenAny(opened.Task, Task.Delay(3000)) != opened.Task)
                 return false;
             await Task.Delay(300); // one layout pass for its contents
@@ -2348,6 +2351,20 @@ public sealed partial class MainWindow : Window
             flyout.Opened -= Done;
         }
     }
+
+    /// <summary>
+    /// A flyout opened where its placement puts it, but without moving the focus into it: what a run that takes pictures
+    /// opens (help by itself, help and settings for their pictures). The focus on a flyout's first link showed that link's
+    /// tooltip, and a tooltip is a window of its own, kept on a monitor: help's TAKE THE TOUR tip stood in the top right
+    /// corner of a monitor in use for about twelve seconds of each run, however far off every monitor the window was,
+    /// where the person at the PC could click it (release QA pass of 2026-10-19, F3: the tour came over two views' pictures).
+    /// </summary>
+    private static void ShowWithoutFocus(Flyout flyout, FrameworkElement button) =>
+        flyout.ShowAt(button, new Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowOptions
+        {
+            ShowMode = Microsoft.UI.Xaml.Controls.Primitives.FlyoutShowMode.Transient,
+            Placement = flyout.Placement,
+        });
 
     /// <summary>The version, its release's name and the kind of this build, at the foot of settings: "Shturmap
     /// 0.4.0+d349909 "Praetorian" · installed" (owner, 2026-10-09: named major releases; Rules.WhatsNew.NameOf).</summary>

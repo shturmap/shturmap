@@ -164,6 +164,22 @@ public class PseudoTextTests
         const string english = "Not checked against your list yet.";
         Assert.InRange(PseudoText.Of(english).Length, english.Length * 1.3, english.Length * 1.6);
     }
+
+    // Release QA pass of 2026-10-19 (F6): a paragraph's padding was one word of 130 dots and more, which broke inside the
+    // word in every paragraph that wraps; no language has such a word. A short text's padding stays one word.
+    [Fact]
+    public void A_long_texts_padding_is_words_a_paragraph_can_wrap_between()
+    {
+        var english = string.Join(' ', Enumerable.Repeat("Reads the item cells in a screenshot.", 8));
+        var pseudo = PseudoText.Of(english);
+        var padding = pseudo[(pseudo.LastIndexOf('.') + 1)..^1].Trim();
+        Assert.All(padding.Split(' '), word => Assert.InRange(word.Length, 1, PseudoText.PaddingWord));
+        Assert.True(padding.Split(' ').Length > 1, padding);
+        Assert.EndsWith("·]", pseudo, StringComparison.Ordinal);
+        Assert.InRange(pseudo.Length, english.Length * 1.3, english.Length * 1.6);
+        var shortOne = PseudoText.Of("Not checked against your list yet.");
+        Assert.DoesNotContain(' ', shortOne[(shortOne.LastIndexOf('.') + 1)..].Trim());
+    }
 }
 
 public class LanguageChoiceTests

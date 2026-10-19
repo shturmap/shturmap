@@ -140,6 +140,8 @@ public sealed partial class MainWindow
             AskAboutCrashes(_crashes);
             ViewModel.CrashDetails = details;
         }
+        // The stash desk's page and cards, and settings' row of the copy's rule: built in code with their words and figures.
+        RetellDesk();
         // Rows made from templates, whose words aren't in the rows' data: a list that says the same is kept on screen
         // (RowLists), so these start over and the snapshot fills them again.
         ForgetRows();

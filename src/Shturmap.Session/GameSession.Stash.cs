@@ -72,7 +72,7 @@ public sealed partial class GameSession
         {
             _store?.SetSetting(ReadStashSetting, on ? "on" : "off");
             _readStash = on;
-            AppLog.Info("Read your stash and tasks from menu screenshots: " + (on ? "on" : "off"));
+            AppLog.Info("Read your stash, gear and tasks from menu screenshots: " + (on ? "on" : "off"));
             Publish();
         }
         finally

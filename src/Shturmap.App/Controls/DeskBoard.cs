@@ -207,6 +207,8 @@ public sealed partial class DeskBoard : Grid
         {
             _head.Visibility = Visibility.Collapsed;
             _scroll.Visibility = Visibility.Collapsed;
+            // Said with each build: a language switch builds the page anew (MainWindow.RetellDesk).
+            _empty.Text = AppTexts.DeskEmpty;
             _empty.Visibility = Visibility.Visible;
             _builtCell = 0;
             _builtBreak = -2;

@@ -85,8 +85,10 @@ each view and the problems boxed. Run it in every offered and in-translation lan
 a release and after a change to the layout or to many texts.
 
 **The pseudo-language** (`--culture qps-ploc`, developer runs only) shows every English text accented, about 40%
-longer and in brackets: "[Ŝéţţîñğš ···]". It finds what a longer language will break before anyone translates, and
-any text without brackets on screen is one that wasn't moved into the texts files. Game names stay English in it.
+longer and in brackets: "[Ŝéţţîñğš ···]", a long text's padding in words of twelve dots at most (release QA pass of
+2026-10-19: a paragraph's was one word of 130 dots and more, which no language has). It finds what a longer language will
+break before anyone translates, and any text without brackets on screen is one that wasn't moved into the texts files.
+Game names stay English in it.
 
 **Switching while running**: the check also switches the language of a running app and compares every text on screen
 with a fresh start in that language; a difference is a text that was kept from before the switch.
@@ -159,7 +161,8 @@ goes into no commit.
   cue's band, What's New's plate, and the copies of a cue's words its halo is made of; `LayoutCheck.Layers`) are
   compared within themselves, not with what they cover.
 - *untranslated*, in the pseudo-language only: a text, or part of one, outside the pseudo-language's brackets that isn't
-  a game name (the loaded game data's names, tarkov.dev's sentences and a transit's conditions), a release's name, a
+  a game name (the loaded game data's names, tarkov.dev's sentences and a transit's conditions; the stash desk's window
+  titles, a container's short name as the game prints it, "WZ"), a release's name, a
   language's own name (settings: ENGLISH, DEUTSCH), a number with its unit, a key, a month or day of the culture, a
   path, or one of the few words that stay the same everywhere (`LayoutWords.Neutral`: Shturmap, PMC, Scav, PvE, PvP,
   Escape from Tarkov, tarkov.dev, GitHub, Sentry, Windows). What a report or a crash report sends, shown before it

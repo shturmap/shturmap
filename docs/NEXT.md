@@ -464,6 +464,25 @@ Plan-only fake raid at 1600×900, then the one with the Zhuk window, and the rep
 PLAN | DESK across the rail's 351 DIP above MAP, 36 DIP tall, its words in the title style, the view on screen raised
 with the open map's row's amber bar; ← and → pick (`DeskSwitch.ByArrow`). DESIGN.md principle 3, *The stash desk*.
 
+**The release QA pass of 0.7.0 (2026-10-19, on 63d9c06) and its fixes.** Fixed:
+- F1: a language switch left the desk's page (head line, region heads, "Not attached", "5.45 M", "−3%") and settings' row
+  of the copy's rule in the old language: they are built in code, and are built again at a switch now
+  (`MainWindow.RetellDesk`; DESIGN.md §8, "The app's own language"). The script's new `language <culture>` pictures a
+  switch with the cards up. `-SwitchCheck` of the desk at 1600×900, en → de: PASSED; a script with two pins and a pointed
+  card, en → de → en: page, cards and figures follow.
+- F3: the tour over the quest's and the desk's pictures was not the first start's (each run has a database of its own in
+  its fake game's folder; `--data` holds only the logs, and a snapshot run never opens the first start's tour). Help,
+  opened by itself, put the focus on TAKE THE TOUR, whose tooltip is a window of its own that Windows keeps on a monitor:
+  it stood in the top right corner of the monitor beside the window for twelve seconds of every run (measured), where a
+  click could reach it (inferred; not reproduced, no input was sent). A quiet run's flyouts open without the focus now,
+  a snapshot run opens the tour only with `--tour`, and the app log says how a tour opened (DESIGN.md §8, *Quiet runs*).
+  The en+de layout check at 900×560, twice: PASSED, the quest's and the desk's pictures each time, 42 panels drawn.
+- F4: the notes, DESIGN.md and the diagnostics name the setting as the app does ("Read your stash, gear and tasks …").
+- F6: the pseudo-language padded a paragraph with one word of 130 dots and more; it pads in words of twelve now
+  (`PseudoText.PaddingWord`), and the desk's window titles ("WZ") count as the game's names. Pseudo-language at 900×560,
+  plan and desk: PASSED, no warnings.
+- Open: F5 (tour chapter 2's staging), the owner's call.
+
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,
 `%USERPROFILE%\source\repos\Shturmap-price-view-data-2026-10-19.md` and

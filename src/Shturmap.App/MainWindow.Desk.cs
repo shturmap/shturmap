@@ -138,6 +138,26 @@ public sealed partial class MainWindow
             RenderDeskRail();
     }
 
+    /// <summary>
+    /// Shturmap's texts changed language (OnUiLanguageChanged): the page's words and figures (the head line, the regions'
+    /// heads, the fold and "Not attached" lines, "5.45 M", "−3%"), the cards and settings' row of the copy's rule are made
+    /// as they are built, so each is built again in the new language at once: the page on screen standing (nothing comes
+    /// in, the totals don't count up), a page out of sight when it next shows (release QA pass of 2026-10-19, F1: the page
+    /// kept the old language beside a rail in the new one).
+    /// </summary>
+    private void RetellDesk()
+    {
+        _deskVersion++;
+        ShowCopyRuleSetting();
+        if (!_deskChosen)
+        {
+            _deskBoardDue = true;
+            return;
+        }
+        ShowDeskPage(motion: false);
+        RenderDeskRail();
+    }
+
     // The page as it is: the desk's view and fold; the cells of a new reading's opened regions come in, once.
     private void ShowDeskPage(bool motion)
     {

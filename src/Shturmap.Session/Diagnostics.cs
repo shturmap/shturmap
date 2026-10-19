@@ -69,7 +69,7 @@ public static class Diagnostics
             : s.ExitReaderLanguage is { } language ? $"on ({language})" : "on");
         // And "why has nothing a mark?": the setting and the reader; never the marks themselves (what the player has
         // is theirs; docs/DESIGN.md §8, "Reports").
-        Line("Read your stash and tasks from menu screenshots", !s.ReadStash ? "off"
+        Line("Read your stash, gear and tasks from menu screenshots", !s.ReadStash ? "off"
             : s.StashReaderMissing ? "on, but Windows has no text recognition language"
             : s.StashReaderLanguage is { } stashLanguage ? $"on ({stashLanguage})" : "on");
 #if DEVTOOLS
