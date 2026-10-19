@@ -79,7 +79,7 @@ glance, "Settings"), "Map drawing" (*The text size*), §8 "Developer aids" (*A l
   cuts them, and a wide map there is 13 % narrower. F3, Plan's NEXT RAID row wraps "STREETS OF / TARKOV": accepted.
   F4, the developer script's `textsize normal|larger|largest` pictures the setting's change while Shturmap runs.
 
-## 2026-10-19: the stash desk, a price view from a screenshot (designed, to build)
+## 2026-10-19: the stash desk, a price view from a screenshot (designed; reading and data built, the view to build)
 
 **The ask** (owner, 2026-10-19): "If you take a screenshot from items, provides a view in the app that mirrors the grid
 (to keep the mental model of the currently seen items) and augments them with the current price at the auction house
@@ -298,6 +298,55 @@ Binding: DESIGN.md §1 (the third answer's paragraph), §2 ("For the stash desk"
 - The in-raid glance: its panel after step B, its build after step C.
 - The flea's price field takes Ctrl+V (owner, 2026-10-19: "Copy and paste worked"). Open: that `SafetyTests` allows
   the clipboard.
+
+**Built (step B part 1, 2026-10-19: the reading and the data; no view, no texts, no setting changed).** Binding:
+DESIGN.md §2 ("For the stash desk", *Built*), §3 (the desk's prices, *Built otherwise*), §4 (*The stash desk*, *Built:
+the model the view draws*), §8 ("The desk file", "How the parts work", *Menu screenshots*).
+
+- **Where it lives.** The model and its rules in `Shturmap.Core.Desk`: `DeskPage`, `DeskRegion`, `DeskCell` (the page),
+  `DeskLedger` (desk.json, the merge, the fold's changed regions, a window's attachment), `DeskValues` (the fee by
+  tarkov-api's `fleaMarketFee`, read 2026-10-19; the figure; condition scaling; tint, arrow, liquidity), `DeskKeep` (the
+  levels), `DeskSheet` (the values over a page, the head line), `DeskView` (what is published). The reading in
+  `Shturmap.Game.Screenshots`: `DeskReader`, `DeskLayout` (the screen and its regions), `DeskFrames` (compartments),
+  `DeskMatch` (the label against the catalogue), `DeskWords`; `MenuScreenshotReader` runs it after the stash reader on the
+  same picture. The data: `ApiItem`'s price fields, footprint and `hasGrid`, `ApiFleaMarket`, `ItemSources.HideoutNeeds`,
+  `PricesAt`, `GameDataLoader.DeskPricesAge`; `Shturmap.Session.DeskData` (catalogue, facts, flea rules, keep levels);
+  `GameSession.Desk` (the reading taken, the file, the prices refreshed, `SessionSnapshot.Desk`). The CLI: `shturmap-cli
+  desk <png|folder>` (page, values, page in hand over the pictures, truths; `--audit` the DESK line, which `bring` prints
+  too). Tests: `DeskValuesTests`, `DeskKeepTests`, `DeskLedgerTests`, `DeskSheetTests` (made-up ids), `DeskReaderTests`
+  (drawn GEAR tab, window, frames, match), `DeskSessionTests`, `DeskRealPictureTests` (skip without the ignored
+  pictures and the cache).
+- **Measured** (`shturmap-cli desk`, cache only, no request): the GEAR tab's truth (its stash, 37 items) 29 right, 2 "one
+  of N" (the truth among them), 6 unread, 0 wrong (the spike's reading at 0.8 against the whole catalogue, without the
+  footprint: 23 named); the three
+  stash truths of 2026-10-11 (148 items) 129 right, 16 "one of N", 3 unread, 0 wrong. Over the five GEAR pictures: 60 to
+  129 cells a picture, about three in five named, a fifth "one of N" (the slots' variants: the armband one of 11, the dog tag one
+  of 32, BAC Bastion one of 3; the two bandages; the Hot Rod can and bag), a sixth unread (labels the art hides, a label
+  read a letter short: "Appl", "ALOK-B", "TC-200"); regions: the loadout (7 slots filled) and the stash on each, the middle
+  column's parts in view (POCKETS, SPECIAL SLOTS, BACKPACK, POUCH; TACTICAL RIG where scrolled up; a grid the scrolling
+  cuts left out); the Zhuk window found on both pictures that show it, attached to its cell in the backpack across the
+  three readings; 1.9 to 2.4 s a picture. The DESK audit line (PvE): 5,006 items with a short name, 608 with no price at
+  all, 24 without a footprint, 759 of 3,344 flea-priced (not guns) sharing short name and footprint; PvP 690 of 3,159.
+- **For the view** (part 2): bind `SessionSnapshot.Desk` (`DeskView`: `Mode`, `Sheet`, `Changed`, `First`, `Reading`,
+  `PricesAt`). `Sheet.Regions` are in reading order, each a `DeskRegionSheet` (`Region` with `Key`, `Kind`, `Cols` ×
+  `Rows`, `Parts`, a window's `Title`, `AttachedTo` or `SameName`; `Part` ON YOU, STASH or neither; `Total`, `Plus`).
+  Each `DeskCellSheet`: `Cell` (`I`, `J`, `W`, `H` in grid units; `Slot` for a slot, no footprint; `Ids`: one named, more
+  "one of N", none unread; `Count`, `Print`, `FoundInRaid`), `Figure` (`Value`, `High` for the range, `Source` Flea,
+  Trader with `TraderName`, None for a range; `Estimate` "~", `Plus` "+", `Unsure`, `Full`, `Tint` 0 to 3, `Arrow`,
+  `Liquidity`, `FleaLevel`, `FleaNet`, `Fee`, `TraderPrice`), `Keep` (Now, Next, Hideout, Later, None) with `Needs` (the
+  card's KEEP lines), `Unseen`. `Sheet.Totals` is the head line. A view can make a page of made-up cells with
+  `DeskSheet.Of`.
+- **Open.** The tick's words, note, help, README and PRIVACY.md don't say the desk yet, while the reading runs under the
+  tick in a developer build (part 2's texts; before any release). The prices per reading are the item file again, not
+  the items a screenshot showed (json.tarkov.dev has no price per item; DESIGN.md §3): at most one request an hour of
+  desk use, about 1.4 MB when it changed: the owner's word on it. The GEAR tab's words are the English game's; other
+  languages, 1080p and other aspect ratios unmeasured (the slot boxes' sizes are the 1440p screenshots' in cells). The
+  rules' choices listed in DESIGN.md (*Built: the model the view draws*: NOW with hand-overs, the notch's order, a "?"
+  cell's keep and total, the fold ignoring the found-in-raid mark) are mine, for the owner to overrule. Not read: a
+  container slot's own label when the art covers it (the backpack's "Trooper 35" read "ATcoop,er 35"), the quick-use
+  bar (never: its slots repeat what is on the player). The cyan outline, a hover highlight across items, and the art's
+  tie-break for the same-name, same-footprint "?" (judged by the "?" count after part 2) stay as the measurement left
+  them.
 
 The research, the data facts and the discussion page stay outside the repository:
 `%USERPROFILE%\source\repos\Shturmap-price-view-research-2026-10-19.md`,

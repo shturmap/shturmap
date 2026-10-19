@@ -66,7 +66,7 @@ internal static class StashLabels
     }
 
     // 1 for the same text, less by the share of letters to change (Levenshtein), as ExitList does.
-    private static double Similarity(string a, string b)
+    internal static double Similarity(string a, string b)
     {
         if (a == b)
             return 1;

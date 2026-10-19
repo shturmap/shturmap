@@ -303,7 +303,7 @@ internal static class StashGrids
 
     // The lattice's top left, moved onto the middle of the light line it stands near: the lines are found with a
     // tolerance that can put the lattice a pixel or two off, and a cell cut two pixels early reads worse.
-    private static (int X0, int Y0) Snap(StashGray gray, int x0, int y0, int cols, int rows, int pitch)
+    internal static (int X0, int Y0) Snap(StashGray gray, int x0, int y0, int cols, int rows, int pitch)
     {
         const int reach = 4, side = 3;
         int y1 = Math.Min(gray.H, y0 + rows * pitch), x1 = Math.Min(gray.W, x0 + cols * pitch);

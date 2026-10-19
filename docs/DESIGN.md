@@ -10,7 +10,8 @@ Shturmap answers two questions for an Escape from Tarkov player, on a second mon
 1. **Before a raid: where should I go, and what do I need to bring?**
 2. **During a raid: where am I, and where is my next objective?**
 
-Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; designed, not built; docs/NEXT.md):
+Between raids it gives a third answer, in a view of its own (owner, 2026-10-19; designed; its reading and data built the
+same day, step B part 1, its view not yet; docs/NEXT.md):
 **what is this worth, and what should I ask for it?**, for the items on a screenshot the player took of their own
 stash. That view is the stash desk; the raid planner stays the other view. The recommendation was a separate app; the
 owner kept it in one: "It makes sense to keep it in one app since shturmap idea is to be mostly as hands off as
@@ -199,8 +200,9 @@ table is read as the stash's is, in the same path, and its tasks show where the 
   they run out. Its note, help, the README, PRIVACY.md and the tour's first chapter say it.
 
 **For the stash desk, the item grids are read against the whole catalogue** (owner, 2026-10-19, keeping the price view
-in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*: nothing of it is
-built, and until it is, the grids are read for What You Have only, above; docs/NEXT.md). The desk mirrors a screenshot's
+in Shturmap as a view of its own, §1; designed the same day, §4, "Screen anatomy", *The stash desk*; its reading and
+page built the same day, step B part 1, the view not yet: `DeskReader`, `DeskLedger`, `GameSession.Desk`; docs/NEXT.md).
+The desk mirrors a screenshot's
 grids with each item's prices, so it has to name every cell, not only the ones BRING lists. Its keep mark has three
 levels from the quest dependency tree, NOW (an active quest's BRING needs the item), NEXT (a quest the active ones
 unlock needs it) and LATER (further down the tree), plus a hideout module's need, regardless of the hideout's progress
@@ -239,16 +241,36 @@ alone, and no further (and, decided the same day, for the in-raid glance: "Which
   (they carry the screenshot's path). A cell that fits more than one item is said honestly, never guessed: "one of N",
   with the group's price range and a "?", and its hover card lists the candidates for the player to pick with one click
   (of the 3,159 flea-priced items that aren't guns or presets, 672 share their short name and footprint with another; a
-  silent guess prices the wrong item). A name is never taken from the picture alone. Before it is built, the stash spike
-  measures the false-name rate against the whole catalogue.
+  silent guess prices the wrong item). A name is never taken from the picture alone. The stash spike measured the false
+  names against the whole catalogue (2026-10-19, docs/NEXT.md): the label alone is safe at a fit of 0.9, not at the
+  quest path's 0.8, so the desk names a cell at 0.9, the item file's footprint (either way round) the tie-break; a slot
+  has no footprint. **Built** (step B part 1, 2026-10-19; `DeskReader`, `DeskLayout`, `DeskFrames`, `DeskMatch`): the
+  screen told by its headings, read once over the whole picture (the loadout's EARPIECE … SHEATH, the middle column's
+  TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK, POUCH, the stash pane's SEARCH and SORT TABLE; the English game's
+  words); a slot's box under its heading; the middle column's compartments as rectangles of whole cells framed on all
+  four sides (a rig's pockets stand a few pixels apart, no lattice), each under the lowest heading above it, a
+  container's own slot the first under BACKPACK, TACTICAL RIG and POUCH; a compartment the column's scrolling cuts is
+  left out (the page keeps what it had); a window by its title bar (the magnifier before the title, sort and close
+  after it, or the title's size: 15 px at 1440p, a label 11 to 14) over compartments of its own, or by its grid's
+  two-pixel lines when no title is read (its search field open: "ITEM SEARCH"); what a window or a toast covers is left
+  unread, and a cell running under it with it. Where the grid's lines split an item, its label at the top right claims
+  the cells its footprint takes from there when no other label fits in them; where a label fits items of two
+  footprints and both fit there, the cell is "one of N" over both. A short label (three letters or fewer) is read once
+  more. Measured on the owner's screenshots (`shturmap-cli desk`): the GEAR tab's stash, 37 hand-labelled items, 29
+  right, 2 "one of N", 6 unread, 0 wrong; the three stash truths of 2026-10-11 (148 items: the key container, the
+  medical case, a stash page) 129 right, 16 "one of N", 3 unread, 0 wrong; regions on the five GEAR pictures: the
+  loadout and the stash on each, the middle column's parts in view (4 to 6), the Zhuk window on the two that show it,
+  attached to its cell in the backpack across the readings; about 2 s a picture.
 - **What is kept:** no pixel. The mirror is drawn from catalogue art (tarkov.dev's grid images, fetched at runtime as
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
   a newer reading changes it (§4, "Screen anatomy", *The stash desk*); never a register of the stash over time (§1).
+  Per game mode, in `desk.json` in the data folder (§8, "The desk file").
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them.
 - **The player's say:** the menu screenshots' one tick ("Read your stash and tasks from menu screenshots"), its words
-  and note widened for the desk, to be worded with step B (the desk's panel of 2026-10-19 left them out). Unticked, no
+  and note widened for the desk, to be worded with step B (the desk's panel of 2026-10-19 left them out; the reading
+  runs under the tick since step B part 1, its words not yet: open, before any release). Unticked, no
   menu screenshot is opened, for the desk either. Once built, its note, help, the README, PRIVACY.md and the website say
   what the desk reads.
 
@@ -359,14 +381,19 @@ quoting it anywhere new.
     every few minutes with the flea market's prices, hence once a day). A start a day after the last one is 13
     requests (18 in another game language) and about 3 MB if every file changed; a second start within the hour
     asks nothing.
-  - **The stash desk's prices come per reading** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; not built; §4,
+  - **The stash desk's prices come per reading** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; §4,
     "Screen anatomy", *The stash desk*): a list price to copy needs prices minutes old, and the item sources' may be a
     day old. So, for the desk alone, the prices of the items a screenshot showed are asked for when it is read (those
     items, never the catalogue), and an item's price history (json.tarkov.dev's `/{mode}/prices/{id}`) when its card
     first shows it, each with its ETag, so an unchanged answer costs a few hundred bytes. Still never on a timer: a page
     left open isn't refreshed, and the card says its prices' age ("Prices 4 min old · tarkov.dev"). Everything else
     keeps the ages above. Its requests and bytes per player are counted and said to the owner before it is built (the
-    rule at the end of this list).
+    rule at the end of this list). **Built otherwise** (step B part 1, 2026-10-19; `GameSession.RefreshDeskPrices`;
+    the owner's word on it open): json.tarkov.dev has no price file per item (the GraphQL API that answers per item was
+    down all of 2026-10-19), so a desk reading asks for the item file again with its ETag when the saved copy is over an
+    hour old (`GameDataLoader.DeskPricesAge`): at most one request an hour of desk use, a few hundred bytes when
+    unchanged, about 1.4 MB compressed when it changed (it changes every few minutes, so in practice once an hour of
+    use). The history is step C's.
   - What the server doesn't have is remembered for a week, the time its own Cache-Control gives its answers
     (`CachedHttp.MissingAge`): a tile or a picture that answered "not found" was asked for again in every session
     before. A refusal (403) is not remembered: it can be a block that passes.
@@ -848,7 +875,7 @@ new minute its figure and rule just change (owner, 2026-10-09: its
 figure decoded and a dark notch ran along its rule at each minute until then). With Windows' animation effects off
 the app shows and hides without motion, and following jumps to the position, the roll call's view to its extracts,
 the wheel's zoom to its notch.
-**The stash desk** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; not built; "Screen anatomy", *The stash desk*)
+**The stash desk** (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2; its view not built; "Screen anatomy", *The stash desk*)
 moves three ways and no more: a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do; its totals
 count up once; a copied cell's frame flashes gold once and its figure decodes, as a cue's title does. With the effects
 off the page stands at once.
@@ -1741,8 +1768,9 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
 - **The stash desk** (owner, 2026-10-19: "Stash Desk Panel: A, but keep in mind that the stash also has the player
   loadout in view and when a raid ends the player might want just take a screenshot of the items they have and get an
   overview of what to do with that. Also keep in mind of stackable things, like a bag stashed in a bag that contains
-  additional items. A1 · B1 · C1 · D2. Update the Design.md accordingly."; from a panel: A1 · B1 · C1 · D2; not
-  built). §1's third answer: between raids, the items of a screenshot the player took of their own stash or loadout,
+  additional items. A1 · B1 · C1 · D2. Update the Design.md accordingly."; from a panel: A1 · B1 · C1 · D2; built
+  (step B, 2026-10-19, part 1: reading and data; the view to come) as *Built: the model the view draws*, below, says).
+  §1's third answer: between raids, the items of a screenshot the player took of their own stash or loadout,
   mirrored cell for cell, each with what it is worth, what it is kept for, and a list price one click away; read as §2
   says ("For the stash desk"), its prices fetched as §3 says. The panel's two questions on the cell went unanswered and
   take its drawn defaults: "later" marks a cell only for a found-in-raid need or an item that can't be bought (the card
@@ -1883,6 +1911,30 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
     *Motion*): a page just read comes in cell by cell, 50 ms apart, as the kit's pictures do (the regions it opened:
     only what changed; *The head line and the fold*); its totals count up once; a copy flashes and decodes. Nothing else
     moves. Colours keep their meanings ("Visual language"): no red or green for down and up, only arrows and signs.
+  - **Built: the model the view draws** (step B, 2026-10-19, part 1: reading and data; `Shturmap.Core.Desk`; the view,
+    its texts and the tick's words are part 2). The session publishes the mode's page with its values
+    (`SessionSnapshot.Desk`, a `DeskView`): the regions in reading order (`DeskSheet.Regions`: LOADOUT's slots, one cell
+    each without a footprint; TACTICAL RIG, POCKETS, SPECIAL SLOTS, BACKPACK and POUCH, each with its own container's slot
+    and its grid's compartments side by side; STASH; each window right after the region its container is in, one attached
+    to none at the end), each cell with its item or candidates, place and footprint, count, printed condition,
+    found-in-raid mark, contents unseen, figure and keep notch (`DeskCellSheet`, `DeskFigure`), each region's part (ON YOU,
+    STASH or neither) and total, the head line (`DeskTotals`), the regions the last reading changed (the fold's input) and
+    the prices' age. A reading is taken into the page in hand (`DeskLedger`): the regions it shows replace the old, the
+    others stay, the cells a window covered keep their last reading. What the rules decided where the panels left it
+    open, for the owner to overrule:
+    - NOW is an active quest's need: what its hand-overs and finds take as well as BRING's rows (keys, items to plant,
+      mark or use, gear to wear, mods), so that "Private Clinic ×1 · now · FIR" holds; NEXT a quest not started whose
+      quests before are all done or active (the active ones unlock it, or it is open to start); LATER every other quest
+      not done. The player's faction isn't known: both factions' quests count.
+    - The notch's order: now, next, a hideout module's need, later (a module's need is wanted at some level for certain,
+      a later quest's is far off); KEEP n · n · n counts now, next and later only.
+    - A "?" cell's figure is its candidates' range and counts in a total at its least; its notch is the weakest all its
+      candidates have, none when one has none.
+    - "Unchanged" compares place, ids or candidates, count and condition, not the found-in-raid mark.
+    - A window's grid attaching to a "?" cell narrows it to the candidates of the window's name (the Zhuk harnesses, not
+      the Zhuk body armour).
+    - The flea figure carries the item's flea level and compares nothing (the player's level isn't read); the fee's
+      hideout levels are 0, no setting yet; tarkov.dev's sell prices include Fence's.
 - **The in-raid glance** (owner, 2026-10-19, three choices: when, what and what is kept; to design with its own panel,
   then build after step C; not built). Every screenshot taken in a raid that shows an inventory screen, the player's
   own loadout or a looted container or body, is read as it arrives, as the extract list is, and a plate over the map
@@ -3533,7 +3585,7 @@ lot, then by complexity, then by the quest giver, then by name (`QuestEffort`, a
 | `Shturmap.Map` | SkiaSharp drawing: artwork per floor, camera, renderer, map content, glyphs |
 | `Shturmap.Session` | the coordinator: inputs in, one immutable `SessionSnapshot` out |
 | `Shturmap.App` | WinUI 3 window; reads snapshots, never game files |
-| `tools/Shturmap.Cli` | headless runner: locate, replay, data, render, watch, simulate, quests; the audits after an update: synopses, effort, bring, handovers, spawns (docs/UPDATES.md) |
+| `tools/Shturmap.Cli` | headless runner: locate, replay, data, render, watch, simulate, quests; the readers' measurements: stash, tasks, desk; the audits after an update: synopses, effort, bring, handovers, spawns (docs/UPDATES.md) |
 
 Rules:
 
@@ -3815,6 +3867,19 @@ can't be read is set aside as `operational.json.unreadable` and the tasks start 
 back). Never in a report or the diagnostics. A snapshot's made-up tasks (`--operational`) are never written. Deleted
 with the data folder.
 
+**The desk file** (`desk.json` in the data folder; owner, 2026-10-19; §2, "For the stash desk"; `DeskLedger`): the
+stash desk's page in hand, one per game mode (PvE and PvP apart): the regions the last screenshots showed, each as its
+last reading had it. Its shape: `version` 1; `modes` by the mode's name (`pve`, `pvp`), each with `readAt` (the last
+reading's screenshot time) and `regions` in the order taken; a region: `key` (`loadout`, `rig`, `pockets`, `special`,
+`backpack`, `pouch`, `stash`, `window:<its folded title>`), `kind`, `cols` and `rows`, its compartments (`parts`, each
+`[i, j, w, h]`), a window's `title` (the container's name as printed), `titleIds` (the items its title may name),
+`attachedTo` (`region`, `i`, `j`, or a `slot`) or, attached to none, `sameName` and `sameNameIn`; and `cells`, each with
+`i`, `j`, `w`, `h`, `ids` (one item, several for "one of N", none for unread), a slot's `slot`, `count` when more than
+one, `print` ("46/50"), `fir`, `holds` (`contents`, `mods`) and a "?" cell's `pick`. Item ids and the containers' names
+only: no pixel, no path, no other word. Written as a temporary file and one move, after each change; one that can't be
+read is set aside as `desk.json.unreadable` and the pages start over (the next screenshot brings them back). Never in a
+report or the diagnostics. Deleted with the data folder.
+
 **The notes file** (`notes.json` in the data folder; owner, 2026-10-15; `QuestNotes`): the notes the player writes on
 a quest's card, one set per quest and game mode (PvE and PvP apart, as ticks and picks are), each with when it was
 written. Add and delete only, no editing: the time always says when the words were written. A note is trimmed, keeps
@@ -4074,7 +4139,15 @@ ledger (`GameSession.Operational`: the location matched to a map of the data, `O
 its checks, the file; `OperationalReadings`, which tells a run of screenshots and whether the reading brought a new
 task, and the cue `CueKind.TasksRead` with every task the run read); a trader's tasks or another Tasks table goes
 nowhere; any other picture goes to the stash reader (`StashReader`), as before, and on to the stash's ledger, the cue
-and the marks' glow. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
+and the marks' glow; and, once the item file is in, to the stash desk's reader as well (`DeskReader`, step B part 1),
+on the same picture with a recognition of its own words: the whole picture's words once at its size (about 150 ms: the
+headings, a window's title, a toast), the screen and its regions from them and the compartments' frames (`DeskLayout`,
+`DeskFrames`, `StashGrids` for the stash), then each cell's label enlarged as the stash reader reads it, matched to the
+whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`), about 2 s a 1440p picture in all. The page goes to the desk's
+ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment), and a reading over an hour after
+the item file was fetched asks for it again (`RefreshDeskPrices`). A snapshot carries the mode's page with its values
+(`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`
+from the quests' states and the hideout), made again only when the page, the prices or the quests change. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
 maps as Plan counts them and the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`,
 `MainWindow.Operational`), glowing in the ones that arrived or changed, and the cue's rows (`Rules.OperationalCueWords`,
 `MainWindow.TasksCue`). A watch over the expiries drops a task as it runs out and publishes again each minute while

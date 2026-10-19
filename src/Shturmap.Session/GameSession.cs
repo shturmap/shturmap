@@ -276,6 +276,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
                 AppLog.Info("Read your stash and tasks from menu screenshots: off");
             OpenStash();
             OpenOperational();
+            OpenDesk();
             OpenNotes();
             if (_deleteScreenshots)
                 AppLog.Info("Delete screenshots after reading: on");
@@ -2080,6 +2081,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         // test read stash.json between the two). The operational tasks' file likewise.
         SaveStashIfDirty();
         SaveOperationalIfDirty();
+        SaveDeskIfDirty();
         var operational = OperationalShownNow();
         Snapshot = new SessionSnapshot
         {
@@ -2123,6 +2125,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
             OperationalReadAt = _operational.ReadAt(_mode),
             OperationalEnded = _operational.Ended(_mode),
             OperationalPlans = OperationalPlans(operational),
+            Desk = DeskViewNow(),
             Locations = _locations,
             CanChooseGameFolder = _locate is not null,
             ChosenGameFolder = _chosenFolder,
@@ -2267,6 +2270,7 @@ public sealed partial class GameSession(AppPaths paths, GameLocations? locations
         _ledger.EndPass();
         SaveStashIfDirty();
         SaveOperationalIfDirty();
+        SaveDeskIfDirty();
         _store?.Dispose();
         Study.Game("app.exit");
         if (Study.Enabled)

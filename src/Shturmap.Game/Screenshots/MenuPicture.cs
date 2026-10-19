@@ -51,8 +51,9 @@ public static class MenuPicture
 }
 
 /// <summary>What one menu screenshot showed: the operational tasks' table, or a trader's tasks (told, nothing read), or
-/// the item grids; Stash is null when the picture went to the tasks' reading or nothing needed looking for.</summary>
-public sealed record MenuReading(TaskPage? Tasks, StashReading? Stash);
+/// the item grids; Stash is null when the picture went to the tasks' reading or nothing needed looking for; Desk is the
+/// stash desk's reading of the same picture (null when it wasn't asked for, or the picture went to the tasks).</summary>
+public sealed record MenuReading(TaskPage? Tasks, StashReading? Stash, DeskReading? Desk = null);
 
 /// <summary>
 /// The menus' readings of one screenshot, its picture opened once (owner, 2026-10-19: from a panel of four, B): the
@@ -60,7 +61,7 @@ public sealed record MenuReading(TaskPage? Tasks, StashReading? Stash);
 /// (the operational table, another Tasks table, a trader's tasks) goes to it alone; the stash reader never sees it, and
 /// sees every other picture as before. Either may be missing (this Windows has no recognition for it).
 /// </summary>
-public sealed class MenuScreenshotReader(TasksReader? tasks, StashReader? stash)
+public sealed class MenuScreenshotReader(TasksReader? tasks, StashReader? stash, DeskReader? desk = null)
 {
     /// <summary>The language the item cells are read in, or null without a stash reader.</summary>
     public string? StashLanguage => stash?.LanguageTag;
@@ -72,15 +73,28 @@ public sealed class MenuScreenshotReader(TasksReader? tasks, StashReader? stash)
     /// What the screenshot shows: null when the file isn't a whole picture after the tries, or is gone. The item grids
     /// are read only when there are candidates to look for (the stash's reading needs them; the table's doesn't).
     /// </summary>
-    public async Task<MenuReading?> ReadAsync(string path, IReadOnlyList<StashCandidate> candidates, CancellationToken ct = default)
+    public Task<MenuReading?> ReadAsync(string path, IReadOnlyList<StashCandidate> candidates, CancellationToken ct = default) =>
+        ReadAsync(path, candidates, null, default, ct);
+
+    /// <summary>
+    /// The same, and the stash desk's reading of the picture against <paramref name="catalogue"/> (owner, 2026-10-19;
+    /// docs/DESIGN.md §2, "For the stash desk") when one is given: the picture opened once, the stash reader's look (the
+    /// items the quests need, for What You Have) and the desk's (the whole catalogue) one after the other; each reads its
+    /// cells' labels itself, the desk at its own fit.
+    /// </summary>
+    /// <param name="at">The screenshot's time, the desk page's.</param>
+    public async Task<MenuReading?> ReadAsync(string path, IReadOnlyList<StashCandidate> candidates, DeskCatalogue? catalogue, DateTimeOffset at,
+        CancellationToken ct = default)
     {
         using var picture = await MenuPicture.OpenAsync(path, ct: ct);
         if (picture is null)
             return null;
         if (tasks is not null && await tasks.ReadPageAsync(picture, ct: ct) is { Screen: not TaskScreen.None } page)
             return new MenuReading(page, null);
-        if (stash is null || candidates.Count == 0)
-            return new MenuReading(null, null);
-        return new MenuReading(null, await stash.ReadAsync(picture, candidates, ct));
+        var stashReading = stash is not null && candidates.Count > 0 ? await stash.ReadAsync(picture, candidates, ct) : null;
+        var deskReading = desk is not null && catalogue is not null && stashReading?.IsTradingScreen != true
+            ? await desk.ReadAsync(picture, catalogue, at, ct)
+            : null;
+        return new MenuReading(null, stashReading, deskReading);
     }
 }
