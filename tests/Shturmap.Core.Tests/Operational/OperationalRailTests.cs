@@ -74,21 +74,21 @@ public class OperationalRailTests
     [Fact]
     public void Plan_says_progress_and_time_left_in_a_few_words()
     {
-        Assert.Equal("4 of 7 · 8 h left", OperationalRail.PlanLine(Survive, Now));
-        Assert.Equal("0 of 3 · 10 h left", OperationalRail.PlanLine(Kill, Now));
-        Assert.Equal("any map · hand over after · 2 d left", OperationalRail.PlanLine(Transfer, Now));
+        Assert.Equal("4 of 7 · 8\u00A0h left", OperationalRail.PlanLine(Survive, Now));
+        Assert.Equal("0 of 3 · 10\u00A0h left", OperationalRail.PlanLine(Kill, Now));
+        Assert.Equal("any map · hand over after · 2\u00A0d left", OperationalRail.PlanLine(Transfer, Now));
         // A countdown not taken: the reading's age instead.
         var unsure = Shown("Elimination", "woods", OperationalKind.Kill, null, 20, Now.AddHours(-3));
-        Assert.Equal("20% · read 3 h ago", OperationalRail.PlanLine(unsure, Now));
+        Assert.Equal("20% · read 3\u00A0h ago", OperationalRail.PlanLine(unsure, Now));
     }
 
     [Theory]
-    [InlineData(25, "25 min left")]
-    [InlineData(0.5, "1 min left")]
-    [InlineData(60, "1 h left")]
-    [InlineData(47 * 60 + 59, "47 h left")]
-    [InlineData(48 * 60, "2 d left")]
-    [InlineData(6 * 24 * 60 + 600, "6 d left")]
+    [InlineData(25, "25\u00A0min left")]
+    [InlineData(0.5, "1\u00A0min left")]
+    [InlineData(60, "1\u00A0h left")]
+    [InlineData(47 * 60 + 59, "47\u00A0h left")]
+    [InlineData(48 * 60, "2\u00A0d left")]
+    [InlineData(6 * 24 * 60 + 600, "6\u00A0d left")]
     public void A_time_left_goes_from_minutes_to_hours_to_days(double minutes, string text) =>
         Assert.Equal(text, OperationalRail.Left(TimeSpan.FromMinutes(minutes)));
 
@@ -97,7 +97,7 @@ public class OperationalRailTests
     {
         var soon = Shown("Exit the location", "customs", OperationalKind.Survive, TimeSpan.FromMinutes(24.5), 57, null,
             new OperationalObjective("Survive and extract from the location", 4, 7));
-        Assert.Equal("ends in 24 min", OperationalRail.EndsIn(soon.Task, Now, minutesLeftInRaid: 38));
+        Assert.Equal("ends in 24\u00A0min", OperationalRail.EndsIn(soon.Task, Now, minutesLeftInRaid: 38));
         Assert.Null(OperationalRail.EndsIn(soon.Task, Now, minutesLeftInRaid: 20));
         Assert.Null(OperationalRail.EndsIn(soon.Task, Now, minutesLeftInRaid: null));
         Assert.Null(OperationalRail.EndsIn(Survive.Task, Now, minutesLeftInRaid: 38));
@@ -109,9 +109,9 @@ public class OperationalRailTests
     // One rounding for both cards, down: a time never says more than there is (QA, 2026-10-19: Plan's "24 MIN LEFT" and
     // the raid's "ENDS IN 25 MIN" at the same moment).
     [Theory]
-    [InlineData(24 * 60 + 59, "24 min left", "ends in 24 min")]
-    [InlineData(24 * 60 + 40, "24 min left", "ends in 24 min")]
-    [InlineData(40, "1 min left", "ends in 1 min")]
+    [InlineData(24 * 60 + 59, "24\u00A0min left", "ends in 24\u00A0min")]
+    [InlineData(24 * 60 + 40, "24\u00A0min left", "ends in 24\u00A0min")]
+    [InlineData(40, "1\u00A0min left", "ends in 1\u00A0min")]
     public void Plan_and_the_raid_round_the_same_time_left_down_alike(int seconds, string plan, string raid)
     {
         var task = Shown("Exit the location", "customs", OperationalKind.Survive, TimeSpan.FromSeconds(seconds));

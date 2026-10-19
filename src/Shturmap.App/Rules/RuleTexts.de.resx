@@ -110,15 +110,15 @@
   </data>
   <data name="AgeSeconds" xml:space="preserve">
     <value>{seconds} s</value>
-    <comment>en: {seconds} s</comment>
+    <comment>en: {seconds} s</comment>
   </data>
   <data name="AgeMinutes" xml:space="preserve">
     <value>{minutes} min</value>
-    <comment>en: {minutes} min</comment>
+    <comment>en: {minutes} min</comment>
   </data>
   <data name="AgeHours" xml:space="preserve">
     <value>{hours} h</value>
-    <comment>en: {hours} h</comment>
+    <comment>en: {hours} h</comment>
   </data>
   <data name="FixNoneYet" xml:space="preserve">
     <value>Noch keine Position: Screenshot mit {keys} für Entfernungen</value>
@@ -142,19 +142,19 @@
   </data>
   <data name="RaidTimeScav" xml:space="preserve">
     <value>{gone} min im Raid · Restzeit unbekannt</value>
-    <comment>en: {gone} min in · time left not known</comment>
+    <comment>en: {gone} min in · time left not known</comment>
   </data>
   <data name="RaidTimeNoLength" xml:space="preserve">
     <value>{gone} min im Raid</value>
-    <comment>en: {gone} min in</comment>
+    <comment>en: {gone} min in</comment>
   </data>
   <data name="RaidTimeLeft" xml:space="preserve">
     <value>{gone} min im Raid · {left} min übrig</value>
-    <comment>en: {gone} min in · {left} min left</comment>
+    <comment>en: {gone} min in · {left} min left</comment>
   </data>
   <data name="RaidTimeOver" xml:space="preserve">
     <value>{gone} min im Raid · über {length} min Raid-Dauer</value>
-    <comment>en: {gone} min in · past the raid's {length} min</comment>
+    <comment>en: {gone} min in · past the raid's {length} min</comment>
   </data>
   <data name="StatusNoPosition" xml:space="preserve">
     <value>Noch keine Position · Screenshot mit {keys}</value>
@@ -214,15 +214,15 @@
   </data>
   <data name="OperationalMinutesLeft" xml:space="preserve">
     <value>noch {count} min</value>
-    <comment>en: {count} min left</comment>
+    <comment>en: {count} min left</comment>
   </data>
   <data name="OperationalHoursLeft" xml:space="preserve">
     <value>noch {count} h</value>
-    <comment>en: {count} h left</comment>
+    <comment>en: {count} h left</comment>
   </data>
   <data name="OperationalDaysLeft" xml:space="preserve">
     <value>{count, plural, one {noch # Tag} other {noch # Tage}}</value>
-    <comment>en: {count} d left</comment>
+    <comment>en: {count} d left</comment>
   </data>
   <data name="OperationalReadJustNow" xml:space="preserve">
     <value>gerade gelesen</value>
@@ -230,19 +230,19 @@
   </data>
   <data name="OperationalReadMinutesAgo" xml:space="preserve">
     <value>vor {count} min gelesen</value>
-    <comment>en: read {count} min ago</comment>
+    <comment>en: read {count} min ago</comment>
   </data>
   <data name="OperationalReadHoursAgo" xml:space="preserve">
     <value>vor {count} h gelesen</value>
-    <comment>en: read {count} h ago</comment>
+    <comment>en: read {count} h ago</comment>
   </data>
   <data name="OperationalReadDaysAgo" xml:space="preserve">
-    <value>{count, plural, one {vor # Tag gelesen} other {vor # Tagen gelesen}}</value>
-    <comment>en: read {count} d ago</comment>
+    <value>{count, plural, one {vor # Tag gelesen} other {vor # Tagen gelesen}}</value>
+    <comment>en: read {count} d ago</comment>
   </data>
   <data name="OperationalEndsIn" xml:space="preserve">
     <value>endet in {count} min</value>
-    <comment>en: ends in {count} min</comment>
+    <comment>en: ends in {count} min</comment>
   </data>
   <data name="OperationalEnded" xml:space="preserve">
     <value>{count, plural, one {# endete um {time}. Mach einen Screenshot deiner Dailies und Weeklies für die neue.} other {# endeten, die letzte um {time}. Mach einen Screenshot deiner Dailies und Weeklies für die neuen.}}</value>
@@ -251,6 +251,10 @@
   <data name="OperationalCueEyebrow" xml:space="preserve">
     <value>AUS DEINEM SCREENSHOT</value>
     <comment>en: FROM YOUR SCREENSHOT</comment>
+  </data>
+  <data name="OperationalCueEnded" xml:space="preserve">
+    <value>abgelaufen</value>
+    <comment>en: ended</comment>
   </data>
   <data name="OperationalCueTitle" xml:space="preserve">
     <value>{count, plural, one {# DAILY ODER WEEKLY} other {# DAILIES UND WEEKLIES}}</value>

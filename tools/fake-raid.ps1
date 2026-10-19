@@ -15,9 +15,10 @@ param(
   [string] $ShowQuest,
   # A trader's name (Ragman): their focus held in the strip under the MAP list, as a click on the portrait holds it.
   [string] $TraderFocus,
-  # Made-up operational tasks (1 to 5), as a screenshot of the Tasks screen would give them once the data is there: a
+  # Made-up operational tasks (1 to 8), as a screenshot of the Tasks screen would give them once the data is there: a
   # survival on Streets ending in 25 min, a kill on Customs, a weekly's hand-overs on any map, a kill without a countdown
-  # on Shoreline, a line of no known kind on Woods (docs/DESIGN.md §4, *Operational tasks*). The file isn't written.
+  # on Shoreline, a line of no known kind on Woods, then a survival on Interchange, a kill on Lighthouse and a weekly's
+  # kill on Reserve (7 or 8: the cue's last place says "+N"; docs/DESIGN.md §4, *Operational tasks*). The file isn't written.
   [int] $Operational,
   # With -Operational: one more task that runs out at once, for the "1 ended at …" line.
   [switch] $OperationalEnded,

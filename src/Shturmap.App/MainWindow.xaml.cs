@@ -161,6 +161,11 @@ public sealed partial class MainWindow : Window
         });
         MapNotes.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         MapFoot.SizeChanged += (_, _) => PlaceWhatsNewPlate();
+        // The cue of the tasks read keeps to its room as a notice comes or goes and as the window's size changes
+        // (MainWindow.TasksCue, FitTasksCue).
+        MapNotes.SizeChanged += (_, _) => RefitTasksCue();
+        MapFoot.SizeChanged += (_, _) => RefitTasksCue();
+        Map.SizeChanged += (_, _) => RefitTasksCue();
         WhatsNewPlateBox.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         WhatsNewPlate.SizeChanged += (_, _) => PlaceWhatsNewPlate();
         WhatsNewPlateStack.SizeChanged += (_, _) => PlaceWhatsNewPlate();
@@ -202,6 +207,7 @@ public sealed partial class MainWindow : Window
         _focusClear.Stop();
         _updateTimer?.Stop();
         Map.StopDrawing();
+        StopTasksCue();
     }
 
     // Facing-relative directions are only true briefly after a fix; past this they turn into map directions.
@@ -1881,11 +1887,12 @@ public sealed partial class MainWindow : Window
         _cueTimer?.Stop();
         if (Replays(cue))
             PlayReplay(cue.Replay!, how);
-        // Laid out with its title as it ends, the rows of the tasks read take the room the map's column leaves them.
+        // Laid out with its title as it ends, the cue of the tasks read keeps to its room, as the roll call's
+        // (MainWindow.TasksCue, FitTasksCue).
         if (cue.Kind == CueKind.TasksRead)
         {
             CueTitle.Text = title;
-            FitTasksRows();
+            FitTasksCue();
         }
         // Laid out with its title as it ends, each row's triangle is handed to the map where it stands. An example list
         // may name fewer extracts to fit its room (MainWindow.RollCall, FitRollCue): the title counts what it names.

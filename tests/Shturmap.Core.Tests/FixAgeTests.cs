@@ -9,21 +9,21 @@ namespace Shturmap.Core.Tests;
 public class FixAgeTests
 {
     [Theory]
-    [InlineData(0, "0 s")]
-    [InlineData(44, "44 s")]
-    [InlineData(59, "59 s")]
-    [InlineData(60, "1 min")]
-    [InlineData(119, "1 min")]
-    [InlineData(9 * 60 + 30, "9 min")]
-    [InlineData(59 * 60 + 59, "59 min")]
-    [InlineData(3600, "1 h")]
-    [InlineData(2 * 3600 + 1800, "2 h")]
+    [InlineData(0, "0\u00A0s")]
+    [InlineData(44, "44\u00A0s")]
+    [InlineData(59, "59\u00A0s")]
+    [InlineData(60, "1\u00A0min")]
+    [InlineData(119, "1\u00A0min")]
+    [InlineData(9 * 60 + 30, "9\u00A0min")]
+    [InlineData(59 * 60 + 59, "59\u00A0min")]
+    [InlineData(3600, "1\u00A0h")]
+    [InlineData(2 * 3600 + 1800, "2\u00A0h")]
     public void The_age_is_in_whole_units(int seconds, string text) =>
         Assert.Equal(text, FixAge.Text(TimeSpan.FromSeconds(seconds)));
 
     [Fact]
     public void A_clock_running_backwards_never_gives_a_negative_age() =>
-        Assert.Equal("0 s", FixAge.Text(TimeSpan.FromSeconds(-3)));
+        Assert.Equal("0\u00A0s", FixAge.Text(TimeSpan.FromSeconds(-3)));
 
     [Fact]
     public void While_fresh_the_raid_card_says_nothing()
@@ -33,11 +33,11 @@ public class FixAgeTests
     }
 
     [Theory]
-    [InlineData(45, "Distances from your screenshot 45 s ago")]
-    [InlineData(59, "Distances from your screenshot 59 s ago")]
-    [InlineData(61, "Distances from your screenshot 1 min ago")]
-    [InlineData(9 * 60 + 5, "Distances from your screenshot 9 min ago")]
-    [InlineData(3 * 3600, "Distances from your screenshot 3 h ago")]
+    [InlineData(45, "Distances from your screenshot 45\u00A0s ago")]
+    [InlineData(59, "Distances from your screenshot 59\u00A0s ago")]
+    [InlineData(61, "Distances from your screenshot 1\u00A0min ago")]
+    [InlineData(9 * 60 + 5, "Distances from your screenshot 9\u00A0min ago")]
+    [InlineData(3 * 3600, "Distances from your screenshot 3\u00A0h ago")]
     public void Past_that_it_says_how_old_the_screenshot_is(int seconds, string note) =>
         Assert.Equal(note, FixAge.Note(TimeSpan.FromSeconds(seconds), "PrtSc"));
 
