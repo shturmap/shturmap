@@ -70,13 +70,14 @@ public sealed partial class GameSession
     }
 
     // Under the gate: a desk reading taken into the mode's page (a newer reading replaces the regions it shows and keeps
-    // the others; DeskLedger), and the prices asked for when the item file is over ten minutes old.
-    private void TakeDesk(DeskReading reading, double ms)
+    // the others; DeskLedger), and the prices asked for when the item file is over ten minutes old. What the page did, for
+    // the readings log; null when the screen was none of the desk's.
+    private DeskChange? TakeDesk(DeskReading reading, double ms)
     {
         if (reading.Page is not { } page)
         {
             Study.Game("desk.screen", ("screen", reading.Screen), ("ms", ms));
-            return;
+            return null;
         }
         var change = _desk.Apply(_mode, page);
         _deskChange = change;
@@ -110,6 +111,7 @@ public sealed partial class GameSession
             AppLog.Info($"Desk page dropped a window attached to nothing, not shown by {DeskLedger.MissedToDrop} readings in a row");
         SaveDeskIfDirty();
         RefreshDeskPrices();
+        return change;
     }
 
     // Under the gate. The desk's prices come per reading (docs/DESIGN.md §3, "The stash desk's prices come per reading"):

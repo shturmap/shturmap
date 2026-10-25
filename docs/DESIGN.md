@@ -147,7 +147,10 @@ becomes a mark on their rows (§4, "What you have"). The reading is kept as narr
   keys, 43 of 43 medical items and 51 of 55 items of a stash page right, none wrong.
 - **What is kept:** per item id, the count seen (at least), how many of those carried the found-in-raid mark, when,
   and from which source, in `stash.json` in the data folder (§8, "The stash file"). No pixel, no path, no word that
-  didn't match; the study log counts cells, never names. The file never goes into a report.
+  didn't match; the study log counts cells, never names. The file never goes into a report. **The readings log** keeps
+  more, for troubleshooting a reading afterwards (owner, 2026-10-25): per menu screenshot read, a text file named after
+  it with the words read on its cells (a label that matched nothing too) and what they matched, the last 50 kept (§8,
+  "Developer aids", *Readings log*); no pixel there either, never in a report.
 - **How:** as the list's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them. With "Delete
   screenshots after reading" ticked it goes once read, as a raid screenshot does (below).
@@ -251,7 +254,8 @@ operational task, added to the set or updating it, and the list's countdowns ref
   location and status and the objectives' words and counts; the study log counts rows, entries and refreshes, never
   names; the app log says how many
   ("Operational task read from a trader's screen: 1 new, 2 countdowns refreshed, …"); the file never goes into a
-  report.
+  report. The readings log (above) has each row and entry as read, with its bands' votes, and what the set did with
+  them.
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them; deleted after
   reading when "Delete screenshots after reading" is ticked.
@@ -422,7 +426,8 @@ day, for the in-raid glance: "Which pictures", below):
   the item icons are, §3) at the positions read, never from the screenshot. A reading keeps the page in hand (each
   cell's item or candidates, position, footprint, count, condition and found-in-raid mark, and a "?" cell's pick) until
   a newer reading changes it (§4, "Screen anatomy", *The stash desk*); never a register of the stash over time (§1).
-  Per game mode, in `desk.json` in the data folder (§8, "The desk file").
+  Per game mode, in `desk.json` in the data folder (§8, "The desk file"). The readings log (above) has the layout in
+  pixels and each cell's label as the recognition read it, its fit and what it matched, and what the page did.
 - **How:** as the stash's: the file opened read-only, shared, whole; nothing written to the screenshots folder; no
   screen captured; a screenshot the player took with their own key press, never one taken for them.
 - **The player's say:** the menu screenshots' one tick, its words widened for the desk (2026-10-19, after step B part
@@ -4512,6 +4517,14 @@ Written as a temporary file and one move, after each change; one that can't be r
 `desk.json.unreadable` and the pages start over (the next screenshot brings them back). Never in a report or the
 diagnostics. Deleted with the data folder.
 
+**The readings log** (`readings` in the data folder; owner, 2026-10-25; `ReadingLog`): one plain text file per menu
+screenshot read, named after it, its file name and `.txt` (`2026-01-01[15-40] (1).png.txt`), written again when the
+same screenshot is read again; the last 50 kept by the time written, the oldest deleted as a new one is written. In every
+build, in its own data folder (the release's `%LOCALAPPDATA%\Shturmap\readings`, every other build's
+`%LOCALAPPDATA%\Shturmap-dev\readings`). What it holds and never holds: "Developer aids", *Readings log*. Never in a
+report or the diagnostics (`SafetyTests` holds the reporting code and the diagnostics to never naming it); "Delete
+screenshots after reading" leaves it. Deleted with the data folder.
+
 **The notes file** (`notes.json` in the data folder; owner, 2026-10-15; `QuestNotes`): the notes the player writes on
 a quest's card, one set per quest and game mode (PvE and PvP apart, as ticks and picks are), each with when it was
 written. Add and delete only, no editing: the time always says when the words were written. A note is trimmed, keeps
@@ -4756,6 +4769,34 @@ drawing" the same way, on a made-up raid, `GlideFramesTests` the symbols on lead
 and in a double-click's and +'s steps, `WheelZoomTests` the notches' and the steps' zoom, and `ExitCallOutFramesTests`
 the roll call's flights; the ring's and the roll call's tests read the names' face too.
 
+**Readings log** (owner, 2026-10-25, after testing the dev build: "Can't you write out logs of what was detected and link
+it to the screenshot so we can troubleshoot it afterwards?"; `ReadingLog`, `GameSession.Stash`). Every menu screenshot
+read leaves a plain text file named after the screenshot in the data folder's `readings` ("Data folders"), so a reading
+that went wrong can be looked into afterwards, beside the screenshot where it was kept. One fact a line, in the order the
+reading went: the head (the screenshot's name and time, Shturmap's version and build as the app log's first line says
+them, the picture's size, the game mode, the menu screenshots' tick and "Delete screenshots after reading"); the Tasks
+screen told, each row or entry with its cells as read (name, location, status, time left and progress as read and as
+taken, and by the page's words or by how many of the 14 ways), an expanded row's or a trader's tab's objectives, each
+band's votes as the reading heard them, and what the operational set did (rows taken, locations on no map the data
+knows, countdowns the checks didn't take, a trader's task added or updated, countdowns refreshed, a screenshot older
+than the last table left; the set after it); What You Have's items; the desk's screen and timings, its layout in pixels
+(the loadout's slot boxes, each region's slot box, compartments and a window's area, the stash's grid, the windows and
+toasts, under which nothing is read, the frames found and those under no region, the layout's notes), each cell's place
+in units and pixels, its label as the recognition read it, its fit and what it matched (an item's name and id, "one of
+N" with their names, or nothing: a label that fits nothing, none read, the footprint contradicting the label), its count
+as read, condition and found-in-raid mark, each region's cells unread and covered; and what the page in hand did
+(changed, read too blank, kept in part and why, a window dropped, each window attached or not, the regions now). A
+picture that couldn't be opened whole, or that showed none of the screens, gets a short file saying so. Never a pixel;
+of the right third only what the tasks' reading takes; no task's text, no reward; never the player's name or money
+(never read); and a word the layout's notes quote that is no window's title on the page (one refused as a title, read
+anywhere left of the stash pane) is written as its length only ("a word of 9 characters"). In every build, as the
+readings are (the study log is the developer builds' alone): the menu screenshots' note, help, the README and
+PRIVACY.md say it is kept. The readers hand what they saw on the way to the session for it (`MenuReading.Seen`: the
+picture's size, the Tasks screen told, the bands' votes, the desk's look), and the session adds what it did; the file is
+written after the readings are taken, outside the session's gate. `shturmap-cli desk --why` and `tasks --bands` print
+the same facts for a folder of pictures without the session, in their own words: sharing the writer's lines is a later
+change.
+
 ### How the parts work
 
 **Finding the game.** Candidates come from the `EscapeFromTarkov` uninstall key (HKLM 32/64, HKCU), the
@@ -4792,7 +4833,8 @@ whole catalogue at 0.9 (`DeskMatch`, `DeskData.Catalogue`), about 2 s a 1440p pi
 ledger (`GameSession.Desk`: `DeskLedger.Apply`, `desk.json`, the window's attachment; a region read too blank keeps the
 page's, one read in part keeps the page's rest, cut at the column's foot, under a window or not in view, and a window
 attached to nothing that three readings didn't show leaves the page, and the app log says each; 2026-10-25), and a reading over ten minutes after the item file was fetched asks for it again
-(`RefreshDeskPrices`; an hour until 2026-10-19). A snapshot carries the mode's page with its values
+(`RefreshDeskPrices`; an hour until 2026-10-19). Then, outside the gate, the readings log's file (`ReadingLog`;
+"Developer aids", *Readings log*; 2026-10-25). A snapshot carries the mode's page with its values
 (`SessionSnapshot.Desk`: `DeskSheet.Of` over the item file's facts, `DeskData.Flea`, the keep levels `DeskData.Keep`
 from the quests' states and the hideout), made again only when the page, the prices or the quests change. A snapshot (`SessionSnapshot.Operational`, `OperationalPlans`) carries the mode's tasks with their
 maps as Plan counts them and the hand-overs' items, and the window makes the rows (`Rules.OperationalRail`,
@@ -5148,8 +5190,8 @@ screenshots after reading", "Read the extract list from screenshots" and "Read y
 screenshots" are on (§2; the two readings with the recognition's language); the study log
 on or off (developer builds); and today's last 200 app-log lines. Paths are masked, every 24-digit id (profiles, accounts, quests) is
 cut to `<id>`, and no quest names or lists go along (`Redact`), nor anything of the stash file, the operational tasks
-file or the notes file (the app log's lines on the operational readings, a table's and since 2026-10-25 a trader's
-task view's, count rows, entries and refreshes and never name a task).
+file, the notes file or the readings log (the app log's lines on the operational readings, a table's and since
+2026-10-25 a trader's task view's, count rows, entries and refreshes and never name a task).
 Copying sends nothing; a report carries the same text when the player keeps "Include diagnostics", shown first.
 
 **Reports** (owner, 2026-10-03: "as easy as possible … one coherent easy to use thing, otherwise people won't
@@ -5192,7 +5234,7 @@ every issue goes through it, and the app's report is offered beside it.
   sent at the next start without asking again, unless the setting is Never by then: choosing Never takes back an
   earlier Send too, at once and at the next start, and such a record stays on the PC (2026-10-04: approved records
   went out before the setting was read). A sent one is deleted; records are kept 30 days, twenty at most.
-  Never sent: memory dumps, screenshots, game files, ids, quest lists.
+  Never sent: memory dumps, screenshots, game files, ids, quest lists, the readings log.
 - **How it goes out.** Sentry (Functional Software, Inc.), EU data region. Only the SDK's event types and envelope
   format are used: `ReportEnvelopes` builds the envelope from what the player saw and `ReportSender` posts it, so
   nothing is added on the way (no machine name, installation id, IP, breadcrumbs, sessions or tracing) and the
