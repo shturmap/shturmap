@@ -189,7 +189,7 @@ operational task, added to the set or updating it, and the list's countdowns ref
   edge to the picture's right edge, the height of the task's name with half a unit above and below), for the task's
   location and status word at the header's right end ("Shoreline", "active!"; "Any location" as on the table, seen on
   a trader's tab); and **one per objective line** (owner, 2026-10-25, the decision's "its objectives with their
-  counts"; the coordinator's first "the header line's band alone" was its own limit, not the owner's): the objectives
+  counts"): the objectives
   stand centred across the screen in the bar under "Objective(s)" and above "Rewards" (or the game's menu bar at the
   picture's foot where the task shows no rewards), each line's words cut at the left part's edge and its count at 0.76
   of the width (measured on the owner's screenshots of 2026-10-19 at 1440p); each line the left part's words show is

@@ -51,7 +51,7 @@ screenshotted from the traders quest accept view, it is not added to shturmap."
    name (the header), its location (the header's right end), its status word, its objectives with their counts, and the
    countdown of the list entry of that name, read by the same vote as the table's bands; progress from the counts. Never
    the task's text (DESIGN.md §3), the rewards, the traders' row with the player's name and money; of the picture's right
-   third, the header line's band alone. The one task is added or updated by name and map; the mode's other tasks stay; a
+   third, the header line's band and one band per objective line (their counts stand there). The one task is added or updated by name and map; the mode's other tasks stay; a
    Tasks table screenshot later replaces the set, as now. The same cue, glow and notice. Two details, both taken: a task
    screenshotted before ACCEPT counts (the status isn't "active" yet; the countdown runs either way); the other
    operational tasks in the trader's list refresh the countdowns of tasks already kept, by name, never adding one.
@@ -85,8 +85,7 @@ diagnostics) and §9.
   line's band from 0.665 of the width to the picture's edge, read once at its size: the location, then the status word
   apart from it (a lone run is the location unless it reads "active"). Two entries of the header's name: the task
   without a countdown.
-- **The objectives** (the coordinator, the same day: the decision's "its objectives with their counts" is the owner's,
-  "the header line's band alone" was the coordinator's own limit; `TaskTable.ObjectiveBands`, `ObjectiveOf`,
+- **The objectives** (the decision's "its objectives with their counts"; `TaskTable.ObjectiveBands`, `ObjectiveOf`,
   `CountOf`): they stand centred across the screen in a bar under "Objective(s)" (776 to 2522 px at 1440p), a line's
   words over the left part's edge (the daily's "Survive on the location" from 1542 to 1820), every count in the right
   third (1938 to 1980). Each line the left part's words show under the label and above "Rewards" (or the menu bar at the
@@ -155,8 +154,6 @@ diagnostics) and §9.
 
 **Open (step 3).**
 
-- **For the owner, to confirm:** the decision above says "of the picture's right third, the header line's band alone";
-  the objective bands go past that on the coordinator's word that it was the coordinator's limit and not the owner's.
 - The weekly's count 0/7 on its trader's tab reads on one vote of 14 (seven ways read "øn"): right here, thin.
 - A list entry's orange countdown (not the selected one's) reads in no way: a refresh works where it reads (the
   selected entries' white ones did, 4 of 4).
