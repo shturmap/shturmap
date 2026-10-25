@@ -94,7 +94,10 @@ reports waiting to be sent, crash records and the download cache) is in %LOCALAP
 in "stash.json" there, as item ids with a count and a date: no names, no pictures. "Not any more" on an item's card
 takes one out. The stash desk's page is in "desk.json" there: item ids with where each lay, the counts, condition and
 found-in-raid marks, the titles of open container windows as the game printed them, and the screenshot's time; no
-pictures, and a newer screenshot replaces what it shows. The notes you write on quest cards are in "notes.json" there,
+pictures, and a newer screenshot replaces what it shows. What it read from each of your last 50 menu screenshots is in
+its "readings" folder, a text file per screenshot named after it (the words read on the item cells and the Tasks screen,
+what they matched and where on the picture they stood; no pictures), so that a reading that went wrong can be looked
+into; it is never sent, not even with a report. The notes you write on quest cards are in "notes.json" there,
 in your words, and are never sent, not even with a report; the × beside a note deletes it. Crash records are kept
 for 30 days (in its crashes folder), and a report that couldn't be sent waits in its outbox folder until it has gone.
 A report the service refused stays there as a ".refused.txt" file, with its text and contact, and isn't sent again:
