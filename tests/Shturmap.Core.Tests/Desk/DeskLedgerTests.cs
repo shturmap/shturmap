@@ -355,6 +355,29 @@ public sealed class DeskLedgerTests : IDisposable
         Assert.Equal((5, 4), (first.Page.Region("backpack")!.Cols, first.Page.Region("backpack")!.Rows));
     }
 
+    // The owner's second test of 2026-10-25, picture 17: the Beta 2 backpack (five by five, read in the backpack's grid in 14,
+    // its rows below the Beta 2 window) was taken to the stash; the backpack's four rows in view read empty, and the page
+    // kept the Beta 2 in them, as it lay in part below the foot. A page's cell the rows read overlap is what the reading saw
+    // there; one wholly below them stays.
+    [Fact]
+    public void A_pages_cell_the_rows_read_overlap_gives_way_to_them()
+    {
+        var ledger = new DeskLedger();
+        var beta = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 6, [Slot("backpack", Zhuk), Cell(0, 0, 5, 5, Wallet), Cell(2, 5, 1, 1, Salewa)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 6)],
+        };
+        ledger.Apply(GameMode.Pve, Page(0, beta));
+        var emptied = new DeskRegion("backpack", DeskRegionKind.Backpack, 5, 4, [Slot("backpack", Zhuk)])
+        {
+            Parts = [new DeskRect(0, 0, 5, 4)],
+            Partial = true,
+        };
+        var backpack = ledger.Apply(GameMode.Pve, Page(1, emptied)).Page.Region("backpack")!;
+        Assert.Equal([Salewa], backpack.Cells.Where(c => !c.IsSlot).Select(c => c.ItemId));
+        Assert.Equal((5, 6), (backpack.Cols, backpack.Rows));
+    }
+
     // ---- what leaves the page (owner, 2026-10-25) ----
 
     // The owner's page of 2026-10-19 kept four windows made of misread headings and the POUCH's grid, which no reading
@@ -402,6 +425,28 @@ public sealed class DeskLedgerTests : IDisposable
               { "key": "window:", "kind": "window", "cols": 1, "rows": 2, "cells": [], "readAt": "2026-01-01T15:40:00+01:00" } ] } } }
             """);
         Assert.Null(DeskLedger.Load(path).Page(GameMode.Pve)!.Region("window:"));
+    }
+
+    // The owner's second test of 2026-10-25, picture 14: a pistol's rounds "0/17" in the stash, read "Ø/17", made a window of one
+    // cell of nothing. A window with no cell read whose title names no container of the catalogue is never kept, read or
+    // loaded; one whose title names a container stays (its window may lie under another).
+    [Fact]
+    public void A_window_with_no_cell_read_whose_title_names_nothing_is_never_kept()
+    {
+        var ledger = new DeskLedger();
+        var rounds = Window("Ø/17", [], Cell(0, 0, 1, 2));
+        var covered = Window("Keys", [Wallet]);
+        var change = ledger.Apply(GameMode.Pve, Page(0, Stash(Cell(4, 4, 2, 2, Wallet) with { Holds = DeskHolds.Contents }), rounds, covered));
+        Assert.Null(change.Page.Region(rounds.Key));
+        Assert.NotNull(change.Page.Region("window:keys"));
+
+        var path = Path.Combine(_root, "desk.json");
+        File.WriteAllText(path, """
+            { "version": 1, "modes": { "pve": { "readAt": "2026-01-01T15:40:00+01:00", "regions": [
+              { "key": "stash", "kind": "stash", "cols": 10, "rows": 12, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 1, "ids": [ "000000000000000000000203" ] } ], "readAt": "2026-01-01T15:40:00+01:00" },
+              { "key": "window:ø17", "kind": "window", "cols": 1, "rows": 2, "cells": [ { "i": 0, "j": 0, "w": 1, "h": 2, "ids": [] } ], "title": "Ø/17", "readAt": "2026-01-01T15:40:00+01:00" } ] } } }
+            """);
+        Assert.Null(DeskLedger.Load(path).Page(GameMode.Pve)!.Region("window:ø17"));
     }
 
     // Each region keeps when the screenshot that last showed it was taken (for its head, "BACKPACK · 15:40") and how many

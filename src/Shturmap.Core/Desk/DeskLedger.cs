@@ -80,9 +80,13 @@ public sealed class DeskLedger
     /// 2026-10-25).</summary>
     public const int MissedToDrop = 3;
 
-    /// <summary>A window no reading should have made, never kept (owner, 2026-10-25): no cell and no title.</summary>
+    /// <summary>A window no reading should have made, never kept (owner, 2026-10-25): no cell read (no item, no "one of N")
+    /// and no title that names a container of the catalogue (owner's second test, 2026-10-25: a pistol's rounds "0/17" in
+    /// the stash, read "Ø/17", made a window of one cell of nothing; until then only a window of no cell and no
+    /// title).</summary>
     public static bool Junk(DeskRegion region) =>
-        region.Kind == DeskRegionKind.ContainerWindow && region.Cells.Count == 0 && string.IsNullOrWhiteSpace(region.Title);
+        region.Kind == DeskRegionKind.ContainerWindow && region.ReadCells == 0 &&
+        (string.IsNullOrWhiteSpace(region.Title) || region.TitleIds.Count == 0);
 
     // A window attached to nothing (no container of its name on the page) that enough readings in a row didn't show.
     private static bool Gone(DeskRegion region) =>
@@ -109,9 +113,12 @@ public sealed class DeskLedger
         var keepSlot = pageSlot is not null && (readSlot is null || (readSlot.Ids.Count == 0 && pageSlot.Ids.Count > 0));
         if (keepSlot && readSlot is not null)
             region = region with { Cells = region.Cells.Where(c => !c.IsSlot).ToList() };
+        // A page's cell in part in the compartments read is what the reading saw there, unless a window covered it there
+        // (owner's second test, 2026-10-25: the Beta 2 backpack, five by five, stood on in the backpack after the four
+        // rows in view read empty; until then only a cell wholly in them gave way).
         var kept = before.Cells.Where(c => c.IsSlot
             ? keepSlot
-            : !region.Cells.Any(n => !n.IsSlot && n.Rect.Overlaps(c.Rect)) && (!view.Any(p => p.Contains(c.Rect)) || region.Covered.Any(r => r.Overlaps(c.Rect)))).ToList();
+            : !region.Cells.Any(n => !n.IsSlot && n.Rect.Overlaps(c.Rect)) && (!view.Any(p => p.Overlaps(c.Rect)) || region.Covered.Any(r => r.Overlaps(c.Rect)))).ToList();
         var parts = view.Select(p => before.Parts.FirstOrDefault(q => q.I == p.I && q.J == p.J && q.W == p.W && q.H > p.H) is { W: > 0 } whole ? whole : p).ToList();
         parts.AddRange(before.Parts.Where(q => !parts.Any(p => p.Overlaps(q))));
         var cols = parts.Count > 0 ? Math.Max(region.Cols, parts.Max(p => p.I + p.W)) : Math.Max(region.Cols, before.Cols);
