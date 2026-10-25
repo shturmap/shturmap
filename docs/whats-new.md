@@ -28,7 +28,7 @@ translated. A version the translation lacks, or whose lines aren't this section'
 ## 0.7.0 · Kaomoji
 
 - tour:2 · The stash desk · Screenshot your stash or gear: each item's price, flea or trader, and what to keep. DESK, top left.
-- tour:1 · Dailies and weeklies · Screenshot the Tasks screen (English game): your dailies and weeklies, time left, on their maps.
+- tour:1 · Dailies and weeklies · Screenshot the Tasks screen or a trader's TASKS tab (English game): dailies and weeklies on maps.
 - tour:7 · Text as large as you need · Windows' text size now reaches the map too; Text size in settings adds LARGER and LARGEST.
 - tour:6 · Loot at a glance · In a raid, screenshot a body or a container: its items' prices, laid out as the game shows them.
 
