@@ -360,9 +360,13 @@
     <value>AN DIR {onYou} · STASH {stash} · BEHALTEN {now} · {next} · {later}</value>
     <comment>en: ON YOU {onYou} · STASH {stash} · KEEP {now} · {next} · {later}</comment>
   </data>
-  <data name="DeskUnchanged" xml:space="preserve">
-    <value>UNVERÄNDERT</value>
-    <comment>en: UNCHANGED</comment>
+  <data name="DeskNotRead" xml:space="preserve">
+    <value>NOCH IN KEINEM SCREENSHOT</value>
+    <comment>en: NOT IN A SCREENSHOT YET</comment>
+  </data>
+  <data name="DeskHeadSince" xml:space="preserve">
+    <value>{head} · {time}</value>
+    <comment>en: {head} · {time}</comment>
   </data>
   <data name="DeskSlotEarpiece" xml:space="preserve">
     <value>HEADSET</value>

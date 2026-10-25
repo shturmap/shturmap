@@ -163,7 +163,8 @@ update band under MAP and its cue, UPDATE READY, from `trigger update` (the next
 raid and back; `operational-feedback` (2026-10-19) a Tasks screenshot's operational tasks read, from `tasks 5 ended`:
 the rows' glow and the notice, the ended line, the other maps' cards and the raid card's section; `desk` (2026-10-19)
 the stash desk's view from the made-up desk's readings (`desk 1`, `2`, `3`): the switch, the page's entry, a window's
-light and stem, the rail's card, the fold, PLAN and DESK, and a raid taking the window and giving it back; `glance`
+light and stem, the rail's card, the regions kept and dated (until 2026-10-25 the fold), PLAN and DESK, and a raid
+taking the window and giving it back; `glance`
 (2026-10-19) the in-raid glance's plate from the made-up readings (`glance 1`, a drawer; `glance 2`, a body): its look,
 a newer reading replacing it, its 6 s, a reading waiting for the roll call, and the raid's end taking it.
 

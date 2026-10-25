@@ -4,7 +4,7 @@ namespace Shturmap.Core.Tests.Desk;
 
 // PLAN | DESK (owner, 2026-10-19, from a panel: A1; docs/DESIGN.md §4, principle 3 and *The stash desk*, *Its place*): the
 // desk opens by itself with a reading in the menus, the switch and Esc leave it, a raid loading takes the window to Raid
-// and back to Plan after, and the page stays for next time (Rules.DeskSwitch, Rules.DeskFold).
+// and back to Plan after, and the page stays for next time (Rules.DeskSwitch, Rules.DeskPageRules.Entering).
 public class DeskSwitchTests
 {
     [Fact]
@@ -54,14 +54,12 @@ public class DeskSwitchTests
         Assert.True(DeskSwitch.IsNew(3, 2));
     }
 
-    // The desk keeps its page through a raid: a snapshot without a new reading leaves the fold as it was.
+    // The desk keeps its page through a raid: a snapshot without a new reading brings nothing in.
     [Fact]
-    public void The_page_and_its_fold_are_kept_through_a_raid()
+    public void The_page_is_kept_through_a_raid()
     {
         string[] keys = ["loadout", "backpack", "stash"];
-        var open = new HashSet<string> { "backpack" };
-        var after = DeskFold.Open(open, keys, new HashSet<string> { "backpack" }, first: false, newReading: false);
-        Assert.Equal(open, after);
+        Assert.Empty(DeskPageRules.Entering(keys, new HashSet<string> { "backpack" }, first: false, newReading: false));
     }
 
     // The map's keys leave the map behind the desk alone (PgUp and PgDn scroll the page); Esc and F1 stay the window's.

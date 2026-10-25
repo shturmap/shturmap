@@ -32,17 +32,20 @@ public sealed partial class DeskCellView : Grid
     /// nothing operates (the in-raid glance's plate).</param>
     /// <param name="inset">How far it stands in from its place: a grid of several compartments sets them apart
     /// (<see cref="DeskPageRules.Inset"/>).</param>
-    public DeskCellView(DeskRegion region, DeskCellSheet sheet, double size, DeskBoard? board, Thickness inset = default)
+    /// <param name="box">A slot's box on the desk (owner, 2026-10-25: LOADOUT as the game's slot grid, a container's slot
+    /// beside its grid): the cell drawn at the box's size, its art the item's grid image as the game shows it; without, a
+    /// grid's cell at its footprint or a strip's slot (<see cref="DeskCells.Width"/>).</param>
+    public DeskCellView(DeskRegion region, DeskCellSheet sheet, double size, DeskBoard? board, Thickness inset = default, Windows.Foundation.Size? box = null)
     {
         Region = region;
         Sheet = sheet;
         Size = size;
         _board = board;
         var cell = sheet.Cell;
-        Width = DeskCells.Width(cell, size) - inset.Left - inset.Right;
-        Height = DeskCells.Height(cell, size) - inset.Top - inset.Bottom;
+        Width = (box?.Width ?? DeskCells.Width(cell, size)) - inset.Left - inset.Right;
+        Height = (box?.Height ?? DeskCells.Height(cell, size)) - inset.Top - inset.Bottom;
         // The marks' room by the size the window's text size draws them at (QA pass of 2026-10-19, F6).
-        Marks = DeskCells.Of(sheet, size, TextScale.Drawn, inset.Left + inset.Right);
+        Marks = DeskCells.Of(sheet, size, TextScale.Drawn, inset.Left + inset.Right, box?.Width);
         Background = new SolidColorBrush(Colors.Transparent);
 
         Children.Add(new Border { Background = DeskBoard.Brush("CellBrush"), BorderBrush = DeskBoard.Brush("LineStrongBrush"), BorderThickness = new Thickness(1) });
@@ -51,7 +54,8 @@ public sealed partial class DeskCellView : Grid
         {
             var canvas = new Canvas { IsHitTestVisible = false, Opacity = Marks.ArtOpacity };
             Children.Add(canvas);
-            Load(canvas, art, grid: !cell.IsSlot);
+            // A slot's box shows the item as the game's box does, its grid image (a weapon's wide); a strip's slot its icon.
+            Load(canvas, art, grid: !cell.IsSlot || box is not null, boxed: box is not null);
         }
         if (Marks.Tint > 0)
             Children.Add(new Border { Background = Ink(Marks.Tint), Margin = new Thickness(1), IsHitTestVisible = false });
@@ -280,8 +284,10 @@ public sealed partial class DeskCellView : Grid
     };
 
     // The art: a grid cell's grid image (its footprint; turned a quarter where the cell stands the other way), a slot's
-    // item icon, fitted. The grid image falls back to the icon; with neither, the cell stays its ground.
-    private async void Load(Canvas canvas, string id, bool grid)
+    // item icon, fitted. The grid image falls back to the icon; with neither, the cell stays its ground. In a slot's box
+    // (boxed) the grid image is never turned and stands at the box's top, so the figure's band covers the short name it
+    // prints there (a gun in the weapon's wide box, a pistol in the holster's).
+    private async void Load(Canvas canvas, string id, bool grid, bool boxed = false)
     {
         if (Picture.Art() is not { } art)
             return;
@@ -302,6 +308,15 @@ public sealed partial class DeskCellView : Grid
             Canvas.SetTop(image, 1);
             bitmap.ImageOpened += (_, _) =>
             {
+                if (boxed && bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0)
+                {
+                    // At the box's top, as wide or as tall as the box lets it be, centred across.
+                    var fit = Math.Min(w / bitmap.PixelWidth, h / bitmap.PixelHeight);
+                    image.Width = bitmap.PixelWidth * fit;
+                    image.Height = bitmap.PixelHeight * fit;
+                    Canvas.SetLeft(image, 1 + (w - image.Width) / 2);
+                    return;
+                }
                 // A cell turned in the game (a 2×1 standing as 1×2): its picture turns a quarter with it.
                 var wide = bitmap.PixelWidth > bitmap.PixelHeight * 1.2;
                 var tall = bitmap.PixelHeight > bitmap.PixelWidth * 1.2;

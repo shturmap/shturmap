@@ -13,23 +13,25 @@ namespace Shturmap.App.Controls;
 
 /// <summary>
 /// The stash desk's page, in the map's place out of a raid (owner, 2026-10-19, from a panel: A1 · B1 · C1 · D2, and the
-/// addendum: A(2) · B1 · C1a · Da; docs/DESIGN.md §4, "Screen anatomy", *The stash desk*): the head line over the page,
-/// then every region of the page in hand under its own head, in reading order, in one column, or where both fit in the
-/// game's two (the stash right), the cells as large as the desk's width and height let them be, 40 to 128 DIP
-/// (<see cref="DeskPageRules.Layout"/>; owner, 2026-10-19); regions a reading didn't change folded into one line
-/// ("UNCHANGED · POUCH ▸ · STASH ▸"). A click on a cell copies its list price, a right-click pins its card. Each cell mirrors the screenshot's, drawn from the catalogue's art with its figure, count, keep notch,
-/// change and tint (<see cref="DeskCells"/>); a container's open window stands under "ZHUK · IN THE BACKPACK", stemmed to
-/// its cell, and pointing at either lights the other. A reading's page comes in cell by cell, 50 ms apart, as the kit's
-/// pictures do, and its totals count up once; nothing else moves. Built in code, as the map's panels are: the page is
-/// rebuilt for each snapshot that changes it.
+/// addendum: A(2) · B1 · C1a · Da; owner, 2026-10-25, decision 1 of the layout round: A, the GEAR tab mirrored and fixed;
+/// docs/DESIGN.md §4, "Screen anatomy", *The stash desk*): the head line over the page, then the game's GEAR tab's shape
+/// in three columns, every region in its place whether or not the last screenshot showed it: LOADOUT as the game's slot
+/// grid, each box under its slot's name; TACTICAL RIG, POCKETS beside SPECIAL SLOTS, BACKPACK and POUCH, a container's
+/// slot box beside its grid; STASH; the windows in a fourth column or under the stash (<see cref="DeskPageRules.Layout"/>:
+/// the cell's size by the desk's size alone, 40 to 128 DIP). A region no reading showed is its head over a dashed frame
+/// ("NOT IN A SCREENSHOT YET"); one the last screenshot didn't show is drawn a step dimmer, its head saying since when
+/// ("BACKPACK · 23:08"). A click on a cell copies its list price, a right-click pins its card. Each cell mirrors the
+/// screenshot's, drawn from the catalogue's art with its figure, count, keep notch, change and tint (<see cref="DeskCells"/>);
+/// a container's open window stands under "ZHUK · IN THE BACKPACK", stemmed to its cell, and pointing at either lights the
+/// other. What a reading changed comes in cell by cell, 50 ms apart, as the kit's pictures do, and the totals count up
+/// once; nothing else moves. Built in code, as the map's panels are: the page is rebuilt for each snapshot that changes it.
+/// Until 2026-10-25 the regions a reading didn't change folded into one line and the page flowed into as many columns as
+/// filled the desk.
 /// </summary>
 public sealed partial class DeskBoard : Grid
 {
     /// <summary>The pointer came onto a cell: the rail shows its card.</summary>
     public event Action<DeskCellView>? CellPointed;
-
-    /// <summary>A name in a fold line was clicked: its region's key, to open until the next reading.</summary>
-    public event Action<string>? Unfolded;
 
     /// <summary>A cell was clicked: the rail copies its list price (*The click*).</summary>
     public event Action<DeskCellView>? CellClicked;
@@ -44,6 +46,9 @@ public sealed partial class DeskBoard : Grid
     private static readonly TimeSpan CountUpLength = TimeSpan.FromSeconds(0.9);
     private const double Gap = 18;
 
+    // The head line's margins: 14 DIP over it, 4 under it, the page's lane under that (DeskPageRules.Lane).
+    private const double HeadTop = 14, HeadBottom = 4;
+
     private readonly TextBlock _head;
     private readonly TextBlock _empty;
     private readonly ScrollViewer _scroll;
@@ -54,8 +59,10 @@ public sealed partial class DeskBoard : Grid
     private readonly List<DeskCellView> _cellViews = [];
     private readonly DispatcherQueueTimer _countUp;
 
+    // A container's grid and the slot box beside it: a stem leaving the grid on the box's side goes round the box.
+    private readonly Dictionary<Canvas, FrameworkElement> _boxes = [];
+
     private DeskView? _view;
-    private IReadOnlySet<string> _open = new HashSet<string>();
     private string _builtShape = "";
     private bool _stemsDue;
     private (double OnYou, double Stash) _from;
@@ -74,7 +81,7 @@ public sealed partial class DeskBoard : Grid
         {
             Style = (Style)Application.Current.Resources["StatusText"],
             Foreground = Brush("MutedBrush"),
-            Margin = new Thickness(Gap, 14, Gap, 10),
+            Margin = new Thickness(Gap, HeadTop, Gap, HeadBottom),
             TextWrapping = TextWrapping.Wrap,
         };
         Children.Add(_head);
@@ -88,7 +95,7 @@ public sealed partial class DeskBoard : Grid
         Children.Add(_empty);
         _columns = new Grid { ColumnSpacing = DeskPageRules.ColumnGap, HorizontalAlignment = HorizontalAlignment.Left };
         _stems = new Canvas { IsHitTestVisible = false };
-        _page = new Grid { Padding = new Thickness(Gap, 0, Gap, 24) };
+        _page = new Grid { Padding = new Thickness(Gap, DeskPageRules.Lane, Gap, DeskPageRules.PageBottom) };
         _page.Children.Add(_columns);
         _page.Children.Add(_stems);
         _scroll = new ScrollViewer
@@ -106,7 +113,7 @@ public sealed partial class DeskBoard : Grid
         {
             // The cell's size and the columns follow the desk's width and height (DeskPageRules): a new layout only when
             // they change.
-            if (_view is { } view && LayoutNow(view).Shape != _builtShape)
+            if (_view is { } view && LayoutNow(view, DateTimeOffset.Now).Shape != _builtShape)
                 Build(entering: null);
             _stemsDue = true;
         };
@@ -130,19 +137,18 @@ public sealed partial class DeskBoard : Grid
     /// XAML is down (SafetyTests.Timers).</summary>
     public void Stop() => _countUp.Stop();
 
-    /// <summary>The page on screen and its fold, for the layout check and the developer view.</summary>
+    /// <summary>The page on screen, for the layout check and the developer view.</summary>
     public DeskView? View => _view;
 
     /// <summary>
-    /// Shows a page with its fold. With <paramref name="motion"/>, the cells of <paramref name="entering"/>'s regions
-    /// come in, 50 ms apart, and the totals count up from what the head line said (from nothing on the page's first
-    /// showing); without, the page stands at once (animation effects off, a snapshot run).
+    /// Shows a page. With <paramref name="motion"/>, the cells of <paramref name="entering"/>'s regions come in, 50 ms
+    /// apart, and the totals count up from what the head line said (from nothing on the page's first showing); without,
+    /// the page stands at once (animation effects off, a snapshot run).
     /// </summary>
-    public void Show(DeskView? view, IReadOnlySet<string> open, IReadOnlySet<string> entering, bool motion)
+    public void Show(DeskView? view, IReadOnlySet<string> entering, bool motion)
     {
         var had = _view is not null;
         _view = view;
-        _open = open;
         var cells = Build(motion ? entering : null);
         if (view is null)
             return;
@@ -195,15 +201,20 @@ public sealed partial class DeskBoard : Grid
     // The page's room under the head line: the desk's height less the line and its margins (one line until it is laid
     // out); unknown before the desk is, so the width alone decides.
     private double DeskHeight() =>
-        ActualHeight > 0 ? ActualHeight - (_head.ActualHeight > 0 ? _head.ActualHeight : Math.Ceiling(TextScale.Drawn(12) * 1.4)) - 24 : double.PositiveInfinity;
+        ActualHeight > 0 ? ActualHeight - (_head.ActualHeight > 0 ? _head.ActualHeight : Math.Ceiling(TextScale.Drawn(12) * 1.4)) - HeadTop - HeadBottom
+        : double.PositiveInfinity;
 
-    // The cell's size and the columns for the page as it stands now, its fold too (DeskPageRules.Layout).
-    private DeskPageRules.Arrangement LayoutNow(DeskView view) =>
-        DeskPageRules.Layout(view.Sheet.Regions.Select(r => r.Region).ToList(), DeskWidth(), DeskHeight(), _open, TextScale.Drawn(12) / 12);
+    // The size text is drawn at against the size written, for the heads' and lines' heights.
+    private static double TextFactor => TextScale.Drawn(12) / 12;
+
+    // The cell's size and the columns for the page as it stands now (DeskPageRules.Layout), its heads as drawn.
+    private DeskPageRules.Arrangement LayoutNow(DeskView view, DateTimeOffset now) =>
+        DeskPageRules.Layout(view.Sheet.Regions.Select(r => r.Region).ToList(), DeskWidth(), DeskHeight(), TextFactor,
+            r => DeskPageRules.HeadOf(r, view.Sheet.Page, now));
 
     // ---- the page ----
 
-    // The page anew: its columns, regions, fold lines and cells; the cells of the entering regions, in reading order.
+    // The page anew: its columns, regions and placeholders, and cells; the cells of the entering regions, in reading order.
     private List<DeskCellView> Build(IReadOnlySet<string>? entering)
     {
         _columns.Children.Clear();
@@ -211,6 +222,7 @@ public sealed partial class DeskBoard : Grid
         _stems.Children.Clear();
         _links.Clear();
         _cellViews.Clear();
+        _boxes.Clear();
         var entered = new List<DeskCellView>();
         if (_view is not { Sheet.Regions.Count: > 0 } view)
         {
@@ -226,16 +238,15 @@ public sealed partial class DeskBoard : Grid
         _scroll.Visibility = Visibility.Visible;
         _empty.Visibility = Visibility.Collapsed;
 
-        var regions = view.Sheet.Regions;
-        var keys = regions.Select(r => r.Region.Key).ToList();
-        var arrangement = LayoutNow(view);
+        var now = DateTimeOffset.Now;
+        var page = view.Sheet.Page;
+        var sheets = view.Sheet.Regions.ToDictionary(r => r.Region.Key, StringComparer.Ordinal);
+        var arrangement = LayoutNow(view, now);
         var size = arrangement.Cell;
         _builtShape = arrangement.Shape;
-        // Each block in its column: the gear's down one and on into the next, the stash's of its own, what follows the stash
-        // in the shortest beside it (DeskPageRules.Arrange); each column as wide as its widest grid, never under its least.
-        var columns = arrangement.ColumnWidths.Count;
-        var panels = new StackPanel[columns];
-        for (var c = 0; c < columns; c++)
+        // The columns: LOADOUT, the middle column, the stash, the windows' where they stand beside it (DeskPageRules.Arrange).
+        var panels = new StackPanel[arrangement.ColumnWidths.Count];
+        for (var c = 0; c < panels.Length; c++)
         {
             _columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(arrangement.ColumnWidths[c]) });
             panels[c] = new StackPanel();
@@ -244,51 +255,45 @@ public sealed partial class DeskBoard : Grid
         }
 
         var windows = new List<(DeskRegion Window, FrameworkElement Head, FrameworkElement Panel, Border Light)>();
-        StackPanel? row = null;
-        DeskRegionKind? before = null;
-        StackPanel? last = null;
+        StackPanel? pair = null;
         for (var b = 0; b < arrangement.Blocks.Count; b++)
         {
             var block = arrangement.Blocks[b];
-            var first = block switch
-            {
-                DeskBlock.Region r => keys.IndexOf(r.Key),
-                DeskBlock.Fold f => keys.IndexOf(f.Keys[0]),
-                _ => 0,
-            };
-            var panel = panels[arrangement.Columns[b]];
-            if (!ReferenceEquals(panel, last))
-            {
-                row = null;
-                before = null;
-                last = panel;
-            }
+            var column = arrangement.Columns[b];
+            var panel = panels[column];
             var top = panel.Children.Count == 0 ? 0 : DeskPageRules.BlockGap;
-            if (block is DeskBlock.Fold fold)
+            // POCKETS and SPECIAL SLOTS on one row, as the game has them, each under its own head and as wide as its grid.
+            var paired = block.Kind is DeskRegionKind.Pockets or DeskRegionKind.SpecialSlots;
+            var width = paired ? DeskPageRules.BlockWidth(block, size) : arrangement.ColumnWidths[column];
+            FrameworkElement element;
+            if (block.Region is { } region && sheets.TryGetValue(region.Key, out var sheet))
             {
-                row = null;
-                before = null;
-                panel.Children.Add(FoldLine(fold, regions, top, size));
-                continue;
+                var (made, head, light) = RegionBlock(sheet, page, now, size, width, entering, entered);
+                element = made;
+                if (region is { Kind: DeskRegionKind.ContainerWindow, AttachedTo: not null })
+                    windows.Add((region, head, made, light));
             }
-            var sheet = regions[first];
-            var (element, head, light) = RegionBlock(sheet, view.Sheet.Page, size, arrangement.ColumnWidths[arrangement.Columns[b]], entering, entered);
-            // POCKETS and SPECIAL SLOTS on one row, as the game has them, each under its own head.
-            if (row is not null && before is { } kind && DeskPageRules.SameRow(kind, sheet.Region.Kind))
-                row.Children.Add(element);
+            else
+                element = Placeholder(block, size, width);
+            if (block.Kind == DeskRegionKind.Pockets)
+            {
+                pair = new StackPanel { Orientation = Orientation.Horizontal, Spacing = DeskPageRules.RowGap, Margin = new Thickness(0, top, 0, 0) };
+                pair.Children.Add(element);
+                panel.Children.Add(pair);
+            }
+            else if (block.Kind == DeskRegionKind.SpecialSlots && pair is not null)
+            {
+                pair.Children.Add(element);
+                Level(pair);
+            }
             else
             {
-                row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = DeskPageRules.RowGap, Margin = new Thickness(0, top, 0, 0) };
-                row.Children.Add(element);
-                panel.Children.Add(row);
+                element.Margin = new Thickness(0, top, 0, 0);
+                panel.Children.Add(element);
             }
-            before = sheet.Region.Kind;
-            if (sheet.Region is { Kind: DeskRegionKind.ContainerWindow, AttachedTo: not null })
-                windows.Add((sheet.Region, head, element, light));
         }
 
-        // Each attached window and its container's cell, where both are on the page (an anchor in a folded region has
-        // no cell to stem to).
+        // Each attached window and its container's cell.
         foreach (var (window, head, panel, light) in windows)
         {
             if (_cellViews.FirstOrDefault(c => window.AttachedTo!.Is(c.Region, c.Sheet.Cell)) is not { } anchor)
@@ -308,22 +313,18 @@ public sealed partial class DeskBoard : Grid
         return entered;
     }
 
-    // A region under its head: the muted "Not attached" line of a window attached to none, its slots in a strip (the
-    // loadout's in the game's order, a middle region's own container), its grid.
-    private (FrameworkElement Block, FrameworkElement Head, Border Light) RegionBlock(DeskRegionSheet sheet, DeskPage page, double size, double column,
-        IReadOnlySet<string>? entering, List<DeskCellView> entered)
+    // A region under its head (dated where the last screenshot didn't show it, the block then a step dimmer): the muted
+    // "Not attached" line of a window attached to none; LOADOUT's slot grid; a container's slot box beside its grid; a grid.
+    private (FrameworkElement Block, FrameworkElement Head, Border Light) RegionBlock(DeskRegionSheet sheet, DeskPage page, DateTimeOffset now, double size,
+        double width, IReadOnlySet<string>? entering, List<DeskCellView> entered)
     {
         var region = sheet.Region;
-        var block = new StackPanel { Spacing = 6, Tag = region.Key, Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent) };
-        var head = new TextBlock
+        var block = new StackPanel
         {
-            Style = (Style)Application.Current.Resources["EyebrowText"],
-            Margin = new Thickness(0),
-            Text = DeskPageRules.Head(region, page),
-            FontSize = DeskPageRules.HeadSize(size),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            TextWrapping = TextWrapping.Wrap,
+            Spacing = DeskPageRules.HeadGap, Tag = region.Key, Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
         };
+        var head = Head(DeskPageRules.HeadOf(region, page, now), size, width);
         // The linked highlight's gold behind the head of a window whose cell is pointed at.
         var light = new Border { Background = Brush("LinkBrush"), Opacity = 0, IsHitTestVisible = false, Margin = new Thickness(-4, -2, -4, -2) };
         var headCell = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
@@ -331,45 +332,200 @@ public sealed partial class DeskBoard : Grid
         headCell.Children.Add(head);
         block.Children.Add(headCell);
         if (DeskPageRules.NotAttached(sheet) is { } line)
-            block.Children.Add(new TextBlock { Style = (Style)Application.Current.Resources["NoteText"], Text = line, MaxWidth = column });
+            block.Children.Add(new TextBlock { Style = (Style)Application.Current.Resources["NoteText"], Text = line, MaxWidth = width });
 
         var comes = entering?.Contains(region.Key) == true;
-        var slots = sheet.Cells.Where(c => c.Cell.IsSlot).OrderBy(c => SlotOrder(c.Cell.Slot)).ToList();
-        if (slots.Count > 0)
+        if (region.Kind == DeskRegionKind.Loadout)
+            block.Children.Add(Loadout(region, sheet, size, comes, entered, dashed: false));
+        else if (DeskPageRules.HasBox(region.Kind))
         {
-            // The strip wraps at the column's width.
-            var strip = new WrapRow { HorizontalSpacing = 4, VerticalSpacing = 4, MaxWidth = column };
-            foreach (var slot in slots)
+            // The container's own slot box at the left and its grid right of it, on one row, as the game draws them.
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = DeskPageRules.BoxGap(size) };
+            var box = Box(region, sheet.Cells.FirstOrDefault(c => c.Cell.IsSlot), DeskPageRules.Box(size), DeskPageRules.Box(size), size, comes, entered,
+                dashed: false);
+            row.Children.Add(box);
+            if (GridOf(region, sheet, size, comes, entered) is { } grid)
             {
-                var cell = new DeskCellView(region, slot, size, this);
-                strip.Children.Add(cell);
-                _cellViews.Add(cell);
-                if (comes)
-                    entered.Add(cell);
+                row.Children.Add(grid);
+                _boxes[grid] = box;
             }
-            block.Children.Add(strip);
+            block.Children.Add(row);
         }
-        // LOADOUT draws no grid, whatever a reading says (DeskPageRules.Grid); a grid's compartments stand apart.
-        var (cols, rows) = DeskPageRules.Grid(region);
-        if (cols > 0 && rows > 0)
-        {
-            var grid = new Canvas { Width = cols * size + 1, Height = rows * size + 1, HorizontalAlignment = HorizontalAlignment.Left };
-            foreach (var part in region.Parts.Count > 0 ? region.Parts : [new DeskRect(0, 0, cols, rows)])
-                grid.Children.Add(PartOf(part, size, Thickness(DeskPageRules.Inset(region, part, size)), region.Parts.Count > 1));
-            foreach (var item in sheet.Cells.Where(c => !c.Cell.IsSlot).OrderBy(c => c.Cell.J).ThenBy(c => c.Cell.I))
-            {
-                var inset = Thickness(DeskPageRules.Inset(region, item.Cell.Rect, size));
-                var cell = new DeskCellView(region, item, size, this, inset);
-                Canvas.SetLeft(cell, item.Cell.I * size + inset.Left);
-                Canvas.SetTop(cell, item.Cell.J * size + inset.Top);
-                grid.Children.Add(cell);
-                _cellViews.Add(cell);
-                if (comes)
-                    entered.Add(cell);
-            }
+        else if (GridOf(region, sheet, size, comes, entered) is { } grid)
             block.Children.Add(grid);
-        }
+        // A region the last screenshot didn't show: whole, a step dimmer; its cards and clicks as ever.
+        if (DeskPageRules.Kept(region, page))
+            block.Opacity = DeskPageRules.KeptOpacity;
         return (block, head, light);
+    }
+
+    // POCKETS and SPECIAL SLOTS side by side: their heads as tall as the taller, so their grids stand level as the game's do
+    // where one head wraps (SPECIAL SLOTS, three cells wide, dated "· 1 JAN 14:02").
+    private static void Level(StackPanel pair)
+    {
+        var heads = pair.Children.OfType<Panel>().Select(b => b.Children.FirstOrDefault() as Grid)
+            .Select(cell => (Cell: cell, Text: cell?.Children.OfType<TextBlock>().FirstOrDefault())).Where(h => h.Cell is not null && h.Text is not null).ToList();
+        if (heads.Count < 2)
+            return;
+        void Even()
+        {
+            var tallest = heads.Max(h => h.Text!.ActualHeight);
+            foreach (var (cell, _) in heads)
+                cell!.MinHeight = tallest;
+        }
+        foreach (var (_, text) in heads)
+            text!.SizeChanged += (_, _) => Even();
+    }
+
+    // A region's head, in the eyebrows' style at the page's size, wrapping in its column.
+    private static TextBlock Head(string text, double size, double width) => new()
+    {
+        Style = (Style)Application.Current.Resources["EyebrowText"],
+        Margin = new Thickness(0),
+        Text = text,
+        FontSize = DeskPageRules.HeadSize(size),
+        HorizontalAlignment = HorizontalAlignment.Left,
+        TextWrapping = TextWrapping.Wrap,
+        MaxWidth = width,
+    };
+
+    // A fixed region no reading showed (owner, 2026-10-25): its head, and in its place a dashed frame of five cells by two
+    // (POCKETS four, SPECIAL SLOTS three; DeskPageRules.Placeholder) with "NOT IN A SCREENSHOT YET" (a container's empty
+    // slot box beside it); LOADOUT its slot grid of dashed boxes under the words.
+    private FrameworkElement Placeholder(DeskBlock block, double size, double width)
+    {
+        var panel = new StackPanel
+        {
+            Spacing = DeskPageRules.HeadGap, Tag = block.Key, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        };
+        panel.Children.Add(new Grid { HorizontalAlignment = HorizontalAlignment.Left, Children = { Head(DeskPageRules.Name(block.Kind), size, width) } });
+        if (block.Kind == DeskRegionKind.Loadout)
+        {
+            panel.Children.Add(new TextBlock { Style = (Style)Application.Current.Resources["NoteText"], Text = RuleTexts.DeskNotRead, MaxWidth = width });
+            panel.Children.Add(Loadout(null, null, size, false, [], dashed: true));
+        }
+        else if (DeskPageRules.HasBox(block.Kind))
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = DeskPageRules.BoxGap(size) };
+            row.Children.Add(EmptyBox(DeskPageRules.Box(size), DeskPageRules.Box(size), dashed: false));
+            row.Children.Add(NotRead(block.Kind, size));
+            panel.Children.Add(row);
+        }
+        else
+            panel.Children.Add(NotRead(block.Kind, size));
+        return panel;
+    }
+
+    // The dashed frame of a region never read, the words in it.
+    private static FrameworkElement NotRead(DeskRegionKind kind, double size)
+    {
+        var (cols, rows) = DeskPageRules.Placeholder(kind);
+        var frame = new Grid
+        {
+            Width = cols * size + 1, Height = rows * size + 1,
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        };
+        frame.Children.Add(Dashed());
+        frame.Children.Add(new TextBlock
+        {
+            Style = (Style)Application.Current.Resources["NoteText"],
+            Text = RuleTexts.DeskNotRead,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(6),
+        });
+        return frame;
+    }
+
+    private static Rectangle Dashed() => new()
+    {
+        Stroke = Brush("LineStrongBrush"), StrokeThickness = 1, StrokeDashArray = new DoubleCollection { 4, 3 }, IsHitTestVisible = false,
+    };
+
+    // A slot's box with nothing read in it: the cell's ground in its frame, as the game's empty slot; dashed, a slot never
+    // read (LOADOUT's placeholder).
+    private static FrameworkElement EmptyBox(double width, double height, bool dashed)
+    {
+        var box = new Grid { Width = width, Height = height, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        box.Children.Add(dashed ? Dashed() : new Border { Background = Brush("CellBrush"), BorderBrush = Brush("LineStrongBrush"), BorderThickness = new Thickness(1) });
+        return box;
+    }
+
+    // A slot's box: its cell at the box's size, or an empty box.
+    private FrameworkElement Box(DeskRegion region, DeskCellSheet? slot, double width, double height, double size, bool comes, List<DeskCellView> entered,
+        bool dashed)
+    {
+        if (slot is null)
+            return EmptyBox(width, height, dashed);
+        var cell = new DeskCellView(region, slot, size, this, default, new Size(width, height)) { VerticalAlignment = VerticalAlignment.Top };
+        _cellViews.Add(cell);
+        if (comes)
+            entered.Add(cell);
+        return cell;
+    }
+
+    // LOADOUT as the game's GEAR tab draws it (DeskPageRules.LoadoutBoxes): each slot's box under its name, fitted to the
+    // box's width (DeskPageRules.SlotHead), its item drawn as a cell at the box's size, an empty box where the slot is
+    // empty; dashed boxes for a LOADOUT never read.
+    private Canvas Loadout(DeskRegion? region, DeskRegionSheet? sheet, double size, bool comes, List<DeskCellView> entered, bool dashed)
+    {
+        var scale = TextFactor;
+        var room = DeskPageRules.SlotHeadRoom(size, scale);
+        var canvas = new Canvas
+        {
+            Width = DeskPageRules.LoadoutCells * size + 1, Height = DeskPageRules.LoadoutHeight(size, scale), HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        foreach (var place in DeskPageRules.LoadoutBoxes(size, scale))
+        {
+            var name = DeskCards.SlotName(place.Slot) ?? "";
+            var (type, spacing) = DeskPageRules.SlotHead(name, place.Width, size, TextScale.Drawn);
+            var eyebrow = new TextBlock
+            {
+                Style = (Style)Application.Current.Resources["EyebrowText"],
+                Margin = new Thickness(0),
+                Text = name,
+                FontSize = type,
+                CharacterSpacing = spacing,
+                TextWrapping = TextWrapping.NoWrap,
+            };
+            Canvas.SetLeft(eyebrow, place.X);
+            Canvas.SetTop(eyebrow, place.Y - room);
+            canvas.Children.Add(eyebrow);
+            var slot = sheet?.Cells.FirstOrDefault(c => c.Cell.IsSlot && c.Cell.Slot == place.Slot);
+            var box = region is null ? EmptyBox(place.Width, place.Height, dashed) : Box(region, slot, place.Width, place.Height, size, comes, entered, dashed);
+            Canvas.SetLeft(box, place.X);
+            Canvas.SetTop(box, place.Y);
+            canvas.Children.Add(box);
+        }
+        return canvas;
+    }
+
+    // A region's grid: its compartments, its empty cells the panel's ground with hairlines, its items at their places; null
+    // where it has none.
+    private Canvas? GridOf(DeskRegion region, DeskRegionSheet sheet, double size, bool comes, List<DeskCellView> entered)
+    {
+        var (cols, rows) = DeskPageRules.Grid(region);
+        if (cols <= 0 || rows <= 0)
+            return null;
+        var grid = new Canvas
+        {
+            Width = cols * size + 1, Height = rows * size + 1, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        };
+        foreach (var part in region.Parts.Count > 0 ? region.Parts : [new DeskRect(0, 0, cols, rows)])
+            grid.Children.Add(PartOf(part, size, Thickness(DeskPageRules.Inset(region, part, size)), region.Parts.Count > 1));
+        foreach (var item in sheet.Cells.Where(c => !c.Cell.IsSlot).OrderBy(c => c.Cell.J).ThenBy(c => c.Cell.I))
+        {
+            var inset = Thickness(DeskPageRules.Inset(region, item.Cell.Rect, size));
+            var cell = new DeskCellView(region, item, size, this, inset);
+            Canvas.SetLeft(cell, item.Cell.I * size + inset.Left);
+            Canvas.SetTop(cell, item.Cell.J * size + inset.Top);
+            grid.Children.Add(cell);
+            _cellViews.Add(cell);
+            if (comes)
+                entered.Add(cell);
+        }
+        return grid;
     }
 
     internal static int SlotOrder(string? slot) => DeskSlots.Order(slot ?? "") is var order and >= 0 ? order : 100;
@@ -394,40 +550,6 @@ public sealed partial class DeskBoard : Grid
         Canvas.SetTop(frame, part.J * size + inset.Top);
         return frame;
     }
-
-    // "UNCHANGED · LOADOUT ▸ · POCKETS ▸": the folded neighbours' names, each a link that opens its region. Each "·" goes
-    // with the name after it, so a line that wraps breaks before the separator, never after it (QA pass of 2026-10-19,
-    // F8: "POCKETS ▸ ·" ended a line).
-    private FrameworkElement FoldLine(DeskBlock.Fold fold, IReadOnlyList<DeskRegionSheet> regions, double top, double size)
-    {
-        var line = new WrapRow { HorizontalSpacing = 6, VerticalSpacing = 2, Margin = new Thickness(0, top, 0, 0) };
-        var words = DeskPageRules.HeadSize(size);
-        line.Children.Add(Word(DeskPageRules.Unchanged, "MutedBrush", words));
-        foreach (var key in fold.Keys)
-        {
-            if (regions.FirstOrDefault(r => r.Region.Key == key) is not { } sheet)
-                continue;
-            var link = new HyperlinkButton { Padding = new Thickness(0), Content = Word(DeskPageRules.FoldName(sheet.Region), "AmberBrush", words), Tag = key };
-            link.Click += (sender, _) =>
-            {
-                if (sender is FrameworkElement { Tag: string region })
-                    Unfolded?.Invoke(region);
-            };
-            var named = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            named.Children.Add(Word("·", "MutedBrush", words));
-            named.Children.Add(link);
-            line.Children.Add(named);
-        }
-        return line;
-    }
-
-    private static TextBlock Word(string text, string brush, double size) => new()
-    {
-        Style = (Style)Application.Current.Resources["StatusText"],
-        FontSize = size,
-        Text = text,
-        Foreground = Brush(brush),
-    };
 
     // ---- the head line ----
 
@@ -505,10 +627,14 @@ public sealed partial class DeskBoard : Grid
 
     // ---- the stems ----
 
-    // From the container's cell to its window's head, along the grid's lines and the page's margin: out of a grid's cell by
-    // its way through the grid (DeskPageRules.StemRoute: the middle of its side at the grid's edge, else along the lines
-    // no item covers, its lower corner first), out of a slot at its side (its middle at the column's edge, else its lower
-    // corner), to the margin, up or down to the head's middle, and into it.
+    // From the container's cell to its window's head, along the grid's lines and the page's margins: out of a grid's cell
+    // by its way through the grid (DeskPageRules.StemRoute: the middle of its side at the grid's edge, else along the lines
+    // no item covers, its lower corner first), round a container's slot box where it leaves the grid on the box's side, out
+    // of a slot at its side (its middle at the column's edge, else its lower corner); then, the window in the cell's own
+    // column, down the column's margin; in the column right of the cell's, down the gap between them; two or more columns
+    // right (the Zhuk of the middle column's backpack in the windows' column right of the stash), along the gap right of
+    // the cell's column up to the lane over the columns, across it over the heads between, and down the gap left of the
+    // window's column; to the head's middle and into its near end.
     private void DrawStems()
     {
         _stemsDue = false;
@@ -519,19 +645,15 @@ public sealed partial class DeskBoard : Grid
             // In the stems' own room, which stands inside the page's padding.
             var a = link.Anchor.TransformToVisual(_stems).TransformBounds(new Rect(0, 0, link.Anchor.ActualWidth, link.Anchor.ActualHeight));
             var h = link.Head.TransformToVisual(_stems).TransformBounds(new Rect(0, 0, link.Head.ActualWidth, link.Head.ActualHeight));
-            var column = link.Panel.TransformToVisual(_stems).TransformPoint(new Point(0, 0)).X;
-            // The window and its cell in one column: by that column's margin, as ever. In the columns either side of each
-            // other (the page flowed, DeskPageRules.Arrange: a window of the stash's beside the stash, the Zhuk's in the
-            // gear's next column): down the gap between them, out of the cell's side that faces it, into the head's near
-            // end.
             var own = ColumnOf(link.Anchor);
+            var theirs = ColumnOf(link.Panel);
+            var column = theirs is null ? link.Panel.TransformToVisual(_stems).TransformPoint(new Point(0, 0)).X
+                : theirs.TransformToVisual(_stems).TransformPoint(new Point(0, 0)).X;
             var cellLeft = own is null ? column : own.TransformToVisual(_stems).TransformPoint(new Point(0, 0)).X;
             var cellRight = own is null ? column : cellLeft + own.ActualWidth;
-            var left = cellLeft > column + 1;
-            var right = cellLeft < column - 1;
-            var margin = left ? Math.Round(cellLeft - DeskPageRules.ColumnGap / 2) + 0.5
-                : right ? Math.Round(column - DeskPageRules.ColumnGap / 2) + 0.5
-                : column - 9.5;
+            var apart = own is null || theirs is null ? 0 : GetColumn(theirs) - GetColumn(own);
+            var left = apart < 0;
+            var right = apart > 0;
             var way = GridWay(link.Anchor, a, toLeft: !right);
             if (way is null)
             {
@@ -540,12 +662,31 @@ public sealed partial class DeskBoard : Grid
                 else
                     way = [a.Left <= cellLeft + link.Anchor.Size ? new Point(a.Left, Math.Round(a.Top + a.Height / 2) + 0.5) : new Point(a.Left + 0.5, a.Bottom - 0.5)];
             }
+            else if (!right)
+                RoundTheBox(link.Anchor, way);
             var y = Math.Round(h.Top + h.Height / 2) + 0.5;
             var into = left ? h.Right + 4 : h.Left - 4;
             var figure = new PathFigure { StartPoint = way[0], IsClosed = false, IsFilled = false };
             foreach (var point in way.Skip(1))
                 figure.Segments.Add(new LineSegment { Point = point });
-            figure.Segments.Add(new LineSegment { Point = new Point(margin, way[^1].Y) });
+            double margin;
+            if (apart > 1)
+            {
+                // Over the columns between: up the gap right of the cell's column, along the lane, down the window's gap.
+                var gap = Math.Round(cellRight + DeskPageRules.ColumnGap / 2) + 0.5;
+                var lane = Math.Round(-DeskPageRules.Lane / 2) + 0.5;
+                margin = Math.Round(column - DeskPageRules.ColumnGap / 2) + 0.5;
+                figure.Segments.Add(new LineSegment { Point = new Point(gap, way[^1].Y) });
+                figure.Segments.Add(new LineSegment { Point = new Point(gap, lane) });
+                figure.Segments.Add(new LineSegment { Point = new Point(margin, lane) });
+            }
+            else
+            {
+                margin = left ? Math.Round(cellLeft - DeskPageRules.ColumnGap / 2) + 0.5
+                    : right ? Math.Round(column - DeskPageRules.ColumnGap / 2) + 0.5
+                    : column - 9.5;
+                figure.Segments.Add(new LineSegment { Point = new Point(margin, way[^1].Y) });
+            }
             figure.Segments.Add(new LineSegment { Point = new Point(margin, y) });
             figure.Segments.Add(new LineSegment { Point = new Point(into, y) });
             var geometry = new PathGeometry();
@@ -554,6 +695,23 @@ public sealed partial class DeskBoard : Grid
             Shturmap.Session.AppLog.Debug(FormattableString.Invariant(
                 $"Desk stem: cell {a.Left:0},{a.Top:0} {a.Width:0}×{a.Height:0}, from {string.Join(" via ", way.Select(p => FormattableString.Invariant($"{p.X:0.#},{p.Y:0.#}")))} by the margin at {margin:0.#} to {into:0.#},{y:0.#}"));
         }
+    }
+
+    // A stem leaving a container's grid on the side of its slot box, level with the box: along the gap between the box and
+    // the grid, down to under the box, so it never crosses the box's picture.
+    private void RoundTheBox(DeskCellView anchor, List<Point> way)
+    {
+        if (anchor.Parent is not Canvas grid || !_boxes.TryGetValue(grid, out var box) || box.ActualWidth <= 0)
+            return;
+        var b = box.TransformToVisual(_stems).TransformBounds(new Rect(0, 0, box.ActualWidth, box.ActualHeight));
+        var end = way[^1];
+        if (end.Y < b.Top - 0.5 || end.Y > b.Bottom + 0.5)
+            return;
+        var gridLeft = grid.TransformToVisual(_stems).TransformPoint(new Point(0, 0)).X;
+        var x = Math.Round((b.Right + gridLeft) / 2) + 0.5;
+        var under = Math.Round(b.Bottom + (gridLeft - b.Right) / 2) + 0.5;
+        way.Add(new Point(x, end.Y));
+        way.Add(new Point(x, under));
     }
 
     // A grid cell's way through its grid to the grid's edge on the window's side (DeskPageRules.StemRoute), in the stems'
