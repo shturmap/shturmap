@@ -349,6 +349,35 @@ folders" (*The readings log*) and "Developer aids" (*Readings log*), §2's three
   `ReadAsync` changes, `MenuScreenshotReader` makes its reading the same way and must follow; the UI QA pass on the
   settings note and help's privacy text (en and de, 900×560 and 1600×900) and the senior translator's review.
 
+**Code review of the day's merges (2026-10-25, 66fd15d..6f895a9, high).**
+
+- Fixed: a trader's list entry could take a kept task's expiry away. It refreshes the one task kept by its name whatever
+  its map, and a countdown more than 5 s off the kept expiry left none, though the entry may be another task of the name
+  (the table's "Exit the location" on Customs; another trader's in the list). Now an entry never takes an expiry away:
+  one that disagrees is left, counted as not taken; one that agrees refreshes it; a task without one takes it
+  (`OperationalLedger.ApplyTrader`; DESIGN.md §2). The header's task's own countdown keeps its rule (it is the task by
+  name and map). `OperationalTasksTests`: one more (the three cases), and the list's refresh test's last step now keeps
+  the expiry.
+- Fixed: a readings log that failed other than by the file system (a null or an unexpected value in an entry while its
+  lines are built) escaped into the screenshot's failure handler, which said the reading failed though it was taken.
+  The write (`GameSession.WriteReadingLog`) now catches everything but `OutOfMemoryException`, writes one WARN line
+  ("Readings log not written: <type>: <message>") and goes on; `GameSession.ReadingLogWriter` lets a test give a writer
+  that fails. `ReadingLogSessionTests`: one more (a writer that throws: the reading taken, no failure said, the next
+  screenshot's log written).
+- Being fixed (by other agents): a 0×0 region drawn as a bare head instead of the placeholder; the CLI's regions truth
+  throwing on a repeated key.
+- Accepted limits, for the record:
+  - A percentage read with one ring of the "%" lost ("100/0" for 100 %) parses as a tenfold-smaller vote; the 14-way
+    vote guards it.
+  - `MisreadCount` drops an objective's last word starting with a slashed zero, or with a digit after the progress bar's
+    gap; no such word is known in the game's objectives.
+  - A trader's list drops an entry within two units of the one before; the game's entries stand 2.6 apart at 1440p.
+  - A fuzzy heading match has no closeness check for one-word headings; the headings' columns bound it.
+  - A dated head isn't re-dated at midnight until the page is built again.
+- Cleanups left for later: the two paths that keep a page's cells (`Filled` and the covered branch); the "why kept"
+  words in three places; the container kinds spelled out in three assemblies; the count's vote replacing
+  `MisreadCount`'s patterns; `Layout` arranging the smallest size twice.
+
 ## 2026-10-19: text size: Windows' own, honoured everywhere
 
 **The ask** (beta feedback, relayed by the owner 2026-10-18): "on some setups the text can be hard to read. We should
