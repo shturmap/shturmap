@@ -179,6 +179,9 @@ public static class ReadingLog
 
     private static string OnOff(bool on) => on ? "on" : "off";
 
+    // "1 row", "2 rows".
+    private static string N(int count, string one, string many) => string.Create(CultureInfo.InvariantCulture, $"{count} {(count == 1 ? one : many)}");
+
     private static string Time(DateTimeOffset t) => t.ToString("yyyy-MM-dd HH:mm:ss zzz", CultureInfo.InvariantCulture);
 
     private static string Box(SKRectI r) => string.Create(CultureInfo.InvariantCulture, $"({r.Left},{r.Top} {r.Width}x{r.Height})");
@@ -199,10 +202,10 @@ public static class ReadingLog
         switch (page.Screen)
         {
             case TaskScreen.OtherTable:
-                Add($"TASKS SCREEN: a Tasks table without a countdown in any of its {page.Rows.Count} rows (STORY or SIDE, presumably): told, not read.");
+                Add($"TASKS SCREEN: a Tasks table without a countdown in any of its {N(page.Rows.Count, "row", "rows")} (STORY or SIDE, presumably): told, not read.");
                 break;
             case TaskScreen.Table:
-                Add($"TASKS SCREEN: the OPERATIONAL table, {page.Rows.Count} rows.");
+                Add($"TASKS SCREEN: the OPERATIONAL table, {N(page.Rows.Count, "row", "rows")}.");
                 foreach (var (row, n) in page.Rows.Select((r, i) => (r, i + 1)))
                 {
                     Add($"row {n}: \"{row.Name}\" | location {Quoted(row.Location)} | status {Quoted(row.Status)} | time left {TimeLeft(row)} | progress {Progress(row)}");
@@ -236,13 +239,13 @@ public static class ReadingLog
         var unplaced = taken.Unplaced.Count == 0 ? ""
             : $"; left out on no map the data knows: {string.Join(", ", taken.Unplaced.Select(Quoted))}";
         if (taken.Trader)
-            Add($"TAKEN: {(taken.Added ? "the task added to the set" : taken.Updated ? "the kept task of its name and map updated" : "no task")}; {taken.Refreshed} kept tasks' countdowns refreshed by the list's entries; {taken.Dropped} countdowns not taken by the checks{unplaced}.");
+            Add($"TAKEN: {(taken.Added ? "the task added to the set" : taken.Updated ? "the kept task of its name and map updated" : "no task")}; {N(taken.Refreshed, "kept task's countdown", "kept tasks' countdowns")} refreshed by the list's entries; {N(taken.Dropped, "countdown", "countdowns")} not taken by the checks{unplaced}.");
         else
-            Add($"TAKEN: {taken.Rows} rows, the set replaced; {taken.Dropped} countdowns not taken by the checks{unplaced}.");
-        Add($"the set ({entry.Mode}) now: {taken.Set.Count} tasks");
+            Add($"TAKEN: {N(taken.Rows, "row", "rows")}, the set replaced; {N(taken.Dropped, "countdown", "countdowns")} not taken by the checks{unplaced}.");
+        Add($"the set ({entry.Mode}) now: {N(taken.Set.Count, "task", "tasks")}");
         foreach (var task in taken.Set)
         {
-            Add($"  \"{task.Name}\" on {task.MapId ?? "any location"} | {task.Kind} | expires {(task.ExpiresAt is { } end ? Time(end) : "unknown")} | progress {(task.Progress is { } p ? $"{p} %" : "unknown")} | {task.Objectives.Count} objectives | read {Time(task.ReadAt)}");
+            Add($"  \"{task.Name}\" on {task.MapId ?? "any location"} | {task.Kind} | expires {(task.ExpiresAt is { } end ? Time(end) : "unknown")} | progress {(task.Progress is { } p ? $"{p} %" : "unknown")} | {N(task.Objectives.Count, "objective", "objectives")} | read {Time(task.ReadAt)}");
         }
     }
 
@@ -252,13 +255,13 @@ public static class ReadingLog
         if (page.Selected is { } task)
         {
             var own = page.Rows.Contains(task);
-            Add($"TASKS SCREEN: a trader's TASKS tab, its header's task an operational one; {page.Rows.Count} entries in its list's OPERATIONAL TASKS.");
+            Add($"TASKS SCREEN: a trader's TASKS tab, its header's task an operational one; {N(page.Rows.Count, "entry", "entries")} in its list's OPERATIONAL TASKS.");
             Add($"header: \"{task.Name}\" | location {Quoted(task.Location)} | status {Quoted(task.Status)} | time left {(own ? TimeLeft(task) : "none: two entries of its name in the list")}");
             Objectives(lines, task);
         }
         else
         {
-            Add($"TASKS SCREEN: a trader's TASKS tab, its header's task none of the list's (a story or side quest, or none); {page.Rows.Count} entries in its list's OPERATIONAL TASKS.");
+            Add($"TASKS SCREEN: a trader's TASKS tab, its header's task none of the list's (a story or side quest, or none); {N(page.Rows.Count, "entry", "entries")} in its list's OPERATIONAL TASKS.");
         }
         foreach (var entry in page.Rows.Where(r => !ReferenceEquals(r, page.Selected)))
             Add($"entry: \"{entry.Name}\" | time left {TimeLeft(entry)}");
@@ -298,7 +301,7 @@ public static class ReadingLog
                 return;
             case { } stash:
                 var items = stash.Grids.SelectMany(g => g.Items).ToList();
-                Add($"WHAT YOU HAVE (against the items the active quests need): {stash.Grids.Count} grids ({string.Join(", ", stash.Grids.Select(g => g.Kind.ToString().ToLowerInvariant()))}), {items.Count} cells with such an item:");
+                Add($"WHAT YOU HAVE (against the items the active quests need): {N(stash.Grids.Count, "grid", "grids")} ({string.Join(", ", stash.Grids.Select(g => g.Kind.ToString().ToLowerInvariant()))}), {N(items.Count, "cell", "cells")} with such an item:");
                 foreach (var item in items)
                     Add($"  {Item(entry, item.ItemId)}, count {item.Count}{Fir(item.FoundInRaid)}");
                 if (entry.MarksChanged is { } changed)
@@ -333,7 +336,7 @@ public static class ReadingLog
             LayoutLines(lines, look, page);
         var cells = page.Regions.SelectMany(r => r.Cells).ToList();
         lines.Add("");
-        Add($"CELLS: {page.Regions.Count} regions, {cells.Count} cells: {cells.Count(c => c.Ids.Count == 1)} named, {cells.Count(c => c.Ids.Count > 1)} one of several, {cells.Count(c => c.Ids.Count == 0)} nothing said{(look is null ? "" : $"; {look.Odd} shapes no label fits (their cells unread)")}.");
+        Add($"CELLS: {N(page.Regions.Count, "region", "regions")}, {N(cells.Count, "cell", "cells")}: {cells.Count(c => c.Ids.Count == 1)} named, {cells.Count(c => c.Ids.Count > 1)} one of several, {cells.Count(c => c.Ids.Count == 0)} nothing said{(look is null ? "" : $"; {N(look.Odd, "shape", "shapes")} no label fits (their cells unread)")}.");
         foreach (var region in page.Regions)
         {
             Add($"{Head(region)}");
@@ -382,12 +385,13 @@ public static class ReadingLog
         Add($"  frames: {layout.Frames.Count} found, {layout.Unplaced} under no region");
         var titles = page.Regions.Select(r => r.Title).OfType<string>().ToHashSet(StringComparer.Ordinal);
         foreach (var note in layout.Notes)
-            Add($"  note: {Unquoted(note, titles)}");
+            Add($"  note: {(note.StartsWith("headings ", StringComparison.Ordinal) ? note : Unquoted(note, titles))}");
     }
 
-    // A layout note's quoted words: a window's title the page has stays (desk.json keeps it too); any other (a word refused
-    // as a title, read anywhere left of the stash pane) is said by its length only, so no word of the picture the readings
-    // don't keep is written.
+    // A layout note's quoted words: a window's title the page has stays (desk.json keeps it too), and so do the headings'
+    // note's words (each one of the game's headings, a letter off at most); any other (a word refused as a title, read
+    // anywhere left of the stash pane) is said by its length only, so no word of the picture the readings don't keep is
+    // written.
     private static string Unquoted(string note, IReadOnlySet<string> titles) =>
         Regex.Replace(note, "\"([^\"]*)\"", m => titles.Contains(m.Groups[1].Value) ? m.Value
             : string.Create(CultureInfo.InvariantCulture, $"a word of {m.Groups[1].Value.Length} characters"));
@@ -402,9 +406,9 @@ public static class ReadingLog
             text.Append(CultureInfo.InvariantCulture, $" {r.Cols}x{r.Rows}");
         if (r.Parts.Count > 0)
             text.Append(", parts ").Append(string.Join(" ", r.Parts.Select(Rect)));
-        text.Append(CultureInfo.InvariantCulture, $": {r.Cells.Count} cells ({r.Cells.Count(c => c.Ids.Count == 1)} named, {r.Cells.Count(c => c.Ids.Count > 1)} one of several, {r.Cells.Count(c => c.Ids.Count == 0)} nothing said)");
+        text.Append(CultureInfo.InvariantCulture, $": {N(r.Cells.Count, "cell", "cells")} ({r.Cells.Count(c => c.Ids.Count == 1)} named, {r.Cells.Count(c => c.Ids.Count > 1)} one of several, {r.Cells.Count(c => c.Ids.Count == 0)} nothing said)");
         if (r.Unread > 0)
-            text.Append(CultureInfo.InvariantCulture, $", {r.Unread} cells unread");
+            text.Append(CultureInfo.InvariantCulture, $", {N(r.Unread, "cell", "cells")} unread");
         if (r.Covered.Count > 0)
             text.Append(", covered by a window or a toast: ").Append(string.Join(" ", r.Covered.Select(Rect)));
         if (r.CoveredSlots.Count > 0)
@@ -458,7 +462,7 @@ public static class ReadingLog
         foreach (var key in change.Refused.Order(StringComparer.Ordinal))
         {
             var read = reading.Region(key);
-            Add($"  kept the page's {key}: read too blank ({read?.ReadCells ?? 0} cells read, {read?.Unread ?? 0} unread; the page's has {change.Page.Region(key)?.ReadCells ?? 0})");
+            Add($"  kept the page's {key}: read too blank ({N(read?.ReadCells ?? 0, "cell", "cells")} read, {read?.Unread ?? 0} unread; the page's has {change.Page.Region(key)?.ReadCells ?? 0})");
         }
         foreach (var key in change.Kept.Order(StringComparer.Ordinal))
         {
@@ -474,6 +478,6 @@ public static class ReadingLog
                 : $"attached to none ({w.SameName} of its name on the page{(w.SameNameIn.Count > 0 ? ", in " + string.Join(" and ", w.SameNameIn) : "")})";
             Add($"  window \"{w.Title ?? "of no name"}\": {where}{(reading.Region(w.Key) is null ? $", not in this screenshot ({w.Missed} readings in a row)" : "")}");
         }
-        Add($"  regions now: {string.Join("; ", change.Page.InReadingOrder().Select(r => $"{r.Key}{(r.Cols > 0 ? string.Create(CultureInfo.InvariantCulture, $" {r.Cols}x{r.Rows}") : "")} {r.Cells.Count} cells, read {Time(r.ReadAt == DateTimeOffset.MinValue ? change.Page.ReadAt : r.ReadAt)}"))}");
+        Add($"  regions now: {string.Join("; ", change.Page.InReadingOrder().Select(r => $"{r.Key}{(r.Cols > 0 ? string.Create(CultureInfo.InvariantCulture, $" {r.Cols}x{r.Rows}") : "")} {N(r.Cells.Count, "cell", "cells")}, read {Time(r.ReadAt == DateTimeOffset.MinValue ? change.Page.ReadAt : r.ReadAt)}"))}");
     }
 }

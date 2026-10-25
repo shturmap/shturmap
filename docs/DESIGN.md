@@ -4788,8 +4788,9 @@ as read, condition and found-in-raid mark, each region's cells unread and covere
 (changed, read too blank, kept in part and why, a window dropped, each window attached or not, the regions now). A
 picture that couldn't be opened whole, or that showed none of the screens, gets a short file saying so. Never a pixel;
 of the right third only what the tasks' reading takes; no task's text, no reward; never the player's name or money
-(never read); and a word the layout's notes quote that is no window's title on the page (one refused as a title, read
-anywhere left of the stash pane) is written as its length only ("a word of 9 characters"). In every build, as the
+(never read); and a word the layout's notes quote that is neither one of the game's headings (a letter off at most) nor
+a window's title on the page (one refused as a title, read anywhere left of the stash pane) is written as its length
+only ("a word of 9 characters"). In every build, as the
 readings are (the study log is the developer builds' alone): the menu screenshots' note, help, the README and
 PRIVACY.md say it is kept. The readers hand what they saw on the way to the session for it (`MenuReading.Seen`: the
 picture's size, the Tasks screen told, the bands' votes, the desk's look), and the session adds what it did; the file is

@@ -126,8 +126,8 @@ public class ReadingLogSessionTests
         Assert.Contains("TASKS SCREEN: the OPERATIONAL table, 2 rows.", text);
         Assert.Contains("row 1: \"Elimination\" | location \"Customs\" | status \"active\" | time left \"10:14:11\" = 10:14:11 (4 of 14 ways)", text);
         Assert.Contains("  objective \"Eliminate Zorbs\" 0/3", text);
-        Assert.Contains("TAKEN: 1 rows, the set replaced; 0 countdowns not taken by the checks; left out on no map the data knows: \"Zorbland\".", text);
-        Assert.Contains("the set (Pve) now: 1 tasks", text);
+        Assert.Contains("TAKEN: 1 row, the set replaced; 0 countdowns not taken by the checks; left out on no map the data knows: \"Zorbland\".", text);
+        Assert.Contains("the set (Pve) now: 1 task", text);
         Assert.Contains("  \"Elimination\" on map-customs | Kill | expires ", text);
         // The Tasks screen goes to the tasks' reading alone: no item grids.
         Assert.DoesNotContain("DESK", text);

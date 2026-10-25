@@ -79,6 +79,7 @@ public sealed class ReadingLogTests : IDisposable
         {
             Notes =
             [
+                "headings EARPIECE \"EARPlECE\" (100,180 88x15); foot 1274",
                 "\"ZORBNAME\" at (10,20) where a loadout heading stands: no title",
                 "window \"Zhuk\" at (1500,470): magnifier read, close read, 15 px high",
                 "frame (10,10 84x84) under no heading",
@@ -146,9 +147,10 @@ public sealed class ReadingLogTests : IDisposable
         // A window's title the page has stays; a word refused as one is said by its length only.
         Assert.Contains("  note: window \"Zhuk\" at (1500,470): magnifier read, close read, 15 px high", lines);
         Assert.Contains("  note: a word of 8 characters at (10,20) where a loadout heading stands: no title", lines);
+        Assert.Contains("  note: headings EARPIECE \"EARPlECE\" (100,180 88x15); foot 1274", lines);
         Assert.DoesNotContain("ZORBNAME", text);
         // Each cell: its place, the label as read, its fit, what it matched.
-        Assert.Contains("loadout: 1 cells (1 named, 0 one of several, 0 nothing said), slots covered: armband", lines);
+        Assert.Contains("loadout: 1 cell (1 named, 0 one of several, 0 nothing said), slots covered: armband", lines);
         Assert.Contains($"  [earpiece] (100,200 168x168): label \"Zorbset\", fit 1.00: Zorbian headset (Zorbset) [{Headset}]", lines);
         Assert.Contains("stash 10x12: 5 cells (1 named, 1 one of several, 3 nothing said), 4 cells unread, covered by a window or a toast: 8,4 1x1", lines);
         Assert.Contains($"  0,0 1x2 (1800,300 84x168): label \"Water\", fit 1.00: Bottle of water (Water) [{Water}], count 2 (read \"2\"), found in raid", lines);
@@ -157,13 +159,13 @@ public sealed class ReadingLogTests : IDisposable
         Assert.Contains("  6,0 1x1 (2304,300 84x84): no label read: nothing", lines);
         Assert.Contains("  7,0 2x1 (2388,300 168x84): label \"Water\", fit 1.00, its footprint contradicts it: nothing: the items the label fits are of another size", lines);
         Assert.Contains(lines, l => l.StartsWith("window:zhuk \"Zhuk\" 3x2", StringComparison.Ordinal));
-        Assert.Contains("CELLS: 4 regions, 7 cells: 3 named, 1 one of several, 3 nothing said; 1 shapes no label fits (their cells unread).", lines);
+        Assert.Contains("CELLS: 4 regions, 7 cells: 3 named, 1 one of several, 3 nothing said; 1 shape no label fits (their cells unread).", lines);
         // What the page in hand did.
         Assert.Contains("THE PAGE IN HAND (Pve): changed loadout, stash.", lines);
         Assert.Contains("  kept the page's backpack: read too blank (0 cells read, 3 unread; the page's has 0)", lines);
         Assert.Contains("  dropped window:junk: a window attached to nothing, not shown by 3 readings in a row", lines);
         Assert.Contains("  window \"Zhuk\": attached to backpack [backpack]", lines);
-        Assert.Contains(lines, l => l.StartsWith("  regions now: loadout 1 cells", StringComparison.Ordinal));
+        Assert.Contains(lines, l => l.StartsWith("  regions now: loadout 1 cell, read ", StringComparison.Ordinal));
         NothingOfThePicture(text);
     }
 
@@ -244,9 +246,9 @@ public sealed class ReadingLogTests : IDisposable
         Assert.Contains("bands, each read 14 ways, the value most of them read taken:", lines);
         Assert.Contains("  time band 1200,640: nothing read of 14 ways", lines);
         Assert.Contains("  progress band 1500,400: 0 ×3 of 14 ways", lines);
-        Assert.Contains("TAKEN: 1 rows, the set replaced; 0 countdowns not taken by the checks; left out on no map the data knows: \"Zorbland\".", lines);
-        Assert.Contains("the set (Pve) now: 1 tasks", lines);
-        Assert.Contains("  \"Elimination\" on map-customs | Kill | expires 2026-01-02 01:54:23 +01:00 | progress 0 % | 1 objectives | read 2026-01-01 15:40:12 +01:00", lines);
+        Assert.Contains("TAKEN: 1 row, the set replaced; 0 countdowns not taken by the checks; left out on no map the data knows: \"Zorbland\".", lines);
+        Assert.Contains("the set (Pve) now: 1 task", lines);
+        Assert.Contains("  \"Elimination\" on map-customs | Kill | expires 2026-01-02 01:54:23 +01:00 | progress 0 % | 1 objective | read 2026-01-01 15:40:12 +01:00", lines);
         // A Tasks screen goes to the tasks' reading alone.
         Assert.DoesNotContain(lines, l => l.StartsWith("DESK", StringComparison.Ordinal) || l.StartsWith("WHAT YOU HAVE", StringComparison.Ordinal));
         NothingOfThePicture(File.ReadAllText(path));
@@ -267,7 +269,7 @@ public sealed class ReadingLogTests : IDisposable
         Assert.Contains("header: \"Exit the location\" | location \"Shoreline\" | status \"active!\" | time left \"23:54:15\" = 23:54:15 (5 of 14 ways)", lines);
         Assert.Contains("  objective \"Survive and extract from the location\" 0/1", lines);
         Assert.Contains("entry: \"Elimination\" | time left \"00:48:48\" = 00:48:48 (4 of 14 ways)", lines);
-        Assert.Contains("TAKEN: the task added to the set; 1 kept tasks' countdowns refreshed by the list's entries; 0 countdowns not taken by the checks.", lines);
+        Assert.Contains("TAKEN: the task added to the set; 1 kept task's countdown refreshed by the list's entries; 0 countdowns not taken by the checks.", lines);
 
         // A screenshot older than the last table's leaves the set as it was.
         lines = ReadingLog.Lines(Entry(new MenuReading(page, null)) with { Tasks = taken with { Older = true } });
