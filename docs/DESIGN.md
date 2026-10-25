@@ -2163,7 +2163,11 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       `Reserved`): a head takes the lines of its name with the longest date the language writes ("28 SEP 23:58", German
       „28. SEPT., 23:58“) whether it is dated or not, the layout counting them and the page holding them with an unseen
       copy of that dated head under it, so the date comes into room kept for it and nothing under a head moves; on the
-      first reading SPECIAL SLOTS and POCKETS stand over a line left empty for it. The dimming
+      first reading SPECIAL SLOTS and POCKETS stand over a line left empty for it. The room is above the name, the name
+      right over its grid as every head stands (UI QA re-check, 2026-10-25: at the room's top POCKETS and SPECIAL SLOTS
+      stood 23 px over their grids on the first reading, where every other head stands 10 to 11 over its own, and read
+      as parted from them): where the date wraps a head, the name's line goes up into the room and the date's line
+      stands where the name stood. The dimming
       and the date are the only marks: its cells keep their look, their cards and clicks. A region of a file written
       before the reading's time was kept is the page's.
     - **A container in a grid** (a bag in a bag, a Zhuk rig in the backpack) is a cell with its own price, its figure
@@ -2407,7 +2411,8 @@ and their generator are in `brand/` (see `brand/README.md`); `brand\build.cs` al
       container's 2-cell box, a fifth of a cell between it and its grid in whole pixels, 8 DIP at 40 and 12 at 56, and
       the grid; POCKETS and SPECIAL SLOTS side by side 24 DIP apart, each as wide as its grid, their heads as tall as the
       taller so their grids stand level); the stash's ten cells, or the widest window under it; the windows' widest. Each
-      block under its head, 6 DIP apart, the blocks of a column 20 DIP apart; LOADOUT's rows 8 DIP apart at 40 (a fifth of
+      block under its head, 6 DIP apart (the head at the foot of the room it keeps for its date, *A region not in the
+      last screenshot*), the blocks of a column 20 DIP apart; LOADOUT's rows 8 DIP apart at 40 (a fifth of
       a cell), the armband's and the dog tag's boxes 4 DIP apart. The regions' heads grow a pixel every two steps past
       80, to 16 px at 120 and 128, the slots' names with them two pixels under. LOADOUT draws no grid, whatever a
       reading's region says (F2 of 2026-10-19: a reading's eleven by one drew a row of empty cells under the strip and

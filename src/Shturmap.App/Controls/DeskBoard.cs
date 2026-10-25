@@ -441,7 +441,7 @@ public sealed partial class DeskBoard : Grid
         var head = Head(DeskPageRules.HeadOf(region, page, now), size, width);
         // The linked highlight's gold behind the head of a window whose cell is pointed at, as wide as the words.
         var light = new Border { Background = Brush("LinkBrush"), Opacity = 0, IsHitTestVisible = false, Margin = new Thickness(-4, -2, -4, -2) };
-        var lit = new Grid { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        var lit = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
         lit.Children.Add(light);
         lit.Children.Add(head);
         block.Children.Add(HeadCell(DeskPageRules.Head(region, page), lit, size, width));
@@ -511,7 +511,11 @@ public sealed partial class DeskBoard : Grid
     // every row under it 13 px down): the head as drawn, and under it, unseen, the same head in its dated form at its
     // widest (DeskPageRules.Reserved: "SPECIAL SLOTS · 28 SEP 23:58"), wrapping alike, so the cell takes the dated head's
     // lines from the first reading, at the size the text is drawn, and nothing under a head moves when its date comes. The
-    // copy is transparent, takes no pointer and says nothing to a screen reader; the layout check passes over it.
+    // copy is transparent, takes no pointer and says nothing to a screen reader; the layout check passes over it. The head
+    // as drawn stands at the cell's foot, right over its grid, the room it keeps above it (UI QA re-check, 2026-10-25: at
+    // the cell's top POCKETS and SPECIAL SLOTS stood 23 px over their grids on the first reading, where every other head
+    // stands 10 to 11, and read as cut off from them): where the date wraps a head, the name's line goes up into the room
+    // and the date's line stands where the name stood.
     private static Grid HeadCell(string head, FrameworkElement drawn, double size, double width)
     {
         var cell = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
@@ -520,6 +524,7 @@ public sealed partial class DeskBoard : Grid
         room.IsHitTestVisible = false;
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAccessibilityView(room, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
         cell.Children.Add(room);
+        drawn.VerticalAlignment = VerticalAlignment.Bottom;
         cell.Children.Add(drawn);
         return cell;
     }
